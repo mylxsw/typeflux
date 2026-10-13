@@ -16,15 +16,15 @@ struct AskVoiceOrb: View {
     var body: some View {
         ZStack {
             if listening {
-                Circle().fill(AskTheme.accent.opacity(0.18))
+                Circle().fill(TypefluxColor.accent.color.opacity(0.18))
                     .scaleEffect(reduceMotion ? 1 : Self.scale(level: live.levels.last ?? 0))
                     .animation(reduceMotion ? nil : .easeOut(duration: 0.12), value: live.levels.last)
-                Circle().fill(AskTheme.accent).frame(width: 20, height: 20)
-                Image(systemName: "mic.fill").font(.system(size: 10, weight: .semibold)).foregroundStyle(.white)
+                Circle().fill(TypefluxColor.accent.color).frame(width: 20, height: 20)
+                Image(systemName: "mic.fill").font(.footnote.weight(.semibold)).foregroundStyle(.white)
             } else {
-                Circle().fill(AskTheme.accent.opacity(0.14))
-                Image(systemName: "waveform").font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(AskTheme.accent)
+                Circle().fill(TypefluxColor.accent.color.opacity(0.14))
+                Image(systemName: "waveform").font(.callout.weight(.semibold))
+                    .foregroundStyle(TypefluxColor.accent.color)
             }
         }
         .frame(width: Self.size, height: Self.size)
@@ -47,13 +47,13 @@ struct AskVoiceLiveText: View {
         Group {
             if live.transcript.isEmpty, existing.isEmpty {
                 Text(L(listening ? "ask.voice.waiting" : "ask.voice.recognizing"))
-                    .foregroundStyle(StudioTheme.textTertiary)
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
             } else if live.transcript.isEmpty {
-                Text(existing).foregroundStyle(StudioTheme.textPrimary)
+                Text(existing).foregroundStyle(TypefluxColor.label.color)
             } else {
-                Text(existing + live.transcript.confirmed).foregroundColor(StudioTheme.textPrimary)
+                Text(existing + live.transcript.confirmed).foregroundColor(TypefluxColor.label.color)
                     + Text(live.transcript.pending)
-                    .foregroundColor(listening ? StudioTheme.textTertiary : StudioTheme.textSecondary)
+                    .foregroundColor(listening ? TypefluxColor.tertiaryLabel.color : TypefluxColor.secondaryLabel.color)
             }
         }
         .font(.system(size: fontSize))
@@ -73,8 +73,8 @@ struct AskVoiceElapsed: View {
         if let startedAt = live.startedAt {
             TimelineView(.periodic(from: startedAt, by: 1)) { context in
                 Text(AskLauncherContext.elapsed(context.date.timeIntervalSince(startedAt)))
-                    .font(.system(size: 12.5).monospacedDigit())
-                    .foregroundStyle(StudioTheme.textSecondary)
+                    .font(.callout.monospacedDigit())
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
             }
             .accessibilityHidden(true)
         }
@@ -96,7 +96,7 @@ struct AskLevelWaveform: View {
         HStack(spacing: 3) {
             ForEach(Array(levels.enumerated()), id: \.offset) { _, level in
                 Capsule()
-                    .fill(active ? AskTheme.accent : StudioTheme.textTertiary.opacity(0.5))
+                    .fill(active ? TypefluxColor.accent.color : TypefluxColor.secondaryLabel.color.opacity(0.5))
                     .frame(width: 3, height: active ? Self.barHeight(level: level) : 4)
             }
         }
@@ -124,12 +124,12 @@ struct AskVoicePanel: View {
             VStack(spacing: 10) {
                 AskLevelWaveform(levels: live.levels, active: listening)
                 Text(L(listening ? "ask.voice.panel.hint" : "ask.voice.panel.transcribing"))
-                    .font(.system(size: 12))
-                    .foregroundStyle(StudioTheme.textSecondary)
+                    .font(.callout)
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
                 if listening {
                     Text(L("ask.voice.panel.examples"))
-                        .font(.system(size: 11.5))
-                        .foregroundStyle(StudioTheme.textTertiary)
+                        .font(.subheadline)
+                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
                 }
                 if let token, (token.hasSource && !token.sourceOff) || token.screenshot == .attached {
                     contextNote(token)
@@ -154,8 +154,8 @@ struct AskVoicePanel: View {
             }
             Text(L("ask.voice.panel.context"))
         }
-        .font(.system(size: 11.5))
-        .foregroundStyle(StudioTheme.textSecondary)
+        .font(.subheadline)
+        .foregroundStyle(TypefluxColor.secondaryLabel.color)
         .padding(.horizontal, 10)
         .frame(height: 24)
         .background(AskTheme.hoverFill.opacity(0.6), in: Capsule())

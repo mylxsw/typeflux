@@ -12,6 +12,8 @@ public struct TypefluxSpotlightSurface<Results: View, Hints: View>: View {
     private let onEscape: () -> Void
     private let results: Results
     private let hints: Hints
+    private let usesSuppliedLayout: Bool
+    private let placement: GlassPlacement
 
     public init(query: Binding<String>, mode: Binding<String>, focused: Binding<Bool>, prompt: String,
                 modes: [TypefluxSpotlightMode], onEscape: @escaping () -> Void,
@@ -25,9 +27,40 @@ public struct TypefluxSpotlightSurface<Results: View, Hints: View>: View {
         self.onEscape = onEscape
         self.results = results()
         self.hints = hints()
+        usesSuppliedLayout = false
+        placement = .floating
     }
 
-    public var body: some View {
+    /// Decorate an existing rich editor layout without supplying frames, spacing or size proposals.
+    public init(placement: GlassPlacement = .floating, @ViewBuilder content: () -> Results)
+        where Hints == EmptyView {
+        _query = .constant("")
+        _mode = .constant("")
+        _focused = .constant(false)
+        prompt = ""
+        modes = []
+        onEscape = {}
+        results = content()
+        hints = EmptyView()
+        usesSuppliedLayout = true
+        self.placement = placement
+    }
+
+    @ViewBuilder public var body: some View {
+        if usesSuppliedLayout {
+            results
+                .background {
+                    TypefluxGlassContainer(radius: .spotlightResults, placement: placement) { Color.clear }
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                }
+                .clipShape(RoundedRectangle(cornerRadius: TypefluxRadius.spotlightResults.value(for: style)))
+        } else {
+            nativePanel
+        }
+    }
+
+    private var nativePanel: some View {
         Group {
             if style == .classic {
                 TypefluxGlassContainer(radius: .spotlightResults) {

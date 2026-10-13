@@ -31,7 +31,7 @@ struct AskLauncherView: View {
             .environment(\.askLauncherNumberHints, showingNumberHints)
             .background(AskLauncherCommandMonitor { showingNumberHints = $0 })
             .background(AskLauncherEscapeMonitor())
-            .tint(AskTheme.accent)
+            .tint(TypefluxColor.accent.color)
             .onChange(of: model.launcherDraft) { _ in model.persistDrafts() }
             .popover(item: $model.launcherClipboardPreview) { entry in
                 ClipboardPreviewPane(entry: entry, isMissing: entry.contentURLs.contains {
@@ -1080,7 +1080,10 @@ struct AskComposer: View {
                     // EmptyView does not participate in layout. Keep a real
                     // viewport while the last results disappear during shrinkage.
                     Color.clear
-                    launcherResults
+                    // Keep material hosting below the native editor's accepted layout hierarchy.
+                    TypefluxSpotlightSurface {
+                        launcherResults.background(TypefluxColor.contentBackground.color)
+                    }
                 }
                 .frame(height: launcherResultsViewportHeight, alignment: .top)
                 .clipped()
@@ -1672,7 +1675,7 @@ struct AskComposer: View {
                 .accessibilityIdentifier("ask.composer.voice")
             if !active {
                 AskLauncherOpenChatButton(mode: launcherChatAction, enabled: launcherChatActionEnabled,
-                                         tint: privateTint ? AskTheme.privateTint : AskTheme.accent,
+                                         tint: privateTint ? AskTheme.privateTint : TypefluxColor.accent.color,
                                           action: runLauncherChatAction)
             }
         }

@@ -38,7 +38,7 @@ enum TypefluxUISnapshot {
         window.isReleasedWhenClosed = false
         window.appearance = hosting.appearance
         window.contentView = hosting
-        defer { window.orderOut(nil); window.close() }
+        defer { TypefluxNavigationTestSupport.closeWindow(window) }
         try await Task.sleep(for: .milliseconds(300))
         hosting.layoutSubtreeIfNeeded()
         let bitmap = try #require(NSBitmapImageRep(

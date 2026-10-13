@@ -134,8 +134,8 @@ struct AskQuickResultsView: View {
     private func sectionTitle(_ section: Section) -> some View {
         Text(section == .calculation && results.calculation?.isNumericInput == true
              ? L("ask.quick.numberConversions") : section.title)
-            .font(.system(size: 11, weight: .semibold))
-            .foregroundStyle(StudioTheme.textTertiary)
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(TypefluxColor.secondaryLabel.color)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 10)
             .frame(height: Self.sectionHeight, alignment: .bottom)
@@ -167,20 +167,23 @@ struct AskQuickResultsView: View {
     private func featureRow(_ entry: AskLauncherSearchEntry, row: AskQuickResults.Row, highlighted: Bool) -> some View {
         Button { onRun(row, true) } label: {
             HStack(spacing: 12) {
-                tile(entry.symbol, tint: AskTheme.accent)
-                Text(entry.title).font(.system(size: 13.5)).foregroundStyle(StudioTheme.textPrimary).lineLimit(1)
+                tile(entry.symbol, tint: highlighted
+                     ? TypefluxSpotlightRow.labelColor(selected: true) : TypefluxColor.accent.color)
+                Text(entry.title).font(.body)
+                    .foregroundStyle(TypefluxSpotlightRow.labelColor(selected: highlighted)).lineLimit(1)
                 if !entry.keyword.keyword.isEmpty {
-                    Text(entry.keyword.keyword).font(.system(size: 11.5, design: .monospaced))
-                        .foregroundStyle(StudioTheme.textTertiary)
+                    Text(entry.keyword.keyword).font(.callout.monospaced())
+                        .foregroundStyle(TypefluxSpotlightRow.labelColor(selected: highlighted, secondary: true))
                 }
                 Spacer(minLength: 8)
-                Text(highlighted ? L(entry.command == nil ? "ask.plugin.prefix.enter" : "ask.system.run") + " ↩" : entry.detail)
-                    .font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
+                Text(highlighted
+                     ? L(entry.command == nil ? "ask.plugin.prefix.enter" : "ask.system.run") + " ↩" : entry.detail)
+                    .font(.subheadline)
+                    .foregroundStyle(TypefluxSpotlightRow.labelColor(selected: highlighted, secondary: true))
+                    .lineLimit(1)
             }
             .padding(.horizontal, 10).frame(height: Self.appHeight)
-            .background(highlighted ? AskTheme.hoverFill : Color.clear,
-                        in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .contentShape(Rectangle())
+            .modifier(TypefluxSpotlightRow(selected: highlighted))
         }
         .buttonStyle(.plain)
         .accessibilityLabel(entry.title)
@@ -200,37 +203,33 @@ struct AskQuickResultsView: View {
         let title = L(calculation.isNumericInput ? "ask.quick.numberConversions" : "ask.quick.calculator")
         return Button { onRun(.calculation, true) } label: {
             HStack(spacing: 12) {
-                tile(calculation.isNumericInput ? "number" : "equal", tint: AskTheme.accent)
-                Text(title).font(.system(size: 13.5))
-                    .foregroundStyle(StudioTheme.textPrimary)
+                tile(calculation.isNumericInput ? "number" : "equal",
+                     tint: highlighted ? TypefluxSpotlightRow.labelColor(selected: true) : TypefluxColor.accent.color)
+                Text(title).font(.body)
+                    .foregroundStyle(TypefluxSpotlightRow.labelColor(selected: highlighted))
                 Spacer(minLength: 16)
                 VStack(alignment: .trailing, spacing: 1) {
-                    Text(expression).font(.system(size: 12.5).monospacedDigit())
-                        .foregroundStyle(StudioTheme.textSecondary)
+                    Text(expression).font(.callout.monospacedDigit())
+                        .foregroundStyle(TypefluxSpotlightRow.labelColor(selected: highlighted, secondary: true))
                         .lineLimit(1).truncationMode(.head)
                     switch calculation.outcome {
                     case let .success(number):
-                        Text(number.displayText).font(.system(size: 26, weight: .semibold).monospacedDigit())
-                            .foregroundStyle(results.stale ? StudioTheme.textTertiary : StudioTheme.textPrimary)
+                        Text(number.displayText).font(.largeTitle.weight(.semibold).monospacedDigit())
+                            .foregroundStyle(TypefluxSpotlightRow.labelColor(
+                                selected: highlighted, secondary: results.stale
+                            ))
                             .lineLimit(1).minimumScaleFactor(0.5)
                     case let .failure(error):
-                        Text(error.message).font(.system(size: 14, weight: .medium))
-                            .foregroundStyle(StudioTheme.danger)
+                        Text(error.message).font(.body.weight(.medium))
+                            .foregroundStyle(highlighted ? TypefluxSpotlightRow.labelColor(selected: true)
+                                : TypefluxColor.danger.color)
                             .lineLimit(1)
                     }
                 }
             }
             .padding(.horizontal, 10)
             .frame(height: Self.calculationHeight)
-            .background(highlighted ? AskTheme.hoverFill : Color.clear,
-                        in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay {
-                if highlighted {
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .strokeBorder(AskTheme.accent.opacity(0.55), lineWidth: 1)
-                }
-            }
-            .contentShape(Rectangle())
+            .modifier(TypefluxSpotlightRow(selected: highlighted))
         }
         .buttonStyle(.plain)
         .disabled(!results.isEnabled(.calculation))
@@ -256,30 +255,22 @@ struct AskQuickResultsView: View {
                 AskFileIconView(url: app.url, thumbnail: false)
                     .frame(width: 28, height: 28)
                     .accessibilityHidden(true)
-                Self.marked(app.name, match.highlights).font(.system(size: 13.5))
-                    .foregroundStyle(StudioTheme.textPrimary)
+                Self.marked(app.name, match.highlights, selected: highlighted).font(.body)
+                    .foregroundStyle(TypefluxSpotlightRow.labelColor(selected: highlighted))
                     .lineLimit(1)
                 Text(app.kind == .settingsPane ? L("ask.quick.pane.location") : Self.location(of: app.url))
-                    .font(.system(size: 11.5))
-                    .foregroundStyle(StudioTheme.textTertiary)
+                    .font(.subheadline)
+                    .foregroundStyle(TypefluxSpotlightRow.labelColor(selected: highlighted, secondary: true))
                     .lineLimit(1).truncationMode(.middle)
                 Spacer(minLength: 8)
                 if highlighted {
-                    Text(L("ask.quick.app.open") + " ↩").font(.system(size: 11.5))
-                        .foregroundStyle(StudioTheme.textTertiary)
+                    Text(L("ask.quick.app.open") + " ↩").font(.subheadline)
+                        .foregroundStyle(TypefluxSpotlightRow.labelColor(selected: highlighted, secondary: true))
                 }
             }
             .padding(.horizontal, 10)
             .frame(height: Self.appHeight)
-            .background(highlighted ? AskTheme.hoverFill : Color.clear,
-                        in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .overlay {
-                if highlighted, results.best == row, row == results.rows.first {
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .strokeBorder(AskTheme.accent.opacity(0.55), lineWidth: 1)
-                }
-            }
-            .contentShape(Rectangle())
+            .modifier(TypefluxSpotlightRow(selected: highlighted))
         }
         .buttonStyle(.plain)
         .accessibilityLabel(app.name)
@@ -295,31 +286,23 @@ struct AskQuickResultsView: View {
             HStack(spacing: 12) {
                 AskFileIconView(url: file.url, thumbnail: thumbnails && file.kind == .file, modified: file.modified)
                     .frame(width: 28, height: 28)
-                Self.marked(file.name, file.highlights).font(.system(size: 13.5))
-                    .foregroundStyle(StudioTheme.textPrimary)
+                Self.marked(file.name, file.highlights, selected: highlighted).font(.body)
+                    .foregroundStyle(TypefluxSpotlightRow.labelColor(selected: highlighted))
                     .lineLimit(1).truncationMode(.middle)
                     .layoutPriority(1)
-                Text(AskLauncherSearchSettings.abbreviate(file.folder)).font(.system(size: 11.5))
-                    .foregroundStyle(StudioTheme.textTertiary)
+                Text(AskLauncherSearchSettings.abbreviate(file.folder)).font(.subheadline)
+                    .foregroundStyle(TypefluxSpotlightRow.labelColor(selected: highlighted, secondary: true))
                     .lineLimit(1).truncationMode(.middle)
                 Spacer(minLength: 8)
                 Text(highlighted ? L("ask.quick.file.actions") : Self.relative(file.modified))
-                    .font(.system(size: 11.5))
-                    .foregroundStyle(StudioTheme.textTertiary)
+                    .font(.subheadline)
+                    .foregroundStyle(TypefluxSpotlightRow.labelColor(selected: highlighted, secondary: true))
                     .lineLimit(1)
                     .fixedSize()
             }
             .padding(.horizontal, 10)
             .frame(height: Self.fileHeight)
-            .background(highlighted ? AskTheme.hoverFill : Color.clear,
-                        in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .overlay {
-                if highlighted, results.best == row, row == results.rows.first {
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .strokeBorder(AskTheme.accent.opacity(0.55), lineWidth: 1)
-                }
-            }
-            .contentShape(Rectangle())
+            .modifier(TypefluxSpotlightRow(selected: highlighted))
         }
         .buttonStyle(.plain)
         .help(AskLauncherSearchSettings.abbreviate(file.path))
@@ -337,17 +320,16 @@ struct AskQuickResultsView: View {
     private func moreRow(highlighted: Bool) -> some View {
         Button { onRun(.showAllFiles, false) } label: {
             HStack(spacing: 8) {
-                Text(L("ask.quick.file.showAll")).font(.system(size: 12.5))
-                    .foregroundStyle(StudioTheme.textSecondary)
+                Text(L("ask.quick.file.showAll")).font(.callout)
+                    .foregroundStyle(TypefluxSpotlightRow.labelColor(selected: highlighted, secondary: true))
                 Spacer(minLength: 8)
-                Text("⌘↓").font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
+                Text("⌘↓").font(.subheadline)
+                    .foregroundStyle(TypefluxSpotlightRow.labelColor(selected: highlighted, secondary: true))
             }
             .padding(.leading, 50)
             .padding(.trailing, 10)
             .frame(height: Self.moreHeight)
-            .background(highlighted ? AskTheme.hoverFill : Color.clear,
-                        in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .contentShape(Rectangle())
+            .modifier(TypefluxSpotlightRow(selected: highlighted))
         }
         .buttonStyle(.plain)
         .accessibilityAddTraits(highlighted ? .isSelected : [])
@@ -359,8 +341,8 @@ struct AskQuickResultsView: View {
         case let .indexing(found, progress):
             HStack(spacing: 10) {
                 ProgressView().controlSize(.small).scaleEffect(0.7).frame(width: 28)
-                Text(L("ask.quick.file.indexing", found.formatted())).font(.system(size: 12))
-                    .foregroundStyle(StudioTheme.textSecondary)
+                Text(L("ask.quick.file.indexing", found.formatted())).font(.callout)
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
                     .lineLimit(1)
                 if let progress {
                     ProgressView(value: progress).frame(maxWidth: 120)
@@ -378,25 +360,26 @@ struct AskQuickResultsView: View {
         let done = copied == index
         return Button { copy(index) } label: {
             HStack(spacing: 10) {
-                Text(format.kind.title).font(.system(size: 11.5))
-                    .foregroundStyle(StudioTheme.textTertiary)
+                Text(format.kind.title).font(.subheadline)
+                    .foregroundStyle(TypefluxSpotlightRow.labelColor(selected: highlighted, secondary: true))
                     .lineLimit(1).minimumScaleFactor(0.8)
                     .frame(width: results.calculation?.isNumericInput == true ? 110 : 72, alignment: .leading)
                     .help(format.kind == .base64 ? L("ask.quick.format.base64.alphabet") : format.kind.title)
-                Text(format.value).font(.system(size: 12.5).monospacedDigit())
-                    .foregroundStyle(results.stale ? StudioTheme.textTertiary : StudioTheme.textPrimary)
+                Text(format.value).font(.callout.monospacedDigit())
+                    .foregroundStyle(TypefluxSpotlightRow.labelColor(
+                                selected: highlighted, secondary: results.stale
+                            ))
                     .lineLimit(1).truncationMode(.tail)
                 Spacer(minLength: 8)
-                Image(systemName: done ? "checkmark" : "doc.on.doc").font(.system(size: 11.5))
-                    .foregroundStyle(done ? StudioTheme.success : StudioTheme.textTertiary)
+                Image(systemName: done ? "checkmark" : "doc.on.doc").font(.subheadline)
+                    .foregroundStyle(done && !highlighted ? TypefluxColor.success.color
+                        : TypefluxSpotlightRow.labelColor(selected: highlighted, secondary: true))
                     .frame(width: 24)
             }
             .padding(.leading, 50)
             .padding(.trailing, 10)
             .frame(height: Self.formatHeight)
-            .background(highlighted ? AskTheme.hoverFill : Color.clear,
-                        in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .contentShape(Rectangle())
+            .modifier(TypefluxSpotlightRow(selected: highlighted))
         }
         .buttonStyle(.plain)
         .help(format.value)
@@ -407,7 +390,7 @@ struct AskQuickResultsView: View {
     }
 
     private func tile(_ symbol: String, tint: Color) -> some View {
-        Image(systemName: symbol).font(.system(size: 12.5, weight: .semibold))
+        Image(systemName: symbol).font(.callout.weight(.semibold))
             .foregroundStyle(tint)
             .frame(width: 28, height: 28)
             .background(tint.opacity(0.14), in: RoundedRectangle(cornerRadius: 9, style: .continuous))

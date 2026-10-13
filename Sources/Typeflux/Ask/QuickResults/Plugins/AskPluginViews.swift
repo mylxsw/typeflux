@@ -82,6 +82,7 @@ struct AskKeywordChip: View {
 /// The results area in keyword mode: a plugin row, flat list or result card.
 struct AskPluginResultsView: View {
     @State private var pointer = AskSearchPointer(position: NSEvent.mouseLocation)
+    @Environment(\.interfaceStyle) private var style
     var display: AskPluginDisplay
     var question: String
     var minimumHeight: CGFloat = 0
@@ -356,20 +357,23 @@ struct AskPluginResultsView: View {
         Image(systemName: symbol).font(.system(size: 12, weight: .bold))
             .foregroundStyle(.white)
             .frame(width: 28, height: 28)
-            .background(AskTheme.accent, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+            .background(TypefluxColor.accent.color,
+                        in: RoundedRectangle(cornerRadius: TypefluxRadius.navigationIcon.value(for: style)))
     }
 
-    private func metaChips(_ meta: [AskPluginMeta]) -> some View {
+    private func metaChips(_ meta: [AskPluginMeta], selected: Bool = false) -> some View {
         HStack(spacing: 6) {
             ForEach(Array(meta.enumerated()), id: \.offset) { index, item in
                 if index > 0 {
                     Image(systemName: "arrow.right").font(.system(size: 10, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textTertiary)
+                        .foregroundStyle(TypefluxSpotlightRow.labelColor(selected: selected, secondary: true))
                 }
                 Text(item.text).font(.system(size: 12))
-                    .foregroundStyle(item.emphasized ? AskTheme.accent : StudioTheme.textPrimary)
+                    .foregroundStyle(selected ? TypefluxSpotlightRow.labelColor(selected: true)
+                        : item.emphasized ? TypefluxColor.accent.color : TypefluxColor.label.color)
                     .padding(.horizontal, 8).frame(height: 22)
-                    .background((item.emphasized ? AskTheme.accent.opacity(0.16) : AskTheme.hoverFill),
+                    .background((selected ? Color.white.opacity(0.2)
+                        : item.emphasized ? TypefluxColor.accent.color.opacity(0.16) : AskTheme.hoverFill),
                                 in: Capsule())
             }
         }
@@ -392,27 +396,21 @@ struct AskPluginResultsView: View {
         Button(action: onMain) {
             HStack(spacing: 12) {
                 tile(display.symbol).opacity(enabled ? 1 : 0.45)
-                Text(title).font(.system(size: 13.5))
-                    .foregroundStyle(enabled ? StudioTheme.textPrimary : StudioTheme.textTertiary)
+                Text(title).font(.body)
+                    .foregroundStyle(TypefluxSpotlightRow.labelColor(
+                        selected: highlighted && enabled, secondary: !enabled
+                    ))
                     .lineLimit(1)
-                metaChips(meta)
+                metaChips(meta, selected: highlighted && enabled)
                 Spacer(minLength: 8)
                 if enabled {
-                    Text(Self.rowHint(for: action)).font(.system(size: 11.5))
-                        .foregroundStyle(StudioTheme.textTertiary)
+                    Text(Self.rowHint(for: action)).font(.subheadline)
+                        .foregroundStyle(TypefluxSpotlightRow.labelColor(selected: highlighted, secondary: true))
                 }
             }
             .padding(.horizontal, 10)
             .frame(height: Self.rowHeight)
-            .background(highlighted && enabled ? AskTheme.hoverFill : Color.clear,
-                        in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .overlay {
-                if highlighted, enabled {
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .strokeBorder(AskTheme.accent.opacity(0.55), lineWidth: 1)
-                }
-            }
-            .contentShape(Rectangle())
+            .modifier(TypefluxSpotlightRow(selected: highlighted && enabled))
         }
         .buttonStyle(.plain)
         .disabled(!enabled)
@@ -424,21 +422,20 @@ struct AskPluginResultsView: View {
         Button(action: onMain) {
             HStack(spacing: 12) {
                 tile(display.symbol)
-                Text(display.title).font(.system(size: 13.5)).foregroundStyle(StudioTheme.textPrimary)
-                Text(hint.keyword).font(.system(size: 12, design: .monospaced))
-                    .foregroundStyle(StudioTheme.textTertiary)
+                Text(display.title).font(.body).foregroundStyle(TypefluxSpotlightRow.labelColor(selected: highlighted))
+                Text(hint.keyword).font(.callout.monospaced())
+                    .foregroundStyle(TypefluxSpotlightRow.labelColor(selected: highlighted, secondary: true))
                 if hint.pluginID == AskSystemMonitorPlugin.id {
                     SystemMonitorHintSummary(store: .shared).layoutPriority(-1)
                 }
                 Spacer(minLength: 8)
                 Text(Self.hintRowKeys(hint, highlighted: highlighted))
-                    .font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
+                    .font(.subheadline)
+                    .foregroundStyle(TypefluxSpotlightRow.labelColor(selected: highlighted, secondary: true))
             }
             .padding(.horizontal, 10)
             .frame(height: Self.askHeight)
-            .background(highlighted ? AskTheme.hoverFill : Color.clear,
-                        in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .contentShape(Rectangle())
+            .modifier(TypefluxSpotlightRow(selected: highlighted))
         }
         .buttonStyle(.plain)
         .accessibilityLabel(display.title)
@@ -530,11 +527,11 @@ struct AskPluginResultsView: View {
             }
         }
         .padding(Self.cardPadding)
-        .background(highlighted ? AskTheme.hoverFill : Color.clear,
-                    in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(TypefluxColor.contentBackground.color,
+                    in: RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: style)))
         .overlay {
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(highlighted ? AskTheme.accent.opacity(0.55) : AskTheme.separator, lineWidth: 1)
+            RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: style))
+                .strokeBorder(highlighted ? TypefluxColor.accent.color : TypefluxColor.separator.color, lineWidth: 1)
         }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("ask.plugin.card")

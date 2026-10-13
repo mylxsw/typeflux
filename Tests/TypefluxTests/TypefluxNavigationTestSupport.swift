@@ -1,6 +1,7 @@
 import AppKit
 import SwiftUI
 import Testing
+@testable import Typeflux
 @testable import TypefluxUI
 
 @MainActor
@@ -32,8 +33,36 @@ enum TypefluxNavigationTestSupport {
         }
     }
 
+    static func prepareApplication() {
+        TypefluxTestApplicationEnvironment.prepare()
+    }
+
+    static func closeWindow(_ window: NSWindow) {
+        if AskGlassMenuPresenter.shared.panel?.parent === window { AskGlassMenuPresenter.shared.hide() }
+        if let sheet = window.attachedSheet {
+            window.endSheet(sheet)
+            sheet.close()
+        }
+        for child in window.childWindows ?? [] {
+            window.removeChildWindow(child)
+            child.contentView = nil
+            child.orderOut(nil)
+            child.close()
+        }
+        // AppKit releases key status while the responder tree is still attached.
+        window.orderOut(nil)
+        window.makeFirstResponder(nil)
+        window.contentView = nil
+        window.close()
+    }
+
     static func withWindow(_ view: some View, size: NSSize = NSSize(width: 900, height: 600),
-                           run: (NSWindow, NSView) async throws -> Void) async throws {
+                           nonactivating: Bool = false,
+                           run: @MainActor (NSWindow, NSView) async throws -> Void) async throws {
+        if nonactivating {
+            try await withNonactivatingPanel(view, size: size, run: run)
+            return
+        }
         try await withWindows([AnyView(view)], size: size) { windows in
             let hosted = try #require(windows.first)
             try await run(hosted.window, hosted.host)
@@ -69,6 +98,26 @@ enum TypefluxNavigationTestSupport {
         // Stop every hosting tree before closing a key window can activate another test window.
         for hosted in windows { hosted.detach() }
         for hosted in windows.reversed() { hosted.close() }
+    }
+
+    /// Spotlight-style fixtures need a non-activating panel that keeps the runner's activation policy.
+    private static func withNonactivatingPanel(_ view: some View, size: NSSize,
+                                               run: @MainActor (NSWindow, NSView) async throws -> Void) async throws {
+        prepareApplication()
+        let rect = NSRect(origin: NSPoint(x: 100, y: 100), size: size)
+        let window = TypefluxNonactivatingTestPanel(contentRect: rect,
+            styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
+        window.becomesKeyOnlyIfNeeded = false
+        window.hidesOnDeactivate = false
+        window.isReleasedWhenClosed = false
+        let host = NSHostingView(rootView: view)
+        window.contentView = host
+        window.makeKeyAndOrderFront(nil)
+        defer { closeWindow(window) }
+        try await Task.sleep(for: .milliseconds(250))
+        window.makeKey()
+        host.layoutSubtreeIfNeeded()
+        try await run(window, host)
     }
 
     static func searchField(in view: NSView, identifier: String? = nil) -> NSSearchField? {
@@ -148,6 +197,9 @@ enum TypefluxNavigationTestSupport {
             if let monitor = view as? TypefluxKeyboardMonitor.MonitorView, monitor.handle(event) { return }
             if let table = view as? TypefluxTableDeleteKey.KeyView, table.handle(event) { return }
         }
+        // Other local monitors (e.g. the Spotlight arrow monitor) and the focused field receive the key
+        // through normal application dispatch; a keyDown does not start a nested tracking loop.
+        NSApp.sendEvent(event)
     }
 
     static func capture(_ window: NSWindow, name: String) throws {
