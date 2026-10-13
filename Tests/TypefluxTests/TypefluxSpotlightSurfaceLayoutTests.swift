@@ -35,15 +35,17 @@ struct TypefluxSpotlightSurfaceLayoutTests {
         #expect(TypefluxSpotlightRow.labelColor(selected: false, secondary: true) == TypefluxColor.secondaryLabel.color)
     }
 
-    @Test(arguments: InterfaceStyle.allCases)
-    func decorationPreservesNativeEditorFramesWhileContentAndWindowResize(_ style: InterfaceStyle) async throws {
+    @Test(arguments: InterfaceStyle.allCases, [GlassMaterial.opaque, .visualEffect])
+    func decorationPreservesNativeEditorFramesWhileContentAndWindowResize(_ style: InterfaceStyle,
+                                                                          _ material: GlassMaterial) async throws {
         let state = LayoutState()
         let view = HStack(spacing: 0) {
             ComposerContent(state: state, context: "baseline")
-            TypefluxSpotlightSurface { ComposerContent(state: state, context: "surface") }
+            ComposerContent(state: state, context: "surface")
+                .background { TypefluxSpotlightSurface { Color.clear } }
         }
         .environment(\.interfaceStyle, style)
-        .environment(\.glassMaterialOverride, .opaque)
+        .environment(\.glassMaterialOverride, material)
         try await TypefluxNavigationTestSupport.withWindow(view, nonactivating: true) { window, host in
             @MainActor func editor(_ context: String) throws -> AskComposerTextView.Editor {
                 try #require(TypefluxNavigationTestSupport.descendants(of: host)

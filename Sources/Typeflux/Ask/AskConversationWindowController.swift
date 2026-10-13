@@ -257,11 +257,14 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         let selectionRequest = model.makeLauncherSelectionRequest()
         let panel = launcherPanel()
         applyAppearance(panel)
+        // A reused simple panel may still cache its collapsed height before SwiftUI reconciles the new mode.
+        let openingHeight = model.launcherIsCollapsed ? AskLauncherWindowMode.simpleHeight
+            : max(launcherHeight, AskMetrics.launcherHeight(editor: 32, banners: 0))
         if let screen = NSScreen.screens.first(where: { $0.frame.contains(NSEvent.mouseLocation) }) ?? NSScreen.main {
             let frame = screen.visibleFrame
             let anchor = launcherAnchor(on: screen)
             panel.setFrame(AskLauncherPlacement.preferredFrame(on: frame, anchor: anchor,
-                           height: model.launcherIsCollapsed ? AskLauncherWindowMode.simpleHeight : launcherHeight),
+                           height: openingHeight),
                            display: false)
             launcherOpeningTop = AskLauncherPlacement.top(on: frame, anchor: anchor)
         }

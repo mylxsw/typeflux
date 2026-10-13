@@ -1054,18 +1054,49 @@ struct AskComposer: View {
     }
 
     private var card: some View {
-        Group {
+        VStack(spacing: 0) {
+            if launcher && !launcherCollapsed {
+                supplementalContent
+                    .background(GeometryReader { geometry in
+                        Color.clear.preference(key: AskComposerSupplementalHeight.self, value: geometry.size.height)
+                    })
+            } else if !launcher && hasSupplementalContent {
+                ScrollView(.vertical) {
+                    supplementalContent
+                        .background(GeometryReader { geometry in
+                            Color.clear.preference(key: AskComposerSupplementalHeight.self, value: geometry.size.height)
+                        })
+                }
+                .frame(height: min(max(1, supplementalHeight), layout.supplementalMaximumHeight))
+            }
             if launcher {
-                TypefluxSpotlightSurface { cardContent }
+                launcherHeader
             } else {
-                cardContent
-                    .background {
-                        if let glass {
-                            chrome.glassBackground(glass)
-                        } else {
-                            chrome.fill
-                        }
-                    }
+                editorRow
+                footer
+            }
+            if launcher && !launcherCollapsed {
+                ZStack(alignment: .top) {
+                    // EmptyView does not participate in layout. Keep a real
+                    // viewport while the last results disappear during shrinkage.
+                    Color.clear
+                    launcherResults
+                }
+                .background(TypefluxColor.contentBackground.color)
+                .frame(height: launcherResultsViewportHeight, alignment: .top)
+                .clipped()
+            }
+            if launcher && !launcherCollapsed {
+                launcherBar
+            }
+        }
+        .background {
+            if launcher {
+                TypefluxSpotlightSurface { Color.clear }
+            } else if let glass {
+                chrome.glassBackground(glass)
+            } else {
+                chrome.fill
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: chrome.corner, style: .continuous))
@@ -1102,46 +1133,6 @@ struct AskComposer: View {
             if launcher {
                 transaction.animation = nil
                 transaction.disablesAnimations = true
-            }
-        }
-    }
-
-    /// Keep the accepted content order and sizing; the shared surface supplies only decoration.
-    private var cardContent: some View {
-        VStack(spacing: 0) {
-            if launcher && !launcherCollapsed {
-                supplementalContent
-                    .background(GeometryReader { geometry in
-                        Color.clear.preference(key: AskComposerSupplementalHeight.self, value: geometry.size.height)
-                    })
-            } else if !launcher && hasSupplementalContent {
-                ScrollView(.vertical) {
-                    supplementalContent
-                        .background(GeometryReader { geometry in
-                            Color.clear.preference(key: AskComposerSupplementalHeight.self, value: geometry.size.height)
-                        })
-                }
-                .frame(height: min(max(1, supplementalHeight), layout.supplementalMaximumHeight))
-            }
-            if launcher {
-                launcherHeader
-            } else {
-                editorRow
-                footer
-            }
-            if launcher && !launcherCollapsed {
-                ZStack(alignment: .top) {
-                    // EmptyView does not participate in layout. Keep a real
-                    // viewport while the last results disappear during shrinkage.
-                    Color.clear
-                    launcherResults
-                }
-                .background(TypefluxColor.contentBackground.color)
-                .frame(height: launcherResultsViewportHeight, alignment: .top)
-                .clipped()
-            }
-            if launcher && !launcherCollapsed {
-                launcherBar
             }
         }
     }
