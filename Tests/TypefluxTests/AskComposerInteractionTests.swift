@@ -3,6 +3,7 @@ import Combine
 import SwiftUI
 import Testing
 @testable import Typeflux
+import TypefluxUI
 
 @Suite("Ask composer event delivery", .serialized, .exclusiveUIState)
 @MainActor
@@ -144,8 +145,10 @@ struct AskComposerInteractionTests {
             }
             let button = try #require(findButton(window.contentView!))
             #expect(button.title.isEmpty)
-            #expect(button.frame.size == NSSize(width: AskMetrics.composerControlHeight,
-                                                height: AskMetrics.composerControlHeight))
+            // The Liquid Glass launcher shows the microphone as a Spotlight mode circle.
+            let diameter = launcher ? TypefluxControlHeight.spotlightModeButton.value(for: .liquidGlass)
+                : AskMetrics.composerControlHeight
+            #expect(button.frame.size == NSSize(width: diameter, height: diameter))
             #expect(button.accessibilityLabel() == L("ask.voice.input"))
             var restingFrame = button.convert(button.bounds, to: nil)
             let hover = try mouse(.mouseMoved, window: window, point: restingFrame.origin)
