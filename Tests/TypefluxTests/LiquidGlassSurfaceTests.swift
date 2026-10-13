@@ -71,7 +71,9 @@ struct LiquidGlassSurfaceTests {
                         Text("Title controls").frame(width: 180, height: 38)
                             .askInWindowGlassPill(height: 38)
                         AskComposer(model: fixture.model, launcher: false)
-                        SystemMonitorWindowBackground().frame(width: 180, height: 40)
+                        TypefluxGlassContainer(radius: .popover) {
+                            Color.clear.frame(width: 180, height: 40)
+                        }
                     }
                     .environment(\.interfaceStyle, mode == "classic" ? .classic : .liquidGlass)
                     .environment(\.colorScheme, dark ? .dark : .light)

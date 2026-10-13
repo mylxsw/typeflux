@@ -296,7 +296,7 @@ extension AskWorkflowEditorView {
                       tint: TypefluxColor.accent.color),
                 .init(tab: Panel.test, title: L("ask.workflow.editor.test.title"), symbol: "play.fill",
                       badge: model.results.last.map { $0.succeeded ? nil : "●" } ?? nil)
-            ], selection: $panel, size: 12.5, fills: true)
+            ], selection: $panel, fills: true)
                 .padding(.horizontal, 12).padding(.top, 12).padding(.bottom, 10)
             switch panel {
             case .assistant: AskWorkflowAssistantPanel(model: model, assistant: model.assistant)

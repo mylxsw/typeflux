@@ -1897,6 +1897,32 @@ struct OnboardingView: View {
         }.frame(maxWidth: .infinity, alignment: alignCenter ? .center : .leading)
     }
 
+    private var onboardingCardFill: some View {
+        RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle), style: .continuous)
+            .fill(TypefluxColor.contentBackground.color)
+    }
+
+    private var onboardingCardStroke: some View {
+        RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle), style: .continuous)
+            .strokeBorder(TypefluxColor.separator.color)
+    }
+
+    private func languageSelectionIndicator(isSelected: Bool) -> some View {
+        Circle()
+            .fill(isSelected ? TypefluxColor.accent.color : .clear)
+            .overlay {
+                Circle().strokeBorder(isSelected ? TypefluxColor.accent.color : TypefluxColor.separator.color)
+                if isSelected {
+                    Image(systemName: "checkmark")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(Color(nsColor: .selectedControlTextColor))
+                }
+            }
+            .frame(width: TypefluxSpacing.section.value(for: interfaceStyle),
+                   height: TypefluxSpacing.section.value(for: interfaceStyle))
+            .accessibilityHidden(true)
+    }
+
     private func languageCardFill(isSelected: Bool) -> some View {
         RoundedRectangle(cornerRadius: TypefluxRadius.popover.value(for: interfaceStyle), style: .continuous)
             .fill(

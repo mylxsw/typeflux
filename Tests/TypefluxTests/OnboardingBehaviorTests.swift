@@ -116,6 +116,33 @@ struct OnboardingBehaviorTests {
         }
     }
 
+    @Test(arguments: [InterfaceStyle.classic, .liquidGlass], [AppearanceMode.light, .dark])
+    func localSTTChoicesRenderAndSelectWithoutPreparingDownloads(style: InterfaceStyle,
+                                                                 appearance: AppearanceMode) async throws {
+        try await RenderedUI.withFixture { settings in
+            let model = OnboardingViewModel(settingsStore: settings, onComplete: {})
+            model.currentStep = .stt
+            model.selectSTTProvider(.localModel)
+            let target = try #require(LocalSTTModel.displayOrder.first { $0 != model.localSTTModel })
+            let content = OnboardingView(viewModel: model, appearanceMode: appearance)
+                .environment(\.interfaceStyle, style)
+            try await RenderedUI.withWindow(content, height: 1200) { _, host in
+                try await RenderedUI.wait {
+                    RenderedUI.elements(in: host).contains {
+                        $0.role == NSAccessibility.Role.button.rawValue && $0.label.contains(target.displayName)
+                    }
+                }
+                let choice = try #require(RenderedUI.elements(in: host).first {
+                    $0.role == NSAccessibility.Role.button.rawValue && $0.label.contains(target.displayName)
+                })
+                try choice.press()
+                #expect(model.localSTTModel == target)
+                #expect(model.currentStep == .stt)
+                #expect(!settings.isOnboardingCompleted)
+            }
+        }
+    }
+
     @Test func `connection feedback shows loading failure notice and success without sending`() async throws {
         try await RenderedUI.withFixture { settings in
             let model = OnboardingViewModel(settingsStore: settings, onComplete: {})
