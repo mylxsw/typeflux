@@ -60,8 +60,6 @@ struct ClipboardSpotlightSnapshotTests {
                 let view = ClipboardPanelView(model: model, focusRequest: 0)
                     .environment(\.typefluxAccessibilityOptions,
                                  TypefluxAccessibilityOptions(reduceTransparency: reduced, increasedContrast: !reduced))
-                    .environment(\.accessibilityReduceTransparency, reduced)
-                    .environment(\.colorSchemeContrast, reduced ? .standard : .increased)
                     // Accessibility must win even over an explicit glass override.
                     .environment(\.glassMaterialOverride, .liquidGlass)
                 try await TypefluxUISnapshot.render(view, size: ClipboardPanelView.size(showsPreview: false),
