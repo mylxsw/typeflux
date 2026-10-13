@@ -175,7 +175,9 @@ struct AskRedesignLayoutTests {
                 expected = NSColor(cgColor: token.nsColor.cgColor)?.usingColorSpace(.sRGB)
             }
             let expectedRGB = try #require(expected, "Cannot resolve \(token.rawValue) in \(appearance)")
-            #expect(colorDistance(sidebar, expectedRGB) < 0.006,
+            // The opaque glass fallback composites its material over the token, so allow a
+            // small shift there; Classic draws the system token directly.
+            #expect(colorDistance(sidebar, expectedRGB) < (style.usesGlass ? 0.03 : 0.006),
                     "\(style.rawValue), \(appearance): sidebar \(sidebar) vs \(expectedRGB)")
             if style.usesGlass {
                 #expect(colorDistance(sidebar, transcript) > 0.01)

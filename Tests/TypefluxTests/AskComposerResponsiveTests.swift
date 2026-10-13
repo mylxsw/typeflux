@@ -251,7 +251,7 @@ struct AskComposerResponsiveTests {
             fixture.model.draft.text = ""
             try await settle(host)
             let disabledSave = try queueAction("ask.queue.save", in: window)
-            #expect(disabledSave.value("accessibilityEnabled") as? Bool == false)
+            #expect(disabledSave.value("isAccessibilityEnabled") as? Bool == false)
             #expect(disabledSave.frame.width >= 20 && disabledSave.frame.height >= 20)
             #expect(window.frame.contains(disabledSave.frame), "Empty drafts keep the disabled save control visible")
             #expect(disabledSave.label == L("ask.queue.save"))
