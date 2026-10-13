@@ -1,9 +1,9 @@
 import SwiftUI
 
-/// Reusable signed-out identity. Chat supplies an action (local mode); settings
-/// passes nil, so the row only shows status and sign-in stays with the Cloud card or pill.
+/// Chat's optional local-mode action beside the account row.
 struct AskSignedOutIdentity: View {
     var active = false
+    var compact = false
     var subtitle = L("ask.local.identity.storage")
     var detail: String
     let action: (() -> Void)?
@@ -28,7 +28,16 @@ struct AskSignedOutIdentity: View {
         }
     }
 
-    private var label: some View {
+    @ViewBuilder private var label: some View {
+        if compact {
+            Label(L("ask.local.identity"), systemImage: "desktopcomputer").labelStyle(.iconOnly)
+                .font(.body).frame(width: 28, height: 28).contentShape(Rectangle())
+        } else {
+            fullLabel
+        }
+    }
+
+    private var fullLabel: some View {
         HStack(spacing: 9) {
             Image(systemName: "desktopcomputer").font(.system(size: 13, weight: .medium))
                 .foregroundStyle(TypefluxColor.label.color)

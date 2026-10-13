@@ -9,6 +9,7 @@ public struct TypefluxSheet<Content: View>: View {
     private let confirmShortcut: KeyboardShortcut?
     private let confirmIdentifier: String
     private let isConfirmEnabled: Bool
+    private let scrollsContent: Bool
     private let role: ButtonRole?
     private let cancelIdentifier: String
     private let cancel: () -> Void
@@ -16,6 +17,7 @@ public struct TypefluxSheet<Content: View>: View {
     private let content: Content
 
     public init(title: String, cancelTitle: String, confirmTitle: String, isConfirmEnabled: Bool = true,
+                scrollsContent: Bool = false,
                 role: ButtonRole? = nil, confirmIdentifier: String = "typeflux.sheet.confirm",
                 cancelIdentifier: String = "typeflux.sheet.cancel",
                 cancelShortcut: KeyboardShortcut? = .cancelAction,
@@ -28,6 +30,7 @@ public struct TypefluxSheet<Content: View>: View {
         self.cancelShortcut = cancelShortcut
         self.confirmShortcut = confirmShortcut
         self.isConfirmEnabled = isConfirmEnabled
+        self.scrollsContent = scrollsContent
         self.role = role
         self.cancelIdentifier = cancelIdentifier
         self.cancel = cancel
@@ -39,7 +42,7 @@ public struct TypefluxSheet<Content: View>: View {
         TypefluxGlassContainer(radius: .sheet, placement: .inWindow) {
             VStack(alignment: .leading, spacing: 16) {
                 Text(title).font(.headline).accessibilityAddTraits(.isHeader)
-                content
+                sheetContent
                 HStack(spacing: 8) {
                     Spacer()
                     Button(cancelTitle, role: .cancel, action: cancel).keyboardShortcut(cancelShortcut)
@@ -49,6 +52,19 @@ public struct TypefluxSheet<Content: View>: View {
                         .accessibilityIdentifier(confirmIdentifier)
                 }
             }.padding(20)
+        }
+    }
+
+    @ViewBuilder private var sheetContent: some View {
+        if scrollsContent {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 12) { content }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .multilineTextAlignment(.leading)
+            }
+            .frame(maxHeight: 360)
+        } else {
+            content
         }
     }
 }

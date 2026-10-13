@@ -105,15 +105,12 @@ struct StudioView: View {
             searchPlaceholder: searchPrompt,
             accountDefaults: viewModel.askToolSettings.defaults,
             toolbarCenter: toolbarSegments,
-            toolbarGroups: pageToolbarGroups
+            toolbarGroups: pageToolbarGroups,
+            sidebarCount: viewModel.voiceInputTabCount
         ) { viewportSize in
             let viewportHeight = max(viewportSize.height, 0)
 
             VStack(alignment: .leading, spacing: 20) {
-                if viewModel.currentSection == .settings {
-                    settingsHeader
-                }
-
                 if viewModel.currentSection == .models {
                     GeometryReader { proxy in
                         modelsPage(viewportHeight: proxy.size.height)
@@ -545,27 +542,27 @@ struct StudioView: View {
 
     private var toolbarSegments: AnyView? {
         if viewModel.currentSection == .models {
-            return AnyView(TypefluxSegmentedControl(StudioSection.models.title,
-                                                    selection: Binding(
-                                                        get: { viewModel.modelPageTab },
-                                                        set: viewModel.selectModelPageTab
-                                                    )) {
-                    ForEach(ModelPageTab.allCases) { tab in
-                        Text(tab.title).tag(tab).accessibilityIdentifier("studio.models.tab.\(tab.rawValue)")
-                    }
-                }.fixedSize())
+            return AnyView(StudioToolbarPicker(StudioSection.models.title,
+                                              selection: Binding(
+                                                  get: { viewModel.modelPageTab },
+                                                  set: viewModel.selectModelPageTab
+                                              )) {
+                ForEach(ModelPageTab.allCases) { tab in
+                    Text(tab.title).tag(tab).accessibilityIdentifier("studio.models.tab.\(tab.rawValue)")
+                }
+            })
         }
-        if viewModel.currentSection.isVoiceInput {
-            return AnyView(TypefluxSegmentedControl(viewModel.currentSection.title,
-                                                    selection: Binding(
-                                                        get: { viewModel.currentSection },
-                                                        set: viewModel.navigate
-                                                    )) {
-                    ForEach(StudioSection.voiceInputCases) { section in
-                        Text(section.title + (viewModel.voiceInputTabCount(for: section).map { " \($0)" } ?? ""))
-                            .tag(section)
-                    }
-                }.fixedSize())
+        if viewModel.currentSection == .vocabulary {
+            return AnyView(StudioToolbarPicker(L("vocabulary.table.source"), selection: $vocabularyFilter) {
+                ForEach(VocabularyFilter.allCases) { filter in Text(filter.title).tag(filter) }
+            }.accessibilityIdentifier("vocabulary.sourceFilter"))
+        }
+        if viewModel.currentSection == .settings {
+            return AnyView(TypefluxSegmentedControl(StudioSection.settings.title, selection: $settingsPane) {
+                ForEach(AppSettingsPane.allCases) { pane in
+                    Text(pane.title).tag(pane).accessibilityIdentifier("studio.settings.tab." + pane.rawValue)
+                }
+            })
         }
         return nil
     }
@@ -601,13 +598,6 @@ struct StudioView: View {
     private var libraryPageToolbar: some ToolbarContent {
         if viewModel.currentSection == .vocabulary {
             ToolbarItem(placement: .primaryAction) {
-                TypefluxSegmentedControl(L("vocabulary.table.source"), selection: $vocabularyFilter) {
-                    ForEach(VocabularyFilter.allCases) { filter in Text(filter.title).tag(filter) }
-                }
-                .fixedSize()
-                .accessibilityIdentifier("vocabulary.sourceFilter")
-            }
-            ToolbarItem(placement: .primaryAction) {
                 Menu {
                     Button(L("vocabulary.action.export"), action: viewModel.exportVocabulary)
                     Divider()
@@ -620,9 +610,10 @@ struct StudioView: View {
             }
         }
         if viewModel.currentSection == .history {
-            ToolbarItem(id: HistorySettingsBackButton.toolbarIdentifier, placement: .navigation) {
-                HistorySettingsBackButton(selectedID: $selectedHistoryID)
-                    .disabled(!isShowingHistoryDetail)
+            if isShowingHistoryDetail {
+                ToolbarItem(id: HistorySettingsBackButton.toolbarIdentifier, placement: .navigation) {
+                    HistorySettingsBackButton(selectedID: $selectedHistoryID)
+                }
             }
             ToolbarItem(placement: .primaryAction) {
                 Menu {
@@ -723,17 +714,6 @@ struct StudioView: View {
             newVocabularyTerm = entry.term
             isAddingVocabulary = false
         }
-    }
-
-    private var settingsHeader: some View {
-        TypefluxSegmentedControl(StudioSection.settings.title, selection: $settingsPane) {
-            ForEach(AppSettingsPane.allCases) { pane in
-                Text(pane.title).tag(pane)
-                    .accessibilityIdentifier("studio.settings.tab." + pane.rawValue)
-            }
-        }
-        .frame(maxWidth: 640)
-        .frame(maxWidth: .infinity)
     }
 
     @ViewBuilder

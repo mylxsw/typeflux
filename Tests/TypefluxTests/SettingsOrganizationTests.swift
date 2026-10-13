@@ -23,29 +23,25 @@ struct SettingsOrganizationTests {
     }
 
     @Test(arguments: [AppLanguage.english, .simplifiedChinese, .traditionalChinese, .japanese, .korean])
-    func `voice input and settings titles live in the native toolbar above their tabs`(language: AppLanguage) async throws {
+    func `direct destinations keep titles in the native toolbar and one page control`(language: AppLanguage) async throws {
         try await withModel(section: .home) { _, model in
             model.setAppLanguage(language)
             for width: CGFloat in [720, 1100] {
                 try await UI.withWindow(StudioView(viewModel: model), width: width, height: 800) { window, host in
                     for section in StudioSection.voiceInputCases + [.settings] {
                         model.navigate(to: section)
-                        let tabTitle = section == .settings ? AppSettingsPane.general.title : StudioSection.home.title
                         try await UI.wait { window.title == section.heading }
-                        let tabRoot: Any
-                        if section == .settings {
-                            tabRoot = host
-                        } else {
-                            tabRoot = try #require(window.toolbar?.items.first {
-                                $0.itemIdentifier.rawValue == "typeflux.window.segments"
-                            }?.view)
-                        }
-                        try await UI.wait { UI.contains(tabTitle, in: tabRoot) }
                         #expect(window.toolbar != nil)
+                        let segments = window.toolbar?.items.filter {
+                            $0.itemIdentifier.rawValue == "typeflux.window.segments"
+                        } ?? []
+                        #expect(segments.count == ([.vocabulary, .settings].contains(section) ? 1 : 0))
+                        if section == .settings {
+                            _ = try UI.button(AppSettingsPane.general.title, in: window)
+                        }
                         #expect(!UI.elements(in: host).contains {
                             $0.value("accessibilityIdentifier") as? String == "studio.page.title"
                         })
-                        _ = try UI.button(tabTitle, in: tabRoot)
                         try UI.snapshot(host, name: "page-title-\(section.rawValue)-\(language.rawValue)-\(Int(width))")
                     }
                 }
@@ -57,14 +53,14 @@ struct SettingsOrganizationTests {
         try await withModel { _, model in
             #expect(AppSettingsPane.allCases.last == .advanced)
             for width: CGFloat in [720, 1100] {
-                try await UI.withWindow(StudioView(viewModel: model), width: width, height: 800) { _, host in
+                try await UI.withWindow(StudioView(viewModel: model), width: width, height: 800) { window, host in
                     for key in ["settings.providers",
                                 "settings.identity", "personas.redesign.dictation", "personas.redesign.auxiliary",
                                 "settings.advanced.voiceProcessingTimeout.title", "settings.servers.title"] {
                         #expect(!UI.contains(L(key), in: host))
                     }
-                    let advanced = try UI.button(AppSettingsPane.advanced.title, in: host)
-                    let appearance = try UI.button(AppSettingsPane.appearance.title, in: host)
+                    let advanced = try UI.button(AppSettingsPane.advanced.title, in: window)
+                    let appearance = try UI.button(AppSettingsPane.appearance.title, in: window)
                     #expect(advanced.frame.minX > appearance.frame.maxX)
                     try advanced.press()
                     try await UI.wait { UI.contains(L("settings.advanced.voiceProcessingTimeout.title"), in: host) }
@@ -72,7 +68,7 @@ struct SettingsOrganizationTests {
                     #expect(UI.contains(L("settings.servers.asr.title"), in: host))
                     #expect(!UI.contains(L("settings.launchAtLogin.title"), in: host))
                     try UI.snapshot(host, name: "settings-advanced-tab-\(Int(width))")
-                    try UI.button(AppSettingsPane.general.title, in: host).press()
+                    try UI.button(AppSettingsPane.general.title, in: window).press()
                     try await UI.wait { UI.contains(L("settings.launchAtLogin.title"), in: host) }
                     #expect(!UI.contains(L("settings.advanced.voiceProcessingTimeout.title"), in: host))
                 }

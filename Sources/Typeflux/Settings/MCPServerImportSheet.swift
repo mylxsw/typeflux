@@ -11,9 +11,11 @@ struct MCPServerImportSheet: View {
         let servers = (try? parsed.get())?.servers ?? []
         TypefluxSheet(title: L("agent.mcp.import.title"), cancelTitle: L("common.cancel"),
                       confirmTitle: L("agent.mcp.import.confirm"), isConfirmEnabled: !servers.isEmpty,
+                      scrollsContent: true,
                       cancel: cancel, confirm: { confirm(servers) }, content: {
                           Text(L("agent.mcp.import.hint")).font(.body).foregroundStyle(.secondary)
                           TextEditor(text: $text).font(.body.monospaced()).frame(height: 180)
+                              .multilineTextAlignment(.leading)
                               .accessibilityLabel(L("agent.mcp.import.title"))
                           if !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                               switch parsed {

@@ -26,7 +26,7 @@ struct MCPServerEditorView: View {
                     }.disabled(!viewModel.canSaveMCPDraft || viewModel.mcpConnectionTestState == .testing)
                     mcpConnectionTestResultView
                 }
-            }.frame(height: min(500, max(300, (NSScreen.main?.visibleFrame.height ?? 800) - 240)))
+            }.frame(minHeight: 300, idealHeight: 520, maxHeight: 520)
         }).frame(width: 560)
             .onDisappear { viewModel.resetMCPDraftConnectionTest() }
             .onChange(of: connectionFields) { _ in viewModel.resetMCPDraftConnectionTest() }
@@ -41,8 +41,8 @@ struct MCPServerEditorView: View {
     @ViewBuilder
     private var connectionCard: some View {
         formRow("agent.mcp.name") {
-            TextField(L("agent.mcp.namePlaceholder"), text: $viewModel.mcpDraftName)
-                .textFieldStyle(.roundedBorder)
+            TypefluxTextField(L("agent.mcp.name"), text: $viewModel.mcpDraftName,
+                              prompt: L("agent.mcp.namePlaceholder"))
         }
         formRow("agent.mcp.transportType") {
             TypefluxPopup(title: L("agent.mcp.transportType"),
@@ -52,12 +52,12 @@ struct MCPServerEditorView: View {
         }
         if viewModel.mcpDraftTransportType == .stdio {
             formRow("agent.mcp.stdio.command") {
-                TextField("/usr/local/bin/my-mcp-server", text: $viewModel.mcpDraftStdioCommand)
-                    .textFieldStyle(.roundedBorder)
+                TypefluxTextField(L("agent.mcp.stdio.command"), text: $viewModel.mcpDraftStdioCommand,
+                                  prompt: "/usr/local/bin/my-mcp-server")
             }
             formRow("agent.mcp.stdio.args") {
-                TextField("--port 3000 --verbose", text: $viewModel.mcpDraftStdioArgs)
-                    .textFieldStyle(.roundedBorder)
+                TypefluxTextField(L("agent.mcp.stdio.args"), text: $viewModel.mcpDraftStdioArgs,
+                                  prompt: "--port 3000 --verbose")
             }
             keyValueEditor(
                 label: "agent.mcp.stdio.env",
@@ -67,8 +67,8 @@ struct MCPServerEditorView: View {
             .id(MCPTransportType.stdio)
         } else {
             formRow("agent.mcp.http.url") {
-                TextField("https://mcp.example.com/sse", text: $viewModel.mcpDraftHTTPURL)
-                    .textFieldStyle(.roundedBorder)
+                TypefluxTextField(L("agent.mcp.http.url"), text: $viewModel.mcpDraftHTTPURL,
+                                  prompt: "https://mcp.example.com/sse")
             }
             keyValueEditor(
                 label: "agent.mcp.http.headers",
@@ -80,7 +80,7 @@ struct MCPServerEditorView: View {
     }
 
     private func formRow(_ key: String, @ViewBuilder field: () -> some View) -> some View {
-        AgentFormRow(label: L(key), field: field)
+        TypefluxFormField(L(key), content: field)
     }
 
     private func keyValueEditor(label: String, placeholder: String, text: Binding<String>) -> some View {

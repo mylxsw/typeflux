@@ -15,12 +15,12 @@ enum StudioSection: String, CaseIterable, Identifiable {
         rawValue
     }
 
-    /// Sections that appear in the upper sidebar group. `.home` stands for the whole Voice Input group.
+    /// Each settings page has its own sidebar destination.
     static var sidebarUpperCases: [StudioSection] {
-        [.home, .models, .agent, .launcher, .settings]
+        [.home, .history, .vocabulary, .personas, .models, .agent, .launcher, .settings, .account]
     }
 
-    /// Voice Input pages, in tab order. They share one sidebar entry and switch through tabs.
+    /// Voice input destinations, retained for callers that enumerate this feature's pages.
     static var voiceInputCases: [StudioSection] {
         [.home, .vocabulary, .history, .personas]
     }
@@ -31,20 +31,20 @@ enum StudioSection: String, CaseIterable, Identifiable {
 
     /// The sidebar entry that is selected while this section is shown.
     var sidebarSection: StudioSection {
-        isVoiceInput ? .home : self
+        self
     }
 
     var sidebarTitle: String {
-        self == .home ? L("studio.section.voiceInput") : title
+        title
     }
 
     var sidebarIconName: String {
-        self == .home ? "waveform" : iconName
+        iconName
     }
 
-    /// The grouped section title. Window toolbars use the individual page's heading.
+    /// Window toolbars use the individual page's heading.
     var shellTitle: String {
-        isVoiceInput ? L("studio.section.voiceInput") : heading
+        heading
     }
 
     /// Sections that appear in the lower sidebar group.

@@ -12,6 +12,7 @@ struct StudioShell<Content: View>: View {
     let accountDefaults: UserDefaults
     var toolbarCenter: AnyView?
     var toolbarGroups: [TypefluxToolbarGroup] = []
+    var sidebarCount: (StudioSection) -> Int? = { _ in nil }
     @ViewBuilder let content: (CGSize) -> Content
 
     var body: some View {
@@ -20,7 +21,7 @@ struct StudioShell<Content: View>: View {
             TypefluxWindow(title: title, search: search, searchPrompt: searchPlaceholder,
                            groups: toolbarGroups, sidebarVisibility: $sidebarVisibility, center: toolbarCenter) {
                 StudioSidebar(currentSection: currentSection, onSelect: onSelect,
-                              onAccountAction: onAccountAction, defaults: accountDefaults)
+                              onAccountAction: onAccountAction, defaults: accountDefaults, count: sidebarCount)
             } detail: {
                 GeometryReader { proxy in
                     Group {

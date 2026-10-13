@@ -22,25 +22,25 @@ final class VoiceInputNavigationTests: XCTestCase {
         XCTAssertEqual(viewModel.currentSection, .home)
     }
 
-    func testSidebarVoiceInputReturnsToTheInitialVoiceInputTab() throws {
+    func testSidebarOverviewOpensOverviewAfterAnInitialHistoryPage() throws {
         let viewModel = try makeViewModel(initialSection: .history)
         viewModel.navigateFromSidebar(to: .models)
 
         viewModel.navigateFromSidebar(to: .home)
 
-        XCTAssertEqual(viewModel.currentSection, .history)
+        XCTAssertEqual(viewModel.currentSection, .home)
     }
 
-    func testSidebarVoiceInputReturnsToTheLastShownTab() throws {
+    func testSidebarOverviewOpensOverviewAfterVisitingPersonas() throws {
         let viewModel = try makeViewModel(initialSection: .home)
         viewModel.navigate(to: .personas)
         viewModel.navigateFromSidebar(to: .launcher)
         XCTAssertEqual(viewModel.currentSection, .launcher)
-        XCTAssertEqual(viewModel.lastVoiceInputSection, .personas, "Leaving the group keeps its last tab")
+        XCTAssertEqual(viewModel.lastVoiceInputSection, .personas, "Feature history remains available to existing callers")
 
         viewModel.navigateFromSidebar(to: .home)
 
-        XCTAssertEqual(viewModel.currentSection, .personas)
+        XCTAssertEqual(viewModel.currentSection, .home)
     }
 
     func testDirectNavigationToOverviewStillOpensOverview() throws {
@@ -75,15 +75,12 @@ final class VoiceInputNavigationTests: XCTestCase {
         XCTAssertNil(viewModel.voiceInputTabCount(for: .models))
     }
 
-    func testTabBarRendersEveryVoiceInputTab() {
-        let bar = TypefluxSegmentedControl("Voice Input", selection: .constant(StudioSection.vocabulary)) {
-            ForEach(StudioSection.voiceInputCases) { Text($0.title).tag($0) }
+    func testEverySidebarDestinationNavigatesDirectly() throws {
+        let viewModel = try makeViewModel(initialSection: .history)
+        for section in StudioSection.sidebarUpperCases {
+            viewModel.navigateFromSidebar(to: section)
+            XCTAssertEqual(viewModel.currentSection, section)
         }
-        let host = NSHostingView(rootView: bar)
-        host.layoutSubtreeIfNeeded()
-
-        XCTAssertGreaterThan(host.fittingSize.width, 0)
-        XCTAssertGreaterThan(host.fittingSize.height, 0)
     }
 
     func testVocabularyActionRemainsAvailableBelowToolbarTabs() async throws {

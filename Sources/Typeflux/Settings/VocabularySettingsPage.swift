@@ -44,12 +44,14 @@ struct VocabularySettingsPage: View {
 
     private var table: some View {
         TypefluxTable(entries, selection: $selection, sortOrder: $sortOrder,
-                      onDelete: deleteSelection, identifier: "vocabulary.table") {
+                      onDelete: deleteSelection, identifier: "vocabulary.table", fillsAvailableHeight: false) {
             TableColumn(L("vocabulary.table.term"), value: \.term) { entry in
                 TypefluxTableCell(rowID: entry.id) { Text(entry.term).lineLimit(1).help(entry.term) }
             }.width(min: 120, ideal: 220)
             TableColumn(L("vocabulary.table.source"), value: \.sourceTitle) { entry in
-                TypefluxTableCell(rowID: entry.id) { Text(entry.sourceTitle) }
+                TypefluxTableCell(rowID: entry.id) {
+                    TypefluxTag(entry.sourceTitle, tone: entry.source == .automatic ? .accent : .neutral)
+                }
             }.width(min: 80, ideal: 100)
             TableColumn(L("vocabulary.table.uses"), value: \.occurrenceCount) { entry in
                 TypefluxTableCell(rowID: entry.id) { Text(entry.occurrenceCount, format: .number).monospacedDigit() }

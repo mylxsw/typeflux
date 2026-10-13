@@ -30,8 +30,9 @@ struct AskKeywordEditorSheet: View {
                 TypefluxForm {
                     Section {
                         field(L("ask.settings.keywords.defaultKeyword")) {
-                            TextField(placeholderKeyword, text: $draft.keyword)
-                                .textFieldStyle(.roundedBorder).focused($keywordFocused)
+                            TypefluxTextField(L("ask.settings.keywords.defaultKeyword"), text: $draft.keyword,
+                                              prompt: placeholderKeyword)
+                                .focused($keywordFocused)
                                 .accessibilityIdentifier("ask.settings.keywords.sheet.keyword")
                             if let keywordProblem {
                                 problem(keywordProblem)
@@ -43,22 +44,22 @@ struct AskKeywordEditorSheet: View {
                     Section {
                         field(L("ask.settings.keywords.sheet.preview")) { preview }
                         TypefluxSwitch(L("ask.settings.keywords.enabled"), isOn: $draft.enabled)
+                            .accessibilityIdentifier("ask.settings.keywords.sheet.enabled")
                         if let onDelete {
                             Button(L("ask.settings.keywords.sheet.delete"), role: .destructive, action: onDelete)
                                 .accessibilityIdentifier("ask.settings.keywords.sheet.delete")
                         }
                     }
-                }.frame(height: 440)
+                }.frame(minHeight: 300, idealHeight: 520, maxHeight: 520)
             }).frame(width: 560)
-            .onAppear { keywordFocused = true }
+            .onAppear { keywordFocused = draft.keyword.isEmpty }
     }
 
     private var aliasFields: some View {
         field(L("ask.settings.keywords.aliases")) {
             ForEach(draft.aliases.indices, id: \.self) { index in
                 HStack(spacing: 8) {
-                    TextField(L("ask.settings.keywords.alias"), text: $draft.aliases[index])
-                        .textFieldStyle(.roundedBorder)
+                    TypefluxTextField(L("ask.settings.keywords.alias"), text: $draft.aliases[index])
                         .accessibilityIdentifier("ask.settings.keywords.sheet.alias.\(index)")
                     TypefluxIconButton(L("ask.settings.keywords.removeAlias"), systemImage: "minus.circle") {
                         draft.aliases.remove(at: index)
@@ -144,12 +145,14 @@ struct AskKeywordEditorSheet: View {
             }
         case .prompt:
             field(L("ask.settings.keywords.name")) {
-                TextField(draft.titlePlaceholder, text: $draft.title).textFieldStyle(.roundedBorder)
+                TypefluxTextField(L("ask.settings.keywords.name"), text: $draft.title, prompt: draft.titlePlaceholder)
+                    .accessibilityIdentifier("ask.settings.keywords.sheet.name")
             }
             field(L("ask.settings.plugins.prompt.prompt")) {
                 TextEditor(text: $draft.prompt)
                     .font(.subheadline)
-                    .frame(minHeight: 120, maxHeight: 220)
+                    .multilineTextAlignment(.leading)
+                    .frame(height: 120)
                     .accessibilityIdentifier("ask.settings.keywords.sheet.prompt")
                 HStack(spacing: 6) {
                     Button { draft.prompt += AskPromptPlugin.inputToken } label: {
@@ -170,11 +173,11 @@ struct AskKeywordEditorSheet: View {
             }
         case .web:
             field(L("ask.settings.keywords.name")) {
-                TextField(draft.titlePlaceholder, text: $draft.title).textFieldStyle(.roundedBorder)
+                TypefluxTextField(L("ask.settings.keywords.name"), text: $draft.title, prompt: draft.titlePlaceholder)
+                    .accessibilityIdentifier("ask.settings.keywords.sheet.name")
             }
             field(L("ask.settings.plugins.web.url")) {
-                TextField("https://…?q={query}", text: $draft.url)
-                    .textFieldStyle(.roundedBorder)
+                TypefluxTextField(L("ask.settings.plugins.web.url"), text: $draft.url, prompt: "https://…?q={query}")
                     .accessibilityIdentifier("ask.settings.keywords.sheet.url")
                 if let fieldProblem = draft.fieldProblem {
                     problem(fieldProblem)
@@ -214,7 +217,7 @@ struct AskKeywordEditorSheet: View {
     }
 
     private func field(_ label: String, @ViewBuilder content: () -> some View) -> some View {
-        TypefluxSettingsRow(label) {
+        TypefluxFormField(label) {
             VStack(alignment: .leading, spacing: 5) { content() }
                 .frame(maxWidth: .infinity, alignment: .leading)
         }

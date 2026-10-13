@@ -27,16 +27,25 @@ struct SettingsWindowSnapshotTests {
                     controller.modelLibrary = library
                     controller.show(settingsStore: settings, historyStore: history, initialSection: .vocabulary)
                     let window = try #require(controller.window)
+                    let model = try #require(controller.viewModel)
                     defer { window.close() }
-                    window.setContentSize(NSSize(width: 1100, height: 800))
+                    for (term, source) in [("Tahoe", VocabularySource.automatic), ("Typeflux", .manual),
+                                            ("SwiftUI", .automatic), ("PGVector", .manual)] {
+                        if !model.vocabularyEntries.contains(where: { $0.term == term }) {
+                            model.addVocabularyTerm(term, source: source)
+                        }
+                    }
                     window.setFrameOrigin(NSPoint(x: 40, y: 40))
                     window.makeKeyAndOrderFront(nil)
                     NSApp.activate(ignoringOtherApps: true)
-                    try await Task.sleep(for: .milliseconds(900))
-                    window.displayIfNeeded()
-                    try capture(window, file: directory.appendingPathComponent(
-                        "settings-\(style.rawValue)-\(dark ? "dark" : "light").png"
-                    ))
+                    for size in [NSSize(width: 1100, height: 800), NSSize(width: 720, height: 500)] {
+                        window.setContentSize(size)
+                        try await Task.sleep(for: .milliseconds(900))
+                        window.displayIfNeeded()
+                        try capture(window, file: directory.appendingPathComponent(
+                            "settings-\(Int(size.width))-\(style.rawValue)-\(dark ? "dark" : "light").png"
+                        ))
+                    }
                 }
             }
         }

@@ -940,12 +940,12 @@ final class StudioViewModel: ObservableObject {
         navigate(to: .launcher)
     }
 
-    /// Opens a sidebar entry. The Voice Input entry reopens the tab shown last.
+    /// Opens the exact destination selected in the sidebar.
     func navigateFromSidebar(to section: StudioSection) {
-        navigate(to: section == .home ? lastVoiceInputSection : section)
+        navigate(to: section)
     }
 
-    /// The count shown beside a Voice Input tab, if the tab has one.
+    /// The count shown beside a voice input destination, if it has one.
     func voiceInputTabCount(for section: StudioSection) -> Int? {
         switch section {
         case .vocabulary: vocabularyEntries.count
