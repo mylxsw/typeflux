@@ -88,7 +88,6 @@ struct AskSearchPaletteView: View {
             list(maxHeight: listHeight)
         }
         .frame(maxWidth: Self.width)
-        .accessibilityIdentifier("ask.workspace.search.palette")
     }
 
     private func list(maxHeight: CGFloat) -> some View {

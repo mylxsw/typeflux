@@ -7,6 +7,36 @@ import Testing
 @MainActor
 struct AskSpotlightPanelTests {
     @Test(arguments: InterfaceStyle.allCases)
+    func launcherIdentifiersRemainOnTheirControlsAsTheQueryChanges(_ style: InterfaceStyle) async throws {
+        let fixture = try AskTestFixture()
+        defer {
+            fixture.model.resetSession()
+            try? FileManager.default.removeItem(at: fixture.root)
+        }
+        fixture.model.launcherDraft.memory = AskMemory(global: "Context", app: nil)
+        let view = AskLauncherView(model: fixture.model, onDismiss: {})
+            .environment(\.interfaceStyle, style)
+            .environment(\.glassMaterialOverride, .opaque)
+        try await TypefluxNavigationTestSupport.withWindow(view) { window, _ in
+            for query in ["", "Question"] {
+                fixture.model.launcherDraft.text = query
+                try await Task.sleep(for: .milliseconds(150))
+                let elements = SettingsBehaviorTestSupport.elements(in: window)
+                for identifier in ["ask.launcher.openChat", "ask.composer.voice", "ask.composer.model",
+                                   "ask.context.screenshot.toggle"] {
+                    #expect(elements.contains { $0.value("accessibilityIdentifier") as? String == identifier },
+                            "Missing original control: \(identifier)")
+                }
+                let button = try #require(elements.first {
+                    $0.value("accessibilityIdentifier") as? String == "ask.launcher.openChat"
+                })
+                #expect(button.role == NSAccessibility.Role.button.rawValue)
+                #expect(button.frame.width == AskSendButton.size)
+            }
+        }
+    }
+
+    @Test(arguments: InterfaceStyle.allCases)
     func searchPaletteRunsActionsAndMatchingConversations(_ style: InterfaceStyle) async throws {
         var actions: [AskPaletteAction] = []
         var opened: [String] = []

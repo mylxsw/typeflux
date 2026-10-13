@@ -15,12 +15,15 @@ public struct TypefluxSpotlightModeControl<Content: View>: View {
         if style == .classic {
             content
         } else {
-            TypefluxGlassContainer(radius: .spotlightInput, placement: placement) {
-                content
-                    .frame(width: TypefluxControlHeight.spotlightModeButton.value(for: style),
-                           height: TypefluxControlHeight.spotlightModeButton.value(for: style))
-                    .contentShape(Circle())
-            }
+            ZStack { content }
+                .frame(width: TypefluxControlHeight.spotlightModeButton.value(for: style),
+                       height: TypefluxControlHeight.spotlightModeButton.value(for: style))
+                .background {
+                    TypefluxGlassContainer(radius: .spotlightInput, placement: placement) { Color.clear }
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                }
+                .accessibilityElement(children: .contain)
         }
     }
 }

@@ -17,32 +17,18 @@ struct AskLauncherOpenChatButton: View {
     var mode: AskLauncherChatAction = .openChat
     var enabled: Bool
     var tint: Color = AskTheme.accent
-    var size = AskSendButton.size
     var action: () -> Void
 
     var body: some View {
-        Group {
-            if mode == .askAI {
-                Button(action: action) {
-                    Image(systemName: "arrow.up").font(.headline)
-                        .frame(width: size, height: size)
-                        .contentShape(Circle())
-                }
-                .buttonStyle(.borderless)
-                .foregroundStyle(tint)
-                .disabled(!enabled)
-            } else {
-                Button(action: action) {
-                    Image(systemName: "macwindow")
-                        .font(.title3)
-                        .frame(width: size, height: size)
-                        .contentShape(Circle())
-                }
-                .buttonStyle(.borderless)
-                .foregroundStyle(TypefluxColor.secondaryLabel.color)
-                .disabled(!enabled)
-            }
+        Button(action: action) {
+            Image(systemName: mode == .askAI ? "arrow.up" : "macwindow")
+                .font(mode == .askAI ? .headline : .title3)
+                .frame(width: AskSendButton.size, height: AskSendButton.size)
+                .contentShape(Circle())
         }
+        .buttonStyle(.borderless)
+        .foregroundStyle(mode == .askAI ? tint : TypefluxColor.secondaryLabel.color)
+        .disabled(!enabled)
         .help(mode.hint)
         .accessibilityLabel(mode.title)
         .accessibilityIdentifier("ask.launcher.openChat")

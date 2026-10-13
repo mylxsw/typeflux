@@ -1077,7 +1077,7 @@ struct AskComposer: View {
     }
 
     private var launcherCard: some View {
-        TypefluxSpotlightLayout(showsResults: !launcherCollapsed) {
+        TypefluxSpotlightLayout(showsResults: !launcherCollapsed, fillsAvailableHeight: true) {
             launcherHeader
                 .modifier(AskVoiceBorder(voice: voice, context: contextID,
                                         radius: TypefluxRadius.spotlightInput.value(for: interfaceStyle),
@@ -1672,12 +1672,13 @@ struct AskComposer: View {
                     .frame(height: AskMetrics.composerControlHeight)
             }
         }
+        // Keep a short editor top-aligned as its measured line height settles.
+        .frame(minHeight: AskMetrics.composerControlHeight, alignment: .topLeading)
         .padding(.horizontal, chrome.horizontalInset)
         .padding(.top, layout.editorTopInset)
         .padding(.bottom, layout.editorBottomInset)
         .frame(maxWidth: .infinity, minHeight: TypefluxControlHeight.spotlightInput.value(for: interfaceStyle),
-               alignment: .leading)
-        .accessibilityIdentifier("ask.launcher.input")
+               alignment: .topLeading)
     }
 
     private var launcherModeControls: some View {
@@ -1708,7 +1709,7 @@ struct AskComposer: View {
                 TypefluxSpotlightModeControl {
                     AskLauncherOpenChatButton(mode: launcherChatAction, enabled: launcherChatActionEnabled,
                                               tint: privateTint ? AskTheme.privateTint : TypefluxColor.accent.color,
-                                              size: size, action: runLauncherChatAction)
+                                              action: runLauncherChatAction)
                 }
             }
         }
