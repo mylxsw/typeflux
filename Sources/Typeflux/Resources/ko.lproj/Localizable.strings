@@ -4773,3 +4773,10 @@
 "auth.web.requestRejected" = "로그인 요청이 거부되었습니다. 개발/운영 클라이언트와 콜백 주소 설정을 확인하세요.";
 "auth.web.serviceUnavailable" = "로그인 서비스를 사용할 수 없습니다. API와 데이터베이스를 확인한 후 다시 시도하세요.";
 "auth.web.rateLimited" = "로그인 시도가 너무 많습니다. 잠시 후 다시 시도하세요.";
+
+// Clipboard Spotlight modes and keyboard hints
+"clipboard.tab.link" = "링크";
+"clipboard.hint.navigate" = "선택";
+"clipboard.hint.plainPaste" = "일반 텍스트";
+"clipboard.hint.quickPaste" = "붙여넣기";
+"clipboard.hint.close" = "닫기";

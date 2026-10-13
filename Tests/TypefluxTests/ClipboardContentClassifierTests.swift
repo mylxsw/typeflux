@@ -47,7 +47,7 @@ final class ClipboardContentClassifierTests: XCTestCase {
     func testKindCategoriesAndTextuality() {
         XCTAssertTrue(ClipboardEntryKind.link.isTextual)
         XCTAssertFalse(ClipboardEntryKind.image.isTextual)
-        XCTAssertEqual(ClipboardCategory.allCases.map(\.id), ["all", "snippet"])
+        XCTAssertEqual(ClipboardCategory.allCases.map(\.id), ["all", "text", "image", "link", "snippet"])
         XCTAssertTrue(ClipboardCategory.allCases.allSatisfy { !$0.title.isEmpty && !$0.title.hasPrefix("clipboard.") })
     }
 }

@@ -46,7 +46,8 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
         applyAppearance(to: panel)
         panel.setContentSize(ClipboardPanelView.size(showsPreview: model.showsPreview))
         position(panel)
-        previewCenterX = settingsStore.clipboardPanelPosition == .mouse ? panel.frame.midX : panel.screen?.visibleFrame.midX
+        previewCenterX = settingsStore.clipboardPanelPosition == .mouse
+            ? panel.frame.midX : panel.screen?.visibleFrame.midX
         panel.makeKeyAndOrderFront(nil)
         installMonitors()
         previewObservation = model.$showsPreview.dropFirst().removeDuplicates().sink { [weak self] shows in
@@ -189,6 +190,9 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
             return handleQuickLookKeyDown(event)
         }
         guard event.window === panel else { return false }
+        // Native search and editors must finish input method composition before panel shortcuts run.
+        let editor = panel.firstResponder as? NSTextView
+        guard editor?.hasMarkedText() != true else { return false }
         if model.snippetDraft != nil {
             if event.keyCode == 53 { model.cancelSnippetEdit(); return true }
             let flags = event.modifierFlags.intersection([.command, .option, .control, .shift])
@@ -202,8 +206,6 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
             return handleConfirmationKeyDown(event, model: model)
         }
 
-        let editor = panel.firstResponder as? NSTextView
-        if [123, 124].contains(event.keyCode), editor?.hasMarkedText() == true { return false }
         let command = ClipboardPanelKeyCommand.command(
             keyCode: event.keyCode,
             modifiers: event.modifierFlags,

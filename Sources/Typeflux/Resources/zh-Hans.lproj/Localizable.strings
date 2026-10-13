@@ -4822,3 +4822,10 @@
 "auth.web.requestRejected" = "登录请求被拒绝，请检查开发/正式客户端及回调地址配置。";
 "auth.web.serviceUnavailable" = "登录服务暂不可用，请检查 API 和数据库后重试。";
 "auth.web.rateLimited" = "登录尝试过于频繁，请稍后重试。";
+
+// Clipboard Spotlight modes and keyboard hints
+"clipboard.tab.link" = "链接";
+"clipboard.hint.navigate" = "选择";
+"clipboard.hint.plainPaste" = "纯文本";
+"clipboard.hint.quickPaste" = "粘贴";
+"clipboard.hint.close" = "关闭";

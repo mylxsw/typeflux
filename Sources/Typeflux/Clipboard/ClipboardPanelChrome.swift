@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// The more menu, right of the clipboard panel's type tabs.
+/// The more menu in the clipboard panel's hint bar.
 struct ClipboardPanelToolbar: View {
     @ObservedObject var model: ClipboardPanelModel
 
@@ -22,8 +22,8 @@ struct ClipboardPanelToolbar: View {
             Button(L("clipboard.menu.clearUnpinned"), role: .destructive) { model.requestClearUnpinned() }
         } label: {
             Image(systemName: "ellipsis")
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(model.isRecordingPaused ? Color.orange : StudioTheme.textSecondary)
+                .font(.body.weight(.semibold))
+                .foregroundStyle(model.isRecordingPaused ? Color.orange : TypefluxColor.secondaryLabel.color)
                 .frame(width: 28, height: 28)
                 .contentShape(Rectangle())
         }
@@ -35,7 +35,7 @@ struct ClipboardPanelToolbar: View {
     }
 }
 
-/// The app the list is filtered to, in the search bar, with a button to show every app again.
+/// The app filter in the hint bar, with a button to show every app again.
 struct ClipboardAppFilterChip: View {
     let app: ClipboardAppFilter
     let onClear: () -> Void
@@ -43,11 +43,11 @@ struct ClipboardAppFilterChip: View {
     var body: some View {
         HStack(spacing: 5) {
             Text(app.name)
-                .font(.system(size: 12, weight: .medium))
+                .font(.callout.weight(.medium))
                 .lineLimit(1)
             Button(action: onClear) {
                 Image(systemName: "xmark")
-                    .font(.system(size: 9, weight: .bold))
+                    .font(.footnote.weight(.bold))
             }
             .buttonStyle(.plain)
             .help(L("clipboard.filter.clear"))
@@ -57,7 +57,7 @@ struct ClipboardAppFilterChip: View {
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
         .background(Color.accentColor.opacity(0.15), in: Capsule())
-        .fixedSize()
+        .frame(maxWidth: 220, alignment: .leading)
     }
 }
 
@@ -71,7 +71,7 @@ struct ClipboardPausedChip: View {
                 Circle().fill(Color.orange).frame(width: 6, height: 6)
                 Text(L("clipboard.footer.paused"))
             }
-            .font(.system(size: 11.5, weight: .medium))
+            .font(.footnote.weight(.medium))
             .foregroundStyle(Color.orange)
             .padding(.horizontal, 8)
             .padding(.vertical, 3)
@@ -87,34 +87,28 @@ struct ClipboardPausedChip: View {
 struct ClipboardEditBeforePaste: View {
     @ObservedObject var model: ClipboardPanelModel
     @FocusState private var focused: Bool
+    @Environment(\.interfaceStyle) private var style
 
     var body: some View {
         ZStack {
             Color.black.opacity(0.25)
-            VStack(alignment: .leading, spacing: 10) {
-                Text(L("clipboard.edit.title"))
-                    .font(.system(size: 13, weight: .semibold))
-                TextEditor(text: Binding(get: { model.editingText ?? "" }, set: { model.editingText = $0 }))
-                    .font(.system(size: 13))
-                    .scrollContentBackground(.hidden)
-                    .padding(6)
-                    .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                    .focused($focused)
-                HStack(spacing: 8) {
+            TypefluxSheet(title: L("clipboard.edit.title"), cancelTitle: L("clipboard.edit.cancel"),
+                          confirmTitle: L("clipboard.action.paste"),
+                          cancelShortcut: nil, confirmShortcut: nil,
+                          cancel: model.cancelEdit, confirm: model.commitEdit) {
+                VStack(alignment: .leading, spacing: 10) {
+                    TextEditor(text: Binding(get: { model.editingText ?? "" }, set: { model.editingText = $0 }))
+                        .font(.body)
+                        .scrollContentBackground(.hidden)
+                        .padding(6)
+                        .background(Color.primary.opacity(0.06), in: RoundedRectangle(
+                            cornerRadius: TypefluxRadius.textField.value(for: style), style: .continuous))
+                        .focused($focused)
                     Text(L("clipboard.edit.hint"))
-                        .font(.system(size: 11))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                    Spacer()
-                    Button(L("clipboard.edit.cancel"), action: model.cancelEdit)
-                    Button(L("clipboard.action.paste"), action: model.commitEdit)
-                        .buttonStyle(.borderedProminent)
+                        .font(.subheadline).foregroundStyle(TypefluxColor.secondaryLabel.color)
                 }
             }
-            .padding(16)
-            .frame(width: 520, height: 320)
-            .background(AskTheme.launcherSurface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Color.primary.opacity(0.12)))
-            .shadow(color: .black.opacity(0.25), radius: 16, y: 6)
+            .frame(width: 480, height: 320)
         }
         .onAppear { focused = true }
     }
@@ -127,23 +121,16 @@ struct ClipboardConfirmationBar: View {
     let onConfirm: () -> Void
 
     var body: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(Color.orange)
-            Text(message)
-                .font(.system(size: 12))
-                .lineLimit(2)
-            Spacer()
-            Button(L("clipboard.edit.cancel"), action: onCancel)
-            Button(L("clipboard.action.delete"), role: .destructive, action: onConfirm)
-                .buttonStyle(.borderedProminent)
-                .tint(.red)
+        TypefluxGlassContainer(radius: .popover) {
+            HStack(spacing: 10) {
+                Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(TypefluxColor.warning.color)
+                Text(message).font(.callout).lineLimit(2)
+                Spacer()
+                TypefluxButton(L("clipboard.edit.cancel"), action: onCancel)
+                TypefluxButton(L("clipboard.action.delete"), kind: .destructive, action: onConfirm)
+            }
+            .padding(.horizontal, 14).padding(.vertical, 10)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Color.primary.opacity(0.12)))
-        .shadow(color: .black.opacity(0.2), radius: 10, y: 4)
-        .padding(.horizontal, 12)
-        .padding(.bottom, 48)
+        .padding(.horizontal, 12).padding(.bottom, 76)
     }
 }
