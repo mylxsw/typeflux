@@ -136,7 +136,7 @@ extension AskComposerInteractionTests {
             }), size: NSSize(width: 360, height: 360))
         defer { popover.close() }
         #expect(try sourceContainsLabel(in: #require(popover.contentView), label: "Selected words"))
-        try AskWorkspaceTestAccessibility.assertButton("ask.selection.remove",
+        try AskWorkspaceTestAccessibility.assertButton("ask.context.selection.remove",
                                                       label: L("ask.selection.remove"), in: popover)
         fixture.model.removeCapturedContent(.selection, launcher: false)
         try await fixture.wait { fixture.model.draft.selectionOff == true }

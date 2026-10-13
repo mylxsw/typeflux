@@ -163,12 +163,15 @@ struct AskConversationView: View {
                 .background(TypefluxColor.contentBackground.color)
             }
             .typefluxSearchable(state: toolbarSearch, prompt: L("ask.search.conversations"))
-            .navigationTitle(workspaceTitle)
+            .navigationTitle("")
+            .typefluxWindowChrome(title: workspaceTitle, actionTitles: [L("ask.sidebar.toggle"), L("ask.new")])
             .toolbar {
-                ToolbarItem(id: "ask.workspace.title", placement: .principal) {
+                ToolbarItem(id: "typeflux.window.title", placement: .principal) {
                     Text(workspaceTitle).font(.headline).lineLimit(1).truncationMode(.tail)
                         .frame(width: toolbarTitleWidth, height: TypefluxControlHeight.toolbarItem.value(for: style))
                         .help(workspaceTitle)
+                        .accessibilityAddTraits(.isHeader)
+                        .accessibilityIdentifier("typeflux.window.title")
                 }
                 ToolbarItem(id: "ask.workspace.sidebar", placement: .navigation) {
                     TypefluxIconButton(L("ask.sidebar.toggle"), systemImage: "sidebar.left", action: toggleSidebar)

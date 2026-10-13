@@ -143,6 +143,9 @@ struct AskSelectedTextDetails: View {
                 Spacer()
                 Button(L("ask.selection.remove"), action: onRemove)
                     .buttonStyle(AskCapsuleButtonStyle(kind: .secondary))
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityAddTraits(.isButton)
+                    .accessibilityLabel(L("ask.selection.remove"))
                     .accessibilityIdentifier("ask.context.selection.remove")
             }
         }

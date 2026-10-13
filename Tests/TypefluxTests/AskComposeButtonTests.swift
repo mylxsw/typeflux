@@ -138,11 +138,15 @@ struct AskWorkspaceTestAccessibility {
     }
 
     static func assertButton(_ identifier: String, label: String, in window: NSWindow) throws {
-        let element = try #require(elements(in: window).first {
-            $0.value("accessibilityIdentifier") as? String == identifier && $0.label == label
-        }, "Missing accessible button: \(identifier), \(label)")
-        #expect(element.role == NSAccessibility.Role.button.rawValue)
-        _ = try #require(frame(identifier: identifier, in: window), "The button must have a finite visible frame")
+        let identified = elements(in: window).filter {
+            $0.value("accessibilityIdentifier") as? String == identifier
+        }
+        _ = try #require(!identified.isEmpty, "Missing control identifier: \(identifier)")
+        // SwiftUI may put the identifier on a container and the button label on its accessible child.
+        let candidates = identified.flatMap { [$0] + SettingsBehaviorTestSupport.elements(in: $0.object) }
+        _ = try #require(candidates.contains {
+            $0.role == NSAccessibility.Role.button.rawValue && $0.label == label
+        }, "Missing accessible button in \(identifier): \(label)")
     }
 
     private static func usable(_ frame: NSRect) -> Bool {

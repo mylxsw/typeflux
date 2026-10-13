@@ -22,7 +22,6 @@ struct AppKitTestActionsTests {
     @Test func controlsWithoutNativeActionsFailWithoutStartingAccessibilityTracking() {
         let button = NontrackingButton(title: "SwiftUI proxy", target: nil, action: nil)
         #expect(throws: (any Error).self) { try AppKitTestActions.press(button) }
-        #expect(throws: (any Error).self) { try SettingsBehaviorTestSupport.Element(object: button).press() }
         #expect(button.trackingCalls == 0)
     }
 

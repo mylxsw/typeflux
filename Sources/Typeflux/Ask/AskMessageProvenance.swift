@@ -64,6 +64,7 @@ struct AskMessageProvenanceView: View {
             }
             .font(.system(size: 11))
             .foregroundStyle(StudioTheme.textSecondary)
+            .accessibilityElement(children: .contain)
             .accessibilityIdentifier("ask.message.provenance")
         }
     }
@@ -75,6 +76,9 @@ struct AskMessageProvenanceView: View {
         case .selection(let text):
             Button { selectionPresentation.wrappedValue.toggle() } label: { Text(item.label) }
                 .buttonStyle(.plain)
+                .accessibilityElement(children: .ignore)
+                .accessibilityAddTraits(.isButton)
+                .accessibilityLabel(item.label)
                 .help(L("ask.context.previewHint"))
                 .accessibilityIdentifier("ask.message.selection")
                 .popover(isPresented: selectionPresentation) {
@@ -91,6 +95,9 @@ struct AskMessageProvenanceView: View {
         case .screenshot(let url):
             Button { imagePresentation.wrappedValue.toggle() } label: { Text(item.label) }
                 .buttonStyle(.plain)
+                .accessibilityElement(children: .ignore)
+                .accessibilityAddTraits(.isButton)
+                .accessibilityLabel(item.label)
                 .help(L("ask.context.previewHint"))
                 .accessibilityIdentifier("ask.message.screenshot")
                 .popover(isPresented: imagePresentation) {

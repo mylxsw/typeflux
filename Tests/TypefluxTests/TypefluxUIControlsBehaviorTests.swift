@@ -9,23 +9,21 @@ import Testing
 struct TypefluxUIControlsBehaviorTests {
     @Test func `buttons dispatch and disabled buttons retain accessibility`() async throws {
         var actions = 0
-        let perform = { actions += 1 }
         for kind in TypefluxButtonKind.allCases {
-            try await withAccessibleWindow(TypefluxButton("Action", kind: kind, action: perform)) { _, host in
-                _ = try SettingsBehaviorTestSupport.button("Action", in: host)
-                perform()
+            try await withAccessibleWindow(TypefluxButton("Action", kind: kind) { actions += 1 }) { _, host in
+                try activate("Action", in: host)
             }
         }
         #expect(actions == TypefluxButtonKind.allCases.count)
         try await withAccessibleWindow(TypefluxButton("Disabled") { actions += 1 }.disabled(true)) { _, host in
             let element = try SettingsBehaviorTestSupport.button("Disabled", in: host)
             #expect(element.value("isAccessibilityEnabled") as? Bool == false)
+            try activate(element)
         }
         #expect(actions == TypefluxButtonKind.allCases.count)
-        let icon = TypefluxIconButton("Copy document", systemImage: "doc.on.doc", action: perform)
+        let icon = TypefluxIconButton("Copy document", systemImage: "doc.on.doc") { actions += 1 }
         try await withAccessibleWindow(icon) { _, host in
-            _ = try SettingsBehaviorTestSupport.button("Copy document", in: host)
-            perform()
+            try activate("Copy document", in: host)
         }
         #expect(actions == TypefluxButtonKind.allCases.count + 1)
     }
@@ -54,26 +52,23 @@ struct TypefluxUIControlsBehaviorTests {
         #expect(selection == 1)
     }
 
-    @Test func `default action exposes its label and disabled state`() async throws {
+    @Test func `default Return action respects disabled state`() async throws {
         var actions = 0
-        let perform = { actions += 1 }
         for disabled in [false, true] {
-            try await withAccessibleWindow(TypefluxButton("Save", kind: .primary, defaultAction: true,
-                                                          action: perform).disabled(disabled)) { _, host in
-                let element = try SettingsBehaviorTestSupport.button("Save", in: host)
-                #expect(element.value("isAccessibilityEnabled") as? Bool == !disabled)
-                if !disabled { perform() }
+            try await withAccessibleWindow(TypefluxButton("Save", kind: .primary, defaultAction: true) {
+                actions += 1
+            }.disabled(disabled)) { window, _ in
+                try TypefluxNavigationTestSupport.sendKey(36, to: window, keyEquivalent: true)
                 #expect(actions == 1)
             }
         }
     }
 
-    @Test func `button with a caller shortcut remains accessible`() async throws {
+    @Test func `caller supplied keyboard shortcut remains active`() async throws {
         var actions = 0
-        let perform = { actions += 1 }
-        try await withAccessibleWindow(TypefluxButton("Copy", action: perform).keyboardShortcut("k")) { _, host in
-            _ = try SettingsBehaviorTestSupport.button("Copy", in: host)
-            perform()
+        try await withAccessibleWindow(TypefluxButton("Copy") { actions += 1 }.keyboardShortcut("k")) { window, _ in
+            try TypefluxNavigationTestSupport.sendKey(40, characters: "k", modifiers: .command,
+                                                       to: window, keyEquivalent: true)
             #expect(actions == 1)
         }
     }
@@ -81,17 +76,13 @@ struct TypefluxUIControlsBehaviorTests {
     @Test func `tokens remove once and navigation rows activate`() async throws {
         var removals = 0
         var navigations = 0
-        let remove = { removals += 1 }
-        let navigate = { navigations += 1 }
         try await withAccessibleWindow(VStack {
-            TypefluxToken("Report.pdf", removeLabel: "Remove Report.pdf", onRemove: remove)
-            TypefluxNavigationRow("Shortcuts", systemImage: "keyboard", color: .teal, detail: "6", action: navigate)
+            TypefluxToken("Report.pdf", removeLabel: "Remove Report.pdf") { removals += 1 }
+            TypefluxNavigationRow("Shortcuts", systemImage: "keyboard", color: .teal, detail: "6") { navigations += 1 }
             TypefluxKeyHint("⌘K", accessibilityLabel: "Command K")
         }) { _, host in
-            _ = try SettingsBehaviorTestSupport.button("Remove Report.pdf", in: host)
-            _ = try SettingsBehaviorTestSupport.button("Shortcuts", in: host)
-            remove()
-            navigate()
+            try activate("Remove Report.pdf", in: host)
+            try activate("Shortcuts", in: host)
             #expect(SettingsBehaviorTestSupport.contains("Command K", in: host))
         }
         #expect(removals == 1)
@@ -155,6 +146,14 @@ struct TypefluxUIControlsBehaviorTests {
             host.layoutSubtreeIfNeeded()
             try await check(window, host)
         }
+    }
+
+    private func activate(_ title: String, in host: NSView) throws {
+        let elements = SettingsBehaviorTestSupport.elements(in: host)
+        let element = try #require(elements.first {
+            $0.label == title && $0.object.responds(to: NSSelectorFromString("accessibilityPerformPress"))
+        }, "Missing \(title): \(elements.map { ($0.role, $0.label, $0.text) })")
+        try activate(element)
     }
 
     private func activate(_ element: SettingsBehaviorTestSupport.Element) throws {

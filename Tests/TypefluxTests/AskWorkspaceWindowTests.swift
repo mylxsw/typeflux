@@ -29,10 +29,12 @@ struct AskWorkspaceWindowTests {
                 .defaultAppStorage(defaults).environment(\.interfaceStyle, style))
             host.sizingOptions = []
             window.contentView = host
-            window.orderFront(nil)
+            window.makeKeyAndOrderFront(nil)
             defer { close(window) }
             try await Task.sleep(for: .milliseconds(400))
+            layout(window)
             #expect(window.title == title)
+            #expect(window.titleVisibility == .hidden)
             let items = try #require(window.toolbar?.items)
             #expect(!items.contains {
                 $0.itemIdentifier == .toggleSidebar
@@ -42,11 +44,13 @@ struct AskWorkspaceWindowTests {
             try assertVisibleToolbarFrames(window)
             for identifier in ["ask.workspace.sidebar", "ask.workspace.new"] {
                 try await SettingsBehaviorTestSupport.wait("Toolbar action: \(identifier)") {
-                    AskWorkspaceTestAccessibility.frame(identifier: identifier, in: window) != nil
+                    layout(window)
+                    return AskWorkspaceTestAccessibility.frame(identifier: identifier, in: window) != nil
                 }
                 let frame = try #require(AskWorkspaceTestAccessibility.frame(identifier: identifier, in: window))
                 #expect(frame.width > 0 && frame.width.isFinite)
                 #expect(frame.height > 0 && frame.height.isFinite)
+                #expect(window.frame.contains(frame), "The primary action must remain inside the window")
             }
             try AskWorkspaceTestAccessibility.assertButton("ask.workspace.new", label: L("ask.new"), in: window)
             fixture.model.newConversation()
@@ -74,10 +78,12 @@ struct AskWorkspaceWindowTests {
         window.makeKeyAndOrderFront(nil)
         defer { close(window) }
         try await Task.sleep(for: .milliseconds(400))
+        layout(window)
         try sidebarAction(presentation, defaults: defaults, in: window)
         try await SettingsBehaviorTestSupport.wait { defaults.bool(forKey: "ask.sidebarCollapsed") }
         window.setContentSize(NSSize(width: 440, height: 320))
         try await Task.sleep(for: .milliseconds(400))
+        layout(window)
         try sidebarAction(presentation, defaults: defaults, in: window)
         try await SettingsBehaviorTestSupport.wait {
             SettingsBehaviorTestSupport.elements(in: window).contains {
@@ -124,6 +130,11 @@ struct AskWorkspaceWindowTests {
                               backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         return window
+    }
+
+    private func layout(_ window: NSWindow) {
+        window.contentView?.superview?.layoutSubtreeIfNeeded()
+        window.displayIfNeeded()
     }
 
     private func close(_ window: NSWindow) {

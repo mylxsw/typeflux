@@ -87,7 +87,7 @@ enum TypefluxNavigationTestSupport {
         window.makeKeyAndOrderFront(nil)
         if let view = item.view,
            let button = SettingsBehaviorTestSupport.elements(in: view).first(where: {
-               ($0.object as? NSControl)?.action != nil && $0.role == NSAccessibility.Role.button.rawValue
+               $0.role == NSAccessibility.Role.button.rawValue
            }) {
             try button.press()
         } else {
@@ -127,8 +127,10 @@ enum TypefluxNavigationTestSupport {
             if let control = matching {
                 try SettingsBehaviorTestSupport.Element(object: control, window: window).press()
             } else {
-                // A SwiftUI shortcut can synthesize a cell click. Invoke its bound model route instead.
-                throw AppKitTestActions.ModelActionRequired()
+                // Route through this window's SwiftUI hosting tree, then consume delayed runloop stops
+                // just as pressThroughAccessibility does. Callers assert the actual command's effect.
+                defer { SettingsBehaviorTestSupport.drainPendingRunLoopStops() }
+                _ = window.performKeyEquivalent(with: event)
             }
             return
         }

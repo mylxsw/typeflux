@@ -154,3 +154,24 @@ enum SettingsBehaviorTestSupport {
 
     private struct ReadinessTimeout: Error {}
 }
+
+extension SettingsBehaviorTestSupport {
+    /// SwiftUI buttons expose no native target/action, so they are pressed through AX. AppKit may run a nested
+    /// event loop for that press; drain the main run loop's pending blocks right away so a late HIToolbox
+    /// CFRunLoopStop stops this nested run instead of Swift Testing's outer CFRunLoopRun.
+    @MainActor static func pressThroughAccessibility(_ object: NSObject) {
+        defer { drainPendingRunLoopStops() }
+        typealias Press = @convention(c) (NSObject, Selector) -> Bool
+        let selector = NSSelectorFromString("accessibilityPerformPress")
+        if object.responds(to: selector) {
+            _ = unsafeBitCast(object.method(for: selector), to: Press.self)(object, selector)
+        } else {
+            object.accessibilityPerformAction(.press)
+        }
+    }
+
+    /// Share the same verified drain with SwiftUI's window-owned keyboard-shortcut dispatch.
+    @MainActor static func drainPendingRunLoopStops() {
+        for _ in 0 ..< 3 { _ = CFRunLoopRunInMode(.defaultMode, 0, true) }
+    }
+}
