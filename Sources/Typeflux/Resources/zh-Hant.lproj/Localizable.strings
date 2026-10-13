@@ -3647,6 +3647,8 @@
 "ask.home.section.page" = "針對目前網頁";
 "ask.home.section.recent" = "繼續對話";
 "ask.home.section.keywords" = "常用";
+"ask.home.more" = "更多";
+"ask.home.more.help" = "更多關鍵字";
 "ask.home.section.tryKeywords" = "試試關鍵詞：輸入後加空格";
 "ask.home.text.translate" = "翻譯";
 "ask.home.text.translate.detail" = "保留原格式";

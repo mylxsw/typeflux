@@ -112,21 +112,18 @@ struct AskLauncherPluginSettingsView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(spacing: 12) {
             toolbar
                 .frame(maxWidth: .infinity)
-            ScrollView {
-                VStack(alignment: .leading, spacing: 12) {
-                    listCard
+            TypefluxForm {
+                listCard
+                Section {
                     Text(L("ask.settings.keywords.listFootnote"))
                         .font(.subheadline).foregroundStyle(TypefluxColor.tertiaryLabel.color)
                     Button(L("ask.settings.keywords.restore")) { confirmingRestore = true }
                         .buttonStyle(.borderless)
                         .accessibilityIdentifier("ask.settings.keywords.restore")
                 }
-                .frame(maxWidth: 640, alignment: .leading)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 4)
             }
         }
         .onAppear(perform: reload)
@@ -177,6 +174,7 @@ struct AskLauncherPluginSettingsView: View {
                 }
             }
         } label: { Label(L("ask.settings.keywords.add"), systemImage: "plus") }
+            .menuIndicator(.hidden)
             .fixedSize()
             .accessibilityIdentifier("ask.settings.keywords.add")
     }
@@ -193,15 +191,26 @@ struct AskLauncherPluginSettingsView: View {
             ForEach(AskKeywordSection.allCases, id: \.self) { section in
                 let group = shown.filter { section.kinds.contains($0.kind) }
                 if !group.isEmpty {
-                    TypefluxListSection(section.title, count: group.count, isExpanded: Binding(
-                        get: { !collapsedSections.contains(section) },
-                        set: { setSection(section, expanded: $0) }
-                    ), identifier: "ask.settings.keywords.section." + section.rawValue,
-                    expandedValue: L("ask.settings.keywords.expanded"),
-                    collapsedValue: L("ask.settings.keywords.collapsed")) {
-                        ForEach(group) { row in
-                            AskKeywordRowView(row: row, toggle: { toggle(row) }, open: { open(row) })
-                                .padding(12)
+                    Section {
+                        Button { setSection(section, expanded: collapsedSections.contains(section)) } label: {
+                            HStack {
+                                Label(section.title, systemImage: collapsedSections.contains(section)
+                                    ? "chevron.right" : "chevron.down")
+                                    .font(.headline)
+                                Spacer(minLength: 0)
+                                Text(group.count, format: .number).font(.subheadline)
+                                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
+                            }
+                        }
+                        .buttonStyle(.borderless)
+                        .accessibilityLabel(section.title)
+                        .accessibilityIdentifier("ask.settings.keywords.section." + section.rawValue)
+                        .accessibilityValue(L(collapsedSections.contains(section)
+                            ? "ask.settings.keywords.collapsed" : "ask.settings.keywords.expanded"))
+                        if !collapsedSections.contains(section) {
+                            ForEach(group) { row in
+                                AskKeywordRowView(row: row, toggle: { toggle(row) }, open: { open(row) })
+                            }
                         }
                     }
                 }

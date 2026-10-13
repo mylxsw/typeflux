@@ -9,6 +9,22 @@ struct AskChatFidelityTests {
     private typealias UI = SettingsBehaviorTestSupport
 
     @Test(arguments: InterfaceStyle.allCases)
+    func chatAccountStatusRemainsReadableBesideCompactActions(style: InterfaceStyle) async throws {
+        try await UI.withFixture { settings in
+            let footer = SidebarAccountFooter(auth: AuthState.shared, compact: false, defaults: settings.defaults,
+                onSignIn: {}, onOpenAccount: {}, onOpenSettings: {}) {
+                    AskSignedOutIdentity(detail: "Local mode", action: nil)
+                }.environment(\.interfaceStyle, style)
+            try await UI.withWindow(footer, width: 248, height: 80) { _, host in
+                try await UI.wait { UI.contains(L("ask.local.identity"), in: host) }
+                #expect(UI.contains(L("ask.local.identity.storage"), in: host))
+                _ = try UI.button(L("ask.cloudPromo.signIn"), in: host)
+                _ = try UI.button(L("sidebar.settingsAccessibility"), in: host)
+            }
+        }
+    }
+
+    @Test(arguments: InterfaceStyle.allCases)
     func emptyWorkspaceSuggestionCardsReserveEqualTitleHeights(style: InterfaceStyle) async throws {
         try await UI.withFixture { settings in
             settings.appLanguage = .english
@@ -73,7 +89,7 @@ struct AskChatFidelityTests {
             var logins = 0
             var openedSettings = 0
             let footer = SidebarAccountFooter(auth: AuthState.shared, compact: false, defaults: settings.defaults,
-                showsPromotion: false, onSignIn: { logins += 1 }, onOpenAccount: {},
+                onSignIn: { logins += 1 }, onOpenAccount: {},
                 onOpenSettings: { openedSettings += 1 })
                 .environment(\.interfaceStyle, style)
             try await UI.withWindow(footer, width: 248, height: 60) { _, host in

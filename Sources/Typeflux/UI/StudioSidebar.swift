@@ -5,6 +5,7 @@ struct StudioSidebar: View {
     let onSelect: (StudioSection) -> Void
     let onAccountAction: () -> Void
     let defaults: UserDefaults
+    var count: (StudioSection) -> Int? = { _ in nil }
     @ObservedObject private var localization = AppLocalization.shared
 
     var body: some View {
@@ -21,10 +22,17 @@ struct StudioSidebar: View {
                 }
             )) { section in
                 TypefluxButton(kind: .borderless, action: { onSelect(section) }, label: {
-                    Label {
-                        Text(section.sidebarTitle)
-                    } icon: {
-                        Image(systemName: section.sidebarIconName).foregroundStyle(TypefluxColor.accent.color)
+                    HStack {
+                        Label {
+                            Text(section.sidebarTitle)
+                        } icon: {
+                            Image(systemName: section.sidebarIconName).foregroundStyle(TypefluxColor.accent.color)
+                        }
+                        Spacer(minLength: 0)
+                        if let count = count(section) {
+                            Text(count, format: .number).font(.subheadline).monospacedDigit()
+                                .foregroundStyle(TypefluxColor.secondaryLabel.color)
+                        }
                     }
                 })
                 .accessibilityLabel(section.sidebarTitle)

@@ -3650,6 +3650,8 @@
 "ask.home.section.page" = "针对当前网页";
 "ask.home.section.recent" = "继续对话";
 "ask.home.section.keywords" = "常用";
+"ask.home.more" = "更多";
+"ask.home.more.help" = "更多关键词";
 "ask.home.section.tryKeywords" = "试试关键词：输入后加空格";
 "ask.home.text.translate" = "翻译";
 "ask.home.text.translate.detail" = "保留原格式";

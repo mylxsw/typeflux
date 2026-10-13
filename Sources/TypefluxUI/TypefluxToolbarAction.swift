@@ -9,9 +9,9 @@ public struct TypefluxToolbarAction: Identifiable {
     public let accessibilityIdentifier: String
     public let shortcut: KeyEquivalent?
     public let modifiers: EventModifiers
-    /// When present without menu actions, the control is a native ShareLink.
-    public let sharingText: String?
     public let menuActions: [TypefluxToolbarAction]
+    /// Standalone share actions use a native ShareLink instead of perform.
+    public let sharingText: String?
     public let perform: () -> Void
 
     public var keyboardShortcut: KeyboardShortcut? {
@@ -31,8 +31,8 @@ public struct TypefluxToolbarAction: Identifiable {
         self.accessibilityIdentifier = accessibilityIdentifier ?? "typeflux.toolbar." + id
         self.shortcut = shortcut
         self.modifiers = modifiers
-        self.sharingText = sharingText
         self.menuActions = menuActions
+        self.sharingText = sharingText
         self.perform = perform
     }
 }

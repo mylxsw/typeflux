@@ -124,9 +124,9 @@ public struct TypefluxWindow<Detail: View>: View {
     }
 
     private var titleItem: some ToolbarContent {
-        ToolbarItem(id: TypefluxWindowTitleBridge.itemIdentifier, placement: .principal) {
+        ToolbarItem(id: TypefluxWindowTitleBridge.itemIdentifier, placement: .automatic) {
             Text(title).font(.headline)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .fixedSize()
                 .accessibilityAddTraits(.isHeader)
                 .accessibilityIdentifier(TypefluxWindowTitleBridge.itemIdentifier)
         }

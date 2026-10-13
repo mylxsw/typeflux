@@ -11,25 +11,24 @@ struct HistorySettingsBackButtonTests {
     @Test func `wired Back actions follow detail selection and toolbar scope`() async throws {
         try await withModels { model, _ in
             try await withWindow(model) { window, host, navigation in
-                try await RenderedUI.wait { backButton(in: window) != nil }
-                #expect(try !requireBackButton(in: window).isEnabled)
+                #expect(backButton(in: window) == nil)
                 for _ in 0 ..< 2 {
                     try await openDetail(in: host, model: model, navigation: navigation)
                     try await RenderedUI.wait { backButton(in: window)?.isEnabled == true }
                     let back = try requireBackButton(in: window)
                     try sendBackAction(back)
                     try await RenderedUI.wait { !RenderedUI.contains(L("history.detail.rawTranscript"), in: host) }
-                    try await RenderedUI.wait { backButton(in: window)?.isEnabled == false }
+                    try await RenderedUI.wait { backButton(in: window) == nil }
                     #expect(RenderedUI.contains("Back fixture", in: host))
                 }
                 model.navigate(to: .vocabulary)
                 try await RenderedUI.wait { backButton(in: window) == nil }
                 model.navigate(to: .history)
-                try await RenderedUI.wait { backButton(in: window)?.isEnabled == false }
+                try await RenderedUI.wait { backButton(in: window) == nil }
                 try await openDetail(in: host, model: model, navigation: navigation)
                 model.deleteHistoryRecord(id: try #require(model.displayedHistory.first?.id))
                 try await RenderedUI.wait { !RenderedUI.contains(L("history.detail.rawTranscript"), in: host) }
-                try await RenderedUI.wait { backButton(in: window)?.isEnabled == false }
+                try await RenderedUI.wait { backButton(in: window) == nil }
             }
         }
     }
@@ -57,7 +56,7 @@ struct HistorySettingsBackButtonTests {
                 #expect(firstBack !== secondBack)
                 try sendBackAction(firstBack)
                 try await RenderedUI.wait("First window returning to its history list") {
-                    backButton(in: firstWindow)?.isEnabled == false
+                    backButton(in: firstWindow) == nil
                         && !RenderedUI.contains(L("history.detail.rawTranscript"), in: firstHost)
                 }
                 #expect(!RenderedUI.contains(L("history.detail.rawTranscript"), in: firstHost))
@@ -69,7 +68,7 @@ struct HistorySettingsBackButtonTests {
                 #expect(currentSecondBack.isEnabled)
                 try sendBackAction(currentSecondBack)
                 try await RenderedUI.wait("Second window returning to its history list") {
-                    backButton(in: secondWindow)?.isEnabled == false
+                    backButton(in: secondWindow) == nil
                         && !RenderedUI.contains(L("history.detail.rawTranscript"), in: secondHost)
                 }
                 #expect(!RenderedUI.contains(L("history.detail.rawTranscript"), in: secondHost))
@@ -109,6 +108,9 @@ struct HistorySettingsBackButtonTests {
     private func requireBackButton(in window: NSWindow) throws -> NSButton {
         let button = try #require(backButton(in: window))
         #expect(button.window === window)
+        #expect(button.title.isEmpty && button.image != nil)
+        #expect(button.imagePosition == .imageOnly)
+        #expect(button.toolTip == L("history.action.back"))
         #expect(button.accessibilityIdentifier() == HistorySettingsBackButton.accessibilityIdentifier)
         #expect(button.target is HistorySettingsBackButton.Coordinator)
         #expect(button.action == #selector(HistorySettingsBackButton.Coordinator.goBack(_:)))

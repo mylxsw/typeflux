@@ -3650,6 +3650,8 @@
 "ask.home.section.page" = "For this web page";
 "ask.home.section.recent" = "Continue";
 "ask.home.section.keywords" = "Frequent";
+"ask.home.more" = "More";
+"ask.home.more.help" = "More keywords";
 "ask.home.section.tryKeywords" = "Try a keyword, then a space";
 "ask.home.text.translate" = "Translate";
 "ask.home.text.translate.detail" = "Keeps the formatting";

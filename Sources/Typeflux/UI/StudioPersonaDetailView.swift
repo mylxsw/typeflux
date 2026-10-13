@@ -12,45 +12,46 @@ struct StudioPersonaDetailView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            StudioPersonaUsageStrip(viewModel: viewModel)
-                .fixedSize(horizontal: false, vertical: true)
-            Group {
-                header
-                if readOnly {
-                    TypefluxSettingsRow(L("personas.redesign.builtInNote")) {
-                        Button(L("personas.redesign.copyToEdit")) {
-                            if let persona = viewModel.selectedPersona {
-                                viewModel.duplicatePersona(persona)
-                            }
-                        }.buttonStyle(.bordered)
-                    }
-                }
-                HStack {
-                    Text(L("settings.personas.prompt"))
-                    Spacer()
-                    if viewModel.isCreatingPersonaDraft {
-                        templateMenu
-                    } else {
-                        Text(L("personas.redesign.characterCount", viewModel.personaDraftPrompt.count))
-                    }
-                }.font(.subheadline).foregroundStyle(.secondary)
-                definition
-                if viewModel.isCreatingPersonaDraft || viewModel.hasPersonaDraftChanges {
-                    HStack {
-                        Spacer()
-                        Button(L(viewModel
-                                .isCreatingPersonaDraft ? "common.cancel" : "personas.redesign.discardChanges")) {
-                            viewModel.cancelPersonaEditing()
+            TypefluxForm {
+                StudioPersonaUsageStrip(viewModel: viewModel)
+                Section {
+                    header
+                    if readOnly {
+                        TypefluxSettingsRow(L("personas.redesign.builtInNote")) {
+                            Button(L("personas.redesign.copyToEdit")) {
+                                if let persona = viewModel.selectedPersona {
+                                    viewModel.duplicatePersona(persona)
+                                }
+                            }.buttonStyle(.bordered)
                         }
-                        Button(L(viewModel
-                                .isCreatingPersonaDraft ? "personas.redesign.create" : "personas.redesign.save")) {
-                            viewModel.savePersonaDraft()
-                        }.buttonStyle(.borderedProminent).disabled(!viewModel.canSavePersonaDraft)
-                            .accessibilityIdentifier("personas.saveDraft").keyboardShortcut("s", modifiers: .command)
                     }
-                    .accessibilityElement(children: .contain)
-                    .accessibilityIdentifier("personas.saveBar")
+                    HStack {
+                        Text(L("settings.personas.prompt"))
+                        Spacer()
+                        if viewModel.isCreatingPersonaDraft {
+                            templateMenu
+                        } else {
+                            Text(L("personas.redesign.characterCount", viewModel.personaDraftPrompt.count))
+                        }
+                    }.font(.subheadline).foregroundStyle(.secondary)
+                    definition
                 }
+            }
+            if viewModel.isCreatingPersonaDraft || viewModel.hasPersonaDraftChanges {
+                HStack {
+                    Spacer()
+                    Button(L(viewModel
+                            .isCreatingPersonaDraft ? "common.cancel" : "personas.redesign.discardChanges")) {
+                        viewModel.cancelPersonaEditing()
+                    }
+                    Button(L(viewModel
+                            .isCreatingPersonaDraft ? "personas.redesign.create" : "personas.redesign.save")) {
+                        viewModel.savePersonaDraft()
+                    }.buttonStyle(.borderedProminent).disabled(!viewModel.canSavePersonaDraft)
+                        .accessibilityIdentifier("personas.saveDraft").keyboardShortcut("s", modifiers: .command)
+                }
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier("personas.saveBar")
             }
             if let message = viewModel.personaUndoMessage, viewModel.personaPendingDeletion == nil {
                 Group {
@@ -68,14 +69,11 @@ struct StudioPersonaDetailView: View {
                 }
             }
         }
-        .padding(12)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .frame(maxWidth: 640)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .task(id: viewModel.personaDraftCreationID) {
             guard viewModel.isCreatingPersonaDraft else { return }
             nameFocused = true
-            try? await Task.sleep(for: .milliseconds(100))
-            guard !Task.isCancelled, viewModel.isCreatingPersonaDraft else { return }
-            (NSApp.keyWindow?.firstResponder as? NSTextView)?.selectAll(nil)
         }
     }
 
@@ -86,8 +84,9 @@ struct StudioPersonaDetailView: View {
                 Text(L("personas.redesign.builtIn")).font(.subheadline)
                     .foregroundStyle(.secondary)
             } else {
-                TextField(L("settings.personas.namePlaceholder"), text: $viewModel.personaDraftName)
-                    .textFieldStyle(.roundedBorder).focused($nameFocused)
+                TypefluxTextField(L("settings.personas.name"), text: $viewModel.personaDraftName,
+                                  prompt: L("settings.personas.namePlaceholder"))
+                    .focused($nameFocused)
                     .accessibilityLabel(L("settings.personas.name"))
                     .accessibilityIdentifier("personas.name")
             }
@@ -148,21 +147,16 @@ struct StudioPersonaDetailView: View {
     private var definition: some View {
         Group {
             if readOnly {
-                ScrollView {
-                    Text(viewModel.personaDraftPrompt).textSelection(.enabled)
-                        .frame(maxWidth: .infinity, alignment: .topLeading)
-                }
+                Text(viewModel.personaDraftPrompt).textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
+                    .fixedSize(horizontal: false, vertical: true)
             } else {
-                // A form row proposes an unbounded height to AppKit's text scroll view.
-                // Use the remaining viewport so the editor and save action stay visible.
-                GeometryReader { geometry in
-                    TextEditor(text: $viewModel.personaDraftPrompt)
-                        .frame(width: geometry.size.width, height: geometry.size.height)
-                        .accessibilityIdentifier("personas.definition")
-                }
+                TextEditor(text: $viewModel.personaDraftPrompt)
+                    .frame(height: 220)
+                    .accessibilityIdentifier("personas.definition")
             }
         }
-        .frame(minHeight: 120, maxHeight: .infinity)
+        .multilineTextAlignment(.leading)
         .font(.body).accessibilityLabel(L("settings.personas.prompt"))
     }
 }

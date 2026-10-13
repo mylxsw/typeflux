@@ -3,6 +3,7 @@ import SwiftUI
 /// Reusable signed-out identity. Chat supplies a local-mode action; settings shows status.
 struct AskSignedOutIdentity: View {
     var active = false
+    var compact = false
     var subtitle = L("ask.local.identity.storage")
     var detail: String
     let action: (() -> Void)?
@@ -28,7 +29,16 @@ struct AskSignedOutIdentity: View {
         }
     }
 
-    private var label: some View {
+    @ViewBuilder private var label: some View {
+        if compact {
+            Label(L("ask.local.identity"), systemImage: "desktopcomputer").labelStyle(.iconOnly)
+                .font(.body).frame(width: 28, height: 28).contentShape(Rectangle())
+        } else {
+            fullLabel
+        }
+    }
+
+    private var fullLabel: some View {
         HStack(spacing: 9) {
             Image(systemName: "desktopcomputer").font(.body.weight(.medium))
                 .foregroundStyle(TypefluxColor.label.color)

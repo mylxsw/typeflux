@@ -232,18 +232,20 @@ final class ClipboardPanelRenderingTests: XCTestCase {
 
         let window = try XCTUnwrap(ClipboardTestSupport.presentedPanel())
         let screen = try XCTUnwrap(window.screen)
+        let size = ClipboardPanelView.size(showsPreview: false, style: settings.interfaceStyle)
         // The card's top edge at `top`, centred and kept inside the usable area. On a display
         // shorter than the panel AppKit then holds it below the menu bar, so compare with the
         // frame the window server allows rather than assume the host display fits 560pt.
         func placed(top: CGFloat) -> NSRect {
             let visible = screen.visibleFrame
-            let wanted = NSRect(x: (visible.midX - 256).rounded(), y: top - 560, width: 512, height: 560)
+            let wanted = NSRect(x: (visible.midX - size.width / 2).rounded(), y: top - size.height,
+                                width: size.width, height: size.height)
             return window.constrainFrameRect(AskLauncherPlacement.clamped(wanted, screen: visible), to: screen)
         }
         XCTAssertEqual(window.frame,
                        placed(top: AskLauncherPlacement.top(on: screen.visibleFrame) - AskMetrics.launcherGutter))
         XCTAssertEqual(window.frame.midX, screen.visibleFrame.midX, accuracy: 0.5)
-        XCTAssertEqual(window.frame.size, NSSize(width: 512, height: 560))
+        XCTAssertEqual(window.frame.size, size)
 
         // Reopening follows the launcher's saved vertical position on this display.
         settings.askLauncherPosition = .lastPosition

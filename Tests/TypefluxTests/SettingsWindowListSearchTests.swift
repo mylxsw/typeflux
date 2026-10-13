@@ -69,40 +69,25 @@ struct SettingsWindowListSearchTests {
         }
     }
 
-    @Test func `settings footer preserves dismissal and compact sign in`() async throws {
+    @Test func `settings footer has one login action in compact and regular sidebars`() async throws {
         try await UI.withFixture { settings in
             var signIns = 0
-            let footer = StudioSidebarFooter(defaults: settings.defaults, compact: false) { signIns += 1 }
-            try await UI.withWindow(footer, width: 220, height: 300) { _, host in
-                try await UI.wait { UI.contains("Typeflux Cloud", in: host) }
-                @MainActor func signInCount() -> Int {
-                    UI.elements(in: host).filter {
+            for compact in [false, true] {
+                let footer = StudioSidebarFooter(defaults: settings.defaults, compact: compact) { signIns += 1 }
+                try await UI.withWindow(footer, width: 220, height: 56) { _, host in
+                    try await UI.wait { UI.contains(L("ask.cloudPromo.signIn"), in: host) }
+                    #expect(!UI.contains("Typeflux Cloud", in: host))
+                    #expect(!UI.contains(L("ask.local.identity"), in: host))
+                    #expect(UI.elements(in: host).filter {
                         $0.role == NSAccessibility.Role.button.rawValue && $0.label == L("ask.cloudPromo.signIn")
-                    }.count
+                    }.count == 1)
+                    try UI.button(L("ask.cloudPromo.signIn"), in: host).press()
                 }
-                #expect(signInCount() == 1)
-                try UI.button(L("ask.cloudPromo.signIn"), in: host).press()
-                #expect(signIns == 1)
-                try UI.button(L("ask.cloudPromo.dismiss"), in: host).press()
-                try await UI.wait { !UI.contains("Typeflux Cloud", in: host) }
-                #expect(settings.defaults.double(forKey: AskCloudPromo.dismissedKey) > 0)
-                #expect(signInCount() == 1)
-                try UI.button(L("ask.cloudPromo.signIn"), in: host).press()
-                #expect(signIns == 2)
             }
-            settings.defaults.set(0, forKey: AskCloudPromo.dismissedKey)
-            try await UI.withWindow(StudioSidebarFooter(defaults: settings.defaults, compact: true) {
-                signIns += 1
-            }, width: 220, height: 80) { _, host in
-                #expect(!UI.contains("Typeflux Cloud", in: host))
-                #expect(UI.contains(L("ask.local.identity"), in: host))
-                try UI.button(L("ask.cloudPromo.signIn"), in: host).press()
-                #expect(signIns == 3)
-            }
+            #expect(signIns == 2)
             AuthState.shared.isLoggedIn = true
             try await UI.withWindow(StudioSidebarFooter(defaults: settings.defaults, compact: true) {},
-                                    width: 220, height: 80) { _, host in
-                #expect(!UI.contains("Typeflux Cloud", in: host))
+                                    width: 220, height: 56) { _, host in
                 #expect(!UI.contains(L("ask.cloudPromo.signIn"), in: host))
                 #expect(UI.contains(L("sidebar.appName"), in: host))
             }

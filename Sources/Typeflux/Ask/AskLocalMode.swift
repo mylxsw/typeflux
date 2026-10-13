@@ -308,6 +308,7 @@ struct AskStorageButton: View {
 struct AskLocalModeIdentity: View {
     @ObservedObject var model: AskConversationModel
     @State private var presented = false
+    var compact = false
 
     /// "Ollama · Stays on this Mac": the model's source and where chats are kept.
     static func detail(source: String) -> String {
@@ -316,7 +317,7 @@ struct AskLocalModeIdentity: View {
 
     var body: some View {
         let status = AskLocalModeStatus.make(model: model, signedIn: false)
-        AskSignedOutIdentity(active: presented, detail: Self.detail(source: status.source)) {
+        AskSignedOutIdentity(active: presented, compact: compact, detail: Self.detail(source: status.source)) {
             presented.toggle()
         }
         .modifier(AskLocalModeMenu(isPresented: $presented, status: status, model: model))

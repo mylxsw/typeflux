@@ -70,7 +70,7 @@ struct SettingsWindowNavigationTests {
                     throw error
                 }
             }
-            #expect(StudioSection.sidebarUpperCases == [.home, .models, .agent, .launcher, .settings])
+            #expect(StudioSection.sidebarUpperCases == [.home, .history, .vocabulary, .personas, .models, .agent, .launcher, .settings, .account])
             controller.show(settingsStore: settings, historyStore: FileHistoryStore(baseDir: directory),
                             initialSection: .vocabulary)
             #expect(controller.window === window)

@@ -56,10 +56,14 @@ On macOS 26, native controls always take the Tahoe shape, and an app cannot forc
 | Menu / item / highlight | r6 / 22 / r4 | r14 / 24 / r8 |
 | Custom composer menu card / choice row / hover card | r14 / r8 / r10 | r18 / r10 / r14 |
 | Popover / sheet | r10 / r10 | r18 / r22 |
-| Spotlight panel | 52 input, single r12 panel | 56 capsule input + 56 round mode buttons + r24 results |
+| Spotlight panel | 640 wide, 52 input, single r12 panel | 680 wide, 56 capsule input + 56 round mode buttons + r24 results |
 | Spotlight result row | 34 minimum | 40 minimum |
 
 Text styles (macOS values): largeTitle 26, title 22, title2 17, title3 15, headline 13 bold, body 13, callout 12, subheadline 11, footnote 10.
+
+The custom Spotlight display input follows template C's system font at 20pt in Classic and 21pt in Liquid Glass,
+through `TypefluxSpotlightMetrics.inputFont`. Panel width uses `TypefluxControlWidth.spotlightPanel`;
+the clipboard's optional reading preview adds 280pt to either style.
 
 Native menus use the system metrics above. Custom composer menu cards use `TypefluxRadius.menuCard` and `menuRow` at a 6pt row inset; `hoverCard` is smaller than the enclosing menu. These roles keep the floating choice rows concentric without changing native menu or popover geometry.
 
@@ -101,7 +105,7 @@ Native menus use the system metrics above. Custom composer menu cards use `Typef
 | --- | --- |
 | Settings, model/provider pages, vocabulary and history | `TypefluxWindow`, toolbar search and native grouped forms/lists/tables |
 | Notes, word book and Ask libraries | Native split navigation and solid detail panes |
-| Launcher and clipboard | `TypefluxSpotlightPanel`, navigation glass and solid result content |
+| Launcher and clipboard | `TypefluxSpotlightPanel`, glass input/mode/result navigation; solid reading previews and opaque Classic/accessibility fallbacks |
 | Workflow editor | `TypefluxWindow` with toolbar actions, native radio/segmented controls and solid code/form/test panes |
 | System monitor | Floating navigation shell with `TypefluxGlassContainer`, solid metrics and native mode/sort segments |
 | Onboarding | Grouped `TypefluxForm`, native choices/fields/actions and a navigation footer with accessibility fallback |
@@ -124,8 +128,8 @@ The migration leaves existing literals in older Ask, clipboard preview and scree
 
 | Rule | Before GUL-355 (main `77945be8`) | Remaining |
 | --- | ---: | ---: |
-| Numeric SwiftUI font size | 710 | 403 |
-| Numeric corner radius | 397 | 214 |
+| Numeric SwiftUI font size | 710 | 397 |
+| Numeric corner radius | 397 | 205 |
 | Calibrated/sRGB `NSColor` constructor | 46 | 36 |
 
 All seven window families in this wrap-up, the Overview metrics and the workflow editor directory have zero occurrences of these rules. The existing general SwiftLint baseline was also refreshed because prior migrations had left it stale; new UI literal exceptions may only be removed. Lint success does not replace macOS build, interaction tests or visual acceptance.

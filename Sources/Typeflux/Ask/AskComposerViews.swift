@@ -901,7 +901,7 @@ struct AskComposer: View {
 
     private var launcherHomeViewportHeight: CGFloat {
         let chromeHeight = AskMetrics.launcherHeight(editor: editorHeight, banners: 0)
-            - AskMetrics.launcherGutter * 2 + supplementalHeight
+            - AskMetrics.launcherGutter * 2 + supplementalHeight + spotlightChromeAdjustment
         // Fit against a stable budget rather than the animated panel height,
         // otherwise a collapsed panel cannot grow to show its home rows.
         return max(0, AskMetrics.launcherWindowHeight - AskMetrics.launcherGutter * 2 - chromeHeight)
@@ -1014,6 +1014,7 @@ struct AskComposer: View {
                 if !launcher, abs(cardHeight - height) > 0.5 { cardHeight = height }
             }
             .onChange(of: editorHeight) { _ in reportHeight() }
+            .onChange(of: interfaceStyle) { _ in if launcher { reportHeight() } }
             .onChange(of: launcherCollapsed) { _ in reportHeight() }
             .onChange(of: showsLauncherSuggestions) { _ in reportHeight() }
             .onChange(of: showsQuickResults) { _ in updateFilePreview(); reportHeight() }
@@ -1109,65 +1110,17 @@ struct AskComposer: View {
     }
 
     private var card: some View {
-        VStack(spacing: 0) {
-            if launcher && !launcherCollapsed {
-                supplementalContent
-                    .background(GeometryReader { geometry in
-                        Color.clear.preference(key: AskComposerSupplementalHeight.self, value: geometry.size.height)
-                    })
-            } else if !launcher && hasSupplementalContent {
-                ScrollView(.vertical) {
-                    supplementalContent
-                        .background(GeometryReader { geometry in
-                            Color.clear.preference(key: AskComposerSupplementalHeight.self, value: geometry.size.height)
-                        })
-                }
-                .frame(height: min(max(1, supplementalHeight), layout.supplementalMaximumHeight))
-            }
-            if launcher {
-                launcherHeader
-            } else {
-                editorRow
-                TypefluxGlassContainer(radius: .form, placement: .inWindow) { footer }
-            }
-            if launcher && !launcherCollapsed {
-                ZStack(alignment: .top) {
-                    // EmptyView does not participate in layout. Keep a real
-                    // viewport while the last results disappear during shrinkage.
-                    Color.clear
-                    // Keep material hosting below the native editor's accepted layout hierarchy.
-                    TypefluxSpotlightSurface {
-                        launcherResults.background(TypefluxColor.contentBackground.color)
-                    }
-                }
-                .frame(height: launcherResultsViewportHeight, alignment: .top)
-                .clipped()
-            }
-            if launcher && !launcherCollapsed {
-                launcherBar
-            }
-        }
-        .background {
-            if let glass {
-                chrome.glassBackground(glass)
-            } else {
-                chrome.fill
-            }
-        }
-        .clipShape(RoundedRectangle(cornerRadius: chrome.corner, style: .continuous))
-        .modifier(AskWorkspaceCardDepth(enabled: !launcher && (interfaceStyle.usesGlass || colorScheme == .light),
-                                        corner: chrome.corner, material: glass))
-        .modifier(AskVoiceBorder(voice: voice, context: contextID, radius: chrome.corner,
-                                 idle: chrome.idleBorder(on: glass, increasedContrast: contrast == .increased),
-                                 sheen: !launcher))
+        cardSurface
         .overlay {
-            if editingQueued || dropTargeted {
-                RoundedRectangle(cornerRadius: chrome.corner, style: .continuous)
+            if (editingQueued || dropTargeted) && (!launcher || interfaceStyle == .classic) {
+                RoundedRectangle(cornerRadius: launcher
+                    ? TypefluxRadius.spotlightResults.value(for: interfaceStyle) : chrome.corner, style: .continuous)
                     .strokeBorder(TypefluxColor.accent.color, lineWidth: dropTargeted ? 2 : 1.5)
                     .allowsHitTesting(false)
-            } else if privateTint {
+            } else if privateTint && (!launcher || interfaceStyle == .classic) {
                 // Signed in, a conversation kept on this Mac keeps a quiet private edge.
-                RoundedRectangle(cornerRadius: chrome.corner, style: .continuous)
+                RoundedRectangle(cornerRadius: launcher
+                    ? TypefluxRadius.spotlightResults.value(for: interfaceStyle) : chrome.corner, style: .continuous)
                     .strokeBorder(Color(nsColor: .systemPurple).opacity(0.45), lineWidth: 1)
                     .allowsHitTesting(false)
             }
@@ -1190,6 +1143,87 @@ struct AskComposer: View {
                 transaction.disablesAnimations = true
             }
         }
+    }
+
+    @ViewBuilder
+    private var cardSurface: some View {
+        if launcher {
+            if interfaceStyle == .classic {
+                TypefluxGlassContainer(radius: .spotlightResults) {
+                    VStack(spacing: 0) { launcherHeader; launcherResultSurface }
+                }
+                .clipShape(RoundedRectangle(cornerRadius: TypefluxRadius.spotlightResults.value(for: interfaceStyle)))
+            } else {
+                TypefluxGlassGroup(spacing: TypefluxSpacing.regular.value(for: interfaceStyle)) {
+                    VStack(spacing: TypefluxSpacing.regular.value(for: interfaceStyle)) {
+                        launcherHeader
+                        if !launcherCollapsed {
+                            TypefluxGlassContainer(radius: .spotlightResults) { launcherResultSurface }
+                                .clipShape(RoundedRectangle(
+                                    cornerRadius: TypefluxRadius.spotlightResults.value(for: interfaceStyle)))
+                        }
+                    }
+                }
+            }
+        } else {
+            VStack(spacing: 0) {
+                if hasSupplementalContent {
+                    ScrollView(.vertical) {
+                        supplementalContent
+                            .background(GeometryReader { geometry in
+                                Color.clear.preference(key: AskComposerSupplementalHeight.self,
+                                                       value: geometry.size.height)
+                            })
+                    }
+                    .frame(height: min(max(1, supplementalHeight), layout.supplementalMaximumHeight))
+                }
+                editorRow
+                TypefluxGlassContainer(radius: .form, placement: .inWindow) { footer }
+            }
+            .background {
+                if let glass { chrome.glassBackground(glass) } else { chrome.fill }
+            }
+            .clipShape(RoundedRectangle(cornerRadius: chrome.corner, style: .continuous))
+            .modifier(AskWorkspaceCardDepth(enabled: interfaceStyle.usesGlass || colorScheme == .light,
+                                            corner: chrome.corner, material: glass))
+            .modifier(AskVoiceBorder(voice: voice, context: contextID, radius: chrome.corner,
+                                     idle: chrome.idleBorder(on: glass, increasedContrast: contrast == .increased),
+                                     sheen: true))
+        }
+    }
+
+    @ViewBuilder
+    private var launcherResultSurface: some View {
+        if !launcherCollapsed {
+            VStack(spacing: 0) {
+                supplementalContent
+                    .background(GeometryReader { geometry in
+                        Color.clear.preference(key: AskComposerSupplementalHeight.self, value: geometry.size.height)
+                    })
+                ZStack(alignment: .top) {
+                    // Hold the viewport while the native panel finishes shrinking.
+                    Color.clear
+                    launcherResults
+                }
+                .frame(height: launcherResultsViewportHeight, alignment: .top)
+                .clipped()
+                launcherBar
+            }
+            .overlay {
+                if interfaceStyle.usesGlass, dropTargeted || privateTint {
+                    RoundedRectangle(cornerRadius: TypefluxRadius.spotlightResults.value(for: interfaceStyle))
+                        .strokeBorder(dropTargeted ? TypefluxColor.accent.color : Color(nsColor: .systemPurple),
+                                      lineWidth: dropTargeted ? 2 : 1)
+                        .allowsHitTesting(false)
+                }
+            }
+            .accessibilityElement(children: .contain)
+        }
+    }
+
+    private var spotlightChromeAdjustment: CGFloat {
+        AskLauncherSpotlightLayout.chromeAdjustment(editor: editorHeight, style: interfaceStyle,
+                                                   collapsed: launcherCollapsed)
     }
 
     /// Follow the actual panel height so the footer never jumps to a target
@@ -1697,66 +1731,93 @@ struct AskComposer: View {
     /// the editor (the words being recognised), then the microphone
     /// and chat/AI button, or the elapsed time, cancel and stop while recording.
     private var launcherHeader: some View {
-        HStack(alignment: .top, spacing: 10) {
-            if active {
-                AskVoiceOrb(live: voice.live, listening: listening)
-                    .padding(.vertical, 2)
+        TypefluxSpotlightHeader {
+            HStack(spacing: 8) {
+                if active {
+                    AskVoiceOrb(live: voice.live, listening: listening)
+                } else if let keyword = plugins.keyword, let plugin = plugins.plugin {
+                    ViewThatFits(in: .horizontal) {
+                        AskKeywordChip(title: plugin.title, symbol: plugin.symbol,
+                                       detail: plugin.chipDetail(for: keyword, language: AppLocalization.shared.language),
+                                       tint: plugin.keywordColor)
+                        Image(systemName: plugin.symbol).font(.body)
+                            .foregroundStyle(plugin.keywordColor)
+                            .accessibilityLabel(plugin.title)
+                            .accessibilityIdentifier("ask.plugin.keyword")
+                    }
+                    .frame(maxWidth: 140)
+                    .help(plugin.title)
+                } else {
+                    Image(systemName: model.launcherHistoryMode ? "clock.arrow.circlepath" : "magnifyingglass")
+                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
+                        .accessibilityHidden(true)
+                }
+                editorField
+                    .frame(minWidth: 80)
+                    .opacity(active ? 0 : 1)
+                    .overlay(alignment: .leading) {
+                        if active {
+                            AskVoiceLiveText(live: voice.live, listening: listening,
+                                             existing: draft.wrappedValue.text, fontSize: chrome.editorFontSize)
+                        }
+                    }
+                if active { AskVoiceElapsed(live: voice.live) }
             }
-            if !active, let keyword = plugins.keyword, let plugin = plugins.plugin {
-                AskKeywordChip(title: plugin.title, symbol: plugin.symbol,
-                               detail: plugin.chipDetail(for: keyword, language: AppLocalization.shared.language),
-                               tint: plugin.keywordColor)
-                    .padding(.vertical, 2)
+            .padding(.horizontal, TypefluxSpacing.large.value(for: interfaceStyle))
+            .padding(.vertical, TypefluxSpacing.small.value(for: interfaceStyle))
+            .frame(minHeight: TypefluxControlHeight.spotlightInput.value(for: interfaceStyle))
+            .overlay {
+                if interfaceStyle.usesGlass, dropTargeted || privateTint {
+                    RoundedRectangle(cornerRadius: TypefluxRadius.spotlightInput.value(for: interfaceStyle),
+                                     style: .circular)
+                        .strokeBorder(dropTargeted ? TypefluxColor.accent.color : Color(nsColor: .systemPurple),
+                                      lineWidth: dropTargeted ? 2 : 1)
+                        .allowsHitTesting(false)
+                }
             }
-            if !active, model.launcherHistoryMode {
-                Text(L("ask.inputHistory.chip")).font(.subheadline).fontWeight(.semibold)
-                    .foregroundStyle(TypefluxColor.accent.color).padding(.horizontal, 7).padding(.vertical, 6)
-                    .background(LegacyAskPalette.launcherSelection, in: RoundedRectangle(cornerRadius: 6))
-                    .padding(.top, 3)
-            }
-            editorField
-                // The text sits 2pt high in its view; this centres it on the 34pt buttons.
-                .offset(y: 2)
-                .opacity(active ? 0 : 1)
-                .overlay(alignment: .topLeading) {
-                    if active {
-                        AskVoiceLiveText(live: voice.live, listening: listening, existing: draft.wrappedValue.text,
-                                         fontSize: chrome.editorFontSize)
-                            .frame(height: AskMetrics.composerControlHeight)
+        } modes: {
+            HStack(spacing: TypefluxSpacing.small.value(for: interfaceStyle)) {
+                if active {
+                    TypefluxSpotlightModeSurface {
+                        Button { voice.cancel() } label: {
+                            Image(systemName: "xmark").font(.callout.weight(.semibold))
+                                .frame(width: launcherModeDiameter, height: launcherModeDiameter)
+                                .contentShape(Circle())
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
+                        .help(L("ask.voice.cancel"))
+                        .accessibilityLabel(L("ask.voice.cancel"))
+                        .accessibilityIdentifier("ask.voice.cancel")
                     }
                 }
-            if active {
-                AskVoiceElapsed(live: voice.live)
-                    .frame(height: AskMetrics.composerControlHeight)
-                Button { voice.cancel() } label: {
-                    Image(systemName: "xmark").font(.callout).fontWeight(.semibold)
-                        .frame(width: AskMetrics.composerControlHeight, height: AskMetrics.composerControlHeight)
-                        .contentShape(Circle())
+                TypefluxSpotlightModeSurface {
+                    AskVoiceButton(voice: voice, contextID: contextID, enabled: true,
+                                   shortcut: voiceShortcut, diameter: launcherModeDiameter)
+                        .frame(width: launcherModeDiameter, height: launcherModeDiameter)
+                        .accessibilityLabel(AskVoiceButton.title(
+                            phase: voice.phase, contextMatches: voice.context == contextID
+                        ))
+                        .accessibilityIdentifier("ask.composer.voice")
                 }
-                .buttonStyle(.plain)
-                .foregroundStyle(TypefluxColor.secondaryLabel.color)
-                .help(L("ask.voice.cancel"))
-                .accessibilityLabel(L("ask.voice.cancel"))
-                .accessibilityIdentifier("ask.voice.cancel")
-            }
-            AskVoiceButton(voice: voice, contextID: contextID, enabled: true, shortcut: voiceShortcut)
-                .frame(width: AskMetrics.composerControlHeight, height: AskMetrics.composerControlHeight)
-                .accessibilityLabel(AskVoiceButton.title(
-                    phase: voice.phase,
-                    contextMatches: voice.context == contextID
-                ))
-                .accessibilityIdentifier("ask.composer.voice")
-            if !active {
-                AskLauncherOpenChatButton(mode: launcherChatAction, enabled: launcherChatActionEnabled,
-                                          tint: privateTint ? Color(nsColor: .systemPurple) : TypefluxColor.accent
-                                              .color,
-                                          action: runLauncherChatAction)
+                if !active {
+                    TypefluxSpotlightModeSurface(selected: launcherChatAction == .askAI) {
+                        AskLauncherOpenChatButton(mode: launcherChatAction, enabled: launcherChatActionEnabled,
+                                                  tint: interfaceStyle.usesGlass
+                                                      ? TypefluxSpotlightRow.labelColor(selected: true)
+                                                      : TypefluxColor.accent.color,
+                                                  action: runLauncherChatAction, diameter: launcherModeDiameter)
+                    }
+                }
             }
         }
-        .padding(.horizontal, chrome.horizontalInset)
-        .padding(.top, layout.editorTopInset)
-        .padding(.bottom, layout.editorBottomInset)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.trailing, interfaceStyle == .classic ? TypefluxSpacing.small.value(for: interfaceStyle) : 0)
+        .accessibilityElement(children: .contain)
+    }
+
+    private var launcherModeDiameter: CGFloat {
+        interfaceStyle.usesGlass ? TypefluxControlHeight.spotlightModeButton.value(for: interfaceStyle)
+            : AskMetrics.composerControlHeight
     }
 
     /// Under the results: the model and switches, then what the keys do now.
@@ -2199,7 +2260,7 @@ struct AskComposer: View {
         let keyword = !recording ? pluginHeight : 0
         if launcher {
             return AskMetrics.launcherHeight(editor: editorHeight, banners: 0)
-                + supplementalHeight + commands + quick + panel + keyword
+                + supplementalHeight + commands + quick + panel + keyword + spotlightChromeAdjustment
                 + (!recording && showsLauncherSuggestions ? homeHeight : 0)
         }
         return AskMetrics.launcherHeight(editor: editorHeight, banners: banners,

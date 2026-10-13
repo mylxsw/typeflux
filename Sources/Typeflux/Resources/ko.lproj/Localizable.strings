@@ -3640,6 +3640,8 @@
 "ask.home.section.page" = "현재 웹페이지";
 "ask.home.section.recent" = "대화 이어가기";
 "ask.home.section.keywords" = "자주 사용";
+"ask.home.more" = "더 보기";
+"ask.home.more.help" = "더 많은 키워드";
 "ask.home.section.tryKeywords" = "키워드를 입력한 뒤 스페이스";
 "ask.home.text.translate" = "번역";
 "ask.home.text.translate.detail" = "서식 유지";

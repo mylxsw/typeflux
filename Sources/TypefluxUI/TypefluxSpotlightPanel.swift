@@ -45,6 +45,7 @@ public struct TypefluxSpotlightPanel: View {
                 handle(key)
                 return true
             }.frame(width: 0, height: 0))
+            .accessibilityElement(children: .contain)
             .accessibilityIdentifier("typeflux.spotlight")
     }
 

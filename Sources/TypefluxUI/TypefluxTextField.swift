@@ -16,8 +16,9 @@ public struct TypefluxTextField: View {
 
     public var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            TextField(title, text: $text, prompt: prompt.map { Text($0) })
+            TextField("", text: $text, prompt: Text(prompt ?? title))
                 .textFieldStyle(.roundedBorder)
+                .multilineTextAlignment(.leading)
                 .overlay {
                     if let error, !error.isEmpty {
                         RoundedRectangle(cornerRadius: TypefluxRadius.textField.value(for: style))

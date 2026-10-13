@@ -3,12 +3,16 @@ import SwiftUI
 
 /// Spotlight chrome around the clipboard list, preview and existing panel actions.
 struct ClipboardPanelView: View {
-    /// Width of the list; the preview pane adds `ClipboardPreviewPane.width` to its right.
-    static let width: CGFloat = 512
+    /// Default Liquid Glass width. Style-aware hosts use `width(for:)`; the preview adds 280pt.
+    static var width: CGFloat { width(for: .liquidGlass) }
     static let height: CGFloat = 560
 
-    static func size(showsPreview: Bool) -> NSSize {
-        NSSize(width: width + (showsPreview ? ClipboardPreviewPane.width : 0), height: height)
+    static func width(for style: InterfaceStyle) -> CGFloat {
+        TypefluxControlWidth.spotlightPanel.value(for: style)
+    }
+
+    static func size(showsPreview: Bool, style: InterfaceStyle = .liquidGlass) -> NSSize {
+        NSSize(width: width(for: style) + (showsPreview ? ClipboardPreviewPane.width : 0), height: height)
     }
 
     private static let listSpace = "ClipboardPanelView.list"
@@ -29,14 +33,16 @@ struct ClipboardPanelView: View {
         TypefluxSpotlightSurface(query: $model.query, mode: mode, focused: $searchFocused,
                                  prompt: L(model.category == .snippet
                                      ? "clipboard.snippet.search" : "clipboard.search.placeholder"),
-                                 modes: ClipboardCategory.allCases.map { $0.spotlightMode }, onEscape: model.cancel) {
+                                 modes: ClipboardCategory.allCases.map { $0.spotlightMode },
+                                 inputSystemImage: "clipboard", onEscape: model.cancel) {
             HStack(spacing: 0) {
-                list.frame(width: Self.width)
+                list.frame(width: Self.width(for: effectiveStyle) - panelInset * 2)
                 if model.showsPreview || previewWidth > 0 { preview }
             }
         } hints: {
             footer
         }
+        .padding(panelInset)
         .frame(width: viewportWidth, height: Self.height)
         .allowsHitTesting(!isModal)
         .accessibilityHidden(isModal)
@@ -50,8 +56,8 @@ struct ClipboardPanelView: View {
                 )
             }
         }
-        .environment(\.askLauncherNumberHints, showingNumberHints)
         .environment(\.interfaceStyle, effectiveStyle)
+        .environment(\.askLauncherNumberHints, showingNumberHints)
         .background(AskLauncherCommandMonitor { showingNumberHints = $0 })
         .onAppear { searchFocused = !isModal }
         .onChange(of: focusRequest) { _ in searchFocused = !isModal }
@@ -62,16 +68,19 @@ struct ClipboardPanelView: View {
         model.snippetDraft != nil || model.editingText != nil || model.pendingConfirmation != nil
     }
 
+    private var panelInset: CGFloat { TypefluxSpacing.small.value(for: effectiveStyle) }
+
     private var viewportWidth: CGFloat {
-        layout.width ?? Self.size(showsPreview: model.showsPreview).width
+        layout.width ?? Self.size(showsPreview: model.showsPreview, style: effectiveStyle).width
     }
 
-    private var previewWidth: CGFloat { max(0, viewportWidth - Self.width) }
+    private var previewWidth: CGFloat { max(0, viewportWidth - Self.width(for: effectiveStyle)) }
 
     /// Keep the content mounted during collapse and reveal it from the list's right edge.
     private var preview: some View {
         let entry = model.previewEntry ?? model.selectedEntry
         return ClipboardPreviewPane(entry: entry, isMissing: entry.map(model.isMarkedMissing) ?? false)
+            .background(TypefluxColor.contentBackground.color)
             .overlay(alignment: .leading) {
                 Rectangle().fill(Color.primary.opacity(0.12)).frame(width: 0.5)
             }
@@ -140,7 +149,7 @@ struct ClipboardPanelView: View {
             isSelected: index == model.selectedIndex,
             isHovered: hoveredIndex == index,
             isMissing: model.isMarkedMissing(row.entry),
-            number: showingNumberHints ? model.shortcutNumber(at: index) : nil,
+            number: model.shortcutNumber(at: index),
             onClick: { model.click(index: index, clickCount: $0) },
             onPerform: { model.perform($0, at: index) },
             onHover: { hovering in
@@ -198,52 +207,28 @@ extension ClipboardPanelView {
                     if model.isRecordingPaused { ClipboardPausedChip { model.send(.togglePause) } }
                 }
             }
-            HStack(spacing: 2) {
-                Text(L("clipboard.footer.count", model.visibleEntries.count))
-                    .font(.footnote).foregroundStyle(TypefluxColor.secondaryLabel.color)
-                Spacer(minLength: 0)
-                if let entry = model.selectedEntry {
-                    if !entry.kind.isTextual { footerButton(.quickLook, entry: entry) }
-                    if entry.snippet == nil { footerButton(.togglePin, entry: entry) }
-                    footerButton(.paste, entry: entry, primary: true)
-                }
-                ClipboardPanelToolbar(model: model)
-            }
             HStack(spacing: 12) {
                 keyboardHint("↑↓", title: L("clipboard.hint.navigate"))
-                keyboardHint("⌘↵", title: L("clipboard.hint.plainPaste"))
-                keyboardHint("⌘1–9", title: L("clipboard.hint.quickPaste"))
+                if let entry = model.selectedEntry, model.isEnabled(.paste, for: entry) {
+                    keyboardHint("↵", title: L("clipboard.action.paste"))
+                    if model.actions(for: entry).contains(.pastePlainText) {
+                        keyboardHint("⌘↵", title: entry.kind.isTextual
+                            ? L("clipboard.hint.plainPaste") : ClipboardEntryAction.pastePlainText.title(for: entry))
+                    }
+                }
                 Spacer(minLength: 0)
-                keyboardHint("Esc", title: L("clipboard.hint.close"))
+                ClipboardPanelToolbar(model: model)
+                keyboardHint("esc", title: L("clipboard.hint.close"))
             }
             .font(.footnote).foregroundStyle(TypefluxColor.secondaryLabel.color)
         }
-        .padding(.horizontal, 12).padding(.vertical, 10)
+        .padding(.horizontal, 12).padding(.vertical, 6)
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("clipboard.hints")
     }
 
     private func keyboardHint(_ key: String, title: String) -> some View {
         Text(key + " " + title).lineLimit(1)
-    }
-
-    private func footerButton(_ action: ClipboardEntryAction, entry: ClipboardEntry, primary: Bool = false) -> some View {
-        Button {
-            model.perform(action)
-        } label: {
-            HStack(spacing: 6) {
-                Text(action.title(for: entry))
-                if let shortcut = action.shortcutLabel {
-                    ClipboardKeycap(text: shortcut)
-                }
-            }
-            .font(.callout)
-            .foregroundStyle(primary ? TypefluxColor.label.color : TypefluxColor.secondaryLabel.color)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 5)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .disabled(!model.isEnabled(action, for: entry))
     }
 
     @ViewBuilder
@@ -252,7 +237,7 @@ extension ClipboardPanelView {
             TypefluxGlassContainer(radius: .popover) {
                 Text(notice).font(.callout).padding(.horizontal, 12).padding(.vertical, 7)
             }
-            .padding(.bottom, 76)
+            .padding(.bottom, 40)
             .transition(.opacity.combined(with: .move(edge: .bottom)))
         }
     }

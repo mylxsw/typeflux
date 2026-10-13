@@ -29,8 +29,10 @@ struct TypefluxToolbarActionControl: View {
                     .accessibilityIdentifier(item.accessibilityIdentifier)
                     .keyboardShortcut(item.keyboardShortcut)
             }
-        } label: { label }
-            .menuIndicator(.hidden)
+        } label: {
+            label
+        }
+        .menuIndicator(.hidden)
     }
 
     private var label: some View {

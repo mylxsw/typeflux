@@ -202,7 +202,6 @@ struct AskSearchPaletteView: View {
             .modifier(TypefluxSpotlightRow(selected: highlighted))
         }
         .buttonStyle(.plain)
-        .onHover { if $0 { model.highlight(index) } }
         .id(row.id)
         .accessibilityIdentifier("ask.workspace.search.result." + row.id)
         .accessibilityAddTraits(highlighted ? .isSelected : [])

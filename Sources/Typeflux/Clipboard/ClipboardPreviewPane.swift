@@ -8,6 +8,7 @@ struct ClipboardPreviewPane: View {
     let entry: ClipboardEntry?
     let isMissing: Bool
     @State private var info: ClipboardMediaInfo?
+    @Environment(\.interfaceStyle) private var style
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -34,19 +35,20 @@ struct ClipboardPreviewPane: View {
         if isMissing {
             VStack(alignment: .leading, spacing: 8) {
                 Text(entry.title)
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.body.weight(.medium))
                     .lineLimit(2)
                 ClipboardEntryPreview(entry: entry, isMissing: true)
             }
         } else if entry.kind.isTextual {
             ScrollView {
                 Text(Self.previewText(entry.text ?? entry.title))
-                    .font(entry.kind == .code ? .system(size: 12, design: .monospaced) : .system(size: 13))
+                    .font(entry.kind == .code ? .body.monospaced() : .body)
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .topLeading)
                     .padding(10)
             }
-            .background(Color.primary.opacity(0.05), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .background(TypefluxColor.controlBackground.color, in: RoundedRectangle(
+                cornerRadius: TypefluxRadius.menuRow.value(for: style), style: .continuous))
         } else if entry.hasInlineMedia {
             ClipboardInlineMedia(entry: entry, info: info, isExpanded: true, isMissing: false)
         } else if entry.kind == .pdf {
@@ -56,9 +58,10 @@ struct ClipboardPreviewPane: View {
                 )
                 .frame(maxWidth: .infinity)
                 .frame(height: 300)
-                .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                .clipShape(RoundedRectangle(
+                    cornerRadius: TypefluxRadius.navigationIcon.value(for: style), style: .continuous))
                 Text(entry.title)
-                    .font(.system(size: 12.5, weight: .medium))
+                    .font(.callout.weight(.medium))
                     .lineLimit(2)
             }
         } else {
@@ -73,7 +76,7 @@ struct ClipboardPreviewPane: View {
         Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 10, verticalSpacing: 4) {
             ForEach(Self.detailRows(for: entry, info: info), id: \.label) { row in
                 GridRow {
-                    Text(row.label).foregroundStyle(TypefluxColor.secondaryLabel.color.opacity(0.75))
+                    Text(row.label).foregroundStyle(TypefluxColor.secondaryLabel.color)
                     Text(row.value)
                         .foregroundStyle(TypefluxColor.secondaryLabel.color)
                         .lineLimit(row.label == L("clipboard.preview.location") ? 3 : 1)
@@ -82,7 +85,7 @@ struct ClipboardPreviewPane: View {
                 }
             }
         }
-        .font(.system(size: 11.5))
+        .font(.subheadline)
     }
 
     struct DetailRow: Equatable {

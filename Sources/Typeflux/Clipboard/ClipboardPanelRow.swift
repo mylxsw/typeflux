@@ -1,9 +1,7 @@
 import SwiftUI
 
-/// One clipboard panel row: the source app's icon, then the content. Media rows show the content
-/// itself (thumbnails, a video frame, a waveform). Rows keep their height when selected; the
-/// preview pane shows the full text or a large preview instead, so moving the selection never
-/// re-lays out the list.
+/// Compact results use a kind icon, one content line, source/time and an always-visible quick-paste key.
+/// Full text, thumbnails and media controls live in the preview pane; selection never resizes a row.
 ///
 /// The row takes plain values rather than the panel model and compares them in `==`, so a
 /// selection change redraws only the two rows whose highlight changed.
@@ -13,13 +11,13 @@ struct ClipboardPanelRow: View, Equatable {
     let isSelected: Bool
     let isHovered: Bool
     let isMissing: Bool
-    /// The `⌘` number badge while the hints are showing.
+    /// The `⌘` number of this visible row, independent of modifier-key state.
     var number: Int?
     var onClick: (Int) -> Void = { _ in }
     var onPerform: (ClipboardEntryAction) -> Void = { _ in }
     var onHover: (Bool) -> Void = { _ in }
-    @State private var info: ClipboardMediaInfo?
     @Environment(\.interfaceStyle) private var style
+    @Environment(\.askLauncherNumberHints) private var showingNumberHints
 
     static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.entry == rhs.entry && lhs.index == rhs.index && lhs.isSelected == rhs.isSelected
@@ -27,21 +25,33 @@ struct ClipboardPanelRow: View, Equatable {
     }
 
     var body: some View {
-        HStack(alignment: .center, spacing: 11) {
-            ClipboardEntryLeadingIcon(entry: entry)
+        HStack(alignment: .center, spacing: 10) {
+            ClipboardEntryTile(entry: entry, size: style == .classic ? 22 : 28, selected: isSelected)
                 .opacity(isMissing ? 0.55 : 1)
-            VStack(alignment: .leading, spacing: 2) {
-                content
+            title.frame(maxWidth: .infinity, alignment: .leading)
+            if isMissing {
+                Image(systemName: "exclamationmark.triangle")
+                    .foregroundStyle(isSelected ? rowText : TypefluxColor.warning.color)
+                    .help(L("clipboard.entry.missing"))
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
+            Text(ClipboardEntryFormatter.rowMetadata(for: entry))
+                .font(.subheadline)
+                .foregroundStyle(TypefluxSpotlightRow.labelColor(selected: isSelected, secondary: true))
+                .lineLimit(1).truncationMode(.middle)
+                .frame(maxWidth: 140, alignment: .trailing)
             if entry.isPinned {
-                Image(systemName: "pin.fill")
-                    .font(.footnote)
-                    .foregroundStyle(Color.yellow)
+                Image(systemName: "pin.fill").font(.footnote)
+                    .foregroundStyle(isSelected ? rowText : TypefluxColor.secondaryLabel.color)
             }
+            Text(number.map { "⌘\($0)" } ?? "")
+                .font(.footnote.weight(showingNumberHints ? .semibold : .regular).monospacedDigit())
+                .foregroundStyle(isSelected ? rowText : showingNumberHints
+                    ? TypefluxColor.accent.color : TypefluxColor.secondaryLabel.color)
+                .frame(width: 24, alignment: .trailing)
+                .accessibilityHidden(number == nil)
         }
         .padding(.horizontal, 10)
-        .padding(.vertical, 8)
+        .frame(height: style == .classic ? 34 : 44)
         .background(
             RoundedRectangle(cornerRadius: TypefluxRadius.sidebarRow.value(for: style), style: .continuous)
                 .fill(isSelected ? TypefluxColor.selection.color
@@ -63,34 +73,11 @@ struct ClipboardPanelRow: View, Equatable {
         .accessibilityAction { onClick(1) }
         .onHover(perform: onHover)
         .contextMenu { contextMenu }
-        .modifier(AskLauncherNumberBadge(number: number))
-        .task(id: entry.id) { await loadInfo() }
+        .help(ClipboardEntryFormatter.details(for: entry).joined(separator: " · "))
     }
 
     private var rowText: Color {
         isSelected ? Color(nsColor: .alternateSelectedControlTextColor) : TypefluxColor.label.color
-    }
-
-    @ViewBuilder
-    private var content: some View {
-        if entry.hasInlineMedia {
-            ClipboardInlineMedia(entry: entry, info: info, isExpanded: false, isMissing: isMissing)
-                .opacity(isMissing ? 0.55 : 1)
-                .padding(.top, 1)
-                .padding(.bottom, 3)
-            subtitle(caption: entry.mediaCaption)
-        } else if entry.kind == .pdf {
-            HStack(alignment: .center, spacing: 10) {
-                ClipboardPDFThumbnail(url: isMissing ? nil : entry.fileURLs.first, isExpanded: false)
-                VStack(alignment: .leading, spacing: 2) {
-                    title
-                    subtitle()
-                }
-            }
-        } else {
-            title
-            subtitle()
-        }
     }
 
     private var title: some View {
@@ -102,33 +89,6 @@ struct ClipboardPanelRow: View, Equatable {
             .opacity(isMissing ? 0.55 : 1)
     }
 
-    /// Kind, size, source and time; media rows lead with the file name, which truncates first.
-    private func subtitle(caption: String? = nil) -> some View {
-        HStack(spacing: 6) {
-            if let caption {
-                Text(caption)
-                    .font(.callout)
-                    .foregroundStyle(rowText)
-                    .truncationMode(.middle)
-                Circle().frame(width: 2, height: 2)
-            }
-            let details = ClipboardEntryFormatter.details(for: entry, info: info)
-            ForEach(Array(details.enumerated()), id: \.offset) { offset, part in
-                if offset > 0 {
-                    Circle().frame(width: 2, height: 2)
-                }
-                Text(part).layoutPriority(1)
-            }
-            if isMissing {
-                Circle().frame(width: 2, height: 2)
-                Text(L("clipboard.entry.missing")).foregroundStyle(Color.orange)
-            }
-        }
-        .font(.subheadline)
-        .foregroundStyle(isSelected ? rowText : TypefluxColor.secondaryLabel.color)
-        .lineLimit(1)
-    }
-
     /// Separators before previews, the app filter and pinning: paste and copy come first,
     /// destructive actions last.
     static func startsMenuGroup(_ action: ClipboardEntryAction, after previous: ClipboardEntryAction) -> Bool {
@@ -137,10 +97,6 @@ struct ClipboardPanelRow: View, Equatable {
         case .quickLook, .showOnlyApp: previous == .copy
         default: false
         }
-    }
-
-    private func loadInfo() async {
-        info = await ClipboardMediaInfoProvider.shared.loadInfo(for: entry)
     }
 
     @ViewBuilder
@@ -185,9 +141,19 @@ struct ClipboardEntryLeadingIcon: View {
 /// get a plain symbol rather than a second thumbnail.
 struct ClipboardEntryTile: View {
     let entry: ClipboardEntry
-    private let size: CGFloat = 32
+    var size: CGFloat = 32
+    var selected = false
+    @Environment(\.interfaceStyle) private var style
 
     var body: some View {
+        if entry.snippet != nil {
+            symbol("scissors")
+        } else {
+            kindIcon
+        }
+    }
+
+    @ViewBuilder private var kindIcon: some View {
         switch entry.kind {
         case .voice:
             // Same neutral tile as the other text kinds; the waveform alone marks a voice result.
@@ -216,10 +182,11 @@ struct ClipboardEntryTile: View {
 
     private func symbol(_ name: String) -> some View {
         Image(systemName: name)
-            .font(.system(size: 13, weight: .medium))
-            .foregroundStyle(.secondary)
+            .font(.body.weight(.medium))
+            .foregroundStyle(TypefluxSpotlightRow.labelColor(selected: selected, secondary: true))
             .frame(width: size, height: size)
-            .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .background(TypefluxColor.label.color.opacity(0.06), in: RoundedRectangle(
+                cornerRadius: TypefluxRadius.navigationIcon.value(for: style), style: .continuous))
     }
 
     private func stack(_ views: [AnyView]) -> some View {

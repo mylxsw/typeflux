@@ -232,7 +232,7 @@ final class ClipboardSnippetTests: XCTestCase {
                 .environment(\.askGlassMaterialOverride, .opaque)
                 .environment(\.colorScheme, .dark))
             host.appearance = NSAppearance(named: .darkAqua)
-            host.frame = NSRect(x: 0, y: 0, width: 512, height: 560)
+            host.frame = NSRect(origin: .zero, size: ClipboardPanelView.size(showsPreview: false))
             host.layoutSubtreeIfNeeded()
             let rep = try XCTUnwrap(host.bitmapImageRepForCachingDisplay(in: host.bounds))
             host.cacheDisplay(in: host.bounds, to: rep)

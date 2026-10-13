@@ -81,7 +81,6 @@ struct AskKeywordChip: View {
 
 /// The results area in keyword mode: a plugin row, flat list or result card.
 struct AskPluginResultsView: View {
-    @State private var pointer = AskSearchPointer(position: NSEvent.mouseLocation)
     @Environment(\.interfaceStyle) private var style
     var display: AskPluginDisplay
     var question: String
@@ -288,9 +287,6 @@ struct AskPluginResultsView: View {
             VStack(spacing: Self.rowSpacing) {
                 section(Self.sectionTitle(for: display))
                 main
-                    .onContinuousHover { phase in
-                        if case .active = phase, pointer.moved(to: NSEvent.mouseLocation) { onHighlight(0) }
-                    }
             }
             .padding(Self.listPadding)
             Spacer(minLength: 0)

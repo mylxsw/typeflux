@@ -413,11 +413,10 @@ struct AskConversationView: View {
     private var accountFooter: some View {
         SidebarAccountFooter(auth: auth, compact: layout.isShort,
                              defaults: model.modelLibrary.settings.defaults,
-                             showsPromotion: false,
                              onSignIn: { LoginWindowController.shared.show() },
                              onOpenAccount: { model.onOpenSettings?(.account) },
                              onOpenSettings: { model.onOpenSettings?(.settings) }) {
-            AskLocalModeIdentity(model: model)
+            AskLocalModeIdentity(model: model, compact: false)
         }
     }
 
