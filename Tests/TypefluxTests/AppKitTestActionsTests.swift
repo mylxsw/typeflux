@@ -71,7 +71,7 @@ struct AppKitTestActionsTests {
         matrix.action = #selector(Recorder.record)
         let cell = try #require(matrix.cell(atRow: 1, column: 0))
         try AppKitTestActions.selectCell(cell, in: matrix)
-        #expect(matrix.selectedCell === cell)
+        #expect(matrix.selectedCell() === cell)
         #expect(recorder.senders.count == 1)
         #expect(recorder.senders.first === matrix)
     }
