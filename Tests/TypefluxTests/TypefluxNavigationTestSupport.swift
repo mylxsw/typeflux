@@ -115,8 +115,7 @@ enum TypefluxNavigationTestSupport {
                                                   characters: text, charactersIgnoringModifiers: text,
                                                   isARepeat: false, keyCode: code))
         if keyEquivalent {
-            // Native performKeyEquivalent can call performClick and enter AppKit's nested event loop.
-            // Check the owned button's shortcut wiring, then dispatch its target/action directly.
+            // Prefer native shortcut wiring; SwiftUI shortcuts can exist without an NSButtonCell equivalent.
             let flags = modifiers.intersection([.command, .option, .control, .shift])
             let controls = window.contentView.map(SettingsBehaviorTestSupport.nativeViews) ?? []
             let matching = controls.compactMap { $0 as? NSControl }.first {
@@ -125,8 +124,14 @@ enum TypefluxNavigationTestSupport {
                 return cell.keyEquivalent == text
                     && cell.keyEquivalentModifierMask.intersection([.command, .option, .control, .shift]) == flags
             }
-            let control = try #require(matching, "Missing owned native shortcut: key \(code), modifiers \(flags)")
-            try SettingsBehaviorTestSupport.Element(object: control, window: window).press()
+            if let control = matching {
+                try SettingsBehaviorTestSupport.Element(object: control, window: window).press()
+            } else {
+                // Route through this window's SwiftUI hosting tree, then consume delayed runloop stops
+                // just as pressThroughAccessibility does. Callers assert the actual command's effect.
+                defer { SettingsBehaviorTestSupport.drainPendingRunLoopStops() }
+                _ = window.performKeyEquivalent(with: event)
+            }
             return
         }
         // Swift Testing does not run NSApp.run. Dispatch the same owned handlers that the local

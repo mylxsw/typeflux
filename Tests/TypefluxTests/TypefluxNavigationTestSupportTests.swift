@@ -9,6 +9,30 @@ import Testing
 struct TypefluxNavigationTestSupportTests {
     private struct FixtureFailure: Error {}
 
+    @Test func `SwiftUI sheet cancellation shortcuts stay in the supplied window`() async throws {
+        var cancellations = [0, 0]
+        var confirmations = 0
+        let views = (0 ..< 2).map { index in
+            AnyView(TypefluxSheet(title: "Sheet fixture", cancelTitle: "Cancel", confirmTitle: "Confirm",
+                                  cancel: { cancellations[index] += 1 }, confirm: { confirmations += 1 }) {
+                Text("Content")
+            })
+        }
+        try await TypefluxNavigationTestSupport.withWindows(views) { windows in
+            for (index, hosted) in windows.enumerated() {
+                try await SettingsBehaviorTestSupport.wait("Rendered sheet cancel action in window \(index)") {
+                    SettingsBehaviorTestSupport.contains("Cancel", in: hosted.host)
+                }
+                try TypefluxNavigationTestSupport.sendKey(53, to: hosted.window, keyEquivalent: true)
+                let expected = index == 0 ? [1, 0] : [1, 1]
+                try await SettingsBehaviorTestSupport.wait("Owned SwiftUI cancellation shortcut in window \(index)") {
+                    cancellations == expected
+                }
+                #expect(confirmations == 0)
+            }
+        }
+    }
+
     @Test func `search commands use the supplied window without global key dispatch`() async throws {
         let states = [TypefluxSearchState(), TypefluxSearchState()]
         let views = states.map { state in

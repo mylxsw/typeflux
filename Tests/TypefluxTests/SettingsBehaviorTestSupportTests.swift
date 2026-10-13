@@ -97,36 +97,41 @@ struct SettingsBehaviorTestSupportTests {
         #expect(target.states == [.on, .on])
     }
 
-    @Test func `SwiftUI button proxies dispatch without cell clicks or nested event polling`() async throws {
-        var actions = 0
-        let view = Button { actions += 1 } label: {
-            HStack { Text("Proxy action"); Image(systemName: "chevron.right") }
-        }.buttonStyle(.borderless).accessibilityLabel("Proxy action")
-        try await TypefluxNavigationTestSupport.withWindow(view) { window, host in
-            try await SettingsBehaviorTestSupport.wait("Rendered SwiftUI button") {
-                SettingsBehaviorTestSupport.contains("Proxy action", in: host)
+    @Test func `wired native button dispatches without clicks or event polling`() async throws {
+        let target = Target()
+        let button = NSButton(title: "Wired action", target: target, action: #selector(Target.receive(_:)))
+        try await TypefluxNavigationTestSupport.withWindow(NativeButton(button: button)) { window, _ in
+            #expect(button.window === window)
+            try withoutClickEventLoops {
+                try SettingsBehaviorTestSupport.Element(object: button, window: window).press()
             }
-            let element = try SettingsBehaviorTestSupport.button("Proxy action", in: host)
-            let control = try #require(element.nativeControl())
-            #expect(control.window === window)
-            try withoutClickEventLoops { try element.press() }
-            #expect(actions == 1)
+            #expect(target.senders.count == 1 && target.senders.first === button)
         }
     }
 
-    @Test func `proxy resolution stays in its own window when button labels match`() async throws {
+    @Test func `button presses stay in their own window when labels match`() async throws {
         var actions = [0, 0]
         let views = (0 ..< 2).map { index in
             AnyView(Button("Same title") { actions[index] += 1 }.buttonStyle(.bordered))
         }
         try await TypefluxNavigationTestSupport.withWindows(views) { windows in
             for (index, hosted) in windows.enumerated() {
+                try await SettingsBehaviorTestSupport.wait("Same-title button in window \(index)") {
+                    SettingsBehaviorTestSupport.contains("Same title", in: hosted.host)
+                }
                 let element = try SettingsBehaviorTestSupport.button("Same title", in: hosted.host)
-                #expect(element.nativeControl()?.window === hosted.window)
-                try withoutClickEventLoops { try element.press() }
-                #expect(actions[index] == 1)
+                try element.press()
+                // SwiftUI may expose only an AX action. Assert both the chosen window and its peer's effect.
+                #expect(actions == (index == 0 ? [1, 0] : [1, 1]))
             }
-            #expect(actions == [1, 1])
+        }
+        // A subsequent fixture must still execute after the AX presses and both window teardowns.
+        try await TypefluxNavigationTestSupport.withWindow(Button("Following action") { actions[1] += 1 }) { _, host in
+            try await SettingsBehaviorTestSupport.wait("Following fixture's button") {
+                SettingsBehaviorTestSupport.contains("Following action", in: host)
+            }
+            try SettingsBehaviorTestSupport.button("Following action", in: host).press()
+            #expect(actions == [1, 2])
         }
     }
 
