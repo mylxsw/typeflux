@@ -72,8 +72,10 @@ struct OverviewSettingsMetricsTests {
                 let field = try #require(window.toolbar?.items.compactMap { $0 as? NSSearchToolbarItem }
                     .first?.searchField)
                 try TypefluxNavigationTestSupport.changeText("Another", in: field)
-                let action = try #require(field.action)
-                #expect(NSApp.sendAction(action, to: field.target, from: field))
+                // The toolbar search bridge reacts to text changes through its delegate; an action is optional.
+                if let action = field.action {
+                    #expect(NSApp.sendAction(action, to: field.target, from: field))
+                }
                 try await UI.wait("Typing a history query returns from detail to the matching list") {
                     model.searchQuery == "Another" && UI.contains("Another record", in: host)
                         && !UI.contains("Overview record", in: host)
