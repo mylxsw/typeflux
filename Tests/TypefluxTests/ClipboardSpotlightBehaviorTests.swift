@@ -93,21 +93,21 @@ struct ClipboardSpotlightBehaviorTests {
                 try await SettingsBehaviorTestSupport.wait {
                     TypefluxNavigationTestSupport.searchField(in: host)?.currentEditor() != nil
                 }
-                let field = try #require(TypefluxNavigationTestSupport.searchField(in: host))
+                let field = try #require(TypefluxNavigationTestSupport.searchField(
+                    in: host, identifier: "typeflux.spotlight.search"))
                 #expect(field.accessibilityLabel() == L("clipboard.search.placeholder"))
                 #expect(field.frame.width > 0)
                 try verifyModeButtons(in: host)
-                try SettingsBehaviorTestSupport.button(ClipboardCategory.link.title, in: host).press()
-                try await SettingsBehaviorTestSupport.wait { model.category == .link }
+                _ = try await selectMode(.link, model: model, window: window, host: host)
                 #expect(model.visibleEntries.map(\.id) == [link.id])
-                try SettingsBehaviorTestSupport.button(ClipboardCategory.text.title, in: host).press()
-                try await SettingsBehaviorTestSupport.wait { model.category == .text }
-                window.makeFirstResponder(field)
-                let editor = try #require(field.currentEditor() as? NSTextView)
+                let search = try await selectMode(.text, model: model, window: window, host: host)
+                let editor = try #require(search.currentEditor() as? NSTextView)
                 editor.insertText("match", replacementRange: NSRange(location: 0, length: editor.string.utf16.count))
-                field.validateEditing()
+                search.validateEditing()
                 try await SettingsBehaviorTestSupport.wait { model.query == "match" }
                 #expect(model.visibleEntries.map(\.id) == [text.id])
+                _ = try await selectMode(.text, model: model, window: window, host: host)
+                #expect(model.query == "match")
                 #expect(try press(36, window: window, controller: controller))
                 #expect(try press(36, modifiers: .command, window: window, controller: controller))
                 #expect(try press(18, characters: "1", modifiers: .command, window: window, controller: controller))
@@ -240,6 +240,9 @@ struct ClipboardSpotlightBehaviorTests {
         }
     }
 
+}
+
+extension ClipboardSpotlightBehaviorTests {
     private func descendants(_ view: NSView) -> [NSView] {
         [view] + view.subviews.flatMap(descendants)
     }
@@ -249,6 +252,21 @@ struct ClipboardSpotlightBehaviorTests {
             let button = try SettingsBehaviorTestSupport.button(category.title, in: host)
             #expect(button.frame.width > 0)
         }
+    }
+
+    private func selectMode(_ category: ClipboardCategory, model: ClipboardPanelModel,
+                            window: NSWindow, host: NSView) async throws -> NSSearchField {
+        try SettingsBehaviorTestSupport.button(category.title, in: host).press()
+        try await SettingsBehaviorTestSupport.wait {
+            guard model.category == category,
+                  let search = TypefluxNavigationTestSupport.searchField(in: host,
+                                                                         identifier: "typeflux.spotlight.search"),
+                  let editor = search.currentEditor() as? NSTextView else { return false }
+            return search.window === window && window.firstResponder === editor && window.isKeyWindow
+        }
+        // Style changes can replace native views; resolve the field from the presented panel each time.
+        return try #require(TypefluxNavigationTestSupport.searchField(in: host,
+                                                                     identifier: "typeflux.spotlight.search"))
     }
 
     private func press(_ code: UInt16, characters: String = "", modifiers: NSEvent.ModifierFlags = [],

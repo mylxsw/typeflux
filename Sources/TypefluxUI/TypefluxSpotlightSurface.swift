@@ -54,6 +54,8 @@ public struct TypefluxSpotlightSurface<Results: View, Hints: View>: View {
         }
         .foregroundStyle(TypefluxColor.label.color)
         .accessibilityIdentifier("typeflux.spotlight.surface")
+        // Restore focus after the native views have reconciled the new mode.
+        .onChange(of: mode) { _ in focused = true }
     }
 
     private var input: some View {
@@ -86,6 +88,8 @@ public struct TypefluxSpotlightSurface<Results: View, Hints: View>: View {
                        height: style == .classic ? 26 : TypefluxControlHeight.spotlightModeButton.value(for: style))
         }
         .buttonStyle(.borderless)
+        // Keep the nonactivating panel's field editor while switching modes.
+        .focusable(false)
         .help(item.title)
         .accessibilityLabel(item.title)
         .accessibilityAddTraits(selected ? .isSelected : [])
