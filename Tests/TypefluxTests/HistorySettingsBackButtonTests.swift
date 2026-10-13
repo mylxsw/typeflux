@@ -42,28 +42,46 @@ struct HistorySettingsBackButtonTests {
 
     @Test func `Back in one settings window leaves another window detail selected`() async throws {
         try await withModels { first, second in
-            try await withWindow(first) { firstWindow, firstHost in
-                try await withWindow(second) { secondWindow, secondHost in
-                    try await openDetail(in: firstHost)
-                    try await openDetail(in: secondHost)
-                    try await RenderedUI.wait {
-                        backButton(in: firstWindow)?.isEnabled == true
-                            && backButton(in: secondWindow)?.isEnabled == true
-                    }
-                    let firstBack = try requireBackButton(in: firstWindow)
-                    let secondBack = try requireBackButton(in: secondWindow)
-                    #expect(firstBack !== secondBack)
-                    #expect(firstBack.accessibilityPerformPress())
-                    try await RenderedUI.wait { backButton(in: firstWindow)?.isEnabled == false }
-                    #expect(RenderedUI.contains(L("history.detail.rawTranscript"), in: secondHost))
-                    let currentSecondBack = try requireBackButton(in: secondWindow)
-                    #expect(currentSecondBack.isEnabled)
-                    currentSecondBack.performClick(nil)
-                    try await RenderedUI.wait { backButton(in: secondWindow)?.isEnabled == false }
-                    #expect(!RenderedUI.contains(L("history.detail.rawTranscript"), in: secondHost))
+            let views = [first, second].map { AnyView(StudioView(viewModel: $0).frame(width: 1680, height: 820)) }
+            try await TypefluxNavigationTestSupport.withWindows(
+                views, size: NSSize(width: 1680, height: 820)
+            ) { windows in
+                _ = try #require(windows.count == 2)
+                let firstWindow = windows[0].window
+                let firstHost = windows[0].host
+                let secondWindow = windows[1].window
+                let secondHost = windows[1].host
+                try await focus(firstWindow)
+                try await openDetail(in: firstHost)
+                try await focus(secondWindow)
+                try await openDetail(in: secondHost)
+                try await RenderedUI.wait {
+                    backButton(in: firstWindow)?.isEnabled == true
+                        && backButton(in: secondWindow)?.isEnabled == true
                 }
+                try await focus(firstWindow)
+                let firstBack = try requireBackButton(in: firstWindow)
+                let secondBack = try requireBackButton(in: secondWindow)
+                #expect(firstBack !== secondBack)
+                _ = firstBack.accessibilityPerformPress()
+                try await RenderedUI.wait { backButton(in: firstWindow)?.isEnabled == false }
+                #expect(!RenderedUI.contains(L("history.detail.rawTranscript"), in: firstHost))
+                #expect(RenderedUI.contains(L("history.detail.rawTranscript"), in: secondHost))
+                windows[0].close()
+                #expect(!firstWindow.isVisible && secondWindow.isVisible)
+                try await focus(secondWindow)
+                let currentSecondBack = try requireBackButton(in: secondWindow)
+                #expect(currentSecondBack.isEnabled)
+                currentSecondBack.performClick(nil)
+                try await RenderedUI.wait { backButton(in: secondWindow)?.isEnabled == false }
+                #expect(!RenderedUI.contains(L("history.detail.rawTranscript"), in: secondHost))
             }
         }
+    }
+
+    private func focus(_ window: NSWindow) async throws {
+        window.makeKeyAndOrderFront(nil)
+        try await RenderedUI.wait { NSApp.keyWindow === window }
     }
 
     private func backButton(in window: NSWindow) -> NSButton? {

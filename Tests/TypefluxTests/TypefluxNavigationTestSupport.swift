@@ -5,6 +5,33 @@ import Testing
 
 @MainActor
 enum TypefluxNavigationTestSupport {
+    @MainActor
+    final class HostedWindow {
+        let window: NSWindow
+        let host: NSView
+        private var closed = false
+
+        init(window: NSWindow, host: NSView) {
+            self.window = window
+            self.host = host
+        }
+
+        func detach() {
+            if let sheet = window.attachedSheet {
+                window.endSheet(sheet); sheet.close()
+            }
+            window.contentView = nil
+        }
+
+        func close() {
+            guard !closed else { return }
+            closed = true
+            detach()
+            window.orderOut(nil)
+            window.close()
+        }
+    }
+
     static func withWindow(_ view: some View, size: NSSize = NSSize(width: 900, height: 600),
                            run: (NSWindow, NSView) async throws -> Void) async throws {
         _ = NSApplication.shared
@@ -33,6 +60,48 @@ enum TypefluxNavigationTestSupport {
         window.makeKey()
         host.layoutSubtreeIfNeeded()
         try await run(window, host)
+    }
+
+    /// Multiple windows share one application/accessibility scope, rather than nesting global state changes.
+    static func withWindows(_ views: [AnyView], size: NSSize = NSSize(width: 900, height: 600),
+                            run: @MainActor ([HostedWindow]) async throws -> Void) async throws {
+        _ = try #require(!views.isEmpty)
+        _ = NSApplication.shared
+        let previousPolicy = NSApp.activationPolicy()
+        let lifetime = TypefluxTestApplicationLifetime(application: NSApp)
+        NSApp.setActivationPolicy(.regular)
+        let attribute = NSAccessibility.Attribute(rawValue: "AXEnhancedUserInterface")
+        let previous = NSApp.accessibilityAttributeValue(attribute)
+        NSApp.accessibilitySetValue(true, forAttribute: attribute)
+        let windows = views.map { makeWindow($0, size: size) }
+        defer {
+            close(windows)
+            NSApp.accessibilitySetValue(previous ?? false, forAttribute: attribute)
+            NSApp.setActivationPolicy(previousPolicy)
+            lifetime.restore()
+        }
+        for hosted in windows { hosted.window.orderFront(nil) }
+        windows.last?.window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+        try await Task.sleep(for: .milliseconds(250))
+        windows.last?.window.makeKey()
+        for hosted in windows { hosted.host.layoutSubtreeIfNeeded() }
+        try await run(windows)
+    }
+
+    private static func makeWindow(_ view: AnyView, size: NSSize) -> HostedWindow {
+        let window = NSWindow(contentRect: NSRect(origin: NSPoint(x: 100, y: 100), size: size),
+                              styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        let host = NSHostingView(rootView: view)
+        window.contentView = host
+        return HostedWindow(window: window, host: host)
+    }
+
+    private static func close(_ windows: [HostedWindow]) {
+        // Stop every hosting tree before closing a key window can activate another test window.
+        for hosted in windows { hosted.detach() }
+        for hosted in windows.reversed() { hosted.close() }
     }
 
     static func searchField(in view: NSView, identifier: String? = nil) -> NSSearchField? {
