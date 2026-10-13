@@ -180,17 +180,19 @@ struct AskNotebookVisualTests {
         try click(accessibilityFrame(source), in: window)
         try await waitForUI { openedConversation == "conv" }
         #expect(openedConversation == "conv", "the compact source action remains clickable")
-        let copy = try #require(accessibilityElement(L("ask.plugin.action.copy"),
-                                                     attribute: "accessibilityLabel", in: window))
+        let copy = try AskLibraryTestSupport.action("notes.copy", in: window)
+        let expectedBody = try #require(model.selected?.body)
         var copied: String?
         model.copy = { copied = $0 }
-        try click(accessibilityFrame(copy), in: window)
-        try await waitForUI { copied == model.selected?.body }
-        #expect(copied == model.selected?.body, "the compact copy action remains clickable")
+        try click(copy.frame, in: window)
+        try await waitForUI { copied == expectedBody }
+        #expect(copied == expectedBody, "the compact copy action remains clickable")
         model.notice = nil
-        try SettingsBehaviorTestSupport.button(L("ask.notes.mode.split"), in: window).press()
+        // At minimum size the mode picker lives in the native More menu; its shortcut stays active.
+        _ = try #require(accessibilityElement("ask.notes.more", in: window))
+        try TypefluxNavigationTestSupport.sendKey(14, characters: "e", modifiers: [.command, .option], to: window)
         try await waitForUI { model.mode == .split }
-        #expect(model.mode == .split, "the mode picker remains clickable")
+        #expect(model.mode == .split, "split mode stays reachable through its shortcut")
         try await capture(window, "\(prefix)-12-minimum-split.png")
         try await checkSplitControls(window, model: model)
     }
@@ -328,14 +330,20 @@ struct AskNotebookVisualTests {
     }
 
     private func checkReadControls(_ window: NSWindow) throws {
-        for identifier in ["notes.copy", "notes.pin", "notes.edit", "notes.delete"] {
-            #expect(window.toolbar?.items.isEmpty == false, "the native toolbar owns library actions")
-            let action = accessibilityElement("typeflux.toolbar." + identifier, in: window)
-            // At small sizes AppKit can place actions in its native overflow menu.
-            if let action {
-                let frame = accessibilityFrame(action)
-                #expect(frame.minX >= window.frame.minX - 1 && frame.maxX <= window.frame.maxX + 1)
-            }
+        let compact = (window.contentView?.bounds.width ?? 0) < AskNotesView.expandedToolbarMinimumWidth
+        let identifiers = compact ? ["notes.copy"] : ["notes.copy", "notes.pin", "notes.edit", "notes.delete"]
+        for identifier in identifiers {
+            let action = try AskLibraryTestSupport.action(identifier, in: window)
+            let frame = action.frame
+            #expect(frame.width >= 20 && frame.height >= 20, "visible actions keep usable hit targets")
+            #expect(frame.minX >= window.frame.minX - 1 && frame.maxX <= window.frame.maxX + 1,
+                    "visible toolbar actions stay inside the window")
+        }
+        if compact {
+            let menu = try #require(accessibilityElement("ask.notes.more", in: window))
+            let frame = accessibilityFrame(menu)
+            #expect(frame.minX >= window.frame.minX - 1 && frame.maxX <= window.frame.maxX + 1,
+                    "collapsed actions remain reachable through the native menu")
         }
         #expect(window.toolbar?.items.contains { $0 is NSSearchToolbarItem } == true)
     }

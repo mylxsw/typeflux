@@ -9,17 +9,12 @@ struct AskNotesView: View {
     @FocusState private var focus: AskNotesField?
     @State private var dropTargeted = false
     @StateObject private var search = TypefluxSearchState()
+    static let expandedToolbarMinimumWidth: CGFloat = 1200
 
     var body: some View {
-        TypefluxWindow(title: L("ask.notes.title"), search: search, searchPrompt: L("ask.notes.search"),
-                       groups: toolbarGroups, prominent: TypefluxToolbarAction(
-                        id: "notes.new", title: L("ask.notes.new"), systemImage: "square.and.pencil",
-                        perform: { model.createNote() })) {
-            AskNotesList(model: model)
-        } detail: {
-            AskNoteDetailView(model: model, focus: $focus)
+        GeometryReader { geometry in
+            libraryWindow(compact: geometry.size.width < Self.expandedToolbarMinimumWidth || search.isExpanded)
         }
-        .toolbar { libraryToolbar }
         .onAppear { search.query = model.searchText }
         .onChange(of: search.query) { query in
             model.searchText = query
@@ -38,6 +33,19 @@ struct AskNotesView: View {
         .background(shortcuts)
         .tint(TypefluxColor.accent.color)
         .accessibilityIdentifier("ask.notes")
+    }
+
+    /// Keep the direct copy action reachable while secondary actions collapse into a native menu.
+    private func libraryWindow(compact: Bool) -> some View {
+        TypefluxWindow(title: L("ask.notes.title"), search: search, searchPrompt: L("ask.notes.search"),
+                       groups: compact ? [] : toolbarGroups, prominent: TypefluxToolbarAction(
+                        id: "notes.new", title: L("ask.notes.new"), systemImage: "square.and.pencil",
+                        perform: { model.createNote() })) {
+            AskNotesList(model: model)
+        } detail: {
+            AskNoteDetailView(model: model, focus: $focus)
+        }
+        .toolbar { libraryToolbar(compact: compact) }
     }
 
     /// Reads the dropped files' URLs, then hands them over on the main actor.

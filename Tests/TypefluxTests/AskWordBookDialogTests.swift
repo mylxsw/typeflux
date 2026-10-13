@@ -293,6 +293,42 @@ struct AskWordBookViewModelTests {
         model.undoDelete()
     }
 
+    @Test func staleRowValuesCannotOverwriteFavouriteStateOrTheUndoSnapshot() throws {
+        let (model, store, _, suite) = try fixture()
+        defer { UserDefaults().removePersistentDomain(forName: suite) }
+        let beta = try #require(model.entries.first { $0.headword == "beta" })
+        model.selectedKey = beta.key
+        model.toggleStar(beta)
+        #expect(store.entry(forKey: beta.key)?.isStarred == true)
+        model.delete(beta)
+        #expect(model.deleted.first?.isStarred == true)
+        model.delete(beta)
+        #expect(model.deleted.first?.isStarred == true, "a vanished row cannot replace the valid undo snapshot")
+        model.undoDelete()
+        #expect(store.entry(forKey: beta.key)?.isStarred == true)
+        model.toggleStar(beta)
+        #expect(store.entry(forKey: beta.key)?.isStarred == false,
+                "a repeated click must toggle the stored state rather than the old row value")
+    }
+
+    @Test func starringATransientCardKeepsAnExistingFavouriteAndSavesTheNewCard() async throws {
+        let (model, store, _, suite) = try fixture()
+        defer { UserDefaults().removePersistentDomain(forName: suite) }
+        let beta = try #require(model.entries.first { $0.headword == "beta" })
+        store.setStarred(true, lookup: beta.lookup, at: Self.now)
+        model.reload()
+        model.recordsHistory = false
+        let card = AskWordCard(headword: "beta", senses: [.init(pos: "n.", meanings: ["new card"])])
+        model.dictionary = AskTestWordLookup(answer: .card(card))
+        await model.lookUp("beta")
+        let loose = try #require(model.displayed)
+        #expect(model.isTransient(loose) && !loose.isStarred)
+        model.toggleStar(loose)
+        #expect(store.entry(forKey: beta.key)?.isStarred == true)
+        #expect(store.entry(forKey: beta.key)?.lookup.card == card)
+        #expect(model.transient == nil)
+    }
+
     @Test func copyingReadingAloudAndAskingTheAI() throws {
         let (model, _, _, suite) = try fixture()
         defer { UserDefaults().removePersistentDomain(forName: suite) }

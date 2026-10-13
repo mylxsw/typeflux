@@ -60,8 +60,9 @@ enum AskLibraryTestSupport {
     }
 
     static func elements(in window: NSWindow) -> [SettingsBehaviorTestSupport.Element] {
-        SettingsBehaviorTestSupport.elements(in: window)
-            + (window.toolbar?.items.compactMap(\.view).flatMap { SettingsBehaviorTestSupport.elements(in: $0) } ?? [])
+        // Native toolbar views own hit-testing; prefer them over SwiftUI's duplicated AX proxies.
+        (window.toolbar?.items.compactMap(\.view).flatMap { SettingsBehaviorTestSupport.elements(in: $0) } ?? [])
+            + SettingsBehaviorTestSupport.elements(in: window)
     }
 
     static func action(_ identifier: String, in window: NSWindow) throws -> SettingsBehaviorTestSupport.Element {

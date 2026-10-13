@@ -64,29 +64,32 @@ struct AskWordBookView: View {
             TypefluxToolbarAction(id: "wordBook.star", title: L(entry?.isStarred == true
                 ? "ask.wordBook.unstar" : "ask.wordBook.star"),
                 systemImage: entry?.isStarred == true ? "star.fill" : "star", isEnabled: enabled,
-                perform: { if let entry { model.toggleStar(entry) } }),
+                perform: { if let entry = toolbarEntry { model.toggleStar(entry) } }),
             TypefluxToolbarAction(id: "wordBook.copy", title: L("ask.plugin.action.copyDefinition"),
                 systemImage: "doc.on.doc", isEnabled: enabled,
-                perform: { if let entry { model.copyMeaning(entry) } }),
+                perform: { if let entry = toolbarEntry { model.copyMeaning(entry) } }),
             TypefluxToolbarAction(id: "wordBook.speak", title: L("ask.plugin.action.speak"),
                 systemImage: "speaker.wave.2", isEnabled: enabled,
-                perform: { if let entry { model.speak(entry) } })
+                perform: { if let entry = toolbarEntry { model.speak(entry) } })
         ]
         if model.askAI != nil {
             actions.append(TypefluxToolbarAction(id: "wordBook.ask", title: L("ask.quick.askAI"),
                 systemImage: "bubble.left", isEnabled: enabled,
-                perform: { if let entry { model.ask(about: entry) } }))
+                perform: { if let entry = toolbarEntry { model.ask(about: entry) } }))
         }
         if model.canRegenerate {
             actions.append(TypefluxToolbarAction(id: "wordBook.regenerate", title: L("ask.plugin.action.regenerate"),
                 systemImage: "arrow.clockwise", isEnabled: enabled && model.regenerating == nil,
-                perform: { regenerating = entry }))
+                perform: { if model.regenerating == nil { regenerating = toolbarEntry } }))
         }
         actions.append(TypefluxToolbarAction(id: "wordBook.delete", title: L(entry.map { model.isTransient($0) } == true
             ? "ask.wordBook.dismiss" : "ask.wordBook.delete"), systemImage: "trash", role: .destructive,
-            isEnabled: enabled, perform: { if let entry { model.delete(entry) } }))
+            isEnabled: enabled, perform: { if let entry = toolbarEntry { model.delete(entry) } }))
         return [TypefluxToolbarGroup(id: "wordBook.actions", actions: actions)]
     }
+
+    /// Resolve at activation time; a native control can outlive the entry it was rendered for.
+    private var toolbarEntry: AskWordBookEntry? { model.lookingUp == nil ? model.displayed : nil }
 
     @ViewBuilder private var notice: some View {
         if let notice = model.notice {
@@ -107,10 +110,10 @@ struct AskWordBookView: View {
         ZStack {
             Button("") { showsLookup = true }.keyboardShortcut("l").disabled(model.lookingUp != nil)
             Button("") { showsLookup = true }.keyboardShortcut("n").disabled(model.lookingUp != nil)
-            Button("") { if let entry = model.displayed { model.toggleStar(entry) } }.keyboardShortcut("s")
-            Button("") { if let entry = model.displayed { model.copyMeaning(entry) } }
+            Button("") { if let entry = toolbarEntry { model.toggleStar(entry) } }.keyboardShortcut("s")
+            Button("") { if let entry = toolbarEntry { model.copyMeaning(entry) } }
                 .keyboardShortcut("c").disabled(search.isFocused || showsLookup)
-            Button("") { if let entry = model.displayed { model.delete(entry) } }
+            Button("") { if let entry = toolbarEntry { model.delete(entry) } }
                 .keyboardShortcut(.delete, modifiers: []).disabled(search.isFocused || showsLookup)
             Button("") { model.undoDelete() }.keyboardShortcut("z")
                 .disabled(model.deleted.isEmpty || search.isFocused || showsLookup)

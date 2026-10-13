@@ -55,7 +55,9 @@ struct AskLibraryVisualConsistencyTests {
         try AskLibraryTestSupport.action("wordBook.copy", in: wordWindow).press()
         #expect(copiedWord?.isEmpty == false)
         try AskLibraryTestSupport.action("wordBook.star", in: wordWindow).press()
-        try await SettingsBehaviorTestSupport.wait { words.displayed?.isStarred == true }
+        try await SettingsBehaviorTestSupport.wait {
+            words.displayed?.isStarred == true && words.store.entry(forKey: key)?.isStarred == true
+        }
         try AskLibraryTestSupport.action("wordBook.delete", in: wordWindow).press()
         try await SettingsBehaviorTestSupport.wait { words.store.entry(forKey: key) == nil }
         words.undoDelete()
@@ -65,6 +67,35 @@ struct AskLibraryVisualConsistencyTests {
         #expect(wordSearch.stringValue == words.filterText)
         try TypefluxNavigationTestSupport.sendKey(53, to: wordWindow)
         try await SettingsBehaviorTestSupport.wait { words.filterText.isEmpty }
+    }
+
+    @Test func toolbarCallbacksReadTheCurrentWordBeforeRedrawing() async throws {
+        try await AskLibraryTestSupport.withLibraries(style: .classic, dark: false) { libraries in
+            let words = try #require(libraries.words.model)
+            // Keep the same rendered callbacks throughout, as with consecutive native toolbar clicks.
+            let actions = AskWordBookView(model: words) {}.toolbarGroups.flatMap(\.actions)
+            let star = try #require(actions.first { $0.id == "wordBook.star" })
+            let delete = try #require(actions.first { $0.id == "wordBook.delete" })
+            star.perform()
+            #expect(words.store.entry(forKey: libraries.wordKey)?.isStarred == true)
+            star.perform()
+            #expect(words.store.entry(forKey: libraries.wordKey)?.isStarred == false)
+            star.perform()
+            delete.perform()
+            words.undoDelete()
+            #expect(words.store.entry(forKey: libraries.wordKey)?.isStarred == true)
+            let plain = try #require(words.entries.first { $0.headword == "plain" })
+            words.selectedKey = plain.key
+            var copied: String?
+            words.copy = { copied = $0 }
+            try #require(actions.first { $0.id == "wordBook.copy" }).perform()
+            #expect(copied == plain.lookup.firstMeaning)
+            star.perform()
+            #expect(words.store.entry(forKey: plain.key)?.isStarred == true)
+            delete.perform()
+            #expect(words.store.entry(forKey: plain.key) == nil)
+            #expect(words.store.entry(forKey: libraries.wordKey)?.isStarred == true)
+        }
     }
 
     @Test(arguments: InterfaceStyle.allCases)
@@ -81,6 +112,54 @@ struct AskLibraryVisualConsistencyTests {
             }
             #expect(libraries.notes.model?.selectedID == libraries.noteID)
             #expect(libraries.words.model?.selectedKey == libraries.wordKey)
+        }
+    }
+
+    @Test(arguments: InterfaceStyle.allCases, [false, true])
+    func minimumNotesWindowKeepsCopyAndTheActionsMenuInsideTheWindow(style: InterfaceStyle, dark: Bool) async throws {
+        try await AskLibraryTestSupport.withLibraries(style: style, dark: dark) { libraries in
+            let window = try #require(libraries.notes.window)
+            let notes = try #require(libraries.notes.model)
+            window.setContentSize(AskNotesWindowController.minimumSize)
+            window.makeKeyAndOrderFront(nil)
+            try await SettingsBehaviorTestSupport.wait {
+                let elements = AskLibraryTestSupport.elements(in: window)
+                let menu = elements.first { $0.value("accessibilityIdentifier") as? String == "ask.notes.more" }
+                let copy = elements.first {
+                    $0.value("accessibilityIdentifier") as? String == "typeflux.toolbar.notes.copy"
+                }
+                return copy.map { insideWindow($0.frame, window: window) } == true
+                    && menu.map { insideWindow($0.frame, window: window) } == true
+                    && !elements.contains {
+                        $0.value("accessibilityIdentifier") as? String == "typeflux.toolbar.notes.pin"
+                    }
+            }
+            var copied: String?
+            notes.copy = { copied = $0 }
+            let expectedBody = try #require(notes.selected?.body)
+            let copy = try AskLibraryTestSupport.action("notes.copy", in: window)
+            try click(copy.frame, in: window)
+            try await SettingsBehaviorTestSupport.wait { copied == expectedBody }
+            #expect(copied?.isEmpty == false)
+            _ = try await AskLibraryTestSupport.search("Reading", in: window)
+            try await SettingsBehaviorTestSupport.wait { notes.searchText == "Reading" }
+            let searchingCopy = try AskLibraryTestSupport.action("notes.copy", in: window)
+            #expect(insideWindow(searchingCopy.frame, window: window), "expanded search cannot displace copy")
+        }
+    }
+
+    private func insideWindow(_ frame: NSRect, window: NSWindow) -> Bool {
+        frame.width >= 20 && frame.height >= 20
+            && frame.minX >= window.frame.minX - 1 && frame.maxX <= window.frame.maxX + 1
+            && frame.minY >= window.frame.minY - 1 && frame.maxY <= window.frame.maxY + 1
+    }
+
+    private func click(_ frame: NSRect, in window: NSWindow) throws {
+        let point = window.convertPoint(fromScreen: NSPoint(x: frame.midX, y: frame.midY))
+        for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
+            NSApp.sendEvent(try #require(NSEvent.mouseEvent(with: type, location: point, modifierFlags: [],
+                timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber, context: nil,
+                eventNumber: 0, clickCount: 1, pressure: type == .leftMouseDown ? 1 : 0)))
         }
     }
 
