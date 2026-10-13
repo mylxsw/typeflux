@@ -26,8 +26,7 @@ public struct TypefluxSpotlightRow: ViewModifier {
     }
 }
 
-/// Keep the system paint dynamic and let AppKit convert it into the drawing
-/// destination's color space, including cached hosting-view snapshots.
+/// Resolve the system paint in this view's appearance before color-space conversion.
 private struct TypefluxSpotlightSelectionBackground: NSViewRepresentable {
     let radius: CGFloat
 
@@ -51,8 +50,11 @@ private struct TypefluxSpotlightSelectionBackground: NSViewRepresentable {
             super.draw(dirtyRect)
             NSGraphicsContext.saveGraphicsState()
             defer { NSGraphicsContext.restoreGraphicsState() }
-            NSColor.selectedContentBackgroundColor.setFill()
-            NSBezierPath(roundedRect: bounds, xRadius: radius, yRadius: radius).fill()
+            effectiveAppearance.performAsCurrentDrawingAppearance {
+                let selection = NSColor.selectedContentBackgroundColor
+                (selection.usingColorSpace(.sRGB) ?? selection).setFill()
+                NSBezierPath(roundedRect: bounds, xRadius: radius, yRadius: radius).fill()
+            }
         }
     }
 

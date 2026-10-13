@@ -56,21 +56,60 @@ struct AskFloatingPanelStyleTests {
         let row = AskPluginItemRow(item: AskPluginItem(id: "word", title: "serendipity", subtitle: "A happy discovery"),
                                    symbol: "character.book.closed", selected: true, emphasized: true,
                                    height: AskPluginResultsView.itemHeight, onPick: {})
-            .background(LegacyAskPalette.launcherSurface)
             .environment(\.interfaceStyle, style)
         for appearance in [NSAppearance.Name.aqua, .darkAqua] {
-            let bitmap = try await render(row, size: NSSize(width: 560, height: 44), appearance: appearance)
-            let fill = try pixel(bitmap, x: 520, y: 22)
             var selection: NSColor?
             try #require(NSAppearance(named: appearance)).performAsCurrentDrawingAppearance {
                 selection = TypefluxColor.selection.nsColor.usingColorSpace(.sRGB)
             }
             let expected = try #require(selection)
-            // UI System v2 uses solid native selection and its contrasting system text color.
-            #expect(abs(fill.redComponent - expected.redComponent) < 0.02)
-            #expect(abs(fill.greenComponent - expected.greenComponent) < 0.02)
-            #expect(abs(fill.blueComponent - expected.blueComponent) < 0.02)
-            #expect(fill.alphaComponent > 0.999)
+            for state in [ControlActiveState.key, .inactive] {
+                for backdrop in [LegacyAskPalette.launcherSurface, Color.black, Color.white] {
+                    let content = row.environment(\.controlActiveState, state).background(backdrop)
+                    let bitmap = try await render(content, size: NSSize(width: 560, height: 44), appearance: appearance)
+                    let fill = try pixel(bitmap, x: 520, y: 22)
+                    // Neither the plain button style nor the backdrop may dim selection.
+                    #expect(abs(fill.redComponent - expected.redComponent) < 0.02)
+                    #expect(abs(fill.greenComponent - expected.greenComponent) < 0.02)
+                    #expect(abs(fill.blueComponent - expected.blueComponent) < 0.02)
+                    #expect(fill.alphaComponent > 0.999)
+                }
+            }
+        }
+    }
+
+    @Test func bitmapRendererPreservesTheNativeSystemSelectionColor() async throws {
+        for appearance in [NSAppearance.Name.aqua, .darkAqua] {
+            let bitmap = try await render(SystemSelectionSwatch(), size: NSSize(width: 20, height: 20),
+                                          appearance: appearance)
+            let fill = try pixel(bitmap, x: 10, y: 10)
+            var expected: NSColor?
+            try #require(NSAppearance(named: appearance)).performAsCurrentDrawingAppearance {
+                expected = NSColor.selectedContentBackgroundColor.usingColorSpace(.sRGB)
+            }
+            let selection = try #require(expected)
+            #expect(abs(fill.redComponent - selection.redComponent) < 0.02)
+            #expect(abs(fill.greenComponent - selection.greenComponent) < 0.02)
+            #expect(abs(fill.blueComponent - selection.blueComponent) < 0.02)
+        }
+    }
+
+    /// An independent AppKit swatch checks the capture profile without the row modifier.
+    private struct SystemSelectionSwatch: NSViewRepresentable {
+        final class Surface: NSView {
+            override func draw(_ dirtyRect: NSRect) {
+                super.draw(dirtyRect)
+                NSGraphicsContext.saveGraphicsState()
+                defer { NSGraphicsContext.restoreGraphicsState() }
+                NSColor.selectedContentBackgroundColor.setFill()
+                bounds.fill()
+            }
+        }
+
+        func makeNSView(context _: Context) -> Surface { Surface(frame: .zero) }
+        func updateNSView(_ view: Surface, context _: Context) { view.needsDisplay = true }
+        func sizeThatFits(_ proposal: ProposedViewSize, nsView _: Surface, context _: Context) -> CGSize? {
+            CGSize(width: proposal.width ?? 0, height: proposal.height ?? 0)
         }
     }
 
@@ -162,7 +201,11 @@ struct AskFloatingPanelStyleTests {
         defer { TypefluxNavigationTestSupport.closeWindow(window) }
         try await Task.sleep(for: .milliseconds(100))
         hosting.layoutSubtreeIfNeeded()
-        let bitmap = try #require(hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds))
+        // Set the destination profile before drawing. A device-RGB cache depends on
+        // the host display and cannot be compared directly with resolved sRGB tokens.
+        let cache = try #require(hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds))
+        let bitmap = try #require(cache.retagging(with: .sRGB))
+        bitmap.size = cache.size
         hosting.cacheDisplay(in: hosting.bounds, to: bitmap)
         return bitmap
     }

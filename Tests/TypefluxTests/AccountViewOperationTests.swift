@@ -18,21 +18,14 @@ struct AccountViewOperationTests {
                     let content = try #require(sheet.contentView)
                     try await SettingsBehaviorTestSupport.wait { fields(in: content).count == 3 }
                     let inputs = fields(in: content)
-                    // A grouped LabeledContent row can name its native secure input through
-                    // AXTitleUIElement, AXPlaceholderValue or the adjacent form label rather
-                    // than duplicating its name on a SwiftUI text-field proxy.
+                    // Inspect the actual native input, not a SwiftUI accessibility proxy.
                     for (input, key) in zip(inputs, ["auth.account.currentPassword", "auth.account.newPassword",
                                                      "auth.account.confirmNewPassword"]) {
                         #expect(input is NSSecureTextField, "Password entry must remain protected")
                         #expect(input.accessibilityRole() == .textField)
-                        let titleElement = input.accessibilityTitleUIElement() as? NSObject
-                        let title = titleElement.map {
-                            SettingsBehaviorTestSupport.Element(object: $0).text
-                        }
-                        #expect([input.accessibilityLabel(), title, input.accessibilityPlaceholderValue()]
-                            .compactMap { $0 }.contains(L(key))
-                            || SettingsBehaviorTestSupport.contains(L(key), in: content),
-                            "Missing secure input or grouped form label: \(L(key))")
+                        #expect(input.accessibilitySubrole() == .secureTextField)
+                        #expect(input.isAccessibilityElement())
+                        #expect(input.accessibilityLabel() == L(key))
                     }
                     let current = inputs[0]
                     let new = inputs[1]

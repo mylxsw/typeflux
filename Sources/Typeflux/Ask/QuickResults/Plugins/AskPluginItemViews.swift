@@ -41,9 +41,11 @@ struct AskPluginItemRow: View {
             }
             .padding(.horizontal, 8)
             .frame(height: height)
-            .modifier(TypefluxSpotlightRow(selected: filled))
         }
         .buttonStyle(.plain)
+        // Paint outside the button label: the native plain style can dim its label
+        // in an inactive window, which must not blend the selection with the panel.
+        .modifier(TypefluxSpotlightRow(selected: filled))
         .disabled(!item.valid)
         .accessibilityLabel(item.subtitle.isEmpty ? item.title : item.title + ", " + item.subtitle)
         .accessibilityAddTraits(item.valid && selected ? .isSelected : [])
