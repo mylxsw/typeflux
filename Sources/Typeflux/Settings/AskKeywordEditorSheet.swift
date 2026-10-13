@@ -20,37 +20,31 @@ struct AskKeywordEditorSheet: View {
     }
 
     var body: some View {
-        TypefluxSheet(title: draft.isNew ? L("ask.settings.keywords.sheet.addTitle", draft.kind.title)
-            : L("ask.settings.keywords.sheet.editTitle"),
-            cancelTitle: L("ask.workflow.cancel"),
-            confirmTitle: L(draft.isNew ? "ask.settings.keywords.sheet.add" : "ask.settings.keywords.save"),
-            isConfirmEnabled: draft.canSave(among: keywords, workflows: workflows),
-            confirmIdentifier: "ask.settings.keywords.sheet.save", cancel: onCancel,
-            confirm: { onSave(draft.result()) }, content: {
-                TypefluxForm {
-                    Section {
-                        field(L("ask.settings.keywords.defaultKeyword")) {
-                            TextField(placeholderKeyword, text: $draft.keyword)
-                                .textFieldStyle(.roundedBorder).focused($keywordFocused)
-                                .accessibilityIdentifier("ask.settings.keywords.sheet.keyword")
-                            if let keywordProblem {
-                                problem(keywordProblem)
-                            }
-                        }
-                        aliasFields
-                    }
-                    Section { kindFields }
-                    Section {
-                        field(L("ask.settings.keywords.sheet.preview")) { preview }
-                        TypefluxSwitch(L("ask.settings.keywords.enabled"), isOn: $draft.enabled)
-                        if let onDelete {
-                            Button(L("ask.settings.keywords.sheet.delete"), role: .destructive, action: onDelete)
-                                .accessibilityIdentifier("ask.settings.keywords.sheet.delete")
+        VStack(alignment: .leading, spacing: 0) {
+            header.padding(.horizontal, 22).padding(.top, 20).padding(.bottom, 14)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 12) {
+                    field(L("ask.settings.keywords.defaultKeyword")) {
+                        TextField(placeholderKeyword, text: $draft.keyword)
+                            .textFieldStyle(.roundedBorder)
+                            .focused($keywordFocused)
+                            .overlay(problemBorder(keywordProblem != nil))
+                            .accessibilityIdentifier("ask.settings.keywords.sheet.keyword")
+                        if let keywordProblem {
+                            problem(keywordProblem)
                         }
                     }
-                }.frame(height: 440)
-            }).frame(width: 560)
-            .onAppear { keywordFocused = true }
+                    aliasFields
+                    kindFields
+                    field(L("ask.settings.keywords.sheet.preview")) { preview }
+                }
+                .padding(.horizontal, 22).padding(.vertical, 2)
+            }.frame(maxHeight: 460)
+            footer.padding(.horizontal, 22).padding(.top, 18).padding(.bottom, 20)
+        }
+        .frame(width: 560)
+        .background(TypefluxColor.windowBackground.color)
+        .onAppear { keywordFocused = true }
     }
 
     private var aliasFields: some View {
@@ -60,17 +54,30 @@ struct AskKeywordEditorSheet: View {
                     TextField(L("ask.settings.keywords.alias"), text: $draft.aliases[index])
                         .textFieldStyle(.roundedBorder)
                         .accessibilityIdentifier("ask.settings.keywords.sheet.alias.\(index)")
-                    TypefluxIconButton(L("ask.settings.keywords.removeAlias"), systemImage: "minus.circle") {
-                        draft.aliases.remove(at: index)
+                    Button { draft.aliases.remove(at: index) } label: {
+                        Image(systemName: "minus.circle").foregroundStyle(StudioTheme.textTertiary)
                     }
+                    .buttonStyle(.plain).help(L("ask.settings.keywords.removeAlias"))
+                    .accessibilityLabel(L("ask.settings.keywords.removeAlias"))
                 }
             }
             Button { draft.aliases.append("") } label: {
                 Label(L("ask.settings.keywords.addAlias"), systemImage: "plus")
             }
-            .buttonStyle(.plain).foregroundStyle(TypefluxColor.accent.color).font(.subheadline)
+            .buttonStyle(.plain).foregroundStyle(TypefluxColor.accent.color).font(.system(size: 12))
             .accessibilityIdentifier("ask.settings.keywords.sheet.addAlias")
             hint(L("ask.settings.keywords.aliasHint"))
+        }
+    }
+
+    private var header: some View {
+        HStack(spacing: 12) {
+            AskKeywordKindTile(kind: draft.kind, size: 34)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(draft.isNew ? L("ask.settings.keywords.sheet.addTitle", draft.kind.title)
+                    : L("ask.settings.keywords.sheet.editTitle"))
+                    .font(.system(size: 15, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
+            }
         }
     }
 
@@ -130,13 +137,12 @@ struct AskKeywordEditorSheet: View {
         switch draft.kind {
         case .translate:
             field(L("ask.settings.keywords.sheet.action")) {
-                TypefluxSegmentedControl(L("ask.settings.keywords.sheet.action"), selection: $draft.opensWordBook) {
-                    Text(L("ask.settings.keywords.sheet.action.translate")).tag(false)
-                    Text(L("ask.settings.keywords.sheet.action.wordBook")).tag(true)
-                }.accessibilityIdentifier("ask.settings.keywords.sheet.action")
-                if draft.opensWordBook {
-                    hint(L("ask.settings.keywords.sheet.action.wordBookHint"))
-                }
+                StudioSegmentedControl(options: [
+                    (label: L("ask.settings.keywords.sheet.action.translate"), value: false),
+                    (label: L("ask.settings.keywords.sheet.action.wordBook"), value: true)
+                ], selection: $draft.opensWordBook, size: .compact)
+                    .accessibilityIdentifier("ask.settings.keywords.sheet.action")
+                if draft.opensWordBook { hint(L("ask.settings.keywords.sheet.action.wordBookHint")) }
             }
             if !draft.opensWordBook {
                 translateTargetField
@@ -148,20 +154,32 @@ struct AskKeywordEditorSheet: View {
             }
             field(L("ask.settings.plugins.prompt.prompt")) {
                 TextEditor(text: $draft.prompt)
-                    .font(.subheadline)
+                    .font(.system(size: 12.5))
+                    .scrollContentBackground(.hidden)
+                    .padding(6)
                     .frame(minHeight: 120, maxHeight: 220)
+                    .background(
+                        TypefluxColor.controlBackground.color,
+                        in: RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    )
+                    .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous)
+                        .strokeBorder(TypefluxColor.separator.color))
                     .accessibilityIdentifier("ask.settings.keywords.sheet.prompt")
                 HStack(spacing: 6) {
                     Button { draft.prompt += AskPromptPlugin.inputToken } label: {
-                        Text(AskPromptPlugin.inputToken).font(.body.monospaced())
-                    }.buttonStyle(.bordered)
-                        .help(L("ask.settings.plugins.prompt.insert"))
-                    Text(L("ask.settings.keywords.sheet.insertInput")).font(.subheadline)
+                        Text(AskPromptPlugin.inputToken).font(.system(size: 11.5, design: .monospaced))
+                            .foregroundStyle(TypefluxColor.accent.color)
+                            .padding(.horizontal, 7).frame(height: 20)
+                            .background(TypefluxColor.accent.color.opacity(0.14), in: RoundedRectangle(cornerRadius: 6))
+                    }
+                    .buttonStyle(.plain)
+                    .help(L("ask.settings.plugins.prompt.insert"))
+                    Text(L("ask.settings.keywords.sheet.insertInput")).font(.system(size: 11.5))
                         .foregroundStyle(StudioTheme.textTertiary)
                     Spacer()
                     if let preset = draft.presetPrompt, preset != draft.prompt {
                         Button(L("ask.settings.keywords.sheet.restorePreset")) { draft.restorePreset() }
-                            .buttonStyle(.plain).font(.subheadline).foregroundStyle(TypefluxColor.accent.color)
+                            .buttonStyle(.plain).font(.system(size: 11.5)).foregroundStyle(TypefluxColor.accent.color)
                     }
                 }
                 if let fieldProblem = draft.fieldProblem, !draft.isNew || !draft.prompt.isEmpty {
@@ -175,13 +193,19 @@ struct AskKeywordEditorSheet: View {
             field(L("ask.settings.plugins.web.url")) {
                 TextField("https://…?q={query}", text: $draft.url)
                     .textFieldStyle(.roundedBorder)
+                    .overlay(problemBorder(draft.fieldProblem != nil))
                     .accessibilityIdentifier("ask.settings.keywords.sheet.url")
                 if let fieldProblem = draft.fieldProblem {
                     problem(fieldProblem)
                 }
                 HStack(spacing: 6) {
                     ForEach(AskWebSearchPlugin.Engine.allCases, id: \.self) { engine in
-                        Button(engine.title) { draft.use(engine) }.buttonStyle(.bordered).controlSize(.small)
+                        Button(engine.title) { draft.use(engine) }
+                            .buttonStyle(.plain).font(.system(size: 11.5))
+                            .foregroundStyle(StudioTheme.textSecondary)
+                            .padding(.horizontal, 9).frame(height: 20)
+                            .background(TypefluxColor.controlBackground.color, in: Capsule())
+                            .overlay(Capsule().strokeBorder(TypefluxColor.separator.color))
                     }
                 }
             }
@@ -205,28 +229,72 @@ struct AskKeywordEditorSheet: View {
 
     /// The keyword as the launcher will show it, with sample text after it.
     private var preview: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        HStack(spacing: 8) {
             Text((draft.keyword.isEmpty ? L("ask.settings.keywords.keyword") : draft.keyword) + " · " + draft
                 .displayName)
-                .font(.body.monospaced()).foregroundStyle(TypefluxColor.accent.color)
-            Text(draft.kind == .web ? "swift actor" : "hello world").font(.body)
+                .font(.system(size: 12, weight: .semibold)).foregroundStyle(TypefluxColor.accent.color)
+                .padding(.horizontal, 8).frame(height: 22)
+                .background(TypefluxColor.accent.color.opacity(0.14), in: RoundedRectangle(cornerRadius: 6))
+                .lineLimit(1)
+            Text(draft.kind == .web ? "swift actor" : "hello world").font(.system(size: 13))
+                .foregroundStyle(StudioTheme.textPrimary)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 10).frame(height: 38)
+        .background(TypefluxColor.controlBackground.color, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).strokeBorder(TypefluxColor.separator.color))
+    }
+
+    private var footer: some View {
+        HStack(spacing: 8) {
+            if let onDelete {
+                Button(role: .destructive, action: onDelete) {
+                    Text(L("ask.settings.keywords.sheet.delete")).foregroundStyle(StudioTheme.danger)
+                }
+                .buttonStyle(.bordered)
+                .accessibilityIdentifier("ask.settings.keywords.sheet.delete")
+            }
+            Spacer()
+            Toggle(isOn: $draft.enabled) {
+                Text(L("ask.settings.keywords.enabled")).font(.system(size: 12.5))
+                    .foregroundStyle(StudioTheme.textSecondary)
+            }
+            .toggleStyle(.switch).controlSize(.small)
+            .padding(.trailing, 6)
+            Button(L("ask.workflow.cancel"), action: onCancel)
+                .buttonStyle(.bordered)
+                .keyboardShortcut(.cancelAction)
+            Button(draft.isNew ? L("ask.settings.keywords.sheet.add") : L("ask.settings.keywords.save")) {
+                onSave(draft.result())
+            }
+            .buttonStyle(.borderedProminent)
+            .keyboardShortcut(.return, modifiers: .command)
+            .disabled(!draft.canSave(among: keywords, workflows: workflows))
+            .accessibilityIdentifier("ask.settings.keywords.sheet.save")
         }
     }
 
     private func field(_ label: String, @ViewBuilder content: () -> some View) -> some View {
-        TypefluxSettingsRow(label) {
+        HStack(alignment: .firstTextBaseline, spacing: 12) {
+            Text(label).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary)
+                .frame(width: 76, alignment: .leading)
             VStack(alignment: .leading, spacing: 5) { content() }
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
     private func hint(_ text: String) -> some View {
-        Text(text).font(.subheadline).foregroundStyle(StudioTheme.textTertiary)
+        Text(text).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
             .fixedSize(horizontal: false, vertical: true)
     }
 
     private func problem(_ text: String) -> some View {
-        Text(text).font(.subheadline).foregroundStyle(StudioTheme.warning)
+        Text(text).font(.system(size: 11.5)).foregroundStyle(StudioTheme.warning)
             .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private func problemBorder(_ shown: Bool) -> some View {
+        RoundedRectangle(cornerRadius: TypefluxRadius.textField.value(for: .classic), style: .continuous)
+            .strokeBorder(shown ? StudioTheme.warning : .clear)
     }
 }

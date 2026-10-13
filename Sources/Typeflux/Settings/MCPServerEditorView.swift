@@ -6,30 +6,33 @@ struct MCPServerEditorView: View {
     let onClose: () -> Void
 
     var body: some View {
-        TypefluxSheet(title: L(viewModel.mcpDraftEditingServerID == nil
-                          ? "agent.mcp.dialog.addTitle" : "agent.mcp.dialog.editTitle"),
-        cancelTitle: L("common.cancel"), confirmTitle: L("common.save"),
-        isConfirmEnabled: viewModel.canSaveMCPDraft,
-        cancel: closeEditor, confirm: { viewModel.saveMCPDraft(); closeEditor() }, content: {
-            TypefluxForm {
-                Section { connectionCard }
-                Section {
-                    settingRow("agent.mcp.enabled.title", subtitle: "agent.mcp.enabled.subtitle",
-                               selection: $viewModel.mcpDraftEnabled)
-                    settingRow("agent.mcp.autoConnect.title", subtitle: "agent.mcp.autoConnect.subtitle",
-                               selection: $viewModel.mcpDraftAutoConnect)
-                }
-                Section {
-                    Button(L(viewModel
-                            .mcpConnectionTestState == .testing ? "agent.mcp.testing" : "agent.mcp.testConnection")) {
-                        viewModel.testMCPDraftConnection()
-                    }.disabled(!viewModel.canSaveMCPDraft || viewModel.mcpConnectionTestState == .testing)
+        VStack(alignment: .leading, spacing: 18) {
+            Text(L(viewModel
+                    .mcpDraftEditingServerID == nil ? "agent.mcp.dialog.addTitle" : "agent.mcp.dialog.editTitle"))
+                .font(.system(size: 17, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 18) {
+                    connectionCard
+                    StudioCard(padding: 0) {
+                        VStack(spacing: 0) {
+                            settingRow("agent.mcp.enabled.title", subtitle: "agent.mcp.enabled.subtitle",
+                                       selection: $viewModel.mcpDraftEnabled)
+                            ModelRowDivider()
+                            settingRow("agent.mcp.autoConnect.title", subtitle: "agent.mcp.autoConnect.subtitle",
+                                       selection: $viewModel.mcpDraftAutoConnect)
+                        }
+                    }
                     mcpConnectionTestResultView
-                }
-            }.frame(height: min(500, max(300, (NSScreen.main?.visibleFrame.height ?? 800) - 240)))
-        }).frame(width: 560)
-            .onDisappear { viewModel.resetMCPDraftConnectionTest() }
-            .onChange(of: connectionFields) { _ in viewModel.resetMCPDraftConnectionTest() }
+                }.padding(2)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            actions
+        }
+        .padding(24)
+        .frame(width: 520, height: min(640, max(400, (NSScreen.main?.visibleFrame.height ?? 800) - 120)))
+        .background(TypefluxColor.windowBackground.color)
+        .onDisappear { viewModel.resetMCPDraftConnectionTest() }
+        .onChange(of: connectionFields) { _ in viewModel.resetMCPDraftConnectionTest() }
     }
 
     private var connectionFields: [String] {
@@ -38,61 +41,106 @@ struct MCPServerEditorView: View {
          viewModel.mcpDraftHTTPURL, viewModel.mcpDraftHTTPHeaders]
     }
 
-    @ViewBuilder
     private var connectionCard: some View {
-        formRow("agent.mcp.name") {
-            TextField(L("agent.mcp.namePlaceholder"), text: $viewModel.mcpDraftName)
-                .textFieldStyle(.roundedBorder)
-        }
-        formRow("agent.mcp.transportType") {
-            TypefluxPopup(title: L("agent.mcp.transportType"),
-                          options: [(label: L("agent.mcp.transport.stdio"), value: MCPTransportType.stdio),
-                                    (label: L("agent.mcp.transport.http"), value: MCPTransportType.http)],
-                          selection: $viewModel.mcpDraftTransportType)
-        }
-        if viewModel.mcpDraftTransportType == .stdio {
-            formRow("agent.mcp.stdio.command") {
-                TextField("/usr/local/bin/my-mcp-server", text: $viewModel.mcpDraftStdioCommand)
-                    .textFieldStyle(.roundedBorder)
+        StudioCard(padding: 0) {
+            VStack(alignment: .leading, spacing: 0) {
+                formRow("agent.mcp.name") {
+                    TextField(L("agent.mcp.namePlaceholder"), text: $viewModel.mcpDraftName)
+                        .textFieldStyle(.roundedBorder)
+                }
+                ModelRowDivider()
+                formRow("agent.mcp.transportType") {
+                    TypefluxPopup(title: L("agent.mcp.transportType"),
+                                  options: [(label: L("agent.mcp.transport.stdio"), value: MCPTransportType.stdio),
+                                            (label: L("agent.mcp.transport.http"), value: MCPTransportType.http)],
+                                  selection: $viewModel.mcpDraftTransportType)
+                }
+                ModelRowDivider()
+                if viewModel.mcpDraftTransportType == .stdio {
+                    formRow("agent.mcp.stdio.command") {
+                        TextField("/usr/local/bin/my-mcp-server", text: $viewModel.mcpDraftStdioCommand)
+                            .textFieldStyle(.roundedBorder)
+                    }
+                    ModelRowDivider()
+                    formRow("agent.mcp.stdio.args") {
+                        TextField("--port 3000 --verbose", text: $viewModel.mcpDraftStdioArgs)
+                            .textFieldStyle(.roundedBorder)
+                    }
+                    ModelRowDivider()
+                    keyValueEditor(
+                        label: "agent.mcp.stdio.env",
+                        placeholder: "NODE_ENV",
+                        text: $viewModel.mcpDraftStdioEnv
+                    )
+                    .id(MCPTransportType.stdio)
+                } else {
+                    formRow("agent.mcp.http.url") {
+                        TextField("https://mcp.example.com/sse", text: $viewModel.mcpDraftHTTPURL)
+                            .textFieldStyle(.roundedBorder)
+                    }
+                    ModelRowDivider()
+                    keyValueEditor(
+                        label: "agent.mcp.http.headers",
+                        placeholder: "Authorization",
+                        text: $viewModel.mcpDraftHTTPHeaders
+                    )
+                    .id(MCPTransportType.http)
+                }
             }
-            formRow("agent.mcp.stdio.args") {
-                TextField("--port 3000 --verbose", text: $viewModel.mcpDraftStdioArgs)
-                    .textFieldStyle(.roundedBorder)
-            }
-            keyValueEditor(
-                label: "agent.mcp.stdio.env",
-                placeholder: "NODE_ENV",
-                text: $viewModel.mcpDraftStdioEnv
-            )
-            .id(MCPTransportType.stdio)
-        } else {
-            formRow("agent.mcp.http.url") {
-                TextField("https://mcp.example.com/sse", text: $viewModel.mcpDraftHTTPURL)
-                    .textFieldStyle(.roundedBorder)
-            }
-            keyValueEditor(
-                label: "agent.mcp.http.headers",
-                placeholder: "Authorization",
-                text: $viewModel.mcpDraftHTTPHeaders
-            )
-            .id(MCPTransportType.http)
         }
     }
 
     private func formRow(_ key: String, @ViewBuilder field: () -> some View) -> some View {
-        AgentFormRow(label: L(key), field: field)
+        AgentFormRow(label: L(key), labelWidth: 100, field: field)
+            .padding(.horizontal, 18).padding(.vertical, 10)
+            .accessibilityElement(children: .contain)
     }
 
     private func keyValueEditor(label: String, placeholder: String, text: Binding<String>) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(L(label)).font(.body).foregroundStyle(.secondary)
+            Text(L(label)).font(.system(size: 13)).foregroundStyle(StudioTheme.textSecondary)
             MCPKeyValueEditor(text: text, keyPlaceholder: placeholder, valuePlaceholder: L("agent.mcp.kv.value"))
-        }
+        }.padding(18)
     }
 
     private func settingRow(_ title: String, subtitle: String, selection: Binding<Bool>) -> some View {
-        TypefluxSettingsRow(L(title), description: L(subtitle)) {
-            TypefluxSwitch(L(title), isOn: selection, labelsHidden: true)
+        HStack(spacing: 14) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(L(title)).font(.system(size: 13, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
+                Text(L(subtitle)).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 12)
+            Toggle(L(title), isOn: selection).labelsHidden().toggleStyle(.switch).accessibilityLabel(L(title))
+        }.padding(18)
+    }
+
+    private var actions: some View {
+        HStack(spacing: 8) {
+            Button(L("common.cancel"), action: closeEditor).buttonStyle(.bordered)
+                .keyboardShortcut(.cancelAction)
+            Spacer(minLength: 8)
+            Button {
+                viewModel.testMCPDraftConnection()
+            } label: {
+                HStack(spacing: 6) {
+                    if viewModel.mcpConnectionTestState == .testing {
+                        ProgressView().controlSize(.small).accessibilityHidden(true)
+                    }
+                    Text(L(viewModel
+                            .mcpConnectionTestState == .testing ? "agent.mcp.testing" : "agent.mcp.testConnection"))
+                }
+            }
+            .buttonStyle(.bordered)
+            .accessibilityLabel(L(viewModel.mcpConnectionTestState == .testing
+                    ? "agent.mcp.testing" : "agent.mcp.testConnection"))
+            .disabled(!viewModel.canSaveMCPDraft || viewModel.mcpConnectionTestState == .testing)
+            Button(L("common.save")) {
+                viewModel.saveMCPDraft()
+                closeEditor()
+            }
+            .buttonStyle(.borderedProminent).disabled(!viewModel.canSaveMCPDraft)
+            .keyboardShortcut(.defaultAction)
         }
     }
 
@@ -102,19 +150,69 @@ struct MCPServerEditorView: View {
         onClose()
     }
 
-    @ViewBuilder private var mcpConnectionTestResultView: some View {
+    @ViewBuilder
+    private var mcpConnectionTestResultView: some View {
         switch viewModel.mcpConnectionTestState {
-        case .idle: EmptyView()
+        case .idle:
+            EmptyView()
         case .testing:
-            HStack { ProgressView().controlSize(.small); Text(L("agent.mcp.testing")).font(.subheadline) }
+            HStack(spacing: StudioTheme.Spacing.xSmall) {
+                ProgressView().controlSize(.small)
+                Text(L("agent.mcp.testing"))
+                    .font(.studioBody(StudioTheme.Typography.caption))
+                    .foregroundStyle(StudioTheme.textSecondary)
+            }
         case let .success(tools):
-            TypefluxStatus(L("agent.mcp.testSuccess", tools.count), tone: .success)
-            ForEach(tools) { tool in
-                TypefluxSettingsRow(tool.name, description: tool.description) { EmptyView() }
+            VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+                HStack(spacing: StudioTheme.Spacing.xSmall) {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(StudioTheme.success)
+                    Text(L("agent.mcp.testSuccess", tools.count))
+                        .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
+                        .foregroundStyle(StudioTheme.textPrimary)
+                }
+                if !tools.isEmpty {
+                    VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
+                        ForEach(tools) { tool in
+                            HStack(alignment: .top, spacing: StudioTheme.Spacing.xSmall) {
+                                Image(systemName: "wrench.and.screwdriver")
+                                    .font(.system(size: 10, weight: .medium))
+                                    .foregroundStyle(StudioTheme.textTertiary)
+                                    .frame(width: 14, alignment: .center)
+                                    .padding(.top, 2)
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text(tool.name)
+                                        .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
+                                        .foregroundStyle(StudioTheme.textPrimary)
+                                    if !tool.description.isEmpty {
+                                        Text(tool.description)
+                                            .font(.studioBody(StudioTheme.Typography.caption, weight: .regular))
+                                            .foregroundStyle(StudioTheme.textSecondary)
+                                            .lineLimit(2)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    .padding(StudioTheme.Spacing.small)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.medium, style: .continuous)
+                            .fill(StudioTheme.controlSurface)
+                    )
+                }
             }
         case let .failure(message):
-            Text(message).font(.subheadline).foregroundStyle(TypefluxColor.danger.color)
-                .fixedSize(horizontal: false, vertical: true).textSelection(.enabled)
+            HStack(alignment: .top, spacing: StudioTheme.Spacing.xSmall) {
+                Image(systemName: "xmark.circle.fill")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(StudioTheme.danger)
+                Text(message)
+                    .font(.studioBody(StudioTheme.Typography.caption))
+                    .foregroundStyle(StudioTheme.danger)
+                    .fixedSize(horizontal: false, vertical: true).textSelection(.enabled)
+            }
         }
     }
 }

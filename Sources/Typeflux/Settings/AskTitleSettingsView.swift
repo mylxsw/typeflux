@@ -10,8 +10,7 @@ struct AskTitleSettingsView: View {
 
     private var options: [(label: String, value: String)] {
         var values = [(label: L("ask.title.auto"), value: "")]
-        values += cloudModels.filter { $0.id != "default" }.map { (label: "Typeflux Cloud · " + $0.name,
-                                                                   value: $0.registered.reference) }
+        values += cloudModels.filter { $0.id != "default" }.map { (label: "Typeflux Cloud · " + $0.name, value: $0.registered.reference) }
         for provider in library.selectableProviders(loggedIn: false, hasImage: false, scenario: "rewrite") {
             values += provider.models.map { (label: provider.name + " · " + $0.displayName, value: $0.reference) }
         }
@@ -23,11 +22,10 @@ struct AskTitleSettingsView: View {
 
     var body: some View {
         AgentSettingsSection(title: L("ask.title.section")) {
-            AgentSettingsRow(icon: "textformat", title: L("ask.title.enabled"),
-                             subtitle: L("ask.title.enabled.subtitle")) {
-                Toggle("", isOn: $enabled).labelsHidden().toggleStyle(.switch)
-                    .accessibilityLabel(L("ask.title.enabled"))
+            AgentSettingsRow(icon: "textformat", title: L("ask.title.enabled"), subtitle: L("ask.title.enabled.subtitle")) {
+                Toggle("", isOn: $enabled).labelsHidden().toggleStyle(.switch).accessibilityLabel(L("ask.title.enabled"))
             }
+            ModelRowDivider(leading: 66)
             AgentSettingsRow(
                 icon: "sparkles",
                 title: L("ask.title.model"),
@@ -37,16 +35,16 @@ struct AskTitleSettingsView: View {
                 TypefluxPopup(title: L("ask.title.model"), options: options, selection: $reference)
                     .frame(width: 200).disabled(!enabled)
             }
-            Text(L("ask.title.cost")).font(.subheadline).foregroundStyle(StudioTheme.textTertiary)
-                .fixedSize(horizontal: false, vertical: true)
+            Text(L("ask.title.cost")).font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
+                .fixedSize(horizontal: false, vertical: true).padding(18)
         }
         .onAppear { enabled = settings.askAutomaticTitles; reference = settings.askTitleModelReference }
         .onChange(of: enabled) { settings.askAutomaticTitles = $0 }
         .onChange(of: reference) { settings.askTitleModelReference = $0 }
         .task(id: auth.isLoggedIn) {
             cloudModels = []
-            guard auth.isLoggedIn, let token = auth.accessToken else { return }
-            cloudModels = await (try? AskAPIClient().featureModels(feature: "conversation-title", token: token)) ?? []
+            guard let token = auth.accessToken else { return }
+            cloudModels = (try? await AskAPIClient().featureModels(feature: "conversation-title", token: token)) ?? []
         }
     }
 }

@@ -137,9 +137,9 @@ struct AskWorkflowSettingsView: View {
     @State private var runDetails: AskWorkflowRunDetails?
 
     var body: some View {
-        TypefluxForm {
-            Section { header }
-            Section { list }
+        VStack(alignment: .leading, spacing: 18) {
+            header
+            StudioCard(padding: 0) { list }
         }
         .onAppear { store.reload() }
         .sheet(isPresented: $showingGallery) {
@@ -161,11 +161,7 @@ struct AskWorkflowSettingsView: View {
         }
         .sheet(item: $runDetails) { $0 }
         .confirmationDialog(L("ask.workflow.editor.deleteTitle", deleting?.manifest?.name ?? deleting?.id ?? ""),
-                            isPresented: Binding(get: { deleting != nil }, set: {
-                                if !$0 {
-                                    deleting = nil
-                                }
-                            }),
+                            isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }),
                             presenting: deleting) { workflow in
             Button(L("ask.workflow.delete"), role: .destructive) {
                 delete(workflow)
@@ -175,28 +171,31 @@ struct AskWorkflowSettingsView: View {
         }
     }
 
-    @ViewBuilder
     private var list: some View {
-        if store.workflows.isEmpty {
-            AskWorkflowGalleryStarter(store: store, gallery: .bundled,
-                                      builtIn: settings.effectiveAskLauncherKeywords(reserving: store.workflows),
-                                      browse: { showingGallery = true },
-                                      open: { AskWorkflowEditorWindowController.shared.show(workflowID: $0) })
-        }
-        let builtIn = settings.effectiveAskLauncherKeywords(reserving: store.workflows)
-        let conflicts = AskWorkflowStore.keywords(of: store.plugins { (nil, nil) }, excluding: builtIn).conflicts
-        if !store.workflows.isEmpty, visibleWorkflows.isEmpty {
-            AgentSettingsEmptyRow(text: L("personas.redesign.noResults", toolbarQuery ?? searchQuery))
-        }
-        ForEach(visibleWorkflows) { workflow in
-            row(
-                workflow,
-                summary: AskWorkflowSummary(workflow, conflicts: conflicts, lastRun: log.last(for: workflow.id))
-            )
-        }
-        if let failure {
-            Text(failure).font(.system(size: 11.5)).foregroundStyle(StudioTheme.warning)
-                .padding(.horizontal, 18).padding(.vertical, 6)
+        VStack(alignment: .leading, spacing: 0) {
+            if store.workflows.isEmpty {
+                AskWorkflowGalleryStarter(store: store, gallery: .bundled,
+                                          builtIn: settings.effectiveAskLauncherKeywords(reserving: store.workflows),
+                                          browse: { showingGallery = true },
+                                          open: { AskWorkflowEditorWindowController.shared.show(workflowID: $0) })
+                ModelRowDivider(leading: 18)
+            }
+            let builtIn = settings.effectiveAskLauncherKeywords(reserving: store.workflows)
+            let conflicts = AskWorkflowStore.keywords(of: store.plugins { (nil, nil) }, excluding: builtIn).conflicts
+            if !store.workflows.isEmpty, visibleWorkflows.isEmpty {
+                AgentSettingsEmptyRow(text: L("personas.redesign.noResults", toolbarQuery ?? searchQuery))
+            }
+            ForEach(Array(visibleWorkflows.enumerated()), id: \.element.id) { index, workflow in
+                if index > 0 { ModelRowDivider(leading: 66) }
+                row(
+                    workflow,
+                    summary: AskWorkflowSummary(workflow, conflicts: conflicts, lastRun: log.last(for: workflow.id))
+                )
+            }
+            if let failure {
+                Text(failure).font(.system(size: 11.5)).foregroundStyle(StudioTheme.warning)
+                    .padding(.horizontal, 18).padding(.vertical, 6)
+            }
         }
     }
 

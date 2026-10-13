@@ -8,10 +8,10 @@ extension AskToolsSettingsView {
         AgentCapabilityStatus.status(of: capability, inputs: capabilityInputs)
     }
 
-    func capabilityHeader(_ capability: AgentCapability) -> AgentPaneHeader<TypefluxStatus> {
+    func capabilityHeader(_ capability: AgentCapability) -> AgentPaneHeader<AgentStatusBadge> {
         let state = status(of: capability)
         return AgentPaneHeader(symbol: capability.symbol, title: capability.title) {
-            TypefluxStatus(state.label, tone: state.level.tone)
+            AgentStatusBadge(level: state.level, label: state.label)
         }
     }
 
@@ -20,7 +20,7 @@ extension AskToolsSettingsView {
     @ViewBuilder var searchPane: some View {
         let state = status(of: .webSearch)
         AgentPaneHeader(symbol: AgentCapability.webSearch.symbol, title: AgentCapability.webSearch.title) {
-            TypefluxStatus(state.label, tone: state.level.tone)
+            AgentStatusBadge(level: state.level, label: state.label)
             Toggle("", isOn: Binding(get: { searchProvider != .none }, set: setSearchEnabled))
                 .labelsHidden().toggleStyle(.switch)
                 .accessibilityLabel(AgentCapability.webSearch.title)
@@ -32,11 +32,11 @@ extension AskToolsSettingsView {
                 AgentSearchForm(
                     provider: Binding(get: { searchProvider }, set: setSearchProvider),
                     apiKey: Binding(get: { searchKey }, set: { searchKey = $0; saveSearchKey() }),
-                    cloudflare: Binding(get: { cloudflareSearch },
-                                        set: { cloudflareSearch = $0; search.cloudflare = $0 }),
+                    cloudflare: Binding(get: { cloudflareSearch }, set: { cloudflareSearch = $0; search.cloudflare = $0 }),
                     missing: missingSearchFields,
                     configuration: searchConfiguration
                 )
+                .padding(18)
             }
         }
     }
@@ -45,18 +45,19 @@ extension AskToolsSettingsView {
 
     @ViewBuilder var filesPane: some View {
         capabilityHeader(.files)
-        Group {
+        VStack(alignment: .leading, spacing: 8) {
             AgentSettingsSection(title: L("ask.settings.folders.title"),
                                  detail: L("agent.status.files.count", folders.count)) {
                 if folders.isEmpty {
                     AgentSettingsEmptyRow(text: L("agent.files.empty"))
+                    ModelRowDivider(leading: 18)
                 }
                 ForEach(folders, id: \.self) { folder in
                     AgentSettingsRow(icon: "folder", title: (folder as NSString).lastPathComponent,
                                      subtitle: folder, subtitleLineLimit: 1) {
-                        TypefluxIconButton(L("ask.remove") + " " + folder,
-                                           systemImage: "minus") { removeFolder(folder) }
+                        AgentSettingsIconButton(systemImage: "minus", help: L("ask.remove")) { removeFolder(folder) }
                     }
+                    ModelRowDivider(leading: 66)
                 }
                 AgentSettingsActionRow(icon: "plus", title: L("ask.settings.folders.add")) { addFolder() }
             }
@@ -72,7 +73,7 @@ extension AskToolsSettingsView {
     @ViewBuilder var codePane: some View {
         let state = status(of: .codeExecution)
         AgentPaneHeader(symbol: AgentCapability.codeExecution.symbol, title: AgentCapability.codeExecution.title) {
-            TypefluxStatus(state.label, tone: state.level.tone)
+            AgentStatusBadge(level: state.level, label: state.label)
             Toggle("", isOn: Binding(get: { codeEnabled }, set: setCodeExecution))
                 .labelsHidden().toggleStyle(.switch)
                 .accessibilityLabel(AgentCapability.codeExecution.title)
@@ -83,11 +84,10 @@ extension AskToolsSettingsView {
 
     @ViewBuilder var automationPane: some View {
         capabilityHeader(.automation)
-        AgentSettingsSection(title: L("agent.automation.permissions"),
-                             footnote: L("agent.automation.permissions.hint")) {
-            permissionRow(icon: "hand.tap", title: L("permission.accessibility.title"),
-                          detail: L("agent.automation.accessibility"),
+        AgentSettingsSection(title: L("agent.automation.permissions"), footnote: L("agent.automation.permissions.hint")) {
+            permissionRow(icon: "hand.tap", title: L("permission.accessibility.title"), detail: L("agent.automation.accessibility"),
                           granted: accessibilityGranted, request: permissions.requestAccessibility)
+            ModelRowDivider(leading: 66)
             permissionRow(icon: "rectangle.dashed.badge.record", title: L("agent.automation.screen.title"),
                           detail: L("agent.automation.screen"),
                           granted: screenRecordingGranted, request: permissions.requestScreenRecording)
@@ -103,10 +103,122 @@ extension AskToolsSettingsView {
                                request: @escaping @MainActor () -> Void) -> some View {
         AgentSettingsRow(icon: icon, title: title, subtitle: detail) {
             if granted {
-                TypefluxStatus(L("permission.badge.granted"), tone: .success)
+                AgentStatusBadge(level: .ready, label: L("permission.badge.granted"))
             } else {
                 Button(L("permission.action.openSettings")) { request() }.buttonStyle(.bordered)
             }
+        }
+    }
+}
+
+/// A one-line explanation in an accent-tinted box, e.g. why a pane has nothing to set.
+struct AgentInfoNote: View {
+    let text: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 8) {
+            Image(systemName: "info.circle").foregroundStyle(TypefluxColor.accent.color)
+            Text(text).foregroundStyle(StudioTheme.textSecondary).fixedSize(horizontal: false, vertical: true)
+        }
+        .font(.system(size: 12.5))
+        .padding(.horizontal, 14).padding(.vertical, 10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(TypefluxColor.accent.color.opacity(0.1), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+    }
+}
+
+/// Provider choice, credentials and connection test for local web search.
+struct AgentSearchForm: View {
+    @Binding var provider: AskSearchSettings.Provider
+    @Binding var apiKey: String
+    @Binding var cloudflare: AskCloudflareSearchConfiguration
+    let missing: [AgentSearchField]
+    let configuration: AskSearchConfiguration
+    @StateObject private var connection = AskCloudflareConnectionTest()
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            // Turning search off is the pane's switch, so only real providers are offered here.
+            ModelSegmentedControl(
+                options: AskSearchSettings.Provider.allCases.filter { $0 != .none }
+                    .map { (label: AgentCapabilityStatus.searchProviderName($0), value: $0) },
+                selection: $provider
+            )
+            if provider != .none {
+                AgentFormRow(label: AgentSearchField.apiKey.title(for: provider), required: true) {
+                    SecureField(
+                        provider == .cloudflare ? L("agent.search.cloudflare.tokenPlaceholder") :
+                            L("agent.search.keyPlaceholder"),
+                        text: $apiKey
+                    )
+                    .textFieldStyle(.roundedBorder)
+                }
+                if provider == .cloudflare {
+                    AskCloudflareSearchSettingsView(configuration: $cloudflare)
+                }
+                testBar
+                footnote
+            }
+        }
+        .onChange(of: provider) { _ in connection.reset() }
+        .onChange(of: apiKey) { _ in connection.reset() }
+        .onChange(of: cloudflare) { _ in connection.reset() }
+        .onDisappear { connection.reset() }
+    }
+
+    private var testBar: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 10) {
+                Button {
+                    connection.start(configuration)
+                } label: {
+                    HStack(spacing: 6) {
+                        if connection.testing { ProgressView().controlSize(.small) }
+                        Text(L(connection.testing ? "ask.settings.search.cloudflare.testing" : "ask.settings.search.cloudflare.test"))
+                    }
+                }
+                .buttonStyle(.bordered)
+                .disabled(connection.testing || !missing.isEmpty)
+                if !missing.isEmpty {
+                    Text(L("agent.search.missing", missing.map { $0.title(for: provider) }.joined(separator: L("agent.listSeparator"))))
+                        .font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
+                }
+            }
+            if let result = connection.result {
+                let ok = connection.succeeded == true
+                HStack(alignment: .top, spacing: 8) {
+                    Image(systemName: ok ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                    Text(result).fixedSize(horizontal: false, vertical: true)
+                }
+                .font(.system(size: 12))
+                .foregroundStyle(ok ? StudioTheme.success : StudioTheme.danger)
+                .padding(.horizontal, 12).padding(.vertical, 8)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background((ok ? StudioTheme.success : StudioTheme.danger).opacity(0.12),
+                            in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            }
+        }
+    }
+
+    @ViewBuilder private var footnote: some View {
+        if provider == .cloudflare {
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text(L("agent.search.cloudflare.help")).fixedSize(horizontal: false, vertical: true)
+                Link(L("ask.settings.search.cloudflare.guide"),
+                     destination: URL(string: "https://developers.cloudflare.com/web-search/how-to-use/")!)
+            }
+            .font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
+        } else if let url = Self.keyURL(for: provider) {
+            Link(L("agent.search.getKey", AgentCapabilityStatus.searchProviderName(provider)), destination: url)
+                .font(.system(size: 12))
+        }
+    }
+
+    static func keyURL(for provider: AskSearchSettings.Provider) -> URL? {
+        switch provider {
+        case .tavily: URL(string: "https://app.tavily.com/")
+        case .brave: URL(string: "https://api-dashboard.search.brave.com/")
+        case .none, .cloudflare: nil
         }
     }
 }

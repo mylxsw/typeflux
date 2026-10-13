@@ -25,41 +25,48 @@ struct MemoryNotesEditorView: View {
     }
 
     var body: some View {
-        TypefluxForm {
-            Section {
-                TypefluxSettingsRow(L("agent.memory.count", model.notes.count)) {
-                    Button {
-                        query = ""
-                        model.beginAdding()
-                    } label: { Label(L("agent.memory.add"), systemImage: "plus") }
-                        .buttonStyle(.borderedProminent).disabled(model.draft != nil)
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 10) {
+                Spacer()
+                Button {
+                    query = ""
+                    model.beginAdding()
+                } label: {
+                    Label(L("agent.memory.add"), systemImage: "plus")
                 }
+                .buttonStyle(.borderedProminent)
+                .disabled(model.draft != nil)
             }
-            Section {
-                if let draft = model.draft, draft.note == nil {
-                    editor
-                }
-                if model.notes.isEmpty, model.draft == nil {
-                    TypefluxEmptyState(L("agent.memory.emptyTitle"), systemImage: "brain",
-                                       description: L("agent.memory.emptyMessage"))
-                } else if visibleNotes.isEmpty, model.draft == nil {
-                    AgentSettingsEmptyRow(text: L("agent.memory.noMatch"))
-                }
-                ForEach(visibleNotes) { note in
-                    if model.draft?.note?.id == note.id {
+            StudioCard(padding: 0) {
+                VStack(alignment: .leading, spacing: 0) {
+                    if let draft = model.draft, draft.note == nil {
                         editor
-                    } else {
-                        row(note)
+                        if !visibleNotes.isEmpty { ModelRowDivider(leading: 66) }
+                    }
+                    if model.notes.isEmpty, model.draft == nil {
+                        AgentEmptyState(symbol: "brain", title: L("agent.memory.emptyTitle"),
+                                        message: L("agent.memory.emptyMessage")) { EmptyView() }
+                    } else if visibleNotes.isEmpty, model.draft == nil {
+                        AgentSettingsEmptyRow(text: L("agent.memory.noMatch"))
+                    }
+                    ForEach(Array(visibleNotes.enumerated()), id: \.element.id) { index, note in
+                        if index > 0 { ModelRowDivider(leading: 66) }
+                        if model.draft?.note?.id == note.id {
+                            editor
+                        } else {
+                            row(note)
+                        }
                     }
                 }
             }
             if let error = model.error {
-                Text(error).font(.subheadline).foregroundStyle(TypefluxColor.danger.color)
+                Text(error).font(.system(size: 12)).foregroundStyle(StudioTheme.danger)
             }
             if let removed = model.recentlyRemoved {
                 AgentUndoBanner(message: L("agent.memory.removed"),
                                 onUndo: { model.undoRemove(to: store, owner: owner) },
-                                onDismiss: { model.dismissUndo() }).id(removed.id)
+                                onDismiss: { model.dismissUndo() })
+                    .id(removed.id)
             }
         }
         .onChange(of: owner) { _ in
@@ -88,12 +95,12 @@ struct MemoryNotesEditorView: View {
         AgentSettingsRow(icon: "brain", title: note.text, subtitle: Self.provenance(note), titleLineLimit: nil) {
             HStack(spacing: 8) {
                 if correctionsEnabled {
-                    TypefluxIconButton(L("memory.correct"), systemImage: "pencil") {
+                    AgentSettingsIconButton(systemImage: "pencil", help: L("memory.correct")) {
                         model.beginEditing(note)
                     }
                     .disabled(model.draft != nil)
                 }
-                TypefluxIconButton(L("memory.deleteSource"), systemImage: "trash", kind: .destructive) {
+                AgentSettingsIconButton(systemImage: "trash", help: L("memory.deleteSource"), role: .destructive) {
                     model.remove(note, from: store, owner: owner)
                 }
             }
@@ -104,13 +111,29 @@ struct MemoryNotesEditorView: View {
         let isNew = model.draft?.note == nil
         let currentExpiry = model.draft?.note?.provenance?.expiry
         return HStack(alignment: .top, spacing: 14) {
+            ModelIconTile {
+                Image(systemName: isNew ? "plus" : "pencil").font(.system(size: 14))
+                    .foregroundStyle(TypefluxColor.accent.color)
+            }
             VStack(alignment: .leading, spacing: 8) {
                 TextEditor(text: Binding(get: { model.draft?.text ?? "" }, set: { model.draft?.text = $0 }))
-                    .font(.body)
-                    .frame(height: 90)
+                    .font(.system(size: 13))
+                    .scrollContentBackground(.hidden)
+                    .padding(6)
+                    .frame(height: 72)
+                    .background(TypefluxColor.controlBackground.color,
+                                in: RoundedRectangle(
+                                    cornerRadius: TypefluxRadius.textField.value(for: .classic),
+                                    style: .continuous
+                                ))
+                    .overlay(RoundedRectangle(
+                        cornerRadius: TypefluxRadius.textField.value(for: .classic),
+                        style: .continuous
+                    )
+                    .strokeBorder(TypefluxColor.accent.color.opacity(0.6)))
                     .accessibilityLabel(L(isNew ? "agent.memory.add" : "memory.correct"))
                 HStack(spacing: 8) {
-                    Text(L("memory.retention")).font(.subheadline).foregroundStyle(StudioTheme.textTertiary)
+                    Text(L("memory.retention")).font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
                     TypefluxPopup(title: L("memory.retention"),
                                   options: retentionOptions(isNew: isNew, currentExpiry: currentExpiry),
                                   selection: Binding(
@@ -129,6 +152,7 @@ struct MemoryNotesEditorView: View {
                 }
             }
         }
+        .padding(.horizontal, 18).padding(.vertical, 14)
     }
 
     static func provenance(_ note: AskMemoryNote) -> String {

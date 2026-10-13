@@ -22,7 +22,7 @@ final class AgentSettingsRedesignTests: XCTestCase {
     }
 
     private func settings() throws -> SettingsStore {
-        try SettingsStore(defaults: XCTUnwrap(UserDefaults(suiteName: suite)))
+        SettingsStore(defaults: try XCTUnwrap(UserDefaults(suiteName: suite)))
     }
 
     func testSkillFilteringAndInstallPreview() {
@@ -52,8 +52,7 @@ final class AgentSettingsRedesignTests: XCTestCase {
         let folder = library.userDirectory.appendingPathComponent("house-style")
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         try "---\ndescription: Our house style\n---\nSign as Team.".write(
-            to: folder.appendingPathComponent("SKILL.md"), atomically: true, encoding: .utf8
-        )
+            to: folder.appendingPathComponent("SKILL.md"), atomically: true, encoding: .utf8)
         let view = AskToolsSettingsView(settings: settings, skills: library,
                                         notes: AskMemoryNoteStore(fileURL: root.appendingPathComponent("n.json")),
                                         owner: { "o" }, pane: .skills,
@@ -67,15 +66,15 @@ final class AgentSettingsRedesignTests: XCTestCase {
         _ = NSApplication.shared
         let sheet = try await render(view.installSheet, appearance: .aqua, height: 400)
         XCTAssertGreaterThan(sheet.count, 4000)
-        view.startInstall() // An empty link never starts an install.
+        view.startInstall()  // An empty link never starts an install.
 
-        view.rollbackSkill(local) // No previous version: reported, not thrown.
+        view.rollbackSkill(local)  // No previous version: reported, not thrown.
         XCTAssertNotNil(library.skills().first { $0.name == "house-style" })
         view.setSkill("house-style", enabled: false)
         view.removeSkill(local)
         XCTAssertNil(library.skills().first { $0.name == "house-style" })
         XCTAssertFalse(settings.askDisabledSkills.contains("house-style"), "Removal resets the preference")
-        view.removeSkill(local) // Already gone: reported, not thrown.
+        view.removeSkill(local)  // Already gone: reported, not thrown.
     }
 
     func testFolderRemovalCanBeRestored() throws {
@@ -100,17 +99,13 @@ final class AgentSettingsRedesignTests: XCTestCase {
         let success = AskCloudflareConnectionTest { _ in }
         XCTAssertNil(success.succeeded)
         success.start(config)
-        for _ in 0 ..< 100 where success.testing {
-            await Task.yield()
-        }
+        for _ in 0 ..< 100 where success.testing { await Task.yield() }
         XCTAssertEqual(success.succeeded, true)
         success.reset()
         XCTAssertNil(success.succeeded)
         let failure = AskCloudflareConnectionTest { _ in throw AskLocalError.message("nope") }
         failure.start(config)
-        for _ in 0 ..< 100 where failure.testing {
-            await Task.yield()
-        }
+        for _ in 0 ..< 100 where failure.testing { await Task.yield() }
         XCTAssertEqual(failure.succeeded, false)
         failure.start(.init(provider: .brave))
         XCTAssertEqual(failure.succeeded, false, "An incomplete configuration fails without searching")
@@ -118,9 +113,7 @@ final class AgentSettingsRedesignTests: XCTestCase {
 
     func testMCPImportDuplicateAndRemoval() throws {
         let settings = try settings()
-        let viewModel = StudioViewModel(settingsStore: settings,
-                                        historyStore: SQLiteHistoryStore(baseDir: root
-                                            .appendingPathComponent("history")),
+        let viewModel = StudioViewModel(settingsStore: settings, historyStore: SQLiteHistoryStore(baseDir: root.appendingPathComponent("history")),
                                         initialSection: .agent)
         viewModel.importMCPServers([])
         XCTAssertTrue(viewModel.mcpServers.isEmpty)
@@ -143,9 +136,7 @@ final class AgentSettingsRedesignTests: XCTestCase {
 
     func testMCPConnectionResultIsRecordedPerServer() async throws {
         let settings = try settings()
-        let viewModel = StudioViewModel(settingsStore: settings,
-                                        historyStore: SQLiteHistoryStore(baseDir: root
-                                            .appendingPathComponent("history")),
+        let viewModel = StudioViewModel(settingsStore: settings, historyStore: SQLiteHistoryStore(baseDir: root.appendingPathComponent("history")),
                                         initialSection: .agent)
         viewModel.importMCPServers([MCPServerConfig(name: "bad", transport: .http(.init(url: "")))])
         let server = try XCTUnwrap(viewModel.mcpServers.first)
@@ -155,9 +146,7 @@ final class AgentSettingsRedesignTests: XCTestCase {
             try await Task.sleep(for: .milliseconds(10))
         }
         guard case .failure? = viewModel.mcpServerTestResults[server.id] else {
-            return XCTFail(
-                "Expected a failed test, got \(String(describing: viewModel.mcpServerTestResults[server.id]))"
-            )
+            return XCTFail("Expected a failed test, got \(String(describing: viewModel.mcpServerTestResults[server.id]))")
         }
         viewModel.beginEditMCPServer(server)
         viewModel.mcpDraftHTTPURL = "https://example.invalid/mcp"
@@ -177,8 +166,7 @@ final class AgentSettingsRedesignTests: XCTestCase {
         for tab in AgentSettingsPane.allCases where tab != .mcpServers {
             var reported: [AgentCapabilityStatus] = []
             for granted in [false, true] {
-                let view = AskToolsSettingsView(settings: settings, skills: library, notes: notes, owner: { "o" },
-                                                pane: tab,
+                let view = AskToolsSettingsView(settings: settings, skills: library, notes: notes, owner: { "o" }, pane: tab,
                                                 onStatusesChange: { reported = $0 },
                                                 permissions: .fixed(accessibility: granted, screenRecording: granted))
                 for appearance in [NSAppearance.Name.aqua, .darkAqua] {
@@ -188,8 +176,7 @@ final class AgentSettingsRedesignTests: XCTestCase {
                         let directory = URL(fileURLWithPath: output)
                         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
                         try png.write(to: directory.appendingPathComponent(
-                            "agent-\(tab.rawValue)-\(appearance == .aqua ? "light" : "dark").png"
-                        ))
+                            "agent-\(tab.rawValue)-\(appearance == .aqua ? "light" : "dark").png"))
                     }
                 }
             }
@@ -202,34 +189,28 @@ final class AgentSettingsRedesignTests: XCTestCase {
     func testComponentsRender() async throws {
         let view = VStack(alignment: .leading, spacing: 12) {
             SettingsPaneLayout(sections: AgentSettingsPane.sections, selection: .constant(.webSearch),
-                               status: { pane in pane.capability.map { AgentCapabilityStatus(
-                                   capability: $0,
-                                   level: .attention,
-                                   label: "Fix"
-                               ) } }) {
+                               status: { pane in pane.capability.map { AgentCapabilityStatus(capability: $0, level: .attention, label: "Fix") } }) {
                 Text("Detail")
             }
-            SettingsPaneLayout(sections: LauncherSettingsPane.sections, selection: .constant(.keywords),
-                               compact: true) {
+            SettingsPaneLayout(sections: LauncherSettingsPane.sections, selection: .constant(.keywords), compact: true) {
                 Text("Detail")
             }
-            AgentPaneHeader(symbol: "globe", title: "Search", subtitle: "Finds pages") { Toggle("",
-                                                                                                isOn: .constant(true)) }
+            AgentPaneHeader(symbol: "globe", title: "Search", subtitle: "Finds pages") { Toggle("", isOn: .constant(true)) }
             AgentPaneHeader(symbol: "folder", title: "Files")
             AgentRulesCard(rules: [(title: "No network", detail: nil), (title: "Asks first", detail: "Every time")])
             AgentRulesCard(title: "Rules", rules: [(title: "Off", detail: nil)], dimmed: true)
             AgentInfoNote(text: "Search is off")
-            HStack { ForEach([AgentCapabilityStatus.Level.ready, .attention, .off],
-                             id: \.self) { AgentStatusDot(level: $0) } }
-            TypefluxStatus("Ready", tone: .success)
-            TypefluxStatus("Fix", tone: .warning)
-            TypefluxStatus("Off", tone: .inactive)
-            TypefluxEmptyState("Empty", systemImage: "server.rack", description: "Nothing yet") { Button("Add") {} }
+            HStack { ForEach([AgentCapabilityStatus.Level.ready, .attention, .off], id: \.self) { AgentStatusDot(level: $0) } }
+            AgentStatusBadge(level: .ready, label: "Ready")
+            AgentStatusBadge(level: .attention, label: "Fix")
+            AgentStatusBadge(level: .off, label: "Off")
+            AgentFlowLayout { ForEach(0 ..< 12) { AgentFactChip(text: "Rule \($0)", systemImage: $0 == 0 ? "lock" : nil) } }
+                .frame(width: 300)
+            AgentEmptyState(symbol: "server.rack", title: "Empty", message: "Nothing yet") { Button("Add") {} }
             AgentUndoBanner(message: "Removed", onUndo: {}, onDismiss: {})
             AgentFormRow(label: "Token", required: true) { TextField("", text: .constant("")) }
-            DisclosureGroup("Advanced", isExpanded: .constant(true)) { Text("Options") }
-            MCPKeyValueEditor(text: .constant("API_KEY=1\nNODE_ENV=production"), keyPlaceholder: "NAME",
-                              valuePlaceholder: "Value")
+            AgentDisclosureButton(title: "Advanced", expanded: .constant(true))
+            MCPKeyValueEditor(text: .constant("API_KEY=1\nNODE_ENV=production"), keyPlaceholder: "NAME", valuePlaceholder: "Value")
             AgentSearchForm(provider: .constant(.cloudflare), apiKey: .constant(""), cloudflare: .constant(.init()),
                             missing: [.apiKey, .accountID], configuration: .init(provider: .cloudflare))
             AgentSearchForm(provider: .constant(.tavily), apiKey: .constant("k"), cloudflare: .constant(.init()),
@@ -240,8 +221,7 @@ final class AgentSettingsRedesignTests: XCTestCase {
                 badge: (text: "GitHub", accent: true),
                 source: AskSkillSource(url: "https://github.com/a/b", repository: "a/b", ref: "main", path: "skills/x",
                                        installedAt: Date(), commit: String(repeating: "a", count: 40),
-                                       installationID: UUID(), version: "1", resources: [],
-                                       declaredPermissions: ["files.read"]),
+                                       installationID: UUID(), version: "1", resources: [], declaredPermissions: ["files.read"]),
                 enabled: .constant(true), canRollback: true, onRollback: {}, onReveal: {}, onRemove: {}, onClose: {}
             )
         }
@@ -249,9 +229,6 @@ final class AgentSettingsRedesignTests: XCTestCase {
             let png = try await render(view, appearance: appearance, height: 1600)
             XCTAssertGreaterThan(png.count, 4000)
         }
-    }
-
-    func testSearchFormLinksAndEngineNames() {
         XCTAssertEqual(AgentSearchForm.keyURL(for: .tavily)?.host, "app.tavily.com")
         XCTAssertNotNil(AgentSearchForm.keyURL(for: .brave))
         XCTAssertNil(AgentSearchForm.keyURL(for: .cloudflare))
@@ -263,15 +240,13 @@ final class AgentSettingsRedesignTests: XCTestCase {
     func testSearchSwitchPicksTheProviderMostLikelySetUp() throws {
         XCTAssertEqual(AskToolsSettingsView.providerWhenEnabling(cloudflare: .init()), .tavily)
         XCTAssertEqual(AskToolsSettingsView.providerWhenEnabling(cloudflare: .init(accountID: "  ")), .tavily)
-        XCTAssertEqual(AskToolsSettingsView.providerWhenEnabling(cloudflare: .init(accountID: String(repeating: "a",
-                                                                                                     count: 32))),
-        .cloudflare)
+        XCTAssertEqual(AskToolsSettingsView.providerWhenEnabling(cloudflare: .init(accountID: String(repeating: "a", count: 32))),
+                       .cloudflare)
 
         let settings = try settings()
         let view = AskToolsSettingsView(settings: settings, skills: AskSkillLibrary(userDirectory: root),
                                         notes: AskMemoryNoteStore(fileURL: root.appendingPathComponent("n.json")),
-                                        owner: { "o" }, pane: .webSearch, permissions: .fixed(accessibility: true,
-                                                                                              screenRecording: true))
+                                        owner: { "o" }, pane: .webSearch, permissions: .fixed(accessibility: true, screenRecording: true))
         view.setSearchEnabled(true)
         XCTAssertEqual(AskSearchSettings(defaults: settings.defaults).provider, .tavily)
         view.setSearchEnabled(false)
@@ -303,8 +278,7 @@ final class AgentSettingsRedesignTests: XCTestCase {
         _ = NSApplication.shared
         for section in [StudioSection.agent, .launcher] {
             let viewModel = StudioViewModel(settingsStore: settings,
-                                            historyStore: SQLiteHistoryStore(baseDir: root
-                                                .appendingPathComponent("history")),
+                                            historyStore: SQLiteHistoryStore(baseDir: root.appendingPathComponent("history")),
                                             initialSection: section)
             for appearance in [NSAppearance.Name.aqua, .darkAqua] {
                 let png = try await render(StudioView(viewModel: viewModel), appearance: appearance,
@@ -314,8 +288,7 @@ final class AgentSettingsRedesignTests: XCTestCase {
                     let directory = URL(fileURLWithPath: output)
                     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
                     try png.write(to: directory.appendingPathComponent(
-                        "page-\(section.rawValue)-\(appearance == .aqua ? "light" : "dark").png"
-                    ))
+                        "page-\(section.rawValue)-\(appearance == .aqua ? "light" : "dark").png"))
                 }
             }
         }
@@ -327,10 +300,7 @@ final class AgentSettingsRedesignTests: XCTestCase {
         XCTAssertEqual(AgentOverviewSummary(statuses: [ready], noteCount: 0, onFix: { _ in }).detail,
                        L("agent.overview.allSet"))
         XCTAssertEqual(AgentOverviewSummary(statuses: [ready, fix], noteCount: 2, onFix: { _ in }).detail,
-                       L("agent.overview.needsAttention", 1, AgentCapability.webSearch.title) + " · " + L(
-                           "agent.overview.notes",
-                           2
-                       ))
+                       L("agent.overview.needsAttention", 1, AgentCapability.webSearch.title) + " · " + L("agent.overview.notes", 2))
     }
 
     func testAgentStringsExistInEveryLanguage() throws {
@@ -343,8 +313,7 @@ final class AgentSettingsRedesignTests: XCTestCase {
             tables[language] = try XCTUnwrap(NSDictionary(contentsOf: url) as? [String: String])
         }
         let english = try XCTUnwrap(tables[.english])
-        let keys = english.keys
-            .filter { $0.hasPrefix("agent.") || $0.hasPrefix("launcher.") || $0.hasSuffix(".launcher") }
+        let keys = english.keys.filter { $0.hasPrefix("agent.") || $0.hasPrefix("launcher.") || $0.hasSuffix(".launcher") }
             + ["common.done"]
         XCTAssertGreaterThan(keys.count, 100)
         for (language, table) in tables {
@@ -354,7 +323,7 @@ final class AgentSettingsRedesignTests: XCTestCase {
                 // Every translation must take the same format arguments as English.
                 for specifier in ["%d", "%@", "%1$d", "%2$d", "%1$@", "%2$@", "%3$@"] {
                     XCTAssertEqual(value.components(separatedBy: specifier).count,
-                                   try XCTUnwrap(english[key]?.components(separatedBy: specifier).count),
+                                   english[key]!.components(separatedBy: specifier).count,
                                    "\(key) \(specifier) in \(language.rawValue)")
                 }
             }
@@ -367,9 +336,8 @@ final class AgentSettingsRedesignTests: XCTestCase {
                               backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         window.appearance = NSAppearance(named: appearance)
-        let hosting = NSHostingView(rootView: view.padding(padded ? 24 : 0).frame(width: width, height: height,
-                                                                                  alignment: .top)
-                .background(StudioTheme.surface))
+        let hosting = NSHostingView(rootView: view.padding(padded ? 24 : 0).frame(width: width, height: height, alignment: .top)
+            .background(StudioTheme.surface))
         window.contentView = hosting
         window.orderFront(nil)
         defer { window.orderOut(nil); window.close() }
