@@ -51,7 +51,7 @@ struct AskLauncherWhitespaceTests {
         #expect(fixture.model.launcherDraft.text == " \t\n ")
     }
 
-    @Test func whitespaceAllowsRestoringAMeaningfulCachedDraft() async throws {
+    @Test func cachedLauncherInputIsNeverRestored() async throws {
         let fixture = try AskTestFixture()
         defer { fixture.model.resetSession() }
         await fixture.model.prepareLauncher()
@@ -59,8 +59,8 @@ struct AskLauncherWhitespaceTests {
         try await fixture.cache.saveDraft(.init(text: "Saved question"), key: "launcher", owner: "owner")
         fixture.model.launcherDraft.text = " \t\n "
         await fixture.model.prepareLauncher()
-        #expect(fixture.model.launcherDraft.text == "Saved question")
-        #expect(fixture.model.launcherContextRestored)
-        #expect(fixture.capture.calls == captures)
+        #expect(fixture.model.launcherDraft.text == " \t\n ")
+        #expect(!fixture.model.launcherContextRestored)
+        #expect(fixture.capture.calls == captures + 1)
     }
 }

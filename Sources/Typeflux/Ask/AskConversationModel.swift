@@ -37,6 +37,12 @@ final class AskConversationModel: ObservableObject {
     var confirmSystemCommand: (AskSystemCommand) -> Bool = AskSystemCommandConfirmation.confirm
     var appIndex: any AskAppSearching = AskAppIndex.shared
     var launcherHomeFallbackKeywordIDs: [String] = []
+    lazy var launcherInputHistory = AskLauncherInputHistoryStore(settings: modelLibrary.settings)
+    @Published var launcherHistoryMode = false
+    @Published var launcherHistoryIndex = 0
+    @Published var launcherHistoryFillID: UUID?
+    @Published var launcherPresentationID = UUID()
+    var launcherExecutedInput: String?
     /// Files and folders the launcher can open; tests supply their own.
     var fileIndex: any AskFileSearching = AskFileIndex.shared
     /// Whether a found file is still there; tests decide instead.
@@ -106,6 +112,9 @@ final class AskConversationModel: ObservableObject {
         connectWordBook(to: session)
         connectNotes(to: session)
         session.onActivate = { [weak self] keyword in self?.keywordUsage.record(keyword) }
+        session.onRunInput = { [weak self] keyword, text, title in
+            self?.recordLauncherInput(destination: .keyword, label: title, text: text, keyword: keyword.keyword)
+        }
         return session
     }()
     /// How often each launcher keyword is used, for the launcher's home.
@@ -524,7 +533,10 @@ final class AskConversationModel: ObservableObject {
         historyGeneration = UUID(); historyOffset = 0; conversations = []; localConversationIds = []
         launcherScreenshotNotice = nil; screenshotNotice = nil; recoveringImages = [:]
         attachmentNotice = nil; launcherAttachmentNotice = nil
+        attachmentLoads[visionDraftKey(launcher: true)] = nil
         launcherDraft = newQuestionDraft(); draft = .followUp; launcherContextRestored = false
+        launcherHistoryMode = false; launcherHistoryIndex = 0; launcherHistoryFillID = nil
+        launcherPresentationID = UUID(); launcherExecutedInput = nil
         capturing = false; capturingScreenshot = false
         controllingConversationId = nil; onControlChanged?(false); owner = ""
     }
@@ -541,35 +553,12 @@ final class AskConversationModel: ObservableObject {
         let request = request ?? makeLauncherSelectionRequest()
         guard !Task.isCancelled else { return }
         flushMemoryPurge()
-        let previousWarning = captureWarning
         captureWarning = nil
         normalizeScreenshotChoices()
         if let current = session(), owner != current.owner { resetSession(); owner = current.owner }
         let expectedOwner = owner
         let expectedSessionOwner = session()?.owner
-        // Invalidate an older preparation before awaiting the draft cache.
         let generation = UUID(); captureGeneration = generation; capturing = false; capturingScreenshot = false
-        let typedBefore = launcherDraft.hasText
-        var restored = false
-        if !typedBefore, let cached = try? await cache.draft(key: "launcher", owner: owner) {
-            guard !Task.isCancelled, generation == captureGeneration,
-                  owner == expectedOwner, session()?.owner == expectedSessionOwner else { return }
-            // The panel is already open: never replace anything typed meanwhile.
-            if !launcherDraft.hasText, cached.hasText { launcherDraft = cached; restored = true }
-        }
-        guard !Task.isCancelled, generation == captureGeneration,
-              owner == expectedOwner, session()?.owner == expectedSessionOwner else { return }
-        // Restore an unfinished question without silently replacing its context.
-        // Text typed into the just-opened panel still gets this launch's context.
-        if typedBefore || restored {
-            launcherContextRestored = true
-            // The kept draft keeps its context as it was. A screenshot that was not
-            // taken still says why, instead of reading as attached on this opening.
-            if launcherDraft.includeScreenshot, launcherDraft.screenshot == nil {
-                captureWarning = previousWarning ?? capture.missingScreenshotWarning()
-            }
-            return
-        }
         if !capture.screenCaptureAllowed { launcherDraft.includeScreenshot = false }
         clearCapturedContentFeedback(launcher: true)
         capturing = true; capturingScreenshot = launcherDraft.includeScreenshot; launcherContextRestored = false
@@ -670,7 +659,8 @@ final class AskConversationModel: ObservableObject {
         draftSave?.cancel()
         // While a queued message is open in the composer, the conversation's own draft is the stash.
         let editing = sendQueue.editing.flatMap { $0.conversationId == selectedId ? $0.stash : nil }
-        let launcher = launcherDraft, followUp = editing ?? draft, owner = owner
+        // Launcher input is kept in local history, never restored as an active draft.
+        let launcher = newQuestionDraft(), followUp = editing ?? draft, owner = owner
         let id = isLoadingSelection ? nil : selectedId.flatMap { deletedConversationIDs.contains($0) ? nil : $0 }
         let followUpOwner = id.map(cacheOwner) ?? owner
         if let id, !isLoadingSelection { drafts[id] = followUp }
@@ -871,10 +861,11 @@ final class AskConversationModel: ObservableObject {
         draft.memory = capture.globalMemory() ?? AskMemory()
     }
 
-    func submitLauncher() {
+    func submitLauncher(recordInput: Bool = true) {
         if consumeModeCommand(launcher: true) { return }
         normalizeScreenshotChoices()
         guard canSendLauncher else { return }
+        if recordInput { recordLauncherInput(destination: .askAI) }
         submit(launcherDraft, newConversation: true, launcher: true)
     }
     func addReference(_ reference: AskReference) {

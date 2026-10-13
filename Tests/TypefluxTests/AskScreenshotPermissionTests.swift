@@ -127,8 +127,11 @@ struct AskScreenshotPermissionTests {
         #expect(fixture.model.capturedContentChanges[launcher] == nil)
         #expect(probe.captures == 0)
         if launcher {
+            fixture.model.resetLauncherForPresentation()
             await fixture.model.prepareLauncher()
-            #expect(fixture.model.captureWarning == L("ask.capture.permission"))
+            #expect(fixture.model.captureWarning == nil)
+            #expect(fixture.model.launcherDraft.text.isEmpty)
+            #expect(!fixture.model.launcherDraft.includeScreenshot)
             #expect(probe.requests == 1 && probe.captures == 0)
         }
     }

@@ -56,6 +56,7 @@ final class AskPluginSession: ObservableObject {
     var beginWordBookSession: (@MainActor () -> Void)?
     /// A keyword was entered, typed or chosen: the launcher counts it to offer it later.
     var onActivate: (@MainActor (AskKeyword) -> Void)?
+    var onRunInput: (@MainActor (AskKeyword, String, String) -> Void)?
     /// A result shown this long counts as looked up when keyword mode ends.
     var settleDelay: TimeInterval = 1.5
     var clock: () -> Date = Date.init
@@ -282,6 +283,9 @@ final class AskPluginSession: ObservableObject {
     private func execute(_ plan: AskPluginPlan, request: AskPluginRequest, generation current: Int,
                          plugin: any AskLauncherPlugin, shown: AskPluginOutput? = nil) async {
         do {
+            if !Task.isCancelled, current == generation, request.origin == .argument, request.chain.isEmpty {
+                onRunInput?(request.keyword, request.text, plugin.title)
+            }
             var output = try await plugin.run(request, plan: plan) { [weak self] partial in
                 guard let self else { return }
                 if let sink = self.handoffSinks[current] { sink(.progress(partial)); return }
