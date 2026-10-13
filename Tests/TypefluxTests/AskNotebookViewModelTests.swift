@@ -1,5 +1,6 @@
 import AppKit
 import Foundation
+import SwiftUI
 import Testing
 @testable import Typeflux
 
@@ -327,6 +328,84 @@ struct AskNotebookViewModelTests {
         notes.reload()
         #expect(notes.draftBody == "changed outside" && !notes.hasUnsavedDraft)
         #expect(notes.finishEditing() && store.note(id: note.id) == note)
+    }
+
+    @Test func nativeListSelectionSavesDraftsAndSupportsMultiSelection() throws {
+        let store = makeTestNotes()
+        let first = makeTestNote("First", body: "before")
+        let second = makeTestNote("Second")
+        store.save(first)
+        store.save(second)
+        let notes = model(store)
+        notes.select(first.id)
+        #expect(notes.listSelection == [first.id])
+        notes.beginEditing()
+        notes.autosaveDelay = .seconds(60)
+        notes.draftBody = "saved by selection"
+        notes.selectFromList([second.id])
+        #expect(notes.selectedID == second.id && !notes.editing)
+        #expect(store.note(id: first.id)?.body == "saved by selection")
+        notes.selectFromList([first.id, second.id, UUID()])
+        #expect(notes.selecting && notes.picked == [first.id, second.id])
+        notes.selectFromList([second.id])
+        #expect(notes.selecting && notes.picked == [second.id])
+        notes.selectFromList([])
+        #expect(notes.picked.isEmpty)
+        notes.setSelecting(false)
+        notes.selectFromList([UUID()])
+        #expect(notes.selectedID == second.id, "stale native rows cannot clear the current selection")
+        notes.selectFromList([])
+        #expect(notes.selectedID == nil)
+    }
+
+    @Test func nativeSelectionCannotDiscardAFailedDraftOrBatchSelectTrash() throws {
+        let store = FailingNotebookStore()
+        let first = makeTestNote("First", body: "before")
+        let second = makeTestNote("Second")
+        store.save(first)
+        store.save(second)
+        let notes = AskNotesViewModel(store: store, notificationCenter: NotificationCenter())
+        notes.select(first.id)
+        notes.autosaveDelay = .seconds(60)
+        notes.beginEditing()
+        notes.draftBody = "must survive"
+        store.rejectWrites = true
+        notes.selectFromList([second.id])
+        notes.selectFromList([first.id, second.id])
+        #expect(notes.selectedID == first.id && notes.editing && !notes.selecting)
+        #expect(notes.draftBody == "must survive" && notes.hasUnsavedDraft)
+        store.rejectWrites = false
+        notes.selectFromList([second.id])
+        #expect(store.note(id: first.id)?.body == "must survive")
+        notes.deleteSelected()
+        notes.select(first.id)
+        notes.deleteSelected()
+        notes.scope = .trash
+        notes.selectFromList([first.id, second.id])
+        #expect(!notes.selecting && notes.picked.isEmpty)
+        #expect(notes.listSelection.count == 1, "trash actions operate on a single selected note")
+    }
+
+    @Test func nativeToolbarSearchRestoresARejectedQueryWithoutLosingTheDraft() async throws {
+        try await SettingsBehaviorTestSupport.withFixture { _ in
+            let store = FailingNotebookStore()
+            let note = makeTestNote("Original", body: "before")
+            store.save(note)
+            let notes = AskNotesViewModel(store: store, notificationCenter: NotificationCenter())
+            notes.autosaveDelay = .seconds(60)
+            notes.beginEditing()
+            notes.draftBody = "must survive"
+            store.rejectWrites = true
+            defer { store.rejectWrites = false; _ = notes.finishEditing() }
+            try await TypefluxNavigationTestSupport.withWindow(AskNotesView(model: notes) {}
+                .environment(\.interfaceStyle, .classic)) { window, _ in
+                let field = try await AskLibraryTestSupport.search("Other", in: window)
+                try await SettingsBehaviorTestSupport.wait { field.stringValue.isEmpty }
+                #expect(notes.searchText.isEmpty && notes.selectedID == note.id)
+                #expect(notes.editing && notes.draftBody == "must survive" && notes.hasUnsavedDraft)
+                #expect(notes.notice == L("ask.notes.saveFailed"))
+            }
+        }
     }
 
     @Test func failedWritesKeepTheDraftAndPreventWindowClosure() throws {

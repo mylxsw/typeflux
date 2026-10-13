@@ -5,7 +5,7 @@ import SwiftUI
 struct AskResultWindowView: View {
     @ObservedObject var document: AskResultDocument
     var onClose: () -> Void
-    var interfaceStyle: InterfaceStyleObserver? = nil
+    var interfaceStyle: InterfaceStyleObserver?
 
     static let readingWidth: CGFloat = 680
     /// Room for the traffic lights at the left of the title bar.
@@ -80,10 +80,10 @@ struct AskResultWindowView: View {
         let pending = document.savesWhenDone
         return Button(action: document.toggleNote) {
             Image(systemName: saved || pending ? "star.fill" : "star").font(.system(size: 12.5))
-                .foregroundStyle(saved || pending ? AskWordBookStyle.star : StudioTheme.textSecondary)
+                .foregroundStyle(saved || pending ? Color(nsColor: .systemYellow) : StudioTheme.textSecondary)
                 .opacity(pending ? 0.55 : 1)
                 .frame(width: 28, height: 26)
-                .background(saved || pending ? AskWordBookStyle.star.opacity(0.16) : AskTheme.controlSurface,
+                .background(saved || pending ? Color(nsColor: .systemYellow).opacity(0.16) : AskTheme.controlSurface,
                             in: RoundedRectangle(cornerRadius: 7, style: .continuous))
                 .contentShape(Rectangle())
         }
@@ -164,7 +164,8 @@ struct AskResultWindowView: View {
             if document.sourceBundleID != nil {
                 toolButton(L("ask.result.insert", document.sourceApp ?? L("ask.result.sourceApp")),
                            symbol: "arrow.down.to.line", key: "⌥↩", primary: false, enabled: document.canInsert,
-                           detail: document.canInsert || document.isStreaming ? nil : L("ask.result.insert.unavailable"),
+                           detail: document.canInsert || document.isStreaming
+                            ? nil : L("ask.result.insert.unavailable"),
                            action: document.insert)
                     .accessibilityIdentifier("ask.result.insert")
             }
@@ -189,7 +190,7 @@ struct AskResultWindowView: View {
     }
 
     /// Icons keep every action reachable; the tooltip carries its full title and shortcut.
-    private func toolButton(_ title: String, symbol: String, key: String?, primary: Bool, enabled: Bool,
+    private func toolButton(_ title: String, symbol: String, key: String? = nil, primary: Bool, enabled: Bool,
                             detail: String? = nil, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: symbol).font(.system(size: 12.5))

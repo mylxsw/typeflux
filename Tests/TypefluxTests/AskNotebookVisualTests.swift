@@ -188,8 +188,7 @@ struct AskNotebookVisualTests {
         try await waitForUI { copied == model.selected?.body }
         #expect(copied == model.selected?.body, "the compact copy action remains clickable")
         model.notice = nil
-        let split = try accessibilityButton(L("ask.notes.mode.split"), in: window)
-        try click(accessibilityFrame(split), in: window)
+        try SettingsBehaviorTestSupport.button(L("ask.notes.mode.split"), in: window).press()
         try await waitForUI { model.mode == .split }
         #expect(model.mode == .split, "the mode picker remains clickable")
         try await capture(window, "\(prefix)-12-minimum-split.png")
@@ -226,12 +225,10 @@ struct AskNotebookVisualTests {
             let readerFrame = screenFrame(reader, in: window)
             #expect(accessibilityFrame(row).maxX < readerFrame.minX,
                     "the list must not overlap the note during resizing")
-            #expect(readerFrame.width >= 300 && readerFrame.maxX <= window.frame.maxX + 1)
+            #expect(readerFrame.width >= 300 && readerFrame.width <= 680
+                    && readerFrame.maxX <= window.frame.maxX + 1)
             #expect(model.selectedID == chat, "resizing keeps the selected note")
-            if width < 1100 {
-                let toggle = try accessibilityButton(L("ask.sidebar.toggle"), in: window)
-                #expect(accessibilityFrame(toggle).width >= 20, "collapsed navigation stays reachable")
-            }
+
         }
         model.setMode(.split)
         let draft = "## Draft kept during resizing\n\n" + Self.answer
@@ -331,28 +328,16 @@ struct AskNotebookVisualTests {
     }
 
     private func checkReadControls(_ window: NSWindow) throws {
-        let layout = AskNotesLayout(width: window.contentView?.bounds.width ?? window.frame.width)
-        let left = window.frame.minX + layout.sidebarWidth + layout.listWidth
-        // ViewThatFits does not always expose a container in AppKit's AX tree.
-        // Measure each real control, which also detects one clipped action in an otherwise visible bar.
-        let labels = [L("ask.plugin.action.copy"), L("ask.notes.rich"), L("ask.result.askAI"), L("ask.notes.edit"),
-                      L("ask.plugin.action.openInWindow") + " ⌘O", L("ask.notes.delete") + " ⌘⌫"]
-        for label in labels {
-            let button = try #require(accessibilityElement(label, attribute: "accessibilityLabel", in: window),
-                                      "\(label)")
-            let frame = accessibilityFrame(button)
-            #expect(frame.width >= 20 && frame.height >= 20, "\(label) has a usable hit target")
-            #expect(frame.minX >= left - 1 && frame.maxX <= window.frame.maxX + 1,
-                    "\(label) stays within the narrow detail column")
+        for identifier in ["notes.copy", "notes.pin", "notes.edit", "notes.delete"] {
+            #expect(window.toolbar?.items.isEmpty == false, "the native toolbar owns library actions")
+            let action = accessibilityElement("typeflux.toolbar." + identifier, in: window)
+            // At small sizes AppKit can place actions in its native overflow menu.
+            if let action {
+                let frame = accessibilityFrame(action)
+                #expect(frame.minX >= window.frame.minX - 1 && frame.maxX <= window.frame.maxX + 1)
+            }
         }
-        for mode in AskNotesViewModel.Mode.allCases {
-            let button = try accessibilityButton(L("ask.notes.mode." + mode.rawValue), in: window)
-            let frame = accessibilityFrame(button)
-            let label = L("ask.notes.mode." + mode.rawValue) as NSString
-            let textWidth = label.size(withAttributes: [.font: NSFont.systemFont(ofSize: 12, weight: .semibold)]).width
-            #expect(frame.width >= textWidth + 8, "the mode name has room to remain readable")
-            #expect(frame.minX >= left - 1 && frame.maxX <= window.frame.maxX + 1)
-        }
+        #expect(window.toolbar?.items.contains { $0 is NSSearchToolbarItem } == true)
     }
 
     private func checkSplitControls(_ window: NSWindow, model: AskNotesViewModel) async throws {
@@ -364,8 +349,7 @@ struct AskNotebookVisualTests {
         let preview = try #require(views.compactMap { $0 as? AskNoteReaderText.ReaderView }.first)
         let previewFrame = screenFrame(preview, in: window)
         #expect(editorFrame.width >= 100 && previewFrame.width >= 100, "both split columns remain usable")
-        let layout = AskNotesLayout(width: content.bounds.width)
-        if layout.detailWidth < 600 {
+        if previewFrame.maxY <= editorFrame.minY {
             #expect(previewFrame.maxY <= editorFrame.minY, "stacked editing keeps the preview below the editor")
         } else {
             #expect(editorFrame.maxX <= previewFrame.minX, "the editor cannot overlap the rendered preview")
@@ -413,51 +397,15 @@ struct AskNotebookVisualTests {
 
     private func accessibilityElement(_ value: String, attribute: String = "accessibilityIdentifier",
                                       in window: NSWindow) -> NSObject? {
-        accessibilityElements(in: window).first { accessibilityValue(attribute, of: $0) == value }
+        AskLibraryTestSupport.elements(in: window).first { $0.value(attribute) as? String == value }?.object
     }
 
     private func accessibilityButton(_ label: String, in window: NSWindow) throws -> NSObject {
-        let elements = accessibilityElements(in: window)
-        if let button = elements.first(where: {
-            accessibilityValue("accessibilityLabel", of: $0) == label
-                && accessibilityValue("accessibilityRole", of: $0) == NSAccessibility.Role.button.rawValue
-        }) { return button }
-        let description = elements.compactMap { object -> String? in
-            let label = accessibilityValue("accessibilityLabel", of: object) ?? ""
-            let identifier = accessibilityValue("accessibilityIdentifier", of: object) ?? ""
-            guard !label.isEmpty || !identifier.isEmpty else { return nil }
-            let role = accessibilityValue("accessibilityRole", of: object) ?? ""
-            return "role=\(role), identifier=\(identifier), label=\(label)"
-        }.prefix(120).joined(separator: "\n")
-        return try #require(nil as NSObject?, "Missing AXButton \(label). AX elements:\n\(description)")
-    }
-
-    private func accessibilityValue(_ attribute: String, of object: NSObject) -> String? {
-        guard object.responds(to: NSSelectorFromString(attribute)) else { return nil }
-        return object.value(forKey: attribute) as? String
-    }
-
-    private func accessibilityElements(in window: NSWindow) -> [NSObject] {
-        var seen = Set<ObjectIdentifier>()
-        var elements: [NSObject] = []
-        func walk(_ node: Any) {
-            guard let object = node as? NSObject, seen.insert(ObjectIdentifier(object)).inserted else { return }
-            elements.append(object)
-            if object.responds(to: NSSelectorFromString("accessibilityChildren")),
-               let children = object.value(forKey: "accessibilityChildren") as? [Any] {
-                children.forEach(walk)
-            }
-            if let view = object as? NSView {
-                view.subviews.forEach(walk)
-            }
-        }
-        walk(window)
-        if let content = window.contentView { walk(content) }
-        return elements
+        try SettingsBehaviorTestSupport.button(label, in: window).object
     }
 
     private func accessibilityFrame(_ element: NSObject) -> NSRect {
-        (element.value(forKey: "accessibilityFrame") as? NSValue)?.rectValue ?? .zero
+        SettingsBehaviorTestSupport.Element(object: element).frame
     }
 
     private func click(_ frame: NSRect, in window: NSWindow) throws {

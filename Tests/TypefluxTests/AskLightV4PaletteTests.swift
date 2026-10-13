@@ -199,12 +199,6 @@ struct AskLightV4PaletteTests {
             #expect(abs(dark.redComponent - original.redComponent) < 0.002)
             #expect(abs(dark.blueComponent - original.blueComponent) < 0.002)
         }
-        let lightGroup = try await render(Color.clear.frame(width: 160, height: 60).askWordBookGroup(),
-                                          style: style, dark: false)
-        let darkGroup = try await render(Color.clear.frame(width: 160, height: 60).askWordBookGroup(),
-                                         style: style, dark: true)
-        #expect(lightGroup.redComponent > 0.99)
-        #expect(darkGroup.redComponent < 0.01)
     }
 
     private func render(_ view: some View, style: InterfaceStyle, dark: Bool) async throws -> NSColor {
