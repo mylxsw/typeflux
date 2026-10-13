@@ -54,8 +54,13 @@ final class SettingsWindowController: NSObject {
             } else {
                 viewModel?.navigate(to: initialSection)
             }
-            if let initialModelDomain { viewModel?.selectModelPageTab(ModelPageTab(domain: initialModelDomain)) }
-            if presentFeedback { viewModel?.directFeedbackRequestID = UUID() }
+            if let initialModelDomain {
+                viewModel?.selectModelPageTab(ModelPageTab(domain: initialModelDomain))
+                viewModel?.setModelDomain(initialModelDomain)
+            }
+            if presentFeedback {
+                viewModel?.directFeedbackRequestID = UUID()
+            }
             refreshAppearance()
             DockVisibilityController.shared.windowDidShow(window)
             window.makeKeyAndOrderFront(nil)
@@ -74,7 +79,10 @@ final class SettingsWindowController: NSObject {
             notificationService: notificationService,
             modelLibrary: modelLibrary
         )
-        if let initialModelDomain { viewModel.selectModelPageTab(ModelPageTab(domain: initialModelDomain)) }
+        if let initialModelDomain {
+            viewModel.selectModelPageTab(ModelPageTab(domain: initialModelDomain))
+            viewModel.setModelDomain(initialModelDomain)
+        }
         AppLocalization.shared.setLanguage(viewModel.appLanguage)
         if presentFeedback { viewModel.directFeedbackRequestID = UUID() }
         let view = StudioView(viewModel: viewModel, launcherPane: launcherPane ?? .basics)

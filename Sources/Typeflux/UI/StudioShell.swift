@@ -10,13 +10,15 @@ struct StudioShell<Content: View>: View {
     let search: TypefluxSearchState?
     let searchPlaceholder: String
     let accountDefaults: UserDefaults
+    var toolbarCenter: AnyView?
+    var toolbarGroups: [TypefluxToolbarGroup] = []
     @ViewBuilder let content: (CGSize) -> Content
 
     var body: some View {
         GeometryReader { windowGeometry in
             let showsSidebar = StudioShellLayout(width: windowGeometry.size.width).sidebarWidth > 0
             TypefluxWindow(title: title, search: search, searchPrompt: searchPlaceholder,
-                           sidebarVisibility: $sidebarVisibility) {
+                           groups: toolbarGroups, sidebarVisibility: $sidebarVisibility, center: toolbarCenter) {
                 StudioSidebar(currentSection: currentSection, onSelect: onSelect,
                               onAccountAction: onAccountAction, defaults: accountDefaults)
             } detail: {

@@ -21,7 +21,7 @@ struct SettingsSearchScopeTests {
                 if detail || tab == .scenes {
                     #expect(result == nil)
                 } else {
-                    #expect(result == (tab == .speech ? .speechModels : .languageModels))
+                    #expect(result == (tab == .local ? .speechModels : .languageModels))
                 }
             }
         }

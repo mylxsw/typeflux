@@ -1750,7 +1750,7 @@
 "models.httpError" = "The provider returned HTTP %d. Check the endpoint and credentials.";
 "models.search" = "Search models or providers";
 "models.back" = "Back";
-"models.tab.scenes" = "Model Configuration";
+"models.tab.scenes" = "Scenes";
 "models.tab.speech" = "Speech Recognition";
 "models.tab.language" = "Language Models";
 "models.sceneHint" = "Choose a provider and model for each application scenario";
@@ -4810,6 +4810,9 @@
 "ask.inputHistory.limit" = "Entries to keep";
 "ask.inputHistory.privacy" = "Input history stays on this Mac. Captured context, attachments and AI answers are excluded.";
 "ask.inputHistory.noMatches.detail" = "Try another filter. Escape clears it and returns to the launcher.";
+
+"models.tab.providers" = "Providers";
+"models.tab.local" = "Local models";
 
 // Website login connection diagnostics.
 "auth.web.invalidResponse" = "The login service returned an unexpected response. Check that the App and API use the same website address.";

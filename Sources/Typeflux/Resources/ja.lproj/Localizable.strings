@@ -1740,7 +1740,7 @@
 "models.httpError" = "The provider returned HTTP %d. Check the endpoint and credentials.";
 "models.search" = "Search models or providers";
 "models.back" = "戻る";
-"models.tab.scenes" = "モデル構成";
+"models.tab.scenes" = "シーン";
 "models.tab.speech" = "音声認識";
 "models.tab.language" = "大規模言語モデル";
 "models.sceneHint" = "Choose a provider and model for each application scenario";
@@ -4761,6 +4761,9 @@
 "ask.inputHistory.limit" = "保存件数";
 "ask.inputHistory.privacy" = "入力履歴はこの Mac にのみ保存されます。取得したコンテキスト、添付ファイル、AI の回答は含まれません。";
 "ask.inputHistory.noMatches.detail" = "別の文字で絞り込んでください。esc で解除して戻れます。";
+
+"models.tab.providers" = "プロバイダー";
+"models.tab.local" = "ローカルモデル";
 
 // Website login connection diagnostics.
 "auth.web.invalidResponse" = "ログインサービスから予期しない応答がありました。App と API のウェブサイト URL が一致しているか確認してください。";

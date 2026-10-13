@@ -13,7 +13,7 @@ struct AskWorkflowFilesCard: View {
                     let rows = model.fileRows
                     ForEach(Array(rows.enumerated()), id: \.element.path) { index, row in
                         if index > 0 {
-                            Rectangle().fill(ModelVisualStyle.divider).frame(height: 1)
+                            Rectangle().fill(TypefluxColor.separator.color).frame(height: 1)
                         }
                         fileRow(row)
                     }
@@ -22,8 +22,12 @@ struct AskWorkflowFilesCard: View {
                             .foregroundStyle(StudioTheme.textTertiary).padding(14)
                     }
                 }
-                .background(ModelVisualStyle.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(ModelVisualStyle.border))
+                .background(
+                    TypefluxColor.contentBackground.color,
+                    in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                )
+                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(TypefluxColor.separator.color))
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
         }

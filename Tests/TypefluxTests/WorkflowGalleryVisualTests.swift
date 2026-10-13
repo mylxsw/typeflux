@@ -141,7 +141,7 @@ struct WorkflowGalleryVisualTests {
             let page = {
                 ScrollView {
                     AskWorkflowSettingsView(store: fixture.store, settings: fixture.settings)
-                        .background(ModelVisualStyle.surface, in: RoundedRectangle(cornerRadius: 12))
+                        .background(TypefluxColor.contentBackground.color, in: RoundedRectangle(cornerRadius: 12))
                         .padding(20)
                 }
             }

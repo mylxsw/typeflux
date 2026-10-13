@@ -26,8 +26,13 @@ struct AskTitleSettingsView: View {
                 Toggle("", isOn: $enabled).labelsHidden().toggleStyle(.switch).accessibilityLabel(L("ask.title.enabled"))
             }
             ModelRowDivider(leading: 66)
-            AgentSettingsRow(icon: "sparkles", title: L("ask.title.model"), subtitle: L("ask.title.model.subtitle"), subtitleLineLimit: nil) {
-                SettingsMenuPicker(title: L("ask.title.model"), options: options, selection: $reference)
+            AgentSettingsRow(
+                icon: "sparkles",
+                title: L("ask.title.model"),
+                subtitle: L("ask.title.model.subtitle"),
+                subtitleLineLimit: nil
+            ) {
+                TypefluxPopup(title: L("ask.title.model"), options: options, selection: $reference)
                     .frame(width: 200).disabled(!enabled)
             }
             Text(L("ask.title.cost")).font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)

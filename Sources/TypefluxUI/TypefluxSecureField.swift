@@ -11,6 +11,7 @@ public struct TypefluxSecureField: View {
     }
 
     public var body: some View {
-        SecureField(title, text: $text).textFieldStyle(.roundedBorder).accessibilityLabel(Text(title))
+        SecureField(title, text: $text).textFieldStyle(.roundedBorder)
+            .labelsHidden().accessibilityLabel(Text(title))
     }
 }

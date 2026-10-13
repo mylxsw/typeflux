@@ -101,13 +101,13 @@ struct AskWorkflowRadioList<Value: Hashable>: View {
         VStack(spacing: 0) {
             ForEach(Array(choices.enumerated()), id: \.element.id) { index, choice in
                 if index > 0 {
-                    Rectangle().fill(ModelVisualStyle.divider).frame(height: 1)
+                    Rectangle().fill(TypefluxColor.separator.color).frame(height: 1)
                 }
                 row(choice)
             }
         }
-        .background(ModelVisualStyle.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(ModelVisualStyle.border))
+        .background(TypefluxColor.contentBackground.color, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(TypefluxColor.separator.color))
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
@@ -166,7 +166,7 @@ struct AskWorkflowActionStyle: ButtonStyle {
             .foregroundStyle(foreground)
             .background(background, in: RoundedRectangle(cornerRadius: small ? 7 : 8, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: small ? 7 : 8, style: .continuous)
-                .strokeBorder(kind == .secondary ? ModelVisualStyle.border : .clear))
+                .strokeBorder(kind == .secondary ? TypefluxColor.separator.color : .clear))
             .contentShape(Rectangle())
             .opacity(enabled ? (configuration.isPressed ? 0.75 : 1) : 0.45)
     }
@@ -183,7 +183,7 @@ struct AskWorkflowActionStyle: ButtonStyle {
         switch kind {
         case .primary: AskTheme.accent
         case .assistant: AskWorkflowEditorStyle.assistant
-        case .secondary: ModelVisualStyle.control
+        case .secondary: TypefluxColor.controlBackground.color
         case .ghost: .clear
         }
     }
@@ -268,8 +268,8 @@ struct AskWorkflowTabs<Tab: Hashable>: View {
             }
         }
         .padding(2)
-        .background(ModelVisualStyle.control, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(ModelVisualStyle.border))
+        .background(TypefluxColor.controlBackground.color, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(TypefluxColor.separator.color))
     }
 }
 

@@ -207,18 +207,16 @@ struct StudioView: View {
             onAccountAction: handleAccountAction,
             search: searchScope == nil ? nil : toolbarSearch,
             searchPlaceholder: searchPrompt,
-            accountDefaults: viewModel.askToolSettings.defaults
+            accountDefaults: viewModel.askToolSettings.defaults,
+            toolbarCenter: toolbarSegments,
+            toolbarGroups: modelToolbarGroups
         ) { viewportSize in
             let viewportHeight = max(viewportSize.height, 0)
 
             VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
-                if viewModel.currentSection.isVoiceInput {
-                    voiceInputHeader
-                } else if viewModel.currentSection == .settings {
+                if viewModel.currentSection == .settings {
                     settingsHeader
-                } else if viewModel.currentSection == .models {
-                    modelsHeader
-                } else {
+                } else if viewModel.currentSection != .models {
                     pageHeader
                 }
 
@@ -619,6 +617,15 @@ struct StudioView: View {
         switch viewModel.currentSection {
         case .agent: viewModel.currentSection.heading + " · " + agentPane.title
         case .launcher: viewModel.currentSection.heading + " · " + launcherPane.title
+        case .models:
+            if viewModel.isShowingSpeechProviderDetail {
+                focusedProviderTitle
+            } else if let id = viewModel.selectedLanguageProviderID,
+                      let provider = viewModel.modelLibrary.providers.first(where: { $0.id == id }) {
+                provider.name
+            } else {
+                StudioSection.models.title
+            }
         default: viewModel.currentSection.heading
         }
     }
@@ -627,53 +634,41 @@ struct StudioView: View {
         HStack(spacing: StudioTheme.Spacing.large) { pageHeaderActions }
     }
 
-    /// Voice Input pages share one header: their tabs, with the shown page's actions on the right.
-    private var voiceInputHeader: some View {
-        VStack(spacing: StudioTheme.Spacing.none) {
-            VoiceInputTabBar(
-                selection: viewModel.currentSection,
-                count: viewModel.voiceInputTabCount,
-                onSelect: viewModel.navigate
-            )
-            .frame(maxWidth: .infinity, alignment: .leading)
-            // Keep a clear gap below actions without moving the tab underline off the divider.
-            .overlay(alignment: .bottom) {
-                HStack(spacing: StudioTheme.Spacing.large) { pageHeaderActions }
-                    .padding(.bottom, StudioTheme.Spacing.small)
-            }
-            Rectangle()
-                .fill(StudioTheme.border)
-                .frame(height: 1)
+    private var toolbarSegments: AnyView? {
+        if viewModel.currentSection == .models {
+            return AnyView(TypefluxSegmentedControl(StudioSection.models.title,
+                                                    selection: Binding(
+                                                        get: { viewModel.modelPageTab },
+                                                        set: viewModel.selectModelPageTab
+                                                    )) {
+                    ForEach(ModelPageTab.allCases) { tab in
+                        Text(tab.title).tag(tab).accessibilityIdentifier("studio.models.tab.\(tab.rawValue)")
+                    }
+                }.fixedSize())
         }
+        if viewModel.currentSection.isVoiceInput {
+            return AnyView(TypefluxSegmentedControl(viewModel.currentSection.title,
+                                                    selection: Binding(
+                                                        get: { viewModel.currentSection },
+                                                        set: viewModel.navigate
+                                                    )) {
+                    ForEach(StudioSection.voiceInputCases) { section in
+                        Text(section.title + (viewModel.voiceInputTabCount(for: section).map { " \($0)" } ?? ""))
+                            .tag(section)
+                    }
+                }.fixedSize())
+        }
+        return nil
     }
 
-    /// The Models page header shares its tabs and action alignment with Voice Input.
-    private var modelsHeader: some View {
-        ViewThatFits(in: .horizontal) {
-            VStack(spacing: 0) {
-                HStack(alignment: .bottom, spacing: StudioTheme.Spacing.large) {
-                    modelTabs.fixedSize(horizontal: true, vertical: false)
-                    HStack(spacing: StudioTheme.Spacing.large) { pageHeaderActions }
-                        .padding(.bottom, StudioTheme.Spacing.small)
-                        .frame(height: 0, alignment: .bottom)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                Rectangle().fill(StudioTheme.border).frame(height: 1)
+    private var modelToolbarGroups: [TypefluxToolbarGroup] {
+        guard viewModel.currentSection == .models, viewModel.modelPageTab == .providers,
+              !viewModel.isShowingModelProviderDetail else { return [] }
+        return [TypefluxToolbarGroup(id: "models", actions: [
+            TypefluxToolbarAction(id: "models.addProvider", title: L("models.addEndpoint"), systemImage: "plus") {
+                viewModel.isAddingModelEndpoint = true
             }
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-                VStack(spacing: 0) {
-                    modelTabs.frame(maxWidth: .infinity, alignment: .leading)
-                    Rectangle().fill(StudioTheme.border).frame(height: 1)
-                }
-                if viewModel.modelPageTab.domain != nil, !viewModel.isShowingModelProviderDetail {
-                    HStack(spacing: StudioTheme.Spacing.large) { pageHeaderActions }
-                }
-            }
-        }
-    }
-
-    private var modelTabs: some View {
-        ModelPageTabBar(selection: viewModel.modelPageTab, onSelect: viewModel.selectModelPageTab)
+        ])]
     }
 
     /// Actions on the right of the page header, including the spacer that pushes them there.
@@ -737,24 +732,6 @@ struct StudioView: View {
 
                 AskIconGhostButton(label: L("common.clear"), systemImage: "trash") {
                     showingClearHistoryConfirmation = true
-                }
-            }
-        } else if viewModel.currentSection == .models {
-            Spacer()
-
-            // Provider lists can be searched; a provider's own settings have nothing to search.
-            if let domain = viewModel.modelPageTab.domain, !viewModel.isShowingModelProviderDetail {
-                HStack(spacing: StudioTheme.Spacing.small) {
-                    if domain == .llm {
-                        SettingsActionButton(
-                            title: L("models.addEndpoint"),
-                            symbol: "plus"
-                        ) {
-                            viewModel.isAddingModelEndpoint = true
-                        }
-                        .fixedSize(horizontal: true, vertical: false)
-                        .accessibilityIdentifier("models.addProvider")
-                    }
                 }
             }
         } else if viewModel.currentSection == .account {
@@ -1026,14 +1003,14 @@ struct StudioView: View {
                         Button { beginMCPImport() } label: {
                             Label(L("agent.mcp.import.action"), systemImage: "square.and.arrow.down")
                         }
-                        .buttonStyle(ModelActionStyle())
+                        .buttonStyle(.bordered)
                         Button {
                             viewModel.beginAddMCPServer()
                             isMCPServerDialogPresented = true
                         } label: {
                             Label(L("agent.mcp.addServer"), systemImage: "plus")
                         }
-                        .buttonStyle(ModelActionStyle(primary: true))
+                        .buttonStyle(.borderedProminent)
                     }
                 }
                 agentMCPServersTabContent
@@ -1088,24 +1065,28 @@ struct StudioView: View {
 
     @ViewBuilder private var agentMCPServersTabContent: some View {
         if viewModel.mcpServers.isEmpty {
-            ModelSurface {
-                AgentEmptyState(symbol: "server.rack", title: L("agent.mcp.emptyTitle"), message: L("agent.mcp.emptyMessage")) {
+            StudioCard(padding: 0) {
+                AgentEmptyState(
+                    symbol: "server.rack",
+                    title: L("agent.mcp.emptyTitle"),
+                    message: L("agent.mcp.emptyMessage")
+                ) {
                     Button {
                         viewModel.beginAddMCPServer()
                         isMCPServerDialogPresented = true
                     } label: {
                         Label(L("agent.mcp.addServer"), systemImage: "plus")
                     }
-                    .buttonStyle(ModelActionStyle(primary: true))
+                    .buttonStyle(.borderedProminent)
                     Button { beginMCPImport() } label: {
                         Label(L("agent.mcp.import.action"), systemImage: "square.and.arrow.down")
                     }
-                    .buttonStyle(ModelActionStyle())
+                    .buttonStyle(.bordered)
                 }
             }
         } else {
             VStack(alignment: .leading, spacing: 8) {
-                ModelSurface {
+                StudioCard(padding: 0) {
                     VStack(alignment: .leading, spacing: 0) {
                         if filteredMCPServers.isEmpty {
                             AgentSettingsEmptyRow(text: L("personas.redesign.noResults", toolbarSearch.query))
@@ -1215,10 +1196,16 @@ struct StudioView: View {
                 .scrollContentBackground(.hidden)
                 .padding(6)
                 .frame(height: 180)
-                .background(ModelVisualStyle.control,
-                            in: RoundedRectangle(cornerRadius: ModelVisualStyle.controlCornerRadius, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: ModelVisualStyle.controlCornerRadius, style: .continuous)
-                    .strokeBorder(ModelVisualStyle.border))
+                .background(TypefluxColor.controlBackground.color,
+                            in: RoundedRectangle(
+                                cornerRadius: TypefluxRadius.textField.value(for: .classic),
+                                style: .continuous
+                            ))
+                .overlay(RoundedRectangle(
+                    cornerRadius: TypefluxRadius.textField.value(for: .classic),
+                    style: .continuous
+                )
+                .strokeBorder(TypefluxColor.separator.color))
                 .accessibilityLabel(L("agent.mcp.import.title"))
             if !mcpImportText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                 switch parsed {
@@ -1240,19 +1227,19 @@ struct StudioView: View {
             }
             HStack {
                 Spacer()
-                Button(L("common.cancel")) { isMCPImportPresented = false }.buttonStyle(ModelActionStyle())
+                Button(L("common.cancel")) { isMCPImportPresented = false }.buttonStyle(.bordered)
                 Button(L("agent.mcp.import.confirm")) {
                     viewModel.importMCPServers(servers)
                     isMCPImportPresented = false
                 }
-                .buttonStyle(ModelActionStyle(primary: true))
+                .buttonStyle(.borderedProminent)
                 .disabled(servers.isEmpty)
                 .keyboardShortcut(.defaultAction)
             }
         }
         .padding(24)
         .frame(width: 520)
-        .background(ModelVisualStyle.canvas)
+        .background(TypefluxColor.windowBackground.color)
     }
 
     private var mcpServerDialog: some View {
@@ -1384,7 +1371,7 @@ struct StudioView: View {
                 .foregroundStyle(StudioTheme.textSecondary)
 
             TextField(L("vocabulary.sheet.placeholder"), text: $newVocabularyTerm)
-                .textFieldStyle(ModelFieldStyle(monospaced: false))
+                .textFieldStyle(.roundedBorder)
                 .foregroundStyle(StudioTheme.textPrimary)
                 .onSubmit {
                     submitVocabularyTerm()
@@ -2281,23 +2268,19 @@ struct StudioView: View {
     }
 
     private var focusedProviderConfigurationPanel: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        TypefluxForm {
             ModelDetailHeader(
                 title: focusedProviderTitle,
                 icon: viewModel.focusedModelProvider,
                 connected: focusedProviderConnected,
-                backTitle: ModelPageTab.speech.title,
+                backTitle: viewModel.modelPageTab.title,
                 onBack: { viewModel.isShowingSpeechProviderDetail = false }
             )
-            .padding(.bottom, 22)
-            SettingsListSectionLabel(title: L("models.connection")).padding(.bottom, 8)
-            ModelSurface {
-                VStack(alignment: .leading, spacing: 0) {
-                    focusedProviderForm
-                    focusedProviderActions
-                    if viewModel.focusedModelProvider == .localSTT {
-                        localSTTStorageRow
-                    }
+            TypefluxFormSection(L("models.connection")) {
+                focusedProviderForm
+                focusedProviderActions
+                if viewModel.focusedModelProvider == .localSTT {
+                    localSTTStorageRow
                 }
             }
         }
@@ -2350,7 +2333,7 @@ struct StudioView: View {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
                     Text(viewModel.localSTTStoragePath)
-                        .font(.studioMono(12)).textSelection(.enabled)
+                        .font(.body.monospaced()).textSelection(.enabled)
                         .fixedSize(horizontal: false, vertical: true)
                     Spacer(minLength: 8)
                     Button { viewModel.copyLocalSTTStoragePath() } label: {
@@ -2364,383 +2347,397 @@ struct StudioView: View {
                 }
                 .buttonStyle(.plain)
                 Text(viewModel.localSTTStatus)
-                    .font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
+                    .font(.body).foregroundStyle(StudioTheme.textSecondary)
             }
         }
     }
 
+    @ViewBuilder
     private var focusedProviderForm: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            switch viewModel.focusedModelProvider {
-            case .typefluxOfficial:
-                ModelFormRow(title: L("studio.section.account")) { typefluxOfficialProviderForm }
+        switch viewModel.focusedModelProvider {
+        case .typefluxOfficial:
+            ModelFormRow(title: L("studio.section.account")) { typefluxOfficialProviderForm }
 
-            case .appleSpeech:
-                ModelFormRow(title: L("common.model")) {
-                    Text(STTProvider.appleSpeech.displayName).font(.system(size: 13))
-                }
+        case .appleSpeech:
+            ModelFormRow(title: L("common.model")) {
+                Text(STTProvider.appleSpeech.displayName).font(.body)
+            }
 
-            case .freeSTT:
-                ModelFormRow(title: L("common.model")) {
-                    VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-                        if FreeSTTModelRegistry.suggestedModelNames.isEmpty {
-                            Text(L("settings.models.freeSTT.noSources"))
-                                .font(.studioBody(StudioTheme.Typography.caption))
-                                .foregroundStyle(StudioTheme.textTertiary)
-                        } else {
-                            StudioMenuPicker(
-                                options: FreeSTTModelRegistry.suggestedModelNames.map { ($0, $0) },
-                                selection: Binding(
-                                    get: { viewModel.freeSTTModel },
-                                    set: viewModel.setFreeSTTModel
-                                ),
-                                width: 320
-                            )
-                        }
+        case .freeSTT:
+            ModelFormRow(title: L("common.model")) {
+                VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+                    if FreeSTTModelRegistry.suggestedModelNames.isEmpty {
+                        Text(L("settings.models.freeSTT.noSources"))
+                            .font(.subheadline)
+                            .foregroundStyle(StudioTheme.textTertiary)
+                    } else {
+                        StudioMenuPicker(
+                            options: FreeSTTModelRegistry.suggestedModelNames.map { ($0, $0) },
+                            selection: Binding(
+                                get: { viewModel.freeSTTModel },
+                                set: viewModel.setFreeSTTModel
+                            ),
+                            width: 320
+                        )
+                    }
 
-                        Text(L("settings.models.freeSTT.hint"))
-                            .font(.studioBody(StudioTheme.Typography.caption))
-                            .foregroundStyle(StudioTheme.textSecondary)
+                    Text(L("settings.models.freeSTT.hint"))
+                        .font(.subheadline)
+                        .foregroundStyle(StudioTheme.textSecondary)
 
-                        if !FreeSTTModelRegistry.sources.isEmpty {
-                            VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxxSmall) {
-                                Text(L("settings.models.freeSTT.availableSources"))
-                                    .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
-                                    .foregroundStyle(StudioTheme.textSecondary)
-                                ForEach(FreeSTTModelRegistry.sourceSummaryLines(), id: \.self) { line in
-                                    Text(line)
-                                        .font(.studioMono(StudioTheme.Typography.caption))
-                                        .foregroundStyle(StudioTheme.textTertiary)
-                                }
+                    if !FreeSTTModelRegistry.sources.isEmpty {
+                        VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxxSmall) {
+                            Text(L("settings.models.freeSTT.availableSources"))
+                                .font(.subheadline)
+                                .foregroundStyle(StudioTheme.textSecondary)
+                            ForEach(FreeSTTModelRegistry.sourceSummaryLines(), id: \.self) { line in
+                                Text(line)
+                                    .font(.body.monospaced())
+                                    .foregroundStyle(StudioTheme.textTertiary)
                             }
                         }
                     }
                 }
-                ModelRowDivider()
+            }
 
-            case .localSTT:
-                VStack(spacing: 0) {
-                    ForEach(LocalSTTModel.displayOrder, id: \.self) { model in
-                        localSTTModelOptionCard(model)
-                        ModelRowDivider()
+        case .localSTT:
+            List(LocalSTTModel.displayOrder, id: \.self, selection: Binding<LocalSTTModel?>(
+                get: { viewModel.localSTTFocusedModel },
+                set: {
+                    if let model = $0 {
+                        selectLocalSTTModelCard(model)
                     }
                 }
-                .confirmationDialog(
-                    localSTTPendingDownload.map {
-                        L("settings.models.downloadDialog.title", $0.displayName)
-                    } ?? "",
-                    isPresented: Binding(
-                        get: { localSTTPendingDownload != nil },
-                        set: { if !$0 { localSTTPendingDownload = nil } }
-                    ),
-                    titleVisibility: .visible
-                ) {
-                    Button(L("settings.models.prepareLocalModel")) {
-                        if let model = localSTTPendingDownload {
-                            viewModel.prepareLocalSTTModel(model)
+            )) { model in
+                localSTTModelOptionCard(model).tag(model)
+            }
+            .listStyle(.inset).frame(height: 420)
+            .confirmationDialog(
+                localSTTPendingDownload.map {
+                    L("settings.models.downloadDialog.title", $0.displayName)
+                } ?? "",
+                isPresented: Binding(
+                    get: { localSTTPendingDownload != nil },
+                    set: {
+                        if !$0 {
                             localSTTPendingDownload = nil
                         }
                     }
-                    Button(L("common.cancel"), role: .cancel) {
+                ),
+                titleVisibility: .visible
+            ) {
+                Button(L("settings.models.prepareLocalModel")) {
+                    if let model = localSTTPendingDownload {
+                        viewModel.prepareLocalSTTModel(model)
                         localSTTPendingDownload = nil
                     }
-                } message: {
-                    Text(L("settings.models.downloadDialog.message"))
                 }
-                .confirmationDialog(
-                    localSTTPendingRedownload.map {
-                        L("settings.models.redownloadDialog.title", $0.displayName)
-                    } ?? "",
-                    isPresented: Binding(
-                        get: { localSTTPendingRedownload != nil },
-                        set: { if !$0 { localSTTPendingRedownload = nil } }
-                    ),
-                    titleVisibility: .visible
-                ) {
-                    Button(L("settings.models.redownload"), role: .destructive) {
-                        if let model = localSTTPendingRedownload {
-                            viewModel.redownloadLocalSTTModel(model)
+                Button(L("common.cancel"), role: .cancel) {
+                    localSTTPendingDownload = nil
+                }
+            } message: {
+                Text(L("settings.models.downloadDialog.message"))
+            }
+            .confirmationDialog(
+                localSTTPendingRedownload.map {
+                    L("settings.models.redownloadDialog.title", $0.displayName)
+                } ?? "",
+                isPresented: Binding(
+                    get: { localSTTPendingRedownload != nil },
+                    set: {
+                        if !$0 {
                             localSTTPendingRedownload = nil
                         }
                     }
-                    Button(L("common.cancel"), role: .cancel) {
+                ),
+                titleVisibility: .visible
+            ) {
+                Button(L("settings.models.redownload"), role: .destructive) {
+                    if let model = localSTTPendingRedownload {
+                        viewModel.redownloadLocalSTTModel(model)
                         localSTTPendingRedownload = nil
                     }
-                } message: {
-                    Text(L("settings.models.redownloadDialog.message"))
                 }
-                .confirmationDialog(
-                    localSTTPendingDelete.map {
-                        L("settings.models.deleteDialog.title", $0.displayName)
-                    } ?? "",
-                    isPresented: Binding(
-                        get: { localSTTPendingDelete != nil },
-                        set: { if !$0 { localSTTPendingDelete = nil } }
-                    ),
-                    titleVisibility: .visible
-                ) {
-                    Button(L("common.delete"), role: .destructive) {
-                        if let model = localSTTPendingDelete {
-                            viewModel.deleteLocalSTTModel(model)
+                Button(L("common.cancel"), role: .cancel) {
+                    localSTTPendingRedownload = nil
+                }
+            } message: {
+                Text(L("settings.models.redownloadDialog.message"))
+            }
+            .confirmationDialog(
+                localSTTPendingDelete.map {
+                    L("settings.models.deleteDialog.title", $0.displayName)
+                } ?? "",
+                isPresented: Binding(
+                    get: { localSTTPendingDelete != nil },
+                    set: {
+                        if !$0 {
                             localSTTPendingDelete = nil
                         }
                     }
-                    Button(L("common.cancel"), role: .cancel) {
+                ),
+                titleVisibility: .visible
+            ) {
+                Button(L("common.delete"), role: .destructive) {
+                    if let model = localSTTPendingDelete {
+                        viewModel.deleteLocalSTTModel(model)
                         localSTTPendingDelete = nil
                     }
-                } message: {
-                    Text(L("settings.models.deleteDialog.message"))
                 }
+                Button(L("common.cancel"), role: .cancel) {
+                    localSTTPendingDelete = nil
+                }
+            } message: {
+                Text(L("settings.models.deleteDialog.message"))
+            }
 
-            case .whisperAPI:
+        case .whisperAPI:
+            StudioSuggestedTextInputCard(
+                label: L("settings.models.transcriptionEndpoint"),
+                placeholder: OpenAIAudioModelCatalog.whisperEndpoints[0],
+                text: Binding(
+                    get: { viewModel.whisperBaseURL }, set: viewModel.setWhisperBaseURL
+                ),
+                suggestions: whisperEndpointSuggestions,
+                horizontal: true
+            )
+            StudioSuggestedTextInputCard(
+                label: L("common.model"),
+                placeholder: whisperModelSuggestions[0],
+                text: Binding(get: { viewModel.whisperModel }, set: viewModel.setWhisperModel),
+                suggestions: whisperModelSuggestions,
+                horizontal: true
+            )
+            StudioTextInputCard(
+                label: L("common.apiKey"), placeholder: "sk-...",
+                text: Binding(
+                    get: { viewModel.whisperAPIKey }, set: viewModel.setWhisperAPIKey
+                ),
+                secure: true,
+                horizontal: true
+            ) {
+                if let url = sttProviderAPIKeyURL(.whisperAPI) {
+                    apiKeyHelpButton(url: url)
+                }
+            }
+
+        case .ollama:
+            StudioSuggestedTextInputCard(
+                label: L("settings.models.ollama.baseURL"),
+                placeholder: "http://127.0.0.1:11434",
+                text: Binding(
+                    get: { viewModel.ollamaBaseURL }, set: viewModel.setOllamaBaseURL
+                ),
+                suggestions: ollamaEndpointSuggestions
+            )
+            StudioSuggestedTextInputCard(
+                label: L("settings.models.localModel"),
+                placeholder: "qwen2.5:7b",
+                text: Binding(get: { viewModel.ollamaModel }, set: viewModel.setOllamaModel),
+                suggestions: ollamaModelSuggestions
+            )
+            Toggle(
+                L("settings.models.ollama.autoInstall"),
+                isOn: Binding(
+                    get: { viewModel.ollamaAutoSetup }, set: viewModel.setOllamaAutoSetup
+                )
+            )
+            .toggleStyle(.switch)
+
+        case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek,
+             .kimi, .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi, .openCodeZen, .openCodeGo:
+            llmRemoteProviderForm
+
+        case .typefluxCloud:
+            typefluxCloudLLMProviderForm
+
+        case .multimodalLLM:
+            Group {
                 StudioSuggestedTextInputCard(
-                    label: L("settings.models.transcriptionEndpoint"),
-                    placeholder: OpenAIAudioModelCatalog.whisperEndpoints[0],
+                    label: L("settings.models.apiEndpoint"),
+                    placeholder: OpenAIAudioModelCatalog.multimodalEndpoints[0],
                     text: Binding(
-                        get: { viewModel.whisperBaseURL }, set: viewModel.setWhisperBaseURL
+                        get: { viewModel.multimodalLLMBaseURL },
+                        set: viewModel.setMultimodalLLMBaseURL
                     ),
-                    suggestions: whisperEndpointSuggestions,
+                    suggestions: multimodalEndpointSuggestions,
                     horizontal: true
                 )
                 StudioSuggestedTextInputCard(
                     label: L("common.model"),
-                    placeholder: whisperModelSuggestions[0],
-                    text: Binding(get: { viewModel.whisperModel }, set: viewModel.setWhisperModel),
-                    suggestions: whisperModelSuggestions,
+                    placeholder: OpenAIAudioModelCatalog.multimodalModels[0],
+                    text: Binding(
+                        get: { viewModel.multimodalLLMModel },
+                        set: viewModel.setMultimodalLLMModel
+                    ),
+                    suggestions: multimodalModelSuggestions,
                     horizontal: true
                 )
                 StudioTextInputCard(
                     label: L("common.apiKey"), placeholder: "sk-...",
                     text: Binding(
-                        get: { viewModel.whisperAPIKey }, set: viewModel.setWhisperAPIKey
+                        get: { viewModel.multimodalLLMAPIKey },
+                        set: viewModel.setMultimodalLLMAPIKey
+                    ), secure: true,
+                    horizontal: true
+                ) {
+                    if let url = sttProviderAPIKeyURL(.multimodalLLM) {
+                        apiKeyHelpButton(url: url)
+                    }
+                }
+                Text(L("settings.models.multimodalLLM.audioHint"))
+                    .font(.subheadline)
+                    .foregroundStyle(StudioTheme.textSecondary)
+            }
+
+        case .aliCloud:
+            Group {
+                StudioSuggestedTextInputCard(
+                    label: L("common.model"),
+                    placeholder: AliCloudASRDefaults.model,
+                    text: Binding(
+                        get: { viewModel.aliCloudModel },
+                        set: viewModel.setAliCloudModel
+                    ),
+                    suggestions: AliCloudASRDefaults.suggestedModels,
+                    horizontal: true
+                )
+                StudioTextInputCard(
+                    label: L("common.apiKey"), placeholder: "sk-...",
+                    text: Binding(
+                        get: { viewModel.aliCloudAPIKey }, set: viewModel.setAliCloudAPIKey
                     ),
                     secure: true,
                     horizontal: true
                 ) {
-                    if let url = sttProviderAPIKeyURL(.whisperAPI) {
+                    if let url = sttProviderAPIKeyURL(.aliCloud) {
                         apiKeyHelpButton(url: url)
                     }
                 }
+            }
 
-            case .ollama:
-                StudioSuggestedTextInputCard(
-                    label: L("settings.models.ollama.baseURL"),
-                    placeholder: "http://127.0.0.1:11434",
+        case .doubaoRealtime:
+            Group {
+                StudioTextInputCard(
+                    label: L("settings.models.doubao.appID"), placeholder: "APPID",
+                    text: Binding(get: { viewModel.doubaoAppID }, set: viewModel.setDoubaoAppID),
+                    horizontal: true
+                )
+                StudioTextInputCard(
+                    label: L("settings.models.doubao.resourceID"),
+                    placeholder: DoubaoASRDefaults.resourceID,
                     text: Binding(
-                        get: { viewModel.ollamaBaseURL }, set: viewModel.setOllamaBaseURL
+                        get: { viewModel.doubaoResourceID },
+                        set: viewModel.setDoubaoResourceID
                     ),
-                    suggestions: ollamaEndpointSuggestions
+                    horizontal: true
+                )
+                StudioTextInputCard(
+                    label: L("settings.models.doubao.accessToken"), placeholder: "access-token",
+                    text: Binding(
+                        get: { viewModel.doubaoAccessToken },
+                        set: viewModel.setDoubaoAccessToken
+                    ), secure: true,
+                    horizontal: true
+                ) {
+                    Button {
+                        NSWorkspace.shared.open(
+                            URL(string: "https://www.volcengine.com/docs/6561/1354869?lang=zh")!
+                        )
+                    } label: {
+                        Text(L("settings.models.doubao.docs"))
+                            .font(.subheadline)
+                            .foregroundStyle(StudioTheme.accent)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+
+        case .googleCloud:
+            Group {
+                StudioTextInputCard(
+                    label: L("settings.models.googleCloud.projectID"), placeholder: "my-gcp-project",
+                    text: Binding(
+                        get: { viewModel.googleCloudProjectID },
+                        set: viewModel.setGoogleCloudProjectID
+                    ),
+                    horizontal: true
                 )
                 StudioSuggestedTextInputCard(
-                    label: L("settings.models.localModel"),
-                    placeholder: "qwen2.5:7b",
-                    text: Binding(get: { viewModel.ollamaModel }, set: viewModel.setOllamaModel),
-                    suggestions: ollamaModelSuggestions
+                    label: L("common.model"),
+                    placeholder: GoogleCloudSpeechDefaults.model,
+                    text: Binding(
+                        get: { viewModel.googleCloudModel },
+                        set: viewModel.setGoogleCloudModel
+                    ),
+                    suggestions: GoogleCloudSpeechDefaults.suggestedModels,
+                    horizontal: true
                 )
-                Toggle(
-                    L("settings.models.ollama.autoInstall"),
-                    isOn: Binding(
-                        get: { viewModel.ollamaAutoSetup }, set: viewModel.setOllamaAutoSetup
-                    )
-                )
-                .toggleStyle(.switch)
-
-            case .freeModel, .customLLM, .openRouter, .openAI, .anthropic, .gemini, .deepSeek,
-                 .kimi, .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi, .openCodeZen, .openCodeGo:
-                llmRemoteProviderForm
-
-            case .typefluxCloud:
-                typefluxCloudLLMProviderForm
-
-            case .multimodalLLM:
-                VStack(alignment: .leading, spacing: 0) {
-                    StudioSuggestedTextInputCard(
-                        label: L("settings.models.apiEndpoint"),
-                        placeholder: OpenAIAudioModelCatalog.multimodalEndpoints[0],
-                        text: Binding(
-                            get: { viewModel.multimodalLLMBaseURL },
-                            set: viewModel.setMultimodalLLMBaseURL
-                        ),
-                        suggestions: multimodalEndpointSuggestions,
-                        horizontal: true
-                    )
-                    StudioSuggestedTextInputCard(
-                        label: L("common.model"),
-                        placeholder: OpenAIAudioModelCatalog.multimodalModels[0],
-                        text: Binding(
-                            get: { viewModel.multimodalLLMModel },
-                            set: viewModel.setMultimodalLLMModel
-                        ),
-                        suggestions: multimodalModelSuggestions,
-                        horizontal: true
-                    )
-                    StudioTextInputCard(
-                        label: L("common.apiKey"), placeholder: "sk-...",
-                        text: Binding(
-                            get: { viewModel.multimodalLLMAPIKey },
-                            set: viewModel.setMultimodalLLMAPIKey
-                        ), secure: true,
-                        horizontal: true
-                    ) {
-                        if let url = sttProviderAPIKeyURL(.multimodalLLM) {
-                            apiKeyHelpButton(url: url)
+                ModelFormRow(title: "Google OAuth") {
+                    HStack(spacing: 8) {
+                        SettingsActionButton(
+                            title: viewModel.googleCloudOAuthAuthorized
+                                ? L("settings.models.googleCloud.oauth.reauthorize")
+                                : L("settings.models.googleCloud.oauth.authorize"),
+                            isLoading: viewModel.isAuthorizingGoogleCloudOAuth,
+                            isDisabled: AppServerConfiguration.googleCloudOAuthClientID.isEmpty
+                        ) {
+                            viewModel.authorizeGoogleCloudOAuth()
                         }
-                    }
-                    Text(L("settings.models.multimodalLLM.audioHint"))
-                        .font(.studioBody(StudioTheme.Typography.caption))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                }
 
-            case .aliCloud:
-                VStack(alignment: .leading, spacing: 0) {
-                    StudioSuggestedTextInputCard(
-                        label: L("common.model"),
-                        placeholder: AliCloudASRDefaults.model,
-                        text: Binding(
-                            get: { viewModel.aliCloudModel },
-                            set: viewModel.setAliCloudModel
-                        ),
-                        suggestions: AliCloudASRDefaults.suggestedModels,
-                        horizontal: true
-                    )
-                    StudioTextInputCard(
-                        label: L("common.apiKey"), placeholder: "sk-...",
-                        text: Binding(
-                            get: { viewModel.aliCloudAPIKey }, set: viewModel.setAliCloudAPIKey
-                        ),
-                        secure: true,
-                        horizontal: true
-                    ) {
-                        if let url = sttProviderAPIKeyURL(.aliCloud) {
-                            apiKeyHelpButton(url: url)
-                        }
-                    }
-                }
-
-            case .doubaoRealtime:
-                VStack(alignment: .leading, spacing: 0) {
-                    StudioTextInputCard(
-                        label: L("settings.models.doubao.appID"), placeholder: "APPID",
-                        text: Binding(get: { viewModel.doubaoAppID }, set: viewModel.setDoubaoAppID),
-                        horizontal: true
-                    )
-                    StudioTextInputCard(
-                        label: L("settings.models.doubao.resourceID"),
-                        placeholder: DoubaoASRDefaults.resourceID,
-                        text: Binding(
-                            get: { viewModel.doubaoResourceID },
-                            set: viewModel.setDoubaoResourceID
-                        ),
-                        horizontal: true
-                    )
-                    StudioTextInputCard(
-                        label: L("settings.models.doubao.accessToken"), placeholder: "access-token",
-                        text: Binding(
-                            get: { viewModel.doubaoAccessToken },
-                            set: viewModel.setDoubaoAccessToken
-                        ), secure: true,
-                        horizontal: true
-                    ) {
-                        Button {
-                            NSWorkspace.shared.open(
-                                URL(string: "https://www.volcengine.com/docs/6561/1354869?lang=zh")!
-                            )
-                        } label: {
-                            Text(L("settings.models.doubao.docs"))
-                                .font(.studioBody(StudioTheme.Typography.caption))
-                                .foregroundStyle(StudioTheme.accent)
-                        }
-                        .buttonStyle(.plain)
-                    }
-                }
-
-            case .googleCloud:
-                VStack(alignment: .leading, spacing: 0) {
-                    StudioTextInputCard(
-                        label: L("settings.models.googleCloud.projectID"), placeholder: "my-gcp-project",
-                        text: Binding(
-                            get: { viewModel.googleCloudProjectID },
-                            set: viewModel.setGoogleCloudProjectID
-                        ),
-                        horizontal: true
-                    )
-                    StudioSuggestedTextInputCard(
-                        label: L("common.model"),
-                        placeholder: GoogleCloudSpeechDefaults.model,
-                        text: Binding(
-                            get: { viewModel.googleCloudModel },
-                            set: viewModel.setGoogleCloudModel
-                        ),
-                        suggestions: GoogleCloudSpeechDefaults.suggestedModels,
-                        horizontal: true
-                    )
-                    ModelFormRow(title: "Google OAuth") {
-                        HStack(spacing: 8) {
+                        if viewModel.googleCloudOAuthAuthorized {
                             SettingsActionButton(
-                                title: viewModel.googleCloudOAuthAuthorized
-                                    ? L("settings.models.googleCloud.oauth.reauthorize")
-                                    : L("settings.models.googleCloud.oauth.authorize"),
-                                isLoading: viewModel.isAuthorizingGoogleCloudOAuth,
-                                isDisabled: AppServerConfiguration.googleCloudOAuthClientID.isEmpty
+                                title: L("settings.models.googleCloud.oauth.disconnect")
                             ) {
-                                viewModel.authorizeGoogleCloudOAuth()
+                                viewModel.disconnectGoogleCloudOAuth()
                             }
-
-                            if viewModel.googleCloudOAuthAuthorized {
-                                SettingsActionButton(
-                                    title: L("settings.models.googleCloud.oauth.disconnect")
-                                ) {
-                                    viewModel.disconnectGoogleCloudOAuth()
-                                }
-                            }
-
-                            Spacer()
                         }
-                    }
-                    ModelRowDivider()
-                }
 
-            case .groqSTT:
-                VStack(alignment: .leading, spacing: 0) {
-                    StudioTextInputCard(
-                        label: L("common.apiKey"), placeholder: "gsk_...",
-                        text: Binding(get: { viewModel.groqSTTAPIKey }, set: viewModel.setGroqSTTAPIKey),
-                        secure: true,
-                        horizontal: true
-                    ) {
-                        if let url = sttProviderAPIKeyURL(.groq) {
-                            apiKeyHelpButton(url: url)
-                        }
+                        Spacer()
                     }
-                    StudioSuggestedTextInputCard(
-                        label: L("common.model"),
-                        placeholder: OpenAIAudioModelCatalog.groqWhisperModels[0],
-                        text: Binding(get: { viewModel.groqSTTModel }, set: viewModel.setGroqSTTModel),
-                        suggestions: OpenAIAudioModelCatalog.groqWhisperModels,
-                        horizontal: true
-                    )
                 }
+            }
 
-            case .soniox:
-                VStack(alignment: .leading, spacing: 0) {
-                    StudioTextInputCard(
-                        label: L("common.apiKey"), placeholder: "sk-...",
-                        text: Binding(get: { viewModel.sonioxAPIKey }, set: viewModel.setSonioxAPIKey),
-                        secure: true,
-                        horizontal: true
-                    ) {
-                        if let url = sttProviderAPIKeyURL(.soniox) {
-                            apiKeyHelpButton(url: url)
-                        }
+        case .groqSTT:
+            Group {
+                StudioTextInputCard(
+                    label: L("common.apiKey"), placeholder: "gsk_...",
+                    text: Binding(get: { viewModel.groqSTTAPIKey }, set: viewModel.setGroqSTTAPIKey),
+                    secure: true,
+                    horizontal: true
+                ) {
+                    if let url = sttProviderAPIKeyURL(.groq) {
+                        apiKeyHelpButton(url: url)
                     }
-                    StudioSuggestedTextInputCard(
-                        label: L("common.model"),
-                        placeholder: SonioxASRDefaults.model,
-                        text: Binding(get: { viewModel.sonioxModel }, set: viewModel.setSonioxModel),
-                        suggestions: SonioxASRDefaults.suggestedModels,
-                        horizontal: true
-                    )
                 }
+                StudioSuggestedTextInputCard(
+                    label: L("common.model"),
+                    placeholder: OpenAIAudioModelCatalog.groqWhisperModels[0],
+                    text: Binding(get: { viewModel.groqSTTModel }, set: viewModel.setGroqSTTModel),
+                    suggestions: OpenAIAudioModelCatalog.groqWhisperModels,
+                    horizontal: true
+                )
+            }
+
+        case .soniox:
+            Group {
+                StudioTextInputCard(
+                    label: L("common.apiKey"), placeholder: "sk-...",
+                    text: Binding(get: { viewModel.sonioxAPIKey }, set: viewModel.setSonioxAPIKey),
+                    secure: true,
+                    horizontal: true
+                ) {
+                    if let url = sttProviderAPIKeyURL(.soniox) {
+                        apiKeyHelpButton(url: url)
+                    }
+                }
+                StudioSuggestedTextInputCard(
+                    label: L("common.model"),
+                    placeholder: SonioxASRDefaults.model,
+                    text: Binding(get: { viewModel.sonioxModel }, set: viewModel.setSonioxModel),
+                    suggestions: SonioxASRDefaults.suggestedModels,
+                    horizontal: true
+                )
             }
         }
     }
@@ -2758,7 +2755,7 @@ struct StudioView: View {
             if !authState.isLoggedIn {
                 VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
                     Text(message)
-                        .font(.studioBody(StudioTheme.Typography.caption))
+                        .font(.subheadline)
                         .foregroundStyle(StudioTheme.warning)
 
                     HStack {
@@ -2787,22 +2784,22 @@ struct StudioView: View {
                 ProgressView()
                     .controlSize(.small)
                 Text(L("settings.models.testingConnection"))
-                    .font(.studioBody(StudioTheme.Typography.caption))
+                    .font(.subheadline)
                     .foregroundStyle(StudioTheme.textSecondary)
             }
         case let .success(firstMs, totalMs, preview):
             VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
                 HStack(spacing: StudioTheme.Spacing.xSmall) {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 13, weight: .semibold))
+                        .font(.body)
                         .foregroundStyle(StudioTheme.success)
                     Text(L("settings.models.connectionSuccess", firstMs, totalMs))
-                        .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
+                        .font(.subheadline)
                         .foregroundStyle(StudioTheme.textPrimary)
                 }
                 if !preview.isEmpty {
                     Text(preview)
-                        .font(.studioBody(StudioTheme.Typography.caption))
+                        .font(.subheadline)
                         .foregroundStyle(StudioTheme.textSecondary)
                         .lineLimit(3)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -2818,20 +2815,20 @@ struct StudioView: View {
         case let .notice(message):
             HStack(alignment: .top, spacing: StudioTheme.Spacing.xSmall) {
                 Image(systemName: "info.circle")
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.body)
                     .foregroundStyle(StudioTheme.textSecondary)
                 Text(message)
-                    .font(.studioBody(StudioTheme.Typography.caption))
+                    .font(.subheadline)
                     .foregroundStyle(StudioTheme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         case let .failure(message):
             HStack(alignment: .top, spacing: StudioTheme.Spacing.xSmall) {
                 Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: 13, weight: .semibold))
+                    .font(.body)
                     .foregroundStyle(StudioTheme.danger)
                 Text(message)
-                    .font(.studioBody(StudioTheme.Typography.caption))
+                    .font(.subheadline)
                     .foregroundStyle(StudioTheme.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -3003,33 +3000,32 @@ struct StudioView: View {
             VStack(alignment: .leading, spacing: 8) {
                 HStack(alignment: .top, spacing: 8) {
                     Text(specs.summary)
-                        .font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
+                        .font(.subheadline).foregroundStyle(StudioTheme.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                     Spacer(minLength: 8)
                     if isActive {
-                        StudioPill(title: L("settings.models.selected"), tone: StudioTheme.accent,
-                                   fill: StudioTheme.accentSoft)
+                        Text(L("settings.models.selected")).font(.subheadline)
+                            .foregroundStyle(TypefluxColor.accent.color)
                     }
                 }
                 HStack {
                     Text("\(specs.parameterValue) parameters · \(specs.sizeValue)")
-                        .font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
+                        .font(.subheadline).foregroundStyle(StudioTheme.textTertiary)
                     Spacer()
                     localSTTModelDownloadIconButton(model)
                 }
                 if isFocused, viewModel.isPreparingLocalSTT || !isDownloaded {
                     localSTTModelProgressRow(model)
                     Text(viewModel.localSTTPreparationDetail)
-                        .font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
+                        .font(.subheadline).foregroundStyle(StudioTheme.textSecondary)
                     if !viewModel.localSTTTransferDetail.isEmpty {
                         Text(viewModel.localSTTTransferDetail)
-                            .font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
+                            .font(.subheadline).foregroundStyle(StudioTheme.textSecondary)
                     }
                 }
             }
         }
         .contentShape(Rectangle())
-        .onTapGesture { selectLocalSTTModelCard(model) }
         .contextMenu {
             Button {
                 let isAvailable = viewModel.isModelAvailable(model)
@@ -3060,7 +3056,7 @@ struct StudioView: View {
         }
     }
 
-    private func localSTTModelProgressRow(_ model: LocalSTTModel) -> some View {
+    private func localSTTModelProgressRow(_: LocalSTTModel) -> some View {
         HStack(alignment: .center, spacing: StudioTheme.Spacing.small) {
             ProgressView(value: viewModel.localSTTDisplayedPreparationProgress, total: 1)
                 .progressViewStyle(.linear)
@@ -3070,7 +3066,6 @@ struct StudioView: View {
                 .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
                 .foregroundStyle(StudioTheme.textSecondary)
                 .frame(width: 40, alignment: .trailing)
-
         }
     }
 
@@ -3091,12 +3086,12 @@ struct StudioView: View {
             }
         } label: {
             Image(systemName: systemImage)
-                .font(.system(size: StudioTheme.Typography.iconSmall, weight: .semibold))
+                .font(.subheadline)
                 .foregroundStyle(viewModel.isPreparingLocalSTT ? StudioTheme.textTertiary : StudioTheme.textSecondary)
                 .frame(width: 28, height: 28)
                 .contentShape(Rectangle())
         }
-        .buttonStyle(StudioInteractiveButtonStyle())
+        .buttonStyle(.borderless)
         .disabled(viewModel.isPreparingLocalSTT)
         .help(title)
         .accessibilityLabel(title)

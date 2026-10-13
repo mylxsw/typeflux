@@ -1750,7 +1750,7 @@
 "models.httpError" = "服务商返回 HTTP %d，请检查地址和凭据。";
 "models.search" = "搜索模型或服务商";
 "models.back" = "返回";
-"models.tab.scenes" = "模型配置";
+"models.tab.scenes" = "场景";
 "models.tab.speech" = "语音识别";
 "models.tab.language" = "大语言模型";
 "models.sceneHint" = "在这里决定每件事使用哪个服务商的哪个模型";
@@ -4810,6 +4810,9 @@
 "ask.inputHistory.limit" = "保留条数";
 "ask.inputHistory.privacy" = "输入历史仅保存在这台 Mac 上，不包含自动捕获的上下文、附件或 AI 回答。";
 "ask.inputHistory.noMatches.detail" = "试试其他文字。按 esc 清空筛选并返回首页。";
+
+"models.tab.providers" = "服务商";
+"models.tab.local" = "本地模型";
 
 // Website login connection diagnostics.
 "auth.web.invalidResponse" = "登录服务返回的数据不符合预期，请检查 App 与 API 配置的官网地址是否一致。";

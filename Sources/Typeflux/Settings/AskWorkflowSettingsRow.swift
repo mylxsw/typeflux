@@ -16,12 +16,15 @@ struct AskWorkflowSettingsRow<Controls: View>: View {
             Image(systemName: symbol).font(.system(size: 17))
                 .foregroundStyle(StudioTheme.textSecondary)
                 .frame(width: 36, height: 36)
-                .background(ModelVisualStyle.control, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                .background(
+                    TypefluxColor.controlBackground.color,
+                    in: RoundedRectangle(cornerRadius: 9, style: .continuous)
+                )
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 12) {
                     Button(action: edit) {
                         Text(summary.title).font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(titleHovered ? ModelVisualStyle.accent : StudioTheme.textPrimary)
+                            .foregroundStyle(titleHovered ? TypefluxColor.accent.color : StudioTheme.textPrimary)
                             .underline(titleHovered)
                             .lineLimit(1).truncationMode(.tail)
                             .frame(maxWidth: .infinity, alignment: .leading)

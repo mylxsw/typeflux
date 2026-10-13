@@ -37,10 +37,10 @@ struct AskWorkflowEditorView: View {
             AskWorkflowEditorSidebar(model: model, store: store, create: { creating = $0 },
                                      gallery: { showingGallery = true })
                 .frame(width: 220)
-            Rectangle().fill(ModelVisualStyle.border).frame(width: 1)
+            Rectangle().fill(TypefluxColor.separator.color).frame(width: 1)
             VStack(spacing: 0) {
                 header
-                Rectangle().fill(ModelVisualStyle.divider).frame(height: 1)
+                Rectangle().fill(TypefluxColor.separator.color).frame(height: 1)
                 banners
                 HStack(spacing: 0) {
                     Group {
@@ -52,7 +52,7 @@ struct AskWorkflowEditorView: View {
                     }
                     .frame(minWidth: 480, maxWidth: .infinity, maxHeight: .infinity)
                     if showsPanel, model.draft != nil {
-                        Rectangle().fill(ModelVisualStyle.divider).frame(width: 1)
+                        Rectangle().fill(TypefluxColor.separator.color).frame(width: 1)
                         rightPanel.frame(width: 340)
                     }
                 }
@@ -177,7 +177,7 @@ struct AskWorkflowEditorView: View {
                     .disabled(model.isTesting || !model.problems.isEmpty)
                 }
                 if let id = model.workflowID, model.generation == nil {
-                    Rectangle().fill(ModelVisualStyle.border).frame(width: 1, height: 18).padding(.horizontal, 2)
+                    Rectangle().fill(TypefluxColor.separator.color).frame(width: 1, height: 18).padding(.horizontal, 2)
                     Toggle(isOn: Binding(get: { store.isEnabled(id) }, set: { store.setEnabled(id, $0) })) {
                         Text(L("ask.settings.keywords.enabled")).font(.system(size: 12))
                             .foregroundStyle(StudioTheme.textSecondary)
@@ -382,8 +382,11 @@ struct AskWorkflowEditorSidebar: View {
                 TextField(L("ask.workflow.editor.search"), text: $model.search).textFieldStyle(.plain)
             }
             .font(.system(size: 12.5)).padding(.horizontal, 9).frame(height: 28)
-            .background(ModelVisualStyle.control, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(ModelVisualStyle.border))
+            .background(
+                TypefluxColor.controlBackground.color,
+                in: RoundedRectangle(cornerRadius: 8, style: .continuous)
+            )
+            .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(TypefluxColor.separator.color))
             .padding(.horizontal, 12).padding(.bottom, 8)
             ScrollView {
                 VStack(alignment: .leading, spacing: 2) {
@@ -410,7 +413,7 @@ struct AskWorkflowEditorSidebar: View {
                     }
                 }
             }
-            Rectangle().fill(ModelVisualStyle.divider).frame(height: 1)
+            Rectangle().fill(TypefluxColor.separator.color).frame(height: 1)
             HStack(spacing: 6) {
                 Menu {
                     Button { create(.assistant) } label: {
@@ -432,8 +435,12 @@ struct AskWorkflowEditorSidebar: View {
                 }
                 .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
                 .frame(maxWidth: .infinity).frame(height: 28)
-                .background(ModelVisualStyle.control, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(ModelVisualStyle.border))
+                .background(
+                    TypefluxColor.controlBackground.color,
+                    in: RoundedRectangle(cornerRadius: 8, style: .continuous)
+                )
+                .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .strokeBorder(TypefluxColor.separator.color))
                 .contentShape(Rectangle())
                 .accessibilityIdentifier("ask.workflow.editor.new")
                 Button { store.revealRoot() } label: {

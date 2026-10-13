@@ -1740,7 +1740,7 @@
 "models.httpError" = "The provider returned HTTP %d. Check the endpoint and credentials.";
 "models.search" = "Search models or providers";
 "models.back" = "뒤로";
-"models.tab.scenes" = "모델 구성";
+"models.tab.scenes" = "시나리오";
 "models.tab.speech" = "음성 인식";
 "models.tab.language" = "대규모 언어 모델";
 "models.sceneHint" = "Choose a provider and model for each application scenario";
@@ -4761,6 +4761,9 @@
 "ask.inputHistory.limit" = "보관할 항목 수";
 "ask.inputHistory.privacy" = "입력 기록은 이 Mac에만 저장됩니다. 캡처한 컨텍스트, 첨부 파일, AI 답변은 포함되지 않습니다.";
 "ask.inputHistory.noMatches.detail" = "다른 필터를 시도하세요. esc로 필터를 지우고 돌아갈 수 있습니다.";
+
+"models.tab.providers" = "제공자";
+"models.tab.local" = "로컬 모델";
 
 // Website login connection diagnostics.
 "auth.web.invalidResponse" = "로그인 서비스에서 예상하지 못한 응답을 받았습니다. App과 API의 웹사이트 주소가 같은지 확인하세요.";

@@ -13,33 +13,23 @@ struct ModelProviderRowData: Identifiable {
 struct ModelProviderRow: View {
     let row: ModelProviderRowData
     let action: () -> Void
-    @State private var hovering = false
-
     var body: some View {
-        Button(action: action) {
-            HStack(spacing: 14) {
-                ModelIconTile {
-                    ModelProviderIcon(provider: row.icon, size: 22)
-                }.opacity(row.available ? 1 : 0.55)
+        TypefluxButton(kind: .borderless, action: action) {
+            HStack(spacing: 8) {
+                ModelProviderIcon(provider: row.icon, size: 24).accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(row.name).font(.system(size: StudioTheme.Typography.settingTitle, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textPrimary)
+                    Text(row.name).font(.body).foregroundStyle(TypefluxColor.label.color)
                     if !row.detail.isEmpty {
-                        Text(row.detail).font(.system(size: StudioTheme.Typography.bodySmall))
-                            .foregroundStyle(StudioTheme.textSecondary)
+                        Text(row.detail).font(.subheadline).foregroundStyle(.secondary)
                             .lineLimit(1).truncationMode(.middle)
                     }
-                }.opacity(row.available ? 1 : 0.6)
-                Spacer(minLength: 12)
-                ModelConnectionStatus(connected: row.available)
-                Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textTertiary)
-            }
-            .padding(.horizontal, 18).frame(minHeight: 60)
-            .background(hovering ? StudioTheme.textPrimary.opacity(0.035) : Color.clear)
-            .contentShape(Rectangle())
+                }
+                Spacer()
+                TypefluxStatus(L(row.available ? "models.configured" : "models.notConfigured"),
+                               tone: row.available ? .success : .inactive)
+                Image(systemName: "chevron.right").foregroundStyle(.tertiary).accessibilityHidden(true)
+            }.contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
-        .onHover { hovering = $0 }
+        .accessibilityIdentifier("models.provider." + row.id)
     }
 }

@@ -41,7 +41,7 @@ extension AskToolsSettingsView {
                         Label(L("agent.overview.attention.action"), systemImage: "chevron.right")
                             .labelStyle(TrailingIconLabelStyle())
                     }
-                    .buttonStyle(ModelActionStyle())
+                    .buttonStyle(.bordered)
                 }
             }
         }
@@ -90,17 +90,17 @@ struct AgentOverviewSummary: View {
             }
             Spacer(minLength: 12)
             if let first = attention.first {
-                Button(L("agent.overview.fix")) { onFix(first) }.buttonStyle(ModelActionStyle(primary: true))
+                Button(L("agent.overview.fix")) { onFix(first) }.buttonStyle(.borderedProminent)
             }
         }
         .padding(.horizontal, 16).padding(.vertical, 14)
         .background(
-            LinearGradient(colors: [ModelVisualStyle.accent.opacity(0.14), ModelVisualStyle.surface],
+            LinearGradient(colors: [TypefluxColor.accent.color.opacity(0.14), TypefluxColor.contentBackground.color],
                            startPoint: .leading, endPoint: .trailing),
-            in: RoundedRectangle(cornerRadius: ModelVisualStyle.cornerRadius, style: .continuous)
+            in: RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: .classic), style: .continuous)
         )
-        .overlay(RoundedRectangle(cornerRadius: ModelVisualStyle.cornerRadius, style: .continuous)
-            .strokeBorder(ModelVisualStyle.border))
+        .overlay(RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: .classic), style: .continuous)
+            .strokeBorder(TypefluxColor.separator.color))
     }
 }
 
@@ -121,7 +121,7 @@ struct AgentStorageOption: View {
                     Spacer()
                     Image(systemName: selected ? "largecircle.fill.circle" : "circle")
                         .font(.system(size: 15))
-                        .foregroundStyle(selected ? ModelVisualStyle.accent : StudioTheme.textTertiary)
+                        .foregroundStyle(selected ? TypefluxColor.accent.color : StudioTheme.textTertiary)
                 }
                 .foregroundStyle(StudioTheme.textPrimary)
                 VStack(alignment: .leading, spacing: 5) {
@@ -139,10 +139,16 @@ struct AgentStorageOption: View {
             }
             .padding(14)
             .frame(maxWidth: .infinity, alignment: .topLeading)
-            .background(ModelVisualStyle.surface,
-                        in: RoundedRectangle(cornerRadius: ModelVisualStyle.cornerRadius, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: ModelVisualStyle.cornerRadius, style: .continuous)
-                .strokeBorder(selected ? ModelVisualStyle.accent : ModelVisualStyle.border, lineWidth: selected ? 2 : 1))
+            .background(TypefluxColor.contentBackground.color,
+                        in: RoundedRectangle(
+                            cornerRadius: TypefluxRadius.form.value(for: .classic),
+                            style: .continuous
+                        ))
+            .overlay(RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: .classic), style: .continuous)
+                .strokeBorder(
+                    selected ? TypefluxColor.accent.color : TypefluxColor.separator.color,
+                    lineWidth: selected ? 2 : 1
+                ))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

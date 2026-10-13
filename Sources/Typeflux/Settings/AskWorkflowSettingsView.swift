@@ -139,7 +139,7 @@ struct AskWorkflowSettingsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
             header
-            ModelSurface { list }
+            StudioCard(padding: 0) { list }
         }
         .onAppear { store.reload() }
         .sheet(isPresented: $showingGallery) {
@@ -245,31 +245,29 @@ struct AskWorkflowSettingsView: View {
         Button { showingGallery = true } label: {
             Label(L("ask.workflow.gallery.title"), systemImage: "square.grid.2x2")
         }
-        .buttonStyle(ModelActionStyle())
+        .buttonStyle(.bordered)
         .accessibilityIdentifier("ask.workflow.gallery")
     }
 
     private var creationMenu: some View {
-        SettingsActionMenu(title: L("ask.workflow.new"), symbol: "plus", primary: true,
-                           identifier: "ask.workflow.new", items: [
-                            .action(L("ask.workflow.editor.new.ai"), symbol: "sparkles", {
-                                AskWorkflowEditorWindowController.shared.showNew(.assistant)
-                            }),
-                            .separator
-                           ] + AskWorkflowTemplate.allCases.map { template in
-                            .action(template.title, { create(template) })
-                           })
-        .fixedSize()
+        TypefluxMenu {
+            Button(L("ask.workflow.editor.new.ai")) { AskWorkflowEditorWindowController.shared.showNew(.assistant) }
+            Divider()
+            ForEach(AskWorkflowTemplate.allCases, id: \.self) { template in
+                Button(template.title) { create(template) }
+            }
+        } label: { Label(L("ask.workflow.new"), systemImage: "plus") }
+            .accessibilityIdentifier("ask.workflow.new")
     }
 
     private var maintenanceMenu: some View {
-        SettingsActionMenu(title: L("ask.workflow.manage"), identifier: "ask.workflow.manage", items: [
-            .action(L("ask.workflow.editor.openWindow"), { AskWorkflowEditorWindowController.shared.show() }),
-            .separator,
-            .action(L("ask.workflow.revealFolder"), { store.revealRoot() }),
-            .action(L("ask.workflow.reload"), { store.reload() })
-        ])
-        .fixedSize()
+        TypefluxMenu {
+            Button(L("ask.workflow.editor.openWindow")) { AskWorkflowEditorWindowController.shared.show() }
+            Divider()
+            Button(L("ask.workflow.revealFolder")) { store.revealRoot() }
+            Button(L("ask.workflow.reload")) { store.reload() }
+        } label: { Text(L("ask.workflow.manage")) }
+            .accessibilityIdentifier("ask.workflow.manage")
     }
 
     private func row(_ workflow: AskWorkflow, summary: AskWorkflowSummary) -> some View {

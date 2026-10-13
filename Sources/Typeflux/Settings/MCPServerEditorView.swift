@@ -13,7 +13,7 @@ struct MCPServerEditorView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     connectionCard
-                    ModelSurface {
+                    StudioCard(padding: 0) {
                         VStack(spacing: 0) {
                             settingRow("agent.mcp.enabled.title", subtitle: "agent.mcp.enabled.subtitle",
                                        selection: $viewModel.mcpDraftEnabled)
@@ -30,7 +30,7 @@ struct MCPServerEditorView: View {
         }
         .padding(24)
         .frame(width: 520, height: min(640, max(400, (NSScreen.main?.visibleFrame.height ?? 800) - 120)))
-        .background(ModelVisualStyle.canvas)
+        .background(TypefluxColor.windowBackground.color)
         .onDisappear { viewModel.resetMCPDraftConnectionTest() }
         .onChange(of: connectionFields) { _ in viewModel.resetMCPDraftConnectionTest() }
     }
@@ -42,29 +42,29 @@ struct MCPServerEditorView: View {
     }
 
     private var connectionCard: some View {
-        ModelSurface {
+        StudioCard(padding: 0) {
             VStack(alignment: .leading, spacing: 0) {
                 formRow("agent.mcp.name") {
                     TextField(L("agent.mcp.namePlaceholder"), text: $viewModel.mcpDraftName)
-                        .textFieldStyle(ModelFieldStyle(monospaced: false))
+                        .textFieldStyle(.roundedBorder)
                 }
                 ModelRowDivider()
                 formRow("agent.mcp.transportType") {
-                    SettingsMenuPicker(title: L("agent.mcp.transportType"),
-                                       options: [(label: L("agent.mcp.transport.stdio"), value: MCPTransportType.stdio),
-                                                 (label: L("agent.mcp.transport.http"), value: MCPTransportType.http)],
-                                       selection: $viewModel.mcpDraftTransportType)
+                    TypefluxPopup(title: L("agent.mcp.transportType"),
+                                  options: [(label: L("agent.mcp.transport.stdio"), value: MCPTransportType.stdio),
+                                            (label: L("agent.mcp.transport.http"), value: MCPTransportType.http)],
+                                  selection: $viewModel.mcpDraftTransportType)
                 }
                 ModelRowDivider()
                 if viewModel.mcpDraftTransportType == .stdio {
                     formRow("agent.mcp.stdio.command") {
                         TextField("/usr/local/bin/my-mcp-server", text: $viewModel.mcpDraftStdioCommand)
-                            .textFieldStyle(ModelFieldStyle())
+                            .textFieldStyle(.roundedBorder)
                     }
                     ModelRowDivider()
                     formRow("agent.mcp.stdio.args") {
                         TextField("--port 3000 --verbose", text: $viewModel.mcpDraftStdioArgs)
-                            .textFieldStyle(ModelFieldStyle())
+                            .textFieldStyle(.roundedBorder)
                     }
                     ModelRowDivider()
                     keyValueEditor(
@@ -76,7 +76,7 @@ struct MCPServerEditorView: View {
                 } else {
                     formRow("agent.mcp.http.url") {
                         TextField("https://mcp.example.com/sse", text: $viewModel.mcpDraftHTTPURL)
-                            .textFieldStyle(ModelFieldStyle())
+                            .textFieldStyle(.roundedBorder)
                     }
                     ModelRowDivider()
                     keyValueEditor(
@@ -117,7 +117,7 @@ struct MCPServerEditorView: View {
 
     private var actions: some View {
         HStack(spacing: 8) {
-            Button(L("common.cancel"), action: closeEditor).buttonStyle(ModelActionStyle())
+            Button(L("common.cancel"), action: closeEditor).buttonStyle(.bordered)
                 .keyboardShortcut(.cancelAction)
             Spacer(minLength: 8)
             Button {
@@ -131,7 +131,7 @@ struct MCPServerEditorView: View {
                             .mcpConnectionTestState == .testing ? "agent.mcp.testing" : "agent.mcp.testConnection"))
                 }
             }
-            .buttonStyle(ModelActionStyle())
+            .buttonStyle(.bordered)
             .accessibilityLabel(L(viewModel.mcpConnectionTestState == .testing
                     ? "agent.mcp.testing" : "agent.mcp.testConnection"))
             .disabled(!viewModel.canSaveMCPDraft || viewModel.mcpConnectionTestState == .testing)
@@ -139,7 +139,7 @@ struct MCPServerEditorView: View {
                 viewModel.saveMCPDraft()
                 closeEditor()
             }
-            .buttonStyle(ModelActionStyle(primary: true)).disabled(!viewModel.canSaveMCPDraft)
+            .buttonStyle(.borderedProminent).disabled(!viewModel.canSaveMCPDraft)
             .keyboardShortcut(.defaultAction)
         }
     }

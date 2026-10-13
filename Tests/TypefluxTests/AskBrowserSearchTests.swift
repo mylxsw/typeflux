@@ -474,7 +474,7 @@ struct AskBrowserSearchTests {
             )
             window.isReleasedWhenClosed = false
             let hosting = NSHostingView(rootView: view.frame(width: width, height: height, alignment: .top)
-                .padding(16).background(ModelVisualStyle.canvas).environment(\.colorScheme, .dark))
+                .padding(16).background(TypefluxColor.windowBackground.color).environment(\.colorScheme, .dark))
             window.contentView = hosting
             window.orderFront(nil)
             defer { window.orderOut(nil); window.close() }

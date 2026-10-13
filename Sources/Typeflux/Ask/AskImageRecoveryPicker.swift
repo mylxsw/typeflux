@@ -10,16 +10,31 @@ struct AskImagePickerState: Equatable {
     init(hasChoices: Bool, loading: Bool, catalogFailed: Bool, loggedIn: Bool) {
         self.loading = loading
         self.catalogFailed = catalogFailed
-        if !loggedIn { content = .signedOut }
-        else if hasChoices { content = .choices }
-        else if loading { content = .loading }
-        else if catalogFailed { content = .failed }
-        else { content = .empty }
+        if !loggedIn {
+            content = .signedOut
+        } else if hasChoices {
+            content = .choices
+        } else if loading {
+            content = .loading
+        } else if catalogFailed {
+            content = .failed
+        } else {
+            content = .empty
+        }
     }
 
-    var offersSettings: Bool { content == .empty }
-    var offersRetry: Bool { content == .failed }
-    var showsCloudFailure: Bool { content == .choices && catalogFailed && !loading }
+    var offersSettings: Bool {
+        content == .empty
+    }
+
+    var offersRetry: Bool {
+        content == .failed
+    }
+
+    var showsCloudFailure: Bool {
+        content == .choices && catalogFailed && !loading
+    }
+
     func canContinue(candidate: String, providers: [RegisteredProvider], busy: Bool) -> Bool {
         content == .choices && !busy && providers.contains { provider in
             (!provider.isCloud || (!loading && !catalogFailed)) && provider.models.contains { $0.reference == candidate }
@@ -75,6 +90,7 @@ struct AskImagePickerContent: View {
     private var providers: [RegisteredProvider] {
         library.imageRecoveryProviders(loggedIn: loggedIn)
     }
+
     private var state: AskImagePickerState {
         AskImagePickerState(hasChoices: !providers.isEmpty, loading: loading,
                             catalogFailed: library.catalogError != nil, loggedIn: loggedIn)
@@ -125,7 +141,7 @@ struct AskImagePickerContent: View {
             Divider()
             HStack {
                 Button(L("ask.image.cancel"), action: dismiss)
-                    .buttonStyle(ModelActionStyle()).keyboardShortcut(.cancelAction)
+                    .buttonStyle(.bordered).keyboardShortcut(.cancelAction)
                 Spacer()
                 if state.offersRetry {
                     primary("ask.image.retry", action: refresh)
@@ -139,11 +155,11 @@ struct AskImagePickerContent: View {
                 }
             }.padding(16)
         }
-        .frame(width: 360).background(ModelVisualStyle.input).tint(AskTheme.accent)
+        .frame(width: 360).background(TypefluxColor.controlBackground.color).tint(AskTheme.accent)
     }
 
     private func primary(_ key: String, action: @escaping () -> Void) -> some View {
-        Button(L(key), action: action).buttonStyle(ModelActionStyle(primary: true)).keyboardShortcut(.defaultAction)
+        Button(L(key), action: action).buttonStyle(.borderedProminent).keyboardShortcut(.defaultAction)
     }
 
     private func message(_ key: String, icon: String) -> some View {

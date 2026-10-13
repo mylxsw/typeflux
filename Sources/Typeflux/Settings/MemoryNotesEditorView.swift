@@ -34,10 +34,10 @@ struct MemoryNotesEditorView: View {
                 } label: {
                     Label(L("agent.memory.add"), systemImage: "plus")
                 }
-                .buttonStyle(ModelActionStyle(primary: true))
+                .buttonStyle(.borderedProminent)
                 .disabled(model.draft != nil)
             }
-            ModelSurface {
+            StudioCard(padding: 0) {
                 VStack(alignment: .leading, spacing: 0) {
                     if let draft = model.draft, draft.note == nil {
                         editor
@@ -112,7 +112,8 @@ struct MemoryNotesEditorView: View {
         let currentExpiry = model.draft?.note?.provenance?.expiry
         return HStack(alignment: .top, spacing: 14) {
             ModelIconTile {
-                Image(systemName: isNew ? "plus" : "pencil").font(.system(size: 14)).foregroundStyle(ModelVisualStyle.accent)
+                Image(systemName: isNew ? "plus" : "pencil").font(.system(size: 14))
+                    .foregroundStyle(TypefluxColor.accent.color)
             }
             VStack(alignment: .leading, spacing: 8) {
                 TextEditor(text: Binding(get: { model.draft?.text ?? "" }, set: { model.draft?.text = $0 }))
@@ -120,29 +121,33 @@ struct MemoryNotesEditorView: View {
                     .scrollContentBackground(.hidden)
                     .padding(6)
                     .frame(height: 72)
-                    .background(ModelVisualStyle.control,
-                                in: RoundedRectangle(cornerRadius: ModelVisualStyle.controlCornerRadius, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: ModelVisualStyle.controlCornerRadius, style: .continuous)
-                        .strokeBorder(ModelVisualStyle.accent.opacity(0.6)))
+                    .background(TypefluxColor.controlBackground.color,
+                                in: RoundedRectangle(
+                                    cornerRadius: TypefluxRadius.textField.value(for: .classic),
+                                    style: .continuous
+                                ))
+                    .overlay(RoundedRectangle(
+                        cornerRadius: TypefluxRadius.textField.value(for: .classic),
+                        style: .continuous
+                    )
+                    .strokeBorder(TypefluxColor.accent.color.opacity(0.6)))
                     .accessibilityLabel(L(isNew ? "agent.memory.add" : "memory.correct"))
                 HStack(spacing: 8) {
                     Text(L("memory.retention")).font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
-                    SettingsMenuPicker(
-                        title: L("memory.retention"),
-                        options: retentionOptions(isNew: isNew, currentExpiry: currentExpiry),
-                        selection: Binding(
-                            get: { model.draft?.retention ?? .keep },
-                            set: { model.draft?.retention = $0 }
-                        )
-                    )
-                    .frame(width: 150)
+                    TypefluxPopup(title: L("memory.retention"),
+                                  options: retentionOptions(isNew: isNew, currentExpiry: currentExpiry),
+                                  selection: Binding(
+                                      get: { model.draft?.retention ?? .keep },
+                                      set: { model.draft?.retention = $0 }
+                                  ))
+                                  .frame(width: 150)
                     Spacer()
-                    Button(L("memory.cancel")) { model.cancelEditing() }.buttonStyle(ModelActionStyle())
+                    Button(L("memory.cancel")) { model.cancelEditing() }.buttonStyle(.bordered)
                         .keyboardShortcut(.cancelAction)
                     Button(L(isNew ? "agent.memory.save" : "memory.save")) {
                         model.saveDraft(to: store, owner: owner)
                     }
-                    .buttonStyle(ModelActionStyle(primary: true))
+                    .buttonStyle(.borderedProminent)
                     .disabled(model.draft?.canSave != true)
                 }
             }

@@ -105,7 +105,7 @@ extension AskToolsSettingsView {
             if granted {
                 AgentStatusBadge(level: .ready, label: L("permission.badge.granted"))
             } else {
-                Button(L("permission.action.openSettings")) { request() }.buttonStyle(ModelActionStyle())
+                Button(L("permission.action.openSettings")) { request() }.buttonStyle(.bordered)
             }
         }
     }
@@ -117,13 +117,13 @@ struct AgentInfoNote: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 8) {
-            Image(systemName: "info.circle").foregroundStyle(ModelVisualStyle.accent)
+            Image(systemName: "info.circle").foregroundStyle(TypefluxColor.accent.color)
             Text(text).foregroundStyle(StudioTheme.textSecondary).fixedSize(horizontal: false, vertical: true)
         }
         .font(.system(size: 12.5))
         .padding(.horizontal, 14).padding(.vertical, 10)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(ModelVisualStyle.accent.opacity(0.1), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .background(TypefluxColor.accent.color.opacity(0.1), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 }
 
@@ -146,9 +146,12 @@ struct AgentSearchForm: View {
             )
             if provider != .none {
                 AgentFormRow(label: AgentSearchField.apiKey.title(for: provider), required: true) {
-                    SecureField(provider == .cloudflare ? L("agent.search.cloudflare.tokenPlaceholder") : L("agent.search.keyPlaceholder"),
-                                text: $apiKey)
-                        .textFieldStyle(ModelFieldStyle())
+                    SecureField(
+                        provider == .cloudflare ? L("agent.search.cloudflare.tokenPlaceholder") :
+                            L("agent.search.keyPlaceholder"),
+                        text: $apiKey
+                    )
+                    .textFieldStyle(.roundedBorder)
                 }
                 if provider == .cloudflare {
                     AskCloudflareSearchSettingsView(configuration: $cloudflare)
@@ -174,7 +177,7 @@ struct AgentSearchForm: View {
                         Text(L(connection.testing ? "ask.settings.search.cloudflare.testing" : "ask.settings.search.cloudflare.test"))
                     }
                 }
-                .buttonStyle(ModelActionStyle())
+                .buttonStyle(.bordered)
                 .disabled(connection.testing || !missing.isEmpty)
                 if !missing.isEmpty {
                     Text(L("agent.search.missing", missing.map { $0.title(for: provider) }.joined(separator: L("agent.listSeparator"))))

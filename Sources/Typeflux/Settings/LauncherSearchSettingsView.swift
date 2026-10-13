@@ -67,9 +67,9 @@ struct LauncherSearchSettingsView: View {
             ModelRowDivider(leading: 66)
             AgentSettingsRow(icon: "list.number", title: L("launcher.search.limit"),
                              subtitle: L("launcher.search.limit.subtitle"), subtitleLineLimit: nil) {
-                SettingsMenuPicker(title: L("launcher.search.limit"),
-                                   options: AskLauncherSearchSettings.limits.map { (label: "\($0)", value: $0) },
-                                   selection: binding(\.limit))
+                TypefluxPopup(title: L("launcher.search.limit"),
+                              options: AskLauncherSearchSettings.limits.map { (label: "\($0)", value: $0) },
+                              selection: binding(\.limit))
                     .frame(width: 90)
             }
             ModelRowDivider(leading: 66)
@@ -105,7 +105,7 @@ struct LauncherSearchSettingsView: View {
     // MARK: - Applications
 
     @ViewBuilder private var appsTab: some View {
-        ModelSurface {
+        StudioCard(padding: 0) {
             AgentSettingsRow(icon: "square.grid.2x2", title: L("ask.settings.quick.apps.title")) {
                 Toggle("", isOn: Binding(get: { appsEnabled }, set: setAppsEnabled))
                     .labelsHidden().toggleStyle(.switch)
@@ -143,7 +143,7 @@ struct LauncherSearchSettingsView: View {
     // MARK: - Files
 
     @ViewBuilder private var filesTab: some View {
-        ModelSurface {
+        StudioCard(padding: 0) {
             AgentSettingsRow(icon: "doc.text.magnifyingglass", title: L("ask.settings.quick.files.title")) {
                 Toggle("", isOn: Binding(get: { filesEnabled }, set: setFilesEnabled))
                     .labelsHidden().toggleStyle(.switch)
@@ -295,14 +295,14 @@ struct LauncherSearchSettingsView: View {
                             }
                             .padding(.leading, 8).padding(.trailing, 6).frame(height: 22)
                             .background(
-                                ModelVisualStyle.control,
+                                TypefluxColor.controlBackground.color,
                                 in: RoundedRectangle(cornerRadius: 6, style: .continuous)
                             )
                         }
                     }
                 }
                 HStack(spacing: 8) {
-                    TextField(placeholder, text: text).textFieldStyle(ModelFieldStyle()).frame(maxWidth: 240)
+                    TextField(placeholder, text: text).textFieldStyle(.roundedBorder).frame(maxWidth: 240)
                         .onSubmit { add(text, clean: clean, to: values, save: save) }
                     Button(L("launcher.search.add")) { add(text, clean: clean, to: values, save: save) }
                         .controlSize(.small)
@@ -331,8 +331,8 @@ extension LauncherSearchSettingsView {
     // MARK: - Pieces
 
     private func pathRow(_ path: String, icon: String, remove: @escaping () -> Void) -> some View {
-        return AgentSettingsRow(icon: icon, title: AskFileLabels.folder(path),
-                                subtitle: path, subtitleLineLimit: 1) {
+        AgentSettingsRow(icon: icon, title: AskFileLabels.folder(path),
+                         subtitle: path, subtitleLineLimit: 1) {
             AgentSettingsIconButton(systemImage: "minus", help: L("ask.remove"), action: remove)
         }
     }

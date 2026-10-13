@@ -9,7 +9,7 @@ extension AskToolsSettingsView {
         } label: {
             Label(L("ask.settings.skills.open"), systemImage: "folder")
         }
-        .buttonStyle(ModelActionStyle())
+        .buttonStyle(.bordered)
         Button {
             installError = nil
             installURL = ""
@@ -17,7 +17,7 @@ extension AskToolsSettingsView {
         } label: {
             Label(L("ask.settings.skills.install"), systemImage: "arrow.down.circle")
         }
-        .buttonStyle(ModelActionStyle(primary: true))
+        .buttonStyle(.borderedProminent)
     }
 
     @ViewBuilder var skillSections: some View {
@@ -36,7 +36,7 @@ extension AskToolsSettingsView {
                     selection: $skillFilter
                 )
             }
-            ModelSurface {
+            StudioCard(padding: 0) {
                 VStack(alignment: .leading, spacing: 0) {
                     if visible.isEmpty {
                         AgentSettingsEmptyRow(text: L("agent.skills.noMatch"))
@@ -98,7 +98,8 @@ extension AskToolsSettingsView {
             HStack(spacing: 14) {
                 ModelIconTile {
                     Image(systemName: "wand.and.stars").font(.system(size: 15))
-                        .foregroundStyle(disabledSkills.contains(skill.name) ? StudioTheme.textTertiary : ModelVisualStyle.accent)
+                        .foregroundStyle(disabledSkills.contains(skill.name) ? StudioTheme.textTertiary : TypefluxColor
+                            .accent.color)
                 }
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 6) {
@@ -176,7 +177,7 @@ extension AskToolsSettingsView {
                 .font(.studioDisplay(StudioTheme.Typography.sectionTitle, weight: .semibold))
                 .foregroundStyle(StudioTheme.textPrimary)
             TextField("https://github.com/owner/repo/tree/main/skills/name", text: $installURL)
-                .textFieldStyle(ModelFieldStyle())
+                .textFieldStyle(.roundedBorder)
                 .disabled(installing)
                 .onSubmit { startInstall() }
             if let preview {
@@ -198,7 +199,7 @@ extension AskToolsSettingsView {
             HStack {
                 Spacer()
                 Button(L("common.cancel")) { installTask?.cancel(); showingInstall = false }
-                    .buttonStyle(ModelActionStyle())
+                    .buttonStyle(.bordered)
                 Button {
                     startInstall()
                 } label: {
@@ -207,14 +208,14 @@ extension AskToolsSettingsView {
                         Text(L(installing ? "ask.settings.skills.installing" : "ask.settings.skills.installAction"))
                     }
                 }
-                .buttonStyle(ModelActionStyle(primary: true))
+                .buttonStyle(.borderedProminent)
                 .disabled(installing || preview?.valid != true)
                 .keyboardShortcut(.defaultAction)
             }
         }
         .padding(24)
         .frame(width: 480)
-        .background(ModelVisualStyle.canvas)
+        .background(TypefluxColor.windowBackground.color)
     }
 
     func startInstall() {
@@ -269,7 +270,8 @@ struct AgentSkillDetailView: View {
         VStack(alignment: .leading, spacing: 16) {
             HStack(alignment: .top, spacing: 12) {
                 ModelIconTile(size: 38) {
-                    Image(systemName: "wand.and.stars").font(.system(size: 17)).foregroundStyle(ModelVisualStyle.accent)
+                    Image(systemName: "wand.and.stars").font(.system(size: 17))
+                        .foregroundStyle(TypefluxColor.accent.color)
                 }
                 VStack(alignment: .leading, spacing: 4) {
                     Text(skill.name).font(.system(size: 16, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
@@ -288,7 +290,10 @@ struct AgentSkillDetailView: View {
                 Toggle("", isOn: $enabled).labelsHidden().toggleStyle(.switch).accessibilityLabel(skill.name)
             }
             .padding(12)
-            .background(ModelVisualStyle.surface, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .background(
+                TypefluxColor.contentBackground.color,
+                in: RoundedRectangle(cornerRadius: 10, style: .continuous)
+            )
             Text(skill.displayDescription).font(.system(size: 13)).foregroundStyle(StudioTheme.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
             Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 12, verticalSpacing: 8) {
@@ -312,24 +317,27 @@ struct AgentSkillDetailView: View {
             }
             HStack(spacing: 8) {
                 if canRollback {
-                    Button(action: onRollback) { Label(L("ask.settings.skills.rollback"), systemImage: "arrow.uturn.backward") }
-                        .buttonStyle(ModelActionStyle())
+                    Button(action: onRollback) { Label(
+                        L("ask.settings.skills.rollback"),
+                        systemImage: "arrow.uturn.backward"
+                    ) }
+                    .buttonStyle(.bordered)
                 }
                 if let onReveal {
-                    Button(L("agent.skills.reveal"), action: onReveal).buttonStyle(ModelActionStyle())
+                    Button(L("agent.skills.reveal"), action: onReveal).buttonStyle(.bordered)
                 }
                 Spacer()
                 if let onRemove {
                     Button(role: .destructive, action: onRemove) { Label(L("ask.remove"), systemImage: "trash") }
-                        .buttonStyle(ModelActionStyle())
+                        .buttonStyle(.bordered)
                 }
-                Button(L("common.done"), action: onClose).buttonStyle(ModelActionStyle(primary: true))
+                Button(L("common.done"), action: onClose).buttonStyle(.borderedProminent)
                     .keyboardShortcut(.defaultAction)
             }
         }
         .padding(24)
         .frame(width: 460)
-        .background(ModelVisualStyle.canvas)
+        .background(TypefluxColor.windowBackground.color)
     }
 
     private func detailRow(_ title: String, _ value: String) -> some View {

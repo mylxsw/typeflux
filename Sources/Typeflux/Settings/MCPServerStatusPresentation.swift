@@ -48,7 +48,7 @@ struct MCPKeyValueEditor: View {
         VStack(alignment: .leading, spacing: 6) {
             ForEach($rows) { $row in
                 HStack(spacing: 6) {
-                    TextField(keyPlaceholder, text: $row.key).textFieldStyle(ModelFieldStyle())
+                    TextField(keyPlaceholder, text: $row.key).textFieldStyle(.roundedBorder)
                         .accessibilityLabel(L("agent.mcp.kv.key"))
                         .frame(maxWidth: 170)
                     Group {
@@ -58,7 +58,7 @@ struct MCPKeyValueEditor: View {
                             TextField(valuePlaceholder, text: $row.value)
                         }
                     }
-                    .textFieldStyle(ModelFieldStyle())
+                    .textFieldStyle(.roundedBorder)
                     .accessibilityLabel(valuePlaceholder)
                     AgentSettingsIconButton(systemImage: "minus", help: L("ask.remove")) {
                         rows.removeAll { $0.id == row.id }
@@ -72,7 +72,7 @@ struct MCPKeyValueEditor: View {
                 Label(L("agent.mcp.kv.add"), systemImage: "plus").font(.system(size: 12.5, weight: .medium))
             }
             .buttonStyle(.plain)
-            .foregroundStyle(ModelVisualStyle.accent)
+            .foregroundStyle(TypefluxColor.accent.color)
         }
         .onAppear {
             // Rows own the editing state so an empty key being typed is not dropped by a round trip.

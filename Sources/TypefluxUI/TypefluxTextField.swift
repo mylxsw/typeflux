@@ -25,6 +25,7 @@ public struct TypefluxTextField: View {
                             .allowsHitTesting(false).accessibilityHidden(true)
                     }
                 }
+                .labelsHidden()
                 .accessibilityLabel(Text(title))
                 .accessibilityHint(Text(error ?? ""))
             if let error, !error.isEmpty { Text(error).font(.subheadline).foregroundStyle(TypefluxColor.danger.color) }

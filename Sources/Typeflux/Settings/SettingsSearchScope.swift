@@ -11,7 +11,7 @@ enum SettingsSearchScope: Equatable {
         case .history: .history
         case .personas: .personas
         case .models:
-            providerDetail || modelTab == .scenes ? nil : modelTab == .speech ? .speechModels : .languageModels
+            providerDetail || modelTab == .scenes ? nil : modelTab == .local ? .speechModels : .languageModels
         case .agent: agentScope(agentPane)
         case .launcher: launcherScope(launcherPane)
         default: nil
