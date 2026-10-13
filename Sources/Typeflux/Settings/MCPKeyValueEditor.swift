@@ -12,17 +12,18 @@ struct MCPKeyValueEditor: View {
         VStack(alignment: .leading, spacing: 6) {
             ForEach($rows) { $row in
                 HStack(spacing: 6) {
-                    TextField(keyPlaceholder, text: $row.key).textFieldStyle(.roundedBorder)
+                    TypefluxTextField(L("agent.mcp.kv.key"), text: $row.key, prompt: keyPlaceholder)
                         .accessibilityLabel(L("agent.mcp.kv.key"))
                         .frame(maxWidth: 170)
                     Group {
                         if row.isSecret {
-                            SecureField(valuePlaceholder, text: $row.value)
+                            SecureField("", text: $row.value, prompt: Text(valuePlaceholder))
                         } else {
-                            TextField(valuePlaceholder, text: $row.value)
+                            TypefluxTextField(valuePlaceholder, text: $row.value)
                         }
                     }
                     .textFieldStyle(.roundedBorder)
+                    .multilineTextAlignment(.leading)
                     .accessibilityLabel(valuePlaceholder)
                     TypefluxIconButton(L("ask.remove"), systemImage: "minus") {
                         rows.removeAll { $0.id == row.id }

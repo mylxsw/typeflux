@@ -9,88 +9,78 @@ struct SettingsSidebarChromeTests {
     private typealias UI = SettingsBehaviorTestSupport
 
     @Test(arguments: InterfaceStyle.allCases)
-    func `chat footer keeps login and settings reachable after dismissal`(style: InterfaceStyle) async throws {
+    func `chat footer keeps a single login row and settings at every height`(style: InterfaceStyle) async throws {
         try await UI.withFixture { settings in
             var logins = 0
             var settingsOpened = 0
-            func footer(compact: Bool) -> some View {
-                SidebarAccountFooter(auth: AuthState.shared, compact: compact, defaults: settings.defaults,
-                                     onSignIn: { logins += 1 }, onOpenAccount: {},
-                                     onOpenSettings: { settingsOpened += 1 }).environment(\.interfaceStyle, style)
-            }
-            try await UI.withWindow(footer(compact: false), width: 256, height: 280) { _, host in
-                try await UI.wait { UI.contains("Typeflux Cloud", in: host) }
-                // The card owns the only sign-in action; the settings identity only shows status.
-                #expect(signInButtons(in: host) == 1)
-                #expect(!identityIsButton(in: host))
-                #expect(UI.contains(L("ask.local.identity.localMode"), in: host))
-                // UI System v2 uses a single notice summary instead of separate feature rows.
-                #expect(UI.contains(AskCloudPromo.summary, in: host))
-                try UI.button(L("ask.cloudPromo.signIn"), in: host).press()
-                #expect(logins == 1)
-                try UI.button(L("ask.cloudPromo.dismiss"), in: host).press()
-                try await UI.wait { !UI.contains("Typeflux Cloud", in: host) }
-                #expect(settings.defaults.double(forKey: AskCloudPromo.dismissedKey) > 0)
-                // Closing the card leaves a footer pill as the one sign-in action.
-                #expect(signInButtons(in: host) == 1)
-                try UI.button(L("ask.cloudPromo.signIn"), in: host).press()
-                #expect(logins == 2)
-                try UI.button(L("sidebar.settingsAccessibility"), in: host).press()
-                #expect(settingsOpened == 1)
-            }
-            // Both windows share this dismissal preference, including newly opened footers.
-            try await UI.withWindow(footer(compact: true), width: 256, height: 56.5) { window, host in
-                #expect(!UI.contains("Typeflux Cloud", in: host))
-                #expect(UI.contains(L("ask.local.identity"), in: host))
-                let bounds = window.convertToScreen(host.convert(host.bounds, to: nil))
-                for label in [L("ask.cloudPromo.signIn"), L("sidebar.settingsAccessibility")] {
-                    let button = try UI.button(label, in: host)
-                    #expect(button.frame.minX >= bounds.minX - 1 && button.frame.maxX <= bounds.maxX + 1)
-                    #expect(button.frame.height >= 28)
+            for compact in [false, true] {
+                let footer = SidebarAccountFooter(auth: AuthState.shared, compact: compact, defaults: settings.defaults,
+                                                  onSignIn: { logins += 1 }, onOpenAccount: {},
+                                                  onOpenSettings: { settingsOpened += 1 })
+                    .environment(\.interfaceStyle, style)
+                try await UI.withWindow(footer, width: 220, height: 56) { window, host in
+                    try await UI.wait { signInButtons(in: host) == 1 }
+                    #expect(!UI.contains("Typeflux Cloud", in: host))
+                    #expect(!UI.contains(L("ask.local.identity"), in: host))
+                    let bounds = window.convertToScreen(host.convert(host.bounds, to: nil))
+                    for label in [L("ask.cloudPromo.signIn"), L("sidebar.settingsAccessibility")] {
+                        let button = try UI.button(label, in: host)
+                        #expect(bounds.contains(button.frame))
+                        try button.press()
+                    }
                 }
-                try UI.button(L("ask.cloudPromo.signIn"), in: host).press()
-                #expect(logins == 3)
+            }
+            #expect(logins == 2 && settingsOpened == 2)
+            #expect(settings.defaults.double(forKey: AskCloudPromo.dismissedKey) == 0)
+        }
+    }
+
+    @Test(arguments: InterfaceStyle.allCases)
+    func `account only footers preserve historical promo dismissal preferences`(style: InterfaceStyle) async throws {
+        try await UI.withFixture { settings in
+            let dismissedAt = Date().timeIntervalSince1970
+            settings.defaults.set(dismissedAt, forKey: AskCloudPromo.dismissedKey)
+            let footer = SidebarAccountFooter(auth: AuthState.shared, compact: false, defaults: settings.defaults,
+                                              onSignIn: {}, onOpenAccount: {}, onOpenSettings: {})
+                .environment(\.interfaceStyle, style)
+            for _ in 0 ..< 2 {
+                try await UI.withWindow(footer, width: 256, height: 56) { _, host in
+                    try await UI.wait { signInButtons(in: host) == 1 }
+                    #expect(!UI.contains("Typeflux Cloud", in: host))
+                    #expect(!UI.contains(L("ask.cloudPromo.dismiss"), in: host))
+                    #expect(settings.defaults.double(forKey: AskCloudPromo.dismissedKey) == dismissedAt)
+                }
             }
         }
     }
 
     @Test(arguments: InterfaceStyle.allCases)
-    func `dismissal updates both open sidebar footers`(style: InterfaceStyle) async throws {
+    func `single account rows preserve chat local mode without duplicate status`(style: InterfaceStyle) async throws {
         try await UI.withFixture { settings in
             var localModeOpened = 0
-            let settingsFooter = SidebarAccountFooter(
-                auth: AuthState.shared, compact: false, defaults: settings.defaults,
-                onSignIn: {}, onOpenAccount: {}
-            ).environment(\.interfaceStyle, style)
+            let settingsFooter = StudioSidebarFooter(defaults: settings.defaults, compact: false) {}
+                .environment(\.interfaceStyle, style)
             let chatFooter = SidebarAccountFooter(
                 auth: AuthState.shared, compact: false, defaults: settings.defaults,
                 onSignIn: {}, onOpenAccount: {}, onOpenSettings: {}
             ) {
-                AskSignedOutIdentity(detail: "Chat local mode") { localModeOpened += 1 }
+                AskSignedOutIdentity(compact: true, detail: "Chat local mode") { localModeOpened += 1 }
             }.environment(\.interfaceStyle, style)
-            try await UI.withWindow(settingsFooter, width: 256, height: 280) { _, settingsHost in
-                try await UI.withWindow(chatFooter, width: 256, height: 280) { _, chatHost in
-                    try await UI.wait {
-                        UI.contains("Typeflux Cloud", in: settingsHost) && UI.contains("Typeflux Cloud", in: chatHost)
-                    }
-                    #expect(!UI.contains(L("sidebar.settingsAccessibility"), in: settingsHost))
-                    #expect(UI.contains(L("sidebar.settingsAccessibility"), in: chatHost))
-                    try UI.button(L("ask.cloudPromo.dismiss"), in: settingsHost).press()
-                    try await UI.wait {
-                        !UI.contains("Typeflux Cloud", in: settingsHost) && !UI.contains("Typeflux Cloud", in: chatHost)
-                    }
+            try await UI.withWindow(settingsFooter, width: 220, height: 56) { _, settingsHost in
+                try await UI.withWindow(chatFooter, width: 256, height: 56) { _, chatHost in
+                    #expect(!UI.contains("Typeflux Cloud", in: settingsHost))
+                    #expect(!UI.contains("Typeflux Cloud", in: chatHost))
+                    #expect(!UI.contains(L("ask.local.identity"), in: settingsHost))
                     try UI.button(L("ask.local.identity"), in: chatHost).press()
                     #expect(localModeOpened == 1)
                     #expect(signInButtons(in: settingsHost) == 1 && signInButtons(in: chatHost) == 1)
-                    #expect(!UI.contains(L("sidebar.settingsAccessibility"), in: settingsHost))
-                    #expect(UI.contains(L("sidebar.settingsAccessibility"), in: chatHost))
                 }
             }
         }
     }
 
     @Test(arguments: InterfaceStyle.allCases)
-    func `shared footer owns login transitions and account identity`(style: InterfaceStyle) async throws {
+    func `shared footer follows sign in transitions and account identity`(style: InterfaceStyle) async throws {
         try await UI.withFixture { settings in
             let auth = AuthState(loadStoredToken: { nil }, loadStoredRefreshToken: { nil },
                                  loadStoredUserProfile: { nil }, clearStoredSession: {})
@@ -99,23 +89,20 @@ struct SettingsSidebarChromeTests {
                 auth: auth, compact: false, defaults: settings.defaults,
                 onSignIn: { logins += 1 }, onOpenAccount: {}
             ).environment(\.interfaceStyle, style)
-            try await UI.withWindow(footer, width: 256, height: 280) { _, host in
-                try await UI.wait { UI.contains("Typeflux Cloud", in: host) }
-                #expect(!UI.contains(L("sidebar.settingsAccessibility"), in: host))
+            try await UI.withWindow(footer, width: 256, height: 56) { _, host in
+                try await UI.wait { signInButtons(in: host) == 1 }
                 auth.userProfile = UserProfile(id: "u", email: "demir@example.com", name: "Demir Von",
                                                status: 1, provider: "google", createdAt: "", updatedAt: "")
                 auth.isLoggedIn = true
-                try await UI.wait { UI.contains("Demir Von", in: host) && !UI.contains("Typeflux Cloud", in: host) }
-                #expect(!UI.contains(L("ask.local.identity"), in: host))
+                try await UI.wait { UI.contains("Demir Von", in: host) }
+                #expect(signInButtons(in: host) == 0)
                 auth.userProfile = nil
                 try await UI.wait { UI.contains(L("sidebar.appName"), in: host) }
-                #expect(signInButtons(in: host) == 0)
-                #expect(!UI.contains(L("sidebar.settingsAccessibility"), in: host))
                 auth.isLoggedIn = false
-                try await UI.wait { UI.contains("Typeflux Cloud", in: host) && UI.contains(L("ask.local.identity"), in: host) }
+                try await UI.wait { signInButtons(in: host) == 1 }
+                #expect(!UI.contains("Typeflux Cloud", in: host))
                 try UI.button(L("ask.cloudPromo.signIn"), in: host).press()
                 #expect(logins == 1)
-                #expect(settings.defaults.double(forKey: AskCloudPromo.dismissedKey) == 0)
             }
         }
     }
@@ -190,32 +177,34 @@ struct SettingsSidebarChromeTests {
                 }
                 try await Task.sleep(for: .milliseconds(180))
                 let bounds = window.convertToScreen(host.convert(host.bounds, to: nil))
-                let controls = AskLibraryTestSupport.elements(in: window)
-                for identifier in ["typeflux.toolbar.history.export", "typeflux.toolbar.history.clear"] {
-                    let button = try #require(controls.first {
-                        $0.value("accessibilityIdentifier") as? String == identifier && !$0.frame.isEmpty
-                    }, "Missing history toolbar control: \(identifier)")
-                    #expect(button.frame.width >= 20)
-                    #expect(button.frame.minX >= bounds.minX - 1 && button.frame.maxX <= bounds.maxX + 1)
+                let identifiers = ["typeflux.toolbar.history.export", "typeflux.toolbar.history.clear"]
+                try await UI.wait("History toolbar actions at width \(size.width)") {
+                    identifiers.allSatisfy { AskWorkspaceTestAccessibility.frame(identifier: $0, in: window) != nil }
+                }
+                for identifier in identifiers {
+                    let frame = try #require(AskWorkspaceTestAccessibility.frame(identifier: identifier, in: window))
+                    #expect(frame.width >= 20)
+                    #expect(frame.minX >= bounds.minX - 1 && frame.maxX <= bounds.maxX + 1)
                 }
                 let row = try #require(UI.elements(in: host).first {
                     ($0.value("accessibilityIdentifier") as? String)?.hasPrefix("history.open.") == true
                         && !$0.frame.isEmpty
                 })
                 #expect(row.frame.minX >= bounds.minX - 1 && row.frame.maxX <= bounds.maxX + 1)
-                // A sidebar opened at 900 points can remain open at 720. Toggle only when
-                // it is absent, rather than hiding it on the second narrow resize.
-                if !UI.contains(L("ask.local.identity"), in: window) {
+                if !UI.elements(in: window).contains(where: {
+                    $0.label == L("ask.cloudPromo.signIn") && $0.frame.width > 0 && $0.frame.height > 0
+                        && window.frame.contains($0.frame)
+                }) {
                     try TypefluxNavigationTestSupport.toggleSidebar(in: window)
                 }
-                try await UI.wait("History sidebar account after resize to \(size.width)") {
-                    UI.contains(L("ask.local.identity"), in: window)
+                try await UI.wait {
+                    UI.elements(in: window).contains {
+                        $0.label == L("ask.cloudPromo.signIn") && $0.frame.height > 0 && window.frame.contains($0.frame)
+                    }
                 }
                 let identity = try identity(in: window)
                 #expect(identity.frame.minY >= bounds.minY && identity.frame.maxX < bounds.minX + 264)
-                if size.height >= 620 {
-                    #expect(UI.contains("Typeflux Cloud", in: window))
-                }
+                #expect(!UI.contains("Typeflux Cloud", in: window))
                 try await capture(window, name: "settings-history-\(style.rawValue)-\(Int(size.width))-dark")
             }
             TypefluxNavigationTestSupport.closeWindow(window)
@@ -261,15 +250,10 @@ private extension SettingsSidebarChromeTests {
         }.count
     }
 
-    /// The settings identity is status, not a button, so find it by label alone.
+    /// The settings footer has one sign-in row.
     func identity(in host: Any) throws -> SettingsBehaviorTestSupport.Element {
-        try #require(UI.elements(in: host).first { $0.text == L("ask.local.identity") },
+        try #require(UI.elements(in: host).first { $0.label == L("ask.cloudPromo.signIn") && $0.role == NSAccessibility.Role.button.rawValue },
                      "Missing signed-out identity")
     }
 
-    func identityIsButton(in host: NSView) -> Bool {
-        UI.elements(in: host).contains {
-            $0.role == NSAccessibility.Role.button.rawValue && $0.label == L("ask.local.identity")
-        }
-    }
 }

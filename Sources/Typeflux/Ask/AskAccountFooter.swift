@@ -109,23 +109,20 @@ struct AskAccountFooterIdentity: View {
     }
 
     private var identity: some View {
-        let footer = presentation
         let highlighted = hovering || hover.isPresented
         return Button { hover.click() } label: {
             HStack(spacing: 9) {
                 AskAvatar(name: name)
-                Text(name)
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(TypefluxColor.label.color)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                if let badge = footer.badge {
-                    AskAccountBadge(text: AccountStatusText.badge(badge), tone: footer.badgeTone)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(name).font(.headline).foregroundStyle(TypefluxColor.label.color)
+                    Text(summary).font(.subheadline).foregroundStyle(TypefluxColor.secondaryLabel.color)
                 }
+                .lineLimit(1).truncationMode(.tail)
+                Spacer(minLength: 0)
             }
             .padding(.leading, 4)
             .padding(.trailing, 8)
-            .frame(height: 34)
+            .frame(minHeight: 36)
             .background(Capsule().fill(highlighted ? TypefluxColor.label.color.opacity(0.06) : .clear))
             .contentShape(Capsule())
         }
@@ -142,8 +139,22 @@ struct AskAccountFooterIdentity: View {
             }, onDismiss: { hover.isPresented = false })
         }
         .accessibilityLabel(name)
-        .accessibilityValue(footer.badge.map(AccountStatusText.badge) ?? "")
+        .accessibilityValue(summary)
         .accessibilityHint(L("account.card.openHint"))
+    }
+
+    private var summary: String {
+        var parts: [String] = []
+        if let plan = AccountStatusPresentation.planName(for: auth.subscription) { parts.append(plan) }
+        let quota = AccountUsageCreditPresentation(credits: auth.usageCredits)
+        if let fraction = quota.progress {
+            parts.append(L("sidebar.accountCard.remaining", AccountStatusText.percent(fraction)))
+        } else if quota.balance == .unlimited {
+            parts.append(L("sidebar.accountCard.unlimited"))
+        } else if let badge = presentation.badge, parts.isEmpty {
+            parts.append(AccountStatusText.badge(badge))
+        }
+        return parts.joined(separator: " · ")
     }
 
     private var signIn: some View {

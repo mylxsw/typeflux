@@ -50,7 +50,7 @@ final class StudioModelsTests: XCTestCase {
 
     func testSidebarUpperCases() {
         let upper = StudioSection.sidebarUpperCases
-        XCTAssertEqual(upper, [.home, .models, .agent, .launcher, .settings])
+        XCTAssertEqual(upper, [.home, .history, .vocabulary, .personas, .models, .agent, .launcher, .settings, .account])
     }
 
     func testVoiceInputCasesAreTheTabsInOrder() {
@@ -63,24 +63,24 @@ final class StudioModelsTests: XCTestCase {
         }
     }
 
-    func testVoiceInputPagesSelectTheVoiceInputSidebarEntry() {
+    func testEachPageSelectsItsOwnSidebarEntry() {
         for section in StudioSection.voiceInputCases {
-            XCTAssertEqual(section.sidebarSection, .home, "\(section)")
+            XCTAssertEqual(section.sidebarSection, section, "\(section)")
         }
         XCTAssertEqual(StudioSection.models.sidebarSection, .models)
         XCTAssertEqual(StudioSection.settings.sidebarSection, .settings)
     }
 
-    func testVoiceInputSidebarEntryUsesGroupTitleAndIcon() {
-        XCTAssertEqual(StudioSection.home.sidebarTitle, L("studio.section.voiceInput"))
-        XCTAssertEqual(StudioSection.home.sidebarIconName, "waveform")
+    func testSidebarDestinationsUseTheirOwnTitleAndIcon() {
+        XCTAssertEqual(StudioSection.home.sidebarTitle, StudioSection.home.title)
+        XCTAssertEqual(StudioSection.home.sidebarIconName, StudioSection.home.iconName)
         XCTAssertEqual(StudioSection.launcher.sidebarTitle, StudioSection.launcher.title)
         XCTAssertEqual(StudioSection.launcher.sidebarIconName, StudioSection.launcher.iconName)
     }
 
-    func testShellTitleNamesTheVoiceInputGroupForItsPages() {
+    func testShellTitleNamesEachPage() {
         for section in StudioSection.voiceInputCases {
-            XCTAssertEqual(section.shellTitle, L("studio.section.voiceInput"), "\(section)")
+            XCTAssertEqual(section.shellTitle, section.heading, "\(section)")
         }
         XCTAssertEqual(StudioSection.agent.shellTitle, StudioSection.agent.heading)
     }

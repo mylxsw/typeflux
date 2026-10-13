@@ -105,15 +105,13 @@ struct StudioView: View {
             searchPlaceholder: searchPrompt,
             accountDefaults: viewModel.askToolSettings.defaults,
             toolbarCenter: toolbarSegments,
-            toolbarGroups: pageToolbarGroups
+            toolbarGroups: pageToolbarGroups,
+            sidebarCount: viewModel.voiceInputTabCount
         ) { viewportSize in
             let viewportHeight = max(viewportSize.height, 0)
 
             VStack(alignment: .leading, spacing: 20) {
-                if viewModel.currentSection == .settings {
-                    settingsHeader
-                }
-
+                if viewModel.currentSection == .settings { settingsHeader }
                 if viewModel.currentSection == .models {
                     GeometryReader { proxy in
                         modelsPage(viewportHeight: proxy.size.height)
@@ -545,39 +543,61 @@ struct StudioView: View {
 
     private var toolbarSegments: AnyView? {
         if viewModel.currentSection == .models {
-            return AnyView(TypefluxSegmentedControl(StudioSection.models.title,
-                                                    selection: Binding(
-                                                        get: { viewModel.modelPageTab },
-                                                        set: viewModel.selectModelPageTab
-                                                    )) {
-                    ForEach(ModelPageTab.allCases) { tab in
-                        Text(tab.title).tag(tab).accessibilityIdentifier("studio.models.tab.\(tab.rawValue)")
-                    }
-                }.fixedSize())
+            return AnyView(StudioToolbarPicker(StudioSection.models.title,
+                                              selection: Binding(
+                                                  get: { viewModel.modelPageTab },
+                                                  set: viewModel.selectModelPageTab
+                                              )) {
+                ForEach(ModelPageTab.allCases) { tab in
+                    Text(tab.title).tag(tab).accessibilityIdentifier("studio.models.tab.\(tab.rawValue)")
+                }
+            })
         }
-        if viewModel.currentSection.isVoiceInput {
-            return AnyView(TypefluxSegmentedControl(viewModel.currentSection.title,
-                                                    selection: Binding(
-                                                        get: { viewModel.currentSection },
-                                                        set: viewModel.navigate
-                                                    )) {
-                    ForEach(StudioSection.voiceInputCases) { section in
-                        Text(section.title + (viewModel.voiceInputTabCount(for: section).map { " \($0)" } ?? ""))
-                            .tag(section)
-                    }
-                }.fixedSize())
+        if viewModel.currentSection == .vocabulary {
+            return AnyView(StudioToolbarPicker(L("vocabulary.table.source"), selection: $vocabularyFilter) {
+                ForEach(VocabularyFilter.allCases) { filter in Text(filter.title).tag(filter) }
+            }.accessibilityIdentifier("vocabulary.sourceFilter"))
         }
         return nil
+    }
+
+    private var settingsHeader: some View {
+        TypefluxSegmentedControl(StudioSection.settings.title, selection: $settingsPane) {
+            ForEach(AppSettingsPane.allCases) { pane in
+                Text(pane.title).tag(pane).accessibilityIdentifier("studio.settings.tab." + pane.rawValue)
+            }
+        }
+        .fixedSize()
+        .frame(maxWidth: 640)
+        .frame(maxWidth: .infinity)
     }
 
     private var pageToolbarGroups: [TypefluxToolbarGroup] {
         if viewModel.currentSection == .vocabulary {
             return [TypefluxToolbarGroup(id: "vocabulary", actions: [
-                TypefluxToolbarAction(id: "vocabulary.add", title: L("vocabulary.action.newWord"),
-                                      systemImage: "plus", perform: beginAddingVocabulary),
                 TypefluxToolbarAction(id: "vocabulary.import", title: L("vocabulary.action.importFile"),
                                       systemImage: "arrow.down.doc", isEnabled: !viewModel.isSynchronizingVocabulary,
-                                      perform: viewModel.importVocabulary)
+                                      menuActions: [
+                                          TypefluxToolbarAction(id: "vocabulary.importFile",
+                                                                title: L("vocabulary.action.importFile"),
+                                                                systemImage: "arrow.down.doc",
+                                                                perform: viewModel.importVocabulary),
+                                          TypefluxToolbarAction(id: "vocabulary.importClaude",
+                                                                title: L("vocabulary.action.importClaude"),
+                                                                systemImage: "arrow.down.doc",
+                                                                perform: viewModel.importClaudeVocabulary),
+                                          TypefluxToolbarAction(id: "vocabulary.importCodex",
+                                                                title: L("vocabulary.action.importCodex"),
+                                                                systemImage: "arrow.down.doc",
+                                                                perform: viewModel.importCodexVocabulary),
+                                          TypefluxToolbarAction(id: "vocabulary.export",
+                                                                title: L("vocabulary.action.export"),
+                                                                systemImage: "square.and.arrow.up",
+                                                                perform: viewModel.exportVocabulary)
+                                      ],
+                                      perform: viewModel.importVocabulary),
+                TypefluxToolbarAction(id: "vocabulary.add", title: L("vocabulary.action.newWord"),
+                                      systemImage: "plus", perform: beginAddingVocabulary)
             ])]
         }
         if viewModel.currentSection == .history {
@@ -599,30 +619,11 @@ struct StudioView: View {
 
     @ToolbarContentBuilder
     private var libraryPageToolbar: some ToolbarContent {
-        if viewModel.currentSection == .vocabulary {
-            ToolbarItem(placement: .primaryAction) {
-                TypefluxSegmentedControl(L("vocabulary.table.source"), selection: $vocabularyFilter) {
-                    ForEach(VocabularyFilter.allCases) { filter in Text(filter.title).tag(filter) }
-                }
-                .fixedSize()
-                .accessibilityIdentifier("vocabulary.sourceFilter")
-            }
-            ToolbarItem(placement: .primaryAction) {
-                Menu {
-                    Button(L("vocabulary.action.export"), action: viewModel.exportVocabulary)
-                    Divider()
-                    Button(L("vocabulary.action.importClaude"), action: viewModel.importClaudeVocabulary)
-                    Button(L("vocabulary.action.importCodex"), action: viewModel.importCodexVocabulary)
-                } label: { Label(L("vocabulary.action.more"), systemImage: "ellipsis") }
-                    .disabled(viewModel.isSynchronizingVocabulary)
-                    .help(L("vocabulary.action.more"))
-                    .accessibilityIdentifier("vocabulary.transferMenu")
-            }
-        }
         if viewModel.currentSection == .history {
-            ToolbarItem(id: HistorySettingsBackButton.toolbarIdentifier, placement: .navigation) {
-                HistorySettingsBackButton(selectedID: $selectedHistoryID)
-                    .disabled(!isShowingHistoryDetail)
+            if isShowingHistoryDetail {
+                ToolbarItem(id: HistorySettingsBackButton.toolbarIdentifier, placement: .navigation) {
+                    HistorySettingsBackButton(selectedID: $selectedHistoryID)
+                }
             }
             ToolbarItem(placement: .primaryAction) {
                 Menu {
@@ -723,17 +724,6 @@ struct StudioView: View {
             newVocabularyTerm = entry.term
             isAddingVocabulary = false
         }
-    }
-
-    private var settingsHeader: some View {
-        TypefluxSegmentedControl(StudioSection.settings.title, selection: $settingsPane) {
-            ForEach(AppSettingsPane.allCases) { pane in
-                Text(pane.title).tag(pane)
-                    .accessibilityIdentifier("studio.settings.tab." + pane.rawValue)
-            }
-        }
-        .frame(maxWidth: 640)
-        .frame(maxWidth: .infinity)
     }
 
     @ViewBuilder

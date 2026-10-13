@@ -410,7 +410,7 @@ struct AskConversationView: View {
                              onSignIn: { LoginWindowController.shared.show() },
                              onOpenAccount: { model.onOpenSettings?(.account) },
                              onOpenSettings: { model.onOpenSettings?(.settings) }) {
-            AskLocalModeIdentity(model: model)
+            AskLocalModeIdentity(model: model, compact: true)
         }
     }
 

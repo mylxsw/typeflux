@@ -1,91 +1,64 @@
 import SwiftUI
 
-/// Owns account state, identity, and Cloud promotion for both sidebars.
-/// Chat supplies a settings action; the settings window uses its navigation menu instead.
-/// Signed out, exactly one sign-in action shows: the Cloud card, or a pill once the card is
-/// closed or the sidebar is compact. Only the signed-out identity varies: chat offers local
-/// mode; settings shows status only.
+/// Both sidebars use one account row. Chat may add its local-mode and settings actions.
 struct SidebarAccountFooter<SignedOutIdentity: View>: View {
     @ObservedObject var auth: AuthState
     @ObservedObject private var localization = AppLocalization.shared
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @AppStorage private var dismissedAt: Double
-    let compact: Bool
     let onSignIn: () -> Void
     let onOpenAccount: () -> Void
     let onOpenSettings: (() -> Void)?
     let signedOutIdentity: SignedOutIdentity
+    private let showsSignedOutIdentity: Bool
 
-    init(auth: AuthState, compact: Bool, defaults: UserDefaults = .standard,
+    // Keep the existing initializer compatible with callers sharing this component.
+    init(auth: AuthState, compact _: Bool, defaults _: UserDefaults = .standard,
          onSignIn: @escaping () -> Void, onOpenAccount: @escaping () -> Void,
          onOpenSettings: (() -> Void)? = nil,
+         showsSignedOutIdentity: Bool = true,
          @ViewBuilder signedOutIdentity: () -> SignedOutIdentity) {
         self.auth = auth
-        self.compact = compact
         self.onSignIn = onSignIn
         self.onOpenAccount = onOpenAccount
         self.onOpenSettings = onOpenSettings
         self.signedOutIdentity = signedOutIdentity()
-        _dismissedAt = AppStorage(wrappedValue: 0, AskCloudPromo.dismissedKey, store: defaults)
-    }
-
-    private var showsPromo: Bool {
-        !compact && !auth.isLoggedIn && AskCloudPromo.isVisible(dismissedAt: dismissedAt)
+        self.showsSignedOutIdentity = showsSignedOutIdentity
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            if showsPromo {
-                AskCloudPromoCard(onSignIn: onSignIn, onDismiss: {
-                    withAnimation(AskMotion.revealAnimation(reduceMotion: reduceMotion)) {
-                        dismissedAt = Date().timeIntervalSince1970
-                    }
-                })
-                .padding(.horizontal, 10)
-                .padding(.bottom, 10)
-                .transition(.opacity)
+        HStack(spacing: 8) {
+            if auth.isLoggedIn {
+                AskAccountFooterIdentity(auth: auth, name:
+                    AskPresentation.accountName(name: auth.userProfile?.name, email: auth.userProfile?.email)
+                        ?? L("sidebar.appName"), onOpenAccount: onOpenAccount)
+            } else {
+                signIn
+                if showsSignedOutIdentity { signedOutIdentity }
             }
-            Rectangle().fill(TypefluxColor.separator.color).frame(height: 0.5)
-            HStack(spacing: 9) {
-                identity.layoutPriority(1)
-                Spacer(minLength: 4)
-                if !auth.isLoggedIn, !showsPromo {
-                    Button(L("ask.cloudPromo.signIn"), action: onSignIn)
-                        .buttonStyle(AskCapsuleButtonStyle(kind: .primary))
-                        .help(AskCloudPromo.summary)
-                        .accessibilityHint(AskCloudPromo.summary)
-                        .accessibilityIdentifier("sidebar.signIn")
-                }
-                if let onOpenSettings {
-                    Button(action: onOpenSettings) {
-                        Image(systemName: "gearshape").font(.system(size: 15))
-                            .foregroundStyle(TypefluxColor.secondaryLabel.color)
-                            .frame(width: 32, height: 32)
-                            .contentShape(Circle())
-                    }
-                    .buttonStyle(AskPressableStyle())
-                    .help(L("sidebar.settingsAccessibility"))
-                    .accessibilityLabel(L("sidebar.settingsAccessibility"))
+            if let onOpenSettings {
+                TypefluxIconButton(L("sidebar.settingsAccessibility"), systemImage: "gearshape",
+                                   action: onOpenSettings)
                     .accessibilityIdentifier("sidebar.accountSettings")
-                }
             }
-            .padding(.leading, 12)
-            .padding(.trailing, 10)
-            .frame(height: auth.isLoggedIn ? 52 : 56)
         }
+        .padding(.horizontal, 12).padding(.vertical, 8)
+        .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
         .accessibilityIdentifier("sidebar.accountFooter")
         .environment(\.locale, localization.locale)
     }
 
-    @ViewBuilder
-    private var identity: some View {
-        if auth.isLoggedIn {
-            AskAccountFooterIdentity(auth: auth, name:
-                AskPresentation.accountName(name: auth.userProfile?.name, email: auth.userProfile?.email)
-                    ?? L("sidebar.appName"), onOpenAccount: onOpenAccount)
-        } else {
-            signedOutIdentity
+    private var signIn: some View {
+        Button(action: onSignIn) {
+            HStack(spacing: 8) {
+                Image(systemName: "person.crop.circle.fill").font(.title2)
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
+                Text(L("ask.cloudPromo.signIn")).font(.headline)
+                Spacer(minLength: 0)
+            }.contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
+        .help(L("auth.account.signedOutSubtitle"))
+        .accessibilityLabel(L("ask.cloudPromo.signIn"))
+        .accessibilityIdentifier("sidebar.signIn")
     }
 }
 
@@ -94,9 +67,9 @@ extension SidebarAccountFooter where SignedOutIdentity == AskSignedOutIdentity {
          onSignIn: @escaping () -> Void, onOpenAccount: @escaping () -> Void,
          onOpenSettings: (() -> Void)? = nil) {
         self.init(auth: auth, compact: compact, defaults: defaults,
-                  onSignIn: onSignIn, onOpenAccount: onOpenAccount, onOpenSettings: onOpenSettings) {
-            AskSignedOutIdentity(subtitle: L("ask.local.identity.localMode"),
-                                 detail: L("ask.local.identity.localMode"), action: nil)
+                  onSignIn: onSignIn, onOpenAccount: onOpenAccount, onOpenSettings: onOpenSettings,
+                  showsSignedOutIdentity: false) {
+            AskSignedOutIdentity(detail: L("ask.local.identity.localMode"), action: nil)
         }
     }
 }

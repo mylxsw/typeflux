@@ -134,6 +134,10 @@ struct UnifiedSettingsSnapshotTests {
             try await capture(AskKeywordEditorSheet(draft: draft, keywords: [], workflows: [],
                                                     onSave: { _ in }, onCancel: {}), "keyword-sheet-" + kind.rawValue,
                               output)
+            try await TypefluxUISnapshot.renderMatrix(
+                AskKeywordEditorSheet(draft: draft, keywords: [], workflows: [], onSave: { _ in }, onCancel: {}),
+                size: NSSize(width: 560, height: 500), directory: output, name: "keyword-sheet-short-" + kind.rawValue
+            )
         }
         let hotkeys = HotkeySettingsModel(settingsStore: settings, workflows: workflows)
         try await capture(KeywordHotkeyEditorSheet(model: hotkeys, draft: KeywordHotkeyDraft(adding: nil), onDone: {}),
@@ -142,6 +146,11 @@ struct UnifiedSettingsSnapshotTests {
         try await capture(MCPServerEditorView(viewModel: model, onClose: {}), "mcp-editor-stdio", output)
         model.mcpDraftTransportType = .http
         try await capture(MCPServerEditorView(viewModel: model, onClose: {}), "mcp-editor-http", output)
+        model.mcpDraftHTTPHeaders = (0 ..< 20).map { "X-Fixture-\($0)=value" }.joined(separator: "\n")
+        try await TypefluxUISnapshot.renderMatrix(MCPServerEditorView(viewModel: model, onClose: {}),
+                                                  size: NSSize(width: 560, height: 500), directory: output,
+                                                  name: "mcp-editor-short-many-rows")
+        model.mcpDraftHTTPHeaders = ""
         try await capture(MCPServerImportSheet(text: .constant("{"), existingNames: [], cancel: {}, confirm: { _ in }),
                           "mcp-import-invalid", output)
         let json = #"{"mcpServers":{"example":{"command":"tool"}}}"#

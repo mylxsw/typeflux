@@ -116,12 +116,6 @@
   {
     "file": "Sources/Typeflux/Ask/AskAccountFooter.swift",
     "rule": "typeflux_literal_font",
-    "match": ".font(.system(size: 13",
-    "count": 1
-  },
-  {
-    "file": "Sources/Typeflux/Ask/AskAccountFooter.swift",
-    "rule": "typeflux_literal_font",
     "match": ".font(.system(size: 9.5",
     "count": 1
   },
@@ -2037,12 +2031,6 @@
     "file": "Sources/Typeflux/UI/MarkdownSwiftUIView.swift",
     "rule": "typeflux_literal_radius",
     "match": "cornerRadius: 1.5",
-    "count": 1
-  },
-  {
-    "file": "Sources/Typeflux/UI/SidebarAccountFooter.swift",
-    "rule": "typeflux_literal_font",
-    "match": ".font(.system(size: 15",
     "count": 1
   },
   {
