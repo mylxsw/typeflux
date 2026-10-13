@@ -45,7 +45,7 @@ struct TypefluxSpotlightSurfaceLayoutTests {
         .environment(\.interfaceStyle, style)
         .environment(\.glassMaterialOverride, .opaque)
         try await TypefluxNavigationTestSupport.withWindow(view, nonactivating: true) { window, host in
-            func editor(_ context: String) throws -> AskComposerTextView.Editor {
+            @MainActor func editor(_ context: String) throws -> AskComposerTextView.Editor {
                 try #require(TypefluxNavigationTestSupport.descendants(of: host)
                     .compactMap { $0 as? AskComposerTextView.Editor }.first { $0.contextID == context })
             }
