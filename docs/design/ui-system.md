@@ -77,6 +77,15 @@ Native menus use the system metrics above. Custom composer menu cards use `Typef
   - The item list lives in the glass sidebar.
   - The detail pane holds a reading column up to 680 wide.
   - The toolbar has grouped icon actions, one prominent "new" button and the collapsible search.
+  - Classic uses the opaque system `windowBackgroundColor` sidebar, flush to the window edge,
+    with a separator against the solid `textBackgroundColor` detail pane. The separator keeps
+    the columns distinct even when Tahoe resolves those two background colors alike.
+    Liquid Glass keeps the inset navigation panel; its opaque fallback uses the shared
+    `sidebarBackground` token so it remains distinct from the transcript without glass.
+  - Selection belongs to the native list. Custom history rows use the system
+    `selectedContentBackgroundColor` in both styles and appearances.
+  - Notes keeps copy visible below 1000pt or while toolbar search is expanded; pin, share,
+    delete and reading modes remain available in the native More menu.
 - **C · Floating panel** (Spotlight layout; used by the clipboard, launcher and ⌘K):
   - A capsule input with circular mode buttons and a results panel below.
   - Keys: ↑↓ select, ↵ paste, ⌘↵ paste as plain text, ⌘1–9 quick paste, Esc closes.
@@ -117,6 +126,10 @@ Native menus use the system metrics above. Custom composer menu cards use `Typef
 Cloud promotion is a dismissible notice with native actions. Clipboard app-context and pause-state tokens use `TypefluxToken`; media dimensions and duration use a plain metadata label.
 
 Custom navigation containers use the shared independent AppKit glass layer, including the window-edge backdrop in light appearance. The workspace composer's editor stays solid while its footer controls occupy a navigation glass container. Reduce Transparency or Increase Contrast resolves every container to an opaque surface.
+
+While editing a queued message below 600pt of composer width, tool menus occupy the first
+footer row and voice, save and cancel occupy the second. Both rows count toward the height
+budget; short windows retain a complete command row and scrollable draft attachments.
 
 The app no longer has the old model, library, workflow, monitor, onboarding or Studio/Ask theme enums. App-owned window dimensions remain in `StudioWindowMetrics`; tool titles and reasoning emphasis live in their own presentation helpers. Frozen `LegacyStudioPalette` / `LegacyAskPalette` values remain inside the library for the floating launcher compatibility surfaces. New UI uses semantic tokens.
 

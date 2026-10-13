@@ -90,6 +90,9 @@ struct AskUsagePanel: View {
     @State private var expandedCall: String?
 
     var body: some View {
+        // SwiftUI can evaluate a retained picker row after selection changes. Capture
+        // option values once, rather than indexing a newly computed, shorter array.
+        let options = scopeOptions
         VStack(spacing: 0) {
             HStack {
                 Text(L("ask.usage.title")).font(.body).fontWeight(.semibold)
@@ -114,13 +117,14 @@ struct AskUsagePanel: View {
                 VStack(alignment: .leading, spacing: compact ? 8 : 12) {
                     if let context = model.usageContext { contextCard(context) }
                     if let budget = model.selected?.run?.budget { AskBudgetView(budget: budget) }
-                    if scopeOptions.count > 1 {
+                    if options.count > 1 {
                         TypefluxSegmentedControl(L("ask.usage.title"), selection: $runId) {
-                            ForEach(scopeOptions.indices, id: \.self) { index in
-                                Text(scopeOptions[index].title).tag(scopeOptions[index].value)
+                            ForEach(options, id: \.value) { option in
+                                Text(option.title).tag(option.value)
                             }
                         }
                         .padding(.top, 4)
+                        .accessibilityIdentifier("ask.usage.scope")
                     }
                     if model.hasUsageRecords, let totals {
                         totalsCard(totals)

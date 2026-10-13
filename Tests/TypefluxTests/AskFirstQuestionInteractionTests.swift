@@ -67,7 +67,10 @@ struct AskFirstQuestionInteractionTests {
     @Test(arguments: [true, false])
     func deletingOrSwitchingConversationClosesUsage(delete: Bool) async throws {
         let fixture = try AskTestFixture()
-        defer { fixture.model.resetSession() }
+        defer {
+            fixture.model.resetSession()
+            try? FileManager.default.removeItem(at: fixture.root)
+        }
         await fixture.api.seed(.init(id: "c", title: "Empty", revision: 1, updatedAt: Date(), messages: []))
         await fixture.model.select("c")
         let auth = AuthState(loadStoredToken: { nil }, loadStoredRefreshToken: { nil }, loadStoredUserProfile: { nil })
@@ -81,6 +84,42 @@ struct AskFirstQuestionInteractionTests {
         #expect(fixture.model.selectedId == nil)
         #expect(!host.labels.contains(L("ask.usage.empty")))
         #expect(!host.identifiers.contains("ask.workspace.drawer.close"))
+    }
+
+    @Test(arguments: [true, false])
+    func mountedUsagePickerSurvivesDeletingOrSwitchingItsConversation(delete: Bool) async throws {
+        let fixture = try AskTestFixture()
+        defer {
+            fixture.model.resetSession()
+            try? FileManager.default.removeItem(at: fixture.root)
+        }
+        let date = Date()
+        let run = AskRun(id: "scope-run", deviceId: "device", status: "completed", steps: 1,
+                         updatedAt: date, tools: [], pending: [])
+        await fixture.api.seed(.init(id: "scoped", title: "With run", revision: 1, updatedAt: date,
+                                     messages: [], run: run))
+        await fixture.api.seed(.init(id: "unscoped", title: "Without run", revision: 1, updatedAt: date, messages: []))
+        await fixture.model.select("scoped")
+        // Keep the same panel mounted as its options shrink from two to one.
+        let host = FirstQuestionControlHost(AskUsagePanel(model: fixture.model, runId: .constant(nil), close: {}))
+        defer { host.close() }
+        try await host.settle()
+        #expect(host.identifiers.contains("ask.usage.scope"))
+        if delete { await fixture.model.delete("scoped") }
+        else { await fixture.model.select("unscoped") }
+        try await host.settle()
+        #expect(host.window.isVisible && host.window.contentView != nil)
+        #expect(!host.identifiers.contains("ask.usage.scope"))
+        #expect(host.labels.contains(L("ask.usage.empty")))
+        await fixture.api.seed(.init(id: "next-scoped", title: "Another run", revision: 1, updatedAt: date,
+                                     messages: [], run: run))
+        await fixture.model.select("next-scoped")
+        try await host.settle()
+        #expect(host.identifiers.contains("ask.usage.scope"))
+        fixture.model.resetSession()
+        try await host.settle()
+        #expect(!host.identifiers.contains("ask.usage.scope"))
+        #expect(host.labels.contains(L("ask.usage.empty")))
     }
 }
 
@@ -130,7 +169,7 @@ private final class FirstQuestionControlHost {
     }
 
     func close() {
-        window.orderOut(nil); window.close()
+        TypefluxNavigationTestSupport.closeWindow(window)
         defaults.removePersistentDomain(forName: suite)
         if !wasEnhancedAccessibility { accessibility.restore() }
     }

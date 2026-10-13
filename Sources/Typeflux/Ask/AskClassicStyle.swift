@@ -10,7 +10,7 @@ enum AskClassic {
     )
 
     static let canvas = TypefluxColor.contentBackground.color
-    static let sidebar = TypefluxColor.sidebarBackground.color
+    static let sidebar = TypefluxColor.windowBackground.color
     static let card = TypefluxColor.controlBackground.color
     static let cardHover = TypefluxColor.label.color.opacity(0.06)
     static let cardBorder = TypefluxColor.separator.color

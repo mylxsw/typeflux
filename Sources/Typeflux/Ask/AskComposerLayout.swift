@@ -9,13 +9,15 @@ struct AskComposerLayout: Equatable {
     var availableHeight: CGFloat?
     var paletteOpen = false
     var supplementalHeight: CGFloat = 0
+    var editingQueued = false
 
     /// Reserve one complete command row before the draft can consume the
     /// remaining viewport. This budget does not depend on the compact card's
     /// measured height, so changing density cannot oscillate during layout.
     var usesCompactMetrics: Bool {
         guard !launcher else { return false }
-        let ordinaryCardMaximum: CGFloat = 148 + 14 + 4 + 48 + (supplementalHeight > 0 ? 160 : 0)
+        let ordinaryCardMaximum: CGFloat = 148 + 14 + 4 + 48 * (stackedQueueActions ? 2 : 1)
+            + (supplementalHeight > 0 ? 160 : 0)
         let needsCommandRoom = paletteOpen && (availableHeight ?? .infinity) < ordinaryCardMaximum + 68 + 8
         return compact || needsCommandRoom
     }
@@ -33,12 +35,22 @@ struct AskComposerLayout: Equatable {
         !launcher && width < 600
     }
 
+    /// A queued edit adds a second primary action; keep the tool menus on their own row.
+    var stackedQueueActions: Bool { editingQueued && condensedFooter }
+
     var editorMaximumHeight: CGFloat {
-        usesCompactMetrics ? 48 : 148
+        let maximum: CGFloat = usesCompactMetrics ? 48 : 148
+        guard stackedQueueActions, paletteOpen, let availableHeight else { return maximum }
+        let reserved = editorTopInset + editorBottomInset + footerHeight + 68 + 8
+            + (supplementalHeight > 0 ? 20 : 0)
+        return min(maximum, max(32, availableHeight - reserved))
     }
 
     var supplementalMaximumHeight: CGFloat {
-        usesCompactMetrics ? 40 : 160
+        let maximum: CGFloat = usesCompactMetrics ? 40 : 160
+        guard stackedQueueActions, paletteOpen, let availableHeight else { return maximum }
+        let reserved = editorMaximumHeight + editorTopInset + editorBottomInset + footerHeight + 68 + 8
+        return min(maximum, max(0, availableHeight - reserved))
     }
 
     var editorTopInset: CGFloat {
@@ -50,6 +62,10 @@ struct AskComposerLayout: Equatable {
     }
 
     var footerHeight: CGFloat {
+        footerRowHeight * (stackedQueueActions ? 2 : 1)
+    }
+
+    var footerRowHeight: CGFloat {
         launcher ? AskComposerChrome.launcher.footerHeight : usesCompactMetrics ? 40 : 48
     }
 }

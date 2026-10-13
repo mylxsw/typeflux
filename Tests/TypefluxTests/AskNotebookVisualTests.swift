@@ -323,22 +323,33 @@ struct AskNotebookVisualTests {
     }
 
     private func checkReadControls(_ window: NSWindow) throws {
-        let compact = (window.contentView?.bounds.width ?? 0) < AskNotesView.expandedToolbarMinimumWidth
-        let identifiers = compact ? ["notes.copy"] : ["notes.copy", "notes.pin", "notes.share", "notes.delete"]
-        for identifier in identifiers {
-            let action = try AskLibraryTestSupport.action(identifier, in: window)
-            let frame = action.frame
-            #expect(frame.width >= 20 && frame.height >= 20, "visible actions keep usable hit targets")
-            #expect(frame.minX >= window.frame.minX - 1 && frame.maxX <= window.frame.maxX + 1,
-                    "visible toolbar actions stay inside the window")
-        }
-        if compact {
-            let menu = try #require(accessibilityElement("ask.notes.more", in: window))
-            let frame = accessibilityFrame(menu)
-            #expect(frame.minX >= window.frame.minX - 1 && frame.maxX <= window.frame.maxX + 1,
-                    "collapsed actions remain reachable through the native menu")
-        }
         #expect(window.toolbar?.items.contains { $0 is NSSearchToolbarItem } == true)
+        let elements = AskLibraryTestSupport.elements(in: window)
+        func visibleAction(_ name: String) -> SettingsBehaviorTestSupport.Element? {
+            elements.first {
+                guard $0.value("accessibilityIdentifier") as? String == "typeflux.toolbar.notes." + name,
+                      $0.frame.width >= 20, $0.frame.height >= 20,
+                      window.frame.insetBy(dx: -1, dy: -1).contains($0.frame) else { return false }
+                if let view = $0.object as? NSView { return view.window === window && !view.isHiddenOrHasHiddenAncestor }
+                return true
+            }
+        }
+        _ = try #require(visibleAction("copy"), "Copy must stay visible at width \(window.frame.width)")
+        let button = try #require(AskNotesToolbarTestSupport.button(in: window))
+        #expect(button.isEnabled && !button.isHiddenOrHasHiddenAncestor && button.window === window)
+        let moreFrame = screenFrame(button, in: window)
+        #expect(moreFrame.width >= 20 && moreFrame.height >= 20)
+        #expect(window.frame.insetBy(dx: -1, dy: -1).contains(moreFrame))
+        let menu = try #require(button.menu)
+        for name in ["pin", "share", "delete"] {
+            // Native search and split-view layout can compact the toolbar at wider
+            // window sizes too. Inspect the presented action, rather than inferring state.
+            if window.frame.width >= AskNotesView.expandedToolbarMinimumWidth, visibleAction(name) != nil { continue }
+            let item = try #require(menu.items.first { $0.identifier?.rawValue == "ask.notes." + name },
+                                    "\(name) must remain in More at width \(window.frame.width)")
+            #expect(item.isEnabled && !item.isHidden && item.action != nil)
+            #expect(item.target is AskNotesMoreMenu.Coordinator)
+        }
     }
 
     private func checkSplitControls(_ window: NSWindow, model: AskNotesViewModel) async throws {

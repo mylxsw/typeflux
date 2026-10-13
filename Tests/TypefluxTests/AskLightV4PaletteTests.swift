@@ -170,16 +170,16 @@ struct AskLightV4PaletteTests {
     }
 
     @Test(arguments: [InterfaceStyle.liquidGlass, .classic])
-    func historySelectionRisesAsAWhiteCardInLight(style: InterfaceStyle) async throws {
-        let light = try await render(HistorySelection(), style: style, dark: false)
-        #expect(light.redComponent > 0.99 && light.blueComponent > 0.99)
-        let dark = try await render(HistorySelection(), style: style, dark: true)
-        let expected =
-            try await render((style.usesGlass ? TypefluxColor.accent.color.opacity(0.18) : AskClassic.selection)
-                    .frame(width: 160, height: 60), style: style, dark: true)
-        // The existing dark glass row also has a faint tint shadow.
-        #expect(abs(dark.redComponent - expected.redComponent) < 0.01)
-        #expect(abs(dark.blueComponent - expected.blueComponent) < 0.01)
+    func historySelectionUsesTheSystemSelectionInBothAppearances(style: InterfaceStyle) async throws {
+        for dark in [false, true] {
+            let actual = try await render(HistorySelection(), style: style, dark: dark)
+            let expected = try await render(TypefluxColor.selection.color.frame(width: 160, height: 60),
+                                            style: style, dark: dark)
+            #expect(abs(actual.redComponent - expected.redComponent) < 0.002)
+            #expect(abs(actual.greenComponent - expected.greenComponent) < 0.002)
+            #expect(abs(actual.blueComponent - expected.blueComponent) < 0.002)
+            #expect(abs(actual.alphaComponent - expected.alphaComponent) < 0.002)
+        }
     }
 
     @Test(arguments: [InterfaceStyle.liquidGlass, .classic])

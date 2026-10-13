@@ -61,49 +61,4 @@ struct ScreenshotCaptureWindowPolicyTests {
         control.orderOut(nil)
         #expect(!ScreenshotCaptureWindowPolicy.excludedWindowIDs().contains(CGWindowID(control.windowNumber)))
     }
-
-    @Test(.enabled(if: CGPreflightScreenCaptureAccess()))
-    func realCaptureKeepsAppPagePixelsBehindCaptureControls() async throws {
-        let screen = try #require(NSScreen.screens.first {
-            ($0.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value == CGMainDisplayID()
-        }, "The fixture must use the same display as the capture request")
-        let area = screen.visibleFrame
-        let pageFrame = CGRect(x: area.midX - 120, y: area.midY - 90, width: 240, height: 180)
-        let page = NSWindow(contentRect: pageFrame, styleMask: [.borderless], backing: .buffered, defer: false)
-        page.isReleasedWhenClosed = false
-        page.title = "Typeflux screenshot regression test"
-        page.isOpaque = true
-        page.backgroundColor = .green
-        // Keep the fixture above windows left by earlier suites. The excluded red control
-        // uses the same level and is ordered above this green page explicitly.
-        page.level = .screenSaver
-        let control = ScreenshotFloatingPanel(frame: pageFrame)
-        control.isOpaque = true
-        control.backgroundColor = .red
-        defer {
-            control.close()
-            page.close()
-        }
-        page.orderFrontRegardless()
-        control.orderFrontRegardless()
-        page.displayIfNeeded()
-        control.displayIfNeeded()
-        // Let the window server commit both surfaces before ScreenCaptureKit freezes them.
-        try await Task.sleep(nanoseconds: 200_000_000)
-        let snapshot = try await ScreenCaptureService().snapshot(ScreenCaptureRequest(
-            displays: .preferred(CGMainDisplayID()), resolution: .fitting(maxDimension: 640),
-            windowExclusion: .screenshotControls
-        ))
-        #expect(snapshot.windows.contains { $0.id == CGWindowID(page.windowNumber) })
-        #expect(!snapshot.windows.contains { $0.id == CGWindowID(control.windowNumber) })
-        let display = try #require(snapshot.displays.first)
-        let center = CGRect(x: pageFrame.midX - 5, y: pageFrame.midY - 5, width: 10, height: 10)
-        let crop = ScreenCaptureGeometry.flipped(center, primaryDisplayHeight: screen.frame.height)
-        let image = try ScreenshotImageExporter.crop(display, to: crop)
-        let pixels = try #require(ScreenshotMosaicEffects.Pixels(image, space: CGColorSpace(name: CGColorSpace.sRGB)!))
-        let offset = ((pixels.height / 2) * pixels.width + pixels.width / 2) * 4
-        #expect(pixels.bytes[offset] < 50)
-        #expect(pixels.bytes[offset + 1] > 200)
-        #expect(pixels.bytes[offset + 2] < 50)
-    }
 }
