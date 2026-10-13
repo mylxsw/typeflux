@@ -48,7 +48,7 @@ struct WorkflowOutputActionsVisualTests {
         hosting.frame = NSRect(origin: .zero, size: size)
         window.contentView = hosting
         window.orderFront(nil)
-        defer { window.orderOut(nil); window.close() }
+        defer { TypefluxNavigationTestSupport.closeWindow(window) }
         try await Task.sleep(for: .milliseconds(500))
         hosting.layoutSubtreeIfNeeded()
         #expect(hosting.fittingSize.height > 0)
@@ -112,6 +112,7 @@ struct WorkflowOutputActionsVisualTests {
         try await chinese {
             let fixture = try AskWorkflowFixture()
             let model = try editor(fixture)
+            defer { model.close() }
             #expect(model.draft?.manifest?.output.onSuccess.count == 2)
             model.runTest()
             await wait { !model.isTesting && !model.results.isEmpty }
@@ -150,8 +151,7 @@ struct WorkflowOutputActionsVisualTests {
             let fixture = try AskWorkflowFixture()
             let model = try editor(fixture)
             defer { model.close() }
-            let accessibility = AskWorkspaceTestAccessibility()
-            defer { accessibility.restore() }
+            TypefluxTestApplicationEnvironment.prepare()
             let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: width, height: 900),
                                   styleMask: [.borderless], backing: .buffered, defer: false)
             window.isReleasedWhenClosed = false
@@ -159,16 +159,22 @@ struct WorkflowOutputActionsVisualTests {
             let hosting = NSHostingView(rootView: AskWorkflowEditorView(model: model, store: fixture.store))
             window.contentView = hosting
             window.orderFront(nil)
-            defer { window.orderOut(nil); window.close() }
-            try await Task.sleep(for: .milliseconds(300))
-            hosting.layoutSubtreeIfNeeded()
+            defer { TypefluxNavigationTestSupport.closeWindow(window) }
+            try await SettingsBehaviorTestSupport.wait("Workflow output and center viewport at width \(width)") {
+                hosting.layoutSubtreeIfNeeded()
+                return AskWorkspaceTestAccessibility.frame(identifier: "ask.workflow.editor.output.add.onSuccess",
+                                                            in: window) != nil
+                    && AskWorkspaceTestAccessibility.frame(identifier: "ask.workflow.editor.center", in: window) != nil
+            }
             let frame = try controlFrame(
                 identifier: "ask.workflow.editor.output.add.onSuccess", in: window
             )
-            // The center column starts after the 220-point sidebar and divider;
-            // the 340-point assistant panel and its divider bound its right side.
-            #expect(abs(frame.minX - 241) < 0.5)
-            #expect(frame.maxX <= width - 361 + 0.5)
+            // UI System v2 lets NavigationSplitView size its sidebar. Keep the 20-point
+            // form insets relative to the actual center viewport, rather than a fixed x=241.
+            let center = try controlFrame(identifier: "ask.workflow.editor.center", in: window)
+            #expect(abs(frame.minX - center.minX - 20) < 0.5)
+            #expect(frame.maxX <= center.maxX - 20 + 0.5)
+            #expect(center.maxX <= hosting.bounds.width - 340 + 0.5, "The assistant remains beside the form")
             try await render(AskWorkflowEditorView(model: model, store: fixture.store),
                              size: NSSize(width: width, height: 900),
                              name: "implemented-output-insets-\(Int(width)).png")
@@ -176,24 +182,8 @@ struct WorkflowOutputActionsVisualTests {
     }
 
     private func controlFrame(identifier: String, in window: NSWindow) throws -> NSRect {
-        var seen = Set<ObjectIdentifier>()
-        func value(_ node: NSObject, _ key: String) -> Any? {
-            node.responds(to: NSSelectorFromString(key)) ? node.value(forKey: key) : nil
-        }
-        func find(_ node: NSObject) -> NSRect? {
-            guard seen.insert(ObjectIdentifier(node)).inserted else { return nil }
-            if value(node, "accessibilityIdentifier") as? String == identifier,
-               let frame = value(node, "accessibilityFrame") as? NSValue {
-                return frame.rectValue
-            }
-            for child in value(node, "accessibilityChildren") as? [NSObject] ?? [] {
-                if let frame = find(child) {
-                    return frame
-                }
-            }
-            return nil
-        }
-        return try window.convertFromScreen(#require(find(window) ?? window.contentView.flatMap(find)))
+        try window.convertFromScreen(#require(AskWorkspaceTestAccessibility.frame(identifier: identifier, in: window),
+                                               "Missing workflow control: \(identifier)"))
     }
 
     /// The menus open in popovers, so nothing in the window (the step bar, the scroll
@@ -205,6 +195,7 @@ struct WorkflowOutputActionsVisualTests {
             _ = NSApplication.shared
             let fixture = try AskWorkflowFixture()
             let model = try editor(fixture)
+            defer { model.close() }
             // Within the usable screen where the editor's minimum size allows: AppKit moves and
             // clips a window larger than the display, and a control off screen opens no popover.
             let visible = try #require(NSScreen.main?.visibleFrame)
@@ -221,13 +212,12 @@ struct WorkflowOutputActionsVisualTests {
             window.setFrameOrigin(NSPoint(x: visible.minX + min(80, visible.width - size.width),
                                           y: visible.minY + min(80, visible.height - size.height)))
             window.makeKeyAndOrderFront(nil)
-            defer { window.orderOut(nil); window.close() }
+            defer { TypefluxNavigationTestSupport.closeWindow(window) }
             try await Task.sleep(for: .milliseconds(600))
             // On a display shorter than the editor's minimum height the form opens scrolled away
             // from the action list. Bring the list's add control into the part of the form that
             // is on screen, as a user would, so it and the row above it can anchor a popover.
-            NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
-            defer { NSApp.accessibilitySetValue(false, forAttribute: .init(rawValue: "AXEnhancedUserInterface")) }
+            TypefluxTestApplicationEnvironment.prepare()
             let add = try controlFrame(identifier: "ask.workflow.editor.output.add.onSuccess", in: window)
             let form = try #require(window.contentView?.hitTest(NSPoint(x: add.midX, y: window.frame.height / 2))?
                 .enclosingScrollView)
@@ -240,15 +230,22 @@ struct WorkflowOutputActionsVisualTests {
             #expect(shown.contains(revealed), "the add control is on screen")
             for (menu, name) in [(AskWorkflowOutputMenu.add(.onSuccess), "add"),
                                  (.placeholder(.onSuccess, index: 0, field: .value), "token")] {
+                let previousWindows = Set(NSApp.windows.filter { $0.isVisible }.map(ObjectIdentifier.init))
+                let title = L(name == "add" ? "ask.workflow.editor.output.group0"
+                                           : "ask.workflow.editor.placeholder.menuTitle")
                 model.outputMenu = menu
                 var popover: NSWindow?
                 for _ in 0 ..< 40 where popover == nil {
                     try await Task.sleep(for: .milliseconds(50))
-                    popover = NSApp.windows.first { $0 !== window && $0.isVisible && $0.parent === window }
-                        ?? NSApp.windows
-                        .first { $0 !== window && $0.isVisible && "\(type(of: $0))".contains("Popover") }
+                    popover = window.childWindows?.first { $0.isVisible && $0.parent === window }
+                        ?? NSApp.windows.first {
+                            !previousWindows.contains(ObjectIdentifier($0)) && $0.isVisible
+                                && "\(type(of: $0))".contains("Popover")
+                                && SettingsBehaviorTestSupport.contains(title, in: $0)
+                        }
                 }
                 let shown = try #require(popover, "the \(name) menu opens in a popover window")
+                defer { TypefluxNavigationTestSupport.closeWindow(shown) }
                 #expect(shown.frame.height > 120, "the \(name) menu is laid out")
                 try snapshot(window: window, popover: shown, name: "implemented-ed-\(name)-popover.png")
                 model.outputMenu = nil

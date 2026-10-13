@@ -207,7 +207,11 @@ struct AskQuickSearchSessionTests {
         let apps = AskControlledSearchIndex(), files = AskControlledSearchIndex()
         apps.appSearch = { _ in [Self.app] }
         files.fileSearch = { _ in [Self.file] }
-        let session = AskQuickSearchSession()
+        // Exercise coalescing independently of thread scheduling on a loaded full-suite host.
+        // Slow-provider tests separately cover the production grace and staged publication.
+        let session = AskQuickSearchSession(publicationGrace: .seconds(5))
+        session.fileDebounce = .zero
+        defer { session.cancel() }
         var batches: [AskQuickResults] = []
         let subscription = session.$results.sink { result in
             if let result, !result.apps.isEmpty || !result.files.isEmpty { batches.append(result) }

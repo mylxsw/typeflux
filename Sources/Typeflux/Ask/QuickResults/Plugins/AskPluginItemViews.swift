@@ -3,8 +3,8 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 /// One row of a result list: icon, title, subtitle, and on the chosen row what
-/// Return does ("↩ Copy"). A soft accent wash marks keyboard focus without
-/// competing with the title or the list's section heading.
+/// Return does ("↩ Copy"). Native selection uses the system accent and
+/// contrasting selected text colors in both interface styles.
 struct AskPluginItemRow: View {
     var item: AskPluginItem
     /// The plugin's symbol, for rows without an icon of their own.

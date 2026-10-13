@@ -98,7 +98,7 @@ struct AskFilePreviewVisualTests {
         host.sizingOptions = []
         window.contentView = host
         window.orderFront(nil)
-        defer { window.orderOut(nil); window.close() }
+        defer { TypefluxNavigationTestSupport.closeWindow(window) }
         try await Task.sleep(for: .milliseconds(35))
         host.layoutSubtreeIfNeeded()
         #expect(host.fittingSize.height <= 520, "Preview content must leave the header and footer inside the panel")
@@ -119,24 +119,38 @@ struct AskFilePreviewVisualTests {
         let parent = NSPanel(contentRect: CGRect(x: screen.minX + 30, y: screen.maxY - 550, width: 600, height: 500),
                              styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)
         parent.isReleasedWhenClosed = false
-        parent.makeKeyAndOrderFront(nil)
-        defer { parent.orderOut(nil); parent.close() }
+        parent.orderFront(nil)
+        defer { TypefluxNavigationTestSupport.closeWindow(parent) }
+        let suiteName = "PreviewPlacement-\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let settings = SettingsStore(defaults: defaults)
+        settings.interfaceStyle = .classic
         let clock = PreviewTestClock(), loader = PreviewTestLoader()
         let controller = AskFilePreviewController(loader: loader, clock: clock, reduceMotion: { false })
-        controller.attach(to: parent, style: InterfaceStyleObserver(settings: SettingsStore()))
+        defer {
+            controller.dismissNow()
+            controller.panel.map(TypefluxNavigationTestSupport.closeWindow)
+        }
+        controller.attach(to: parent, style: InterfaceStyleObserver(settings: settings))
         controller.request(previewHit()); clock.advance(0.12)
         loader.completions[0](.init(kind: .text, text: "Hello"))
         let panel = try #require(controller.panel)
         #expect(panel.parent === parent); #expect(!panel.canBecomeKey); #expect(!panel.canBecomeMain)
-        try await Task.sleep(for: .milliseconds(220))
-        #expect(panel.frame.width == 380)
-        #expect(panel.frame.maxY == parent.frame.maxY - AskMetrics.launcherGutter)
-        #expect(panel.frame.minX == parent.frame.maxX - AskMetrics.launcherGutter + 10)
+        let placement = try #require(AskFilePreviewPlacement.resolve(
+            card: parent.frame.insetBy(dx: AskMetrics.launcherGutter, dy: AskMetrics.launcherGutter),
+            screens: NSScreen.screens.map(\.visibleFrame)
+        ))
+        try await SettingsBehaviorTestSupport.wait("Preview panel animation reaching \(placement.frame)") {
+            panel.frame == placement.frame && panel.alphaValue == 1
+        }
+        #expect(panel.frame == placement.frame)
         parent.setFrame(CGRect(x: screen.minX + 35, y: screen.maxY - 250, width: 600, height: 200), display: false)
         controller.updateFrame()
         #expect(panel.frame.height == 320)
         controller.request(nil); clock.advance(0.15)
-        try await Task.sleep(for: .milliseconds(160)); clock.advance(0.14)
+        clock.advance(0.14)
+        try await SettingsBehaviorTestSupport.wait("Preview hide completion") { !panel.isVisible && panel.parent == nil }
         #expect(!panel.isVisible); #expect(panel.parent == nil)
         controller.request(previewHit("again.txt")); clock.advance(0.12)
         loader.completions.last?(.init(kind: .text))
@@ -146,7 +160,6 @@ struct AskFilePreviewVisualTests {
         controller.request(previewHit()); clock.advance(0.12); loader.completions.last?(.init(kind: .text))
         NotificationCenter.default.post(name: NSWindow.didResignKeyNotification, object: parent)
         #expect(!panel.isVisible)
-        controller.dismissNow()
     }
 
     @Test func `real text PDF image and audio renderers`() async throws {

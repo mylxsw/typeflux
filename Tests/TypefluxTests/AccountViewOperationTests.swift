@@ -18,8 +18,10 @@ struct AccountViewOperationTests {
                     let content = try #require(sheet.contentView)
                     try await SettingsBehaviorTestSupport.wait { fields(in: content).count == 3 }
                     let inputs = fields(in: content)
-                    for key in ["auth.account.currentPassword", "auth.account.newPassword",
-                                "auth.account.confirmNewPassword"] {
+                    // Native grouped forms must retain protected, independently named inputs.
+                    for (input, key) in zip(inputs, ["auth.account.currentPassword", "auth.account.newPassword",
+                                                     "auth.account.confirmNewPassword"]) {
+                        #expect(input is NSSecureTextField, "Password entry must remain protected")
                         #expect(SettingsBehaviorTestSupport.elements(in: content).contains {
                             $0.role == NSAccessibility.Role.textField.rawValue && $0.label == L(key)
                         })

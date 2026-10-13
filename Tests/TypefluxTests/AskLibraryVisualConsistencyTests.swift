@@ -40,11 +40,11 @@ struct AskLibraryVisualConsistencyTests {
             notes.restoreFromTrash()
             try await SettingsBehaviorTestSupport.wait { notes.store.note(id: libraries.noteID)?.isDeleted == false }
             notes.scope = .all
-            let noteSearch = try await AskLibraryTestSupport.search("Search target", in: noteWindow)
+            let noteSearch = try await search("Search target", in: noteWindow)
             try await SettingsBehaviorTestSupport.wait { notes.notes.count == 1 && notes.searchText == "Search target" }
             #expect(noteSearch.stringValue == notes.searchText)
             notes.searchText = ""
-            try await SettingsBehaviorTestSupport.wait { notes.searchText.isEmpty }
+            try await SettingsBehaviorTestSupport.wait("Notes toolbar query cleared") { noteSearch.stringValue.isEmpty }
             #expect(noteWindow.isVisible, "first Escape clears search without closing the library")
 
             try await checkWordActionsAndSearch(words, window: wordWindow, key: libraries.wordKey)
@@ -55,7 +55,6 @@ struct AskLibraryVisualConsistencyTests {
                                            key: String) async throws {
         var copiedWord: String?
         words.copy = { copiedWord = $0 }
-        wordWindow.makeKeyAndOrderFront(nil)
         _ = try AskLibraryTestSupport.action("wordBook.copy", in: wordWindow)
         if let entry = words.displayed { words.copyMeaning(entry) }
         #expect(copiedWord?.isEmpty == false)
@@ -69,11 +68,11 @@ struct AskLibraryVisualConsistencyTests {
         try await SettingsBehaviorTestSupport.wait { words.store.entry(forKey: key) == nil }
         words.undoDelete()
         #expect(words.store.entry(forKey: key)?.isStarred == true)
-        let wordSearch = try await AskLibraryTestSupport.search("plain", in: wordWindow)
+        let wordSearch = try await search("plain", in: wordWindow)
         try await SettingsBehaviorTestSupport.wait { words.entries.count == 1 && words.filterText == "plain" }
         #expect(wordSearch.stringValue == words.filterText)
         words.filterText = ""
-        try await SettingsBehaviorTestSupport.wait { words.filterText.isEmpty }
+        try await SettingsBehaviorTestSupport.wait("Word book toolbar query cleared") { wordSearch.stringValue.isEmpty }
     }
 
     @Test func toolbarCallbacksReadTheCurrentWordBeforeRedrawing() async throws {
@@ -128,18 +127,14 @@ struct AskLibraryVisualConsistencyTests {
             let window = try #require(libraries.notes.window)
             let notes = try #require(libraries.notes.model)
             window.setContentSize(AskNotesWindowController.minimumSize)
-            window.makeKeyAndOrderFront(nil)
-            try await SettingsBehaviorTestSupport.wait {
-                let elements = AskLibraryTestSupport.elements(in: window)
-                let menu = elements.first { $0.value("accessibilityIdentifier") as? String == "ask.notes.more" }
-                let copy = elements.first {
-                    $0.value("accessibilityIdentifier") as? String == "typeflux.toolbar.notes.copy"
-                }
-                return copy.map { insideWindow($0.frame, window: window) } == true
-                    && menu.map { insideWindow($0.frame, window: window) } == true
-                    && !elements.contains {
-                        $0.value("accessibilityIdentifier") as? String == "typeflux.toolbar.notes.pin"
-                    }
+            try await SettingsBehaviorTestSupport.wait("Copy and native More controls at Notes minimum size") {
+                window.contentView?.layoutSubtreeIfNeeded()
+                guard let menu = AskNotesToolbarTestSupport.button(in: window), menu.window === window,
+                      let copy = AskWorkspaceTestAccessibility.frame(identifier: "typeflux.toolbar.notes.copy",
+                                                                     in: window) else { return false }
+                let menuFrame = window.convertToScreen(menu.convert(menu.bounds, to: nil))
+                return insideWindow(copy, window: window) && insideWindow(menuFrame, window: window)
+                    && AskWorkspaceTestAccessibility.frame(identifier: "typeflux.toolbar.notes.pin", in: window) == nil
             }
             var copied: String?
             notes.copy = { copied = $0 }
@@ -154,7 +149,7 @@ struct AskLibraryVisualConsistencyTests {
                 #expect(notes.mode == mode, "each native mode action remains reachable at minimum width")
                 try await Task.sleep(for: .milliseconds(200))
             }
-            _ = try await AskLibraryTestSupport.search("Reading", in: window)
+            _ = try await search("Reading", in: window)
             try await SettingsBehaviorTestSupport.wait { notes.searchText == "Reading" }
             let searchingCopy = try AskLibraryTestSupport.action("notes.copy", in: window)
             #expect(insideWindow(searchingCopy.frame, window: window), "expanded search cannot displace copy")
@@ -167,12 +162,23 @@ struct AskLibraryVisualConsistencyTests {
             && frame.minY >= window.frame.minY - 1 && frame.maxY <= window.frame.maxY + 1
     }
 
+    private func search(_ query: String, in window: NSWindow) async throws -> NSSearchField {
+        try await SettingsBehaviorTestSupport.wait("Native library toolbar search installation") {
+            window.toolbar?.items.contains { $0 is NSSearchToolbarItem } == true
+        }
+        let field = try #require(window.toolbar?.items.compactMap { $0 as? NSSearchToolbarItem }.first?.searchField)
+        #expect(field.window === window)
+        // Drive the native binding without waiting for a key-window field editor.
+        try TypefluxNavigationTestSupport.changeText(query, in: field)
+        if let action = field.action { #expect(NSApp.sendAction(action, to: field.target, from: field)) }
+        return field
+    }
+
     @Test func newNoteToolbarActionCreatesAnEditablePersistedNote() async throws {
         try await AskLibraryTestSupport.withLibraries(style: .classic, dark: false) { libraries in
             let window = try #require(libraries.notes.window)
             let model = try #require(libraries.notes.model)
             let before = model.notes.count
-            window.makeKeyAndOrderFront(nil)
             _ = try AskLibraryTestSupport.action("notes.new", in: window)
             model.createNote()
             try await SettingsBehaviorTestSupport.wait { model.notes.count == before + 1 && model.editing }

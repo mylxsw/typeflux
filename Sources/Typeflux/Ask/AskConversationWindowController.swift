@@ -513,6 +513,15 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         NSApp.activate(ignoringOtherApps: true)
         conversationWindow.makeKeyAndOrderFront(nil)
         focusEditor(in: conversationWindow)
+        // Native navigation can rebuild its responder tree after deminiaturization.
+        // Reapply focus after that layout, scoped to this controller's visible workspace.
+        DispatchQueue.main.async { [weak self, weak conversationWindow] in
+            guard let self, let conversationWindow, self.conversationWindow === conversationWindow,
+                  conversationWindow.isVisible, conversationWindow.isKeyWindow,
+                  conversationWindow.attachedSheet == nil, !self.workspacePresentation.isSearching,
+                  !self.workspacePresentation.showsSidebarDrawer else { return }
+            self.focusEditor(in: conversationWindow)
+        }
         conversationRefreshTask = Task { await model.refreshHistory(); await model.loadSavedChatDrafts() }
     }
 
@@ -613,7 +622,9 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
 
     private func findEditor(in view: NSView?) -> NSTextView? {
         guard let view else { return nil }
-        if let text = view as? NSTextView, text.isEditable { return text }
+        // Native search and list controls can also install editable NSTextViews.
+        // Only the Ask composer receives launcher or conversation focus.
+        if let text = view as? AskComposerTextView.Editor, text.isEditable { return text }
         return view.subviews.lazy.compactMap { self.findEditor(in: $0) }.first
     }
 }

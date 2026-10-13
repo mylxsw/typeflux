@@ -22,5 +22,8 @@ public struct TypefluxSettingsRow<Control: View>: View {
                 }
             }
         }
+        // A form row can contain several independently operable controls, such as a
+        // secure field and its reveal button. Keep each control in the AX tree.
+        .accessibilityElement(children: .contain)
     }
 }

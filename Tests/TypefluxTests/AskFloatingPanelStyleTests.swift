@@ -51,20 +51,26 @@ struct AskFloatingPanelStyleTests {
         }
     }
 
-    @Test func `selected plugin rows use a soft wash in both appearances`() async throws {
+    @Test(arguments: InterfaceStyle.allCases)
+    func `selected plugin rows use system selection in both appearances`(style: InterfaceStyle) async throws {
         let row = AskPluginItemRow(item: AskPluginItem(id: "word", title: "serendipity", subtitle: "A happy discovery"),
                                    symbol: "character.book.closed", selected: true, emphasized: true,
                                    height: AskPluginResultsView.itemHeight, onPick: {})
             .background(LegacyAskPalette.launcherSurface)
+            .environment(\.interfaceStyle, style)
         for appearance in [NSAppearance.Name.aqua, .darkAqua] {
             let bitmap = try await render(row, size: NSSize(width: 560, height: 44), appearance: appearance)
             let fill = try pixel(bitmap, x: 520, y: 22)
-            // A saturated accent fill would make the red channel much darker in light mode.
-            if appearance == .aqua {
-                #expect(fill.redComponent > 0.85)
-            } else {
-                #expect(fill.redComponent < 0.3 && fill.blueComponent < 0.4)
+            var selection: NSColor?
+            try #require(NSAppearance(named: appearance)).performAsCurrentDrawingAppearance {
+                selection = TypefluxColor.selection.nsColor.usingColorSpace(.sRGB)
             }
+            let expected = try #require(selection)
+            // UI System v2 uses solid native selection and its contrasting system text color.
+            #expect(abs(fill.redComponent - expected.redComponent) < 0.02)
+            #expect(abs(fill.greenComponent - expected.greenComponent) < 0.02)
+            #expect(abs(fill.blueComponent - expected.blueComponent) < 0.02)
+            #expect(fill.alphaComponent > 0.999)
         }
     }
 
@@ -153,7 +159,7 @@ struct AskFloatingPanelStyleTests {
         let hosting = NSHostingView(rootView: view)
         window.contentView = hosting
         window.orderFront(nil)
-        defer { window.orderOut(nil); window.close() }
+        defer { TypefluxNavigationTestSupport.closeWindow(window) }
         try await Task.sleep(for: .milliseconds(100))
         hosting.layoutSubtreeIfNeeded()
         let bitmap = try #require(hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds))
