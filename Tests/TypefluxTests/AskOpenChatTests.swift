@@ -299,7 +299,7 @@ extension AskOpenChatTests {
     }
 
     @Test func `window reuses and restores minimized conversation with editor focus`() async throws {
-        _ = NSApplication.shared
+        TypefluxTestApplicationEnvironment.prepare()
         let f = try AskTestFixture()
         _ = f.model.credentials()
         let frameName = "OpenChat-\(UUID().uuidString)"
@@ -317,6 +317,7 @@ extension AskOpenChatTests {
         }
         #expect(await f.model.openChatFromLauncher())
         let window = try #require(controller.conversationWindow)
+        defer { window.close() }
         try await SettingsBehaviorTestSupport.wait("Initial conversation composer") {
             window.firstResponder is AskComposerTextView.Editor
         }

@@ -10,15 +10,10 @@ enum AskComposerFocus {
     }
 
     static func requestConversationFocus(in window: NSWindow, controller: AskConversationWindowController) {
-        // Native navigation can rebuild the responder tree after deminiaturization.
-        DispatchQueue.main.async { [weak controller, weak window] in
-            guard let controller, let window, controller.conversationWindow === window,
-                  window.isVisible, window.isKeyWindow, window.attachedSheet == nil,
-                  !controller.workspacePresentation.isSearching,
-                  !controller.workspacePresentation.showsSidebarDrawer else { return }
-            guard let content = window.contentView else { return }
-            content.layoutSubtreeIfNeeded()
-            if let editor = editor(in: content) { window.makeFirstResponder(editor) }
-        }
+        guard controller.conversationWindow === window, window.attachedSheet == nil,
+              !controller.workspacePresentation.isSearching,
+              !controller.workspacePresentation.showsSidebarDrawer else { return }
+        // The editor fulfills this once its native view is attached and the launcher handoff enables it.
+        controller.workspacePresentation.focusComposer()
     }
 }

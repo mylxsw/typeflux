@@ -9,6 +9,19 @@ struct SettingsSidebarChromeTests {
     private typealias UI = SettingsBehaviorTestSupport
 
     @Test(arguments: InterfaceStyle.allCases)
+    func `cloud promotion is readable on the account page`(style: InterfaceStyle) async throws {
+        try await UI.withFixture { _ in
+            let auth = AuthState(loadStoredToken: { nil }, loadStoredRefreshToken: { nil },
+                                 loadStoredUserProfile: { nil }, clearStoredSession: {})
+            let page = AccountView(authState: auth, onLogout: {}).environment(\.interfaceStyle, style)
+            try await UI.withWindow(page, width: 640, height: 500) { _, host in
+                try await UI.wait { UI.contains(L("auth.account.signIn"), in: host) }
+                for feature in AskCloudPromo.features { #expect(UI.contains(L(feature.key), in: host)) }
+            }
+        }
+    }
+
+    @Test(arguments: InterfaceStyle.allCases)
     func `chat footer keeps a single login row and settings at every height`(style: InterfaceStyle) async throws {
         try await UI.withFixture { settings in
             var logins = 0
@@ -191,6 +204,23 @@ struct SettingsSidebarChromeTests {
                         && !$0.frame.isEmpty
                 })
                 #expect(row.frame.minX >= bounds.minX - 1 && row.frame.maxX <= bounds.maxX + 1)
+                if size.width == 1100 {
+                    let record = try #require(controller.viewModel?.displayedHistory.first)
+                    controller.historyNavigation.open(record.id)
+                    try await UI.wait("History detail navigation") {
+                        historyBackButton(in: window)?.isEnabled == true
+                            && UI.contains(L("history.detail.rawTranscript"), in: host)
+                    }
+                    let back = try #require(historyBackButton(in: window))
+                    #expect(back.window === window && back.target is HistorySettingsBackButton.Coordinator)
+                    #expect(NSApp.sendAction(try #require(back.action), to: back.target, from: back))
+                    try await UI.wait("Returning to history navigation rows") {
+                        controller.historyNavigation.selectedID == nil && historyBackButton(in: window) == nil
+                            && UI.elements(in: host).contains {
+                                ($0.value("accessibilityIdentifier") as? String)?.hasPrefix("history.open.") == true
+                            }
+                    }
+                }
                 if !UI.elements(in: window).contains(where: {
                     $0.label == L("ask.cloudPromo.signIn") && $0.frame.width > 0 && $0.frame.height > 0
                         && window.frame.contains($0.frame)
@@ -244,6 +274,14 @@ struct SettingsSidebarChromeTests {
 }
 
 private extension SettingsSidebarChromeTests {
+    func historyBackButton(in window: NSWindow) -> NSButton? {
+        guard let root = window.toolbar?.items.first(where: {
+            $0.itemIdentifier.rawValue == HistorySettingsBackButton.toolbarIdentifier
+        })?.view else { return nil }
+        return UI.nativeViews(in: root).compactMap { $0 as? HistorySettingsBackButton.ToolbarView }
+            .first { $0.window === window }?.button
+    }
+
     func signInButtons(in host: NSView) -> Int {
         UI.elements(in: host).filter {
             $0.role == NSAccessibility.Role.button.rawValue && $0.label == L("ask.cloudPromo.signIn")

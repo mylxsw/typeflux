@@ -6,6 +6,23 @@ import TypefluxUI
 @Suite("TypefluxUI token resolution", .exclusiveUIState)
 @MainActor
 struct TypefluxUITokenTests {
+    @Test func sidebarBackingStaysDistinctFromTheReadingSurface() throws {
+        for name in [NSAppearance.Name.aqua, .darkAqua] {
+            let appearance = try #require(NSAppearance(named: name))
+            var sidebar: NSColor?
+            var reading: NSColor?
+            appearance.performAsCurrentDrawingAppearance {
+                sidebar = TypefluxColor.sidebarBackground.nsColor.usingColorSpace(.sRGB)
+                reading = TypefluxColor.contentBackground.nsColor.usingColorSpace(.sRGB)
+            }
+            let left = try #require(sidebar)
+            let right = try #require(reading)
+            #expect(left.alphaComponent == 1)
+            #expect(abs(left.redComponent - right.redComponent) + abs(left.greenComponent - right.greenComponent)
+                + abs(left.blueComponent - right.blueComponent) > 0.01)
+        }
+    }
+
     @Test func `every style appearance accessibility and capability combination`() {
         for style in InterfaceStyle.allCases {
             for scheme in [ColorScheme.light, .dark] {
@@ -39,8 +56,8 @@ struct TypefluxUITokenTests {
         // Independent expected tables from UI System §4, ordered like the public cases.
         let classicRadii: [CGFloat] = [10, 0, 5, 6, 0, 6, 5.5, 7, 5.5, 5, 6, 3.5, 8, 6, 4, 10, 10, 12, 12, 14, 8, 10]
         let glassRadii: [CGFloat] = [26, 18, 10, 6, 18, 18, 8, 17, 8, 8, 14, 5, 14, 14, 8, 18, 22, 28, 24, 18, 10, 14]
-        let classicHeights: [CGFloat] = [52, 28, 28, 24, 24, 22, 28, 22, 22, 22, 18, 14, 36, 24, 22, 52, 52]
-        let glassHeights: [CGFloat] = [52, 32, 28, 36, 36, 26, 34, 26, 26, 28, 22, 16, 40, 28, 24, 56, 56]
+        let classicHeights: [CGFloat] = [52, 28, 28, 24, 24, 22, 28, 22, 22, 22, 18, 14, 36, 24, 22, 52, 34, 52]
+        let glassHeights: [CGFloat] = [52, 32, 28, 36, 36, 26, 34, 26, 26, 28, 22, 16, 40, 28, 24, 56, 40, 56]
         let radii = tokens.style == .classic ? classicRadii : glassRadii
         let heights = tokens.style == .classic ? classicHeights : glassHeights
         #expect(TypefluxRadius.allCases.count == radii.count)
@@ -71,7 +88,7 @@ struct TypefluxUITokenTests {
                                  .windowBackgroundColor, .textBackgroundColor, .controlBackgroundColor, .separatorColor,
                                  .controlAccentColor, .selectedContentBackgroundColor, .systemGreen, .systemOrange,
                                  .systemRed]
-        for (token, expected) in zip(TypefluxColor.allCases, system) {
+        for (token, expected) in zip(TypefluxColor.allCases.filter { $0 != .sidebarBackground }, system) {
             #expect(token.nsColor == expected)
             #expect(token.color == Color(nsColor: expected))
         }

@@ -31,8 +31,15 @@ struct SidebarAccountFooter<SignedOutIdentity: View>: View {
                     AskPresentation.accountName(name: auth.userProfile?.name, email: auth.userProfile?.email)
                         ?? L("sidebar.appName"), onOpenAccount: onOpenAccount)
             } else {
-                signIn
-                if showsSignedOutIdentity { signedOutIdentity }
+                if showsSignedOutIdentity {
+                    signedOutIdentity.layoutPriority(1)
+                    Spacer(minLength: 0)
+                    TypefluxIconButton(L("ask.cloudPromo.signIn"), systemImage: "person.crop.circle.badge.plus",
+                                       action: onSignIn)
+                        .accessibilityIdentifier("sidebar.signIn")
+                } else {
+                    signIn
+                }
             }
             if let onOpenSettings {
                 TypefluxIconButton(L("sidebar.settingsAccessibility"), systemImage: "gearshape",

@@ -12,7 +12,6 @@ struct AskConversationView: View {
     @State private var collapsedGroups: Set<String> = []
     /// Which conversations the sidebar lists while some are kept on this Mac.
     @State private var historyFilter = AskHistoryFilter.all
-    /// The selected row's pill slides between rows instead of jumping.
     @Namespace private var selectionSpace
     /// Height of the banners and composer floating over the transcript's bottom edge.
     @State private var bottomChromeHeight: CGFloat = 0
@@ -85,6 +84,7 @@ struct AskConversationView: View {
         }
         .tint(TypefluxColor.accent.color)
         .environment(\.askUsesLibraryTokens, true)
+        .environment(\.askComposerFocusRequest, presentation.composerFocusRequestID)
         .environment(\.askArtifactAccess, model.artifactAccess)
         .environment(\.askTerminalAccess, model.terminalAccess)
         .onChange(of: model.draft) { _ in model.persistDrafts() }
@@ -165,15 +165,9 @@ struct AskConversationView: View {
             }
             .typefluxSearchable(state: toolbarSearch, prompt: L("ask.search.conversations"))
             .navigationTitle("")
-            .typefluxWindowChrome(title: workspaceTitle, actionTitles: [L("ask.sidebar.toggle"), L("ask.new")])
+            .typefluxWindowChrome(title: workspaceTitle, actionTitles: [L("ask.sidebar.toggle"), L("ask.new")],
+                                  trailingItemIdentifiers: ["ask.workspace.status", "ask.actions", "ask.workspace.new"])
             .toolbar {
-                ToolbarItem(id: "typeflux.window.title", placement: .principal) {
-                    Text(workspaceTitle).font(.headline).lineLimit(1).truncationMode(.tail)
-                        .frame(width: toolbarTitleWidth, height: TypefluxControlHeight.toolbarItem.value(for: style))
-                        .help(workspaceTitle)
-                        .accessibilityAddTraits(.isHeader)
-                        .accessibilityIdentifier("typeflux.window.title")
-                }
                 ToolbarItem(id: "ask.workspace.sidebar", placement: .navigation) {
                     TypefluxIconButton(L("ask.sidebar.toggle"), systemImage: "sidebar.left", action: toggleSidebar)
                         .frame(width: TypefluxControlWidth.toolbarItem.value(for: style),
@@ -181,6 +175,12 @@ struct AskConversationView: View {
                         .keyboardShortcut("s", modifiers: [.command, .control])
                         .accessibilityIdentifier("ask.workspace.sidebar")
                 }
+                TypefluxToolbarTitle(workspaceTitle, width: toolbarTitleWidth)
+                #if compiler(>=6.2)
+                    if #available(macOS 26, *) {
+                        ToolbarSpacer(.flexible, placement: .primaryAction)
+                    }
+                #endif
                 if let center = toolbarCenter {
                     ToolbarItem(id: "ask.workspace.status", placement: .primaryAction) {
                         center
@@ -188,7 +188,7 @@ struct AskConversationView: View {
                                    height: TypefluxControlHeight.toolbarItem.value(for: style))
                     }
                 }
-                TypefluxToolbar(groups: toolbarGroups, prominent: newConversationAction)
+                TypefluxToolbar(groups: toolbarGroups, prominent: newConversationAction, separatesProminent: true)
             }
             .toolbarBackground(TypefluxColor.windowBackground.color, for: .windowToolbar)
             .toolbarBackground(style.usesGlass ? .automatic : .visible, for: .windowToolbar)
@@ -352,6 +352,12 @@ struct AskConversationView: View {
     private var workspaceShortcuts: some View {
         newPrivateShortcut
             .background {
+                // Keep this window's command registered while its visible button is hosted in the native toolbar.
+                Button(L("ask.new"), action: { model.newConversation() })
+                    .keyboardShortcut("n", modifiers: .command)
+                    .hidden().accessibilityHidden(true)
+            }
+            .background {
                 if layout.compactContent {
                     Button(L("ask.search"), action: openSearch).keyboardShortcut("k", modifiers: .command)
                         .hidden().accessibilityHidden(true)
@@ -410,7 +416,7 @@ struct AskConversationView: View {
                              onSignIn: { LoginWindowController.shared.show() },
                              onOpenAccount: { model.onOpenSettings?(.account) },
                              onOpenSettings: { model.onOpenSettings?(.settings) }) {
-            AskLocalModeIdentity(model: model, compact: true)
+            AskLocalModeIdentity(model: model, compact: false)
         }
     }
 
@@ -484,15 +490,20 @@ struct AskConversationView: View {
 
     private var historyList: some View {
         let items = visibleConversations
+        let sections = AskHistorySection.make(items, title: historyGroup)
         return List(selection: historySelection) {
             Group {
-                ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
-                    if index == 0 || historyGroup(items[index - 1].updatedAt) != historyGroup(item.updatedAt) {
-                        groupHeader(historyGroup(item.updatedAt), first: index == 0)
-                    }
-                    if !collapsedGroups.contains(historyGroup(item.updatedAt)) {
-                        historyRow(item).tag(item.id)
-                            .listRowInsets(EdgeInsets())
+                ForEach(sections) { section in
+                    Section {
+                        if !collapsedGroups.contains(section.id) {
+                            ForEach(section.items) { item in
+                                historyRow(item).tag(item.id)
+                                    .listRowInsets(EdgeInsets())
+                            }
+                        }
+                    } header: {
+                        groupHeader(section.id, first: section.id == sections.first?.id)
+                            .textCase(nil)
                     }
                 }
                 if model.historyHasMore {
@@ -514,6 +525,7 @@ struct AskConversationView: View {
             .animation(AskMotion.panelAnimation(reduceMotion: reduceMotion), value: model.selectedId)
         }
         .listStyle(.sidebar)
+        .accessibilityIdentifier("ask.workspace.history")
         .scrollContentBackground(.hidden)
         .background(AskHistoryPullRefresh(
             isRefreshing: model.isRefreshingHistory,
@@ -730,6 +742,7 @@ struct AskConversationView: View {
             if screenshot { model.attachScreenshotForSuggestion(launcher: false) }
         }
         .keyboardShortcut(KeyEquivalent(Character(shortcut)), modifiers: .command)
+        .accessibilityIdentifier("ask.workspace.suggestion." + key)
         .disabled(!state.enabled && !addsModel)
         .help((addsModel ? L("ask.vision.addHelp") : caption) + " · ⌘" + shortcut)
     }
@@ -939,6 +952,8 @@ struct AskConversationView: View {
                 // drawing first and scrolling a frame later made every load
                 // flash the top of the conversation before jumping to the end.
                 .opacity(restoredTranscript != nil && restoredTranscript == model.selectedId ? 1 : 0)
+                .accessibilityIdentifier(restoredTranscript != nil && restoredTranscript == model.selectedId
+                    ? "ask.workspace.transcript" : "ask.workspace.transcript.loading")
                 .overlay(alignment: .top) {
                     if model.isLoadingSelection, model.selected == nil {
                         AskDelayedProgress(title: L("ask.loading"))
@@ -1408,7 +1423,7 @@ private struct AskSuggestionCard: View {
                                 .strokeBorder(iconTint.opacity(0.35), lineWidth: 0.5))
                         Text(title).font(.body).fontWeight(.semibold)
                             .foregroundStyle(available ? TypefluxColor.label.color : TypefluxColor.tertiaryLabel.color)
-                            .lineLimit(2)
+                            .lineLimit(2, reservesSpace: true)
                             .fixedSize(horizontal: false, vertical: true)
                         (Text(caption).foregroundColor(TypefluxColor.tertiaryLabel.color)
                             + Text(captionAction.map { " · " + $0 } ?? "")

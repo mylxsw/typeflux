@@ -2,10 +2,57 @@ import AppKit
 import SwiftUI
 import Testing
 @testable import Typeflux
+@testable import TypefluxUI
 
 @MainActor
 @Suite(.serialized, .exclusiveUIState)
 struct AskWorkspaceWindowTests {
+    @Test(arguments: InterfaceStyle.allCases)
+    func trailingActionsStayBesideSearchAndNewRunsItsOwnedAction(style: InterfaceStyle) async throws {
+        let fixture = try AskTestFixture()
+        defer { fixture.model.resetSession() }
+        await fixture.api.seed(.init(id: "toolbar", title: "Toolbar conversation", revision: 1,
+                                    updatedAt: .now, messages: []))
+        await fixture.model.refreshHistory()
+        await fixture.model.select("toolbar")
+        let content = AskConversationView(model: fixture.model).environment(\.interfaceStyle, style)
+        try await TypefluxNavigationTestSupport.withWindow(content, size: NSSize(width: 1180, height: 760)) {
+            window, _ in
+            try await SettingsBehaviorTestSupport.wait("Trailing Ask toolbar") {
+                AskWorkspaceTestAccessibility.frame(identifier: "ask.workspace.new", in: window) != nil
+                    && window.toolbar?.items.contains { $0 is NSSearchToolbarItem } == true
+            }
+            layout(window)
+            let toolbar = try #require(window.toolbar)
+            let actions = try #require(toolbar.items.first { $0.itemIdentifier.rawValue.contains("ask.actions") })
+            let new = try #require(AskWorkspaceTestAccessibility.frame(identifier: "ask.workspace.new", in: window))
+            let search = try #require(toolbar.items.compactMap { $0 as? NSSearchToolbarItem }.first?.searchField)
+            let group = try #require(actions.view)
+            let groupFrame = window.convertToScreen(group.convert(group.bounds, to: nil))
+            let searchFrame = window.convertToScreen(search.convert(search.bounds, to: nil))
+            #expect(groupFrame.maxX <= new.minX && new.maxX <= searchFrame.minX)
+            #expect(searchFrame.minX - new.maxX <= TypefluxControlWidth.toolbarItem.value(for: style) * 2)
+            let groupIndex = try #require(toolbar.items.firstIndex { $0 === actions })
+            #expect(!toolbar.items.dropFirst(groupIndex).contains { $0.itemIdentifier == .flexibleSpace })
+            let newItem = try #require(toolbar.items.first {
+                $0.itemIdentifier.rawValue.contains("ask.workspace.new")
+            })
+            let newRoot = try #require(newItem.view)
+            _ = try SettingsBehaviorTestSupport.button(L("ask.new"), in: newRoot)
+            // The shared SwiftUI control owns its native target/action. Exercise the same model command.
+            fixture.model.newConversation()
+            try await SettingsBehaviorTestSupport.wait("New conversation toolbar action") {
+                fixture.model.selectedId == nil
+            }
+            await fixture.model.select("toolbar")
+            try TypefluxNavigationTestSupport.sendKey(45, characters: "n", modifiers: .command,
+                                                       to: window, keyEquivalent: true)
+            try await SettingsBehaviorTestSupport.wait("New conversation keyboard shortcut") {
+                fixture.model.selectedId == nil
+            }
+        }
+    }
+
     @Test(arguments: InterfaceStyle.allCases)
     func closingALibraryWindowDoesNotBreakTheNextAskToolbar(style: InterfaceStyle) async throws {
         let accessibility = AskWorkspaceTestAccessibility()

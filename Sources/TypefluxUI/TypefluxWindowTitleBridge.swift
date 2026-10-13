@@ -8,11 +8,13 @@ struct TypefluxWindowTitleBridge: NSViewRepresentable {
     let title: String
     var actionTitles: Set<String> = []
     var actionIdentifiers: Set<String> = []
+    var trailingItemIdentifiers: Set<String> = []
 
     final class TitleView: NSView {
         var representedWindowTitle = ""
         var actionTitles: Set<String> = []
         var actionIdentifiers: Set<String> = []
+        var trailingItemIdentifiers: Set<String> = []
         private var active = false
         private var titleObservation: NSKeyValueObservation?
         private var visibilityObservation: NSKeyValueObservation?
@@ -70,6 +72,7 @@ struct TypefluxWindowTitleBridge: NSViewRepresentable {
                 }
             }
             if let toolbar = window.toolbar {
+                TypefluxToolbarAlignment.alignTrailingItems(in: toolbar, identifiers: trailingItemIdentifiers)
                 if let item = toolbar.items.first(where: {
                     $0.itemIdentifier.rawValue == TypefluxWindowTitleBridge.itemIdentifier
                         || $0.view?.accessibilityIdentifier() == TypefluxWindowTitleBridge.itemIdentifier
@@ -78,7 +81,7 @@ struct TypefluxWindowTitleBridge: NSViewRepresentable {
                     if toolbar.centeredItemIdentifiers.contains(item.itemIdentifier) {
                         toolbar.centeredItemIdentifiers.remove(item.itemIdentifier)
                     }
-                    alignTitle(item, in: toolbar)
+                    if trailingItemIdentifiers.isEmpty { alignTitle(item, in: toolbar) }
                 }
                 // Keep this window's fixed tabs and primary actions accessible before native overflow.
                 // A toolbar group may represent its action in the group label rather than subitems.
@@ -160,6 +163,7 @@ struct TypefluxWindowTitleBridge: NSViewRepresentable {
         view.representedWindowTitle = title
         view.actionTitles = actionTitles
         view.actionIdentifiers = actionIdentifiers
+        view.trailingItemIdentifiers = trailingItemIdentifiers
         return view
     }
 
@@ -167,6 +171,7 @@ struct TypefluxWindowTitleBridge: NSViewRepresentable {
         view.representedWindowTitle = title
         view.actionTitles = actionTitles
         view.actionIdentifiers = actionIdentifiers
+        view.trailingItemIdentifiers = trailingItemIdentifiers
         view.synchronize()
         view.schedule()
     }

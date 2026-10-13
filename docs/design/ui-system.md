@@ -57,6 +57,7 @@ On macOS 26, native controls always take the Tahoe shape, and an app cannot forc
 | Custom composer menu card / choice row / hover card | r14 / r8 / r10 | r18 / r10 / r14 |
 | Popover / sheet | r10 / r10 | r18 / r22 |
 | Spotlight panel | 640 wide, 52 input, single r12 panel | 680 wide, 56 capsule input + 56 round mode buttons + r24 results |
+| Spotlight result row | 34 minimum | 40 minimum |
 
 Text styles (macOS values): largeTitle 26, title 22, title2 17, title3 15, headline 13 bold, body 13, callout 12, subheadline 11, footnote 10.
 

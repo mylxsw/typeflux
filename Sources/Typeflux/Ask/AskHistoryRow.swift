@@ -21,7 +21,8 @@ struct AskHistoryRow: View {
     @State private var renameError: String?
     @State private var editSession = UUID()
     @Environment(\.interfaceStyle) private var style
-    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.colorSchemeContrast) private var contrast
+    @Environment(\.typefluxAccessibilityOptions) private var accessibility
 
     var body: some View {
         Group {
@@ -46,10 +47,13 @@ struct AskHistoryRow: View {
     private func contents(editorTitle: String?) -> some View {
         HStack(spacing: 8) {
             // A conversation still working shows a breathing accent dot.
-            if busy { AskRunToneDot(tone: .running) }
+            if busy {
+                AskRunToneDot(tone: .running, tint: selected && !usesNativeSelection
+                    ? TypefluxSpotlightRow.labelColor(selected: true) : nil)
+            }
             if stored {
                 Image(systemName: "lock").font(.footnote).fontWeight(.medium)
-                    .foregroundStyle(Color(nsColor: .systemPurple))
+                    .foregroundStyle(labelColor())
                     .help(L("ask.storage.local"))
                     .accessibilityLabel(L("ask.storage.local"))
             }
@@ -78,7 +82,7 @@ struct AskHistoryRow: View {
             } else if editorTitle == nil, !busy {
                 Text(AskPresentation.historyTimeLabel(updatedAt))
                     .font(.subheadline)
-                    .foregroundStyle(TypefluxColor.tertiaryLabel.color)
+                    .foregroundStyle(labelColor(secondary: true))
                     .monospacedDigit()
             }
         }
@@ -86,28 +90,20 @@ struct AskHistoryRow: View {
         .padding(.trailing, 10)
         .frame(height: style.ask.sidebarRowHeight)
         .frame(maxWidth: .infinity, alignment: .leading)
-        // White selection rises gently above the quiet light sidebar. Dark
-        // retains its glass tint or classic source-list selection.
+        // Native List owns its selected fill and active/inactive label treatment.
         .background {
             let shape = RoundedRectangle(cornerRadius: style.ask.sidebarRowCorner, style: .continuous)
             ZStack {
-                if hovering, !selected { shape.fill(TypefluxColor.label.color.opacity(0.06)).transition(.opacity) }
+                if hovering, !selected, !usesNativeSelection {
+                    shape.fill(TypefluxColor.label.color.opacity(0.06)).transition(.opacity)
+                }
                 if selected, !usesNativeSelection {
-                    if colorScheme == .light {
-                        shape.fill(.white)
-                            .overlay(shape.strokeBorder(TypefluxColor.separator.color, lineWidth: 0.5))
-                            .shadow(color: .black.opacity(0.08), radius: 1, y: 1)
-                            .matchedGeometryEffect(id: "ask.history.selection", in: selectionSpace)
-                    } else if style.usesGlass {
-                        let tint = stored ? Color(nsColor: .systemPurple) : TypefluxColor.accent.color
-                        shape.fill(tint.opacity(0.18))
-                            .overlay(shape.strokeBorder(tint.opacity(0.4), lineWidth: 0.5))
-                            .shadow(color: tint.opacity(0.18), radius: 6, y: 2)
-                            .matchedGeometryEffect(id: "ask.history.selection", in: selectionSpace)
-                    } else {
-                        shape.fill(AskClassic.selection)
-                            .matchedGeometryEffect(id: "ask.history.selection", in: selectionSpace)
-                    }
+                    shape.fill(TypefluxColor.selection.color)
+                        .overlay {
+                            if contrast == .increased || accessibility.increasedContrast {
+                                shape.strokeBorder(TypefluxColor.label.color, lineWidth: 1)
+                            }
+                        }
                 }
             }
             .animation(.easeOut(duration: 0.15), value: hovering)
@@ -115,14 +111,15 @@ struct AskHistoryRow: View {
         .contentShape(RoundedRectangle(cornerRadius: style.ask.sidebarRowCorner, style: .continuous))
     }
 
-    @ViewBuilder private var titleLabel: some View {
-        let text = Text(savingTitle ?? title)
+    private var titleLabel: some View {
+        Text(savingTitle ?? title)
             .font(.body).fontWeight(selected ? .semibold : .regular).lineLimit(1)
-        if usesNativeSelection {
-            text
-        } else {
-            text.foregroundStyle(selected || hovering ? TypefluxColor.label.color : TypefluxColor.secondaryLabel.color)
-        }
+            .foregroundStyle(labelColor())
+    }
+
+    private func labelColor(secondary: Bool = false) -> AnyShapeStyle {
+        if usesNativeSelection { return secondary ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary) }
+        return AnyShapeStyle(TypefluxSpotlightRow.labelColor(selected: selected, secondary: secondary))
     }
 
     private func beginRename() {

@@ -10,7 +10,7 @@ enum AskClassic {
     )
 
     static let canvas = TypefluxColor.contentBackground.color
-    static let sidebar = TypefluxColor.windowBackground.color
+    static let sidebar = TypefluxColor.sidebarBackground.color
     static let card = TypefluxColor.controlBackground.color
     static let cardHover = TypefluxColor.label.color.opacity(0.06)
     static let cardBorder = TypefluxColor.separator.color
@@ -96,7 +96,10 @@ struct AskSidePanelChrome: ViewModifier {
     @ViewBuilder
     func body(content: Content) -> some View {
         if style.usesGlass {
-            TypefluxGlassContainer(radius: .sidebar, placement: .windowEdge) { content }
+            TypefluxGlassContainer(radius: .sidebar, placement: .windowEdge,
+                                   opaqueFill: TypefluxColor.sidebarBackground.color) { content }
+                .background(TypefluxColor.sidebarBackground.color,
+                            in: RoundedRectangle(cornerRadius: TypefluxRadius.sidebar.value(for: style)))
                 .padding(glassInset, AskMetrics.sidebarPanelInset)
         } else {
             content

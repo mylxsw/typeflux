@@ -12,6 +12,7 @@ struct AskModelMenu: View {
     /// there, so it loses its border and only fills under the pointer. Settings
     /// keeps the bordered field it was designed with.
     var compact = false
+    /// Workspace controls use a native menu; retained for compatibility with existing callers.
     var usesNativePopover = false
     /// Narrow workspace cards reserve room for send and voice controls.
     var condensed = false
@@ -43,14 +44,7 @@ struct AskModelMenu: View {
     }
 
     private var currentReason: String? {
-        guard let (provider, model) = library.registry.resolve(reference) else { return L("ask.models.unavailable") }
-        return library.selectionReason(
-            model,
-            provider: provider,
-            hasImage: hasImage,
-            loggedIn: loggedIn,
-            scenario: scenario
-        )
+        library.selectionExplanation(for: reference, hasImage: hasImage, loggedIn: loggedIn, scenario: scenario)
     }
 
     private var corner: CGFloat {
@@ -63,10 +57,33 @@ struct AskModelMenu: View {
     private var stroke: Color { compact ? .clear : TypefluxColor.separator.color }
 
     var body: some View {
+        Group {
+            if usesNativePopover {
+                AskNativeModelMenu(library: library, reference: $reference, effort: effort, scenario: scenario,
+                                   hasImage: hasImage, loggedIn: loggedIn, showsDefaultAction: showsDefaultAction,
+                                   offersSignIn: scenario == "ask" && !auth.isLoggedIn, onManage: onManage) {
+                    modelLabel.font(.body)
+                }
+                .accessibilityIdentifier(controlIdentifier)
+            } else {
+                legacyChooser
+            }
+        }
+        .disabled(disabled)
+        .onHover { hovering = $0 }
+        .help(currentReason ?? L("ask.models.conversationOnly"))
+        .accessibilityValue(currentReason ?? "")
+        .task(id: auth.accessToken) {
+            library.adoptLegacySelectionIfNeeded()
+            if library.automaticallyLoadsCatalog {
+                await library.refresh(token: auth.accessToken)
+                await library.probeOllama()
+            }
+        }
+    }
+
+    private var legacyChooser: some View {
         modelButton
-            .disabled(disabled)
-            .onHover { hovering = $0 }
-            .help(currentReason ?? L("ask.models.conversationOnly"))
             .askMenu(isPresented: $expanded, glass: compact && !usesNativePopover) {
                 if let effort, compact {
                     AskModelEffortCard(library: library, reference: $reference, effort: effort, hasImage: hasImage,
@@ -91,13 +108,6 @@ struct AskModelMenu: View {
             .onChange(of: expanded) { isExpanded in
                 if isExpanded && library.automaticallyLoadsCatalog {
                     Task { await library.refresh(token: auth.accessToken) }
-                }
-            }
-            .task(id: auth.accessToken) {
-                library.adoptLegacySelectionIfNeeded()
-                if library.automaticallyLoadsCatalog {
-                    await library.refresh(token: auth.accessToken)
-                    await library.probeOllama()
                 }
             }
     }

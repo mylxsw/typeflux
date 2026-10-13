@@ -1625,6 +1625,7 @@
 "ask.search.actions" = "Actions";
 "ask.search.conversations" = "Conversations";
 "ask.search.placeholder" = "Search conversations or actions";
+"ask.search.execute" = "Run";
 "ask.launcher.hint" = "↩ Send";
 "ask.launcher.drag" = "Drag to move · double-click to center";
 "ask.quick.calculator" = "Calculator";

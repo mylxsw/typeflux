@@ -10,12 +10,15 @@ public struct TypefluxGlassContainer<Content: View>: View {
     private let radius: TypefluxRadius
     private let placement: GlassPlacement
     private let content: Content
+    private let opaqueFill: Color
 
     public init(radius: TypefluxRadius = .popover, placement: GlassPlacement = .floating,
+                opaqueFill: Color = TypefluxColor.windowBackground.color,
                 @ViewBuilder content: () -> Content) {
         self.radius = radius
         self.placement = placement
         self.content = content()
+        self.opaqueFill = opaqueFill
     }
 
     private var material: GlassMaterial {
@@ -32,7 +35,7 @@ public struct TypefluxGlassContainer<Content: View>: View {
         content
             // Separate AppKit layers keep animated content from recompositing the glass.
             .background(GlassBackground(material: material, corner: radius.value(for: style),
-                                        opaqueFill: TypefluxColor.windowBackground.color, placement: placement,
+                                        opaqueFill: opaqueFill, placement: placement,
                                         cornerStyle: radius == .spotlightInput ? .circular : .continuous)
                 .accessibilityHidden(true))
             .overlay {

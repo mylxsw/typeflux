@@ -143,12 +143,9 @@ struct AskRedesignLayoutTests {
     @Test func workspaceKeepsTheWiderSidebarDistinctFromTheTranscript() async throws {
         _ = NSApplication.shared
         let fixture = try AskTestFixture()
-        let key = "ask.sidebarCollapsed"
-        let previous = UserDefaults.standard.object(forKey: key)
-        UserDefaults.standard.set(false, forKey: key)
+        let defaults = fixture.model.modelLibrary.settings.defaults
+        defaults.set(false, forKey: "ask.sidebarCollapsed")
         defer {
-            if let previous { UserDefaults.standard.set(previous, forKey: key) }
-            else { UserDefaults.standard.removeObject(forKey: key) }
             fixture.model.resetSession()
             try? FileManager.default.removeItem(at: fixture.root)
         }
@@ -156,6 +153,7 @@ struct AskRedesignLayoutTests {
             // Bitmap caching cannot capture WindowServer glass. Exercise the opaque fallback
             // explicitly and sample semantic surfaces away from the Liquid Glass inset.
             let bitmap = try await render(AskConversationView(model: fixture.model)
+                .defaultAppStorage(defaults)
                 .environment(\.interfaceStyle, .liquidGlass)
                 .environment(\.askGlassMaterialOverride, .opaque)
                 .environment(\.colorScheme, appearance == .aqua ? .light : .dark),

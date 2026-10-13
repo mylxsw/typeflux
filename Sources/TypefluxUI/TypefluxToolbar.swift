@@ -5,20 +5,31 @@ public struct TypefluxToolbar: ToolbarContent {
     private let prominent: TypefluxToolbarAction?
     private let accessories: AnyView?
     private let separatesGroups: Bool
+    private let separatesProminent: Bool
 
     public init(groups: [TypefluxToolbarGroup] = [], prominent: TypefluxToolbarAction? = nil,
-                accessories: AnyView? = nil, separatesGroups: Bool = false) {
+                accessories: AnyView? = nil, separatesGroups: Bool = false, separatesProminent: Bool = false) {
         self.groups = groups.filter { !$0.actions.isEmpty }
         self.prominent = prominent
         self.accessories = accessories
         self.separatesGroups = separatesGroups
+        self.separatesProminent = separatesProminent
     }
 
     public var body: some ToolbarContent {
         ForEach(groups) { group in
             if group.id != groups.first?.id { groupSpacer }
-            ToolbarItemGroup(placement: .primaryAction) {
-                ForEach(group.actions) { action in TypefluxToolbarButton(action: action) }
+            if separatesProminent {
+                ToolbarItem(id: group.id, placement: .primaryAction) {
+                    HStack(spacing: 0) {
+                        ForEach(group.actions) { action in TypefluxToolbarButton(action: action) }
+                    }
+                    .buttonStyle(.borderless)
+                }
+            } else {
+                ToolbarItemGroup(placement: .primaryAction) {
+                    ForEach(group.actions) { action in TypefluxToolbarButton(action: action) }
+                }
             }
         }
         if let accessories {
@@ -32,7 +43,7 @@ public struct TypefluxToolbar: ToolbarContent {
     }
 
     @ToolbarContentBuilder private var groupSpacer: some ToolbarContent {
-        if separatesGroups {
+        if separatesGroups || separatesProminent {
             #if compiler(>=6.2)
                 if #available(macOS 26, *) {
                     ToolbarSpacer(.fixed, placement: .primaryAction)

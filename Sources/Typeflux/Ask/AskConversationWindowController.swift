@@ -546,6 +546,12 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         dockVisibility.windowDidHide(window)
     }
 
+    func windowDidDeminiaturize(_ notification: Notification) {
+        guard let window = notification.object as? NSWindow, window === conversationWindow,
+              !workspacePresentation.isSearching, !workspacePresentation.showsSidebarDrawer else { return }
+        AskComposerFocus.requestConversationFocus(in: window, controller: self)
+    }
+
     private func showControl(_ active: Bool) {
         guard active else {
             let wasVisible = controlPanel?.isVisible == true
