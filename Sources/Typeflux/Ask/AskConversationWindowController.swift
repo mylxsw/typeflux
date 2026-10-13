@@ -313,6 +313,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             .interfaceStyle(following: interfaceStyle))
         // The height animator sizes the panel while preserving its top edge.
         hosting.sizingOptions = []
+        hosting.frame = NSRect(origin: .zero, size: panel.frame.size)
         panel.contentView = hosting
         launcher = panel
         filePreview.attach(to: panel, style: interfaceStyle)
@@ -354,17 +355,25 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         let screen = launcherScreen?.visibleFrame
         let height = min(requestedHeight, screen.map { max(1, $0.height - AskLauncherPlacement.screenMargin * 2) }
                          ?? requestedHeight)
-        launcherHeightAnimator.update(from: launcher.frame.height, to: height,
+        let scale = max(1, launcher.backingScaleFactor)
+        let targetHeight = (height * scale).rounded() / scale
+        launcherHeightAnimator.update(from: launcher.frame.height, to: targetHeight,
                                       animated: launcher.isVisible && !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion,
                                       framesPerSecond: launcher.screen?.maximumFramesPerSecond ?? 60,
                                       rate: model.launcherDraft.text.isEmpty ? 60 : 28) { [weak self, weak launcher] height in
             guard let self, let launcher else { return }
             CATransaction.begin()
             CATransaction.setDisableActions(true)
-            launcher.setFrame(AskLauncherPlacement.resized(launcher.frame, height: height,
+            // Keep the native window and editor on the same backing-pixel boundary throughout the spring.
+            let scale = max(1, launcher.backingScaleFactor)
+            let committedHeight = (height * scale).rounded() / scale
+            launcher.setFrame(AskLauncherPlacement.resized(launcher.frame, height: committedHeight,
                               top: self.launcherOpeningTop, screen: launcher.screen?.visibleFrame), display: false)
             self.filePreview.updateFrame()
-            launcher.contentView?.layoutSubtreeIfNeeded()
+            if let content = launcher.contentView {
+                content.frame = NSRect(origin: .zero, size: launcher.contentRect(forFrameRect: launcher.frame).size)
+                content.layoutSubtreeIfNeeded()
+            }
             launcher.displayIfNeeded()
             CATransaction.commit()
         }

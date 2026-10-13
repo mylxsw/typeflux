@@ -15,7 +15,7 @@ struct AskSpotlightPanelTests {
             }
             .environment(\.interfaceStyle, style)
             .environment(\.glassMaterialOverride, .opaque)
-            try await TypefluxNavigationTestSupport.withWindow(view) { window, _ in
+            try await TypefluxNavigationTestSupport.withWindow(view, nonactivating: true) { window, _ in
                 let button = try #require(SettingsBehaviorTestSupport.elements(in: window).first {
                     $0.value("accessibilityIdentifier") as? String == "ask.launcher.openChat"
                 })
@@ -51,7 +51,7 @@ struct AskSpotlightPanelTests {
         let view = AskLauncherView(model: fixture.model, onDismiss: {})
             .environment(\.interfaceStyle, style)
             .environment(\.glassMaterialOverride, .opaque)
-        try await TypefluxNavigationTestSupport.withWindow(view) { window, _ in
+        try await TypefluxNavigationTestSupport.withWindow(view, nonactivating: true) { window, _ in
             for query in ["", "Question"] {
                 fixture.model.launcherDraft.text = query
                 try await Task.sleep(for: .milliseconds(150))
@@ -81,7 +81,7 @@ struct AskSpotlightPanelTests {
                                         onClose: { closed += 1 })
             .environment(\.interfaceStyle, style)
             .environment(\.glassMaterialOverride, .opaque)
-        try await TypefluxNavigationTestSupport.withWindow(view) { window, _ in
+        try await TypefluxNavigationTestSupport.withWindow(view, nonactivating: true) { window, _ in
             let editor = try #require(window.firstResponder as? NSTextView)
             try TypefluxNavigationTestSupport.sendKey(36, to: window)
             #expect(actions == [.newConversation])
@@ -103,7 +103,7 @@ struct AskSpotlightPanelTests {
                                         onOpen: { opened.append($0) }, onClose: {})
             .environment(\.interfaceStyle, style)
             .environment(\.glassMaterialOverride, .opaque)
-        try await TypefluxNavigationTestSupport.withWindow(view) { window, _ in
+        try await TypefluxNavigationTestSupport.withWindow(view, nonactivating: true) { window, _ in
             try TypefluxNavigationTestSupport.sendKey(126, to: window)
             try await Task.sleep(for: .milliseconds(50))
             try TypefluxNavigationTestSupport.sendKey(36, to: window)
@@ -124,7 +124,7 @@ struct AskSpotlightPanelTests {
         let view = AskCommandPaletteView(state: state, onPick: { picked.append($0) }, onHighlight: { _ in })
             .environment(\.interfaceStyle, style)
             .environment(\.glassMaterialOverride, .opaque)
-        try await TypefluxNavigationTestSupport.withWindow(view) { _, host in
+        try await TypefluxNavigationTestSupport.withWindow(view, nonactivating: true) { _, host in
             let action = try SettingsBehaviorTestSupport.button("Help", in: host)
             try action.press()
             #expect(picked == [0])
@@ -136,7 +136,8 @@ struct AskSpotlightPanelTests {
 
     @Test func arrowMonitorLeavesMarkedTextAloneAndReleasesItsHandler() async throws {
         try await TypefluxNavigationTestSupport.withWindow(Color.clear,
-                                                           size: NSSize(width: 400, height: 200)) { window, _ in
+                                                           size: NSSize(width: 400, height: 200),
+                                                           nonactivating: true) { window, _ in
             let editor = MarkedEditor(frame: NSRect(x: 0, y: 0, width: 400, height: 200))
             window.contentView = editor
             let monitor = AskArrowKeyMonitor.MonitorView()
@@ -157,15 +158,18 @@ struct AskSpotlightPanelTests {
     }
 
     @Test func paletteWindowTeardownAllowsANonactivatingClipboardPanelToTakeFocus() async throws {
+        let previousPolicy = NSApplication.shared.activationPolicy()
         weak var paletteWindow: NSWindow?
         let view = AskSearchPaletteView(conversations: [], available: [.newConversation],
                                        onAction: { _ in }, onOpen: { _ in }, onClose: {})
-        try await TypefluxNavigationTestSupport.withWindow(view) { window, _ in
+        try await TypefluxNavigationTestSupport.withWindow(view, nonactivating: true) { window, _ in
             paletteWindow = window
             #expect(window.isKeyWindow)
         }
         #expect(paletteWindow?.isVisible != true)
         #expect(paletteWindow?.contentView == nil)
+        #expect(paletteWindow?.isKeyWindow != true)
+        #expect(NSApp.activationPolicy() == previousPolicy)
         try await SettingsBehaviorTestSupport.withFixture { settings in
             let model = ClipboardPanelModel()
             model.reset(entries: [ClipboardTestSupport.entry(.text, text: "Original")])

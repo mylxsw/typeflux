@@ -44,7 +44,7 @@ struct TypefluxSpotlightSurfaceLayoutTests {
         let view = ChangingResults(state: state)
             .environment(\.interfaceStyle, style)
             .environment(\.glassMaterialOverride, .opaque)
-        try await TypefluxNavigationTestSupport.withWindow(view) { window, host in
+        try await TypefluxNavigationTestSupport.withWindow(view, nonactivating: true) { window, host in
             let field = try #require(TypefluxNavigationTestSupport.searchField(in: host))
             func topInset() -> CGFloat {
                 let frame = window.convertToScreen(field.convert(field.bounds, to: nil))
@@ -70,7 +70,7 @@ struct TypefluxSpotlightSurfaceLayoutTests {
             .environment(\.glassMaterialOverride, .opaque)
             .frame(width: 600, height: 140, alignment: .top)
             .clipped()
-        try await TypefluxNavigationTestSupport.withWindow(view) { window, host in
+        try await TypefluxNavigationTestSupport.withWindow(view, nonactivating: true) { window, host in
             let field = try #require(TypefluxNavigationTestSupport.searchField(in: host))
             func screenFrame() -> NSRect { window.convertToScreen(field.convert(field.bounds, to: nil)) }
             let anchor = screenFrame()
@@ -91,7 +91,7 @@ struct TypefluxSpotlightSurfaceLayoutTests {
         let view = ChangingResults(state: state)
             .environment(\.interfaceStyle, style)
             .environment(\.glassMaterialOverride, .opaque)
-        try await TypefluxNavigationTestSupport.withWindow(view) { window, host in
+        try await TypefluxNavigationTestSupport.withWindow(view, nonactivating: true) { window, host in
             let field = try #require(TypefluxNavigationTestSupport.searchField(in: host))
             let recorder = InputResizeRecorder(input: field)
             let anchor = recorder.screenTop
@@ -126,7 +126,7 @@ struct TypefluxSpotlightSurfaceLayoutTests {
             .environment(\.interfaceStyle, style)
             .environment(\.glassMaterialOverride, .visualEffect)
             .environment(\.typefluxAccessibilityOptions, options)
-            try await TypefluxNavigationTestSupport.withWindow(view) { _, host in
+            try await TypefluxNavigationTestSupport.withWindow(view, nonactivating: true) { _, host in
                 #expect(!descendants(host).contains { $0 is NSVisualEffectView })
             }
         }
