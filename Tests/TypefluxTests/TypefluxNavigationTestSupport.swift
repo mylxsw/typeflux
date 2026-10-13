@@ -58,7 +58,7 @@ enum TypefluxNavigationTestSupport {
 
     static func withWindow(_ view: some View, size: NSSize = NSSize(width: 900, height: 600),
                            nonactivating: Bool = false,
-                           run: (NSWindow, NSView) async throws -> Void) async throws {
+                           run: @MainActor (NSWindow, NSView) async throws -> Void) async throws {
         if nonactivating {
             try await withNonactivatingPanel(view, size: size, run: run)
             return
@@ -102,7 +102,7 @@ enum TypefluxNavigationTestSupport {
 
     /// Spotlight-style fixtures need a non-activating panel that keeps the runner's activation policy.
     private static func withNonactivatingPanel(_ view: some View, size: NSSize,
-                                               run: (NSWindow, NSView) async throws -> Void) async throws {
+                                               run: @MainActor (NSWindow, NSView) async throws -> Void) async throws {
         prepareApplication()
         let rect = NSRect(origin: NSPoint(x: 100, y: 100), size: size)
         let window = TypefluxNonactivatingTestPanel(contentRect: rect,
