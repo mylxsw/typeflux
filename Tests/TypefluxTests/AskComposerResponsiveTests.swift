@@ -126,10 +126,7 @@ struct AskComposerResponsiveTests {
         #expect(host.bounds.contains(voice.convert(voice.bounds, to: host)))
     }
 
-    // Run native NSMenu interactions in their own process: in SwiftPM's test
-    // host, this test can interrupt subsequent window tests after it completes.
-    // TYPEFLUX_ASK_CONTEXT_MENU_TESTS=1 swift test --no-parallel --filter 'AskComposerResponsiveTests.*compactContextMenu'
-    @Test(.enabled(if: ProcessInfo.processInfo.environment["TYPEFLUX_ASK_CONTEXT_MENU_TESTS"] == "1"))
+    @Test
     func compactContextMenuTogglesMemoryAndOpensUsage() async throws {
         _ = NSApplication.shared
         NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
@@ -245,44 +242,7 @@ struct AskComposerResponsiveTests {
 
     @discardableResult
     private func selectMenuItem(_ title: String, using button: NSPopUpButton) throws -> NSControl.StateValue? {
-        var selected = false
-        var state: NSControl.StateValue?
-        var titles: [String] = []
-        let escape = try #require(NSEvent.keyEvent(
-            with: .keyDown, location: .zero, modifierFlags: [], timestamp: ProcessInfo.processInfo.systemUptime,
-            windowNumber: button.window?.windowNumber ?? 0, context: nil, characters: "\u{1b}",
-            charactersIgnoringModifiers: "\u{1b}", isARepeat: false, keyCode: 53
-        ))
-        var escapePosted = false
-        // SwiftUI populates the NSMenu only when tracking starts. Run the
-        // selection in that tracking loop, then close it before dispatching.
-        let timer = Timer(timeInterval: 0.2, repeats: false) { _ in
-            MainActor.assumeIsolated {
-                guard let menu = button.menu else {
-                    // A missing menu must fail the test instead of trapping the runner in tracking.
-                    escapePosted = true
-                    NSApp.postEvent(escape, atStart: true)
-                    return
-                }
-                titles = menu.items.map(\.title)
-                let index = menu.items.firstIndex { $0.title == title }
-                menu.cancelTrackingWithoutAnimation()
-                if let index {
-                    state = menu.items[index].state
-                    menu.performActionForItem(at: index)
-                    selected = true
-                }
-            }
-        }
-        RunLoop.main.add(timer, forMode: .eventTracking)
-        RunLoop.main.add(timer, forMode: .common)
-        defer {
-            timer.invalidate()
-            if escapePosted { AskWorkspaceTestMouse.removeIfQueued(escape, matching: .keyDown) }
-        }
-        button.performClick(nil)
-        try #require(selected, "Menu item \(title) missing from \(titles)")
-        return state
+        try AppKitTestActions.selectMenuItem(title, using: button)
     }
 
     private func accessibilityElement(identifier: String, in window: NSWindow) throws -> NSObject {

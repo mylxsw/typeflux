@@ -340,9 +340,10 @@ struct AskResponsiveWorkspaceTests {
             timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber, context: nil,
             characters: characters, charactersIgnoringModifiers: characters, isARepeat: false, keyCode: code))
         if modifiers.contains(.command) {
-            #expect(window.performKeyEquivalent(with: event), "The window must handle its search shortcut.")
+            #expect(try AppKitTestActions.keyEquivalent(event, in: window),
+                    "The window must handle its search shortcut.")
         } else {
-            NSApp.sendEvent(event)
+            window.sendEvent(event)
         }
     }
 

@@ -6,8 +6,7 @@ import TypefluxUI
 @Suite("TypefluxUI native content menus", .serialized, .exclusiveUIState)
 @MainActor
 struct TypefluxUIControlsMenuTests {
-    // Native menu tracking runs in a dedicated process, like TypefluxPopupMenuTests.
-    @Test(.enabled(if: ProcessInfo.processInfo.environment["TYPEFLUX_UI_CONTENT_MENUS"] == "1"))
+    @Test
     func `both pop-up styles select and both pull-down styles dispatch`() async throws {
         _ = NSApplication.shared
         var selection = 0
@@ -42,23 +41,7 @@ struct TypefluxUIControlsMenuTests {
     }
 
     private func chooseNativeItem(using button: NSPopUpButton) throws {
-        var selected = false
-        var titles: [String] = []
-        // SwiftUI populates NSMenu only inside the native tracking loop.
-        let timer = Timer(timeInterval: 0.2, repeats: false) { _ in
-            MainActor.assumeIsolated {
-                guard let menu = button.menu else { return }
-                titles = menu.items.map(\.title)
-                let index = menu.items.firstIndex { $0.title == "Manual" || $0.title == "Import file" }
-                menu.cancelTrackingWithoutAnimation()
-                if let index { menu.performActionForItem(at: index); selected = true }
-            }
-        }
-        RunLoop.main.add(timer, forMode: .eventTracking)
-        RunLoop.main.add(timer, forMode: .common)
-        defer { timer.invalidate() }
-        button.performClick(nil)
-        try #require(selected, "Missing item in native menu: \(titles)")
+        try AppKitTestActions.selectMenuItem(button.pullsDown ? "Import file" : "Manual", using: button)
     }
 
     private func descendants(_ view: NSView) -> [NSView] { [view] + view.subviews.flatMap(descendants) }

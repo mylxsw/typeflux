@@ -96,7 +96,7 @@ struct AskWorkspaceWindowTests {
                                                  windowNumber: window.windowNumber, context: nil,
                                                  characters: "s", charactersIgnoringModifiers: "s",
                                                  isARepeat: false, keyCode: 1))
-        #expect(window.performKeyEquivalent(with: event))
+        #expect(try AppKitTestActions.keyEquivalent(event, in: window))
     }
 
     private func closeLibraryWindow(style: InterfaceStyle) async throws {
