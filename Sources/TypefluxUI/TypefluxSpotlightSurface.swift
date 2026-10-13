@@ -103,7 +103,7 @@ public struct TypefluxSpotlightSurface<Results: View, Hints: View>: View {
 
     @ViewBuilder private var customPanel: some View {
         if style == .classic {
-            TypefluxSpotlightContentPlacement(spacing: 0, fillsAvailableHeight: fillsAvailableHeight) {
+            VStack(spacing: 0) {
                 customHeader
                 if showsResults {
                     VStack(spacing: 0) {
@@ -112,12 +112,12 @@ public struct TypefluxSpotlightSurface<Results: View, Hints: View>: View {
                     }
                 }
             }
+            .frame(maxWidth: .infinity, maxHeight: fillsAvailableHeight ? .infinity : nil, alignment: .top)
             .background { surface(.spotlightResults) }
             .clipShape(RoundedRectangle(cornerRadius: TypefluxRadius.spotlightResults.value(for: style)))
         } else {
             TypefluxGlassGroup(spacing: TypefluxSpotlightMetrics.resultsSpacing(for: style)) {
-                TypefluxSpotlightContentPlacement(spacing: TypefluxSpotlightMetrics.resultsSpacing(for: style),
-                                                   fillsAvailableHeight: fillsAvailableHeight) {
+                VStack(spacing: TypefluxSpotlightMetrics.resultsSpacing(for: style)) {
                     customHeader
                     if showsResults {
                         results.background { surface(.spotlightResults) }
@@ -125,6 +125,7 @@ public struct TypefluxSpotlightSurface<Results: View, Hints: View>: View {
                                 cornerRadius: TypefluxRadius.spotlightResults.value(for: style)))
                     }
                 }
+                .frame(maxWidth: .infinity, maxHeight: fillsAvailableHeight ? .infinity : nil, alignment: .top)
             }
         }
     }

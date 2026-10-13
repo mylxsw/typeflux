@@ -1619,7 +1619,7 @@ struct AskComposer: View {
             onOpenChat: launcher ? openChatOrMonitorWindow : nil,
             onContextShortcut: launcher ? toggleContextPanel : nil
         )
-        .frame(height: min(editorHeight, layout.editorMaximumHeight), alignment: launcher ? .top : .center)
+        .frame(height: min(editorHeight, layout.editorMaximumHeight))
         .disabled(model.isOpeningChat || (!launcher && model.isLoadingSelection))
     }
 

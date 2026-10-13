@@ -16,6 +16,7 @@ extension AskLauncherToggleTests {
         let container: NSView
         private(set) var panelTops: [CGFloat] = []
         private(set) var editorTops: [CGFloat] = []
+        private(set) var editorHeights: [CGFloat] = []
         private(set) var heights: [CGFloat] = []
         private var observers: [NSObjectProtocol] = []
 
@@ -44,6 +45,7 @@ extension AskLauncherToggleTests {
         func sample() {
             panelTops.append(panel.frame.maxY)
             editorTops.append(editorTop)
+            editorHeights.append(container.frame.height)
             heights.append(panel.frame.height)
         }
 
@@ -200,8 +202,13 @@ extension AskLauncherToggleTests {
         #expect(recorder.panelTops.count > 10, "resizes were observed")
         let topDrift = recorder.panelTops.map { abs($0 - topAnchor) }.max() ?? 0
         let editorDrift = recorder.editorTops.map { abs($0 - editorAnchor) }.max() ?? 0
+        let peak = recorder.editorTops.indices.max {
+            abs(recorder.editorTops[$0] - editorAnchor) < abs(recorder.editorTops[$1] - editorAnchor)
+        } ?? 0
         #expect(topDrift < 0.5, "the panel's top edge moved by \(topDrift)")
-        #expect(editorDrift < 0.5, "the editor and its controls moved by \(editorDrift)")
+        #expect(editorDrift < 0.5, "the editor and its controls moved by \(editorDrift); "
+            + "at window height \(recorder.heights[peak]), editor height \(recorder.editorHeights[peak]), "
+            + "editor top \(recorder.editorTops[peak]), anchor \(editorAnchor)")
     }
 
     @Test func theListGrowsWithoutShrinkingWhileMatchesComeAndGo() async throws {

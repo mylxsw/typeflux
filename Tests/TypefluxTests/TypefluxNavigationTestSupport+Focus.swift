@@ -22,23 +22,28 @@ extension TypefluxNavigationTestSupport {
         delegate.controlTextDidChange?(Notification(name: NSControl.textDidChangeNotification, object: field))
     }
 
-    static func sendAction(_ element: SettingsBehaviorTestSupport.Element) throws {
-        let cellControl = (element.object as? NSCell)?.controlView as? NSControl
-        let control = (element.object as? NSControl) ?? cellControl
-            ?? element.window?.contentView.flatMap { host in
-                descendants(of: host).compactMap { $0 as? NSButton }.first {
-                    let frame = $0.window?.convertToScreen($0.convert($0.bounds, to: nil)) ?? .zero
-                    return frame.intersects(element.frame) && ($0.title == element.label
-                        || $0.accessibilityLabel() == element.label)
-                }
+    static func wait(_ description: String, in window: NSWindow, host: NSView,
+                     diagnostics: () -> String = { "" }, until condition: () -> Bool) async throws {
+        let deadline = ContinuousClock.now + .seconds(3)
+        while !condition() {
+            guard ContinuousClock.now < deadline else {
+                let field = searchField(in: host)
+                let responder = window.firstResponder.map { NSStringFromClass(type(of: $0)) } ?? "nil"
+                let detail = "visible=\(window.isVisible), responder=\(responder), "
+                    + "searchField=\(field != nil), fieldEditor=\(field?.currentEditor() != nil), "
+                    + "fieldQuery=\(field?.stringValue.debugDescription ?? "nil"). \(diagnostics())"
+                Issue.record("Timed out waiting for \(description): \(detail)")
+                throw FocusReadinessTimeout(description: description)
             }
-        let sender = try #require(control, "Missing native action sender for \(element.label)")
-        _ = try #require(sender.isEnabled)
-        let action = try #require(sender.action)
-        #expect(NSApp.sendAction(action, to: sender.target, from: sender))
+            try await Task.sleep(for: .milliseconds(10))
+        }
     }
 
     static func descendants(of view: NSView) -> [NSView] {
         [view] + view.subviews.flatMap { descendants(of: $0) }
     }
+}
+
+private struct FocusReadinessTimeout: Error, CustomStringConvertible {
+    let description: String
 }

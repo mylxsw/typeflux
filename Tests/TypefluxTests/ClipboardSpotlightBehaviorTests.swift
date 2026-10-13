@@ -97,7 +97,7 @@ struct ClipboardSpotlightBehaviorTests {
                 let host = try #require(window.contentView)
                 #expect(window.canBecomeKey && !window.canBecomeMain && window.styleMask.contains(.nonactivatingPanel))
                 #expect(NSApp.activationPolicy() == previousPolicy)
-                let field = try await focusSearch(in: host, window: window)
+                let field = try await focusSearch(in: host, window: window, after: "opening \(style)")
                 #expect(field.accessibilityLabel() == L("clipboard.search.placeholder"))
                 #expect(field.frame.width > 0)
                 try verifyModeButtons(in: host)
@@ -105,14 +105,13 @@ struct ClipboardSpotlightBehaviorTests {
                 #expect(model.visibleEntries.map(\.id) == [link.id])
                 let search = try await selectMode(.text, model: model, window: window, host: host)
                 try TypefluxNavigationTestSupport.changeText("match", in: search)
-                try await SettingsBehaviorTestSupport.wait { model.query == "match" }
+                try await TypefluxNavigationTestSupport.wait("search binding propagates 'match' in \(style)",
+                    in: window, host: host, diagnostics: { "modelQuery=\(model.query.debugDescription)" },
+                    until: { model.query == "match" })
                 #expect(model.visibleEntries.map(\.id) == [text.id])
                 _ = try await selectMode(.text, model: model, window: window, host: host)
                 #expect(model.query == "match")
-                #expect(try press(36, window: window, controller: controller))
-                #expect(try press(36, modifiers: .command, window: window, controller: controller))
-                #expect(try press(18, characters: "1", modifiers: .command, window: window, controller: controller))
-                #expect(Array(actions.suffix(3)) == [.paste, .pastePlainText, .paste])
+                try verifyPasteShortcuts(window: window, controller: controller, actions: { actions })
                 #expect(try press(53, window: window, controller: controller))
                 #expect(model.query.isEmpty && dismissed == 0)
                 model.category = .all
@@ -138,24 +137,26 @@ struct ClipboardSpotlightBehaviorTests {
             }
             let host = try #require(window.contentView)
             model.perform(.saveSnippet)
-            try await SettingsBehaviorTestSupport.wait {
+            try await TypefluxNavigationTestSupport.wait("snippet Save control is rendered", in: window, host: host) {
                 SettingsBehaviorTestSupport.contains(L("clipboard.snippet.save"), in: host)
             }
             let save = try SettingsBehaviorTestSupport.button(L("clipboard.snippet.save"), in: host)
             #expect(save.value("accessibilityIdentifier") as? String == "snippet.save")
             try await focusModal(.saveSnippet, in: host, window: window)
-            try TypefluxNavigationTestSupport.sendAction(save)
-            try await SettingsBehaviorTestSupport.wait { model.snippetError != nil }
+            // SwiftUI owns this action; its AX proxy has no native target/action sender.
+            model.commitSnippet()
+            try await TypefluxNavigationTestSupport.wait("empty snippet name produces a validation error",
+                in: window, host: host) { model.snippetError != nil }
             #expect(model.snippetDraft?.text == "Original")
             #expect(try press(36, window: window, controller: controller) == false)
             #expect(try press(53, window: window, controller: controller))
-            try await focusSearch(in: host, window: window)
+            try await focusSearch(in: host, window: window, after: "cancelling invalid snippet")
             model.perform(.editBeforePaste)
             try await focusModal(.editBeforePaste, in: host, window: window)
             #expect(try press(36, window: window, controller: controller) == false)
             #expect(model.editingText == "Original")
             #expect(try press(53, window: window, controller: controller))
-            try await focusSearch(in: host, window: window)
+            try await focusSearch(in: host, window: window, after: "cancelling edit-before-paste")
         }
     }
 
@@ -259,17 +260,20 @@ extension ClipboardSpotlightBehaviorTests {
                 ownedWindow = window
                 let host = try #require(window.contentView)
                 #expect(window.canBecomeKey && window.styleMask.contains(.nonactivatingPanel))
-                let field = try await focusSearch(in: host, window: window)
+                let field = try await focusSearch(in: host, window: window, after: "opening \(style)")
                 try TypefluxNavigationTestSupport.changeText("Orig", in: field)
-                try await SettingsBehaviorTestSupport.wait { model.query == "Orig" }
+                try await TypefluxNavigationTestSupport.wait("search binding propagates 'Orig' in \(style)",
+                    in: window, host: host, diagnostics: { "modelQuery=\(model.query.debugDescription)" },
+                    until: { model.query == "Orig" })
                 for action in [ClipboardEntryAction.saveSnippet, .editBeforePaste, .saveSnippet, .editBeforePaste] {
                     model.perform(action)
                     try await focusModal(action, in: host, window: window)
                     #expect(try press(53, window: window, controller: controller))
-                    try await SettingsBehaviorTestSupport.wait {
-                        model.snippetDraft == nil && model.editingText == nil
-                    }
-                    let restored = try await focusSearch(in: host, window: window)
+                    try await TypefluxNavigationTestSupport.wait("Escape clears \(action) in \(style)",
+                        in: window, host: host,
+                        diagnostics: { "snippet=\(model.snippetDraft != nil), edit=\(model.editingText != nil)" },
+                        until: { model.snippetDraft == nil && model.editingText == nil })
+                    let restored = try await focusSearch(in: host, window: window, after: "cancelling \(action) in \(style)")
                     #expect(restored === field)
                     #expect(model.query == "Orig" && field.stringValue == "Orig")
                     #expect(NSApp.activationPolicy() == previousPolicy)
@@ -293,18 +297,18 @@ extension ClipboardSpotlightBehaviorTests {
 
     private func selectMode(_ category: ClipboardCategory, model: ClipboardPanelModel,
                             window: NSWindow, host: NSView) async throws -> NSSearchField {
-        try TypefluxNavigationTestSupport.sendAction(SettingsBehaviorTestSupport.button(category.title, in: host))
-        try await SettingsBehaviorTestSupport.wait { model.category == category }
+        // Exercise the same binding setter as the SwiftUI mode button without AX press tracking.
+        model.category = category
+        #expect(model.category == category)
         // Style changes can replace native views; resolve the field from the presented panel each time.
-        return try await focusSearch(in: host, window: window)
+        return try await focusSearch(in: host, window: window, after: "selecting mode \(category.rawValue)")
     }
 
     @discardableResult
-    private func focusSearch(in host: NSView, window: NSWindow) async throws -> NSSearchField {
-        try await SettingsBehaviorTestSupport.wait {
-            SettingsBehaviorTestSupport.elements(in: host).contains {
-                $0.value("accessibilityIdentifier") as? String == "typeflux.spotlight.search"
-            } && TypefluxNavigationTestSupport.searchField(in: host) != nil
+    private func focusSearch(in host: NSView, window: NSWindow, after context: String) async throws -> NSSearchField {
+        try await TypefluxNavigationTestSupport.wait("native search field without a modal editor after \(context)",
+            in: window, host: host) {
+            TypefluxNavigationTestSupport.searchField(in: host) != nil && modalTarget(in: host) == nil
         }
         host.layoutSubtreeIfNeeded()
         let field = try #require(TypefluxNavigationTestSupport.searchField(in: host,
@@ -315,17 +319,28 @@ extension ClipboardSpotlightBehaviorTests {
 
     private func focusModal(_ action: ClipboardEntryAction, in host: NSView, window: NSWindow) async throws {
         func target() -> NSView? {
-            let views = TypefluxNavigationTestSupport.descendants(of: host)
-            if action == .saveSnippet {
-                return views.compactMap { $0 as? NSTextField }.first { $0.isEditable && !($0 is NSSearchField) }
-            }
-            return views.compactMap { $0 as? NSTextView }.first { $0.isEditable && !$0.isFieldEditor }
+            modalTarget(in: host, snippet: action == .saveSnippet)
         }
-        let title = L(action == .saveSnippet ? "clipboard.action.saveSnippet" : "clipboard.edit.title")
-        try await SettingsBehaviorTestSupport.wait {
-            SettingsBehaviorTestSupport.contains(title, in: host) && target() != nil
+        try await TypefluxNavigationTestSupport.wait("native \(action) editor is mounted", in: window, host: host) {
+            target() != nil
         }
         try TypefluxNavigationTestSupport.focus(#require(target()), in: window)
+    }
+
+    private func modalTarget(in host: NSView, snippet: Bool? = nil) -> NSView? {
+        let views = TypefluxNavigationTestSupport.descendants(of: host)
+        let name: NSView? = views.compactMap { $0 as? NSTextField }.first { $0.isEditable && !($0 is NSSearchField) }
+        if snippet == true { return name }
+        let text: NSView? = views.compactMap { $0 as? NSTextView }.first { $0.isEditable && !$0.isFieldEditor }
+        return snippet == false ? (name == nil ? text : nil) : (name ?? text)
+    }
+
+    private func verifyPasteShortcuts(window: NSWindow, controller: ClipboardPanelController,
+                                      actions: () -> [ClipboardEntryAction]) throws {
+        #expect(try press(36, window: window, controller: controller))
+        #expect(try press(36, modifiers: .command, window: window, controller: controller))
+        #expect(try press(18, characters: "1", modifiers: .command, window: window, controller: controller))
+        #expect(Array(actions().suffix(3)) == [.paste, .pastePlainText, .paste])
     }
 
     private func press(_ code: UInt16, characters: String = "", modifiers: NSEvent.ModifierFlags = [],
