@@ -44,6 +44,14 @@ struct AskComposerTextView: NSViewRepresentable {
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
+    func sizeThatFits(_ proposal: ProposedViewSize, nsView _: NSScrollView, context _: Context) -> CGSize? {
+        guard let width = proposal.width, let height = proposal.height,
+              width.isFinite, height.isFinite else { return nil }
+        // The composer supplies the measured editor height. Do not let NSScrollView's
+        // fitting size center a smaller native viewport inside that explicit frame.
+        return CGSize(width: max(0, width), height: max(0, height))
+    }
+
     func makeNSView(context: Context) -> NSScrollView {
         let scroll = NSScrollView()
         scroll.drawsBackground = false

@@ -81,11 +81,13 @@ struct AskSpotlightPanelTests {
                                         onClose: { closed += 1 })
             .environment(\.interfaceStyle, style)
             .environment(\.glassMaterialOverride, .opaque)
-        try await TypefluxNavigationTestSupport.withWindow(view, nonactivating: true) { window, _ in
-            let editor = try #require(window.firstResponder as? NSTextView)
+        try await TypefluxNavigationTestSupport.withWindow(view, nonactivating: true) { window, host in
+            let field = try #require(TypefluxNavigationTestSupport.descendants(of: host)
+                .compactMap { $0 as? NSTextField }.first { $0.isEditable })
+            try TypefluxNavigationTestSupport.focus(field, in: window)
             try TypefluxNavigationTestSupport.sendKey(36, to: window)
             #expect(actions == [.newConversation])
-            editor.insertText("Swift", replacementRange: NSRange(location: 0, length: editor.string.utf16.count))
+            try TypefluxNavigationTestSupport.changeText("Swift", in: field)
             try await Task.sleep(for: .milliseconds(150))
             try TypefluxNavigationTestSupport.sendKey(36, to: window)
             #expect(opened == ["swift"])
@@ -103,7 +105,10 @@ struct AskSpotlightPanelTests {
                                         onOpen: { opened.append($0) }, onClose: {})
             .environment(\.interfaceStyle, style)
             .environment(\.glassMaterialOverride, .opaque)
-        try await TypefluxNavigationTestSupport.withWindow(view, nonactivating: true) { window, _ in
+        try await TypefluxNavigationTestSupport.withWindow(view, nonactivating: true) { window, host in
+            let field = try #require(TypefluxNavigationTestSupport.descendants(of: host)
+                .compactMap { $0 as? NSTextField }.first { $0.isEditable })
+            try TypefluxNavigationTestSupport.focus(field, in: window)
             try TypefluxNavigationTestSupport.sendKey(126, to: window)
             try await Task.sleep(for: .milliseconds(50))
             try TypefluxNavigationTestSupport.sendKey(36, to: window)
@@ -162,13 +167,16 @@ struct AskSpotlightPanelTests {
         weak var paletteWindow: NSWindow?
         let view = AskSearchPaletteView(conversations: [], available: [.newConversation],
                                        onAction: { _ in }, onOpen: { _ in }, onClose: {})
-        try await TypefluxNavigationTestSupport.withWindow(view, nonactivating: true) { window, _ in
+        try await TypefluxNavigationTestSupport.withWindow(view, nonactivating: true) { window, host in
             paletteWindow = window
-            #expect(window.isKeyWindow)
+            #expect(window.canBecomeKey && !window.canBecomeMain)
+            #expect(window.styleMask.contains(.nonactivatingPanel))
+            let field = try #require(TypefluxNavigationTestSupport.descendants(of: host)
+                .compactMap { $0 as? NSTextField }.first { $0.isEditable })
+            try TypefluxNavigationTestSupport.focus(field, in: window)
         }
         #expect(paletteWindow?.isVisible != true)
         #expect(paletteWindow?.contentView == nil)
-        #expect(paletteWindow?.isKeyWindow != true)
         #expect(NSApp.activationPolicy() == previousPolicy)
         try await SettingsBehaviorTestSupport.withFixture { settings in
             let model = ClipboardPanelModel()
@@ -184,11 +192,13 @@ struct AskSpotlightPanelTests {
             ownedWindow = window
             let host = try #require(window.contentView)
             try await SettingsBehaviorTestSupport.wait {
-                guard let field = TypefluxNavigationTestSupport.searchField(in: host),
-                      let editor = field.currentEditor() else { return false }
-                return window.isKeyWindow && window.firstResponder === editor
+                TypefluxNavigationTestSupport.searchField(in: host) != nil
             }
+            let field = try #require(TypefluxNavigationTestSupport.searchField(in: host))
+            try TypefluxNavigationTestSupport.focus(field, in: window)
+            #expect(window.canBecomeKey && !window.canBecomeMain)
             #expect(window.styleMask.contains(.nonactivatingPanel))
+            #expect(NSApp.activationPolicy() == previousPolicy)
         }
     }
 

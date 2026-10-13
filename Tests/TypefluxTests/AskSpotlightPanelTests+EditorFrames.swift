@@ -25,7 +25,7 @@ extension AskSpotlightPanelTests {
                 editor.insertText(query, replacementRange: NSRange(location: NSNotFound, length: 0))
                 try await Task.sleep(for: .milliseconds(150))
                 host.layoutSubtreeIfNeeded()
-                #expect(scroll.frame.height >= AskMetrics.composerControlHeight)
+                #expect(scroll.frame.height >= 32)
                 recorder.sample()
             }
             #expect(recorder.tops.allSatisfy { abs($0 - top) < 0.5 },

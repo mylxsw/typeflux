@@ -60,11 +60,14 @@ extension AskLauncherToggleTests {
         let defaults: UserDefaults
         let suite: String
         let controller: AskConversationWindowController
+        let previousAccessibility: Any?
 
         func close() {
             controller.dismissLauncher()
             if let window = controller.launcherWindow { TypefluxNavigationTestSupport.closeWindow(window) }
             fixture.model.resetSession()
+            NSApp.accessibilitySetValue(previousAccessibility ?? false,
+                                       forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
             // After the windows' last writes, so nothing recreates the domain.
             defaults.removePersistentDomain(forName: suite)
             try? FileManager.default.removeItem(at: fixture.root)
@@ -111,14 +114,17 @@ extension AskLauncherToggleTests {
     }
 
     fileprivate func openSteadyLauncher(initialQuery: String = "a") async throws -> Session {
-        TypefluxNavigationTestSupport.prepareApplication()
+        _ = NSApplication.shared
+        let previousAccessibility = NSApp.accessibilityAttributeValue(.init(rawValue: "AXEnhancedUserInterface"))
         let suite = "ask-steady-" + UUID().uuidString
         let defaults = try #require(UserDefaults(suiteName: suite))
         let fixture = try AskTestFixture()
         fixture.model.appIndex = AskTestAppIndex(AskTestAppIndex.sample.entries)
         let controller = AskConversationWindowController(settings: SettingsStore(defaults: defaults), model: fixture.model,
                                                         dockVisibility: DockVisibilityController(app: SteadyActivationPolicy()))
-        let owned = Owned(fixture: fixture, defaults: defaults, suite: suite, controller: controller)
+        let owned = Owned(fixture: fixture, defaults: defaults, suite: suite, controller: controller,
+                          previousAccessibility: previousAccessibility)
+        TypefluxNavigationTestSupport.prepareApplication()
         do {
             controller.showLauncher()
             // This controller's own panel: earlier tests can leave other launchers in `NSApp.windows`.

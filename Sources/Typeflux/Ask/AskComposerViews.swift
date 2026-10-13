@@ -1619,9 +1619,7 @@ struct AskComposer: View {
             onOpenChat: launcher ? openChatOrMonitorWindow : nil,
             onContextShortcut: launcher ? toggleContextPanel : nil
         )
-        // Sub-row text measurements must not resize the native scroll view inside the fixed-height input row.
-        .frame(height: launcher ? max(AskMetrics.composerControlHeight, min(editorHeight, layout.editorMaximumHeight))
-                   : min(editorHeight, layout.editorMaximumHeight), alignment: launcher ? .top : .center)
+        .frame(height: min(editorHeight, layout.editorMaximumHeight), alignment: launcher ? .top : .center)
         .disabled(model.isOpeningChat || (!launcher && model.isLoadingSelection))
     }
 
