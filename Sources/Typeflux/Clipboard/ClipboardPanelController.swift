@@ -15,6 +15,7 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
     private weak var model: ClipboardPanelModel?
     private var keyMonitor: Any?
     private var clickMonitor: Any?
+    private var actionsMenu: NSMenu?
     private var focusRequest = 0
     private var quickLookURLs: [URL] = []
     private var previewObservation: AnyCancellable?
@@ -37,9 +38,11 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
     var contentViewportWidth: CGFloat? { layout.width }
 
     func present(_ model: ClipboardPanelModel) {
+        actionsMenu?.cancelTracking()
         previewWidthAnimator.stop()
         previewObservation = nil
         self.model = model
+        model.onShowActions = { [weak self] in self?.showActionsMenu() }
         focusRequest += 1
         layout.setWidth(ClipboardPanelView.size(showsPreview: model.showsPreview).width)
         let panel = panel(for: model)
@@ -81,11 +84,24 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
     }
 
     func dismiss() {
+        actionsMenu?.cancelTracking()
         previewWidthAnimator.stop()
         previewObservation = nil
         closeQuickLook()
         removeMonitors()
         panel?.orderOut(nil)
+    }
+
+    private func showActionsMenu() {
+        guard let panel, panel.isVisible, let model, let host = panel.contentView,
+              model.snippetDraft == nil, model.editingText == nil, model.pendingConfirmation == nil else { return }
+        let presenter = ClipboardPanelActionsMenu(model: model)
+        let menu = presenter.makeMenu()
+        actionsMenu = menu
+        defer { actionsMenu = nil }
+        withExtendedLifetime(presenter) {
+            menu.popUp(positioning: nil, at: NSPoint(x: ClipboardPanelView.width - 16, y: 32), in: host)
+        }
     }
 
     func toggleQuickLook(urls: [URL]) {
@@ -185,6 +201,8 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
 
     /// Maps a key press in the panel (or in Quick Look) to the model. Returns whether it was consumed.
     func handleKeyDown(_ event: NSEvent) -> Bool {
+        // Let native menu tracking own arrows, Return, Escape and its key equivalents.
+        guard actionsMenu == nil else { return false }
         guard let panel, let model, panel.isVisible else { return false }
         if isQuickLookVisible, event.window !== panel {
             return handleQuickLookKeyDown(event)
@@ -214,6 +232,10 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
             hasTextSelection: (editor?.selectedRange().length ?? 0) > 0
         )
         guard let command else { return false }
+        if command == .showActions {
+            if !event.isARepeat { showActionsMenu() }
+            return true
+        }
         Self.run(command, on: model, isRepeat: event.isARepeat)
         return true
     }
@@ -226,7 +248,7 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
         case .previousCategory: model.cycleCategory(forward: false)
         case .cancel: model.cancel()
         case let .action(action): model.perform(action)
-        case .quickPaste, .togglePreview, .showPreview, .hidePreview, .togglePause, .openSettings:
+        case .quickPaste, .togglePreview, .showPreview, .hidePreview, .togglePause, .openSettings, .showActions:
             // Toggles and one-shot commands ignore key repeat.
             if !isRepeat { runOnce(command, on: model) }
         }

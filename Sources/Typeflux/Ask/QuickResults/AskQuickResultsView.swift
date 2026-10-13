@@ -24,7 +24,7 @@ struct AskQuickResultsView: View {
     var onAction: (AskQuickAction) -> Void = { _ in }
     var onShowFileActions: (AskFileHit) -> Void = { _ in }
 
-    @State private var pointer = AskSearchPointer(position: NSEvent.mouseLocation)
+    @State private var hoveredIndex: Int?
     @State private var copied: Int?
     @State private var copiedReset: Task<Void, Never>?
 
@@ -117,7 +117,6 @@ struct AskQuickResultsView: View {
             }
         }
         .transaction { $0.animation = nil; $0.disablesAnimations = true }
-        .onAppear { pointer.position = NSEvent.mouseLocation }
         .onDisappear { copiedReset?.cancel() }
     }
 
@@ -125,10 +124,10 @@ struct AskQuickResultsView: View {
         content(row, index: index, highlighted: index == results.highlighted)
             .modifier(AskLauncherNumberBadge(number: actions == nil ? AskLauncherNumberShortcuts
                     .number(at: index) : nil))
-            .onContinuousHover { phase in
-                if case .active = phase, actions == nil, pointer.moved(to: NSEvent.mouseLocation) {
-                    onHighlight(index)
-                }
+            .background(index != results.highlighted && hoveredIndex == index
+                        ? TypefluxColor.controlBackground.color : .clear)
+            .onHover { hovering in
+                hoveredIndex = hovering ? index : (hoveredIndex == index ? nil : hoveredIndex)
             }
     }
 

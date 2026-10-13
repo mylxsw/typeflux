@@ -155,7 +155,6 @@ struct AskSearchPaletteView: View {
             .modifier(TypefluxSpotlightRow(selected: highlighted))
         }
         .buttonStyle(.plain)
-        .onHover { if $0 { state.highlighted = index } }
         .id(row.id)
         .accessibilityAddTraits(highlighted ? .isSelected : [])
     }

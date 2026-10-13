@@ -8,6 +8,7 @@ public struct TypefluxSpotlightSurface<Results: View, Hints: View>: View {
     @Binding private var focused: Bool
     @Environment(\.interfaceStyle) private var style
     private let prompt: String
+    private let inputSystemImage: String
     private let modes: [TypefluxSpotlightMode]
     private let onEscape: () -> Void
     private let results: Results
@@ -16,13 +17,15 @@ public struct TypefluxSpotlightSurface<Results: View, Hints: View>: View {
     private let placement: GlassPlacement
 
     public init(query: Binding<String>, mode: Binding<String>, focused: Binding<Bool>, prompt: String,
-                modes: [TypefluxSpotlightMode], onEscape: @escaping () -> Void,
+                modes: [TypefluxSpotlightMode], inputSystemImage: String = "magnifyingglass",
+                onEscape: @escaping () -> Void,
                 @ViewBuilder results: () -> Results,
                 @ViewBuilder hints: () -> Hints) {
         _query = query
         _mode = mode
         _focused = focused
         self.prompt = prompt
+        self.inputSystemImage = inputSystemImage
         self.modes = modes
         self.onEscape = onEscape
         self.results = results()
@@ -38,6 +41,7 @@ public struct TypefluxSpotlightSurface<Results: View, Hints: View>: View {
         _mode = .constant("")
         _focused = .constant(false)
         prompt = ""
+        inputSystemImage = "magnifyingglass"
         modes = []
         onEscape = {}
         results = content()
@@ -65,7 +69,7 @@ public struct TypefluxSpotlightSurface<Results: View, Hints: View>: View {
             if style == .classic {
                 TypefluxGlassContainer(radius: .spotlightResults) {
                     VStack(spacing: 0) {
-                        HStack(spacing: 8) { input; modeButtons }.padding(.trailing, 10)
+                        TypefluxSpotlightHeader(input: { input }, modes: { modeButtons }).padding(.trailing, 10)
                         Divider()
                         resultPanel
                     }
@@ -74,10 +78,7 @@ public struct TypefluxSpotlightSurface<Results: View, Hints: View>: View {
             } else {
                 TypefluxGlassGroup(spacing: 12) {
                     VStack(spacing: 12) {
-                        HStack(spacing: 8) {
-                            TypefluxGlassContainer(radius: .spotlightInput) { input }
-                            modeButtons
-                        }
+                        TypefluxSpotlightHeader(input: { input }, modes: { modeButtons })
                         TypefluxGlassContainer(radius: .spotlightResults) { resultPanel }
                             .clipShape(RoundedRectangle(
                                 cornerRadius: TypefluxRadius.spotlightResults.value(for: style)))
@@ -93,7 +94,7 @@ public struct TypefluxSpotlightSurface<Results: View, Hints: View>: View {
 
     private var input: some View {
         HStack(spacing: 8) {
-            Image(systemName: "magnifyingglass").foregroundStyle(TypefluxColor.secondaryLabel.color)
+            Image(systemName: inputSystemImage).foregroundStyle(TypefluxColor.secondaryLabel.color)
                 .accessibilityHidden(true)
             TypefluxNativeSearchField(text: $query, focused: $focused, prompt: prompt,
                                       identifier: "typeflux.spotlight.search", borderless: true, onEscape: onEscape)
@@ -110,40 +111,30 @@ public struct TypefluxSpotlightSurface<Results: View, Hints: View>: View {
         .fixedSize()
     }
 
-    @ViewBuilder private func modeButton(_ item: TypefluxSpotlightMode) -> some View {
+    private func modeButton(_ item: TypefluxSpotlightMode) -> some View {
         let selected = mode == item.id
-        let button = Button {
-            mode = item.id
-            focused = true
-        } label: {
-            Label(item.title, systemImage: item.systemImage).labelStyle(.iconOnly)
-                .frame(width: style == .classic ? 30 : TypefluxControlHeight.spotlightModeButton.value(for: style),
-                       height: style == .classic ? 26 : TypefluxControlHeight.spotlightModeButton.value(for: style))
-        }
-        .buttonStyle(.borderless)
-        // Keep the nonactivating panel's field editor while switching modes.
-        .focusable(false)
-        .help(item.title)
-        .accessibilityLabel(item.title)
-        .accessibilityAddTraits(selected ? .isSelected : [])
-        .accessibilityIdentifier("typeflux.spotlight.mode." + item.id)
-        .foregroundStyle(selected
-            ? (style == .classic ? TypefluxColor.accent.color : Color(nsColor: .alternateSelectedControlTextColor))
-            : TypefluxColor.secondaryLabel.color)
-        .background {
-            if selected {
-                if style == .classic {
-                    RoundedRectangle(cornerRadius: TypefluxRadius.button.value(for: style))
-                        .fill(TypefluxColor.accent.color.opacity(0.15))
-                } else {
-                    Circle().fill(TypefluxColor.accent.color)
-                }
+        let width = style == .classic ? 30 : TypefluxControlHeight.spotlightModeButton.value(for: style)
+        let height = style == .classic ? 26 : width
+        return TypefluxSpotlightModeSurface(selected: selected) {
+            Button {
+                mode = item.id
+                focused = true
+            } label: {
+                Label(item.title, systemImage: item.systemImage).labelStyle(.iconOnly)
+                    .frame(width: width, height: height)
+                    .contentShape(Rectangle())
             }
-        }
-        if style == .classic {
-            button
-        } else {
-            TypefluxGlassContainer(radius: .spotlightInput) { button }
+            .buttonStyle(.plain)
+            .frame(width: width, height: height)
+            // Keep the nonactivating panel's field editor while switching modes.
+            .focusable(false)
+            .help(item.title)
+            .accessibilityLabel(item.title)
+            .accessibilityAddTraits(selected ? .isSelected : [])
+            .accessibilityIdentifier("typeflux.spotlight.mode." + item.id)
+            .foregroundStyle(selected
+                ? (style == .classic ? TypefluxColor.accent.color : Color(nsColor: .alternateSelectedControlTextColor))
+                : TypefluxColor.secondaryLabel.color)
         }
     }
 

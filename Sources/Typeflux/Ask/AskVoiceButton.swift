@@ -9,6 +9,7 @@ struct AskVoiceButton: NSViewRepresentable {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     var enabled: Bool
     var shortcut: HotkeyBinding?
+    var diameter: CGFloat = AskMetrics.composerControlHeight
 
     static func help(shortcut: HotkeyBinding?) -> String {
         let instructions = L("ask.voice.buttonHint")
@@ -35,6 +36,7 @@ struct AskVoiceButton: NSViewRepresentable {
     }
 
     func updateNSView(_ button: Control, context: Context) {
+        button.diameter = diameter
         button.voice = voice
         button.contextID = contextID
         let listening = voice.context == contextID && voice.phase == .listening
@@ -56,6 +58,7 @@ struct AskVoiceButton: NSViewRepresentable {
         var hovered = false
         var pressed = false
         var reduceMotion = false
+        var diameter: CGFloat = AskMetrics.composerControlHeight
 
         /// No circle behind the microphone: recording turns the icon into an
         /// accent stop square, hover brightens it.
@@ -87,7 +90,7 @@ struct AskVoiceButton: NSViewRepresentable {
                     }
                 }
             }
-            .frame(width: AskMetrics.composerControlHeight, height: AskMetrics.composerControlHeight)
+            .frame(width: diameter, height: diameter)
             .opacity(enabled || phase == .transcribing ? 1 : 0.45)
             .scaleEffect(pressed && !reduceMotion ? 0.94 : 1)
             .animation(reduceMotion ? nil : .easeOut(duration: 0.12), value: pressed)
@@ -107,6 +110,9 @@ struct AskVoiceButton: NSViewRepresentable {
         private var localReleaseMonitor: Any?
         private var globalReleaseMonitor: Any?
 
+        var diameter: CGFloat = AskMetrics.composerControlHeight {
+            didSet { if diameter != oldValue { invalidateIntrinsicContentSize() } }
+        }
         var visualPhase: AskVoiceInput.Phase = .idle
         var reduceMotion = false
         private(set) var hovered = false
@@ -114,13 +120,13 @@ struct AskVoiceButton: NSViewRepresentable {
         private var artwork: Artwork?
 
         override var intrinsicContentSize: NSSize {
-            NSSize(width: AskMetrics.composerControlHeight, height: AskMetrics.composerControlHeight)
+            NSSize(width: diameter, height: diameter)
         }
         override func draw(_ dirtyRect: NSRect) {} // The artwork replaces NSButton's bezel.
 
         func refreshAppearance() {
             let appearance = Appearance(phase: visualPhase, enabled: isEnabled, hovered: hovered,
-                                        pressed: isHighlighted, reduceMotion: reduceMotion)
+                                        pressed: isHighlighted, reduceMotion: reduceMotion, diameter: diameter)
             if let artwork {
                 artwork.rootView = appearance
             } else {

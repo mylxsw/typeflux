@@ -61,6 +61,7 @@ final class ClipboardPanelModel: ObservableObject {
     var onAction: ((ClipboardEntryAction, ClipboardEntry) -> Void)?
     var onCommand: ((ClipboardPanelCommand) -> Void)?
     var onDismiss: (() -> Void)?
+    var onShowActions: (() -> Void)?
     var onPreviewVisibilityChange: ((Bool) -> Void)?
     var fileExists: (String) -> Bool = { FileManager.default.fileExists(atPath: $0) }
     var now: () -> Date = Date.init

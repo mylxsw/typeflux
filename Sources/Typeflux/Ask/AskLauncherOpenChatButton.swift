@@ -18,12 +18,13 @@ struct AskLauncherOpenChatButton: View {
     var enabled: Bool
     var tint: Color = TypefluxColor.accent.color
     var action: () -> Void
+    var diameter: CGFloat = AskSendButton.size
 
     var body: some View {
         Button(action: action) {
             Image(systemName: mode == .askAI ? "arrow.up" : "macwindow")
                 .font(mode == .askAI ? .headline : .title3)
-                .frame(width: AskSendButton.size, height: AskSendButton.size)
+                .frame(width: diameter, height: diameter)
                 .contentShape(Circle())
         }
         // Preserve the send button's SwiftUI event handling without changing its bounds while pressed.
@@ -33,6 +34,8 @@ struct AskLauncherOpenChatButton: View {
         .help(mode.hint)
         .accessibilityLabel(mode.title)
         .accessibilityIdentifier("ask.launcher.openChat")
-        .modifier(AskLauncherShortcutBadge(key: enabled ? mode.shortcut : nil, leadingInset: 24, topInset: -5))
+        .modifier(AskLauncherShortcutBadge(key: enabled ? mode.shortcut : nil,
+                                          leadingInset: diameter > AskSendButton.size ? diameter - 24 : 24,
+                                          topInset: diameter > AskSendButton.size ? 10 : -5))
     }
 }

@@ -21,7 +21,6 @@ struct ClipboardPanelView: View {
     @ObservedObject var layout = ClipboardPanelLayout()
     @State private var searchFocused = false
     @State private var hoveredIndex: Int?
-    @State private var showingNumberHints = false
     @State private var rowFrames = ClipboardRowFrames()
     private var effectiveStyle: InterfaceStyle { interfaceStyle ?? environmentStyle }
 
@@ -29,7 +28,8 @@ struct ClipboardPanelView: View {
         TypefluxSpotlightSurface(query: $model.query, mode: mode, focused: $searchFocused,
                                  prompt: L(model.category == .snippet
                                      ? "clipboard.snippet.search" : "clipboard.search.placeholder"),
-                                 modes: ClipboardCategory.allCases.map { $0.spotlightMode }, onEscape: model.cancel) {
+                                 modes: ClipboardCategory.allCases.map { $0.spotlightMode },
+                                 inputSystemImage: "clipboard", onEscape: model.cancel) {
             HStack(spacing: 0) {
                 list.frame(width: Self.width)
                 if model.showsPreview || previewWidth > 0 { preview }
@@ -50,9 +50,7 @@ struct ClipboardPanelView: View {
                 )
             }
         }
-        .environment(\.askLauncherNumberHints, showingNumberHints)
         .environment(\.interfaceStyle, effectiveStyle)
-        .background(AskLauncherCommandMonitor { showingNumberHints = $0 })
         .onAppear { searchFocused = !isModal }
         .onChange(of: focusRequest) { _ in searchFocused = !isModal }
         .onChange(of: isModal) { presented in searchFocused = !presented }
@@ -140,7 +138,7 @@ struct ClipboardPanelView: View {
             isSelected: index == model.selectedIndex,
             isHovered: hoveredIndex == index,
             isMissing: model.isMarkedMissing(row.entry),
-            number: showingNumberHints ? model.shortcutNumber(at: index) : nil,
+            number: model.shortcutNumber(at: index),
             onClick: { model.click(index: index, clickCount: $0) },
             onPerform: { model.perform($0, at: index) },
             onHover: { hovering in
@@ -198,52 +196,27 @@ extension ClipboardPanelView {
                     if model.isRecordingPaused { ClipboardPausedChip { model.send(.togglePause) } }
                 }
             }
-            HStack(spacing: 2) {
-                Text(L("clipboard.footer.count", model.visibleEntries.count))
-                    .font(.footnote).foregroundStyle(TypefluxColor.secondaryLabel.color)
-                Spacer(minLength: 0)
-                if let entry = model.selectedEntry {
-                    if !entry.kind.isTextual { footerButton(.quickLook, entry: entry) }
-                    if entry.snippet == nil { footerButton(.togglePin, entry: entry) }
-                    footerButton(.paste, entry: entry, primary: true)
-                }
-                ClipboardPanelToolbar(model: model)
-            }
             HStack(spacing: 12) {
                 keyboardHint("↑↓", title: L("clipboard.hint.navigate"))
-                keyboardHint("⌘↵", title: L("clipboard.hint.plainPaste"))
-                keyboardHint("⌘1–9", title: L("clipboard.hint.quickPaste"))
+                if let entry = model.selectedEntry, model.isEnabled(.paste, for: entry) {
+                    keyboardHint("↵", title: L("clipboard.action.paste"))
+                    if model.actions(for: entry).contains(.pastePlainText) {
+                        keyboardHint("⌘↵", title: entry.kind.isTextual
+                            ? L("clipboard.hint.plainPaste") : ClipboardEntryAction.pastePlainText.title(for: entry))
+                    }
+                }
                 Spacer(minLength: 0)
-                keyboardHint("Esc", title: L("clipboard.hint.close"))
+                ClipboardPanelToolbar(model: model)
+                keyboardHint("esc", title: L("clipboard.hint.close"))
             }
             .font(.footnote).foregroundStyle(TypefluxColor.secondaryLabel.color)
         }
-        .padding(.horizontal, 12).padding(.vertical, 10)
+        .padding(.horizontal, 12).padding(.vertical, 6)
         .accessibilityIdentifier("clipboard.hints")
     }
 
     private func keyboardHint(_ key: String, title: String) -> some View {
         Text(key + " " + title).lineLimit(1)
-    }
-
-    private func footerButton(_ action: ClipboardEntryAction, entry: ClipboardEntry, primary: Bool = false) -> some View {
-        Button {
-            model.perform(action)
-        } label: {
-            HStack(spacing: 6) {
-                Text(action.title(for: entry))
-                if let shortcut = action.shortcutLabel {
-                    ClipboardKeycap(text: shortcut)
-                }
-            }
-            .font(.callout)
-            .foregroundStyle(primary ? TypefluxColor.label.color : TypefluxColor.secondaryLabel.color)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 5)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .disabled(!model.isEnabled(action, for: entry))
     }
 
     @ViewBuilder
@@ -252,7 +225,7 @@ extension ClipboardPanelView {
             TypefluxGlassContainer(radius: .popover) {
                 Text(notice).font(.callout).padding(.horizontal, 12).padding(.vertical, 7)
             }
-            .padding(.bottom, 76)
+            .padding(.bottom, 40)
             .transition(.opacity.combined(with: .move(edge: .bottom)))
         }
     }

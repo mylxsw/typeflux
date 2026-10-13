@@ -47,6 +47,7 @@ struct AskLauncherSuggestions: View {
     @Environment(\.colorScheme) private var colorScheme
     var sections: [AskLauncherHome.Section]
     @Binding var highlighted: Int
+    @State private var hoveredID: String?
     var onPick: (AskLauncherHome.Item) -> Void
     var now = Date()
     var viewportHeight: CGFloat?
@@ -199,8 +200,9 @@ struct AskLauncherSuggestions: View {
                         ForEach(chips) { chip in
                             let item = AskLauncherHome.Item.chip(chip)
                             chipView(chip, highlighted: item.id == current)
+                                .fixedSize(horizontal: true, vertical: false)
                                 .id(item.id)
-                                .onHover { if $0, let index = items.firstIndex(of: item) { highlighted = index } }
+                                .onHover { hoveredID = $0 ? item.id : (hoveredID == item.id ? nil : hoveredID) }
                         }
                     }
                     .padding(.horizontal, Self.contentInset)
@@ -211,7 +213,8 @@ struct AskLauncherSuggestions: View {
                 }
             }
             .frame(height: Self.chipRowHeight)
-            .clipped()
+            .modifier(TypefluxHorizontalScrollFade())
+            .accessibilityIdentifier("ask.launcher.keywords")
         }
     }
 
@@ -223,7 +226,7 @@ struct AskLauncherSuggestions: View {
             }
             Spacer(minLength: 0)
         }
-        .font(.system(size: 11.5, weight: .medium))
+        .font(.subheadline.weight(.medium))
         .padding(.horizontal, Self.contentInset)
         .padding(.bottom, Self.headerBottomGap)
         .frame(height: Self.headerHeight, alignment: .bottomLeading)
@@ -235,7 +238,7 @@ struct AskLauncherSuggestions: View {
             ForEach(rows) { row in
                 let item = AskLauncherHome.Item.row(row)
                 rowView(row, number: numbers[row.id], highlighted: item.id == current)
-                    .onHover { if $0, let index = items.firstIndex(of: item) { highlighted = index } }
+                    .onHover { hoveredID = $0 ? item.id : (hoveredID == item.id ? nil : hoveredID) }
             }
         }
     }
@@ -283,6 +286,7 @@ struct AskLauncherSuggestions: View {
             }
             .padding(.horizontal, Self.contentInset)
             .frame(height: Self.rowHeight)
+            .background(!highlighted && hoveredID == row.id ? TypefluxColor.controlBackground.color : .clear)
             .modifier(TypefluxSpotlightRow(selected: highlighted))
         }
         .buttonStyle(.plain)
@@ -301,14 +305,16 @@ struct AskLauncherSuggestions: View {
             Image(systemName: row.symbol).font(.callout)
                 .foregroundStyle(highlighted ? TypefluxSpotlightRow.labelColor(selected: true) : Self.tint(row.tint))
                 .frame(width: 28, height: 28)
-                .background(Self.tileFill(row.tint), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous)
+                .background(Self.tileFill(row.tint), in: RoundedRectangle(
+                    cornerRadius: TypefluxRadius.navigationIcon.value(for: style), style: .continuous))
+                .overlay(RoundedRectangle(
+                    cornerRadius: TypefluxRadius.navigationIcon.value(for: style), style: .continuous)
                     .strokeBorder(Self.tileEdge(row.tint), lineWidth: 0.5))
         }
     }
 
     private func keywordLabel(_ keyword: String, highlighted: Bool = false) -> some View {
-        Text(keyword).font(.system(size: 10.5, design: .monospaced))
+        Text(keyword).font(.footnote.monospaced())
             .foregroundStyle(TypefluxSpotlightRow.labelColor(selected: highlighted, secondary: true))
             .padding(.horizontal, 5)
             .frame(height: 18)
@@ -320,22 +326,23 @@ struct AskLauncherSuggestions: View {
     private func chipView(_ chip: AskLauncherHome.Chip, highlighted: Bool) -> some View {
         Button { onPick(.chip(chip)) } label: {
             HStack(spacing: 6) {
-                keywordLabel(chip.keyword.keyword)
+                keywordLabel(chip.keyword.keyword, highlighted: highlighted)
                 Text(chip.title).font(.callout)
-                    .foregroundStyle(highlighted ? TypefluxColor.label.color : secondaryText)
+                    .foregroundStyle(TypefluxSpotlightRow.labelColor(selected: highlighted, secondary: !highlighted))
                     .lineLimit(1)
             }
             .padding(.leading, 5)
             .padding(.trailing, 9)
             .frame(height: Self.chipHeight)
-            .background(highlighted ? LegacyAskPalette.launcherSelection : LegacyAskPalette.launcherChipFill,
-                        in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .strokeBorder(LegacyAskPalette.launcherChipEdge))
+            .background(highlighted ? TypefluxColor.selection.color : TypefluxColor.controlBackground.color,
+                        in: RoundedRectangle(
+                            cornerRadius: TypefluxRadius.menuRow.value(for: style), style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: TypefluxRadius.menuRow.value(for: style), style: .continuous)
+                .strokeBorder(TypefluxColor.separator.color))
             .overlay {
                 if highlighted {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .strokeBorder(LegacyAskPalette.launcherSelectionEdge, lineWidth: 0.5)
+                    RoundedRectangle(cornerRadius: TypefluxRadius.menuRow.value(for: style), style: .continuous)
+                        .strokeBorder(TypefluxColor.separator.color, lineWidth: 0.5)
                 }
             }
             .contentShape(Rectangle())

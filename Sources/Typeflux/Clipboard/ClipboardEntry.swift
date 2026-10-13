@@ -39,7 +39,7 @@ struct ClipboardEntry: Identifiable, Equatable, Sendable {
         return fileURLs
     }
 
-    /// Whether the row shows the content itself (thumbnails, a video frame, a waveform) instead of a title.
+    /// Whether the preview shows inline content (thumbnails, a video frame or a waveform).
     var hasInlineMedia: Bool {
         switch kind {
         case .image, .images, .video, .audio: true

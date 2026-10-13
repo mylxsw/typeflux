@@ -55,7 +55,8 @@ struct AskSpotlightPanelTests {
                     $0.value("accessibilityIdentifier") as? String == "ask.launcher.openChat"
                 })
                 #expect(button.role == NSAccessibility.Role.button.rawValue)
-                #expect(button.frame.width == AskSendButton.size)
+                #expect(button.frame.width == (style.usesGlass
+                    ? TypefluxControlHeight.spotlightModeButton.value(for: style) : AskMetrics.composerControlHeight))
             }
         }
     }

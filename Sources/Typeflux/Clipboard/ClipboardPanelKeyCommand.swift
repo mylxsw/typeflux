@@ -15,6 +15,7 @@ enum ClipboardPanelKeyCommand: Equatable {
     case hidePreview
     case togglePause
     case openSettings
+    case showActions
 
     static func command(
         keyCode: UInt16,
@@ -47,6 +48,7 @@ enum ClipboardPanelKeyCommand: Equatable {
         "p": .action(.togglePin),
         "e": .action(.editBeforePaste),
         "y": .action(.quickLook),
+        "k": .showActions,
         ",": .openSettings,
         "\\": .togglePreview
     ]

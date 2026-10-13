@@ -5,33 +5,21 @@ struct ClipboardPanelToolbar: View {
     @ObservedObject var model: ClipboardPanelModel
 
     var body: some View {
-        moreMenu
-    }
-
-    private var moreMenu: some View {
-        Menu {
-            Button(L(model.isRecordingPaused ? "clipboard.toolbar.resume" : "clipboard.toolbar.pause")) {
-                model.send(.togglePause)
-            }
-            Button(L(model.showsPreview ? "clipboard.menu.hidePreview" : "clipboard.menu.showPreview")) {
-                model.togglePreview()
-            }
-            Divider()
-            Button(L("clipboard.toolbar.settings")) { model.send(.openSettings) }
-            Divider()
-            Button(L("clipboard.menu.clearUnpinned"), role: .destructive) { model.requestClearUnpinned() }
+        Button {
+            model.onShowActions?()
         } label: {
-            Image(systemName: "ellipsis")
-                .font(.body.weight(.semibold))
-                .foregroundStyle(model.isRecordingPaused ? Color.orange : TypefluxColor.secondaryLabel.color)
-                .frame(width: 28, height: 28)
+            Text("⌘K " + L("clipboard.toolbar.more"))
+                .font(.footnote)
+                .foregroundStyle(TypefluxColor.secondaryLabel.color)
+                .padding(.vertical, 4)
                 .contentShape(Rectangle())
         }
-        .menuStyle(.borderlessButton)
-        .menuIndicator(.hidden)
+        .buttonStyle(.plain)
+        .focusable(false)
         .fixedSize()
         .help(L("clipboard.toolbar.more"))
         .accessibilityLabel(L("clipboard.toolbar.more"))
+        .accessibilityIdentifier("clipboard.more")
     }
 }
 
@@ -107,6 +95,6 @@ struct ClipboardConfirmationBar: View {
             }
             .padding(.horizontal, 14).padding(.vertical, 10)
         }
-        .padding(.horizontal, 12).padding(.bottom, 76)
+        .padding(.horizontal, 12).padding(.bottom, 40)
     }
 }

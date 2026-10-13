@@ -123,8 +123,8 @@ The migration leaves existing literals in older Ask, clipboard preview and scree
 
 | Rule | Before GUL-355 (main `77945be8`) | Remaining |
 | --- | ---: | ---: |
-| Numeric SwiftUI font size | 710 | 403 |
-| Numeric corner radius | 397 | 214 |
+| Numeric SwiftUI font size | 710 | 397 |
+| Numeric corner radius | 397 | 205 |
 | Calibrated/sRGB `NSColor` constructor | 46 | 36 |
 
 All seven window families in this wrap-up, the Overview metrics and the workflow editor directory have zero occurrences of these rules. The existing general SwiftLint baseline was also refreshed because prior migrations had left it stale; new UI literal exceptions may only be removed. Lint success does not replace macOS build, interaction tests or visual acceptance.

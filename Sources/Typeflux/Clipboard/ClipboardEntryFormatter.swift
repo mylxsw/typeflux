@@ -20,6 +20,17 @@ enum ClipboardEntryFormatter {
         return parts
     }
 
+    /// The compact result row puts origin and time on its trailing edge.
+    static func rowMetadata(for entry: ClipboardEntry, now: Date = Date()) -> String {
+        if entry.snippet != nil {
+            return [L("clipboard.tab.snippet"), entry.isPinned ? L("clipboard.section.pinned") : nil]
+                .compactMap { $0 }.joined(separator: " · ")
+        }
+        let source = entry.kind == .voice ? "Typeflux" : entry.sourceAppName
+        return [source?.isEmpty == false ? source : nil, relativeTime(from: entry.date, to: now)]
+            .compactMap { $0 }.joined(separator: " · ")
+    }
+
     private static func mediaDetails(for entry: ClipboardEntry, info: ClipboardMediaInfo?) -> [String] {
         switch entry.kind {
         case .video, .audio: [info?.duration.map(duration)].compactMap { $0 }
