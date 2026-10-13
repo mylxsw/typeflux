@@ -1,23 +1,29 @@
 import SwiftUI
 
+/// The Overview pane: what Ask can use now, what needs fixing, and where new conversations are kept.
 extension AskToolsSettingsView {
     @ViewBuilder var overviewSections: some View {
         let statuses = capabilityStatuses
-        Section {
-            AgentOverviewSummary(statuses: statuses, noteCount: memoryNotes.notes.count) { status in
-                navigate(to: status.capability)
-            }
+        AgentOverviewSummary(statuses: statuses, noteCount: memoryNotes.notes.count) { status in
+            navigate(to: status.capability)
         }
-        TypefluxFormSection(L("ask.settings.local.title"), footer: L("agent.overview.storage.hint")) {
-            TypefluxSettingsRow(L("ask.settings.local.title")) {
-                TypefluxSegmentedControl(L("ask.settings.local.title"), selection: Binding(
-                    get: { newConversationsStayLocal }, set: setNewConversationsStayLocal
-                )) {
-                    Text(Self.storageName(local: false)).tag(false)
-                    Text(Self.storageName(local: true)).tag(true)
-                }
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                ModelSectionLabel(title: L("ask.settings.local.title"))
+                Text(L("agent.overview.storage.hint")).font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
             }
-            ForEach(storagePoints, id: \.self) { Text(L($0)).font(.subheadline).foregroundStyle(.secondary) }
+            HStack(alignment: .top, spacing: 12) {
+                AgentStorageOption(
+                    symbol: "cloud", title: Self.storageName(local: false), selected: !newConversationsStayLocal,
+                    points: [(true, L("agent.storage.cloud.models")), (true, L("agent.storage.cloud.sync")),
+                             (true, L("agent.storage.cloud.search")), (false, L("agent.storage.cloud.credits"))]
+                ) { setNewConversationsStayLocal(false) }
+                AgentStorageOption(
+                    symbol: "lock", title: Self.storageName(local: true), selected: newConversationsStayLocal,
+                    points: [(true, L("agent.storage.local.private")), (true, L("agent.storage.local.models")),
+                             (false, L("agent.storage.local.search")), (false, L("agent.storage.local.limits"))]
+                ) { setNewConversationsStayLocal(true) }
+            }
         }
         AskTitleSettingsView(settings: settings)
         let attention = statuses.filter { $0.level == .attention }
@@ -26,26 +32,126 @@ extension AskToolsSettingsView {
             if attention.isEmpty {
                 AgentSettingsEmptyRow(text: L("agent.overview.attention.none"))
             }
-            ForEach(attention) { status in
-                AgentSettingsRow(icon: status.capability.symbol, title: status.capability.title,
-                                 subtitle: status.label) {
-                    Button { navigate(to: status.capability) } label: {
+            ForEach(Array(attention.enumerated()), id: \.element.id) { index, status in
+                if index > 0 { ModelRowDivider(leading: 66) }
+                AgentSettingsRow(icon: status.capability.symbol, title: status.capability.title, subtitle: status.label) {
+                    Button {
+                        navigate(to: status.capability)
+                    } label: {
                         Label(L("agent.overview.attention.action"), systemImage: "chevron.right")
-                    }.buttonStyle(.bordered)
+                            .labelStyle(TrailingIconLabelStyle())
+                    }
+                    .buttonStyle(.bordered)
                 }
             }
         }
     }
 
-    private var storagePoints: [String] {
-        newConversationsStayLocal
-            ? ["agent.storage.local.private", "agent.storage.local.models", "agent.storage.local.search",
-               "agent.storage.local.limits"]
-            : ["agent.storage.cloud.models", "agent.storage.cloud.sync", "agent.storage.cloud.search",
-               "agent.storage.cloud.credits"]
-    }
-
     func navigate(to capability: AgentCapability) {
         onNavigate(capability.pane)
+    }
+}
+
+/// Title first, icon after it, e.g. "Open ›".
+struct TrailingIconLabelStyle: LabelStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        HStack(spacing: 4) {
+            configuration.title
+            configuration.icon.font(.system(size: 10, weight: .semibold))
+        }
+    }
+}
+
+/// Headline count of usable capabilities and a shortcut to the first one needing attention.
+struct AgentOverviewSummary: View {
+    let statuses: [AgentCapabilityStatus]
+    let noteCount: Int
+    let onFix: (AgentCapabilityStatus) -> Void
+
+    private var attention: [AgentCapabilityStatus] {
+        statuses.filter { $0.level == .attention }
+    }
+
+    var detail: String {
+        var parts = [attention.isEmpty
+            ? L("agent.overview.allSet")
+            : L("agent.overview.needsAttention", attention.count, attention.map(\.capability.title).joined(separator: L("agent.listSeparator")))]
+        if noteCount > 0 { parts.append(L("agent.overview.notes", noteCount)) }
+        return parts.joined(separator: " · ")
+    }
+
+    var body: some View {
+        HStack(spacing: 14) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(L("agent.overview.ready", statuses.filter { $0.level == .ready }.count))
+                    .font(.system(size: 15, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
+                Text(detail).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 12)
+            if let first = attention.first {
+                Button(L("agent.overview.fix")) { onFix(first) }.buttonStyle(.borderedProminent)
+            }
+        }
+        .padding(.horizontal, 16).padding(.vertical, 14)
+        .background(
+            LinearGradient(colors: [TypefluxColor.accent.color.opacity(0.14), TypefluxColor.contentBackground.color],
+                           startPoint: .leading, endPoint: .trailing),
+            in: RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: .classic), style: .continuous)
+        )
+        .overlay(RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: .classic), style: .continuous)
+            .strokeBorder(TypefluxColor.separator.color))
+    }
+}
+
+/// One choice of where new conversations are kept, listing what it allows and what it gives up.
+struct AgentStorageOption: View {
+    let symbol: String
+    let title: String
+    let selected: Bool
+    let points: [(included: Bool, text: String)]
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 8) {
+                    Image(systemName: symbol).font(.system(size: 14))
+                    Text(title).font(.system(size: 13.5, weight: .semibold))
+                    Spacer()
+                    Image(systemName: selected ? "largecircle.fill.circle" : "circle")
+                        .font(.system(size: 15))
+                        .foregroundStyle(selected ? TypefluxColor.accent.color : StudioTheme.textTertiary)
+                }
+                .foregroundStyle(StudioTheme.textPrimary)
+                VStack(alignment: .leading, spacing: 5) {
+                    ForEach(Array(points.enumerated()), id: \.offset) { _, point in
+                        HStack(alignment: .firstTextBaseline, spacing: 6) {
+                            Image(systemName: point.included ? "checkmark" : "minus")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundStyle(point.included ? StudioTheme.success : StudioTheme.textTertiary)
+                                .frame(width: 12)
+                            Text(point.text).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                }
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .topLeading)
+            .background(TypefluxColor.contentBackground.color,
+                        in: RoundedRectangle(
+                            cornerRadius: TypefluxRadius.form.value(for: .classic),
+                            style: .continuous
+                        ))
+            .overlay(RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: .classic), style: .continuous)
+                .strokeBorder(
+                    selected ? TypefluxColor.accent.color : TypefluxColor.separator.color,
+                    lineWidth: selected ? 2 : 1
+                ))
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }

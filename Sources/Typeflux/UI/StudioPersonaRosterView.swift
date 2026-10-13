@@ -4,62 +4,70 @@ struct StudioPersonaRosterView: View {
     @ObservedObject var viewModel: StudioViewModel
     let onDelete: (PersonaProfile) -> Void
 
-    private var selection: Binding<UUID?> {
-        Binding(get: {
-            viewModel.isCreatingPersonaDraft ? viewModel.personaDraftCreationID : viewModel.selectedPersonaID
-        }, set: { id in
-            guard let id, id != viewModel.personaDraftCreationID else { return }
-            viewModel.selectPersonaGuardingDraft(id)
-        })
-    }
-
     var body: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Text(L("personas.redesign.library")).font(.headline)
-                Text("\(viewModel.personas.count)").foregroundStyle(.secondary)
-                Spacer()
-                TypefluxIconButton(L("personas.redesign.new"), systemImage: "plus") {
-                    viewModel.beginCreatingPersona()
-                }.accessibilityIdentifier("personas.create")
-            }.padding(8)
-            List(selection: selection) {
-                if viewModel.isCreatingPersonaDraft {
-                    Section(L("personas.redesign.creating")) {
-                        name(
-                            viewModel.personaDraftName.isEmpty ? L("personas.redesign.new") : viewModel
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 6) {
+                Text(L("personas.redesign.library")).fontWeight(.semibold)
+                Text("\(viewModel.personas.count)").foregroundStyle(StudioTheme.textSecondary)
+                Spacer(minLength: 0)
+                Button { viewModel.beginCreatingPersona() } label: {
+                    Label(L("personas.redesign.new"), systemImage: "plus")
+                }
+                .buttonStyle(.plain).font(.system(size: 11))
+                .padding(.horizontal, 8).padding(.vertical, 5)
+                .background(StudioTheme.controlSurface, in: RoundedRectangle(cornerRadius: 6))
+                .overlay(RoundedRectangle(cornerRadius: 6).stroke(StudioTheme.border))
+                .accessibilityIdentifier("personas.create")
+            }
+            .padding(.horizontal, 4)
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 10) {
+                    if viewModel.isCreatingPersonaDraft {
+                        heading(L("personas.redesign.creating"), count: 1)
+                        row(
+                            title: viewModel.personaDraftName.isEmpty ? L("personas.redesign.new") : viewModel
                                 .personaDraftName,
+                            selected: true,
                             dirty: viewModel.hasPersonaDraftChanges
-                        ).tag(viewModel.personaDraftCreationID)
+                        ) {}
                     }
-                }
-                group(title: L("settings.personas.custom"), personas: viewModel.filteredCustomPersonas)
-                group(title: L("personas.redesign.builtIn"), personas: viewModel.filteredBuiltInPersonas)
-            }.listStyle(.inset)
-                .overlay {
-                    if viewModel.filteredPersonas.isEmpty, !viewModel.searchQuery.isEmpty,
-                       !viewModel.isCreatingPersonaDraft {
-                        TypefluxEmptyState(L("personas.redesign.noResults", viewModel.searchQuery),
-                                           systemImage: "magnifyingglass", description: "") {
+                    group(title: L("settings.personas.custom"), personas: viewModel.filteredCustomPersonas)
+                    group(title: L("personas.redesign.builtIn"), personas: viewModel.filteredBuiltInPersonas)
+                    if viewModel.filteredPersonas.isEmpty, !viewModel.searchQuery.isEmpty {
+                        VStack(spacing: 12) {
+                            Text(L("personas.redesign.noResults", viewModel.searchQuery))
+                                .foregroundStyle(StudioTheme.textSecondary)
                             Button(L("personas.redesign.createSearch", viewModel.searchQuery)) {
-                                viewModel.beginCreatingPersona(name: viewModel.searchQuery
-                                    .trimmingCharacters(in: .whitespacesAndNewlines))
-                            }.accessibilityIdentifier("personas.createFromSearch")
+                                viewModel
+                                    .beginCreatingPersona(name: viewModel.searchQuery
+                                        .trimmingCharacters(in: .whitespacesAndNewlines))
+                            }
+                            .buttonStyle(.plain).foregroundStyle(StudioTheme.accent)
+                            .accessibilityIdentifier("personas.createFromSearch")
                         }
+                        .font(.system(size: 12)).padding(.vertical, 25).frame(maxWidth: .infinity)
                     }
                 }
+            }
         }
+        .font(.system(size: 13))
+        .padding(11)
+        .frame(maxHeight: .infinity, alignment: .top)
+        .modifier(PersonaPanelModifier())
     }
 
     @ViewBuilder private func group(title: String, personas: [PersonaProfile]) -> some View {
         if !personas.isEmpty {
-            Section(title + " · \(personas.count)") {
+            VStack(alignment: .leading, spacing: 0) {
+                heading(title, count: personas.count).padding(.bottom, 5)
                 ForEach(personas) { persona in
-                    name(
-                        persona.name,
+                    row(
+                        title: persona.name,
+                        selected: !viewModel.isCreatingPersonaDraft && viewModel.selectedPersonaID == persona.id,
                         dirty: viewModel.selectedPersonaID == persona.id && viewModel.hasPersonaDraftChanges
-                    )
-                    .tag(persona.id)
+                    ) {
+                        viewModel.selectPersonaGuardingDraft(persona.id)
+                    }
                     .contextMenu {
                         Button(L("personas.redesign.duplicate")) { viewModel.duplicatePersona(persona) }
                         if !persona.isSystem {
@@ -71,13 +79,40 @@ struct StudioPersonaRosterView: View {
         }
     }
 
-    private func name(_ title: String, dirty: Bool) -> some View {
-        HStack {
-            Text(title).font(.body).lineLimit(1)
-            if dirty {
-                Image(systemName: "pencil").font(.caption).foregroundStyle(.secondary)
-                    .accessibilityLabel(L("imagegen.unsaved"))
+    private func heading(_ title: String, count: Int) -> some View {
+        HStack { Text(title); Spacer(); Text("\(count)") }
+            .font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary).padding(.horizontal, 8)
+    }
+
+    private func row(title: String, selected: Bool, dirty: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 5) {
+                deEmphasizedName(title, selected: selected).lineLimit(1)
+                if dirty {
+                    Circle().fill(Color.orange).frame(width: 5, height: 5)
+                }
+                Spacer(minLength: 0)
             }
-        }.help(title)
+            .font(.system(size: 13, weight: selected ? .medium : .regular))
+            .padding(.horizontal, 10)
+            .frame(height: 34)
+            .background(
+                selected ? StudioTheme.accent.opacity(0.15) : Color.clear,
+                in: RoundedRectangle(cornerRadius: 7)
+            )
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain).help(title)
+        .accessibilityLabel(title).accessibilityAddTraits(selected ? .isSelected : [])
+    }
+
+    private func deEmphasizedName(_ title: String, selected: Bool) -> Text {
+        let prefixes = ["候选：", "候選：", "Candidate:", "候補：", "후보:"]
+        if let prefix = prefixes.first(where: title.hasPrefix) {
+            return Text(prefix).foregroundColor(selected ? StudioTheme.accent.opacity(0.7) : StudioTheme.textSecondary)
+                + Text(String(title.dropFirst(prefix.count)))
+                .foregroundColor(selected ? StudioTheme.accent : StudioTheme.textPrimary)
+        }
+        return Text(title).foregroundColor(selected ? StudioTheme.accent : StudioTheme.textPrimary)
     }
 }

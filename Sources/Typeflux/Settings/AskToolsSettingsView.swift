@@ -61,58 +61,41 @@ struct AskToolsSettingsView: View {
     }
 
     var body: some View {
-        Group {
-            if pane == .imageGeneration {
-                imagePane
-            } else if pane == .memory {
+        VStack(alignment: .leading, spacing: 24) {
+            switch pane {
+            case .overview:
+                overviewSections
+            case .webSearch:
+                searchPane
+            case .imageGeneration:
+                AskImageSettingsView(model: imageSettingsModel ??
+                    AskImageSettingsModel(store: AskImageSettings(defaults: settings.defaults))) { enabled, ready in
+                    imageEnabled = enabled; imageReady = ready
+                }
+            case .files:
+                filesPane
+            case .codeExecution:
+                codePane
+            case .automation:
+                automationPane
+            case .skills:
+                AgentPaneHeader(symbol: AgentCapability.skills.symbol, title: AgentCapability.skills.title) {
+                    skillHeaderActions
+                }
+                skillSections
+            case .mcpServers:
+                EmptyView()
+            case .memory:
                 memorySections
-            } else {
-                TypefluxForm { paneContent }
             }
         }
         .onAppear(perform: reload)
         .onChange(of: capabilityStatuses) { onStatusesChange($0) }
-        .onDisappear { installTask?.cancel() }
-    }
-
-    private var imagePane: some View {
-        AskImageSettingsView(model: imageSettingsModel ??
-            AskImageSettingsModel(store: AskImageSettings(defaults: settings.defaults))) { enabled, ready in
-                imageEnabled = enabled; imageReady = ready
-            }
-    }
-
-    @ViewBuilder private var paneContent: some View {
-        switch pane {
-        case .overview:
-            overviewSections
-        case .webSearch:
-            searchPane
-        case .imageGeneration:
-            EmptyView()
-        case .files:
-            filesPane
-        case .codeExecution:
-            codePane
-        case .automation:
-            automationPane
-        case .skills:
-            AgentPaneHeader(symbol: AgentCapability.skills.symbol, title: AgentCapability.skills.title) {
-                skillHeaderActions
-            }
-            skillSections
-        case .mcpServers:
-            EmptyView()
-        case .memory:
-            EmptyView()
-        }
     }
 
     // MARK: - Shared state
 
-    var search: AskSearchSettings {
-        AskSearchSettings(defaults: settings.defaults)
-    }
+    var search: AskSearchSettings { AskSearchSettings(defaults: settings.defaults) }
 
     var searchConfiguration: AskSearchConfiguration {
         AskSearchConfiguration(provider: searchProvider, apiKey: searchKey, cloudflare: cloudflareSearch)
@@ -155,7 +138,7 @@ struct AskToolsSettingsView: View {
     func reload() {
         folders = settings.askFileAccessFolders
         codeEnabled = settings.askCodeExecutionEnabled
-        let images = imageSettingsModel?.store ?? AskImageSettings(defaults: settings.defaults)
+        let images = AskImageSettings(defaults: settings.defaults)
         imageEnabled = images.enabled; imageReady = images.isReady
         newConversationsStayLocal = settings.askNewConversationsStayLocal
         searchProvider = search.provider
@@ -185,9 +168,7 @@ struct AskToolsSettingsView: View {
         searchKey = search.apiKey
     }
 
-    func saveSearchKey() {
-        search.setAPIKey(searchKey)
-    }
+    func saveSearchKey() { search.setAPIKey(searchKey) }
 
     /// Turns local web search on with the provider most likely to be set up, or off.
     func setSearchEnabled(_ enabled: Bool) {
@@ -206,11 +187,7 @@ struct AskToolsSettingsView: View {
 
     func setSkill(_ name: String, enabled: Bool) {
         var disabled = settings.askDisabledSkills
-        if enabled {
-            disabled.remove(name)
-        } else {
-            disabled.insert(name)
-        }
+        if enabled { disabled.remove(name) } else { disabled.insert(name) }
         settings.askDisabledSkills = disabled
         disabledSkills = disabled
     }
@@ -218,9 +195,7 @@ struct AskToolsSettingsView: View {
     func removeFolder(_ folder: String) {
         let index = settings.askFileAccessFolders.firstIndex(of: folder)
         settings.askFileAccessFolders.removeAll { $0 == folder }
-        if let index {
-            removedFolder = RemovedFolder(path: folder, index: index)
-        }
+        if let index { removedFolder = RemovedFolder(path: folder, index: index) }
         reload()
     }
 
@@ -255,7 +230,11 @@ struct AskToolsSettingsView: View {
         reload()
     }
 
-    var memorySections: some View {
+    @ViewBuilder var memorySections: some View {
+        AgentPaneHeader(symbol: AgentSettingsPane.memory.symbol, title: AgentSettingsPane.memory.title) {
+            AgentStatusBadge(level: memoryNotes.notes.isEmpty ? .off : .ready,
+                             label: L("agent.memory.count", memoryNotes.notes.count))
+        }
         MemoryNotesEditorView(model: memoryNotes, store: notes, owner: owner(),
                               correctionsEnabled: MemoryRollout.enabled(settings.defaults), query: searchQuery)
     }

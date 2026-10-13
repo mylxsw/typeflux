@@ -3,10 +3,6 @@ import SwiftUI
 
 struct StudioPersonaAppRulesDrawer: View {
     @ObservedObject var viewModel: StudioViewModel
-    var discover: () async -> [PersonaAppCandidate] = {
-        await PersonaAppDiscovery.discoverPersonaAppCandidates(scope: .all)
-    }
-
     @State private var scope: PersonaAppPickerScope = .running
     @State private var search = ""
     @State private var candidates: [PersonaAppCandidate] = []
@@ -22,44 +18,66 @@ struct StudioPersonaAppRulesDrawer: View {
     }
 
     var body: some View {
-        TypefluxSheet(title: L("settings.personaAppBindings.title"), cancelTitle: L("common.cancel"),
-                      confirmTitle: L("common.done"), confirmIdentifier: "personas.closeRules",
-                      cancel: { viewModel.closePersonaAppRules() }, confirm: { viewModel.closePersonaAppRules() },
-                      content: {
-                          TypefluxForm {
-                              Section {
-                                  Toggle(L("personas.redesign.enableRules"), isOn: Binding(
-                                      get: { viewModel.personaAppBindingsEnabled },
-                                      set: viewModel.setPersonaAppBindingsEnabled
-                                  )).toggleStyle(.switch).accessibilityIdentifier("personas.rulesEnabled")
-                              }
-                              Section {
-                                  if viewModel.personaAppBindings.isEmpty {
-                                      TypefluxEmptyState(
-                                          L("settings.personaAppBindings.empty"),
-                                          systemImage: "app",
-                                          description: ""
-                                      )
-                                  }
-                                  ForEach(viewModel.personaAppBindings) { rule($0) }
-                                  Button { viewModel.openPersonaAppRules(adding: true) } label: {
-                                      Label(L("settings.personaAppBindings.add"), systemImage: "plus")
-                                  }
-                              }
-                              if viewModel.isAddingPersonaAppRule {
-                                  Section { addFlow }
-                              }
-                          }.frame(height: 500)
-                      }).frame(width: 640)
-            .task {
-                loading = true
-                let apps = await discover()
-                guard !Task.isCancelled else { return }
-                candidates = apps
-                loading = false
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Text(L("settings.personaAppBindings.title")).font(.system(size: 18, weight: .semibold))
+                Spacer()
+                Button { viewModel.closePersonaAppRules() } label: { Image(systemName: "xmark") }
+                    .buttonStyle(.plain).accessibilityLabel(L("personas.redesign.close"))
+                    .accessibilityIdentifier("personas.closeRules")
             }
-            .accessibilityElement(children: .contain)
-            .accessibilityIdentifier("personas.rulesDrawer")
+            Toggle(L("personas.redesign.enableRules"), isOn: Binding(
+                get: { viewModel.personaAppBindingsEnabled }, set: viewModel.setPersonaAppBindingsEnabled
+            ))
+            .toggleStyle(.switch)
+            .accessibilityIdentifier("personas.rulesEnabled")
+            .padding(12)
+            .background(StudioTheme.cardSurface, in: RoundedRectangle(cornerRadius: 10))
+            .overlay(RoundedRectangle(cornerRadius: 10).stroke(StudioTheme.border))
+            Divider()
+            ScrollView {
+                VStack(alignment: .leading, spacing: 12) {
+                    if viewModel.personaAppBindings.isEmpty {
+                        Text(L("settings.personaAppBindings.empty")).foregroundStyle(StudioTheme.textSecondary).padding(
+                            .vertical,
+                            16
+                        )
+                    }
+                    VStack(spacing: 0) {
+                        ForEach(viewModel.personaAppBindings) { binding in
+                            rule(binding)
+                            if binding.id != viewModel.personaAppBindings.last?.id {
+                                Divider()
+                            }
+                        }
+                    }
+                    Button { viewModel.openPersonaAppRules(adding: true) } label: {
+                        Label(L("settings.personaAppBindings.add"), systemImage: "plus")
+                    }
+                    .buttonStyle(.plain).foregroundStyle(StudioTheme.accent)
+                    .padding(.vertical, 6)
+                    if viewModel.isAddingPersonaAppRule {
+                        addFlow
+                    }
+                }
+                .padding(1)
+            }
+        }
+        .font(.system(size: 12))
+        .padding(20)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .background(Color(nsColor: .windowBackgroundColor))
+        .overlay(alignment: .leading) { Rectangle().fill(StudioTheme.border).frame(width: 1) }
+        .shadow(color: .black.opacity(0.2), radius: 16, x: -6)
+        .task {
+            loading = true
+            let apps = await PersonaAppDiscovery.discoverPersonaAppCandidates(scope: .all)
+            guard !Task.isCancelled else { return }
+            candidates = apps
+            loading = false
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("personas.rulesDrawer")
     }
 
     private func rule(_ binding: PersonaAppBinding) -> some View {
@@ -72,7 +90,7 @@ struct StudioPersonaAppRulesDrawer: View {
             PersonaAppIcon(identifier: binding.appIdentifier, url: candidate?.appURL)
             VStack(alignment: .leading, spacing: 3) {
                 Text(candidate?.displayName ?? binding.appIdentifier).fontWeight(.medium).lineLimit(1)
-                Text(binding.appIdentifier).font(.subheadline).foregroundStyle(StudioTheme.textSecondary)
+                Text(binding.appIdentifier).font(.system(size: 10)).foregroundStyle(StudioTheme.textSecondary)
                     .lineLimit(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -81,7 +99,7 @@ struct StudioPersonaAppRulesDrawer: View {
             PersonaSelectionMenu(viewModel: viewModel, selection: binding.personaID) {
                 viewModel.updatePersonaAppBindingPersona(id: binding.id, personaID: $0)
             }
-            .frame(maxWidth: 180)
+            .frame(width: 180)
             .opacity(binding.isEnabled ? 1 : 0.5)
             Toggle(L("settings.personaAppBindings.binding.enable"), isOn: Binding(
                 get: { binding.isEnabled },
@@ -89,11 +107,11 @@ struct StudioPersonaAppRulesDrawer: View {
             ))
             .labelsHidden().toggleStyle(.switch)
             .accessibilityLabel(L("settings.personaAppBindings.binding.enable") + " " + binding.appIdentifier)
-            TypefluxIconButton(L("common.delete") + " " + binding.appIdentifier, systemImage: "trash",
-                               kind: .destructive) {
-                viewModel.removePersonaAppBinding(id: binding.id)
-            }
+            Button { viewModel.removePersonaAppBinding(id: binding.id) } label: { Image(systemName: "trash") }
+                .buttonStyle(.plain)
+                .accessibilityLabel(L("common.delete") + " " + binding.appIdentifier)
         }
+        .padding(.vertical, 10).padding(.horizontal, 4)
         .opacity(viewModel.personaAppBindingsEnabled ? 1 : 0.5)
     }
 
@@ -111,10 +129,9 @@ struct StudioPersonaAppRulesDrawer: View {
             Picker(L("settings.personaAppBindings.picker.title"), selection: $scope) {
                 ForEach(PersonaAppPickerScope.allCases, id: \.self) { Text($0.title).tag($0) }
             }
-            .pickerStyle(.segmented).labelsHidden().accessibilityLabel(L("settings.personaAppBindings.picker.title"))
+            .pickerStyle(.segmented).labelsHidden()
             TextField(L("settings.personaAppBindings.picker.searchPlaceholder"), text: $search)
                 .textFieldStyle(.roundedBorder)
-                .accessibilityLabel(L("settings.personaAppBindings.picker.searchPlaceholder"))
             if loading {
                 ProgressView().frame(maxWidth: .infinity)
             } else if filteredCandidates.isEmpty {
@@ -143,6 +160,9 @@ struct StudioPersonaAppRulesDrawer: View {
                 Text(L("personas.redesign.existingRule")).foregroundStyle(StudioTheme.textSecondary)
             }
         }
+        .padding(12)
+        .background(StudioTheme.cardSurface, in: RoundedRectangle(cornerRadius: 10))
+        .overlay(RoundedRectangle(cornerRadius: 10).stroke(StudioTheme.border))
     }
 
     private func candidateRow(_ candidate: PersonaAppCandidate) -> some View {
@@ -152,17 +172,17 @@ struct StudioPersonaAppRulesDrawer: View {
             viewModel.savePersonaAppBinding()
         } label: {
             HStack(spacing: 8) {
-                PersonaAppIcon(identifier: candidate.preferredIdentifier, url: candidate.appURL)
+                PersonaAppIcon(identifier: candidate.preferredIdentifier, url: candidate.appURL, size: 24)
                 VStack(alignment: .leading, spacing: 3) {
                     Text(candidate.displayName).lineLimit(1)
                     Text(candidate.bundleIdentifier ?? candidate.preferredIdentifier)
-                        .font(.subheadline).foregroundStyle(StudioTheme.textSecondary).lineLimit(1)
+                        .font(.system(size: 10)).foregroundStyle(StudioTheme.textSecondary).lineLimit(1)
                 }
                 Spacer(minLength: 0)
                 if exists {
-                    Text(L("personas.redesign.existingRule")).font(.subheadline)
+                    Text(L("personas.redesign.existingRule")).font(.system(size: 10))
                 } else if candidate.isRunning {
-                    Text(L("settings.personaAppBindings.picker.runningBadge")).font(.subheadline)
+                    Text(L("settings.personaAppBindings.picker.runningBadge")).font(.system(size: 10))
                         .foregroundStyle(StudioTheme.success)
                 }
             }
