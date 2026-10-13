@@ -206,9 +206,10 @@ extension AskLauncherToggleTests {
             abs(recorder.editorTops[$0] - editorAnchor) < abs(recorder.editorTops[$1] - editorAnchor)
         } ?? 0
         #expect(topDrift < 0.5, "the panel's top edge moved by \(topDrift)")
-        #expect(editorDrift < 0.5, "the editor and its controls moved by \(editorDrift); "
+        let driftDetail = "the editor and its controls moved by \(editorDrift); "
             + "at window height \(recorder.heights[peak]), editor height \(recorder.editorHeights[peak]), "
-            + "editor top \(recorder.editorTops[peak]), anchor \(editorAnchor)")
+            + "editor top \(recorder.editorTops[peak]), anchor \(editorAnchor)"
+        #expect(editorDrift < 0.5, Comment(rawValue: driftDetail))
     }
 
     @Test func theListGrowsWithoutShrinkingWhileMatchesComeAndGo() async throws {
