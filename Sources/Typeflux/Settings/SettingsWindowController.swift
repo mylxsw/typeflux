@@ -12,8 +12,14 @@ final class SettingsWindowController: NSObject {
     private(set) var window: NSWindow?
     private(set) var viewModel: StudioViewModel?
     private var appearanceObserver: NSObjectProtocol?
+    private let dockVisibility: DockVisibilityController
 
-    override init() {
+    override convenience init() {
+        self.init(dockVisibility: .shared)
+    }
+
+    init(dockVisibility: DockVisibilityController) {
+        self.dockVisibility = dockVisibility
         super.init()
         appearanceObserver = NotificationCenter.default.addObserver(
             forName: .appearanceModeDidChange,
@@ -62,7 +68,7 @@ final class SettingsWindowController: NSObject {
                 viewModel?.directFeedbackRequestID = UUID()
             }
             refreshAppearance()
-            DockVisibilityController.shared.windowDidShow(window)
+            dockVisibility.windowDidShow(window)
             window.makeKeyAndOrderFront(nil)
             NSApp.activate(ignoringOtherApps: true)
             AuthState.shared.refreshProfileIfNeeded()
@@ -123,7 +129,7 @@ final class SettingsWindowController: NSObject {
 
         self.viewModel = viewModel
         self.window = window
-        DockVisibilityController.shared.windowDidShow(window)
+        dockVisibility.windowDidShow(window)
         window.makeKeyAndOrderFront(nil)
         window.contentMinSize = minimumWindowSize
         NSApp.activate(ignoringOtherApps: true)
@@ -139,7 +145,7 @@ final class SettingsWindowController: NSObject {
 extension SettingsWindowController: NSWindowDelegate {
     func windowWillClose(_: Notification) {
         if let window {
-            DockVisibilityController.shared.windowDidHide(window)
+            dockVisibility.windowDidHide(window)
             // Detach the hosting tree so SwiftUI tasks and native search monitors stop immediately.
             window.contentView = nil
         }

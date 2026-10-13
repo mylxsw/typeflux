@@ -733,9 +733,9 @@
 "vocabulary.source.claude" = "Claude";
 "vocabulary.source.codex" = "Codex";
 "vocabulary.filter.all" = "全部";
-"vocabulary.filter.automatic" = "自動新增";
-"vocabulary.filter.manual" = "手動新增";
-"vocabulary.filter.otherApps" = "其它應用";
+"vocabulary.filter.automatic" = "自動";
+"vocabulary.filter.manual" = "手動";
+"vocabulary.filter.otherApps" = "其他應用";
 "vocabulary.intro.title" = "協助 Typeflux 更穩定地辨識人名、產品名與領域詞彙。";
 "vocabulary.intro.subtitle" = "手動新增的詞條會作為辨識提示送往相容 Whisper 的轉寫後端。";
 "vocabulary.search.placeholder" = "搜尋詞庫...";
@@ -4807,6 +4807,26 @@
 "auth.web.requestRejected" = "登入請求遭拒，請檢查開發/正式用戶端及回呼位址設定。";
 "auth.web.serviceUnavailable" = "登入服務暫時無法使用，請檢查 API 和資料庫後重試。";
 "auth.web.rateLimited" = "登入嘗試過於頻繁，請稍後重試。";
+
+// Vocabulary and history library pages
+"vocabulary.table.term" = "詞條";
+"vocabulary.table.source" = "來源";
+"vocabulary.table.uses" = "使用次數";
+"vocabulary.table.added" = "新增日期";
+"vocabulary.empty.noMatch" = "沒有找到「%@」的結果";
+"vocabulary.action.addQuery" = "新增「%@」";
+"history.filter.title" = "篩選歷史";
+"history.filter.all" = "全部記錄";
+"history.filter.failures" = "失敗記錄";
+"history.filter.audio" = "包含音訊";
+"history.filter.text" = "包含文字";
+"history.filter.reset" = "重設篩選";
+"history.empty.description" = "沒有符合目前搜尋或篩選條件的記錄。";
+"history.action.loadMore" = "載入更多";
+"history.detail.title" = "記錄詳情";
+"history.detail.personaPrompt" = "人設提示詞";
+"history.detail.applyMessage" = "插入狀態";
+"history.action.back" = "返回歷史";
 
 // Clipboard Spotlight modes and keyboard hints
 "clipboard.tab.link" = "連結";

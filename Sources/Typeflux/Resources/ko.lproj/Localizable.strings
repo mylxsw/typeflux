@@ -726,9 +726,9 @@
 "vocabulary.source.claude" = "Claude";
 "vocabulary.source.codex" = "Codex";
 "vocabulary.filter.all" = "모두";
-"vocabulary.filter.automatic" = "자동 추가됨";
-"vocabulary.filter.manual" = "수동으로 추가됨";
-"vocabulary.filter.otherApps" = "기타 앱";
+"vocabulary.filter.automatic" = "자동";
+"vocabulary.filter.manual" = "수동";
+"vocabulary.filter.otherApps" = "다른 앱";
 "vocabulary.intro.title" = "Typeflux이 이름, 제품, 도메인 용어를 더욱 안정적으로 포착할 수 있도록 도와주세요.";
 "vocabulary.intro.subtitle" = "수동 항목은 Whisper 호환 전사 백엔드에 인식 힌트로 전송됩니다.";
 "vocabulary.search.placeholder" = "단어 검색...";
@@ -4773,6 +4773,26 @@
 "auth.web.requestRejected" = "로그인 요청이 거부되었습니다. 개발/운영 클라이언트와 콜백 주소 설정을 확인하세요.";
 "auth.web.serviceUnavailable" = "로그인 서비스를 사용할 수 없습니다. API와 데이터베이스를 확인한 후 다시 시도하세요.";
 "auth.web.rateLimited" = "로그인 시도가 너무 많습니다. 잠시 후 다시 시도하세요.";
+
+// Vocabulary and history library pages
+"vocabulary.table.term" = "단어";
+"vocabulary.table.source" = "출처";
+"vocabulary.table.uses" = "사용 횟수";
+"vocabulary.table.added" = "추가 날짜";
+"vocabulary.empty.noMatch" = "“%@”에 대한 결과 없음";
+"vocabulary.action.addQuery" = "“%@” 추가";
+"history.filter.title" = "기록 필터";
+"history.filter.all" = "모든 기록";
+"history.filter.failures" = "실패한 기록";
+"history.filter.audio" = "오디오 포함";
+"history.filter.text" = "텍스트 포함";
+"history.filter.reset" = "필터 초기화";
+"history.empty.description" = "현재 검색 또는 필터와 일치하는 기록이 없습니다.";
+"history.action.loadMore" = "더 불러오기";
+"history.detail.title" = "기록 상세";
+"history.detail.personaPrompt" = "페르소나 프롬프트";
+"history.detail.applyMessage" = "삽입 상태";
+"history.action.back" = "기록으로 돌아가기";
 
 // Clipboard Spotlight modes and keyboard hints
 "clipboard.tab.link" = "링크";

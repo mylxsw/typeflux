@@ -37,7 +37,8 @@ struct StudioPersonaUsageStrip: View {
                     } else {
                         viewModel.setDefaultPersonaSelection(id)
                     }
-                }.accessibilityIdentifier(auxiliary ? "personas.auxiliarySelection" : "personas.defaultSelection")
+                }.accessibilityElement(children: .contain)
+                    .accessibilityIdentifier(auxiliary ? "personas.auxiliarySelection" : "personas.defaultSelection")
                     .accessibilityLabel(L(auxiliary ? "personas.redesign.auxiliary" : "personas.redesign.dictation"))
                 Button { viewModel.openPersonaShortcutSettings() } label: {
                     Text((auxiliary ? viewModel.auxiliaryHotkey : viewModel.activationHotkey)

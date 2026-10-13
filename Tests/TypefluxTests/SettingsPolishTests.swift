@@ -455,19 +455,15 @@ final class SettingsPolishTests: XCTestCase {
         }
         let frame = element.accessibilityFrame()
         XCTAssertFalse(frame.isEmpty, "A clickable control needs a visible frame")
-        let point = window.convertPoint(fromScreen: NSPoint(x: frame.midX, y: frame.midY))
-        func event(_ type: NSEvent.EventType) throws -> NSEvent {
-            try XCTUnwrap(NSEvent.mouseEvent(with: type, location: point, modifierFlags: [],
-                                             timestamp: ProcessInfo.processInfo.systemUptime,
-                                             windowNumber: window.windowNumber, context: nil,
-                                             eventNumber: 0, clickCount: 1, pressure: type == .leftMouseDown ? 1 : 0))
+        func fields(in view: NSView) -> [NSTextField] {
+            (view as? NSTextField).map { [$0] } ?? view.subviews.flatMap { fields(in: $0) }
         }
-        // Native text fields track until mouse-up; queue it before dispatching mouse-down.
-        try NSApp.postEvent(event(.leftMouseUp), atStart: true)
-        try window.sendEvent(event(.leftMouseDown))
-        if let release = NSApp.nextEvent(matching: .leftMouseUp, until: Date(), inMode: .default, dequeue: true) {
-            window.sendEvent(release)
-        }
+        let content = try XCTUnwrap(window.contentView)
+        let field = try XCTUnwrap(fields(in: content).first {
+            $0.isEditable && window.convertToScreen($0.convert($0.bounds, to: nil)).intersects(frame)
+        }, "Missing native editable field for the accessibility element")
+        // Focus directly: mouseDown/nextEvent tracking can stop the Swift Testing host's outer runloop.
+        XCTAssertTrue(window.makeFirstResponder(field))
     }
 
     private func withWindow(_ content: some View, width: CGFloat, height: CGFloat,

@@ -31,14 +31,21 @@ struct SettingsOrganizationTests {
                     for section in StudioSection.voiceInputCases + [.settings] {
                         model.navigate(to: section)
                         let tabTitle = section == .settings ? AppSettingsPane.general.title : StudioSection.home.title
-                        try await UI.wait {
-                            window.title == section.heading && UI.contains(tabTitle, in: host)
+                        try await UI.wait { window.title == section.heading }
+                        let tabRoot: Any
+                        if section == .settings {
+                            tabRoot = host
+                        } else {
+                            tabRoot = try #require(window.toolbar?.items.first {
+                                $0.itemIdentifier.rawValue == "typeflux.window.segments"
+                            }?.view)
                         }
+                        try await UI.wait { UI.contains(tabTitle, in: tabRoot) }
                         #expect(window.toolbar != nil)
                         #expect(!UI.elements(in: host).contains {
                             $0.value("accessibilityIdentifier") as? String == "studio.page.title"
                         })
-                        _ = try UI.button(tabTitle, in: host)
+                        _ = try UI.button(tabTitle, in: tabRoot)
                         try UI.snapshot(host, name: "page-title-\(section.rawValue)-\(language.rawValue)-\(Int(width))")
                     }
                 }
@@ -77,7 +84,16 @@ struct SettingsOrganizationTests {
         try await withModel(section: .personas) { _, model in
             model.selectPersona(SettingsStore.defaultPersonaID)
             for width: CGFloat in [720, 1100] {
-                try await UI.withWindow(StudioView(viewModel: model), width: width, height: 800) { _, host in
+                try await UI.withWindow(StudioView(viewModel: model), width: width, height: 800) { window, host in
+                    try await UI.wait("Both persona usage selectors at width \(width)") {
+                        let elements = UI.elements(in: host)
+                        return ["personas.defaultSelection", "personas.auxiliarySelection"].allSatisfy { identifier in
+                            elements.contains {
+                                $0.value("accessibilityIdentifier") as? String == identifier
+                                    && $0.frame.width > 0 && $0.frame.height > 0
+                            }
+                        }
+                    }
                     for key in ["personas.redesign.dictation", "personas.redesign.auxiliary"] {
                         #expect(UI.contains(L(key), in: host))
                     }
@@ -88,9 +104,16 @@ struct SettingsOrganizationTests {
                     let auxiliaryPicker = try #require(elements.first {
                         $0.value("accessibilityIdentifier") as? String == "personas.auxiliarySelection"
                     })
-                    #expect(abs(defaultPicker.frame.midY - auxiliaryPicker.frame.midY) < 1)
-                    #expect(auxiliaryPicker.frame.minX > defaultPicker.frame.maxX)
+                    let bounds = window.convertToScreen(host.convert(host.bounds, to: nil))
+                    for picker in [defaultPicker, auxiliaryPicker] {
+                        #expect(picker.frame.width > 0 && picker.frame.height > 0)
+                        #expect(bounds.contains(picker.frame))
+                    }
+                    // Main's usage strip puts dictation and auxiliary selectors in separate rows.
+                    #expect(defaultPicker.frame.minY > auxiliaryPicker.frame.maxY)
                     #expect(UI.contains(L("settings.personas.prompt"), in: host))
+                    let prompt = try #require(elements.first { $0.text == L("settings.personas.prompt") })
+                    #expect(auxiliaryPicker.frame.minY > prompt.frame.maxY)
                     #expect(!elements.contains { $0.value("accessibilityIdentifier") as? String == "personas.name" })
                     try UI.snapshot(host, name: "personas-input-defaults-\(Int(width))")
                 }

@@ -3,114 +3,6 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 // swiftlint:disable file_length
-private enum VocabularyFilter: String, CaseIterable, Identifiable {
-    case all
-    case automatic
-    case manual
-    case otherApps
-
-    var id: String {
-        rawValue
-    }
-
-    var title: String {
-        switch self {
-        case .all:
-            L("vocabulary.filter.all")
-        case .automatic:
-            L("vocabulary.filter.automatic")
-        case .manual:
-            L("vocabulary.filter.manual")
-        case .otherApps:
-            L("vocabulary.filter.otherApps")
-        }
-    }
-
-    func matches(_ source: VocabularySource) -> Bool {
-        switch self {
-        case .all:
-            // The "All" filter intentionally includes every vocabulary source.
-            true
-        case .automatic:
-            source == .automatic
-        case .manual:
-            source == .manual
-        case .otherApps:
-            source.isExternalAppSource
-        }
-    }
-
-    var iconName: String {
-        switch self {
-        case .all:
-            "line.3.horizontal.decrease.circle"
-        case .automatic:
-            "sparkles"
-        case .manual:
-            "hand.draw"
-        case .otherApps:
-            "square.stack.3d.up"
-        }
-    }
-}
-
-private func logoResourceName(for source: VocabularySource) -> String? {
-    switch source {
-    case .claude:
-        "claude-color"
-    case .codex:
-        "openai"
-    case .manual, .automatic:
-        nil
-    }
-}
-
-private func vocabularySourceLogoImage(for source: VocabularySource) -> NSImage? {
-    guard let resourceName = logoResourceName(for: source) else { return nil }
-    guard let url = vocabularySourceLogoURL(for: resourceName) else {
-        ErrorLogStore.shared.log(
-            "Missing vocabulary source logo resource for \(source.rawValue): \(resourceName)"
-        )
-        return nil
-    }
-    return NSImage(contentsOf: url)
-}
-
-private func vocabularySourceMenuIconImage(for source: VocabularySource) -> NSImage? {
-    guard let image = vocabularySourceLogoImage(for: source) else { return nil }
-    let iconSize = NSSize(width: 16, height: 16)
-    return NSImage(size: iconSize, flipped: false) { destinationRect in
-        image.draw(
-            in: destinationRect,
-            from: NSRect(origin: .zero, size: image.size),
-            operation: .sourceOver,
-            fraction: 1
-        )
-        return true
-    }
-}
-
-private func vocabularySourceLogoURL(for resourceName: String) -> URL? {
-    let imageExtension = "png"
-    let candidatePaths: [(String?, String)] = [
-        ("Resources/Providers", imageExtension),
-        ("Providers", imageExtension),
-        (nil, imageExtension)
-    ]
-
-    for (subdirectory, pathExtension) in candidatePaths {
-        if let url = Bundle.appResources.url(
-            forResource: resourceName,
-            withExtension: pathExtension,
-            subdirectory: subdirectory
-        ) {
-            return url
-        }
-    }
-
-    return nil
-}
-
 private struct StudioAutoHidingScrollIndicatorConfigurator: NSViewRepresentable {
     func makeNSView(context _: Context) -> NSView {
         NSView(frame: .zero)
@@ -155,6 +47,7 @@ struct StudioView: View {
     @ObservedObject var viewModel: StudioViewModel
     @StateObject private var imageSettings: AskImageSettingsModel
     @State private var vocabularyFilter: VocabularyFilter = .all
+    @State private var selectedHistoryID: UUID?
     @State private var isAddingVocabulary = false
     @State private var editingVocabularyEntry: VocabularyEntry?
     @State private var newVocabularyTerm = ""
@@ -181,9 +74,10 @@ struct StudioView: View {
     @State private var settingsPane: AppSettingsPane
 
     /// `launcherPane` opens the Launcher page at one of its panes, e.g. the keyword list.
+    /// `initialHistoryID` selects a detail in this view's own state, independently of other windows.
     init(viewModel: StudioViewModel, launcherPane: LauncherSettingsPane = .basics,
          settingsPane: AppSettingsPane = .general, agentPane: AgentSettingsPane = .overview,
-         imageSettingsModel: AskImageSettingsModel? = nil) {
+         imageSettingsModel: AskImageSettingsModel? = nil, initialHistoryID: UUID? = nil) {
         self.viewModel = viewModel
         _interfaceStyleObserver = StateObject(wrappedValue: InterfaceStyleObserver(settings: viewModel.askToolSettings))
         _imageSettings = StateObject(wrappedValue: imageSettingsModel ?? AskImageSettingsModel(
@@ -192,6 +86,7 @@ struct StudioView: View {
         _launcherPane = State(initialValue: launcherPane)
         _settingsPane = State(initialValue: settingsPane)
         _agentPane = State(initialValue: agentPane)
+        _selectedHistoryID = State(initialValue: initialHistoryID)
     }
 
     @State private var agentStatuses: [AgentCapabilityStatus] = []
@@ -210,15 +105,13 @@ struct StudioView: View {
             searchPlaceholder: searchPrompt,
             accountDefaults: viewModel.askToolSettings.defaults,
             toolbarCenter: toolbarSegments,
-            toolbarGroups: modelToolbarGroups
+            toolbarGroups: pageToolbarGroups
         ) { viewportSize in
             let viewportHeight = max(viewportSize.height, 0)
 
             VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
                 if viewModel.currentSection == .settings {
                     settingsHeader
-                } else if viewModel.currentSection != .models {
-                    pageHeader
                 }
 
                 if viewModel.currentSection == .models {
@@ -233,7 +126,8 @@ struct StudioView: View {
                 }
             }
             .frame(
-                height: [.models, .personas, .agent, .launcher, .settings, .account].contains(viewModel.currentSection)
+                height: [.models, .personas, .agent, .launcher, .settings, .account, .vocabulary, .history]
+                    .contains(viewModel.currentSection)
                     ? viewportHeight : nil,
                 alignment: .top
             )
@@ -268,6 +162,15 @@ struct StudioView: View {
                 toolbarSearch.query = query
             }
         }
+        .toolbar { libraryPageToolbar }
+        .onChange(of: viewModel.currentSection) { _ in selectedHistoryID = nil }
+        .onChange(of: viewModel.searchQuery) { _ in selectedHistoryID = nil }
+        .onChange(of: viewModel.historyFilter) { _ in selectedHistoryID = nil }
+        .onChange(of: viewModel.displayedHistory.map(\.id)) { ids in
+            if let selectedHistoryID, !ids.contains(selectedHistoryID) {
+                self.selectedHistoryID = nil
+            }
+        }
         .interfaceStyle(following: interfaceStyleObserver)
         .onChange(of: interfaceStyleObserver.style) { viewModel.interfaceStyle = $0 }
         .onChange(of: interfaceStyleObserver.glassIntensity) { viewModel.liquidGlassIntensity = $0.value }
@@ -299,14 +202,14 @@ struct StudioView: View {
         .onReceive(NotificationCenter.default.publisher(for: .authDidLogin)) { _ in
             Task { await refreshSidebarAccountStatus() }
         }
-        .onReceive(viewModel.$directFeedbackRequestID.compactMap { $0 }.receive(on: RunLoop.main)) { _ in
+        .onReceive(viewModel.$directFeedbackRequestID.compactMap(\.self).receive(on: RunLoop.main)) { _ in
             viewModel.directFeedbackRequestID = nil
             openDirectFeedback()
         }
-        .onReceive(viewModel.$settingsPaneRequest.compactMap { $0 }) { pane in
+        .onReceive(viewModel.$settingsPaneRequest.compactMap(\.self)) { pane in
             settingsPane = pane
         }
-        .onReceive(viewModel.$launcherPaneRequest.compactMap { $0 }) { pane in
+        .onReceive(viewModel.$launcherPaneRequest.compactMap(\.self)) { pane in
             launcherPane = pane
         }
         .overlay(alignment: .bottom) {
@@ -345,7 +248,11 @@ struct StudioView: View {
             L("settings.models.activationMissingAPIKey.title"),
             isPresented: Binding(
                 get: { llmActivationMissingAPIKeyProviderName != nil },
-                set: { if !$0 { llmActivationMissingAPIKeyProviderName = nil } }
+                set: {
+                    if !$0 {
+                        llmActivationMissingAPIKeyProviderName = nil
+                    }
+                }
             ),
             actions: {
                 Button(L("common.ok"), role: .cancel) {
@@ -368,7 +275,11 @@ struct StudioView: View {
             L("agent.mcp.deleteDialog.title"),
             isPresented: Binding(
                 get: { mcpServerPendingDeletion != nil },
-                set: { if !$0 { mcpServerPendingDeletion = nil } }
+                set: {
+                    if !$0 {
+                        mcpServerPendingDeletion = nil
+                    }
+                }
             ),
             titleVisibility: .visible
         ) {
@@ -631,10 +542,6 @@ struct StudioView: View {
         }
     }
 
-    private var pageHeader: some View {
-        HStack(spacing: StudioTheme.Spacing.large) { pageHeaderActions }
-    }
-
     private var toolbarSegments: AnyView? {
         if viewModel.currentSection == .models {
             return AnyView(TypefluxSegmentedControl(StudioSection.models.title,
@@ -662,7 +569,24 @@ struct StudioView: View {
         return nil
     }
 
-    private var modelToolbarGroups: [TypefluxToolbarGroup] {
+    private var pageToolbarGroups: [TypefluxToolbarGroup] {
+        if viewModel.currentSection == .vocabulary {
+            return [TypefluxToolbarGroup(id: "vocabulary", actions: [
+                TypefluxToolbarAction(id: "vocabulary.add", title: L("vocabulary.action.newWord"),
+                                      systemImage: "plus", perform: beginAddingVocabulary),
+                TypefluxToolbarAction(id: "vocabulary.import", title: L("vocabulary.action.importFile"),
+                                      systemImage: "arrow.down.doc", isEnabled: !viewModel.isSynchronizingVocabulary,
+                                      perform: viewModel.importVocabulary)
+            ])]
+        }
+        if viewModel.currentSection == .history {
+            var actions: [TypefluxToolbarAction] = []
+            actions.append(TypefluxToolbarAction(id: "history.export", title: L("history.action.exportMarkdown"),
+                                                 systemImage: "square.and.arrow.up", perform: viewModel.exportHistory))
+            actions.append(TypefluxToolbarAction(id: "history.clear", title: L("common.clear"), systemImage: "trash",
+                                                 role: .destructive) { showingClearHistoryConfirmation = true })
+            return [TypefluxToolbarGroup(id: "history", actions: actions)]
+        }
         guard viewModel.currentSection == .models, viewModel.modelPageTab == .providers,
               !viewModel.isShowingModelProviderDetail else { return [] }
         return [TypefluxToolbarGroup(id: "models", actions: [
@@ -672,74 +596,57 @@ struct StudioView: View {
         ])]
     }
 
-    /// Actions on the right of the page header, including the spacer that pushes them there.
-    @ViewBuilder
-    private var pageHeaderActions: some View {
+    @ToolbarContentBuilder
+    private var libraryPageToolbar: some ToolbarContent {
         if viewModel.currentSection == .vocabulary {
-            Spacer()
-
-            HStack(spacing: StudioTheme.Spacing.medium) {
-                StudioButton(
-                    title: L("vocabulary.action.newWord"), systemImage: "plus", variant: .secondary
-                ) {
-                    editingVocabularyEntry = nil
-                    newVocabularyTerm = ""
-                    isAddingVocabulary = true
+            ToolbarItem(placement: .primaryAction) {
+                TypefluxSegmentedControl(L("vocabulary.table.source"), selection: $vocabularyFilter) {
+                    ForEach(VocabularyFilter.allCases) { filter in Text(filter.title).tag(filter) }
                 }
-
+                .fixedSize()
+                .accessibilityIdentifier("vocabulary.sourceFilter")
+            }
+            ToolbarItem(placement: .primaryAction) {
                 Menu {
-                    Button(action: viewModel.importVocabulary) {
-                        Label(L("vocabulary.action.importFile"), systemImage: "arrow.down.doc")
-                    }
-                    Button(action: viewModel.exportVocabulary) {
-                        Label(L("vocabulary.action.export"), systemImage: "arrow.up.doc")
+                    Button(L("vocabulary.action.export"), action: viewModel.exportVocabulary)
+                    Divider()
+                    Button(L("vocabulary.action.importClaude"), action: viewModel.importClaudeVocabulary)
+                    Button(L("vocabulary.action.importCodex"), action: viewModel.importCodexVocabulary)
+                } label: { Label(L("vocabulary.action.more"), systemImage: "ellipsis") }
+                    .disabled(viewModel.isSynchronizingVocabulary)
+                    .help(L("vocabulary.action.more"))
+                    .accessibilityIdentifier("vocabulary.transferMenu")
+            }
+        }
+        if viewModel.currentSection == .history {
+            ToolbarItem(id: HistorySettingsBackButton.toolbarIdentifier, placement: .navigation) {
+                HistorySettingsBackButton(selectedID: $selectedHistoryID)
+                    .disabled(!isShowingHistoryDetail)
+            }
+            ToolbarItem(placement: .primaryAction) {
+                Menu {
+                    Picker(L("history.filter.title"), selection: $viewModel.historyFilter) {
+                        ForEach(HistorySettingsFilter.allCases) { filter in Text(filter.title).tag(filter) }
                     }
                     Divider()
-                    Button(action: viewModel.importClaudeVocabulary) {
-                        vocabularyMenuItemLabel(
-                            title: L("vocabulary.action.importClaude"),
-                            source: .claude
-                        )
+                    Picker(L("history.keep.title"), selection: Binding(
+                        get: { viewModel.historyRetentionPolicy }, set: viewModel.setHistoryRetentionPolicy
+                    )) {
+                        ForEach(HistoryRetentionPolicy.allCases, id: \.self) { policy in
+                            Text(policy.title).tag(policy)
+                        }
                     }
-                    Button(action: viewModel.importCodexVocabulary) {
-                        vocabularyMenuItemLabel(
-                            title: L("vocabulary.action.importCodex"),
-                            source: .codex
-                        )
-                    }
-                } label: {
-                    vocabularyMoreMenuLabel
-                }
-                .menuStyle(.button)
-                .buttonStyle(.plain)
-                .menuIndicator(.hidden)
-                .fixedSize(horizontal: true, vertical: false)
-                .modifier(StudioButtonChromeModifier(
-                    variant: .secondary,
-                    isDisabled: viewModel.isSynchronizingVocabulary,
-                    isLoading: false,
-                    isPressed: false,
-                    minWidth: StudioTheme.ControlSize.buttonMinWidth
-                ))
-                .disabled(viewModel.isSynchronizingVocabulary)
+                } label: { Label(L("history.filter.title"), systemImage: "line.3.horizontal.decrease") }
+                    .help(viewModel.historyFilter.title)
+                    .accessibilityLabel(L("history.filter.title"))
+                    .accessibilityIdentifier("history.filterMenu")
             }
-        } else if viewModel.currentSection == .history {
-            Spacer()
-
-            HStack(spacing: StudioTheme.Spacing.medium) {
-                AskIconGhostButton(label: L("history.action.exportMarkdown"), systemImage: "square.and.arrow.up") {
-                    viewModel.exportHistory()
-                }
-
-                AskIconGhostButton(label: L("common.clear"), systemImage: "trash") {
-                    showingClearHistoryConfirmation = true
-                }
-            }
-        } else if viewModel.currentSection == .account {
-            Spacer()
-        } else if viewModel.currentSection.isVoiceInput {
-            Spacer()
         }
+    }
+
+    private var isShowingHistoryDetail: Bool {
+        guard let selectedHistoryID else { return false }
+        return viewModel.displayedHistory.contains { $0.id == selectedHistoryID }
     }
 
     @ViewBuilder
@@ -817,154 +724,14 @@ struct StudioView: View {
     }
 
     private var historyPage: some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
-            StudioCard(padding: 16) {
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
-                    StudioSettingRow(
-                        title: L("history.keep.title"),
-                        subtitle: L("history.keep.subtitle")
-                    ) {
-                        StudioMenuPicker(
-                            options: HistoryRetentionPolicy.allCases.map {
-                                (label: $0.title, value: $0)
-                            },
-                            selection: Binding(
-                                get: { viewModel.historyRetentionPolicy },
-                                set: viewModel.setHistoryRetentionPolicy
-                            ),
-                            width: 140
-                        )
-                    }
-
-                    Label(L("history.privacy.subtitle"), systemImage: "lock.fill")
-                        .font(.system(size: 12))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-
-            groupedSessionStream(sections: viewModel.groupedHistory)
-        }
-    }
-
-    private func groupedSessionStream(sections: [HistorySection]) -> some View {
-        LazyVStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
-            if sections.isEmpty {
-                StudioCard(padding: StudioTheme.Insets.none) {
-                    Text(L("history.empty"))
-                        .font(.studioBody(StudioTheme.Typography.bodySmall))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.vertical, StudioTheme.Insets.sessionEmptyVertical)
-                }
-            } else {
-                ForEach(sections) { section in
-                    VStack(alignment: .leading, spacing: StudioTheme.Spacing.smallMedium) {
-                        Text(section.id)
-                            .font(.studioBody(StudioTheme.Typography.caption, weight: .bold))
-                            .foregroundStyle(StudioTheme.textSecondary)
-                            .padding(.horizontal, StudioTheme.Insets.historyRowHorizontal)
-
-                        StudioCard(padding: StudioTheme.Insets.none) {
-                            VStack(spacing: StudioTheme.Spacing.none) {
-                                ForEach(section.records) { record in
-                                    StudioHistoryRow(
-                                        record: record,
-                                        onCopyResult: {
-                                            viewModel.copyHistoryResult(id: record.id)
-                                        },
-                                        onCopyTranscript: {
-                                            viewModel.copyTranscript(id: record.id)
-                                        },
-                                        onDownloadAudio: {
-                                            viewModel.downloadAudio(id: record.id)
-                                        },
-                                        onPlayAudio: {
-                                            viewModel.playAudio(id: record.id)
-                                        },
-                                        isAudioPlaying: viewModel.playingAudioRecordID == record.id,
-                                        onDelete: {
-                                            viewModel.deleteHistoryRecord(id: record.id)
-                                        },
-                                        onRetry: {
-                                            viewModel.retryHistoryRecord(id: record.id)
-                                        }
-                                    )
-                                    if record.id != section.records.last?.id {
-                                        Divider().overlay(
-                                            StudioTheme.border.opacity(
-                                                StudioTheme.Opacity.listDivider
-                                            )
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            if viewModel.isLoadingMoreHistory {
-                HStack(spacing: StudioTheme.Spacing.small) {
-                    ProgressView()
-                        .controlSize(.small)
-                    Text(L("history.loadingMore"))
-                        .font(.studioBody(StudioTheme.Typography.caption))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                }
-                .frame(maxWidth: .infinity, alignment: .center)
-                .padding(.vertical, StudioTheme.Spacing.medium)
-            } else if viewModel.canLoadMoreHistory {
-                Color.clear
-                    .frame(height: 1)
-                    .onAppear {
-                        viewModel.loadMoreHistoryIfNeeded()
-                    }
-            }
-        }
+        HistorySettingsPage(viewModel: viewModel, selectedID: $selectedHistoryID)
     }
 
     private var vocabularyPage: some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
-            HStack(alignment: .center, spacing: StudioTheme.Spacing.medium) {
-                HStack(spacing: StudioTheme.Spacing.xSmall) {
-                    ForEach(VocabularyFilter.allCases) { filter in
-                        vocabularyFilterChip(filter)
-                    }
-                }
-
-                Spacer()
-            }
-
-            StudioCard(showsChrome: colorScheme == .dark) {
-                Group {
-                    if filteredVocabularyEntries.isEmpty {
-                        VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-                            Text(L("vocabulary.empty.title"))
-                                .font(
-                                    .studioDisplay(StudioTheme.Typography.cardTitle, weight: .semibold)
-                                )
-                                .foregroundStyle(StudioTheme.textPrimary)
-                            Text(L("vocabulary.empty.subtitle"))
-                                .font(.studioBody(StudioTheme.Typography.body))
-                                .foregroundStyle(StudioTheme.textSecondary)
-                            vocabularyEmptyActions
-                        }
-                        .padding(.vertical, StudioTheme.Insets.historyEmptyVertical)
-                    } else {
-                        LazyVGrid(
-                            columns: [GridItem(.adaptive(minimum: 240), spacing: StudioTheme.Spacing.xLarge)],
-                            alignment: .leading,
-                            spacing: StudioTheme.Spacing.mediumLarge
-                        ) {
-                            ForEach(filteredVocabularyEntries) { entry in
-                                vocabularyTermCard(entry)
-                            }
-                        }
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
+        VocabularySettingsPage(viewModel: viewModel, filter: vocabularyFilter, onAdd: beginAddingVocabulary) { entry in
+            editingVocabularyEntry = entry
+            newVocabularyTerm = entry.term
+            isAddingVocabulary = false
         }
     }
 
@@ -1194,201 +961,34 @@ struct StudioView: View {
         }
     }
 
-    private var filteredVocabularyEntries: [VocabularyEntry] {
-        viewModel.filteredVocabularyEntries.filter { vocabularyFilter.matches($0.source) }
-    }
-
-    @ViewBuilder
-    private var vocabularyEmptyActions: some View {
-        if vocabularyFilter == .otherApps, vocabularyCount(for: .otherApps) == 0 {
-            HStack(spacing: StudioTheme.Spacing.small) {
-                StudioButton(
-                    title: L("vocabulary.action.importClaude"),
-                    systemImage: "arrow.down.doc",
-                    variant: .secondary,
-                    isDisabled: viewModel.isSynchronizingVocabulary
-                ) {
-                    viewModel.importClaudeVocabulary()
-                }
-                StudioButton(
-                    title: L("vocabulary.action.importCodex"),
-                    systemImage: "arrow.down.doc",
-                    variant: .secondary,
-                    isDisabled: viewModel.isSynchronizingVocabulary
-                ) {
-                    viewModel.importCodexVocabulary()
-                }
-            }
-        } else {
-            StudioButton(
-                title: L("vocabulary.action.addFirst"), systemImage: "plus",
-                variant: .secondary
-            ) {
-                editingVocabularyEntry = nil
-                newVocabularyTerm = ""
-                isAddingVocabulary = true
-            }
-        }
-    }
-
-    private func vocabularyFilterChip(_ filter: VocabularyFilter) -> some View {
-        Button {
-            vocabularyFilter = filter
-        } label: {
-            HStack(spacing: StudioTheme.Spacing.xSmall) {
-                Image(systemName: filter.iconName)
-                    .font(.system(size: StudioTheme.Typography.iconXSmall, weight: .semibold))
-                    .fixedSize()
-                Text(filter.title)
-                    .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                Text("\(vocabularyCount(for: filter))")
-                    .font(.studioBody(StudioTheme.Typography.caption, weight: .bold))
-                    .foregroundStyle(
-                        vocabularyFilter == filter
-                            ? StudioTheme.textPrimary : StudioTheme.textTertiary
-                    )
-                    .fixedSize()
-            }
-            .foregroundStyle(
-                vocabularyFilter == filter ? StudioTheme.textPrimary : StudioTheme.textSecondary
-            )
-            .lineLimit(1)
-            .padding(.horizontal, StudioTheme.Insets.buttonHorizontal)
-            .padding(.vertical, StudioTheme.Insets.pillVertical + 3)
-            .background(
-                Capsule()
-                    .fill(
-                        vocabularyFilter == filter
-                            ? StudioTheme.filterChipSelectedFill : StudioTheme.surfaceMuted.opacity(0.82)
-                    )
-            )
-            .overlay(
-                Capsule()
-                    .stroke(
-                        StudioTheme.border.opacity(StudioTheme.Opacity.cardBorder),
-                        lineWidth: StudioTheme.BorderWidth.thin
-                    )
-            )
-        }
-        .buttonStyle(StudioInteractiveButtonStyle())
-    }
-
-    private func vocabularyTermCard(_ entry: VocabularyEntry) -> some View {
-        VocabularyTermCard(
-            entry: entry,
-            onCopy: {
-                viewModel.copyVocabularyTerm(entry.term)
-            },
-            onEdit: {
-                editingVocabularyEntry = entry
-                newVocabularyTerm = entry.term
-                isAddingVocabulary = false
-            },
-            onDelete: {
-                viewModel.removeVocabularyEntry(id: entry.id)
-            }
-        )
+    private func beginAddingVocabulary() {
+        editingVocabularyEntry = nil
+        newVocabularyTerm = viewModel.searchQuery.trimmingCharacters(in: .whitespacesAndNewlines)
+        isAddingVocabulary = true
     }
 
     private var vocabularyAddSheet: some View {
-        let isEditing = editingVocabularyEntry != nil
-
-        return VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
-            Text(L(isEditing ? "vocabulary.sheet.editTitle" : "vocabulary.sheet.title"))
-                .font(.studioDisplay(StudioTheme.Typography.pageTitle, weight: .semibold))
-                .foregroundStyle(StudioTheme.textPrimary)
-
-            Text(L(isEditing ? "vocabulary.sheet.editSubtitle" : "vocabulary.sheet.subtitle"))
-                .font(.studioBody(StudioTheme.Typography.body))
-                .foregroundStyle(StudioTheme.textSecondary)
-
-            TextField(L("vocabulary.sheet.placeholder"), text: $newVocabularyTerm)
-                .textFieldStyle(.roundedBorder)
-                .foregroundStyle(StudioTheme.textPrimary)
-                .onSubmit {
-                    submitVocabularyTerm()
-                }
-
-            HStack {
-                Spacer()
-                StudioButton(title: L("common.cancel"), systemImage: nil, variant: .secondary) {
-                    editingVocabularyEntry = nil
-                    newVocabularyTerm = ""
-                    isAddingVocabulary = false
-                }
-                StudioButton(
-                    title: L(isEditing ? "common.save" : "vocabulary.action.addWord"),
-                    systemImage: nil,
-                    variant: .primary,
-                    isDisabled: newVocabularyTerm.trimmingCharacters(in: .whitespacesAndNewlines)
-                        .isEmpty
-                ) {
-                    submitVocabularyTerm()
-                }
-            }
-        }
-        .padding(32)
-        .frame(width: 520)
-        .background(
-            ZStack {
-                Rectangle()
-                    .fill(.ultraThinMaterial)
-                StudioTheme.modalSurface
-            }
-        )
+        VocabularyTermSheet(term: $newVocabularyTerm, isEditing: editingVocabularyEntry != nil,
+                            onCancel: dismissVocabularySheet, onSave: submitVocabularyTerm)
     }
 
-    private func submitVocabularyTerm() {
-        let term = newVocabularyTerm.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !term.isEmpty else { return }
-
-        if let editingVocabularyEntry {
-            viewModel.updateVocabularyEntry(id: editingVocabularyEntry.id, term: term)
-        } else {
-            viewModel.addVocabularyTerm(term)
-        }
-
+    private func dismissVocabularySheet() {
         editingVocabularyEntry = nil
         newVocabularyTerm = ""
         isAddingVocabulary = false
     }
 
-    private func vocabularyCount(for filter: VocabularyFilter) -> Int {
-        viewModel.vocabularyEntries.count(where: { filter.matches($0.source) })
-    }
-
-    private var vocabularyMoreMenuLabel: some View {
-        HStack(spacing: StudioTheme.Spacing.xSmall) {
-            Image(systemName: "chevron.down")
-                .font(.system(size: StudioTheme.Typography.iconXSmall, weight: .semibold))
-            Text(L("vocabulary.action.more"))
-                .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
-                .lineLimit(1)
+    private func submitVocabularyTerm() {
+        let term = newVocabularyTerm.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !term.isEmpty else { return }
+        if let editingVocabularyEntry {
+            viewModel.updateVocabularyEntry(id: editingVocabularyEntry.id, term: term)
+        } else {
+            viewModel.addVocabularyTerm(term)
         }
-        .padding(.horizontal, StudioTheme.Insets.buttonHorizontal)
-        .padding(.vertical, StudioTheme.Insets.buttonVertical)
-    }
-
-    private func vocabularyMenuItemIcon(for source: VocabularySource) -> some View {
-        Group {
-            if let image = vocabularySourceMenuIconImage(for: source) {
-                Image(nsImage: image)
-                    .interpolation(.high)
-            } else {
-                Image(systemName: "square.stack.3d.up")
-                    .font(.system(size: StudioTheme.Typography.iconSmall, weight: .semibold))
-            }
-        }
-        .frame(width: 16, height: 16)
-    }
-
-    private func vocabularyMenuItemLabel(title: String, source: VocabularySource) -> some View {
-        HStack(spacing: StudioTheme.Spacing.small) {
-            vocabularyMenuItemIcon(for: source)
-            Text(title)
-        }
+        vocabularyFilter = .all
+        viewModel.searchQuery = ""
+        dismissVocabularySheet()
     }
 
     private func uniqueSuggestions(_ values: [String]) -> [String] {
@@ -1636,69 +1236,6 @@ struct StudioView: View {
                     )
                 )
         )
-    }
-
-    private func historyTable(records: [HistoryPresentationRecord]) -> some View {
-        StudioCard(padding: StudioTheme.Insets.none) {
-            VStack(spacing: StudioTheme.Spacing.none) {
-                HStack {
-                    Text(L("history.table.timestamp"))
-                        .frame(
-                            width: StudioTheme.Layout.historyTimestampColumnWidth,
-                            alignment: .leading
-                        )
-                    Text(L("history.table.sourceFile"))
-                        .frame(
-                            width: StudioTheme.Layout.historySourceColumnWidth, alignment: .leading
-                        )
-                    Text(L("history.table.recognizedText"))
-                    Spacer()
-                }
-                .font(.studioBody(StudioTheme.Typography.sidebarEyebrow, weight: .bold))
-                .foregroundStyle(StudioTheme.textSecondary)
-                .padding(.horizontal, StudioTheme.Insets.historyHeaderHorizontal)
-                .padding(.top, StudioTheme.Insets.historyHeaderTop)
-                .padding(.bottom, StudioTheme.Insets.historyHeaderBottom)
-
-                Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-
-                if records.isEmpty {
-                    Text(L("history.empty"))
-                        .font(.studioBody(StudioTheme.Typography.bodySmall))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.vertical, StudioTheme.Insets.historyEmptyVertical)
-                } else {
-                    ForEach(records) { record in
-                        StudioHistoryRow(
-                            record: record,
-                            onCopyResult: {
-                                viewModel.copyHistoryResult(id: record.id)
-                            },
-                            onCopyTranscript: {
-                                viewModel.copyTranscript(id: record.id)
-                            },
-                            onDownloadAudio: {
-                                viewModel.downloadAudio(id: record.id)
-                            },
-                            onPlayAudio: {
-                                viewModel.playAudio(id: record.id)
-                            },
-                            isAudioPlaying: viewModel.playingAudioRecordID == record.id,
-                            onDelete: {
-                                viewModel.deleteHistoryRecord(id: record.id)
-                            },
-                            onRetry: {
-                                viewModel.retryHistoryRecord(id: record.id)
-                            }
-                        )
-                        if record.id != records.last?.id {
-                            Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-                        }
-                    }
-                }
-            }
-        }
     }
 
     private func sectionHeader(
@@ -3506,85 +3043,5 @@ struct StudioView: View {
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
-    }
-}
-
-private struct VocabularyTermCard: View {
-    let entry: VocabularyEntry
-    let onCopy: () -> Void
-    let onEdit: () -> Void
-    let onDelete: () -> Void
-
-    @State private var isHovered = false
-    @Environment(\.colorScheme) private var colorScheme
-
-    /// Light: a white card with a 1px hairline; dark keeps the translucent surface.
-    private var cardFill: Color { colorScheme == .dark ? StudioTheme.surface : StudioTheme.cardFill }
-    private var cardStroke: Color {
-        colorScheme == .dark
-            ? StudioTheme.border.opacity(StudioTheme.Opacity.cardBorder) : StudioTheme.cardStroke
-    }
-
-    var body: some View {
-        HStack(spacing: StudioTheme.Spacing.small) {
-            vocabularySourceBadge
-
-            Text(entry.term)
-                .font(.studioBody(StudioTheme.Typography.bodyLarge, weight: .semibold))
-                .foregroundStyle(StudioTheme.textPrimary)
-                .lineLimit(1)
-
-            Spacer(minLength: StudioTheme.Spacing.small)
-
-            Button(action: onDelete) {
-                Image(systemName: "xmark")
-                    .font(.system(size: StudioTheme.Typography.iconXSmall, weight: .bold))
-                    .foregroundStyle(StudioTheme.textTertiary)
-                    .frame(width: 24, height: 24)
-                    .background(
-                        Circle()
-                            .fill(StudioTheme.controlSurface)
-                    )
-            }
-            .buttonStyle(.plain)
-            .opacity(isHovered ? 1 : 0)
-            .allowsHitTesting(isHovered)
-            .animation(.easeOut(duration: 0.12), value: isHovered)
-        }
-        .padding(.horizontal, StudioTheme.Insets.cardCompact)
-        .padding(.vertical, StudioTheme.Insets.buttonVertical + 2)
-        .frame(minHeight: 48)
-        .background(
-            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
-                .fill(cardFill)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
-                .stroke(cardStroke, lineWidth: StudioTheme.BorderWidth.thin)
-        )
-        .contentShape(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous))
-        .onHover { isHovered = $0 }
-        .contextMenu {
-            Button(L("common.copy"), systemImage: "doc.on.doc", action: onCopy)
-            Button(L("common.edit"), systemImage: "pencil", action: onEdit)
-            Button(L("common.delete"), systemImage: "trash", role: .destructive, action: onDelete)
-        }
-    }
-
-    @ViewBuilder
-    private var vocabularySourceBadge: some View {
-        if let image = vocabularySourceLogoImage(for: entry.source) {
-            Image(nsImage: image)
-                .resizable()
-                .interpolation(.high)
-                .scaledToFit()
-                .frame(width: 16, height: 16)
-        } else {
-            // Light: a neutral sparkle; dark keeps the original accent asterisk.
-            Image(systemName: colorScheme == .dark ? "asterisk" : "sparkles")
-                .font(.system(size: StudioTheme.Typography.iconRegular,
-                    weight: colorScheme == .dark ? .bold : .regular))
-                .foregroundStyle(colorScheme == .dark ? StudioTheme.warning : StudioTheme.textTertiary)
-        }
     }
 }

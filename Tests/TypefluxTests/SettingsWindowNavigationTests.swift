@@ -8,14 +8,32 @@ import Testing
 struct SettingsWindowNavigationTests {
     private typealias UI = SettingsBehaviorTestSupport
 
+    @Test func `pane row identifiers select nested cells despite status labels`() async throws {
+        try await UI.withFixture { _ in
+            var selection = AgentSettingsPane.overview
+            let list = SettingsPaneList(sections: AgentSettingsPane.sections,
+                                        selection: Binding(get: { selection }, set: { selection = $0 }),
+                                        status: { _ in AgentCapabilityStatus.mcpStatus(for: []) })
+            try await UI.withWindow(list, width: 260, height: 640) { window, host in
+                for pane in [AgentSettingsPane.skills, .memory, .mcpServers, .overview] {
+                    try await selectPane(pane, in: host)
+                    try await wait("Pane binding selected \(pane.id)", in: window) { selection == pane }
+                    let (table, row) = try #require(paneRow(pane, in: host))
+                    let identifier = "settings.pane.\(pane.id)"
+                    #expect(paneCellElements(in: table, row: row).contains {
+                        $0.value("accessibilityIdentifier") as? String == identifier
+                    })
+                }
+            }
+        }
+    }
+
     @Test func `all pages have native toolbar titles and keep sidebar order`() async throws {
         try await UI.withFixture { settings in
-            let previousPolicy = NSApp.activationPolicy()
-            NSApp.setActivationPolicy(.regular)
-            defer { NSApp.setActivationPolicy(previousPolicy) }
             let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
             defer { try? FileManager.default.removeItem(at: directory) }
-            let controller = SettingsWindowController()
+            let dockVisibility = DockVisibilityController(app: TypefluxTestActivationPolicyController())
+            let controller = SettingsWindowController(dockVisibility: dockVisibility)
             controller.modelLibrary = AskModelLibrary(defaults: settings.defaults, automaticallyLoadsCatalog: false)
             controller.show(settingsStore: settings, historyStore: FileHistoryStore(baseDir: directory))
             let window = try #require(controller.window)
@@ -68,12 +86,10 @@ struct SettingsWindowNavigationTests {
 
     @Test func `vocabulary personas and models use the native search and reset on navigation`() async throws {
         try await UI.withFixture { settings in
-            let previousPolicy = NSApp.activationPolicy()
-            NSApp.setActivationPolicy(.regular)
-            defer { NSApp.setActivationPolicy(previousPolicy) }
             let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
             defer { try? FileManager.default.removeItem(at: directory) }
-            let controller = SettingsWindowController()
+            let dockVisibility = DockVisibilityController(app: TypefluxTestActivationPolicyController())
+            let controller = SettingsWindowController(dockVisibility: dockVisibility)
             controller.modelLibrary = AskModelLibrary(defaults: settings.defaults, automaticallyLoadsCatalog: false)
             controller.show(settingsStore: settings, historyStore: FileHistoryStore(baseDir: directory),
                             initialSection: .vocabulary)
@@ -140,28 +156,36 @@ struct SettingsWindowNavigationTests {
             try await TypefluxNavigationTestSupport.withWindow(StudioView(viewModel: model),
                                                                size: NSSize(width: 1300, height: 800)) { window, host in
                 for pane in [AgentSettingsPane.skills, .memory, .mcpServers] {
-                    try await open(pane.title, in: host)
-                    try await UI.wait { window.title.contains(pane.title) }
+                    try await selectPane(pane, in: host)
+                    try await wait("Agent pane title: \(pane.title)", in: window) { window.title.contains(pane.title) }
                     try await type("no-results-346", in: window)
                     let item = try #require(searchItem(window))
                     #expect(item.searchField.stringValue == "no-results-346")
                     #expect(!UI.elements(in: host).contains { $0.role == NSAccessibility.Role.textField.rawValue })
                     if pane == .skills {
-                        try await UI.wait { UI.contains(L("agent.skills.noMatch"), in: host) }
+                        try await wait("Skills filtered empty state", in: window) {
+                            UI.contains(L("agent.skills.noMatch"), in: host)
+                        }
                     }
                     if pane == .mcpServers {
-                        try await UI.wait { UI.contains(L("personas.redesign.noResults", "no-results-346"), in: host) }
+                        try await wait("MCP servers filtered empty state", in: window) {
+                            UI.contains(L("personas.redesign.noResults", "no-results-346"), in: host)
+                        }
                         #expect(!UI.contains("Alpha Server", in: host) && !UI.contains("Beta Server", in: host))
                     }
                     try TypefluxNavigationTestSupport.sendKey(53, to: window)
-                    try await UI.wait { item.searchField.stringValue.isEmpty }
+                    try await wait("Clear search with Escape in \(pane.title)", in: window) {
+                        item.searchField.stringValue.isEmpty
+                    }
                     try TypefluxNavigationTestSupport.sendKey(53, to: window)
-                    try await UI.wait { item.searchField.currentEditor() == nil }
+                    try await wait("End search editing with Escape in \(pane.title)", in: window) {
+                        item.searchField.currentEditor() == nil
+                    }
                 }
                 model.navigate(to: .launcher)
                 for pane in [LauncherSettingsPane.keywords, .workflows] {
-                    try await open(pane.title, in: host)
-                    try await UI.wait { window.title.contains(pane.title) }
+                    try await selectPane(pane, in: host)
+                    try await wait("Launcher pane title: \(pane.title)", in: window) { window.title.contains(pane.title) }
                     try await type("no-results-346", in: window)
                     #expect(searchItem(window)?.searchField.stringValue == "no-results-346")
                     if pane == .keywords {
@@ -171,22 +195,83 @@ struct SettingsWindowNavigationTests {
                         })
                     }
                 }
-                try await open(LauncherSettingsPane.basics.title, in: host)
-                try await UI.wait { searchItem(window) == nil }
+                try await selectPane(LauncherSettingsPane.basics, in: host)
+                try await wait("Launcher basics removes toolbar search", in: window) { searchItem(window) == nil }
             }
         }
     }
 
-    private func open(_ title: String, in host: NSView) async throws {
-        try await UI.wait {
-            UI.elements(in: host)
-                .contains { $0.role == NSAccessibility.Role.button.rawValue && $0.label.hasPrefix(title) }
+    private func selectPane<Pane: SettingsPaneItem & CaseIterable>(_ pane: Pane, in host: NSView) async throws {
+        let window = try #require(host.window)
+        try await wait("Native pane list row: \(pane.title)", in: window) {
+            self.paneRow(pane, in: host) != nil
         }
-        let button = try #require(UI.elements(in: host).first {
-            $0.role == NSAccessibility.Role.button.rawValue && $0.label.hasPrefix(title)
-        })
-        try button.press()
-        try await Task.sleep(for: .milliseconds(100))
+        let (table, row) = try #require(paneRow(pane, in: host))
+        // SettingsPaneList is List(selection:), so select its native row rather than waiting for a Button.
+        table.selectRowIndexes(IndexSet(integer: row), byExtendingSelection: false)
+        table.scrollRowToVisible(row)
+        #expect(table.selectedRowIndexes == IndexSet(integer: row))
+    }
+
+    private func paneRow<Pane: SettingsPaneItem & CaseIterable>(_ pane: Pane, in host: NSView) -> (NSTableView, Int)? {
+        host.layoutSubtreeIfNeeded()
+        let identifier = "settings.pane.\(pane.id)"
+        let titles = Set(Pane.allCases.map(\.title))
+        for table in UI.nativeViews(in: host).compactMap({ $0 as? NSTableView }) {
+            guard table.window === host.window, !table.isHiddenOrHasHiddenAncestor else { continue }
+            var rows: [String: Int] = [:]
+            for index in 0 ..< table.numberOfRows {
+                let elements = paneCellElements(in: table, row: index)
+                if elements.contains(where: { $0.value("accessibilityIdentifier") as? String == identifier }) {
+                    return (table, index)
+                }
+                for title in titles where elements.contains(where: {
+                    let text = $0.text.trimmingCharacters(in: .whitespacesAndNewlines)
+                    let label = $0.label.trimmingCharacters(in: .whitespacesAndNewlines)
+                    return text == title || label == title || label.hasPrefix(title + ", ")
+                }) {
+                    rows[title] = index
+                }
+            }
+            // Recognize the complete pane roster, keeping the app sidebar and content lists out of scope.
+            if rows.count == titles.count, let index = rows[pane.title] { return (table, index) }
+        }
+        return nil
+    }
+
+    private func paneCellElements(in table: NSTableView, row: Int) -> [UI.Element] {
+        // AppKit row views need not expose their hosting cells as AX children. Read the cells and
+        // their native subviews explicitly rather than relying on the row container's label.
+        var roots: [Any] = (0 ..< table.numberOfColumns).compactMap {
+            table.view(atColumn: $0, row: row, makeIfNecessary: true)
+        }
+        if let view = table.rowView(atRow: row, makeIfNecessary: true) { roots.append(view) }
+        let accessibilityRows = UI.Element(object: table, window: table.window)
+            .value("accessibilityRows") as? [Any] ?? []
+        if accessibilityRows.count == table.numberOfRows { roots.append(accessibilityRows[row]) }
+        var seen = Set<ObjectIdentifier>()
+        return roots.flatMap { root -> [UI.Element] in
+            let native = (root as? NSView).map { UI.nativeViews(in: $0) } ?? []
+            return (UI.elements(in: root) + native.flatMap { UI.elements(in: $0) }).filter {
+                seen.insert(ObjectIdentifier($0.object)).inserted
+            }
+        }
+    }
+
+    private func wait(_ description: String, in window: NSWindow, _ condition: () -> Bool) async throws {
+        do {
+            try await UI.wait(description, condition)
+        } catch {
+            let field = searchItem(window)?.searchField
+            let rows = window.contentView.map { host in
+                UI.nativeViews(in: host).compactMap { $0 as? NSTableView }.map(\.numberOfRows)
+            } ?? []
+            Issue.record("""
+                \(description): title=\(window.title), search=\(field?.stringValue ?? "<absent>"), \
+                editor=\(field?.currentEditor() != nil), tableRows=\(rows)
+                """)
+            throw error
+        }
     }
 
     private func searchItem(_ window: NSWindow) -> NSSearchToolbarItem? {
@@ -194,18 +279,16 @@ struct SettingsWindowNavigationTests {
     }
 
     private func type(_ query: String, in window: NSWindow) async throws {
-        try await UI.wait { searchItem(window) != nil }
+        try await wait("Native toolbar search item", in: window) { searchItem(window) != nil }
         try await Task.sleep(for: .milliseconds(50))
-        window.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
         try TypefluxNavigationTestSupport.sendKey(3, characters: "f", modifiers: .command, to: window)
         let item = try #require(searchItem(window))
-        try await UI.wait { item.searchField.currentEditor() != nil }
+        try await wait("Owned search field editor", in: window) { item.searchField.currentEditor() != nil }
         let editor = try #require(item.searchField.currentEditor() as? NSTextView)
         editor.insertText(query, replacementRange: NSRange(location: 0, length: editor.string.utf16.count))
         item.searchField.validateEditing()
         item.searchField.sendAction(item.searchField.action, to: item.searchField.target)
-        try await UI.wait { item.searchField.stringValue == query }
+        try await wait("Toolbar search query: \(query)", in: window) { item.searchField.stringValue == query }
         try await Task.sleep(for: .milliseconds(80))
     }
 }

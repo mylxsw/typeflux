@@ -5,28 +5,70 @@ import Testing
 
 @MainActor
 enum TypefluxNavigationTestSupport {
+    @MainActor
+    final class HostedWindow {
+        let window: NSWindow
+        let host: NSView
+        private var closed = false
+
+        init(window: NSWindow, host: NSView) {
+            self.window = window
+            self.host = host
+        }
+
+        func detach() {
+            if let sheet = window.attachedSheet {
+                window.endSheet(sheet); sheet.close()
+            }
+            window.contentView = nil
+        }
+
+        func close() {
+            guard !closed else { return }
+            closed = true
+            detach()
+            window.orderOut(nil)
+            window.close()
+        }
+    }
+
     static func withWindow(_ view: some View, size: NSSize = NSSize(width: 900, height: 600),
                            run: (NSWindow, NSView) async throws -> Void) async throws {
+        try await withWindows([AnyView(view)], size: size) { windows in
+            let hosted = try #require(windows.first)
+            try await run(hosted.window, hosted.host)
+        }
+    }
+
+    /// Fixtures own their windows; application configuration is performed once for the process.
+    static func withWindows(_ views: [AnyView], size: NSSize = NSSize(width: 900, height: 600),
+                            run: @MainActor ([HostedWindow]) async throws -> Void) async throws {
+        _ = try #require(!views.isEmpty)
         TypefluxTestApplicationEnvironment.prepare()
+        let windows = views.map { makeWindow($0, size: size) }
+        defer { close(windows) }
+        for hosted in windows { hosted.window.orderFront(nil) }
+        windows.last?.window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+        try await Task.sleep(for: .milliseconds(250))
+        windows.last?.window.makeKey()
+        for hosted in windows { hosted.host.layoutSubtreeIfNeeded() }
+        try await run(windows)
+    }
+
+    private static func makeWindow(_ view: AnyView, size: NSSize) -> HostedWindow {
         let window = NSWindow(contentRect: NSRect(origin: NSPoint(x: 100, y: 100), size: size),
                               styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         let host = NSHostingView(rootView: view)
         window.contentView = host
-        window.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
-        defer {
-            if let sheet = window.attachedSheet {
-                window.endSheet(sheet); sheet.close()
-            }
-            window.contentView = nil
-            window.orderOut(nil)
-            window.close()
-        }
-        try await Task.sleep(for: .milliseconds(250))
-        window.makeKey()
-        host.layoutSubtreeIfNeeded()
-        try await run(window, host)
+        return HostedWindow(window: window, host: host)
+    }
+
+    private static func close(_ windows: [HostedWindow]) {
+        // Stop every hosting tree before closing a key window can activate another test window.
+        for hosted in windows { hosted.detach() }
+        for hosted in windows.reversed() { hosted.close() }
     }
 
     static func searchField(in view: NSView, identifier: String? = nil) -> NSSearchField? {
@@ -73,11 +115,38 @@ enum TypefluxNavigationTestSupport {
                                                   characters: text, charactersIgnoringModifiers: text,
                                                   isARepeat: false, keyCode: code))
         if keyEquivalent {
-            // SwiftPM does not run NSApp's event loop. Ask the owned native
-            // window to resolve its default/cancel button keyboard equivalents.
-            _ = window.performKeyEquivalent(with: event)
-        } else {
-            NSApp.sendEvent(event)
+            // Prefer native shortcut wiring; SwiftUI shortcuts can exist without an NSButtonCell equivalent.
+            let flags = modifiers.intersection([.command, .option, .control, .shift])
+            let controls = window.contentView.map(SettingsBehaviorTestSupport.nativeViews) ?? []
+            let matching = controls.compactMap { $0 as? NSControl }.first {
+                guard !($0 is NSPopUpButton), let cell = $0.cell as? NSButtonCell,
+                      !(cell is NSPopUpButtonCell), !$0.isHiddenOrHasHiddenAncestor else { return false }
+                return cell.keyEquivalent == text
+                    && cell.keyEquivalentModifierMask.intersection([.command, .option, .control, .shift]) == flags
+            }
+            if let control = matching {
+                try SettingsBehaviorTestSupport.Element(object: control, window: window).press()
+            } else {
+                // Route through this window's SwiftUI hosting tree, then consume delayed runloop stops
+                // just as pressThroughAccessibility does. Callers assert the actual command's effect.
+                defer { SettingsBehaviorTestSupport.drainPendingRunLoopStops() }
+                _ = window.performKeyEquivalent(with: event)
+            }
+            return
+        }
+        // Swift Testing does not run NSApp.run. Dispatch the same owned handlers that the local
+        // monitors use, without relying on WindowServer's key-window event delivery.
+        guard window.attachedSheet == nil, let content = window.contentView else { return }
+        for view in SettingsBehaviorTestSupport.nativeViews(in: content) {
+            if let bridge = view as? TypefluxSearchToolbarBridge.BridgeView, bridge.handle(event) {
+                if modifiers == .command, text.lowercased() == "f",
+                   let field = window.toolbar?.items.compactMap({ $0 as? NSSearchToolbarItem }).first?.searchField {
+                    #expect(window.makeFirstResponder(field), "Focus the search field in its owning window")
+                }
+                return
+            }
+            if let monitor = view as? TypefluxKeyboardMonitor.MonitorView, monitor.handle(event) { return }
+            if let table = view as? TypefluxTableDeleteKey.KeyView, table.handle(event) { return }
         }
     }
 

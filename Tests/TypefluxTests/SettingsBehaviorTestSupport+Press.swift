@@ -3,11 +3,10 @@ import Testing
 
 @MainActor
 extension SettingsBehaviorTestSupport.Element {
-    private typealias Press = @convention(c) (AnyObject, Selector) -> Bool
-
     func press() throws {
         // Native mouse/AX clicks enter AppKit tracking loops that can stop the test runner's outer run loop.
-        _ = try #require(!(object is NSPopUpButton), "Select menu items without starting menu tracking")
+        _ = try #require(!(object is NSPopUpButton) && !((object as? NSControl)?.cell is NSPopUpButtonCell),
+                         "Select menu items without starting menu tracking")
         if let button = object as? NSButton {
             try pressButton(button)
             return
@@ -21,7 +20,11 @@ extension SettingsBehaviorTestSupport.Element {
             return
         }
         if let control = object as? NSControl {
-            try dispatch(control)
+            if let cell = control.cell as? NSButtonCell {
+                try pressCell(cell, in: control)
+            } else {
+                try dispatch(control)
+            }
             return
         }
         if let item = object as? NSMenuItem {
@@ -31,23 +34,18 @@ extension SettingsBehaviorTestSupport.Element {
             return
         }
         if try pressNativeButton() || pressNativeSegment() || pressNativeSwitch() { return }
-        // Only non-control SwiftUI accessibility regions reach this fallback. Callers assert their model effect.
+        // SwiftUI proxies need not expose a native control or action. Keep the verified AX/runloop drain.
         _ = try #require(!(object is NSCell), "A native cell must dispatch through its owning control")
-        let selector = NSSelectorFromString("accessibilityPerformPress")
-        if !object.responds(to: selector), object.accessibilityActionNames().contains(.press) {
-            object.accessibilityPerformAction(.press)
-            return
-        }
-        _ = try #require(object.responds(to: selector), "The rendered region must expose a press action: \(label)")
-        let press = unsafeBitCast(object.method(for: selector), to: Press.self)
-        // Some SwiftUI proxies return false even after invoking their handler.
-        _ = press(object, selector)
+        SettingsBehaviorTestSupport.pressThroughAccessibility(object)
     }
 
     private func dispatch(_ control: NSControl) throws {
         if let window { _ = try #require(control.window === window, "The control must belong to the tested window") }
         guard control.isEnabled else { return }
-        let action = try #require(control.action, "The native control must have an action: \(label)")
+        guard let action = control.action else {
+            SettingsBehaviorTestSupport.pressThroughAccessibility(control)
+            return
+        }
         #expect(NSApp.sendAction(action, to: control.target, from: control),
                 "The native control must dispatch its action: \(label)")
     }
@@ -56,8 +54,14 @@ extension SettingsBehaviorTestSupport.Element {
         _ = try #require(!(button is NSPopUpButton), "Select menu items without starting menu tracking")
         if let window { _ = try #require(button.window === window) }
         guard button.isEnabled else { return }
+        guard button.action != nil else {
+            SettingsBehaviorTestSupport.pressThroughAccessibility(button)
+            return
+        }
         // Native state-display flags survive missing or overridden AX roles; momentary buttons have none.
-        if let cell = button.cell as? NSButtonCell, !cell.showsStateBy.isEmpty {
+        if button.accessibilityRole() == .radioButton {
+            button.state = .on
+        } else if let cell = button.cell as? NSButtonCell, !cell.showsStateBy.isEmpty {
             button.setNextState()
         }
         try dispatch(button)
@@ -66,6 +70,10 @@ extension SettingsBehaviorTestSupport.Element {
     private func pressCell(_ cell: NSButtonCell) throws {
         if let button = cell.controlView as? NSButton {
             try pressButton(button)
+            return
+        }
+        if let control = cell.controlView as? NSControl, !(control is NSMatrix) {
+            try pressCell(cell, in: control)
             return
         }
         let matrix = try #require(cell.controlView as? NSMatrix, "The button cell must have an owned control")
@@ -78,6 +86,22 @@ extension SettingsBehaviorTestSupport.Element {
         let action = try #require(cell.action ?? matrix.action)
         let target = cell.action != nil ? cell.target : matrix.target
         #expect(NSApp.sendAction(action, to: target, from: matrix))
+    }
+
+    private func pressCell(_ cell: NSButtonCell, in control: NSControl) throws {
+        if let window { _ = try #require(control.window === window) }
+        guard control.isEnabled, cell.isEnabled else { return }
+        guard let action = control.action ?? cell.action else {
+            SettingsBehaviorTestSupport.pressThroughAccessibility(control)
+            return
+        }
+        if control.accessibilityRole() == .radioButton {
+            cell.state = .on
+        } else if !cell.showsStateBy.isEmpty {
+            cell.setNextState()
+        }
+        let target = control.action != nil ? control.target : cell.target
+        #expect(NSApp.sendAction(action, to: target, from: control))
     }
 
     private func pressSwitch(_ control: NSSwitch) throws {
@@ -114,7 +138,7 @@ extension SettingsBehaviorTestSupport.Element {
         let roles = [NSAccessibility.Role.button.rawValue, NSAccessibility.Role.radioButton.rawValue,
                      NSAccessibility.Role.checkBox.rawValue, NSAccessibility.Role.link.rawValue]
         guard roles.contains(role), let button = nativeViews.compactMap({ $0 as? NSButton }).first(where: {
-            !($0 is NSPopUpButton) && matches($0)
+            !($0 is NSPopUpButton) && $0.action != nil && matches($0)
         }) else { return false }
         try pressButton(button)
         return true

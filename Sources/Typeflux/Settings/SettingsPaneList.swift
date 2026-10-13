@@ -23,6 +23,7 @@ struct SettingsPaneList<Pane: SettingsPaneItem>: View {
                             }
                         }
                         .tag(pane)
+                        .accessibilityIdentifier("settings.pane.\(pane.id)")
                         .accessibilityLabel(status(pane).map { "\(pane.title), \($0.label)" } ?? pane.title)
                     }
                 } header: {
