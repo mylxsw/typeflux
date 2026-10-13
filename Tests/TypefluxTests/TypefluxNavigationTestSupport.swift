@@ -197,6 +197,9 @@ enum TypefluxNavigationTestSupport {
             if let monitor = view as? TypefluxKeyboardMonitor.MonitorView, monitor.handle(event) { return }
             if let table = view as? TypefluxTableDeleteKey.KeyView, table.handle(event) { return }
         }
+        // Other local monitors (e.g. the Spotlight arrow monitor) and the focused field receive the key
+        // through normal application dispatch; a keyDown does not start a nested tracking loop.
+        NSApp.sendEvent(event)
     }
 
     static func capture(_ window: NSWindow, name: String) throws {
