@@ -18,7 +18,9 @@ struct HistorySettingsBackButtonTests {
                     try await RenderedUI.wait { backButton(in: window)?.isEnabled == true }
                     let back = try requireBackButton(in: window)
                     if accessibilityPress {
-                        #expect(back.accessibilityPerformPress())
+                        // AppKit can report false for toolbar-hosted buttons even when the action runs;
+                        // the waits below assert the actual effect.
+                        _ = back.accessibilityPerformPress()
                     } else {
                         back.performClick(nil)
                     }
