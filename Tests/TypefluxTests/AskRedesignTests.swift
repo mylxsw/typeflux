@@ -276,7 +276,7 @@ struct AskDesignPolishTests {
     @Test func designSurfacesAreDistinctFromEachOther() {
         // The composer card must not blend into the popover or panel cards.
         #expect(TypefluxColor.controlBackground.color != TypefluxColor.windowBackground.color)
-        #expect(TypefluxColor.controlBackground.color != TypefluxColor.controlBackground.color)
+        #expect(TypefluxColor.contentBackground.color != TypefluxColor.controlBackground.color)
         // In-window glass has its own tint, distinct from the opaque cards.
         #expect(LegacyAskPalette.glassFill != TypefluxColor.controlBackground.color)
     }

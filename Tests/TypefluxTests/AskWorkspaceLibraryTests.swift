@@ -18,9 +18,9 @@ struct AskWorkspaceLibraryTests {
         #expect(metrics.suggestionCorner == TypefluxRadius.form.value(for: style))
         #expect(metrics.composerCorner == TypefluxRadius.form.value(for: style))
         #expect(metrics.paletteCorner == TypefluxRadius.spotlightResults.value(for: style))
-        #expect(metrics.menuCorner == TypefluxRadius.menu.value(for: style))
-        #expect(metrics.menuRowCorner == TypefluxRadius.menuHighlight.value(for: style))
-        #expect(metrics.hoverCardCorner == TypefluxRadius.popover.value(for: style))
+        #expect(metrics.menuCorner == TypefluxRadius.menuCard.value(for: style))
+        #expect(metrics.menuRowCorner == TypefluxRadius.menuRow.value(for: style))
+        #expect(metrics.hoverCardCorner == TypefluxRadius.hoverCard.value(for: style))
         #expect(metrics.headerChipHeight == TypefluxControlHeight.toolbarItem.value(for: style))
     }
 
@@ -35,13 +35,12 @@ struct AskWorkspaceLibraryTests {
         #expect(AskMetrics.composerMaxWidth - chrome.horizontalInset * 2 == AskMetrics.transcriptMaxWidth)
     }
 
-    @Test func sharedCompatibilityNamesResolveToTheSameSemanticTokens() {
-        #expect(TypefluxColor.accent.color == TypefluxColor.accent.color)
-        #expect(TypefluxColor.accent.color == TypefluxColor.accent.color)
-        #expect(TypefluxColor.accent.color.opacity(0.12) == TypefluxColor.accent.color.opacity(0.12))
-        #expect(TypefluxColor.controlBackground.color == TypefluxColor.controlBackground.color)
-        #expect(TypefluxColor.controlBackground.color == TypefluxColor.controlBackground.color)
-        #expect(TypefluxColor.separator.color == TypefluxColor.separator.color)
+    @Test func classicSurfacesUseTheirSystemColorRoles() {
+        #expect(AskClassic.canvas == Color(nsColor: .textBackgroundColor))
+        #expect(AskClassic.sidebar == Color(nsColor: .windowBackgroundColor))
+        #expect(AskClassic.card == Color(nsColor: .controlBackgroundColor))
+        #expect(AskClassic.cardBorder == Color(nsColor: .separatorColor))
+        #expect(AskClassic.selection == Color(nsColor: .selectedContentBackgroundColor))
     }
 
     @Test func toolbarActionsKeepKeyboardAndAccessibilityMetadata() {

@@ -288,10 +288,10 @@ struct AskWorkflowAuthoringPanel: View {
                         .accessibilityIdentifier("ask.workflow.complete")
                     }
                     .padding(.horizontal, 14).padding(.vertical, 10)
-                    .background(TypefluxColor.controlBackground.color.opacity(0.6))
+                    .background(TypefluxColor.contentBackground.color.opacity(0.6))
                 }
             }
-            .background(TypefluxColor.controlBackground.color,
+            .background(TypefluxColor.contentBackground.color,
                         in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(TypefluxColor.separator.color))
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
@@ -446,6 +446,10 @@ struct AskWorkflowAuthoringPanel: View {
 
     // MARK: Result
 
+    private var contentCardShape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: style), style: .continuous)
+    }
+
     private func resultSection(_ checklist: AskWorkflowChecklist) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             sectionTitle(L("ask.workflow.chat.result"))
@@ -456,7 +460,7 @@ struct AskWorkflowAuthoringPanel: View {
                         .foregroundStyle(TypefluxColor.secondaryLabel.color)
                 }
                 .frame(maxWidth: .infinity, minHeight: 90)
-                .background(TypefluxColor.controlBackground.color,
+                .background(TypefluxColor.contentBackground.color,
                             in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .strokeBorder(TypefluxColor.separator.color))
@@ -526,9 +530,9 @@ struct AskWorkflowAuthoringPanel: View {
             }
             .padding(.horizontal, 12).padding(.vertical, 8)
         }
-        .background(TypefluxColor.controlBackground.color, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(TypefluxColor.separator.color))
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background(TypefluxColor.contentBackground.color, in: contentCardShape)
+        .overlay(contentCardShape.strokeBorder(TypefluxColor.separator.color))
+        .clipShape(contentCardShape)
     }
 
     /// The run log: the arguments it got, then what it wrote to stderr.
@@ -571,7 +575,7 @@ struct AskWorkflowAuthoringPanel: View {
                         .buttonStyle(.plain)
                     }
                 }
-                .background(TypefluxColor.controlBackground.color,
+                .background(TypefluxColor.contentBackground.color,
                             in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .strokeBorder(TypefluxColor.separator.color))

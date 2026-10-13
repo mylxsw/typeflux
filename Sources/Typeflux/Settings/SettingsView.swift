@@ -149,6 +149,7 @@ struct StudioView: View {
             if searchScope?.usesModelQuery == true, viewModel.modelSearchQuery != query {
                 viewModel.modelSearchQuery = query
             } else if searchScope?.usesStudioQuery == true, viewModel.searchQuery != query {
+                if viewModel.currentSection == .history { selectedHistoryID = nil }
                 viewModel.searchQuery = query
             }
         }
@@ -166,8 +167,6 @@ struct StudioView: View {
         .onChange(of: viewModel.currentSection) { section in
             if section != .history { selectedHistoryID = nil }
         }
-        .onChange(of: viewModel.searchQuery) { _ in selectedHistoryID = nil }
-        .onChange(of: viewModel.historyFilter) { _ in selectedHistoryID = nil }
         .onChange(of: viewModel.displayedHistory.map(\.id)) { ids in
             if let selectedHistoryID, !ids.contains(selectedHistoryID) {
                 self.selectedHistoryID = nil
@@ -627,7 +626,7 @@ struct StudioView: View {
             }
             ToolbarItem(placement: .primaryAction) {
                 Menu {
-                    Picker(L("history.filter.title"), selection: $viewModel.historyFilter) {
+                    Picker(L("history.filter.title"), selection: historyFilterBinding) {
                         ForEach(HistorySettingsFilter.allCases) { filter in Text(filter.title).tag(filter) }
                     }
                     Divider()
@@ -644,6 +643,13 @@ struct StudioView: View {
                     .accessibilityIdentifier("history.filterMenu")
             }
         }
+    }
+
+    private var historyFilterBinding: Binding<HistorySettingsFilter> {
+        Binding(get: { viewModel.historyFilter }, set: { filter in
+            if filter != viewModel.historyFilter { selectedHistoryID = nil }
+            viewModel.historyFilter = filter
+        })
     }
 
     private var isShowingHistoryDetail: Bool {
@@ -1251,6 +1257,7 @@ struct StudioView: View {
         } else {
             ForEach(records) { record in
                 HistorySettingsNavigationRow(record: record, viewModel: viewModel) {
+                    viewModel.historyFilter = .all
                     viewModel.navigate(to: .history)
                     selectedHistoryID = record.id
                 }

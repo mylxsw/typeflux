@@ -840,12 +840,6 @@
     "count": 1
   },
   {
-    "file": "Sources/Typeflux/Ask/Budget/AskBudgetView.swift",
-    "rule": "typeflux_literal_radius",
-    "match": "cornerRadius: 10",
-    "count": 1
-  },
-  {
     "file": "Sources/Typeflux/Ask/Project/AskProjectReviewView.swift",
     "rule": "typeflux_literal_font",
     "match": ".font(.system(size: 12",
@@ -1353,7 +1347,7 @@
     "file": "Sources/Typeflux/Ask/WorkflowAuthoring/AskWorkflowAuthoringPanel.swift",
     "rule": "typeflux_literal_radius",
     "match": "cornerRadius: 12",
-    "count": 16
+    "count": 13
   },
   {
     "file": "Sources/Typeflux/Ask/WorkflowAuthoring/AskWorkflowAuthoringPanel.swift",

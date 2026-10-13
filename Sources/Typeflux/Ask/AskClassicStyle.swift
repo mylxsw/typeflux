@@ -49,9 +49,9 @@ struct AskStyleMetrics: Equatable {
              suggestionCorner: TypefluxRadius.form.value(for: style),
              composerCorner: TypefluxRadius.form.value(for: style),
              paletteCorner: TypefluxRadius.spotlightResults.value(for: style),
-             menuCorner: TypefluxRadius.menu.value(for: style),
-             hoverCardCorner: TypefluxRadius.popover.value(for: style),
-             menuRowCorner: TypefluxRadius.menuHighlight.value(for: style),
+             menuCorner: TypefluxRadius.menuCard.value(for: style),
+             hoverCardCorner: TypefluxRadius.hoverCard.value(for: style),
+             menuRowCorner: TypefluxRadius.menuRow.value(for: style),
              headerChipHeight: TypefluxControlHeight.toolbarItem.value(for: style))
     }
 }
@@ -96,7 +96,7 @@ struct AskSidePanelChrome: ViewModifier {
     @ViewBuilder
     func body(content: Content) -> some View {
         if style.usesGlass {
-            TypefluxGlassContainer(radius: .sidebar, placement: .inWindow) { content }
+            TypefluxGlassContainer(radius: .sidebar, placement: .windowEdge) { content }
                 .padding(glassInset, AskMetrics.sidebarPanelInset)
         } else {
             content

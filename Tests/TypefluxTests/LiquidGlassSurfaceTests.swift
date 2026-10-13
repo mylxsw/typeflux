@@ -109,6 +109,40 @@ struct LiquidGlassSurfaceTests {
         #endif
     }
 
+    @Test func libraryGlassContainersKeepNativeLayersAndAccessibilityFallbacks() async throws {
+        #if compiler(>=6.2)
+            guard #available(macOS 26.0, *) else { return }
+            for style in InterfaceStyle.allCases {
+                for dark in [false, true] {
+                    for options in [TypefluxAccessibilityOptions(), .init(reduceTransparency: true),
+                                    .init(increasedContrast: true)] {
+                        let content = TypefluxGlassContainer(radius: .sidebar, placement: .windowEdge) {
+                            Text("Navigation").frame(width: 200, height: 80)
+                        }
+                        .environment(\.interfaceStyle, style)
+                        .environment(\.colorScheme, dark ? .dark : .light)
+                        .environment(\.typefluxAccessibilityOptions, options)
+                        .environment(\.glassMaterialOverride, .liquidGlass)
+                        let window = makeWindow(content, dark: dark, size: .init(width: 200, height: 80),
+                                                highContrast: options.increasedContrast)
+                        defer { window.orderOut(nil); window.close() }
+                        try await Task.sleep(for: .milliseconds(100))
+                        let layers = descendants(try #require(window.contentView))
+                        let native = layers.compactMap { $0 as? NSGlassEffectView }
+                        let edgeBackdrops = layers.compactMap { $0 as? NSVisualEffectView }
+                            .filter { $0.material == .hudWindow }
+                        let expectsGlass = style.usesGlass && !options.reduceTransparency && !options.increasedContrast
+                            && !NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency
+                            && !NSWorkspace.shared.accessibilityDisplayShouldIncreaseContrast
+                        #expect(native.count == (expectsGlass ? 1 : 0))
+                        #expect(native.allSatisfy { $0.style == .regular })
+                        #expect(edgeBackdrops.count == (expectsGlass && !dark ? 1 : 0))
+                    }
+                }
+            }
+        #endif
+    }
+
     /// Window Server captures include the refraction omitted by bitmap caching.
     /// Opt-in only; uses synthetic data and requires local screen-capture access.
     @Test func writeNativeGlassReviewWhenRequested() async throws {

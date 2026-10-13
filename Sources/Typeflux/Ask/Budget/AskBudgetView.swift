@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct AskBudgetView: View {
+    @Environment(\.interfaceStyle) private var style
     let budget: AskBudgetSummary
 
     static func reasonKey(_ reason: String) -> String {
@@ -36,6 +37,7 @@ struct AskBudgetView: View {
         .foregroundStyle(TypefluxColor.label.color)
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(TypefluxColor.controlBackground.color, in: RoundedRectangle(cornerRadius: 10))
+        .background(TypefluxColor.contentBackground.color,
+                    in: RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: style)))
     }
 }

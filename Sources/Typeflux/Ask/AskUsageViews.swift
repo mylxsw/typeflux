@@ -278,7 +278,7 @@ struct AskUsagePanel: View {
         VStack(alignment: .leading, spacing: compact ? 6 : 9, content: content)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, compact ? 10 : 14).padding(.vertical, compact ? 9 : 13)
-            .background(TypefluxColor.controlBackground.color,
+            .background(TypefluxColor.contentBackground.color,
                         in: RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: style), style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: style), style: .continuous)
                 .strokeBorder(TypefluxColor.separator.color))

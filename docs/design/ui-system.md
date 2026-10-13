@@ -54,10 +54,13 @@ On macOS 26, native controls always take the Tahoe shape, and an app cannot forc
 | Grouped form | Group r8, row 36 | Group r14, row 40 |
 | Table row | 24 | 28 |
 | Menu / item / highlight | r6 / 22 / r4 | r14 / 24 / r8 |
+| Custom composer menu card / choice row / hover card | r14 / r8 / r10 | r18 / r10 / r14 |
 | Popover / sheet | r10 / r10 | r18 / r22 |
 | Spotlight panel | 52 input, single r12 panel | 56 capsule input + 56 round mode buttons + r24 results |
 
 Text styles (macOS values): largeTitle 26, title 22, title2 17, title3 15, headline 13 bold, body 13, callout 12, subheadline 11, footnote 10.
+
+Native menus use the system metrics above. Custom composer menu cards use `TypefluxRadius.menuCard` and `menuRow` at a 6pt row inset; `hoverCard` is smaller than the enclosing menu. These roles keep the floating choice rows concentric without changing native menu or popover geometry.
 
 ## 5. Window templates
 
@@ -108,6 +111,8 @@ Text styles (macOS values): largeTitle 26, title 22, title2 17, title3 15, headl
 
 Cloud promotion is a dismissible notice with native actions. Clipboard app-context and pause-state tokens use `TypefluxToken`; media dimensions and duration use a plain metadata label.
 
+Custom navigation containers use the shared independent AppKit glass layer, including the window-edge backdrop in light appearance. The workspace composer's editor stays solid while its footer controls occupy a navigation glass container. Reduce Transparency or Increase Contrast resolves every container to an opaque surface.
+
 The app no longer has the old model, library, workflow, monitor, onboarding or Studio/Ask theme enums. App-owned window dimensions remain in `StudioWindowMetrics`; tool titles and reasoning emphasis live in their own presentation helpers. Frozen `LegacyStudioPalette` / `LegacyAskPalette` values remain inside the library for the floating launcher compatibility surfaces. New UI uses semantic tokens.
 
 ## 8. Regression guard and remaining baseline
@@ -119,7 +124,7 @@ The migration leaves existing literals in older Ask, clipboard preview and scree
 | Rule | Before GUL-355 (main `77945be8`) | Remaining |
 | --- | ---: | ---: |
 | Numeric SwiftUI font size | 710 | 403 |
-| Numeric corner radius | 397 | 218 |
+| Numeric corner radius | 397 | 214 |
 | Calibrated/sRGB `NSColor` constructor | 46 | 36 |
 
 All seven window families in this wrap-up, the Overview metrics and the workflow editor directory have zero occurrences of these rules. The existing general SwiftLint baseline was also refreshed because prior migrations had left it stale; new UI literal exceptions may only be removed. Lint success does not replace macOS build, interaction tests or visual acceptance.

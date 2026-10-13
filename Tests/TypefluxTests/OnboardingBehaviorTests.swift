@@ -8,22 +8,39 @@ import Testing
 struct OnboardingBehaviorTests {
     private typealias RenderedUI = SettingsBehaviorTestSupport
 
-    @Test func `language selection persists and back returns to the chosen language`() async throws {
+    @Test(arguments: [InterfaceStyle.classic, .liquidGlass])
+    func `language selection persists and back returns to the chosen language`(style: InterfaceStyle) async throws {
         try await RenderedUI.withFixture { settings in
             let model = OnboardingViewModel(settingsStore: settings, onComplete: {})
-            try await RenderedUI.withWindow(OnboardingView(viewModel: model, appearanceMode: .light)) { window, host in
-                try await RenderedUI.wait { RenderedUI.contains(AppLanguage.traditionalChinese.displayName, in: host) }
+            let content = OnboardingView(viewModel: model, appearanceMode: .light)
+                .environment(\.interfaceStyle, style)
+            try await RenderedUI.withWindow(content) { window, host in
+                try await RenderedUI.wait("All language radio options in the onboarding form") {
+                    AppLanguage.allCases.allSatisfy { language in
+                        RenderedUI.elements(in: host).contains {
+                            $0.role == NSAccessibility.Role.radioButton.rawValue && $0.label == language.displayName
+                        }
+                    }
+                }
                 try RenderedUI.button(AppLanguage.traditionalChinese.displayName, in: host).press()
-                try await RenderedUI.wait { model.appLanguage == .traditionalChinese }
+                #expect(model.appLanguage == .traditionalChinese)
                 #expect(SettingsStore(defaults: settings.defaults).appLanguage == .traditionalChinese)
                 #expect(AppLocalization.shared.language == .traditionalChinese)
                 let next = try RenderedUI.button(L("onboarding.action.continue"), in: host)
                 #expect(window.frame.contains(next.frame))
                 try next.press()
-                try await RenderedUI.wait { model.currentStep == .account }
-                try await RenderedUI.wait { RenderedUI.contains(L("onboarding.account.skip"), in: host) }
+                try await RenderedUI.wait("Account step after confirming the language") {
+                    model.currentStep == .account
+                }
+                try await RenderedUI.wait("Account skip action in the rendered account step") {
+                    RenderedUI.contains(L("onboarding.account.skip"), in: host)
+                }
                 try RenderedUI.button(L("onboarding.action.back"), in: host).press()
-                try await RenderedUI.wait { model.currentStep == .language }
+                try await RenderedUI.wait("Language step after Back") {
+                    model.currentStep == .language && RenderedUI.contains(
+                        AppLanguage.traditionalChinese.displayName, in: host
+                    )
+                }
                 #expect(model.appLanguage == .traditionalChinese)
                 try RenderedUI.snapshot(host, name: "onboarding-language")
             }

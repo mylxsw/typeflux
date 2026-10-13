@@ -20,7 +20,7 @@ struct AskComposerChromeTests {
         #expect(workspace.footerHeight == 48)
         #expect(workspace.fill == TypefluxColor.controlBackground.color)
         #expect(launcher.fill == LegacyAskPalette.launcherSurface)
-        // Only the floating launcher uses a glass material.
+        // The workspace editor's outer card stays solid; its footer owns the navigation glass.
         #expect(launcher.placement == .floating)
         #expect(workspace.placement == .inWindow)
     }

@@ -1064,8 +1064,8 @@ final class StudioViewModel: ObservableObject {
     ) {
         historyRefreshTask?.cancel()
         if reset {
-            historyRecords = []
-            displayedHistory = []
+            // Keep the visible page until the query replaces it. A transient empty
+            // page would discard the selected detail when navigating from Overview.
             canLoadMoreHistory = false
             historyNextOffset = 0
             isLoadingMoreHistory = false

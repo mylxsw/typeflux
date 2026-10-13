@@ -226,7 +226,7 @@ struct AskComposer: View {
         return value
     }
 
-    /// Both appearances use the style's material, including the workspace composer.
+    /// The launcher supplies the root glass; workspace footer controls have their own navigation layer.
     private var glass: AskGlassMaterial? {
         if !interfaceStyle.usesGlass { return chrome.glass ? .opaque : nil }
         return chrome.glass ? glassOverride ?? AskGlassMaterial.resolve(reduceTransparency: reduceTransparency,
@@ -1107,7 +1107,7 @@ struct AskComposer: View {
                 launcherHeader
             } else {
                 editorRow
-                footer
+                TypefluxGlassContainer(radius: .form, placement: .inWindow) { footer }
             }
             if launcher && !launcherCollapsed {
                 ZStack(alignment: .top) {

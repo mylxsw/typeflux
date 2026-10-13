@@ -175,30 +175,26 @@ struct OnboardingView: View {
         max(420, size.height - 220)
     }
 
-    private func languageStep(contentHeight: CGFloat) -> some View {
-        VStack {
-            Spacer(minLength: 0)
+    private func languageStep(contentHeight _: CGFloat) -> some View {
+        VStack(alignment: .leading, spacing: TypefluxSpacing.section.value(for: interfaceStyle)) {
+            editorialStepHeader(
+                title: L("onboarding.language.title"),
+                subtitle: L("onboarding.language.subtitle"),
+                alignCenter: false
+            )
 
-            VStack(alignment: .leading, spacing: 22) {
-                editorialStepHeader(
-                    title: L("onboarding.language.title"),
-                    subtitle: L("onboarding.language.subtitle"),
-                    alignCenter: false
-                )
-
-                TypefluxRadioGroup(L("onboarding.language.title"),
-                                   selection: Binding(get: { viewModel.appLanguage }, set: viewModel.setLanguage)) {
-                    ForEach(AppLanguage.allCases) { language in
-                        Text(language.displayName).tag(language)
-                    }
-                }.labelsHidden()
+            TypefluxRadioGroup(L("onboarding.language.title"),
+                               selection: Binding(get: { viewModel.appLanguage }, set: viewModel.setLanguage)) {
+                ForEach(AppLanguage.allCases) { language in
+                    Text(language.displayName)
+                        .accessibilityLabel(Text(language.displayName))
+                        .accessibilityIdentifier("onboarding.language.\(language.rawValue)")
+                        .tag(language)
+                }
             }
-            .frame(maxWidth: 740, alignment: .leading)
-            .frame(maxWidth: .infinity)
-
-            Spacer(minLength: 0)
+            .accessibilityIdentifier("onboarding.language")
         }
-        .frame(minHeight: contentHeight)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func accountStep(contentHeight: CGFloat) -> some View {
