@@ -5,6 +5,40 @@ import Testing
 @Suite("Window title lifecycle", .exclusiveUIState)
 @MainActor
 struct TypefluxWindowTitleLifecycleTests {
+    private final class ToolbarDelegate: NSObject, NSToolbarDelegate {
+        let item = NSToolbarItemGroup(itemIdentifier: .init("add"))
+
+        func toolbarAllowedItemIdentifiers(_: NSToolbar) -> [NSToolbarItem.Identifier] { [item.itemIdentifier] }
+        func toolbarDefaultItemIdentifiers(_: NSToolbar) -> [NSToolbarItem.Identifier] { [item.itemIdentifier] }
+        func toolbar(_: NSToolbar, itemForItemIdentifier _: NSToolbarItem.Identifier,
+                     willBeInsertedIntoToolbar _: Bool) -> NSToolbarItem? { item }
+    }
+
+    @Test func `primary actions retain priority when native groups have no subitems`() {
+        _ = NSApplication.shared
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 800, height: 600),
+                              styleMask: [.titled], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        let delegate = ToolbarDelegate()
+        delegate.item.label = "New word"
+        let toolbar = NSToolbar(identifier: "ActionPriority")
+        toolbar.delegate = delegate
+        window.toolbar = toolbar
+        if !toolbar.items.contains(where: { $0.itemIdentifier == delegate.item.itemIdentifier }) {
+            toolbar.insertItem(withItemIdentifier: delegate.item.itemIdentifier, at: 0)
+        }
+        let view = TypefluxWindowTitleBridge.TitleView()
+        view.actionTitles = ["New word"]
+        window.contentView = view
+        defer { window.contentView = nil; window.close() }
+        view.synchronize()
+        #expect(delegate.item.subitems.isEmpty)
+        #expect(delegate.item.visibilityPriority == .high)
+        delegate.item.visibilityPriority = .user
+        view.synchronize()
+        #expect(delegate.item.visibilityPriority == .user)
+    }
+
     @Test func metadataSurvivesToolbarUpdatesAndStopsAfterDetachment() async throws {
         _ = NSApplication.shared
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 800, height: 600),

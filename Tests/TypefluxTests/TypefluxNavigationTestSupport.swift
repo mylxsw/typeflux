@@ -115,9 +115,19 @@ enum TypefluxNavigationTestSupport {
                                                   characters: text, charactersIgnoringModifiers: text,
                                                   isARepeat: false, keyCode: code))
         if keyEquivalent {
-            // SwiftPM does not run NSApp's event loop. Ask the owned native
-            // window to resolve its default/cancel button keyboard equivalents.
-            _ = window.performKeyEquivalent(with: event)
+            // Native performKeyEquivalent can call performClick and enter AppKit's nested event loop.
+            // Check the owned button's shortcut wiring, then dispatch its target/action directly.
+            func buttons(in view: NSView) -> [NSButton] {
+                (view as? NSButton).map { [$0] } ?? view.subviews.flatMap { buttons(in: $0) }
+            }
+            let flags = modifiers.intersection([.command, .option, .control, .shift])
+            guard let button = window.contentView.flatMap({ view in
+                buttons(in: view).first {
+                    $0.keyEquivalent == text
+                        && $0.keyEquivalentModifierMask.intersection([.command, .option, .control, .shift]) == flags
+                }
+            }) else { return } // An unregistered/disabled shortcut is ignored, as by AppKit.
+            try SettingsBehaviorTestSupport.Element(object: button, window: window).press()
         } else {
             NSApp.sendEvent(event)
         }

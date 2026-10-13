@@ -9,6 +9,29 @@ import Testing
 struct VocabularyHistorySettingsTests {
     private typealias RenderedUI = SettingsBehaviorTestSupport
 
+    @Test func `new word stays accessible in a narrow populated vocabulary window`() async throws {
+        try await withModel(section: .vocabulary) { model, _ in
+            model.addVocabularyTerm("Existing term")
+            try await TypefluxNavigationTestSupport.withWindow(
+                StudioView(viewModel: model), size: NSSize(width: 900, height: 600)
+            ) { window, _ in
+                try await RenderedUI.wait("New word button in the narrow populated toolbar") {
+                    RenderedUI.elements(in: window).contains {
+                        [NSAccessibility.Role.button.rawValue, NSAccessibility.Role.radioButton.rawValue].contains($0.role)
+                            && $0.label == L("vocabulary.action.newWord")
+                    }
+                }
+                try RenderedUI.button(L("vocabulary.action.newWord"), in: window).press()
+                try await RenderedUI.wait { window.attachedSheet != nil }
+                let sheet = try #require(window.attachedSheet)
+                try await RenderedUI.wait { RenderedUI.contains(L("common.cancel"), in: sheet) }
+                try RenderedUI.button(L("common.cancel"), in: sheet).press()
+                try await RenderedUI.wait { window.attachedSheet == nil }
+                #expect(model.vocabularyEntries.map(\.term) == ["Existing term"])
+            }
+        }
+    }
+
     @Test func `empty search adds the query through a sheet and keyboard dismissal works`() async throws {
         try await withModel(section: .vocabulary) { model, _ in
             try await TypefluxNavigationTestSupport.withWindow(

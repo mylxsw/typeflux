@@ -58,12 +58,7 @@ struct TypefluxUIControlsBehaviorTests {
             try await withAccessibleWindow(TypefluxButton("Save", kind: .primary, defaultAction: true) {
                 actions += 1
             }.disabled(disabled)) { window, _ in
-                let event = try #require(NSEvent.keyEvent(
-                    with: .keyDown, location: .zero, modifierFlags: [], timestamp: 0,
-                    windowNumber: window.windowNumber, context: nil, characters: "\r",
-                    charactersIgnoringModifiers: "\r", isARepeat: false, keyCode: 36
-                ))
-                _ = window.performKeyEquivalent(with: event)
+                try TypefluxNavigationTestSupport.sendKey(36, to: window, keyEquivalent: true)
                 #expect(actions == 1)
             }
         }
@@ -72,12 +67,8 @@ struct TypefluxUIControlsBehaviorTests {
     @Test func `caller supplied keyboard shortcut remains active`() async throws {
         var actions = 0
         try await withAccessibleWindow(TypefluxButton("Copy") { actions += 1 }.keyboardShortcut("k")) { window, _ in
-            let event = try #require(NSEvent.keyEvent(
-                with: .keyDown, location: .zero, modifierFlags: .command, timestamp: 0,
-                windowNumber: window.windowNumber, context: nil, characters: "k",
-                charactersIgnoringModifiers: "k", isARepeat: false, keyCode: 40
-            ))
-            #expect(window.performKeyEquivalent(with: event))
+            try TypefluxNavigationTestSupport.sendKey(40, characters: "k", modifiers: .command,
+                                                       to: window, keyEquivalent: true)
             #expect(actions == 1)
         }
     }
@@ -166,17 +157,7 @@ struct TypefluxUIControlsBehaviorTests {
     }
 
     private func activate(_ element: SettingsBehaviorTestSupport.Element) throws {
-        if let button = element.object as? NSButton {
-            button.performClick(nil)
-        } else {
-            let selector = NSSelectorFromString("accessibilityPerformPress")
-            _ = try #require(element.object.responds(to: selector))
-            typealias Press = @convention(c) (AnyObject, Selector) -> Bool
-            let action = unsafeBitCast(element.object.method(for: selector), to: Press.self)
-            // SwiftUI's PlatformSwitch can change its binding while returning false.
-            // Assertions check the resulting model rather than this transport value.
-            _ = action(element.object, selector)
-        }
+        try element.press()
     }
 
     private func nativeViews(in view: NSView) -> [NSView] {

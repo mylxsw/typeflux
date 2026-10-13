@@ -12,8 +12,8 @@ enum TypefluxTestApplicationEnvironment {
     private static let hostPresentation = NSObject()
 
     static func prepare() {
-        // Switching back to accessory mode between tests can hide and terminate the Swift Testing host.
-        // Leave the runner's delegate intact, and keep this configuration until the process exits.
+        // Leave the runner's delegate intact, and keep its Dock presentation stable until process exit.
+        // Nested event loops are avoided by the test action helpers, independently of this configuration.
         let application = NSApplication.shared
         if !configured {
             application.setActivationPolicy(.regular)

@@ -44,15 +44,49 @@ enum SettingsBehaviorTestSupport {
         }
 
         @MainActor func press() throws {
-            if try pressNativeSegment() || pressNativeSwitch() || pressNativeToolbarAction() { return }
+            // AppKit click/AX simulation enters a nested event loop and can stop Swift Testing's outer runloop.
+            _ = try #require(!(object is NSPopUpButton), "Select menu items directly instead of starting menu tracking")
             if let button = object as? NSButton {
-                button.performClick(nil)
+                guard button.isEnabled else { return }
+                if role == NSAccessibility.Role.checkBox.rawValue {
+                    button.state = button.state == .on ? .off : .on
+                } else if role == NSAccessibility.Role.radioButton.rawValue {
+                    button.state = .on
+                }
+                let action = try #require(button.action, "The native button must have an action: \(label)")
+                #expect(NSApp.sendAction(action, to: button.target, from: button),
+                        "The native button must dispatch its action: \(label)")
                 return
             }
             if let cell = object as? NSButtonCell {
-                cell.performClick(nil)
+                if let button = cell.controlView as? NSButton {
+                    try Element(object: button, window: window).press()
+                    return
+                }
+                let matrix = try #require(cell.controlView as? NSMatrix, "The button cell must have an owned control")
+                guard matrix.isEnabled, cell.isEnabled else { return }
+                let index = try #require(matrix.cells.firstIndex { $0 === cell })
+                let columns = matrix.numberOfColumns
+                _ = try #require(columns > 0)
+                matrix.selectCell(atRow: index / columns, column: index % columns)
+                let action = try #require(cell.action ?? matrix.action)
+                let target = cell.action != nil ? cell.target : matrix.target
+                #expect(NSApp.sendAction(action, to: target, from: matrix))
                 return
             }
+            if let control = object as? NSSwitch {
+                try pressSwitch(control)
+                return
+            }
+            if let item = object as? NSMenuItem {
+                guard item.isEnabled else { return }
+                let action = try #require(item.action)
+                #expect(NSApp.sendAction(action, to: item.target, from: item))
+                return
+            }
+            if try pressNativeToolbarAction() || pressNativeSegment() || pressNativeSwitch() { return }
+            // SwiftUI accessibility proxies can expose an action without being native button controls.
+            // Native buttons/cells/switches are handled above and never reach this AX fallback.
             let selector = NSSelectorFromString("accessibilityPerformPress")
             if !object.responds(to: selector), object.accessibilityActionNames().contains(.press) {
                 object.accessibilityPerformAction(.press)
@@ -60,15 +94,16 @@ enum SettingsBehaviorTestSupport {
             }
             _ = try #require(object.responds(to: selector), "The rendered control must expose a press action")
             let press = unsafeBitCast(object.method(for: selector), to: Press.self)
-            let accepted = press(object, selector)
-            #expect(accepted, "The control must accept its press action: \(label)")
+            // SwiftUI proxies can run their handler while returning false. Callers assert the model/UI effect.
+            _ = press(object, selector)
         }
 
         @MainActor private func pressNativeToolbarAction() throws -> Bool {
-            guard role == NSAccessibility.Role.button.rawValue, object is NSView, let window else { return false }
+            guard [NSAccessibility.Role.button.rawValue, NSAccessibility.Role.radioButton.rawValue].contains(role),
+                  let window else { return false }
             for view in window.toolbar?.items.compactMap(\.view) ?? [] {
                 if let button = SettingsBehaviorTestSupport.elements(in: view).first(where: {
-                    $0.role == role && $0.label == label && $0.object !== object
+                    $0.object is NSButton && $0.role == role && $0.label == label && $0.object !== object
                 }) {
                     try button.press()
                     return true
@@ -81,15 +116,17 @@ enum SettingsBehaviorTestSupport {
                 if let index = (0 ..< control.segmentCount).first(where: {
                     control.toolTip(forSegment: $0) == label || control.label(forSegment: $0) == label
                 }) {
+                    guard control.isEnabled, control.isEnabled(forSegment: index) else { return true }
                     control.selectedSegment = index
-                    control.sendAction(control.action, to: control.target)
+                    let action = try #require(control.action)
+                    #expect(NSApp.sendAction(action, to: control.target, from: control))
                     return true
                 }
             }
             return false
         }
 
-        private func pressNativeSegment() throws -> Bool {
+        @MainActor private func pressNativeSegment() throws -> Bool {
             guard role == NSAccessibility.Role.radioButton.rawValue, let window,
                   let content = window.contentView else { return false }
             func segments(in view: NSView) -> [NSSegmentedControl] {
@@ -100,6 +137,7 @@ enum SettingsBehaviorTestSupport {
             } ?? []
             for control in segments(in: content) + toolbarSegments {
                 if let index = (0 ..< control.segmentCount).first(where: { control.label(forSegment: $0) == label }) {
+                    guard control.isEnabled, control.isEnabled(forSegment: index) else { return true }
                     control.selectedSegment = index
                     let action = try #require(control.action)
                     let sent = NSApp.sendAction(action, to: control.target, from: control)
@@ -107,11 +145,19 @@ enum SettingsBehaviorTestSupport {
                     return true
                 }
             }
-            Issue.record("Missing native segmented control for \(label)")
-            throw ReadinessTimeout()
+            func matrices(in view: NSView) -> [NSMatrix] {
+                (view as? NSMatrix).map { [$0] } ?? view.subviews.flatMap { matrices(in: $0) }
+            }
+            for matrix in matrices(in: content) {
+                if let cell = matrix.cells.compactMap({ $0 as? NSButtonCell }).first(where: { $0.title == label }) {
+                    try Element(object: cell, window: window).press()
+                    return true
+                }
+            }
+            return false // Other SwiftUI radio proxies can dispatch their own non-native action.
         }
 
-        private func pressNativeSwitch() -> Bool {
+        @MainActor private func pressNativeSwitch() throws -> Bool {
             guard role == NSAccessibility.Role.checkBox.rawValue, let window,
                   let content = window.contentView else { return false }
             func switches(in view: NSView) -> [NSSwitch] {
@@ -121,10 +167,17 @@ enum SettingsBehaviorTestSupport {
                 let rect = window.convertToScreen($0.convert($0.bounds, to: nil))
                 return rect.intersects(frame)
             }) {
-                control.performClick(nil)
+                try pressSwitch(control)
                 return true
             }
             return false
+        }
+
+        @MainActor private func pressSwitch(_ control: NSSwitch) throws {
+            guard control.isEnabled else { return }
+            control.state = control.state == .on ? .off : .on
+            let action = try #require(control.action, "The native switch must have an action")
+            #expect(NSApp.sendAction(action, to: control.target, from: control))
         }
     }
 
