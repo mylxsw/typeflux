@@ -37,7 +37,8 @@ enum ClipboardFeed {
 
         var entries: [ClipboardEntry] = []
         for item in clipboardItems {
-            if item.snippet == nil, item.payload == .text, let text = item.text?.trimmingCharacters(in: .whitespacesAndNewlines),
+            if item.snippet == nil, item.payload == .text,
+               let text = item.text?.trimmingCharacters(in: .whitespacesAndNewlines),
                let voice = voiceDates[text] {
                 voiceDates[text] = (voice.record, max(voice.date, item.date))
                 continue
@@ -89,7 +90,7 @@ enum ClipboardFeed {
     ) -> [ClipboardEntry] {
         let needle = query.trimmingCharacters(in: .whitespacesAndNewlines)
         return entries.filter { entry in
-            guard (category == .snippet) == (entry.snippet != nil) else { return false }
+            guard category.includes(entry) else { return false }
             guard sourceBundleID == nil || entry.sourceBundleID == sourceBundleID else { return false }
             guard !needle.isEmpty else { return true }
             return searchText(entry).localizedCaseInsensitiveContains(needle)
@@ -116,6 +117,8 @@ enum ClipboardFeed {
 
     static func searchableText(of entry: ClipboardEntry) -> String {
         let fileNames = entry.filePaths.map { ($0 as NSString).lastPathComponent }
-        return ([entry.text ?? entry.title, entry.snippet?.name ?? "", entry.snippet?.alias ?? "", entry.sourceAppName ?? ""] + fileNames).joined(separator: "\n")
+        let metadata = [entry.text ?? entry.title, entry.snippet?.name ?? "", entry.snippet?.alias ?? "",
+                        entry.sourceAppName ?? ""]
+        return (metadata + fileNames).joined(separator: "\n")
     }
 }

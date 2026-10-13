@@ -1,8 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// The clipboard panel: search, type tabs, the grouped list with an optional preview pane, and
-/// an action footer.
+/// Spotlight chrome around the clipboard list, preview and existing panel actions.
 struct ClipboardPanelView: View {
     /// Width of the list; the preview pane adds `ClipboardPreviewPane.width` to its right.
     static let width: CGFloat = 512
@@ -17,45 +16,30 @@ struct ClipboardPanelView: View {
     @ObservedObject var model: ClipboardPanelModel
     let focusRequest: Int
     /// Read from settings each time the panel opens.
-    var interfaceStyle: InterfaceStyle? = nil
+    var interfaceStyle: InterfaceStyle?
     @Environment(\.interfaceStyle) private var environmentStyle
     @ObservedObject var layout = ClipboardPanelLayout()
-    @FocusState private var searchFocused: Bool
-    @Namespace private var tabNamespace
+    @State private var searchFocused = false
     @State private var hoveredIndex: Int?
     @State private var showingNumberHints = false
     @State private var rowFrames = ClipboardRowFrames()
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-    @Environment(\.colorSchemeContrast) private var contrast
-    @Environment(\.askGlassMaterialOverride) private var materialOverride
-
     private var effectiveStyle: InterfaceStyle { interfaceStyle ?? environmentStyle }
 
     var body: some View {
-        VStack(spacing: 0) {
-            searchBar
-            Divider().opacity(0.6)
+        TypefluxSpotlightSurface(query: $model.query, mode: mode, focused: $searchFocused,
+                                 prompt: L(model.category == .snippet
+                                     ? "clipboard.snippet.search" : "clipboard.search.placeholder"),
+                                 modes: ClipboardCategory.allCases.map { $0.spotlightMode }, onEscape: model.cancel) {
             HStack(spacing: 0) {
                 list.frame(width: Self.width)
-                if model.showsPreview || previewWidth > 0 {
-                    preview
-                }
+                if model.showsPreview || previewWidth > 0 { preview }
             }
-            Divider().opacity(0.6)
+        } hints: {
             footer
         }
         .frame(width: viewportWidth, height: Self.height)
-        .foregroundStyle(StudioTheme.textPrimary)
-        .background(AskGlassBackground(
-            material: materialOverride ?? AskGlassMaterial.resolve(reduceTransparency: reduceTransparency,
-                                                                   style: effectiveStyle),
-            corner: 16, opaqueFill: AskTheme.launcherSurface
-        ))
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(AskTheme.floatingBorder, lineWidth: contrast == .increased ? 1 : 0.5)
-        )
+        .allowsHitTesting(!isModal)
+        .accessibilityHidden(isModal)
         .overlay(alignment: .bottom) { noticeToast }
         .overlay { if model.editingText != nil { ClipboardEditBeforePaste(model: model) } }
         .overlay { if model.snippetDraft != nil { ClipboardSnippetEditor(model: model) } }
@@ -69,14 +53,13 @@ struct ClipboardPanelView: View {
         .environment(\.askLauncherNumberHints, showingNumberHints)
         .environment(\.interfaceStyle, effectiveStyle)
         .background(AskLauncherCommandMonitor { showingNumberHints = $0 })
-        .onAppear { searchFocused = true }
-        .onChange(of: focusRequest) { _ in searchFocused = true }
-        .onChange(of: model.snippetDraft == nil) { closed in
-            if closed { searchFocused = true }
-        }
-        .onChange(of: model.editingText == nil) { closed in
-            if closed { searchFocused = true }
-        }
+        .onAppear { searchFocused = !isModal }
+        .onChange(of: focusRequest) { _ in searchFocused = !isModal }
+        .onChange(of: isModal) { presented in searchFocused = !presented }
+    }
+
+    private var isModal: Bool {
+        model.snippetDraft != nil || model.editingText != nil || model.pendingConfirmation != nil
     }
 
     private var viewportWidth: CGFloat {
@@ -99,72 +82,10 @@ struct ClipboardPanelView: View {
             .accessibilityHidden(!model.showsPreview)
     }
 
-    // MARK: - Search bar
-
-    private var searchBar: some View {
-        HStack(spacing: 10) {
-            Image(systemName: "magnifyingglass")
-                .font(.system(size: 16, weight: .medium))
-                .foregroundStyle(StudioTheme.textSecondary)
-            if let app = model.appFilter {
-                ClipboardAppFilterChip(app: app) {
-                    model.setAppFilter(nil)
-                    searchFocused = true
-                }
-            }
-            TextField(L(model.category == .snippet ? "clipboard.snippet.search" : "clipboard.search.placeholder"), text: $model.query)
-                .textFieldStyle(.plain)
-                .font(.system(size: 17))
-                .focused($searchFocused)
-            if !model.query.isEmpty {
-                Button {
-                    model.query = ""
-                    searchFocused = true
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 14))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                }
-                .buttonStyle(.plain)
-                .help(L("clipboard.search.clear"))
-            }
-            categoryTabs
-            ClipboardPanelToolbar(model: model)
-        }
-        .padding(.leading, 18)
-        .padding(.trailing, 10)
-        .frame(height: 54)
-    }
-
-    private var categoryTabs: some View {
-        HStack(spacing: 0) {
-            ForEach(ClipboardCategory.allCases) { category in
-                let selected = model.category == category
-                Text(category.title)
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(selected ? StudioTheme.textPrimary : StudioTheme.textSecondary)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background {
-                        if selected {
-                            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                                .fill(Color.primary.opacity(0.1))
-                                .shadow(color: .black.opacity(0.12), radius: 1, y: 0.5)
-                                .matchedGeometryEffect(id: "tab", in: tabNamespace)
-                        }
-                    }
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        withAnimation(.spring(response: 0.25, dampingFraction: 0.85)) { model.category = category }
-                        searchFocused = true
-                    }
-            }
-        }
-        .padding(2)
-        .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.primary.opacity(0.05)))
-        .animation(.spring(response: 0.25, dampingFraction: 0.85), value: model.category)
-        // The search field shrinks before the tab titles wrap.
-        .fixedSize()
+    private var mode: Binding<String> {
+        Binding(get: { model.category.rawValue }, set: { value in
+            if let category = ClipboardCategory(rawValue: value) { model.category = category }
+        })
     }
 
     // MARK: - List
@@ -177,8 +98,8 @@ struct ClipboardPanelView: View {
                         ForEach(model.rows) { row in
                             if let header = row.header {
                                 Text(header.title)
-                                    .font(.system(size: 11, weight: .semibold))
-                                    .foregroundStyle(StudioTheme.textSecondary)
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
                                     .padding(.horizontal, 10)
                                     .padding(.top, 10)
                                     .padding(.bottom, 4)
@@ -250,11 +171,13 @@ struct ClipboardPanelView: View {
     private var emptyState: some View {
         VStack(spacing: 8) {
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 30, weight: .light))
-            Text(model.query.isEmpty ? L(model.category == .snippet ? "clipboard.snippet.empty" : "clipboard.empty") : L("clipboard.search.noResults", model.query))
-                .font(.system(size: 12.5))
+                .font(.largeTitle.weight(.light))
+            Text(model.query.isEmpty
+                ? L(model.category == .snippet ? "clipboard.snippet.empty" : "clipboard.empty")
+                : L("clipboard.search.noResults", model.query))
+                .font(.callout)
         }
-        .foregroundStyle(StudioTheme.textSecondary)
+        .foregroundStyle(TypefluxColor.secondaryLabel.color)
     }
 
 }
@@ -263,28 +186,44 @@ struct ClipboardPanelView: View {
 
 extension ClipboardPanelView {
     private var footer: some View {
-        HStack(spacing: 2) {
-            Text(L("clipboard.footer.count", model.visibleEntries.count))
-                .font(.system(size: 11.5))
-                .foregroundStyle(StudioTheme.textSecondary)
-            if model.isRecordingPaused {
-                ClipboardPausedChip { model.send(.togglePause) }
-            }
-            Spacer()
-            if let entry = model.selectedEntry {
-                if entry.kind.isTextual == false {
-                    footerButton(.quickLook, entry: entry)
+        VStack(alignment: .leading, spacing: 6) {
+            if model.appFilter != nil || model.isRecordingPaused {
+                HStack(spacing: 8) {
+                    if let app = model.appFilter {
+                        ClipboardAppFilterChip(app: app) {
+                            model.setAppFilter(nil)
+                            searchFocused = true
+                        }
+                    }
+                    if model.isRecordingPaused { ClipboardPausedChip { model.send(.togglePause) } }
                 }
-                if entry.snippet == nil {
-                    footerButton(.togglePin, entry: entry)
-                    Divider().frame(height: 14).padding(.horizontal, 4)
-                }
-                footerButton(.paste, entry: entry, primary: true)
             }
+            HStack(spacing: 2) {
+                Text(L("clipboard.footer.count", model.visibleEntries.count))
+                    .font(.footnote).foregroundStyle(TypefluxColor.secondaryLabel.color)
+                Spacer(minLength: 0)
+                if let entry = model.selectedEntry {
+                    if !entry.kind.isTextual { footerButton(.quickLook, entry: entry) }
+                    if entry.snippet == nil { footerButton(.togglePin, entry: entry) }
+                    footerButton(.paste, entry: entry, primary: true)
+                }
+                ClipboardPanelToolbar(model: model)
+            }
+            HStack(spacing: 12) {
+                keyboardHint("↑↓", title: L("clipboard.hint.navigate"))
+                keyboardHint("⌘↵", title: L("clipboard.hint.plainPaste"))
+                keyboardHint("⌘1–9", title: L("clipboard.hint.quickPaste"))
+                Spacer(minLength: 0)
+                keyboardHint("Esc", title: L("clipboard.hint.close"))
+            }
+            .font(.footnote).foregroundStyle(TypefluxColor.secondaryLabel.color)
         }
-        .padding(.leading, 16)
-        .padding(.trailing, 10)
-        .frame(height: 40)
+        .padding(.horizontal, 12).padding(.vertical, 10)
+        .accessibilityIdentifier("clipboard.hints")
+    }
+
+    private func keyboardHint(_ key: String, title: String) -> some View {
+        Text(key + " " + title).lineLimit(1)
     }
 
     private func footerButton(_ action: ClipboardEntryAction, entry: ClipboardEntry, primary: Bool = false) -> some View {
@@ -297,8 +236,8 @@ extension ClipboardPanelView {
                     ClipboardKeycap(text: shortcut)
                 }
             }
-            .font(.system(size: 12))
-            .foregroundStyle(primary ? StudioTheme.textPrimary : StudioTheme.textSecondary)
+            .font(.callout)
+            .foregroundStyle(primary ? TypefluxColor.label.color : TypefluxColor.secondaryLabel.color)
             .padding(.horizontal, 8)
             .padding(.vertical, 5)
             .contentShape(Rectangle())
@@ -310,38 +249,11 @@ extension ClipboardPanelView {
     @ViewBuilder
     private var noticeToast: some View {
         if let notice = model.notice {
-            Text(notice)
-                .font(.system(size: 12))
-                .padding(.horizontal, 12)
-                .padding(.vertical, 7)
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Color.primary.opacity(0.1)))
-                .shadow(color: .black.opacity(0.2), radius: 10, y: 4)
-                .padding(.bottom, 52)
-                .transition(.opacity.combined(with: .move(edge: .bottom)))
-        }
-    }
-}
-
-/// A small rounded key label such as `⌘P`.
-struct ClipboardKeycap: View {
-    let text: String
-    @Environment(\.colorScheme) private var colorScheme
-
-    var body: some View {
-        Text(text)
-            .font(.system(size: 10.5, weight: .medium))
-            .foregroundStyle(StudioTheme.textSecondary)
-            .padding(.horizontal, 5)
-            .frame(minWidth: 18, minHeight: 18)
-            .background(RoundedRectangle(cornerRadius: 5, style: .continuous)
-                .fill(colorScheme == .light ? AskTheme.keycapSurface : Color.primary.opacity(0.1)))
-            .overlay {
-                if colorScheme == .light {
-                    RoundedRectangle(cornerRadius: 5, style: .continuous)
-                        .strokeBorder(AskTheme.separator, lineWidth: 0.5)
-                        .allowsHitTesting(false)
-                }
+            TypefluxGlassContainer(radius: .popover) {
+                Text(notice).font(.callout).padding(.horizontal, 12).padding(.vertical, 7)
             }
+            .padding(.bottom, 76)
+            .transition(.opacity.combined(with: .move(edge: .bottom)))
+        }
     }
 }

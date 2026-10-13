@@ -48,70 +48,18 @@ public struct TypefluxSpotlightPanel: View {
             .accessibilityIdentifier("typeflux.spotlight")
     }
 
-    @ViewBuilder private var panel: some View {
-        if style == .classic {
-            TypefluxGlassContainer(radius: .spotlightResults) {
-                VStack(spacing: 0) {
-                    inputRow
-                    Divider()
-                    results
-                }
+    private var panel: some View {
+        TypefluxSpotlightSurface(query: $query, mode: $mode, focused: $focused, prompt: prompt,
+                                 modes: modes, onEscape: dismiss) {
+            results
+        } hints: {
+            HStack(spacing: 16) {
+                ForEach(Array(hints.enumerated()), id: \.offset) { _, hint in Text(hint) }
+                Spacer(minLength: 0)
             }
-        } else {
-            TypefluxGlassGroup(spacing: 12) {
-                VStack(spacing: 12) {
-                    HStack(spacing: 8) {
-                        TypefluxGlassContainer(radius: .spotlightInput) { input }
-                        modeButtons
-                    }
-                    TypefluxGlassContainer(radius: .spotlightResults) { results }
-                }
-            }
-        }
-    }
-
-    private var inputRow: some View {
-        HStack(spacing: 8) { input; modeButtons }.padding(.trailing, 10)
-    }
-
-    private var input: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "magnifyingglass").foregroundStyle(TypefluxColor.secondaryLabel.color)
-                .accessibilityHidden(true)
-            TypefluxNativeSearchField(text: $query, focused: $focused, prompt: prompt,
-                                      identifier: "typeflux.spotlight.search", borderless: true, onEscape: dismiss)
-        }
-        .padding(.horizontal, 16)
-        .frame(height: TypefluxControlHeight.spotlightInput.value(for: style))
-    }
-
-    private var modeButtons: some View {
-        HStack(spacing: style == .classic ? 2 : 8) {
-            ForEach(modes) { item in
-                modeButton(item)
-            }
-        }
-    }
-
-    @ViewBuilder private func modeButton(_ item: TypefluxSpotlightMode) -> some View {
-        let button = Button {
-            mode = item.id
-            focused = true
-        } label: {
-            Label(item.title, systemImage: item.systemImage).labelStyle(.iconOnly)
-                .frame(width: style == .classic ? 30 : TypefluxControlHeight.spotlightModeButton.value(for: style),
-                       height: style == .classic ? 26 : TypefluxControlHeight.spotlightModeButton.value(for: style))
-        }
-        .buttonStyle(.borderless)
-        .help(item.title)
-        .accessibilityLabel(item.title)
-        .accessibilityAddTraits(mode == item.id ? .isSelected : [])
-        .accessibilityIdentifier("typeflux.spotlight.mode." + item.id)
-        .foregroundStyle(mode == item.id ? TypefluxColor.accent.color : TypefluxColor.secondaryLabel.color)
-        if style == .classic {
-            button
-        } else {
-            TypefluxGlassContainer(radius: .spotlightInput) { button }
+            .font(.footnote)
+            .foregroundStyle(TypefluxColor.secondaryLabel.color)
+            .padding(.horizontal, 16).padding(.vertical, 10)
         }
     }
 
@@ -136,14 +84,6 @@ public struct TypefluxSpotlightPanel: View {
                         }
                 }
             }
-            Divider()
-            HStack(spacing: 16) {
-                ForEach(Array(hints.enumerated()), id: \.offset) { _, hint in Text(hint) }
-                Spacer(minLength: 0)
-            }
-            .font(.footnote)
-            .foregroundStyle(TypefluxColor.secondaryLabel.color)
-            .padding(.horizontal, 16).padding(.vertical, 10)
         }
     }
 
