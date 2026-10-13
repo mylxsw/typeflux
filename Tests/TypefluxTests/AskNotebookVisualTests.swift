@@ -176,14 +176,14 @@ struct AskNotebookVisualTests {
         try checkReadControls(window)
         let source = try accessibilityButton(L("ask.notes.openConversation"), in: window)
         #expect(accessibilityFrame(source).height <= 28, "the source action stays on one line")
-        try click(accessibilityFrame(source), in: window)
+        try press(source, in: window)
         try await waitForUI { openedConversation == "conv" }
         #expect(openedConversation == "conv", "the compact source action remains clickable")
         let copy = try AskLibraryTestSupport.action("notes.copy", in: window)
         let expectedBody = try #require(model.selected?.body)
         var copied: String?
         model.copy = { copied = $0 }
-        try click(copy.frame, in: window)
+        try copy.press()
         try await waitForUI { copied == expectedBody }
         #expect(copied == expectedBody, "the compact copy action remains clickable")
         model.notice = nil
@@ -291,11 +291,11 @@ struct AskNotebookVisualTests {
         let insert = try #require(accessibilityElement("ask.result.insert", in: window))
         #expect((insert.value(forKey: "accessibilityHelp") as? String)?.contains("⌥↩") == true,
                 "the icon's tooltip includes its shortcut")
-        try click(accessibilityFrame(insert), in: window)
+        try press(insert, in: window)
         try await waitForUI { !recorder.inserted.isEmpty }
         #expect(recorder.inserted.first?.0 == document.body)
         let ask = try #require(accessibilityElement("ask.result.askAI", in: window))
-        try click(accessibilityFrame(ask), in: window)
+        try press(ask, in: window)
         try await waitForUI { !recorder.asked.isEmpty }
         #expect(!recorder.asked.isEmpty, "the last action remains clickable")
         window.appearance = NSAppearance(named: .aqua)
@@ -375,7 +375,7 @@ struct AskNotebookVisualTests {
         #expect(tableFrame.minX >= editorFrame.minX - 1 && tableFrame.maxX <= editorFrame.maxX + 1,
                 "the last formatting action fits or becomes reachable by scrolling")
         let before = model.draftBody
-        try click(tableFrame, in: window)
+        try press(table, in: window)
         try await waitForUI { model.draftBody != before }
         #expect(model.draftBody != before && model.draftBody.contains("|---|---|"),
                 "the last formatting action is reachable after scrolling")
@@ -409,13 +409,8 @@ struct AskNotebookVisualTests {
         SettingsBehaviorTestSupport.Element(object: element).frame
     }
 
-    private func click(_ frame: NSRect, in window: NSWindow) throws {
-        let point = window.convertPoint(fromScreen: NSPoint(x: frame.midX, y: frame.midY))
-        for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
-            NSApp.sendEvent(try #require(NSEvent.mouseEvent(with: type, location: point, modifierFlags: [],
-                timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber, context: nil,
-                eventNumber: 0, clickCount: 1, pressure: type == .leftMouseDown ? 1 : 0)))
-        }
+    private func press(_ object: NSObject, in window: NSWindow) throws {
+        try SettingsBehaviorTestSupport.Element(object: object, window: window).press()
     }
 
 }

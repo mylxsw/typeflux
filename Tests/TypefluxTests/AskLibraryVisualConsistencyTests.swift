@@ -138,7 +138,7 @@ struct AskLibraryVisualConsistencyTests {
             notes.copy = { copied = $0 }
             let expectedBody = try #require(notes.selected?.body)
             let copy = try AskLibraryTestSupport.action("notes.copy", in: window)
-            try click(copy.frame, in: window)
+            try copy.press()
             try await SettingsBehaviorTestSupport.wait { copied == expectedBody }
             #expect(copied?.isEmpty == false)
             for mode in [AskNotesViewModel.Mode.split, .edit, .read] {
@@ -158,15 +158,6 @@ struct AskLibraryVisualConsistencyTests {
         frame.width >= 20 && frame.height >= 20
             && frame.minX >= window.frame.minX - 1 && frame.maxX <= window.frame.maxX + 1
             && frame.minY >= window.frame.minY - 1 && frame.maxY <= window.frame.maxY + 1
-    }
-
-    private func click(_ frame: NSRect, in window: NSWindow) throws {
-        let point = window.convertPoint(fromScreen: NSPoint(x: frame.midX, y: frame.midY))
-        for type in [NSEvent.EventType.leftMouseDown, .leftMouseUp] {
-            NSApp.sendEvent(try #require(NSEvent.mouseEvent(with: type, location: point, modifierFlags: [],
-                timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber, context: nil,
-                eventNumber: 0, clickCount: 1, pressure: type == .leftMouseDown ? 1 : 0)))
-        }
     }
 
     @Test func newNoteToolbarActionCreatesAnEditablePersistedNote() async throws {
