@@ -18,7 +18,7 @@ struct ClipboardSnippetEditor: View {
                                       ? "clipboard.action.saveSnippet" : "clipboard.action.editSnippet"),
                           cancelTitle: L("clipboard.edit.cancel"), confirmTitle: L("clipboard.snippet.save"),
                           confirmIdentifier: "snippet.save",
-                          confirmShortcut: KeyboardShortcut(.return, modifiers: .command),
+                          cancelShortcut: nil, confirmShortcut: nil,
                           cancel: model.cancelSnippetEdit,
                           confirm: model.commitSnippet) {
                 VStack(alignment: .leading, spacing: 12) {

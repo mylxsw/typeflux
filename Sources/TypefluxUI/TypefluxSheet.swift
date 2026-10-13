@@ -1,10 +1,11 @@
 import SwiftUI
 
-/// Compact sheet body. The trailing footer order is Cancel, then the default action.
+/// Compact sheet body. Hosts that own keyboard routing can disable the sheet's shortcuts.
 public struct TypefluxSheet<Content: View>: View {
     private let title: String
     private let cancelTitle: String
     private let confirmTitle: String
+    private let cancelShortcut: KeyboardShortcut?
     private let confirmShortcut: KeyboardShortcut?
     private let confirmIdentifier: String
     private let isConfirmEnabled: Bool
@@ -15,12 +16,14 @@ public struct TypefluxSheet<Content: View>: View {
 
     public init(title: String, cancelTitle: String, confirmTitle: String, isConfirmEnabled: Bool = true,
                 role: ButtonRole? = nil, confirmIdentifier: String = "typeflux.sheet.confirm",
+                cancelShortcut: KeyboardShortcut? = .cancelAction,
                 confirmShortcut: KeyboardShortcut? = .defaultAction, cancel: @escaping () -> Void, confirm: @escaping () -> Void,
                 @ViewBuilder content: () -> Content) {
         self.title = title
         self.cancelTitle = cancelTitle
         self.confirmTitle = confirmTitle
         self.confirmIdentifier = confirmIdentifier
+        self.cancelShortcut = cancelShortcut
         self.confirmShortcut = confirmShortcut
         self.isConfirmEnabled = isConfirmEnabled
         self.role = role
@@ -36,7 +39,7 @@ public struct TypefluxSheet<Content: View>: View {
                 content
                 HStack(spacing: 8) {
                     Spacer()
-                    Button(cancelTitle, role: .cancel, action: cancel).keyboardShortcut(.cancelAction)
+                    Button(cancelTitle, role: .cancel, action: cancel).keyboardShortcut(cancelShortcut)
                         .accessibilityIdentifier("typeflux.sheet.cancel")
                     Button(confirmTitle, role: role, action: confirm).buttonStyle(.borderedProminent)
                         .keyboardShortcut(confirmShortcut).disabled(!isConfirmEnabled)

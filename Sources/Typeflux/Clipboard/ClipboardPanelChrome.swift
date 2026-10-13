@@ -94,7 +94,7 @@ struct ClipboardEditBeforePaste: View {
             Color.black.opacity(0.25)
             TypefluxSheet(title: L("clipboard.edit.title"), cancelTitle: L("clipboard.edit.cancel"),
                           confirmTitle: L("clipboard.action.paste"),
-                          confirmShortcut: KeyboardShortcut(.return, modifiers: .command),
+                          cancelShortcut: nil, confirmShortcut: nil,
                           cancel: model.cancelEdit, confirm: model.commitEdit) {
                 VStack(alignment: .leading, spacing: 10) {
                     TextEditor(text: Binding(get: { model.editingText ?? "" }, set: { model.editingText = $0 }))

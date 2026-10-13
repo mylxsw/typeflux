@@ -226,6 +226,20 @@ struct ClipboardSpotlightBehaviorTests {
         }
     }
 
+    @Test func panelOwnedSheetKeysDoNotRegisterCompetingShortcuts() async throws {
+        var actions = 0
+        let view = TypefluxSheet(title: "Edit", cancelTitle: "Cancel", confirmTitle: "Save",
+                                 cancelShortcut: nil, confirmShortcut: nil,
+                                 cancel: { actions += 1 }, confirm: { actions += 1 },
+                                 content: { Text("Draft content") })
+        try await TypefluxNavigationTestSupport.withWindow(view) { window, _ in
+            try TypefluxNavigationTestSupport.sendKey(36, to: window, keyEquivalent: true)
+            try TypefluxNavigationTestSupport.sendKey(36, modifiers: .command, to: window, keyEquivalent: true)
+            try TypefluxNavigationTestSupport.sendKey(53, to: window, keyEquivalent: true)
+            #expect(actions == 0)
+        }
+    }
+
     private func descendants(_ view: NSView) -> [NSView] {
         [view] + view.subviews.flatMap(descendants)
     }
