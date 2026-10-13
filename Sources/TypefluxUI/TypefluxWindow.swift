@@ -94,11 +94,7 @@ public struct TypefluxWindow<Detail: View>: View {
                     }
                     TypefluxToolbar(groups: groups, prominent: prominent)
                 }
-                .background(TypefluxWindowTitleBridge(
-                    title: title,
-                    actionTitles: Set(groups.flatMap(\.actions).map(\.title))
-                )
-                .frame(width: 0, height: 0))
+                .background(TypefluxWindowTitleBridge(title: title).frame(width: 0, height: 0))
         }
         .navigationSplitViewStyle(.balanced)
     }

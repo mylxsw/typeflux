@@ -57,12 +57,10 @@ struct HistorySettingsBackButtonTests {
                 let firstHost = windows[0].host
                 let secondWindow = windows[1].window
                 let secondHost = windows[1].host
-                try await RenderedUI.wait("Both windows' history details and Back controls") {
-                    backButton(in: firstWindow)?.isEnabled == true
-                        && backButton(in: secondWindow)?.isEnabled == true
-                        && RenderedUI.contains(L("history.detail.rawTranscript"), in: firstHost)
-                        && RenderedUI.contains(L("history.detail.rawTranscript"), in: secondHost)
-                }
+                try await focus(firstWindow)
+                try await waitForDetail(in: firstWindow, host: firstHost)
+                try await focus(secondWindow)
+                try await waitForDetail(in: secondWindow, host: secondHost)
                 try await focus(firstWindow)
                 let firstBack = try requireBackButton(in: firstWindow)
                 let secondBack = try requireBackButton(in: secondWindow)
@@ -73,10 +71,10 @@ struct HistorySettingsBackButtonTests {
                         && !RenderedUI.contains(L("history.detail.rawTranscript"), in: firstHost)
                 }
                 #expect(!RenderedUI.contains(L("history.detail.rawTranscript"), in: firstHost))
-                #expect(RenderedUI.contains(L("history.detail.rawTranscript"), in: secondHost))
                 windows[0].close()
                 #expect(!firstWindow.isVisible && secondWindow.isVisible)
                 try await focus(secondWindow)
+                try await waitForDetail(in: secondWindow, host: secondHost)
                 let currentSecondBack = try requireBackButton(in: secondWindow)
                 #expect(currentSecondBack.isEnabled)
                 currentSecondBack.performClick(nil)
@@ -91,7 +89,26 @@ struct HistorySettingsBackButtonTests {
 
     private func focus(_ window: NSWindow) async throws {
         window.makeKeyAndOrderFront(nil)
-        try await RenderedUI.wait("History window \(window.windowNumber) becoming key") { NSApp.keyWindow === window }
+        window.contentView?.layoutSubtreeIfNeeded()
+        do {
+            try await RenderedUI.wait("History window \(window.windowNumber) becoming key") { NSApp.keyWindow === window }
+        } catch {
+            Issue.record("Focus timeout: activation policy \(NSApp.activationPolicy().rawValue), hidden \(NSApp.isHidden), active \(NSApp.isActive), key window \(NSApp.keyWindow?.windowNumber ?? -1)")
+            throw error
+        }
+    }
+
+    private func waitForDetail(in window: NSWindow, host: NSView) async throws {
+        do {
+            try await RenderedUI.wait("History detail and Back in key window \(window.windowNumber)") {
+                backButton(in: window)?.isEnabled == true
+                    && RenderedUI.contains(L("history.detail.rawTranscript"), in: host)
+            }
+        } catch {
+            let back = backButton(in: window)
+            Issue.record("Detail timeout: window \(window.windowNumber), key \(window.isKeyWindow), Back present \(back != nil), enabled \(back?.isEnabled == true), host attached \(host.window === window)")
+            throw error
+        }
     }
 
     private func backButton(in window: NSWindow) -> NSButton? {

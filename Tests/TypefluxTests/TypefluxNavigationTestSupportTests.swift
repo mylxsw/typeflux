@@ -1,11 +1,34 @@
 import AppKit
 import SwiftUI
 import Testing
+@testable import Typeflux
 
 @Suite(.serialized, .exclusiveUIState)
 @MainActor
 struct TypefluxNavigationTestSupportTests {
     private struct FixtureFailure: Error {}
+
+    @Test func `shared Dock window closures keep the UI test host present`() async throws {
+        TypefluxTestApplicationEnvironment.prepare()
+        let previousDelegate = NSApp.delegate
+        let dock = DockVisibilityController.shared
+        for index in 0 ..< 8 {
+            try await TypefluxNavigationTestSupport.withWindow(Text("Shared Dock window \(index)")) { window, _ in
+                dock.windowDidShow(window)
+                defer { dock.windowDidHide(window) }
+                expectApplicationState(delegate: previousDelegate)
+            }
+            expectApplicationState(delegate: previousDelegate)
+        }
+        // A different window can still render after the last production-tracked window closes.
+        try await TypefluxNavigationTestSupport.withWindow(Text("Following window")) { window, host in
+            #expect(window.isVisible)
+            try await SettingsBehaviorTestSupport.wait("Window following shared Dock closures") {
+                SettingsBehaviorTestSupport.contains("Following window", in: host)
+            }
+        }
+        expectApplicationState(delegate: previousDelegate)
+    }
 
     @Test func `successive single and multiwindow fixtures keep the test process configured`() async throws {
         TypefluxTestApplicationEnvironment.prepare()

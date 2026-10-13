@@ -6,11 +6,9 @@ import SwiftUI
 struct TypefluxWindowTitleBridge: NSViewRepresentable {
     static let itemIdentifier = "typeflux.window.title"
     let title: String
-    var actionTitles: Set<String> = []
 
     final class TitleView: NSView {
         var title = ""
-        var actionTitles: Set<String> = []
         private var active = false
         private var visibilityObservation: NSKeyValueObservation?
         private var toolbarObservation: NSKeyValueObservation?
@@ -34,12 +32,8 @@ struct TypefluxWindowTitleBridge: NSViewRepresentable {
 
         func synchronize() {
             guard active, let window else { return }
-            if window.title != title {
-                window.title = title
-            }
-            if window.titleVisibility != .hidden {
-                window.titleVisibility = .hidden
-            }
+            if window.title != title { window.title = title }
+            if window.titleVisibility != .hidden { window.titleVisibility = .hidden }
             if observedToolbar !== window.toolbar {
                 centerObservation = nil
                 observedToolbar = window.toolbar
@@ -51,16 +45,6 @@ struct TypefluxWindowTitleBridge: NSViewRepresentable {
                 let identifier = NSToolbarItem.Identifier(TypefluxWindowTitleBridge.itemIdentifier)
                 if toolbar.centeredItemIdentifiers.contains(identifier) {
                     toolbar.centeredItemIdentifiers.remove(identifier)
-                }
-                for item in toolbar.items {
-                    if item.itemIdentifier.rawValue == "typeflux.window.segments", item.visibilityPriority != .user {
-                        item.visibilityPriority = .user
-                    }
-                    let titles = [item.label] + ((item as? NSToolbarItemGroup)?.subitems.map(\.label) ?? [])
-                    if titles.contains(where: actionTitles.contains),
-                       item.visibilityPriority.rawValue < NSToolbarItem.VisibilityPriority.high.rawValue {
-                        item.visibilityPriority = .high
-                    }
                 }
             }
         }
@@ -82,13 +66,11 @@ struct TypefluxWindowTitleBridge: NSViewRepresentable {
     func makeNSView(context _: Context) -> TitleView {
         let view = TitleView()
         view.title = title
-        view.actionTitles = actionTitles
         return view
     }
 
     func updateNSView(_ view: TitleView, context _: Context) {
         view.title = title
-        view.actionTitles = actionTitles
         view.synchronize()
         view.schedule()
     }

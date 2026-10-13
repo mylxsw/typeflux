@@ -22,14 +22,20 @@ Liquid Glass accessibility fallbacks: [Reduce Transparency light](snapshots/redu
 The latest issue instruction centralizes all Mac builds, tests and screenshots with the acceptance owner. The final implementation is awaiting that validation. Run on a Mac with a WindowServer session and Screen Recording permission for the snapshot host:
 
 ```bash
-swift build
-swift test --no-parallel --enable-code-coverage --filter 'SettingsWindowLifecycleTests|TypefluxNavigationTestSupportTests|DockVisibilityControllerTests|TypefluxNavigationInteractionTests|TypefluxPresentationInteractionTests|HistorySettingsBackButtonTests|VocabularyHistorySettingsTests|HistorySettingsQueryTests|VocabularyFilterTests|TypefluxTableDeleteKeyTests|TypefluxWindowTitleLifecycleTests|TypefluxUIControlsTableTests|VocabularyStoreTests|VocabularyStoreExtendedTests|SettingsViewModelHistoryAudioTests|HistoryProcessingDiagnosticsTests|HistoryRetryPlanTests|HistoryExportDestinationTests|FileHistoryStoreTests|SQLiteHistoryStoreTests|SettingsWindowNavigationTests|SettingsSearchScopeTests|SettingsOrganizationTests|StudioHistoryRowLayoutTests|VoiceInputNavigationTests'
-TYPEFLUX_VOCABULARY_HISTORY_SNAPSHOTS="$PWD/artifacts/gul349-snapshots" swift test --no-parallel --enable-code-coverage --filter VocabularyHistorySnapshotTests
+set -o pipefail
+mkdir -p artifacts
+swift build &&
+swift test --no-parallel --enable-code-coverage --filter 'ExclusiveUIStateTraitTests|ExclusiveUIStateLanguageTests|LauncherSettingsPolishTests|SettingsPolishTests|SettingsWindowLifecycleTests|TypefluxNavigationTestSupportTests|DockVisibilityControllerTests|TypefluxNavigationInteractionTests|TypefluxPresentationInteractionTests|HistorySettingsBackButtonTests|VocabularyHistorySettingsTests|HistorySettingsQueryTests|VocabularyFilterTests|TypefluxTableDeleteKeyTests|TypefluxWindowTitleLifecycleTests|TypefluxUIControlsTableTests|VocabularyStoreTests|VocabularyStoreExtendedTests|SettingsViewModelHistoryAudioTests|HistoryProcessingDiagnosticsTests|HistoryRetryPlanTests|HistoryExportDestinationTests|FileHistoryStoreTests|SQLiteHistoryStoreTests|SettingsWindowNavigationTests|SettingsSearchScopeTests|SettingsOrganizationTests|StudioHistoryRowLayoutTests|VoiceInputNavigationTests' 2>&1 | tee artifacts/gul349-full.log &&
+rg -q 'Test "Back in one settings window leaves another window detail selected" passed' artifacts/gul349-full.log &&
+rg -q 'Test "window mode previews fit narrow panes and selection persists" passed' artifacts/gul349-full.log &&
+rg -q 'Test run with .* passed' artifacts/gul349-full.log &&
+TYPEFLUX_VOCABULARY_HISTORY_SNAPSHOTS="$PWD/artifacts/gul349-snapshots" swift test --no-parallel --enable-code-coverage --filter VocabularyHistorySnapshotTests 2>&1 | tee artifacts/gul349-snapshots.log &&
+rg -q 'Test run with .* passed' artifacts/gul349-snapshots.log
 ```
 
 The snapshot command captures Vocabulary, unmatched search, empty library, add sheet, History date groups, record details, pipeline stages and unmatched audio filter in Classic/Liquid Glass × light/dark. It also captures Liquid Glass with Reduce Transparency and Increase Contrast in both appearances. Check the history Back button after opening a record, including a narrow window's native toolbar overflow. The tests use synthetic data and isolated defaults/storage, and restore the localization and vocabulary fixture.
 
-For the window-lifecycle rework, start by running both Back tests together, then the two-window test alone. Require the two-window result and the Swift Testing summary in each log; a zero exit code alone did not establish completion in acceptance rounds 3–4.
+For the window-lifecycle rework, start by running both Back tests together, then the two-window test alone. Require the two-window result and the Swift Testing summary in each log; a zero exit code alone did not establish completion in acceptance rounds 3–5.
 
 ```bash
 set -o pipefail
@@ -47,9 +53,22 @@ Then check fixture cleanup and related settings behavior:
 ```bash
 set -o pipefail
 mkdir -p artifacts
-swift test --no-parallel --filter 'SettingsWindowLifecycleTests|SettingsWindowNavigationTests|TypefluxNavigationTestSupportTests|HistorySettingsBackButtonTests|VocabularyHistorySettingsTests' 2>&1 | tee artifacts/gul349-window-lifecycle.log &&
+swift test --no-parallel --filter 'SettingsWindowLifecycleTests|SettingsWindowNavigationTests|TypefluxNavigationTestSupportTests|HistorySettingsBackButtonTests|VocabularyHistorySettingsTests|LauncherSettingsPolishTests' 2>&1 | tee artifacts/gul349-window-lifecycle.log &&
 rg -q 'Test "Back in one settings window leaves another window detail selected" passed' artifacts/gul349-window-lifecycle.log &&
+rg -q 'Test "shared Dock window closures keep the UI test host present" passed' artifacts/gul349-window-lifecycle.log &&
+rg -q 'Test "window mode previews fit narrow panes and selection persists" passed' artifacts/gul349-window-lifecycle.log &&
 rg -q 'Test run with .* passed' artifacts/gul349-window-lifecycle.log
+```
+
+Also run the vocabulary/history and Launcher window tests together without the Back suite, matching acceptance round 5's bisection:
+
+```bash
+set -o pipefail
+mkdir -p artifacts
+swift test --no-parallel --filter 'VocabularyHistorySettingsTests|LauncherSettingsPolishTests' 2>&1 | tee artifacts/gul349-without-back.log &&
+rg -q 'Test "history search filter navigation and deletion preserve a complete list" passed' artifacts/gul349-without-back.log &&
+rg -q 'Test "window mode previews fit narrow panes and selection persists" passed' artifacts/gul349-without-back.log &&
+rg -q 'Test run with .* passed' artifacts/gul349-without-back.log
 ```
 
 ## Return-navigation rework
@@ -60,13 +79,27 @@ Back now hosts its real `NSButton` inside a generic native view in a dedicated n
 
 Acceptance round 3 confirmed the Back effect checks pass, but the Swift Testing process exited before producing a result for the two-window test. The changes from `8233a3f6` and `65f27653` are retained: both localization additions survive, and toolbar AX presses are checked by their navigation effect rather than AppKit's Boolean return value.
 
-Acceptance round 4 isolated the exit to repeated application activation/accessibility setup and delegate replacement between tests. The two-window test also timed out when run alone. `TypefluxTestApplicationEnvironment` now configures `.regular` and `AXEnhancedUserInterface` once on the main actor. Both settings fixtures and navigation window helpers use it without restoring process state or replacing the runner's delegate. Single-window hosting delegates to the multiwindow helper; teardown detaches hosting trees, orders windows out and closes them without hiding the application. Regression tests cover consecutive single/multiwindow fixture scopes, idempotent close, and cleanup after a throwing body while the application state stays stable.
+Acceptance round 5 showed the exit persists after restoring main's fixtures and even when the Back suite is excluded. The earlier fixture changes did not establish the exit's cause. The latest rework removes this PR's toolbar-priority writes from the shared title bridge: `TypefluxWindow`, `TypefluxWindowTitleBridge` and their title-lifecycle test are identical to main again. Native Back stays in its dedicated toolbar item, with the accepted target/action implementation.
 
-The two-window Back test seeds each `StudioView`'s independent initial history selection and waits for both actual detail pages and enabled native controls. It still focuses the owning window before pressing Back, verifies that the other window's detail remains selected, closes the first, and checks the second window's Back remains usable. The single-window test retains real navigation-row accessibility selection. Named readiness waits identify the phase if acceptance finds another timeout.
+The test host now holds a retained presentation token in the actual shared `DockVisibilityController` for the entire process. Other production controllers that use `.shared` can show/close windows without treating the runner as having no presentations and switching it to `.accessory`. The `.exclusiveUIState` trait prepares the host before all participating UI suites, including ones with separate window helpers. The runner's delegate stays intact. Activation policy is initialized once; AX is enabled if a legacy fixture disabled it. The Launcher helper uses this setup and detaches its hosting tree before closing instead of disabling AX after each render. The table-control test also uses shared fixture preparation.
+
+Single-window hosting delegates to the multiwindow helper; teardown detaches hosting trees, orders windows out and closes them without hiding the application. Added regression coverage exercises eight show/close cycles through the real shared Dock controller and checks a following window, in addition to consecutive single/multiwindow scopes, idempotent close and throwing-body cleanup. Independent Dock controller tests still cover the production last-window `.accessory` behavior using their injected policy controller.
+
+The two-window Back test seeds each `StudioView`'s independent initial history selection. Its earlier readiness wait read both windows' AX details before focusing the first; it now focuses and checks each window separately. After Back closes the first detail and its window, it focuses the second before asserting its detail and Back remain usable. The single-window test retains real navigation-row accessibility selection. Named readiness waits and focus/control diagnostics identify the actual phase if acceptance finds another timeout.
 
 Production settings close contains no application-quit call and explicitly uses AppKit's last-window policy to keep the menu-bar app resident. Its lifecycle and navigation tests now inject Dock policy controllers backed by a test double, exercising the real close handler and resource release without changing the host's activation policy. Navigation tests also drop their per-test activation-policy restore. Existing production callers use the shared Dock controller.
 
-The branch is based on main `98978096`, retaining the acceptance owner's combined localization version. Static review checked the macOS 13 target, identifier scope, actor isolation, access levels and teardown. No builds, tests, snapshots or remote Mac operations were run for this rework; successful test completion still requires acceptance verification. All screenshot and coverage samples below are historical.
+The acceptance owner's main merge and both experimental reverts were pulled. The settings initializer keeps `imageSettingsModel:` and `initialHistoryID:`, and the fixed-height lists keep agent/launcher plus vocabulary/history. Main is `bcd424bd`. Static review checked the macOS 13 target, identifier scope, actor isolation, access levels and teardown. No builds, tests, snapshots or remote Mac operations were run for this rework; the exit's precise runtime source and successful completion still require acceptance verification. All screenshot and coverage samples below are historical.
+
+## Window lifecycle source audit
+
+| Path | Appearance/teardown behavior |
+| --- | --- |
+| `StudioView` / `StudioShell` | Existing localization/permission refresh, account tasks, and sidebar-width handling; added history selection and viewport layout. No added Dock registration, window-close notification, application hide or termination. |
+| History / Vocabulary pages | History load-more appearance schedules storage paging; the vocabulary sheet appearance focuses its field. Back dismantling clears its button target/action; the table bridge removes its local event monitor. These paths do not close or hide windows. |
+| `TypefluxWindow` / title bridge | Restored to main, including its existing title/toolbar observations and stop-on-detach behavior. No PR-specific toolbar priority or toolbar-removal behavior. |
+| `SettingsWindowController` | Existing show/close hooks use an injected Dock controller. Close detaches the hosting tree and releases the window/model as on main. Tests inject policy doubles; the process-level Dock presentation also covers other shared production controllers. |
+| `DockVisibilityController` / application entry | Dock production code is unchanged from main: last tracked presentation selects `.accessory`. The test host is now a tracked presentation until process exit. Production `AppDelegate` explicitly keeps the menu-bar app resident after last-window close; startup's accessory policy and development launcher's exit path are unchanged and not invoked by these views. |
 
 ## Earlier validation and limits
 
@@ -81,6 +114,6 @@ After reading the centralization instruction, the in-flight focused rerun was ca
 
 ## Self-review
 
-Reviewed the complete add/edit/cancel and detail/return/delete paths, whitespace and empty inputs, source preservation, selection cleanup, sparse filter pagination, deletion offsets and generation rejection after clearing. Review found and corrected skipped sparse matches, stale query results after clear, the native SwiftUI table's outline-backed Delete focus handling, toolbar visibility priorities, and a dynamically missing Back item. Following acceptance feedback, Back uses a dedicated native button and is disabled on the list. The native target/action is removed when its representable is dismantled.
+Reviewed the complete add/edit/cancel and detail/return/delete paths, whitespace and empty inputs, source preservation, selection cleanup, sparse filter pagination, deletion offsets and generation rejection after clearing. Review found and corrected skipped sparse matches, stale query results after clear, the native SwiftUI table's outline-backed Delete focus handling and a dynamically missing Back item. Following acceptance feedback, Back uses a dedicated native button and is disabled on the list. The native target/action is removed when its representable is dismantled. Toolbar overflow follows main's native layout again; acceptance should recheck source segments and add/actions in a narrow window.
 
 The event monitor releases on detach/deinitialization and only handles unmodified Delete in its own focused table, without an attached sheet or text editor. Storage scans use the existing serial background queue and weak model callbacks. User strings cover all five existing locales. No dependencies, credentials or new external data access were added. The acceptance owner still needs to confirm the final build, tests, toolbar return behavior and refreshed screenshot matrix.

@@ -10,10 +10,7 @@ import Testing
 struct LauncherSettingsPolishTests {
     private func render(_ view: some View, size: NSSize, name: String, light: Bool = false,
                         check: (NSWindow) async throws -> Void = { _ in }) async throws {
-        _ = NSApplication.shared
-        // SwiftUI publishes its native accessibility nodes when this process-wide flag is enabled.
-        NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
-        defer { NSApp.accessibilitySetValue(false, forAttribute: .init(rawValue: "AXEnhancedUserInterface")) }
+        TypefluxTestApplicationEnvironment.prepare()
         let window = AskTestVoiceWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: .borderless,
                                         backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
@@ -23,7 +20,7 @@ struct LauncherSettingsPolishTests {
         hosting.frame = NSRect(origin: .zero, size: size)
         window.contentView = hosting
         window.orderFront(nil)
-        defer { window.orderOut(nil); window.close() }
+        defer { window.contentView = nil; window.orderOut(nil); window.close() }
         try await Task.sleep(for: .milliseconds(180))
         hosting.layoutSubtreeIfNeeded()
         try await check(window)

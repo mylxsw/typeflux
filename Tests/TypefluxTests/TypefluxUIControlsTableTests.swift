@@ -18,11 +18,6 @@ struct TypefluxUIControlsTableTests {
                 TypefluxTableCell(rowID: row.id) { Text(row.term) }
             }
         }.frame(height: 180)
-        _ = NSApplication.shared
-        let attribute = NSAccessibility.Attribute(rawValue: "AXEnhancedUserInterface")
-        let previous = NSApp.accessibilityAttributeValue(attribute)
-        NSApp.accessibilitySetValue(true, forAttribute: attribute)
-        defer { NSApp.accessibilitySetValue(previous ?? false, forAttribute: attribute) }
         try await SettingsBehaviorTestSupport.withWindow(table.padding(24), width: 640, height: 400) { _, host in
             try await Task.sleep(for: .milliseconds(100))
             let native = try #require(descendants(host).compactMap { $0 as? NSTableView }.first)
