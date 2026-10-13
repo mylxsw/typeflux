@@ -294,7 +294,7 @@ struct AskNotebookVisualTests {
             }
         }
         let insert = try #require(accessibilityElement("ask.result.insert", in: window))
-        #expect(accessibilityValue("accessibilityHelp", of: insert)?.contains("⌥↩") == true,
+        #expect((insert.value(forKey: "accessibilityHelp") as? String)?.contains("⌥↩") == true,
                 "the icon's tooltip includes its shortcut")
         try click(accessibilityFrame(insert), in: window)
         try await waitForUI { !recorder.inserted.isEmpty }
