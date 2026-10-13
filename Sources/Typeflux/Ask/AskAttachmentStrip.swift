@@ -230,7 +230,6 @@ struct AskAttachmentChip: View {
             if let onTap {
                 Button(action: onTap) { face }
                     .buttonStyle(.plain)
-                    .typefluxAction(onTap)
                     .accessibilityIdentifier("ask.content.\(item.kind.rawValue).preview")
             } else {
                 face
@@ -241,7 +240,6 @@ struct AskAttachmentChip: View {
             }
             if let actionLabel, let onAction {
                 Button(actionLabel, action: onAction)
-                    .typefluxAction(onAction)
                     .font(.subheadline).fontWeight(.medium)
                     .foregroundStyle(StudioTheme.warning)
                     .buttonStyle(.plain)

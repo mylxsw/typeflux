@@ -39,10 +39,7 @@ enum AskTheme {
     static let launcherChipFill = LegacyAskPalette.launcherChipFill
     static let launcherChipEdge = LegacyAskPalette.launcherChipEdge
     static let launcherShortcutFill = LegacyAskPalette.launcherShortcutFill
-    static let launcherShortcutEdge = StudioTheme.dynamic(
-        light: NSColor(srgbRed: 15 / 255, green: 23 / 255, blue: 42 / 255, alpha: 0.14),
-        dark: NSColor.separatorColor
-    )
+    static let launcherShortcutEdge = LegacyAskPalette.launcherShortcutEdge
     static let launcherMetaText = LegacyAskPalette.launcherMetaText
     static let launcherPlaceholderText = LegacyAskPalette.launcherPlaceholderText
     static let switchOnFill = LegacyAskPalette.switchOnFill

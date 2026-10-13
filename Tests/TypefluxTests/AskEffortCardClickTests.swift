@@ -68,6 +68,8 @@ extension AskComposerInteractionTests {
     }
 
     @Test func effortCardInTheGlassMenuRedrawsWhileOpen() async throws {
+        let accessibility = AskWorkspaceTestAccessibility()
+        defer { accessibility.restore() }
         let defaults = try #require(UserDefaults(suiteName: "ask-effort-click-" + UUID().uuidString))
         let library = AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false)
         try library.addModels([
@@ -89,7 +91,7 @@ extension AskComposerInteractionTests {
             compact: true, cloudAvailable: true, effort: Binding(
                 get: { fixture.model.reasoningEffort }, set: { fixture.model.reasoningEffort = $0 }
             ), controlIdentifier: "ask.test.model"
-        ).accessibilityIdentifier("ask.test.model").frame(maxWidth: .infinity, maxHeight: .infinity))
+        ).frame(maxWidth: .infinity, maxHeight: .infinity))
         window.orderFront(nil)
         let presenter = AskGlassMenuPresenter.shared
         defer {
@@ -97,6 +99,10 @@ extension AskComposerInteractionTests {
             window.close()
         }
         try await Task.sleep(for: .milliseconds(400))
+
+        try await SettingsBehaviorTestSupport.wait("The model menu button") {
+            AskWorkspaceTestAccessibility.frame(identifier: "ask.test.model", in: window) != nil
+        }
 
         func click(_ point: NSPoint, in target: NSWindow) throws {
             try AskWorkspaceTestMouse.click(at: point, in: target)

@@ -1,6 +1,7 @@
 import AppKit
 import SwiftUI
 import Testing
+import CoreFoundation
 @testable import TypefluxUI
 
 @MainActor
@@ -18,18 +19,6 @@ struct AppKitTestActionsTests {
         }
     }
 
-    @Test func swiftUIActionViewsReleaseCallbacksWhenDetached() {
-        let view = TypefluxActionBridge.ActionView()
-        var calls = 0
-        view.action = { calls += 1 }
-        #expect(view.invoke())
-        view.enabled = false
-        #expect(!view.invoke())
-        TypefluxActionBridge.dismantleNSView(view, coordinator: ())
-        view.enabled = true
-        #expect(!view.invoke())
-        #expect(calls == 1)
-    }
     @Test func buttonActionsSendTheOriginalSenderWithoutTrackingOrActivation() throws {
         _ = NSApplication.shared
         let recorder = Recorder()
@@ -41,6 +30,18 @@ struct AppKitTestActionsTests {
         button.isEnabled = false
         try AppKitTestActions.press(button)
         #expect(recorder.senders.count == 2)
+    }
+
+    @Test func swiftUIShortcutProxiesPressWithoutAWindowAndDrainPendingRunloopBlocks() throws {
+        _ = NSApplication.shared
+        let button = AccessibilityButton(title: "Shortcut proxy", target: nil, action: nil)
+        #expect(button.window == nil)
+        try AppKitTestActions.press(button)
+        #expect(button.presses == 1)
+        #expect(button.drained)
+        button.isEnabled = false
+        try AppKitTestActions.press(button)
+        #expect(button.presses == 1)
     }
 
     @Test func checkboxAndSwitchStateChangesPrecedeTheirActions() throws {
@@ -133,6 +134,23 @@ struct AppKitTestActionsTests {
         #expect(recorder.senders.first === button)
     }
 
+    @Test(arguments: [false, true])
+    func pullDownNotificationsPopulateTheCurrentMenuBeforeDispatch(cellNotification: Bool) async throws {
+        _ = NSApplication.shared
+        let recorder = Recorder()
+        let button = NSPopUpButton(frame: .zero, pullsDown: true)
+        let factory = PopUpContents(button: button, recorder: recorder)
+        let name = cellNotification ? NSPopUpButtonCell.willPopUpNotification : NSPopUpButton.willPopUpNotification
+        let source: AnyObject = cellNotification ? try #require(button.cell) : button
+        NotificationCenter.default.addObserver(factory, selector: #selector(PopUpContents.prepareMenu),
+                                               name: name, object: source)
+        defer { NotificationCenter.default.removeObserver(factory) }
+        try await AppKitTestActions.selectMenuItem("Action", using: button)
+        #expect(factory.preparations == 1)
+        #expect(recorder.senders.count == 1)
+        #expect(recorder.senders.first is NSMenuItem)
+    }
+
     @Test func delayedMenuContentsBalancePreparationWithoutTracking() async throws {
         _ = NSApplication.shared
         let recorder = Recorder()
@@ -164,6 +182,34 @@ struct AppKitTestActionsTests {
         override func performClick(_: Any?) { trackingCalls += 1 }
         override func mouseDown(with _: NSEvent) { trackingCalls += 1 }
         override func accessibilityPerformPress() -> Bool { trackingCalls += 1; return false }
+    }
+
+    @MainActor private final class AccessibilityButton: NSButton {
+        var presses = 0
+        var drained = false
+        override func accessibilityPerformPress() -> Bool {
+            presses += 1
+            CFRunLoopPerformBlock(CFRunLoopGetMain(), kCFRunLoopDefaultMode) { [weak self] in
+                MainActor.assumeIsolated { self?.drained = true }
+            }
+            return true
+        }
+    }
+
+    @MainActor private final class PopUpContents: NSObject {
+        let button: NSPopUpButton
+        let recorder: Recorder
+        var preparations = 0
+        init(button: NSPopUpButton, recorder: Recorder) { self.button = button; self.recorder = recorder }
+        @objc func prepareMenu(_: Notification) {
+            preparations += 1
+            let menu = NSMenu()
+            menu.autoenablesItems = false
+            let item = NSMenuItem(title: "Action", action: #selector(Recorder.record), keyEquivalent: "")
+            item.target = recorder
+            menu.addItem(item)
+            button.menu = menu
+        }
     }
 
     @MainActor private final class MenuDelegate: NSObject, NSMenuDelegate {

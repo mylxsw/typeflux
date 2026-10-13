@@ -36,21 +36,27 @@ enum AskWorkspaceTestMouse {
                 try AppKitTestActions.dispatch(control)
                 return
             }
-            if let control = view as? NSButton {
-                try AppKitTestActions.press(control)
-                return
-            }
-            if let control = view as? NSSwitch {
+            if let control = view as? NSControl,
+               control is NSButton || control is NSSwitch || control.cell is NSButtonCell {
                 try AppKitTestActions.press(control)
                 return
             }
             target = view.superview
         }
-        if AppKitTestActions.invokeSwiftUIAction(at: point, in: window) { return }
+        if try pressSwiftUIButton(at: point, in: window) { return }
         let press = try event(.leftMouseDown, at: point, in: window)
         let release = try event(.leftMouseUp, at: point, in: window)
         window.sendEvent(press)
         window.sendEvent(release)
+    }
+
+    private static func pressSwiftUIButton(at point: NSPoint, in window: NSWindow) throws -> Bool {
+        let screenPoint = window.convertPoint(toScreen: point)
+        guard let element = AskWorkspaceTestAccessibility.elements(in: window).first(where: {
+            $0.frame.contains(screenPoint) && $0.role == NSAccessibility.Role.button.rawValue
+        }) else { return false }
+        try element.press()
+        return true
     }
 
     private static func event(_ type: NSEvent.EventType, at point: NSPoint, in window: NSWindow) throws -> NSEvent {

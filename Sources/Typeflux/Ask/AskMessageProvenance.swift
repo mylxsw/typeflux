@@ -70,7 +70,6 @@ struct AskMessageProvenanceView: View {
         case .selection(let text):
             Button { showSelection.toggle() } label: { Text(item.label) }
                 .buttonStyle(.plain)
-                .typefluxAction { showSelection.toggle() }
                 .help(L("ask.context.previewHint"))
                 .accessibilityIdentifier("ask.message.selection")
                 .popover(isPresented: $showSelection) {
@@ -87,7 +86,6 @@ struct AskMessageProvenanceView: View {
         case .screenshot(let url):
             Button { showImage.toggle() } label: { Text(item.label) }
                 .buttonStyle(.plain)
-                .typefluxAction { showImage.toggle() }
                 .help(L("ask.context.previewHint"))
                 .accessibilityIdentifier("ask.message.screenshot")
                 .popover(isPresented: $showImage) {

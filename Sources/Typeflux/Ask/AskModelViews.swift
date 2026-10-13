@@ -108,7 +108,6 @@ struct AskModelMenu: View {
                         .contentShape(Rectangle())
                 }
             }.buttonStyle(.plain)
-                .typefluxAction { expanded.toggle() }
                 .accessibilityIdentifier(controlIdentifier)
         }
     }

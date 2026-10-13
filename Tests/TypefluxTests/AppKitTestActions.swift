@@ -1,6 +1,6 @@
 import AppKit
 import Testing
-@testable import TypefluxUI
+import CoreFoundation
 
 /// Dispatch native actions without starting AppKit's mouse or menu tracking loops.
 @MainActor
@@ -9,34 +9,17 @@ enum AppKitTestActions {
         guard control.isEnabled else { return }
         try #require(!(control is NSPopUpButton), "Select a menu item instead of tracking a pop-up button")
         if control.action == nil {
-            let window = try #require(control.window, "A SwiftUI control must belong to its hosted window")
-            let frame = control.convert(control.bounds, to: nil)
-            try #require(invokeSwiftUIAction(at: NSPoint(x: frame.midX, y: frame.midY), in: window),
-                         "Missing SwiftUI action at the control's frame")
+            try SettingsBehaviorTestSupport.pressThroughAccessibility(control)
             return
         }
         if let button = control as? NSButton {
-            if button.accessibilityRole() == .radioButton {
-                button.state = .on
-            } else if let cell = button.cell as? NSButtonCell, cell.showsStateBy.rawValue != 0 {
+            if let cell = button.cell as? NSButtonCell, !cell.showsStateBy.isEmpty {
                 button.setNextState()
             }
         } else if let toggle = control as? NSSwitch {
             toggle.state = toggle.state == .on ? .off : .on
         }
         try dispatch(control)
-    }
-
-    static func invokeSwiftUIAction(at point: NSPoint, in window: NSWindow) -> Bool {
-        func views(in view: NSView) -> [TypefluxActionBridge.ActionView] {
-            (view as? TypefluxActionBridge.ActionView).map { [$0] } ?? view.subviews.flatMap(views)
-        }
-        let roots = [window.contentView?.superview ?? window.contentView].compactMap { $0 }
-            + (window.toolbar?.items.compactMap(\.view) ?? [])
-        let actions = roots.flatMap(views).filter {
-            $0.window === window && $0.convert($0.bounds, to: nil).contains(point)
-        }.sorted { $0.bounds.width * $0.bounds.height < $1.bounds.width * $1.bounds.height }
-        return actions.first?.invoke() ?? false
     }
 
     static func dispatch(_ control: NSControl) throws {
@@ -73,12 +56,19 @@ enum AppKitTestActions {
             return true
         }
         // SwiftUI shortcuts can belong to the hosting responder instead of an NSButton.
-        return window.performKeyEquivalent(with: event)
+        let handled = window.performKeyEquivalent(with: event)
+        for _ in 0 ..< 3 { _ = CFRunLoopRunInMode(.defaultMode, 0, true) }
+        return handled
     }
 
     @discardableResult
     static func selectMenuItem(_ title: String, using button: NSPopUpButton) async throws -> NSControl.StateValue {
         try #require(button.isEnabled)
+        // SwiftUI builds pull-down contents in response to these native notifications, before menu tracking.
+        NotificationCenter.default.post(name: NSPopUpButton.willPopUpNotification, object: button)
+        if let cell = button.cell {
+            NotificationCenter.default.post(name: NSPopUpButtonCell.willPopUpNotification, object: cell)
+        }
         let menu = try #require(button.menu)
         // Populate SwiftUI's lazy menu through its delegate, without opening it.
         menu.update()
@@ -103,7 +93,7 @@ enum AppKitTestActions {
         try #require(item.isEnabled && !item.isSeparatorItem)
         let state = item.state
         if let action = entry.action {
-            try #require(action.invoke())
+            try action.press()
             return state
         }
         if item.menu === menu { button.selectItem(at: menu.index(of: item)) }
@@ -116,17 +106,14 @@ enum AppKitTestActions {
     }
 
     private static func menuEntry(_ title: String, in menu: NSMenu)
-        -> (item: NSMenuItem, action: TypefluxActionBridge.ActionView?)? {
+        -> (item: NSMenuItem, action: SettingsBehaviorTestSupport.Element?)? {
         for item in menu.items {
             if let view = item.view {
                 view.layoutSubtreeIfNeeded()
-                if item.title == title || SettingsBehaviorTestSupport.elements(in: view).contains(where: {
-                    $0.label == title
+                if let action = SettingsBehaviorTestSupport.elements(in: view).first(where: {
+                    $0.label == title && $0.role == NSAccessibility.Role.button.rawValue
                 }) {
-                    func action(in view: NSView) -> TypefluxActionBridge.ActionView? {
-                        (view as? TypefluxActionBridge.ActionView) ?? view.subviews.lazy.compactMap(action).first
-                    }
-                    if let action = action(in: view) { return (item, action) }
+                    return (item, action)
                 }
             }
             if item.title == title { return (item, nil) }

@@ -41,11 +41,10 @@ struct AskWorkspaceWindowTests {
             #expect(items.filter { $0.itemIdentifier.rawValue.contains("ask.workspace.sidebar") }.count == 1)
             try assertVisibleToolbarFrames(window)
             for identifier in ["ask.workspace.sidebar", "ask.workspace.new"] {
-                let element = try #require(SettingsBehaviorTestSupport.elements(in: window).first {
-                    $0.value("accessibilityIdentifier") as? String == identifier
-                        && $0.frame.width > 0 && $0.frame.height > 0
-                }, "Missing toolbar action: \(identifier)")
-                let frame = element.frame
+                try await SettingsBehaviorTestSupport.wait("Toolbar action: \(identifier)") {
+                    AskWorkspaceTestAccessibility.frame(identifier: identifier, in: window) != nil
+                }
+                let frame = try #require(AskWorkspaceTestAccessibility.frame(identifier: identifier, in: window))
                 #expect(frame.width > 0 && frame.width.isFinite)
                 #expect(frame.height > 0 && frame.height.isFinite)
             }

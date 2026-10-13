@@ -16,7 +16,9 @@ public struct TypefluxToolbar: ToolbarContent {
             }
         }
         if let prominent {
-            ToolbarItem(placement: .primaryAction) { TypefluxToolbarButton(action: prominent, prominent: true) }
+            ToolbarItem(id: prominent.accessibilityIdentifier, placement: .primaryAction) {
+                TypefluxToolbarButton(action: prominent, prominent: true)
+            }
         }
     }
 }

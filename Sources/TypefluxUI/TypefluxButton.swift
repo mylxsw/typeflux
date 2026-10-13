@@ -35,7 +35,7 @@ public struct TypefluxButton<Label: View>: View {
         }
     }
 
-    private var button: some View { Button(role: kind.role, action: action) { label }.typefluxAction(action) }
+    private var button: some View { Button(role: kind.role, action: action) { label } }
 }
 
 extension TypefluxButton where Label == Text {

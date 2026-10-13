@@ -31,7 +31,6 @@ struct TypefluxToolbarButton: View {
         .accessibilityLabel(action.title)
         .accessibilityIdentifier(action.accessibilityIdentifier)
         .keyboardShortcut(action.keyboardShortcut)
-        .typefluxAction(action.perform)
     }
 
     @ViewBuilder private var prominentButton: some View {

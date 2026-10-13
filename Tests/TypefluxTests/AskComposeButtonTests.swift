@@ -91,42 +91,58 @@ extension AskComposerInteractionTests {
     }
 }
 
-/// SwiftUI creates its AX nodes on demand. Read their actual screen frames,
-/// then keep event-delivery tests using native mouse events rather than AXPress.
+/// Resolve controls from the owned window, including its separately hosted toolbar and informal AX nodes.
 @MainActor
 struct AskWorkspaceTestAccessibility {
     init() {
-        _ = NSApplication.shared
-        NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
+        TypefluxTestApplicationEnvironment.prepare()
     }
 
     func restore() {
         NSApp.accessibilitySetValue(false, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
     }
 
-    static func center(identifier: String, in window: NSWindow) throws -> NSPoint {
+    static func elements(in window: NSWindow) -> [SettingsBehaviorTestSupport.Element] {
         var seen = Set<ObjectIdentifier>()
-        func value(_ object: NSObject, _ key: String) -> Any? {
-            SettingsBehaviorTestSupport.Element(object: object, window: window).value(key)
+        func walk(_ object: NSObject) -> [SettingsBehaviorTestSupport.Element] {
+            guard seen.insert(ObjectIdentifier(object)).inserted else { return [] }
+            let element = SettingsBehaviorTestSupport.Element(object: object, window: window)
+            let children = (element.value("accessibilityChildren") as? [NSObject] ?? [])
+                + (element.value("accessibilityRows") as? [NSObject] ?? [])
+                + ((object as? NSView)?.subviews ?? [])
+            return [element] + children.flatMap(walk)
         }
-        func find(_ object: NSObject) -> NSRect? {
-            guard seen.insert(ObjectIdentifier(object)).inserted else { return nil }
-            if value(object, "accessibilityIdentifier") as? String == identifier,
-               let frame = value(object, "accessibilityFrame") as? NSValue,
-               frame.rectValue.width > 0, frame.rectValue.height > 0 {
-                return frame.rectValue
+        let roots: [NSObject] = [window] + [window.contentView?.superview ?? window.contentView].compactMap { $0 }
+            + (window.toolbar?.items.compactMap(\.view) ?? [])
+        return roots.flatMap(walk)
+    }
+
+    static func frame(identifier: String, in window: NSWindow) -> NSRect? {
+        for element in elements(in: window) where element.value("accessibilityIdentifier") as? String == identifier {
+            if usable(element.frame) { return element.frame }
+            if let view = element.object as? NSView, view.window === window {
+                let frame = window.convertToScreen(view.convert(view.bounds, to: nil))
+                if usable(frame) { return frame }
             }
-            let children = value(object, "accessibilityChildren") as? [NSObject] ?? []
-            let subviews = (object as? NSView)?.subviews ?? []
-            for child in children + subviews {
-                if let found = find(child) { return found }
-            }
-            return nil
         }
-        let frame = try #require(find(window) ?? window.contentView.flatMap(find),
-                                 "Missing native control: \(identifier)")
+        // SwiftUI may expose an identifier on the toolbar item rather than its transient AX button proxy.
+        if let item = window.toolbar?.items.first(where: { $0.itemIdentifier.rawValue.contains(identifier) }),
+           let view = item.view, view.window === window {
+            let frame = window.convertToScreen(view.convert(view.bounds, to: nil))
+            if usable(frame) { return frame }
+        }
+        return nil
+    }
+
+    static func center(identifier: String, in window: NSWindow) throws -> NSPoint {
+        let frame = try #require(frame(identifier: identifier, in: window), "Missing native control: \(identifier)")
         let local = window.convertFromScreen(frame)
         return NSPoint(x: local.midX, y: local.midY)
+    }
+
+    private static func usable(_ frame: NSRect) -> Bool {
+        frame.width > 0 && frame.height > 0 && frame.width.isFinite && frame.height.isFinite
+            && frame.minX.isFinite && frame.minY.isFinite
     }
 }
 

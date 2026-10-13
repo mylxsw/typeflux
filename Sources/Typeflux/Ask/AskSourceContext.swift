@@ -16,7 +16,6 @@ struct AskSourceRefreshButton: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .typefluxAction(action)
         .disabled(disabled)
         .help(help)
         .accessibilityLabel(help)
@@ -78,7 +77,6 @@ struct AskSourceContextDetails: View {
                     if source != nil {
                         let key = draft.sourceOff == true ? "ask.context.source.restore" : "ask.context.source.remove"
                         Button(L(key), action: toggleSource)
-                        .typefluxAction(toggleSource)
                         .buttonStyle(AskCapsuleButtonStyle(kind: .secondary))
                         .accessibilityIdentifier(key)
                     }
@@ -144,7 +142,6 @@ struct AskSelectedTextDetails: View {
             HStack {
                 Spacer()
                 Button(L("ask.selection.remove"), action: onRemove)
-                    .typefluxAction(onRemove)
                     .buttonStyle(AskCapsuleButtonStyle(kind: .secondary))
                     .accessibilityIdentifier("ask.context.selection.remove")
             }

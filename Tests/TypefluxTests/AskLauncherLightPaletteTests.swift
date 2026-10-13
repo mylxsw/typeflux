@@ -78,9 +78,9 @@ struct AskLauncherLightPaletteTests {
         #expect(abs(resolve(color, dark: false).alpha - alpha) < 0.005)
     }
 
-    @Test func darkModeKeepsTheSharedTokens() {
+    @Test func darkModeKeepsTheFrozenLauncherTokens() {
         let pairs: [(Color, Color)] = [
-            (AskTheme.launcherShortcutEdge, AskTheme.separator)
+            (AskTheme.launcherShortcutEdge, LegacyAskPalette.launcherShortcutEdge)
         ]
         for (launcher, shared) in pairs {
             #expect(resolve(launcher, dark: true).isClose(to: resolve(shared, dark: true)))
