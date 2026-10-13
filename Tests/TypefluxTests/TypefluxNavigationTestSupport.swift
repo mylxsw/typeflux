@@ -34,10 +34,32 @@ enum TypefluxNavigationTestSupport {
 
     static func withWindow(_ view: some View, size: NSSize = NSSize(width: 900, height: 600),
                            run: (NSWindow, NSView) async throws -> Void) async throws {
-        try await withWindows([AnyView(view)], size: size) { windows in
-            let hosted = try #require(windows.first)
-            try await run(hosted.window, hosted.host)
+        _ = NSApplication.shared
+        let previousPolicy = NSApp.activationPolicy()
+        NSApp.setActivationPolicy(.regular)
+        let attribute = NSAccessibility.Attribute(rawValue: "AXEnhancedUserInterface")
+        let previous = NSApp.accessibilityAttributeValue(attribute)
+        NSApp.accessibilitySetValue(true, forAttribute: attribute)
+        let window = NSWindow(contentRect: NSRect(origin: NSPoint(x: 100, y: 100), size: size),
+                              styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        let host = NSHostingView(rootView: view)
+        window.contentView = host
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+        defer {
+            if let sheet = window.attachedSheet {
+                window.endSheet(sheet); sheet.close()
+            }
+            window.contentView = nil
+            window.close()
+            NSApp.accessibilitySetValue(previous ?? false, forAttribute: attribute)
+            NSApp.setActivationPolicy(previousPolicy)
         }
+        try await Task.sleep(for: .milliseconds(250))
+        window.makeKey()
+        host.layoutSubtreeIfNeeded()
+        try await run(window, host)
     }
 
     /// Fixtures own their windows; application configuration is performed once for the process.
