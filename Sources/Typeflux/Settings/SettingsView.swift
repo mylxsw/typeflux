@@ -74,8 +74,10 @@ struct StudioView: View {
     @State private var settingsPane: AppSettingsPane
 
     /// `launcherPane` opens the Launcher page at one of its panes, e.g. the keyword list.
+    /// `initialHistoryID` selects a detail in this view's own state, independently of other windows.
     init(viewModel: StudioViewModel, launcherPane: LauncherSettingsPane = .basics,
-         settingsPane: AppSettingsPane = .general, agentPane: AgentSettingsPane = .overview) {
+         settingsPane: AppSettingsPane = .general, agentPane: AgentSettingsPane = .overview,
+         initialHistoryID: UUID? = nil) {
         self.viewModel = viewModel
         _interfaceStyleObserver = StateObject(wrappedValue: InterfaceStyleObserver(settings: viewModel.askToolSettings))
         _imageSettings = StateObject(wrappedValue: AskImageSettingsModel(
@@ -84,6 +86,7 @@ struct StudioView: View {
         _launcherPane = State(initialValue: launcherPane)
         _settingsPane = State(initialValue: settingsPane)
         _agentPane = State(initialValue: agentPane)
+        _selectedHistoryID = State(initialValue: initialHistoryID)
     }
 
     @State private var agentStatuses: [AgentCapabilityStatus] = []

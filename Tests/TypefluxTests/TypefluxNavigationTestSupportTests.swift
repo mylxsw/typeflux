@@ -7,45 +7,53 @@ import Testing
 struct TypefluxNavigationTestSupportTests {
     private struct FixtureFailure: Error {}
 
-    @Test func `termination requests are cancelled and reported after restoring the delegate`() {
-        _ = NSApplication.shared
+    @Test func `successive single and multiwindow fixtures keep the test process configured`() async throws {
+        TypefluxTestApplicationEnvironment.prepare()
         let previousDelegate = NSApp.delegate
-        let lifetime = TypefluxTestApplicationLifetime(application: NSApp)
-        // Invoke the delegate callback directly; never request a real process exit in a test.
-        let reply = lifetime.applicationShouldTerminate(NSApp)
-        var stacks: [[String]] = []
-        lifetime.restore(reportingTo: { stacks.append($0) })
-        #expect(reply == .terminateCancel)
-        #expect(stacks.count == 1 && stacks.allSatisfy { !$0.isEmpty })
-        #expect(NSApp.delegate === previousDelegate)
+        var firstWindow: NSWindow?
+        try await SettingsBehaviorTestSupport.withFixture { _ in
+            try await TypefluxNavigationTestSupport.withWindow(Text("First scope")) { window, _ in
+                firstWindow = window
+                expectApplicationState(delegate: previousDelegate)
+            }
+        }
+        let closedWindow = try #require(firstWindow)
+        #expect(!closedWindow.isVisible && closedWindow.contentView == nil)
+        expectApplicationState(delegate: previousDelegate)
+        try await SettingsBehaviorTestSupport.withFixture { _ in
+            try await TypefluxNavigationTestSupport.withWindows([
+                AnyView(Text("Second scope")), AnyView(Text("Third scope"))
+            ]) { windows in
+                #expect(windows.count == 2 && windows.allSatisfy { $0.window.isVisible })
+                expectApplicationState(delegate: previousDelegate)
+            }
+        }
+        expectApplicationState(delegate: previousDelegate)
     }
 
-    @Test func `closing a hosted window keeps the other window and restores the application scope`() async throws {
-        _ = NSApplication.shared
-        let previousPolicy = NSApp.activationPolicy()
+    @Test func `closing a hosted window keeps the other window and application state usable`() async throws {
+        TypefluxTestApplicationEnvironment.prepare()
         let previousDelegate = NSApp.delegate
-        let attribute = NSAccessibility.Attribute(rawValue: "AXEnhancedUserInterface")
-        let previousAccessibility = (NSApp.accessibilityAttributeValue(attribute) as? Bool) ?? false
         var hostedWindows: [TypefluxNavigationTestSupport.HostedWindow] = []
         try await TypefluxNavigationTestSupport.withWindows([
             AnyView(Text("First")), AnyView(Text("Second"))
         ]) { windows in
             hostedWindows = windows
-            #expect(NSApp.delegate is TypefluxTestApplicationLifetime)
+            expectApplicationState(delegate: previousDelegate)
             _ = try #require(windows.count == 2)
             windows[0].close()
             #expect(!windows[0].window.isVisible)
             #expect(windows[1].window.isVisible)
+            windows[0].close()
+            #expect(windows[1].window.isVisible)
+            expectApplicationState(delegate: previousDelegate)
         }
         #expect(hostedWindows.allSatisfy { !$0.window.isVisible && $0.window.contentView == nil })
-        #expect(NSApp.activationPolicy() == previousPolicy)
-        #expect(NSApp.delegate === previousDelegate)
-        #expect(((NSApp.accessibilityAttributeValue(attribute) as? Bool) ?? false) == previousAccessibility)
+        expectApplicationState(delegate: previousDelegate)
     }
 
-    @Test func `a throwing multiwindow body still closes windows and restores its delegate`() async throws {
-        _ = NSApplication.shared
-        let previousPolicy = NSApp.activationPolicy()
+    @Test func `a throwing multiwindow body closes windows without changing application state`() async throws {
+        TypefluxTestApplicationEnvironment.prepare()
         let previousDelegate = NSApp.delegate
         var hostedWindows: [TypefluxNavigationTestSupport.HostedWindow] = []
         do {
@@ -60,7 +68,13 @@ struct TypefluxNavigationTestSupportTests {
             #expect(hostedWindows.count == 2)
         }
         #expect(hostedWindows.allSatisfy { !$0.window.isVisible && $0.window.contentView == nil })
-        #expect(NSApp.activationPolicy() == previousPolicy)
+        expectApplicationState(delegate: previousDelegate)
+    }
+
+    private func expectApplicationState(delegate previousDelegate: NSApplicationDelegate?) {
+        #expect(NSApp.activationPolicy() == .regular)
         #expect(NSApp.delegate === previousDelegate)
+        let enhancedUI = NSApp.accessibilityAttributeValue(TypefluxTestApplicationEnvironment.enhancedUIAttribute) as? Bool
+        #expect(enhancedUI == true)
     }
 }

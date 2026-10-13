@@ -34,52 +34,19 @@ enum TypefluxNavigationTestSupport {
 
     static func withWindow(_ view: some View, size: NSSize = NSSize(width: 900, height: 600),
                            run: (NSWindow, NSView) async throws -> Void) async throws {
-        _ = NSApplication.shared
-        let previousPolicy = NSApp.activationPolicy()
-        NSApp.setActivationPolicy(.regular)
-        let attribute = NSAccessibility.Attribute(rawValue: "AXEnhancedUserInterface")
-        let previous = NSApp.accessibilityAttributeValue(attribute)
-        NSApp.accessibilitySetValue(true, forAttribute: attribute)
-        let window = NSWindow(contentRect: NSRect(origin: NSPoint(x: 100, y: 100), size: size),
-                              styleMask: [.titled, .closable, .resizable], backing: .buffered, defer: false)
-        window.isReleasedWhenClosed = false
-        let host = NSHostingView(rootView: view)
-        window.contentView = host
-        window.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
-        defer {
-            if let sheet = window.attachedSheet {
-                window.endSheet(sheet); sheet.close()
-            }
-            window.contentView = nil
-            window.close()
-            NSApp.accessibilitySetValue(previous ?? false, forAttribute: attribute)
-            NSApp.setActivationPolicy(previousPolicy)
+        try await withWindows([AnyView(view)], size: size) { windows in
+            let hosted = try #require(windows.first)
+            try await run(hosted.window, hosted.host)
         }
-        try await Task.sleep(for: .milliseconds(250))
-        window.makeKey()
-        host.layoutSubtreeIfNeeded()
-        try await run(window, host)
     }
 
-    /// Multiple windows share one application/accessibility scope, rather than nesting global state changes.
+    /// Fixtures own their windows; application configuration is performed once for the process.
     static func withWindows(_ views: [AnyView], size: NSSize = NSSize(width: 900, height: 600),
                             run: @MainActor ([HostedWindow]) async throws -> Void) async throws {
         _ = try #require(!views.isEmpty)
-        _ = NSApplication.shared
-        let previousPolicy = NSApp.activationPolicy()
-        let lifetime = TypefluxTestApplicationLifetime(application: NSApp)
-        NSApp.setActivationPolicy(.regular)
-        let attribute = NSAccessibility.Attribute(rawValue: "AXEnhancedUserInterface")
-        let previous = NSApp.accessibilityAttributeValue(attribute)
-        NSApp.accessibilitySetValue(true, forAttribute: attribute)
+        TypefluxTestApplicationEnvironment.prepare()
         let windows = views.map { makeWindow($0, size: size) }
-        defer {
-            close(windows)
-            NSApp.accessibilitySetValue(previous ?? false, forAttribute: attribute)
-            NSApp.setActivationPolicy(previousPolicy)
-            lifetime.restore()
-        }
+        defer { close(windows) }
         for hosted in windows { hosted.window.orderFront(nil) }
         windows.last?.window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)

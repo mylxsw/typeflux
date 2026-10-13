@@ -29,27 +29,44 @@ TYPEFLUX_VOCABULARY_HISTORY_SNAPSHOTS="$PWD/artifacts/gul349-snapshots" swift te
 
 The snapshot command captures Vocabulary, unmatched search, empty library, add sheet, History date groups, record details, pipeline stages and unmatched audio filter in Classic/Liquid Glass × light/dark. It also captures Liquid Glass with Reduce Transparency and Increase Contrast in both appearances. Check the history Back button after opening a record, including a narrow window's native toolbar overflow. The tests use synthetic data and isolated defaults/storage, and restore the localization and vocabulary fixture.
 
-For the window-lifecycle rework, start with the focused command below. Require both the two-window test result and the Swift Testing summary; a zero exit code alone did not establish completion in acceptance round 3.
+For the window-lifecycle rework, start by running both Back tests together, then the two-window test alone. Require the two-window result and the Swift Testing summary in each log; a zero exit code alone did not establish completion in acceptance rounds 3–4.
 
 ```bash
 set -o pipefail
 mkdir -p artifacts
-swift test --no-parallel --filter 'SettingsWindowLifecycleTests|TypefluxNavigationTestSupportTests|HistorySettingsBackButtonTests|VocabularyHistorySettingsTests' 2>&1 | tee artifacts/gul349-window-lifecycle.log &&
-rg -q 'Test "Back in one settings window leaves another window detail selected" (passed|failed)' artifacts/gul349-window-lifecycle.log &&
-rg -q 'Test run with ' artifacts/gul349-window-lifecycle.log
+swift test --no-parallel --filter HistorySettingsBackButtonTests 2>&1 | tee artifacts/gul349-back-sequential.log &&
+rg -q 'Test "Back in one settings window leaves another window detail selected" passed' artifacts/gul349-back-sequential.log &&
+rg -q 'Test run with .* passed' artifacts/gul349-back-sequential.log &&
+swift test --no-parallel --filter 'Back in one settings window' 2>&1 | tee artifacts/gul349-back-isolated.log &&
+rg -q 'Test "Back in one settings window leaves another window detail selected" passed' artifacts/gul349-back-isolated.log &&
+rg -q 'Test run with .* passed' artifacts/gul349-back-isolated.log
+```
+
+Then check fixture cleanup and related settings behavior:
+
+```bash
+set -o pipefail
+mkdir -p artifacts
+swift test --no-parallel --filter 'SettingsWindowLifecycleTests|SettingsWindowNavigationTests|TypefluxNavigationTestSupportTests|HistorySettingsBackButtonTests|VocabularyHistorySettingsTests' 2>&1 | tee artifacts/gul349-window-lifecycle.log &&
+rg -q 'Test "Back in one settings window leaves another window detail selected" passed' artifacts/gul349-window-lifecycle.log &&
+rg -q 'Test run with .* passed' artifacts/gul349-window-lifecycle.log
 ```
 
 ## Return-navigation rework
 
 The acceptance owner's second pass built latest main + PR #455 and passed 131 XCTest tests and the original return-navigation test, but the new Back test still reported an enabled button on the list and a rejected accessibility press. The main-actor factory correction from `1323d73` is retained.
 
-Back now hosts its real `NSButton` inside a generic native view in a dedicated navigation `ToolbarItem`. The contents receive `.disabled` when no selected record is being presented; each representable update applies that environment to the child button and restores its coordinator, target and action. The target is bound to the presenting window's selection and cleared on teardown. Tests resolve the hosted control again after toolbar updates, check its identifier/target/selector, and retain the disabled-state and accepted-accessibility-press assertions. They also cover native clicks, record deletion, section scope and two-window isolation. The original failing assertion and press helper are unchanged.
+Back now hosts its real `NSButton` inside a generic native view in a dedicated navigation `ToolbarItem`. The contents receive `.disabled` when no selected record is being presented; each representable update applies that environment to the child button and restores its coordinator, target and action. The target is bound to the presenting window's selection and cleared on teardown. Tests resolve the hosted control again after toolbar updates, check its identifier/target/selector, and verify native and accessibility presses by their navigation effects. They also cover disabled state, record deletion, section scope and two-window isolation.
 
 Acceptance round 3 confirmed the Back effect checks pass, but the Swift Testing process exited before producing a result for the two-window test. The changes from `8233a3f6` and `65f27653` are retained: both localization additions survive, and toolbar AX presses are checked by their navigation effect rather than AppKit's Boolean return value.
 
-The settings controller's close handler, `StudioShell`, and `TypefluxWindow` contain no application-quit call. The two-window test previously nested two helpers that each managed process-wide activation/accessibility state and pressed Back in an inactive window. It now owns both windows in one shared scope, focuses each window before interaction, and closes the first while verifying the second stays usable. All hosting trees detach before final window closure; close is idempotent and global state is restored on errors. A scoped test delegate cancels any unexpected AppKit quit request and records its call stack as a test issue, rather than losing the host. Production explicitly uses [AppKit's last-window policy](https://developer.apple.com/documentation/appkit/nsapplicationdelegate/applicationshouldterminateafterlastwindowclosed(_:)) to keep the menu-bar app resident. Added tests cover production settings close, multiwindow cleanup, error restoration and termination-request reporting.
+Acceptance round 4 isolated the exit to repeated application activation/accessibility setup and delegate replacement between tests. The two-window test also timed out when run alone. `TypefluxTestApplicationEnvironment` now configures `.regular` and `AXEnhancedUserInterface` once on the main actor. Both settings fixtures and navigation window helpers use it without restoring process state or replacing the runner's delegate. Single-window hosting delegates to the multiwindow helper; teardown detaches hosting trees, orders windows out and closes them without hiding the application. Regression tests cover consecutive single/multiwindow fixture scopes, idempotent close, and cleanup after a throwing body while the application state stays stable.
 
-The branch was rebased onto main `98978096`, resolving the localization conflict with the acceptance owner's combined version. Static review checked the macOS 13 target, identifier scope, actor isolation, access levels and teardown. No builds, tests, snapshots or remote Mac operations were run for this rework; the precise runtime exit source and successful test completion still require acceptance verification. All screenshot and coverage samples below are historical.
+The two-window Back test seeds each `StudioView`'s independent initial history selection and waits for both actual detail pages and enabled native controls. It still focuses the owning window before pressing Back, verifies that the other window's detail remains selected, closes the first, and checks the second window's Back remains usable. The single-window test retains real navigation-row accessibility selection. Named readiness waits identify the phase if acceptance finds another timeout.
+
+Production settings close contains no application-quit call and explicitly uses AppKit's last-window policy to keep the menu-bar app resident. Its lifecycle and navigation tests now inject Dock policy controllers backed by a test double, exercising the real close handler and resource release without changing the host's activation policy. Navigation tests also drop their per-test activation-policy restore. Existing production callers use the shared Dock controller.
+
+The branch is based on main `98978096`, retaining the acceptance owner's combined localization version. Static review checked the macOS 13 target, identifier scope, actor isolation, access levels and teardown. No builds, tests, snapshots or remote Mac operations were run for this rework; successful test completion still requires acceptance verification. All screenshot and coverage samples below are historical.
 
 ## Earlier validation and limits
 
@@ -60,7 +77,7 @@ Before the final Back toolbar correction, on macOS 26.6.2 with Swift 6.4 and SDK
 - Merged focused/snapshot coverage covered 547 of 574 changed executable production lines (95.3%); `coverage-summary.json` records that earlier sample, rather than coverage of the final head.
 - Strict SwiftLint on new/rewritten files and the changed shared library passed with zero diagnostics. Existing production files retained 29 legacy diagnostics versus 33 at the base, with no new diagnostics on changed lines. Two unchanged test diagnostics remain. Whole-repository SwiftLint was not clean; see `lint-summary.json`.
 
-After reading the centralization instruction, the in-flight focused rerun was cancelled and no further Mac work was started. Acceptance subsequently reproduced the Back failure; the native Back rework and its new regression tests remain unverified. `git diff --check` and localization-key/placeholder checks were performed locally before the original submission.
+After reading the centralization instruction, the in-flight focused rerun was cancelled and no further Mac work was started. Acceptance round 3 subsequently confirmed the Back action effects; the current fixture-lifetime and two-window changes remain unverified. `git diff --check` and localization-key/placeholder checks were performed locally before the original submission.
 
 ## Self-review
 

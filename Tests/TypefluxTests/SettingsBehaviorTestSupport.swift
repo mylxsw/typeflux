@@ -152,11 +152,11 @@ enum SettingsBehaviorTestSupport {
         elements(in: root).contains { $0.text == text || $0.label == text }
     }
 
-    static func wait(_ condition: () -> Bool) async throws {
+    static func wait(_ description: String = "The expected UI state", _ condition: () -> Bool) async throws {
         let deadline = ContinuousClock.now + .seconds(3)
         while !condition() {
             guard ContinuousClock.now < deadline else {
-                Issue.record("The expected UI state did not become ready within three seconds")
+                Issue.record("\(description) did not become ready within three seconds")
                 throw ReadinessTimeout()
             }
             try await Task.sleep(for: .milliseconds(10))
@@ -164,10 +164,7 @@ enum SettingsBehaviorTestSupport {
     }
 
     static func withFixture(_ check: (SettingsStore) async throws -> Void) async throws {
-        _ = NSApplication.shared
-        let attribute = NSAccessibility.Attribute(rawValue: "AXEnhancedUserInterface")
-        let previousAccessibility = NSApp.accessibilityAttributeValue(attribute)
-        NSApp.accessibilitySetValue(true, forAttribute: attribute)
+        TypefluxTestApplicationEnvironment.prepare()
         let previousLanguage = AppLocalization.shared.language
         let previousMemoryStore = KeychainTokenStore.useInMemoryStoreForTesting
         let previousKeys = KeychainTokenStore.inMemoryLock.withLock { KeychainTokenStore.inMemoryValues }
@@ -191,7 +188,6 @@ enum SettingsBehaviorTestSupport {
             KeychainTokenStore.useInMemoryStoreForTesting = previousMemoryStore
             AuthState.shared.isLoggedIn = previousLogin
             AppLocalization.shared.setLanguage(previousLanguage)
-            NSApp.accessibilitySetValue(previousAccessibility ?? false, forAttribute: attribute)
         }
         let defaults = try #require(fixtureDefaults)
         let settings = SettingsStore(defaults: defaults)
@@ -202,6 +198,7 @@ enum SettingsBehaviorTestSupport {
 
     static func withWindow(_ content: some View, width: CGFloat = 980, height: CGFloat = 780,
                            check: (NSWindow, NSView) async throws -> Void) async throws {
+        TypefluxTestApplicationEnvironment.prepare()
         let window = NSWindow(contentRect: NSRect(x: -10000, y: -10000, width: width, height: height),
                               styleMask: [.titled], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false

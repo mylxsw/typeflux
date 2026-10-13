@@ -7,14 +7,13 @@ import Testing
 struct SettingsWindowLifecycleTests {
     @Test func `closing settings releases its hosting tree while the menu bar app stays resident`() async throws {
         try await SettingsBehaviorTestSupport.withFixture { settings in
-            let policy = NSApp.activationPolicy()
-            let lifetime = TypefluxTestApplicationLifetime(application: NSApp)
+            let previousDelegate = NSApp.delegate
+            let policy = TypefluxTestActivationPolicyController()
             let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
-            let controller = SettingsWindowController()
+            // Exercise the production close handler without hiding the test process through the Dock controller.
+            let controller = SettingsWindowController(dockVisibility: DockVisibilityController(app: policy))
             defer {
                 controller.window?.close()
-                NSApp.setActivationPolicy(policy)
-                lifetime.restore()
                 try? FileManager.default.removeItem(at: root)
             }
             controller.modelLibrary = AskModelLibrary(defaults: settings.defaults, automaticallyLoadsCatalog: false)
@@ -26,6 +25,9 @@ struct SettingsWindowLifecycleTests {
             window.close()
             #expect(controller.window == nil && controller.viewModel == nil)
             #expect(window.contentView == nil && !window.isVisible)
+            #expect(policy.currentActivationPolicy == .accessory)
+            #expect(NSApp.activationPolicy() == .regular)
+            #expect(NSApp.delegate === previousDelegate)
         }
     }
 }

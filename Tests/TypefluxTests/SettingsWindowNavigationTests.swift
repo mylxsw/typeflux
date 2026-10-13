@@ -10,12 +10,10 @@ struct SettingsWindowNavigationTests {
 
     @Test func `all pages have native toolbar titles and keep sidebar order`() async throws {
         try await UI.withFixture { settings in
-            let previousPolicy = NSApp.activationPolicy()
-            NSApp.setActivationPolicy(.regular)
-            defer { NSApp.setActivationPolicy(previousPolicy) }
             let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
             defer { try? FileManager.default.removeItem(at: directory) }
-            let controller = SettingsWindowController()
+            let dockVisibility = DockVisibilityController(app: TypefluxTestActivationPolicyController())
+            let controller = SettingsWindowController(dockVisibility: dockVisibility)
             controller.modelLibrary = AskModelLibrary(defaults: settings.defaults, automaticallyLoadsCatalog: false)
             controller.show(settingsStore: settings, historyStore: FileHistoryStore(baseDir: directory))
             let window = try #require(controller.window)
@@ -68,12 +66,10 @@ struct SettingsWindowNavigationTests {
 
     @Test func `vocabulary personas and models use the native search and reset on navigation`() async throws {
         try await UI.withFixture { settings in
-            let previousPolicy = NSApp.activationPolicy()
-            NSApp.setActivationPolicy(.regular)
-            defer { NSApp.setActivationPolicy(previousPolicy) }
             let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
             defer { try? FileManager.default.removeItem(at: directory) }
-            let controller = SettingsWindowController()
+            let dockVisibility = DockVisibilityController(app: TypefluxTestActivationPolicyController())
+            let controller = SettingsWindowController(dockVisibility: dockVisibility)
             controller.modelLibrary = AskModelLibrary(defaults: settings.defaults, automaticallyLoadsCatalog: false)
             controller.show(settingsStore: settings, historyStore: FileHistoryStore(baseDir: directory),
                             initialSection: .vocabulary)
