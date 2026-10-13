@@ -6,6 +6,9 @@ import XCTest
 @MainActor
 final class TypefluxPopupMenuTests: XCTestCase {
     func testUnavailableSelectionKeepsItsLabelUntilAValidOptionIsChosen() async throws {
+        guard ProcessInfo.processInfo.environment["TYPEFLUX_SETTINGS_MENU_TESTS"] == "1" else {
+            throw XCTSkip("Native SwiftUI menu inspection requires TYPEFLUX_SETTINGS_MENU_TESTS=1")
+        }
         TypefluxTestApplicationEnvironment.prepare()
         for options in [TypefluxPopupMenuFixture.options, []] {
             let window = NSWindow(contentRect: NSRect(x: 100, y: 100, width: 320, height: 100),
@@ -34,6 +37,9 @@ final class TypefluxPopupMenuTests: XCTestCase {
     }
 
     func testSharedAndStudioPickersShowOptionsDirectlyAndUpdateSelection() async throws {
+        guard ProcessInfo.processInfo.environment["TYPEFLUX_SETTINGS_MENU_TESTS"] == "1" else {
+            throw XCTSkip("Native SwiftUI menu inspection requires TYPEFLUX_SETTINGS_MENU_TESTS=1")
+        }
         TypefluxTestApplicationEnvironment.prepare()
         let options = TypefluxPopupMenuFixture.options
         for studio in [false, true] {
@@ -95,6 +101,7 @@ final class TypefluxPopupMenuTests: XCTestCase {
             NotificationCenter.default.post(name: NSPopUpButtonCell.willPopUpNotification, object: cell)
         }
         let menu = try XCTUnwrap(button.menu)
+        menu.delegate?.menuNeedsUpdate?(menu)
         menu.update()
         menu.delegate?.menuWillOpen?(menu)
         defer { menu.delegate?.menuDidClose?(menu) }

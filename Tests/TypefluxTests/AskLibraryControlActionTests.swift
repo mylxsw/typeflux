@@ -27,6 +27,7 @@ struct AskLibraryControlActionTests {
             try SettingsBehaviorTestSupport.Element(object: cell, window: window).press()
             #expect(recorder.senders.count == 2)
             #expect(recorder.senders.allSatisfy { $0 === button })
+            #expect(recorder.states == [.off, .off], "Momentary actions must not advance persistent state")
             #expect(window.firstResponder === responder, "Action dispatch does not need native focus transitions")
         }
     }
@@ -34,6 +35,7 @@ struct AskLibraryControlActionTests {
     @Test func checkboxAndSwitchActionsObserveTheNewStateAndRespectDisabledControls() throws {
         try withControls { window, content, recorder in
             let button = makeButton(type: .switch, recorder: recorder)
+            button.setAccessibilityRole(.button)
             content.addSubview(button)
             let checkbox = SettingsBehaviorTestSupport.Element(object: button, window: window)
             try checkbox.press()
@@ -81,6 +83,7 @@ struct AskLibraryControlActionTests {
     @Test func radioButtonsAndMatrixCellsSendTheirSelectedState() throws {
         try withControls { window, content, recorder in
             let radio = makeButton(type: .radio, recorder: recorder)
+            radio.setAccessibilityRole(.button)
             content.addSubview(radio)
             try SettingsBehaviorTestSupport.Element(object: radio, window: window).press()
             #expect(recorder.states == [.on])
@@ -121,6 +124,20 @@ struct AskLibraryControlActionTests {
             try split.press()
             #expect(control.selectedSegment == 0)
             #expect(recorder.segments == [2])
+        }
+    }
+
+    @Test func mixedCheckboxStateAdvancesBeforeEachActionWithoutAnAXCheckboxRole() throws {
+        try withControls { window, content, recorder in
+            let button = makeButton(type: .switch, recorder: recorder)
+            button.setAccessibilityRole(.button)
+            button.allowsMixedState = true
+            button.state = .mixed
+            content.addSubview(button)
+            let checkbox = SettingsBehaviorTestSupport.Element(object: button, window: window)
+            for _ in 0 ..< 3 { try checkbox.press() }
+            #expect(recorder.states == [.on, .off, .mixed])
+            #expect(recorder.senders.count == 3 && recorder.senders.allSatisfy { $0 === button })
         }
     }
 

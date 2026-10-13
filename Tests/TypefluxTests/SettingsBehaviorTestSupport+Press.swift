@@ -56,11 +56,9 @@ extension SettingsBehaviorTestSupport.Element {
         _ = try #require(!(button is NSPopUpButton), "Select menu items without starting menu tracking")
         if let window { _ = try #require(button.window === window) }
         guard button.isEnabled else { return }
-        let role = button.accessibilityRole()
-        if role == .checkBox {
-            button.state = button.state == .on ? .off : .on
-        } else if role == .radioButton {
-            button.state = .on
+        // Native state-display flags survive missing or overridden AX roles; momentary buttons have none.
+        if let cell = button.cell as? NSButtonCell, !cell.showsStateBy.isEmpty {
+            button.setNextState()
         }
         try dispatch(button)
     }
