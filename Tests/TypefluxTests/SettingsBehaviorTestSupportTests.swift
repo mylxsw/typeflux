@@ -88,7 +88,7 @@ struct SettingsBehaviorTestSupportTests {
 
     @Test func `radio matrix cells select before dispatching the owning control action`() async throws {
         let target = Target()
-        let matrix = NSMatrix(frame: NSRect(x: 0, y: 0, width: 200, height: 60), mode: .radioMode,
+        let matrix = NSMatrix(frame: NSRect(x: 0, y: 0, width: 200, height: 60), mode: .radioModeMatrix,
                               cellClass: NSButtonCell.self, numberOfRows: 2, numberOfColumns: 1)
         matrix.target = target
         matrix.action = #selector(Target.receive(_:))
