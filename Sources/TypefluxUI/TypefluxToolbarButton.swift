@@ -15,7 +15,11 @@ struct TypefluxToolbarButton: View {
     }
 
     @ViewBuilder var body: some View {
-        if prominent { prominentButton } else { button }
+        Group {
+            if prominent { prominentButton } else { button }
+        }
+        .frame(width: TypefluxControlWidth.toolbarItem.value(for: style),
+               height: TypefluxControlHeight.toolbarItem.value(for: style))
     }
 
     private var button: some View {

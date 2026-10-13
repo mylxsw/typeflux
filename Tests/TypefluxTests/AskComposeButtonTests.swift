@@ -25,7 +25,12 @@ extension AskComposerInteractionTests {
             let hosting = NSHostingView(rootView: AskConversationView(model: fixture.model).defaultAppStorage(defaults))
             window.contentView = hosting
             window.orderFront(nil)
-            defer { window.close() }
+            defer {
+                window.orderOut(nil)
+                window.contentView = nil
+                window.toolbar = nil
+                window.close()
+            }
             try await Task.sleep(for: .milliseconds(400))
 
             func clickHeader(_ point: NSPoint) throws {
@@ -56,6 +61,7 @@ extension AskComposerInteractionTests {
             defer { defaults.removePersistentDomain(forName: suite) }
             defaults.set(collapsed, forKey: "ask.sidebarCollapsed")
             let fixture = try AskTestFixture()
+            defer { fixture.model.resetSession() }
             let now = Date()
             await fixture.api.seed(.init(id: "compose", title: "Compose", revision: 1, updatedAt: now, messages: [
                 .init(id: "q", role: "user", text: "Hello", createdAt: now),
@@ -69,14 +75,18 @@ extension AskComposerInteractionTests {
             window.isReleasedWhenClosed = false
             window.contentView = NSHostingView(rootView: AskConversationView(model: fixture.model).defaultAppStorage(defaults))
             window.orderFront(nil)
-            defer { window.close() }
+            defer {
+                window.orderOut(nil)
+                window.contentView = nil
+                window.toolbar = nil
+                window.close()
+            }
             try await Task.sleep(for: .milliseconds(400))
             #expect(fixture.model.selectedId == "compose")
             let point = try AskWorkspaceTestAccessibility.center(identifier: "ask.workspace.new", in: window)
             try AskWorkspaceTestMouse.click(at: point, in: window)
             try await fixture.wait { fixture.model.selectedId == nil }
             #expect(fixture.model.selectedId == nil, "collapsed: \(collapsed)")
-            fixture.model.resetSession()
         }
     }
 }

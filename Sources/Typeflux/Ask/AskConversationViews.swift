@@ -137,7 +137,7 @@ struct AskConversationView: View {
         ZStack(alignment: .topLeading) {
             TypefluxWindow(title: workspaceTitle, search: toolbarSearch, searchPrompt: L("ask.search.conversations"),
                            groups: toolbarGroups, prominent: newConversationAction,
-                           sidebarVisibility: sidebarVisibility, center: AnyView(toolbarStatus),
+                           sidebarVisibility: sidebarVisibility, center: toolbarCenter,
                            sidebarWidth: AskMetrics.sidebarWidth, sidebarToggle: sidebarAction) {
                 sidebar
             } detail: {
@@ -277,6 +277,14 @@ struct AskConversationView: View {
         }
         if layout.compactContent { actions = actions.filter { $0.id == "ask.usage" } }
         return [.init(id: "ask.actions", actions: actions)]
+    }
+
+    private var toolbarCenter: AnyView? {
+        let local = model.storesLocally(launcher: false)
+        let hasDetail = !layout.compactContent && ((!local && model.selected?.usage != nil) || model.runPhase != nil)
+        guard layout.compactContent || !model.savedChatDrafts.isEmpty || (model.isSignedIn && local) || hasDetail
+        else { return nil }
+        return AnyView(toolbarStatus)
     }
 
     private var toolbarStatus: some View {

@@ -17,7 +17,12 @@ extension AskComposerInteractionTests {
         let fixture = try await motionFixture()
         defer { fixture.model.resetSession() }
         let (window, hosting) = try await hostMotionView(AskConversationView(model: fixture.model).defaultAppStorage(defaults))
-        defer { window.close() }
+        defer {
+            window.orderOut(nil)
+            window.contentView = nil
+            window.toolbar = nil
+            window.close()
+        }
         let editor = try #require(motionEditors(hosting).first)
         let start = editor.convert(editor.bounds, to: nil).minX
         let samples = try await clickAndSample(AskWorkspaceTestAccessibility.center(identifier: "ask.workspace.sidebar", in: window),
@@ -44,7 +49,12 @@ extension AskComposerInteractionTests {
         let fixture = try await motionFixture()
         defer { fixture.model.resetSession() }
         let (window, hosting) = try await hostMotionView(AskConversationView(model: fixture.model).defaultAppStorage(defaults))
-        defer { window.close() }
+        defer {
+            window.orderOut(nil)
+            window.contentView = nil
+            window.toolbar = nil
+            window.close()
+        }
         let editor = try #require(motionEditors(hosting).first)
         let start = editor.convert(editor.bounds, to: nil).maxX
         let samples = try await clickAndSample(AskWorkspaceTestAccessibility.center(identifier: "ask.workspace.usage", in: window),

@@ -29,7 +29,12 @@ enum AskLibrarySnapshot {
             : (dark ? .darkAqua : .aqua))
         window.contentView = hosting
         window.orderFront(nil)
-        defer { window.orderOut(nil); window.close() }
+        defer {
+            window.orderOut(nil)
+            window.contentView = nil
+            window.toolbar = nil
+            window.close()
+        }
         try await Task.sleep(for: .milliseconds(300))
         #expect(window.toolbar != nil)
         let frame = try #require(window.contentView?.superview)
