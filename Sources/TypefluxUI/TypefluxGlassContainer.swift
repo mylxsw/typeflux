@@ -29,36 +29,15 @@ public struct TypefluxGlassContainer<Content: View>: View {
     public var body: some View {
         let shape = RoundedRectangle(cornerRadius: radius.value(for: style),
                                      style: radius == .spotlightInput ? .circular : .continuous)
-        switch material {
-        case .liquidGlass:
-            nativeGlass(shape: shape)
-        case .visualEffect:
-            content.background(VisualEffectBlur(material: placement.fallbackMaterial,
-                                                blendingMode: placement.blending,
-                                                cornerRadius: radius.value(for: style)))
-        case .opaque:
-            content.background(TypefluxColor.windowBackground.color, in: shape)
-                .overlay {
-                    if contrast == .increased || accessibility.increasedContrast {
-                        shape.strokeBorder(TypefluxColor.separator.color, lineWidth: 1).allowsHitTesting(false)
-                    }
+        content
+            // Separate AppKit layers keep animated content from recompositing the glass.
+            .background(GlassBackground(material: material, corner: radius.value(for: style),
+                                        opaqueFill: TypefluxColor.windowBackground.color, placement: placement,
+                                        cornerStyle: radius == .spotlightInput ? .circular : .continuous))
+            .overlay {
+                if material == .opaque, accessibility.increasedContrast, contrast != .increased {
+                    shape.strokeBorder(TypefluxColor.separator.color, lineWidth: 1).allowsHitTesting(false)
                 }
-        }
-    }
-
-    @ViewBuilder private func nativeGlass(shape: RoundedRectangle) -> some View {
-        #if compiler(>=6.2)
-            if #available(macOS 26.0, *) {
-                content.glassEffect(.regular, in: shape)
-            } else {
-                content.background(VisualEffectBlur(material: placement.fallbackMaterial,
-                                                    blendingMode: placement.blending,
-                                                    cornerRadius: radius.value(for: style)))
             }
-        #else
-            content.background(VisualEffectBlur(material: placement.fallbackMaterial,
-                                                blendingMode: placement.blending,
-                                                cornerRadius: radius.value(for: style)))
-        #endif
     }
 }

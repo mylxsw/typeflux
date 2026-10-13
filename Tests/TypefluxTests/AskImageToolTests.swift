@@ -51,7 +51,7 @@ final class AskImageToolTests: XCTestCase {
         XCTAssertFalse(enabled.contains { $0.name == "artifact" })
         XCTAssertEqual(tools.risk(of: call), .write)
         XCTAssertFalse(AskToolPolicy.mayReuse(call))
-        XCTAssertEqual(AskTheme.toolTitle(call), L("imagegen.title"))
+        XCTAssertEqual(AskToolPresentation.toolTitle(call), L("imagegen.title"))
         XCTAssertEqual(AskPresentation.toolSymbol(call), "photo.badge.plus")
         let original = try await tools.approvalBinding(for: call, conversationId: "conversation")
         for _ in 0 ..< 20 {

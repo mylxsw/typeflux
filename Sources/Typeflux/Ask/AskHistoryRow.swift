@@ -49,7 +49,7 @@ struct AskHistoryRow: View {
             if busy { AskRunToneDot(tone: .running) }
             if stored {
                 Image(systemName: "lock").font(.footnote).fontWeight(.medium)
-                    .foregroundStyle(AskTheme.privateTint)
+                    .foregroundStyle(Color(nsColor: .systemPurple))
                     .help(L("ask.storage.local"))
                     .accessibilityLabel(L("ask.storage.local"))
             }
@@ -58,14 +58,14 @@ struct AskHistoryRow: View {
                     .id(editSession)
                     .padding(.horizontal, 4)
                     .frame(height: 24)
-                    .background(AskTheme.controlSurface,
+                    .background(TypefluxColor.controlBackground.color,
                                 in: RoundedRectangle(cornerRadius: TypefluxRadius.textField.value(for: style)))
                     .overlay(RoundedRectangle(cornerRadius: TypefluxRadius.textField.value(for: style))
-                        .strokeBorder(AskTheme.accent.opacity(0.7), lineWidth: 1))
+                        .strokeBorder(TypefluxColor.accent.color.opacity(0.7), lineWidth: 1))
                 if let renameError {
                     Image(systemName: "exclamationmark.circle")
                         .font(.subheadline)
-                        .foregroundStyle(StudioTheme.warning)
+                        .foregroundStyle(TypefluxColor.warning.color)
                         .help(renameError)
                         .accessibilityLabel(renameError)
                 }
@@ -78,7 +78,7 @@ struct AskHistoryRow: View {
             } else if editorTitle == nil, !busy {
                 Text(AskPresentation.historyTimeLabel(updatedAt))
                     .font(.subheadline)
-                    .foregroundStyle(StudioTheme.textTertiary)
+                    .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                     .monospacedDigit()
             }
         }
@@ -91,15 +91,15 @@ struct AskHistoryRow: View {
         .background {
             let shape = RoundedRectangle(cornerRadius: style.ask.sidebarRowCorner, style: .continuous)
             ZStack {
-                if hovering, !selected { shape.fill(AskTheme.hoverFill).transition(.opacity) }
+                if hovering, !selected { shape.fill(TypefluxColor.label.color.opacity(0.06)).transition(.opacity) }
                 if selected, !usesNativeSelection {
                     if colorScheme == .light {
                         shape.fill(.white)
-                            .overlay(shape.strokeBorder(AskTheme.librarySeparator, lineWidth: 0.5))
+                            .overlay(shape.strokeBorder(TypefluxColor.separator.color, lineWidth: 0.5))
                             .shadow(color: .black.opacity(0.08), radius: 1, y: 1)
                             .matchedGeometryEffect(id: "ask.history.selection", in: selectionSpace)
                     } else if style.usesGlass {
-                        let tint = stored ? AskTheme.privateTint : AskTheme.accent
+                        let tint = stored ? Color(nsColor: .systemPurple) : TypefluxColor.accent.color
                         shape.fill(tint.opacity(0.18))
                             .overlay(shape.strokeBorder(tint.opacity(0.4), lineWidth: 0.5))
                             .shadow(color: tint.opacity(0.18), radius: 6, y: 2)
@@ -121,7 +121,7 @@ struct AskHistoryRow: View {
         if usesNativeSelection {
             text
         } else {
-            text.foregroundStyle(selected || hovering ? StudioTheme.textPrimary : StudioTheme.textSecondary)
+            text.foregroundStyle(selected || hovering ? TypefluxColor.label.color : TypefluxColor.secondaryLabel.color)
         }
     }
 

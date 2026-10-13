@@ -91,11 +91,11 @@ struct InterfaceStyleTests {
 
     @Test func menuAndHoverCardCornersFollowTheStyle() {
         #expect(AskGlassCardSurface<EmptyView>.corner(.menu, style: .classic)
-            == TypefluxRadius.menu.value(for: .classic))
+            == TypefluxRadius.menuCard.value(for: .classic))
         #expect(AskGlassCardSurface<EmptyView>.corner(.hoverCard, style: .classic)
-            == TypefluxRadius.popover.value(for: .classic))
+            == TypefluxRadius.hoverCard.value(for: .classic))
         #expect(AskGlassCardSurface<EmptyView>.corner(.hoverCard, style: .liquidGlass)
-            == TypefluxRadius.popover.value(for: .liquidGlass))
+            == TypefluxRadius.hoverCard.value(for: .liquidGlass))
     }
 
     // MARK: - Following settings

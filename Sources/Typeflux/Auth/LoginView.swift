@@ -73,6 +73,8 @@ enum SocialLoginLayout {
 }
 
 struct LoginView: View {
+    @Environment(\.interfaceStyle) private var interfaceStyle
+
     enum PresentationStyle {
         case card
         case plain
@@ -170,11 +172,11 @@ struct LoginView: View {
                     } label: {
                         HStack(spacing: 6) {
                             Image(systemName: "chevron.left")
-                                .font(.system(size: StudioTheme.Typography.caption, weight: .medium))
+                                .font(.system(.subheadline, weight: .medium))
                             Text(L("auth.login.back"))
-                                .font(.studioBody(StudioTheme.Typography.body))
+                                .font(.system(.body))
                         }
-                        .foregroundStyle(StudioTheme.textSecondary)
+                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
                     }
                     .buttonStyle(.plain)
                 }
@@ -211,11 +213,11 @@ struct LoginView: View {
                     } label: {
                         HStack(spacing: 6) {
                             Image(systemName: "chevron.left")
-                                .font(.system(size: StudioTheme.Typography.caption, weight: .medium))
+                                .font(.system(.subheadline, weight: .medium))
                             Text(L("auth.login.back"))
-                                .font(.studioBody(StudioTheme.Typography.body))
+                                .font(.system(.body))
                         }
-                        .foregroundStyle(StudioTheme.textSecondary)
+                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
                     }
                     .buttonStyle(.plain)
                 }
@@ -248,8 +250,8 @@ struct LoginView: View {
 
             if let statusMessage {
                 Text(statusMessage)
-                    .font(.studioBody(StudioTheme.Typography.caption))
-                    .foregroundStyle(StudioTheme.accent)
+                    .font(.system(.subheadline))
+                    .foregroundStyle(TypefluxColor.accent.color)
                     .frame(maxWidth: .infinity, alignment: formContentAlignment)
                     .multilineTextAlignment(presentationStyle == .card ? .center : .leading)
                     .transition(.opacity)
@@ -257,8 +259,8 @@ struct LoginView: View {
 
             if let errorMessage {
                 Text(errorMessage)
-                    .font(.studioBody(StudioTheme.Typography.caption))
-                    .foregroundStyle(StudioTheme.danger)
+                    .font(.system(.subheadline))
+                    .foregroundStyle(TypefluxColor.danger.color)
                     .frame(maxWidth: .infinity, alignment: formContentAlignment)
                     .multilineTextAlignment(presentationStyle == .card ? .center : .leading)
                     .transition(.opacity)
@@ -278,21 +280,21 @@ struct LoginView: View {
                 .padding(.bottom, 10)
 
                 Text("Typeflux Cloud")
-                    .font(.studioBody(11, weight: .semibold))
+                    .font(.system(.subheadline, weight: .semibold))
                     .tracking(2.2)
                     .textCase(.uppercase)
                     .foregroundStyle(brandEyebrowColor)
             }
 
             Text(plainHeaderTitle)
-                .font(.studioDisplay(30, weight: .bold))
-                .foregroundStyle(StudioTheme.textPrimary)
+                .font(.system(.largeTitle, weight: .bold))
+                .foregroundStyle(TypefluxColor.label.color)
                 .multilineTextAlignment(.center)
 
             if let subtitle = plainHeaderSubtitle, !subtitle.isEmpty {
                 HStack(alignment: .center, spacing: 6) {
                     Text(subtitle)
-                        .font(.studioBody(13))
+                        .font(.system(.body))
                         .foregroundStyle(headerSubtitleColor)
                         .multilineTextAlignment(.center)
                         .fixedSize(horizontal: false, vertical: true)
@@ -308,7 +310,7 @@ struct LoginView: View {
     }
 
     private var enterEmailForm: some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.medium) {
+        VStack(alignment: .leading, spacing: 14) {
             if !socialLoginProviders.isEmpty {
                 socialLoginButtonsRow
                 orDivider
@@ -346,35 +348,17 @@ struct LoginView: View {
     }
 
     private func socialLoginButton(for provider: SocialLoginProvider) -> some View {
-        Button(action: action(for: provider)) {
-            HStack(spacing: 10) {
+        TypefluxButton(size: .large, action: action(for: provider)) {
+            HStack(spacing: 8) {
                 if isLoadingProvider(provider) {
-                    ProgressView()
-                        .controlSize(.small)
-                        .tint(socialButtonTextColor(for: provider))
-                        .frame(width: socialButtonIconSize, height: socialButtonIconSize)
+                    ProgressView().controlSize(.small)
                 } else {
-                    socialLoginIcon(for: provider)
-                        .frame(width: socialButtonIconSize, height: socialButtonIconSize)
+                    socialLoginIcon(for: provider).frame(width: socialButtonIconSize, height: socialButtonIconSize)
+                        .accessibilityHidden(true)
                 }
-
-                Text(socialLoginTitle(for: provider))
-                    .font(.studioBody(13, weight: .semibold))
-                    .lineLimit(1)
-            }
-            .foregroundStyle(socialButtonTextColor(for: provider))
-            .frame(maxWidth: .infinity, minHeight: socialButtonHeight)
-            .padding(.horizontal, 14)
-            .background(
-                RoundedRectangle(cornerRadius: socialButtonCornerRadius, style: .continuous)
-                    .fill(socialButtonFillColor(for: provider))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: socialButtonCornerRadius, style: .continuous)
-                    .stroke(socialButtonStrokeColor(for: provider), lineWidth: 1)
-            )
+                Text(socialLoginTitle(for: provider)).lineLimit(1)
+            }.frame(maxWidth: .infinity)
         }
-        .buttonStyle(.plain)
         .disabled(isLoading || isGoogleLoading || isGitHubLoading || isAppleLoading)
         .help(socialLoginAccessibilityLabel(for: provider))
         .accessibilityLabel(socialLoginAccessibilityLabel(for: provider))
@@ -454,8 +438,8 @@ struct LoginView: View {
                 .fill(orDividerColor)
                 .frame(height: 1)
             Text(L("auth.login.orDivider"))
-                .font(.studioBody(12))
-                .foregroundStyle(StudioTheme.textTertiary)
+                .font(.system(.callout))
+                .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                 .fixedSize()
             Rectangle()
                 .fill(orDividerColor)
@@ -484,7 +468,7 @@ struct LoginView: View {
     }
 
     private var loginForm: some View {
-        VStack(spacing: StudioTheme.Spacing.medium) {
+        VStack(spacing: 14) {
             LoginTextField(
                 placeholder: L("auth.field.email"),
                 text: .constant(email),
@@ -503,8 +487,8 @@ struct LoginView: View {
 
             Button(action: openForgotPassword) {
                 Text(L("auth.login.forgotPassword"))
-                    .font(.studioBody(StudioTheme.Typography.caption, weight: .medium))
-                    .foregroundStyle(StudioTheme.accent)
+                    .font(.system(.subheadline, weight: .medium))
+                    .foregroundStyle(TypefluxColor.accent.color)
                     .frame(maxWidth: .infinity, alignment: .trailing)
             }
             .buttonStyle(.plain)
@@ -512,7 +496,7 @@ struct LoginView: View {
     }
 
     private var registerForm: some View {
-        VStack(spacing: StudioTheme.Spacing.medium) {
+        VStack(spacing: 14) {
             LoginTextField(
                 placeholder: L("auth.field.email"),
                 text: .constant(email),
@@ -545,10 +529,10 @@ struct LoginView: View {
     }
 
     private var activateForm: some View {
-        VStack(spacing: StudioTheme.Spacing.medium) {
+        VStack(spacing: 14) {
             Text(L("auth.login.activateHint", email))
-                .font(.studioBody(StudioTheme.Typography.caption))
-                .foregroundStyle(StudioTheme.textSecondary)
+                .font(.system(.subheadline))
+                .foregroundStyle(TypefluxColor.secondaryLabel.color)
                 .multilineTextAlignment(.center)
 
             LoginTextField(
@@ -561,8 +545,9 @@ struct LoginView: View {
 
             Button(action: resendActivationCode) {
                 Text(resendActivationButtonTitle)
-                    .font(.studioBody(StudioTheme.Typography.caption, weight: .medium))
-                    .foregroundStyle(resendCooldownRemaining > 0 ? StudioTheme.textTertiary : StudioTheme.accent)
+                    .font(.system(.subheadline, weight: .medium))
+                    .foregroundStyle(resendCooldownRemaining > 0 ? TypefluxColor.tertiaryLabel.color : TypefluxColor
+                        .accent.color)
                     .frame(maxWidth: .infinity, alignment: .center)
             }
             .buttonStyle(.plain)
@@ -571,10 +556,10 @@ struct LoginView: View {
     }
 
     private var forgotPasswordForm: some View {
-        VStack(spacing: StudioTheme.Spacing.medium) {
+        VStack(spacing: 14) {
             Text(L("auth.login.forgotPasswordHint", email))
-                .font(.studioBody(StudioTheme.Typography.caption))
-                .foregroundStyle(StudioTheme.textSecondary)
+                .font(.system(.subheadline))
+                .foregroundStyle(TypefluxColor.secondaryLabel.color)
                 .multilineTextAlignment(.center)
 
             LoginTextField(
@@ -593,8 +578,8 @@ struct LoginView: View {
                 }
             } label: {
                 Text(L("auth.login.alreadyHaveResetCode"))
-                    .font(.studioBody(StudioTheme.Typography.caption, weight: .medium))
-                    .foregroundStyle(StudioTheme.accent)
+                    .font(.system(.subheadline, weight: .medium))
+                    .foregroundStyle(TypefluxColor.accent.color)
                     .frame(maxWidth: .infinity, alignment: .center)
             }
             .buttonStyle(.plain)
@@ -602,7 +587,7 @@ struct LoginView: View {
     }
 
     private var resetPasswordForm: some View {
-        VStack(spacing: StudioTheme.Spacing.medium) {
+        VStack(spacing: 14) {
             LoginTextField(
                 placeholder: L("auth.field.email"),
                 text: .constant(email),
@@ -635,31 +620,12 @@ struct LoginView: View {
     }
 
     private func loginButton(title: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Group {
-                if isLoading {
-                    ProgressView()
-                        .controlSize(.small)
-                        .colorScheme(.dark)
-                } else {
-                    Text(title)
-                        .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
-                }
-            }
-            .frame(maxWidth: .infinity)
-            .frame(height: 46)
-            .foregroundStyle(buttonTextColor)
-            .background(
-                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.medium, style: .continuous)
-                    .fill(buttonFillColor)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.medium, style: .continuous)
-                    .stroke(buttonStrokeColor, lineWidth: buttonStrokeWidth)
-            )
+        TypefluxButton(kind: .primary, size: .large, defaultAction: true, action: action) {
+            HStack {
+                if isLoading { ProgressView().controlSize(.small) }
+                Text(title)
+            }.frame(maxWidth: .infinity)
         }
-        .buttonStyle(.plain)
-        .opacity(isButtonEnabled ? 1 : disabledButtonOpacity)
         .disabled(!isButtonEnabled)
     }
 
@@ -667,7 +633,7 @@ struct LoginView: View {
     private var containerBackground: some View {
         switch presentationStyle {
         case .card:
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
+            RoundedRectangle(cornerRadius: TypefluxRadius.popover.value(for: interfaceStyle), style: .continuous)
                 .fill(loginCardSurface)
         case .plain:
             Color.clear
@@ -678,7 +644,7 @@ struct LoginView: View {
     private var containerBorder: some View {
         switch presentationStyle {
         case .card:
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
+            RoundedRectangle(cornerRadius: TypefluxRadius.popover.value(for: interfaceStyle), style: .continuous)
                 .stroke(loginCardStroke, lineWidth: 1)
         case .plain:
             EmptyView()
@@ -686,7 +652,7 @@ struct LoginView: View {
     }
 
     private var loginCardDivider: Color {
-        colorScheme == .dark ? Color.white.opacity(0.06) : StudioTheme.border.opacity(0.9)
+        colorScheme == .dark ? Color.white.opacity(0.06) : TypefluxColor.separator.color.opacity(0.9)
     }
 
     private var contentPadding: CGFloat {
@@ -727,11 +693,11 @@ struct LoginView: View {
     }
 
     private var loginCardSurface: Color {
-        colorScheme == .dark ? Color.white.opacity(0.045) : StudioTheme.surface
+        colorScheme == .dark ? Color.white.opacity(0.045) : TypefluxColor.controlBackground.color
     }
 
     private var loginCardStroke: Color {
-        colorScheme == .dark ? Color.white.opacity(0.08) : StudioTheme.border
+        colorScheme == .dark ? Color.white.opacity(0.08) : TypefluxColor.separator.color
     }
 
     private var loginCardShadow: Color {
@@ -739,8 +705,7 @@ struct LoginView: View {
     }
 
     private var loginWindowBackground: some View {
-        StudioGlassBackground(tintOpacity: StudioTheme.Opacity.glassBackgroundTint)
-            .ignoresSafeArea()
+        TypefluxColor.contentBackground.color.ignoresSafeArea()
     }
 
     private var showsPolicyAgreement: Bool {
@@ -768,7 +733,7 @@ struct LoginView: View {
 
     private var buttonFillColor: Color {
         if isButtonEnabled {
-            return StudioTheme.accent
+            return TypefluxColor.accent.color
         }
 
         return colorScheme == .dark
@@ -812,9 +777,9 @@ struct LoginView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             .toggleStyle(.checkbox)
-            .tint(StudioTheme.accent)
+            .tint(TypefluxColor.accent.color)
             .foregroundStyle(policyTextColor)
-            .font(.studioBody(12))
+            .font(.system(.callout))
             .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
         }
@@ -826,13 +791,13 @@ struct LoginView: View {
             Text(agreementCombinedLeadInText)
                 .foregroundStyle(policyTextColor)
             Link(agreementTermsTitle, destination: termsURL)
-                .foregroundStyle(StudioTheme.accent)
+                .foregroundStyle(TypefluxColor.accent.color)
             Text(agreementSeparatorText)
                 .foregroundStyle(policyTextColor)
             Link(agreementPrivacyTitle, destination: privacyURL)
-                .foregroundStyle(StudioTheme.accent)
+                .foregroundStyle(TypefluxColor.accent.color)
         }
-        .font(.studioBody(12))
+        .font(.system(.callout))
         .multilineTextAlignment(.center)
     }
 
@@ -943,22 +908,22 @@ struct LoginView: View {
     }
 
     private var brandEyebrowColor: Color {
-        colorScheme == .dark ? StudioTheme.accent.opacity(0.92) : StudioTheme.accent.opacity(0.86)
+        colorScheme == .dark ? TypefluxColor.accent.color.opacity(0.92) : TypefluxColor.accent.color.opacity(0.86)
     }
 
     private var headerSubtitleColor: Color {
         if presentationStyle == .plain, colorScheme == .light {
             return Color.black.opacity(0.58)
         }
-        return StudioTheme.textSecondary
+        return TypefluxColor.secondaryLabel.color
     }
 
     private var helperTextColor: Color {
-        colorScheme == .dark ? StudioTheme.textTertiary : Color.black.opacity(0.42)
+        colorScheme == .dark ? TypefluxColor.tertiaryLabel.color : Color.black.opacity(0.42)
     }
 
     private var policyTextColor: Color {
-        colorScheme == .dark ? StudioTheme.textSecondary : Color.black.opacity(0.5)
+        colorScheme == .dark ? TypefluxColor.secondaryLabel.color : Color.black.opacity(0.5)
     }
 
     private var agreementSeparatorText: String {
@@ -1376,107 +1341,5 @@ struct LoginView: View {
             resetPasswordConfirmation = ""
             step = .forgotPassword
         }
-    }
-}
-
-private struct LoginTextField: View {
-    @Environment(\.colorScheme) private var colorScheme
-    let placeholder: String
-    @Binding var text: String
-    let icon: String
-    var isSecure: Bool = false
-    var isDisabled: Bool = false
-
-    var body: some View {
-        HStack(spacing: StudioTheme.Spacing.small) {
-            Image(systemName: icon)
-                .font(.system(size: StudioTheme.Typography.iconSmall, weight: .medium))
-                .foregroundStyle(StudioTheme.textSecondary)
-                .frame(width: 20)
-
-            if isSecure {
-                SecureField(placeholder, text: $text)
-                    .textFieldStyle(.plain)
-                    .font(.studioBody(StudioTheme.Typography.body))
-                    .disabled(isDisabled)
-            } else {
-                TextField(placeholder, text: $text)
-                    .textFieldStyle(.plain)
-                    .font(.studioBody(StudioTheme.Typography.body))
-                    .disabled(isDisabled)
-            }
-        }
-        .padding(.horizontal, 14)
-        .frame(height: 46)
-        .background(
-            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.medium, style: .continuous)
-                .fill(fieldBackgroundColor)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.medium, style: .continuous)
-                .stroke(fieldBorderColor, lineWidth: StudioTheme.BorderWidth.thin)
-        )
-        .shadow(color: fieldShadowColor, radius: fieldShadowRadius, x: 0, y: fieldShadowY)
-        .opacity(isDisabled ? 0.6 : 1)
-    }
-
-    private var fieldBackgroundColor: Color {
-        colorScheme == .dark
-            ? StudioTheme.surfaceMuted
-            : Color.white.opacity(0.92)
-    }
-
-    private var fieldBorderColor: Color {
-        colorScheme == .dark
-            ? StudioTheme.border
-            : Color.black.opacity(0.10)
-    }
-
-    private var fieldShadowColor: Color {
-        colorScheme == .dark ? .clear : Color.black.opacity(0.03)
-    }
-
-    private var fieldShadowRadius: CGFloat {
-        colorScheme == .dark ? 0 : 10
-    }
-
-    private var fieldShadowY: CGFloat {
-        colorScheme == .dark ? 0 : 3
-    }
-}
-
-private struct SocialProviderLogoMark: View {
-    let resourceName: String
-    var isTemplate = false
-
-    var body: some View {
-        if let image = logoImage {
-            Image(nsImage: image)
-                .renderingMode(isTemplate ? .template : .original)
-                .resizable()
-                .scaledToFit()
-        }
-    }
-
-    private var logoImage: NSImage? {
-        guard let url = Bundle.appResources.url(
-            forResource: resourceName,
-            withExtension: "svg",
-            subdirectory: "Resources"
-        )
-            ?? Bundle.appResources.url(forResource: resourceName, withExtension: "svg")
-        else {
-            return nil
-        }
-
-        guard let image = NSImage(contentsOf: url) else {
-            return nil
-        }
-
-        if isTemplate {
-            image.isTemplate = true
-        }
-
-        return image
     }
 }

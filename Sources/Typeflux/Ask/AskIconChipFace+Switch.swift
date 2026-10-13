@@ -11,15 +11,15 @@ extension AskIconChipFace {
     /// when it failed, and the hover wash under an off icon.
     static func wellFill(_ style: AskContextItem.Style, hovering: Bool) -> Color {
         switch style {
-        case .active: return AskTheme.switchOnFill
-        case .warning: return StudioTheme.warning.opacity(0.14)
+        case .active: return LegacyAskPalette.switchOnFill
+        case .warning: return TypefluxColor.warning.color.opacity(0.14)
         case .unavailable: return .clear
-        case .neutral: return hovering ? AskTheme.hoverFill : .clear
+        case .neutral: return hovering ? TypefluxColor.label.color.opacity(0.06) : .clear
         }
     }
 
     static func wellEdge(_ style: AskContextItem.Style) -> Color {
-        style == .active ? AskTheme.switchOnEdge : .clear
+        style == .active ? LegacyAskPalette.switchOnEdge : .clear
     }
 
     /// An on switch uses the filled form of its symbol when there is one

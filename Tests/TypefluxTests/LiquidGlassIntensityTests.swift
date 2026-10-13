@@ -108,7 +108,7 @@ struct LiquidGlassIntensityTests {
             for value in [0.0, 0.5, 1.0] {
                 let view = LiquidGlassIntensitySetting(value: .constant(value))
                     .padding(20).frame(width: 340)
-                    .background(StudioTheme.surface)
+                    .background(TypefluxColor.controlBackground.color)
                     .environment(\.colorScheme, dark ? .dark : .light)
                 let host = NSHostingView(rootView: view)
                 let window = NSWindow(contentRect: .init(x: 0, y: 0, width: 340, height: 340),

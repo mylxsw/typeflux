@@ -52,10 +52,10 @@ struct ClipboardUsageSection: View {
         HStack(alignment: .firstTextBaseline, spacing: 10) {
             Text(ByteCountFormatter.string(fromByteCount: model.usage?.totalBytes ?? 0, countStyle: .file))
                 .font(.title2)
-                .foregroundStyle(StudioTheme.textPrimary)
+                .foregroundStyle(TypefluxColor.label.color)
             Text(L("clipboard.settings.usage.items", model.usage?.totalCount ?? 0))
                 .font(.subheadline)
-                .foregroundStyle(StudioTheme.textSecondary)
+                .foregroundStyle(TypefluxColor.secondaryLabel.color)
         }
     }
 
@@ -64,7 +64,7 @@ struct ClipboardUsageSection: View {
             ClipboardAppIcon(bundleID: app.bundleID)
             Text(appName(app))
                 .font(.body)
-                .foregroundStyle(StudioTheme.textPrimary)
+                .foregroundStyle(TypefluxColor.label.color)
                 .lineLimit(1)
             Spacer(minLength: 12)
             ProgressView(value: Double(app.bytes), total: Double(max(largest, 1)))
@@ -75,7 +75,7 @@ struct ClipboardUsageSection: View {
                 ByteCountFormatter.string(fromByteCount: app.bytes, countStyle: .file), app.itemCount
             ))
             .font(.subheadline.monospacedDigit())
-            .foregroundStyle(StudioTheme.textSecondary)
+            .foregroundStyle(TypefluxColor.secondaryLabel.color)
             .frame(width: 130, alignment: .trailing)
             Button {
                 pendingDelete = app
@@ -83,7 +83,7 @@ struct ClipboardUsageSection: View {
                 Image(systemName: "trash")
             }
             .buttonStyle(.plain)
-            .foregroundStyle(StudioTheme.textSecondary)
+            .foregroundStyle(TypefluxColor.secondaryLabel.color)
             .help(L("clipboard.settings.usage.deleteApp.help"))
             .accessibilityLabel(L("clipboard.settings.usage.deleteApp.help"))
         }

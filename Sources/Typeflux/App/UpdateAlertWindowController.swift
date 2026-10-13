@@ -7,6 +7,7 @@ final class UpdateAlertWindowController: NSWindowController, NSWindowDelegate {
 
     var onAction: ((Action) -> Void)?
     private var actionFired = false
+    private lazy var interfaceStyleObserver = InterfaceStyleObserver(settings: SettingsStore())
 
     convenience init(
         version: String,
@@ -40,7 +41,9 @@ final class UpdateAlertWindowController: NSWindowController, NSWindowDelegate {
             onUpdate: { [weak self] in self?.fire(.update) },
             onSkip: { [weak self] in self?.fire(.skip) }
         )
-        panel.contentViewController = NSHostingController(rootView: view)
+        panel.contentViewController = NSHostingController(
+            rootView: view.interfaceStyle(following: interfaceStyleObserver)
+        )
         panel.delegate = self
         panel.center()
     }
@@ -71,7 +74,9 @@ final class UpdateAlertWindowController: NSWindowController, NSWindowDelegate {
 
 // MARK: - SwiftUI content
 
-private struct UpdateAlertContentView: View {
+struct UpdateAlertContentView: View {
+    @Environment(\.interfaceStyle) private var interfaceStyle
+
     let version: String
     let releaseNotes: String
     let releaseURL: URL?
@@ -80,16 +85,19 @@ private struct UpdateAlertContentView: View {
     let onSkip: () -> Void
 
     var body: some View {
-        VStack(spacing: 0) {
-            headerSection
-            releaseNotesSection
-                .padding(.horizontal, 20)
-                .padding(.top, 12)
-                .padding(.bottom, 16)
-            Divider()
-            buttonRow
+        TypefluxGlassContainer(radius: .sheet, placement: .inWindow) {
+            VStack(spacing: 0) {
+                headerSection
+                releaseNotesSection
+                    .padding(.horizontal, 20)
+                    .padding(.top, 12)
+                    .padding(.bottom, 16)
+                Divider()
+                buttonRow
+            }
+            .frame(width: 540)
         }
-        .frame(width: 540)
+        .preferredColorScheme(appearanceMode == .system ? nil : appearanceMode == .dark ? .dark : .light)
     }
 
     // MARK: Header
@@ -127,20 +135,20 @@ private struct UpdateAlertContentView: View {
                 .padding(12)
                 .frame(maxWidth: .infinity)
                 .frame(height: 210)
-                .clipShape(RoundedRectangle(cornerRadius: 8))
+                .background(TypefluxColor.contentBackground.color)
+                .clipShape(RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle)))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 8)
+                    RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle))
                         .stroke(Color.secondary.opacity(0.25), lineWidth: 1)
                 )
 
             if let releaseURL {
-                Button {
+                TypefluxButton(kind: .link) {
                     NSWorkspace.shared.open(releaseURL)
                 } label: {
                     Text(L("updater.action.viewDetails"))
                         .font(.callout)
                 }
-                .buttonStyle(.link)
             }
         }
     }
@@ -149,13 +157,14 @@ private struct UpdateAlertContentView: View {
 
     private var buttonRow: some View {
         HStack(spacing: 8) {
-            Button(L("updater.action.skip"), action: onSkip)
+            TypefluxButton(L("updater.action.skip"), action: onSkip)
                 .keyboardShortcut(.cancelAction)
+                .accessibilityIdentifier("update.skip")
             Spacer()
-            Button(L("updater.action.installAndRelaunch"), action: onUpdate)
-                .buttonStyle(.borderedProminent)
-                .tint(StudioTheme.accent)
+            TypefluxButton(L("updater.action.installAndRelaunch"), kind: .primary, action: onUpdate)
+                .tint(TypefluxColor.accent.color)
                 .keyboardShortcut(.defaultAction)
+                .accessibilityIdentifier("update.install")
         }
         .padding(16)
     }

@@ -49,30 +49,32 @@ struct AskLauncherLightPaletteTests {
 
     @Test func frostAloneKeepsPrimaryTextReadableOverABlackWindow() {
         // The worst case: no glass tint at all, only the frost over pure black.
-        let surface = resolve(AskTheme.launcherSurface, dark: false)
+        let surface = resolve(LegacyAskPalette.launcherSurface, dark: false)
         let frost = AskGlassPlacement.floating.frost(dark: false)
         let backplate = RGBA(red: surface.red * frost, green: surface.green * frost,
                              blue: surface.blue * frost, alpha: 1)
-        #expect(contrast(resolve(StudioTheme.textPrimary, dark: false), backplate) >= 7)
+        #expect(contrast(resolve(TypefluxColor.label.color, dark: false), backplate) >= 7)
     }
 
     @Test func lightSurfaceIsACoolOffWhite() {
-        let light = resolve(AskTheme.launcherSurface, dark: false)
+        let light = resolve(LegacyAskPalette.launcherSurface, dark: false)
         #expect(light.alpha == 1)
         #expect(light.red < 0.98 && light.blue > light.red)
         let dark = RGBA(red: 0.11, green: 0.11, blue: 0.11, alpha: 1)
-        #expect(resolve(AskTheme.launcherSurface, dark: true).isClose(to: dark))
+        #expect(resolve(LegacyAskPalette.launcherSurface, dark: true).isClose(to: dark))
     }
 
     @Test func glassKeepsAFaintHairlineOnlyInLightMode() {
         let hairline = RGBA(red: 0, green: 0, blue: 0, alpha: 0.08)
-        #expect(resolve(AskTheme.floatingGlassEdge, dark: false).isClose(to: hairline))
-        #expect(resolve(AskTheme.floatingGlassEdge, dark: true).alpha == 0)
+        #expect(resolve(LegacyAskPalette.floatingGlassEdge, dark: false).isClose(to: hairline))
+        #expect(resolve(LegacyAskPalette.floatingGlassEdge, dark: true).alpha == 0)
     }
 
     @Test(arguments: [
-        (AskTheme.launcherSeparator, 0.08), (AskTheme.launcherSelection, 0.10), (AskTheme.launcherKeyword, 0.06),
-        (AskTheme.launcherTile, 0.24), (AskTheme.launcherChipFill, 0.08)
+        (LegacyAskPalette.launcherSeparator, 0.08), (LegacyAskPalette.launcherSelection, 0.10),
+        (LegacyAskPalette.launcherKeyword,
+         0.06),
+        (LegacyAskPalette.launcherTile, 0.24), (LegacyAskPalette.launcherChipFill, 0.08)
     ])
     func lightWashesAreTranslucent(color: Color, alpha: Double) {
         #expect(abs(resolve(color, dark: false).alpha - alpha) < 0.005)
@@ -80,62 +82,70 @@ struct AskLauncherLightPaletteTests {
 
     @Test func darkModeKeepsTheFrozenLauncherTokens() {
         let pairs: [(Color, Color)] = [
-            (AskTheme.launcherShortcutEdge, LegacyAskPalette.launcherShortcutEdge)
+            (LegacyAskPalette.launcherShortcutEdge, LegacyAskPalette.launcherShortcutEdge)
         ]
         for (launcher, shared) in pairs {
             #expect(resolve(launcher, dark: true).isClose(to: resolve(shared, dark: true)))
         }
-        for clear in [AskTheme.launcherSelectionEdge, AskTheme.launcherTileEdge, AskTheme.launcherChipFill,
-                      AskTheme.launcherShortcutFill] {
+        for clear in [
+            LegacyAskPalette.launcherSelectionEdge,
+            LegacyAskPalette.launcherTileEdge,
+            LegacyAskPalette.launcherChipFill,
+            LegacyAskPalette.launcherShortcutFill
+        ] {
             #expect(resolve(clear, dark: true).alpha == 0)
         }
     }
 
     @Test func darkLauncherSelectionAndKeywordsStayNeutralAndReadable() {
-        for color in [AskTheme.launcherSelection, AskTheme.launcherKeyword, AskTheme.launcherKeywordText] {
+        for color in [
+            LegacyAskPalette.launcherSelection,
+            LegacyAskPalette.launcherKeyword,
+            LegacyAskPalette.launcherKeywordText
+        ] {
             let value = resolve(color, dark: true)
             #expect(abs(value.red - value.green) < 0.005)
             #expect(abs(value.red - value.blue) < 0.005)
         }
-        #expect(contrast(resolve(StudioTheme.textPrimary, dark: true),
-                         resolve(AskTheme.launcherSelection, dark: true)) >= 7)
-        #expect(contrast(resolve(AskTheme.launcherMetaText, dark: true),
-                         resolve(AskTheme.launcherSelection, dark: true)) >= 4.5)
-        #expect(contrast(resolve(AskTheme.launcherPlaceholderText, dark: true),
-                         resolve(AskTheme.launcherSurface, dark: true)) >= 4.5)
-        let text = resolve(AskTheme.launcherKeywordText, dark: true)
-        let keyword = resolve(AskTheme.launcherKeyword, dark: true)
+        #expect(contrast(resolve(TypefluxColor.label.color, dark: true),
+                         resolve(LegacyAskPalette.launcherSelection, dark: true)) >= 7)
+        #expect(contrast(resolve(LegacyAskPalette.launcherMetaText, dark: true),
+                         resolve(LegacyAskPalette.launcherSelection, dark: true)) >= 4.5)
+        #expect(contrast(resolve(LegacyAskPalette.launcherPlaceholderText, dark: true),
+                         resolve(LegacyAskPalette.launcherSurface, dark: true)) >= 4.5)
+        let text = resolve(LegacyAskPalette.launcherKeywordText, dark: true)
+        let keyword = resolve(LegacyAskPalette.launcherKeyword, dark: true)
         // The keyword's translucent fill cannot exceed its opaque source luminance
         // over the launcher's dark surface.
         #expect(contrast(text, keyword) >= 4.5)
     }
 
     @Test func lightGlassAndSelectionStayNeutralWithReadableTitles() {
-        let glass = resolve(AskTheme.launcherGlassTint, dark: false)
+        let glass = resolve(LegacyAskPalette.launcherGlassTint, dark: false)
         #expect(glass.red > 0.85 && glass.red < 0.92)
         #expect(glass.red == glass.green && glass.green == glass.blue)
         // The reference's selected row is near #B4B4B4. Use a slightly darker
         // reading surface so captions remain legible as desktop colors shift.
         let selected = RGBA(red: 0.70, green: 0.70, blue: 0.70, alpha: 1)
-        #expect(contrast(resolve(StudioTheme.textPrimary, dark: false), selected) >= 7)
-        #expect(resolve(AskTheme.launcherSelectionEdge, dark: false).alpha == 0)
-        let keywordText = resolve(AskTheme.launcherKeywordText, dark: false)
+        #expect(contrast(resolve(TypefluxColor.label.color, dark: false), selected) >= 7)
+        #expect(resolve(LegacyAskPalette.launcherSelectionEdge, dark: false).alpha == 0)
+        let keywordText = resolve(LegacyAskPalette.launcherKeywordText, dark: false)
         #expect(keywordText.red == keywordText.green && keywordText.green == keywordText.blue)
         #expect(contrast(keywordText, selected) >= 4.5)
-        #expect(contrast(resolve(AskTheme.launcherMetaText, dark: false), selected) >= 4.5)
-        #expect(resolve(AskTheme.launcherGlassTint, dark: true)
+        #expect(contrast(resolve(LegacyAskPalette.launcherMetaText, dark: false), selected) >= 4.5)
+        #expect(resolve(LegacyAskPalette.launcherGlassTint, dark: true)
             .isClose(to: RGBA(red: 18 / 255, green: 18 / 255, blue: 18 / 255, alpha: 1)))
     }
 
     @Test func metadataRemainsSecondaryToTitlesInLightMode() {
-        let meta = resolve(AskTheme.launcherMetaText, dark: false)
+        let meta = resolve(LegacyAskPalette.launcherMetaText, dark: false)
         #expect(meta.isClose(to: RGBA(red: 0.27, green: 0.27, blue: 0.27, alpha: 1)))
-        #expect(luminance(meta) > luminance(resolve(StudioTheme.textPrimary, dark: false)))
+        #expect(luminance(meta) > luminance(resolve(TypefluxColor.label.color, dark: false)))
     }
 
     @Test func neutralRowsSitOnARaisedTile() {
-        #expect(AskLauncherSuggestions.tileFill(.neutral) == AskTheme.launcherTile)
-        #expect(AskLauncherSuggestions.tileEdge(.neutral) == AskTheme.launcherTileEdge)
+        #expect(AskLauncherSuggestions.tileFill(.neutral) == LegacyAskPalette.launcherTile)
+        #expect(AskLauncherSuggestions.tileEdge(.neutral) == LegacyAskPalette.launcherTileEdge)
         for tint in [AskLauncherHome.Tint.accent, .orange, .purple, .green] {
             #expect(AskLauncherSuggestions.tileFill(tint) == AskLauncherSuggestions.tint(tint).opacity(0.14))
             #expect(AskLauncherSuggestions.tileEdge(tint) == .clear)
@@ -143,19 +153,19 @@ struct AskLauncherLightPaletteTests {
     }
 
     @Test func onSwitchesSitInATintedWell() {
-        #expect(AskIconChipFace.wellFill(.active, hovering: false) == AskTheme.switchOnFill)
-        #expect(AskIconChipFace.wellFill(.active, hovering: true) == AskTheme.switchOnFill)
-        #expect(AskIconChipFace.wellEdge(.active) == AskTheme.switchOnEdge)
+        #expect(AskIconChipFace.wellFill(.active, hovering: false) == LegacyAskPalette.switchOnFill)
+        #expect(AskIconChipFace.wellFill(.active, hovering: true) == LegacyAskPalette.switchOnFill)
+        #expect(AskIconChipFace.wellEdge(.active) == LegacyAskPalette.switchOnEdge)
         #expect(AskIconChipFace.wellFill(.neutral, hovering: false) == .clear)
-        #expect(AskIconChipFace.wellFill(.neutral, hovering: true) == AskTheme.hoverFill)
+        #expect(AskIconChipFace.wellFill(.neutral, hovering: true) == TypefluxColor.label.color.opacity(0.06))
         #expect(AskIconChipFace.wellFill(.unavailable, hovering: true) == .clear)
-        #expect(AskIconChipFace.wellFill(.warning, hovering: false) == StudioTheme.warning.opacity(0.14))
+        #expect(AskIconChipFace.wellFill(.warning, hovering: false) == TypefluxColor.warning.color.opacity(0.14))
         for style in [AskContextItem.Style.neutral, .warning, .unavailable] {
             #expect(AskIconChipFace.wellEdge(style) == .clear)
         }
         // Light and dark both tint the well with the accent.
         for dark in [false, true] {
-            let fill = resolve(AskTheme.switchOnFill, dark: dark)
+            let fill = resolve(LegacyAskPalette.switchOnFill, dark: dark)
             #expect(fill.blue > fill.red + 0.3 && fill.alpha >= 0.099 && fill.alpha < 0.3)
         }
     }
@@ -176,9 +186,9 @@ struct AskLauncherLightPaletteTests {
     }
 
     @Test func storageOnThisMacSitsInAPrivateWell() {
-        #expect(AskStorageButton.wellFill(local: true, active: false) == AskTheme.privateFill)
-        #expect(AskStorageButton.wellFill(local: true, active: true) == AskTheme.privateFill)
-        #expect(AskStorageButton.wellFill(local: false, active: true) == AskTheme.hoverFill)
+        #expect(AskStorageButton.wellFill(local: true, active: false) == LegacyAskPalette.privateFill)
+        #expect(AskStorageButton.wellFill(local: true, active: true) == LegacyAskPalette.privateFill)
+        #expect(AskStorageButton.wellFill(local: false, active: true) == TypefluxColor.label.color.opacity(0.06))
         #expect(AskStorageButton.wellFill(local: false, active: false) == .clear)
     }
 }

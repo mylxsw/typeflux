@@ -35,12 +35,12 @@ struct EmojiResultsView: View {
                 Text(result.name).font(.system(size: 9)).lineLimit(1)
             }.frame(maxWidth: .infinity).frame(height: 57)
                 .background(
-                    selected?.id == result.id ? AskTheme.accent.opacity(0.15) : AskTheme
-                        .hoverFill,
+                    selected?.id == result.id ? TypefluxColor.accent.color.opacity(0.15) : TypefluxColor.label.color
+                        .opacity(0.06),
                     in: RoundedRectangle(cornerRadius: 8)
                 )
                 .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(
-                    selected?.id == result.id ? AskTheme.accent : Color.clear
+                    selected?.id == result.id ? TypefluxColor.accent.color : Color.clear
                 ))
         }
         .buttonStyle(.plain)
@@ -84,25 +84,26 @@ struct EmojiResultsView: View {
                         .buttonStyle(.plain)
                         .padding(.horizontal, 10).padding(.vertical, 5)
                         .background(
-                            scope == presentation.scope ? AskTheme.accent.opacity(0.15) : Color.clear,
+                            scope == presentation.scope ? TypefluxColor.accent.color.opacity(0.15) : Color.clear,
                             in: Capsule()
                         )
                         .accessibilityAddTraits(scope == presentation.scope ? .isSelected : [])
                         .accessibilityIdentifier("emoji.scope." + scope.rawValue)
                 }
-                Text("\(presentation.results.count)").foregroundStyle(StudioTheme.textSecondary)
+                Text("\(presentation.results.count)").foregroundStyle(TypefluxColor.secondaryLabel.color)
                 Spacer()
                 if presentation.scope == .recent {
                     Button(L("emoji.clearRecent")) { action(.emoji(.clearRecent)) }.buttonStyle(.plain)
                         .accessibilityIdentifier("emoji.clearRecent")
                 }
-                Text(L("emoji.local")).foregroundStyle(StudioTheme.textSecondary)
+                Text(L("emoji.local")).foregroundStyle(TypefluxColor.secondaryLabel.color)
             }.font(.system(size: 11))
             if presentation.results.isEmpty {
                 VStack(spacing: 10) {
                     Image(systemName: "face.smiling").font(.system(size: 25))
                     Text(L("emoji.empty." + presentation.scope.rawValue))
-                    Text(L("emoji.empty.hint")).font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
+                    Text(L("emoji.empty.hint")).font(.system(size: 11))
+                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
                 }.frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 ScrollViewReader { proxy in
@@ -128,7 +129,8 @@ struct EmojiResultsView: View {
                         Text(selected.sequence).font(.system(size: 32))
                         VStack(alignment: .leading, spacing: 3) {
                             Text(selected.name).font(.system(size: 13, weight: .semibold)).lineLimit(1)
-                            Text(selected.reason).font(.system(size: 10)).foregroundStyle(StudioTheme.textSecondary)
+                            Text(selected.reason).font(.system(size: 10))
+                                .foregroundStyle(TypefluxColor.secondaryLabel.color)
                         }
                         Spacer()
                         if !selected.entry.variants.isEmpty {

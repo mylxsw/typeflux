@@ -9,14 +9,14 @@ struct AskCapturedContentFeedbackView: View {
         ViewThatFits(in: .horizontal) {
             HStack(spacing: 6) {
                 Text(feedback.text).lineLimit(1)
-                    .foregroundStyle(StudioTheme.textSecondary)
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
                 if feedback.canUndo { undoButton }
             }
             .fixedSize()
             if feedback.canUndo {
                 undoButton
             } else {
-                Text(feedback.text).lineLimit(1).foregroundStyle(StudioTheme.textSecondary)
+                Text(feedback.text).lineLimit(1).foregroundStyle(TypefluxColor.secondaryLabel.color)
             }
         }
         .font(.system(size: 11))
@@ -27,7 +27,7 @@ struct AskCapturedContentFeedbackView: View {
         Button(L("ask.context.undo"), action: undo)
             .buttonStyle(.plain)
             .fixedSize()
-            .foregroundStyle(AskTheme.accent)
+            .foregroundStyle(TypefluxColor.accent.color)
             .accessibilityIdentifier("ask.context.undo")
     }
 }

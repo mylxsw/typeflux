@@ -6,6 +6,8 @@ import SwiftUI
 /// being edited in the middle, the assistant and test runs on the right.
 /// See `docs/design/ask-workflow-editor.md` §2.
 struct AskWorkflowEditorView: View {
+    @Environment(\.interfaceStyle) private var interfaceStyle
+
     @ObservedObject var model: AskWorkflowEditorModel
     @ObservedObject var store: AskWorkflowStore
     @State private var creating: AskWorkflowNewSheet.Mode?
@@ -33,14 +35,11 @@ struct AskWorkflowEditorView: View {
     }
 
     var body: some View {
-        HStack(spacing: 0) {
+        TypefluxWindow(title: windowTitle) {
             AskWorkflowEditorSidebar(model: model, store: store, create: { creating = $0 },
                                      gallery: { showingGallery = true })
-                .frame(width: 220)
-            Rectangle().fill(TypefluxColor.separator.color).frame(width: 1)
+        } detail: {
             VStack(spacing: 0) {
-                header
-                Rectangle().fill(TypefluxColor.separator.color).frame(height: 1)
                 banners
                 HStack(spacing: 0) {
                     Group {
@@ -52,15 +51,16 @@ struct AskWorkflowEditorView: View {
                     }
                     .frame(minWidth: 480, maxWidth: .infinity, maxHeight: .infinity)
                     if showsPanel, model.draft != nil {
-                        Rectangle().fill(TypefluxColor.separator.color).frame(width: 1)
+                        Divider()
                         rightPanel.frame(width: 340)
                     }
                 }
-            }
+            }.background(TypefluxColor.contentBackground.color)
         }
         .frame(minWidth: 960, minHeight: 560)
-        .background(StudioTheme.windowBackground)
-        .ignoresSafeArea(.container, edges: .top)
+        .toolbar {
+            ToolbarItemGroup(placement: .primaryAction) { header }
+        }
         .sheet(item: $creating) { mode in
             AskWorkflowNewSheet(model: model, mode: mode) { creating = nil }
         }
@@ -95,6 +95,10 @@ struct AskWorkflowEditorView: View {
         }
     }
 
+    private var windowTitle: String {
+        model.draft?.manifest?.name ?? model.workflowID ?? L("ask.workflow.editor.title")
+    }
+
     // MARK: - Header
 
     /// One row with the window's title bar: the workflow, its state, then Save,
@@ -102,50 +106,29 @@ struct AskWorkflowEditorView: View {
     private var header: some View {
         HStack(spacing: 10) {
             if let draft = model.draft {
-                Image(systemName: model.workflow?.symbol ?? "sparkles")
-                    .font(.system(size: 14, weight: .semibold)).foregroundStyle(.white)
-                    .frame(width: 30, height: 30)
-                    .background(AskWorkflowEditorStyle.tileColor(for: model.workflowID ?? "new"),
-                                in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                Button { editingInfo = true } label: {
-                    VStack(alignment: .leading, spacing: 1) {
-                        HStack(spacing: 5) {
-                            Text(draft.manifest?.name ?? model.workflowID ?? L("ask.workflow.editor.newTitle"))
-                                .font(.system(size: 14, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
-                                .lineLimit(1)
-                            Image(systemName: "chevron.down").font(.system(size: 9, weight: .semibold))
-                                .foregroundStyle(StudioTheme.textTertiary)
-                        }
-                        Text([draft.manifest?.id, draft.manifest?.version,
-                              draft.manifest?.origin.map { _ in L("ask.workflow.gallery.fromGallery") }]
-                                .compactMap(\.self).joined(separator: " · "))
-                            .font(.system(size: 11, design: .monospaced)).foregroundStyle(StudioTheme.textTertiary)
-                            .lineLimit(1)
-                    }
-                    .padding(.horizontal, 6).padding(.vertical, 2)
-                    .contentShape(Rectangle())
+                TypefluxIconButton(L("ask.workflow.editor.info.help"), systemImage: "info.circle") {
+                    editingInfo = true
                 }
-                .buttonStyle(.plain)
-                .disabled(draft.isFormEditable != true)
-                .help(L("ask.workflow.editor.info.help"))
+                .disabled(!draft.isFormEditable)
                 .accessibilityIdentifier("ask.workflow.editor.info")
                 .popover(isPresented: $editingInfo, arrowEdge: .bottom) {
-                    AskWorkflowInfoForm(model: model) { editingInfo = false }
+                    TypefluxGlassContainer(radius: .popover) {
+                        AskWorkflowInfoForm(model: model) { editingInfo = false }
+                    }
                 }
                 statusBadge
-                Spacer()
                 if model.unsavedLabel != nil {
                     HStack(spacing: 5) {
                         Circle().fill(Color.orange).frame(width: 7, height: 7)
                         Text(L("ask.workflow.editor.unsaved"))
                     }
-                    .font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
+                    .font(.system(.callout)).foregroundStyle(TypefluxColor.secondaryLabel.color)
                     .help(model.unsavedLabel ?? "")
                 }
                 if model.generation != nil {
                     // A generated workflow is saved into the launcher in one step.
                     Button(L("ask.workflow.editor.new.save")) { model.saveGenerated() }
-                        .buttonStyle(AskWorkflowActionStyle(kind: .assistant))
+                        .buttonStyle(.borderedProminent)
                         .keyboardShortcut("s", modifiers: .command)
                         .disabled(model.assistant.isBusy || !model.canSaveGenerated)
                         .accessibilityIdentifier("ask.workflow.editor.saveGenerated")
@@ -156,7 +139,7 @@ struct AskWorkflowEditorView: View {
                             AskWorkflowShortcutHint(text: "⌘S")
                         }
                     }
-                    .buttonStyle(AskWorkflowActionStyle())
+                    .buttonStyle(.bordered)
                     .keyboardShortcut("s", modifiers: .command)
                     .help(L("ask.workflow.editor.save") + " ⌘S")
                     .accessibilityIdentifier("ask.workflow.editor.save")
@@ -166,12 +149,12 @@ struct AskWorkflowEditorView: View {
                         model.runTest()
                     } label: {
                         HStack(spacing: 6) {
-                            Image(systemName: "play.fill").font(.system(size: 10))
+                            Image(systemName: "play.fill").font(.system(.footnote))
                             Text(L("ask.workflow.editor.test.runButton"))
                             AskWorkflowShortcutHint(text: "⌘R")
                         }
                     }
-                    .buttonStyle(AskWorkflowActionStyle(kind: .primary))
+                    .buttonStyle(.borderedProminent)
                     .keyboardShortcut("r", modifiers: .command)
                     .help(L("ask.workflow.editor.test.run") + " ⌘R")
                     .disabled(model.isTesting || !model.problems.isEmpty)
@@ -179,28 +162,24 @@ struct AskWorkflowEditorView: View {
                 if let id = model.workflowID, model.generation == nil {
                     Rectangle().fill(TypefluxColor.separator.color).frame(width: 1, height: 18).padding(.horizontal, 2)
                     Toggle(isOn: Binding(get: { store.isEnabled(id) }, set: { store.setEnabled(id, $0) })) {
-                        Text(L("ask.settings.keywords.enabled")).font(.system(size: 12))
-                            .foregroundStyle(StudioTheme.textSecondary)
+                        Text(L("ask.settings.keywords.enabled")).font(.system(.callout))
+                            .foregroundStyle(TypefluxColor.secondaryLabel.color)
                     }
                     .toggleStyle(.switch).controlSize(.small)
                     .accessibilityLabel(L("ask.settings.keywords.enabled"))
                 }
                 moreMenu
                 Button { showsPanel.toggle() } label: {
-                    Image(systemName: "sidebar.right").font(.system(size: 14))
-                        .foregroundStyle(showsPanel ? StudioTheme.textPrimary : StudioTheme.textTertiary)
+                    Image(systemName: "sidebar.right").font(.system(.body))
+                        .foregroundStyle(showsPanel ? TypefluxColor.label.color : TypefluxColor.tertiaryLabel.color)
                         .frame(width: 28, height: 28).contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .keyboardShortcut("t", modifiers: [.command, .option])
                 .help(L("ask.workflow.editor.togglePanel") + " ⌥⌘T")
-            } else {
-                Text(L("ask.workflow.editor.title")).font(.system(size: 14, weight: .semibold))
-                Spacer()
             }
         }
-        .padding(.leading, 18).padding(.trailing, 14)
-        .frame(height: 56)
+        .controlSize(.small)
     }
 
     private var moreMenu: some View {
@@ -217,8 +196,8 @@ struct AskWorkflowEditorView: View {
                 Button(L("ask.workflow.delete"), role: .destructive) { confirmingDelete = true }
             }
         } label: {
-            Image(systemName: "ellipsis").font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(StudioTheme.textSecondary)
+            Image(systemName: "ellipsis").font(.system(.body, weight: .semibold))
+                .foregroundStyle(TypefluxColor.secondaryLabel.color)
         }
         .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
         .frame(width: 28, height: 28)
@@ -233,7 +212,7 @@ struct AskWorkflowEditorView: View {
         } else if let workflow = model.workflow {
             switch workflow.status {
             case .ready:
-                AskWorkflowBadge(text: L("ask.workflow.editor.status.ready"), color: StudioTheme.success,
+                AskWorkflowBadge(text: L("ask.workflow.editor.status.ready"), color: TypefluxColor.success.color,
                                  symbol: "checkmark.shield")
             case .untrusted, .modified: AskWorkflowBadge(text: L("ask.workflow.status.modified"), color: .orange)
             case .disabled: AskWorkflowBadge(text: L("ask.workflow.status.disabled"), color: .gray)
@@ -248,38 +227,38 @@ extension AskWorkflowEditorView {
 
     @ViewBuilder private var banners: some View {
         if let message = model.message {
-            banner(symbol: "exclamationmark.circle", tint: StudioTheme.warning) {
+            banner(symbol: "exclamationmark.circle", tint: TypefluxColor.warning.color) {
                 Text(message)
             } actions: {
                 Button(L("ask.workflow.editor.dismiss")) { model.message = nil }
             }
         }
         if let change = model.outsideChange {
-            banner(symbol: "exclamationmark.triangle", tint: StudioTheme.warning) {
+            banner(symbol: "exclamationmark.triangle", tint: TypefluxColor.warning.color) {
                 outsideText(change)
             } actions: {
                 Button(L("ask.workflow.editor.outside.keepMine")) { model.keepMine() }
                 Button(L("ask.workflow.editor.outside.loadTheirs")) { model.loadTheirs() }
                 Button(L("ask.workflow.editor.outside.diffTrust")) { model.showingDiff = true }
-                    .buttonStyle(AskWorkflowActionStyle(kind: .primary, small: true))
+                    .buttonStyle(.borderedProminent).controlSize(.small)
             }
         } else if model.needsTrust, let workflow = model.workflow {
-            banner(symbol: "lock.shield", tint: StudioTheme.warning) {
+            banner(symbol: "lock.shield", tint: TypefluxColor.warning.color) {
                 Text(L("ask.workflow.editor.needsTrust"))
             } actions: {
                 Button(L("ask.workflow.review")) { reviewing = workflow }
-                    .buttonStyle(AskWorkflowActionStyle(kind: .primary, small: true))
+                    .buttonStyle(.borderedProminent).controlSize(.small)
                     .accessibilityIdentifier("ask.workflow.editor.review")
             }
         }
         if let id = model.previewingProposal, model.proposal(id)?.state == .pending {
-            banner(symbol: "sparkles", tint: AskWorkflowEditorStyle.assistant) {
+            banner(symbol: "sparkles", tint: TypefluxColor.accent.color) {
                 Text(L("ask.workflow.editor.previewBanner")).bold()
                     + Text(L("ask.workflow.editor.previewBannerDetail"))
             } actions: {
                 Button(L("ask.workflow.assistant.discard")) { model.discard(id) }
                 Button(L("ask.workflow.editor.applyToEditor")) { model.apply(id) }
-                    .buttonStyle(AskWorkflowActionStyle(kind: .assistant, small: true))
+                    .buttonStyle(.borderedProminent).controlSize(.small)
             }
         }
     }
@@ -298,9 +277,9 @@ extension AskWorkflowEditorView {
         VStack(spacing: 0) {
             HStack(spacing: 10) {
                 Image(systemName: symbol).foregroundStyle(tint)
-                text().font(.system(size: 12)).fixedSize(horizontal: false, vertical: true)
+                text().font(.system(.callout)).fixedSize(horizontal: false, vertical: true)
                 Spacer()
-                HStack(spacing: 6) { actions() }.buttonStyle(AskWorkflowActionStyle(small: true))
+                HStack(spacing: 6) { actions() }.buttonStyle(.bordered).controlSize(.small)
             }
             .padding(.horizontal, 14).padding(.vertical, 7)
             .background(tint.opacity(0.10))
@@ -314,10 +293,10 @@ extension AskWorkflowEditorView {
         VStack(spacing: 0) {
             AskWorkflowTabs(items: [
                 .init(tab: Panel.assistant, title: L("ask.workflow.assistant.title"), symbol: "sparkles",
-                      tint: AskWorkflowEditorStyle.assistant),
+                      tint: TypefluxColor.accent.color),
                 .init(tab: Panel.test, title: L("ask.workflow.editor.test.title"), symbol: "play.fill",
                       badge: model.results.last.map { $0.succeeded ? nil : "●" } ?? nil)
-            ], selection: $panel, size: 12.5, fills: true)
+            ], selection: $panel, fills: true)
                 .padding(.horizontal, 12).padding(.top, 12).padding(.bottom, 10)
             switch panel {
             case .assistant: AskWorkflowAssistantPanel(model: model, assistant: model.assistant)
@@ -325,22 +304,23 @@ extension AskWorkflowEditorView {
                 AskWorkflowTestPanel(model: model, tab: testTab) { panel = .assistant; model.fixWithAssistant() }
             }
         }
-        .background(StudioTheme.windowBackground)
+        .background(TypefluxColor.windowBackground.color)
     }
 
     private var empty: some View {
         VStack(spacing: 12) {
-            Image(systemName: "square.stack.3d.up").font(.system(size: 34)).foregroundStyle(StudioTheme.textTertiary)
-            Text(L("ask.workflow.editor.empty")).foregroundStyle(StudioTheme.textSecondary)
+            Image(systemName: "square.stack.3d.up").font(.system(.largeTitle))
+                .foregroundStyle(TypefluxColor.tertiaryLabel.color)
+            Text(L("ask.workflow.editor.empty")).foregroundStyle(TypefluxColor.secondaryLabel.color)
             HStack {
                 Button { creating = .assistant } label: {
                     Label(L("ask.workflow.editor.new.ai"), systemImage: "sparkles")
                 }
-                .buttonStyle(AskWorkflowActionStyle(kind: .assistant))
+                .buttonStyle(.borderedProminent)
                 Button(L("ask.workflow.gallery.fromGalleryMenu")) { showingGallery = true }
-                    .buttonStyle(AskWorkflowActionStyle())
+                    .buttonStyle(.bordered)
                 Button(L("ask.workflow.editor.new.template")) { creating = .template }
-                    .buttonStyle(AskWorkflowActionStyle())
+                    .buttonStyle(.bordered)
             }
         }
     }
@@ -367,6 +347,8 @@ extension Notification.Name {
 
 /// Workflows and their status; the open workflow's files are tabs over the code.
 struct AskWorkflowEditorSidebar: View {
+    @Environment(\.interfaceStyle) private var interfaceStyle
+
     @ObservedObject var model: AskWorkflowEditorModel
     @ObservedObject var store: AskWorkflowStore
     var create: (AskWorkflowNewSheet.Mode) -> Void
@@ -378,20 +360,22 @@ struct AskWorkflowEditorSidebar: View {
             // The window's traffic lights sit here: there is no separate title bar.
             Color.clear.frame(height: 44)
             HStack(spacing: 6) {
-                Image(systemName: "magnifyingglass").foregroundStyle(StudioTheme.textTertiary)
+                Image(systemName: "magnifyingglass").foregroundStyle(TypefluxColor.tertiaryLabel.color)
                 TextField(L("ask.workflow.editor.search"), text: $model.search).textFieldStyle(.plain)
             }
-            .font(.system(size: 12.5)).padding(.horizontal, 9).frame(height: 28)
+            .font(.system(.callout)).padding(.horizontal, 9).frame(height: 28)
             .background(
                 TypefluxColor.controlBackground.color,
-                in: RoundedRectangle(cornerRadius: 8, style: .continuous)
+                in: RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle), style: .continuous)
             )
-            .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(TypefluxColor.separator.color))
+            .overlay(RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle), style: .continuous)
+                .strokeBorder(TypefluxColor.separator.color))
             .padding(.horizontal, 12).padding(.bottom, 8)
             ScrollView {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(L("ask.workflow.editor.list", store.workflows.count))
-                        .font(.system(size: 11, weight: .semibold)).foregroundStyle(StudioTheme.textTertiary)
+                        .font(.system(.subheadline, weight: .semibold))
+                        .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                         .padding(.horizontal, 18).padding(.top, 6).padding(.bottom, 4)
                     if model.generation != nil {
                         row(Row(id: "new", title: model.draft?.manifest?.name ?? L("ask.workflow.editor.newTitle"),
@@ -428,30 +412,36 @@ struct AskWorkflowEditorSidebar: View {
                     }
                 } label: {
                     HStack(spacing: 6) {
-                        Image(systemName: "plus").font(.system(size: 11, weight: .semibold))
-                        Text(L("ask.workflow.editor.newWorkflow")).font(.system(size: 12.5, weight: .medium))
+                        Image(systemName: "plus").font(.system(.subheadline, weight: .semibold))
+                        Text(L("ask.workflow.editor.newWorkflow")).font(.system(.callout, weight: .medium))
                     }
-                    .foregroundStyle(StudioTheme.textPrimary)
+                    .foregroundStyle(TypefluxColor.label.color)
                 }
                 .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
                 .frame(maxWidth: .infinity).frame(height: 28)
                 .background(
                     TypefluxColor.controlBackground.color,
-                    in: RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    in: RoundedRectangle(
+                        cornerRadius: TypefluxRadius.form.value(for: interfaceStyle),
+                        style: .continuous
+                    )
                 )
-                .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .strokeBorder(TypefluxColor.separator.color))
+                .overlay(RoundedRectangle(
+                    cornerRadius: TypefluxRadius.form.value(for: interfaceStyle),
+                    style: .continuous
+                )
+                .strokeBorder(TypefluxColor.separator.color))
                 .contentShape(Rectangle())
                 .accessibilityIdentifier("ask.workflow.editor.new")
                 Button { store.revealRoot() } label: {
-                    Image(systemName: "folder").font(.system(size: 13)).foregroundStyle(StudioTheme.textSecondary)
+                    Image(systemName: "folder").font(.system(.body)).foregroundStyle(TypefluxColor.secondaryLabel.color)
                         .frame(width: 28, height: 28).contentShape(Rectangle())
                 }
                 .buttonStyle(.plain).help(L("ask.workflow.revealFolder"))
             }
             .padding(12)
         }
-        .background(StudioTheme.surfaceMuted)
+        .background(TypefluxColor.controlBackground.color)
         .confirmationDialog(L("ask.workflow.editor.unsavedTitle"), isPresented: switchingBinding) {
             Button(L("ask.workflow.editor.save")) {
                 if model.save(), let id = switching {
@@ -489,24 +479,30 @@ struct AskWorkflowEditorSidebar: View {
     private func row(_ row: Row, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 10) {
-                Image(systemName: row.symbol).font(.system(size: 12, weight: .semibold)).foregroundStyle(.white)
+                Image(systemName: row.symbol).font(.system(.callout, weight: .semibold)).foregroundStyle(.white)
                     .frame(width: 26, height: 26)
-                    .background(AskWorkflowEditorStyle.tileColor(for: row.id),
-                                in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                    .background(TypefluxColor.accent.color,
+                                in: RoundedRectangle(
+                                    cornerRadius: TypefluxRadius.navigationIcon.value(for: interfaceStyle),
+                                    style: .continuous
+                                ))
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(row.title).font(.system(size: 13, weight: .medium)).foregroundStyle(StudioTheme.textPrimary)
+                    Text(row.title).font(.system(.body, weight: .medium)).foregroundStyle(TypefluxColor.label.color)
                         .lineLimit(1)
                     if !row.subtitle.isEmpty {
-                        Text(row.subtitle).font(.system(size: 11, design: .monospaced))
-                            .foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
+                        Text(row.subtitle).font(.system(.subheadline, design: .monospaced))
+                            .foregroundStyle(TypefluxColor.tertiaryLabel.color).lineLimit(1)
                     }
                 }
                 Spacer()
                 Circle().fill(row.dot).frame(width: 7, height: 7)
             }
             .padding(.horizontal, 10).padding(.vertical, 7)
-            .background(row.selected ? StudioTheme.accentSoft : .clear,
-                        in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .background(row.selected ? TypefluxColor.accent.color.opacity(0.12) : .clear,
+                        in: RoundedRectangle(
+                            cornerRadius: TypefluxRadius.form.value(for: interfaceStyle),
+                            style: .continuous
+                        ))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

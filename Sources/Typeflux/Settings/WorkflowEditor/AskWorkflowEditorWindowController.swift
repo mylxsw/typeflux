@@ -14,6 +14,7 @@ final class AskWorkflowEditorWindowController: NSObject, NSWindowDelegate {
     /// without a launcher. `DIContainer` supplies it.
     var openInLauncher: ((String) -> Bool)?
     private let settings: SettingsStore
+    private lazy var interfaceStyleObserver = InterfaceStyleObserver(settings: settings)
     private let store: AskWorkflowStore
     /// Asks what to do with unsaved edits when the window closes; tests answer it.
     var confirmClose: () -> NSApplication.ModalResponse = AskWorkflowEditorWindowController.askAboutUnsavedEdits
@@ -87,14 +88,16 @@ final class AskWorkflowEditorWindowController: NSObject, NSWindowDelegate {
             return
         }
         let view = AskWorkflowEditorView(model: model, store: model.store)
+            .interfaceStyle(following: interfaceStyleObserver)
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 1220, height: 720),
                               styleMask: [.titled, .closable, .miniaturizable, .resizable, .fullSizeContentView],
                               backing: .buffered, defer: false)
         window.title = L("ask.workflow.editor.title")
-        // The header row is the title bar: the traffic lights sit over the sidebar.
+        // The native toolbar owns the title and workflow actions.
         window.titleVisibility = .hidden
         window.titlebarAppearsTransparent = true
         window.contentView = NSHostingView(rootView: view)
+        window.appearance = AppAppearance.nsAppearance(for: settings.appearanceMode)
         window.minSize = NSSize(width: 960, height: 560)
         window.setFrameAutosaveName("AskWorkflowEditor")
         if window.frame.origin == .zero {

@@ -69,7 +69,8 @@ struct SystemMonitorFormatTests {
                                             memory: 36 << 30)
             let snapshot = F.snapshot(cpu: 23)
             let cpu = SystemMonitorMetricDisplay.make(.cpu, snapshot: snapshot, machine: machine)
-            #expect(cpu.value == "23" && cpu.unit == "%" && cpu.detail == "12 cores · load 3.05" && cpu.level == .normal)
+            #expect(cpu.value == "23" && cpu.unit == "%" && cpu.detail == "12 cores · load 3.05" && cpu
+                .level == .normal)
             let memory = SystemMonitorMetricDisplay.make(.memory, snapshot: snapshot, machine: machine)
             #expect(memory.value == "56" && memory.detail == "9 GB / 16 GB")
             let disk = SystemMonitorMetricDisplay.make(.disk, snapshot: snapshot, machine: machine)
@@ -86,35 +87,50 @@ struct SystemMonitorFormatTests {
             noVolume.interface = nil
             noVolume.loadAverage = []
             #expect(SystemMonitorMetricDisplay.make(.disk, snapshot: noVolume, machine: machine).value == "—")
-            #expect(SystemMonitorMetricDisplay.make(.network, snapshot: noVolume, machine: machine).detail == "↑ 181 KB/s")
-            #expect(SystemMonitorMetricDisplay.make(.cpu, snapshot: noVolume, machine: machine).detail == "12 cores · load —")
+            #expect(SystemMonitorMetricDisplay.make(.network, snapshot: noVolume, machine: machine)
+                .detail == "↑ 181 KB/s")
+            #expect(SystemMonitorMetricDisplay.make(.cpu, snapshot: noVolume, machine: machine)
+                .detail == "12 cores · load —")
         }
     }
 
     @Test func levelsColourTheCards() {
         let machine = SystemMachineInfo(chip: "x", cores: 1, memory: 1)
-        #expect(SystemMonitorMetricDisplay.make(.cpu, snapshot: F.snapshot(cpu: 85), machine: machine).level == .elevated)
+        #expect(SystemMonitorMetricDisplay.make(.cpu, snapshot: F.snapshot(cpu: 85), machine: machine)
+            .level == .elevated)
         #expect(SystemMonitorMetricDisplay.make(.memory, snapshot: F.snapshot(pressure: .critical), machine: machine)
             .level == .critical)
         let nearlyFull = F.snapshot(volumes: [F.volume(total: 100, available: 8)])
         #expect(SystemMonitorMetricDisplay.make(.disk, snapshot: nearlyFull, machine: machine).level == .elevated)
         let full = F.snapshot(volumes: [F.volume(total: 100, available: 2)])
         #expect(SystemMonitorMetricDisplay.make(.disk, snapshot: full, machine: machine).level == .critical)
-        #expect(SystemMonitorTheme.color(.normal) == nil)
-        #expect(SystemMonitorTheme.color(.elevated) != nil && SystemMonitorTheme.color(.critical) != nil)
-        for metric in SystemMonitorMetric.allCases { _ = SystemMonitorTheme.color(metric) }
+        #expect(SystemMonitorLevel.normal.color == nil)
+        #expect(SystemMonitorLevel.elevated.color != nil && SystemMonitorLevel.critical.color != nil)
+        for metric in SystemMonitorMetric.allCases { _ = metric.color }
+        #expect(SystemMonitorMetric.cpu.color == TypefluxColor.accent.color)
+        #expect(SystemMonitorMetric.memory.color == Color(nsColor: .systemPurple))
+        #expect(SystemMonitorMetric.disk.color == Color(nsColor: .systemTeal))
+        #expect(SystemMonitorMetric.network.color == TypefluxColor.success.color)
+        #expect(SystemMonitorLevel.elevated.color == TypefluxColor.warning.color)
+        #expect(SystemMonitorLevel.critical.color == TypefluxColor.danger.color)
         for pressure in [SystemMonitorMemoryPressure.normal, .warning, .critical] {
-            _ = SystemMonitorTheme.pressureColor(pressure)
+            _ = pressure.color
         }
     }
 
     @Test func wordsForStatesAndSummary() {
         withSystemMonitorLanguage {
-            #expect(SystemMonitorMetric.allCases.map(SystemMonitorMetricDisplay.title) == ["CPU", "Memory", "Disk", "Network"])
+            #expect(SystemMonitorMetric.allCases.map(SystemMonitorMetricDisplay.title) == [
+                "CPU",
+                "Memory",
+                "Disk",
+                "Network"
+            ])
             #expect(SystemMonitorSort.allCases.map(SystemMonitorMetricDisplay.sortTitle) == ["CPU", "Memory", "Disk"])
             #expect(Set(SystemMonitorMetric.allCases.map(SystemMonitorMetricDisplay.symbol)).count == 4)
             #expect(SystemMonitorMetricDisplay.pressureTitle(.warning) == "High")
-            #expect([ProcessInfo.ThermalState.nominal, .fair, .serious, .critical].map(SystemMonitorMetricDisplay.thermalTitle)
+            #expect([ProcessInfo.ThermalState.nominal, .fair, .serious, .critical]
+                .map(SystemMonitorMetricDisplay.thermalTitle)
                 == ["Normal", "Fair", "Serious", "Critical"])
             #expect(SystemMonitorMetricDisplay.thermalLevel(.fair) == .normal)
             #expect(SystemMonitorMetricDisplay.thermalLevel(.serious) == .elevated)

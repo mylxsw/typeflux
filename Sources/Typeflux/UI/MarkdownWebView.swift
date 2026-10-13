@@ -69,13 +69,13 @@ struct MarkdownWebView: NSViewRepresentable {
         """
         :root {
           color-scheme: \(colorSchemeValue);
-          --bg: \(colorHex(StudioTheme.surface));
-          --text: \(colorHex(StudioTheme.textPrimary));
-          --muted: \(colorHex(StudioTheme.textSecondary));
-          --border: \(colorHex(StudioTheme.border));
-          --accent: \(colorHex(StudioTheme.accent));
-          --code-bg: \(colorHex(StudioTheme.surfaceMuted));
-          --table-header-bg: \(colorHex(StudioTheme.surfaceMuted.opacity(0.92)));
+          --bg: \(colorHex(TypefluxColor.controlBackground.color));
+          --text: \(colorHex(TypefluxColor.label.color));
+          --muted: \(colorHex(TypefluxColor.secondaryLabel.color));
+          --border: \(colorHex(TypefluxColor.separator.color));
+          --accent: \(colorHex(TypefluxColor.accent.color));
+          --code-bg: \(colorHex(TypefluxColor.controlBackground.color));
+          --table-header-bg: \(colorHex(TypefluxColor.controlBackground.color.opacity(0.92)));
         }
         * { box-sizing: border-box; }
         html, body {
@@ -84,7 +84,7 @@ struct MarkdownWebView: NSViewRepresentable {
           background: transparent;
           color: var(--text);
           font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
-          font-size: \(StudioTheme.Typography.body)px;
+          font-size: \(NSFont.preferredFont(forTextStyle: .body).pointSize)px;
           line-height: 1.65;
         }
         body {
@@ -98,10 +98,10 @@ struct MarkdownWebView: NSViewRepresentable {
           color: var(--text);
           font-weight: 700;
         }
-        h1 { font-size: \(StudioTheme.Typography.sectionTitle + 4)px; }
-        h2 { font-size: \(StudioTheme.Typography.sectionTitle + 1)px; }
-        h3 { font-size: \(StudioTheme.Typography.subsectionTitle)px; }
-        h4, h5, h6 { font-size: \(StudioTheme.Typography.cardTitle)px; }
+        h1 { font-size: \(NSFont.preferredFont(forTextStyle: .title2).pointSize + 4)px; }
+        h2 { font-size: \(NSFont.preferredFont(forTextStyle: .title2).pointSize + 1)px; }
+        h3 { font-size: \(NSFont.preferredFont(forTextStyle: .title3).pointSize)px; }
+        h4, h5, h6 { font-size: \(NSFont.preferredFont(forTextStyle: .title3).pointSize)px; }
         p {
           margin: 0 0 0.9em;
         }
@@ -131,7 +131,7 @@ struct MarkdownWebView: NSViewRepresentable {
         }
         code {
           font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-          font-size: \(StudioTheme.Typography.bodySmall)px;
+          font-size: \(NSFont.preferredFont(forTextStyle: .callout).pointSize)px;
           background: var(--code-bg);
           border-radius: 6px;
         }

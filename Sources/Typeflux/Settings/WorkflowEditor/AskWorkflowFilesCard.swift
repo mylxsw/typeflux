@@ -3,6 +3,8 @@ import SwiftUI
 /// The Keywords step's Files card (§2.3): every file of the workflow, entries marked
 /// with the keywords that start them, the others with the files that use them.
 struct AskWorkflowFilesCard: View {
+    @Environment(\.interfaceStyle) private var interfaceStyle
+
     @ObservedObject var model: AskWorkflowEditorModel
 
     var body: some View {
@@ -18,17 +20,26 @@ struct AskWorkflowFilesCard: View {
                         fileRow(row)
                     }
                     if rows.isEmpty {
-                        Text(L("ask.workflow.editor.files.none")).font(.system(size: 12))
-                            .foregroundStyle(StudioTheme.textTertiary).padding(14)
+                        Text(L("ask.workflow.editor.files.none")).font(.system(.callout))
+                            .foregroundStyle(TypefluxColor.tertiaryLabel.color).padding(14)
                     }
                 }
                 .background(
                     TypefluxColor.contentBackground.color,
-                    in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    in: RoundedRectangle(
+                        cornerRadius: TypefluxRadius.form.value(for: interfaceStyle),
+                        style: .continuous
+                    )
                 )
-                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .strokeBorder(TypefluxColor.separator.color))
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .overlay(RoundedRectangle(
+                    cornerRadius: TypefluxRadius.form.value(for: interfaceStyle),
+                    style: .continuous
+                )
+                .strokeBorder(TypefluxColor.separator.color))
+                .clipShape(RoundedRectangle(
+                    cornerRadius: TypefluxRadius.form.value(for: interfaceStyle),
+                    style: .continuous
+                ))
             }
         }
     }
@@ -48,24 +59,24 @@ struct AskWorkflowFilesCard: View {
             }
             Text(L("ask.workflow.editor.files.hintDirectory"))
         }
-        .font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
+        .font(.system(.callout)).foregroundStyle(TypefluxColor.tertiaryLabel.color)
         .padding(.horizontal, 4)
     }
 
     private func fileRow(_ row: AskWorkflowFileReferences.Row) -> some View {
         HStack(spacing: 8) {
-            Text(row.path).font(.system(size: 12.5, design: .monospaced)).foregroundStyle(AskTheme.accent)
+            Text(row.path).font(.system(.callout, design: .monospaced)).foregroundStyle(TypefluxColor.accent.color)
                 .lineLimit(1)
             if row.isEntry {
                 AskWorkflowEntryBadge(text: ([L("ask.workflow.editor.files.entry")] + row.keywords)
                     .joined(separator: " · "))
             }
-            Text(Self.note(for: row)).font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
+            Text(Self.note(for: row)).font(.system(.callout)).foregroundStyle(TypefluxColor.tertiaryLabel.color)
                 .lineLimit(1).truncationMode(.tail)
             Spacer(minLength: 8)
             Button(L("ask.workflow.editor.files.open")) { model.openFile(row.path) }
-                .buttonStyle(.plain).font(.system(size: 12, weight: .medium))
-                .foregroundStyle(StudioTheme.textPrimary)
+                .buttonStyle(.plain).font(.system(.callout, weight: .medium))
+                .foregroundStyle(TypefluxColor.label.color)
                 .accessibilityIdentifier("ask.workflow.editor.files.open." + row.path)
         }
         .padding(.horizontal, 14).frame(height: 40)
@@ -94,11 +105,19 @@ struct AskWorkflowFilesCard: View {
 
 /// "Entry" or "Entry · fx" in the accent color, for entry scripts.
 struct AskWorkflowEntryBadge: View {
+    @Environment(\.interfaceStyle) private var interfaceStyle
+
     var text: String
 
     var body: some View {
-        Text(text).font(.system(size: 11, weight: .semibold)).foregroundStyle(AskTheme.accent)
+        Text(text).font(.system(.subheadline, weight: .semibold)).foregroundStyle(TypefluxColor.accent.color)
             .padding(.horizontal, 6).frame(height: 19)
-            .background(AskTheme.accent.opacity(0.14), in: RoundedRectangle(cornerRadius: 5, style: .continuous))
+            .background(
+                TypefluxColor.accent.color.opacity(0.14),
+                in: RoundedRectangle(
+                    cornerRadius: TypefluxRadius.textField.value(for: interfaceStyle),
+                    style: .continuous
+                )
+            )
     }
 }

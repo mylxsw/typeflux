@@ -31,7 +31,8 @@ struct AskLauncherSearchVisualTests {
 
     /// A small home folder with real files, so rows show real icons and thumbnails.
     private func makeFiles() throws -> (root: URL, index: AskTestFileIndex) {
-        let root = FileManager.default.temporaryDirectory.appendingPathComponent("ask-search-shots-\(UUID().uuidString)")
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ask-search-shots-\(UUID().uuidString)")
             .resolvingSymlinksInPath()
         let files: [(String, AskFileRecord.Kind, Double)] = [
             ("Documents/notes.md", .file, 0),
@@ -47,7 +48,8 @@ struct AskLauncherSearchVisualTests {
                 try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
                 continue
             }
-            try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try FileManager.default.createDirectory(at: url.deletingLastPathComponent(),
+                                                    withIntermediateDirectories: true)
             if url.pathExtension == "png" {
                 let image = NSImage(size: NSSize(width: 64, height: 64), flipped: false) { rect in
                     NSGradient(starting: .systemTeal, ending: .systemPurple)?.draw(in: rect, angle: 45)
@@ -59,7 +61,8 @@ struct AskLauncherSearchVisualTests {
                 try Data("x".utf8).write(to: url)
             }
         }
-        let index = AskTestFileIndex(files.map { (root.appendingPathComponent($0.0).path, $0.1, $0.2) }, home: root.path)
+        let index = AskTestFileIndex(files.map { (root.appendingPathComponent($0.0).path, $0.1, $0.2) },
+                                     home: root.path)
         return (root, index)
     }
 
@@ -92,24 +95,28 @@ struct AskLauncherSearchVisualTests {
                 fixture.model.fileIndex = files
                 fixture.model.launcherDraft = AskDraft(text: item.text, includeScreenshot: false)
                 try await render(AskLauncherView(model: fixture.model, onDismiss: {})
-                                    .environment(\.askGlassMaterialOverride, .opaque),
-                                 size: NSSize(width: AskMetrics.launcherWidth, height: item.height), appearance: appearance,
-                                 file: output.appendingPathComponent("search-\(item.name)-\(theme).png"))
+                    .environment(\.askGlassMaterialOverride, .opaque),
+                    size: NSSize(width: AskMetrics.launcherWidth, height: item.height),
+                    appearance: appearance,
+                    file: output.appendingPathComponent("search-\(item.name)-\(theme).png"))
             }
             // The actions of a highlighted file.
             var settings = AskLauncherSearchSettings()
             settings.mode = .mixed
-            var results = try #require(AskQuickResults.resolve(text: "invoice", previous: nil, chinese: true, calculator: false,
-                                                               sources: .init(apps: apps, files: files, settings: settings)))
+            var results = try #require(AskQuickResults.resolve(text: "invoice", previous: nil, chinese: true,
+                                                               calculator: false,
+                                                               sources: .init(apps: apps, files: files,
+                                                                              settings: settings)))
             results.highlight(1)
             let first = try #require(results.file(at: .file(0)))
             var panel = try #require(AskQuickActionPanel.make(for: .file(first)))
             panel.highlighted = 7
-            try await render(AskQuickResultsView(results: results, question: "invoice", minimumHeight: 330, actions: panel,
+            try await render(AskQuickResultsView(results: results, question: "invoice", minimumHeight: 330,
+                                                 actions: panel,
                                                  onRun: { _, _ in }, onHighlight: { _ in })
-                                .background(AskTheme.popoverSurface),
-                             size: NSSize(width: AskMetrics.launcherWidth, height: 330), appearance: appearance,
-                             file: output.appendingPathComponent("search-actions-\(theme).png"))
+                    .background(TypefluxColor.windowBackground.color),
+                size: NSSize(width: AskMetrics.launcherWidth, height: 330), appearance: appearance,
+                file: output.appendingPathComponent("search-actions-\(theme).png"))
         }
     }
 
@@ -133,9 +140,10 @@ struct AskLauncherSearchVisualTests {
         index.status = AskFileIndexStatus(phase: .ready, count: 248_312, bytes: 15_400_000, updatedAt: Date())
         for (theme, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
             for tab in LauncherSearchSettingsView.Tab.allCases {
-                let view = LauncherSearchSettingsView(settings: settings, index: index, fullDiskAccess: { false }, tab: tab)
+                let view = LauncherSearchSettingsView(settings: settings, index: index, fullDiskAccess: { false },
+                                                      tab: tab)
                     .padding(24).frame(width: 760, alignment: .top)
-                    .background(StudioTheme.surface)
+                    .background(TypefluxColor.controlBackground.color)
                 try await render(view, size: NSSize(width: 760, height: 900), appearance: appearance,
                                  file: output.appendingPathComponent("settings-\(tab.rawValue)-\(theme).png"),
                                  wait: .milliseconds(300))

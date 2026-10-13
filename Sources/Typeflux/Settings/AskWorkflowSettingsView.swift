@@ -195,7 +195,7 @@ struct AskWorkflowSettingsView: View {
             )
         }
         if let failure {
-            Text(failure).font(.system(size: 11.5)).foregroundStyle(StudioTheme.warning)
+            Text(failure).font(.system(size: 11.5)).foregroundStyle(TypefluxColor.warning.color)
                 .padding(.horizontal, 18).padding(.vertical, 6)
         }
     }
@@ -357,7 +357,7 @@ struct AskWorkflowTrustSheet: View {
             HStack(alignment: .top, spacing: 14) {
                 Image(systemName: workflow.symbol).font(.system(size: 20, weight: .semibold))
                     .foregroundStyle(.white).frame(width: 44, height: 44)
-                    .background(AskTheme.accent, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+                    .background(TypefluxColor.accent.color, in: RoundedRectangle(cornerRadius: 11, style: .continuous))
                 VStack(alignment: .leading, spacing: 4) {
                     Text(L(
                         workflow.status == .modified ? "ask.workflow.trust.modifiedTitle" : "ask.workflow.trust.title",
@@ -365,7 +365,10 @@ struct AskWorkflowTrustSheet: View {
                     ))
                     .font(.system(size: 15, weight: .semibold))
                     Text(L("ask.workflow.trust.warning")).font(.system(size: 12))
-                        .foregroundStyle(StudioTheme.textSecondary).fixedSize(horizontal: false, vertical: true)
+                        .foregroundStyle(TypefluxColor.secondaryLabel.color).fixedSize(
+                            horizontal: false,
+                            vertical: true
+                        )
                 }
             }
             VStack(alignment: .leading, spacing: 0) {
@@ -377,7 +380,7 @@ struct AskWorkflowTrustSheet: View {
                 }
                 fact("doc.on.doc", L("ask.workflow.trust.files"), summary.files.joined(separator: " · "))
             }
-            .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(StudioTheme.border))
+            .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(TypefluxColor.separator.color))
             ScrollView {
                 Text(summary.preview).font(.system(size: 11.5, design: .monospaced))
                     .frame(maxWidth: .infinity, alignment: .leading).textSelection(.enabled).padding(10)
@@ -400,10 +403,10 @@ struct AskWorkflowTrustSheet: View {
 
     private func fact(_ symbol: String, _ title: String, _ value: String, monospaced: Bool = false) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 10) {
-            Image(systemName: symbol).frame(width: 18).foregroundStyle(StudioTheme.textSecondary)
+            Image(systemName: symbol).frame(width: 18).foregroundStyle(TypefluxColor.secondaryLabel.color)
             Text(title).font(.system(size: 12.5)).frame(width: 90, alignment: .leading)
             Text(value).font(.system(size: 12, design: monospaced ? .monospaced : .default))
-                .foregroundStyle(StudioTheme.textSecondary).textSelection(.enabled)
+                .foregroundStyle(TypefluxColor.secondaryLabel.color).textSelection(.enabled)
                 .frame(maxWidth: .infinity, alignment: .leading).fixedSize(horizontal: false, vertical: true)
         }
         .padding(.horizontal, 12).padding(.vertical, 8)

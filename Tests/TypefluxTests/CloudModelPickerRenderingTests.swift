@@ -14,7 +14,7 @@ final class CloudModelPickerRenderingTests: XCTestCase {
         for dark in [false, true] {
             let content = AskModelChoices(library: library, reference: .constant("cloud:default"),
                                           loggedIn: true, composerStyle: true)
-                .background(StudioTheme.cardSurface)
+                .background(TypefluxColor.contentBackground.color)
                 .environment(\.colorScheme, dark ? .dark : .light)
             let host = NSHostingView(rootView: content)
             host.frame = NSRect(x: 0, y: 0, width: 330, height: 400)

@@ -45,7 +45,7 @@ struct SidebarAccountFooter<SignedOutIdentity: View>: View {
                 .padding(.bottom, 10)
                 .transition(.opacity)
             }
-            Rectangle().fill(AskTheme.separator).frame(height: 0.5)
+            Rectangle().fill(TypefluxColor.separator.color).frame(height: 0.5)
             HStack(spacing: 9) {
                 identity.layoutPriority(1)
                 Spacer(minLength: 4)
@@ -59,7 +59,7 @@ struct SidebarAccountFooter<SignedOutIdentity: View>: View {
                 if let onOpenSettings {
                     Button(action: onOpenSettings) {
                         Image(systemName: "gearshape").font(.system(size: 15))
-                            .foregroundStyle(StudioTheme.textSecondary)
+                            .foregroundStyle(TypefluxColor.secondaryLabel.color)
                             .frame(width: 32, height: 32)
                             .contentShape(Circle())
                     }

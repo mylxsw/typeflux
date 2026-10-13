@@ -37,7 +37,7 @@ struct AskTitleSettingsView: View {
                 TypefluxPopup(title: L("ask.title.model"), options: options, selection: $reference)
                     .frame(width: 200).disabled(!enabled)
             }
-            Text(L("ask.title.cost")).font(.subheadline).foregroundStyle(StudioTheme.textTertiary)
+            Text(L("ask.title.cost")).font(.subheadline).foregroundStyle(TypefluxColor.tertiaryLabel.color)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .onAppear { enabled = settings.askAutomaticTitles; reference = settings.askTitleModelReference }

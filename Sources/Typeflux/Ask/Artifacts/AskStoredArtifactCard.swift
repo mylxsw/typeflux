@@ -33,10 +33,10 @@ struct AskStoredArtifactCard: View {
                 fromByteCount: ref.sizeBytes,
                 countStyle: .file
             ))
-            .font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
+            .font(.system(size: 12)).foregroundStyle(TypefluxColor.secondaryLabel.color)
             if let expiry = AskArtifactStore.expirationDate(for: ref) {
                 Text(L("ask.artifact.expires", expiry.formatted(date: .abbreviated, time: .omitted)))
-                    .font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
+                    .font(.system(size: 11)).foregroundStyle(TypefluxColor.tertiaryLabel.color)
             }
             HStack {
                 Button(L("ask.preview")) {
@@ -48,12 +48,12 @@ struct AskStoredArtifactCard: View {
                 }
             }
             if let error {
-                Text(error).foregroundStyle(StudioTheme.danger).font(.system(size: 12))
+                Text(error).foregroundStyle(TypefluxColor.danger.color).font(.system(size: 12))
             }
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AskTheme.monoSurface, in: RoundedRectangle(cornerRadius: 10))
+        .background(TypefluxColor.controlBackground.color, in: RoundedRectangle(cornerRadius: 10))
         .task(id: ref.id) {
             guard ref.mediaType.hasPrefix("image/") else { return }
             if let bundle = try? access.load(ref), let data = bundle.files[bundle.manifest.entry] {
@@ -143,7 +143,7 @@ struct AskArtifactPreviewView: View {
                 }
             }
             if let error {
-                Text(error).foregroundStyle(StudioTheme.danger).lineLimit(8).textSelection(.enabled)
+                Text(error).foregroundStyle(TypefluxColor.danger.color).lineLimit(8).textSelection(.enabled)
             }
         }
         .padding(20)

@@ -19,7 +19,7 @@ struct AskLauncherPaletteRenderTests {
         for mode in [AskPermissionMode.strict, .standard] {
             // System secondary-label colours carry alpha. Sample their visible composite over a light canvas.
             let menu = AskPermissionModeMenu(mode: mode, compact: true, onSelect: { _ in })
-                .tint(AskTheme.accent)
+                .tint(TypefluxColor.accent.color)
                 .environment(\.colorScheme, .light)
                 .background(Color.white)
             let census = try census(await render(menu, size: NSSize(width: 60, height: 30)))
@@ -27,7 +27,7 @@ struct AskLauncherPaletteRenderTests {
             #expect(census.grey > 0)
         }
         let yolo = AskPermissionModeMenu(mode: .yolo, compact: true, onSelect: { _ in })
-            .tint(AskTheme.accent)
+            .tint(TypefluxColor.accent.color)
             .environment(\.colorScheme, .light)
             .background(Color.white)
         let census = try census(await render(yolo, size: NSSize(width: 90, height: 30)))
@@ -36,11 +36,11 @@ struct AskLauncherPaletteRenderTests {
     }
 
     @Test func `permission menu colours only yolo`() {
-        #expect(AskPermissionModeMenu.labelColor(.standard) == StudioTheme.textSecondary)
-        #expect(AskPermissionModeMenu.labelColor(.strict) == StudioTheme.textSecondary)
-        #expect(AskPermissionModeMenu.labelColor(.yolo) == StudioTheme.danger)
+        #expect(AskPermissionModeMenu.labelColor(.standard) == TypefluxColor.secondaryLabel.color)
+        #expect(AskPermissionModeMenu.labelColor(.strict) == TypefluxColor.secondaryLabel.color)
+        #expect(AskPermissionModeMenu.labelColor(.yolo) == TypefluxColor.danger.color)
         #expect(AskPermissionModeMenu.wellFill(.standard) == .clear)
-        #expect(AskPermissionModeMenu.wellFill(.yolo) == StudioTheme.danger.opacity(0.11))
+        #expect(AskPermissionModeMenu.wellFill(.yolo) == TypefluxColor.danger.color.opacity(0.11))
     }
 
     @Test func `permission menus omit chevrons and the launcher shows only symbols`() {

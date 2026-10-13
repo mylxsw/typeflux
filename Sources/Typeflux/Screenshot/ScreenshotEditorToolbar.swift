@@ -551,9 +551,10 @@ struct ScreenshotEditorToolbar: View {
         Button { perform(.font(font)) } label: {
             Text("Aa")
                 .font(Font(ScreenshotAnnotation.font(size: 12, family: font) as CTFont))
-                .foregroundStyle(isOn ? AskTheme.accent : Color.secondary)
+                .foregroundStyle(isOn ? TypefluxColor.accent.color : Color.secondary)
                 .frame(width: 26, height: 22)
-                .background(RoundedRectangle(cornerRadius: 6).fill(isOn ? AskTheme.accentSoft : Color.clear))
+                .background(RoundedRectangle(cornerRadius: 6)
+                    .fill(isOn ? TypefluxColor.accent.color.opacity(0.12) : Color.clear))
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -565,21 +566,23 @@ struct ScreenshotEditorToolbar: View {
             Group {
                 switch textStyle {
                 case .plain:
-                    Text("Aa").foregroundStyle(isOn ? AskTheme.accent : Color.secondary)
+                    Text("Aa").foregroundStyle(isOn ? TypefluxColor.accent.color : Color.secondary)
                 case .background:
                     Text("Aa").foregroundStyle(Color(nsColor: .windowBackgroundColor))
                         .padding(.horizontal, 3)
-                        .background(RoundedRectangle(cornerRadius: 3).fill(isOn ? AskTheme.accent : Color.secondary))
+                        .background(RoundedRectangle(cornerRadius: 3)
+                            .fill(isOn ? TypefluxColor.accent.color : Color.secondary))
                 case .outline:
-                    Text("Aa").foregroundStyle(isOn ? AskTheme.accent : Color.secondary)
+                    Text("Aa").foregroundStyle(isOn ? TypefluxColor.accent.color : Color.secondary)
                         .padding(.horizontal, 2)
                         .overlay(RoundedRectangle(cornerRadius: 3)
-                            .strokeBorder(isOn ? AskTheme.accent : Color.secondary, lineWidth: 1))
+                            .strokeBorder(isOn ? TypefluxColor.accent.color : Color.secondary, lineWidth: 1))
                 }
             }
             .font(.system(size: 11, weight: .bold))
             .frame(width: 28, height: 22)
-            .background(RoundedRectangle(cornerRadius: 6).fill(isOn ? AskTheme.accentSoft : Color.clear))
+            .background(RoundedRectangle(cornerRadius: 6)
+                .fill(isOn ? TypefluxColor.accent.color.opacity(0.12) : Color.clear))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -591,10 +594,11 @@ struct ScreenshotEditorToolbar: View {
             Text(title)
                 .font(.system(size: 12, weight: isOn ? .semibold : .regular))
                 .lineLimit(1).fixedSize()
-                .foregroundStyle(isOn ? AskTheme.accent : Color.secondary)
+                .foregroundStyle(isOn ? TypefluxColor.accent.color : Color.secondary)
                 .padding(.horizontal, 7)
                 .frame(height: 22)
-                .background(RoundedRectangle(cornerRadius: 6).fill(isOn ? AskTheme.accentSoft : Color.clear))
+                .background(RoundedRectangle(cornerRadius: 6)
+                    .fill(isOn ? TypefluxColor.accent.color.opacity(0.12) : Color.clear))
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -604,7 +608,7 @@ struct ScreenshotEditorToolbar: View {
         Button(action: action) {
             HStack(spacing: 5) {
                 Capsule()
-                    .fill(isOn ? AskTheme.accent : AskTheme.pressFill)
+                    .fill(isOn ? TypefluxColor.accent.color : TypefluxColor.label.color.opacity(0.1))
                     .frame(width: 24, height: 14)
                     .overlay(Circle().fill(.white).frame(width: 10, height: 10).offset(x: isOn ? 5 : -5))
                 Text(title).font(.system(size: 12)).foregroundStyle(.secondary).lineLimit(1).fixedSize()
@@ -663,7 +667,8 @@ struct ScreenshotEditorToolbar: View {
                 .overlay(Circle().strokeBorder(Color.black.opacity(0.2), lineWidth: 1))
                 .frame(width: 18, height: 18)
                 .padding(2)
-                .overlay(Circle().strokeBorder(isOn ? AskTheme.accent : Color.primary.opacity(0.25), lineWidth: 2))
+                .overlay(Circle().strokeBorder(isOn ? TypefluxColor.accent.color : Color.primary.opacity(0.25),
+                                               lineWidth: 2))
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)
@@ -693,11 +698,12 @@ struct ScreenshotEditorToolbar: View {
                         Image(systemName: "eyedropper").font(.system(size: 11, weight: .medium))
                         Text(L("screenshot.color.pick")).font(.system(size: 12)).lineLimit(1).fixedSize()
                     }
-                    .foregroundStyle(state.isPickingColor ? AskTheme.accent : Color.primary.opacity(0.75))
+                    .foregroundStyle(state.isPickingColor ? TypefluxColor.accent.color : Color.primary.opacity(0.75))
                     .padding(.horizontal, 7)
                     .frame(height: 22)
                     .background(RoundedRectangle(cornerRadius: 6)
-                        .fill(state.isPickingColor ? AskTheme.accentSoft : AskTheme.pressFill))
+                        .fill(state.isPickingColor ? TypefluxColor.accent.color.opacity(0.12) : TypefluxColor.label
+                            .color.opacity(0.1)))
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -749,7 +755,7 @@ struct ScreenshotEditorToolbar: View {
     private func segment<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
         HStack(spacing: 2) { content() }
             .padding(2)
-            .background(RoundedRectangle(cornerRadius: 7).fill(AskTheme.pressFill.opacity(0.6)))
+            .background(RoundedRectangle(cornerRadius: 7).fill(TypefluxColor.label.color.opacity(0.1).opacity(0.6)))
     }
 
     private func strengthButton(_ strength: ScreenshotMosaic.Strength) -> some View {
@@ -758,10 +764,11 @@ struct ScreenshotEditorToolbar: View {
             Text(L("screenshot.mosaic.strength.\(["low", "medium", "high"][strength.rawValue])"))
                 .font(.system(size: 12, weight: isOn ? .semibold : .regular))
                 .lineLimit(1).fixedSize()
-                .foregroundStyle(isOn ? AskTheme.accent : Color.secondary)
+                .foregroundStyle(isOn ? TypefluxColor.accent.color : Color.secondary)
                 .padding(.horizontal, 7)
                 .frame(height: 22)
-                .background(RoundedRectangle(cornerRadius: 6).fill(isOn ? AskTheme.accentSoft : Color.clear))
+                .background(RoundedRectangle(cornerRadius: 6)
+                    .fill(isOn ? TypefluxColor.accent.color.opacity(0.12) : Color.clear))
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -773,9 +780,10 @@ struct ScreenshotEditorToolbar: View {
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(tint ?? (isOn ? AskTheme.accent : Color.primary.opacity(0.75)))
+                .foregroundStyle(tint ?? (isOn ? TypefluxColor.accent.color : Color.primary.opacity(0.75)))
                 .frame(width: 30, height: 30)
-                .background(RoundedRectangle(cornerRadius: 8).fill(isOn ? AskTheme.accentSoft : Color.clear))
+                .background(RoundedRectangle(cornerRadius: 8)
+                    .fill(isOn ? TypefluxColor.accent.color.opacity(0.12) : Color.clear))
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -793,7 +801,7 @@ struct ScreenshotEditorToolbar: View {
                     Image(systemName: followUp.symbol).font(.system(size: 13, weight: .medium))
                     Text(followUp.title).font(.system(size: 12.5)).lineLimit(1).fixedSize()
                 }
-                .foregroundStyle(AskTheme.accent)
+                .foregroundStyle(TypefluxColor.accent.color)
                 .padding(.horizontal, 7)
                 .frame(height: 30)
                 .contentShape(Rectangle())
@@ -812,9 +820,10 @@ struct ScreenshotEditorToolbar: View {
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(isOn ? AskTheme.accent : Color.secondary)
+                .foregroundStyle(isOn ? TypefluxColor.accent.color : Color.secondary)
                 .frame(width: 22, height: 22)
-                .background(RoundedRectangle(cornerRadius: 6).fill(isOn ? AskTheme.accentSoft : Color.clear))
+                .background(RoundedRectangle(cornerRadius: 6)
+                    .fill(isOn ? TypefluxColor.accent.color.opacity(0.12) : Color.clear))
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -826,13 +835,14 @@ struct ScreenshotEditorToolbar: View {
     }
 
     private var separator: some View {
-        Rectangle().fill(AskTheme.border).frame(width: 1, height: 18).padding(.horizontal, 4)
+        Rectangle().fill(TypefluxColor.separator.color).frame(width: 1, height: 18).padding(.horizontal, 4)
     }
 
     private func glass(cornerRadius: CGFloat) -> some View {
         RoundedRectangle(cornerRadius: cornerRadius)
-            .fill(AskTheme.glassFill.opacity(0.96))
-            .overlay(RoundedRectangle(cornerRadius: cornerRadius).strokeBorder(AskTheme.border, lineWidth: 1))
+            .fill(LegacyAskPalette.glassFill.opacity(0.96))
+            .overlay(RoundedRectangle(cornerRadius: cornerRadius).strokeBorder(TypefluxColor.separator.color,
+                                                                               lineWidth: 1))
             .shadow(color: .black.opacity(0.35), radius: 14, y: 8)
     }
 }

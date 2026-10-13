@@ -4,7 +4,7 @@ import SwiftUI
 /// Compatibility colours for Classic surfaces, backed by the shared semantic palette.
 enum AskClassic {
     /// Opaque launchers need a quiet outline rather than a bright glass rim.
-    static let launcherBorder = StudioTheme.dynamic(
+    static let launcherBorder = LegacyStudioPalette.dynamic(
         light: NSColor(calibratedWhite: 0, alpha: 0.12),
         dark: NSColor(calibratedWhite: 1, alpha: 0.06)
     )
@@ -16,7 +16,6 @@ enum AskClassic {
     static let cardBorder = TypefluxColor.separator.color
     static let divider = TypefluxColor.separator.color
     static let selection = TypefluxColor.selection.color
-
 }
 
 /// Geometry that differs between the two interface styles. Everything not
@@ -50,12 +49,11 @@ struct AskStyleMetrics: Equatable {
              suggestionCorner: TypefluxRadius.form.value(for: style),
              composerCorner: TypefluxRadius.form.value(for: style),
              paletteCorner: TypefluxRadius.spotlightResults.value(for: style),
-             menuCorner: TypefluxRadius.menu.value(for: style),
-             hoverCardCorner: TypefluxRadius.popover.value(for: style),
-             menuRowCorner: TypefluxRadius.menuHighlight.value(for: style),
+             menuCorner: TypefluxRadius.menuCard.value(for: style),
+             hoverCardCorner: TypefluxRadius.hoverCard.value(for: style),
+             menuRowCorner: TypefluxRadius.menuRow.value(for: style),
              headerChipHeight: TypefluxControlHeight.toolbarItem.value(for: style))
     }
-
 }
 
 extension InterfaceStyle {
@@ -98,7 +96,7 @@ struct AskSidePanelChrome: ViewModifier {
     @ViewBuilder
     func body(content: Content) -> some View {
         if style.usesGlass {
-            TypefluxGlassContainer(radius: .sidebar, placement: .inWindow) { content }
+            TypefluxGlassContainer(radius: .sidebar, placement: .windowEdge) { content }
                 .padding(glassInset, AskMetrics.sidebarPanelInset)
         } else {
             content

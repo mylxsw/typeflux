@@ -14,13 +14,13 @@ struct AskWorkflowSettingsRow<Controls: View>: View {
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: symbol).font(.body)
-                .foregroundStyle(StudioTheme.textSecondary)
+                .foregroundStyle(TypefluxColor.secondaryLabel.color)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 12) {
                     Button(action: edit) {
                         Text(summary.title).font(.subheadline)
-                            .foregroundStyle(titleHovered ? TypefluxColor.accent.color : StudioTheme.textPrimary)
+                            .foregroundStyle(titleHovered ? TypefluxColor.accent.color : TypefluxColor.label.color)
                             .underline(titleHovered)
                             .lineLimit(1).truncationMode(.tail)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -35,13 +35,13 @@ struct AskWorkflowSettingsRow<Controls: View>: View {
                 }
                 if !summary.description.isEmpty {
                     Text(summary.description).font(.subheadline)
-                        .foregroundStyle(StudioTheme.textSecondary)
+                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
                         .lineLimit(1).truncationMode(.tail)
                         .help(summary.description)
                 }
                 AskFlowLayout(spacing: 6) {
                     if let runtime = summary.runtime {
-                        Text(runtime).font(.subheadline).foregroundStyle(StudioTheme.textSecondary)
+                        Text(runtime).font(.subheadline).foregroundStyle(TypefluxColor.secondaryLabel.color)
                     }
                     ForEach(Array(summary.keywords.enumerated()), id: \.offset) { _, keyword in
                         AskKeywordLabel(keyword: keyword)
@@ -53,13 +53,13 @@ struct AskWorkflowSettingsRow<Controls: View>: View {
                     if let review {
                         Button(L("ask.workflow.review"), action: review)
                             .buttonStyle(.plain).font(.subheadline)
-                            .foregroundStyle(StudioTheme.warning)
+                            .foregroundStyle(TypefluxColor.warning.color)
                             .accessibilityIdentifier("ask.workflow.review")
                     }
                     if let fix {
                         Button(L("ask.workflow.editor.fixButton"), action: fix)
                             .buttonStyle(.plain).font(.subheadline)
-                            .foregroundStyle(StudioTheme.warning)
+                            .foregroundStyle(TypefluxColor.warning.color)
                             .accessibilityIdentifier("ask.workflow.fix")
                     }
                 }
@@ -67,7 +67,7 @@ struct AskWorkflowSettingsRow<Controls: View>: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 ForEach(Array(summary.notices.enumerated()), id: \.offset) { _, notice in
                     Text(notice).font(.subheadline)
-                        .foregroundStyle(StudioTheme.warning)
+                        .foregroundStyle(TypefluxColor.warning.color)
                         .fixedSize(horizontal: false, vertical: true)
                         .textSelection(.enabled)
                 }
@@ -81,7 +81,7 @@ struct AskWorkflowSettingsRow<Controls: View>: View {
                                 .accessibilityIdentifier("ask.workflow.runDetails")
                         }
                     }
-                    .font(.subheadline).foregroundStyle(StudioTheme.warning)
+                    .font(.subheadline).foregroundStyle(TypefluxColor.warning.color)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)

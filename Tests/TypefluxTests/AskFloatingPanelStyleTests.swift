@@ -19,11 +19,12 @@ struct AskFloatingPanelStyleTests {
             // omits its Window Server optics, so this measures legacy scrims only.
             for material in [AskGlassMaterial.visualEffect, .opaque] {
                 let panel = AskGlassBackground(material: material, corner: 16,
-                                               opaqueFill: AskTheme.launcherSurface, placement: placement)
+                                               opaqueFill: LegacyAskPalette.launcherSurface, placement: placement)
                 let black = try await render(panel.background(Color.black), size: size, appearance: .aqua)
                 let blue = try await render(panel.background(Color.blue), size: size, appearance: .aqua)
                 let darkFill = try pixel(black, x: 80, y: 50), blueFill = try pixel(blue, x: 80, y: 50)
-                #expect(darkFill.redComponent > floor && darkFill.greenComponent > floor && darkFill.blueComponent > floor)
+                #expect(darkFill.redComponent > floor && darkFill.greenComponent > floor && darkFill
+                    .blueComponent > floor)
                 #expect(abs(darkFill.blueComponent - blueFill.blueComponent) < cast)
                 #expect(abs(blueFill.blueComponent - blueFill.redComponent) < cast)
             }
@@ -54,7 +55,7 @@ struct AskFloatingPanelStyleTests {
         let row = AskPluginItemRow(item: AskPluginItem(id: "word", title: "serendipity", subtitle: "A happy discovery"),
                                    symbol: "character.book.closed", selected: true, emphasized: true,
                                    height: AskPluginResultsView.itemHeight, onPick: {})
-            .background(AskTheme.launcherSurface)
+            .background(LegacyAskPalette.launcherSurface)
         for appearance in [NSAppearance.Name.aqua, .darkAqua] {
             let bitmap = try await render(row, size: NSSize(width: 560, height: 44), appearance: appearance)
             let fill = try pixel(bitmap, x: 520, y: 22)
@@ -94,7 +95,11 @@ struct AskFloatingPanelStyleTests {
                                                phase: .done(plan, output))
                 let view = AskPluginResultsView(display: display, question: "", onMain: {}, onAction: { _ in },
                                                 onAskAI: {}, onHighlight: { _ in })
-                    .background(AskGlassBackground(material: .opaque, corner: 16, opaqueFill: AskTheme.launcherSurface))
+                    .background(AskGlassBackground(
+                        material: .opaque,
+                        corner: 16,
+                        opaqueFill: LegacyAskPalette.launcherSurface
+                    ))
                 let bitmap = try await render(
                     view,
                     size: NSSize(width: 650, height: AskPluginResultsView.height(for: display)),

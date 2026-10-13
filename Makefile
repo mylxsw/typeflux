@@ -138,3 +138,7 @@ verify-release-artifacts: ## Verify the integrity of release artifacts
 .PHONY: format
 format: ## Format code using SwiftFormat and SwiftLint
 	./scripts/format.sh
+
+.PHONY: lint
+lint: ## Check UI literals and lint Swift sources against the shrinking baseline
+	./scripts/lint_ui.sh

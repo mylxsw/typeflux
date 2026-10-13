@@ -4,7 +4,7 @@ import SwiftUI
 struct StudioInteractiveButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .opacity(configuration.isPressed ? StudioTheme.Opacity.pressedFade : 1)
+            .opacity(configuration.isPressed ? 0.86 : 1)
             .scaleEffect(configuration.isPressed ? 0.985 : 1)
             .animation(.easeOut(duration: 0.12), value: configuration.isPressed)
     }
@@ -156,14 +156,14 @@ private final class TooltipWindowController {
     func show(text: String, screenFrame: NSRect, yOffset: CGFloat) {
         let tooltipView = AnyView(
             Text(text)
-                .font(.studioBody(StudioTheme.Typography.tooltip, weight: .semibold))
-                .foregroundStyle(StudioTheme.Colors.white)
+                .font(.system(.callout, weight: .semibold))
+                .foregroundStyle(Color.white)
                 .lineLimit(1)
-                .padding(.horizontal, StudioTheme.Insets.tooltipHorizontal)
-                .padding(.vertical, StudioTheme.Insets.tooltipVertical)
+                .padding(.horizontal, TypefluxSpacing.regular.value(for: .classic))
+                .padding(.vertical, TypefluxSpacing.small.value(for: .classic))
                 .background(
-                    RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.tooltip, style: .continuous)
-                        .fill(StudioTheme.tooltipBackground)
+                    RoundedRectangle(cornerRadius: TypefluxRadius.popover.value(for: .classic), style: .continuous)
+                        .fill(LegacyStudioPalette.tooltipBackground)
                 )
                 .fixedSize()
         )
@@ -296,9 +296,9 @@ private struct StudioLiquidGlassBackground<S: InsettableShape>: View {
         shape: S,
         cornerRadius: CGFloat? = nil,
         material: NSVisualEffectView.Material = .hudWindow,
-        tintOpacity: Double = StudioTheme.Opacity.glassSurfaceTint,
-        scrimOpacity: Double = StudioTheme.Opacity.glassSurfaceScrim,
-        strokeOpacity: Double = StudioTheme.Opacity.glassHighlight,
+        tintOpacity: Double = 0.96,
+        scrimOpacity: Double = 0.96,
+        strokeOpacity: Double = 1,
         interactive: Bool = false
     ) {
         self.shape = shape
@@ -313,7 +313,7 @@ private struct StudioLiquidGlassBackground<S: InsettableShape>: View {
     var body: some View {
         Group {
             if !usesMaterial {
-                shape.fill(StudioTheme.controlSurface)
+                shape.fill(TypefluxColor.controlBackground.color)
             } else {
                 #if compiler(>=6.2)
                     if #available(macOS 26.0, *) {
@@ -322,11 +322,12 @@ private struct StudioLiquidGlassBackground<S: InsettableShape>: View {
                             .glassEffect(
                                 Glass.regular
                                     .interactive(interactive)
-                                    .tint(StudioTheme.glassTint.opacity(intensity.nativeFrostOpacity(tintOpacity))),
+                                    .tint(LegacyStudioPalette.glassTint
+                                        .opacity(intensity.nativeFrostOpacity(tintOpacity))),
                                 in: shape
                             )
                             .overlay(shape.fill(AskWindowBackdrop.base(dark: colorScheme == .dark)
-                                .opacity(intensity.extraTintOpacity)))
+                                    .opacity(intensity.extraTintOpacity)))
 
                     } else {
                         fallbackBackground
@@ -342,26 +343,26 @@ private struct StudioLiquidGlassBackground<S: InsettableShape>: View {
                 .strokeBorder(
                     LinearGradient(
                         colors: [
-                            StudioTheme.glassStrokeHighlight.opacity(strokeOpacity),
-                            StudioTheme.glassStrokeHighlight.opacity(strokeOpacity * 0.28),
-                            StudioTheme.glassStrokeShadow.opacity(0.50)
+                            LegacyStudioPalette.glassStrokeHighlight.opacity(strokeOpacity),
+                            LegacyStudioPalette.glassStrokeHighlight.opacity(strokeOpacity * 0.28),
+                            LegacyStudioPalette.glassStrokeShadow.opacity(0.50)
                         ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     ),
-                    lineWidth: StudioTheme.BorderWidth.thin
+                    lineWidth: 1
                 )
                 .opacity(usesMaterial && !usesNativeGlass ? 1 : 0)
         )
         .overlay(
             shape
-                .inset(by: StudioTheme.BorderWidth.thin + 0.5)
+                .inset(by: 1 + 0.5)
                 .strokeBorder(
                     LinearGradient(
                         colors: [
-                            StudioTheme.glassInnerHighlight,
+                            LegacyStudioPalette.glassInnerHighlight,
                             Color.clear,
-                            StudioTheme.glassInnerHighlight.opacity(0.42)
+                            LegacyStudioPalette.glassInnerHighlight.opacity(0.42)
                         ],
                         startPoint: .top,
                         endPoint: .bottom
@@ -383,9 +384,9 @@ private struct StudioLiquidGlassBackground<S: InsettableShape>: View {
             .allowsHitTesting(false)
 
             shape
-                .fill(StudioTheme.glassScrim.opacity(intensity.legacyFrostOpacity(scrimOpacity)))
+                .fill(LegacyStudioPalette.glassScrim.opacity(intensity.legacyFrostOpacity(scrimOpacity)))
             shape
-                .fill(StudioTheme.glassTint.opacity(intensity.legacyFrostOpacity(tintOpacity)))
+                .fill(LegacyStudioPalette.glassTint.opacity(intensity.legacyFrostOpacity(tintOpacity)))
         }
     }
 }
@@ -405,7 +406,7 @@ struct StudioButtonChromeModifier: ViewModifier {
     /// Light primary buttons are solid accent, #1D4ED8 under the pointer; dark keeps its gradient.
     static func solidPrimaryFill(dark: Bool, hovering: Bool) -> Color? {
         guard !dark else { return nil }
-        return hovering ? StudioTheme.accentHover : StudioTheme.accent
+        return hovering ? TypefluxColor.accent.color : TypefluxColor.accent.color
     }
 
     func body(content: Content) -> some View {
@@ -415,8 +416,11 @@ struct StudioButtonChromeModifier: ViewModifier {
             .foregroundStyle(foreground)
             .background(background)
             .overlay(overlay)
-            .clipShape(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous))
-            .contentShape(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: TypefluxRadius.popover.value(for: .classic), style: .continuous))
+            .contentShape(RoundedRectangle(
+                cornerRadius: TypefluxRadius.popover.value(for: .classic),
+                style: .continuous
+            ))
             .scaleEffect(isPressed ? 0.985 : 1)
             .opacity(opacity)
             .animation(.easeOut(duration: 0.14), value: isPressed)
@@ -425,52 +429,58 @@ struct StudioButtonChromeModifier: ViewModifier {
 
     @ViewBuilder
     private var background: some View {
-        let buttonShape = RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
+        let buttonShape = RoundedRectangle(
+            cornerRadius: TypefluxRadius.popover.value(for: .classic),
+            style: .continuous
+        )
 
         switch variant {
         case .primary where Self.solidPrimaryFill(dark: colorScheme == .dark, hovering: isHovering || isPressed) != nil:
             buttonShape
-                .fill(Self.solidPrimaryFill(dark: colorScheme == .dark, hovering: isHovering || isPressed) ?? StudioTheme.accent)
-                .shadow(color: StudioTheme.accent.opacity(0.18), radius: 8, x: 0, y: 5)
+                .fill(Self
+                    .solidPrimaryFill(dark: colorScheme == .dark, hovering: isHovering || isPressed) ?? TypefluxColor
+                    .accent.color)
+                .shadow(color: TypefluxColor.accent.color.opacity(0.18), radius: 8, x: 0, y: 5)
         case .primary:
             buttonShape
                 .fill(
                     LinearGradient(
                         colors: [
-                            StudioTheme.accent.opacity(0.92),
-                            StudioTheme.accent
+                            TypefluxColor.accent.color.opacity(0.92),
+                            TypefluxColor.accent.color
                         ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
                 )
                 .brightness(isPressed ? -0.06 : (isLoading ? -0.03 : 0))
-                .shadow(color: StudioTheme.accent.opacity(0.18), radius: 8, x: 0, y: 5)
+                .shadow(color: TypefluxColor.accent.color.opacity(0.18), radius: 8, x: 0, y: 5)
         case .secondary:
             ZStack {
                 StudioLiquidGlassBackground(
                     shape: buttonShape,
-                    cornerRadius: StudioTheme.CornerRadius.xLarge,
-                    tintOpacity: isPressed ? 0.72 : StudioTheme.Opacity.glassControlTint,
-                    scrimOpacity: isPressed ? 0.76 : StudioTheme.Opacity.glassControlScrim,
+                    cornerRadius: TypefluxRadius.popover.value(for: .classic),
+                    tintOpacity: isPressed ? 0.72 : 0.28,
+                    scrimOpacity: isPressed ? 0.76 : 0.56,
                     interactive: true
                 )
 
                 buttonShape
-                    .fill(isPressed ? StudioTheme.selectionSurface : StudioTheme.controlSurface)
+                    .fill(isPressed ? TypefluxColor.selection.color.opacity(0.12) : TypefluxColor.controlBackground
+                        .color)
                     .opacity(style.usesGlass && !reduceTransparency && contrast != .increased
                         ? (isPressed ? 0.22 : 0.08) : 1)
             }
             .brightness(isPressed ? -0.03 : (isLoading ? -0.015 : 0))
         case .ghost:
             buttonShape
-                .fill(isPressed ? StudioTheme
-                    .controlSurface : (isLoading ? StudioTheme.controlSurface.opacity(0.62) : Color.clear))
+                .fill(isPressed ? TypefluxColor.controlBackground
+                    .color : (isLoading ? TypefluxColor.controlBackground.color.opacity(0.62) : Color.clear))
         }
     }
 
     private var overlay: some View {
-        RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous)
+        RoundedRectangle(cornerRadius: TypefluxRadius.popover.value(for: .classic), style: .continuous)
             .stroke(borderColor, lineWidth: borderWidth)
     }
 
@@ -479,9 +489,9 @@ struct StudioButtonChromeModifier: ViewModifier {
         case .primary:
             .white
         case .secondary:
-            StudioTheme.textPrimary
+            TypefluxColor.label.color
         case .ghost:
-            StudioTheme.textSecondary
+            TypefluxColor.secondaryLabel.color
         }
     }
 
@@ -490,16 +500,16 @@ struct StudioButtonChromeModifier: ViewModifier {
         case .primary:
             Color.clear
         case .secondary, .ghost:
-            StudioTheme.border.opacity(isPressed || isLoading ? 0.82 : 1)
+            TypefluxColor.separator.color.opacity(isPressed || isLoading ? 0.82 : 1)
         }
     }
 
     private var borderWidth: CGFloat {
         switch variant {
         case .ghost:
-            isPressed || isLoading ? StudioTheme.BorderWidth.thin : 0
+            isPressed || isLoading ? 1 : 0
         case .primary, .secondary:
-            StudioTheme.BorderWidth.thin
+            1
         }
     }
 
@@ -555,13 +565,13 @@ struct StudioGlassBackground: View {
 
     var body: some View {
         if !style.usesGlass || reduceTransparency || contrast == .increased {
-            StudioTheme.windowBackground
+            TypefluxColor.windowBackground.color
                 .background(AskWindowBackdrop.base(dark: colorScheme == .dark))
         } else if colorScheme == .dark {
             ZStack {
                 StudioVisualEffectBlur(material: .underWindowBackground, blendingMode: .behindWindow, cornerRadius: nil)
 
-                StudioTheme.windowBackground
+                TypefluxColor.windowBackground.color
                     .opacity(intensity.nativeFrostOpacity(tintOpacity))
                 AskWindowBackdrop.base(dark: true).opacity(intensity.extraTintOpacity)
             }
@@ -569,12 +579,12 @@ struct StudioGlassBackground: View {
             ZStack {
                 StudioVisualEffectBlur(material: .underWindowBackground, blendingMode: .behindWindow, cornerRadius: nil)
 
-                StudioTheme.windowBackground
+                TypefluxColor.windowBackground.color
                     .opacity(intensity.nativeFrostOpacity(tintOpacity))
 
                 LinearGradient(
                     colors: [
-                        StudioTheme.windowHighlight.opacity(0.92),
+                        LegacyStudioPalette.windowHighlight.opacity(0.92),
                         Color.clear
                     ],
                     startPoint: .topLeading,
@@ -600,8 +610,8 @@ struct StudioSectionTitle: View {
 
     var body: some View {
         Text(title)
-            .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
-            .foregroundStyle(StudioTheme.textSecondary)
+            .font(.system(.subheadline, weight: .semibold))
+            .foregroundStyle(TypefluxColor.secondaryLabel.color)
     }
 }
 
@@ -614,7 +624,7 @@ struct StudioCard<Content: View>: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.interfaceStyle) private var style
 
-    var padding: CGFloat = StudioTheme.Insets.cardDefault
+    var padding: CGFloat = TypefluxSpacing.section.value(for: .classic)
     var showsShadow: Bool = false
     var isHighlighted: Bool = false
     var isDimmed: Bool = false
@@ -624,7 +634,7 @@ struct StudioCard<Content: View>: View {
     let content: Content
 
     init(
-        padding: CGFloat = StudioTheme.Insets.cardDefault,
+        padding: CGFloat = TypefluxSpacing.section.value(for: .classic),
         showsShadow: Bool = false,
         isHighlighted: Bool = false,
         isDimmed: Bool = false,
@@ -642,38 +652,38 @@ struct StudioCard<Content: View>: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardCompact) {
+        VStack(alignment: .leading, spacing: TypefluxSpacing.large.value(for: .classic)) {
             content
         }
         .padding(padding)
         .background(
             ZStack {
                 if showsChrome {
-                    RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
-                        .fill(style.usesGlass ? StudioTheme.cardFill : AskClassic.card)
+                    RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: .classic), style: .continuous)
+                        .fill(style.usesGlass ? TypefluxColor.contentBackground.color : AskClassic.card)
                     cardTextureOverlay
 
-                    RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
+                    RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: .classic), style: .continuous)
                         .fill(selectionOverlay)
                 }
             }
         )
         .overlay(
-            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
+            RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: .classic), style: .continuous)
                 .stroke(
                     showsChrome ? cardBorderColor : .clear,
-                    lineWidth: isHighlighted ? StudioTheme.BorderWidth.emphasis : (usesLightGlassCard ? 1 : 0.5)
+                    lineWidth: isHighlighted ? 1.5 : (usesLightGlassCard ? 1 : 0.5)
                 )
         )
-        .clipShape(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous))
-        .contentShape(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: .classic), style: .continuous))
+        .contentShape(RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: .classic), style: .continuous))
         .shadow(
-            color: StudioTheme.shadow
+            color: LegacyStudioPalette.shadow
                 .opacity(!showsChrome || !style
                     .usesGlass || usesLightGlassCard || !showsShadow ? 0 : (isHighlighted ? 0.20 : 0.16)),
-            radius: isHighlighted ? StudioTheme.Shadow.cardRadius + 2 : StudioTheme.Shadow.cardRadius,
+            radius: isHighlighted ? 18 + 2 : 18,
             x: 0,
-            y: isHighlighted ? StudioTheme.Shadow.cardY + 1 : StudioTheme.Shadow.cardY
+            y: isHighlighted ? 8 + 1 : 8
         )
     }
 
@@ -688,11 +698,11 @@ struct StudioCard<Content: View>: View {
 
     private var selectionOverlay: Color {
         if isHighlighted {
-            return StudioTheme.accentSoft.opacity(0.36)
+            return TypefluxColor.accent.color.opacity(0.12).opacity(0.36)
         }
 
         if isDimmed {
-            return StudioTheme.surfaceMuted.opacity(0.38)
+            return TypefluxColor.controlBackground.color.opacity(0.38)
         }
 
         return Color.clear
@@ -700,10 +710,10 @@ struct StudioCard<Content: View>: View {
 
     private var cardBorderColor: Color {
         if isHighlighted {
-            return StudioTheme.accent.opacity(0.34)
+            return TypefluxColor.accent.color.opacity(0.34)
         }
 
-        return usesLightGlassCard ? StudioTheme.cardStroke : AskTheme.separator
+        return usesLightGlassCard ? TypefluxColor.separator.color : TypefluxColor.separator.color
     }
 
     private var cardTextureOverlay: some View {
@@ -713,25 +723,25 @@ struct StudioCard<Content: View>: View {
             } else if colorScheme == .dark {
                 Color.clear
             } else {
-                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
+                RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: .classic), style: .continuous)
                     .fill(
                         LinearGradient(
                             colors: [
                                 Color.white.opacity(0.22),
                                 Color.clear,
-                                StudioTheme.accentSoft.opacity(0.08)
+                                TypefluxColor.accent.color.opacity(0.12).opacity(0.08)
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
                     )
                     .overlay(
-                        RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
+                        RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: .classic), style: .continuous)
                             .fill(
                                 LinearGradient(
                                     colors: [
                                         Color.clear,
-                                        StudioTheme.border.opacity(0.08)
+                                        TypefluxColor.separator.color.opacity(0.08)
                                     ],
                                     startPoint: .top,
                                     endPoint: .bottom
@@ -755,7 +765,7 @@ struct StudioCard<Content: View>: View {
                     let highlightOpacity = 0.18
 
                     ZStack {
-                        RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
+                        RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: .classic), style: .continuous)
                             .fill(
                                 LinearGradient(
                                     colors: [
@@ -772,7 +782,7 @@ struct StudioCard<Content: View>: View {
                                 LinearGradient(
                                     colors: [
                                         Color.clear,
-                                        StudioTheme.accent.opacity(accentOpacity),
+                                        TypefluxColor.accent.color.opacity(accentOpacity),
                                         Color.white.opacity(highlightOpacity),
                                         Color.clear
                                     ],
@@ -791,7 +801,7 @@ struct StudioCard<Content: View>: View {
                                     colors: [
                                         Color.clear,
                                         Color.white.opacity(highlightOpacity * 0.72),
-                                        StudioTheme.accentSoft.opacity(accentOpacity * 0.52),
+                                        TypefluxColor.accent.color.opacity(0.12).opacity(accentOpacity * 0.52),
                                         Color.clear
                                     ],
                                     startPoint: .leading,
@@ -803,12 +813,13 @@ struct StudioCard<Content: View>: View {
                             .offset(x: width * 0.18, y: height * 0.02)
                             .blur(radius: 12)
 
-                        RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
+                        RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: .classic), style: .continuous)
                             .fill(
                                 LinearGradient(
                                     colors: [
                                         Color.clear,
-                                        isHighlighted ? StudioTheme.accentSoft.opacity(accentOpacity * 0.58) : Color
+                                        isHighlighted ? TypefluxColor.accent.color.opacity(0.12)
+                                            .opacity(accentOpacity * 0.58) : Color
                                             .clear,
                                         Color.clear
                                     ],
@@ -843,24 +854,27 @@ struct StudioButton: View {
             variant: variant,
             isDisabled: isDisabled,
             isLoading: isLoading,
-            minWidth: variant == .ghost ? nil : StudioTheme.ControlSize.buttonMinWidth,
+            minWidth: variant == .ghost ? nil : 84,
             action: action
         ) {
-            HStack(spacing: StudioTheme.Spacing.xSmall) {
+            HStack(spacing: TypefluxSpacing.small.value(for: .classic)) {
                 if isLoading {
                     ProgressView()
                         .controlSize(.small)
-                        .tint(variant == .primary ? .white : StudioTheme.textSecondary)
+                        .tint(variant == .primary ? .white : TypefluxColor.secondaryLabel.color)
                 } else if let systemImage {
                     Image(systemName: systemImage)
-                        .font(.system(size: StudioTheme.Typography.iconXSmall, weight: .semibold))
+                        .font(.system(.subheadline, weight: .semibold))
                 }
                 Text(title)
-                    .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
+                    .font(.system(.body, weight: .semibold))
             }
-            .padding(.horizontal, variant == .ghost ? StudioTheme.Insets.none : StudioTheme.Insets.buttonHorizontal)
-            .padding(.vertical, variant == .ghost ? StudioTheme.Insets.none : StudioTheme.Insets.buttonVertical)
-            .contentShape(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous))
+            .padding(.horizontal, variant == .ghost ? 0 : TypefluxSpacing.large.value(for: .classic))
+            .padding(.vertical, variant == .ghost ? 0 : 10)
+            .contentShape(RoundedRectangle(
+                cornerRadius: TypefluxRadius.popover.value(for: .classic),
+                style: .continuous
+            ))
         }
     }
 }
@@ -885,36 +899,39 @@ struct StudioIconButton: View {
                 if isLoading {
                     ProgressView()
                         .controlSize(.small)
-                        .tint(variant == .primary ? .white : StudioTheme.textSecondary)
+                        .tint(variant == .primary ? .white : TypefluxColor.secondaryLabel.color)
                 } else {
                     Image(systemName: systemImage)
-                        .font(.system(size: StudioTheme.Typography.iconRegular, weight: .medium))
+                        .font(.system(.body, weight: .medium))
                 }
             }
             .frame(width: frame, height: frame)
-            .contentShape(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous))
+            .contentShape(RoundedRectangle(
+                cornerRadius: TypefluxRadius.popover.value(for: .classic),
+                style: .continuous
+            ))
         }
     }
 }
 
 struct StudioPill: View {
     let title: String
-    var tone: Color = StudioTheme.textSecondary
-    var fill: Color = StudioTheme.surfaceMuted
+    var tone: Color = TypefluxColor.secondaryLabel.color
+    var fill: Color = TypefluxColor.controlBackground.color
     var systemImage: String?
 
     var body: some View {
         HStack(spacing: 4) {
             if let systemImage {
                 Image(systemName: systemImage)
-                    .font(.system(size: StudioTheme.Typography.caption - 1, weight: .semibold))
+                    .font(.system(.caption, weight: .semibold))
             }
             Text(title)
-                .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
+                .font(.system(.subheadline, weight: .semibold))
         }
         .foregroundStyle(tone)
-        .padding(.horizontal, StudioTheme.Insets.pillHorizontal)
-        .padding(.vertical, StudioTheme.Insets.pillVertical)
+        .padding(.horizontal, TypefluxSpacing.regular.value(for: .classic))
+        .padding(.vertical, 7)
         .background(Capsule().fill(fill))
     }
 }
@@ -924,18 +941,18 @@ struct StudioPill: View {
 /// Reuse this component anywhere a compact tag callout is needed.
 struct StudioTag: View {
     let title: String
-    var tone: Color = StudioTheme.accent
-    var fill: Color = StudioTheme.accent.opacity(0.12)
+    var tone: Color = TypefluxColor.accent.color
+    var fill: Color = TypefluxColor.accent.color.opacity(0.12)
     var systemImage: String?
 
     var body: some View {
         HStack(spacing: 3) {
             if let systemImage {
                 Image(systemName: systemImage)
-                    .font(.system(size: StudioTheme.Typography.caption - 2, weight: .bold))
+                    .font(.system(.caption2, weight: .bold))
             }
             Text(title)
-                .font(.studioBody(StudioTheme.Typography.caption - 1, weight: .semibold))
+                .font(.system(.footnote, weight: .semibold))
         }
         .foregroundStyle(tone)
         .padding(.horizontal, 6)
@@ -953,13 +970,13 @@ struct StudioMetricCard: View {
     var body: some View {
         StudioCard {
             HStack(alignment: .center) {
-                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.large, style: .continuous)
-                    .fill(StudioTheme.iconTileSurface)
-                    .frame(width: StudioTheme.ControlSize.overviewBadge, height: StudioTheme.ControlSize.overviewBadge)
+                RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: .classic), style: .continuous)
+                    .fill(TypefluxColor.accent.color.opacity(0.12))
+                    .frame(width: 34, height: 34)
                     .overlay(
                         Image(systemName: icon)
-                            .font(.system(size: StudioTheme.Typography.iconRegular, weight: .semibold))
-                            .foregroundStyle(StudioTheme.accent)
+                            .font(.system(.body, weight: .semibold))
+                            .foregroundStyle(TypefluxColor.accent.color)
                     )
 
                 Spacer()
@@ -970,14 +987,14 @@ struct StudioMetricCard: View {
             }
 
             Text(value)
-                .font(.studioDisplay(StudioTheme.Typography.heroMetric, weight: .semibold))
-                .foregroundStyle(StudioTheme.textPrimary)
+                .font(.system(.largeTitle, weight: .semibold))
+                .foregroundStyle(TypefluxColor.label.color)
 
             Text(caption)
-                .font(.studioBody(StudioTheme.Typography.body))
-                .foregroundStyle(StudioTheme.textSecondary)
+                .font(.system(.body))
+                .foregroundStyle(TypefluxColor.secondaryLabel.color)
         }
-        .frame(maxWidth: .infinity, minHeight: StudioTheme.Layout.compactMetricMinHeight, alignment: .leading)
+        .frame(maxWidth: .infinity, minHeight: StudioWindowMetrics.compactMetricMinHeight, alignment: .leading)
     }
 }
 
@@ -996,29 +1013,29 @@ struct StudioSettingRow<Accessory: View>: View {
 
     var body: some View {
         ViewThatFits(in: .horizontal) {
-            HStack(alignment: .center, spacing: StudioTheme.Spacing.large) {
+            HStack(alignment: .center, spacing: 18) {
                 labels.frame(minWidth: 200, maxWidth: .infinity, alignment: .leading)
                 accessory.fixedSize(horizontal: true, vertical: false)
             }
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+            VStack(alignment: .leading, spacing: 10) {
                 labels
                 accessory
             }
         }
-        .padding(.vertical, StudioTheme.Spacing.xSmall)
+        .padding(.vertical, TypefluxSpacing.small.value(for: .classic))
     }
 
     private var labels: some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
-            HStack(alignment: .center, spacing: StudioTheme.Spacing.small) {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .center, spacing: 10) {
                 Text(title)
-                    .font(.studioBody(StudioTheme.Typography.settingTitle, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textPrimary)
+                    .font(.system(.title3, weight: .semibold))
+                    .foregroundStyle(TypefluxColor.label.color)
                 if let badge { StudioPill(title: badge) }
             }
             Text(subtitle)
-                .font(.studioBody(StudioTheme.Typography.bodyLarge))
-                .foregroundStyle(StudioTheme.textSecondary)
+                .font(.system(.body))
+                .foregroundStyle(TypefluxColor.secondaryLabel.color)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }
@@ -1058,7 +1075,7 @@ struct StudioTextInputCard<LabelTrailing: View>: View {
                 }
             }
             .textFieldStyle(.roundedBorder)
-            .foregroundStyle(StudioTheme.textPrimary)
+            .foregroundStyle(TypefluxColor.label.color)
             .labelsHidden().accessibilityLabel(label)
         }
     }
@@ -1104,11 +1121,11 @@ struct StudioSuggestedTextInputCard<LabelTrailing: View>: View {
             HStack(spacing: 4) {
                 TextField(placeholder, text: $text)
                     .textFieldStyle(.roundedBorder)
-                    .foregroundStyle(StudioTheme.textPrimary)
+                    .foregroundStyle(TypefluxColor.label.color)
                     .labelsHidden().accessibilityLabel(label)
 
                 if !normalizedSuggestions.isEmpty {
-                    HStack(spacing: StudioTheme.Spacing.xSmall) {
+                    HStack(spacing: TypefluxSpacing.small.value(for: .classic)) {
                         ZStack {
                             Menu {
                                 ForEach(normalizedSuggestions, id: \.self) { suggestion in
@@ -1119,7 +1136,7 @@ struct StudioSuggestedTextInputCard<LabelTrailing: View>: View {
                             } label: {
                                 Image(systemName: "chevron.up.chevron.down")
                                     .font(.system(size: 10, weight: .medium))
-                                    .foregroundStyle(StudioTheme.textSecondary)
+                                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
                                     .frame(width: 24, height: SettingsControlMetrics.height)
                             }
                             .menuStyle(.borderlessButton).menuIndicator(.hidden)
@@ -1154,298 +1171,16 @@ private struct StudioInputLayout<Field: View, LabelTrailing: View>: View {
                 }
             }
         } else {
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+            VStack(alignment: .leading, spacing: 10) {
                 HStack {
                     Text(label)
-                        .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textSecondary)
+                        .font(.system(.subheadline, weight: .semibold))
+                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
                     Spacer()
                     labelTrailing()
                 }
                 field()
             }
-        }
-    }
-}
-
-struct StudioHistoryRow: View {
-    let record: HistoryPresentationRecord
-    let onCopyResult: (() -> Void)?
-    let onCopyTranscript: (() -> Void)?
-    let onDownloadAudio: (() -> Void)?
-    let onPlayAudio: (() -> Void)?
-    let isAudioPlaying: Bool
-    let onDelete: (() -> Void)?
-    let onRetry: (() -> Void)?
-
-    @State private var isExpanded = false
-    @State private var isAudioPathHovered = false
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-            ViewThatFits(in: .horizontal) {
-                HStack(alignment: .top, spacing: 12) {
-                    timestamp.frame(width: 48, alignment: .leading)
-                    preview.frame(minWidth: 240, idealWidth: 240, maxWidth: .infinity, alignment: .leading)
-                    rowActions
-                }
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack {
-                        timestamp
-                        Spacer(minLength: 0)
-                        rowActions
-                    }
-                    preview
-                }
-            }
-
-            if isExpanded {
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.smallMedium) {
-                    historyAudioPathSection(
-                        title: L("history.detail.audioPath"),
-                        content: record.audioFilePath ?? L("history.detail.noAudioFile"),
-                        canPlay: record.audioFilePath != nil,
-                        isPlaying: isAudioPlaying,
-                        playAction: onPlayAudio
-                    )
-                    historyDetailSection(
-                        title: L("history.detail.rawTranscript"),
-                        content: record.transcriptText,
-                        copyAction: (record.transcriptText?.isEmpty ?? true) ? nil : onCopyTranscript
-                    )
-                    historyDetailSection(title: L("history.detail.personaResult"), content: record.personaResultText)
-
-                    if let openCCResult = record.openCCResultText {
-                        let configName = switch record.openCCConfig {
-                        case "s2twp": L("settings.output.opencc.config.s2twp")
-                        case "s2tw": L("settings.output.opencc.config.s2tw")
-                        case "s2hk": L("settings.output.opencc.config.s2hk")
-                        case "t2s": L("settings.output.opencc.config.t2s")
-                        default: ""
-                        }
-                        let title = configName.isEmpty ? L("history.detail.openCCResult") : "\(L("history.detail.openCCResult")) (\(configName))"
-                        historyDetailSection(title: title, content: openCCResult)
-                    }
-
-                    let anyProcessingHappened = (record.personaResultText != nil)
-                        || (record.openCCResultText != nil)
-                        || (record.selectionEditedText != nil)
-
-                    let sourceForFinalCompare = record.openCCResultText ?? record.personaResultText ?? record
-                        .transcriptText
-                    if let postProcessedText = record.postProcessedText,
-                       anyProcessingHappened || postProcessedText != sourceForFinalCompare {
-                        historyDetailSection(title: L("history.detail.postProcessedResult"), content: postProcessedText)
-                    }
-                    historyDetailSection(
-                        title: L("history.detail.selectionOriginal"),
-                        content: record.selectionOriginalText
-                    )
-                    historyDetailSection(
-                        title: L("history.detail.selectionEdited"),
-                        content: record.selectionEditedText
-                    )
-                    historyPipelineTimelineSection(
-                        title: L("history.detail.pipelineStats"),
-                        timeline: record.pipelineTimeline
-                    )
-                    historyDetailSection(
-                        title: L("history.detail.error"),
-                        content: record.errorMessage,
-                        emphasize: true
-                    )
-                }
-                .padding(.top, StudioTheme.Spacing.xSmall)
-            }
-        }
-        .padding(.horizontal, StudioTheme.Insets.historyRowHorizontal)
-        .padding(.vertical, StudioTheme.Insets.historyRowVertical)
-        .background(Color.clear)
-        .contentShape(Rectangle())
-        .contextMenu {
-            historyActionsMenuContent
-        }
-    }
-
-    private var timestamp: some View {
-        Text(record.timestampText)
-            .font(.studioBody(StudioTheme.Typography.bodySmall))
-            .foregroundStyle(StudioTheme.textTertiary)
-            .fixedSize()
-            .padding(.top, 6)
-    }
-
-    private var preview: some View {
-        HStack(alignment: .top, spacing: 6) {
-            Text(record.previewText)
-                .font(.studioBody(StudioTheme.Typography.bodyLarge))
-                .foregroundStyle(StudioTheme.textPrimary)
-                .lineLimit(isExpanded ? nil : 2)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            if record.hasFailure {
-                Image(systemName: "exclamationmark.circle.fill")
-                    .font(.system(size: StudioTheme.Typography.iconSmall, weight: .semibold))
-                    .foregroundStyle(StudioTheme.danger)
-                    .padding(.top, 3)
-                    .help(record.failureMessage ?? L("workflow.processing.failed"))
-                    .accessibilityLabel(record.failureMessage ?? L("workflow.processing.failed"))
-            }
-        }
-        .padding(.top, 5)
-    }
-
-    private var rowActions: some View {
-        HStack(spacing: 2) {
-            historyActionsMenuButton
-            historyIconButton(systemImage: isExpanded ? "chevron.up" : "chevron.down",
-                              helpText: isExpanded ? L("common.collapse") : L("common.expand")) {
-                withAnimation(.easeInOut(duration: 0.2)) { isExpanded.toggle() }
-            }
-            .accessibilityIdentifier("history.expand.\(record.id)")
-        }
-        .fixedSize(horizontal: true, vertical: false)
-    }
-
-    private var historyActionsMenuButton: some View {
-        Menu {
-            historyActionsMenuContent
-        } label: {
-            Image(systemName: "ellipsis")
-                .font(.system(size: StudioTheme.Typography.iconRegular, weight: .medium))
-                .frame(width: 32, height: 32)
-                .contentShape(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous))
-        }
-        .menuStyle(.borderlessButton)
-        .menuIndicator(.hidden)
-        .fixedSize(horizontal: true, vertical: false)
-        .studioTooltip(L("history.action.more"), yOffset: 42)
-        .accessibilityLabel(L("history.action.more"))
-    }
-
-    @ViewBuilder
-    private var historyActionsMenuContent: some View {
-        if let onCopyResult, record.hasTranscriptToCopy {
-            Button(L("history.action.copyResult"), systemImage: "doc.on.doc", action: onCopyResult)
-        }
-        if let onCopyTranscript, !(record.transcriptText?.isEmpty ?? true) {
-            Button(L("history.action.copyTranscript"), systemImage: "doc.on.doc", action: onCopyTranscript)
-        }
-        if (onCopyResult != nil && record.hasTranscriptToCopy) || !(record.transcriptText?.isEmpty ?? true) {
-            Divider()
-        }
-        if let onRetry {
-            Button(L("common.retry"), systemImage: "arrow.clockwise", action: onRetry)
-                .disabled(!record.canRetry)
-        }
-        if let onDownloadAudio {
-            Button(L("history.action.downloadAudio"), systemImage: "arrow.down.circle", action: onDownloadAudio)
-                .disabled(record.audioFilePath == nil)
-        }
-        Divider()
-        if let onDelete {
-            Button(L("history.action.deleteTranscript"), systemImage: "trash", role: .destructive, action: onDelete)
-        }
-    }
-
-    private func historyIconButton(systemImage: String, helpText: String, action: @escaping () -> Void) -> some View {
-        AskIconGhostButton(label: helpText, systemImage: systemImage, action: action)
-    }
-
-    @ViewBuilder
-    private func historyAudioPathSection(
-        title: String,
-        content: String?,
-        canPlay: Bool,
-        isPlaying: Bool,
-        playAction: (() -> Void)?
-    ) -> some View {
-        if let content, !content.isEmpty {
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
-                Text(title)
-                    .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textTertiary)
-
-                HStack(alignment: .top, spacing: StudioTheme.Spacing.small) {
-                    Text(content)
-                        .font(.studioBody(StudioTheme.Typography.bodySmall))
-                        .foregroundStyle(StudioTheme.textPrimary)
-                        .textSelection(.enabled)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    Spacer(minLength: StudioTheme.Spacing.small)
-
-                    if canPlay, let playAction {
-                        StudioIconButton(
-                            systemImage: isPlaying ? "stop.circle" : "play.circle",
-                            frame: 24,
-                            action: playAction
-                        )
-                        .opacity(isAudioPathHovered ? 0.78 : 0)
-                        .allowsHitTesting(isAudioPathHovered)
-                        .animation(.easeOut(duration: 0.12), value: isAudioPathHovered)
-                        .studioTooltip(
-                            isPlaying ? L("history.action.stopAudio") : L("history.action.playAudio"),
-                            yOffset: 34
-                        )
-                    }
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(StudioTheme.Insets.cardDense)
-            .background(
-                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.large, style: .continuous)
-                    .fill(StudioTheme.controlSurface)
-            )
-            .onHover { isAudioPathHovered = $0 }
-        }
-    }
-
-    @ViewBuilder
-    private func historyPipelineTimelineSection(
-        title: String,
-        timeline: HistoryPipelineTimelinePresentation?
-    ) -> some View {
-        if let timeline {
-            HistoryPipelineTimelineView(title: title, timeline: timeline)
-        }
-    }
-
-    @ViewBuilder
-    private func historyDetailSection(
-        title: String,
-        content: String?,
-        emphasize: Bool = false,
-        copyAction: (() -> Void)? = nil
-    ) -> some View {
-        if let content, !content.isEmpty {
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
-                HStack(alignment: .center, spacing: StudioTheme.Spacing.small) {
-                    Text(title)
-                        .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textTertiary)
-
-                    Spacer()
-
-                    if let copyAction {
-                        StudioIconButton(systemImage: "doc.on.doc", frame: 24, action: copyAction)
-                            .studioTooltip(L("history.action.copyTranscript"), yOffset: 34)
-                            .accessibilityLabel(L("history.action.copyTranscript"))
-                    }
-                }
-
-                Text(content)
-                    .font(.studioBody(StudioTheme.Typography.bodySmall))
-                    .foregroundStyle(emphasize ? StudioTheme.danger : StudioTheme.textPrimary)
-                    .textSelection(.enabled)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(StudioTheme.Insets.cardDense)
-            .background(
-                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.large, style: .continuous)
-                    .fill(StudioTheme.controlSurface)
-            )
         }
     }
 }

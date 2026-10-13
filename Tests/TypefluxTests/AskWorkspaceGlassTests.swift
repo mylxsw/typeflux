@@ -18,11 +18,11 @@ struct AskWorkspaceGlassTests {
     @Test(arguments: [AskGlassMaterial.liquidGlass, .visualEffect, .opaque])
     func accessibilitySettingsOverrideEvenPinnedGlass(material: AskGlassMaterial) {
         #expect(AskGlassBackground.effectiveMaterial(material, reduceTransparency: true,
-                                                   increasedContrast: false) == .opaque)
+                                                     increasedContrast: false) == .opaque)
         #expect(AskGlassBackground.effectiveMaterial(material, reduceTransparency: false,
-                                                   increasedContrast: true) == .opaque)
+                                                     increasedContrast: true) == .opaque)
         #expect(AskGlassBackground.effectiveMaterial(material, reduceTransparency: false,
-                                                   increasedContrast: false) == material)
+                                                     increasedContrast: false) == material)
     }
 
     @Test func floatingGlassBlursWhatIsBehindThePanel() {
@@ -56,14 +56,14 @@ struct AskWorkspaceGlassTests {
     @Test func inWindowComposerKeepsItsHairlineOnGlass() {
         let workspace = AskComposerChrome.workspace, launcher = AskComposerChrome.launcher
         for material in [AskGlassMaterial.liquidGlass, .visualEffect, .opaque] {
-            #expect(workspace.idleBorder(on: material, increasedContrast: false) == AskTheme.border)
+            #expect(workspace.idleBorder(on: material, increasedContrast: false) == TypefluxColor.separator.color)
         }
-        #expect(workspace.idleBorder(on: nil, increasedContrast: false) == AskTheme.border)
+        #expect(workspace.idleBorder(on: nil, increasedContrast: false) == TypefluxColor.separator.color)
         // The launcher keeps the glass's own edge, plus a faint light-mode hairline.
-        #expect(launcher.idleBorder(on: .liquidGlass, increasedContrast: false) == AskTheme.floatingGlassEdge)
-        #expect(launcher.idleBorder(on: .liquidGlass, increasedContrast: true) == AskTheme.floatingBorder)
-        #expect(launcher.idleBorder(on: .opaque, increasedContrast: false) == AskTheme.floatingBorder)
-        #expect(launcher.idleBorder(on: nil, increasedContrast: false) == AskTheme.floatingBorder)
+        #expect(launcher.idleBorder(on: .liquidGlass, increasedContrast: false) == LegacyAskPalette.floatingGlassEdge)
+        #expect(launcher.idleBorder(on: .liquidGlass, increasedContrast: true) == LegacyAskPalette.floatingBorder)
+        #expect(launcher.idleBorder(on: .opaque, increasedContrast: false) == LegacyAskPalette.floatingBorder)
+        #expect(launcher.idleBorder(on: nil, increasedContrast: false) == LegacyAskPalette.floatingBorder)
     }
 
     @Test func composerAndSidebarBottomsLineUp() {

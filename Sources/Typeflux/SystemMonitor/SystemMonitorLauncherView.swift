@@ -6,6 +6,8 @@ import SwiftUI
 /// and the process list the editor filters. Its height is fixed, so the launcher
 /// does not jump as cards focus or rows come and go.
 struct SystemMonitorLauncherView: View {
+    @Environment(\.interfaceStyle) private var interfaceStyle
+
     @ObservedObject var store: SystemMonitorStore
     @ObservedObject var model: SystemMonitorLauncherModel
     /// What the editor holds after the keyword: a name or PID.
@@ -26,7 +28,7 @@ struct SystemMonitorLauncherView: View {
     var body: some View {
         let rows = model.rows(store.snapshot, filter: filter)
         VStack(spacing: 0) {
-            Rectangle().fill(AskTheme.separator).frame(height: 1).padding(.horizontal, 12)
+            Rectangle().fill(TypefluxColor.separator.color).frame(height: 1).padding(.horizontal, 12)
             VStack(alignment: .leading, spacing: 8) {
                 statusLine
                 HStack(spacing: 8) {
@@ -63,7 +65,7 @@ struct SystemMonitorLauncherView: View {
         let snapshot = store.snapshot
         return HStack(spacing: 12) {
             HStack(spacing: 5) {
-                Circle().fill(StudioTheme.success).frame(width: 6, height: 6)
+                Circle().fill(TypefluxColor.success.color).frame(width: 6, height: 6)
                 Text(L("system.monitor.live", SystemMonitorFormat.interval(store.interval)))
             }
             Text(SystemMonitorMetricDisplay.machineLine(store.machine)).lineLimit(1)
@@ -77,43 +79,44 @@ struct SystemMonitorLauncherView: View {
                 HStack(spacing: 3) {
                     Text(L("system.monitor.thermal"))
                     Text(SystemMonitorMetricDisplay.thermalTitle(snapshot.thermal))
-                        .foregroundStyle(SystemMonitorTheme.color(SystemMonitorMetricDisplay.thermalLevel(snapshot.thermal))
-                            ?? StudioTheme.success)
+                        .foregroundStyle(SystemMonitorMetricDisplay.thermalLevel(snapshot.thermal).color
+                            ?? TypefluxColor.success.color)
                 }
             }
         }
-        .font(.system(size: 11.5))
-        .foregroundStyle(StudioTheme.textTertiary)
+        .font(.system(.subheadline))
+        .foregroundStyle(TypefluxColor.tertiaryLabel.color)
         .frame(height: 18)
     }
 
     private func tile(_ metric: SystemMonitorMetric) -> some View {
         let display = SystemMonitorMetricDisplay.make(metric, snapshot: store.snapshot, machine: store.machine)
         let focused = model.focus == metric
-        let accent = SystemMonitorTheme.color(metric)
-        let warning = SystemMonitorTheme.color(display.level)
+        let accent = metric.color
+        let warning = display.level.color
         return Button { model.toggleFocus(metric) } label: {
             VStack(alignment: .leading, spacing: 1) {
                 HStack(spacing: 5) {
-                    Image(systemName: SystemMonitorMetricDisplay.symbol(metric)).font(.system(size: 11, weight: .semibold))
+                    Image(systemName: SystemMonitorMetricDisplay.symbol(metric)).font(.system(.subheadline,
+                                                                                              weight: .semibold))
                         .foregroundStyle(accent)
-                    Text(SystemMonitorMetricDisplay.title(metric)).font(.system(size: 11.5, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textSecondary)
+                    Text(SystemMonitorMetricDisplay.title(metric)).font(.system(.subheadline, weight: .semibold))
+                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
                     if metric == .memory, let pressure = store.snapshot?.memory.pressure {
-                        Circle().fill(SystemMonitorTheme.pressureColor(pressure)).frame(width: 6, height: 6)
+                        Circle().fill(pressure.color).frame(width: 6, height: 6)
                             .help(L("system.monitor.pressure", SystemMonitorMetricDisplay.pressureTitle(pressure)))
                     }
                     Spacer(minLength: 0)
-                    Text("⌘\(metric.number)").font(.system(size: 10, design: .monospaced))
-                        .foregroundStyle(StudioTheme.textTertiary)
+                    Text("⌘\(metric.number)").font(.system(.footnote, design: .monospaced))
+                        .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                 }
                 HStack(alignment: .firstTextBaseline, spacing: 2) {
-                    Text(display.value).font(.system(size: 21, weight: .semibold)).monospacedDigit()
-                        .foregroundStyle(warning ?? StudioTheme.textPrimary)
-                    Text(display.unit).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
+                    Text(display.value).font(.system(.title, weight: .semibold)).monospacedDigit()
+                        .foregroundStyle(warning ?? TypefluxColor.label.color)
+                    Text(display.unit).font(.system(.subheadline)).foregroundStyle(TypefluxColor.tertiaryLabel.color)
                 }
-                Text(display.detail).font(.system(size: 11)).monospacedDigit()
-                    .foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
+                Text(display.detail).font(.system(.subheadline)).monospacedDigit()
+                    .foregroundStyle(TypefluxColor.tertiaryLabel.color).lineLimit(1)
                 Spacer(minLength: 0)
             }
             .padding(.horizontal, 10).padding(.top, 8)
@@ -121,11 +124,13 @@ struct SystemMonitorLauncherView: View {
             .background(alignment: .bottom) {
                 SystemMonitorChart(series: .make(metric, history: store.history)).frame(height: 28)
             }
-            .background(display.level == .critical ? AskTheme.dangerSoft : AskTheme.hoverFill.opacity(0.6))
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .background(display.level == .critical ? TypefluxColor.danger.color.opacity(0.12) : TypefluxColor.label
+                .color.opacity(0.06).opacity(0.6))
+            .clipShape(RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle),
+                                        style: .continuous))
             .overlay {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .strokeBorder(focused ? accent : AskTheme.separator, lineWidth: focused ? 1.5 : 1)
+                RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle), style: .continuous)
+                    .strokeBorder(focused ? accent : TypefluxColor.separator.color, lineWidth: focused ? 1.5 : 1)
             }
             .contentShape(Rectangle())
         }
@@ -138,21 +143,23 @@ struct SystemMonitorLauncherView: View {
 
     private func alertRow(_ alert: SystemMonitorCPUAlertInfo) -> some View {
         HStack(spacing: 9) {
-            Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(StudioTheme.danger)
-            Text(Self.alertText(alert)).foregroundStyle(StudioTheme.textPrimary).lineLimit(1)
+            Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(TypefluxColor.danger.color)
+            Text(Self.alertText(alert)).foregroundStyle(TypefluxColor.label.color).lineLimit(1)
             Spacer(minLength: 8)
             if let process = alert.process {
                 Button(L("system.monitor.alert.show")) {
                     model.sort = .cpu
                     model.select(process.pid)
                 }
-                .buttonStyle(.plain).foregroundStyle(StudioTheme.danger)
+                .buttonStyle(.plain).foregroundStyle(TypefluxColor.danger.color)
             }
         }
-        .font(.system(size: 12.5))
+        .font(.system(.callout))
         .padding(.horizontal, 12)
         .frame(height: 32)
-        .background(AskTheme.dangerSoft, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .background(TypefluxColor.danger.color.opacity(0.12),
+                    in: RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle),
+                                         style: .continuous))
         .accessibilityIdentifier("system.monitor.alert")
     }
 
@@ -167,19 +174,19 @@ struct SystemMonitorLauncherView: View {
 
     private func processHeader(count: Int) -> some View {
         HStack(spacing: 8) {
-            Text(L("system.monitor.processes")).font(.system(size: 11.5, weight: .semibold))
+            Text(L("system.monitor.processes")).font(.system(.subheadline, weight: .semibold))
             Text(filter.trimmingCharacters(in: .whitespaces).isEmpty
                 ? L("system.monitor.processes.count", store.snapshot?.processCount ?? count)
                 : L("system.monitor.processes.matching", count))
-                .font(.system(size: 11.5))
+                .font(.system(.subheadline))
             if model.isFrozen, count > 0 {
-                Label(L("system.monitor.frozen"), systemImage: "pause.fill").font(.system(size: 11))
+                Label(L("system.monitor.frozen"), systemImage: "pause.fill").font(.system(.subheadline))
                     .labelStyle(.titleAndIcon)
             }
             Spacer(minLength: 8)
             SystemMonitorSortPicker(sort: $model.sort, options: SystemMonitorSort.allCases)
         }
-        .foregroundStyle(StudioTheme.textTertiary)
+        .foregroundStyle(TypefluxColor.tertiaryLabel.color)
         .frame(height: 22)
         .padding(.top, 2)
     }
@@ -193,7 +200,7 @@ struct SystemMonitorLauncherView: View {
                         if rows.isEmpty {
                             Text(store.snapshot == nil ? L("system.monitor.summary.loading")
                                 : L("system.monitor.processes.none", filter))
-                                .font(.system(size: 12.5)).foregroundStyle(StudioTheme.textTertiary)
+                                .font(.system(.callout)).foregroundStyle(TypefluxColor.tertiaryLabel.color)
                                 .frame(maxWidth: .infinity).padding(.top, 18)
                         }
                         ForEach(rows) { process in
@@ -219,8 +226,8 @@ struct SystemMonitorLauncherView: View {
             sortColumn(.disk, title: SystemMonitorMetricDisplay.title(.disk), width: Self.columns.disk)
             Text("PID").frame(width: Self.columns.pid, alignment: .trailing)
         }
-        .font(.system(size: 11))
-        .foregroundStyle(StudioTheme.textTertiary)
+        .font(.system(.subheadline))
+        .foregroundStyle(TypefluxColor.tertiaryLabel.color)
         .padding(.horizontal, 10)
         .frame(height: 18)
     }
@@ -228,7 +235,7 @@ struct SystemMonitorLauncherView: View {
     private func sortColumn(_ sort: SystemMonitorSort, title: String, width: CGFloat) -> some View {
         Button { model.sort = sort } label: {
             Text(title).fontWeight(model.sort == sort ? .semibold : .regular)
-                .foregroundStyle(model.sort == sort ? StudioTheme.textPrimary : StudioTheme.textTertiary)
+                .foregroundStyle(model.sort == sort ? TypefluxColor.label.color : TypefluxColor.tertiaryLabel.color)
                 .frame(width: width, alignment: .trailing)
         }
         .buttonStyle(.plain)
@@ -249,15 +256,15 @@ struct SystemMonitorLauncherView: View {
         HStack(spacing: 8) {
             name(process)
             Text(SystemMonitorFormat.processCPU(process.cpu) + "%")
-                .foregroundStyle(SystemMonitorTheme.color(.processCPU(process.cpu)) ?? StudioTheme.textPrimary)
+                .foregroundStyle(SystemMonitorLevel.processCPU(process.cpu).color ?? TypefluxColor.label.color)
                 .frame(width: Self.columns.cpu, alignment: .trailing)
             Text(SystemMonitorFormat.memory(process.memory)).frame(width: Self.columns.memory, alignment: .trailing)
             Text(process.disk.map { $0 < 1 ? "—" : SystemMonitorFormat.rate($0) } ?? "—")
                 .frame(width: Self.columns.disk, alignment: .trailing)
-            Text(String(process.pid)).foregroundStyle(StudioTheme.textTertiary)
+            Text(String(process.pid)).foregroundStyle(TypefluxColor.tertiaryLabel.color)
                 .frame(width: Self.columns.pid, alignment: .trailing)
         }
-        .font(.system(size: 12.5)).monospacedDigit()
+        .font(.system(.callout)).monospacedDigit()
         .padding(.horizontal, 10)
         .frame(height: Self.rowHeight)
         .contentShape(Rectangle())
@@ -270,9 +277,9 @@ struct SystemMonitorLauncherView: View {
         let eligible = model.terminator.eligibility(of: process) == .allowed
         return HStack(spacing: 8) {
             name(process)
-            Text("PID \(process.pid)").font(.system(size: 10.5)).foregroundStyle(StudioTheme.textTertiary)
+            Text("PID \(process.pid)").font(.system(.footnote)).foregroundStyle(TypefluxColor.tertiaryLabel.color)
             Text(SystemMonitorFormat.processCPU(process.cpu) + "% · " + SystemMonitorFormat.memory(process.memory))
-                .font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
+                .font(.system(.subheadline)).foregroundStyle(TypefluxColor.tertiaryLabel.color).lineLimit(1)
             Spacer(minLength: 6)
             actionButton(isApp(process) ? L("system.monitor.action.switch") : L("system.monitor.action.reveal"), "↩") {
                 onEffect(.activate(process))
@@ -284,10 +291,12 @@ struct SystemMonitorLauncherView: View {
             .disabled(!eligible)
             .help(eligible ? "" : L("system.monitor.refused.system", process.name))
         }
-        .font(.system(size: 12.5)).monospacedDigit()
+        .font(.system(.callout)).monospacedDigit()
         .padding(.horizontal, 10)
         .frame(height: Self.rowHeight)
-        .background(AskTheme.accent.opacity(0.14), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .background(TypefluxColor.accent.color.opacity(0.14),
+                    in: RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle),
+                                         style: .continuous))
         .accessibilityIdentifier("system.monitor.process.selected")
     }
 
@@ -295,10 +304,10 @@ struct SystemMonitorLauncherView: View {
         HStack(spacing: 9) {
             icon(process)
             Text(L(force ? "system.monitor.confirm.force" : "system.monitor.confirm", process.name))
-                .font(.system(size: 12.5, weight: .semibold)).lineLimit(1)
+                .font(.system(.callout, weight: .semibold)).lineLimit(1)
             Text(L(isApp(process) ? (force ? "system.monitor.confirm.app.force" : "system.monitor.confirm.app")
-                : "system.monitor.confirm.process", String(process.pid)))
-                .font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
+                    : "system.monitor.confirm.process", String(process.pid)))
+                .font(.system(.subheadline)).foregroundStyle(TypefluxColor.tertiaryLabel.color).lineLimit(1)
             Spacer(minLength: 6)
             actionButton(L("system.monitor.action.cancel"), "esc") { model.cancelConfirmation() }
             actionButton(L(force ? "system.monitor.action.forceQuit" : "system.monitor.action.quit"), "↩",
@@ -308,7 +317,9 @@ struct SystemMonitorLauncherView: View {
         }
         .padding(.horizontal, 10)
         .frame(height: Self.rowHeight + 4)
-        .background(AskTheme.dangerSoft, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .background(TypefluxColor.danger.color.opacity(0.12),
+                    in: RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle),
+                                         style: .continuous))
         .accessibilityIdentifier("system.monitor.process.confirm")
     }
 
@@ -317,10 +328,11 @@ struct SystemMonitorLauncherView: View {
             icon(process)
             Text(process.name).lineLimit(1).truncationMode(.middle)
             if model.terminator.eligibility(of: process) == .system {
-                Text(L("system.monitor.system")).font(.system(size: 10))
-                    .foregroundStyle(StudioTheme.textTertiary)
+                Text(L("system.monitor.system")).font(.system(.footnote))
+                    .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                     .padding(.horizontal, 4).frame(height: 15)
-                    .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(AskTheme.separator))
+                    .overlay(RoundedRectangle(cornerRadius: TypefluxRadius.textField.value(for: interfaceStyle))
+                        .strokeBorder(TypefluxColor.separator.color))
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -331,9 +343,12 @@ struct SystemMonitorLauncherView: View {
             if isApp(process), let image = SystemProcessIcons.icon(for: process.pid) {
                 Image(nsImage: image).resizable().interpolation(.high)
             } else {
-                Image(systemName: "gearshape").font(.system(size: 10)).foregroundStyle(StudioTheme.textTertiary)
+                Image(systemName: "gearshape").font(.system(.footnote))
+                    .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                     .frame(width: 18, height: 18)
-                    .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 5, style: .continuous))
+                    .background(TypefluxColor.label.color.opacity(0.06),
+                                in: RoundedRectangle(cornerRadius: TypefluxRadius.textField.value(for: interfaceStyle),
+                                                     style: .continuous))
             }
         }
         .frame(width: 18, height: 18)
@@ -346,20 +361,22 @@ struct SystemMonitorLauncherView: View {
         Button(role: role, action: action) {
             HStack(spacing: 4) {
                 Text(title)
-                Text(key).font(.system(size: 10.5)).opacity(0.65)
+                Text(key).font(.system(.footnote)).opacity(0.65)
             }
-            .font(.system(size: 11.5))
-            .foregroundStyle(prominent ? Color.white : role == .destructive ? StudioTheme.danger : StudioTheme.textSecondary)
+            .font(.system(.subheadline))
+            .foregroundStyle(prominent ? Color.white : role == .destructive ? TypefluxColor.danger.color : TypefluxColor
+                .secondaryLabel.color)
             .padding(.horizontal, 7).frame(height: 22)
-            .background(prominent ? StudioTheme.danger : AskTheme.hoverFill,
-                        in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+            .background(prominent ? TypefluxColor.danger.color : TypefluxColor.label.color.opacity(0.06),
+                        in: RoundedRectangle(cornerRadius: TypefluxRadius.navigationIcon.value(for: interfaceStyle),
+                                             style: .continuous))
         }
         .buttonStyle(.plain)
     }
 
     private func footer(_ rows: [SystemProcess]) -> some View {
         Text(Self.hint(model: model, rows: rows, windowOpen: windowOpen))
-            .font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
+            .font(.system(.subheadline)).foregroundStyle(TypefluxColor.tertiaryLabel.color)
             .frame(maxWidth: .infinity, alignment: .leading)
             .frame(height: 16)
     }
@@ -378,31 +395,24 @@ struct SystemMonitorLauncherView: View {
 
 /// The CPU / Memory / Disk segmented control above process lists.
 struct SystemMonitorSortPicker: View {
+    @Environment(\.interfaceStyle) private var interfaceStyle
+
     @Binding var sort: SystemMonitorSort
     var options: [SystemMonitorSort]
 
     var body: some View {
-        HStack(spacing: 2) {
+        TypefluxSegmentedControl(L("system.monitor.processes"), selection: $sort) {
             ForEach(options, id: \.self) { option in
-                Button { sort = option } label: {
-                    Text(SystemMonitorMetricDisplay.sortTitle(option))
-                        .font(.system(size: 11.5, weight: sort == option ? .semibold : .regular))
-                        .foregroundStyle(sort == option ? StudioTheme.textPrimary : StudioTheme.textSecondary)
-                        .padding(.horizontal, 8).frame(height: 20)
-                        .background(sort == option ? AskTheme.pressFill : Color.clear,
-                                    in: RoundedRectangle(cornerRadius: 5, style: .continuous))
-                }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(sort == option ? .isSelected : [])
+                Text(SystemMonitorMetricDisplay.sortTitle(option)).tag(option)
             }
-        }
-        .padding(2)
-        .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+        }.controlSize(.small)
     }
 }
 
 /// A focused card's details: a 60-second chart and the figures behind it.
 struct SystemMonitorDetailView: View {
+    @Environment(\.interfaceStyle) private var interfaceStyle
+
     var metric: SystemMonitorMetric
     @ObservedObject var store: SystemMonitorStore
     var onClose: () -> Void
@@ -411,12 +421,13 @@ struct SystemMonitorDetailView: View {
         HStack(alignment: .top, spacing: 16) {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 8) {
-                    Image(systemName: SystemMonitorMetricDisplay.symbol(metric)).foregroundStyle(SystemMonitorTheme.color(metric))
-                    Text(chartTitle).font(.system(size: 12, weight: .semibold)).foregroundStyle(StudioTheme.textSecondary)
+                    Image(systemName: SystemMonitorMetricDisplay.symbol(metric)).foregroundStyle(metric.color)
+                    Text(chartTitle).font(.system(.callout, weight: .semibold))
+                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
                         .lineLimit(1)
                     Spacer(minLength: 6)
                     Button(L("system.monitor.detail.close"), action: onClose).buttonStyle(.plain)
-                        .font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
+                        .font(.system(.subheadline)).foregroundStyle(TypefluxColor.tertiaryLabel.color)
                 }
                 // Two-line charts name their lines (and current rates) under the title.
                 if metric == .disk || metric == .network {
@@ -430,8 +441,11 @@ struct SystemMonitorDetailView: View {
                 .frame(width: 236, alignment: .topLeading)
         }
         .padding(.horizontal, 13).padding(.vertical, 11)
-        .background(AskTheme.hoverFill.opacity(0.6), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(AskTheme.separator))
+        .background(TypefluxColor.label.color.opacity(0.06).opacity(0.6),
+                    in: RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle),
+                                         style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle), style: .continuous)
+            .strokeBorder(TypefluxColor.separator.color))
         .accessibilityIdentifier("system.monitor.detail.\(metric.rawValue)")
     }
 
@@ -441,11 +455,15 @@ struct SystemMonitorDetailView: View {
         if let snapshot = store.snapshot {
             switch metric {
             case .disk:
-                legendItem(L("system.monitor.read", SystemMonitorFormat.rate(snapshot.diskRead)), SystemMonitorTheme.disk)
-                legendItem(L("system.monitor.write", SystemMonitorFormat.rate(snapshot.diskWrite)), SystemMonitorTheme.secondary)
+                legendItem(L("system.monitor.read", SystemMonitorFormat.rate(snapshot.diskRead)),
+                           SystemMonitorMetric.disk.color)
+                legendItem(L("system.monitor.write", SystemMonitorFormat.rate(snapshot.diskWrite)),
+                           TypefluxColor.warning.color)
             case .network:
-                legendItem(L("system.monitor.download", SystemMonitorFormat.rate(snapshot.networkDown)), SystemMonitorTheme.network)
-                legendItem(L("system.monitor.upload", SystemMonitorFormat.rate(snapshot.networkUp)), SystemMonitorTheme.secondary)
+                legendItem(L("system.monitor.download", SystemMonitorFormat.rate(snapshot.networkDown)),
+                           SystemMonitorMetric.network.color)
+                legendItem(L("system.monitor.upload", SystemMonitorFormat.rate(snapshot.networkUp)),
+                           TypefluxColor.warning.color)
             case .cpu, .memory: EmptyView()
             }
         }
@@ -454,7 +472,7 @@ struct SystemMonitorDetailView: View {
     private func legendItem(_ text: String, _ color: Color) -> some View {
         HStack(spacing: 4) {
             Circle().fill(color).frame(width: 6, height: 6)
-            Text(text).font(.system(size: 11.5)).monospacedDigit().foregroundStyle(color)
+            Text(text).font(.system(.subheadline)).monospacedDigit().foregroundStyle(color)
         }
     }
 
@@ -472,14 +490,16 @@ struct SystemMonitorDetailView: View {
     private func cpuFigures(_ snapshot: SystemSnapshot) -> some View {
         let machine = store.machine
         return VStack(alignment: .leading, spacing: 4) {
-            Text(L("system.monitor.cores.each")).font(.system(size: 11.5, weight: .semibold))
-                .foregroundStyle(StudioTheme.textSecondary)
+            Text(L("system.monitor.cores.each")).font(.system(.subheadline, weight: .semibold))
+                .foregroundStyle(TypefluxColor.secondaryLabel.color)
             HStack(alignment: .bottom, spacing: 2) {
                 ForEach(Array(snapshot.cpu.cores.enumerated()), id: \.offset) { index, usage in
                     GeometryReader { geometry in
                         ZStack(alignment: .bottom) {
-                            RoundedRectangle(cornerRadius: 2).fill(AskTheme.hoverFill)
-                            RoundedRectangle(cornerRadius: 2).fill(SystemMonitorTheme.cpu)
+                            RoundedRectangle(cornerRadius: TypefluxRadius.textField.value(for: interfaceStyle))
+                                .fill(TypefluxColor.label.color.opacity(0.06))
+                            RoundedRectangle(cornerRadius: TypefluxRadius.textField.value(for: interfaceStyle))
+                                .fill(SystemMonitorMetric.cpu.color)
                                 .frame(height: geometry.size.height * CGFloat(min(100, usage)) / 100)
                         }
                     }
@@ -488,11 +508,12 @@ struct SystemMonitorDetailView: View {
             }
             .frame(height: 28)
             if let performance = machine.performanceCores, let efficiency = machine.efficiencyCores {
-                Text(L("system.monitor.cores.kinds", performance, efficiency)).font(.system(size: 10.5))
-                    .foregroundStyle(StudioTheme.textTertiary)
+                Text(L("system.monitor.cores.kinds", performance, efficiency)).font(.system(.footnote))
+                    .foregroundStyle(TypefluxColor.tertiaryLabel.color)
             }
             figure(L("system.monitor.cpu.split"),
-                   SystemMonitorFormat.percent(snapshot.cpu.user) + "% / " + SystemMonitorFormat.percent(snapshot.cpu.system) + "%")
+                   SystemMonitorFormat.percent(snapshot.cpu.user) + "% / " + SystemMonitorFormat
+                       .percent(snapshot.cpu.system) + "%")
             figure(L("system.monitor.load"), SystemMonitorFormat.load(snapshot.loadAverage))
             if let count = snapshot.processCount { figure(L("system.monitor.processes"), String(count)) }
         }
@@ -501,23 +522,26 @@ struct SystemMonitorDetailView: View {
     private func memoryFigures(_ memory: SystemMemoryUsage) -> some View {
         let counters = memory.counters
         let parts: [(String, UInt64, Color)] = [
-            (L("system.monitor.memory.app"), counters.app, SystemMonitorTheme.memory),
+            (L("system.monitor.memory.app"), counters.app, SystemMonitorMetric.memory.color),
             (L("system.monitor.memory.wired"), counters.wired, Color.orange),
             (L("system.monitor.memory.compressed"), counters.compressed, Color.pink),
-            (L("system.monitor.memory.cached"), counters.cached, SystemMonitorTheme.memory.opacity(0.35))
+            (L("system.monitor.memory.cached"), counters.cached, SystemMonitorMetric.memory.color.opacity(0.35))
         ]
         let total = Double(max(1, memory.total))
         return VStack(alignment: .leading, spacing: 5) {
-            Text(L("system.monitor.memory.used", SystemMonitorFormat.memory(memory.used), SystemMonitorFormat.memory(memory.total)))
-                .font(.system(size: 11.5, weight: .semibold)).foregroundStyle(StudioTheme.textSecondary)
+            Text(L("system.monitor.memory.used", SystemMonitorFormat.memory(memory.used),
+                   SystemMonitorFormat.memory(memory.total)))
+                .font(.system(.subheadline, weight: .semibold)).foregroundStyle(TypefluxColor.secondaryLabel.color)
             GeometryReader { geometry in
                 HStack(spacing: 0) {
                     ForEach(Array(parts.enumerated()), id: \.offset) { _, part in
-                        Rectangle().fill(part.2).frame(width: geometry.size.width * CGFloat(min(1, Double(part.1) / total)))
+                        Rectangle().fill(part.2).frame(width: geometry.size.width * CGFloat(min(1,
+                                                                                                Double(part.1) /
+                                                                                                    total)))
                     }
                     Spacer(minLength: 0)
                 }
-                .background(AskTheme.hoverFill)
+                .background(TypefluxColor.label.color.opacity(0.06))
                 .clipShape(Capsule())
             }
             .frame(height: 10)
@@ -525,34 +549,36 @@ struct SystemMonitorDetailView: View {
                       spacing: 2) {
                 ForEach(Array(parts.enumerated()), id: \.offset) { _, part in
                     HStack(spacing: 4) {
-                        RoundedRectangle(cornerRadius: 2).fill(part.2).frame(width: 7, height: 7)
+                        RoundedRectangle(cornerRadius: TypefluxRadius.textField.value(for: interfaceStyle)).fill(part.2)
+                            .frame(width: 7,
+                                   height: 7)
                         Text(part.0 + " " + SystemMonitorFormat.memory(part.1)).lineLimit(1)
                     }
-                    .font(.system(size: 10.5)).foregroundStyle(StudioTheme.textSecondary)
+                    .font(.system(.footnote)).foregroundStyle(TypefluxColor.secondaryLabel.color)
                 }
             }
             figure(L("system.monitor.pressure.title"), SystemMonitorMetricDisplay.pressureTitle(memory.pressure),
-                   color: SystemMonitorTheme.pressureColor(memory.pressure))
+                   color: memory.pressure.color)
             figure(L("system.monitor.swap"), SystemMonitorFormat.memory(counters.swapUsed))
         }
     }
 
     private func diskFigures(_ volumes: [SystemVolume]) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(L("system.monitor.volumes")).font(.system(size: 11.5, weight: .semibold))
-                .foregroundStyle(StudioTheme.textSecondary)
+            Text(L("system.monitor.volumes")).font(.system(.subheadline, weight: .semibold))
+                .foregroundStyle(TypefluxColor.secondaryLabel.color)
             ForEach(volumes.prefix(3)) { volume in
                 VStack(alignment: .leading, spacing: 2) {
                     HStack {
                         Text(volume.name).lineLimit(1)
                         Spacer(minLength: 4)
                         Text(L("system.monitor.free", SystemMonitorFormat.storage(volume.available)))
-                            .foregroundStyle(StudioTheme.textTertiary)
+                            .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                     }
-                    .font(.system(size: 11.5))
+                    .font(.system(.subheadline))
                     GeometryReader { geometry in
-                        Capsule().fill(AskTheme.hoverFill).overlay(alignment: .leading) {
-                            Capsule().fill(SystemMonitorTheme.disk)
+                        Capsule().fill(TypefluxColor.label.color.opacity(0.06)).overlay(alignment: .leading) {
+                            Capsule().fill(SystemMonitorMetric.disk.color)
                                 .frame(width: geometry.size.width * CGFloat(volume.usedPercent / 100))
                         }
                     }
@@ -565,7 +591,7 @@ struct SystemMonitorDetailView: View {
     private func networkFigures(_ snapshot: SystemSnapshot) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             Text(snapshot.interface?.displayName ?? L("system.monitor.network.none"))
-                .font(.system(size: 11.5, weight: .semibold)).foregroundStyle(StudioTheme.textSecondary)
+                .font(.system(.subheadline, weight: .semibold)).foregroundStyle(TypefluxColor.secondaryLabel.color)
             if let address = snapshot.interface?.address { figure(L("system.monitor.address"), address) }
             figure(L("system.monitor.peak.down"), SystemMonitorFormat.rate(store.history.networkDown.peak))
             figure(L("system.monitor.peak.up"), SystemMonitorFormat.rate(store.history.networkUp.peak))
@@ -574,11 +600,11 @@ struct SystemMonitorDetailView: View {
 
     private func figure(_ title: String, _ value: String, color: Color? = nil) -> some View {
         HStack {
-            Text(title).foregroundStyle(StudioTheme.textTertiary)
+            Text(title).foregroundStyle(TypefluxColor.tertiaryLabel.color)
             Spacer(minLength: 6)
-            Text(value).monospacedDigit().foregroundStyle(color ?? StudioTheme.textPrimary).lineLimit(1)
+            Text(value).monospacedDigit().foregroundStyle(color ?? TypefluxColor.label.color).lineLimit(1)
         }
-        .font(.system(size: 11.5))
+        .font(.system(.subheadline))
     }
 }
 
@@ -591,8 +617,8 @@ struct SystemMonitorHintSummary: View {
     var body: some View {
         HStack(spacing: 8) {
             Text(SystemMonitorMetricDisplay.summary(store.snapshot))
-                .font(.system(size: 12)).monospacedDigit()
-                .foregroundStyle(StudioTheme.textTertiary)
+                .font(.system(.callout)).monospacedDigit()
+                .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                 .lineLimit(1)
             SystemMonitorChart(series: .make(.cpu, history: store.history), lineWidth: 1.2, filled: false)
                 .frame(width: 64, height: 16)

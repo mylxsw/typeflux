@@ -157,7 +157,7 @@ struct AskKeywordEditorSheet: View {
                     }.buttonStyle(.bordered)
                         .help(L("ask.settings.plugins.prompt.insert"))
                     Text(L("ask.settings.keywords.sheet.insertInput")).font(.subheadline)
-                        .foregroundStyle(StudioTheme.textTertiary)
+                        .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                     Spacer()
                     if let preset = draft.presetPrompt, preset != draft.prompt {
                         Button(L("ask.settings.keywords.sheet.restorePreset")) { draft.restorePreset() }
@@ -221,12 +221,12 @@ struct AskKeywordEditorSheet: View {
     }
 
     private func hint(_ text: String) -> some View {
-        Text(text).font(.subheadline).foregroundStyle(StudioTheme.textTertiary)
+        Text(text).font(.subheadline).foregroundStyle(TypefluxColor.tertiaryLabel.color)
             .fixedSize(horizontal: false, vertical: true)
     }
 
     private func problem(_ text: String) -> some View {
-        Text(text).font(.subheadline).foregroundStyle(StudioTheme.warning)
+        Text(text).font(.subheadline).foregroundStyle(TypefluxColor.warning.color)
             .fixedSize(horizontal: false, vertical: true)
     }
 }

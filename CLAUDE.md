@@ -34,6 +34,9 @@ make coverage
 
 # Format code (runs scripts/format.sh)
 make format
+
+# Strict lint and the UI literal baseline ratchet
+make lint
 ```
 
 ## Architecture
@@ -100,6 +103,8 @@ History changes are broadcast via `NotificationCenter` using `.historyStoreDidCh
 
 ### UI Layer
 
+- `Sources/TypefluxUI/` — shared native controls, semantic tokens, window/form templates and navigation materials. Follow `docs/design/ui-system.md`; new app UI must use these APIs.
+- In a debug app (`make run`), open the status menu → **Dev → Component Gallery**. Switch Classic / Liquid Glass and Light / Dark to inspect tokens, controls and navigation examples. `Dev/TypefluxGalleryRoot.swift` composes the gallery.
 - `Overlay/` — floating recording status overlay (shown during recording/processing)
 - `UI/` — SwiftUI settings, history, and other windows
 - `App/StatusBarController.swift` — menu bar item and menu
@@ -143,4 +148,5 @@ The full test suite takes a long time. Follow this policy for the entire request
 - Follow existing Swift style: 4-space indentation, `UpperCamelCase` types, `lowerCamelCase` methods/properties, one top-level type per file when practical.
 - Prefer protocol-backed services with dependency injection through `DIContainer` over singletons.
 - SwiftLint is configured; use `// swiftlint:disable file_length` at the top of intentionally large files.
+- Outside `Sources/TypefluxUI`, numeric SwiftUI font sizes and corner radii, and calibrated/sRGB `NSColor` constructors are forbidden. Existing exceptions are recorded in `.swiftlint-baseline.json` and `.swiftlint-ui-baseline.json`; run `scripts/lint_ui.sh --base-ref origin/main` before a PR. Remove obsolete entries when removing literals; never add exceptions or increase the counts.
 - Commit subjects should be short and imperative (e.g. `feat(ax): improve editable target detection`). PRs should note user-visible impact and include screenshots when changing overlay, settings, or menu bar UI.

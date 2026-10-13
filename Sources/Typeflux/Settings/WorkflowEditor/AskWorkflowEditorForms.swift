@@ -10,10 +10,10 @@ struct AskWorkflowFormSection<Content: View>: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text(title).font(.system(size: 13, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
+            Text(title).font(.system(.body, weight: .semibold)).foregroundStyle(TypefluxColor.label.color)
                 .padding(.horizontal, 4)
             if let hint {
-                Text(hint).font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
+                Text(hint).font(.system(.callout)).foregroundStyle(TypefluxColor.tertiaryLabel.color)
                     .fixedSize(horizontal: false, vertical: true)
                     .padding(.horizontal, 4).padding(.top, 3)
             }
@@ -49,7 +49,7 @@ func askWorkflowProblemsText(_ problems: [AskWorkflowManifest.Problem]) -> some 
     VStack(alignment: .leading, spacing: 2) {
         ForEach(problems, id: \.field) { problem in
             Label(problem.field + ": " + problem.message, systemImage: "xmark.circle")
-                .font(.system(size: 11.5)).foregroundStyle(StudioTheme.danger)
+                .font(.system(.subheadline)).foregroundStyle(TypefluxColor.danger.color)
         }
     }
 }
@@ -57,6 +57,8 @@ func askWorkflowProblemsText(_ problems: [AskWorkflowManifest.Problem]) -> some 
 /// Keywords as a table in a card: keyword, display name, preset options as tags.
 /// Rows can be dragged by their handle.
 struct AskWorkflowKeywordsForm: View {
+    @Environment(\.interfaceStyle) private var interfaceStyle
+
     @ObservedObject var model: AskWorkflowEditorModel
     @State private var dragging: Int?
     /// The row whose "+ Option" field is open, and what is typed in it.
@@ -81,7 +83,7 @@ struct AskWorkflowKeywordsForm: View {
                     Text(L("ask.workflow.editor.keywords.optionsShort")).frame(maxWidth: .infinity, alignment: .leading)
                     Color.clear.frame(width: 44)
                 }
-                .font(.system(size: 11, weight: .semibold)).foregroundStyle(StudioTheme.textTertiary)
+                .font(.system(.subheadline, weight: .semibold)).foregroundStyle(TypefluxColor.tertiaryLabel.color)
                 .padding(.horizontal, 14).frame(height: 32)
                 ForEach(Array(rows.enumerated()), id: \.offset) { index, row in
                     Rectangle().fill(TypefluxColor.separator.color).frame(height: 1)
@@ -90,7 +92,7 @@ struct AskWorkflowKeywordsForm: View {
                 Rectangle().fill(TypefluxColor.separator.color).frame(height: 1)
                 Button { add() } label: {
                     Label(L("ask.workflow.editor.keywords.add"), systemImage: "plus")
-                        .font(.system(size: 12.5, weight: .medium)).foregroundStyle(TypefluxColor.accent.color)
+                        .font(.system(.callout, weight: .medium)).foregroundStyle(TypefluxColor.accent.color)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.horizontal, 14).frame(height: 40).contentShape(Rectangle())
                 }
@@ -98,9 +100,16 @@ struct AskWorkflowKeywordsForm: View {
                 .accessibilityIdentifier("ask.workflow.editor.keywords.add")
             }
             .background(TypefluxColor.contentBackground.color,
-                        in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(TypefluxColor.separator.color))
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        in: RoundedRectangle(
+                            cornerRadius: TypefluxRadius.form.value(for: interfaceStyle),
+                            style: .continuous
+                        ))
+            .overlay(RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle), style: .continuous)
+                .strokeBorder(TypefluxColor.separator.color))
+            .clipShape(RoundedRectangle(
+                cornerRadius: TypefluxRadius.form.value(for: interfaceStyle),
+                style: .continuous
+            ))
             askWorkflowProblemsText(model.problems(for: .keywords).filter { !$0.field.hasPrefix("keywords[") })
                 .padding(.top, 6)
         }
@@ -115,7 +124,7 @@ struct AskWorkflowKeywordsForm: View {
                     .textFieldStyle(.roundedBorder)
                     .overlay(RoundedRectangle(cornerRadius: TypefluxRadius.textField.value(for: .classic),
                                               style: .continuous)
-                        .strokeBorder(problem == nil ? .clear : StudioTheme.danger.opacity(0.7)))
+                            .strokeBorder(problem == nil ? .clear : TypefluxColor.danger.color.opacity(0.7)))
                     .frame(width: 110)
                 TextField(L("ask.workflow.editor.keywords.titlePlaceholder"), text: binding(index, "title"))
                     .textFieldStyle(.roundedBorder)
@@ -126,29 +135,30 @@ struct AskWorkflowKeywordsForm: View {
                 }
                 optionTags(index)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                Image(systemName: "line.3.horizontal").font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
+                Image(systemName: "line.3.horizontal").font(.system(.subheadline))
+                    .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                     .frame(width: 16).help(L("ask.workflow.editor.keywords.drag"))
                     .onDrag {
                         dragging = index
                         return NSItemProvider(object: "\(index)" as NSString)
                     }
                 Button { remove(index) } label: {
-                    Image(systemName: "xmark").font(.system(size: 11, weight: .semibold))
+                    Image(systemName: "xmark").font(.system(.subheadline, weight: .semibold))
                         .frame(width: 20, height: 20).contentShape(Rectangle())
                 }
                 .buttonStyle(.plain).disabled(rows.count <= 1)
-                .foregroundStyle(StudioTheme.textTertiary).opacity(rows.count <= 1 ? 0.35 : 1)
+                .foregroundStyle(TypefluxColor.tertiaryLabel.color).opacity(rows.count <= 1 ? 0.35 : 1)
                 .help(L("ask.workflow.editor.keywords.remove"))
             }
             if let problem {
-                Text(problem).font(.system(size: 11.5)).foregroundStyle(StudioTheme.danger)
+                Text(problem).font(.system(.subheadline)).foregroundStyle(TypefluxColor.danger.color)
             }
             if let entryProblem = model.problems.first(where: { $0.field == "keywords[\(index)].script" }) {
-                Text(entryProblem.message).font(.system(size: 11.5)).foregroundStyle(StudioTheme.danger)
+                Text(entryProblem.message).font(.system(.subheadline)).foregroundStyle(TypefluxColor.danger.color)
             }
         }
         .padding(.horizontal, 14).padding(.vertical, 9)
-        .background(problem == nil ? Color.clear : StudioTheme.danger.opacity(0.06))
+        .background(problem == nil ? Color.clear : TypefluxColor.danger.color.opacity(0.06))
         .onDrop(of: [UTType.text], delegate: KeywordDrop(target: index, dragging: $dragging, move: move))
     }
 
@@ -184,26 +194,44 @@ struct AskWorkflowKeywordsForm: View {
         return AskFlowLayout(spacing: 5) {
             ForEach(options.keys.sorted(), id: \.self) { key in
                 HStack(spacing: 3) {
-                    Text("\(key)=\(options[key] ?? "")").font(.system(size: 11.5, design: .monospaced))
-                        .foregroundStyle(StudioTheme.textPrimary).lineLimit(1)
+                    Text("\(key)=\(options[key] ?? "")").font(.system(.subheadline, design: .monospaced))
+                        .foregroundStyle(TypefluxColor.label.color).lineLimit(1)
                     Button { removeOption(key, index) } label: {
-                        Image(systemName: "xmark").font(.system(size: 8, weight: .bold))
+                        Image(systemName: "xmark").font(.system(.footnote, weight: .bold))
                             .frame(width: 14, height: 14).contentShape(Rectangle())
                     }
-                    .buttonStyle(.plain).foregroundStyle(StudioTheme.textTertiary)
+                    .buttonStyle(.plain).foregroundStyle(TypefluxColor.tertiaryLabel.color)
                     .accessibilityLabel(L("ask.workflow.editor.keywords.removeOption", key))
                 }
                 .padding(.leading, 7).padding(.trailing, 3).frame(height: 22)
-                .background(controlColor, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(borderColor))
+                .background(
+                    controlColor,
+                    in: RoundedRectangle(
+                        cornerRadius: TypefluxRadius.navigationIcon.value(for: interfaceStyle),
+                        style: .continuous
+                    )
+                )
+                .overlay(RoundedRectangle(
+                    cornerRadius: TypefluxRadius.navigationIcon.value(for: interfaceStyle),
+                    style: .continuous
+                ).strokeBorder(borderColor))
             }
             if addingOption == index {
                 TextField("name=value", text: $newOption)
-                    .textFieldStyle(.plain).font(.system(size: 11.5, design: .monospaced))
+                    .textFieldStyle(.plain).font(.system(.subheadline, design: .monospaced))
                     .focused($optionFocused)
                     .frame(width: 120, height: 22).padding(.horizontal, 6)
-                    .background(controlColor, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(AskTheme.accent))
+                    .background(
+                        controlColor,
+                        in: RoundedRectangle(
+                            cornerRadius: TypefluxRadius.navigationIcon.value(for: interfaceStyle),
+                            style: .continuous
+                        )
+                    )
+                    .overlay(RoundedRectangle(
+                        cornerRadius: TypefluxRadius.navigationIcon.value(for: interfaceStyle),
+                        style: .continuous
+                    ).strokeBorder(TypefluxColor.accent.color))
                     .onSubmit { commitOption(index) }
                     .onExitCommand { addingOption = nil; newOption = "" }
             } else {
@@ -212,11 +240,14 @@ struct AskWorkflowKeywordsForm: View {
                     newOption = ""
                     optionFocused = true
                 } label: {
-                    Text(L("ask.workflow.editor.keywords.addOption")).font(.system(size: 11.5))
-                        .foregroundStyle(StudioTheme.textTertiary)
+                    Text(L("ask.workflow.editor.keywords.addOption")).font(.system(.subheadline))
+                        .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                         .padding(.horizontal, 8).frame(height: 22)
-                        .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous)
-                            .strokeBorder(borderColor, style: StrokeStyle(lineWidth: 1, dash: [3, 2])))
+                        .overlay(RoundedRectangle(
+                            cornerRadius: TypefluxRadius.navigationIcon.value(for: interfaceStyle),
+                            style: .continuous
+                        )
+                        .strokeBorder(borderColor, style: StrokeStyle(lineWidth: 1, dash: [3, 2])))
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -331,7 +362,7 @@ struct AskWorkflowInfoForm: View {
             }
             HStack {
                 Spacer()
-                Button(L("ask.workflow.editor.done"), action: done).buttonStyle(AskWorkflowActionStyle(small: true))
+                Button(L("ask.workflow.editor.done"), action: done).buttonStyle(.bordered).controlSize(.small)
                     .keyboardShortcut(.defaultAction)
             }
         }
@@ -340,7 +371,7 @@ struct AskWorkflowInfoForm: View {
 
     private func row(_ label: String, @ViewBuilder content: () -> some View) -> some View {
         HStack(spacing: 10) {
-            Text(label).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary)
+            Text(label).font(.system(.callout)).foregroundStyle(TypefluxColor.secondaryLabel.color)
                 .frame(width: 44, alignment: .leading)
             content()
         }
@@ -354,6 +385,8 @@ struct AskWorkflowInfoForm: View {
 
 /// What the script receives: argument, selection, the argv template, and a preview.
 struct AskWorkflowInputForm: View {
+    @Environment(\.interfaceStyle) private var interfaceStyle
+
     @ObservedObject var model: AskWorkflowEditorModel
 
     private var manifest: AskWorkflowManifest? {
@@ -399,46 +432,64 @@ struct AskWorkflowInputForm: View {
                 Rectangle().fill(TypefluxColor.separator.color).frame(height: 1)
                 insertBar.padding(.horizontal, 12).frame(height: 40)
                 Rectangle().fill(TypefluxColor.separator.color).frame(height: 1)
-                Text(preview).font(.system(size: 12, design: .monospaced)).foregroundStyle(StudioTheme.textSecondary)
+                Text(preview).font(.system(.callout, design: .monospaced))
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
                     .textSelection(.enabled).lineSpacing(3)
                     .padding(12).frame(maxWidth: .infinity, alignment: .leading)
-                    .background(StudioTheme.textSecondary.opacity(0.04))
+                    .background(TypefluxColor.secondaryLabel.color.opacity(0.04))
             }
             .background(TypefluxColor.contentBackground.color,
-                        in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(TypefluxColor.separator.color))
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        in: RoundedRectangle(
+                            cornerRadius: TypefluxRadius.form.value(for: interfaceStyle),
+                            style: .continuous
+                        ))
+            .overlay(RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle), style: .continuous)
+                .strokeBorder(TypefluxColor.separator.color))
+            .clipShape(RoundedRectangle(
+                cornerRadius: TypefluxRadius.form.value(for: interfaceStyle),
+                style: .continuous
+            ))
         }
         askWorkflowProblemsText(model.problems(for: .input))
     }
 
     private var argv: some View {
         AskFlowLayout(spacing: 6) {
-            Text(program).font(.system(size: 12.5, design: .monospaced)).foregroundStyle(StudioTheme.textSecondary)
+            Text(program).font(.system(.callout, design: .monospaced))
+                .foregroundStyle(TypefluxColor.secondaryLabel.color)
                 .frame(height: 26)
             ForEach(Array(template.enumerated()), id: \.offset) { index, _ in
                 HStack(spacing: 4) {
-                    Text("$\(index + 1)").font(.system(size: 10.5)).foregroundStyle(StudioTheme.textTertiary)
-                    TextField("", text: argument(index)).font(.system(size: 12.5, design: .monospaced))
+                    Text("$\(index + 1)").font(.system(.footnote)).foregroundStyle(TypefluxColor.tertiaryLabel.color)
+                    TextField("", text: argument(index)).font(.system(.callout, design: .monospaced))
                         .textFieldStyle(.plain).frame(minWidth: 50, maxWidth: 160).fixedSize()
                     Button { removeArgument(index) } label: {
-                        Image(systemName: "xmark").font(.system(size: 8, weight: .bold))
+                        Image(systemName: "xmark").font(.system(.footnote, weight: .bold))
                             .frame(width: 14, height: 14).contentShape(Rectangle())
                     }
-                    .buttonStyle(.plain).foregroundStyle(StudioTheme.textTertiary)
+                    .buttonStyle(.plain).foregroundStyle(TypefluxColor.tertiaryLabel.color)
                 }
                 .padding(.leading, 8).padding(.trailing, 4).frame(height: 26)
                 .background(TypefluxColor.controlBackground.color,
-                            in: RoundedRectangle(cornerRadius: 7, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .strokeBorder(TypefluxColor.separator.color))
+                            in: RoundedRectangle(
+                                cornerRadius: TypefluxRadius.navigationIcon.value(for: interfaceStyle),
+                                style: .continuous
+                            ))
+                .overlay(RoundedRectangle(
+                    cornerRadius: TypefluxRadius.navigationIcon.value(for: interfaceStyle),
+                    style: .continuous
+                )
+                .strokeBorder(TypefluxColor.separator.color))
             }
             Button { setTemplate(template + [""]) } label: {
-                Image(systemName: "plus").font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textTertiary)
+                Image(systemName: "plus").font(.system(.subheadline, weight: .semibold))
+                    .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                     .frame(width: 26, height: 26)
-                    .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .strokeBorder(TypefluxColor.separator.color, style: StrokeStyle(lineWidth: 1, dash: [3, 2])))
+                    .overlay(RoundedRectangle(
+                        cornerRadius: TypefluxRadius.navigationIcon.value(for: interfaceStyle),
+                        style: .continuous
+                    )
+                    .strokeBorder(TypefluxColor.separator.color, style: StrokeStyle(lineWidth: 1, dash: [3, 2])))
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -448,29 +499,40 @@ struct AskWorkflowInputForm: View {
 
     private var insertBar: some View {
         HStack(spacing: 6) {
-            Text(L("ask.workflow.editor.args.insert")).font(.system(size: 12))
-                .foregroundStyle(StudioTheme.textTertiary)
+            Text(L("ask.workflow.editor.args.insert")).font(.system(.callout))
+                .foregroundStyle(TypefluxColor.tertiaryLabel.color)
             ForEach(tokens, id: \.self) { token in
                 Button { setTemplate(template + [token]) } label: {
-                    Text(token).font(.system(size: 11.5, design: .monospaced)).foregroundStyle(AskTheme.accent)
+                    Text(token).font(.system(.subheadline, design: .monospaced))
+                        .foregroundStyle(TypefluxColor.accent.color)
                         .padding(.horizontal, 7).frame(height: 20)
-                        .background(AskTheme.accent.opacity(0.14), in: RoundedRectangle(cornerRadius: 6))
+                        .background(
+                            TypefluxColor.accent.color.opacity(0.14),
+                            in: RoundedRectangle(cornerRadius: TypefluxRadius.navigationIcon.value(for: interfaceStyle))
+                        )
                 }
                 .buttonStyle(.plain)
             }
             Spacer(minLength: 8)
-            Text(L("ask.workflow.editor.args.try")).font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
+            Text(L("ask.workflow.editor.args.try")).font(.system(.callout))
+                .foregroundStyle(TypefluxColor.tertiaryLabel.color)
             HStack(spacing: 5) {
                 if let keyword = manifest?.keywords.first?.keyword {
                     AskWorkflowChip(text: keyword)
                 }
                 TextField("100 usd", text: $model.testQuery).textFieldStyle(.plain)
-                    .font(.system(size: 12, design: .monospaced))
+                    .font(.system(.callout, design: .monospaced))
             }
             .padding(.horizontal, 6).frame(width: 170, height: 24)
             .background(TypefluxColor.controlBackground.color,
-                        in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(TypefluxColor.separator.color))
+                        in: RoundedRectangle(
+                            cornerRadius: TypefluxRadius.navigationIcon.value(for: interfaceStyle),
+                            style: .continuous
+                        ))
+            .overlay(RoundedRectangle(
+                cornerRadius: TypefluxRadius.navigationIcon.value(for: interfaceStyle),
+                style: .continuous
+            ).strokeBorder(TypefluxColor.separator.color))
         }
     }
 
@@ -583,8 +645,8 @@ struct AskWorkflowRunSettings: View {
                         format: .number
                     )
                     .textFieldStyle(.roundedBorder).multilineTextAlignment(.trailing).frame(width: 52)
-                    Text(L("ask.workflow.editor.secondsUnit")).font(.system(size: 12.5))
-                        .foregroundStyle(StudioTheme.textTertiary)
+                    Text(L("ask.workflow.editor.secondsUnit")).font(.system(.callout))
+                        .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                 }
             }
             GridRow(alignment: .top) {
@@ -596,26 +658,26 @@ struct AskWorkflowRunSettings: View {
                             TextField(L("ask.workflow.editor.env.value"), text: $row.value)
                                 .textFieldStyle(.roundedBorder)
                             Button { env.removeAll { $0.id == row.id } } label: {
-                                Image(systemName: "xmark").font(.system(size: 10, weight: .semibold))
+                                Image(systemName: "xmark").font(.system(.footnote, weight: .semibold))
                                     .frame(width: 24, height: 24).contentShape(Rectangle())
                             }
-                            .buttonStyle(.plain).foregroundStyle(StudioTheme.textTertiary)
+                            .buttonStyle(.plain).foregroundStyle(TypefluxColor.tertiaryLabel.color)
                         }
                     }
                     HStack(spacing: 10) {
                         Button { env.append(EnvRow(name: "", value: "")) } label: {
                             Label(L("ask.workflow.editor.env.add"), systemImage: "plus")
-                                .font(.system(size: 12, weight: .medium)).foregroundStyle(AskTheme.accent)
+                                .font(.system(.callout, weight: .medium)).foregroundStyle(TypefluxColor.accent.color)
                         }
                         .buttonStyle(.plain)
-                        Text(L("ask.workflow.editor.env.noSecrets")).font(.system(size: 11.5))
-                            .foregroundStyle(StudioTheme.textTertiary)
+                        Text(L("ask.workflow.editor.env.noSecrets")).font(.system(.subheadline))
+                            .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                     }
                 }
                 .gridCellColumns(3)
             }
         }
-        .font(.system(size: 12.5))
+        .font(.system(.callout))
         .padding(14)
         .onAppear(perform: loadEnv)
         .onChange(of: model.workflowID) { _ in loadEnv() }
@@ -638,7 +700,7 @@ struct AskWorkflowRunSettings: View {
     }
 
     private func label(_ text: String) -> some View {
-        Text(text).foregroundStyle(StudioTheme.textSecondary).frame(width: 64, alignment: .leading)
+        Text(text).foregroundStyle(TypefluxColor.secondaryLabel.color).frame(width: 64, alignment: .leading)
     }
 
     private func loadEnv() {

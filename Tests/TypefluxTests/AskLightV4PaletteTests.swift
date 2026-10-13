@@ -29,27 +29,27 @@ struct AskLightV4PaletteTests {
 
     @Test func lightWorkspaceTokensAndNeutralLauncherPalette() throws {
         let pairs: [(Color, Color)] = [
-            (AskTheme.border, TypefluxColor.separator.color),
-            (AskTheme.separator, TypefluxColor.separator.color),
-            (AskTheme.launcherSeparator, rgb(15, 23, 42, 0.08)),
-            (AskTheme.cardBorder, TypefluxColor.separator.color),
-            (AskTheme.librarySeparator, TypefluxColor.separator.color),
-            (AskTheme.accentText, TypefluxColor.accent.color),
-            (AskTheme.launcherMetaText, rgb(69, 69, 69)),
-            (AskTheme.launcherSelection, rgb(0, 0, 0, 0.10)),
-            (AskTheme.launcherSelectionEdge, .clear),
-            (AskTheme.launcherKeyword, rgb(0, 0, 0, 0.06)),
-            (AskTheme.switchOnFill, rgb(37, 99, 235, 0.10)),
-            (AskTheme.switchOnEdge, rgb(37, 99, 235, 0.20)),
-            (AskTheme.privateTint, Color(nsColor: .systemPurple)),
-            (AskTheme.privateFill, rgb(147, 51, 234, 0.10)),
-            (AskTheme.privateHeaderFill, rgb(147, 51, 234, 0.10)),
-            (AskTheme.launcherShortcutFill, .white),
-            (AskTheme.launcherShortcutEdge, rgb(15, 23, 42, 0.14)),
-            (AskTheme.keycapSurface, .white),
-            (AskTheme.noteQuestionSurface, .white),
-            (AskTheme.userBubble, TypefluxColor.controlBackground.color),
-            (AskTheme.userBubbleEdge, TypefluxColor.separator.color)
+            (TypefluxColor.separator.color, TypefluxColor.separator.color),
+            (TypefluxColor.separator.color, TypefluxColor.separator.color),
+            (LegacyAskPalette.launcherSeparator, rgb(15, 23, 42, 0.08)),
+            (TypefluxColor.separator.color, TypefluxColor.separator.color),
+            (TypefluxColor.separator.color, TypefluxColor.separator.color),
+            (TypefluxColor.accent.color, TypefluxColor.accent.color),
+            (LegacyAskPalette.launcherMetaText, rgb(69, 69, 69)),
+            (LegacyAskPalette.launcherSelection, rgb(0, 0, 0, 0.10)),
+            (LegacyAskPalette.launcherSelectionEdge, .clear),
+            (LegacyAskPalette.launcherKeyword, rgb(0, 0, 0, 0.06)),
+            (LegacyAskPalette.switchOnFill, rgb(37, 99, 235, 0.10)),
+            (LegacyAskPalette.switchOnEdge, rgb(37, 99, 235, 0.20)),
+            (Color(nsColor: .systemPurple), Color(nsColor: .systemPurple)),
+            (LegacyAskPalette.privateFill, rgb(147, 51, 234, 0.10)),
+            (LegacyAskPalette.privateHeaderFill, rgb(147, 51, 234, 0.10)),
+            (LegacyAskPalette.launcherShortcutFill, .white),
+            (LegacyAskPalette.launcherShortcutEdge, rgb(15, 23, 42, 0.14)),
+            (LegacyAskPalette.keycapSurface, .white),
+            (LegacyAskPalette.noteQuestionSurface, .white),
+            (TypefluxColor.controlBackground.color, TypefluxColor.controlBackground.color),
+            (TypefluxColor.separator.color, TypefluxColor.separator.color)
         ]
         for (index, pair) in pairs.enumerated() {
             try expectColor(pair.0, pair.1, dark: false, context: "light token \(index)")
@@ -64,23 +64,26 @@ struct AskLightV4PaletteTests {
             Color(nsColor: NSColor(calibratedRed: red, green: green, blue: blue, alpha: alpha))
         }
         let pairs: [(Color, Color)] = [
-            (AskTheme.border, TypefluxColor.separator.color), (AskTheme.separator, TypefluxColor.separator.color),
-            (AskTheme.launcherSeparator, grey(0.04)), (AskTheme.librarySeparator, TypefluxColor.separator.color),
-            (AskTheme.cardBorder, TypefluxColor.separator.color), (AskTheme.accentText, TypefluxColor.accent.color),
-            (AskTheme.launcherMetaText, rgb(166, 166, 166)),
-            (AskTheme.launcherSelection, rgb(50, 50, 50)),
-            (AskTheme.launcherSelectionEdge, .clear),
-            (AskTheme.launcherKeyword, rgb(56, 56, 56, 0.72)),
-            (AskTheme.switchOnFill, calibrated(0.09, 0.55, 1, 0.22)),
-            (AskTheme.switchOnEdge, calibrated(0.09, 0.55, 1, 0.35)),
-            (AskTheme.privateTint, Color(nsColor: .systemPurple)),
-            (AskTheme.privateFill, Color(nsColor: .systemPurple).opacity(0.13)),
-            (AskTheme.privateHeaderFill, Color(nsColor: .systemPurple).opacity(0.12)),
-            (AskTheme.launcherShortcutFill, .clear), (AskTheme.launcherShortcutEdge, grey(0.07)),
-            (AskTheme.keycapSurface, LegacyAskPalette.hoverFill),
-            (AskTheme.noteQuestionSurface, LegacyAskPalette.hoverFill.opacity(0.6)),
-            (AskTheme.userBubble, TypefluxColor.controlBackground.color),
-            (AskTheme.userBubbleEdge, TypefluxColor.separator.color)
+            (TypefluxColor.separator.color, TypefluxColor.separator.color), (TypefluxColor.separator.color,
+                                                                             TypefluxColor.separator.color),
+            (LegacyAskPalette.launcherSeparator, grey(0.04)), (TypefluxColor.separator.color,
+                                                               TypefluxColor.separator.color),
+            (TypefluxColor.separator.color, TypefluxColor.separator.color), (TypefluxColor.accent.color,
+                                                                             TypefluxColor.accent.color),
+            (LegacyAskPalette.launcherMetaText, rgb(166, 166, 166)),
+            (LegacyAskPalette.launcherSelection, rgb(50, 50, 50)),
+            (LegacyAskPalette.launcherSelectionEdge, .clear),
+            (LegacyAskPalette.launcherKeyword, rgb(56, 56, 56, 0.72)),
+            (LegacyAskPalette.switchOnFill, calibrated(0.09, 0.55, 1, 0.22)),
+            (LegacyAskPalette.switchOnEdge, calibrated(0.09, 0.55, 1, 0.35)),
+            (Color(nsColor: .systemPurple), Color(nsColor: .systemPurple)),
+            (LegacyAskPalette.privateFill, Color(nsColor: .systemPurple).opacity(0.13)),
+            (LegacyAskPalette.privateHeaderFill, Color(nsColor: .systemPurple).opacity(0.12)),
+            (LegacyAskPalette.launcherShortcutFill, .clear), (LegacyAskPalette.launcherShortcutEdge, grey(0.07)),
+            (LegacyAskPalette.keycapSurface, LegacyAskPalette.hoverFill),
+            (LegacyAskPalette.noteQuestionSurface, LegacyAskPalette.hoverFill.opacity(0.6)),
+            (TypefluxColor.controlBackground.color, TypefluxColor.controlBackground.color),
+            (TypefluxColor.separator.color, TypefluxColor.separator.color)
         ]
         for (index, pair) in pairs.enumerated() {
             try expectColor(pair.0, pair.1, dark: true, context: "dark token \(index)")
@@ -96,9 +99,9 @@ struct AskLightV4PaletteTests {
         application.appearance = NSAppearance(named: .aqua)
         defer { application.appearance = appearance }
         let pairs: [(Color, Color)] = [
-            (AskTheme.privateTint, Color(nsColor: .systemPurple)),
-            (AskTheme.privateFill, Color(nsColor: .systemPurple).opacity(0.13)),
-            (AskTheme.privateHeaderFill, Color(nsColor: .systemPurple).opacity(0.12))
+            (Color(nsColor: .systemPurple), Color(nsColor: .systemPurple)),
+            (LegacyAskPalette.privateFill, Color(nsColor: .systemPurple).opacity(0.13)),
+            (LegacyAskPalette.privateHeaderFill, Color(nsColor: .systemPurple).opacity(0.12))
         ]
         for (actual, expected) in pairs {
             let actualColor = try await render(actual.frame(width: 160, height: 60), style: .liquidGlass, dark: true)
@@ -129,8 +132,8 @@ struct AskLightV4PaletteTests {
             .modifier(StudioSidebarRowBackground(selected: true, corner: 12))
         for dark in [false, true] {
             let selected = try await render(row, style: style, dark: dark)
-            let fill = dark ? (style.usesGlass ? AskTheme.accent.opacity(0.18) : AskClassic.selection)
-                : StudioTheme.sidebarSelection
+            let fill = dark ? (style.usesGlass ? TypefluxColor.accent.color.opacity(0.18) : AskClassic.selection)
+                : TypefluxColor.selection.color.opacity(0.12)
             // Compare through the renderer so both samples use the same bitmap colour space.
             let expected = try await render(fill.frame(width: 160, height: 60), style: style, dark: dark)
             #expect(abs(selected.redComponent - expected.redComponent) < 0.002)
@@ -171,8 +174,9 @@ struct AskLightV4PaletteTests {
         let light = try await render(HistorySelection(), style: style, dark: false)
         #expect(light.redComponent > 0.99 && light.blueComponent > 0.99)
         let dark = try await render(HistorySelection(), style: style, dark: true)
-        let expected = try await render((style.usesGlass ? AskTheme.accent.opacity(0.18) : AskClassic.selection)
-            .frame(width: 160, height: 60), style: style, dark: true)
+        let expected =
+            try await render((style.usesGlass ? TypefluxColor.accent.color.opacity(0.18) : AskClassic.selection)
+                    .frame(width: 160, height: 60), style: style, dark: true)
         // The existing dark glass row also has a faint tint shadow.
         #expect(abs(dark.redComponent - expected.redComponent) < 0.01)
         #expect(abs(dark.blueComponent - expected.blueComponent) < 0.01)
@@ -182,7 +186,7 @@ struct AskLightV4PaletteTests {
     func contentCardsAreWhiteInLightAndRetainTheirDarkMaterial(style: InterfaceStyle) async throws {
         for elevated in [false, true] {
             let card = Color.clear.frame(width: 160, height: 60)
-                .askContentCard(corner: 12, opaqueFill: AskTheme.glassFill, elevatedInLight: elevated)
+                .askContentCard(corner: 12, opaqueFill: LegacyAskPalette.glassFill, elevatedInLight: elevated)
             let light = try await render(card, style: style, dark: false)
             #expect(light.redComponent > 0.99 && light.blueComponent > 0.99)
             let dark = try await render(card, style: style, dark: true)

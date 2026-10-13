@@ -16,7 +16,7 @@ enum AskLauncherChatAction: Equatable {
 struct AskLauncherOpenChatButton: View {
     var mode: AskLauncherChatAction = .openChat
     var enabled: Bool
-    var tint: Color = AskTheme.accent
+    var tint: Color = TypefluxColor.accent.color
     var action: () -> Void
 
     var body: some View {

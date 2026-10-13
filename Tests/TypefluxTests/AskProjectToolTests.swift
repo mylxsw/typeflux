@@ -190,7 +190,7 @@ struct AskProjectToolTests {
                 review: review,
                 exportPatch: { _ in Data(state.patch.utf8) }
             )
-            .padding(20).frame(width: 700).background(StudioTheme.surface))
+            .padding(20).frame(width: 700).background(TypefluxColor.controlBackground.color))
             view.appearance = NSAppearance(named: appearance)
             view.frame.size = view.fittingSize
             view.layoutSubtreeIfNeeded()

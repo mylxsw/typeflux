@@ -4,6 +4,8 @@ import SwiftUI
 /// The monitor window's content in its three shapes. It sizes itself; the
 /// controller fits the panel around it.
 struct SystemMonitorWindowView: View {
+    @Environment(\.interfaceStyle) private var interfaceStyle
+
     let controller: SystemMonitorWindowController
     @ObservedObject var model: SystemMonitorWindowModel
     @ObservedObject var store: SystemMonitorStore
@@ -21,10 +23,10 @@ struct SystemMonitorWindowView: View {
             .background(AskWindowDragArea(handlers: AskWindowDragHandlers(reset: {
                 if settings.mode == .mini { controller.setMode(.full) }
             })))
-            .background(SystemMonitorWindowBackground(corner: settings.mode == .mini ? 16 : 14))
+            .background { TypefluxGlassContainer(radius: .popover) { Color.clear } }
             .clipShape(shape)
             .overlay {
-                shape.strokeBorder(model.flashing ? AskTheme.accent : AskTheme.border,
+                shape.strokeBorder(model.flashing ? TypefluxColor.accent.color : TypefluxColor.separator.color,
                                    lineWidth: model.flashing ? 2.5 : 1)
                     .animation(.easeOut(duration: 0.2), value: model.flashing)
             }
@@ -36,7 +38,7 @@ struct SystemMonitorWindowView: View {
     }
 
     private var shape: RoundedRectangle {
-        RoundedRectangle(cornerRadius: settings.mode == .mini ? 16 : 14, style: .continuous)
+        RoundedRectangle(cornerRadius: TypefluxRadius.popover.value(for: interfaceStyle), style: .continuous)
     }
 
     @ViewBuilder private var content: some View {
@@ -58,7 +60,7 @@ struct SystemMonitorWindowView: View {
                     metricRow(metric)
                 }
             }
-            .padding(.horizontal, 12)
+            .padding(.horizontal, 12).background(TypefluxColor.contentBackground.color)
             processSection
         }
         .frame(width: Self.fullWidth)
@@ -70,22 +72,25 @@ struct SystemMonitorWindowView: View {
         return Button { controller.openInLauncher(metric) } label: {
             HStack(spacing: 10) {
                 HStack(spacing: 6) {
-                    Image(systemName: SystemMonitorMetricDisplay.symbol(metric)).font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(SystemMonitorTheme.color(metric))
-                    Text(SystemMonitorMetricDisplay.title(metric)).font(.system(size: 11.5, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textSecondary)
+                    Image(systemName: SystemMonitorMetricDisplay.symbol(metric)).font(.system(
+                        .subheadline,
+                        weight: .semibold
+                    ))
+                    .foregroundStyle(metric.color)
+                    Text(SystemMonitorMetricDisplay.title(metric)).font(.system(.subheadline, weight: .semibold))
+                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
                 }
                 .frame(width: 64, alignment: .leading)
                 SystemMonitorChart(series: .make(metric, history: store.history)).frame(height: 30)
                 VStack(alignment: .trailing, spacing: 1) {
                     HStack(alignment: .firstTextBaseline, spacing: 2) {
-                        Text(display.value).font(.system(size: 15, weight: .semibold)).monospacedDigit()
-                            .foregroundStyle(SystemMonitorTheme.color(display.level) ?? StudioTheme.textPrimary)
-                        Text(display.unit.replacingOccurrences(of: " ↓", with: "")).font(.system(size: 10.5))
-                            .foregroundStyle(StudioTheme.textTertiary)
+                        Text(display.value).font(.system(.title3, weight: .semibold)).monospacedDigit()
+                            .foregroundStyle(display.level.color ?? TypefluxColor.label.color)
+                        Text(display.unit.replacingOccurrences(of: " ↓", with: "")).font(.system(.footnote))
+                            .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                     }
-                    Text(display.detail).font(.system(size: 10.5)).monospacedDigit()
-                        .foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
+                    Text(display.detail).font(.system(.footnote)).monospacedDigit()
+                        .foregroundStyle(TypefluxColor.tertiaryLabel.color).lineLimit(1)
                 }
                 .frame(width: 118, alignment: .trailing)
             }
@@ -105,8 +110,8 @@ struct SystemMonitorWindowView: View {
         return VStack(spacing: 2) {
             Divider().opacity(0.5)
             HStack {
-                Text(L("system.monitor.processes")).font(.system(size: 11.5, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textTertiary)
+                Text(L("system.monitor.processes")).font(.system(.subheadline, weight: .semibold))
+                    .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                 Spacer()
                 SystemMonitorSortPicker(sort: Binding(get: { settings.sort }, set: { controller.setSort($0) }),
                                         options: [.cpu, .memory])
@@ -118,24 +123,25 @@ struct SystemMonitorWindowView: View {
                         if store.apps[process.pid] != nil, let icon = SystemProcessIcons.icon(for: process.pid) {
                             Image(nsImage: icon).resizable()
                         } else {
-                            Image(systemName: "gearshape").font(.system(size: 9)).foregroundStyle(StudioTheme.textTertiary)
+                            Image(systemName: "gearshape").font(.system(.footnote))
+                                .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                         }
                     }
                     .frame(width: 16, height: 16)
                     Text(process.name).lineLimit(1).truncationMode(.middle)
                     Spacer(minLength: 6)
                     Text(SystemMonitorFormat.processCPU(process.cpu) + "%")
-                        .foregroundStyle(SystemMonitorTheme.color(.processCPU(process.cpu)) ?? StudioTheme.textPrimary)
+                        .foregroundStyle(SystemMonitorLevel.processCPU(process.cpu).color ?? TypefluxColor.label.color)
                         .frame(width: 56, alignment: .trailing)
                     Text(SystemMonitorFormat.memory(process.memory)).frame(width: 66, alignment: .trailing)
                 }
-                .font(.system(size: 12)).monospacedDigit()
+                .font(.system(.callout)).monospacedDigit()
                 .frame(height: 26)
             }
             // Rows still to come keep the window from growing once figures arrive.
             ForEach(processes.count..<Self.processRows, id: \.self) { _ in Color.clear.frame(height: 26) }
         }
-        .padding(.horizontal, 12)
+        .padding(.horizontal, 12).background(TypefluxColor.contentBackground.color)
     }
 
     // MARK: Compact
@@ -147,7 +153,7 @@ struct SystemMonitorWindowView: View {
             }
             .padding(8)
             titleBar(showsTitle: false)
-                .background(SystemMonitorWindowBackground())
+                .background { TypefluxGlassContainer(radius: .popover) { Color.clear } }
                 .opacity(hovering ? 1 : 0)
                 .animation(.easeOut(duration: 0.15), value: hovering)
         }
@@ -157,13 +163,13 @@ struct SystemMonitorWindowView: View {
     private func compactTile(_ metric: SystemMonitorMetric) -> some View {
         let display = SystemMonitorMetricDisplay.make(metric, snapshot: store.snapshot, machine: store.machine)
         return VStack(alignment: .leading, spacing: 0) {
-            Text(SystemMonitorMetricDisplay.title(metric)).font(.system(size: 10.5, weight: .semibold))
-                .foregroundStyle(SystemMonitorTheme.color(metric))
+            Text(SystemMonitorMetricDisplay.title(metric)).font(.system(.footnote, weight: .semibold))
+                .foregroundStyle(metric.color)
             HStack(alignment: .firstTextBaseline, spacing: 2) {
-                Text(display.value).font(.system(size: 18, weight: .semibold)).monospacedDigit()
-                    .foregroundStyle(SystemMonitorTheme.color(display.level) ?? StudioTheme.textPrimary)
-                Text(display.unit.replacingOccurrences(of: " ↓", with: "")).font(.system(size: 10.5))
-                    .foregroundStyle(StudioTheme.textTertiary)
+                Text(display.value).font(.system(.title2, weight: .semibold)).monospacedDigit()
+                    .foregroundStyle(display.level.color ?? TypefluxColor.label.color)
+                Text(display.unit.replacingOccurrences(of: " ↓", with: "")).font(.system(.footnote))
+                    .foregroundStyle(TypefluxColor.tertiaryLabel.color)
             }
             Spacer(minLength: 0)
         }
@@ -173,8 +179,8 @@ struct SystemMonitorWindowView: View {
         .background(alignment: .bottom) {
             SystemMonitorChart(series: .make(metric, history: store.history)).frame(height: 24)
         }
-        .background(display.level == .critical ? AskTheme.dangerSoft : AskTheme.hoverFill)
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .background(TypefluxColor.contentBackground.color)
+        .clipShape(RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle), style: .continuous))
         .accessibilityElement(children: .combine)
         .accessibilityLabel(SystemMonitorMetricDisplay.title(metric) + " " + display.value + display.unit)
     }
@@ -184,7 +190,7 @@ struct SystemMonitorWindowView: View {
     private var mini: some View {
         HStack(spacing: 12) {
             ForEach(Array(settings.metrics.enumerated()), id: \.element) { index, metric in
-                if index > 0 { Rectangle().fill(AskTheme.border).frame(width: 1, height: 14) }
+                if index > 0 { Rectangle().fill(TypefluxColor.separator.color).frame(width: 1, height: 14) }
                 miniItem(metric)
             }
             if hovering {
@@ -207,25 +213,25 @@ struct SystemMonitorWindowView: View {
         HStack(spacing: 5) {
             switch metric {
             case .network:
-                Text("↓").foregroundStyle(StudioTheme.textTertiary)
+                Text("↓").foregroundStyle(TypefluxColor.tertiaryLabel.color)
                 Text(snapshot.map { SystemMonitorFormat.shortRate($0.networkDown) } ?? "—").fontWeight(.semibold)
-                Text("↑").foregroundStyle(StudioTheme.textTertiary)
+                Text("↑").foregroundStyle(TypefluxColor.tertiaryLabel.color)
                 Text(snapshot.map { SystemMonitorFormat.shortRate($0.networkUp) } ?? "—").fontWeight(.semibold)
             case .disk:
-                Text(SystemMonitorMetricDisplay.title(metric)).foregroundStyle(StudioTheme.textTertiary)
+                Text(SystemMonitorMetricDisplay.title(metric)).foregroundStyle(TypefluxColor.tertiaryLabel.color)
                 Text(snapshot.map { SystemMonitorFormat.shortRate($0.diskRead + $0.diskWrite) + "/s" } ?? "—")
                     .fontWeight(.semibold)
             case .cpu, .memory:
-                Text(SystemMonitorMetricDisplay.title(metric)).foregroundStyle(StudioTheme.textTertiary)
+                Text(SystemMonitorMetricDisplay.title(metric)).foregroundStyle(TypefluxColor.tertiaryLabel.color)
                 Text(display.value + "%").fontWeight(.semibold)
-                    .foregroundStyle(SystemMonitorTheme.color(display.level) ?? StudioTheme.textPrimary)
+                    .foregroundStyle(display.level.color ?? TypefluxColor.label.color)
                 if metric == .cpu {
                     SystemMonitorChart(series: .make(.cpu, history: store.history), lineWidth: 1.2, filled: false)
                         .frame(width: 40, height: 14)
                 }
             }
         }
-        .font(.system(size: 12)).monospacedDigit()
+        .font(.system(.callout)).monospacedDigit()
         .fixedSize()
     }
 
@@ -233,17 +239,11 @@ struct SystemMonitorWindowView: View {
 
     private func titleBar(showsTitle: Bool) -> some View {
         HStack(spacing: 6) {
-            Button { controller.close() } label: {
-                Image(systemName: "xmark").font(.system(size: 7.5, weight: .heavy))
-                    .foregroundStyle(Color.black.opacity(hovering ? 0.55 : 0))
-                    .frame(width: 12, height: 12)
-                    .background(Color(nsColor: .systemRed), in: Circle())
+            TypefluxIconButton(L("system.monitor.window.close"), systemImage: "xmark", size: .mini) {
+                controller.close()
             }
-            .buttonStyle(.plain)
-            .help(L("system.monitor.window.close"))
-            .accessibilityLabel(L("system.monitor.window.close"))
             if showsTitle {
-                Text(L("system.monitor.title")).font(.system(size: 12.5, weight: .semibold)).padding(.leading, 6)
+                Text(L("system.monitor.title")).font(.system(.callout, weight: .semibold)).padding(.leading, 6)
             }
             Spacer(minLength: 6)
             modePicker
@@ -256,23 +256,12 @@ struct SystemMonitorWindowView: View {
     }
 
     private var modePicker: some View {
-        HStack(spacing: 1) {
+        TypefluxSegmentedControl(L("system.monitor.window.mode.full"),
+                                 selection: Binding(get: { settings.mode }, set: controller.setMode), iconsOnly: true) {
             ForEach(SystemMonitorWindowMode.allCases, id: \.self) { mode in
-                Button { controller.setMode(mode) } label: {
-                    Image(systemName: Self.symbol(mode)).font(.system(size: 10.5))
-                        .foregroundStyle(settings.mode == mode ? StudioTheme.textPrimary : StudioTheme.textTertiary)
-                        .frame(width: 24, height: 18)
-                        .background(settings.mode == mode ? AskTheme.pressFill : Color.clear,
-                                    in: RoundedRectangle(cornerRadius: 5, style: .continuous))
-                }
-                .buttonStyle(.plain)
-                .help(Self.title(mode))
-                .accessibilityLabel(Self.title(mode))
-                .accessibilityAddTraits(settings.mode == mode ? .isSelected : [])
+                Label(Self.title(mode), systemImage: Self.symbol(mode)).tag(mode)
             }
-        }
-        .padding(2)
-        .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+        }.controlSize(.mini).fixedSize()
     }
 
     static func symbol(_ mode: SystemMonitorWindowMode) -> String {
@@ -289,15 +278,8 @@ struct SystemMonitorWindowView: View {
 
     private func iconButton(_ symbol: String, help: String, active: Bool = false,
                             action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: symbol).font(.system(size: 11.5))
-                .foregroundStyle(active ? AskTheme.accent : StudioTheme.textSecondary)
-                .frame(width: 24, height: 22)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .help(help)
-        .accessibilityLabel(help)
+        TypefluxIconButton(help, systemImage: symbol, size: .small, action: action)
+            .foregroundStyle(active ? TypefluxColor.accent.color : TypefluxColor.secondaryLabel.color)
     }
 
     private var optionsMenu: some View {
@@ -334,8 +316,8 @@ struct SystemMonitorWindowView: View {
             Button(L("system.monitor.window.activityMonitor")) { controller.openActivityMonitor() }
             Button(L("system.monitor.window.close")) { controller.close() }
         } label: {
-            Image(systemName: "ellipsis").font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(StudioTheme.textSecondary)
+            Image(systemName: "ellipsis").font(.system(.callout, weight: .semibold))
+                .foregroundStyle(TypefluxColor.secondaryLabel.color)
                 .frame(width: 24, height: 22)
                 .contentShape(Rectangle())
         }
@@ -344,21 +326,5 @@ struct SystemMonitorWindowView: View {
         .fixedSize()
         .help(L("system.monitor.window.options"))
         .accessibilityLabel(L("system.monitor.window.options"))
-    }
-}
-
-/// Shares the floating panels' native material and accessibility fallbacks.
-struct SystemMonitorWindowBackground: View {
-    var corner: CGFloat = 14
-    @Environment(\.interfaceStyle) private var style
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-    @Environment(\.askGlassMaterialOverride) private var materialOverride
-
-    var body: some View {
-        let material = style.usesGlass
-            ? materialOverride ?? AskGlassMaterial.resolve(reduceTransparency: reduceTransparency, style: style)
-            : .opaque
-        AskGlassBackground(material: material,
-                           corner: corner, opaqueFill: AskTheme.launcherSurface)
     }
 }

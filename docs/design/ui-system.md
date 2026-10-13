@@ -54,10 +54,13 @@ On macOS 26, native controls always take the Tahoe shape, and an app cannot forc
 | Grouped form | Group r8, row 36 | Group r14, row 40 |
 | Table row | 24 | 28 |
 | Menu / item / highlight | r6 / 22 / r4 | r14 / 24 / r8 |
+| Custom composer menu card / choice row / hover card | r14 / r8 / r10 | r18 / r10 / r14 |
 | Popover / sheet | r10 / r10 | r18 / r22 |
 | Spotlight panel | 52 input, single r12 panel | 56 capsule input + 56 round mode buttons + r24 results |
 
 Text styles (macOS values): largeTitle 26, title 22, title2 17, title3 15, headline 13 bold, body 13, callout 12, subheadline 11, footnote 10.
+
+Native menus use the system metrics above. Custom composer menu cards use `TypefluxRadius.menuCard` and `menuRow` at a 6pt row inset; `hoverCard` is smaller than the enclosing menu. These roles keep the floating choice rows concentric without changing native menu or popover geometry.
 
 ## 5. Window templates
 
@@ -89,14 +92,44 @@ Text styles (macOS values): largeTitle 26, title 22, title2 17, title3 15, headl
 | Tooltip | `.help()` | `StudioTooltipModifier` |
 | Glass | `.glassEffect()`, `GlassEffectContainer` (search morph), `NSGlassEffectView`; `NSVisualEffectView` on 13–15 | Hand-drawn highlights in `StudioLiquidGlassBackground` |
 
-## 7. Roll-out
+## 7. Implemented library and migration
 
-1. **Window skeleton (~1 week).** Move the settings window to `NavigationSplitView` with a toolbar title and toolbar search, and drop the in-content headings. This is the smallest change with the biggest effect on how native the app feels.
-2. **Forms (~2 weeks).** Turn each settings page into `Form(.grouped)` with native pop-ups, switches and segmented controls. 词库 and 历史 become `Table`s.
-3. **Library windows (template B):** notes, word book, Ask.
-4. **Floating panels (template C):** clipboard, launcher, ⌘K.
+`Sources/TypefluxUI` owns semantic colors, text styles, spacing, radii, accessibility fallbacks and native control wrappers. The debug app's status menu → **Dev → Component Gallery** opens the runnable controls and navigation gallery. Style and appearance can be switched independently there.
 
-For every phase, add snapshot renders (macOS version × style × appearance) in the style of `AskConversationVisualTests`. Add SwiftLint rules that forbid literal `.font(.system(size:`, literal `cornerRadius:` and `NSColor(calibrated…)`; use today's counts as the baseline, which may only go down. Then delete `ModelVisualStyle`, `AskWordBookStyle`, `AskNotesStyle`, `AskWorkflowEditorStyle`, `SystemMonitorTheme` and `OnboardingProviderStyle`.
+| Surface | Implemented structure |
+| --- | --- |
+| Settings, model/provider pages, vocabulary and history | `TypefluxWindow`, toolbar search and native grouped forms/lists/tables |
+| Notes, word book and Ask libraries | Native split navigation and solid detail panes |
+| Launcher and clipboard | `TypefluxSpotlightPanel`, navigation glass and solid result content |
+| Workflow editor | `TypefluxWindow` with toolbar actions, native radio/segmented controls and solid code/form/test panes |
+| System monitor | Floating navigation shell with `TypefluxGlassContainer`, solid metrics and native mode/sort segments |
+| Onboarding | Grouped `TypefluxForm`, native choices/fields/actions and a navigation footer with accessibility fallback |
+| Login | Native library fields and buttons, preserving policy checks, secure entry and browser sign-in |
+| About | Grouped form, shared navigation rows and a toolbar title |
+| Update alert and feedback | Navigation sheet shell, solid reading/input surfaces and native actions |
+| Overview | Grouped metric rows with `.largeTitle` values; recent records reuse the History navigation row and its context actions |
+
+Cloud promotion is a dismissible notice with native actions. Clipboard app-context and pause-state tokens use `TypefluxToken`; media dimensions and duration use a plain metadata label.
+
+Custom navigation containers use the shared independent AppKit glass layer, including the window-edge backdrop in light appearance. The workspace composer's editor stays solid while its footer controls occupy a navigation glass container. Reduce Transparency or Increase Contrast resolves every container to an opaque surface.
+
+The app no longer has the old model, library, workflow, monitor, onboarding or Studio/Ask theme enums. App-owned window dimensions remain in `StudioWindowMetrics`; tool titles and reasoning emphasis live in their own presentation helpers. Frozen `LegacyStudioPalette` / `LegacyAskPalette` values remain inside the library for the floating launcher compatibility surfaces. New UI uses semantic tokens.
+
+## 8. Regression guard and remaining baseline
+
+Run `make lint`, or `scripts/lint_ui.sh --base-ref origin/main` to include the Git comparison. CI runs this check for source/lint changes. The three SwiftLint custom rules reject numeric SwiftUI font sizes (including ternaries), numeric `cornerRadius:` arguments and calibrated/sRGB `NSColor` constructors in app sources outside `Sources/TypefluxUI`.
+
+The migration leaves existing literals in older Ask, clipboard preview and screenshot drawing code. The committed baseline is a limit, not an allowance for new occurrences. The independent Python checker reads the same expressions from `.swiftlint.yml`, counts each file/signature and rejects duplicates, new locations and baseline growth against the PR base. No entire feature folder is exempted.
+
+| Rule | Before GUL-355 (main `77945be8`) | Remaining |
+| --- | ---: | ---: |
+| Numeric SwiftUI font size | 710 | 403 |
+| Numeric corner radius | 397 | 214 |
+| Calibrated/sRGB `NSColor` constructor | 46 | 36 |
+
+All seven window families in this wrap-up, the Overview metrics and the workflow editor directory have zero occurrences of these rules. The existing general SwiftLint baseline was also refreshed because prior migrations had left it stale; new UI literal exceptions may only be removed. Lint success does not replace macOS build, interaction tests or visual acceptance.
+
+At acceptance, capture Classic / Liquid Glass × light / dark, plus Reduce Transparency and Increase Contrast. Check the workflow toolbar and sheets, full/compact/mini monitor, every onboarding step, browser and legacy login, About, update notes, feedback validation/upload errors, Overview recent-record navigation and clipboard context tokens. Glass stays on navigation surfaces; the library makes it opaque for either accessibility setting.
 
 ## Appendix: audit (v1)
 

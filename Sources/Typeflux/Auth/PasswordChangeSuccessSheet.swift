@@ -4,8 +4,8 @@ struct PasswordChangeSuccessSheet: View {
     let onRelogin: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.large) {
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.xSmall) {
+        VStack(alignment: .leading, spacing: 18) {
+            VStack(alignment: .leading, spacing: TypefluxSpacing.small.value(for: .classic)) {
                 Text(L("auth.account.passwordChangeSuccessTitle"))
                     .font(.title2.weight(.bold))
                     .foregroundStyle(TypefluxColor.label.color)

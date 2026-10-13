@@ -139,7 +139,7 @@ struct AskWordCardTranslationViewTests {
         window.isReleasedWhenClosed = false
         window.appearance = NSAppearance(named: .darkAqua)
         let view = AskWordCardView(card: card, language: "zh-Hans", onAction: { _ in })
-            .padding(16).background(StudioTheme.surface)
+            .padding(16).background(TypefluxColor.controlBackground.color)
         let host = NSHostingView(rootView: view)
         host.frame = NSRect(origin: .zero, size: size)
         window.contentView = host

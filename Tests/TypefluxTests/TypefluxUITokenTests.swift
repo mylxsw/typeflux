@@ -37,8 +37,8 @@ struct TypefluxUITokenTests {
 
     private func checkMetrics(_ tokens: TypefluxTokens) {
         // Independent expected tables from UI System §4, ordered like the public cases.
-        let classicRadii: [CGFloat] = [10, 0, 5, 6, 0, 6, 5.5, 7, 5.5, 5, 6, 3.5, 8, 6, 4, 10, 10, 12, 12]
-        let glassRadii: [CGFloat] = [26, 18, 10, 6, 18, 18, 8, 17, 8, 8, 14, 5, 14, 14, 8, 18, 22, 28, 24]
+        let classicRadii: [CGFloat] = [10, 0, 5, 6, 0, 6, 5.5, 7, 5.5, 5, 6, 3.5, 8, 6, 4, 10, 10, 12, 12, 14, 8, 10]
+        let glassRadii: [CGFloat] = [26, 18, 10, 6, 18, 18, 8, 17, 8, 8, 14, 5, 14, 14, 8, 18, 22, 28, 24, 18, 10, 14]
         let classicHeights: [CGFloat] = [52, 28, 28, 24, 24, 22, 28, 22, 22, 22, 18, 14, 36, 24, 22, 52, 52]
         let glassHeights: [CGFloat] = [52, 32, 28, 36, 36, 26, 34, 26, 26, 28, 22, 16, 40, 28, 24, 56, 56]
         let radii = tokens.style == .classic ? classicRadii : glassRadii
@@ -57,6 +57,10 @@ struct TypefluxUITokenTests {
         }
         #expect(tokens.spacing(.sidebarInset) == (tokens.style == .classic ? 0 : 8))
         #expect(tokens.spacing(.sidebarRowInset) == 8)
+        for (token, value) in zip([TypefluxSpacing.compact, .small, .regular, .large, .section],
+                                  [CGFloat(4), 8, 12, 16, 24]) {
+            #expect(tokens.spacing(token) == value)
+        }
         #expect(tokens.radius(.sidebar) == tokens.radius(.window) - tokens.spacing(.sidebarInset) || tokens
             .style == .classic)
     }

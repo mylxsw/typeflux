@@ -65,7 +65,7 @@ struct AskClassicStyleVisualTests {
                 .transaction { $0.animation = nil; $0.disablesAnimations = true }
                 .environment(\.colorScheme, dark ? .dark : .light)
                 .frame(width: size.width, height: size.height)
-                .background(style.usesGlass ? AskTheme.surface : AskClassic.canvas)
+                .background(style.usesGlass ? TypefluxColor.controlBackground.color : AskClassic.canvas)
         }
         let previous = AppLocalization.shared.language
         AppLocalization.shared.setLanguage(.simplifiedChinese)
@@ -91,7 +91,8 @@ struct AskClassicStyleVisualTests {
         let bitmap = try #require(NSBitmapImageRep(
             bitmapDataPlanes: nil, pixelsWide: Int(size.width * 2), pixelsHigh: Int(size.height * 2),
             bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
-            colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0))
+            colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0
+        ))
         bitmap.size = size
         hosting.cacheDisplay(in: hosting.bounds, to: bitmap)
         AppLocalization.shared.setLanguage(previous)
@@ -227,10 +228,10 @@ private struct SettingsRowScene: View {
         StudioSettingRow(title: L("settings.interfaceStyle.title"), subtitle: L("settings.interfaceStyle.subtitle")) {
             StudioSegmentedPicker(options: InterfaceStyle.allCases.map { (label: $0.displayName, value: $0) },
                                   selection: .constant(InterfaceStyle.classic))
-                .frame(width: StudioTheme.Layout.appearancePickerWidth)
+                .frame(width: StudioWindowMetrics.appearancePickerWidth)
         }
         .padding(24)
-        .background(StudioTheme.surface)
+        .background(TypefluxColor.controlBackground.color)
     }
 }
 

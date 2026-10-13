@@ -8,7 +8,7 @@ struct ModelProviderBackButton: View {
         Button(action: action) {
             Label(title, systemImage: "chevron.left")
                 .font(.body)
-                .foregroundStyle(StudioTheme.textSecondary)
+                .foregroundStyle(TypefluxColor.secondaryLabel.color)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

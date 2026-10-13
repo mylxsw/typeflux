@@ -17,11 +17,14 @@ struct AskPlanList: View {
             ForEach(Array(items.enumerated()), id: \.offset) { _, item in
                 HStack(alignment: .firstTextBaseline, spacing: 7) {
                     Image(systemName: Self.symbol(item.status)).font(.system(size: 10.5))
-                        .foregroundStyle(item.status == "completed" ? StudioTheme.success
-                            : (item.status == "in_progress" ? AskTheme.accentText : StudioTheme.textTertiary))
+                        .foregroundStyle(item.status == "completed" ? TypefluxColor.success.color
+                            :
+                            (item.status == "in_progress" ? TypefluxColor.accent.color : TypefluxColor.tertiaryLabel
+                                .color))
                     Text(item.step)
                         .font(.system(size: 12.5, weight: item.status == "in_progress" ? .semibold : .regular))
-                        .foregroundStyle(item.status == "completed" ? StudioTheme.textSecondary : StudioTheme.textPrimary)
+                        .foregroundStyle(item.status == "completed" ? TypefluxColor.secondaryLabel.color : TypefluxColor
+                            .label.color)
                         .textSelection(.enabled)
                 }
             }

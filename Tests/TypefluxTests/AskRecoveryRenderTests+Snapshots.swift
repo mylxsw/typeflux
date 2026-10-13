@@ -44,7 +44,7 @@ extension AskRecoveryRenderTests {
                 .transaction { $0.animation = nil; $0.disablesAnimations = true }
                 .environment(\.colorScheme, dark ? .dark : .light)
                 .frame(width: size.width, height: size.height)
-                .background(AskTheme.surface)
+                .background(TypefluxColor.controlBackground.color)
         }
         _ = NSApplication.shared
         let hosting = NSHostingView(rootView: content())

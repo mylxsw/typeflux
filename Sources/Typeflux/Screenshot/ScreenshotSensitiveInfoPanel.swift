@@ -33,7 +33,7 @@ struct ScreenshotSensitiveInfoPanel: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
-                Image(systemName: "eye.trianglebadge.exclamationmark").foregroundStyle(AskTheme.accent)
+                Image(systemName: "eye.trianglebadge.exclamationmark").foregroundStyle(TypefluxColor.accent.color)
                 Text(L("screenshot.sensitive.title")).font(.system(size: 13, weight: .semibold))
                 Text("\(state.rows.count)").font(.system(size: 12)).foregroundStyle(.secondary)
                 Spacer(minLength: 4)
@@ -57,7 +57,7 @@ struct ScreenshotSensitiveInfoPanel: View {
                     .foregroundStyle(state.allApplied ? Color.secondary : Color.white)
                     .frame(maxWidth: .infinity).frame(height: 28)
                     .background(RoundedRectangle(cornerRadius: 8)
-                        .fill(state.allApplied ? AskTheme.hoverFill : AskTheme.accent))
+                        .fill(state.allApplied ? TypefluxColor.label.color.opacity(0.06) : TypefluxColor.accent.color))
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -69,8 +69,8 @@ struct ScreenshotSensitiveInfoPanel: View {
         .frame(width: Self.width)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(AskTheme.glassFill.opacity(0.96))
-                .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(AskTheme.border, lineWidth: 1))
+                .fill(LegacyAskPalette.glassFill.opacity(0.96))
+                .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(TypefluxColor.separator.color, lineWidth: 1))
                 .shadow(color: .black.opacity(0.35), radius: 14, y: 8)
         )
     }
@@ -79,7 +79,7 @@ struct ScreenshotSensitiveInfoPanel: View {
         Button { perform(.toggle(row.id)) } label: {
             HStack(spacing: 8) {
                 Image(systemName: row.applied ? "checkmark.square.fill" : "square")
-                    .foregroundStyle(row.applied ? AskTheme.accent : Color.secondary)
+                    .foregroundStyle(row.applied ? TypefluxColor.accent.color : Color.secondary)
                 Text(row.kind.title).font(.system(size: 12, weight: .medium)).lineLimit(1)
                 Text(row.text).font(.system(size: 12).monospacedDigit()).foregroundStyle(.secondary)
                     .lineLimit(1).truncationMode(.middle)

@@ -13,11 +13,11 @@ struct AskPermissionModeMenu: View {
     var onSelect: (AskPermissionMode) -> Void
 
     static func labelColor(_ mode: AskPermissionMode) -> Color {
-        mode == .yolo ? StudioTheme.danger : StudioTheme.textSecondary
+        mode == .yolo ? TypefluxColor.danger.color : TypefluxColor.secondaryLabel.color
     }
 
     static func wellFill(_ mode: AskPermissionMode) -> Color {
-        mode == .yolo ? StudioTheme.danger.opacity(0.11) : .clear
+        mode == .yolo ? TypefluxColor.danger.color.opacity(0.11) : .clear
     }
 
     var body: some View {

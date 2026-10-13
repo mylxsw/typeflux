@@ -10,10 +10,10 @@ struct AskRunToneDot: View {
 
     static func color(_ tone: AskRunTone) -> Color {
         switch tone {
-        case .done: return StudioTheme.success
-        case .running: return AskTheme.accent
-        case .attention: return StudioTheme.warning
-        case .failed: return StudioTheme.danger
+        case .done: return TypefluxColor.success.color
+        case .running: return TypefluxColor.accent.color
+        case .attention: return TypefluxColor.warning.color
+        case .failed: return TypefluxColor.danger.color
         }
     }
 
@@ -78,10 +78,11 @@ struct AskIconGhostButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: systemImage).font(.callout)
-                .foregroundStyle(active ? StudioTheme.success
-                    : (hovering ? StudioTheme.textPrimary : StudioTheme.textTertiary))
+                .foregroundStyle(active ? TypefluxColor.success.color
+                    : (hovering ? TypefluxColor.label.color : TypefluxColor.tertiaryLabel.color))
                 .frame(width: 28, height: 28)
-                .background(hovering ? AskTheme.hoverFill : Color.clear, in: style.controlShape(height: 28))
+                .background(hovering ? TypefluxColor.label.color.opacity(0.06) : Color.clear,
+                            in: style.controlShape(height: 28))
                 .contentShape(style.controlShape(height: 28))
         }
         .buttonStyle(AskPressableStyle())
@@ -98,12 +99,12 @@ struct AskKeyHint: View {
     var body: some View {
         Text(verbatim: text)
             .font(.subheadline).fontWeight(.medium)
-            .foregroundStyle(StudioTheme.textTertiary)
+            .foregroundStyle(TypefluxColor.tertiaryLabel.color)
             .padding(.horizontal, 6)
             .frame(height: 18)
-            .background(AskTheme.keycapSurface, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+            .background(LegacyAskPalette.keycapSurface, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .strokeBorder(AskTheme.separator, lineWidth: 0.5))
+                .strokeBorder(TypefluxColor.separator.color, lineWidth: 0.5))
             .accessibilityHidden(true)
     }
 }
@@ -158,12 +159,12 @@ struct AskSentAttachmentChip: View {
             Text(title).lineLimit(1)
         }
         .font(.subheadline)
-        .foregroundStyle(StudioTheme.textSecondary)
+        .foregroundStyle(TypefluxColor.secondaryLabel.color)
         .padding(.leading, thumbnail == nil ? 9 : 4)
         .padding(.trailing, 9)
         .frame(height: 26)
-        .background(AskTheme.hoverFill, in: Capsule())
-        .overlay(Capsule().strokeBorder(AskTheme.separator, lineWidth: 0.5))
+        .background(TypefluxColor.label.color.opacity(0.06), in: Capsule())
+        .overlay(Capsule().strokeBorder(TypefluxColor.separator.color, lineWidth: 0.5))
         .contentShape(Capsule())
         .accessibilityLabel(title)
     }
@@ -172,7 +173,7 @@ struct AskSentAttachmentChip: View {
 /// The hairline between groups in a composer menu.
 struct AskPopoverDivider: View {
     var body: some View {
-        Rectangle().fill(AskTheme.separator).frame(height: 0.5)
+        Rectangle().fill(TypefluxColor.separator.color).frame(height: 0.5)
             .padding(.horizontal, 14)
             .padding(.vertical, 5)
     }

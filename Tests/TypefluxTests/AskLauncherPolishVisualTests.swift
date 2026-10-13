@@ -16,14 +16,15 @@ struct AskLauncherPolishVisualTests {
         var height: CGFloat = 0
 
         init(_ fixture: AskTestFixture, width: CGFloat, appearance: NSAppearance.Name) {
-            window = AskTestVoiceWindow(contentRect: NSRect(x: 0, y: 0, width: width, height: 640), styleMask: [.borderless],
+            window = AskTestVoiceWindow(contentRect: NSRect(x: 0, y: 0, width: width, height: 640),
+                                        styleMask: [.borderless],
                                         backing: .buffered, defer: false)
             window.isReleasedWhenClosed = false
             window.appearance = NSAppearance(named: appearance)
             var report: (CGFloat) -> Void = { _ in }
             let view = NSHostingView(rootView: AskLauncherView(model: fixture.model, onDismiss: {},
                                                                onHeightChange: { report($0) })
-                .environment(\.askGlassMaterialOverride, .opaque))
+                    .environment(\.askGlassMaterialOverride, .opaque))
             hosting = view
             window.contentView = view
             window.orderFront(nil)
@@ -46,9 +47,11 @@ struct AskLauncherPolishVisualTests {
 
         func press(_ keyCode: UInt16, _ flags: NSEvent.ModifierFlags = []) async throws {
             let editor = try #require(editor)
-            let event = try #require(NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: flags, timestamp: 0,
+            let event = try #require(NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: flags,
+                                                      timestamp: 0,
                                                       windowNumber: window.windowNumber, context: nil, characters: "",
-                                                      charactersIgnoringModifiers: "", isARepeat: false, keyCode: keyCode))
+                                                      charactersIgnoringModifiers: "", isARepeat: false,
+                                                      keyCode: keyCode))
             editor.keyDown(with: event)
             try await Task.sleep(for: .milliseconds(150))
         }
@@ -112,15 +115,16 @@ struct AskLauncherPolishVisualTests {
             let text = VStack(alignment: .leading, spacing: 6) {
                 ForEach(0 ..< 10, id: \.self) { _ in
                     Text("prefix 关键词目录  history 聊天历史  gh GitHub").font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textPrimary)
+                        .foregroundStyle(TypefluxColor.label.color)
                 }
             }
             .padding(12)
             .frame(width: frame.width, height: frame.height, alignment: .topLeading)
-            .background(AskTheme.launcherSurface)
+            .background(LegacyAskPalette.launcherSurface)
             let hosting = NSHostingView(rootView: text)
             window.contentView = hosting
-            let anchor = NSView(frame: NSRect(x: 24, y: hosting.isFlipped ? frame.height - 30 : 10, width: 20, height: 20))
+            let anchor = NSView(frame: NSRect(x: 24, y: hosting.isFlipped ? frame.height - 30 : 10, width: 20,
+                                              height: 20))
             hosting.addSubview(anchor)
             window.orderFrontRegardless()
             try await Task.sleep(for: .milliseconds(300))
@@ -133,7 +137,8 @@ struct AskLauncherPolishVisualTests {
             let file = URL(fileURLWithPath: directory).appendingPathComponent("06c-attach-menu-on-screen-\(theme).png")
             let capture = Process()
             capture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
-            capture.arguments = ["-x", "-R\(Int(area.minX - screen.frame.minX)),\(Int(top)),\(Int(area.width)),\(Int(area.height))",
+            capture.arguments = ["-x",
+                                 "-R\(Int(area.minX - screen.frame.minX)),\(Int(top)),\(Int(area.width)),\(Int(area.height))",
                                  file.path]
             try capture.run()
             capture.waitUntilExit()
@@ -247,12 +252,12 @@ struct AskLauncherPolishVisualTests {
             let chips = VStack(alignment: .leading, spacing: 6) {
                 ForEach(0 ..< 8, id: \.self) { _ in
                     Text("prefix 关键词目录  history 聊天历史  gh GitHub").font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textPrimary)
+                        .foregroundStyle(TypefluxColor.label.color)
                 }
             }
             .padding(10)
             .frame(width: 340, height: 220, alignment: .topLeading)
-            .background(AskTheme.launcherSurface)
+            .background(LegacyAskPalette.launcherSurface)
             try await render(ZStack(alignment: .topLeading) {
                 chips
                 menu.padding(.leading, 20).padding(.top, 20)
@@ -266,12 +271,13 @@ struct AskLauncherPolishVisualTests {
             let footer = HStack(spacing: 9) {
                 AskLocalModeIdentity(model: signedOut.model).layoutPriority(1)
                 Spacer(minLength: 4)
-                Image(systemName: "gearshape").font(.system(size: 15)).foregroundStyle(StudioTheme.textSecondary)
+                Image(systemName: "gearshape").font(.system(size: 15))
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
                     .frame(width: 32, height: 32)
             }
             .padding(.leading, 12).padding(.trailing, 10)
             .frame(width: 210, height: 56)
-            .background(AskTheme.popoverSurface)
+            .background(TypefluxColor.windowBackground.color)
             try await render(footer, size: NSSize(width: 210, height: 56), appearance: appearance,
                              file: output.appendingPathComponent("07-sidebar-footer-\(theme).png"))
         }

@@ -24,7 +24,7 @@ struct StudioShell<Content: View>: View {
             } detail: {
                 GeometryReader { proxy in
                     Group {
-                        if [.models, .personas, .agent, .launcher, .settings, .account, .vocabulary, .history]
+                        if [.home, .models, .personas, .agent, .launcher, .settings, .account, .vocabulary, .history]
                             .contains(currentSection) {
                             pageContent(size: proxy.size)
                         } else {
@@ -49,7 +49,7 @@ struct StudioShell<Content: View>: View {
             .frame(width: contentWidth, alignment: .topLeading)
             .padding(.horizontal, inset)
             .padding(.top, 12)
-            .padding(.bottom, [.models, .personas, .agent, .launcher, .settings, .account, .vocabulary, .history]
+            .padding(.bottom, [.home, .models, .personas, .agent, .launcher, .settings, .account, .vocabulary, .history]
                 .contains(currentSection) ? 0 : 12)
             .frame(maxWidth: .infinity, alignment: .topLeading)
     }

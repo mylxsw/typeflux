@@ -9,7 +9,13 @@ final class AskMCPToolsTests: XCTestCase {
         MCPToolDefinition(
             name: name,
             description: "\(name) tool",
-            inputSchema: MCPObjectSchema(type: "object", properties: nil, required: nil, description: nil, additionalProperties: nil)
+            inputSchema: MCPObjectSchema(
+                type: "object",
+                properties: nil,
+                required: nil,
+                description: nil,
+                additionalProperties: nil
+            )
         )
     }
 
@@ -92,7 +98,11 @@ final class AskMCPToolsTests: XCTestCase {
     func testInvalidOrOverlongNamesAreSkipped() {
         let client = MockMCPClient()
         let entries = ["ok_tool", "has space", String(repeating: "a", count: 61)].map {
-            MCPRegisteredTool(serverId: UUID(), serverName: "S", tool: MCPToolAdapter(client: client, toolDef: tool($0)))
+            MCPRegisteredTool(
+                serverId: UUID(),
+                serverName: "S",
+                tool: MCPToolAdapter(client: client, toolDef: tool($0))
+            )
         }
         XCTAssertEqual(AskLocalTools.mcpToolNames(entries).map(\.0), ["mcp_ok_tool"])
         XCTAssertEqual(AskLocalTools.serverSlug("My Server!", id: UUID()), "My_Server")
@@ -103,7 +113,10 @@ final class AskMCPToolsTests: XCTestCase {
         let server = config("Search")
         let client = MockMCPClient()
         await client.setMockTools([tool("lookup")])
-        await client.setMockCallResult(MCPToolsCallResult(content: [MCPContentBlock(type: "text", text: "quota exceeded")], isError: true))
+        await client.setMockCallResult(MCPToolsCallResult(
+            content: [MCPContentBlock(type: "text", text: "quota exceeded")],
+            isError: true
+        ))
         let registry = registry([server.id: client])
         try await registry.addServer(server)
         let tools = AskLocalTools(registry: registry)
@@ -111,7 +124,10 @@ final class AskMCPToolsTests: XCTestCase {
 
         let names = await tools.definitions(conversationId: nil).map(\.name)
         XCTAssertEqual(names, ["computer", "skill", "memory", "mcp_lookup"])
-        let output = try await tools.execute(.init(id: "1", function: .init(name: "mcp_lookup", arguments: "{}")), conversationId: "c")
+        let output = try await tools.execute(
+            .init(id: "1", function: .init(name: "mcp_lookup", arguments: "{}")),
+            conversationId: "c"
+        )
         XCTAssertTrue(output.isError)
         XCTAssertTrue(output.content.contains("quota exceeded"))
         XCTAssertEqual(output.outcome?.safeStatus, .unknown)
@@ -120,7 +136,10 @@ final class AskMCPToolsTests: XCTestCase {
     func testOutputMapsTextResourcesAndImages() throws {
         let text = AskLocalTools.output(from: MCPToolsCallResult(content: [
             MCPContentBlock(type: "text", text: "line"),
-            MCPContentBlock(type: "resource", resource: MCPEmbeddedResource(uri: "file:///a", mimeType: "text/plain", text: "file body"))
+            MCPContentBlock(
+                type: "resource",
+                resource: MCPEmbeddedResource(uri: "file:///a", mimeType: "text/plain", text: "file body")
+            )
         ], isError: nil))
         XCTAssertTrue(text.content.contains("file body"))
         XCTAssertTrue(text.content.contains("unsupported"))
@@ -142,18 +161,27 @@ final class AskMCPToolsTests: XCTestCase {
         XCTAssertTrue(image.content.contains("Multiple images retained"))
         XCTAssertTrue(image.isError)
 
-        let invalid = AskLocalTools.output(from: MCPToolsCallResult(content: [MCPContentBlock(type: "image", data: "@@@")], isError: false))
+        let invalid = AskLocalTools.output(from: MCPToolsCallResult(
+            content: [MCPContentBlock(type: "image", data: "@@@")],
+            isError: false
+        ))
         XCTAssertNil(invalid.image)
         XCTAssertTrue(invalid.content.contains("Unsupported or invalid image"))
         XCTAssertTrue(invalid.isError)
 
-        let onlyImage = AskLocalTools.output(from: MCPToolsCallResult(content: [MCPContentBlock(type: "image", data: png, mimeType: "image/png")], isError: false))
+        let onlyImage = AskLocalTools.output(from: MCPToolsCallResult(
+            content: [MCPContentBlock(type: "image", data: png, mimeType: "image/png")],
+            isError: false
+        ))
         XCTAssertEqual(onlyImage.content, "[Tool image attached]")
         let empty = AskLocalTools.output(from: MCPToolsCallResult(content: [], isError: true))
         XCTAssertTrue(empty.content.contains("Tool returned no content"))
         XCTAssertTrue(empty.isError)
 
-        let long = AskLocalTools.output(from: MCPToolsCallResult(content: [MCPContentBlock(type: "text", text: String(repeating: "x", count: 70000))], isError: false))
+        let long = AskLocalTools.output(from: MCPToolsCallResult(
+            content: [MCPContentBlock(type: "text", text: String(repeating: "x", count: 70000))],
+            isError: false
+        ))
         XCTAssertTrue(long.content.contains("projection truncated"))
         XCTAssertTrue(long.isError)
     }
@@ -189,7 +217,10 @@ final class AskMCPToolsTests: XCTestCase {
     }
 
     func testJSONRPCErrorIsReportedInsteadOfMissingResult() {
-        let message = MCPJsonRPCMessage(id: .string("1"), error: MCPErrorDetail(code: -32602, message: "bad args", data: nil))
+        let message = MCPJsonRPCMessage(
+            id: .string("1"),
+            error: MCPErrorDetail(code: -32602, message: "bad args", data: nil)
+        )
         XCTAssertThrowsError(try message.decodeToolsCallResult()) { error in
             XCTAssertEqual(error.localizedDescription, "MCP server error -32602: bad args")
         }
@@ -197,12 +228,18 @@ final class AskMCPToolsTests: XCTestCase {
             XCTAssertEqual(error.localizedDescription, "Invalid MCP response: No result in message")
         }
         XCTAssertEqual(MCPClientError.timedOut.localizedDescription, "The MCP server did not respond in time.")
-        XCTAssertEqual(MCPClientError.launchFailed("npx").localizedDescription, "Could not start the MCP server command: npx")
+        XCTAssertEqual(
+            MCPClientError.launchFailed("npx").localizedDescription,
+            "Could not start the MCP server command: npx"
+        )
         let cancel = MCPJsonRPCMessage.cancelledNotification(requestId: .string("7"), reason: "Request timed out")
         XCTAssertEqual(cancel.method, "notifications/cancelled")
         XCTAssertNil(cancel.id)
         XCTAssertEqual(cancel.params?["requestId"]?.value as? String, "7")
-        XCTAssertEqual(MCPJsonRPCMessage.toolsListRequest(id: .string("3"), cursor: "abc").params?["cursor"]?.value as? String, "abc")
+        XCTAssertEqual(
+            MCPJsonRPCMessage.toolsListRequest(id: .string("3"), cursor: "abc").params?["cursor"]?.value as? String,
+            "abc"
+        )
     }
 
     func testExternalAnnotationsCannotLowerRisk() async throws {
@@ -219,7 +256,10 @@ final class AskMCPToolsTests: XCTestCase {
         let server = config("Files")
         let client = MockMCPClient()
         var reader = tool("read_file"); reader.annotations = MCPToolAnnotations(readOnlyHint: true)
-        var writer = tool("write_file"); writer.annotations = MCPToolAnnotations(readOnlyHint: false, destructiveHint: false)
+        var writer = tool("write_file"); writer.annotations = MCPToolAnnotations(
+            readOnlyHint: false,
+            destructiveHint: false
+        )
         await client.setMockTools([reader, writer, tool("delete_file")])
         let registry = registry([server.id: client])
         try await registry.addServer(server)
@@ -246,8 +286,13 @@ final class AskMCPToolsTests: XCTestCase {
         XCTAssertFalse(approved.allowsReuse)
         _ = try await tools.executeApproved(call, conversationId: "conversation", binding: approved, authorize: {})
         let changed = MCPToolDefinition(name: "read_file", description: "read_file tool",
-                                        inputSchema: .init(type: "object", properties: nil, required: ["new_required_parameter"],
-                                                           description: nil, additionalProperties: nil))
+                                        inputSchema: .init(
+                                            type: "object",
+                                            properties: nil,
+                                            required: ["new_required_parameter"],
+                                            description: nil,
+                                            additionalProperties: nil
+                                        ))
         await client.setMockTools([changed])
         try await registry.refreshTools(for: server.id)
         do {
@@ -259,7 +304,12 @@ final class AskMCPToolsTests: XCTestCase {
         await registry.removeServer(id: server.id)
         try await registry.addServer(server)
         do {
-            _ = try await registry.callApproved(serverId: server.id, toolName: "read_file", arguments: "{}", binding: changedBinding)
+            _ = try await registry.callApproved(
+                serverId: server.id,
+                toolName: "read_file",
+                arguments: "{}",
+                binding: changedBinding
+            )
             XCTFail("Reconnecting the same server ID must invalidate its old connection grants")
         } catch {}
         let newBinding = try await tools.approvalBinding(for: call, conversationId: "conversation")
@@ -281,32 +331,48 @@ final class AskMCPToolsTests: XCTestCase {
         let json = #"{"name":"t","inputSchema":{"type":"object"},"annotations":{"readOnlyHint":true,"title":"T"}}"#
         let decoded = try JSONDecoder().decode(MCPToolDefinition.self, from: Data(json.utf8))
         XCTAssertEqual(decoded.annotations, MCPToolAnnotations(readOnlyHint: true, destructiveHint: nil))
-        let plain = try JSONDecoder().decode(MCPToolDefinition.self, from: Data(#"{"name":"t","inputSchema":{"type":"object"}}"#.utf8))
+        let plain = try JSONDecoder().decode(
+            MCPToolDefinition.self,
+            from: Data(#"{"name":"t","inputSchema":{"type":"object"}}"#.utf8)
+        )
         XCTAssertNil(plain.annotations)
 
         let request = AskSendRequest(id: "m", deviceId: "d", text: "q", tools: [])
         XCTAssertEqual(request.timeZone, TimeZone.current.identifier)
-        let body = try XCTUnwrap(JSONSerialization.jsonObject(with: AskCoding.encoder().encode(request)) as? [String: Any])
+        let body = try XCTUnwrap(JSONSerialization
+            .jsonObject(with: AskCoding.encoder().encode(request)) as? [String: Any])
         XCTAssertEqual(body["time_zone"] as? String, TimeZone.current.identifier)
         XCTAssertEqual(body["locale"] as? String, Locale.current.identifier(.bcp47))
     }
 
     func testWebToolPresentation() {
         let search = AskToolCall(id: "s", function: .init(name: "web_search", arguments: #"{"query":"swift 6"}"#))
-        XCTAssertEqual(AskTheme.toolTitle(search), L("ask.tool.webSearch") + " · swift 6")
+        XCTAssertEqual(AskToolPresentation.toolTitle(search), L("ask.tool.webSearch") + " · swift 6")
         XCTAssertEqual(AskPresentation.toolSymbol(search), "magnifyingglass")
-        let fetch = AskToolCall(id: "f", function: .init(name: "web_fetch", arguments: #"{"url":"https://example.com/a"}"#))
-        XCTAssertEqual(AskTheme.toolTitle(fetch), L("ask.tool.webFetch") + " · example.com")
+        let fetch = AskToolCall(
+            id: "f",
+            function: .init(name: "web_fetch", arguments: #"{"url":"https://example.com/a"}"#)
+        )
+        XCTAssertEqual(AskToolPresentation.toolTitle(fetch), L("ask.tool.webFetch") + " · example.com")
         XCTAssertEqual(AskPresentation.toolSymbol(fetch), "network")
         let broken = AskToolCall(id: "b", function: .init(name: "web_fetch", arguments: "partial"))
-        XCTAssertEqual(AskTheme.toolTitle(broken), L("ask.tool.webFetch"))
+        XCTAssertEqual(AskToolPresentation.toolTitle(broken), L("ask.tool.webFetch"))
         XCTAssertNotEqual(L("ask.allowConversation"), "ask.allowConversation")
     }
 
     private static func pngBase64(width: Int, height: Int) throws -> String {
-        let rep = try XCTUnwrap(NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: width, pixelsHigh: height, bitsPerSample: 8,
-                                                 samplesPerPixel: 4, hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB,
-                                                 bytesPerRow: 0, bitsPerPixel: 0))
+        let rep = try XCTUnwrap(NSBitmapImageRep(
+            bitmapDataPlanes: nil,
+            pixelsWide: width,
+            pixelsHigh: height,
+            bitsPerSample: 8,
+            samplesPerPixel: 4,
+            hasAlpha: true,
+            isPlanar: false,
+            colorSpaceName: .deviceRGB,
+            bytesPerRow: 0,
+            bitsPerPixel: 0
+        ))
         return try XCTUnwrap(rep.representation(using: .png, properties: [:])).base64EncodedString()
     }
 }

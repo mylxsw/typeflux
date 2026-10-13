@@ -45,7 +45,7 @@ struct ClipboardInlineMedia: View {
                 )
             }
             if expanded, let size = entry.imagePixelSize {
-                ClipboardMediaChip(text: "\(Int(size.width)) × \(Int(size.height))")
+                ClipboardMediaLabel(text: "\(Int(size.width)) × \(Int(size.height))")
                     .padding(6)
             }
         }
@@ -76,7 +76,7 @@ struct ClipboardInlineMedia: View {
                 if urls.count > Self.stripLimit {
                     Text(verbatim: "+\(urls.count - Self.stripLimit)")
                         .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textSecondary)
+                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
                         .padding(.horizontal, 8)
                         .frame(minWidth: 40, minHeight: Self.stripTileSize)
                         .background(
@@ -112,7 +112,7 @@ struct ClipboardInlineMedia: View {
             .frame(width: 114, height: Self.height)
             .overlay(alignment: .bottomTrailing) {
                 if let duration = info?.duration {
-                    ClipboardMediaChip(text: ClipboardEntryFormatter.duration(duration)).padding(4)
+                    ClipboardMediaLabel(text: ClipboardEntryFormatter.duration(duration)).padding(4)
                 }
             }
             .clipboardMediaFrame()
@@ -135,7 +135,7 @@ struct ClipboardInlineMedia: View {
                 if let duration = info?.duration {
                     Text(ClipboardEntryFormatter.duration(duration))
                         .font(.system(size: 10.5).monospacedDigit())
-                        .foregroundStyle(StudioTheme.textSecondary)
+                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
                 }
             }
             .padding(.leading, 6)
@@ -164,17 +164,15 @@ extension View {
     }
 }
 
-/// A small dark label over media, e.g. a duration or pixel size.
-struct ClipboardMediaChip: View {
+/// Read-only metadata over a thumbnail.
+struct ClipboardMediaLabel: View {
     let text: String
 
     var body: some View {
-        Text(verbatim: text)
-            .font(.system(size: 10, weight: .semibold).monospacedDigit())
-            .foregroundStyle(.white)
-            .padding(.horizontal, 5)
-            .padding(.vertical, 1)
-            .background(Color.black.opacity(0.55), in: RoundedRectangle(cornerRadius: 4, style: .continuous))
+        Text(verbatim: text).font(.footnote).monospacedDigit()
+            .foregroundStyle(.primary).padding(4)
+            .background(TypefluxColor.controlBackground.color)
+            .accessibilityLabel(text)
     }
 }
 
@@ -182,7 +180,7 @@ struct ClipboardMediaChip: View {
 struct ClipboardMissingThumbnail: View {
     var body: some View {
         ZStack {
-            AskTheme.raisedSurface
+            TypefluxColor.windowBackground.color
             Image(systemName: "exclamationmark.triangle")
                 .font(.system(size: 14))
                 .foregroundStyle(.tertiary)

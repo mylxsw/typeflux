@@ -106,7 +106,8 @@ struct AskLiquidGlassRedesignTests {
             AskRunPhase.resolve(run: run, busy: busy, pendingApproval: pendingApproval,
                                 recovery: .init(run: run, entries: [], deviceId: "d", local: false))?.tone
         }
-        var run = AskRun(id: "r", deviceId: "d", status: "running", steps: 1, updatedAt: Self.now, tools: [], pending: [])
+        var run = AskRun(id: "r", deviceId: "d", status: "running", steps: 1, updatedAt: Self.now, tools: [],
+                         pending: [])
         #expect(tone(nil, pendingApproval: true) == nil)
         #expect(tone(run) == .running)
         #expect(tone(run, pendingApproval: true) == .attention)
@@ -125,10 +126,10 @@ struct AskLiquidGlassRedesignTests {
     }
 
     @Test func toneDotColoursAndMotion() {
-        #expect(AskRunToneDot.color(.done) == StudioTheme.success)
-        #expect(AskRunToneDot.color(.running) == AskTheme.accent)
-        #expect(AskRunToneDot.color(.attention) == StudioTheme.warning)
-        #expect(AskRunToneDot.color(.failed) == StudioTheme.danger)
+        #expect(AskRunToneDot.color(.done) == TypefluxColor.success.color)
+        #expect(AskRunToneDot.color(.running) == TypefluxColor.accent.color)
+        #expect(AskRunToneDot.color(.attention) == TypefluxColor.warning.color)
+        #expect(AskRunToneDot.color(.failed) == TypefluxColor.danger.color)
         #expect(AskRunToneDot.pulses(.running, reduceMotion: false))
         #expect(!AskRunToneDot.pulses(.running, reduceMotion: true))
         #expect(!AskRunToneDot.pulses(.done, reduceMotion: false))
@@ -164,7 +165,8 @@ struct AskLiquidGlassRedesignTests {
         let locale = Locale(identifier: "en_US_POSIX")
         let now = try #require(calendar.date(from: DateComponents(year: 2026, month: 10, day: 2, hour: 19, minute: 5)))
         let today = try #require(calendar.date(from: DateComponents(year: 2026, month: 10, day: 2, hour: 9, minute: 7)))
-        let yesterday = try #require(calendar.date(from: DateComponents(year: 2026, month: 10, day: 1, hour: 20, minute: 27)))
+        let yesterday = try #require(calendar.date(from: DateComponents(year: 2026, month: 10, day: 1, hour: 20,
+                                                                        minute: 27)))
         let earlier = try #require(calendar.date(from: DateComponents(year: 2026, month: 9, day: 28, hour: 8)))
         let lastYear = try #require(calendar.date(from: DateComponents(year: 2025, month: 12, day: 30, hour: 8)))
         let label = { (date: Date) in

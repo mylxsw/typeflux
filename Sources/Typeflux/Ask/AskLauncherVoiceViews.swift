@@ -120,7 +120,7 @@ struct AskVoicePanel: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Rectangle().fill(AskTheme.separator).frame(height: 1).padding(.horizontal, 12)
+            Rectangle().fill(TypefluxColor.separator.color).frame(height: 1).padding(.horizontal, 12)
             VStack(spacing: 10) {
                 AskLevelWaveform(levels: live.levels, active: listening)
                 Text(L(listening ? "ask.voice.panel.hint" : "ask.voice.panel.transcribing"))
@@ -158,7 +158,7 @@ struct AskVoicePanel: View {
         .foregroundStyle(TypefluxColor.secondaryLabel.color)
         .padding(.horizontal, 10)
         .frame(height: 24)
-        .background(AskTheme.hoverFill.opacity(0.6), in: Capsule())
-        .overlay(Capsule().strokeBorder(AskTheme.border, lineWidth: 0.5))
+        .background(TypefluxColor.label.color.opacity(0.06).opacity(0.6), in: Capsule())
+        .overlay(Capsule().strokeBorder(TypefluxColor.separator.color, lineWidth: 0.5))
     }
 }

@@ -19,7 +19,7 @@ struct AskContentCardSurface: ViewModifier {
             let shape = RoundedRectangle(cornerRadius: corner, style: cornerStyle)
             content
                 .background(shape.fill(.white))
-                .overlay(shape.strokeBorder(AskTheme.cardBorder, lineWidth: 1).allowsHitTesting(false))
+                .overlay(shape.strokeBorder(TypefluxColor.separator.color, lineWidth: 1).allowsHitTesting(false))
                 .background {
                     if elevation != nil, elevatedInLight {
                         shape.fill(.white)
@@ -38,7 +38,7 @@ struct AskContentCardSurface: ViewModifier {
 }
 
 extension View {
-    func askContentCard(corner: CGFloat, opaqueFill: Color = AskTheme.glassFill,
+    func askContentCard(corner: CGFloat, opaqueFill: Color = LegacyAskPalette.glassFill,
                         elevation: AskElevation? = .panel, elevatedInLight: Bool = true) -> some View {
         modifier(AskContentCardSurface(corner: corner, opaqueFill: opaqueFill, elevation: elevation,
                                        elevatedInLight: elevatedInLight))

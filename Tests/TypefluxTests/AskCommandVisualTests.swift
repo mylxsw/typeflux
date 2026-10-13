@@ -16,7 +16,8 @@ struct AskCommandVisualTests {
 
     private func type(_ characters: String, keyCode: UInt16 = 0, into editor: NSTextView) {
         let event = NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: [], timestamp: 0,
-                                     windowNumber: editor.window?.windowNumber ?? 0, context: nil, characters: characters,
+                                     windowNumber: editor.window?.windowNumber ?? 0, context: nil,
+                                     characters: characters,
                                      charactersIgnoringModifiers: characters, isARepeat: false, keyCode: keyCode)!
         editor.keyDown(with: event)
     }
@@ -43,32 +44,55 @@ struct AskCommandVisualTests {
             let fixture = try AskTestFixture()
             fixture.model.commandSources = AskCommandSources(
                 skills: { AskBuiltinSkills.all },
-                mcpServers: { [AskMCPServerSummary(name: "github", enabled: true), AskMCPServerSummary(name: "notion", enabled: false)] }
+                mcpServers: { [
+                    AskMCPServerSummary(name: "github", enabled: true),
+                    AskMCPServerSummary(name: "notion", enabled: false)
+                ] }
             )
             let now = Date()
             let photo = try AskAttachmentLoader.image(
                 data: AskAttachmentFixture.encode(AskAttachmentFixture.image(width: 320, height: 200), type: .png),
-                name: "设计稿-v2.png", byteSize: 82000)
+                name: "设计稿-v2.png", byteSize: 82000
+            )
             let conversation = AskConversation(id: "files", title: "对照需求看设计稿", revision: 1, updatedAt: now, messages: [
                 .init(id: "q1", role: "user", text: "对照这张图和需求文档，看看设计稿还缺什么", createdAt: now,
                       attachments: [photo, AskAttachment(kind: .file, name: "产品需求说明书.pdf", text: "需求", pages: 14),
                                     AskAttachment(kind: .folder, name: "typeflux", path: "/Users/me/typeflux")],
                       skills: [AskSkillUse(name: "meeting-notes", instructions: "x")]),
                 .init(id: "a1", role: "assistant", text: "设计稿覆盖了附件上传和命令面板，还缺少：\n\n- 附件错误状态\n- 命令为空时的提示", createdAt: now)
-            ], run: .init(id: "run", deviceId: "device", status: "completed", steps: 1, updatedAt: now, tools: [], pending: []))
+            ], run: .init(
+                id: "run",
+                deviceId: "device",
+                status: "completed",
+                steps: 1,
+                updatedAt: now,
+                tools: [],
+                pending: []
+            ))
             await fixture.api.seed(conversation)
             await fixture.model.refreshHistory()
             await fixture.model.select(conversation.id)
-            fixture.model.draft.append([photo, AskAttachment(kind: .file, name: "usage-2026-09.csv", text: "a,b", truncated: true),
-                                        AskAttachment(kind: .folder, name: "typeflux", path: "/Users/me/typeflux")])
+            fixture.model.draft.append([
+                photo,
+                AskAttachment(kind: .file, name: "usage-2026-09.csv", text: "a,b", truncated: true),
+                AskAttachment(kind: .folder, name: "typeflux", path: "/Users/me/typeflux")
+            ])
             fixture.model.draft.skills = ["meeting-notes"]
             fixture.model.draft.mcpServers = ["github"]
 
             let size = NSSize(width: 1100, height: 760)
-            let window = AskTestVoiceWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.borderless], backing: .buffered, defer: false)
+            let window = AskTestVoiceWindow(
+                contentRect: NSRect(origin: .zero, size: size),
+                styleMask: [.borderless],
+                backing: .buffered,
+                defer: false
+            )
             window.isReleasedWhenClosed = false
             window.appearance = NSAppearance(named: appearance)
-            let hosting = NSHostingView(rootView: AskConversationView(model: fixture.model).environment(\.askGlassMaterialOverride, .opaque))
+            let hosting = NSHostingView(rootView: AskConversationView(model: fixture.model).environment(
+                \.askGlassMaterialOverride,
+                .opaque
+            ))
             hosting.frame = NSRect(origin: .zero, size: size)
             window.contentView = hosting
             window.makeKeyAndOrderFront(nil)
@@ -102,13 +126,18 @@ struct AskCommandVisualTests {
             fixture.model.launcherDraft = AskDraft(includeScreenshot: false)
             fixture.model.launcherDraft.append([photo])
             let launcherSize = NSSize(width: 720, height: 620)
-            let panel = AskTestVoiceWindow(contentRect: NSRect(origin: .zero, size: launcherSize), styleMask: [.borderless], backing: .buffered, defer: false)
+            let panel = AskTestVoiceWindow(
+                contentRect: NSRect(origin: .zero, size: launcherSize),
+                styleMask: [.borderless],
+                backing: .buffered,
+                defer: false
+            )
             panel.isReleasedWhenClosed = false
             panel.appearance = NSAppearance(named: appearance)
             let launcherHost = NSHostingView(rootView: VStack {
                 AskLauncherView(model: fixture.model, onDismiss: {}).environment(\.askGlassMaterialOverride, .opaque)
                 Spacer(minLength: 0)
-            }.background(AskTheme.surface))
+            }.background(TypefluxColor.controlBackground.color))
             launcherHost.frame = NSRect(origin: .zero, size: launcherSize)
             panel.contentView = launcherHost
             panel.makeKeyAndOrderFront(nil)

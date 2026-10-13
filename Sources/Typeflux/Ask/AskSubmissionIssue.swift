@@ -17,7 +17,7 @@ struct AskSubmissionIssueView: View {
         VStack(alignment: .leading, spacing: 8) {
             Label(issue.text, systemImage: "exclamationmark.triangle")
                 .font(.system(size: 12))
-                .foregroundStyle(StudioTheme.warning)
+                .foregroundStyle(TypefluxColor.warning.color)
                 .fixedSize(horizontal: false, vertical: true)
             if issue.offersModels || issue.offersSignIn {
                 HStack(spacing: 8) {
@@ -36,6 +36,6 @@ struct AskSubmissionIssueView: View {
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AskTheme.warningSoft, in: RoundedRectangle(cornerRadius: 10))
+        .background(TypefluxColor.warning.color.opacity(0.12), in: RoundedRectangle(cornerRadius: 10))
     }
 }

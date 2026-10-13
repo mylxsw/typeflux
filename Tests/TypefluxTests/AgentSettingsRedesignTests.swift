@@ -369,7 +369,7 @@ final class AgentSettingsRedesignTests: XCTestCase {
         window.appearance = NSAppearance(named: appearance)
         let hosting = NSHostingView(rootView: view.padding(padded ? 24 : 0).frame(width: width, height: height,
                                                                                   alignment: .top)
-                .background(StudioTheme.surface))
+                .background(TypefluxColor.controlBackground.color))
         window.contentView = hosting
         window.orderFront(nil)
         defer { window.orderOut(nil); window.close() }

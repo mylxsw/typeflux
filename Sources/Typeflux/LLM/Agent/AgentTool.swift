@@ -9,4 +9,3 @@ protocol AgentTool: Sendable {
     /// - Returns: Execution result (text or JSON string).
     func execute(arguments: String) async throws -> String
 }
-

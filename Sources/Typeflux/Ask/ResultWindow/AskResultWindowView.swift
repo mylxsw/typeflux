@@ -45,8 +45,8 @@ struct AskResultWindowView: View {
             Spacer(minLength: 0)
             HStack(spacing: 6) {
                 Text(document.displayTitle).font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textPrimary).layoutPriority(1)
-                Text(subtitle).font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
+                    .foregroundStyle(TypefluxColor.label.color).layoutPriority(1)
+                Text(subtitle).font(.system(size: 12)).foregroundStyle(TypefluxColor.tertiaryLabel.color)
             }
             .lineLimit(1)
             Spacer(minLength: 0)
@@ -64,7 +64,7 @@ struct AskResultWindowView: View {
         }
         .padding(.trailing, 10)
         .frame(height: Self.titleBarHeight)
-        .overlay(alignment: .bottom) { Rectangle().fill(AskTheme.separator).frame(height: 0.5) }
+        .overlay(alignment: .bottom) { Rectangle().fill(TypefluxColor.separator.color).frame(height: 0.5) }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("ask.result.titlebar")
     }
@@ -80,11 +80,12 @@ struct AskResultWindowView: View {
         let pending = document.savesWhenDone
         return Button(action: document.toggleNote) {
             Image(systemName: saved || pending ? "star.fill" : "star").font(.system(size: 12.5))
-                .foregroundStyle(saved || pending ? Color(nsColor: .systemYellow) : StudioTheme.textSecondary)
+                .foregroundStyle(saved || pending ? Color(nsColor: .systemYellow) : TypefluxColor.secondaryLabel.color)
                 .opacity(pending ? 0.55 : 1)
                 .frame(width: 28, height: 26)
-                .background(saved || pending ? Color(nsColor: .systemYellow).opacity(0.16) : AskTheme.controlSurface,
-                            in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                .background(saved || pending ? Color(nsColor: .systemYellow).opacity(0.16) : TypefluxColor
+                    .controlBackground.color,
+                    in: RoundedRectangle(cornerRadius: 7, style: .continuous))
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -96,9 +97,9 @@ struct AskResultWindowView: View {
     private func iconButton(_ symbol: String, help: String, active: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: symbol).font(.system(size: 12))
-                .foregroundStyle(active ? StudioTheme.accent : StudioTheme.textSecondary)
+                .foregroundStyle(active ? TypefluxColor.accent.color : TypefluxColor.secondaryLabel.color)
                 .frame(width: 28, height: 26)
-                .background(active ? AskTheme.accent.opacity(0.16) : AskTheme.controlSurface,
+                .background(active ? TypefluxColor.accent.color.opacity(0.16) : TypefluxColor.controlBackground.color,
                             in: RoundedRectangle(cornerRadius: 7, style: .continuous))
                 .contentShape(Rectangle())
         }
@@ -112,17 +113,17 @@ struct AskResultWindowView: View {
     private var original: some View {
         DisclosureGroup {
             ScrollView(.vertical) {
-                Text(document.input).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary)
+                Text(document.input).font(.system(size: 12.5)).foregroundStyle(TypefluxColor.secondaryLabel.color)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .textSelection(.enabled)
             }
             .frame(maxHeight: 110)
         } label: {
             Text(L("ask.result.original") + " · " + AskNote.oneLine(document.input))
-                .font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
+                .font(.system(size: 12)).foregroundStyle(TypefluxColor.tertiaryLabel.color).lineLimit(1)
         }
         .padding(.horizontal, 22).padding(.vertical, 8)
-        .overlay(alignment: .bottom) { Rectangle().fill(StudioTheme.border).frame(height: 1) }
+        .overlay(alignment: .bottom) { Rectangle().fill(TypefluxColor.separator.color).frame(height: 1) }
     }
 
     private var content: some View {
@@ -135,7 +136,7 @@ struct AskResultWindowView: View {
                             .opacity(document.dimmed ? 0.45 : 1)
                     }
                     if case let .failed(message) = document.state {
-                        Text(message).font(.system(size: 13.5)).foregroundStyle(StudioTheme.danger)
+                        Text(message).font(.system(size: 13.5)).foregroundStyle(TypefluxColor.danger.color)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     Color.clear.frame(height: 1).id(Self.bottomID)
@@ -165,7 +166,7 @@ struct AskResultWindowView: View {
                 toolButton(L("ask.result.insert", document.sourceApp ?? L("ask.result.sourceApp")),
                            symbol: "arrow.down.to.line", key: "⌥↩", primary: false, enabled: document.canInsert,
                            detail: document.canInsert || document.isStreaming
-                            ? nil : L("ask.result.insert.unavailable"),
+                               ? nil : L("ask.result.insert.unavailable"),
                            action: document.insert)
                     .accessibilityIdentifier("ask.result.insert")
             }
@@ -184,7 +185,7 @@ struct AskResultWindowView: View {
                 .accessibilityIdentifier("ask.result.askAI")
         }
         .padding(.horizontal, 12).frame(height: 46)
-        .overlay(alignment: .top) { Rectangle().fill(StudioTheme.border).frame(height: 1) }
+        .overlay(alignment: .top) { Rectangle().fill(TypefluxColor.separator.color).frame(height: 1) }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("ask.result.toolbar")
     }
@@ -194,11 +195,11 @@ struct AskResultWindowView: View {
                             detail: String? = nil, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: symbol).font(.system(size: 12.5))
-            .foregroundStyle(primary ? AskTheme.accent : StudioTheme.textSecondary)
-            .frame(width: 32, height: 30)
-            .background(primary ? AskTheme.accent.opacity(0.16) : AskTheme.controlSurface,
-                        in: RoundedRectangle(cornerRadius: 7, style: .continuous))
-            .contentShape(Rectangle())
+                .foregroundStyle(primary ? TypefluxColor.accent.color : TypefluxColor.secondaryLabel.color)
+                .frame(width: 32, height: 30)
+                .background(primary ? TypefluxColor.accent.color.opacity(0.16) : TypefluxColor.controlBackground.color,
+                            in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .disabled(!enabled)
@@ -209,10 +210,12 @@ struct AskResultWindowView: View {
 
     @ViewBuilder private var noticeView: some View {
         if let notice = document.notice {
-            Text(notice).font(.system(size: 12)).foregroundStyle(StudioTheme.textPrimary)
+            Text(notice).font(.system(size: 12)).foregroundStyle(TypefluxColor.label.color)
                 .padding(.horizontal, 10).frame(height: 26)
-                .background(StudioTheme.cardSurface, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(StudioTheme.border))
+                .background(TypefluxColor.contentBackground.color,
+                            in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .strokeBorder(TypefluxColor.separator.color))
                 .padding(.bottom, 56)
                 .transition(.opacity)
                 .accessibilityIdentifier("ask.result.notice")

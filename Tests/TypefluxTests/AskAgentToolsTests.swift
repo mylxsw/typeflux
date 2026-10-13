@@ -27,13 +27,16 @@ final class AskAgentToolsTests: XCTestCase {
 
     private func call(_ name: String, _ arguments: [String: Any]) -> AskToolCall {
         let data = try! JSONSerialization.data(withJSONObject: arguments)
-        return AskToolCall(id: UUID().uuidString, function: .init(name: name, arguments: String(decoding: data, as: UTF8.self)))
+        return AskToolCall(id: UUID().uuidString,
+                           function: .init(name: name, arguments: String(decoding: data, as: UTF8.self)))
     }
 
     // MARK: - Skills
 
     func testSkillParsingOverridesAndLoading() throws {
-        let parsed = try XCTUnwrap(AskSkillLibrary.parse("---\nname: Release Notes\ndescription: \"Write release notes\"\n---\n# Steps\nDo it.", fallbackName: "x"))
+        let parsed = try XCTUnwrap(AskSkillLibrary
+            .parse("---\nname: Release Notes\ndescription: \"Write release notes\"\n---\n# Steps\nDo it.",
+                   fallbackName: "x"))
         XCTAssertEqual(parsed.name, "release-notes")
         XCTAssertEqual(parsed.description, "Write release notes")
         XCTAssertEqual(parsed.body, "# Steps\nDo it.")
@@ -47,9 +50,12 @@ final class AskAgentToolsTests: XCTestCase {
         XCTAssertEqual(Set(library.skills().map(\.name)), Set(AskBuiltinSkills.all.map(\.name)))
         let custom = root.appendingPathComponent("email-reply")
         try FileManager.default.createDirectory(at: custom, withIntermediateDirectories: true)
-        try "---\ndescription: Our house style\n---\nAlways sign as Team.".write(to: custom.appendingPathComponent("SKILL.md"), atomically: true, encoding: .utf8)
+        try "---\ndescription: Our house style\n---\nAlways sign as Team."
+            .write(to: custom.appendingPathComponent("SKILL.md"),
+                   atomically: true, encoding: .utf8)
         try "print(1)".write(to: custom.appendingPathComponent("helper.py"), atomically: true, encoding: .utf8)
-        try FileManager.default.createDirectory(at: root.appendingPathComponent("broken"), withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: root.appendingPathComponent("broken"),
+                                                withIntermediateDirectories: true)
 
         let skills = library.skills()
         let replaced = try XCTUnwrap(skills.first { $0.name == "email-reply" })
@@ -83,12 +89,15 @@ final class AskAgentToolsTests: XCTestCase {
         let reloaded = AskMemoryNoteStore(fileURL: file)
         XCTAssertEqual(reloaded.list(owner: "a").map(\.text), ["Prefers metric units", "Lives in Berlin"])
         XCTAssertEqual(reloaded.list(owner: "b").count, 1)
-        XCTAssertEqual(AskMemoryNoteStore.memoryText(reloaded.list(owner: "a"), limit: 1000), "Saved notes:\n- Lives in Berlin\n- Prefers metric units")
-        XCTAssertEqual(AskMemoryNoteStore.memoryText(reloaded.list(owner: "a"), limit: 35), "Saved notes:\n- Lives in Berlin")
+        XCTAssertEqual(AskMemoryNoteStore.memoryText(reloaded.list(owner: "a"), limit: 1000),
+                       "Saved notes:\n- Lives in Berlin\n- Prefers metric units")
+        XCTAssertEqual(AskMemoryNoteStore.memoryText(reloaded.list(owner: "a"), limit: 35),
+                       "Saved notes:\n- Lives in Berlin")
         XCTAssertNil(AskMemoryNoteStore.memoryText([], limit: 1000))
         XCTAssertNil(AskMemoryNoteStore.memoryText(reloaded.list(owner: "a"), limit: 10))
 
-        XCTAssertTrue(try store.execute(["action": "list"], owner: "a").contains("\(first.id) v1: Prefers metric units"))
+        XCTAssertTrue(try store.execute(["action": "list"], owner: "a")
+            .contains("\(first.id) v1: Prefers metric units"))
         XCTAssertTrue(try store.execute(["action": "remember", "text": "Uses vim"], owner: "a").hasPrefix("Saved note"))
         XCTAssertEqual(try store.execute(["action": "forget", "id": first.id], owner: "a"), "Forgot note \(first.id).")
         XCTAssertThrowsError(try store.execute(["action": "forget", "id": "nope"], owner: "a"))
@@ -104,10 +113,14 @@ final class AskAgentToolsTests: XCTestCase {
         settings.globalSoulMemoryEnabled = false
         let notes = AskMemoryNoteStore(fileURL: root.appendingPathComponent("provider.json"))
         try notes.add("Prefers short answers", owner: "owner")
-        let provider = AskMemoryProvider(settings: settings, soulStore: GlobalSoulMemoryStore(fileURL: root.appendingPathComponent("soul.json")),
-                                         recentStore: RecentInputMemoryStore(fileURL: root.appendingPathComponent("recent.json")),
+        let provider = AskMemoryProvider(settings: settings,
+                                         soulStore: GlobalSoulMemoryStore(fileURL: root
+                                             .appendingPathComponent("soul.json")),
+                                         recentStore: RecentInputMemoryStore(fileURL: root
+                                             .appendingPathComponent("recent.json")),
                                          noteStore: notes, ownerID: { "owner" })
-        XCTAssertEqual(provider.memory(bundleIdentifier: nil, appName: nil)?.global, "Saved notes:\n- Prefers short answers")
+        XCTAssertEqual(provider.memory(bundleIdentifier: nil, appName: nil)?.global,
+                       "Saved notes:\n- Prefers short answers")
     }
 
     // MARK: - Desktop helpers
@@ -134,12 +147,15 @@ final class AskAgentToolsTests: XCTestCase {
     func testAccessibilityTreeDescription() {
         typealias Node = AskDesktopActions.Node
         let display = CGRect(x: 0, y: 0, width: 1001, height: 1001)
-        let tree = Node(role: "AXWindow", name: "Editor", value: "", frame: CGRect(x: 0, y: 0, width: 1000, height: 1000), children: [
-            Node(role: "AXGroup", name: "", value: "", frame: nil, children: [
-                Node(role: "AXButton", name: "Save", value: "", frame: CGRect(x: 90, y: 190, width: 20, height: 20)),
-                Node(role: "AXTextField", name: "Title", value: "Draft\nv2", frame: CGRect(x: 2000, y: 0, width: 10, height: 10))
-            ])
-        ])
+        let tree = Node(role: "AXWindow", name: "Editor", value: "",
+                        frame: CGRect(x: 0, y: 0, width: 1000, height: 1000), children: [
+                            Node(role: "AXGroup", name: "", value: "", frame: nil, children: [
+                                Node(role: "AXButton", name: "Save", value: "",
+                                     frame: CGRect(x: 90, y: 190, width: 20, height: 20)),
+                                Node(role: "AXTextField", name: "Title", value: "Draft\nv2",
+                                     frame: CGRect(x: 2000, y: 0, width: 10, height: 10))
+                            ])
+                        ])
         let text = AskDesktopActions.describe(tree, display: display)
         XCTAssertEqual(text, """
         Window "Editor" @(0.500, 0.500)
@@ -147,7 +163,8 @@ final class AskAgentToolsTests: XCTestCase {
           TextField "Title = Draft v2"
         """)
         let wide = Node(role: "AXList", name: "", value: "", frame: nil,
-                        children: (0 ..< 400).map { Node(role: "AXStaticText", name: "Row \($0)", value: "", frame: nil) })
+                        children: (0 ..< 400)
+                            .map { Node(role: "AXStaticText", name: "Row \($0)", value: "", frame: nil) })
         let limited = AskDesktopActions.describe(wide, display: display)
         XCTAssertTrue(limited.hasSuffix("[more elements omitted]"))
         XCTAssertNil(AskDesktopActions.snapshot(pid: -1))
@@ -166,14 +183,16 @@ final class AskAgentToolsTests: XCTestCase {
             XCTAssertTrue(command.contains(action))
         }
         for invalid: [String: Any] in [["action": "click", "ref": 0], ["action": "scroll"],
-                                        ["action": "scroll", "amount": 20], ["action": "fill", "ref": 1]] {
+                                       ["action": "scroll", "amount": 20], ["action": "fill", "ref": 1]] {
             XCTAssertThrowsError(try AskBrowserExecutor.command(invalid))
         }
     }
 
     func testBrowserFallsBackToARunningBrowserAndRisksAreTiered() async throws {
-        let tools = AskLocalTools(registry: registry(), settings: settings(), skills: AskSkillLibrary(userDirectory: root),
-                                  notes: AskMemoryNoteStore(fileURL: root.appendingPathComponent("n.json")), owner: { "o" })
+        let tools = AskLocalTools(registry: registry(), settings: settings(),
+                                  skills: AskSkillLibrary(userDirectory: root),
+                                  notes: AskMemoryNoteStore(fileURL: root.appendingPathComponent("n.json")),
+                                  owner: { "o" })
         tools.runningBundleIdentifiers = { [] }
         XCTAssertNil(tools.browserBundle(conversationId: nil))
         var names = await tools.definitions(conversationId: nil).map(\.name)
@@ -188,8 +207,11 @@ final class AskAgentToolsTests: XCTestCase {
         XCTAssertEqual(names.contains("run_code"), tools.sandbox.definition() != nil)
 
         let risks: [(String, [String: Any], AskToolRisk)] = [
-            ("skill", ["name": "x"], .none), ("computer", ["action": "inspect"], .read), ("computer", ["action": "wait"], .read),
-            ("computer", ["action": "drag"], .write), ("browser", ["action": "snapshot"], .read), ("browser", ["action": "back"], .write),
+            ("skill", ["name": "x"], .none), ("computer", ["action": "inspect"], .read), ("computer",
+                                                                                          ["action": "wait"], .read),
+            ("computer", ["action": "drag"], .write), ("browser", ["action": "snapshot"], .read), ("browser",
+                                                                                                   ["action": "back"],
+                                                                                                   .write),
             ("files", ["action": "read", "path": "a"], .read), ("files", ["action": "write", "path": "a"], .write),
             ("run_code", ["language": "python", "code": "1"], .write), ("memory", ["action": "list"], .read),
             ("memory", ["action": "remember"], .write), ("unknown", [:], .destructive)
@@ -197,7 +219,9 @@ final class AskAgentToolsTests: XCTestCase {
         for (name, args, risk) in risks {
             XCTAssertEqual(tools.risk(of: call(name, args)), risk, "\(name) \(args)")
         }
-        XCTAssertEqual(AskLocalTools.builtinRisk(AskToolCall(id: "x", function: .init(name: "files", arguments: "not json"))), .write)
+        XCTAssertEqual(AskLocalTools.builtinRisk(AskToolCall(id: "x",
+                                                             function: .init(name: "files", arguments: "not json"))),
+                       .write)
     }
 
     func testLocalToolsExecuteFilesCodeSkillsAndMemory() async throws {
@@ -209,9 +233,11 @@ final class AskAgentToolsTests: XCTestCase {
         XCTAssertEqual(settings.askFileAccessFolders, [folder.path])
         XCTAssertTrue(settings.askCodeExecutionEnabled)
         let notes = AskMemoryNoteStore(fileURL: root.appendingPathComponent("n.json"))
-        let sandbox = AskCodeSandbox(baseDirectory: root.appendingPathComponent("sandbox"), allowProcessGroupExecution: true)
+        let sandbox = AskCodeSandbox(baseDirectory: root.appendingPathComponent("sandbox"),
+                                     allowProcessGroupExecution: true)
         let tools = AskLocalTools(registry: registry(), settings: settings, sandbox: sandbox,
-                                  skills: AskSkillLibrary(userDirectory: root.appendingPathComponent("skills")), notes: notes, owner: { "me" })
+                                  skills: AskSkillLibrary(userDirectory: root.appendingPathComponent("skills")),
+                                  notes: notes, owner: { "me" })
         tools.runningBundleIdentifiers = { [] }
         let names = await tools.definitions(conversationId: "c").map(\.name)
         XCTAssertTrue(names.contains("files"))
@@ -224,7 +250,8 @@ final class AskAgentToolsTests: XCTestCase {
         _ = try await tools.execute(call("memory", ["action": "remember", "text": "Likes tea"]), conversationId: "c")
         XCTAssertEqual(notes.list(owner: "me").map(\.text), ["Likes tea"])
         if sandbox.isSupported {
-            let failed = try await tools.execute(call("run_code", ["language": "shell", "code": "echo hi; exit 2"]), conversationId: "c")
+            let failed = try await tools.execute(call("run_code", ["language": "shell", "code": "echo hi; exit 2"]),
+                                                 conversationId: "c")
             XCTAssertTrue(failed.isError)
             XCTAssertTrue(failed.content.contains("Exit code: 2"))
         }
@@ -233,7 +260,11 @@ final class AskAgentToolsTests: XCTestCase {
             _ = try await tools.execute(call("run_code", ["language": "shell", "code": "echo hi"]), conversationId: "c")
             XCTFail("Code execution is disabled")
         } catch {}
-        for bad in [call("skill", [:]), call("files", ["action": "read", "path": "/etc/hosts"]), call("nope", ["action": "x"])] {
+        for bad in [
+            call("skill", [:]),
+            call("files", ["action": "read", "path": "/etc/hosts"]),
+            call("nope", ["action": "x"])
+        ] {
             do {
                 _ = try await tools.execute(bad, conversationId: "c")
                 XCTFail("Expected failure for \(bad.function.name)")
@@ -244,15 +275,18 @@ final class AskAgentToolsTests: XCTestCase {
 
     func testComputerAndBrowserDispatchWithoutTouchingTheDesktop() async throws {
         let runner = ObservationScriptRunner()
-        let tools = AskLocalTools(registry: registry(), runner: runner, settings: settings(), skills: AskSkillLibrary(userDirectory: root),
-                                  notes: AskMemoryNoteStore(fileURL: root.appendingPathComponent("n.json")), owner: { "o" })
+        let tools = AskLocalTools(registry: registry(), runner: runner, settings: settings(),
+                                  skills: AskSkillLibrary(userDirectory: root),
+                                  notes: AskMemoryNoteStore(fileURL: root.appendingPathComponent("n.json")),
+                                  owner: { "o" })
         tools.runningBundleIdentifiers = { ["com.apple.Safari"] }
         let waited = try await tools.execute(call("computer", ["action": "wait", "seconds": 0]), conversationId: "c")
         XCTAssertEqual(waited.content, "Waited 0.0 s.")
         // No bound target: actions fail before any event is posted.
         for action in ["inspect", "click", "hotkey", "nonsense"] {
             do {
-                _ = try await tools.execute(call("computer", ["action": action, "x": 0.5, "y": 0.5, "keys": "cmd+c"]), conversationId: "c")
+                _ = try await tools.execute(call("computer", ["action": action, "x": 0.5, "y": 0.5, "keys": "cmd+c"]),
+                                            conversationId: "c")
                 XCTFail("\(action) must fail without a target")
             } catch {}
         }
@@ -270,8 +304,10 @@ final class AskAgentToolsTests: XCTestCase {
 
     func testRegistryBuildsRealClientsForConfiguredTransports() async {
         let registry = registry()
-        let stdio = MCPServerConfig(name: "Missing", transport: .stdio(MCPStdioTransportConfig(command: "typeflux-missing-\(UUID().uuidString)")))
-        let http = MCPServerConfig(name: "Offline", transport: .http(MCPHTTPTransportConfig(url: "http://127.0.0.1:1/mcp")))
+        let stdio = MCPServerConfig(name: "Missing",
+                                    transport: .stdio(MCPStdioTransportConfig(command: "typeflux-missing-\(UUID().uuidString)")))
+        let http = MCPServerConfig(name: "Offline",
+                                   transport: .http(MCPHTTPTransportConfig(url: "http://127.0.0.1:1/mcp")))
         for config in [stdio, http] {
             do {
                 try await registry.addServer(config)
@@ -287,9 +323,11 @@ final class AskAgentToolsTests: XCTestCase {
         settings.askFileAccessFolders = [root.path]
         let notes = AskMemoryNoteStore(fileURL: root.appendingPathComponent("view-notes.json"))
         let note = try notes.add("Prefers dark mode", owner: "o")
-        let view = AskToolsSettingsView(settings: settings, skills: AskSkillLibrary(userDirectory: root), notes: notes, owner: { "o" },
+        let view = AskToolsSettingsView(settings: settings, skills: AskSkillLibrary(userDirectory: root), notes: notes,
+                                        owner: { "o" },
                                         pane: .memory)
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 640, height: 900), styleMask: [.titled], backing: .buffered, defer: false)
+        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 640, height: 900), styleMask: [.titled],
+                              backing: .buffered, defer: false)
         // ARC owns the window; closing must not release it a second time.
         window.isReleasedWhenClosed = false
         window.contentView = NSHostingView(rootView: view)
@@ -303,13 +341,17 @@ final class AskAgentToolsTests: XCTestCase {
     // MARK: - Presentation
 
     func testToolTitlesPlanAndRunDecoding() throws {
-        XCTAssertEqual(AskTheme.toolTitle(call("skill", ["name": "email-reply"])), L("ask.tool.skill") + " · email-reply")
-        XCTAssertEqual(AskTheme.toolTitle(call("run_code", ["language": "python", "code": "1"])), L("ask.tool.run_code") + " · python")
-        XCTAssertEqual(AskTheme.toolTitle(call("files", ["action": "edit"])), L("ask.files.action.edit"))
-        XCTAssertEqual(AskTheme.toolTitle(call("files", ["action": "read", "path": "~/Documents/release.md"])),
+        XCTAssertEqual(AskToolPresentation.toolTitle(call("skill", ["name": "email-reply"])),
+                       L("ask.tool.skill") + " · email-reply")
+        XCTAssertEqual(AskToolPresentation.toolTitle(call("run_code", ["language": "python", "code": "1"])),
+                       L("ask.tool.run_code") + " · python")
+        XCTAssertEqual(AskToolPresentation.toolTitle(call("files", ["action": "edit"])), L("ask.files.action.edit"))
+        XCTAssertEqual(AskToolPresentation.toolTitle(call("files",
+                                                          ["action": "read", "path": "~/Documents/release.md"])),
                        L("ask.files.action.read") + " · release.md")
-        XCTAssertEqual(AskTheme.toolTitle(call("memory", [:])), L("ask.tool.memory"))
-        XCTAssertEqual(AskTheme.toolTitle(call("computer", ["action": "hotkey"])), L("ask.tool.computer") + " · " + L("ask.action.hotkey"))
+        XCTAssertEqual(AskToolPresentation.toolTitle(call("memory", [:])), L("ask.tool.memory"))
+        XCTAssertEqual(AskToolPresentation.toolTitle(call("computer", ["action": "hotkey"])),
+                       L("ask.tool.computer") + " · " + L("ask.action.hotkey"))
         XCTAssertEqual(AskPresentation.toolSymbol(call("run_code", [:])), "terminal")
         XCTAssertEqual(AskPresentation.toolSymbol(call("research", [:])), "doc.text.magnifyingglass")
 
@@ -329,7 +371,8 @@ final class AskAgentToolsTests: XCTestCase {
         let settings = settings()
         settings.askFileAccessFolders = ["/a", "/b"]
         let view = AskToolsSettingsView(settings: settings, skills: AskSkillLibrary(userDirectory: root),
-                                        notes: AskMemoryNoteStore(fileURL: root.appendingPathComponent("s.json")), owner: { "o" })
+                                        notes: AskMemoryNoteStore(fileURL: root.appendingPathComponent("s.json")),
+                                        owner: { "o" })
         view.removeFolder("/a")
         XCTAssertEqual(settings.askFileAccessFolders, ["/b"])
         for pane in AgentSettingsPane.allCases where pane != .mcpServers {
@@ -351,14 +394,36 @@ final class AskAgentToolsTests: XCTestCase {
     func testNewStringsExistInEveryLanguage() throws {
         for language in AppLanguage.allCases {
             let bundle = try XCTUnwrap(language.bundleLocalizationCandidates.lazy
-                .compactMap { Bundle.appResources.path(forResource: $0, ofType: "lproj") }.first.flatMap(Bundle.init(path:)))
-            for key in ["ask.settings.search.cloudflare.token", "ask.settings.search.cloudflare.help", "ask.settings.search.cloudflare.unavailable", "ask.files.denied", "ask.code.unavailable", "ask.settings.folders.title", "ask.tool.update_plan", "ask.action.inspect", "agent.rules.title",
-                        "agent.section.skills", "agent.section.memory", "ask.settings.skills.install", "ask.skills.install.notFound",
-                        "agent.settings.runMode", "agent.settings.web", "agent.settings.code", "agent.settings.mcp"] {
-                XCTAssertNotEqual(bundle.localizedString(forKey: key, value: nil, table: nil), key, "\(key) in \(language.rawValue)")
+                .compactMap { Bundle.appResources.path(forResource: $0, ofType: "lproj") }.first
+                .flatMap(Bundle.init(path:)))
+            for key in [
+                "ask.settings.search.cloudflare.token",
+                "ask.settings.search.cloudflare.help",
+                "ask.settings.search.cloudflare.unavailable",
+                "ask.files.denied",
+                "ask.code.unavailable",
+                "ask.settings.folders.title",
+                "ask.tool.update_plan",
+                "ask.action.inspect",
+                "agent.rules.title",
+                "agent.section.skills",
+                "agent.section.memory",
+                "ask.settings.skills.install",
+                "ask.skills.install.notFound",
+                "agent.settings.runMode",
+                "agent.settings.web",
+                "agent.settings.code",
+                "agent.settings.mcp"
+            ] {
+                XCTAssertNotEqual(bundle.localizedString(forKey: key, value: nil, table: nil), key,
+                                  "\(key) in \(language.rawValue)")
             }
-            XCTAssertEqual(bundle.localizedString(forKey: "ask.activity.plan", value: nil, table: nil).components(separatedBy: "%d").count - 1, 2)
-            XCTAssertEqual(bundle.localizedString(forKey: "ask.files.editAmbiguous", value: nil, table: nil).components(separatedBy: "%d").count - 1, 1)
+            XCTAssertEqual(bundle.localizedString(forKey: "ask.activity.plan", value: nil, table: nil)
+                .components(separatedBy: "%d").count - 1,
+                2)
+            XCTAssertEqual(bundle.localizedString(forKey: "ask.files.editAmbiguous", value: nil, table: nil)
+                .components(separatedBy: "%d").count - 1,
+                1)
         }
     }
 }

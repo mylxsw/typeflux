@@ -13,9 +13,9 @@ struct AskKeywordRowView: View {
             Button(action: open) {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(row.name).font(.body)
-                        .foregroundStyle(StudioTheme.textPrimary)
+                        .foregroundStyle(TypefluxColor.label.color)
                     Text(row.summary).font(.subheadline)
-                        .foregroundStyle(StudioTheme.textTertiary)
+                        .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                         .lineLimit(2).fixedSize(horizontal: false, vertical: true)
                     if row.keyword.isEmpty {
                         Text(L("ask.system.setKeyword")).font(.subheadline)

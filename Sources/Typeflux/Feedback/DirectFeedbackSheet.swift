@@ -64,133 +64,129 @@ struct DirectFeedbackSheet: View {
     private let contentPlaceholderHorizontalPadding: CGFloat = 13
     private let contentPlaceholderVerticalPadding: CGFloat = 15
 
-    private var trimmedContent: String {
-        content.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
     private var canSubmit: Bool {
-        !trimmedContent.isEmpty
-            && !images.contains { $0.state.isInProgress }
-            && !images.contains {
-                if case .failed = $0.state { return true }
-                return false
-            }
+        FeedbackSubmissionReadiness.canSubmit(content: content, images: images)
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.mediumLarge) {
-            Text(L("feedback.direct.title"))
-                .font(.studioDisplay(20, weight: .semibold))
-                .foregroundStyle(StudioTheme.textPrimary)
+        TypefluxGlassContainer(radius: .sheet, placement: .inWindow) {
+            VStack(alignment: .leading, spacing: TypefluxSpacing.large.value(for: .classic)) {
+                Text(L("feedback.direct.title"))
+                    .font(.system(.title2, weight: .semibold))
+                    .foregroundStyle(TypefluxColor.label.color)
 
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-                Text(L("feedback.direct.contentLabel"))
-                    .font(.studioBody(12, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textSecondary)
+                VStack(alignment: .leading, spacing: 10) {
+                    Text(L("feedback.direct.contentLabel"))
+                        .font(.system(.callout, weight: .semibold))
+                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
 
-                ZStack(alignment: .topLeading) {
-                    FeedbackContentTextView(text: $content)
-                        .font(.studioBody(13))
-                        .frame(minHeight: 160)
-                        .background(StudioTheme.controlSurface)
-                        .clipShape(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.medium, style: .continuous))
-                        .overlay {
-                            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.medium, style: .continuous)
-                                .stroke(StudioTheme.border.opacity(0.72), lineWidth: 1)
+                    ZStack(alignment: .topLeading) {
+                        FeedbackContentTextView(text: $content)
+                            .font(.system(.body))
+                            .frame(minHeight: 160)
+                            .accessibilityLabel(L("feedback.direct.contentLabel"))
+                            .accessibilityIdentifier("feedback.content")
+                            .background(TypefluxColor.controlBackground.color)
+                            .clipShape(RoundedRectangle(
+                                cornerRadius: TypefluxRadius.form.value(for: .classic),
+                                style: .continuous
+                            ))
+                            .overlay {
+                                RoundedRectangle(
+                                    cornerRadius: TypefluxRadius.form.value(for: .classic),
+                                    style: .continuous
+                                )
+                                .stroke(TypefluxColor.separator.color.opacity(0.72), lineWidth: 1)
+                            }
+
+                        if content.isEmpty {
+                            Text(L("feedback.direct.contentPlaceholder"))
+                                .font(.system(.body))
+                                .foregroundStyle(TypefluxColor.tertiaryLabel.color)
+                                .padding(.horizontal, contentPlaceholderHorizontalPadding)
+                                .padding(.vertical, contentPlaceholderVerticalPadding)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .allowsHitTesting(false)
                         }
-
-                    if content.isEmpty {
-                        Text(L("feedback.direct.contentPlaceholder"))
-                            .font(.studioBody(13))
-                            .foregroundStyle(StudioTheme.textTertiary)
-                            .padding(.horizontal, contentPlaceholderHorizontalPadding)
-                            .padding(.vertical, contentPlaceholderVerticalPadding)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .allowsHitTesting(false)
                     }
                 }
-            }
 
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack {
+                        Text(L("feedback.direct.imagesLabel"))
+                            .font(.system(.callout, weight: .semibold))
+                            .foregroundStyle(TypefluxColor.secondaryLabel.color)
+
+                        Spacer()
+
+                        TypefluxButton(action: onAddImages) {
+                            Label(L("feedback.direct.addImage"), systemImage: "plus")
+                        }
+                        .disabled(isSubmitting || images.count >= 4)
+                    }
+
+                    if !images.isEmpty {
+                        LazyVGrid(
+                            columns: Array(
+                                repeating: GridItem(.fixed(68), spacing: 10),
+                                count: 4
+                            ),
+                            alignment: .leading,
+                            spacing: 10
+                        ) {
+                            ForEach(images) { image in
+                                FeedbackImageThumbnail(
+                                    image: image,
+                                    onRemove: { onRemoveImage(image.id) }
+                                )
+                            }
+                        }
+                    }
+                }
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Text(L("feedback.direct.contactLabel"))
+                        .font(.system(.callout, weight: .semibold))
+                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
+
+                    TypefluxTextField(L("feedback.direct.contactLabel"), text: $contact,
+                                      prompt: L("feedback.direct.contactPlaceholder"))
+                }
+
+                if let errorMessage {
+                    Text(errorMessage)
+                        .font(.system(.callout))
+                        .foregroundStyle(TypefluxColor.danger.color)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
                 HStack {
-                    Text(L("feedback.direct.imagesLabel"))
-                        .font(.studioBody(12, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textSecondary)
-
                     Spacer()
 
-                    Button(action: onAddImages) {
-                        Label(L("feedback.direct.addImage"), systemImage: "plus")
-                    }
-                    .disabled(isSubmitting || images.count >= 4)
-                }
+                    TypefluxButton(L("common.cancel"), action: onCancel)
+                        .keyboardShortcut(.cancelAction)
+                        .accessibilityIdentifier("feedback.cancel")
+                        .disabled(isSubmitting)
 
-                if !images.isEmpty {
-                    LazyVGrid(
-                        columns: Array(
-                            repeating: GridItem(.fixed(68), spacing: StudioTheme.Spacing.small),
-                            count: 4
-                        ),
-                        alignment: .leading,
-                        spacing: StudioTheme.Spacing.small
-                    ) {
-                        ForEach(images) { image in
-                            FeedbackImageThumbnail(
-                                image: image,
-                                onRemove: { onRemoveImage(image.id) }
-                            )
+                    TypefluxButton(kind: .primary) {
+                        onSubmit()
+                    } label: {
+                        if isSubmitting {
+                            ProgressView()
+                                .controlSize(.small)
+                        } else {
+                            Text(L("feedback.direct.submit"))
                         }
                     }
+                    .keyboardShortcut(.defaultAction)
+                    .disabled(isSubmitting || !canSubmit)
+                    .accessibilityIdentifier("feedback.submit")
+                    .accessibilityLabel(L("feedback.direct.submit"))
                 }
             }
-
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-                Text(L("feedback.direct.contactLabel"))
-                    .font(.studioBody(12, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textSecondary)
-
-                TextField(L("feedback.direct.contactPlaceholder"), text: $contact)
-                    .textFieldStyle(.plain)
-                    .font(.studioBody(13))
-                    .padding(.horizontal, 12)
-                    .frame(height: 38)
-                    .background(StudioTheme.controlSurface)
-                    .clipShape(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.medium, style: .continuous))
-                    .overlay {
-                        RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.medium, style: .continuous)
-                            .stroke(StudioTheme.border.opacity(0.72), lineWidth: 1)
-                    }
-            }
-
-            if let errorMessage {
-                Text(errorMessage)
-                    .font(.studioBody(12))
-                    .foregroundStyle(StudioTheme.danger)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            HStack {
-                Spacer()
-
-                Button(L("common.cancel"), action: onCancel)
-                    .disabled(isSubmitting)
-
-                Button {
-                    onSubmit()
-                } label: {
-                    if isSubmitting {
-                        ProgressView()
-                            .controlSize(.small)
-                    } else {
-                        Text(L("feedback.direct.submit"))
-                    }
-                }
-                .keyboardShortcut(.defaultAction)
-                .disabled(isSubmitting || !canSubmit)
-            }
+            .padding(24)
+            .frame(width: 480)
         }
-        .padding(24)
-        .frame(width: 480)
     }
 }
 
@@ -213,7 +209,7 @@ private struct FeedbackContentTextView: NSViewRepresentable {
         textView.isAutomaticDashSubstitutionEnabled = false
         textView.isAutomaticTextReplacementEnabled = false
         textView.allowsUndo = true
-        textView.font = NSFont.systemFont(ofSize: 13)
+        textView.font = NSFont.preferredFont(forTextStyle: .body)
         textView.textColor = NSColor.labelColor
         textView.string = text
         textView.textContainerInset = NSSize(width: 10, height: 10)
@@ -242,7 +238,7 @@ private struct FeedbackContentTextView: NSViewRepresentable {
         scrollView.scrollerStyle = .overlay
 
         guard let textView = scrollView.documentView as? NSTextView else { return }
-        textView.font = NSFont.systemFont(ofSize: 13)
+        textView.font = NSFont.preferredFont(forTextStyle: .body)
         textView.textColor = NSColor.labelColor
 
         if textView.string != text {
@@ -275,35 +271,38 @@ private struct FeedbackImageThumbnail: View {
     var body: some View {
         ZStack(alignment: .topTrailing) {
             ZStack {
-                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.medium, style: .continuous)
-                    .fill(StudioTheme.controlSurface)
+                RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: .classic), style: .continuous)
+                    .fill(TypefluxColor.controlBackground.color)
 
                 if let thumbnail = image.thumbnail {
                     Image(nsImage: thumbnail)
                         .resizable()
                         .scaledToFill()
                         .frame(width: 68, height: 68)
-                        .clipShape(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.medium, style: .continuous))
+                        .clipShape(RoundedRectangle(
+                            cornerRadius: TypefluxRadius.form.value(for: .classic),
+                            style: .continuous
+                        ))
                 } else {
                     Image(systemName: "photo")
-                        .font(.system(size: 20, weight: .medium))
-                        .foregroundStyle(StudioTheme.textTertiary)
+                        .font(.system(.title2, weight: .medium))
+                        .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                 }
 
                 statusOverlay
             }
             .frame(width: 68, height: 68)
-            .clipShape(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.medium, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: .classic), style: .continuous))
             .overlay {
-                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.medium, style: .continuous)
-                    .stroke(StudioTheme.border.opacity(0.72), lineWidth: 1)
+                RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: .classic), style: .continuous)
+                    .stroke(TypefluxColor.separator.color.opacity(0.72), lineWidth: 1)
             }
 
             Button(action: onRemove) {
                 Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(.system(.title3, weight: .semibold))
                     .symbolRenderingMode(.palette)
-                    .foregroundStyle(StudioTheme.textPrimary, StudioTheme.surface.opacity(0.92))
+                    .foregroundStyle(TypefluxColor.label.color, TypefluxColor.controlBackground.color.opacity(0.92))
             }
             .buttonStyle(.plain)
             .padding(4)
@@ -325,7 +324,7 @@ private struct FeedbackImageThumbnail: View {
             EmptyView()
         case .failed:
             Rectangle()
-                .fill(StudioTheme.danger.opacity(0.76))
+                .fill(TypefluxColor.danger.color.opacity(0.76))
                 .overlay {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundStyle(.white)

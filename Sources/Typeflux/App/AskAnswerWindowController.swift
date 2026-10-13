@@ -36,39 +36,39 @@ final class AskAnswerWindowController: NSObject {
     }
 
     fileprivate enum Palette {
-        static let windowBackground = StudioTheme.dynamic(
+        static let windowBackground = LegacyStudioPalette.dynamic(
             light: NSColor(calibratedRed: 0.968, green: 0.976, blue: 0.990, alpha: 0.96),
             dark: NSColor(calibratedRed: 0.060, green: 0.068, blue: 0.084, alpha: 0.94)
         )
-        static let windowBackgroundLower = StudioTheme.dynamic(
+        static let windowBackgroundLower = LegacyStudioPalette.dynamic(
             light: NSColor(calibratedRed: 0.992, green: 0.996, blue: 1.000, alpha: 0.94),
             dark: NSColor(calibratedRed: 0.078, green: 0.084, blue: 0.105, alpha: 0.92)
         )
-        static let promptSurface = StudioTheme.dynamic(
+        static let promptSurface = LegacyStudioPalette.dynamic(
             light: NSColor(calibratedRed: 0.925, green: 0.938, blue: 1.000, alpha: 0.92),
             dark: NSColor(calibratedRed: 0.125, green: 0.130, blue: 0.180, alpha: 0.95)
         )
-        static let answerSurface = StudioTheme.dynamic(
+        static let answerSurface = LegacyStudioPalette.dynamic(
             light: NSColor(calibratedWhite: 1.0, alpha: 0.98),
             dark: NSColor(calibratedRed: 0.105, green: 0.112, blue: 0.145, alpha: 0.95)
         )
-        static let cardHighlight = StudioTheme.dynamic(
+        static let cardHighlight = LegacyStudioPalette.dynamic(
             light: NSColor(calibratedWhite: 1.0, alpha: 0.74),
             dark: NSColor(calibratedWhite: 1.0, alpha: 0.055)
         )
-        static let border = StudioTheme.dynamic(
+        static let border = LegacyStudioPalette.dynamic(
             light: NSColor(calibratedRed: 0.48, green: 0.56, blue: 0.72, alpha: 0.14),
             dark: NSColor(calibratedWhite: 1.0, alpha: 0.13)
         )
-        static let questionAccent = StudioTheme.dynamic(
+        static let questionAccent = LegacyStudioPalette.dynamic(
             light: NSColor(calibratedRed: 0.36, green: 0.34, blue: 0.94, alpha: 1),
             dark: NSColor(calibratedRed: 0.64, green: 0.52, blue: 1.0, alpha: 1)
         )
-        static let answerAccent = StudioTheme.dynamic(
+        static let answerAccent = LegacyStudioPalette.dynamic(
             light: NSColor(calibratedRed: 0.17, green: 0.78, blue: 0.54, alpha: 1),
             dark: NSColor(calibratedRed: 0.30, green: 0.82, blue: 0.55, alpha: 1)
         )
-        static let composerSurface = StudioTheme.dynamic(
+        static let composerSurface = LegacyStudioPalette.dynamic(
             light: NSColor(calibratedWhite: 1.0, alpha: 0.58),
             dark: NSColor(calibratedRed: 0.105, green: 0.110, blue: 0.136, alpha: 0.58)
         )
@@ -288,7 +288,7 @@ private struct AskAnswerWindowView: View {
                             answerSection
                         }
                         .frame(maxWidth: .infinity, alignment: .top)
-                        .padding(.bottom, StudioTheme.Spacing.medium)
+                        .padding(.bottom, 14)
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
 
@@ -328,7 +328,7 @@ private struct AskAnswerWindowView: View {
 
             LinearGradient(
                 colors: [
-                    StudioTheme.windowHighlight.opacity(0.36),
+                    LegacyStudioPalette.windowHighlight.opacity(0.36),
                     Color.clear
                 ],
                 startPoint: .topLeading,
@@ -338,7 +338,7 @@ private struct AskAnswerWindowView: View {
     }
 
     private var promptSection: some View {
-        HStack(alignment: .center, spacing: StudioTheme.Spacing.smallMedium) {
+        HStack(alignment: .center, spacing: TypefluxSpacing.regular.value(for: .classic)) {
             Spacer(minLength: 56)
             promptBubble
             userAvatar
@@ -347,9 +347,9 @@ private struct AskAnswerWindowView: View {
     }
 
     private var answerSection: some View {
-        HStack(alignment: .top, spacing: StudioTheme.Spacing.medium) {
+        HStack(alignment: .top, spacing: 14) {
             assistantAvatar
-                .padding(.top, StudioTheme.Spacing.xxSmall)
+                .padding(.top, 6)
 
             ZStack(alignment: .bottomTrailing) {
                 MarkdownSwiftUIView(markdown: model.answerMarkdown)
@@ -381,13 +381,13 @@ private struct AskAnswerWindowView: View {
     }
 
     private var footer: some View {
-        HStack(spacing: StudioTheme.Spacing.xxSmall) {
+        HStack(spacing: 6) {
             Image(systemName: "checkmark.shield")
-                .font(.system(size: StudioTheme.Typography.bodySmall, weight: .semibold))
+                .font(.system(.callout, weight: .semibold))
             Text(L("workflow.ask.answerDisclaimer"))
-                .font(.studioBody(StudioTheme.Typography.caption, weight: .medium))
+                .font(.system(.subheadline, weight: .medium))
         }
-        .foregroundStyle(StudioTheme.textTertiary.opacity(0.78))
+        .foregroundStyle(TypefluxColor.tertiaryLabel.color.opacity(0.78))
         .frame(maxWidth: .infinity)
         .frame(height: AskAnswerWindowController.Metrics.footerHeight)
     }
@@ -395,31 +395,31 @@ private struct AskAnswerWindowView: View {
     private var composer: some View {
         ZStack(alignment: .bottomTrailing) {
             Text(L("workflow.ask.followUpComingSoon"))
-                .font(.studioBody(StudioTheme.Typography.bodySmall, weight: .medium))
-                .foregroundStyle(StudioTheme.textTertiary.opacity(0.86))
+                .font(.system(.callout, weight: .medium))
+                .foregroundStyle(TypefluxColor.tertiaryLabel.color.opacity(0.86))
                 .multilineTextAlignment(.leading)
                 .lineLimit(2)
                 .truncationMode(.tail)
                 .fixedSize(horizontal: false, vertical: true)
-                .padding(.top, StudioTheme.Spacing.small)
-                .padding(.leading, StudioTheme.Spacing.mediumLarge)
+                .padding(.top, 10)
+                .padding(.leading, TypefluxSpacing.large.value(for: .classic))
                 .padding(.trailing, 54)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
 
             Button(action: {}) {
                 Image(systemName: "paperplane.fill")
-                    .font(.system(size: StudioTheme.Typography.iconXSmall, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textTertiary.opacity(0.76))
+                    .font(.system(.subheadline, weight: .semibold))
+                    .foregroundStyle(TypefluxColor.tertiaryLabel.color.opacity(0.76))
                     .frame(
                         width: AskAnswerWindowController.Metrics.composerButtonSize,
                         height: AskAnswerWindowController.Metrics.composerButtonSize
                     )
-                    .background(Circle().fill(StudioTheme.textTertiary.opacity(0.10)))
+                    .background(Circle().fill(TypefluxColor.tertiaryLabel.color.opacity(0.10)))
             }
             .buttonStyle(.plain)
             .disabled(true)
-            .padding(.trailing, StudioTheme.Spacing.small)
-            .padding(.bottom, StudioTheme.Spacing.small)
+            .padding(.trailing, 10)
+            .padding(.bottom, 10)
         }
         .frame(
             maxWidth: .infinity,
@@ -482,8 +482,8 @@ private struct AskAnswerWindowView: View {
     private func copyButton(isVisible: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: "doc.on.doc")
-                .font(.system(size: StudioTheme.Typography.iconSmall, weight: .semibold))
-                .foregroundStyle(StudioTheme.textTertiary)
+                .font(.system(.body, weight: .semibold))
+                .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                 .frame(
                     width: AskAnswerWindowController.Metrics.headerButtonSize,
                     height: AskAnswerWindowController.Metrics.headerButtonSize
@@ -497,10 +497,10 @@ private struct AskAnswerWindowView: View {
     }
 
     private var promptBubble: some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.textCompact) {
+        VStack(alignment: .leading, spacing: TypefluxSpacing.small.value(for: .classic)) {
             Text(model.question)
-                .font(.studioBody(StudioTheme.Typography.body, weight: .regular))
-                .foregroundStyle(StudioTheme.textPrimary)
+                .font(.system(.body, weight: .regular))
+                .foregroundStyle(TypefluxColor.label.color)
                 .lineLimit(nil)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -536,23 +536,23 @@ private struct AskAnswerWindowView: View {
     }
 
     private var selectedTextPreview: some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.textMicro) {
+        VStack(alignment: .leading, spacing: 6) {
             Divider()
                 .opacity(0.48)
 
-            HStack(alignment: .top, spacing: StudioTheme.Spacing.xSmall) {
+            HStack(alignment: .top, spacing: TypefluxSpacing.small.value(for: .classic)) {
                 RoundedRectangle(cornerRadius: 1.5, style: .continuous)
                     .fill(AskAnswerWindowController.Palette.questionAccent.opacity(0.42))
                     .frame(width: 3)
 
                 Text(model.selectedText)
-                    .font(.studioBody(StudioTheme.Typography.bodySmall, weight: .medium))
-                    .foregroundStyle(StudioTheme.textSecondary)
+                    .font(.system(.callout, weight: .medium))
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
                     .lineLimit(isSelectedTextExpanded ? nil : AskAnswerWindowController.Metrics.selectedTextMaxLines)
                     .truncationMode(.tail)
             }
         }
-        .padding(.top, StudioTheme.Spacing.xSmall)
+        .padding(.top, TypefluxSpacing.small.value(for: .classic))
     }
 
     private var userAvatar: some View {
@@ -571,7 +571,7 @@ private struct AskAnswerWindowView: View {
                 .shadow(color: AskAnswerWindowController.Palette.questionAccent.opacity(0.18), radius: 12, x: 0, y: 7)
 
             Image(systemName: "person.fill")
-                .font(.system(size: StudioTheme.Typography.iconMedium, weight: .semibold))
+                .font(.system(.title3, weight: .semibold))
                 .foregroundStyle(AskAnswerWindowController.Palette.questionAccent)
         }
         .frame(

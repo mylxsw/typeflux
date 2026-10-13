@@ -11,7 +11,7 @@ struct ClipboardIgnoredAppsSection: View {
                 ClipboardAppIcon(bundleID: app.bundleID)
                 Text(app.name)
                     .font(.body)
-                    .foregroundStyle(StudioTheme.textPrimary)
+                    .foregroundStyle(TypefluxColor.label.color)
                 Spacer()
                 Button {
                     model.removeIgnoredApp(app.bundleID)
@@ -19,7 +19,7 @@ struct ClipboardIgnoredAppsSection: View {
                     Image(systemName: "minus.circle")
                 }
                 .buttonStyle(.plain)
-                .foregroundStyle(StudioTheme.textSecondary)
+                .foregroundStyle(TypefluxColor.secondaryLabel.color)
                 .help(L("clipboard.settings.ignored.remove"))
                 .accessibilityLabel(L("clipboard.settings.ignored.remove"))
             }

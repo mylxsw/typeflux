@@ -130,8 +130,8 @@ struct AskSystemCommandPlugin: AskLauncherPlugin {
 
     var keywordColor: Color {
         switch command {
-        case .emptyTrash, .shutdown, .restart, .resetSpotlight: StudioTheme.danger
-        default: AskTheme.accent
+        case .emptyTrash, .shutdown, .restart, .resetSpotlight: TypefluxColor.danger.color
+        default: TypefluxColor.accent.color
         }
     }
 

@@ -192,7 +192,7 @@ final class StatusBarController: NSObject {
 
         button.title = ""
         let image = NSImage(
-            systemSymbolName: StudioTheme.Symbol.brand,
+            systemSymbolName: "infinity.circle.fill",
             accessibilityDescription: accessibilityTitle
         )?.withSymbolConfiguration(symbolConfig)
         image?.size = IconLayout.imageSize

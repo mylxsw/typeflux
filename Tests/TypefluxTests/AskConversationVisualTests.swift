@@ -17,8 +17,11 @@ struct AskConversationVisualTests {
         defer { defaults.removePersistentDomain(forName: suite) }
         let policy = AskWindowActivationPolicy()
         let dock = DockVisibilityController(app: policy)
-        let controller = AskConversationWindowController(settings: SettingsStore(defaults: defaults), model: fixture.model,
-                                                        dockVisibility: dock)
+        let controller = AskConversationWindowController(
+            settings: SettingsStore(defaults: defaults),
+            model: fixture.model,
+            dockVisibility: dock
+        )
         func window(_ suffix: String) -> NSWindow? {
             NSApp.windows.first { $0.identifier?.rawValue == "ai.gulu.app.typeflux.window.ask-" + suffix }
         }
@@ -96,51 +99,61 @@ struct AskConversationVisualTests {
                                 screenshot: "data:image/png;base64," + png.base64EncodedString(),
                                 selection: "来源信息属于这份草稿。\n重新截图不会更换选区来源。",
                                 source: "Safari — Typeflux 产品方案：来源与截图范围说明",
-                                sourceBundleID: "com.apple.Safari", capturedAt: Date(timeIntervalSince1970: 1_791_014_400))
+                                sourceBundleID: "com.apple.Safari",
+                                capturedAt: Date(timeIntervalSince1970: 1_791_014_400))
         for (name, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
             let fixture = try AskTestFixture()
             defer { fixture.model.resetSession() }
             fixture.model.launcherDraft = captured
             for width in [AskMetrics.launcherWidth, CGFloat(430)] {
                 try await render(AskLauncherView(model: fixture.model, onDismiss: {})
-                                    .environment(\.askGlassMaterialOverride, .opaque),
-                                 size: NSSize(width: width, height: width == 430 ? 232 : 190), appearance: appearance,
-                                 file: root.appendingPathComponent("captured-content-\(Int(width))-\(name).png"), minimumPNGBytes: 4000)
+                    .environment(\.askGlassMaterialOverride, .opaque),
+                    size: NSSize(width: width, height: width == 430 ? 232 : 190), appearance: appearance,
+                    file: root.appendingPathComponent("captured-content-\(Int(width))-\(name).png"),
+                    minimumPNGBytes: 4000)
             }
             fixture.model.launcherDraft = AskDraft(text: "这个报错是什么意思", includeScreenshot: false,
                                                    selection: "把远程桌面里的报错翻译一下", source: "Windows App — Dev Box")
             fixture.model.restoreLauncherContextMarker(true)
             try await render(AskLauncherView(model: fixture.model, onDismiss: {})
-                                .environment(\.askGlassMaterialOverride, .opaque),
-                             size: NSSize(width: AskMetrics.launcherWidth, height: 190), appearance: appearance,
-                             file: root.appendingPathComponent("captured-draft-\(name).png"), minimumPNGBytes: 4000)
+                .environment(\.askGlassMaterialOverride, .opaque),
+                size: NSSize(width: AskMetrics.launcherWidth, height: 190), appearance: appearance,
+                file: root.appendingPathComponent("captured-draft-\(name).png"), minimumPNGBytes: 4000)
             fixture.model.launcherDraft = AskDraft(text: "讲讲这一屏在做什么", includeScreenshot: true,
                                                    source: "Safari", sourceBundleID: "com.apple.Safari")
             fixture.model.restoreLauncherContextMarker(false)
             fixture.model.captureWarning = L("ask.capture.permission")
             try await render(AskLauncherView(model: fixture.model, onDismiss: {})
-                                .environment(\.askGlassMaterialOverride, .opaque),
-                             size: NSSize(width: 430, height: 190), appearance: appearance,
-                             file: root.appendingPathComponent("captured-permission-\(name).png"), minimumPNGBytes: 4000)
+                .environment(\.askGlassMaterialOverride, .opaque),
+                size: NSSize(width: 430, height: 190), appearance: appearance,
+                file: root.appendingPathComponent("captured-permission-\(name).png"),
+                minimumPNGBytes: 4000)
             fixture.model.launcherDraft = captured
             fixture.model.captureWarning = nil
             fixture.model.removeCapturedContent(.source, launcher: true)
             try await render(AskLauncherView(model: fixture.model, onDismiss: {})
-                                .environment(\.askGlassMaterialOverride, .opaque),
-                             size: NSSize(width: AskMetrics.launcherWidth, height: 150), appearance: appearance,
-                             file: root.appendingPathComponent("captured-undo-\(name).png"), minimumPNGBytes: 4000)
+                .environment(\.askGlassMaterialOverride, .opaque),
+                size: NSSize(width: AskMetrics.launcherWidth, height: 150), appearance: appearance,
+                file: root.appendingPathComponent("captured-undo-\(name).png"), minimumPNGBytes: 4000)
             try await render(AskSourceContextDetails(draft: .constant(captured), restored: true, refresh: {})
-                                .background(Color(nsColor: .windowBackgroundColor)),
-                             size: NSSize(width: 360, height: 230), appearance: appearance,
-                             file: root.appendingPathComponent("captured-source-details-\(name).png"), minimumPNGBytes: 4000)
+                .background(Color(nsColor: .windowBackgroundColor)),
+                size: NSSize(width: 360, height: 230), appearance: appearance,
+                file: root.appendingPathComponent("captured-source-details-\(name).png"),
+                minimumPNGBytes: 4000)
             try await render(AskSelectedTextDetails(text: captured.selection ?? "", source: "Safari", onRemove: {})
-                                .background(Color(nsColor: .windowBackgroundColor)),
-                             size: NSSize(width: 380, height: 250), appearance: appearance,
-                             file: root.appendingPathComponent("captured-selection-details-\(name).png"), minimumPNGBytes: 4000)
-            try await render(AskAttachChoices(clipboardHasImage: false, sourceToRestore: "Safari", selectionLinesToRestore: 2) { _ in }
-                                .background(Color(nsColor: .windowBackgroundColor)),
-                             size: NSSize(width: 300, height: 290), appearance: appearance,
-                             file: root.appendingPathComponent("captured-restore-\(name).png"), minimumPNGBytes: 4000)
+                .background(Color(nsColor: .windowBackgroundColor)),
+                size: NSSize(width: 380, height: 250), appearance: appearance,
+                file: root.appendingPathComponent("captured-selection-details-\(name).png"),
+                minimumPNGBytes: 4000)
+            try await render(
+                AskAttachChoices(clipboardHasImage: false, sourceToRestore: "Safari", selectionLinesToRestore: 2) { _ in
+                }
+                .background(Color(nsColor: .windowBackgroundColor)),
+                size: NSSize(width: 300, height: 290),
+                appearance: appearance,
+                file: root.appendingPathComponent("captured-restore-\(name).png"),
+                minimumPNGBytes: 4000
+            )
         }
     }
 
@@ -162,7 +175,8 @@ struct AskConversationVisualTests {
                          file: root.appendingPathComponent("launcher.png"), minimumPNGBytes: 4000)
 
         try await render(AskLauncherView(model: fixture.model, onDismiss: {}),
-                         size: NSSize(width: AskMetrics.launcherWidth, height: 114), appearance: .aqua, file: root.appendingPathComponent("launcher-light.png"), voice: fixture.model.voiceInput)
+                         size: NSSize(width: AskMetrics.launcherWidth, height: 114), appearance: .aqua,
+                         file: root.appendingPathComponent("launcher-light.png"), voice: fixture.model.voiceInput)
         let launcherDraft = fixture.model.launcherDraft
         fixture.model.launcherDraft.selection = nil
         fixture.model.launcherDraft.source = String(repeating: "Finder ", count: 12)
@@ -175,32 +189,102 @@ struct AskConversationVisualTests {
             AskVoiceButton.Appearance(phase: .listening, pressed: true, reduceMotion: true)
             AskVoiceButton.Appearance(phase: .transcribing, enabled: false, reduceMotion: true)
         }.padding(16), size: NSSize(width: 160, height: 64), appearance: .aqua,
-                         file: root.appendingPathComponent("voice-reduced-motion.png"), minimumPNGBytes: 100)
-        fixture.model.launcherDraft.text = String(repeating: "Long input wraps naturally and stays editable. ", count: 24)
+        file: root.appendingPathComponent("voice-reduced-motion.png"), minimumPNGBytes: 100)
+        fixture.model.launcherDraft.text = String(
+            repeating: "Long input wraps naturally and stays editable. ",
+            count: 24
+        )
         try await render(AskLauncherView(model: fixture.model, onDismiss: {}),
-                         size: NSSize(width: AskMetrics.launcherWidth, height: 230), appearance: .aqua, file: root.appendingPathComponent("launcher-long.png"))
-        let call = AskToolCall(id: "browser-read", type: "function", function: .init(name: "browser", arguments: #"{"action":"read"}"#))
+                         size: NSSize(width: AskMetrics.launcherWidth, height: 230), appearance: .aqua,
+                         file: root.appendingPathComponent("launcher-long.png"))
+        let call = AskToolCall(
+            id: "browser-read",
+            type: "function",
+            function: .init(name: "browser", arguments: #"{"action":"read"}"#)
+        )
         let now = Date()
-        let conversation = AskConversation(id: "design-conversation", title: "页面内容总结", revision: 4, updatedAt: now, messages: [
-            .init(id: "1", role: "user", text: "帮我总结这页内容，并查找相关资料", selection: "快捷键唤起输入框，确认发送后进入完整会话。", source: "Safari", createdAt: now),
-            .init(id: "2", role: "assistant", text: "你更关注哪方面？", createdAt: now),
-            .init(id: "3", role: "user", text: "产品交互和使用成本", createdAt: now),
-            .init(id: "4", role: "assistant", text: "", toolCalls: [call], createdAt: now),
-            .init(id: "5", role: "tool", text: "已读取当前页面的正文与链接。", toolCallId: "browser-read", isError: false, createdAt: now),
-            .init(id: "6", role: "assistant", text: "## 交互要点\n\n- 先在屏幕底部输入，确认后再进入对话。\n- 键盘与现有语音输入共用同一个输入框。\n- 截图与选区可在发送前预览和移除。\n\n使用成本信息仍需进一步核对。你也可以继续追问具体的使用场景。", createdAt: now)
-        ], run: .init(id: "run", deviceId: "device", status: "completed", steps: 2, updatedAt: now, tools: [], pending: []))
+        let conversation = AskConversation(
+            id: "design-conversation",
+            title: "页面内容总结",
+            revision: 4,
+            updatedAt: now,
+            messages: [
+                .init(
+                    id: "1",
+                    role: "user",
+                    text: "帮我总结这页内容，并查找相关资料",
+                    selection: "快捷键唤起输入框，确认发送后进入完整会话。",
+                    source: "Safari",
+                    createdAt: now
+                ),
+                .init(id: "2", role: "assistant", text: "你更关注哪方面？", createdAt: now),
+                .init(id: "3", role: "user", text: "产品交互和使用成本", createdAt: now),
+                .init(id: "4", role: "assistant", text: "", toolCalls: [call], createdAt: now),
+                .init(
+                    id: "5",
+                    role: "tool",
+                    text: "已读取当前页面的正文与链接。",
+                    toolCallId: "browser-read",
+                    isError: false,
+                    createdAt: now
+                ),
+                .init(
+                    id: "6",
+                    role: "assistant",
+                    text: "## 交互要点\n\n- 先在屏幕底部输入，确认后再进入对话。\n- 键盘与现有语音输入共用同一个输入框。\n- 截图与选区可在发送前预览和移除。\n\n使用成本信息仍需进一步核对。你也可以继续追问具体的使用场景。",
+                    createdAt: now
+                )
+            ],
+            run: .init(
+                id: "run",
+                deviceId: "device",
+                status: "completed",
+                steps: 2,
+                updatedAt: now,
+                tools: [],
+                pending: []
+            )
+        )
         await fixture.api.seed(conversation)
-        await fixture.api.seed(.init(id: "older", title: "整理会议要点", revision: 1, updatedAt: now.addingTimeInterval(-86400), messages: []))
+        await fixture.api.seed(.init(
+            id: "older",
+            title: "整理会议要点",
+            revision: 1,
+            updatedAt: now.addingTimeInterval(-86400),
+            messages: []
+        ))
         await fixture.model.refreshHistory()
         await fixture.model.select(conversation.id)
-        try await render(AskConversationView(model: fixture.model), size: NSSize(width: 1100, height: 740), appearance: .aqua, file: root.appendingPathComponent("conversation.png"), voice: fixture.model.voiceInput)
-        try await render(AskConversationView(model: fixture.model), size: NSSize(width: 760, height: 560), appearance: .aqua, file: root.appendingPathComponent("conversation-small.png"))
-        try await render(AskConversationView(model: fixture.model), size: NSSize(width: 1100, height: 740), appearance: .darkAqua, file: root.appendingPathComponent("conversation-dark.png"), voice: fixture.model.voiceInput)
+        try await render(
+            AskConversationView(model: fixture.model),
+            size: NSSize(width: 1100, height: 740),
+            appearance: .aqua,
+            file: root.appendingPathComponent("conversation.png"),
+            voice: fixture.model.voiceInput
+        )
+        try await render(
+            AskConversationView(model: fixture.model),
+            size: NSSize(width: 760, height: 560),
+            appearance: .aqua,
+            file: root.appendingPathComponent("conversation-small.png")
+        )
+        try await render(
+            AskConversationView(model: fixture.model),
+            size: NSSize(width: 1100, height: 740),
+            appearance: .darkAqua,
+            file: root.appendingPathComponent("conversation-dark.png"),
+            voice: fixture.model.voiceInput
+        )
         await fixture.api.setTool(call)
         fixture.model.draft.text = "读取当前页面"
         fixture.model.submitDraft()
         try await fixture.wait { !fixture.model.pendingApprovals.isEmpty }
-        try await render(AskConversationView(model: fixture.model), size: NSSize(width: 1100, height: 740), appearance: .darkAqua, file: root.appendingPathComponent("tool-approval.png"))
+        try await render(
+            AskConversationView(model: fixture.model),
+            size: NSSize(width: 1100, height: 740),
+            appearance: .darkAqua,
+            file: root.appendingPathComponent("tool-approval.png")
+        )
         fixture.model.approve(conversationId: conversation.id, allowed: false)
         try await fixture.wait { fixture.model.busyIds.isEmpty }
         fixture.model.resetSession()
@@ -211,11 +295,21 @@ struct AskConversationVisualTests {
         let f = try AskTestFixture()
         for id in ["long-a", "long-b"] {
             await f.api.seed(.init(id: id, title: id, revision: 1, updatedAt: Date(), messages: (0..<50).map {
-                .init(id: "\(id)-\($0)", role: $0.isMultiple(of: 2) ? "user" : "assistant", text: "Message \($0)", createdAt: Date())
+                .init(
+                    id: "\(id)-\($0)",
+                    role: $0.isMultiple(of: 2) ? "user" : "assistant",
+                    text: "Message \($0)",
+                    createdAt: Date()
+                )
             }))
         }
         await f.model.select("long-a")
-        let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 900, height: 600), styleMask: [.borderless], backing: .buffered, defer: false)
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: 900, height: 600),
+            styleMask: [.borderless],
+            backing: .buffered,
+            defer: false
+        )
         window.isReleasedWhenClosed = false
         let hosting = NSHostingView(rootView: AskConversationView(model: f.model))
         window.contentView = hosting; window.orderFront(nil)
@@ -226,7 +320,8 @@ struct AskConversationVisualTests {
         }
         let scroll = try #require(scrollViews(hosting).first { $0.frame.width > 300 && $0.frame.height > 200 })
         scroll.contentView.scroll(to: NSPoint(x: 0, y: 400)); scroll.reflectScrolledClipView(scroll.contentView)
-        try await f.wait { f.model.transcriptPositions["long-a"] != nil && f.model.transcriptPositions["long-a"] != "bottom" }
+        try await f
+            .wait { f.model.transcriptPositions["long-a"] != nil && f.model.transcriptPositions["long-a"] != "bottom" }
         let anchor = f.model.transcriptPositions["long-a"]
         await f.model.select("long-b")
         try await Task.sleep(for: .milliseconds(150))
@@ -234,7 +329,8 @@ struct AskConversationVisualTests {
         try await Task.sleep(for: .milliseconds(300))
         #expect(f.model.transcriptPositions["long-a"] == anchor)
         #expect(scroll.contentView.bounds.origin.y > 100)
-        #expect(scroll.contentView.bounds.origin.y < (scroll.documentView?.frame.height ?? 0) - scroll.contentView.bounds.height - 100)
+        #expect(scroll.contentView.bounds.origin.y < (scroll.documentView?.frame.height ?? 0) - scroll.contentView
+            .bounds.height - 100)
         f.model.resetSession()
     }
 
@@ -248,19 +344,41 @@ struct AskConversationVisualTests {
         defer { AppLocalization.shared.setLanguage(previous) }
         let fixture = try AskTestFixture()
         let now = Date()
-        var run = AskRun(id: "run", deviceId: "device", status: "running", steps: 0, updatedAt: now, tools: [], pending: [])
+        var run = AskRun(
+            id: "run",
+            deviceId: "device",
+            status: "running",
+            steps: 0,
+            updatedAt: now,
+            tools: [],
+            pending: []
+        )
         run.assistantId = "answer"
         run.reasoning = "先核对数据来源，再比较两种方案的实现成本和维护成本。"
         run.reasoningMilliseconds = 3200
         run.preview = "## 建议优先采用方案 A\n\n它的边界更清晰，也方便逐步上线。\n\n1. 保留现有登录与权限机制。\n2. 将实时响应作为独立模块接入。\n\n下面继续对比性能与维护成本："
-        let call = AskToolCall(id: "tool", type: "function", function: .init(name: "browser", arguments: "{\"query\": \""))
+        let call = AskToolCall(
+            id: "tool",
+            type: "function",
+            function: .init(name: "browser", arguments: "{\"query\": \"")
+        )
         run.previewTools = [call]
         let value = AskConversation(id: "stream-preview", title: "比较两种产品方案", revision: 1, updatedAt: now,
-                                    messages: [.init(id: "question", role: "user", text: "请帮我比较两种方案，给出建议并核对资料。", createdAt: now)], run: run)
+                                    messages: [.init(
+                                        id: "question",
+                                        role: "user",
+                                        text: "请帮我比较两种方案，给出建议并核对资料。",
+                                        createdAt: now
+                                    )], run: run)
         await fixture.api.seed(value)
         await fixture.model.select(value.id)
         for (name, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
-            try await render(AskConversationView(model: fixture.model), size: NSSize(width: 1100, height: 740), appearance: appearance, file: root.appendingPathComponent("stream-answer-\(name).png"))
+            try await render(
+                AskConversationView(model: fixture.model),
+                size: NSSize(width: 1100, height: 740),
+                appearance: appearance,
+                file: root.appendingPathComponent("stream-answer-\(name).png")
+            )
         }
         fixture.model.resetSession()
     }
@@ -282,7 +400,10 @@ struct AskConversationVisualTests {
             AskMessage(id: "t-" + id, role: "tool", text: text, toolCallId: id, isError: error, createdAt: now)
         }
         func group(_ id: String, _ calls: [AskToolCall]) -> AskActivityGroup {
-            AskActivityGroup(id: id, messages: [AskMessage(id: id, role: "assistant", text: "", toolCalls: calls, createdAt: now)])
+            AskActivityGroup(
+                id: id,
+                messages: [AskMessage(id: id, role: "assistant", text: "", toolCalls: calls, createdAt: now)]
+            )
         }
         let memory = call("m", "memory", #"{"action":"list"}"#)
         let search = call("s", "web_search", #"{"query":"WWDC 2026 日期"}"#)
@@ -290,9 +411,12 @@ struct AskConversationVisualTests {
         let write = call("w", "files", #"{"action":"write","path":"~/Documents/notes/wwdc.md"}"#)
         let results = [result("m", "1482afe9 (v1): AI 助手的名字叫星期五"), result("s", "5 条结果"),
                        result("f", "WWDC26 · June 8–12"), result("w", "Permission denied", error: true)]
-        let plan = [AskPlanItem(step: "查到 WWDC 日期", status: "completed"), AskPlanItem(step: "写入笔记", status: "completed")]
+        let plan = [
+            AskPlanItem(step: "查到 WWDC 日期", status: "completed"),
+            AskPlanItem(step: "写入笔记", status: "completed")
+        ]
         func answer(_ text: String) -> some View {
-            Text(text).font(.system(size: 14.5)).foregroundStyle(StudioTheme.textPrimary)
+            Text(text).font(.system(size: 14.5)).foregroundStyle(TypefluxColor.label.color)
         }
         let sheet = VStack(alignment: .leading, spacing: 18) {
             VStack(alignment: .leading, spacing: 8) {
@@ -300,15 +424,27 @@ struct AskConversationVisualTests {
                 answer("目前只保存了一条笔记：AI 助手的名字叫星期五，英文 Friday。")
             }
             AskActivityBlock(group: group("b", [search, fetch, fetch]), results: results, plan: nil, status: .done)
-            AskActivityBlock(group: group("c", [search, fetch]), results: results, plan: nil, status: .running, streamingId: "c")
+            AskActivityBlock(
+                group: group("c", [search, fetch]),
+                results: results,
+                plan: nil,
+                status: .running,
+                streamingId: "c"
+            )
             AskActivityBlock(group: group("d", [fetch, write]), results: results, plan: nil, status: .failed)
             AskActivityBlock(group: group("e", [search, fetch, write]), results: results, plan: plan, status: .failed,
                              startsExpanded: true)
-            AskActivityBlock(group: group("g", [write]), results: [], plan: nil, status: .attention, approvalToolId: "w")
+            AskActivityBlock(
+                group: group("g", [write]),
+                results: [],
+                plan: nil,
+                status: .attention,
+                approvalToolId: "w"
+            )
         }
         .padding(28)
         .frame(width: 720, height: 600, alignment: .topLeading)
-        .background(AskTheme.surface)
+        .background(TypefluxColor.controlBackground.color)
         .environment(\.askGlassMaterialOverride, .opaque)
         for (name, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
             try await render(sheet, size: NSSize(width: 720, height: 600), appearance: appearance,
@@ -365,7 +501,10 @@ struct AskConversationVisualTests {
             try library.removeModel(model.reference, providerID: "ollama")
         }
         if ProcessInfo.processInfo.environment["TYPEFLUX_SCROLL_LARGE_CATALOG"] == "1" {
-            try library.addModels((0..<300).map { .init(id: "fixture-model-\($0)", name: "Fixture \($0)") }, providerID: "openAI")
+            try library.addModels(
+                (0..<300).map { .init(id: "fixture-model-\($0)", name: "Fixture \($0)") },
+                providerID: "openAI"
+            )
         }
         viewModel.selectModelPageTab(.providers)
         for (name, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
@@ -388,7 +527,15 @@ struct AskConversationVisualTests {
                 size: NSSize(width: 360, height: 370), appearance: appearance,
                 file: root.appendingPathComponent("models-menu-\(name).png")
             )
-            let catalogIDs = ["gpt-4o-mini", "gpt-4o", "o4-mini", "gpt-4.1", "gpt-4.1-mini", "o3", "text-embedding-3-large"]
+            let catalogIDs = [
+                "gpt-4o-mini",
+                "gpt-4o",
+                "o4-mini",
+                "gpt-4.1",
+                "gpt-4.1-mini",
+                "o3",
+                "text-embedding-3-large"
+            ]
             try await render(
                 ModelCatalogView(providerName: "OpenAI", models: catalogIDs.map { .init(id: $0, name: $0) },
                                  existingIDs: Set(catalogIDs.prefix(3)), selected: .constant(Set(catalogIDs.prefix(3))),
@@ -445,7 +592,8 @@ struct AskConversationVisualTests {
         defer { defaults.removePersistentDomain(forName: suite) }
         let library = AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false)
         try library.addModels([.init(id: "deep", name: "深度思考", reference: "cloud:deep", vision: true,
-                                    scenarios: ["ask"], pricing: .init(multiplier: "1"), reasoning: true)], providerID: "typefluxCloud")
+                                     scenarios: ["ask"], pricing: .init(multiplier: "1"), reasoning: true)],
+                              providerID: "typefluxCloud")
         library.defaultReference = "cloud:deep"
         let fixture = try AskTestFixture(modelLibrary: library)
         defer { fixture.model.resetSession() }
@@ -491,18 +639,19 @@ struct AskConversationVisualTests {
         await library.refresh(api: api, token: "fixture")
         library.defaultReference = "cloud:daily"
         try await render(ProviderModelsView(library: library, providerID: "typefluxCloud") {}.padding(24)
-                         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                         .background(StudioTheme.background),
-                         size: NSSize(width: 850, height: 500), appearance: .darkAqua,
-                         file: root.appendingPathComponent("cloud-managed-models.png"))
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .background(TypefluxColor.windowBackground.color),
+            size: NSSize(width: 850, height: 500), appearance: .darkAqua,
+            file: root.appendingPathComponent("cloud-managed-models.png"))
         let viewModel = StudioViewModel(settingsStore: SettingsStore(defaults: defaults),
-                                        historyStore: FileHistoryStore(baseDir: root.appendingPathComponent("list-history")),
+                                        historyStore: FileHistoryStore(baseDir: root
+                                            .appendingPathComponent("list-history")),
                                         initialSection: .models, modelLibrary: library)
         viewModel.selectModelPageTab(.providers)
         try await render(ModelSettingsPage(viewModel: viewModel, library: library) { EmptyView() }
-                         .padding(24).background(StudioTheme.background),
-                         size: NSSize(width: 1000, height: 900), appearance: .darkAqua,
-                         file: root.appendingPathComponent("provider-model-counts.png"))
+            .padding(24).background(TypefluxColor.windowBackground.color),
+            size: NSSize(width: 1000, height: 900), appearance: .darkAqua,
+            file: root.appendingPathComponent("provider-model-counts.png"))
     }
 
     @Test func renderImageCapabilitySurfaces() async throws {
@@ -525,9 +674,17 @@ struct AskConversationVisualTests {
         }
         var value = AskImageCapabilityTests().conversation()
         value.title = "讲讲这一屏在做什么"
-        let call = AskToolCall(id: "capture", type: "function", function: .init(name: "computer", arguments: #"{"action":"screenshot"}"#))
+        let call = AskToolCall(
+            id: "capture",
+            type: "function",
+            function: .init(name: "computer", arguments: #"{"action":"screenshot"}"#)
+        )
         value.messages.insert(.init(id: "question", role: "user", text: value.title, createdAt: value.updatedAt), at: 0)
-        value.messages.insert(.init(id: "assistant", role: "assistant", text: "我先看一下当前屏幕的内容。", toolCalls: [call], createdAt: value.updatedAt), at: 1)
+        value.messages.insert(
+            .init(id: "assistant", role: "assistant", text: "我先看一下当前屏幕的内容。", toolCalls: [call],
+                  createdAt: value.updatedAt),
+            at: 1
+        )
         await fixture.api.seed(value)
         await fixture.model.select(value.id)
         let target = try #require(fixture.model.imageRecoveryTarget)
@@ -549,7 +706,6 @@ struct AskConversationVisualTests {
         }
         await fixture.api.release(value.id)
         try await fixture.wait { fixture.model.busyIds.isEmpty }
-
     }
 
     /// GUL-193: the storage icon and card, the private header chip, and the merged history.
@@ -600,9 +756,9 @@ struct AskConversationVisualTests {
         ]
         for (name, status) in cards {
             try await render(AskLocalModeCard(status: status, onOpenSearchSettings: {}, onSignIn: {})
-                                .background(AskTheme.surface),
-                             size: NSSize(width: AskLocalModeCard.width, height: 380), appearance: .darkAqua,
-                             file: root.appendingPathComponent("storage-card-\(name).png"), minimumPNGBytes: 3000)
+                .background(TypefluxColor.controlBackground.color),
+                size: NSSize(width: AskLocalModeCard.width, height: 380), appearance: .darkAqua,
+                file: root.appendingPathComponent("storage-card-\(name).png"), minimumPNGBytes: 3000)
         }
     }
 
@@ -622,8 +778,14 @@ struct AskConversationVisualTests {
         let defaults = try #require(UserDefaults(suiteName: "ask-effort-hold-" + UUID().uuidString))
         let library = AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false)
         try library.addModels([
-            .init(id: "sonnet", name: "Claude Sonnet 5.5", reference: "cloud:sonnet", scenarios: ["ask"], reasoning: true,
-                  reasoningEfforts: ["low", "medium", "high", "xhigh", "max"]),
+            .init(
+                id: "sonnet",
+                name: "Claude Sonnet 5.5",
+                reference: "cloud:sonnet",
+                scenarios: ["ask"],
+                reasoning: true,
+                reasoningEfforts: ["low", "medium", "high", "xhigh", "max"]
+            ),
             .init(id: "m3", name: "MiniMax M3", reference: "cloud:m3", scenarios: ["ask"], reasoning: true),
             .init(id: "mini", name: "GPT-5.5 mini", reference: "cloud:mini", scenarios: ["ask"], reasoning: false)
         ], providerID: "typefluxCloud")
@@ -695,7 +857,10 @@ struct AskConversationVisualTests {
         let defaults = try #require(UserDefaults(suiteName: "ask-storage-hold-" + UUID().uuidString))
         let profile = AskModelProfile(name: "我的 Ollama", baseURL: "http://127.0.0.1:11434/v1", model: "qwen3:8b")
         defaults.set(try JSONEncoder().encode([profile]), forKey: "llm.model.profiles")
-        let fixture = try AskTestFixture(modelLibrary: AskModelLibrary(defaults: defaults, automaticallyLoadsCatalog: false))
+        let fixture = try AskTestFixture(modelLibrary: AskModelLibrary(
+            defaults: defaults,
+            automaticallyLoadsCatalog: false
+        ))
         defer { fixture.model.resetSession() }
         let now = Date()
         func turn(_ id: String, _ question: String, _ answer: String) -> [AskMessage] {
@@ -774,19 +939,57 @@ struct AskConversationVisualTests {
         var reply = AskMessage(id: "answer", role: "assistant", text: "建议先锁定发布范围，再走通真实使用流程，最后准备验收检查表。", createdAt: now)
         reply.runId = runID
         var value = AskConversation(id: UUID().uuidString, title: "梳理产品发布计划", revision: 1, updatedAt: now,
-            messages: [.init(id: "question", role: "user", text: "帮我梳理这周最值得先做的三件事。", createdAt: now), reply],
-            run: .init(id: runID, deviceId: "device", status: "completed", steps: 3, updatedAt: now, tools: [], pending: []))
-        let totals = AskUsageTotals(inputTokens: 17400, outputTokens: 842, totalTokens: 18242, microcredits: 360000, calls: 3)
+                                    messages: [
+                                        .init(id: "question", role: "user", text: "帮我梳理这周最值得先做的三件事。", createdAt: now),
+                                        reply
+                                    ],
+                                    run: .init(
+                                        id: runID,
+                                        deviceId: "device",
+                                        status: "completed",
+                                        steps: 3,
+                                        updatedAt: now,
+                                        tools: [],
+                                        pending: []
+                                    ))
+        let totals = AskUsageTotals(
+            inputTokens: 17400,
+            outputTokens: 842,
+            totalTokens: 18242,
+            microcredits: 360000,
+            calls: 3
+        )
         value.usage = .init(version: 1, since: now, historicalGap: false, total: totals, runs: [runID: totals])
-        value.contextUsage = .init(modelRef: "cloud:default", inputTokens: 31200, outputReserve: 4096, capacity: 128000, summarized: true)
-        await fixture.api.setUsageRecords([.init(id: "call", runId: runID, modelRef: "cloud:default", purpose: "answer", createdAt: now,
-            tokens: .init(promptTokens: 9200, completionTokens: 552, totalTokens: 9752), source: "provider", microcredits: 240000, status: "confirmed", version: 1)])
+        value.contextUsage = .init(
+            modelRef: "cloud:default",
+            inputTokens: 31200,
+            outputReserve: 4096,
+            capacity: 128000,
+            summarized: true
+        )
+        await fixture.api.setUsageRecords([.init(
+            id: "call",
+            runId: runID,
+            modelRef: "cloud:default",
+            purpose: "answer",
+            createdAt: now,
+            tokens: .init(promptTokens: 9200, completionTokens: 552, totalTokens: 9752),
+            source: "provider",
+            microcredits: 240000,
+            status: "confirmed",
+            version: 1
+        )])
         await fixture.api.seed(value)
         await fixture.model.select(value.id)
         for (name, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
             try await render(AskConversationView(model: fixture.model), size: NSSize(width: 1100, height: 740),
-                appearance: appearance, file: root.appendingPathComponent("usage-chat-\(name).png"))
-            try await render(AskConversationView(model: fixture.model, showsUsage: true), size: NSSize(width: 1100, height: 740), appearance: appearance, file: root.appendingPathComponent("usage-panel-\(name).png"))
+                             appearance: appearance, file: root.appendingPathComponent("usage-chat-\(name).png"))
+            try await render(
+                AskConversationView(model: fixture.model, showsUsage: true),
+                size: NSSize(width: 1100, height: 740),
+                appearance: appearance,
+                file: root.appendingPathComponent("usage-panel-\(name).png")
+            )
         }
     }
 
@@ -808,37 +1011,45 @@ struct AskConversationVisualTests {
         defer { fixture.model.resetSession() }
         let engine = AskLocalEngine(directory: fixture.root.appendingPathComponent("local"))
         let queued = try await engine.send(conversationId: "local-usage", request: .init(
-            id: "question", deviceId: "device", text: "帮我整理这周的发布计划。", tools: [], modelRef: profile.reference), token: "")
+            id: "question", deviceId: "device", text: "帮我整理这周的发布计划。", tools: [], modelRef: profile.reference
+        ),
+        token: "")
         let run = try #require(queued.run)
         let value = try await engine.inferenceResult(conversationId: queued.id, request: .init(
             runId: run.id, deviceId: run.deviceId, inferenceId: #require(run.inference?.id),
             content: "先确定发布范围，再验证真实使用流程，最后准备验收清单。",
-            usage: .init(promptTokens: 1240, completionTokens: 186, totalTokens: 1426, cachedTokens: 640)), token: "")
+            usage: .init(promptTokens: 1240, completionTokens: 186, totalTokens: 1426, cachedTokens: 640)
+        ), token: "")
         await fixture.api.seed(value)
-        await fixture.api.setUsageRecords(try await engine.usage(id: value.id, runId: nil, cursor: nil, token: "").items)
+        await fixture.api
+            .setUsageRecords(try await engine.usage(id: value.id, runId: nil, cursor: nil, token: "").items)
         await fixture.model.select(value.id)
         #expect(fixture.model.hasUsageRecords && !fixture.model.isSignedIn)
         let auth = AuthState(loadStoredToken: { nil }, loadStoredUserProfile: { nil },
                              saveStoredToken: { _, _ in }, saveStoredUserProfile: { _ in }, clearStoredSession: {})
         for (name, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
             try await render(AskConversationView(model: fixture.model, showsUsage: true, auth: auth)
-                             .environment(\.interfaceStyle, .classic),
-                             size: NSSize(width: 1100, height: 740),
-                             appearance: appearance, file: root.appendingPathComponent("local-usage-\(name).png"))
+                .environment(\.interfaceStyle, .classic),
+                size: NSSize(width: 1100, height: 740),
+                appearance: appearance, file: root.appendingPathComponent("local-usage-\(name).png"))
         }
         let missing = try await engine.send(conversationId: "local-missing", request: .init(
-            id: "question", deviceId: "device", text: "Explain the plan", tools: [], modelRef: profile.reference), token: "")
+            id: "question", deviceId: "device", text: "Explain the plan", tools: [], modelRef: profile.reference
+        ),
+        token: "")
         let missingRun = try #require(missing.run)
         let missingValue = try await engine.inferenceResult(conversationId: missing.id, request: .init(
             runId: missingRun.id, deviceId: missingRun.deviceId, inferenceId: #require(missingRun.inference?.id),
-            content: "The model did not return token usage."), token: "")
+            content: "The model did not return token usage."
+        ), token: "")
         await fixture.api.seed(missingValue)
-        await fixture.api.setUsageRecords(try await engine.usage(id: missing.id, runId: nil, cursor: nil, token: "").items)
+        await fixture.api
+            .setUsageRecords(try await engine.usage(id: missing.id, runId: nil, cursor: nil, token: "").items)
         await fixture.model.select(missing.id)
         try await render(AskConversationView(model: fixture.model, showsUsage: true, auth: auth)
-                         .environment(\.interfaceStyle, .classic),
-                         size: NSSize(width: 1100, height: 740), appearance: .darkAqua,
-                         file: root.appendingPathComponent("local-usage-missing-dark.png"))
+            .environment(\.interfaceStyle, .classic),
+            size: NSSize(width: 1100, height: 740), appearance: .darkAqua,
+            file: root.appendingPathComponent("local-usage-missing-dark.png"))
     }
 
     /// The workspace's floating chrome. System glass is composited by the window
@@ -854,14 +1065,37 @@ struct AskConversationVisualTests {
         defer { AppLocalization.shared.setLanguage(previousLanguage) }
         let fixture = try AskTestFixture()
         let now = Date()
-        let call = AskToolCall(id: "screen", type: "function", function: .init(name: "computer", arguments: #"{"action":"screenshot"}"#))
+        let call = AskToolCall(
+            id: "screen",
+            type: "function",
+            function: .init(name: "computer", arguments: #"{"action":"screenshot"}"#)
+        )
         let conversation = AskConversation(id: "glass", title: "优化帖子：口语化表达", revision: 3, updatedAt: now, messages: [
             .init(id: "q1", role: "user", text: "帮我优化一下这个帖子的内容，加入比较口语化的表达。", createdAt: now),
-            .init(id: "a1", role: "assistant", text: "我帮你把口语化的核心观点整合进去。先截个图看一下需要编辑的文本范围。", isError: true, createdAt: now),
+            .init(
+                id: "a1",
+                role: "assistant",
+                text: "我帮你把口语化的核心观点整合进去。先截个图看一下需要编辑的文本范围。",
+                isError: true,
+                createdAt: now
+            ),
             .init(id: "a2", role: "assistant", text: "", toolCalls: [call], createdAt: now),
             .init(id: "t1", role: "tool", text: "截图已获取", toolCallId: "screen", isError: false, createdAt: now),
-            .init(id: "a3", role: "assistant", text: String(repeating: "看了一圈，我觉得这个工具特别适合我的场景。本地和远程的 agent 都能统一管理。\n\n", count: 6), createdAt: now)
-        ], run: .init(id: "run", deviceId: "device", status: "completed", steps: 2, updatedAt: now, tools: [], pending: []))
+            .init(
+                id: "a3",
+                role: "assistant",
+                text: String(repeating: "看了一圈，我觉得这个工具特别适合我的场景。本地和远程的 agent 都能统一管理。\n\n", count: 6),
+                createdAt: now
+            )
+        ], run: .init(
+            id: "run",
+            deviceId: "device",
+            status: "completed",
+            steps: 2,
+            updatedAt: now,
+            tools: [],
+            pending: []
+        ))
         await fixture.api.seed(conversation)
         await fixture.model.refreshHistory()
         await fixture.model.select(conversation.id)
@@ -892,21 +1126,31 @@ struct AskConversationVisualTests {
         let history = [
             AskConversationSummary(id: "p1", title: "讲讲这一屏在做什么", updatedAt: now),
             AskConversationSummary(id: "p2", title: "早上好呀。", updatedAt: now.addingTimeInterval(-3600)),
-            AskConversationSummary(id: "p3", title: "解释 Swift 并发里的 actor 重入", updatedAt: now.addingTimeInterval(-86400 * 4))
+            AskConversationSummary(
+                id: "p3",
+                title: "解释 Swift 并发里的 actor 重入",
+                updatedAt: now.addingTimeInterval(-86400 * 4)
+            )
         ]
         for (name, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
             let palette = AskSearchPaletteView(conversations: history, available: AskPaletteAction.allCases,
                                                onAction: { _ in }, onOpen: { _ in }, onClose: {})
                 .environment(\.askGlassMaterialOverride, .opaque)
                 .frame(width: 900, height: 560)
-                .background(AskTheme.surface)
+                .background(TypefluxColor.controlBackground.color)
             try await render(palette, size: NSSize(width: 900, height: 560), appearance: appearance,
                              file: root.appendingPathComponent("search-palette-\(name).png"))
         }
     }
 
-    func render<V: View>(_ view: V, size: NSSize, appearance: NSAppearance.Name, file: URL, voice: AskVoiceInput? = nil, minimumPNGBytes: Int = 10000) async throws {
-        let window = AskTestVoiceWindow(contentRect: NSRect(origin: .zero, size: size), styleMask: [.borderless], backing: .buffered, defer: false)
+    func render<V: View>(_ view: V, size: NSSize, appearance: NSAppearance.Name, file: URL, voice: AskVoiceInput? = nil,
+                         minimumPNGBytes: Int = 10000) async throws {
+        let window = AskTestVoiceWindow(
+            contentRect: NSRect(origin: .zero, size: size),
+            styleMask: [.borderless],
+            backing: .buffered,
+            defer: false
+        )
         window.isReleasedWhenClosed = false
         window.appearance = NSAppearance(named: appearance)
         let hosting = NSHostingView(rootView: view)
@@ -925,7 +1169,8 @@ struct AskConversationVisualTests {
         }
         try snapshot(file)
         if file.lastPathComponent.hasPrefix("models-settings-") ||
-            (ProcessInfo.processInfo.environment["TYPEFLUX_SCROLL_LARGE_CATALOG"] == "1" && file.lastPathComponent.hasPrefix("models-provider-")) {
+            (ProcessInfo.processInfo.environment["TYPEFLUX_SCROLL_LARGE_CATALOG"] == "1" && file.lastPathComponent
+                .hasPrefix("models-provider-")) {
             func scrollViews(_ view: NSView) -> [NSScrollView] {
                 let own = (view as? NSScrollView).map { [$0] } ?? []
                 return own + view.subviews.flatMap(scrollViews)
@@ -938,7 +1183,7 @@ struct AskConversationVisualTests {
             scroll.verticalScrollElasticity = .none
             for _ in 0..<12 {
                 let cgEvent = try #require(CGEvent(scrollWheelEvent2Source: nil, units: .line,
-                    wheelCount: 1, wheel1: -3, wheel2: 0, wheel3: 0))
+                                                   wheelCount: 1, wheel1: -3, wheel2: 0, wheel3: 0))
                 scroll.scrollWheel(with: try #require(NSEvent(cgEvent: cgEvent)))
                 try await Task.sleep(for: .milliseconds(16))
                 #expect(abs((scroll.documentView?.bounds.height ?? 0) - height) < 1,
@@ -946,7 +1191,9 @@ struct AskConversationVisualTests {
             }
             #expect(scroll.contentView.bounds.minY > start, "Mouse wheel must move the model list")
             if let profile = ProcessInfo.processInfo.environment["TYPEFLUX_SCROLL_PROFILE"],
-               file.lastPathComponent == (ProcessInfo.processInfo.environment["TYPEFLUX_SCROLL_SURFACE"] ?? "models-settings-dark.png") {
+               file
+               .lastPathComponent ==
+               (ProcessInfo.processInfo.environment["TYPEFLUX_SCROLL_SURFACE"] ?? "models-settings-dark.png") {
                 try Data(String(ProcessInfo.processInfo.processIdentifier).utf8)
                     .write(to: URL(fileURLWithPath: profile + ".pid"))
                 var elapsed: [Double] = []
@@ -954,7 +1201,8 @@ struct AskConversationVisualTests {
                 for index in 0..<600 {
                     let began = ProcessInfo.processInfo.systemUptime
                     let event = try #require(CGEvent(scrollWheelEvent2Source: nil, units: .line,
-                        wheelCount: 1, wheel1: (index / 60).isMultiple(of: 2) ? -3 : 3, wheel2: 0, wheel3: 0))
+                                                     wheelCount: 1, wheel1: (index / 60).isMultiple(of: 2) ? -3 : 3,
+                                                     wheel2: 0, wheel3: 0))
                     scroll.scrollWheel(with: try #require(NSEvent(cgEvent: event)))
                     let wheelEnd = ProcessInfo.processInfo.systemUptime
                     hosting.layoutSubtreeIfNeeded()
@@ -962,7 +1210,10 @@ struct AskConversationVisualTests {
                     hosting.displayIfNeeded()
                     let displayEnd = ProcessInfo.processInfo.systemUptime
                     elapsed.append((displayEnd - began) * 1000)
-                    details.append("\(index),\((wheelEnd - began) * 1000),\((layoutEnd - wheelEnd) * 1000),\((displayEnd - layoutEnd) * 1000),\((displayEnd - began) * 1000)")
+                    details
+                        .append(
+                            "\(index),\((wheelEnd - began) * 1000),\((layoutEnd - wheelEnd) * 1000),\((displayEnd - layoutEnd) * 1000),\((displayEnd - began) * 1000)"
+                        )
                     try await Task.sleep(for: .milliseconds(16))
                 }
                 try Data(details.joined(separator: "\n").utf8).write(to: URL(fileURLWithPath: profile + ".csv"))
@@ -970,7 +1221,6 @@ struct AskConversationVisualTests {
                 let report = "wheel+layout+display ms: median=\(elapsed[300]) p95=\(elapsed[570]) max=\(elapsed.last!)"
                 try Data(report.utf8).write(to: URL(fileURLWithPath: profile + ".txt"))
             }
-
         }
         if file.lastPathComponent == "conversation.png" {
             func probes(_ view: NSView) -> [AskHistoryPullRefresh.Probe] {

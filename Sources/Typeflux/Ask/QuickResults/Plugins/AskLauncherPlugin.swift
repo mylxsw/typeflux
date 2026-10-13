@@ -28,13 +28,14 @@ protocol AskLauncherPlugin: Sendable {
     func plan(_ request: AskPluginRequest) async -> AskPluginPlan
     /// Runs the request. Plugins that produce text gradually report each step to
     /// `progress`, which the launcher shows while the run goes on.
-    func run(_ request: AskPluginRequest, plan: AskPluginPlan, progress: @escaping AskPluginProgress) async throws -> AskPluginOutput
+    func run(_ request: AskPluginRequest, plan: AskPluginPlan, progress: @escaping AskPluginProgress) async throws
+        -> AskPluginOutput
     /// The option ⇥ moves to: the next target language, say. Nil when there is none.
     func nextOptions(after plan: AskPluginPlan, request: AskPluginRequest, step: Int) -> [String: String]?
 }
 
 extension AskLauncherPlugin {
-    var keywordColor: Color { AskTheme.accent }
+    var keywordColor: Color { TypefluxColor.accent.color }
     var optionName: String? { nil }
     var runsWithoutInput: Bool { false }
     var usesSelectionInput: Bool { true }

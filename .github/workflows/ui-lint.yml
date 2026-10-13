@@ -1,0 +1,35 @@
+name: UI lint
+
+on:
+  pull_request:
+    paths:
+      - 'Sources/**'
+      - '.swiftlint*'
+      - 'scripts/check_ui_literals.py'
+      - 'scripts/lint_ui.sh'
+      - '.github/workflows/ui-lint.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    container: swift:6.3.1-noble
+    env:
+      LD_LIBRARY_PATH: /usr/lib
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Install SwiftLint
+        run: |
+          apt-get update
+          apt-get install -y curl python3
+          curl -fsSL https://github.com/realm/SwiftLint/releases/download/0.65.1/swiftlint_linux_amd64.zip -o /tmp/swiftlint.zip
+          unzip -q /tmp/swiftlint.zip -d /usr/local/bin
+          chmod +x /usr/local/bin/swiftlint
+      - name: Lint and prevent baseline growth
+        env:
+          UI_BASE_REF: ${{ github.event.pull_request.base.sha }}
+        run: ./scripts/lint_ui.sh --base-ref "$UI_BASE_REF"

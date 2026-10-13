@@ -52,14 +52,17 @@ struct AskReferenceDesignRenderTests {
         let sourceID = UUID().uuidString
         let sent = designQuotes(source: sourceID)
         await fixture.api.seed(AskConversation(id: conversationID, title: "讲讲这一屏在做什么", revision: 1, updatedAt: Date(),
-                                         messages: [
-            AskMessage(id: UUID().uuidString, role: "user", text: "讲讲这一屏在做什么", createdAt: Date()),
-            AskMessage(id: sourceID, role: "assistant", text: Self.answer, createdAt: Date()),
-            AskMessage(id: UUID().uuidString, role: "user", text: "这几个途径里，哪个最可能拿到英文原稿？",
-                       createdAt: Date(), references: sent),
-            AskMessage(id: UUID().uuidString, role: "assistant",
-                       text: "最可能的是课程官网的阅读材料和公开课录像的字幕。", createdAt: Date())
-        ]))
+                                               messages: [
+                                                   AskMessage(id: UUID().uuidString, role: "user", text: "讲讲这一屏在做什么",
+                                                              createdAt: Date()),
+                                                   AskMessage(id: sourceID, role: "assistant", text: Self.answer,
+                                                              createdAt: Date()),
+                                                   AskMessage(id: UUID().uuidString, role: "user",
+                                                              text: "这几个途径里，哪个最可能拿到英文原稿？",
+                                                              createdAt: Date(), references: sent),
+                                                   AskMessage(id: UUID().uuidString, role: "assistant",
+                                                              text: "最可能的是课程官网的阅读材料和公开课录像的字幕。", createdAt: Date())
+                                               ]))
         await fixture.model.select(conversationID)
 
         // 1 / 3.2: the board's "After" — three quotes, dark and light.
@@ -71,7 +74,7 @@ struct AskReferenceDesignRenderTests {
 
         // 2.1: a single quote stretches across the row; typed text replaces the prompt.
         fixture.model.draft.references = [quote("课程官网（哈佛公开课页面）可以获取课程大纲、阅读材料和练习，但没有逐字稿。提供了一些可能的获取途径和建议。",
-                                          source: sourceID)]
+                                                source: sourceID)]
         fixture.model.draft.text = "这些途径里哪个最靠谱？"
         try await write(workspace(fixture.model), size: CGSize(width: 1200, height: 820), appearance: .darkAqua,
                         to: root.appendingPathComponent("design-2-1-single.png"))
@@ -123,11 +126,12 @@ struct AskReferenceDesignRenderTests {
             AskReferenceEditor(reference: mixed[1], save: { _ in }, cancel: {},
                                position: L("ask.references.position", 2, 3), locate: {}, remove: {})
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(AskTheme.border))
+                .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .strokeBorder(TypefluxColor.separator.color))
         }
         .padding(20)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(AskTheme.composerSurface)
+        .background(TypefluxColor.controlBackground.color)
     }
 
     private func workspace(_ model: AskConversationModel) -> some View {

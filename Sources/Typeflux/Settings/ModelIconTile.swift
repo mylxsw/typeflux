@@ -8,7 +8,7 @@ struct ModelIconTile<Content: View>: View {
         content
             .frame(width: size, height: size)
             .background(
-                StudioTheme.iconTileSurface,
+                TypefluxColor.accent.color.opacity(0.12),
                 in: RoundedRectangle(
                     cornerRadius: TypefluxRadius.navigationIcon.value(for: .classic),
                     style: .continuous

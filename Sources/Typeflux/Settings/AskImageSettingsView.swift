@@ -97,7 +97,7 @@ struct AskImageSettingsView: View {
                     }
                 } label: {
                     Image(systemName: "list.bullet").font(.body)
-                        .foregroundStyle(StudioTheme.textSecondary)
+                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
                 }
                 .menuStyle(.borderlessButton).menuIndicator(.hidden)
                 .help(L("imagegen.models.suggestions"))
@@ -143,7 +143,7 @@ struct AskImageSettingsView: View {
                 }
                 Spacer(minLength: 8)
                 if model.hasChanges {
-                    Text(L("imagegen.unsaved")).font(.subheadline).foregroundStyle(StudioTheme.warning)
+                    Text(L("imagegen.unsaved")).font(.subheadline).foregroundStyle(TypefluxColor.warning.color)
                 }
                 Button(L("ask.models.save")) {
                     model.save()
@@ -158,7 +158,7 @@ struct AskImageSettingsView: View {
                     Text(notice).fixedSize(horizontal: false, vertical: true).textSelection(.enabled)
                 }
                 .font(.subheadline)
-                .foregroundStyle(model.noticeIsError ? StudioTheme.danger : StudioTheme.success)
+                .foregroundStyle(model.noticeIsError ? TypefluxColor.danger.color : TypefluxColor.success.color)
             }
         }
     }
@@ -174,7 +174,7 @@ struct AskImageSettingsView: View {
     }
 
     private func hint(_ key: String) -> some View {
-        Text(L(key)).font(.subheadline).foregroundStyle(StudioTheme.textTertiary)
+        Text(L(key)).font(.subheadline).foregroundStyle(TypefluxColor.tertiaryLabel.color)
             .fixedSize(horizontal: false, vertical: true)
     }
 }

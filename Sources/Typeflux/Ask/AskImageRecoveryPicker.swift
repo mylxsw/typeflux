@@ -37,7 +37,8 @@ struct AskImagePickerState: Equatable {
 
     func canContinue(candidate: String, providers: [RegisteredProvider], busy: Bool) -> Bool {
         content == .choices && !busy && providers.contains { provider in
-            (!provider.isCloud || (!loading && !catalogFailed)) && provider.models.contains { $0.reference == candidate }
+            (!provider.isCloud || (!loading && !catalogFailed)) && provider.models
+                .contains { $0.reference == candidate }
         }
     }
 }
@@ -54,22 +55,23 @@ struct AskImageRecoveryPicker: View {
     var body: some View {
         AskImagePickerContent(library: model.modelLibrary, candidate: $candidate,
                               currentReference: model.modelReference(launcher: false),
-                              loggedIn: model.cloudAvailable && auth.isLoggedIn, loading: refreshing || model.modelLibrary.loading,
+                              loggedIn: model.cloudAvailable && auth.isLoggedIn,
+                              loading: refreshing || model.modelLibrary.loading,
                               hasSavedScreenshot: model.hasConversationImages,
                               busy: model.isBusy || model.isLoadingSelection || model.imageRecoveryTarget != target,
                               dismiss: dismiss, refresh: { refreshGeneration += 1 },
                               configure: { dismiss(); model.onOpenSettings?(.models) },
                               signIn: { dismiss(); LoginWindowController.shared.show() },
                               resume: { model.resumeImage(target, reference: candidate); dismiss() })
-        .onAppear { if model.canResumeImage { candidate = model.modelReference(launcher: false) } }
-        .task(id: refreshGeneration) {
-            guard model.modelLibrary.automaticallyLoadsCatalog || refreshGeneration > 0 else { return }
-            refreshing = true
-            await model.refreshImageModels()
-            refreshing = false
-        }
-        .onChange(of: model.selectedId) { _ in dismiss() }
-        .onChange(of: model.selected?.run?.id) { _ in dismiss() }
+            .onAppear { if model.canResumeImage { candidate = model.modelReference(launcher: false) } }
+            .task(id: refreshGeneration) {
+                guard model.modelLibrary.automaticallyLoadsCatalog || refreshGeneration > 0 else { return }
+                refreshing = true
+                await model.refreshImageModels()
+                refreshing = false
+            }
+            .onChange(of: model.selectedId) { _ in dismiss() }
+            .onChange(of: model.selected?.run?.id) { _ in dismiss() }
     }
 }
 
@@ -106,12 +108,12 @@ struct AskImagePickerContent: View {
                     if loading { ProgressView().controlSize(.small).accessibilityLabel(L("ask.image.loading")) }
                     else if state.content == .choices || state.content == .empty {
                         Button(action: refresh) { Image(systemName: "arrow.clockwise") }
-                            .buttonStyle(.plain).foregroundStyle(StudioTheme.textSecondary)
+                            .buttonStyle(.plain).foregroundStyle(TypefluxColor.secondaryLabel.color)
                             .help(L("ask.image.refreshModels")).accessibilityLabel(L("ask.image.refreshModels"))
                     }
                 }
                 Text(L(hasSavedScreenshot ? "ask.image.pickerHint" : "ask.image.pickerHintWithoutScreenshot"))
-                    .font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
+                    .font(.system(size: 12)).foregroundStyle(TypefluxColor.secondaryLabel.color)
                     .fixedSize(horizontal: false, vertical: true)
             }.padding(16)
             Divider()
@@ -122,7 +124,7 @@ struct AskImagePickerContent: View {
                         if state.showsCloudFailure {
                             HStack(alignment: .top, spacing: 10) {
                                 Text(L("ask.image.cloudUnavailable")).font(.system(size: 12))
-                                    .foregroundStyle(StudioTheme.textSecondary)
+                                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
                                 Spacer(minLength: 0)
                                 Button(L("ask.image.retry"), action: refresh).controlSize(.small)
                             }.padding(12)
@@ -150,12 +152,13 @@ struct AskImagePickerContent: View {
                 } else if state.content == .signedOut {
                     primary("auth.account.signIn", action: signIn)
                 } else if state.content == .choices {
-                    primary(candidate == currentReference ? "ask.image.resume" : "ask.image.switchAndContinue", action: resume)
+                    primary(candidate == currentReference ? "ask.image.resume" : "ask.image.switchAndContinue",
+                            action: resume)
                         .disabled(!state.canContinue(candidate: candidate, providers: providers, busy: busy))
                 }
             }.padding(16)
         }
-        .frame(width: 360).background(TypefluxColor.controlBackground.color).tint(AskTheme.accent)
+        .frame(width: 360).background(TypefluxColor.controlBackground.color).tint(TypefluxColor.accent.color)
     }
 
     private func primary(_ key: String, action: @escaping () -> Void) -> some View {
@@ -166,7 +169,7 @@ struct AskImagePickerContent: View {
         HStack(alignment: .top, spacing: 8) {
             if !icon.isEmpty { Image(systemName: icon).accessibilityHidden(true) }
             Text(L(key)).fixedSize(horizontal: false, vertical: true)
-        }.font(.system(size: 13)).foregroundStyle(StudioTheme.textSecondary).padding(16)
+        }.font(.system(size: 13)).foregroundStyle(TypefluxColor.secondaryLabel.color).padding(16)
     }
 }
 

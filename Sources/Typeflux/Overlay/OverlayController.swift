@@ -850,7 +850,7 @@ final class OverlayController {
         } else if model.presentation == .notice || model.presentation == .resultDialog {
             return
         } else {
-            dismiss(after: StudioTheme.Durations.overlayDismissDelay)
+            dismiss(after: 0.4)
         }
     }
 
@@ -927,7 +927,10 @@ final class OverlayController {
             hideWindowAndResetState()
         }
         dismissWorkItem = workItem
-        DispatchQueue.main.asyncAfter(deadline: .now() + OverlayMotion.dismissalDuration * model.motionScale, execute: workItem)
+        DispatchQueue.main.asyncAfter(
+            deadline: .now() + OverlayMotion.dismissalDuration * model.motionScale,
+            execute: workItem
+        )
     }
 
     private func hideWindowAndResetState() {
@@ -1054,7 +1057,8 @@ final class OverlayController {
         } else {
             window.orderFrontRegardless()
             if !model.isPresented {
-                withAnimation(reduceMotion ? nil : OverlayMotion.appearance(scale: model.motionScale)) { model.isPresented = true }
+                withAnimation(reduceMotion ? nil : OverlayMotion.appearance(scale: model.motionScale)) {
+                    model.isPresented = true }
             }
         }
         updateKeyMonitoring()
@@ -1153,7 +1157,10 @@ final class OverlayController {
                 pendingFrameAnimationWorkItem = nil
             }
             pendingFrameAnimationWorkItem = workItem
-            DispatchQueue.main.asyncAfter(deadline: .now() + OverlayMotion.geometrySettleDelay(scale: model.motionScale), execute: workItem)
+            DispatchQueue.main.asyncAfter(
+                deadline: .now() + OverlayMotion.geometrySettleDelay(scale: model.motionScale),
+                execute: workItem
+            )
         } else if shouldAnimate {
             animateWindow(window, to: targetFrame, duration: 0.28)
         } else {
@@ -1175,7 +1182,8 @@ final class OverlayController {
         switch presentation {
         case .recordingHold:
             return OverlayMetrics(
-                size: recordingOverlaySize(baseWidth: 146, baseHeight: 112), anchor: .bottom, offset: Self.recordingWindowBottomInset,
+                size: recordingOverlaySize(baseWidth: 146, baseHeight: 112), anchor: .bottom,
+                offset: Self.recordingWindowBottomInset,
                 interactive: false
             )
         case .recordingHoldPreview:
@@ -1189,7 +1197,8 @@ final class OverlayController {
             )
         case .recordingLocked:
             return OverlayMetrics(
-                size: recordingOverlaySize(baseWidth: 196, baseHeight: 120), anchor: .bottom, offset: Self.recordingWindowBottomInset,
+                size: recordingOverlaySize(baseWidth: 196, baseHeight: 120), anchor: .bottom,
+                offset: Self.recordingWindowBottomInset,
                 interactive: true
             )
         case .recordingLockedPreview:
@@ -1719,7 +1728,10 @@ private struct OverlayView: View {
         .fixedSize(horizontal: true, vertical: true)
         .animation(reduceMotion ? nil : OverlayMotion.morph(scale: model.motionScale), value: expanded)
         .animation(reduceMotion ? nil : OverlayMotion.morph(scale: model.motionScale), value: showControls)
-        .animation(reduceMotion ? nil : OverlayMotion.morph(scale: model.motionScale), value: model.presentation.isProcessing)
+        .animation(
+            reduceMotion ? nil : OverlayMotion.morph(scale: model.motionScale),
+            value: model.presentation.isProcessing
+        )
     }
 
     private var previewCard: some View {
@@ -1727,7 +1739,7 @@ private struct OverlayView: View {
             HStack(spacing: 10) {
                 Image(systemName: "info.circle")
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(StudioTheme.accent)
+                    .foregroundStyle(TypefluxColor.accent.color)
 
                 Text("“\(model.detailText)”")
                     .font(.system(size: 12.5, weight: .medium))
@@ -1846,7 +1858,7 @@ private struct OverlayView: View {
             VStack(alignment: .leading, spacing: 8) {
                 cardHeader(
                     icon: "info.circle",
-                    accent: StudioTheme.accent,
+                    accent: TypefluxColor.accent.color,
                     title: model.statusText,
                     dismissible: model.noticeDismissible,
                     titleSize: 13.5
@@ -2038,7 +2050,7 @@ private struct OverlayView: View {
             VStack(alignment: .leading, spacing: 10) {
                 cardHeader(
                     icon: "info.circle",
-                    accent: StudioTheme.accent,
+                    accent: TypefluxColor.accent.color,
                     title: model.statusText,
                     dismissible: true,
                     titleSize: 13.5
@@ -2146,7 +2158,7 @@ private struct OverlayView: View {
             RoundedRectangle(cornerRadius: 11, style: .continuous)
                 .fill(
                     isSelected
-                        ? StudioTheme.accent.opacity(0.34)
+                        ? TypefluxColor.accent.color.opacity(0.34)
                         : Color.black.opacity(0.16)
                 )
                 .frame(width: 40, height: 40)
@@ -2164,7 +2176,7 @@ private struct OverlayView: View {
         private var selectedCheckmark: some View {
             ZStack {
                 Circle()
-                    .fill(StudioTheme.accent.opacity(0.95))
+                    .fill(TypefluxColor.accent.color.opacity(0.95))
                 Image(systemName: "checkmark")
                     .font(.system(size: 9.5, weight: .bold))
                     .foregroundStyle(Color.white)
@@ -2176,14 +2188,14 @@ private struct OverlayView: View {
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .fill(
                     isSelected
-                        ? StudioTheme.accent.opacity(0.18)
+                        ? TypefluxColor.accent.color.opacity(0.18)
                         : Color.black.opacity(0.10)
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
                         .stroke(
                             isSelected
-                                ? StudioTheme.accent.opacity(0.95) : Color.white.opacity(0.08),
+                                ? TypefluxColor.accent.color.opacity(0.95) : Color.white.opacity(0.08),
                             lineWidth: isSelected ? 1.15 : 0.8
                         )
                 )
@@ -2625,7 +2637,6 @@ struct ProcessingTranscriptCapsule: View {
                 .stroke(Color.white.opacity(0.18), lineWidth: 0.8)
         )
     }
-
 }
 
 private struct OverlayCapsule<Content: View>: View {

@@ -5,6 +5,8 @@ import SwiftUI
 /// forms for keywords, input and output (or `workflow.json` itself), the code card
 /// for scripts. See `docs/design/launcher-keywords-workflow-editor.md` §3.2.
 struct AskWorkflowEditorCenter: View {
+    @Environment(\.interfaceStyle) private var interfaceStyle
+
     @ObservedObject var model: AskWorkflowEditorModel
     @State private var addingFile = false
     @State private var newFile = ""
@@ -25,7 +27,7 @@ struct AskWorkflowEditorCenter: View {
                     L("ask.workflow.editor.diff.current"), L("ask.workflow.editor.diff.proposed")
                 ), suffix: L("ask.workflow.editor.diff.proposalSuffix")) {
                     Button(L("ask.workflow.editor.close")) { model.previewingProposal = nil }
-                        .buttonStyle(AskWorkflowActionStyle(small: true))
+                        .buttonStyle(.bordered).controlSize(.small)
                 }
                 .codeCard()
             } else if model.showingDiff, let change = model.outsideChange, let draft = model.draft {
@@ -36,9 +38,9 @@ struct AskWorkflowEditorCenter: View {
                         model.loadTheirs()
                         NotificationCenter.default.post(name: .askWorkflowEditorReviewTrust, object: nil)
                     }
-                    .buttonStyle(AskWorkflowActionStyle(small: true))
+                    .buttonStyle(.bordered).controlSize(.small)
                     Button(L("ask.workflow.editor.close")) { model.showingDiff = false }
-                        .buttonStyle(AskWorkflowActionStyle(small: true))
+                        .buttonStyle(.bordered).controlSize(.small)
                 }
                 .codeCard()
                 .padding(.top, 14)
@@ -69,10 +71,10 @@ struct AskWorkflowEditorCenter: View {
                         }
                 }
                 Button { addingFile = true } label: {
-                    Image(systemName: "plus").font(.system(size: 11, weight: .semibold))
+                    Image(systemName: "plus").font(.system(.subheadline, weight: .semibold))
                         .frame(width: 24, height: 24).contentShape(Rectangle())
                 }
-                .buttonStyle(.plain).foregroundStyle(StudioTheme.textTertiary)
+                .buttonStyle(.plain).foregroundStyle(TypefluxColor.tertiaryLabel.color)
                 .help(L("ask.workflow.editor.addFile"))
                 Spacer()
                 // ⌘F opens the find bar; the button itself stays out of sight.
@@ -82,7 +84,7 @@ struct AskWorkflowEditorCenter: View {
                 Button { withAnimation(.easeOut(duration: 0.15)) { showsRunSettings.toggle() } } label: {
                     Label(runSettingsTitle, systemImage: "gearshape")
                 }
-                .buttonStyle(AskWorkflowActionStyle(kind: showsRunSettings ? .secondary : .ghost, small: true))
+                .buttonStyle(.bordered).controlSize(.small)
                 .accessibilityIdentifier("ask.workflow.editor.runSettings")
             }
             .padding(.horizontal, 20).padding(.bottom, 8)
@@ -96,7 +98,7 @@ struct AskWorkflowEditorCenter: View {
                    model.draft?.files[path] != nil {
                     code(path)
                 } else {
-                    Text(L("ask.workflow.editor.noScript")).foregroundStyle(StudioTheme.textSecondary)
+                    Text(L("ask.workflow.editor.noScript")).foregroundStyle(TypefluxColor.secondaryLabel.color)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
                 Rectangle().fill(TypefluxColor.separator.color).frame(height: 1)
@@ -153,16 +155,16 @@ struct AskWorkflowEditorCenter: View {
                 if let suggestion = model.scriptSuggestion {
                     Rectangle().fill(TypefluxColor.separator.color).frame(height: 1)
                     HStack(spacing: 8) {
-                        Image(systemName: "wand.and.stars").foregroundStyle(StudioTheme.warning)
+                        Image(systemName: "wand.and.stars").foregroundStyle(TypefluxColor.warning.color)
                         Text(L("ask.workflow.editor.quickFix.script", model.draft?.manifest?.command.script ?? "",
                                suggestion))
                         Spacer()
                         Button(L("ask.workflow.editor.quickFix.apply", suggestion)) { model.applyScriptSuggestion() }
-                            .buttonStyle(AskWorkflowActionStyle(small: true))
+                            .buttonStyle(.bordered).controlSize(.small)
                             .accessibilityIdentifier("ask.workflow.editor.quickFix")
                     }
-                    .font(.system(size: 11.5)).padding(.horizontal, 12).padding(.vertical, 6)
-                    .background(StudioTheme.warning.opacity(0.10))
+                    .font(.system(.subheadline)).padding(.horizontal, 12).padding(.vertical, 6)
+                    .background(TypefluxColor.warning.color.opacity(0.10))
                 }
                 if AskWorkflowStatusBar.hasNews(model) {
                     Rectangle().fill(TypefluxColor.separator.color).frame(height: 1)
@@ -198,15 +200,30 @@ struct AskWorkflowEditorCenter: View {
 extension View {
     /// The rounded card code and diffs sit in, inset from the editor's edges.
     func codeCard() -> some View {
-        background(Color(nsColor: .textBackgroundColor).opacity(0.55))
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(TypefluxColor.separator.color))
+        modifier(AskWorkflowCodeCard())
+    }
+}
+
+private struct AskWorkflowCodeCard: ViewModifier {
+    @Environment(\.interfaceStyle) private var interfaceStyle
+
+    func body(content: Content) -> some View {
+        content
+            .background(Color(nsColor: .textBackgroundColor).opacity(0.55))
+            .clipShape(RoundedRectangle(
+                cornerRadius: TypefluxRadius.form.value(for: interfaceStyle),
+                style: .continuous
+            ))
+            .overlay(RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle), style: .continuous)
+                .strokeBorder(TypefluxColor.separator.color))
             .padding(.horizontal, 20).padding(.bottom, 16)
     }
 }
 
 /// A file tab: a pill, raised when selected, with an orange dot when changed.
 struct AskWorkflowFileTab: View {
+    @Environment(\.interfaceStyle) private var interfaceStyle
+
     var title: String
     var selected: Bool
     var dirty: Bool
@@ -218,12 +235,12 @@ struct AskWorkflowFileTab: View {
         Button(action: action) {
             HStack(spacing: 5) {
                 if entry {
-                    Image(systemName: "play.fill").font(.system(size: 7)).foregroundStyle(AskTheme.accent)
+                    Image(systemName: "play.fill").font(.system(.footnote)).foregroundStyle(TypefluxColor.accent.color)
                         .help(L("ask.workflow.editor.files.entry"))
                         .accessibilityLabel(L("ask.workflow.editor.files.entry"))
                 }
-                Text(title).font(.system(size: 12, design: .monospaced))
-                    .foregroundStyle(selected ? StudioTheme.textPrimary : StudioTheme.textSecondary)
+                Text(title).font(.system(.callout, design: .monospaced))
+                    .foregroundStyle(selected ? TypefluxColor.label.color : TypefluxColor.secondaryLabel.color)
                     .lineLimit(1)
                 if dirty {
                     Circle().fill(Color.orange).frame(width: 6, height: 6)
@@ -232,10 +249,16 @@ struct AskWorkflowFileTab: View {
             .padding(.horizontal, 10).frame(height: 26)
             .background(
                 selected ? TypefluxColor.contentBackground.color : .clear,
-                in: RoundedRectangle(cornerRadius: 7, style: .continuous)
+                in: RoundedRectangle(
+                    cornerRadius: TypefluxRadius.navigationIcon.value(for: interfaceStyle),
+                    style: .continuous
+                )
             )
-            .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous)
-                .strokeBorder(selected ? TypefluxColor.separator.color : .clear))
+            .overlay(RoundedRectangle(
+                cornerRadius: TypefluxRadius.navigationIcon.value(for: interfaceStyle),
+                style: .continuous
+            )
+            .strokeBorder(selected ? TypefluxColor.separator.color : .clear))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -259,7 +282,7 @@ struct AskWorkflowStatusBar: View {
             Spacer(minLength: 8)
             trailing
         }
-        .font(.system(size: 11)).padding(.horizontal, 12).frame(height: 28)
+        .font(.system(.subheadline)).padding(.horizontal, 12).frame(height: 28)
         .background(TypefluxColor.contentBackground.color)
     }
 
@@ -270,30 +293,31 @@ struct AskWorkflowStatusBar: View {
                 L("ask.workflow.editor.status.outside", stats.added, stats.removed),
                 systemImage: "exclamationmark.triangle"
             )
-            .foregroundStyle(StudioTheme.warning)
+            .foregroundStyle(TypefluxColor.warning.color)
         } else if !problems.isEmpty {
             ForEach(Array(problems.prefix(2).enumerated()), id: \.offset) { _, problem in
                 Button { model.revealProblem(problem) } label: {
                     Label(problem.field + ": " + problem.message, systemImage: "xmark.circle").lineLimit(1)
                 }
-                .buttonStyle(.plain).foregroundStyle(StudioTheme.danger)
+                .buttonStyle(.plain).foregroundStyle(TypefluxColor.danger.color)
             }
             if problems.count > 2 {
-                Text(L("ask.workflow.editor.status.more", problems.count - 2)).foregroundStyle(StudioTheme.danger)
+                Text(L("ask.workflow.editor.status.more", problems.count - 2))
+                    .foregroundStyle(TypefluxColor.danger.color)
             }
         } else if let last = model.results.last, !last.succeeded, model.step == .script {
             Label(L("ask.workflow.editor.status.testFailed", last.summary), systemImage: "xmark.circle")
-                .foregroundStyle(StudioTheme.danger)
+                .foregroundStyle(TypefluxColor.danger.color)
         } else {
             Label(L("ask.workflow.editor.status.noProblems"), systemImage: "checkmark")
-                .foregroundStyle(StudioTheme.textTertiary)
+                .foregroundStyle(TypefluxColor.tertiaryLabel.color)
         }
     }
 
     @ViewBuilder private var trailing: some View {
         if model.outsideChange != nil {
             if let hash = model.trustedHashLabel {
-                Text(L("ask.workflow.editor.status.trusted", hash)).foregroundStyle(StudioTheme.textTertiary)
+                Text(L("ask.workflow.editor.status.trusted", hash)).foregroundStyle(TypefluxColor.tertiaryLabel.color)
             }
         } else {
             HStack(spacing: 14) {
@@ -305,7 +329,7 @@ struct AskWorkflowStatusBar: View {
                 }
                 Text("UTF-8")
             }
-            .foregroundStyle(StudioTheme.textTertiary)
+            .foregroundStyle(TypefluxColor.tertiaryLabel.color)
         }
     }
 }
@@ -314,6 +338,8 @@ struct AskWorkflowStatusBar: View {
 /// summary each; the selected one is raised, steps with problems get a red dot.
 /// The `workflow.json` switch sits at the end.
 struct AskWorkflowFlowStrip: View {
+    @Environment(\.interfaceStyle) private var interfaceStyle
+
     @ObservedObject var model: AskWorkflowEditorModel
 
     private let steps: [AskWorkflowDraft.Step] = [.keywords, .input, .script, .output]
@@ -329,7 +355,7 @@ struct AskWorkflowFlowStrip: View {
             Spacer(minLength: 12)
             if showsJSON, model.draft?.isFormEditable == true {
                 Button(L("ask.workflow.editor.format")) { model.formatManifest() }
-                    .buttonStyle(AskWorkflowActionStyle(kind: .ghost, small: true))
+                    .buttonStyle(.borderless).controlSize(.small)
             }
             Button {
                 if showsJSON {
@@ -344,7 +370,7 @@ struct AskWorkflowFlowStrip: View {
                 Label(showsJSON ? L("ask.workflow.editor.form") : "JSON",
                       systemImage: showsJSON ? "list.bullet.rectangle" : "curlybraces")
             }
-            .buttonStyle(AskWorkflowActionStyle(kind: showsJSON ? .secondary : .ghost, small: true))
+            .buttonStyle(.bordered).controlSize(.small)
             .help(L("ask.workflow.editor.jsonHelp"))
             .disabled(model.draft?.isFormEditable != true && !showsJSON)
             .accessibilityIdentifier("ask.workflow.editor.json")
@@ -388,21 +414,22 @@ struct AskWorkflowFlowStrip: View {
             }
         } label: {
             HStack(spacing: 9) {
-                Text("\(number)").font(.system(size: 11.5, weight: .bold))
-                    .foregroundStyle(selected ? Color.white : StudioTheme.textSecondary)
+                Text("\(number)").font(.system(.subheadline, weight: .bold))
+                    .foregroundStyle(selected ? Color.white : TypefluxColor.secondaryLabel.color)
                     .frame(width: 22, height: 22)
-                    .background(Circle().fill(selected ? AskTheme.accent : StudioTheme.textSecondary.opacity(0.12)))
+                    .background(Circle()
+                        .fill(selected ? TypefluxColor.accent.color : TypefluxColor.secondaryLabel.color.opacity(0.12)))
                     .overlay(alignment: .topTrailing) {
                         if hasProblems {
-                            Circle().fill(StudioTheme.danger).frame(width: 8, height: 8)
-                                .overlay(Circle().strokeBorder(StudioTheme.windowBackground, lineWidth: 1.5))
+                            Circle().fill(TypefluxColor.danger.color).frame(width: 8, height: 8)
+                                .overlay(Circle().strokeBorder(TypefluxColor.windowBackground.color, lineWidth: 1.5))
                                 .offset(x: 2, y: -2)
                         }
                     }
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(L("ask.workflow.editor.step." + step.rawValue)).font(.system(size: 12.5, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textPrimary).lineLimit(1)
-                    Text(summary(step)).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
+                    Text(L("ask.workflow.editor.step." + step.rawValue)).font(.system(.callout, weight: .semibold))
+                        .foregroundStyle(TypefluxColor.label.color).lineLimit(1)
+                    Text(summary(step)).font(.system(.subheadline)).foregroundStyle(TypefluxColor.tertiaryLabel.color)
                         .lineLimit(1).truncationMode(.tail)
                 }
                 Spacer(minLength: 0)
@@ -411,9 +438,9 @@ struct AskWorkflowFlowStrip: View {
             .frame(maxWidth: .infinity)
             .background(
                 selected ? TypefluxColor.contentBackground.color : .clear,
-                in: RoundedRectangle(cornerRadius: 10, style: .continuous)
+                in: RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle), style: .continuous)
             )
-            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
+            .overlay(RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle), style: .continuous)
                 .strokeBorder(selected ? TypefluxColor.separator.color : .clear))
             .shadow(color: .black.opacity(selected ? 0.12 : 0), radius: 2, y: 1)
             .contentShape(Rectangle())
@@ -486,8 +513,8 @@ struct AskWorkflowDiffView<Actions: View>: View {
                             Text(line.kind == .added ? "+" : line.kind == .removed ? "−" : " ").frame(width: 10)
                             Text(line.text.isEmpty ? " " : line.text).frame(maxWidth: .infinity, alignment: .leading)
                         }
-                        .font(.system(size: 12, design: .monospaced))
-                        .strikethrough(line.kind == .removed, color: StudioTheme.danger.opacity(0.5))
+                        .font(.system(.callout, design: .monospaced))
+                        .strikethrough(line.kind == .removed, color: TypefluxColor.danger.color.opacity(0.5))
                         .padding(.horizontal, 12).padding(.vertical, 1)
                         .background(line.kind == .added ? Color.green.opacity(0.14)
                             : line.kind == .removed ? Color.red.opacity(0.14) : .clear)

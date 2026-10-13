@@ -18,7 +18,7 @@ struct AskKillAppPlugin: AskLauncherPlugin {
     var id: String { Self.id }
     var title: String { L("ask.plugin.kill.title") }
     var symbol: String { "xmark.app" }
-    var keywordColor: Color { StudioTheme.danger }
+    var keywordColor: Color { TypefluxColor.danger.color }
     var defaultKeywords: [AskKeyword] { Self.keywords }
     var runsWithoutInput: Bool { true }
     var usesSelectionInput: Bool { false }
@@ -40,7 +40,8 @@ struct AskKillAppPlugin: AskLauncherPlugin {
         } : targets.compactMap { target -> (AskKillAppTarget, Double)? in
             AskAppMatcher.score(query, target.app).map { (target, $0) }
         }.sorted { lhs, rhs in
-            lhs.1 == rhs.1 ? lhs.0.app.name.localizedStandardCompare(rhs.0.app.name) == .orderedAscending : lhs.1 > rhs.1
+            lhs.1 == rhs.1 ? lhs.0.app.name.localizedStandardCompare(rhs.0.app.name) == .orderedAscending : lhs.1 > rhs
+                .1
         }.map(\.0)
         var items = matches.map { target in
             AskPluginItem(id: String(target.processID), title: target.app.name,

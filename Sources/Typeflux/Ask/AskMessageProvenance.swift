@@ -63,7 +63,7 @@ struct AskMessageProvenanceView: View {
                 }
             }
             .font(.system(size: 11))
-            .foregroundStyle(StudioTheme.textSecondary)
+            .foregroundStyle(TypefluxColor.secondaryLabel.color)
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("ask.message.provenance")
         }

@@ -18,9 +18,9 @@ struct AskWorkspaceLibraryTests {
         #expect(metrics.suggestionCorner == TypefluxRadius.form.value(for: style))
         #expect(metrics.composerCorner == TypefluxRadius.form.value(for: style))
         #expect(metrics.paletteCorner == TypefluxRadius.spotlightResults.value(for: style))
-        #expect(metrics.menuCorner == TypefluxRadius.menu.value(for: style))
-        #expect(metrics.menuRowCorner == TypefluxRadius.menuHighlight.value(for: style))
-        #expect(metrics.hoverCardCorner == TypefluxRadius.popover.value(for: style))
+        #expect(metrics.menuCorner == TypefluxRadius.menuCard.value(for: style))
+        #expect(metrics.menuRowCorner == TypefluxRadius.menuRow.value(for: style))
+        #expect(metrics.hoverCardCorner == TypefluxRadius.hoverCard.value(for: style))
         #expect(metrics.headerChipHeight == TypefluxControlHeight.toolbarItem.value(for: style))
     }
 
@@ -35,20 +35,19 @@ struct AskWorkspaceLibraryTests {
         #expect(AskMetrics.composerMaxWidth - chrome.horizontalInset * 2 == AskMetrics.transcriptMaxWidth)
     }
 
-    @Test func sharedCompatibilityNamesResolveToTheSameSemanticTokens() {
-        #expect(AskTheme.accent == StudioTheme.accent)
-        #expect(AskTheme.accentText == StudioTheme.accentText)
-        #expect(AskTheme.accentSoft == StudioTheme.accentSoft)
-        #expect(AskTheme.surface == StudioTheme.surface)
-        #expect(AskTheme.controlSurface == StudioTheme.controlSurface)
-        #expect(AskTheme.border == StudioTheme.border)
+    @Test func classicSurfacesUseTheirSystemColorRoles() {
+        #expect(AskClassic.canvas == Color(nsColor: .textBackgroundColor))
+        #expect(AskClassic.sidebar == Color(nsColor: .windowBackgroundColor))
+        #expect(AskClassic.card == Color(nsColor: .controlBackgroundColor))
+        #expect(AskClassic.cardBorder == Color(nsColor: .separatorColor))
+        #expect(AskClassic.selection == Color(nsColor: .selectedContentBackgroundColor))
     }
 
     @Test func toolbarActionsKeepKeyboardAndAccessibilityMetadata() {
         var calls = 0
         let action = TypefluxToolbarAction(id: "ask.new", title: "New conversation", systemImage: "square.and.pencil",
-                                          accessibilityIdentifier: "ask.workspace.new", shortcut: "n",
-                                          modifiers: [.command, .shift], perform: { calls += 1 })
+                                           accessibilityIdentifier: "ask.workspace.new", shortcut: "n",
+                                           modifiers: [.command, .shift], perform: { calls += 1 })
         action.perform()
         #expect(calls == 1)
         #expect(action.accessibilityIdentifier == "ask.workspace.new")
@@ -75,12 +74,12 @@ struct AskWorkspaceLibraryTests {
         for reference in ["cloud:reasoner", "missing:model"] {
             for page in [AskModelEffortCard.Page.effort, .models] {
                 let view = AskModelEffortCard(library: library, reference: .constant(reference),
-                                             effort: .constant(.providerDefault), loggedIn: true,
-                                             page: page, nativeControls: true)
+                                              effort: .constant(.providerDefault), loggedIn: true,
+                                              page: page, nativeControls: true)
                 let hosting = NSHostingView(rootView: view)
                 hosting.layoutSubtreeIfNeeded()
                 #expect(hosting.fittingSize.width == (page == .models
-                    ? AskModelEffortCard.modelsWidth : AskModelEffortCard.width))
+                        ? AskModelEffortCard.modelsWidth : AskModelEffortCard.width))
                 #expect(hosting.fittingSize.height > 0)
             }
         }

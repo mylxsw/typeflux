@@ -29,43 +29,50 @@ struct AskGlassTests {
     }
 
     @Test func glassSoftensTheIdleBorderUnlessContrastIsIncreased() {
-        let border = AskTheme.floatingBorder
-        #expect(AskGlassMaterial.liquidGlass.idleBorder(border, increasedContrast: false) == AskTheme.floatingGlassEdge)
-        #expect(AskGlassMaterial.visualEffect.idleBorder(border, increasedContrast: false) == AskTheme.floatingGlassEdge)
+        let border = LegacyAskPalette.floatingBorder
+        #expect(AskGlassMaterial.liquidGlass.idleBorder(border, increasedContrast: false) == LegacyAskPalette
+            .floatingGlassEdge)
+        #expect(AskGlassMaterial.visualEffect.idleBorder(border, increasedContrast: false) == LegacyAskPalette
+            .floatingGlassEdge)
         #expect(AskGlassMaterial.liquidGlass.idleBorder(border, increasedContrast: true) == border)
         #expect(AskGlassMaterial.opaque.idleBorder(border, increasedContrast: false) == border)
     }
 
     @Test func chipsLightTheirIconInsteadOfACircle() {
-        #expect(AskIconChipFace.iconColor(.active, hovering: false) == AskTheme.accent)
-        #expect(AskIconChipFace.iconColor(.active, hovering: true) == AskTheme.accent)
-        #expect(AskIconChipFace.iconColor(.neutral, hovering: false) == StudioTheme.textSecondary)
-        #expect(AskIconChipFace.iconColor(.neutral, hovering: true) == StudioTheme.textPrimary)
-        #expect(AskIconChipFace.iconColor(.unavailable, hovering: true) == StudioTheme.textTertiary)
-        #expect(AskIconChipFace.iconColor(.warning, hovering: false) == StudioTheme.warning)
+        #expect(AskIconChipFace.iconColor(.active, hovering: false) == TypefluxColor.accent.color)
+        #expect(AskIconChipFace.iconColor(.active, hovering: true) == TypefluxColor.accent.color)
+        #expect(AskIconChipFace.iconColor(.neutral, hovering: false) == TypefluxColor.secondaryLabel.color)
+        #expect(AskIconChipFace.iconColor(.neutral, hovering: true) == TypefluxColor.label.color)
+        #expect(AskIconChipFace.iconColor(.unavailable, hovering: true) == TypefluxColor.tertiaryLabel.color)
+        #expect(AskIconChipFace.iconColor(.warning, hovering: false) == TypefluxColor.warning.color)
     }
 
     @Test func microphoneAndStorageLightTheirIconInsteadOfACircle() {
-        #expect(AskVoiceButton.Appearance.iconColor(phase: .idle, hovered: false) == StudioTheme.textSecondary)
-        #expect(AskVoiceButton.Appearance.iconColor(phase: .idle, hovered: true) == StudioTheme.textPrimary)
-        #expect(AskVoiceButton.Appearance.iconColor(phase: .listening, hovered: false) == AskTheme.accent)
-        #expect(AskStorageButton.iconColor(local: true, active: false) == AskTheme.privateTint)
-        #expect(AskStorageButton.iconColor(local: false, active: false) == StudioTheme.textSecondary)
-        #expect(AskStorageButton.iconColor(local: false, active: true) == StudioTheme.textPrimary)
+        #expect(AskVoiceButton.Appearance.iconColor(phase: .idle, hovered: false) == TypefluxColor.secondaryLabel.color)
+        #expect(AskVoiceButton.Appearance.iconColor(phase: .idle, hovered: true) == TypefluxColor.label.color)
+        #expect(AskVoiceButton.Appearance.iconColor(phase: .listening, hovered: false) == TypefluxColor.accent.color)
+        #expect(AskStorageButton.iconColor(local: true, active: false) == Color(nsColor: .systemPurple))
+        #expect(AskStorageButton.iconColor(local: false, active: false) == TypefluxColor.secondaryLabel.color)
+        #expect(AskStorageButton.iconColor(local: false, active: true) == TypefluxColor.label.color)
     }
 
     @Test func onlyTheTopReasoningLevelIsViolet() {
         let five = AskReasoningEffort.levels, three = AskReasoningEffort.defaultLevels
-        let secondary = StudioTheme.textSecondary
-        #expect(AskTheme.reasoningText(.max, in: five, defaultColor: secondary) == AskTheme.reasoningTopText)
+        let secondary = TypefluxColor.secondaryLabel.color
+        #expect(AskReasoningPresentation.color(.max, in: five, defaultColor: secondary) == AskReasoningPresentation
+            .topColor)
         // Whatever the model's highest level is, it is violet.
-        #expect(AskTheme.reasoningText(.high, in: three, defaultColor: secondary) == AskTheme.reasoningTopText)
+        #expect(AskReasoningPresentation.color(.high, in: three, defaultColor: secondary) == AskReasoningPresentation
+            .topColor)
         #expect(AskReasoningEffort.high.isTop(in: three) && !AskReasoningEffort.high.isTop(in: five))
         #expect(!AskReasoningEffort.providerDefault.isTop(in: [.providerDefault]))
-        #expect(AskTheme.reasoningText(.providerDefault, in: five, defaultColor: StudioTheme.textSecondary)
-            == StudioTheme.textSecondary)
+        #expect(AskReasoningPresentation.color(.providerDefault, in: five,
+                                               defaultColor: TypefluxColor.secondaryLabel.color)
+                == TypefluxColor.secondaryLabel.color)
         for effort in [AskReasoningEffort.low, .medium, .high, .xhigh] {
-            #expect(AskTheme.reasoningText(effort, in: five, defaultColor: StudioTheme.textSecondary) == AskTheme.accentText)
+            #expect(AskReasoningPresentation
+                .color(effort, in: five, defaultColor: TypefluxColor.secondaryLabel.color) == TypefluxColor.accent
+                .color)
         }
     }
 
@@ -118,7 +125,8 @@ struct AskGlassTests {
         let vision = RegisteredModel(id: "c", name: "C", vision: true, reasoning: false)
         #expect(AskModelCapabilities.badges(vision).map(\.help) == [L("ask.models.supportsImages")])
         // Reasoning alone earns no badge: nearly every model reasons.
-        #expect(AskModelCapabilities.badges(RegisteredModel(id: "d", name: "D", vision: false, reasoning: true)).isEmpty)
+        #expect(AskModelCapabilities.badges(RegisteredModel(id: "d", name: "D", vision: false, reasoning: true))
+            .isEmpty)
     }
 
     @Test func settingsAndContextRecedeWhileRecording() {

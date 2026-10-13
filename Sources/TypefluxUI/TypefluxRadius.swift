@@ -21,6 +21,10 @@ public enum TypefluxRadius: String, CaseIterable, Sendable {
     case sheet
     case spotlightInput
     case spotlightResults
+    /// Custom composer menus have a 6pt inset around their choice rows.
+    case menuCard
+    case menuRow
+    case hoverCard
 
     // Each exhaustive case is one row of the specification's metric table.
     // swiftlint:disable:next cyclomatic_complexity
@@ -45,6 +49,9 @@ public enum TypefluxRadius: String, CaseIterable, Sendable {
         case .sheet: style == .classic ? 10 : 22
         case .spotlightInput: style == .classic ? 12 : 28
         case .spotlightResults: style == .classic ? 12 : 24
+        case .menuCard: style == .classic ? 14 : 18
+        case .menuRow: style == .classic ? 8 : 10
+        case .hoverCard: style == .classic ? 10 : 14
         }
     }
 }

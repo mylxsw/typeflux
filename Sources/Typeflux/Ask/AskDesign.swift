@@ -2,119 +2,6 @@
 import AppKit
 import SwiftUI
 
-/// Compatibility names for Ask surfaces. Shared colours resolve to TypefluxUI semantic tokens.
-/// Navigation owns glass materials; transcript and composer content remain solid.
-@available(*, deprecated, message: "Use TypefluxUI tokens for new components.")
-enum AskTheme {
-    static let accent = TypefluxColor.accent.color
-    static let surface = TypefluxColor.controlBackground.color
-    static let raisedSurface = TypefluxColor.windowBackground.color
-    static let sidebarSurface = TypefluxColor.windowBackground.color
-    static let controlSurface = TypefluxColor.controlBackground.color
-    static let border = TypefluxColor.separator.color
-    static let separator = TypefluxColor.separator.color
-    static let accentSoft = TypefluxColor.accent.color.opacity(0.12)
-    static let privateTint = Color(nsColor: .systemPurple)
-    static let privateFill = LegacyAskPalette.privateFill
-    static let privateHeaderFill = LegacyAskPalette.privateHeaderFill
-    static let accentText = TypefluxColor.accent.color
-    static let successSoft = TypefluxColor.success.color.opacity(0.12)
-    static let warningSoft = TypefluxColor.warning.color.opacity(0.12)
-    static let dangerSoft = TypefluxColor.danger.color.opacity(0.12)
-    static let composerSurface = TypefluxColor.controlBackground.color
-    static let launcherSurface = LegacyAskPalette.launcherSurface
-    static let launcherGlassTint = LegacyAskPalette.launcherGlassTint
-    static let popoverSurface = TypefluxColor.windowBackground.color
-    static let panelCard = TypefluxColor.controlBackground.color
-    static let segmentTrack = TypefluxColor.controlBackground.color
-    static let floatingBorder = LegacyAskPalette.floatingBorder
-    static let floatingGlassEdge = LegacyAskPalette.floatingGlassEdge
-    static let launcherSeparator = LegacyAskPalette.launcherSeparator
-    static let launcherSelection = LegacyAskPalette.launcherSelection
-    static let launcherSelectionEdge = LegacyAskPalette.launcherSelectionEdge
-    static let launcherKeyword = LegacyAskPalette.launcherKeyword
-    static let launcherKeywordText = LegacyAskPalette.launcherKeywordText
-    static let launcherTile = LegacyAskPalette.launcherTile
-    static let launcherTileEdge = LegacyAskPalette.launcherTileEdge
-    static let launcherChipFill = LegacyAskPalette.launcherChipFill
-    static let launcherChipEdge = LegacyAskPalette.launcherChipEdge
-    static let launcherShortcutFill = LegacyAskPalette.launcherShortcutFill
-    static let launcherShortcutEdge = LegacyAskPalette.launcherShortcutEdge
-    static let launcherMetaText = LegacyAskPalette.launcherMetaText
-    static let launcherPlaceholderText = LegacyAskPalette.launcherPlaceholderText
-    static let switchOnFill = LegacyAskPalette.switchOnFill
-    static let switchOnEdge = LegacyAskPalette.switchOnEdge
-    static let glassFill = LegacyAskPalette.glassFill
-    static let pressFill = TypefluxColor.label.color.opacity(0.1)
-    static let hoverFill = TypefluxColor.label.color.opacity(0.06)
-    static let monoSurface = TypefluxColor.controlBackground.color
-    static let cardBorder = TypefluxColor.separator.color
-    static let librarySeparator = TypefluxColor.separator.color
-    static let noteQuestionSurface = LegacyAskPalette.noteQuestionSurface
-    static let keycapSurface = LegacyAskPalette.keycapSurface
-    static let userBubble = TypefluxColor.controlBackground.color
-    static let userBubbleEdge = TypefluxColor.separator.color
-
-    /// A readable title for a tool call; raw tool names never reach the transcript.
-    /// `mcpServer` names the server of an MCP tool when the caller knows it.
-    static func toolTitle(_ call: AskToolCall, mcpServer: String? = nil) -> String {
-        let name = call.function.name
-        if ["workflow_start", "workflow_list", "workflow_read", "workflow_environment", "workflow_check_keyword",
-            "workflow_propose", "workflow_test", "workflow_save"].contains(name) {
-            return L("ask.tool." + name)
-        }
-        if name == "web_search" || name == "web_fetch" {
-            let args = (try? JSONSerialization.jsonObject(with: Data(call.function.arguments.utf8))) as? [String: Any]
-            let detail = name == "web_search"
-                ? args?["query"] as? String
-                : (args?["url"] as? String).flatMap { URL(string: $0)?.host }
-            let title = L(name == "web_search" ? "ask.tool.webSearch" : "ask.tool.webFetch")
-            return detail.map { title + " · " + $0 } ?? title
-        }
-        let args = (try? AskLocalTools.jsonArguments(call.function.arguments)) ?? [:]
-        switch name {
-        case "generate_image": return L("imagegen.title")
-        case "artifact": return L("ask.artifact.title")
-        case "project_files": return L("ask.project.title") + " · " + (args["action"] as? String ?? "")
-        case "update_plan": return L("ask.tool.update_plan")
-        case "research":
-            let question = (args["question"] as? String).map { String($0.prefix(60)) }
-            return question.map { L("ask.tool.research") + " · " + $0 } ?? L("ask.tool.research")
-        case "files":
-            // Files actions carry their own verbs: "read" is shared with the browser's "read page".
-            let action = args["action"] as? String ?? ""
-            let title = ["list", "read", "search", "write", "edit"].contains(action) ? L("ask.files.action." + action) : L("ask.tool.files")
-            let target = action == "search" ? args["query"] as? String : (args["path"] as? String).map { ($0 as NSString).lastPathComponent }
-            return target.flatMap { $0.isEmpty ? nil : title + " · " + $0 } ?? title
-        default: break
-        }
-        if name.hasPrefix("mcp_") {
-            return (mcpServer ?? "MCP") + " · " + String(name.dropFirst(4))
-        }
-        if name == AskNotebookTool.name { return notebookToolTitle(args) }
-        if ["memory", "run_code", "skill"].contains(name) {
-            let title = L("ask.tool." + name)
-            if name == "skill", let skill = args["name"] as? String { return title + " · " + skill }
-            if name == "run_code", let language = args["language"] as? String { return title + " · " + language }
-            if let action = args["action"] as? String, !action.isEmpty { return title + " · " + L("ask.action." + action) }
-            return title
-        }
-        guard name == "computer" || name == "browser" else { return name }
-        let action = (try? AskLocalTools.arguments(call.function.arguments)["action"] as? String) ?? ""
-        let title = L("ask.tool." + name)
-        return action.isEmpty ? title : title + " · " + L("ask.action." + action)
-    }
-
-    private static func notebookToolTitle(_ args: [String: Any]) -> String {
-        let action = args["action"] as? String ?? ""
-        let title = L("ask.tool.notebook")
-        let detail = action == "search" ? args["query"] as? String : args["title"] as? String
-        let verb = ["search", "read", "list", "create", "append", "update", "tag", "delete"].contains(action)
-            ? " · " + L("ask.notebook.action." + action) : ""
-        return title + verb + (detail.flatMap { $0.isEmpty ? nil : " · " + String($0.prefix(60)) } ?? "")
-    }
-}
-
 /// Fixed metrics shared by the launcher panel and the workspace. The native
 /// window geometry depends on them, so they live next to the views that use them.
 enum AskMetrics {
@@ -226,11 +113,11 @@ struct AskComposerChrome: Equatable {
     /// The launcher reads as a search field first: its editor is the first row,
     /// in larger text, and the model and switches sit in a quieter bottom bar.
     static let launcher = AskComposerChrome(
-        fill: AskTheme.launcherSurface,
+        fill: LegacyAskPalette.launcherSurface,
         corner: AskMetrics.launcherCardCorner,
         editorFontSize: 17,
         horizontalInset: 12,
-        idleBorder: AskTheme.floatingBorder,
+        idleBorder: LegacyAskPalette.floatingBorder,
         glass: true,
         editorTopInset: 12,
         editorBottomInset: 12,
@@ -241,7 +128,7 @@ struct AskComposerChrome: Equatable {
     /// The workspace composer is content, so it uses a solid surface and a semantic border.
     static let workspace: AskComposerChrome = {
         var chrome = launcher
-        chrome.idleBorder = AskTheme.border
+        chrome.idleBorder = TypefluxColor.separator.color
         chrome.placement = .inWindow
         chrome.fill = TypefluxColor.controlBackground.color
         chrome.glass = false
@@ -294,19 +181,19 @@ enum AskActivityState {
 
     var tint: Color {
         switch self {
-        case .running: return AskTheme.accentText
-        case .done: return StudioTheme.success
-        case .attention: return StudioTheme.warning
-        case .failed: return StudioTheme.danger
+        case .running: return TypefluxColor.accent.color
+        case .done: return TypefluxColor.success.color
+        case .attention: return TypefluxColor.warning.color
+        case .failed: return TypefluxColor.danger.color
         }
     }
 
     var softFill: Color {
         switch self {
-        case .running: return AskTheme.accentSoft
-        case .done: return AskTheme.successSoft
-        case .attention: return AskTheme.warningSoft
-        case .failed: return AskTheme.dangerSoft
+        case .running: return TypefluxColor.accent.color.opacity(0.12)
+        case .done: return TypefluxColor.success.color.opacity(0.12)
+        case .attention: return TypefluxColor.warning.color.opacity(0.12)
+        case .failed: return TypefluxColor.danger.color.opacity(0.12)
         }
     }
 
@@ -339,17 +226,21 @@ struct AskMonoBlock: View {
             if !title.isEmpty {
                 Text(title)
                     .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textTertiary)
+                    .foregroundStyle(TypefluxColor.tertiaryLabel.color)
             }
             Text(text)
                 .font(.system(size: 11.5, design: .monospaced))
-                .foregroundStyle(isError ? StudioTheme.danger : StudioTheme.textSecondary)
+                .foregroundStyle(isError ? TypefluxColor.danger.color : TypefluxColor.secondaryLabel.color)
                 .textSelection(.enabled)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 8)
-                .background(AskTheme.monoSurface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(AskTheme.separator))
+                .background(
+                    TypefluxColor.controlBackground.color,
+                    in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                )
+                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(TypefluxColor.separator.color))
         }
     }
 }
@@ -378,14 +269,14 @@ struct AskBanner: View {
                 Button(action: action) {
                     Text(actionTitle).font(.system(size: 11.5, weight: .semibold))
                         .padding(.horizontal, 10).frame(height: 22)
-                        .background(AskTheme.surface, in: Capsule())
+                        .background(TypefluxColor.controlBackground.color, in: Capsule())
                 }
                 .buttonStyle(.plain)
             }
             if let more, let onMore {
                 Button(action: onMore) {
                     Text(more).font(.system(size: 11, weight: .medium))
-                        .foregroundStyle(StudioTheme.textTertiary)
+                        .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                         .fixedSize()
                 }
                 .buttonStyle(.plain)
@@ -395,9 +286,9 @@ struct AskBanner: View {
                     Image(systemName: "xmark").font(.system(size: 10, weight: .bold))
                         .frame(width: 22, height: 22).contentShape(Rectangle())
                 }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel(L("ask.remove"))
-                    .accessibilityIdentifier("ask.banner.dismiss")
+                .buttonStyle(.plain)
+                .accessibilityLabel(L("ask.remove"))
+                .accessibilityIdentifier("ask.banner.dismiss")
             }
         }
         .foregroundStyle(foreground)
@@ -416,17 +307,17 @@ struct AskBanner: View {
 
     private var foreground: Color {
         switch tone {
-        case .info: return StudioTheme.textSecondary
-        case .warning: return StudioTheme.warning
-        case .danger: return StudioTheme.danger
+        case .info: return TypefluxColor.secondaryLabel.color
+        case .warning: return TypefluxColor.warning.color
+        case .danger: return TypefluxColor.danger.color
         }
     }
 
     private var fill: Color {
         switch tone {
-        case .info: return AskTheme.raisedSurface
-        case .warning: return AskTheme.warningSoft
-        case .danger: return AskTheme.dangerSoft
+        case .info: return TypefluxColor.windowBackground.color
+        case .warning: return TypefluxColor.warning.color.opacity(0.12)
+        case .danger: return TypefluxColor.danger.color.opacity(0.12)
         }
     }
 }
@@ -448,7 +339,7 @@ struct AskSystemLine: View {
                 Text(text).lineLimit(2).multilineTextAlignment(.center).textSelection(.enabled)
                 if let actionTitle, let action {
                     Button(action: action) {
-                        Text(actionTitle).fontWeight(.semibold).foregroundStyle(AskTheme.accent)
+                        Text(actionTitle).fontWeight(.semibold).foregroundStyle(TypefluxColor.accent.color)
                     }
                     .buttonStyle(.plain)
                 }
@@ -459,7 +350,7 @@ struct AskSystemLine: View {
                 }
             }
             .font(.system(size: 11.5))
-            .foregroundStyle(StudioTheme.textTertiary)
+            .foregroundStyle(TypefluxColor.tertiaryLabel.color)
             .layoutPriority(1)
             rule
         }
@@ -467,7 +358,7 @@ struct AskSystemLine: View {
     }
 
     private var rule: some View {
-        Rectangle().fill(AskTheme.separator).frame(height: 0.5).frame(minWidth: 16)
+        Rectangle().fill(TypefluxColor.separator.color).frame(height: 0.5).frame(minWidth: 16)
     }
 }
 
@@ -507,8 +398,8 @@ struct AskCapsuleButtonStyle: ButtonStyle {
             configuration.label
                 .font(.system(size: expands ? 13 : 12.5, weight: .semibold))
                 .lineLimit(1)
-                .foregroundStyle(!isEnabled ? StudioTheme.textTertiary
-                    : (kind == .secondary ? StudioTheme.textPrimary : Color.white))
+                .foregroundStyle(!isEnabled ? TypefluxColor.tertiaryLabel.color
+                    : (kind == .secondary ? TypefluxColor.label.color : Color.white))
                 .padding(.horizontal, 14)
                 .frame(maxWidth: expands ? .infinity : nil)
                 .frame(height: expands ? 36 : 30)
@@ -522,8 +413,12 @@ struct AskCapsuleButtonStyle: ButtonStyle {
                     }
                 }
                 .overlay(Capsule().strokeBorder(borderColor, lineWidth: lit ? 0.5 : 1))
-                .shadow(color: kind == .primary && isEnabled && !solidPrimary ? AskTheme.accent.opacity(0.4) : .clear,
-                        radius: 7, y: 3)
+                .shadow(
+                    color: kind == .primary && isEnabled && !solidPrimary ? TypefluxColor.accent.color
+                        .opacity(0.4) : .clear,
+                    radius: 7,
+                    y: 3
+                )
                 .contentShape(Capsule())
                 .scaleEffect(configuration.isPressed ? 0.95 : 1)
                 .animation(.spring(response: 0.25, dampingFraction: 0.6), value: configuration.isPressed)
@@ -535,15 +430,16 @@ struct AskCapsuleButtonStyle: ButtonStyle {
             if solidPrimary && isEnabled {
                 return .clear
             }
-            return lit ? Color.white.opacity(0.3) : (isEnabled ? AskTheme.border : AskTheme.separator)
+            return lit ? Color.white
+                .opacity(0.3) : (isEnabled ? TypefluxColor.separator.color : TypefluxColor.separator.color)
         }
 
         private var fill: Color {
-            guard isEnabled else { return AskTheme.controlSurface }
+            guard isEnabled else { return TypefluxColor.controlBackground.color }
             return switch kind {
-            case .primary: AskTheme.accent
-            case .secondary: AskTheme.hoverFill
-            case .destructive: StudioTheme.danger
+            case .primary: TypefluxColor.accent.color
+            case .secondary: TypefluxColor.label.color.opacity(0.06)
+            case .destructive: TypefluxColor.danger.color
             }
         }
     }
@@ -553,7 +449,7 @@ struct AskSendButton: View {
     static let size: CGFloat = 36
     var enabled: Bool
     /// Lit in the private tint for a conversation kept on this Mac.
-    var tint: Color = AskTheme.accent
+    var tint: Color = TypefluxColor.accent.color
     /// Unlit but still clickable while Return does something else, such as
     /// opening the launcher's highlighted application.
     var prominent = true
@@ -571,10 +467,11 @@ struct AskSendButton: View {
                 .contentShape(Circle())
         }
         .buttonStyle(AskPressableStyle())
-        .foregroundStyle(lit ? Color.white : enabled ? StudioTheme.textSecondary : StudioTheme.textTertiary)
+        .foregroundStyle(lit ? Color.white : enabled ? TypefluxColor.secondaryLabel.color : TypefluxColor.tertiaryLabel
+            .color)
         // The only solid control in the composer: a lit accent drop when it can send,
         // a faint translucent well otherwise, so it sits on glass and opaque cards alike.
-        .background(Circle().fill(lit ? tint : AskTheme.hoverFill))
+        .background(Circle().fill(lit ? tint : TypefluxColor.label.color.opacity(0.06)))
         .overlay {
             if lit {
                 Circle().fill(RadialGradient(colors: [Color.white.opacity(0.32), .clear],
@@ -602,7 +499,7 @@ struct AskStopButton: View {
         Button(action: action) {
             // Just the square, like every other composer icon: no circle around it.
             RoundedRectangle(cornerRadius: 3, style: .continuous)
-                .fill(StudioTheme.textPrimary)
+                .fill(TypefluxColor.label.color)
                 .frame(width: 12, height: 12)
                 .frame(width: AskSendButton.size, height: AskSendButton.size)
                 .contentShape(Circle())
@@ -623,9 +520,9 @@ struct AskKeyCap: View {
             if let symbol { Image(systemName: symbol).font(.system(size: 9, weight: .semibold)) }
             else { Text(text ?? "").font(.system(size: 10, weight: .semibold)) }
         }
-        .foregroundStyle(StudioTheme.textSecondary)
+        .foregroundStyle(TypefluxColor.secondaryLabel.color)
         .frame(minWidth: 18, minHeight: 18)
-        .background(AskTheme.controlSurface, in: RoundedRectangle(cornerRadius: 5, style: .continuous))
+        .background(TypefluxColor.controlBackground.color, in: RoundedRectangle(cornerRadius: 5, style: .continuous))
     }
 }
 
@@ -655,7 +552,7 @@ struct AskShortcutHint: View {
             }
         }
         .font(.system(size: 13))
-        .foregroundStyle(StudioTheme.textTertiary)
+        .foregroundStyle(TypefluxColor.tertiaryLabel.color)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(AskPresentation.spokenHint(clauses))
         .onAppear(perform: refresh)
@@ -669,11 +566,14 @@ struct AskShortcutHint: View {
     private func keyCap(_ value: String) -> some View {
         Text(verbatim: value)
             .font(.system(size: 11, weight: .semibold))
-            .foregroundStyle(StudioTheme.textSecondary)
+            .foregroundStyle(TypefluxColor.secondaryLabel.color)
             .padding(.horizontal, 6)
             .frame(height: 20)
-            .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 5, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).strokeBorder(AskTheme.border))
+            .background(
+                TypefluxColor.label.color.opacity(0.06),
+                in: RoundedRectangle(cornerRadius: 5, style: .continuous)
+            )
+            .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous).strokeBorder(TypefluxColor.separator.color))
     }
 }
 
@@ -696,7 +596,7 @@ struct AskWaveform: View {
         HStack(spacing: 2.5) {
             ForEach(0..<Self.barCount, id: \.self) { index in
                 Capsule()
-                    .fill(AskTheme.accent)
+                    .fill(TypefluxColor.accent.color)
                     .frame(width: 2.5, height: Self.height(index: index, phase: phase))
             }
         }
@@ -765,7 +665,7 @@ struct AskGhostButton: View {
             .foregroundStyle(foreground)
             .padding(.horizontal, 8)
             .frame(height: 26)
-            .background(hovering ? AskTheme.hoverFill : Color.clear,
+            .background(hovering ? TypefluxColor.label.color.opacity(0.06) : Color.clear,
                         in: RoundedRectangle(cornerRadius: 7, style: .continuous))
             .contentShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
         }
@@ -775,8 +675,8 @@ struct AskGhostButton: View {
     }
 
     private var foreground: Color {
-        if active { return StudioTheme.success }
-        return hovering ? StudioTheme.textPrimary : StudioTheme.textTertiary
+        if active { return TypefluxColor.success.color }
+        return hovering ? TypefluxColor.label.color : TypefluxColor.tertiaryLabel.color
     }
 }
 
@@ -831,7 +731,7 @@ struct AskSelectionActionBar: View {
         HStack(spacing: 2) {
             ForEach(actions, id: \.rawValue) { action in
                 if action == .copy {
-                    Rectangle().fill(AskTheme.separator)
+                    Rectangle().fill(TypefluxColor.separator.color)
                         .frame(width: 1, height: 16)
                         .padding(.horizontal, 3)
                 }
@@ -841,7 +741,7 @@ struct AskSelectionActionBar: View {
         .padding(4)
         // Never let the popover compress a label into an ellipsis.
         .fixedSize()
-        .tint(AskTheme.accent)
+        .tint(TypefluxColor.accent.color)
     }
 }
 
@@ -856,10 +756,10 @@ private struct AskSelectionActionButton: View {
                 Image(systemName: action.systemImage).font(.system(size: 11))
                 Text(action.title).font(.system(size: 12, weight: .medium)).lineLimit(1)
             }
-            .foregroundStyle(hovering ? AskTheme.accentText : StudioTheme.textSecondary)
+            .foregroundStyle(hovering ? TypefluxColor.accent.color : TypefluxColor.secondaryLabel.color)
             .padding(.horizontal, 9)
             .frame(height: 28)
-            .background(hovering ? AskTheme.accentSoft : Color.clear,
+            .background(hovering ? TypefluxColor.accent.color.opacity(0.12) : Color.clear,
                         in: RoundedRectangle(cornerRadius: 7, style: .continuous))
             .contentShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
         }
@@ -875,7 +775,7 @@ struct AskVoiceBorder: ViewModifier {
     @ObservedObject var voice: AskVoiceInput
     var context: String
     var radius: CGFloat
-    var idle: Color = AskTheme.border
+    var idle: Color = TypefluxColor.separator.color
     /// The travelling highlight; the launcher shows the voice in its own row instead.
     var sheen = true
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -894,15 +794,19 @@ struct AskVoiceBorder: ViewModifier {
             // makes SwiftUI redraw the glass card per frame.
             .overlay {
                 if sheen, Self.showsSheen(listening: listening, reduceMotion: reduceMotion) {
-                    AskRecordingSheen(cornerRadius: radius, lineWidth: Self.borderWidth(listening: true), animated: true)
-                        .allowsHitTesting(false)
+                    AskRecordingSheen(
+                        cornerRadius: radius,
+                        lineWidth: Self.borderWidth(listening: true),
+                        animated: true
+                    )
+                    .allowsHitTesting(false)
                 }
             }
             // A soft halo outside the card while recording. Only a ring is drawn,
             // so a translucent glass card is not tinted by it.
             .background(
                 RoundedRectangle(cornerRadius: radius + Self.haloWidth, style: .continuous)
-                    .strokeBorder(AskTheme.accent.opacity(listening ? 0.22 : 0), lineWidth: Self.haloWidth)
+                    .strokeBorder(TypefluxColor.accent.color.opacity(listening ? 0.22 : 0), lineWidth: Self.haloWidth)
                     .padding(-Self.haloWidth)
                     .allowsHitTesting(false)
             )
@@ -914,8 +818,8 @@ struct AskVoiceBorder: ViewModifier {
     static func showsSheen(listening: Bool, reduceMotion: Bool) -> Bool { listening && !reduceMotion }
 
     /// Focus alone stays neutral: the accent colour has to keep meaning "recording".
-    static func borderColor(listening: Bool, idle: Color = AskTheme.border) -> Color {
-        if listening { return AskTheme.accent }
+    static func borderColor(listening: Bool, idle: Color = TypefluxColor.separator.color) -> Color {
+        if listening { return TypefluxColor.accent.color }
         return idle
     }
 
@@ -936,7 +840,8 @@ enum AskPresentation {
     /// Name shown in the sidebar footer: the profile name, else the email's local part.
     static func accountName(name: String?, email: String?) -> String? {
         if let name = name?.trimmingCharacters(in: .whitespacesAndNewlines), !name.isEmpty { return name }
-        guard let local = email?.split(separator: "@", omittingEmptySubsequences: false).first, !local.isEmpty else { return nil }
+        guard let local = email?.split(separator: "@", omittingEmptySubsequences: false).first,
+              !local.isEmpty else { return nil }
         return String(local)
     }
 
@@ -1069,7 +974,10 @@ struct AskWindowBackdrop: View {
         ZStack {
             if style.usesGlass && !reduceTransparency && contrast != .increased {
                 StudioVisualEffectBlur(material: .underWindowBackground, blendingMode: .behindWindow, cornerRadius: nil)
-                Self.base(dark: dark).opacity(intensity.backdropOpacity(Self.tintOpacity(dark: dark, reduceTransparency: false)))
+                Self.base(dark: dark).opacity(intensity.backdropOpacity(Self.tintOpacity(
+                    dark: dark,
+                    reduceTransparency: false
+                )))
             } else if style.usesGlass {
                 Self.base(dark: dark)
             } else {
@@ -1138,7 +1046,7 @@ struct AskPopoverHeader: View {
             if let trailing { Text(trailing) }
         }
         .font(.subheadline).fontWeight(.semibold)
-        .foregroundStyle(StudioTheme.textTertiary)
+        .foregroundStyle(TypefluxColor.tertiaryLabel.color)
         .padding(.horizontal, 16)
         .padding(.top, 8)
         .padding(.bottom, 4)
@@ -1169,38 +1077,38 @@ struct AskPopoverRow<Accessory: View>: View {
         TypefluxButton(kind: .borderless, action: action) {
             HStack(spacing: 10) {
                 Image(systemName: "checkmark").font(.subheadline).bold()
-                    .foregroundStyle(AskTheme.accentText)
+                    .foregroundStyle(TypefluxColor.accent.color)
                     .frame(width: 14)
                     .opacity(selected ? 1 : 0)
                 if let modelIcon { modelIcon }
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: 4) {
                         Text(title).font(.body)
-                            .foregroundStyle(StudioTheme.textPrimary)
+                            .foregroundStyle(TypefluxColor.label.color)
                             .lineLimit(1).truncationMode(.middle)
                         if let note {
                             Text(verbatim: "· " + note).font(.subheadline).fontWeight(.medium)
-                                .foregroundStyle(StudioTheme.textSecondary)
+                                .foregroundStyle(TypefluxColor.secondaryLabel.color)
                                 .lineLimit(1).fixedSize()
                         }
                     }
                     if let caption, !caption.isEmpty {
                         Text(caption).font(.subheadline)
-                            .foregroundStyle(StudioTheme.textSecondary)
+                            .foregroundStyle(TypefluxColor.secondaryLabel.color)
                             .lineLimit(2)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
                 Spacer(minLength: 8)
                 accessory()
-                    .foregroundStyle(StudioTheme.textSecondary)
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 4)
             .frame(minHeight: TypefluxControlHeight.menuItem.value(for: style))
             .frame(maxWidth: .infinity, alignment: .leading)
             // A soft hover wash matches the launcher and keeps text colours stable.
-            .background(hovering ? AskTheme.accentSoft : Color.clear,
+            .background(hovering ? TypefluxColor.accent.color.opacity(0.12) : Color.clear,
                         in: RoundedRectangle(cornerRadius: Self.corner(style: style), style: .continuous))
             .contentShape(RoundedRectangle(cornerRadius: Self.corner(style: style), style: .continuous))
         }
@@ -1233,7 +1141,7 @@ struct AskPopoverFooterButton: View {
             Spacer(minLength: 0)
             Button(action: action) {
                 Text(title).font(.system(size: 11.5, weight: .semibold))
-                    .foregroundStyle(isEnabled ? AskTheme.accentText : StudioTheme.textTertiary)
+                    .foregroundStyle(isEnabled ? TypefluxColor.accent.color : TypefluxColor.tertiaryLabel.color)
                     .underline(hovering && isEnabled)
                     .padding(.horizontal, 6)
                     .frame(height: 26)
@@ -1245,7 +1153,7 @@ struct AskPopoverFooterButton: View {
         .padding(.horizontal, 10)
         .padding(.vertical, 4)
         .overlay(alignment: .top) {
-            Rectangle().fill(AskTheme.separator).frame(height: 1).padding(.horizontal, 10)
+            Rectangle().fill(TypefluxColor.separator.color).frame(height: 1).padding(.horizontal, 10)
         }
     }
 }
@@ -1260,9 +1168,9 @@ struct AskMultiplierBadge: View {
 
     static func tone(_ multiplier: String) -> Color {
         guard let value = Decimal(string: multiplier, locale: Locale(identifier: "en_US_POSIX")) else {
-            return StudioTheme.textSecondary
+            return TypefluxColor.secondaryLabel.color
         }
-        return value <= 1 ? StudioTheme.success : StudioTheme.warning
+        return value <= 1 ? TypefluxColor.success.color : TypefluxColor.warning.color
     }
 
     var body: some View {
@@ -1273,7 +1181,10 @@ struct AskMultiplierBadge: View {
                 .foregroundStyle(Self.tone(multiplier))
                 .padding(.horizontal, 6)
                 .padding(.vertical, 3)
-                .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                .background(
+                    TypefluxColor.label.color.opacity(0.06),
+                    in: RoundedRectangle(cornerRadius: 6, style: .continuous)
+                )
         }
     }
 }

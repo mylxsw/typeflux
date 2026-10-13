@@ -109,14 +109,17 @@ struct AskChatRedesignVisualTests {
     /// Ignores spacing, separator dots and two glyphs Vision confuses in small CJK text.
     private func readable(_ text: String) -> String {
         text.replacingOccurrences(of: "井", with: "并").replacingOccurrences(of: "语", with: "话")
-            .unicodeScalars.filter { !CharacterSet.whitespacesAndNewlines.contains($0) && !"·•・‧∙．.…-".unicodeScalars.contains($0) }
+            .unicodeScalars
+            .filter {
+                !CharacterSet.whitespacesAndNewlines.contains($0) && !"·•・‧∙．.…-".unicodeScalars.contains($0) }
             .map(String.init).joined()
     }
 
     private func authoring(_ chat: AskTestFixture, _ fixture: AskWorkflowFixture) -> AskWorkflowAuthoringStore {
         let authoring = AskWorkflowAuthoringStore(workflows: fixture.store,
-            root: fixture.home.appendingPathComponent("Authoring"),
-            staging: .init(root: fixture.home.appendingPathComponent("previews")), owner: { "owner" })
+                                                  root: fixture.home.appendingPathComponent("Authoring"),
+                                                  staging: .init(root: fixture.home.appendingPathComponent("previews")),
+                                                  owner: { "owner" })
         chat.model.workflowAuthoring = authoring
         authoring.onChange = { [weak model = chat.model] in model?.objectWillChange.send() }
         return authoring
@@ -129,7 +132,10 @@ struct AskChatRedesignVisualTests {
             "output": "items"
         ]
         object["command"] = complete
-            ? ["runtime": "zsh", "inline": "print -r -- '{\"items\":[{\"title\":\"杭州 · 晴 22°C\",\"subtitle\":\"体感 21° · 湿度 40% · 东北风 2 级\"},{\"title\":\"明天 · 多云 16°–24°C\",\"subtitle\":\"降水概率 10%\"}]}'"]
+            ? [
+                "runtime": "zsh",
+                "inline": "print -r -- '{\"items\":[{\"title\":\"杭州 · 晴 22°C\",\"subtitle\":\"体感 21° · 湿度 40% · 东北风 2 级\"},{\"title\":\"明天 · 多云 16°–24°C\",\"subtitle\":\"降水概率 10%\"}]}'"
+            ]
             : ["runtime": "python3", "script": "main.py"]
         return AskWorkflowDraft.format(object)!
     }
@@ -144,9 +150,10 @@ struct AskChatRedesignVisualTests {
             .init(id: "start-result", role: "tool", text: "{}", toolCallId: "start", createdAt: Date(), runId: "run")
         ])
         if !unknown {
-            value.messages.append(.init(id: "answer", role: "assistant",
-                text: "已生成 Weather 工作流：在启动器里输入 weather 或 tq 即可查询当前城市的实时天气。可以先在右侧试运行，确认结果后再保存到启动器。",
-                createdAt: Date(), runId: "run"))
+            value.messages.append(.init(id: "answer",
+                                        role: "assistant",
+                                        text: "已生成 Weather 工作流：在启动器里输入 weather 或 tq 即可查询当前城市的实时天气。可以先在右侧试运行，确认结果后再保存到启动器。",
+                                        createdAt: Date(), runId: "run"))
         }
         value.run = .init(id: "run", deviceId: "device", status: unknown ? "waiting_tool" : "completed",
                           steps: unknown ? 7 : 9, updatedAt: Date(), tools: [], pending: unknown ? [write] : [])
@@ -169,7 +176,7 @@ struct AskChatRedesignVisualTests {
                 .transaction { $0.animation = nil; $0.disablesAnimations = true }
                 .environment(\.colorScheme, dark ? .dark : .light)
                 .frame(width: size.width, height: size.height)
-                .background(AskTheme.surface)
+                .background(TypefluxColor.controlBackground.color)
         }
         // Own the global language only in synchronous stretches, never across an
         // await, so suites running alongside keep their own language.
@@ -200,7 +207,8 @@ struct AskChatRedesignVisualTests {
         let bitmap = try #require(NSBitmapImageRep(
             bitmapDataPlanes: nil, pixelsWide: Int(size.width * 3), pixelsHigh: Int(size.height * 3),
             bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
-            colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0))
+            colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0
+        ))
         bitmap.size = size
         hosting.cacheDisplay(in: hosting.bounds, to: bitmap)
         AppLocalization.shared.setLanguage(previous)
@@ -229,14 +237,24 @@ struct AskChatRedesignVisualTests {
         await chat.model.refreshHistory()
         await chat.model.select(value.id)
         let session = try authoring.start(value.id, name: "Weather", workflowID: nil)
-        _ = session.submit(.init(summary: "Draft", manifestText: weatherManifest(complete: false), files: [:], deletes: []))
+        _ = session.submit(.init(
+            summary: "Draft",
+            manifestText: weatherManifest(complete: false),
+            files: [:],
+            deletes: []
+        ))
         #expect(session.checklist.missing == 2)
         #expect(chat.model.runPhase == .needsDecision(step: 7))
 
         for dark in [true, false] where Self.windows {
-            let text = try await render(AskConversationView(model: chat.model), name: "chat-unknown-\(dark ? "dark" : "light")",
-                                        dark: dark, size: .init(width: 1480, height: 860), settle: .milliseconds(500),
-                                        invalidate: { chat.model.objectWillChange.send(); session.objectWillChange.send() })
+            let text = try await render(
+                AskConversationView(model: chat.model),
+                name: "chat-unknown-\(dark ? "dark" : "light")",
+                dark: dark,
+                size: .init(width: 1480, height: 860),
+                settle: .milliseconds(500),
+                invalidate: { chat.model.objectWillChange.send(); session.objectWillChange.send() }
+            )
             let flat = readable(text)
             // The panel and header; the card's buttons are checked on the card alone below.
             for expected in [chinese("ask.run.needsDecision"), chinese("ask.workflow.chat.check.title"),
@@ -286,7 +304,12 @@ struct AskChatRedesignVisualTests {
         await chat.model.refreshHistory()
         await chat.model.select(value.id)
         let session = try authoring.start(value.id, name: "Weather", workflowID: nil)
-        _ = session.submit(.init(summary: "Ready", manifestText: weatherManifest(complete: true), files: [:], deletes: []))
+        _ = session.submit(.init(
+            summary: "Ready",
+            manifestText: weatherManifest(complete: true),
+            files: [:],
+            deletes: []
+        ))
         #expect(session.checklist.isComplete)
         session.query = "杭州"
         session.tester.searchPath = { "/bin:/usr/bin" }
@@ -295,9 +318,14 @@ struct AskChatRedesignVisualTests {
         #expect(chat.model.runPhase == .completed(steps: 9))
 
         for dark in [true, false] where Self.windows {
-            let text = try await render(AskConversationView(model: chat.model), name: "chat-ready-\(dark ? "dark" : "light")",
-                                        dark: dark, size: .init(width: 1480, height: 860), settle: .milliseconds(500),
-                                        invalidate: { chat.model.objectWillChange.send(); session.objectWillChange.send() })
+            let text = try await render(
+                AskConversationView(model: chat.model),
+                name: "chat-ready-\(dark ? "dark" : "light")",
+                dark: dark,
+                size: .init(width: 1480, height: 860),
+                settle: .milliseconds(500),
+                invalidate: { chat.model.objectWillChange.send(); session.objectWillChange.send() }
+            )
             let flat = readable(text)
             for expected in [chinese("ask.workflow.chat.resultOK"), chinese("ask.workflow.chat.hint.tested"),
                              chinese("ask.workflow.chat.save"), chinese("ask.workflow.chat.tab.code")] {

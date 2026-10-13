@@ -54,7 +54,7 @@ struct AskKeywordChip: View {
     var title: String
     var symbol: String
     var detail: String?
-    var tint: Color = AskTheme.accent
+    var tint: Color = TypefluxColor.accent.color
 
     var body: some View {
         HStack(spacing: 6) {
@@ -131,7 +131,8 @@ struct AskPluginResultsView: View {
             - cardPadding.leading - cardPadding.trailing
     }
 
-    static func textHeight(_ text: String, font: NSFont, lineSpacing: CGFloat = 0, width: CGFloat = textWidth) -> CGFloat {
+    static func textHeight(_ text: String, font: NSFont, lineSpacing: CGFloat = 0,
+                           width: CGFloat = textWidth) -> CGFloat {
         let style = NSMutableParagraphStyle()
         style.lineSpacing = lineSpacing
         let rect = (text as NSString).boundingRect(
@@ -283,7 +284,7 @@ struct AskPluginResultsView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            Rectangle().fill(AskTheme.separator).frame(height: 1).padding(.horizontal, 12)
+            Rectangle().fill(TypefluxColor.separator.color).frame(height: 1).padding(.horizontal, 12)
             VStack(spacing: Self.rowSpacing) {
                 section(Self.sectionTitle(for: display))
                 main
@@ -300,7 +301,7 @@ struct AskPluginResultsView: View {
     private func section(_ title: String) -> some View {
         Text(title)
             .font(.system(size: 11, weight: .semibold))
-            .foregroundStyle(StudioTheme.textSecondary)
+            .foregroundStyle(TypefluxColor.secondaryLabel.color)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 10)
             .frame(height: Self.sectionHeight, alignment: .bottom)
@@ -373,8 +374,9 @@ struct AskPluginResultsView: View {
                         : item.emphasized ? TypefluxColor.accent.color : TypefluxColor.label.color)
                     .padding(.horizontal, 8).frame(height: 22)
                     .background((selected ? Color.white.opacity(0.2)
-                        : item.emphasized ? TypefluxColor.accent.color.opacity(0.16) : AskTheme.hoverFill),
-                                in: Capsule())
+                                    : item.emphasized ? TypefluxColor.accent.color.opacity(0.16) : TypefluxColor.label
+                                    .color.opacity(0.06)),
+                    in: Capsule())
             }
         }
         .fixedSize()
@@ -439,7 +441,8 @@ struct AskPluginResultsView: View {
         }
         .buttonStyle(.plain)
         .accessibilityLabel(display.title)
-        .accessibilityHint(hint.pluginID == AskOpenChatPlugin.id ? L("ask.plugin.hint.action", display.title) : L("ask.plugin.enter"))
+        .accessibilityHint(hint.pluginID == AskOpenChatPlugin
+            .id ? L("ask.plugin.hint.action", display.title) : L("ask.plugin.enter"))
         .accessibilityIdentifier("ask.plugin.hint")
     }
 
@@ -456,7 +459,7 @@ struct AskPluginResultsView: View {
             VStack(alignment: .leading, spacing: 0) {
                 itemList(output, pending: running, dimmed: running && plan.mode != .live)
                 if let note = output.note {
-                    Text(note).font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
+                    Text(note).font(.system(size: 11)).foregroundStyle(TypefluxColor.secondaryLabel.color)
                         .lineLimit(1)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .frame(height: Self.noteHeight)
@@ -473,17 +476,19 @@ struct AskPluginResultsView: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 8) {
                 Text(plan.title).font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textPrimary).lineLimit(1)
+                    .foregroundStyle(TypefluxColor.label.color).lineLimit(1)
                 metaChips(output?.meta ?? plan.meta)
                 Spacer(minLength: 8)
                 if let output {
                     if let detail = output.detail {
-                        Text(detail).font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
+                        Text(detail).font(.system(size: 11)).foregroundStyle(TypefluxColor.tertiaryLabel.color)
+                            .lineLimit(1)
                     }
                     Text(output.source).font(.system(size: 11))
-                        .foregroundStyle(output.sourceIsAI ? AskTheme.accent : StudioTheme.textTertiary)
+                        .foregroundStyle(output.sourceIsAI ? TypefluxColor.accent.color : TypefluxColor.tertiaryLabel
+                            .color)
                         .padding(.horizontal, 6).frame(height: 18)
-                        .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(AskTheme.separator))
+                        .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(TypefluxColor.separator.color))
                     headerButtons(output, enabled: !running, streaming: streaming)
                 }
             }
@@ -492,7 +497,7 @@ struct AskPluginResultsView: View {
             if let output {
                 result(output, running: running, streaming: streaming)
                 if let note = output.note {
-                    Text(note).font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
+                    Text(note).font(.system(size: 11)).foregroundStyle(TypefluxColor.tertiaryLabel.color)
                         .frame(height: Self.noteHeight).padding(.top, 6)
                 }
                 // A list has no button row: the bottom bar says what the chosen row's keys do.
@@ -500,7 +505,7 @@ struct AskPluginResultsView: View {
                     actions(output.actions, enabled: !running)
                 }
             } else if let failure {
-                Text(failure.message).font(.system(size: 13.5)).foregroundStyle(StudioTheme.danger)
+                Text(failure.message).font(.system(size: 13.5)).foregroundStyle(TypefluxColor.danger.color)
                     .fixedSize(horizontal: false, vertical: true)
                 if failure.retry || !failure.actions.isEmpty {
                     HStack(spacing: 6) {
@@ -519,8 +524,11 @@ struct AskPluginResultsView: View {
                 }
             } else {
                 VStack(alignment: .leading, spacing: 8) {
-                    RoundedRectangle(cornerRadius: 6).fill(AskTheme.hoverFill).frame(height: 14)
-                    RoundedRectangle(cornerRadius: 6).fill(AskTheme.hoverFill).frame(width: Self.textWidth * 0.6, height: 14)
+                    RoundedRectangle(cornerRadius: 6).fill(TypefluxColor.label.color.opacity(0.06)).frame(height: 14)
+                    RoundedRectangle(cornerRadius: 6).fill(TypefluxColor.label.color.opacity(0.06)).frame(
+                        width: Self.textWidth * 0.6,
+                        height: 14
+                    )
                 }
                 .frame(height: Self.skeletonHeight, alignment: .top)
                 .accessibilityLabel(L("ask.plugin.running"))
@@ -568,7 +576,8 @@ struct AskPluginResultsView: View {
                     // A streaming result is bright with a caret; an old one waiting for its successor is dim.
                     Text(streaming ? output.body + Self.caret : output.body)
                         .font(Font(Self.bodyFont)).lineSpacing(Self.bodyLineSpacing)
-                        .foregroundStyle(running && !streaming ? StudioTheme.textTertiary : StudioTheme.textPrimary)
+                        .foregroundStyle(running && !streaming ? TypefluxColor.tertiaryLabel.color : TypefluxColor.label
+                            .color)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .textSelection(.enabled)
                         .id(Self.bodyID)
@@ -584,12 +593,12 @@ struct AskPluginResultsView: View {
     @ViewBuilder
     private func original(_ output: AskPluginOutput) -> some View {
         ScrollView(.vertical) {
-            Text(output.original).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary)
+            Text(output.original).font(.system(size: 12.5)).foregroundStyle(TypefluxColor.secondaryLabel.color)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .textSelection(.enabled)
         }
         .frame(height: Self.originalHeight(output.original))
-        Rectangle().fill(AskTheme.separator).frame(height: 1).padding(.vertical, 4)
+        Rectangle().fill(TypefluxColor.separator.color).frame(height: 1).padding(.vertical, 4)
     }
 
     /// Result rows: icon, title and subtitle; the chosen one says what Return does.
@@ -605,7 +614,7 @@ struct AskPluginResultsView: View {
                             onMain()
                         }
                         .modifier(AskLauncherNumberBadge(number: !item.valid || Self.numberedItemCount(display) == nil
-                            ? nil : AskLauncherNumberShortcuts.number(at: index)))
+                                ? nil : AskLauncherNumberShortcuts.number(at: index)))
                         .id(item.id)
                     }
                 }
@@ -634,7 +643,7 @@ struct AskPluginResultsView: View {
                 default: true
                 }
             }.enumerated()),
-                    id: \.offset) { _, action in
+            id: \.offset) { _, action in
                 actionButton(title: action.title, symbol: action.symbol, key: Self.key(action.shortcut),
                              primary: action.shortcut == .enter) { onAction(action) }
             }
@@ -652,9 +661,12 @@ struct AskPluginResultsView: View {
         if let window = output.actions.first(where: { $0.kind == .openInWindow }) {
             Button { onAction(window) } label: {
                 Image(systemName: "macwindow.on.rectangle").font(.system(size: 11.5))
-                    .foregroundStyle(StudioTheme.textSecondary)
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
                     .frame(width: 22, height: 20)
-                    .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    .background(
+                        TypefluxColor.label.color.opacity(0.06),
+                        in: RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    )
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -666,9 +678,12 @@ struct AskPluginResultsView: View {
         if let book = output.actions.first(where: Self.opensBook) {
             Button { onAction(book) } label: {
                 Image(systemName: book.symbol).font(.system(size: 11.5))
-                    .foregroundStyle(StudioTheme.textSecondary)
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
                     .frame(width: 22, height: 20)
-                    .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    .background(
+                        TypefluxColor.label.color.opacity(0.06),
+                        in: RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    )
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -682,10 +697,10 @@ struct AskPluginResultsView: View {
             let starred = output.starred == true || saving
             Button { onAction(star) } label: {
                 Image(systemName: starred ? "star.fill" : "star").font(.system(size: 12))
-                    .foregroundStyle(starred ? Color.yellow : StudioTheme.textSecondary)
+                    .foregroundStyle(starred ? Color.yellow : TypefluxColor.secondaryLabel.color)
                     .opacity(saving ? 0.55 : 1)
                     .frame(width: 22, height: 20)
-                    .background(starred ? Color.yellow.opacity(0.16) : AskTheme.hoverFill,
+                    .background(starred ? Color.yellow.opacity(0.16) : TypefluxColor.label.color.opacity(0.06),
                                 in: RoundedRectangle(cornerRadius: 6, style: .continuous))
                     .contentShape(Rectangle())
             }
@@ -743,18 +758,18 @@ struct AskPluginResultsView: View {
                               action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: symbol).font(.system(size: 12))
-            .foregroundStyle(primary ? AskTheme.accent : StudioTheme.textSecondary)
-            .frame(width: 32, height: Self.actionsHeight)
-            .background(primary ? AskTheme.accent.opacity(0.16) : AskTheme.hoverFill,
-                        in: RoundedRectangle(cornerRadius: 7, style: .continuous))
-            .contentShape(Rectangle())
+                .foregroundStyle(primary ? TypefluxColor.accent.color : TypefluxColor.secondaryLabel.color)
+                .frame(width: 32, height: Self.actionsHeight)
+                .background(
+                    primary ? TypefluxColor.accent.color.opacity(0.16) : TypefluxColor.label.color.opacity(0.06),
+                    in: RoundedRectangle(cornerRadius: 7, style: .continuous)
+                )
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .help(title + (key.map { " " + $0 } ?? ""))
         .accessibilityLabel(title)
     }
-
-
 }
 
 /// A workflow's image result (`display: image`).
@@ -792,7 +807,7 @@ extension AskPluginResultsView {
                     .frame(width: size.width, height: size.height)
                     .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
             } else {
-                Image(systemName: "photo").font(.system(size: 28)).foregroundStyle(StudioTheme.textTertiary)
+                Image(systemName: "photo").font(.system(size: 28)).foregroundStyle(TypefluxColor.tertiaryLabel.color)
             }
         }
         .frame(maxWidth: .infinity, minHeight: size.height, maxHeight: size.height)

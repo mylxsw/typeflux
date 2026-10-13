@@ -78,7 +78,7 @@ struct ScreenshotPermissionGuideView: View {
             HStack(spacing: 12) {
                 Image(systemName: "rectangle.dashed.badge.record")
                     .font(.system(size: 26, weight: .semibold))
-                    .foregroundStyle(StudioTheme.accent)
+                    .foregroundStyle(TypefluxColor.accent.color)
                 VStack(alignment: .leading, spacing: 4) {
                     Text(L("screenshot.permission.title"))
                         .font(.system(size: 16, weight: .semibold))
@@ -121,7 +121,7 @@ struct ScreenshotPermissionGuideView: View {
                 .font(.system(size: 11, weight: .bold))
                 .foregroundStyle(.white)
                 .frame(width: 18, height: 18)
-                .background(Circle().fill(StudioTheme.accent))
+                .background(Circle().fill(TypefluxColor.accent.color))
             Text(text)
                 .font(.system(size: 13))
                 .fixedSize(horizontal: false, vertical: true)

@@ -53,7 +53,7 @@ extension AskRecoveryRenderTests {
                 .transaction { $0.animation = nil; $0.disablesAnimations = true }
                 .environment(\.colorScheme, dark ? .dark : .light)
                 .frame(width: size.width, height: size.height)
-                .background(AskTheme.surface)
+                .background(TypefluxColor.controlBackground.color)
         }
         _ = NSApplication.shared
         let hosting = NSHostingView(rootView: content())
@@ -138,7 +138,10 @@ extension AskRecoveryRenderTests {
                 let auth = creditAuth(Self.exhausted)
                 let paused = try await renderWorkspace(fixture.model, auth: auth, name: "credit-1-paused-" + suffix,
                                                        dark: dark, language: language)
-                #expect(readable(paused).contains(readable(localized("ask.credits.exhausted.title", language: language))))
+                #expect(readable(paused).contains(readable(localized(
+                    "ask.credits.exhausted.title",
+                    language: language
+                ))))
                 #expect(readable(paused).contains(readable(localized("ask.credits.buy", language: language))))
                 #expect(readable(paused).contains(readable(localized("ask.credits.upgrade", language: language))))
                 #expect(!readable(paused).contains(readable(localized("ask.recovery.unknown", language: language))))
@@ -157,11 +160,15 @@ extension AskRecoveryRenderTests {
 
                 // 3. Continue resumes the pinned run, which finishes its answer.
                 fixture.model.resumeCreditPause()
-                try await fixture.wait { fixture.model.busyIds.isEmpty && fixture.model.selected?.run?.status == "completed" }
+                try await fixture
+                    .wait { fixture.model.busyIds.isEmpty && fixture.model.selected?.run?.status == "completed" }
                 let resumed = try await renderWorkspace(fixture.model, auth: auth, name: "credit-3-resumed-" + suffix,
                                                         dark: dark, language: language)
                 #expect(resumed.contains("Resumed answer"))
-                #expect(!readable(resumed).contains(readable(localized("ask.credits.exhausted.title", language: language))))
+                #expect(!readable(resumed).contains(readable(localized(
+                    "ask.credits.exhausted.title",
+                    language: language
+                ))))
                 #expect(await fixture.api.resumes == ["credit-run"])
             }
         }
@@ -175,7 +182,8 @@ extension AskRecoveryRenderTests {
                     addon: .init(balance: 220_000, usedThisPeriod: 0, remaining: 220_000,
                                  nextExpiry: .init(credits: 100_000,
                                                    expiresAt: ISO8601DateFormatter().string(
-                                                       from: Date().addingTimeInterval(12 * 86400))))
+                                                       from: Date().addingTimeInterval(12 * 86400)
+                                                   )))
                 )
                 let auth = creditAuth(credits)
                 let text = try render(

@@ -16,15 +16,15 @@ struct AskQuickResultsScrollTests {
         var body: some View {
             AskQuickResultsView(results: state.results, question: "test", viewportHeight: 430, actions: nil,
                                 thumbnails: false, onRun: { _, _ in }, onHighlight: { _ in })
-                .background(AskTheme.surface)
+                .background(TypefluxColor.controlBackground.color)
         }
     }
 
     private func results(_ prefix: String, count: Int) -> AskQuickResults {
         let matches = (0 ..< count).map { index in
             AskAppMatch(entry: AskAppEntry(name: "\(prefix) \(index)",
-                                          url: URL(fileURLWithPath: "/Applications/\(prefix)\(index).app"),
-                                          bundleID: "test.\(prefix).\(index)", names: []), score: 0.9)
+                                           url: URL(fileURLWithPath: "/Applications/\(prefix)\(index).app"),
+                                           bundleID: "test.\(prefix).\(index)", names: []), score: 0.9)
         }
         return AskQuickResults(apps: matches, lead: true)
     }
@@ -48,7 +48,8 @@ struct AskQuickResultsScrollTests {
             for index in 0 ..< 12 {
                 _ = await AskResultImageCache.shared.image(.init(
                     url: URL(fileURLWithPath: "/Applications/\(prefix)\(index).app"), thumbnail: false,
-                    scale: NSScreen.main?.backingScaleFactor ?? 2))
+                    scale: NSScreen.main?.backingScaleFactor ?? 2
+                ))
             }
         }
         func snapshot(_ name: String) throws -> Data {

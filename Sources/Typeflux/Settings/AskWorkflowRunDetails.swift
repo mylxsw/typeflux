@@ -13,16 +13,16 @@ struct AskWorkflowRunDetails: View, Identifiable {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text(title).font(.system(size: 17, weight: .semibold))
-                .foregroundStyle(StudioTheme.textPrimary)
+                .foregroundStyle(TypefluxColor.label.color)
             Text(entry.timedOut
                 ? L("ask.workflow.lastRun.timedOut", entry.duration)
                 : L("ask.workflow.lastRun", Int(entry.exitCode), entry.duration))
-                .font(.system(size: 12.5)).foregroundStyle(StudioTheme.warning)
-            Text(entry.date, style: .date).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
+                .font(.system(size: 12.5)).foregroundStyle(TypefluxColor.warning.color)
+            Text(entry.date, style: .date).font(.system(size: 12)).foregroundStyle(TypefluxColor.secondaryLabel.color)
             ScrollView {
                 Text(entry.stderr.isEmpty ? L("ask.workflow.editor.test.nothing") : entry.stderr)
                     .font(.system(size: 12, design: .monospaced))
-                    .foregroundStyle(StudioTheme.textSecondary)
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
                     .textSelection(.enabled).frame(maxWidth: .infinity, alignment: .leading)
                     .padding(12)
             }

@@ -41,23 +41,8 @@ struct ClipboardAppFilterChip: View {
     let onClear: () -> Void
 
     var body: some View {
-        HStack(spacing: 5) {
-            Text(app.name)
-                .font(.callout.weight(.medium))
-                .lineLimit(1)
-            Button(action: onClear) {
-                Image(systemName: "xmark")
-                    .font(.footnote.weight(.bold))
-            }
-            .buttonStyle(.plain)
-            .help(L("clipboard.filter.clear"))
-            .accessibilityLabel(L("clipboard.filter.clear"))
-        }
-        .foregroundStyle(Color.accentColor)
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(Color.accentColor.opacity(0.15), in: Capsule())
-        .frame(maxWidth: 220, alignment: .leading)
+        TypefluxToken(app.name, removeLabel: L("clipboard.filter.clear"), onRemove: onClear)
+            .frame(maxWidth: 220, alignment: .leading)
     }
 }
 
@@ -66,20 +51,10 @@ struct ClipboardPausedChip: View {
     let onResume: () -> Void
 
     var body: some View {
-        Button(action: onResume) {
-            HStack(spacing: 5) {
-                Circle().fill(Color.orange).frame(width: 6, height: 6)
-                Text(L("clipboard.footer.paused"))
-            }
-            .font(.footnote.weight(.medium))
-            .foregroundStyle(Color.orange)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 3)
-            .background(Color.orange.opacity(0.14), in: Capsule())
-        }
-        .buttonStyle(.plain)
-        .padding(.leading, 8)
-        .help(L("clipboard.toolbar.resume"))
+        TypefluxToken(L("clipboard.footer.paused"), removeLabel: "", systemImage: "pause.circle",
+                      action: onResume)
+            .padding(.leading, 8)
+            .help(L("clipboard.toolbar.resume"))
     }
 }
 
@@ -102,7 +77,8 @@ struct ClipboardEditBeforePaste: View {
                         .scrollContentBackground(.hidden)
                         .padding(6)
                         .background(Color.primary.opacity(0.06), in: RoundedRectangle(
-                            cornerRadius: TypefluxRadius.textField.value(for: style), style: .continuous))
+                            cornerRadius: TypefluxRadius.textField.value(for: style), style: .continuous
+                        ))
                         .focused($focused)
                     Text(L("clipboard.edit.hint"))
                         .font(.subheadline).foregroundStyle(TypefluxColor.secondaryLabel.color)

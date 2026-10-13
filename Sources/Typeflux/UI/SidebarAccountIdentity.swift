@@ -31,22 +31,23 @@ struct AskSignedOutIdentity: View {
     private var label: some View {
         HStack(spacing: 9) {
             Image(systemName: "desktopcomputer").font(.system(size: 13, weight: .medium))
-                .foregroundStyle(StudioTheme.textPrimary)
+                .foregroundStyle(TypefluxColor.label.color)
                 .frame(width: 30, height: 30)
-                .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                .background(TypefluxColor.label.color.opacity(0.06),
+                            in: RoundedRectangle(cornerRadius: 9, style: .continuous))
             VStack(alignment: .leading, spacing: 1) {
                 Text(L("ask.local.identity")).font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textPrimary)
+                    .foregroundStyle(TypefluxColor.label.color)
                 Text(subtitle)
                     .font(.system(size: 11))
-                    .foregroundStyle(StudioTheme.textTertiary)
+                    .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                     .lineLimit(1).minimumScaleFactor(0.85)
             }
         }
         .padding(.leading, 4).padding(.trailing, 8)
         .frame(height: 40)
         .background(RoundedRectangle(cornerRadius: 11, style: .continuous)
-            .fill(hovering || active ? AskTheme.hoverFill : .clear))
+            .fill(hovering || active ? TypefluxColor.label.color.opacity(0.06) : .clear))
         .contentShape(Rectangle())
     }
 }

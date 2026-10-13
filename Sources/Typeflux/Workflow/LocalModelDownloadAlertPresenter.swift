@@ -188,7 +188,7 @@ private struct LocalModelDownloadAlertContentView: View {
         HStack(alignment: .top, spacing: 16) {
             Image(systemName: "arrow.down.circle.fill")
                 .font(.system(size: 42, weight: .regular))
-                .foregroundStyle(StudioTheme.accent)
+                .foregroundStyle(TypefluxColor.accent.color)
                 .frame(width: 48, height: 48)
                 .accessibilityHidden(true)
 

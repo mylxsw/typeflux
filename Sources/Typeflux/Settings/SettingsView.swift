@@ -109,7 +109,7 @@ struct StudioView: View {
         ) { viewportSize in
             let viewportHeight = max(viewportSize.height, 0)
 
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
+            VStack(alignment: .leading, spacing: 20) {
                 if viewModel.currentSection == .settings {
                     settingsHeader
                 }
@@ -126,7 +126,7 @@ struct StudioView: View {
                 }
             }
             .frame(
-                height: [.models, .personas, .agent, .launcher, .settings, .account, .vocabulary, .history]
+                height: [.home, .models, .personas, .agent, .launcher, .settings, .account, .vocabulary, .history]
                     .contains(viewModel.currentSection)
                     ? viewportHeight : nil,
                 alignment: .top
@@ -149,6 +149,7 @@ struct StudioView: View {
             if searchScope?.usesModelQuery == true, viewModel.modelSearchQuery != query {
                 viewModel.modelSearchQuery = query
             } else if searchScope?.usesStudioQuery == true, viewModel.searchQuery != query {
+                if viewModel.currentSection == .history { selectedHistoryID = nil }
                 viewModel.searchQuery = query
             }
         }
@@ -163,9 +164,9 @@ struct StudioView: View {
             }
         }
         .toolbar { libraryPageToolbar }
-        .onChange(of: viewModel.currentSection) { _ in selectedHistoryID = nil }
-        .onChange(of: viewModel.searchQuery) { _ in selectedHistoryID = nil }
-        .onChange(of: viewModel.historyFilter) { _ in selectedHistoryID = nil }
+        .onChange(of: viewModel.currentSection) { section in
+            if section != .history { selectedHistoryID = nil }
+        }
         .onChange(of: viewModel.displayedHistory.map(\.id)) { ids in
             if let selectedHistoryID, !ids.contains(selectedHistoryID) {
                 self.selectedHistoryID = nil
@@ -215,20 +216,20 @@ struct StudioView: View {
         .overlay(alignment: .bottom) {
             if let toast = viewModel.toastMessage {
                 Text(toast)
-                    .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textPrimary)
-                    .padding(.horizontal, StudioTheme.Insets.toastHorizontal)
-                    .padding(.vertical, StudioTheme.Insets.toastVertical)
+                    .font(.system(.body, weight: .semibold))
+                    .foregroundStyle(TypefluxColor.label.color)
+                    .padding(.horizontal, 18)
+                    .padding(.vertical, TypefluxSpacing.regular.value(for: .classic))
                     .background(
                         Capsule()
-                            .fill(StudioTheme.surface)
+                            .fill(TypefluxColor.controlBackground.color)
                     )
                     .overlay(
                         Capsule().stroke(
-                            StudioTheme.border, lineWidth: StudioTheme.BorderWidth.thin
+                            TypefluxColor.separator.color, lineWidth: 1
                         )
                     )
-                    .padding(.bottom, StudioTheme.Insets.toastBottom)
+                    .padding(.bottom, 18)
             }
         }
         .sheet(
@@ -625,7 +626,7 @@ struct StudioView: View {
             }
             ToolbarItem(placement: .primaryAction) {
                 Menu {
-                    Picker(L("history.filter.title"), selection: $viewModel.historyFilter) {
+                    Picker(L("history.filter.title"), selection: historyFilterBinding) {
                         ForEach(HistorySettingsFilter.allCases) { filter in Text(filter.title).tag(filter) }
                     }
                     Divider()
@@ -642,6 +643,13 @@ struct StudioView: View {
                     .accessibilityIdentifier("history.filterMenu")
             }
         }
+    }
+
+    private var historyFilterBinding: Binding<HistorySettingsFilter> {
+        Binding(get: { viewModel.historyFilter }, set: { filter in
+            if filter != viewModel.historyFilter { selectedHistoryID = nil }
+            viewModel.historyFilter = filter
+        })
     }
 
     private var isShowingHistoryDetail: Bool {
@@ -675,38 +683,20 @@ struct StudioView: View {
         }
     }
 
-    private func homePage(viewportWidth: CGFloat) -> some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
-            StudioOverviewPanel(
-                width: viewportWidth,
-                completionRate: viewModel.statsCompletionRate,
-                transcriptionMinutesText: viewModel.transcriptionMinutesText,
-                totalCharacters: viewModel.statsTotalCharacters,
-                savedMinutes: viewModel.statsSavedMinutes,
-                averagePaceWPM: viewModel.statsAveragePaceWPM
-            )
-
-            HStack {
-                Text(L("home.recentTranscriptions"))
-                    .font(.studioDisplay(StudioTheme.Typography.subsectionTitle, weight: .bold))
-                    .foregroundStyle(StudioTheme.textPrimary)
-                Spacer()
-                Button {
+    private func homePage(viewportWidth _: CGFloat) -> some View {
+        TypefluxForm {
+            OverviewSettingsMetrics(completionRate: viewModel.statsCompletionRate,
+                                    transcriptionMinutesText: viewModel.transcriptionMinutesText,
+                                    totalCharacters: viewModel.statsTotalCharacters,
+                                    savedMinutes: viewModel.statsSavedMinutes,
+                                    averagePaceWPM: viewModel.statsAveragePaceWPM)
+            TypefluxFormSection(L("home.recentTranscriptions")) {
+                sessionStream(records: Array(viewModel.displayedHistory.prefix(10)))
+                TypefluxNavigationRow(L("home.openHistory"), systemImage: "clock.arrow.circlepath",
+                                      color: TypefluxColor.accent.color) {
                     viewModel.navigate(to: .history)
-                } label: {
-                    Image(systemName: "clock.arrow.circlepath")
-                        .font(.system(size: StudioTheme.Typography.iconSmall, weight: .medium))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                }
-                .buttonStyle(.plain)
-                .studioTooltip(L("home.openHistory"), yOffset: 28)
+                }.accessibilityIdentifier("overview.openHistory")
             }
-
-            sessionStream(
-                records: Array(
-                    viewModel.displayedHistory.prefix(StudioTheme.Count.homeRecentRecords)
-                )
-            )
         }
     }
 
@@ -864,7 +854,7 @@ struct StudioView: View {
 
     private func mcpServerRow(_ server: MCPServerConfig) -> some View {
         let status = MCPServerStatusPresentation(enabled: server.enabled,
-            result: viewModel.mcpServerTestResults[server.id])
+                                                 result: viewModel.mcpServerTestResults[server.id])
         return VStack(alignment: .leading, spacing: 0) {
             AgentSettingsRow(
                 icon: "server.rack",
@@ -902,13 +892,12 @@ struct StudioView: View {
             }
 
             if case let .failure(message)? = viewModel.mcpServerTestResults[server.id] {
-                Text(message).font(.subheadline).foregroundStyle(StudioTheme.danger)
+                Text(message).font(.subheadline).foregroundStyle(TypefluxColor.danger.color)
                     .fixedSize(horizontal: false, vertical: true)
 
             } else if case let .success(tools)? = viewModel.mcpServerTestResults[server.id], !tools.isEmpty {
                 Text(L("agent.mcp.toolList", tools.map(\.name).joined(separator: ", ")))
-                    .font(.subheadline).foregroundStyle(StudioTheme.textSecondary).lineLimit(2)
-
+                    .font(.subheadline).foregroundStyle(TypefluxColor.secondaryLabel.color).lineLimit(2)
             }
         }
         .contentShape(Rectangle())
@@ -1070,12 +1059,12 @@ struct StudioView: View {
     @ViewBuilder
     private var llmRemoteProviderForm: some View {
         if let provider = focusedLLMRemoteProvider {
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+            VStack(alignment: .leading, spacing: 10) {
                 if provider == .freeModel {
                     if FreeLLMModelRegistry.suggestedModelNames.isEmpty {
                         Text(L("settings.models.freeModel.noSources"))
-                            .font(.studioBody(StudioTheme.Typography.caption))
-                            .foregroundStyle(StudioTheme.textTertiary)
+                            .font(.system(.subheadline))
+                            .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                     } else {
                         StudioMenuPicker(
                             options: FreeLLMModelRegistry.suggestedModelNames.map { ($0, $0) },
@@ -1085,19 +1074,19 @@ struct StudioView: View {
                     }
 
                     Text(L("settings.models.freeModel.hint"))
-                        .font(.studioBody(StudioTheme.Typography.caption))
-                        .foregroundStyle(StudioTheme.textSecondary)
+                        .font(.system(.subheadline))
+                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
 
                     if !FreeLLMModelRegistry.sources.isEmpty {
-                        VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxxSmall) {
+                        VStack(alignment: .leading, spacing: TypefluxSpacing.compact.value(for: .classic)) {
                             Text(L("settings.models.freeModel.availableSources"))
-                                .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
-                                .foregroundStyle(StudioTheme.textSecondary)
+                                .font(.system(.subheadline, weight: .semibold))
+                                .foregroundStyle(TypefluxColor.secondaryLabel.color)
 
                             ForEach(FreeLLMModelRegistry.sourceSummaryLines(), id: \.self) { line in
                                 Text(line)
-                                    .font(.studioMono(StudioTheme.Typography.caption))
-                                    .foregroundStyle(StudioTheme.textTertiary)
+                                    .font(.system(.subheadline, design: .monospaced))
+                                    .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                             }
                         }
                     }
@@ -1129,8 +1118,8 @@ struct StudioView: View {
                     )
 
                     Text(L("settings.models.llm.providerEndpointHint", provider.displayName))
-                        .font(.studioBody(StudioTheme.Typography.caption))
-                        .foregroundStyle(StudioTheme.textSecondary)
+                        .font(.system(.subheadline))
+                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
                 }
             }
         }
@@ -1207,13 +1196,13 @@ struct StudioView: View {
         StudioCard {
             StudioSectionTitle(title: L("settings.models.activation"))
             Text(L("settings.models.customArchitecture.title"))
-                .font(.studioDisplay(StudioTheme.Typography.settingTitle, weight: .semibold))
-                .foregroundStyle(StudioTheme.textPrimary)
+                .font(.system(.title3, weight: .semibold))
+                .foregroundStyle(TypefluxColor.label.color)
             Text(L("settings.models.customArchitecture.subtitle"))
-                .font(.studioBody(StudioTheme.Typography.body))
-                .foregroundStyle(StudioTheme.textSecondary)
+                .font(.system(.body))
+                .foregroundStyle(TypefluxColor.secondaryLabel.color)
 
-            Spacer(minLength: StudioTheme.Spacing.smallMedium)
+            Spacer(minLength: TypefluxSpacing.regular.value(for: .classic))
 
             HStack {
                 StudioPill(title: "CoreML")
@@ -1221,15 +1210,15 @@ struct StudioView: View {
                 Spacer()
             }
         }
-        .frame(maxWidth: .infinity, minHeight: StudioTheme.Layout.actionCardMinHeight)
+        .frame(maxWidth: .infinity, minHeight: StudioWindowMetrics.actionCardMinHeight)
         .background(
-            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous)
+            RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: .classic), style: .continuous)
                 .fill(
                     LinearGradient(
                         colors: [
-                            StudioTheme.accentSoft,
-                            StudioTheme.Colors.actionCardWarm,
-                            StudioTheme.Colors.actionCardCool
+                            TypefluxColor.accent.color.opacity(0.12),
+                            Color(red: 0.98, green: 0.93, blue: 0.90),
+                            Color(red: 0.93, green: 0.97, blue: 0.98)
                         ],
                         startPoint: .leading,
                         endPoint: .trailing
@@ -1247,8 +1236,8 @@ struct StudioView: View {
     ) -> some View {
         HStack {
             Text(title)
-                .font(.studioDisplay(StudioTheme.Typography.subsectionTitle, weight: .bold))
-                .foregroundStyle(StudioTheme.textPrimary)
+                .font(.system(.title3, weight: .bold))
+                .foregroundStyle(TypefluxColor.label.color)
             Spacer()
             StudioButton(
                 title: secondaryButtonTitle, systemImage: nil, variant: .secondary,
@@ -1261,45 +1250,16 @@ struct StudioView: View {
         }
     }
 
+    @ViewBuilder
     private func sessionStream(records: [HistoryPresentationRecord]) -> some View {
-        StudioCard(padding: StudioTheme.Insets.none) {
-            if records.isEmpty {
-                Text(L("history.empty"))
-                    .font(.studioBody(StudioTheme.Typography.bodySmall))
-                    .foregroundStyle(StudioTheme.textSecondary)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .padding(.vertical, StudioTheme.Insets.sessionEmptyVertical)
-            } else {
-                VStack(spacing: StudioTheme.Spacing.none) {
-                    ForEach(records) { record in
-                        StudioHistoryRow(
-                            record: record,
-                            onCopyResult: {
-                                viewModel.copyHistoryResult(id: record.id)
-                            },
-                            onCopyTranscript: {
-                                viewModel.copyTranscript(id: record.id)
-                            },
-                            onDownloadAudio: {
-                                viewModel.downloadAudio(id: record.id)
-                            },
-                            onPlayAudio: {
-                                viewModel.playAudio(id: record.id)
-                            },
-                            isAudioPlaying: viewModel.playingAudioRecordID == record.id,
-                            onDelete: {
-                                viewModel.deleteHistoryRecord(id: record.id)
-                            },
-                            onRetry: {
-                                viewModel.retryHistoryRecord(id: record.id)
-                            }
-                        )
-                        if record.id != records.last?.id {
-                            Divider().overlay(
-                                StudioTheme.border.opacity(StudioTheme.Opacity.listDivider)
-                            )
-                        }
-                    }
+        if records.isEmpty {
+            Text(L("history.empty")).foregroundStyle(.secondary)
+        } else {
+            ForEach(records) { record in
+                HistorySettingsNavigationRow(record: record, viewModel: viewModel) {
+                    viewModel.historyFilter = .all
+                    viewModel.navigate(to: .history)
+                    selectedHistoryID = record.id
                 }
             }
         }
@@ -1311,25 +1271,25 @@ struct StudioView: View {
                 Spacer()
                 if card.isSelected {
                     Image(systemName: "checkmark")
-                        .font(.system(size: StudioTheme.Typography.iconMedium, weight: .bold))
-                        .foregroundStyle(StudioTheme.textSecondary)
+                        .font(.system(.title3, weight: .bold))
+                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
                 }
             }
 
             Text(card.name)
-                .font(.studioDisplay(StudioTheme.Typography.subsectionTitle, weight: .semibold))
-                .foregroundStyle(card.isMuted ? StudioTheme.textSecondary : StudioTheme.textPrimary)
+                .font(.system(.title3, weight: .semibold))
+                .foregroundStyle(card.isMuted ? TypefluxColor.secondaryLabel.color : TypefluxColor.label.color)
             Text(card.summary)
-                .font(.studioBody(StudioTheme.Typography.bodySmall))
-                .foregroundStyle(StudioTheme.textSecondary)
+                .font(.system(.callout))
+                .foregroundStyle(TypefluxColor.secondaryLabel.color)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            Spacer(minLength: StudioTheme.Spacing.xSmall)
+            Spacer(minLength: TypefluxSpacing.small.value(for: .classic))
 
             HStack {
                 Text(card.metadata)
-                    .font(.studioBody(StudioTheme.Typography.body))
-                    .foregroundStyle(StudioTheme.textSecondary)
+                    .font(.system(.body))
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
                 Spacer()
                 StudioButton(
                     title: card.actionTitle, systemImage: nil,
@@ -1339,8 +1299,8 @@ struct StudioView: View {
                 }
             }
         }
-        .frame(maxWidth: .infinity, minHeight: StudioTheme.Layout.modelCardMinHeight)
-        .opacity(card.isMuted ? StudioTheme.Opacity.modelCardMuted : 1)
+        .frame(maxWidth: .infinity, minHeight: StudioWindowMetrics.modelCardMinHeight)
+        .opacity(card.isMuted ? 0.56 : 1)
     }
 
     private var isLocalArchitecture: Bool {
@@ -1354,51 +1314,51 @@ struct StudioView: View {
 
     private func architectureModeButton(title: String, subtitle: String, isActive: Bool)
         -> some View {
-        HStack(spacing: StudioTheme.Spacing.medium) {
-            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.medium, style: .continuous)
-                .fill(isActive ? StudioTheme.accentSoft : StudioTheme.surfaceMuted)
+        HStack(spacing: 14) {
+            RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: .classic), style: .continuous)
+                .fill(isActive ? TypefluxColor.accent.color.opacity(0.12) : TypefluxColor.controlBackground.color)
                 .frame(
-                    width: StudioTheme.ControlSize.architectureBadge,
-                    height: StudioTheme.ControlSize.architectureBadge
+                    width: 52,
+                    height: 52
                 )
                 .overlay(
                     Image(systemName: title.contains("Local") ? "cpu.fill" : "cloud.fill")
-                        .foregroundStyle(isActive ? StudioTheme.accent : StudioTheme.textSecondary)
+                        .foregroundStyle(isActive ? TypefluxColor.accent.color : TypefluxColor.secondaryLabel.color)
                 )
 
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxxSmall) {
+            VStack(alignment: .leading, spacing: TypefluxSpacing.compact.value(for: .classic)) {
                 Text(title)
-                    .font(.studioBody(StudioTheme.Typography.bodyLarge, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textPrimary)
+                    .font(.system(.body, weight: .semibold))
+                    .foregroundStyle(TypefluxColor.label.color)
                 Text(subtitle)
-                    .font(.studioBody(StudioTheme.Typography.caption))
-                    .foregroundStyle(StudioTheme.textSecondary)
+                    .font(.system(.subheadline))
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
             }
             Spacer()
             Circle()
                 .stroke(
-                    isActive ? StudioTheme.accent : StudioTheme.border,
-                    lineWidth: StudioTheme.BorderWidth.emphasis
+                    isActive ? TypefluxColor.accent.color : TypefluxColor.separator.color,
+                    lineWidth: 1.5
                 )
                 .frame(
-                    width: StudioTheme.ControlSize.selectionIndicator,
-                    height: StudioTheme.ControlSize.selectionIndicator
+                    width: 22,
+                    height: 22
                 )
                 .overlay(
                     Circle()
-                        .fill(isActive ? StudioTheme.accent : Color.clear)
+                        .fill(isActive ? TypefluxColor.accent.color : Color.clear)
                         .frame(
-                            width: StudioTheme.ControlSize.selectionIndicatorInner,
-                            height: StudioTheme.ControlSize.selectionIndicatorInner
+                            width: 10,
+                            height: 10
                         )
                 )
         }
-        .padding(StudioTheme.Insets.cardCompact)
+        .padding(TypefluxSpacing.large.value(for: .classic))
         .background(
             RoundedRectangle(
-                cornerRadius: StudioTheme.CornerRadius.architectureOption, style: .continuous
+                cornerRadius: TypefluxRadius.form.value(for: .classic), style: .continuous
             )
-            .fill(isActive ? StudioTheme.surface : StudioTheme.surfaceMuted)
+            .fill(isActive ? TypefluxColor.controlBackground.color : TypefluxColor.controlBackground.color)
         )
     }
 
@@ -1676,37 +1636,35 @@ struct StudioView: View {
 
     private var modelOverviewPanel: some View {
         StudioCard {
-            HStack(alignment: .top, spacing: StudioTheme.Spacing.large) {
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-                    HStack(spacing: StudioTheme.Spacing.small) {
+            HStack(alignment: .top, spacing: 18) {
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(spacing: 10) {
                         RoundedRectangle(
-                            cornerRadius: StudioTheme.CornerRadius.large, style: .continuous
+                            cornerRadius: TypefluxRadius.form.value(for: .classic), style: .continuous
                         )
-                        .fill(StudioTheme.accentSoft)
+                        .fill(TypefluxColor.accent.color.opacity(0.12))
                         .frame(width: 46, height: 46)
                         .overlay(
                             Image(
                                 systemName: viewModel.modelDomain == .stt
                                     ? "waveform.and.mic" : "sparkles.rectangle.stack"
                             )
-                            .foregroundStyle(StudioTheme.accent)
+                            .foregroundStyle(TypefluxColor.accent.color)
                         )
 
-                        VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxxSmall) {
+                        VStack(alignment: .leading, spacing: TypefluxSpacing.compact.value(for: .classic)) {
                             Text(modelOverviewTitle)
                                 .font(
-                                    .studioDisplay(
-                                        StudioTheme.Typography.sectionTitle, weight: .semibold
-                                    )
+                                    .system(.title2, weight: .semibold)
                                 )
-                                .foregroundStyle(StudioTheme.textPrimary)
+                                .foregroundStyle(TypefluxColor.label.color)
                             Text(modelOverviewSubtitle)
-                                .font(.studioBody(StudioTheme.Typography.body))
-                                .foregroundStyle(StudioTheme.textSecondary)
+                                .font(.system(.body))
+                                .foregroundStyle(TypefluxColor.secondaryLabel.color)
                         }
                     }
 
-                    HStack(spacing: StudioTheme.Spacing.xSmall) {
+                    HStack(spacing: TypefluxSpacing.small.value(for: .classic)) {
                         StudioPill(
                             title: modelOverviewModePill, tone: modelOverviewModeTone,
                             fill: modelOverviewModeFill
@@ -1720,13 +1678,13 @@ struct StudioView: View {
 
                 Spacer()
 
-                VStack(alignment: .trailing, spacing: StudioTheme.Spacing.small) {
+                VStack(alignment: .trailing, spacing: 10) {
                     Text(modelOverviewModelName)
-                        .font(.studioBody(StudioTheme.Typography.bodyLarge, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textPrimary)
+                        .font(.system(.body, weight: .semibold))
+                        .foregroundStyle(TypefluxColor.label.color)
                     Text(modelOverviewModelHint)
-                        .font(.studioBody(StudioTheme.Typography.caption))
-                        .foregroundStyle(StudioTheme.textSecondary)
+                        .font(.system(.subheadline))
+                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
                     StudioButton(
                         title: L("settings.models.editCurrentProvider"), systemImage: nil,
                         variant: .secondary
@@ -1773,7 +1731,7 @@ struct StudioView: View {
     private var focusedProviderActions: some View {
         // Language providers use ProviderModelsView; this footer belongs to speech connections.
         let supportsConnection = [StudioModelProviderID.freeSTT, .whisperAPI, .multimodalLLM, .aliCloud,
-                       .doubaoRealtime, .googleCloud, .groqSTT, .soniox, .typefluxOfficial]
+                                  .doubaoRealtime, .googleCloud, .groqSTT, .soniox, .typefluxOfficial]
             .contains(viewModel.focusedModelProvider)
         let canTest = supportsConnection
             && (!viewModel.focusedModelProvider.requiresLoginForConnectionTest || authState.isLoggedIn)
@@ -1818,7 +1776,7 @@ struct StudioView: View {
                 }
                 .buttonStyle(.plain)
                 Text(viewModel.localSTTStatus)
-                    .font(.body).foregroundStyle(StudioTheme.textSecondary)
+                    .font(.body).foregroundStyle(TypefluxColor.secondaryLabel.color)
             }
         }
     }
@@ -1836,11 +1794,11 @@ struct StudioView: View {
 
         case .freeSTT:
             ModelFormRow(title: L("common.model")) {
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+                VStack(alignment: .leading, spacing: 10) {
                     if FreeSTTModelRegistry.suggestedModelNames.isEmpty {
                         Text(L("settings.models.freeSTT.noSources"))
                             .font(.subheadline)
-                            .foregroundStyle(StudioTheme.textTertiary)
+                            .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                     } else {
                         StudioMenuPicker(
                             options: FreeSTTModelRegistry.suggestedModelNames.map { ($0, $0) },
@@ -1854,17 +1812,17 @@ struct StudioView: View {
 
                     Text(L("settings.models.freeSTT.hint"))
                         .font(.subheadline)
-                        .foregroundStyle(StudioTheme.textSecondary)
+                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
 
                     if !FreeSTTModelRegistry.sources.isEmpty {
-                        VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxxSmall) {
+                        VStack(alignment: .leading, spacing: TypefluxSpacing.compact.value(for: .classic)) {
                             Text(L("settings.models.freeSTT.availableSources"))
                                 .font(.subheadline)
-                                .foregroundStyle(StudioTheme.textSecondary)
+                                .foregroundStyle(TypefluxColor.secondaryLabel.color)
                             ForEach(FreeSTTModelRegistry.sourceSummaryLines(), id: \.self) { line in
                                 Text(line)
                                     .font(.body.monospaced())
-                                    .foregroundStyle(StudioTheme.textTertiary)
+                                    .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                             }
                         }
                     }
@@ -2058,7 +2016,7 @@ struct StudioView: View {
                 }
                 Text(L("settings.models.multimodalLLM.audioHint"))
                     .font(.subheadline)
-                    .foregroundStyle(StudioTheme.textSecondary)
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
             }
 
         case .aliCloud:
@@ -2118,7 +2076,7 @@ struct StudioView: View {
                     } label: {
                         Text(L("settings.models.doubao.docs"))
                             .font(.subheadline)
-                            .foregroundStyle(StudioTheme.accent)
+                            .foregroundStyle(TypefluxColor.accent.color)
                     }
                     .buttonStyle(.plain)
                 }
@@ -2222,12 +2180,12 @@ struct StudioView: View {
     }
 
     private func typefluxLoginRequiredForm(message: String) -> some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+        VStack(alignment: .leading, spacing: 10) {
             if !authState.isLoggedIn {
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+                VStack(alignment: .leading, spacing: 10) {
                     Text(message)
                         .font(.subheadline)
-                        .foregroundStyle(StudioTheme.warning)
+                        .foregroundStyle(TypefluxColor.warning.color)
 
                     HStack {
                         Spacer()
@@ -2251,56 +2209,56 @@ struct StudioView: View {
         case .idle:
             EmptyView()
         case .testing:
-            HStack(spacing: StudioTheme.Spacing.xSmall) {
+            HStack(spacing: TypefluxSpacing.small.value(for: .classic)) {
                 ProgressView()
                     .controlSize(.small)
                 Text(L("settings.models.testingConnection"))
                     .font(.subheadline)
-                    .foregroundStyle(StudioTheme.textSecondary)
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
             }
         case let .success(firstMs, totalMs, preview):
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
-                HStack(spacing: StudioTheme.Spacing.xSmall) {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: TypefluxSpacing.small.value(for: .classic)) {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.body)
-                        .foregroundStyle(StudioTheme.success)
+                        .foregroundStyle(TypefluxColor.success.color)
                     Text(L("settings.models.connectionSuccess", firstMs, totalMs))
                         .font(.subheadline)
-                        .foregroundStyle(StudioTheme.textPrimary)
+                        .foregroundStyle(TypefluxColor.label.color)
                 }
                 if !preview.isEmpty {
                     Text(preview)
                         .font(.subheadline)
-                        .foregroundStyle(StudioTheme.textSecondary)
+                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
                         .lineLimit(3)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(StudioTheme.Spacing.small)
+                        .padding(10)
                         .background(
                             RoundedRectangle(
-                                cornerRadius: StudioTheme.CornerRadius.medium, style: .continuous
+                                cornerRadius: TypefluxRadius.form.value(for: .classic), style: .continuous
                             )
-                            .fill(StudioTheme.controlSurface)
+                            .fill(TypefluxColor.controlBackground.color)
                         )
                 }
             }
         case let .notice(message):
-            HStack(alignment: .top, spacing: StudioTheme.Spacing.xSmall) {
+            HStack(alignment: .top, spacing: TypefluxSpacing.small.value(for: .classic)) {
                 Image(systemName: "info.circle")
                     .font(.body)
-                    .foregroundStyle(StudioTheme.textSecondary)
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
                 Text(message)
                     .font(.subheadline)
-                    .foregroundStyle(StudioTheme.textSecondary)
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
                     .fixedSize(horizontal: false, vertical: true)
             }
         case let .failure(message):
-            HStack(alignment: .top, spacing: StudioTheme.Spacing.xSmall) {
+            HStack(alignment: .top, spacing: TypefluxSpacing.small.value(for: .classic)) {
                 Image(systemName: "xmark.circle.fill")
                     .font(.body)
-                    .foregroundStyle(StudioTheme.danger)
+                    .foregroundStyle(TypefluxColor.danger.color)
                 Text(message)
                     .font(.subheadline)
-                    .foregroundStyle(StudioTheme.textSecondary)
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
@@ -2308,7 +2266,7 @@ struct StudioView: View {
 
     private var modelRoutingPanel: some View {
         StudioCard {
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.medium) {
+            VStack(alignment: .leading, spacing: 14) {
                 StudioSectionTitle(title: L("settings.models.routing"))
                 providerFactRow(title: modelRoutingPrimaryTitle, value: modelRoutingPrimaryValue)
                 if let title = modelRoutingSecondaryTitle, let value = modelRoutingSecondaryValue {
@@ -2344,51 +2302,51 @@ struct StudioView: View {
             viewModel.focusModelProvider(providerID)
         } label: {
             StudioCard(
-                padding: StudioTheme.Insets.cardCompact,
+                padding: TypefluxSpacing.large.value(for: .classic),
                 showsShadow: true,
                 isHighlighted: isFocused,
                 isDimmed: !isFocused,
                 texture: .softWaves
             ) {
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.xSmall) {
-                    HStack(alignment: .center, spacing: StudioTheme.Spacing.xSmall) {
+                VStack(alignment: .leading, spacing: TypefluxSpacing.small.value(for: .classic)) {
+                    HStack(alignment: .center, spacing: TypefluxSpacing.small.value(for: .classic)) {
                         RoundedRectangle(
-                            cornerRadius: StudioTheme.CornerRadius.large, style: .continuous
+                            cornerRadius: TypefluxRadius.form.value(for: .classic), style: .continuous
                         )
-                        .fill(StudioTheme.modelProviderIconPlate)
+                        .fill(LegacyStudioPalette.modelProviderIconPlate)
                         .frame(
-                            width: StudioTheme.ControlSize.modelProviderBadge,
-                            height: StudioTheme.ControlSize.modelProviderBadge
+                            width: 36,
+                            height: 36
                         )
                         .overlay(
                             providerIconView(for: providerID, isFocused: isFocused)
                         )
 
                         Text(card.name)
-                            .font(.studioBody(StudioTheme.Typography.bodyLarge, weight: .semibold))
-                            .foregroundStyle(StudioTheme.textPrimary)
+                            .font(.system(.body, weight: .semibold))
+                            .foregroundStyle(TypefluxColor.label.color)
                             .lineLimit(1)
 
                         Spacer(minLength: 0)
 
                         Circle()
-                            .fill(card.isSelected ? StudioTheme.success : StudioTheme.border)
+                            .fill(card.isSelected ? TypefluxColor.success.color : TypefluxColor.separator.color)
                             .frame(
-                                width: StudioTheme.ControlSize.modelProviderStatusDot,
-                                height: StudioTheme.ControlSize.modelProviderStatusDot
+                                width: 8,
+                                height: 8
                             )
                     }
 
                     Text(card.summary)
-                        .font(.studioBody(StudioTheme.Typography.caption))
-                        .foregroundStyle(StudioTheme.textSecondary)
+                        .font(.system(.subheadline))
+                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .lineLimit(2)
 
-                    HStack(alignment: .center, spacing: StudioTheme.Spacing.small) {
+                    HStack(alignment: .center, spacing: 10) {
                         Text(card.metadata)
-                            .font(.studioBody(StudioTheme.Typography.bodySmall))
-                            .foregroundStyle(StudioTheme.textPrimary)
+                            .font(.system(.callout))
+                            .foregroundStyle(TypefluxColor.label.color)
                             .lineLimit(1)
 
                         Spacer(minLength: 0)
@@ -2396,29 +2354,29 @@ struct StudioView: View {
                         if card.isSelected {
                             StudioPill(
                                 title: L("settings.models.active"),
-                                tone: StudioTheme.success,
-                                fill: StudioTheme.success.opacity(0.12)
+                                tone: TypefluxColor.success.color,
+                                fill: TypefluxColor.success.color.opacity(0.12)
                             )
                         }
                     }
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .contentShape(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.hero, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: .classic), style: .continuous))
         }
         .buttonStyle(StudioInteractiveButtonStyle())
     }
 
     private func providerFactRow(title: String, value: String) -> some View {
-        HStack(alignment: .top, spacing: StudioTheme.Spacing.small) {
+        HStack(alignment: .top, spacing: 10) {
             Text(title)
-                .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
-                .foregroundStyle(StudioTheme.textTertiary)
+                .font(.system(.subheadline, weight: .semibold))
+                .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                 .frame(width: 86, alignment: .leading)
 
             Text(value)
-                .font(.studioBody(StudioTheme.Typography.bodySmall))
-                .foregroundStyle(StudioTheme.textPrimary)
+                .font(.system(.callout))
+                .foregroundStyle(TypefluxColor.label.color)
                 .fixedSize(horizontal: false, vertical: true)
 
             Spacer(minLength: 0)
@@ -2450,10 +2408,11 @@ struct StudioView: View {
             Image(systemName: iconName(for: provider))
                 .font(
                     .system(
-                        size: StudioTheme.ControlSize.modelProviderBadgeSymbol, weight: .semibold
+                        size: 13, weight: .semibold
                     )
                 )
-                .foregroundStyle(isFocused ? StudioTheme.accent : StudioTheme.modelProviderFallbackSymbol)
+                .foregroundStyle(isFocused ? TypefluxColor.accent.color : LegacyStudioPalette
+                    .modelProviderFallbackSymbol)
         }
     }
 
@@ -2471,7 +2430,7 @@ struct StudioView: View {
             VStack(alignment: .leading, spacing: 8) {
                 HStack(alignment: .top, spacing: 8) {
                     Text(specs.summary)
-                        .font(.subheadline).foregroundStyle(StudioTheme.textSecondary)
+                        .font(.subheadline).foregroundStyle(TypefluxColor.secondaryLabel.color)
                         .fixedSize(horizontal: false, vertical: true)
                     Spacer(minLength: 8)
                     if isActive {
@@ -2481,17 +2440,17 @@ struct StudioView: View {
                 }
                 HStack {
                     Text("\(specs.parameterValue) parameters · \(specs.sizeValue)")
-                        .font(.subheadline).foregroundStyle(StudioTheme.textTertiary)
+                        .font(.subheadline).foregroundStyle(TypefluxColor.tertiaryLabel.color)
                     Spacer()
                     localSTTModelDownloadIconButton(model)
                 }
                 if isFocused, viewModel.isPreparingLocalSTT || !isDownloaded {
                     localSTTModelProgressRow(model)
                     Text(viewModel.localSTTPreparationDetail)
-                        .font(.subheadline).foregroundStyle(StudioTheme.textSecondary)
+                        .font(.subheadline).foregroundStyle(TypefluxColor.secondaryLabel.color)
                     if !viewModel.localSTTTransferDetail.isEmpty {
                         Text(viewModel.localSTTTransferDetail)
-                            .font(.subheadline).foregroundStyle(StudioTheme.textSecondary)
+                            .font(.subheadline).foregroundStyle(TypefluxColor.secondaryLabel.color)
                     }
                 }
             }
@@ -2528,14 +2487,14 @@ struct StudioView: View {
     }
 
     private func localSTTModelProgressRow(_: LocalSTTModel) -> some View {
-        HStack(alignment: .center, spacing: StudioTheme.Spacing.small) {
+        HStack(alignment: .center, spacing: 10) {
             ProgressView(value: viewModel.localSTTDisplayedPreparationProgress, total: 1)
                 .progressViewStyle(.linear)
                 .tint(viewModel.localSTTPreparationTint)
 
             Text(viewModel.localSTTPreparationPercentText)
-                .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
-                .foregroundStyle(StudioTheme.textSecondary)
+                .font(.system(.subheadline, weight: .semibold))
+                .foregroundStyle(TypefluxColor.secondaryLabel.color)
                 .frame(width: 40, alignment: .trailing)
         }
     }
@@ -2558,7 +2517,8 @@ struct StudioView: View {
         } label: {
             Image(systemName: systemImage)
                 .font(.subheadline)
-                .foregroundStyle(viewModel.isPreparingLocalSTT ? StudioTheme.textTertiary : StudioTheme.textSecondary)
+                .foregroundStyle(viewModel.isPreparingLocalSTT ? TypefluxColor.tertiaryLabel.color : TypefluxColor
+                    .secondaryLabel.color)
                 .frame(width: 28, height: 28)
                 .contentShape(Rectangle())
         }
@@ -2778,24 +2738,24 @@ struct StudioView: View {
     private var modelOverviewModeTone: Color {
         switch activeModelProviderID {
         case .appleSpeech, .localSTT, .ollama:
-            StudioTheme.success
+            TypefluxColor.success.color
         case .freeSTT, .whisperAPI, .freeModel, .customLLM, .openRouter, .openAI, .anthropic,
              .gemini, .deepSeek, .kimi, .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi, .openCodeZen, .openCodeGo,
              .multimodalLLM, .aliCloud, .doubaoRealtime, .googleCloud, .groqSTT, .soniox, .typefluxOfficial,
              .typefluxCloud:
-            StudioTheme.accent
+            TypefluxColor.accent.color
         }
     }
 
     private var modelOverviewModeFill: Color {
         switch activeModelProviderID {
         case .appleSpeech, .localSTT, .ollama:
-            StudioTheme.success.opacity(0.12)
+            TypefluxColor.success.color.opacity(0.12)
         case .freeSTT, .whisperAPI, .freeModel, .customLLM, .openRouter, .openAI, .anthropic,
              .gemini, .deepSeek, .kimi, .qwen, .zhipu, .minimax, .grok, .groq, .xiaomi, .openCodeZen, .openCodeGo,
              .multimodalLLM, .aliCloud, .doubaoRealtime, .googleCloud, .groqSTT, .soniox, .typefluxOfficial,
              .typefluxCloud:
-            StudioTheme.accentSoft
+            TypefluxColor.accent.color.opacity(0.12)
         }
     }
 
@@ -2807,11 +2767,11 @@ struct StudioView: View {
                 Image(systemName: "key")
                     .font(.system(size: 11, weight: .semibold))
                 Text(L("onboarding.models.getAPIKey"))
-                    .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
+                    .font(.system(.subheadline, weight: .semibold))
                 Image(systemName: "arrow.up.right")
                     .font(.system(size: 10, weight: .semibold))
             }
-            .foregroundStyle(StudioTheme.accent)
+            .foregroundStyle(TypefluxColor.accent.color)
         }
         .buttonStyle(.plain)
     }
@@ -3036,10 +2996,10 @@ struct StudioView: View {
     private func sheetCloseButton(action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: "xmark")
-                .font(.system(size: StudioTheme.Typography.iconXSmall, weight: .bold))
-                .foregroundStyle(StudioTheme.textSecondary)
+                .font(.system(.subheadline, weight: .bold))
+                .foregroundStyle(TypefluxColor.secondaryLabel.color)
                 .frame(width: 28, height: 28)
-                .background(Circle().fill(StudioTheme.controlSurface))
+                .background(Circle().fill(TypefluxColor.controlBackground.color))
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)

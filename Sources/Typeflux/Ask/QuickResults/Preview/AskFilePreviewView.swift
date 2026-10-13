@@ -22,14 +22,14 @@ struct AskFilePreviewView: View {
                 .frame(width: geometry.size.width, height: geometry.size.height)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(StudioTheme.textPrimary.opacity(0.035))
+            .background(TypefluxColor.label.color.opacity(0.035))
             .clipShape(RoundedRectangle(cornerRadius: 10))
             .padding(10)
             Divider().opacity(0.4)
             footer.frame(height: 38)
         }
         .background(AskGlassBackground(material: .resolve(reduceTransparency: reduceTransparency, style: style),
-                                       corner: 16, opaqueFill: AskTheme.surface))
+                                       corner: 16, opaqueFill: TypefluxColor.controlBackground.color))
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .accessibilityElement(children: .contain)
         .accessibilityLabel(L("launcher.search.preview"))
@@ -44,7 +44,7 @@ struct AskFilePreviewView: View {
                 Text(state.hit?.name ?? "").font(.system(size: 12, weight: .semibold)).lineLimit(1)
                     .truncationMode(.middle)
                 Text(state.detail ?? L("ask.preview.loading"))
-                    .font(.system(size: 10)).foregroundStyle(StudioTheme.textSecondary).lineLimit(1)
+                    .font(.system(size: 10)).foregroundStyle(TypefluxColor.secondaryLabel.color).lineLimit(1)
             }
             Spacer(minLength: 0)
         }.padding(.horizontal, 14)
@@ -56,13 +56,13 @@ struct AskFilePreviewView: View {
                 .lineLimit(1).truncationMode(.head)
             Spacer(minLength: 0)
             Text("⌘Y " + L("ask.quick.action.quickLook")).fixedSize()
-        }.font(.system(size: 10)).foregroundStyle(StudioTheme.textSecondary).padding(.horizontal, 14)
+        }.font(.system(size: 10)).foregroundStyle(TypefluxColor.secondaryLabel.color).padding(.horizontal, 14)
     }
 
     private var skeleton: some View {
         VStack(alignment: .leading, spacing: 12) {
             ForEach(0 ..< 7) { index in
-                RoundedRectangle(cornerRadius: 4).fill(StudioTheme.textPrimary.opacity(0.07))
+                RoundedRectangle(cornerRadius: 4).fill(TypefluxColor.label.color.opacity(0.07))
                     .frame(width: index % 3 == 0 ? 170 : nil, height: 9)
             }
             Spacer()
@@ -118,7 +118,7 @@ struct AskFilePreviewView: View {
                     context.fill(Path(roundedRect: CGRect(x: CGFloat(index) * width, y: (size.height - height) / 2,
                                                           width: max(1, width - 2), height: height),
                                       cornerRadius: 2),
-                                 with: .color(AskTheme.accent))
+                                 with: .color(TypefluxColor.accent.color))
                 }
             }.frame(height: 90)
             Text(AskFilePreviewContent.time(content.duration)).font(.system(
@@ -126,7 +126,8 @@ struct AskFilePreviewView: View {
                 weight: .medium,
                 design: .monospaced
             ))
-            Text(L("ask.preview.noAutoplay")).font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
+            Text(L("ask.preview.noAutoplay")).font(.system(size: 11))
+                .foregroundStyle(TypefluxColor.secondaryLabel.color)
         }.padding(20)
     }
 
@@ -148,7 +149,7 @@ struct AskFilePreviewView: View {
                     ForEach(Array(content.text.components(separatedBy: "\n").enumerated()),
                             id: \.offset) { index, line in
                         HStack(alignment: .top, spacing: 12) {
-                            Text("\(index + 1)").foregroundStyle(StudioTheme.textTertiary).frame(
+                            Text("\(index + 1)").foregroundStyle(TypefluxColor.tertiaryLabel.color).frame(
                                 width: 28,
                                 alignment: .trailing
                             )
@@ -211,7 +212,8 @@ struct AskFilePreviewView: View {
                                 Text(cell).lineLimit(3).frame(width: 110, alignment: .leading).padding(7)
                             }
                         }.font(.system(size: 11, weight: index == 0 ? .semibold : .regular))
-                            .background(StudioTheme.textPrimary.opacity(index == 0 ? 0.08 : index % 2 == 0 ? 0.025 : 0))
+                            .background(TypefluxColor.label.color
+                                .opacity(index == 0 ? 0.08 : index % 2 == 0 ? 0.025 : 0))
                         Divider()
                     }
                     truncation(content)
@@ -224,7 +226,7 @@ struct AskFilePreviewView: View {
     @ViewBuilder private func truncation(_ content: AskFilePreviewContent) -> some View {
         if content
             .truncated {
-            Text(L("ask.preview.truncated")).font(.system(size: 10)).foregroundStyle(StudioTheme.textSecondary)
+            Text(L("ask.preview.truncated")).font(.system(size: 10)).foregroundStyle(TypefluxColor.secondaryLabel.color)
         }
     }
 }

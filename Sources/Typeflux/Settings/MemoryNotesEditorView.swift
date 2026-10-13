@@ -110,7 +110,7 @@ struct MemoryNotesEditorView: View {
                     .frame(height: 90)
                     .accessibilityLabel(L(isNew ? "agent.memory.add" : "memory.correct"))
                 HStack(spacing: 8) {
-                    Text(L("memory.retention")).font(.subheadline).foregroundStyle(StudioTheme.textTertiary)
+                    Text(L("memory.retention")).font(.subheadline).foregroundStyle(TypefluxColor.tertiaryLabel.color)
                     TypefluxPopup(title: L("memory.retention"),
                                   options: retentionOptions(isNew: isNew, currentExpiry: currentExpiry),
                                   selection: Binding(

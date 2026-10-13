@@ -9,7 +9,7 @@ struct MarkdownSwiftUIView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.textCompact) {
+        VStack(alignment: .leading, spacing: TypefluxSpacing.small.value(for: .classic)) {
             ForEach(Array(document.children.enumerated()), id: \.offset) { _, child in
                 blockView(child)
             }
@@ -20,51 +20,51 @@ struct MarkdownSwiftUIView: View {
     private func blockView(_ markup: Markup) -> AnyView {
         if let paragraph = markup as? Paragraph {
             return AnyView(inlineChildren(paragraph)
-                .font(.studioBody(StudioTheme.Typography.body, weight: .regular))
-                .foregroundStyle(StudioTheme.textPrimary)
+                .font(.system(.body, weight: .regular))
+                .foregroundStyle(TypefluxColor.label.color)
                 .lineSpacing(2)
                 .frame(maxWidth: .infinity, alignment: .leading))
         } else if let heading = markup as? Heading {
             return AnyView(inlineChildren(heading)
-                .font(.studioBody(headingFontSize(for: heading.level), weight: .bold))
-                .foregroundStyle(StudioTheme.textPrimary)
+                .font(.system(headingTextStyle(for: heading.level), weight: .bold))
+                .foregroundStyle(TypefluxColor.label.color)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.top, heading.level <= 2 ? StudioTheme.Spacing.xSmall : 0))
+                .padding(.top, heading.level <= 2 ? TypefluxSpacing.small.value(for: .classic) : 0))
         } else if let unorderedList = markup as? UnorderedList {
             return AnyView(listView(unorderedList.children.map(\.self), orderedStart: nil))
         } else if let orderedList = markup as? OrderedList {
             return AnyView(listView(orderedList.children.map(\.self), orderedStart: Int(orderedList.startIndex)))
         } else if let blockQuote = markup as? BlockQuote {
-            return AnyView(VStack(alignment: .leading, spacing: StudioTheme.Spacing.textMicro) {
+            return AnyView(VStack(alignment: .leading, spacing: 6) {
                 ForEach(Array(blockQuote.children.enumerated()), id: \.offset) { _, child in
                     blockView(child)
                 }
             }
-            .padding(.leading, StudioTheme.Spacing.medium)
+            .padding(.leading, 14)
             .overlay(alignment: .leading) {
                 RoundedRectangle(cornerRadius: 1.5, style: .continuous)
-                    .fill(StudioTheme.border)
+                    .fill(TypefluxColor.separator.color)
                     .frame(width: 3)
             })
         } else if let codeBlock = markup as? CodeBlock {
             return AnyView(SwiftUI.Text(codeBlock.code)
-                .font(.system(size: StudioTheme.Typography.bodySmall, design: .monospaced))
-                .foregroundStyle(StudioTheme.textPrimary)
-                .padding(StudioTheme.Spacing.small)
+                .font(.system(.callout, design: .monospaced))
+                .foregroundStyle(TypefluxColor.label.color)
+                .padding(10)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(
-                    RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.small, style: .continuous)
-                        .fill(StudioTheme.surfaceMuted.opacity(0.92))
+                    RoundedRectangle(cornerRadius: TypefluxRadius.textField.value(for: .classic), style: .continuous)
+                        .fill(TypefluxColor.controlBackground.color.opacity(0.92))
                 ))
         } else if markup is ThematicBreak {
             return AnyView(Divider()
-                .padding(.vertical, StudioTheme.Spacing.xSmall))
+                .padding(.vertical, TypefluxSpacing.small.value(for: .classic)))
         } else {
             let fallback = plainText(in: markup).trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
             if !fallback.isEmpty {
                 return AnyView(SwiftUI.Text(fallback)
-                    .font(.studioBody(StudioTheme.Typography.body, weight: .regular))
-                    .foregroundStyle(StudioTheme.textPrimary)
+                    .font(.system(.body, weight: .regular))
+                    .foregroundStyle(TypefluxColor.label.color)
                     .frame(maxWidth: .infinity, alignment: .leading))
             }
         }
@@ -73,12 +73,12 @@ struct MarkdownSwiftUIView: View {
     }
 
     private func listView(_ items: [Markup], orderedStart: Int?) -> some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.textMicro) {
+        VStack(alignment: .leading, spacing: 6) {
             ForEach(Array(items.enumerated()), id: \.offset) { index, item in
-                HStack(alignment: .top, spacing: StudioTheme.Spacing.xSmall) {
+                HStack(alignment: .top, spacing: TypefluxSpacing.small.value(for: .classic)) {
                     SwiftUI.Text(listMarker(index: index, orderedStart: orderedStart))
-                        .font(.studioBody(StudioTheme.Typography.body, weight: .regular))
-                        .foregroundStyle(StudioTheme.textPrimary)
+                        .font(.system(.body, weight: .regular))
+                        .foregroundStyle(TypefluxColor.label.color)
                         .frame(width: orderedStart == nil ? 14 : 28, alignment: .trailing)
 
                     listItemContent(item)
@@ -93,15 +93,15 @@ struct MarkdownSwiftUIView: View {
            listItem.childCount == 1,
            let paragraph = listItem.child(at: 0) as? Paragraph {
             return AnyView(inlineChildren(paragraph)
-                .font(.studioBody(StudioTheme.Typography.body, weight: .regular))
-                .foregroundStyle(StudioTheme.textPrimary)
+                .font(.system(.body, weight: .regular))
+                .foregroundStyle(TypefluxColor.label.color)
                 .lineSpacing(2)
                 .frame(maxWidth: .infinity, alignment: .leading))
         } else {
             let text = plainText(in: item).trimmingCharacters(in: CharacterSet.whitespacesAndNewlines)
             return AnyView(SwiftUI.Text(text)
-                .font(.studioBody(StudioTheme.Typography.body, weight: .regular))
-                .foregroundStyle(StudioTheme.textPrimary)
+                .font(.system(.body, weight: .regular))
+                .foregroundStyle(TypefluxColor.label.color)
                 .lineSpacing(2)
                 .frame(maxWidth: .infinity, alignment: .leading))
         }
@@ -136,7 +136,7 @@ struct MarkdownSwiftUIView: View {
 
         if let inlineCode = markup as? InlineCode {
             return SwiftUI.Text(inlineCode.code)
-                .font(.system(size: StudioTheme.Typography.bodySmall, design: .monospaced))
+                .font(.system(.callout, design: .monospaced))
         }
 
         if let strong = markup as? Strong {
@@ -178,14 +178,14 @@ struct MarkdownSwiftUIView: View {
         return markup.children.map { plainText(in: $0) }.joined()
     }
 
-    private func headingFontSize(for level: Int) -> CGFloat {
+    private func headingTextStyle(for level: Int) -> Font.TextStyle {
         switch level {
         case 1:
-            StudioTheme.Typography.sectionTitle
+            .title2
         case 2:
-            StudioTheme.Typography.subsectionTitle
+            .title3
         default:
-            StudioTheme.Typography.cardTitle
+            .title3
         }
     }
 }

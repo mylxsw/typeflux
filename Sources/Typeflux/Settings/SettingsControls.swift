@@ -16,14 +16,14 @@ struct SettingsListSectionLabel: View {
             }
             Text(title)
                 .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(StudioTheme.textSecondary)
+                .foregroundStyle(TypefluxColor.secondaryLabel.color)
             if let count {
                 Text(L("settings.list.itemCount", count))
                     .font(.system(size: 11))
-                    .foregroundStyle(StudioTheme.textTertiary)
+                    .foregroundStyle(TypefluxColor.tertiaryLabel.color)
             }
         }
-        .foregroundStyle(StudioTheme.textSecondary)
+        .foregroundStyle(TypefluxColor.secondaryLabel.color)
         .padding(.horizontal, 4)
         .frame(minHeight: SettingsControlMetrics.height)
     }

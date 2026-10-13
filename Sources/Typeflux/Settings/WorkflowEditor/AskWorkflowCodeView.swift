@@ -116,7 +116,10 @@ struct AskWorkflowCodeView: NSViewRepresentable {
     }
 
     final class Coordinator: NSObject, NSTextViewDelegate {
-        static let font = NSFont.monospacedSystemFont(ofSize: 12.5, weight: .regular)
+        static let font = NSFont.monospacedSystemFont(
+            ofSize: NSFont.preferredFont(forTextStyle: .body).pointSize,
+            weight: .regular
+        )
         var parent: AskWorkflowCodeView
         weak var textView: NSTextView?
         weak var ruler: AskWorkflowLineRuler?
@@ -280,7 +283,10 @@ final class AskWorkflowLineRuler: NSRulerView {
             }
         }
         index = content.lineRange(for: NSRange(location: min(characters.location, content.length), length: 0)).location
-        let font = NSFont.monospacedDigitSystemFont(ofSize: 10.5, weight: .regular)
+        let font = NSFont.monospacedDigitSystemFont(
+            ofSize: NSFont.preferredFont(forTextStyle: .footnote).pointSize,
+            weight: .regular
+        )
         let inset = textView.textContainerInset.height
         repeat {
             let lineRange = content.lineRange(for: NSRange(location: index, length: 0))
@@ -315,7 +321,7 @@ final class AskWorkflowTextView: NSTextView {
         guard !problems.isEmpty, let layout = layoutManager, let container = textContainer else { return }
         let content = string as NSString
         let origin = textContainerOrigin
-        let font = NSFont.systemFont(ofSize: 11)
+        let font = NSFont.preferredFont(forTextStyle: .subheadline)
         for (line, message) in problems {
             guard let range = Self.range(ofLine: line, in: content) else { continue }
             let glyphs = layout.glyphRange(forCharacterRange: NSRange(location: range.location, length: 0),

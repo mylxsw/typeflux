@@ -40,7 +40,7 @@ struct ModelIcon: View {
                     .font(.system(size: size * 0.75, weight: .regular))
             }
         }
-        .foregroundStyle(StudioTheme.textPrimary)
+        .foregroundStyle(TypefluxColor.label.color)
         .frame(width: size, height: size)
         .accessibilityHidden(true)
     }

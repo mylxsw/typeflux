@@ -49,9 +49,9 @@ struct ModelCatalogView: View {
             .disabled(existingIDs.contains(model.id) || model.exclusionReason != nil)
             Spacer(minLength: 4)
             if existingIDs.contains(model.id) {
-                Text(L("models.alreadyAdded")).font(.body).foregroundStyle(StudioTheme.textSecondary)
+                Text(L("models.alreadyAdded")).font(.body).foregroundStyle(TypefluxColor.secondaryLabel.color)
             } else if let reason = model.exclusionReason {
-                Text(reason).font(.body).foregroundStyle(StudioTheme.textSecondary)
+                Text(reason).font(.body).foregroundStyle(TypefluxColor.secondaryLabel.color)
             }
         }
     }

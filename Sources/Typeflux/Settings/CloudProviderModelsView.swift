@@ -23,10 +23,10 @@ struct CloudProviderModelsView: View {
             Section {
                 HStack(alignment: .top, spacing: 14) {
                     ModelIconTile {
-                        Image(systemName: "cloud").font(.body).foregroundStyle(StudioTheme.textSecondary)
+                        Image(systemName: "cloud").font(.body).foregroundStyle(TypefluxColor.secondaryLabel.color)
                     }
                     Text(L(auth.isLoggedIn ? "models.cloud.managed" : "models.login"))
-                        .font(.body).foregroundStyle(StudioTheme.textSecondary)
+                        .font(.body).foregroundStyle(TypefluxColor.secondaryLabel.color)
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.top, 8)
@@ -49,11 +49,11 @@ struct CloudProviderModelsView: View {
             if models.isEmpty, !library.loading {
                 Text(L("models.cloud.empty")).foregroundStyle(.secondary)
             }
-            Text(L("models.cloud.priceExplanation")).font(.body).foregroundStyle(StudioTheme.textTertiary)
+            Text(L("models.cloud.priceExplanation")).font(.body).foregroundStyle(TypefluxColor.tertiaryLabel.color)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal, 4).padding(.top, 10)
             if let error = library.catalogError {
-                Text(error).foregroundStyle(StudioTheme.danger).font(.body).padding(.top, 8)
+                Text(error).foregroundStyle(TypefluxColor.danger.color).font(.body).padding(.top, 8)
             }
         }
         .buttonStyle(.bordered)
@@ -73,14 +73,14 @@ struct CloudProviderModelsView: View {
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
                     Text(model.name).font(.body)
-                        .foregroundStyle(StudioTheme.textPrimary)
+                        .foregroundStyle(TypefluxColor.label.color)
                     if let label = model.pricing?.label {
                         ModelUsageBadge(text: label)
                     }
                 }
                 if let context = model.contextWindowTokens, let output = model.maxOutputTokens {
                     Text(String(format: L("models.cloud.parameters"), context, output))
-                        .font(.body).foregroundStyle(StudioTheme.textTertiary)
+                        .font(.body).foregroundStyle(TypefluxColor.tertiaryLabel.color)
                 }
             }
             Spacer(minLength: 8)
@@ -92,7 +92,7 @@ struct CloudProviderModelsView: View {
                 ModelUsageBadge(text: L(key), accent: true)
             }
             if model.vision == true {
-                Text(L("ask.models.badge.vision")).font(.body).foregroundStyle(StudioTheme.textSecondary)
+                Text(L("ask.models.badge.vision")).font(.body).foregroundStyle(TypefluxColor.secondaryLabel.color)
                     .lineLimit(1).fixedSize()
                     .help(L("ask.models.supportsImages"))
             }

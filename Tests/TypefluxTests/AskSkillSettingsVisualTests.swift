@@ -29,7 +29,8 @@ final class AskSkillSettingsVisualTests: XCTestCase {
                                             notes: AskMemoryNoteStore(fileURL: root
                                                 .appendingPathComponent("notes.json")),
                                             owner: { "fixture" }, pane: .skills)
-                .padding(24).frame(width: 760, height: 650, alignment: .top).background(StudioTheme.surface)
+                .padding(24).frame(width: 760, height: 650, alignment: .top)
+                .background(TypefluxColor.controlBackground.color)
             let file = outputURL.appendingPathComponent(appearance == .aqua ? "skills-light.png" : "skills-dark.png")
             try await render(view, appearance: appearance, file: file)
         }

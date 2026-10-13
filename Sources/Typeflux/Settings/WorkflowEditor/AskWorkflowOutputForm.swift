@@ -6,6 +6,8 @@ import UniformTypeIdentifiers
 /// run succeeds or fails, and the launcher as it would look, with what this run
 /// would do. See `docs/design/workflow-gallery-output-actions.md` §3.5.
 struct AskWorkflowOutputForm: View {
+    @Environment(\.interfaceStyle) private var interfaceStyle
+
     @ObservedObject var model: AskWorkflowEditorModel
 
     private var manifest: AskWorkflowManifest? {
@@ -53,10 +55,16 @@ struct AskWorkflowOutputForm: View {
                 }
                 .background(
                     TypefluxColor.contentBackground.color,
-                    in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    in: RoundedRectangle(
+                        cornerRadius: TypefluxRadius.form.value(for: interfaceStyle),
+                        style: .continuous
+                    )
                 )
-                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .strokeBorder(TypefluxColor.separator.color))
+                .overlay(RoundedRectangle(
+                    cornerRadius: TypefluxRadius.form.value(for: interfaceStyle),
+                    style: .continuous
+                )
+                .strokeBorder(TypefluxColor.separator.color))
             }
             askWorkflowProblemsText(model.problems(for: .output).filter { !$0.field.hasPrefix("output.on") })
         }
@@ -97,11 +105,11 @@ struct AskWorkflowOutputForm: View {
         let count = model.actions(list).count
         return VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text(L("ask.workflow.editor.output." + list.rawValue)).font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textPrimary)
+                Text(L("ask.workflow.editor.output." + list.rawValue)).font(.system(.body, weight: .semibold))
+                    .foregroundStyle(TypefluxColor.label.color)
                 if count > 0 {
-                    Text(L("ask.workflow.editor.actionsCount", count)).font(.system(size: 11.5))
-                        .foregroundStyle(StudioTheme.textTertiary)
+                    Text(L("ask.workflow.editor.actionsCount", count)).font(.system(.subheadline))
+                        .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                 }
             }
             .padding(.horizontal, 4)
@@ -114,8 +122,8 @@ struct AskWorkflowOutputForm: View {
                            set: @escaping (Bool) -> Void) -> some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(.system(size: 13, weight: .medium)).foregroundStyle(StudioTheme.textPrimary)
-                Text(detail).font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
+                Text(title).font(.system(.body, weight: .medium)).foregroundStyle(TypefluxColor.label.color)
+                Text(detail).font(.system(.callout)).foregroundStyle(TypefluxColor.tertiaryLabel.color)
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 8)
@@ -139,13 +147,15 @@ private struct AskWorkflowActionHint: View {
                 AskWorkflowTokenChip(text: "{error}")
             }
         }
-        .font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
+        .font(.system(.callout)).foregroundStyle(TypefluxColor.tertiaryLabel.color)
     }
 }
 
 /// One list of actions in a card: rows that can be dragged into a new order, then
 /// "+ Add action" with its menu.
 struct AskWorkflowActionList: View {
+    @Environment(\.interfaceStyle) private var interfaceStyle
+
     @ObservedObject var model: AskWorkflowEditorModel
     var list: AskWorkflowEditorModel.ActionList
     @Binding var menu: AskWorkflowOutputMenu?
@@ -179,13 +189,13 @@ struct AskWorkflowActionList: View {
                 })
             }
             if rows.isEmpty {
-                Text(L("ask.workflow.editor.output." + list.rawValue + "Empty")).font(.system(size: 12))
-                    .foregroundStyle(StudioTheme.textTertiary).padding(.horizontal, 14).padding(.vertical, 12)
+                Text(L("ask.workflow.editor.output." + list.rawValue + "Empty")).font(.system(.callout))
+                    .foregroundStyle(TypefluxColor.tertiaryLabel.color).padding(.horizontal, 14).padding(.vertical, 12)
             }
             Rectangle().fill(TypefluxColor.separator.color).frame(height: 1)
             Button { menu = menu == .add(list) ? nil : .add(list) } label: {
                 Label(L("ask.workflow.editor.output.addAction"), systemImage: "plus")
-                    .font(.system(size: 12.5, weight: .medium)).foregroundStyle(TypefluxColor.accent.color)
+                    .font(.system(.callout, weight: .medium)).foregroundStyle(TypefluxColor.accent.color)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 14).frame(height: 40).contentShape(Rectangle())
             }
@@ -201,8 +211,12 @@ struct AskWorkflowActionList: View {
                 ? L("ask.workflow.problem.tooManyActions", AskWorkflowManifest.Output.maximumActions) : "")
             .accessibilityIdentifier("ask.workflow.editor.output.add." + list.rawValue)
         }
-        .background(TypefluxColor.contentBackground.color, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(TypefluxColor.separator.color))
+        .background(
+            TypefluxColor.contentBackground.color,
+            in: RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle), style: .continuous)
+        )
+        .overlay(RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle), style: .continuous)
+            .strokeBorder(TypefluxColor.separator.color))
     }
 
     /// Moves the dragged row onto the row it is dropped on.
@@ -242,14 +256,15 @@ struct AskWorkflowActionRow: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
-            Image(systemName: "line.3.horizontal").font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
+            Image(systemName: "line.3.horizontal").font(.system(.subheadline))
+                .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                 .frame(width: 14).padding(.top, 7).help(L("ask.workflow.editor.keywords.drag"))
                 .onDrag(drag)
             AskWorkflowActionTile(kind: kind, size: 26)
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 6) {
-                    Text(kind?.title ?? name).font(.system(size: 12.5, weight: .medium))
-                        .foregroundStyle(StudioTheme.textPrimary)
+                    Text(kind?.title ?? name).font(.system(.callout, weight: .medium))
+                        .foregroundStyle(TypefluxColor.label.color)
                     if kind == .notify {
                         AskWorkflowNoteChip(text: L("ask.workflow.editor.output.notifyPermission"))
                     }
@@ -260,7 +275,8 @@ struct AskWorkflowActionRow: View {
                         ForEach(kind.fields, id: \.self) { field in
                             HStack(spacing: 8) {
                                 // One line, a little smaller when a name ("Keyword") is wider than the column.
-                                Text(field.title).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
+                                Text(field.title).font(.system(.callout))
+                                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
                                     .lineLimit(1).minimumScaleFactor(0.75)
                                     .frame(width: 44, alignment: .leading)
                                 AskWorkflowPlaceholderField(
@@ -282,21 +298,21 @@ struct AskWorkflowActionRow: View {
                     }
                 }
                 if let problem {
-                    Text(problem).font(.system(size: 11.5)).foregroundStyle(StudioTheme.danger)
+                    Text(problem).font(.system(.subheadline)).foregroundStyle(TypefluxColor.danger.color)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             Button { model.removeAction(at: index, from: list) } label: {
-                Image(systemName: "xmark").font(.system(size: 11, weight: .semibold))
+                Image(systemName: "xmark").font(.system(.subheadline, weight: .semibold))
                     .frame(width: 22, height: 22).contentShape(Rectangle())
             }
-            .buttonStyle(.plain).foregroundStyle(StudioTheme.textTertiary).padding(.top, 2)
+            .buttonStyle(.plain).foregroundStyle(TypefluxColor.tertiaryLabel.color).padding(.top, 2)
             .help(L("ask.workflow.editor.output.removeAction"))
             .accessibilityLabel(L("ask.workflow.editor.output.removeAction"))
         }
         .padding(.leading, 10).padding(.trailing, 12).padding(.vertical, 10)
-        .background(problem == nil ? Color.clear : StudioTheme.danger.opacity(0.06))
+        .background(problem == nil ? Color.clear : TypefluxColor.danger.color.opacity(0.06))
         .contentShape(Rectangle())
     }
 
@@ -317,6 +333,8 @@ struct AskWorkflowActionRow: View {
 /// A field whose placeholders show as small tags until it is clicked to edit. Typing
 /// `{` opens the placeholder menu, like "{ } Insert".
 struct AskWorkflowPlaceholderField: View {
+    @Environment(\.interfaceStyle) private var interfaceStyle
+
     var value: String
     var placeholder: String
     var insertsPlaceholders = true
@@ -330,7 +348,7 @@ struct AskWorkflowPlaceholderField: View {
         HStack(spacing: 6) {
             Group {
                 if editing {
-                    TextField(placeholder, text: $text).textFieldStyle(.plain).font(.system(size: 12.5))
+                    TextField(placeholder, text: $text).textFieldStyle(.plain).font(.system(.callout))
                         .focused($focused)
                         .onSubmit { focused = false }
                 } else {
@@ -342,13 +360,16 @@ struct AskWorkflowPlaceholderField: View {
             .frame(maxWidth: .infinity, minHeight: 20, alignment: .leading)
             if insertsPlaceholders {
                 Button(action: insert) {
-                    Text(L("ask.workflow.editor.output.insert")).font(.system(size: 11))
-                        .foregroundStyle(StudioTheme.textTertiary).padding(.horizontal, 6).frame(height: 18)
-                        .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous)
-                            .strokeBorder(
-                                TypefluxColor.separator.color,
-                                style: StrokeStyle(lineWidth: 1, dash: [3, 2])
-                            ))
+                    Text(L("ask.workflow.editor.output.insert")).font(.system(.subheadline))
+                        .foregroundStyle(TypefluxColor.tertiaryLabel.color).padding(.horizontal, 6).frame(height: 18)
+                        .overlay(RoundedRectangle(
+                            cornerRadius: TypefluxRadius.textField.value(for: interfaceStyle),
+                            style: .continuous
+                        )
+                        .strokeBorder(
+                            TypefluxColor.separator.color,
+                            style: StrokeStyle(lineWidth: 1, dash: [3, 2])
+                        ))
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain).fixedSize()
@@ -357,9 +378,12 @@ struct AskWorkflowPlaceholderField: View {
         }
         .padding(.leading, 8).padding(.trailing, 5).padding(.vertical, 4)
         .frame(minHeight: 28)
-        .background(TypefluxColor.controlBackground.color, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous)
-            .strokeBorder(focused ? AskTheme.accent : TypefluxColor.separator.color))
+        .background(
+            TypefluxColor.controlBackground.color,
+            in: RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle), style: .continuous)
+        )
+        .overlay(RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle), style: .continuous)
+            .strokeBorder(focused ? TypefluxColor.accent.color : TypefluxColor.separator.color))
         .onAppear { text = value }
         .onChange(of: value) { newValue in
             if !focused {
@@ -394,14 +418,14 @@ struct AskWorkflowPlaceholderText: View {
 
     var body: some View {
         if text.isEmpty {
-            Text(placeholder).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
+            Text(placeholder).font(.system(.callout)).foregroundStyle(TypefluxColor.tertiaryLabel.color).lineLimit(1)
         } else {
             AskFlowLayout(spacing: 3) {
                 ForEach(Array(Self.segments(text).enumerated()), id: \.offset) { _, segment in
                     if segment.isToken {
                         AskWorkflowTokenChip(text: segment.text)
                     } else {
-                        Text(segment.text).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textPrimary)
+                        Text(segment.text).font(.system(.callout)).foregroundStyle(TypefluxColor.label.color)
                             .lineLimit(1)
                     }
                 }
@@ -434,57 +458,79 @@ struct AskWorkflowPlaceholderText: View {
 
 /// A `{placeholder}` as a small accent tag.
 struct AskWorkflowTokenChip: View {
+    @Environment(\.interfaceStyle) private var interfaceStyle
+
     var text: String
 
     var body: some View {
-        Text(text).font(.system(size: 11.5, design: .monospaced)).foregroundStyle(AskTheme.accent)
+        Text(text).font(.system(.subheadline, design: .monospaced)).foregroundStyle(TypefluxColor.accent.color)
             .padding(.horizontal, 6).frame(height: 18)
-            .background(AskTheme.accent.opacity(0.14), in: RoundedRectangle(cornerRadius: 5, style: .continuous))
+            .background(
+                TypefluxColor.accent.color.opacity(0.14),
+                in: RoundedRectangle(
+                    cornerRadius: TypefluxRadius.textField.value(for: interfaceStyle),
+                    style: .continuous
+                )
+            )
             .lineLimit(1).fixedSize()
     }
 }
 
 /// An orange note next to a name: "Asks for notification permission the first time".
 struct AskWorkflowNoteChip: View {
+    @Environment(\.interfaceStyle) private var interfaceStyle
+
     var text: String
 
     var body: some View {
-        Text(text).font(.system(size: 10.5, weight: .medium)).foregroundStyle(StudioTheme.warning)
+        Text(text).font(.system(.footnote, weight: .medium)).foregroundStyle(TypefluxColor.warning.color)
             .padding(.horizontal, 6).frame(height: 17)
-            .background(StudioTheme.warning.opacity(0.14), in: RoundedRectangle(cornerRadius: 5, style: .continuous))
+            .background(
+                TypefluxColor.warning.color.opacity(0.14),
+                in: RoundedRectangle(
+                    cornerRadius: TypefluxRadius.textField.value(for: interfaceStyle),
+                    style: .continuous
+                )
+            )
             .lineLimit(1).fixedSize()
     }
 }
 
 /// An action's icon on its colour: copy blue, write back green, notify orange, open purple.
 struct AskWorkflowActionTile: View {
+    @Environment(\.interfaceStyle) private var interfaceStyle
     var kind: AskWorkflowAction.Kind?
     var size: CGFloat = 24
 
     var body: some View {
         Image(systemName: kind?.symbol ?? "questionmark")
-            .font(.system(size: size * 0.46, weight: .semibold))
+            .font(.system(.body, weight: .semibold))
             .foregroundStyle(Self.color(kind))
             .frame(width: size, height: size)
             .background(
                 Self.color(kind).opacity(0.16),
-                in: RoundedRectangle(cornerRadius: size * 0.27, style: .continuous)
+                in: RoundedRectangle(
+                    cornerRadius: TypefluxRadius.navigationIcon.value(for: interfaceStyle),
+                    style: .continuous
+                )
             )
     }
 
     static func color(_ kind: AskWorkflowAction.Kind?) -> Color {
         switch kind {
-        case .copy: AskTheme.accent
-        case .writeBack: StudioTheme.success
-        case .notify: StudioTheme.warning
-        case .open, .askAI: AskWorkflowEditorStyle.assistant
-        case .hud, .reveal, .speak, .runKeyword, nil: StudioTheme.textSecondary
+        case .copy: TypefluxColor.accent.color
+        case .writeBack: TypefluxColor.success.color
+        case .notify: TypefluxColor.warning.color
+        case .open, .askAI: TypefluxColor.accent.color
+        case .hud, .reveal, .speak, .runKeyword, nil: TypefluxColor.secondaryLabel.color
         }
     }
 }
 
 /// A floating menu card like the design's pop-ups.
 private struct AskWorkflowMenuCard<Content: View>: View {
+    @Environment(\.interfaceStyle) private var interfaceStyle
+
     var width: CGFloat
     @ViewBuilder var content: () -> Content
     @Environment(\.askWorkflowMenuInPopover) private var inPopover
@@ -499,9 +545,18 @@ private struct AskWorkflowMenuCard<Content: View>: View {
             card
         } else {
             card
-                .background(StudioTheme.modalSurface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .strokeBorder(TypefluxColor.separator.color))
+                .background(
+                    TypefluxColor.windowBackground.color,
+                    in: RoundedRectangle(
+                        cornerRadius: TypefluxRadius.form.value(for: interfaceStyle),
+                        style: .continuous
+                    )
+                )
+                .overlay(RoundedRectangle(
+                    cornerRadius: TypefluxRadius.form.value(for: interfaceStyle),
+                    style: .continuous
+                )
+                .strokeBorder(TypefluxColor.separator.color))
                 .shadow(color: .black.opacity(0.3), radius: 18, y: 10)
         }
     }
@@ -545,8 +600,9 @@ struct AskWorkflowAddActionMenu: View {
     var body: some View {
         AskWorkflowMenuCard(width: 300) {
             ForEach(Array(AskWorkflowAction.Kind.groups.enumerated()), id: \.offset) { index, group in
-                Text(L("ask.workflow.editor.output.group\(index)")).font(.system(size: 10.5, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textTertiary).padding(.horizontal, 8).padding(.top, 6).padding(
+                Text(L("ask.workflow.editor.output.group\(index)")).font(.system(.footnote, weight: .semibold))
+                    .foregroundStyle(TypefluxColor.tertiaryLabel.color).padding(.horizontal, 8).padding(.top, 6)
+                    .padding(
                         .bottom,
                         3
                     )
@@ -557,10 +613,10 @@ struct AskWorkflowAddActionMenu: View {
                         HStack(spacing: 10) {
                             AskWorkflowActionTile(kind: kind, size: 24)
                             VStack(alignment: .leading, spacing: 1) {
-                                Text(kind.title).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textPrimary)
+                                Text(kind.title).font(.system(.callout)).foregroundStyle(TypefluxColor.label.color)
                                 Text(kind.fields.map(\.title)
                                     .joined(separator: L("ask.workflow.editor.output.fieldSeparator")))
-                                    .font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
+                                    .font(.system(.subheadline)).foregroundStyle(TypefluxColor.tertiaryLabel.color)
                             }
                         }
                     }
@@ -621,22 +677,27 @@ struct AskWorkflowPlaceholderMenu: View {
 
     var body: some View {
         AskWorkflowMenuCard(width: 316) {
-            Text(L("ask.workflow.editor.placeholder.menuTitle")).font(.system(size: 10.5, weight: .semibold))
-                .foregroundStyle(StudioTheme.textTertiary).padding(.horizontal, 8).padding(.top, 6).padding(.bottom, 3)
+            Text(L("ask.workflow.editor.placeholder.menuTitle")).font(.system(.footnote, weight: .semibold))
+                .foregroundStyle(TypefluxColor.tertiaryLabel.color).padding(.horizontal, 8).padding(.top, 6).padding(
+                    .bottom,
+                    3
+                )
             ForEach(Array(Self.rows(values: values, failure: failure).enumerated()), id: \.offset) { _, row in
                 AskWorkflowMenuItem {
                     pick(row.token)
                 } label: {
                     HStack(alignment: .center, spacing: 10) {
                         VStack(alignment: .leading, spacing: 1) {
-                            Text(row.token).font(.system(size: 11.5, design: .monospaced))
-                                .foregroundStyle(StudioTheme.textSecondary)
-                            Text(row.title).font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
+                            Text(row.token).font(.system(.subheadline, design: .monospaced))
+                                .foregroundStyle(TypefluxColor.secondaryLabel.color)
+                            Text(row.title).font(.system(.subheadline))
+                                .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                         }
                         Spacer(minLength: 8)
                         Text(row.value.isEmpty ? L("ask.workflow.editor.placeholder.empty")
                             : AskWorkflowActionRunner.clipped(row.value, limit: 24))
-                            .font(.system(size: 11, design: .monospaced)).foregroundStyle(StudioTheme.textTertiary)
+                            .font(.system(.subheadline, design: .monospaced))
+                            .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                             .lineLimit(1)
                     }
                 }
@@ -647,6 +708,8 @@ struct AskWorkflowPlaceholderMenu: View {
 
 /// A row in a menu card, highlighted under the pointer.
 private struct AskWorkflowMenuItem<Label: View>: View {
+    @Environment(\.interfaceStyle) private var interfaceStyle
+
     var action: () -> Void
     @ViewBuilder var label: () -> Label
     @State private var hovering = false
@@ -656,8 +719,11 @@ private struct AskWorkflowMenuItem<Label: View>: View {
             label()
                 .padding(.horizontal, 8).padding(.vertical, 5)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .background(hovering ? AskTheme.accent.opacity(0.18) : Color.clear,
-                            in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                .background(hovering ? TypefluxColor.accent.color.opacity(0.18) : Color.clear,
+                            in: RoundedRectangle(
+                                cornerRadius: TypefluxRadius.navigationIcon.value(for: interfaceStyle),
+                                style: .continuous
+                            ))
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -668,17 +734,19 @@ private struct AskWorkflowMenuItem<Label: View>: View {
 /// "This run would…": each success action with its filled-in value, then whether
 /// the launcher closes.
 struct AskWorkflowWillRun: View {
+    @Environment(\.interfaceStyle) private var interfaceStyle
+
     var steps: [AskWorkflowActionStep]
     var closes: Bool
     var scriptActions: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(L("ask.workflow.editor.willRun.title")).font(.system(size: 11.5, weight: .semibold))
-                .foregroundStyle(StudioTheme.textTertiary)
+            Text(L("ask.workflow.editor.willRun.title")).font(.system(.subheadline, weight: .semibold))
+                .foregroundStyle(TypefluxColor.tertiaryLabel.color)
             if steps.isEmpty {
-                Text(L("ask.workflow.editor.willRun.none")).font(.system(size: 12))
-                    .foregroundStyle(StudioTheme.textSecondary)
+                Text(L("ask.workflow.editor.willRun.none")).font(.system(.callout))
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
             }
             ForEach(Array(steps.enumerated()), id: \.offset) { index, step in
                 line(marker: "\(index + 1)", title: step.title,
@@ -694,18 +762,23 @@ struct AskWorkflowWillRun: View {
         }
         .padding(.horizontal, 12).padding(.vertical, 10)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(TypefluxColor.contentBackground.color, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(TypefluxColor.separator.color))
+        .background(
+            TypefluxColor.contentBackground.color,
+            in: RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle), style: .continuous)
+        )
+        .overlay(RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: interfaceStyle), style: .continuous)
+            .strokeBorder(TypefluxColor.separator.color))
     }
 
     private func line(marker: String, title: String, value: String?, failed: Bool) -> some View {
         HStack(spacing: 8) {
-            Text(marker).font(.system(size: 10)).foregroundStyle(StudioTheme.textTertiary)
-                .frame(width: 16, height: 16).background(StudioTheme.controlSurface, in: Circle())
-            Text(title).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary).lineLimit(1).fixedSize()
+            Text(marker).font(.system(.footnote)).foregroundStyle(TypefluxColor.tertiaryLabel.color)
+                .frame(width: 16, height: 16).background(TypefluxColor.controlBackground.color, in: Circle())
+            Text(title).font(.system(.callout)).foregroundStyle(TypefluxColor.secondaryLabel.color).lineLimit(1)
+                .fixedSize()
             if let value {
-                Text(value).font(.system(size: 11.5, design: .monospaced))
-                    .foregroundStyle(failed ? StudioTheme.danger : StudioTheme.textPrimary)
+                Text(value).font(.system(.subheadline, design: .monospaced))
+                    .foregroundStyle(failed ? TypefluxColor.danger.color : TypefluxColor.label.color)
                     .lineLimit(1).truncationMode(.tail)
             }
         }

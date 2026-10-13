@@ -60,44 +60,86 @@ struct LiquidGlassSurfaceTests {
 
     @Test func navigationAndComposerUseRegularGlassInBothAppearances() async throws {
         #if compiler(>=6.2)
-        guard #available(macOS 26.0, *) else { return }
-        let fixture = try AskTestFixture()
-        defer { fixture.model.resetSession() }
-        for dark in [false, true] {
-            for mode in ["glass", "classic", "reduced", "contrast"] {
-                let view = VStack {
-                    Text("Navigation").frame(width: 200, height: 80)
-                        .askSidePanel(edge: .leading, glassFill: AskTheme.glassFill, glassInset: [])
-                    Text("Title controls").frame(width: 180, height: 38)
-                        .askInWindowGlassPill(height: 38)
-                    AskComposer(model: fixture.model, launcher: false)
-                    SystemMonitorWindowBackground().frame(width: 180, height: 40)
-                }
-                .environment(\.interfaceStyle, mode == "classic" ? .classic : .liquidGlass)
-                .environment(\.colorScheme, dark ? .dark : .light)
-                // Accessibility signals are read-only SwiftUI environment values.
-                // Pin the shared resolver's result instead of changing global OS settings.
-                .environment(\.askGlassMaterialOverride, AskGlassBackground.effectiveMaterial(
-                    .liquidGlass, reduceTransparency: mode == "reduced", increasedContrast: mode == "contrast"
-                ))
-                let window = makeWindow(view, dark: dark, size: .init(width: 760, height: 300),
-                                        highContrast: mode == "contrast")
-                defer { window.orderOut(nil); window.close() }
-                try await Task.sleep(for: .milliseconds(100))
-                let glass = descendants(window.contentView!).compactMap { $0 as? NSGlassEffectView }
-                let edgeBackdrops = descendants(window.contentView!).compactMap { $0 as? NSVisualEffectView }
-                    .filter { $0.material == .hudWindow }
-                if mode == "glass" {
-                    #expect(glass.count == 4, "Navigation, composer and monitor must all use native glass")
-                    #expect(glass.allSatisfy { $0.style == .regular })
-                    #expect(edgeBackdrops.count == (dark ? 0 : 1), "Only light edge panels bypass the reading canvas")
-                    #expect(edgeBackdrops.allSatisfy { $0.blendingMode == .behindWindow })
-                } else {
-                    #expect(glass.isEmpty, "\(mode), dark=\(dark): must avoid translucent layers")
-                    #expect(edgeBackdrops.isEmpty, "Classic and accessibility fallbacks must not retain a desktop blur")
+            guard #available(macOS 26.0, *) else { return }
+            let fixture = try AskTestFixture()
+            defer { fixture.model.resetSession() }
+            for dark in [false, true] {
+                for mode in ["glass", "classic", "reduced", "contrast"] {
+                    let view = VStack {
+                        Text("Navigation").frame(width: 200, height: 80)
+                            .askSidePanel(edge: .leading, glassFill: LegacyAskPalette.glassFill, glassInset: [])
+                        Text("Title controls").frame(width: 180, height: 38)
+                            .askInWindowGlassPill(height: 38)
+                        AskComposer(model: fixture.model, launcher: false)
+                        TypefluxGlassContainer(radius: .popover) {
+                            Color.clear.frame(width: 180, height: 40)
+                        }
+                    }
+                    .environment(\.interfaceStyle, mode == "classic" ? .classic : .liquidGlass)
+                    .environment(\.colorScheme, dark ? .dark : .light)
+                    // Accessibility signals are read-only SwiftUI environment values.
+                    // Pin the shared resolver's result instead of changing global OS settings.
+                    .environment(\.askGlassMaterialOverride, AskGlassBackground.effectiveMaterial(
+                        .liquidGlass, reduceTransparency: mode == "reduced", increasedContrast: mode == "contrast"
+                    ))
+                    let window = makeWindow(view, dark: dark, size: .init(width: 760, height: 300),
+                                            highContrast: mode == "contrast")
+                    defer { window.orderOut(nil); window.close() }
+                    try await Task.sleep(for: .milliseconds(100))
+                    let glass = descendants(window.contentView!).compactMap { $0 as? NSGlassEffectView }
+                    let edgeBackdrops = descendants(window.contentView!).compactMap { $0 as? NSVisualEffectView }
+                        .filter { $0.material == .hudWindow }
+                    if mode == "glass" {
+                        #expect(glass.count == 4, "Navigation, composer and monitor must all use native glass")
+                        #expect(glass.allSatisfy { $0.style == .regular })
+                        #expect(
+                            edgeBackdrops.count == (dark ? 0 : 1),
+                            "Only light edge panels bypass the reading canvas"
+                        )
+                        #expect(edgeBackdrops.allSatisfy { $0.blendingMode == .behindWindow })
+                    } else {
+                        #expect(glass.isEmpty, "\(mode), dark=\(dark): must avoid translucent layers")
+                        #expect(
+                            edgeBackdrops.isEmpty,
+                            "Classic and accessibility fallbacks must not retain a desktop blur"
+                        )
+                    }
                 }
             }
-        }
+        #endif
+    }
+
+    @Test func libraryGlassContainersKeepNativeLayersAndAccessibilityFallbacks() async throws {
+        #if compiler(>=6.2)
+            guard #available(macOS 26.0, *) else { return }
+            for style in InterfaceStyle.allCases {
+                for dark in [false, true] {
+                    for options in [TypefluxAccessibilityOptions(), .init(reduceTransparency: true),
+                                    .init(increasedContrast: true)] {
+                        let content = TypefluxGlassContainer(radius: .sidebar, placement: .windowEdge) {
+                            Text("Navigation").frame(width: 200, height: 80)
+                        }
+                        .environment(\.interfaceStyle, style)
+                        .environment(\.colorScheme, dark ? .dark : .light)
+                        .environment(\.typefluxAccessibilityOptions, options)
+                        .environment(\.glassMaterialOverride, .liquidGlass)
+                        let window = makeWindow(content, dark: dark, size: .init(width: 200, height: 80),
+                                                highContrast: options.increasedContrast)
+                        defer { window.orderOut(nil); window.close() }
+                        try await Task.sleep(for: .milliseconds(100))
+                        let layers = descendants(try #require(window.contentView))
+                        let native = layers.compactMap { $0 as? NSGlassEffectView }
+                        let edgeBackdrops = layers.compactMap { $0 as? NSVisualEffectView }
+                            .filter { $0.material == .hudWindow }
+                        let expectsGlass = style.usesGlass && !options.reduceTransparency && !options.increasedContrast
+                            && !NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency
+                            && !NSWorkspace.shared.accessibilityDisplayShouldIncreaseContrast
+                        #expect(native.count == (expectsGlass ? 1 : 0))
+                        #expect(native.allSatisfy { $0.style == .regular })
+                        #expect(edgeBackdrops.count == (expectsGlass && !dark ? 1 : 0))
+                    }
+                }
+            }
         #endif
     }
 
@@ -122,7 +164,7 @@ struct LiquidGlassSurfaceTests {
                     Spacer()
                 }
                 .padding(20).frame(width: 200, height: 420)
-                .askSidePanel(edge: .leading, glassFill: AskTheme.glassFill, glassInset: [])
+                .askSidePanel(edge: .leading, glassFill: LegacyAskPalette.glassFill, glassInset: [])
                 VStack(spacing: 20) {
                     HStack {
                         Label("New conversation", systemImage: "square.and.pencil")
@@ -137,7 +179,12 @@ struct LiquidGlassSurfaceTests {
                         AskGlassCardSurface(kind: .menu) {
                             VStack(spacing: 2) {
                                 AskPopoverRow(title: "MiniMax M3", caption: "205K context", selected: true, action: {})
-                                AskPopoverRow(title: "DeepSeek Pro", caption: "205K context", selected: false, action: {})
+                                AskPopoverRow(
+                                    title: "DeepSeek Pro",
+                                    caption: "205K context",
+                                    selected: false,
+                                    action: {}
+                                )
                             }.padding(.vertical, 6)
                         }.frame(width: 300, height: 130)
                         Spacer()
@@ -147,7 +194,7 @@ struct LiquidGlassSurfaceTests {
             }
             .padding(28)
             .frame(width: 1060, height: 570, alignment: .topLeading)
-            .foregroundStyle(StudioTheme.textPrimary)
+            .foregroundStyle(TypefluxColor.label.color)
             .background {
                 LinearGradient(colors: dark
                     ? [Color(red: 0.12, green: 0.16, blue: 0.28), Color(red: 0.32, green: 0.16, blue: 0.28)]
@@ -163,13 +210,19 @@ struct LiquidGlassSurfaceTests {
 
             let clipboardView = ClipboardPanelView(model: clipboard, focusRequest: 0)
                 .padding(20)
-                .background(LinearGradient(colors: dark ? [.indigo, .black] : [.cyan.opacity(0.4), .orange.opacity(0.3)],
-                                           startPoint: .topLeading, endPoint: .bottomTrailing))
+                .background(LinearGradient(
+                    colors: dark ? [.indigo, .black] : [.cyan.opacity(0.4), .orange.opacity(0.3)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                ))
                 .environment(\.colorScheme, dark ? .dark : .light)
             let clipboardWindow = makeWindow(clipboardView, dark: dark, size: .init(width: 680, height: 600))
             defer { clipboardWindow.orderOut(nil); clipboardWindow.close() }
             try await Task.sleep(for: .milliseconds(500))
-            try capture(clipboardWindow, to: root.appendingPathComponent("native-clipboard-\(dark ? "dark" : "light").png"))
+            try capture(
+                clipboardWindow,
+                to: root.appendingPathComponent("native-clipboard-\(dark ? "dark" : "light").png")
+            )
         }
     }
 
@@ -204,7 +257,7 @@ struct LiquidGlassSurfaceTests {
         defer { fixture.model.resetSession() }
         for (index, title) in ["帮我整理今天的会议记录", "翻译我选中的文字", "讲讲这一屏在做什么"].enumerated() {
             await fixture.api.seed(.init(id: "glass-\(index)", title: title, revision: 1,
-                                        updatedAt: Date().addingTimeInterval(Double(-index * 3600)), messages: []))
+                                         updatedAt: Date().addingTimeInterval(Double(-index * 3600)), messages: []))
         }
         await fixture.model.refreshHistory()
         for dark in [false, true] {
@@ -262,7 +315,8 @@ struct LiquidGlassSurfaceTests {
         let top = NSScreen.screens[0].frame.maxY - frame.maxY
         let capture = Process()
         capture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
-        capture.arguments = ["-x", "-R", "\(Int(frame.minX)),\(Int(top)),\(Int(frame.width)),\(Int(frame.height))", file.path]
+        capture.arguments = ["-x", "-R", "\(Int(frame.minX)),\(Int(top)),\(Int(frame.width)),\(Int(frame.height))",
+                             file.path]
         try capture.run()
         capture.waitUntilExit()
         #expect(capture.terminationStatus == 0)

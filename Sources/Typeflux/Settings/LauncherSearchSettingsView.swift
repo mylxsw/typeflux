@@ -214,8 +214,8 @@ struct LauncherSearchSettingsView: View {
 
     private func statusCell(_ title: String, _ value: String) -> some View {
         VStack(alignment: .leading, spacing: 3) {
-            Text(title).font(.subheadline).foregroundStyle(StudioTheme.textTertiary)
-            Text(value).font(.body).foregroundStyle(StudioTheme.textPrimary)
+            Text(title).font(.subheadline).foregroundStyle(TypefluxColor.tertiaryLabel.color)
+            Text(value).font(.body).foregroundStyle(TypefluxColor.label.color)
                 .lineLimit(1).minimumScaleFactor(0.7)
         }
         .frame(maxWidth: .infinity, alignment: .leading)

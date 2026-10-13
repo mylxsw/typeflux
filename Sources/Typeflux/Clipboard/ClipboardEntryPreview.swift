@@ -34,7 +34,7 @@ struct ClipboardEntryPreview: View {
                         Spacer()
                         Text(Self.fileSize(path))
                             .font(.system(size: 11))
-                            .foregroundStyle(StudioTheme.textSecondary)
+                            .foregroundStyle(TypefluxColor.secondaryLabel.color)
                     }
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
@@ -73,7 +73,7 @@ private struct ClipboardDocumentPreview: View {
                 }
                 Text(url.path)
                     .font(.system(size: 11))
-                    .foregroundStyle(StudioTheme.textSecondary)
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
                     .lineLimit(3)
                     .textSelection(.enabled)
             }

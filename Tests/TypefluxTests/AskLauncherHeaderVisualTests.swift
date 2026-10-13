@@ -26,7 +26,8 @@ struct AskLauncherHeaderVisualTests {
                 let fixture = try AskTestFixture()
                 defer { fixture.model.resetSession() }
                 fixture.model.appIndex = AskTestAppIndex([
-                    AskAppEntry(name: "System Settings", url: URL(fileURLWithPath: "/System/Applications/System Settings.app"),
+                    AskAppEntry(name: "System Settings",
+                                url: URL(fileURLWithPath: "/System/Applications/System Settings.app"),
                                 bundleID: "com.apple.systempreferences", names: [])
                 ])
                 fixture.model.launcherDraft = AskDraft(text: text, includeScreenshot: false)
@@ -35,9 +36,9 @@ struct AskLauncherHeaderVisualTests {
                 let view = GeometryReader { geometry in
                     AskComposer(model: fixture.model, availableHeight: geometry.size.height, launcher: true)
                 }
-                    .padding(AskMetrics.launcherGutter)
-                    .environment(\.askLauncherNumberHints, held)
-                    .environment(\.askGlassMaterialOverride, .opaque)
+                .padding(AskMetrics.launcherGutter)
+                .environment(\.askLauncherNumberHints, held)
+                .environment(\.askGlassMaterialOverride, .opaque)
                 try await render(view, size: NSSize(width: AskMetrics.launcherWidth, height: 320),
                                  appearance: appearance, file: root.appendingPathComponent("chat-\(name)-\(theme).png"))
             }
@@ -177,7 +178,7 @@ struct AskLauncherHeaderVisualTests {
                                                     setIncluded: { _, _ in }, toggleScreenshot: {}, fixScreenshot: nil,
                                                     recapture: {}, refresh: {},
                                                     refreshTitle: L("ask.context.panel.useApp", "Google Chrome"))
-                    .background(AskTheme.composerSurface)
+                    .background(TypefluxColor.controlBackground.color)
                 try await render(panel, size: NSSize(width: AskLauncherContextPanel.width, height: 400),
                                  appearance: appearance,
                                  file: root.appendingPathComponent("header-context-panel-\(name).png"))

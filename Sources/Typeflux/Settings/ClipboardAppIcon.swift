@@ -12,7 +12,7 @@ struct ClipboardAppIcon: View {
             } else {
                 Image(systemName: "app.dashed")
                     .font(.body)
-                    .foregroundStyle(StudioTheme.textSecondary)
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
             }
         }
         .frame(width: TypefluxControlHeight.navigationIcon.value(for: .classic),

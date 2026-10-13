@@ -17,13 +17,13 @@ struct AskContextUsageButton: View {
     @State private var hovering = false
 
     private var fraction: Double { min(1, max(0, context.fraction ?? 0)) }
-    private var tint: Color { context.isHigh ? StudioTheme.warning : AskTheme.accent }
+    private var tint: Color { context.isHigh ? TypefluxColor.warning.color : TypefluxColor.accent.color }
 
     var body: some View {
         Button(action: action) {
             HStack(spacing: 6) {
                 ZStack {
-                    Circle().stroke(AskTheme.border, lineWidth: 2.5)
+                    Circle().stroke(TypefluxColor.separator.color, lineWidth: 2.5)
                     Circle().trim(from: 0, to: fraction)
                         .stroke(tint, style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
                         .rotationEffect(.degrees(-90))
@@ -32,11 +32,11 @@ struct AskContextUsageButton: View {
                 Text(Self.percentText(context.fraction))
                     .font(.callout).monospacedDigit()
             }
-            .foregroundStyle(hovering ? StudioTheme.textPrimary : StudioTheme.textSecondary)
+            .foregroundStyle(hovering ? TypefluxColor.label.color : TypefluxColor.secondaryLabel.color)
             .padding(.leading, 9)
             .padding(.trailing, 10)
             .frame(height: AskMetrics.composerControlHeight)
-            .background(hovering ? AskTheme.hoverFill : Color.clear, in: Capsule())
+            .background(hovering ? TypefluxColor.label.color.opacity(0.06) : Color.clear, in: Capsule())
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
@@ -84,7 +84,8 @@ struct AskUsagePanel: View {
     private var usage: AskConversationUsage? { model.selected?.usage }
     private var local: Bool { model.selectedId.map(model.isLocal) ?? false }
     private var totals: AskUsageTotals? { runId.flatMap { usage?.runs[$0] } ?? (runId == nil ? usage?.total : nil) }
-    private var loadKey: String { "\(model.selectedId ?? "")/\(usage?.version ?? 0)/\(model.selected?.run?.id ?? "none")/\(runId ?? "all")" }
+    private var loadKey: String {
+        "\(model.selectedId ?? "")/\(usage?.version ?? 0)/\(model.selected?.run?.id ?? "none")/\(runId ?? "all")" }
 
     @State private var expandedCall: String?
 
@@ -92,13 +93,13 @@ struct AskUsagePanel: View {
         VStack(spacing: 0) {
             HStack {
                 Text(L("ask.usage.title")).font(.body).fontWeight(.semibold)
-                    .foregroundStyle(StudioTheme.textPrimary)
+                    .foregroundStyle(TypefluxColor.label.color)
                 Spacer()
                 TypefluxIconButton(L("ask.usage.close"), systemImage: "xmark", action: close)
-                .keyboardShortcut(focusCloseOnAppear ? .cancelAction : nil)
-                .focused($closeFocused)
-                .accessibilityLabel(L("ask.usage.close"))
-                .accessibilityIdentifier("ask.workspace.drawer.close")
+                    .keyboardShortcut(focusCloseOnAppear ? .cancelAction : nil)
+                    .focused($closeFocused)
+                    .accessibilityLabel(L("ask.usage.close"))
+                    .accessibilityIdentifier("ask.workspace.drawer.close")
             }
             .padding(.leading, 16).padding(.trailing, 10)
             // Centred on the header pills' row, below the panel's own inset. A
@@ -106,7 +107,7 @@ struct AskUsagePanel: View {
             // up with the one under the conversation's title.
             .frame(height: AskMetrics.titleBarRowHeight
                 - (style.usesGlass ? AskMetrics.sidebarPanelInset * 2 : 1))
-            Rectangle().fill(AskTheme.separator).frame(height: 1)
+            Rectangle().fill(TypefluxColor.separator.color).frame(height: 1)
             ScrollView {
                 // Two questions, two cards: "does the next message still fit?"
                 // and "what did this cost?".
@@ -119,7 +120,7 @@ struct AskUsagePanel: View {
                                 Text(scopeOptions[index].title).tag(scopeOptions[index].value)
                             }
                         }
-                            .padding(.top, 4)
+                        .padding(.top, 4)
                     }
                     if model.hasUsageRecords, let totals {
                         totalsCard(totals)
@@ -130,7 +131,7 @@ struct AskUsagePanel: View {
                                 .font(.body).fontWeight(.semibold)
                             Text(L("ask.usage.emptyHelp")).font(.subheadline)
                         }
-                        .foregroundStyle(StudioTheme.textSecondary)
+                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.vertical, 12)
                         .accessibilityElement(children: .ignore)
@@ -139,7 +140,7 @@ struct AskUsagePanel: View {
                         .accessibilityIdentifier("ask.usage.empty")
                     } else if !loading {
                         Text(L("ask.usage.unavailable")).font(.callout)
-                            .foregroundStyle(StudioTheme.textSecondary)
+                            .foregroundStyle(TypefluxColor.secondaryLabel.color)
                     }
                     if usage?.historicalGap == true { help("ask.usage.historicalGap") }
                     callsSection
@@ -148,14 +149,14 @@ struct AskUsagePanel: View {
                 .padding(compact ? 12 : 16)
             }
             if !local, let credits = auth.usageCredits {
-                Rectangle().fill(AskTheme.separator).frame(height: 1)
+                Rectangle().fill(TypefluxColor.separator.color).frame(height: 1)
                 HStack {
                     Text(L("ask.usage.balance"))
                     Spacer()
                     Text(credits.unlimited ? "∞" : AccountUsageDisplayFormatter.count(Int64(credits.remaining)))
                         .monospacedDigit()
                 }
-                .font(.subheadline).foregroundStyle(StudioTheme.textSecondary)
+                .font(.subheadline).foregroundStyle(TypefluxColor.secondaryLabel.color)
                 .padding(.horizontal, 16).padding(.vertical, compact ? 8 : 12)
                 // Account-wide data is independently refreshed by AuthState.
             }
@@ -166,7 +167,8 @@ struct AskUsagePanel: View {
         .clipShape(RoundedRectangle(cornerRadius: style.usesGlass ? AskMetrics.sidebarPanelCorner : 0,
                                     style: .continuous))
         .frame(width: AskMetrics.usagePanelWidth + (style.usesGlass ? 0 : AskMetrics.sidebarPanelInset))
-        .askSidePanel(edge: .trailing, glassFill: AskTheme.raisedSurface, glassInset: [.trailing, .top, .bottom],
+        .askSidePanel(edge: .trailing, glassFill: TypefluxColor.windowBackground.color,
+                      glassInset: [.trailing, .top, .bottom],
                       floating: floating)
         .task(id: loadKey) { await load(reset: true) }
         .onExitCommand(perform: close)
@@ -190,23 +192,23 @@ struct AskUsagePanel: View {
         card {
             cardLabel(L("ask.usage.remaining")) {
                 Text(L(context.capacity == nil ? "ask.usage.capacityUnknown"
-                       : context.isHigh ? "ask.usage.high" : "ask.usage.available"))
+                        : context.isHigh ? "ask.usage.high" : "ask.usage.available"))
                     .font(.footnote).fontWeight(.medium)
-                    .foregroundStyle(context.isHigh ? StudioTheme.warning : StudioTheme.success)
+                    .foregroundStyle(context.isHigh ? TypefluxColor.warning.color : TypefluxColor.success.color)
             }
             figure(context.remaining.map { "≈ " + AccountUsageDisplayFormatter.count(Int64($0)) } ?? "—",
                    unit: "tokens")
             budgetBar(context)
             HStack(spacing: 12) {
-                legend(color: context.isHigh ? StudioTheme.warning : AskTheme.accent,
+                legend(color: context.isHigh ? TypefluxColor.warning.color : TypefluxColor.accent.color,
                        title: L("ask.usage.inputEstimate"),
                        value: AccountUsageDisplayFormatter.count(Int64(context.inputTokens)))
-                legend(color: AskTheme.border,
+                legend(color: TypefluxColor.separator.color,
                        title: L("ask.usage.reserve"),
                        value: AccountUsageDisplayFormatter.count(Int64(context.outputReserve)))
                 if let capacity = context.capacity {
                     Text(L("ask.usage.capacity") + " " + AccountUsageDisplayFormatter.count(Int64(capacity)))
-                        .font(.footnote).foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
+                        .font(.footnote).foregroundStyle(TypefluxColor.tertiaryLabel.color).lineLimit(1)
                 }
                 Spacer(minLength: 0)
             }
@@ -219,7 +221,7 @@ struct AskUsagePanel: View {
         card {
             cardLabel(L("ask.usage.spent")) {
                 Text(L(runId == nil ? "ask.usage.conversation" : "ask.usage.round"))
-                    .font(.footnote).foregroundStyle(StudioTheme.textTertiary)
+                    .font(.footnote).foregroundStyle(TypefluxColor.tertiaryLabel.color)
             }
             figure(local ? totals.tokenText(totals.totalTokens) : totals.creditsText,
                    unit: local ? "tokens" : "credits")
@@ -247,7 +249,7 @@ struct AskUsagePanel: View {
     @ViewBuilder private var callsSection: some View {
         if !items.isEmpty || loading || loadError || cursor != nil {
             Text(L("ask.usage.calls")).font(.subheadline).fontWeight(.semibold)
-                .foregroundStyle(StudioTheme.textTertiary)
+                .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                 .padding(.top, 4)
             VStack(spacing: 0) {
                 ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
@@ -257,9 +259,9 @@ struct AskUsagePanel: View {
                 if loading { ProgressView().controlSize(.small).padding(10) }
             }
             .background(RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: style), style: .continuous)
-                .strokeBorder(AskTheme.border))
+                .strokeBorder(TypefluxColor.separator.color))
             if loadError {
-                Text(L("ask.usage.loadError")).font(.subheadline).foregroundStyle(StudioTheme.textSecondary)
+                Text(L("ask.usage.loadError")).font(.subheadline).foregroundStyle(TypefluxColor.secondaryLabel.color)
                 Button { Task { await load(reset: false) } } label: {
                     Label(L("ask.retry"), systemImage: "arrow.clockwise")
                 }
@@ -267,7 +269,7 @@ struct AskUsagePanel: View {
                 .accessibilityIdentifier("ask.usage.retry")
             } else if cursor != nil {
                 Button(L("ask.usage.more")) { Task { await load(reset: false) } }.buttonStyle(.plain)
-                    .font(.subheadline).foregroundStyle(AskTheme.accentText)
+                    .font(.subheadline).foregroundStyle(TypefluxColor.accent.color)
             }
         }
     }
@@ -276,15 +278,15 @@ struct AskUsagePanel: View {
         VStack(alignment: .leading, spacing: compact ? 6 : 9, content: content)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, compact ? 10 : 14).padding(.vertical, compact ? 9 : 13)
-            .background(AskTheme.panelCard,
+            .background(TypefluxColor.contentBackground.color,
                         in: RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: style), style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: style), style: .continuous)
-                .strokeBorder(AskTheme.border))
+                .strokeBorder(TypefluxColor.separator.color))
     }
 
     private func cardLabel<Trailing: View>(_ title: String, @ViewBuilder trailing: () -> Trailing) -> some View {
         HStack(alignment: .firstTextBaseline) {
-            Text(title).font(.subheadline).fontWeight(.medium).foregroundStyle(StudioTheme.textTertiary)
+            Text(title).font(.subheadline).fontWeight(.medium).foregroundStyle(TypefluxColor.tertiaryLabel.color)
             Spacer(minLength: 8)
             trailing()
         }
@@ -294,22 +296,22 @@ struct AskUsagePanel: View {
     private func figure(_ value: String, unit: String) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 5) {
             Text(value).font(compact ? .title : .largeTitle).fontWeight(.semibold).monospacedDigit()
-                .foregroundStyle(StudioTheme.textPrimary)
+                .foregroundStyle(TypefluxColor.label.color)
             Text(verbatim: unit).font(.body).fontWeight(.medium)
-                .foregroundStyle(StudioTheme.textTertiary)
+                .foregroundStyle(TypefluxColor.tertiaryLabel.color)
         }
         .lineLimit(1)
         .minimumScaleFactor(0.7)
     }
 
-    private var rule: some View { Rectangle().fill(AskTheme.separator).frame(height: 1) }
+    private var rule: some View { Rectangle().fill(TypefluxColor.separator.color).frame(height: 1) }
 
     private func budgetBar(_ context: AskContextUsage) -> some View {
         GeometryReader { geometry in
             HStack(spacing: 0) {
-                Rectangle().fill(context.isHigh ? StudioTheme.warning : AskTheme.accent)
+                Rectangle().fill(context.isHigh ? TypefluxColor.warning.color : TypefluxColor.accent.color)
                     .frame(width: geometry.size.width * min(1, max(0, context.fraction ?? 0)))
-                Rectangle().fill(AskTheme.segmentTrack)
+                Rectangle().fill(TypefluxColor.controlBackground.color)
             }
         }
         .frame(height: 5)
@@ -322,7 +324,7 @@ struct AskUsagePanel: View {
         HStack(spacing: 5) {
             RoundedRectangle(cornerRadius: 2, style: .continuous).fill(color).frame(width: 7, height: 7)
             Text(title + " " + value).font(.footnote)
-                .foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
+                .foregroundStyle(TypefluxColor.tertiaryLabel.color).lineLimit(1)
         }
     }
 
@@ -334,12 +336,12 @@ struct AskUsagePanel: View {
             } label: {
                 HStack(spacing: 7) {
                     Image(systemName: "chevron.right").font(.footnote).fontWeight(.bold)
-                        .foregroundStyle(StudioTheme.textTertiary)
+                        .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                         .rotationEffect(.degrees(expanded ? 90 : 0))
                     Text(L(item.purpose == "summary" ? "ask.usage.summary" : "ask.usage.inference"))
-                        .foregroundStyle(StudioTheme.textSecondary)
+                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
                     Spacer(minLength: 8)
-                    Text(invocationCost(item)).foregroundStyle(StudioTheme.textPrimary).monospacedDigit()
+                    Text(invocationCost(item)).foregroundStyle(TypefluxColor.label.color).monospacedDigit()
                 }
                 .font(.callout).fontWeight(.medium)
                 .padding(.horizontal, 12)
@@ -350,7 +352,7 @@ struct AskUsagePanel: View {
             if expanded {
                 VStack(alignment: .leading, spacing: 0) {
                     Text(model.modelLibrary.name(for: item.modelRef))
-                        .font(.subheadline).fontWeight(.medium).foregroundStyle(StudioTheme.textSecondary)
+                        .font(.subheadline).fontWeight(.medium).foregroundStyle(TypefluxColor.secondaryLabel.color)
                         .padding(.bottom, 4)
                     if let tokens = item.tokens {
                         detail("ask.usage.input", String(tokens.promptTokens))
@@ -362,10 +364,10 @@ struct AskUsagePanel: View {
                     } else { help("ask.usage.unavailable") }
                     if item.source != "unknown" {
                         help(item.source == "estimated" ? "ask.usage.estimated"
-                             : item.source == "client" ? "ask.usage.clientSource" : "ask.usage.providerSource")
+                            : item.source == "client" ? "ask.usage.clientSource" : "ask.usage.providerSource")
                     }
                     Text(item.createdAt, style: .time).font(.footnote)
-                        .foregroundStyle(StudioTheme.textTertiary).padding(.top, 4)
+                        .foregroundStyle(TypefluxColor.tertiaryLabel.color).padding(.top, 4)
                 }
                 .padding(.leading, 28).padding(.trailing, 12).padding(.bottom, 10)
             }
@@ -382,21 +384,24 @@ struct AskUsagePanel: View {
             return AskUsageTotals(microcredits: amount, calls: 1).creditsText + " credits"
         }
         return L(item.status == "external" ? "ask.usage.externalShort"
-                 : item.status == "pending" ? "ask.usage.pendingShort" : "ask.usage.unavailable")
+            : item.status == "pending" ? "ask.usage.pendingShort" : "ask.usage.unavailable")
     }
 
     private func detail(_ title: String, _ value: String) -> some View {
         HStack {
-            Text(L(title)).foregroundStyle(StudioTheme.textSecondary)
+            Text(L(title)).foregroundStyle(TypefluxColor.secondaryLabel.color)
             Spacer()
             Text(value).font(.callout).fontWeight(.semibold).monospacedDigit()
-                .foregroundStyle(StudioTheme.textPrimary)
+                .foregroundStyle(TypefluxColor.label.color)
         }
         .font(.callout)
         .padding(.vertical, 7)
     }
 
-    private func help(_ key: String) -> some View { Text(L(key)).font(.footnote).foregroundStyle(StudioTheme.textSecondary).fixedSize(horizontal: false, vertical: true) }
+    private func help(_ key: String) -> some View { Text(L(key)).font(.footnote)
+        .foregroundStyle(TypefluxColor.secondaryLabel.color).fixedSize(horizontal: false,
+                                                                       vertical: true)
+    }
 
     @MainActor private func load(reset: Bool) async {
         let id = model.selectedId

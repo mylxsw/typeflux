@@ -20,7 +20,7 @@ struct AskLauncherContextTokenView: View {
                 if let title = token.title {
                     Text(title)
                         .font(.system(size: 12.5))
-                        .foregroundStyle(StudioTheme.textSecondary)
+                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
                         .lineLimit(1).truncationMode(.tail)
                         .frame(maxWidth: Self.titleMaxWidth, alignment: .leading)
                         .fixedSize(horizontal: true, vertical: false)
@@ -30,26 +30,28 @@ struct AskLauncherContextTokenView: View {
                         Image(systemName: "text.quote").font(.system(size: 10, weight: .semibold))
                         Text("\(lines)").font(.system(size: 12).monospacedDigit())
                     }
-                    .foregroundStyle(StudioTheme.textSecondary)
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
                 }
                 if token.screenshot != .none {
                     if token.hasSource || token.selectionLines != nil {
-                        Rectangle().fill(AskTheme.separator).frame(width: 1, height: 16)
+                        Rectangle().fill(TypefluxColor.separator.color).frame(width: 1, height: 16)
                     }
                     screenshot
                 }
                 Image(systemName: "chevron.down")
                     .font(.system(size: 8.5, weight: .bold))
-                    .foregroundStyle(StudioTheme.textTertiary)
+                    .foregroundStyle(TypefluxColor.tertiaryLabel.color)
             }
             .padding(.leading, 6)
             .padding(.trailing, 7)
             .frame(height: Self.height)
-            .background(hovering ? AskTheme.hoverFill : AskTheme.hoverFill.opacity(0.5),
-                        in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+            .background(hovering ? TypefluxColor.label.color.opacity(0.06) : TypefluxColor.label.color.opacity(0.06)
+                .opacity(0.5),
+                in: RoundedRectangle(cornerRadius: 9, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous)
-                .strokeBorder(token.screenshot == .failed ? StudioTheme.warning.opacity(0.6) : AskTheme.border,
-                              lineWidth: 0.5))
+                .strokeBorder(token.screenshot == .failed ? TypefluxColor.warning.color.opacity(0.6) : TypefluxColor
+                    .separator.color,
+                    lineWidth: 0.5))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -67,16 +69,16 @@ struct AskLauncherContextTokenView: View {
             if let bundle = token.bundleID, let icon = AskContextChips.appIcon(bundle) {
                 Image(nsImage: icon).resizable().frame(width: 18, height: 18)
             } else {
-                Image(systemName: "app").font(.system(size: 13)).foregroundStyle(StudioTheme.textSecondary)
+                Image(systemName: "app").font(.system(size: 13)).foregroundStyle(TypefluxColor.secondaryLabel.color)
                     .frame(width: 18, height: 18)
             }
             if token.restored {
                 Image(systemName: "clock.fill")
                     .font(.system(size: 6.5, weight: .bold))
-                    .foregroundStyle(StudioTheme.textPrimary)
+                    .foregroundStyle(TypefluxColor.label.color)
                     .frame(width: 11, height: 11)
-                    .background(Circle().fill(AskTheme.composerSurface))
-                    .overlay(Circle().strokeBorder(AskTheme.border, lineWidth: 0.5))
+                    .background(Circle().fill(TypefluxColor.controlBackground.color))
+                    .overlay(Circle().strokeBorder(TypefluxColor.separator.color, lineWidth: 0.5))
                     .offset(x: 4, y: 4)
                     .accessibilityHidden(true)
             }
@@ -91,14 +93,14 @@ struct AskLauncherContextTokenView: View {
             ProgressView().controlSize(.mini).frame(width: 27, height: 18)
         case .failed:
             Image(systemName: "exclamationmark.triangle.fill")
-                .font(.system(size: 11)).foregroundStyle(StudioTheme.warning)
+                .font(.system(size: 11)).foregroundStyle(TypefluxColor.warning.color)
                 .frame(width: 27, height: 18)
         case .attached, .off:
             thumbnailFace
                 .opacity(token.screenshot == .off ? 0.35 : 1)
                 .overlay {
                     if token.screenshot == .off {
-                        Rectangle().fill(StudioTheme.textPrimary).frame(width: 30, height: 1.5)
+                        Rectangle().fill(TypefluxColor.label.color).frame(width: 30, height: 1.5)
                             .rotationEffect(.degrees(-30))
                     }
                 }
@@ -112,12 +114,13 @@ struct AskLauncherContextTokenView: View {
             if let thumbnail {
                 Image(nsImage: thumbnail).resizable().scaledToFill()
             } else {
-                Image(systemName: "display").font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
+                Image(systemName: "display").font(.system(size: 11)).foregroundStyle(TypefluxColor.secondaryLabel.color)
             }
         }
         .frame(width: 27, height: 18)
         .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 4, style: .continuous).strokeBorder(AskTheme.border, lineWidth: 0.5))
+        .overlay(RoundedRectangle(cornerRadius: 4, style: .continuous).strokeBorder(TypefluxColor.separator.color,
+                                                                                    lineWidth: 0.5))
         .accessibilityHidden(true)
     }
 }
@@ -145,7 +148,8 @@ struct AskLauncherContextPanel: View {
     static let width: CGFloat = 340
 
     private var source: (app: String, window: String?)? {
-        guard let value = draft.source, !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
+        guard let value = draft.source,
+              !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
         return AskContextChips.sourceParts(value)
     }
 
@@ -165,7 +169,8 @@ struct AskLauncherContextPanel: View {
                 Image(nsImage: thumbnail).resizable().scaledToFit()
                     .frame(maxWidth: .infinity, maxHeight: 132)
                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(AskTheme.border))
+                    .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .strokeBorder(TypefluxColor.separator.color))
                     .padding(.horizontal, 8)
                     .padding(.bottom, 4)
                     .accessibilityLabel(L("ask.context.screen.full"))
@@ -185,11 +190,11 @@ struct AskLauncherContextPanel: View {
                 .accessibilityIdentifier("ask.context.refresh")
             }
             Text(L("ask.context.source.metadataOnly"))
-                .font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
+                .font(.system(size: 11)).foregroundStyle(TypefluxColor.tertiaryLabel.color)
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal, 8).padding(.top, 4)
         }
-        .foregroundStyle(StudioTheme.textPrimary)
+        .foregroundStyle(TypefluxColor.label.color)
         .padding(10)
         .frame(width: Self.width)
         .accessibilityIdentifier("ask.context.panel")
@@ -204,7 +209,7 @@ struct AskLauncherContextPanel: View {
             if let bundle = draft.sourceBundleID, let icon = AskContextChips.appIcon(bundle) {
                 Image(nsImage: icon).resizable().frame(width: 22, height: 22)
             } else {
-                Image(systemName: "app").font(.system(size: 14)).foregroundStyle(StudioTheme.textSecondary)
+                Image(systemName: "app").font(.system(size: 14)).foregroundStyle(TypefluxColor.secondaryLabel.color)
             }
         }
     }
@@ -223,25 +228,26 @@ struct AskLauncherContextPanel: View {
         row(title: L("ask.context.screen.full"), detail: detail, isOn: draft.includeScreenshot,
             disabled: toggleScreenshot == nil, identifier: "ask.context.panel.screenshot",
             toggle: { _ in toggleScreenshot?() }) {
-            Image(systemName: failure != nil && draft.includeScreenshot ? "exclamationmark.triangle" : "display")
-                .font(.system(size: 13))
-                .foregroundStyle(failure != nil && draft.includeScreenshot ? StudioTheme.warning : StudioTheme.textSecondary)
-        } trailing: {
-            if draft.includeScreenshot, let failure, let fixScreenshot {
-                Button(L(failure.permission ? "ask.context.screen.grant" : "ask.context.screen.retry"),
-                       action: fixScreenshot)
-                    .buttonStyle(AskCapsuleButtonStyle(kind: .secondary))
-            } else if draft.includeScreenshot, thumbnail != nil, !screenshotCapturing {
-                Button(action: recapture) {
-                    Image(systemName: "arrow.clockwise").font(.system(size: 11, weight: .semibold))
-                        .frame(width: 22, height: 22).contentShape(Rectangle())
+                Image(systemName: failure != nil && draft.includeScreenshot ? "exclamationmark.triangle" : "display")
+                    .font(.system(size: 13))
+                    .foregroundStyle(failure != nil && draft.includeScreenshot ? TypefluxColor.warning
+                        .color : TypefluxColor.secondaryLabel.color)
+            } trailing: {
+                if draft.includeScreenshot, let failure, let fixScreenshot {
+                    Button(L(failure.permission ? "ask.context.screen.grant" : "ask.context.screen.retry"),
+                           action: fixScreenshot)
+                        .buttonStyle(AskCapsuleButtonStyle(kind: .secondary))
+                } else if draft.includeScreenshot, thumbnail != nil, !screenshotCapturing {
+                    Button(action: recapture) {
+                        Image(systemName: "arrow.clockwise").font(.system(size: 11, weight: .semibold))
+                            .frame(width: 22, height: 22).contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
+                    .help(L("ask.capture.refresh"))
+                    .accessibilityLabel(L("ask.capture.refresh"))
                 }
-                .buttonStyle(.plain)
-                .foregroundStyle(StudioTheme.textSecondary)
-                .help(L("ask.capture.refresh"))
-                .accessibilityLabel(L("ask.capture.refresh"))
             }
-        }
     }
 
     private func selectionRow(_ selection: String) -> some View {
@@ -252,7 +258,7 @@ struct AskLauncherContextPanel: View {
                    isOn: draft.selectionOff != true, disabled: capturing, identifier: "ask.context.panel.selection",
                    toggle: { setIncluded(.selection, $0) }) {
             Image(systemName: "text.quote").font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(AskTheme.accent)
+                .foregroundStyle(TypefluxColor.accent.color)
         }
     }
 
@@ -266,7 +272,7 @@ struct AskLauncherContextPanel: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text(title).font(.system(size: 13)).lineLimit(1)
                 if let detail {
-                    Text(detail).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
+                    Text(detail).font(.system(size: 11.5)).foregroundStyle(TypefluxColor.tertiaryLabel.color)
                         .lineLimit(1).truncationMode(.tail)
                 }
             }

@@ -25,7 +25,13 @@ struct AskLauncherNumberShortcutTests {
             #expect(Shortcuts.number(at: index) == index + 1)
             #expect(Shortcuts.number(keyCode: code, modifiers: .command, characters: String(index + 1)) == index + 1)
             #expect(Shortcuts.number(keyCode: code, modifiers: .command, characters: nil) == index + 1)
-            let otherModifiers: [NSEvent.ModifierFlags] = [[], .shift, [.command, .shift], [.command, .option], [.command, .control]]
+            let otherModifiers: [NSEvent.ModifierFlags] = [
+                [],
+                .shift,
+                [.command, .shift],
+                [.command, .option],
+                [.command, .control]
+            ]
             for flags in otherModifiers {
                 #expect(Shortcuts.number(keyCode: code, modifiers: flags, characters: String(index + 1)) == nil)
             }
@@ -64,7 +70,8 @@ struct AskLauncherNumberShortcutTests {
             AppLocalization.shared.setLanguage(previousLanguage)
         }
         let directory = ProcessInfo.processInfo.environment["TYPEFLUX_NUMBER_SNAPSHOTS"]
-        if let directory { try FileManager.default.createDirectory(atPath: directory, withIntermediateDirectories: true) }
+        if let directory {
+            try FileManager.default.createDirectory(atPath: directory, withIntermediateDirectories: true) }
         for appearance in [NSAppearance.Name.aqua, .darkAqua] {
             for width: CGFloat in [640, 440] {
                 let size = NSSize(width: width, height: 50)
@@ -75,11 +82,10 @@ struct AskLauncherNumberShortcutTests {
                             Spacer(minLength: 0)
                             AskLauncherOpenChatButton(mode: mode, enabled: true, action: {})
                         }
-                            .padding(.horizontal, 14)
-                            .frame(height: 50)
-                            .environment(\.askLauncherNumberHints, visible)
-                            .background(AskTheme.composerSurface)
-                    )
+                        .padding(.horizontal, 14)
+                        .frame(height: 50)
+                        .environment(\.askLauncherNumberHints, visible)
+                        .background(TypefluxColor.controlBackground.color))
                     let window = AskTestVoiceWindow(contentRect: NSRect(origin: .zero, size: size),
                                                     styleMask: [.borderless], backing: .buffered, defer: false)
                     window.isReleasedWhenClosed = false
@@ -112,14 +118,15 @@ struct AskLauncherNumberShortcutTests {
         let results = AskQuickResults(apps: apps, lead: true)
         let size = NSSize(width: AskMetrics.launcherWidth, height: AskQuickResultsView.height(for: results))
         let directory = ProcessInfo.processInfo.environment["TYPEFLUX_NUMBER_SNAPSHOTS"]
-        if let directory { try FileManager.default.createDirectory(atPath: directory, withIntermediateDirectories: true) }
+        if let directory {
+            try FileManager.default.createDirectory(atPath: directory, withIntermediateDirectories: true) }
         for appearance in [NSAppearance.Name.aqua, .darkAqua] {
             var renders: [Data] = []
             for visible in [false, true] {
                 let view = AskQuickResultsView(results: results, question: "cal", actions: nil,
                                                thumbnails: false, onRun: { _, _ in }, onHighlight: { _ in })
                     .environment(\.askLauncherNumberHints, visible)
-                    .background(AskTheme.composerSurface)
+                    .background(TypefluxColor.controlBackground.color)
                 let hosting = NSHostingView(rootView: view)
                 let window = AskTestVoiceWindow(contentRect: NSRect(origin: .zero, size: size),
                                                 styleMask: [.borderless], backing: .buffered, defer: false)
@@ -137,7 +144,9 @@ struct AskLauncherNumberShortcutTests {
                 renders.append(png)
                 if let directory {
                     let theme = appearance == .aqua ? "light" : "dark"
-                    try png.write(to: URL(fileURLWithPath: directory).appendingPathComponent("\(theme)-\(visible ? "held" : "idle").png"))
+                    try png
+                        .write(to: URL(fileURLWithPath: directory)
+                            .appendingPathComponent("\(theme)-\(visible ? "held" : "idle").png"))
                 }
             }
             #expect(renders[0] != renders[1], "Command hints must become visible in both appearances")

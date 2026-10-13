@@ -31,12 +31,12 @@ struct AskImageRecoveryCard: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(copy.title)
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textPrimary)
+                    .foregroundStyle(TypefluxColor.label.color)
                 Text(copy.detail)
                     .font(.system(size: 12))
-                    .foregroundStyle(StudioTheme.textSecondary)
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
                 if !busy, let error = model.error {
-                    Text(error).font(.system(size: 12)).foregroundStyle(StudioTheme.warning)
+                    Text(error).font(.system(size: 12)).foregroundStyle(TypefluxColor.warning.color)
                 }
             }
             .lineLimit(2)
@@ -52,9 +52,10 @@ struct AskImageRecoveryCard: View {
         .padding(.trailing, 12)
         .padding(.vertical, 10)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AskTheme.raisedSurface, in: RoundedRectangle(cornerRadius: AskMetrics.recoveryCardCorner, style: .continuous))
+        .background(TypefluxColor.windowBackground.color,
+                    in: RoundedRectangle(cornerRadius: AskMetrics.recoveryCardCorner, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: AskMetrics.recoveryCardCorner, style: .continuous)
-            .strokeBorder(AskTheme.border))
+            .strokeBorder(TypefluxColor.separator.color))
         .task(id: screenshot?.id) { thumbnail = screenshot?.image.flatMap(AskImage.decode) }
     }
 
@@ -69,20 +70,21 @@ struct AskImageRecoveryCard: View {
                     } else {
                         Image(systemName: "photo")
                             .font(.system(size: 15, weight: .medium))
-                            .foregroundStyle(AskTheme.accentText)
+                            .foregroundStyle(TypefluxColor.accent.color)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .background(AskTheme.accentSoft)
+                            .background(TypefluxColor.accent.color.opacity(0.12))
                     }
                 }
                 .frame(width: AskMetrics.recoveryThumbnail.width, height: AskMetrics.recoveryThumbnail.height)
                 .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(AskTheme.border))
+                .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .strokeBorder(TypefluxColor.separator.color))
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 8, weight: .bold))
-                    .foregroundStyle(StudioTheme.textSecondary)
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
                     .frame(width: 16, height: 16)
-                    .background(AskTheme.raisedSurface, in: Circle())
-                    .overlay(Circle().strokeBorder(AskTheme.border))
+                    .background(TypefluxColor.windowBackground.color, in: Circle())
+                    .overlay(Circle().strokeBorder(TypefluxColor.separator.color))
                     .offset(x: 4, y: 4)
             }
         }

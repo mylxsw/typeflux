@@ -20,7 +20,7 @@ struct AskWorkflowAuthoringCard: View {
                     HStack(spacing: 8) {
                         Text(session.draft.manifest?.name ?? L("ask.workflow.chat.title"))
                             .font(.system(size: 13.5, weight: .semibold))
-                            .foregroundStyle(StudioTheme.textPrimary)
+                            .foregroundStyle(TypefluxColor.label.color)
                             .lineLimit(1)
                         AskWorkflowStatusChip(status: status, long: true)
                     }
@@ -28,32 +28,34 @@ struct AskWorkflowAuthoringCard: View {
                           L("ask.workflow.chat.keywordLine", keywords.isEmpty
                               ? L("ask.workflow.chat.keywordNone")
                               : keywords.joined(separator: L("ask.workflow.chat.check.separator")))]
-                        .joined(separator: " · "))
+                            .joined(separator: " · "))
                         .font(.system(size: 12))
-                        .foregroundStyle(StudioTheme.textTertiary)
+                        .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                         .lineLimit(2)
                 }
                 Spacer(minLength: 8)
                 if selected {
                     Text(L("ask.workflow.chat.openedBeside"))
                         .font(.system(size: 12.5, weight: .medium))
-                        .foregroundStyle(StudioTheme.textSecondary)
+                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
                         .padding(.horizontal, 10)
                 } else {
                     Text(L(checklist.isComplete ? "ask.workflow.chat.try" : "ask.workflow.chat.view"))
                         .font(.system(size: 12.5, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textPrimary)
+                        .foregroundStyle(TypefluxColor.label.color)
                         .padding(.horizontal, 14).frame(height: 30)
-                        .background(AskTheme.hoverFill, in: Capsule())
-                        .overlay(Capsule().strokeBorder(AskTheme.border))
+                        .background(TypefluxColor.label.color.opacity(0.06), in: Capsule())
+                        .overlay(Capsule().strokeBorder(TypefluxColor.separator.color))
                 }
             }
             .padding(.horizontal, 14).padding(.vertical, 12)
-            .background(AskTheme.raisedSurface, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .background(TypefluxColor.windowBackground.color,
+                        in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(selected ? AskTheme.accent : AskTheme.border, lineWidth: selected ? 1.5 : 1))
+                .strokeBorder(selected ? TypefluxColor.accent.color : TypefluxColor.separator.color,
+                              lineWidth: selected ? 1.5 : 1))
             .background(RoundedRectangle(cornerRadius: 17, style: .continuous)
-                .fill(selected ? AskTheme.accent.opacity(0.18) : .clear).padding(-3))
+                .fill(selected ? TypefluxColor.accent.color.opacity(0.18) : .clear).padding(-3))
             .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
         .buttonStyle(.plain)
@@ -107,7 +109,7 @@ struct AskWorkflowAuthoringPanel: View {
                         testSection(checklist)
                         resultSection(checklist)
                         if let message = session.message {
-                            Text(message).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
+                            Text(message).font(.system(size: 12)).foregroundStyle(TypefluxColor.secondaryLabel.color)
                                 .textSelection(.enabled)
                         }
                     case .code:
@@ -123,12 +125,14 @@ struct AskWorkflowAuthoringPanel: View {
             Button(L("ask.workflow.chat.run")) {
                 guard approvedRevision == session.revision else { return }
                 let input = AskWorkflowTestInput(query: session.query,
-                    selection: session.selection.isEmpty ? nil : session.selection, keyword: session.keyword)
+                                                 selection: session.selection.isEmpty ? nil : session.selection,
+                                                 keyword: session.keyword)
                 testTask = Task { _ = await session.testLatestProposal([input]) }
             }
             Button(L("common.cancel"), role: .cancel) {}
         } message: {
-            Text(([L("ask.workflow.chat.actionsPreview")] + session.risks.sorted().map(\.title)).joined(separator: "\n"))
+            Text(([L("ask.workflow.chat.actionsPreview")] + session.risks.sorted().map(\.title))
+                .joined(separator: "\n"))
         }
         .sheet(isPresented: $showsCode) { codeEditor }
         .confirmationDialog(L("ask.workflow.chat.discardNotice"), isPresented: $confirmsDiscard) {
@@ -155,12 +159,12 @@ struct AskWorkflowAuthoringPanel: View {
                     HStack(spacing: 8) {
                         Text(session.draft.manifest?.name ?? L("ask.workflow.chat.title"))
                             .font(.system(size: 15, weight: .semibold))
-                            .foregroundStyle(StudioTheme.textPrimary)
+                            .foregroundStyle(TypefluxColor.label.color)
                             .lineLimit(1)
                         AskWorkflowStatusChip(status: status, long: false)
                     }
                     Text(session.draft.manifest?.description ?? L("ask.workflow.chat.draft"))
-                        .font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
+                        .font(.system(size: 12)).foregroundStyle(TypefluxColor.tertiaryLabel.color).lineLimit(1)
                 }
                 Spacer(minLength: 0)
                 moreMenu
@@ -169,7 +173,7 @@ struct AskWorkflowAuthoringPanel: View {
                         .frame(width: 28, height: 28).contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .foregroundStyle(StudioTheme.textSecondary)
+                .foregroundStyle(TypefluxColor.secondaryLabel.color)
                 .help(L("ask.artifact.close"))
                 .accessibilityLabel(L("ask.artifact.close"))
                 .accessibilityIdentifier("ask.workflow.close").focused($closeFocused)
@@ -179,7 +183,7 @@ struct AskWorkflowAuthoringPanel: View {
                 tabButton(.code, title: L("ask.workflow.chat.tab.code"), count: session.draft.paths.count)
                 Spacer()
             }
-            .overlay(alignment: .bottom) { Rectangle().fill(AskTheme.separator).frame(height: 1) }
+            .overlay(alignment: .bottom) { Rectangle().fill(TypefluxColor.separator.color).frame(height: 1) }
         }
         .padding(.leading, 18).padding(.trailing, 12).padding(.top, 14)
     }
@@ -218,17 +222,17 @@ struct AskWorkflowAuthoringPanel: View {
                 if let count {
                     Text(String(count))
                         .font(.system(size: 10.5, weight: .medium))
-                        .foregroundStyle(StudioTheme.textSecondary)
+                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
                         .padding(.horizontal, 5)
-                        .background(AskTheme.controlSurface, in: RoundedRectangle(cornerRadius: 6))
+                        .background(TypefluxColor.controlBackground.color, in: RoundedRectangle(cornerRadius: 6))
                 }
             }
             .font(.system(size: 12.5, weight: .medium))
-            .foregroundStyle(tab == value ? StudioTheme.textPrimary : StudioTheme.textTertiary)
+            .foregroundStyle(tab == value ? TypefluxColor.label.color : TypefluxColor.tertiaryLabel.color)
             .padding(.bottom, 9)
             .overlay(alignment: .bottom) {
                 if tab == value {
-                    Capsule().fill(AskTheme.accent).frame(height: 2)
+                    Capsule().fill(TypefluxColor.accent.color).frame(height: 2)
                 }
             }
             .contentShape(Rectangle())
@@ -248,23 +252,25 @@ struct AskWorkflowAuthoringPanel: View {
                     AskWorkflowProgressRing(done: checklist.completed, total: checklist.rows.count)
                     VStack(alignment: .leading, spacing: 1) {
                         Text(L("ask.workflow.chat.check.remaining", checklist.missing))
-                            .font(.system(size: 13, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
+                            .font(.system(size: 13, weight: .semibold)).foregroundStyle(TypefluxColor.label.color)
                         Text(L("ask.workflow.chat.check.subtitle"))
-                            .font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
+                            .font(.system(size: 11.5)).foregroundStyle(TypefluxColor.tertiaryLabel.color)
                     }
                     Spacer(minLength: 0)
                 }
                 .padding(.horizontal, 14).padding(.top, 12).padding(.bottom, 10)
                 ForEach(checklist.rows, id: \.item) { row in
-                    Rectangle().fill(AskTheme.separator).frame(height: 1)
+                    Rectangle().fill(TypefluxColor.separator.color).frame(height: 1)
                     checklistRow(row)
                 }
                 if complete != nil {
-                    Rectangle().fill(AskTheme.separator).frame(height: 1)
+                    Rectangle().fill(TypefluxColor.separator.color).frame(height: 1)
                     HStack(spacing: 10) {
                         Text(L(completing ? "ask.workflow.chat.completing"
-                                : (canComplete ? "ask.workflow.chat.completeHint" : "ask.workflow.chat.completeBlocked")))
-                            .font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
+                                :
+                                (canComplete ? "ask.workflow.chat.completeHint" :
+                                    "ask.workflow.chat.completeBlocked")))
+                            .font(.system(size: 11.5)).foregroundStyle(TypefluxColor.tertiaryLabel.color)
                             .fixedSize(horizontal: false, vertical: true)
                         Spacer(minLength: 0)
                         Button { complete?(checklist.completionRequest) } label: {
@@ -282,11 +288,12 @@ struct AskWorkflowAuthoringPanel: View {
                         .accessibilityIdentifier("ask.workflow.complete")
                     }
                     .padding(.horizontal, 14).padding(.vertical, 10)
-                    .background(AskTheme.panelCard.opacity(0.6))
+                    .background(TypefluxColor.contentBackground.color.opacity(0.6))
                 }
             }
-            .background(AskTheme.panelCard, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(AskTheme.border))
+            .background(TypefluxColor.contentBackground.color,
+                        in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(TypefluxColor.separator.color))
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
     }
@@ -296,19 +303,21 @@ struct AskWorkflowAuthoringPanel: View {
             Group {
                 if row.isComplete {
                     Image(systemName: "checkmark").font(.system(size: 9, weight: .bold))
-                        .foregroundStyle(StudioTheme.success)
-                        .background(Circle().fill(AskTheme.successSoft).frame(width: 18, height: 18))
+                        .foregroundStyle(TypefluxColor.success.color)
+                        .background(Circle().fill(TypefluxColor.success.color.opacity(0.12)).frame(width: 18,
+                                                                                                   height: 18))
                 } else {
                     Text(verbatim: "!").font(.system(size: 11, weight: .bold))
-                        .foregroundStyle(StudioTheme.warning)
-                        .background(Circle().fill(AskTheme.warningSoft).frame(width: 18, height: 18))
+                        .foregroundStyle(TypefluxColor.warning.color)
+                        .background(Circle().fill(TypefluxColor.warning.color.opacity(0.12)).frame(width: 18,
+                                                                                                   height: 18))
                 }
             }
             .frame(width: 18, height: 18)
             VStack(alignment: .leading, spacing: 1) {
-                Text(L(row.item.titleKey)).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textPrimary)
+                Text(L(row.item.titleKey)).font(.system(size: 12.5)).foregroundStyle(TypefluxColor.label.color)
                 if !row.detail.isEmpty {
-                    Text(row.detail).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
+                    Text(row.detail).font(.system(size: 11.5)).foregroundStyle(TypefluxColor.tertiaryLabel.color)
                         .lineLimit(2).fixedSize(horizontal: false, vertical: true)
                 }
             }
@@ -317,7 +326,7 @@ struct AskWorkflowAuthoringPanel: View {
                 Button(L("ask.workflow.chat.check.addManually")) { openEditor(AskWorkflowManifest.fileName) }
                     .buttonStyle(.plain)
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(AskTheme.accentText)
+                    .foregroundStyle(TypefluxColor.accent.color)
             }
         }
         .padding(.horizontal, 14).padding(.vertical, 9)
@@ -335,7 +344,7 @@ struct AskWorkflowAuthoringPanel: View {
                 Spacer()
                 if !ready {
                     Text(L("ask.workflow.chat.afterComplete")).font(.system(size: 11.5))
-                        .foregroundStyle(StudioTheme.textTertiary)
+                        .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                 }
             }
             if ready, !keywords.isEmpty {
@@ -345,7 +354,7 @@ struct AskWorkflowAuthoringPanel: View {
                 ZStack(alignment: .topLeading) {
                     if session.query.isEmpty {
                         Text(L(ready ? "ask.workflow.chat.inputPlaceholder" : "ask.workflow.chat.inputLocked"))
-                            .font(.system(size: 13.5)).foregroundStyle(StudioTheme.textTertiary)
+                            .font(.system(size: 13.5)).foregroundStyle(TypefluxColor.tertiaryLabel.color)
                             .padding(.horizontal, 13).padding(.top, 11)
                             .allowsHitTesting(false)
                     }
@@ -361,7 +370,7 @@ struct AskWorkflowAuthoringPanel: View {
                 if showsSelection, takesSelection {
                     HStack(alignment: .top, spacing: 8) {
                         Image(systemName: "text.cursor").font(.system(size: 12))
-                            .foregroundStyle(StudioTheme.textTertiary).padding(.top, 2)
+                            .foregroundStyle(TypefluxColor.tertiaryLabel.color).padding(.top, 2)
                         TextEditor(text: $session.selection)
                             .font(.system(size: 12.5))
                             .scrollContentBackground(.hidden)
@@ -371,18 +380,18 @@ struct AskWorkflowAuthoringPanel: View {
                             Image(systemName: "xmark").font(.system(size: 10, weight: .semibold))
                                 .frame(width: 18, height: 18)
                         }
-                        .buttonStyle(.plain).foregroundStyle(StudioTheme.textTertiary)
+                        .buttonStyle(.plain).foregroundStyle(TypefluxColor.tertiaryLabel.color)
                         .accessibilityLabel(L("ask.artifact.close"))
                     }
                     .padding(.horizontal, 10).padding(.vertical, 8)
-                    .background(AskTheme.controlSurface, in: RoundedRectangle(cornerRadius: 8))
+                    .background(TypefluxColor.controlBackground.color, in: RoundedRectangle(cornerRadius: 8))
                     .padding(.horizontal, 10)
                 }
                 HStack(spacing: 8) {
                     if takesSelection, !showsSelection {
                         Button { showsSelection = true } label: {
                             Label(L("ask.workflow.chat.selection"), systemImage: "plus")
-                                .font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
+                                .font(.system(size: 12)).foregroundStyle(TypefluxColor.tertiaryLabel.color)
                         }
                         .buttonStyle(.plain)
                     }
@@ -391,13 +400,15 @@ struct AskWorkflowAuthoringPanel: View {
                 }
                 .padding(.leading, 10).padding(.trailing, 8).padding(.vertical, 8)
             }
-            .background(AskTheme.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .background(TypefluxColor.controlBackground.color,
+                        in: RoundedRectangle(cornerRadius: 12, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .strokeBorder(inputFocused ? AskTheme.accent : AskTheme.border, lineWidth: inputFocused ? 1.5 : 1))
+                .strokeBorder(inputFocused ? TypefluxColor.accent.color : TypefluxColor.separator.color,
+                              lineWidth: inputFocused ? 1.5 : 1))
             .disabled(!ready)
             .opacity(ready ? 1 : 0.55)
             Label(L("ask.workflow.chat.actionsPreview"), systemImage: "checkmark.shield")
-                .font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
+                .font(.system(size: 11.5)).foregroundStyle(TypefluxColor.tertiaryLabel.color)
         }
     }
 
@@ -435,32 +446,39 @@ struct AskWorkflowAuthoringPanel: View {
 
     // MARK: Result
 
+    private var contentCardShape: RoundedRectangle {
+        RoundedRectangle(cornerRadius: TypefluxRadius.form.value(for: style), style: .continuous)
+    }
+
     private func resultSection(_ checklist: AskWorkflowChecklist) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             sectionTitle(L("ask.workflow.chat.result"))
             if session.isRunning {
                 HStack(spacing: 8) {
                     ProgressView().controlSize(.small)
-                    Text(L("ask.workflow.chat.running")).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
+                    Text(L("ask.workflow.chat.running")).font(.system(size: 12))
+                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
                 }
                 .frame(maxWidth: .infinity, minHeight: 90)
-                .background(AskTheme.panelCard, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(AskTheme.border))
+                .background(TypefluxColor.contentBackground.color,
+                            in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(TypefluxColor.separator.color))
             } else if let preview = session.currentPreview {
                 previewResult(preview)
             } else {
                 VStack(spacing: 8) {
                     Image(systemName: "terminal").font(.system(size: 14))
-                        .foregroundStyle(StudioTheme.textTertiary)
+                        .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                         .frame(width: 32, height: 32)
-                        .background(AskTheme.controlSurface, in: RoundedRectangle(cornerRadius: 9))
+                        .background(TypefluxColor.controlBackground.color, in: RoundedRectangle(cornerRadius: 9))
                     Text(L(checklist.isComplete ? "ask.workflow.chat.empty" : "ask.workflow.chat.emptyLocked"))
-                        .font(.system(size: 12.5)).foregroundStyle(StudioTheme.textTertiary)
+                        .font(.system(size: 12.5)).foregroundStyle(TypefluxColor.tertiaryLabel.color)
                         .multilineTextAlignment(.center)
                 }
                 .frame(maxWidth: .infinity).padding(.vertical, 22).padding(.horizontal, 16)
                 .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .strokeBorder(AskTheme.border, style: StrokeStyle(lineWidth: 1, dash: [4, 3])))
+                    .strokeBorder(TypefluxColor.separator.color, style: StrokeStyle(lineWidth: 1, dash: [4, 3])))
             }
         }
     }
@@ -474,21 +492,21 @@ struct AskWorkflowAuthoringPanel: View {
                 Text(L(result.succeeded ? "ask.workflow.chat.resultOK" : "ask.workflow.chat.resultFailed"))
                     .fontWeight(.medium)
                 Text(verbatim: "· " + String(format: "%.1fs", result.duration) + " · "
-                     + L("ask.workflow.chat.exitCode", Int(result.exitCode)))
-                    .foregroundStyle(StudioTheme.textTertiary)
+                    + L("ask.workflow.chat.exitCode", Int(result.exitCode)))
+                    .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                 Spacer(minLength: 0)
-                Text(L("ask.workflow.chat.launcherPreview")).foregroundStyle(StudioTheme.textTertiary)
+                Text(L("ask.workflow.chat.launcherPreview")).foregroundStyle(TypefluxColor.tertiaryLabel.color)
             }
             .font(.system(size: 11.5))
-            .foregroundStyle(result.succeeded ? StudioTheme.success : StudioTheme.warning)
+            .foregroundStyle(result.succeeded ? TypefluxColor.success.color : TypefluxColor.warning.color)
             .padding(.horizontal, 12).padding(.vertical, 9)
-            Rectangle().fill(AskTheme.separator).frame(height: 1)
+            Rectangle().fill(TypefluxColor.separator.color).frame(height: 1)
             AskWorkflowLauncherPreview(name: preview.manifest.name,
-                keyword: result.input.keyword ?? preview.manifest.keywords.first?.keyword ?? "",
-                query: result.input.query, result: result, output: preview.manifest.output,
-                timeout: preview.manifest.timeout, showsInput: false, folder: preview.folder)
+                                       keyword: result.input.keyword ?? preview.manifest.keywords.first?.keyword ?? "",
+                                       query: result.input.query, result: result, output: preview.manifest.output,
+                                       timeout: preview.manifest.timeout, showsInput: false, folder: preview.folder)
             if !result.actionSteps.isEmpty {
-                Rectangle().fill(AskTheme.separator).frame(height: 1)
+                Rectangle().fill(TypefluxColor.separator.color).frame(height: 1)
                 VStack(alignment: .leading, spacing: 4) {
                     Text(L("ask.workflow.chat.actionsPreview")).font(.caption).foregroundStyle(.secondary)
                     ForEach(Array(result.actionSteps.enumerated()), id: \.offset) { _, step in
@@ -498,22 +516,23 @@ struct AskWorkflowAuthoringPanel: View {
                 }
                 .padding(12)
             }
-            Rectangle().fill(AskTheme.separator).frame(height: 1)
+            Rectangle().fill(TypefluxColor.separator.color).frame(height: 1)
             DisclosureGroup {
                 Text(Self.log(result))
                     .font(.system(size: 11.5, design: .monospaced))
-                    .foregroundStyle(StudioTheme.textSecondary)
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.top, 4)
             } label: {
-                Text(L("ask.workflow.chat.log")).font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
+                Text(L("ask.workflow.chat.log")).font(.system(size: 12))
+                    .foregroundStyle(TypefluxColor.tertiaryLabel.color)
             }
             .padding(.horizontal, 12).padding(.vertical, 8)
         }
-        .background(AskTheme.panelCard, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(AskTheme.border))
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background(TypefluxColor.contentBackground.color, in: contentCardShape)
+        .overlay(contentCardShape.strokeBorder(TypefluxColor.separator.color))
+        .clipShape(contentCardShape)
     }
 
     /// The run log: the arguments it got, then what it wrote to stderr.
@@ -534,30 +553,32 @@ struct AskWorkflowAuthoringPanel: View {
                     sectionTitle(L("ask.workflow.chat.files"))
                     Spacer()
                     Text(L("ask.workflow.chat.readOnly")).font(.system(size: 11.5))
-                        .foregroundStyle(StudioTheme.textTertiary)
+                        .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                 }
                 VStack(spacing: 0) {
                     ForEach(Array(session.draft.paths.enumerated()), id: \.element) { index, file in
-                        if index > 0 { Rectangle().fill(AskTheme.separator).frame(height: 1) }
+                        if index > 0 { Rectangle().fill(TypefluxColor.separator.color).frame(height: 1) }
                         Button { previewPath = file } label: {
                             HStack(spacing: 10) {
                                 Image(systemName: "doc.text").font(.system(size: 13))
-                                    .foregroundStyle(StudioTheme.textTertiary)
+                                    .foregroundStyle(TypefluxColor.tertiaryLabel.color)
                                 Text(file).font(.system(size: 12.5, design: .monospaced))
-                                    .foregroundStyle(StudioTheme.textPrimary).lineLimit(1)
+                                    .foregroundStyle(TypefluxColor.label.color).lineLimit(1)
                                 Spacer(minLength: 0)
                                 Text(L("ask.workflow.chat.lines", Self.lineCount(session.draft.text(of: file))))
-                                    .font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
+                                    .font(.system(size: 11.5)).foregroundStyle(TypefluxColor.tertiaryLabel.color)
                             }
                             .padding(.horizontal, 12).padding(.vertical, 10)
-                            .background(file == previewPath ? AskTheme.accentSoft : Color.clear)
+                            .background(file == previewPath ? TypefluxColor.accent.color.opacity(0.12) : Color.clear)
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
                     }
                 }
-                .background(AskTheme.panelCard, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(AskTheme.border))
+                .background(TypefluxColor.contentBackground.color,
+                            in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(TypefluxColor.separator.color))
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
             VStack(alignment: .leading, spacing: 8) {
@@ -565,14 +586,16 @@ struct AskWorkflowAuthoringPanel: View {
                 ScrollView([.horizontal, .vertical]) {
                     Text(session.draft.text(of: previewPath) ?? "")
                         .font(.system(size: 11.5, design: .monospaced))
-                        .foregroundStyle(StudioTheme.textSecondary)
+                        .foregroundStyle(TypefluxColor.secondaryLabel.color)
                         .textSelection(.enabled)
                         .padding(.horizontal, 14).padding(.vertical, 12)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .frame(maxHeight: 280)
-                .background(AskTheme.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(AskTheme.border))
+                .background(TypefluxColor.controlBackground.color,
+                            in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(TypefluxColor.separator.color))
             }
             Button { openEditor(previewPath) } label: {
                 Label(L("ask.workflow.chat.openEditor"), systemImage: "chevron.left.forwardslash.chevron.right")
@@ -618,17 +641,17 @@ struct AskWorkflowAuthoringPanel: View {
                 Text(hint.text)
             }
             .font(.system(size: 11.5))
-            .foregroundStyle(hint.isPositive ? StudioTheme.success : StudioTheme.textTertiary)
+            .foregroundStyle(hint.isPositive ? TypefluxColor.success.color : TypefluxColor.tertiaryLabel.color)
             .multilineTextAlignment(.center)
             .frame(maxWidth: .infinity)
             .accessibilityIdentifier("ask.workflow.saveHint")
         }
         .padding(.horizontal, 18).padding(.top, 14).padding(.bottom, 16)
-        .overlay(alignment: .top) { Rectangle().fill(AskTheme.separator).frame(height: 1) }
+        .overlay(alignment: .top) { Rectangle().fill(TypefluxColor.separator.color).frame(height: 1) }
     }
 
     private func sectionTitle(_ text: String) -> some View {
-        Text(text).font(.system(size: 11.5, weight: .semibold)).foregroundStyle(StudioTheme.textTertiary)
+        Text(text).font(.system(size: 11.5, weight: .semibold)).foregroundStyle(TypefluxColor.tertiaryLabel.color)
     }
 
     /// Uses the workflow editor's syntax-aware native code component against the
@@ -642,7 +665,8 @@ struct AskWorkflowAuthoringPanel: View {
                 Button(L("ask.workflow.chat.back")) { showsCode = false }
             }
             AskWorkflowCodeView(text: Binding(get: { session.draft.text(of: path) ?? "" },
-                set: { session.edit(text: $0, path: path) }), language: .detect(path: path))
+                                              set: { session.edit(text: $0, path: path) }),
+                                language: .detect(path: path))
                 .id(path)
             Text(L("ask.workflow.chat.editNotice")).font(.caption).foregroundStyle(.secondary)
         }.padding(20).frame(minWidth: 660, minHeight: 460)
@@ -676,17 +700,17 @@ struct AskWorkflowStatusChip: View {
 
     private var foreground: Color {
         switch status {
-        case .incomplete: StudioTheme.warning
-        case .draft: StudioTheme.textSecondary
-        case .saved: StudioTheme.success
+        case .incomplete: TypefluxColor.warning.color
+        case .draft: TypefluxColor.secondaryLabel.color
+        case .saved: TypefluxColor.success.color
         }
     }
 
     private var background: Color {
         switch status {
-        case .incomplete: AskTheme.warningSoft
-        case .draft: AskTheme.controlSurface
-        case .saved: AskTheme.successSoft
+        case .incomplete: TypefluxColor.warning.color.opacity(0.12)
+        case .draft: TypefluxColor.controlBackground.color
+        case .saved: TypefluxColor.success.color.opacity(0.12)
         }
     }
 }
@@ -716,13 +740,13 @@ private struct AskWorkflowProgressRing: View {
     var body: some View {
         let fraction = total > 0 ? CGFloat(done) / CGFloat(total) : 0
         ZStack {
-            Circle().stroke(AskTheme.controlSurface, lineWidth: 3)
+            Circle().stroke(TypefluxColor.controlBackground.color, lineWidth: 3)
             Circle().trim(from: 0, to: fraction)
-                .stroke(done == total ? StudioTheme.success : StudioTheme.warning,
+                .stroke(done == total ? TypefluxColor.success.color : TypefluxColor.warning.color,
                         style: StrokeStyle(lineWidth: 3, lineCap: .round))
                 .rotationEffect(.degrees(-90))
             Text(verbatim: "\(done)/\(total)").font(.system(size: 8.5, weight: .bold))
-                .foregroundStyle(StudioTheme.textPrimary)
+                .foregroundStyle(TypefluxColor.label.color)
         }
         .frame(width: 30, height: 30)
         .accessibilityElement()
@@ -742,11 +766,12 @@ private struct AskWorkflowKeywordChips: View {
                 Button { selection = keyword.keyword } label: {
                     Text(keyword.title ?? keyword.keyword)
                         .font(.system(size: 12, design: .monospaced))
-                        .foregroundStyle(selected ? AskTheme.accentText : StudioTheme.textSecondary)
+                        .foregroundStyle(selected ? TypefluxColor.accent.color : TypefluxColor.secondaryLabel.color)
                         .padding(.horizontal, 10).frame(height: 26)
-                        .background(selected ? AskTheme.accentSoft : Color.clear, in: RoundedRectangle(cornerRadius: 7))
+                        .background(selected ? TypefluxColor.accent.color.opacity(0.12) : Color.clear,
+                                    in: RoundedRectangle(cornerRadius: 7))
                         .overlay(RoundedRectangle(cornerRadius: 7)
-                            .strokeBorder(selected ? AskTheme.accent : AskTheme.border))
+                            .strokeBorder(selected ? TypefluxColor.accent.color : TypefluxColor.separator.color))
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
@@ -767,10 +792,10 @@ private struct AskWorkflowPanelChrome: ViewModifier {
     func body(content: Content) -> some View {
         if style.usesGlass {
             content
-                .background(AskTheme.glassFill, in: RoundedRectangle(cornerRadius: 18))
+                .background(LegacyAskPalette.glassFill, in: RoundedRectangle(cornerRadius: 18))
                 .padding(8)
         } else {
-            content.askSidePanel(edge: .trailing, glassFill: AskTheme.glassFill, classicFill: AskClassic.canvas,
+            content.askSidePanel(edge: .trailing, glassFill: LegacyAskPalette.glassFill, classicFill: AskClassic.canvas,
                                  glassInset: [], floating: floating)
         }
     }

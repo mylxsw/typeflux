@@ -69,7 +69,7 @@ struct ClipboardAudioPlayerView: View {
             } label: {
                 Image(systemName: playback.isPlaying ? "pause.fill" : "play.fill")
                     .font(.system(size: 11))
-                    .foregroundStyle(StudioTheme.textPrimary)
+                    .foregroundStyle(TypefluxColor.label.color)
                     .frame(width: 30, height: 30)
                     .background(Circle().fill(Color.primary.opacity(0.1)))
                     .contentShape(Circle())
@@ -79,7 +79,7 @@ struct ClipboardAudioPlayerView: View {
                 .frame(height: 28)
             Text(verbatim: timeLabel)
                 .font(.system(size: 10.5).monospacedDigit())
-                .foregroundStyle(StudioTheme.textSecondary)
+                .foregroundStyle(TypefluxColor.secondaryLabel.color)
         }
         .padding(.leading, 8)
         .padding(.trailing, 10)

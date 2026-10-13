@@ -90,7 +90,7 @@ struct ClipboardSettingsView: View {
             HStack(spacing: 8) {
                 Text(model.store.historyHotkey.map(HotkeyFormat.display) ?? L("clipboard.settings.shortcut.none"))
                     .font(.subheadline)
-                    .foregroundStyle(StudioTheme.textSecondary)
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
                 Button(L("clipboard.settings.shortcut.change"), action: onEditShortcut)
             }
         }

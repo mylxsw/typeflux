@@ -15,6 +15,6 @@ struct StudioShellLayout {
     }
 
     var contentWidth: CGFloat {
-        min(StudioTheme.contentMaxWidth, max(0, width - sidebarWidth - horizontalInset * 2))
+        min(StudioWindowMetrics.contentMaxWidth, max(0, width - sidebarWidth - horizontalInset * 2))
     }
 }
