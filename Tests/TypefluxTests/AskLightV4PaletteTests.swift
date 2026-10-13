@@ -124,33 +124,25 @@ struct AskLightV4PaletteTests {
     }
 
     @Test(arguments: [InterfaceStyle.liquidGlass, .classic])
-    func `library rows share the light selection and keep their dark style`(style: InterfaceStyle) async throws {
+    func `studio sidebar owns its selected and idle backgrounds`(style: InterfaceStyle) async throws {
         let row = Color.clear.frame(width: 160, height: 60)
-            .askNotesRow(selected: true, hovering: false, corner: 12)
-        let light = try await render(row, style: style, dark: false)
-        // Compare through the same renderer: AppKit converts the bitmap's working
-        // colour space before returning sRGB, so raw channel arithmetic differs.
-        let expected = try await render(AskTheme.launcherSelection.frame(width: 160, height: 60),
-                                        style: style, dark: false)
-        #expect(abs(light.redComponent - expected.redComponent) < 0.002)
-        #expect(abs(light.blueComponent - expected.blueComponent) < 0.002)
-        let dark = try await render(row, style: style, dark: true)
-        let darkFill = try await render((style.usesGlass ? AskTheme.accent.opacity(0.18) : AskClassic.selection)
-            .frame(width: 160, height: 60), style: style, dark: true)
-        #expect(abs(dark.redComponent - darkFill.redComponent) < 0.002)
-        #expect(abs(dark.blueComponent - darkFill.blueComponent) < 0.002)
-        let shelf = Color.clear.frame(width: 160, height: 60)
-            .askNotesRow(selected: true, hovering: false, corner: 12, sidebar: true)
-        let lightShelf = try await render(shelf, style: style, dark: false)
-        let darkShelf = try await render(shelf, style: style, dark: true)
-        #expect(lightShelf.redComponent > 0.99 && lightShelf.blueComponent > 0.99)
-        #expect(abs(darkShelf.blueComponent - darkFill.blueComponent) < 0.002)
-        let hover = try await render(Color.clear.frame(width: 160, height: 60)
-            .askNotesRow(selected: false, hovering: true, corner: 12), style: style, dark: false)
-        #expect(hover.redComponent < 0.97)
-        let idle = try await render(Color.clear.frame(width: 160, height: 60)
-            .askNotesRow(selected: false, hovering: false, corner: 12), style: style, dark: false)
-        #expect(idle.redComponent > 0.99)
+            .modifier(StudioSidebarRowBackground(selected: true, corner: 12))
+        for dark in [false, true] {
+            let selected = try await render(row, style: style, dark: dark)
+            let fill = dark ? (style.usesGlass ? AskTheme.accent.opacity(0.18) : AskClassic.selection)
+                : StudioTheme.sidebarSelection
+            // Compare through the renderer so both samples use the same bitmap colour space.
+            let expected = try await render(fill.frame(width: 160, height: 60), style: style, dark: dark)
+            #expect(abs(selected.redComponent - expected.redComponent) < 0.002)
+            #expect(abs(selected.greenComponent - expected.greenComponent) < 0.002)
+            #expect(abs(selected.blueComponent - expected.blueComponent) < 0.002)
+            let idle = try await render(Color.clear.frame(width: 160, height: 60)
+                .modifier(StudioSidebarRowBackground(selected: false, corner: 12)), style: style, dark: dark)
+            let canvas = try await render(Color.clear.frame(width: 160, height: 60), style: style, dark: dark)
+            #expect(abs(idle.redComponent - canvas.redComponent) < 0.002)
+            #expect(abs(idle.greenComponent - canvas.greenComponent) < 0.002)
+            #expect(abs(idle.blueComponent - canvas.blueComponent) < 0.002)
+        }
     }
 
     @Test(arguments: [InterfaceStyle.liquidGlass, .classic])
