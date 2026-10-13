@@ -1237,8 +1237,8 @@ struct AskPopoverRow<Accessory: View>: View {
                     .foregroundStyle(StudioTheme.textSecondary)
             }
             .padding(.horizontal, 10)
+            .padding(.vertical, 4)
             .frame(minHeight: TypefluxControlHeight.menuItem.value(for: style))
-            .padding(.vertical, 5)
             .frame(maxWidth: .infinity, alignment: .leading)
             // A soft hover wash matches the launcher and keeps text colours stable.
             .background(hovering ? AskTheme.accentSoft : Color.clear,
