@@ -14,7 +14,6 @@ struct AskPluginItemRow: View {
     var emphasized: Bool
     var height: CGFloat
     var onPick: () -> Void
-    @Environment(\.colorScheme) private var colorScheme
 
     private var filled: Bool {
         item.valid && selected && emphasized
@@ -25,34 +24,24 @@ struct AskPluginItemRow: View {
             HStack(spacing: 11) {
                 AskPluginItemIcon(icon: item.icon, symbol: symbol, filled: filled)
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(item.title).font(.system(size: 13.5, weight: .semibold)).lineLimit(1)
-                        .foregroundStyle(item.valid ? StudioTheme.textPrimary : StudioTheme.textSecondary)
+                    Text(item.title).font(.body.weight(.semibold)).lineLimit(1)
+                        .foregroundStyle(TypefluxSpotlightRow.labelColor(selected: filled, secondary: !item.valid))
                     if !item.subtitle.isEmpty {
-                        Text(item.subtitle).font(.system(size: 11.5)).lineLimit(1)
-                            .foregroundStyle(StudioTheme.textSecondary)
+                        Text(item.subtitle).font(.subheadline).lineLimit(1)
+                            .foregroundStyle(TypefluxSpotlightRow.labelColor(selected: filled, secondary: true))
                     }
                 }
                 // The title keeps its room; a long action ("Open in Visual Studio Code") is cut short instead.
                 .layoutPriority(1)
                 Spacer(minLength: 8)
                 if selected, let action = item.actions.first(where: { $0.shortcut == .enter }) {
-                    Text("↩ " + action.title).font(.system(size: 11.5)).lineLimit(1).truncationMode(.tail)
-                        .foregroundStyle(filled ? AskTheme.accentText : StudioTheme.textSecondary)
+                    Text("↩ " + action.title).font(.subheadline).lineLimit(1).truncationMode(.tail)
+                        .foregroundStyle(TypefluxSpotlightRow.labelColor(selected: filled, secondary: true))
                 }
             }
             .padding(.horizontal, 8)
             .frame(height: height)
-            .background(item.valid && selected && (filled || colorScheme == .light)
-                ? AskTheme.launcherSelection : item.valid && selected ? AskTheme.hoverFill : Color.clear,
-                in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-            .contentShape(Rectangle())
-            .overlay {
-                if item.valid, selected, filled || colorScheme == .light {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .strokeBorder(AskTheme.launcherSelectionEdge, lineWidth: 0.5)
-                        .allowsHitTesting(false)
-                }
-            }
+            .modifier(TypefluxSpotlightRow(selected: filled))
         }
         .buttonStyle(.plain)
         .disabled(!item.valid)
@@ -77,8 +66,8 @@ struct AskPluginItemIcon: View {
                     .frame(width: 26, height: 26)
             } else {
                 Image(systemName: Self.symbolName(icon) ?? symbol)
-                    .font(.system(size: 12.5, weight: .semibold))
-                    .foregroundStyle(filled ? AskTheme.accentText : StudioTheme.textSecondary)
+                    .font(.callout.weight(.semibold))
+                    .foregroundStyle(TypefluxSpotlightRow.labelColor(selected: filled, secondary: true))
                     .frame(width: 28, height: 28)
                     .background(filled ? Color.clear : AskTheme.hoverFill,
                                 in: RoundedRectangle(cornerRadius: 8, style: .continuous))

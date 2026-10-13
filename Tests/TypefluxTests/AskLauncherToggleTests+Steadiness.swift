@@ -16,6 +16,7 @@ extension AskLauncherToggleTests {
         let container: NSView
         private(set) var panelTops: [CGFloat] = []
         private(set) var editorTops: [CGFloat] = []
+        private(set) var editorHeights: [CGFloat] = []
         private(set) var heights: [CGFloat] = []
         private var observers: [NSObjectProtocol] = []
 
@@ -44,6 +45,7 @@ extension AskLauncherToggleTests {
         func sample() {
             panelTops.append(panel.frame.maxY)
             editorTops.append(editorTop)
+            editorHeights.append(container.frame.height)
             heights.append(panel.frame.height)
         }
 
@@ -60,10 +62,14 @@ extension AskLauncherToggleTests {
         let defaults: UserDefaults
         let suite: String
         let controller: AskConversationWindowController
+        let previousAccessibility: Any?
 
         func close() {
             controller.dismissLauncher()
+            if let window = controller.launcherWindow { TypefluxNavigationTestSupport.closeWindow(window) }
             fixture.model.resetSession()
+            NSApp.accessibilitySetValue(previousAccessibility ?? false,
+                                       forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
             // After the windows' last writes, so nothing recreates the domain.
             defaults.removePersistentDomain(forName: suite)
             try? FileManager.default.removeItem(at: fixture.root)
@@ -111,13 +117,16 @@ extension AskLauncherToggleTests {
 
     fileprivate func openSteadyLauncher(initialQuery: String = "a") async throws -> Session {
         _ = NSApplication.shared
+        let previousAccessibility = NSApp.accessibilityAttributeValue(.init(rawValue: "AXEnhancedUserInterface"))
         let suite = "ask-steady-" + UUID().uuidString
         let defaults = try #require(UserDefaults(suiteName: suite))
         let fixture = try AskTestFixture()
         fixture.model.appIndex = AskTestAppIndex(AskTestAppIndex.sample.entries)
         let controller = AskConversationWindowController(settings: SettingsStore(defaults: defaults), model: fixture.model,
                                                         dockVisibility: DockVisibilityController(app: SteadyActivationPolicy()))
-        let owned = Owned(fixture: fixture, defaults: defaults, suite: suite, controller: controller)
+        let owned = Owned(fixture: fixture, defaults: defaults, suite: suite, controller: controller,
+                          previousAccessibility: previousAccessibility)
+        TypefluxNavigationTestSupport.prepareApplication()
         do {
             controller.showLauncher()
             // This controller's own panel: earlier tests can leave other launchers in `NSApp.windows`.
@@ -186,15 +195,24 @@ extension AskLauncherToggleTests {
         let topAnchor = panel.frame.maxY
         let recorder = Recorder(panel: panel, container: container)
         defer { recorder.stop() }
+        let editorHeight = container.frame.height
         let editorAnchor = recorder.editorTop
         try await session.type(["w", "wx", "w", "wec", "t", "tab", "vsc", "qq音乐", "1", "1+1", "1+1*2", "jsq",
                                 "how do I", "1234567.89*2", "b"], recorder: recorder)
         #expect(fixture.model.launcherDraft.text == "b")
         #expect(recorder.panelTops.count > 10, "resizes were observed")
+        #expect(recorder.editorHeights.allSatisfy { abs($0 - editorHeight) < 0.5 },
+                "Single-line native editor heights changed: \(recorder.editorHeights)")
         let topDrift = recorder.panelTops.map { abs($0 - topAnchor) }.max() ?? 0
         let editorDrift = recorder.editorTops.map { abs($0 - editorAnchor) }.max() ?? 0
+        let peak = recorder.editorTops.indices.max {
+            abs(recorder.editorTops[$0] - editorAnchor) < abs(recorder.editorTops[$1] - editorAnchor)
+        } ?? 0
         #expect(topDrift < 0.5, "the panel's top edge moved by \(topDrift)")
-        #expect(editorDrift < 0.5, "the editor and its controls moved by \(editorDrift)")
+        let driftDetail = "the editor and its controls moved by \(editorDrift); "
+            + "at window height \(recorder.heights[peak]), editor height \(recorder.editorHeights[peak]), "
+            + "editor top \(recorder.editorTops[peak]), anchor \(editorAnchor)"
+        #expect(editorDrift < 0.5, Comment(rawValue: driftDetail))
     }
 
     @Test func theListGrowsWithoutShrinkingWhileMatchesComeAndGo() async throws {

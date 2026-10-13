@@ -20,21 +20,16 @@ struct AskLauncherOpenChatButton: View {
     var action: () -> Void
 
     var body: some View {
-        Group {
-            if mode == .askAI {
-                AskSendButton(enabled: enabled, tint: tint, animatesEmphasis: false, action: action)
-            } else {
-                Button(action: action) {
-                    Image(systemName: "macwindow")
-                        .font(.system(size: 16, weight: .medium))
-                        .frame(width: AskSendButton.size, height: AskSendButton.size)
-                        .contentShape(Circle())
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(StudioTheme.textSecondary)
-                .disabled(!enabled)
-            }
+        Button(action: action) {
+            Image(systemName: mode == .askAI ? "arrow.up" : "macwindow")
+                .font(mode == .askAI ? .headline : .title3)
+                .frame(width: AskSendButton.size, height: AskSendButton.size)
+                .contentShape(Circle())
         }
+        // Preserve the send button's SwiftUI event handling without changing its bounds while pressed.
+        .buttonStyle(AskPressableStyle(scale: 1))
+        .foregroundStyle(mode == .askAI ? tint : TypefluxColor.secondaryLabel.color)
+        .disabled(!enabled)
         .help(mode.hint)
         .accessibilityLabel(mode.title)
         .accessibilityIdentifier("ask.launcher.openChat")

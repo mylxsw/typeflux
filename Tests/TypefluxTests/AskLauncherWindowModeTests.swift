@@ -85,8 +85,10 @@ extension AskLauncherToggleTests {
         let controller = AskConversationWindowController(settings: settings, model: fixture.model)
         defer {
             controller.dismissLauncher()
+            if let window = controller.launcherWindow { TypefluxNavigationTestSupport.closeWindow(window) }
             fixture.model.resetSession()
             defaults.removePersistentDomain(forName: suite)
+            try? FileManager.default.removeItem(at: fixture.root)
         }
         controller.prewarmLauncher()
         controller.showLauncher()
@@ -94,8 +96,12 @@ extension AskLauncherToggleTests {
         try await fixture.wait { fixture.capture.calls > 0 && !fixture.model.capturing }
         #expect(panel.frame.height == AskLauncherWindowMode.simpleHeight)
         let top = panel.frame.maxY
-        let editor = try #require(panel.firstResponder as? NSTextView)
+        let content = try #require(panel.contentView)
+        let editor = try #require(TypefluxNavigationTestSupport.descendants(of: content)
+            .compactMap { $0 as? AskComposerTextView.Editor }.first)
+        try TypefluxNavigationTestSupport.focus(editor, in: panel)
         editor.insertText("abc", replacementRange: NSRange(location: NSNotFound, length: 0))
+        #expect(fixture.model.launcherDraft.text == "abc", "Native insertion must update the launcher's draft")
         try await fixture.wait { panel.frame.height > AskLauncherWindowMode.simpleHeight }
         #expect(panel.frame.maxY == top)
         #expect(panel.firstResponder === editor)
@@ -117,12 +123,19 @@ extension AskLauncherToggleTests {
         controller.recenterLauncher()
         #expect(panel.frame.height == AskLauncherWindowMode.simpleHeight)
 
+        verifyReopeningModes(settings: settings, controller: controller, panel: panel)
+    }
+
+    private func verifyReopeningModes(settings: SettingsStore, controller: AskConversationWindowController,
+                                      panel: NSWindow) {
         // Settings take effect on the next opening, including reuse of a prewarmed panel.
         settings.askLauncherWindowMode = .complete
         #expect(panel.frame.height == AskLauncherWindowMode.simpleHeight)
         controller.dismissLauncher()
         controller.showLauncher()
         #expect(panel.frame.height > AskLauncherWindowMode.simpleHeight)
+        #expect(panel.frame.height >= AskMetrics.launcherHeight(editor: 32, banners: 0),
+                "Complete mode must reserve its full chrome before returning from showLauncher")
         #expect(controller.launcherWindow === panel)
         settings.askLauncherWindowMode = .simple
         controller.dismissLauncher()
@@ -141,8 +154,10 @@ extension AskLauncherToggleTests {
         let controller = AskConversationWindowController(settings: settings, model: fixture.model)
         defer {
             controller.dismissLauncher()
+            if let window = controller.launcherWindow { TypefluxNavigationTestSupport.closeWindow(window) }
             fixture.model.resetSession()
             defaults.removePersistentDomain(forName: suite)
+            try? FileManager.default.removeItem(at: fixture.root)
         }
         controller.showLauncher()
         let panel = try #require(controller.launcherWindow)

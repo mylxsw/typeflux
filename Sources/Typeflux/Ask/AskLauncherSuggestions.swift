@@ -262,35 +262,27 @@ struct AskLauncherSuggestions: View {
     private func rowView(_ row: AskLauncherHome.Row, number: Int?, highlighted: Bool) -> some View {
         Button { onPick(.row(row)) } label: {
             HStack(spacing: 12) {
-                tile(row)
-                Text(row.title).font(.system(size: 13.5))
-                    .foregroundStyle(StudioTheme.textPrimary)
+                tile(row, highlighted: highlighted)
+                Text(row.title).font(.body)
+                    .foregroundStyle(TypefluxSpotlightRow.labelColor(selected: highlighted))
                     .lineLimit(1)
                     .layoutPriority(1)
                 if let detail = row.detail {
-                    Text(detail).font(.system(size: 11.5))
-                        .foregroundStyle(StudioTheme.textSecondary)
+                    Text(detail).font(.subheadline)
+                        .foregroundStyle(TypefluxSpotlightRow.labelColor(selected: highlighted, secondary: true))
                         .lineLimit(1)
                 }
                 Spacer(minLength: 8)
-                if let keyword = row.keyword { keywordLabel(keyword) }
+                if let keyword = row.keyword { keywordLabel(keyword, highlighted: highlighted) }
                 if let date = row.date {
-                    Text(Self.relative(date, now: now)).font(.system(size: 11.5))
-                        .foregroundStyle(AskTheme.launcherMetaText)
+                    Text(Self.relative(date, now: now)).font(.subheadline)
+                        .foregroundStyle(TypefluxSpotlightRow.labelColor(selected: highlighted, secondary: true))
                         .lineLimit(1)
                 }
             }
             .padding(.horizontal, Self.contentInset)
             .frame(height: Self.rowHeight)
-            .background(highlighted ? AskTheme.launcherSelection : Color.clear,
-                        in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .overlay {
-                if highlighted {
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .strokeBorder(AskTheme.launcherSelectionEdge, lineWidth: 0.5)
-                }
-            }
-            .contentShape(Rectangle())
+            .modifier(TypefluxSpotlightRow(selected: highlighted))
         }
         .buttonStyle(.plain)
         .accessibilityLabel(row.title)
@@ -300,13 +292,13 @@ struct AskLauncherSuggestions: View {
     }
 
     @ViewBuilder
-    private func tile(_ row: AskLauncherHome.Row) -> some View {
+    private func tile(_ row: AskLauncherHome.Row, highlighted: Bool) -> some View {
         if case let .application(app) = row.action {
             Image(nsImage: NSWorkspace.shared.icon(forFile: app.url.path))
                 .resizable().interpolation(.high).scaledToFit().frame(width: 28, height: 28)
         } else {
-            Image(systemName: row.symbol).font(.system(size: 12.5))
-            .foregroundStyle(Self.tint(row.tint))
+            Image(systemName: row.symbol).font(.callout)
+            .foregroundStyle(highlighted ? TypefluxSpotlightRow.labelColor(selected: true) : Self.tint(row.tint))
             .frame(width: 28, height: 28)
             .background(Self.tileFill(row.tint), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous)
@@ -314,19 +306,20 @@ struct AskLauncherSuggestions: View {
         }
     }
 
-    private func keywordLabel(_ keyword: String) -> some View {
+    private func keywordLabel(_ keyword: String, highlighted: Bool = false) -> some View {
         Text(keyword).font(.system(size: 10.5, design: .monospaced))
-            .foregroundStyle(AskTheme.launcherKeywordText)
+            .foregroundStyle(TypefluxSpotlightRow.labelColor(selected: highlighted, secondary: true))
             .padding(.horizontal, 5)
             .frame(height: 18)
-            .background(AskTheme.launcherKeyword, in: RoundedRectangle(cornerRadius: 5, style: .continuous))
+            .background(highlighted ? Color.white.opacity(0.2) : TypefluxColor.controlBackground.color,
+                        in: RoundedRectangle(cornerRadius: 5, style: .continuous))
     }
 
     private func chipView(_ chip: AskLauncherHome.Chip, highlighted: Bool) -> some View {
         Button { onPick(.chip(chip)) } label: {
             HStack(spacing: 6) {
                 keywordLabel(chip.keyword.keyword)
-                Text(chip.title).font(.system(size: 12.5))
+                Text(chip.title).font(.callout)
                     .foregroundStyle(highlighted ? StudioTheme.textPrimary : secondaryText)
                     .lineLimit(1)
             }

@@ -65,15 +65,17 @@ extension AskQuickResultsView {
         }
     }
 
-    /// `name` with the characters in `ranges` bold and in the accent color.
-    static func marked(_ name: String, _ ranges: [Range<Int>]) -> Text {
+    /// Matching characters stay legible on the native selection background.
+    static func marked(_ name: String, _ ranges: [Range<Int>], selected: Bool = false) -> Text {
         guard !ranges.isEmpty else { return Text(name) }
         let characters = Array(name)
         var parts: [Text] = []
         var position = 0
         for range in ranges where range.lowerBound >= position && range.upperBound <= characters.count {
             if range.lowerBound > position { parts.append(Text(String(characters[position ..< range.lowerBound]))) }
-            parts.append(Text(String(characters[range])).bold().foregroundColor(AskTheme.accent))
+            parts.append(Text(String(characters[range])).bold().foregroundColor(
+                selected ? TypefluxSpotlightRow.labelColor(selected: true) : TypefluxColor.accent.color
+            ))
             position = range.upperBound
         }
         if position < characters.count { parts.append(Text(String(characters[position...]))) }

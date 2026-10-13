@@ -31,7 +31,7 @@ struct AskLauncherView: View {
             .environment(\.askLauncherNumberHints, showingNumberHints)
             .background(AskLauncherCommandMonitor { showingNumberHints = $0 })
             .background(AskLauncherEscapeMonitor())
-            .tint(AskTheme.accent)
+            .tint(TypefluxColor.accent.color)
             .onChange(of: model.launcherDraft) { _ in model.persistDrafts() }
             .popover(item: $model.launcherClipboardPreview) { entry in
                 ClipboardPreviewPane(entry: entry, isMissing: entry.contentURLs.contains {
@@ -1082,6 +1082,7 @@ struct AskComposer: View {
                     Color.clear
                     launcherResults
                 }
+                .background(TypefluxColor.contentBackground.color)
                 .frame(height: launcherResultsViewportHeight, alignment: .top)
                 .clipped()
             }
@@ -1090,7 +1091,9 @@ struct AskComposer: View {
             }
         }
         .background {
-            if let glass {
+            if launcher {
+                TypefluxSpotlightSurface { Color.clear }
+            } else if let glass {
                 chrome.glassBackground(glass)
             } else {
                 chrome.fill
@@ -1672,7 +1675,7 @@ struct AskComposer: View {
                 .accessibilityIdentifier("ask.composer.voice")
             if !active {
                 AskLauncherOpenChatButton(mode: launcherChatAction, enabled: launcherChatActionEnabled,
-                                         tint: privateTint ? AskTheme.privateTint : AskTheme.accent,
+                                         tint: privateTint ? AskTheme.privateTint : TypefluxColor.accent.color,
                                           action: runLauncherChatAction)
             }
         }

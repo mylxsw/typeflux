@@ -25,20 +25,23 @@ struct AskComposerChromeTests {
         #expect(workspace.placement == .inWindow)
     }
 
-    @Test func launcherUsesCompactCornersWithoutChangingHeaderLayout() {
-        let launcher = AskComposerChrome.launcher
-        // Compact card corners keep the existing editor and control spacing.
-        #expect(launcher.horizontalInset == 12)
-        #expect(launcher.editorTopInset == 12)
-        #expect(launcher.corner == 16)
-        #expect(launcher.corner == AskMetrics.launcherCardCorner)
-        // One line of text keeps the header at 58pt, with the buttons centred in it.
-        #expect(AskMetrics.launcherHeaderHeight(editor: 32) == 58)
-        #expect(AskMetrics.launcherHeaderHeight(editor: 33) == 58)
-        #expect(AskMetrics.launcherHeaderHeight(editor: 60) == 84)
-        // The compact bottom bar leaves 7pt above and below each 34pt control.
-        #expect(launcher.footerHeight == 48)
-        #expect((launcher.footerHeight - AskMetrics.composerControlHeight) / 2 == 7)
+    @Test func launcherKeepsTheMainSizingInBothStyles() {
+        for style in InterfaceStyle.allCases {
+            let launcher = AskComposerChrome.of(launcher: true, style: style)
+            #expect(launcher.corner == TypefluxRadius.spotlightResults.value(for: style))
+            #expect(launcher.editorTopInset == 12)
+            #expect(launcher.editorBottomInset == 12)
+            #expect(launcher.horizontalInset == 12)
+            #expect(launcher.footerHeight == 48)
+            let layout = AskComposerLayout(launcher: true, compact: false, width: 680, availableHeight: nil)
+            #expect(layout.editorTopInset == launcher.editorTopInset)
+            #expect(layout.editorBottomInset == launcher.editorBottomInset)
+            #expect(AskMetrics.launcherHeaderHeight(editor: 32) == 58)
+            #expect(AskMetrics.launcherHeaderHeight(editor: 33) == 58)
+            #expect(AskMetrics.launcherHeaderHeight(editor: 60) == 84)
+            #expect(AskMetrics.launcherHeight(editor: 32, banners: 0) == 118)
+            #expect(AskLauncherWindowMode.simpleHeight == 70)
+        }
     }
 
     @Test func launcherEditorTextLinesUpWithTheModelName() {
