@@ -2,7 +2,7 @@ Vocabulary uses the shared native sortable table, source segments and sheet. His
 
 ## Screenshots
 
-Native WindowServer captures from an earlier run of `VocabularyHistorySnapshotTests`, with isolated settings and synthetic data. Content stays solid in both styles. These 36 reference captures precede the final stable history Back toolbar item and the expanded pipeline timestamp fixture; the acceptance owner must regenerate them from the PR head.
+Native WindowServer captures from an earlier run of `VocabularyHistorySnapshotTests`, with isolated settings and synthetic data. Content stays solid in both styles. These 36 reference captures precede the native history Back toolbar rework and the expanded pipeline timestamp fixture; the acceptance owner must regenerate them from the PR head.
 
 | Surface | Classic light | Classic dark | Liquid Glass light | Liquid Glass dark |
 | --- | --- | --- | --- | --- |
@@ -23,11 +23,23 @@ The latest issue instruction centralizes all Mac builds, tests and screenshots w
 
 ```bash
 swift build
-swift test --no-parallel --enable-code-coverage --filter 'VocabularyHistorySettingsTests|HistorySettingsQueryTests|VocabularyFilterTests|TypefluxTableDeleteKeyTests|TypefluxWindowTitleLifecycleTests|TypefluxUIControlsTableTests|VocabularyStoreTests|VocabularyStoreExtendedTests|SettingsViewModelHistoryAudioTests|HistoryProcessingDiagnosticsTests|HistoryRetryPlanTests|HistoryExportDestinationTests|FileHistoryStoreTests|SQLiteHistoryStoreTests|SettingsWindowNavigationTests|SettingsSearchScopeTests|SettingsOrganizationTests|StudioHistoryRowLayoutTests|VoiceInputNavigationTests'
+swift test --no-parallel --enable-code-coverage --filter 'HistorySettingsBackButtonTests|VocabularyHistorySettingsTests|HistorySettingsQueryTests|VocabularyFilterTests|TypefluxTableDeleteKeyTests|TypefluxWindowTitleLifecycleTests|TypefluxUIControlsTableTests|VocabularyStoreTests|VocabularyStoreExtendedTests|SettingsViewModelHistoryAudioTests|HistoryProcessingDiagnosticsTests|HistoryRetryPlanTests|HistoryExportDestinationTests|FileHistoryStoreTests|SQLiteHistoryStoreTests|SettingsWindowNavigationTests|SettingsSearchScopeTests|SettingsOrganizationTests|StudioHistoryRowLayoutTests|VoiceInputNavigationTests'
 TYPEFLUX_VOCABULARY_HISTORY_SNAPSHOTS="$PWD/artifacts/gul349-snapshots" swift test --no-parallel --enable-code-coverage --filter VocabularyHistorySnapshotTests
 ```
 
 The snapshot command captures Vocabulary, unmatched search, empty library, add sheet, History date groups, record details, pipeline stages and unmatched audio filter in Classic/Liquid Glass × light/dark. It also captures Liquid Glass with Reduce Transparency and Increase Contrast in both appearances. Check the history Back button after opening a record, including a narrow window's native toolbar overflow. The tests use synthetic data and isolated defaults/storage, and restore the localization and vocabulary fixture.
+
+For the return-navigation rework, start with:
+
+```bash
+swift test --no-parallel --filter 'HistorySettingsBackButtonTests|VocabularyHistorySettingsTests'
+```
+
+## Return-navigation rework
+
+The acceptance owner built latest main + PR #455 successfully, but reproduced the existing detail → Back → list test failure three times: the grouped toolbar Back element rejected its accessibility press. Back now has a dedicated navigation `ToolbarItem` hosting an AppKit `NSButton`, with its coordinator and enabled state directly bound to the presenting window's history selection. The existing failing assertion is retained, without changing the press helper. `HistorySettingsBackButtonTests` adds real toolbar native-click/accessibility-press checks, disabled/list transitions, section scope, and two-window selection isolation.
+
+The branch was rebased onto main `19c39385`. This rework was reviewed for the macOS 13 deployment target, identifier scope, access levels and target cleanup. No builds, tests, snapshots or remote Mac operations were run for the rework; validation remains with the acceptance owner. All screenshot and coverage samples below are historical and do not establish that the rework passes.
 
 ## Earlier validation and limits
 
@@ -38,10 +50,10 @@ Before the final Back toolbar correction, on macOS 26.6.2 with Swift 6.4 and SDK
 - Merged focused/snapshot coverage covered 547 of 574 changed executable production lines (95.3%); `coverage-summary.json` records that earlier sample, rather than coverage of the final head.
 - Strict SwiftLint on new/rewritten files and the changed shared library passed with zero diagnostics. Existing production files retained 29 legacy diagnostics versus 33 at the base, with no new diagnostics on changed lines. Two unchanged test diagnostics remain. Whole-repository SwiftLint was not clean; see `lint-summary.json`.
 
-After reading the new instruction, the in-flight focused rerun was cancelled and no further Mac work was started. The stable Back action, its return-navigation assertions, and the richer snapshot fixture remain unverified. `git diff --check` and localization-key/placeholder checks were performed locally before submitting.
+After reading the centralization instruction, the in-flight focused rerun was cancelled and no further Mac work was started. Acceptance subsequently reproduced the Back failure; the native Back rework and its new regression tests remain unverified. `git diff --check` and localization-key/placeholder checks were performed locally before the original submission.
 
 ## Self-review
 
-Reviewed the complete add/edit/cancel and detail/return/delete paths, whitespace and empty inputs, source preservation, selection cleanup, sparse filter pagination, deletion offsets and generation rejection after clearing. Review found and corrected skipped sparse matches, stale query results after clear, the native SwiftUI table's outline-backed Delete focus handling, toolbar visibility priorities, and a dynamically missing Back item. The final Back fix keeps the toolbar group stable and disables Back on the list.
+Reviewed the complete add/edit/cancel and detail/return/delete paths, whitespace and empty inputs, source preservation, selection cleanup, sparse filter pagination, deletion offsets and generation rejection after clearing. Review found and corrected skipped sparse matches, stale query results after clear, the native SwiftUI table's outline-backed Delete focus handling, toolbar visibility priorities, and a dynamically missing Back item. Following acceptance feedback, Back uses a dedicated native button and is disabled on the list. The native target/action is removed when its representable is dismantled.
 
 The event monitor releases on detach/deinitialization and only handles unmodified Delete in its own focused table, without an attached sheet or text editor. Storage scans use the existing serial background queue and weak model callbacks. User strings cover all five existing locales. No dependencies, credentials or new external data access were added. The acceptance owner still needs to confirm the final build, tests, toolbar return behavior and refreshed screenshot matrix.

@@ -578,10 +578,6 @@ struct StudioView: View {
         }
         if viewModel.currentSection == .history {
             var actions: [TypefluxToolbarAction] = []
-            actions.append(TypefluxToolbarAction(id: "history.back", title: L("history.action.back"),
-                                                  systemImage: "chevron.left", isEnabled: selectedHistoryID != nil) {
-                selectedHistoryID = nil
-            })
             actions.append(TypefluxToolbarAction(id: "history.export", title: L("history.action.exportMarkdown"),
                                                  systemImage: "square.and.arrow.up", perform: viewModel.exportHistory))
             actions.append(TypefluxToolbarAction(id: "history.clear", title: L("common.clear"), systemImage: "trash",
@@ -620,6 +616,9 @@ struct StudioView: View {
             }
         }
         if viewModel.currentSection == .history {
+            ToolbarItem(id: HistorySettingsBackButton.toolbarIdentifier, placement: .navigation) {
+                HistorySettingsBackButton(selectedID: $selectedHistoryID)
+            }
             ToolbarItem(placement: .primaryAction) {
                 Menu {
                     Picker(L("history.filter.title"), selection: $viewModel.historyFilter) {
