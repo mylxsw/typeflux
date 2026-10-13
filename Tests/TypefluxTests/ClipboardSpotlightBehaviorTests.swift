@@ -244,15 +244,21 @@ struct ClipboardSpotlightBehaviorTests {
 
 extension ClipboardSpotlightBehaviorTests {
     @Test func repeatedModalCancellationRestoresTheSameSearchFieldAndQuery() async throws {
+        TypefluxNavigationTestSupport.prepareApplication()
         try await SettingsBehaviorTestSupport.withFixture { settings in
             let model = ClipboardPanelModel()
             model.reset(entries: [ClipboardTestSupport.entry(.text, text: "Original")])
             let controller = ClipboardPanelController(settingsStore: settings)
-            defer { controller.dismiss() }
+            var ownedWindow: NSWindow?
+            defer {
+                controller.dismiss()
+                if let ownedWindow { TypefluxNavigationTestSupport.closeWindow(ownedWindow) }
+            }
             for style in InterfaceStyle.allCases {
                 settings.interfaceStyle = style
                 controller.present(model)
                 let window = try #require(controller.presentedWindow)
+                ownedWindow = window
                 let host = try #require(window.contentView)
                 try await SettingsBehaviorTestSupport.wait {
                     TypefluxNavigationTestSupport.searchField(in: host)?.currentEditor() != nil
@@ -264,7 +270,9 @@ extension ClipboardSpotlightBehaviorTests {
                 try await SettingsBehaviorTestSupport.wait { model.query == "Orig" }
                 for action in [ClipboardEntryAction.saveSnippet, .editBeforePaste, .saveSnippet, .editBeforePaste] {
                     model.perform(action)
-                    try await SettingsBehaviorTestSupport.wait { field.currentEditor() == nil }
+                    try await SettingsBehaviorTestSupport.wait {
+                        field.currentEditor() == nil && window.firstResponder is NSTextView
+                    }
                     #expect(try press(53, window: window, controller: controller))
                     try await SettingsBehaviorTestSupport.wait {
                         guard let activeEditor = field.currentEditor() else { return false }

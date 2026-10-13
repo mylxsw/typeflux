@@ -103,18 +103,21 @@ public struct TypefluxSpotlightSurface<Results: View, Hints: View>: View {
 
     @ViewBuilder private var customPanel: some View {
         if style == .classic {
-            VStack(spacing: 0) {
+            TypefluxSpotlightContentPlacement(spacing: 0, fillsAvailableHeight: fillsAvailableHeight) {
                 customHeader
                 if showsResults {
-                    Divider()
-                    results
+                    VStack(spacing: 0) {
+                        Divider()
+                        results
+                    }
                 }
             }
             .background { surface(.spotlightResults) }
             .clipShape(RoundedRectangle(cornerRadius: TypefluxRadius.spotlightResults.value(for: style)))
         } else {
             TypefluxGlassGroup(spacing: TypefluxSpotlightMetrics.resultsSpacing(for: style)) {
-                VStack(spacing: TypefluxSpotlightMetrics.resultsSpacing(for: style)) {
+                TypefluxSpotlightContentPlacement(spacing: TypefluxSpotlightMetrics.resultsSpacing(for: style),
+                                                   fillsAvailableHeight: fillsAvailableHeight) {
                     customHeader
                     if showsResults {
                         results.background { surface(.spotlightResults) }

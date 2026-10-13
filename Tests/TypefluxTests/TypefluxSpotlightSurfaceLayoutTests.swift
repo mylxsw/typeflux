@@ -86,6 +86,33 @@ struct TypefluxSpotlightSurfaceLayoutTests {
     }
 
     @Test(arguments: InterfaceStyle.allCases)
+    func inputStaysAtTheTopDuringNativeViewportResizeNotifications(_ style: InterfaceStyle) async throws {
+        let state = ResultState()
+        let view = ChangingResults(state: state)
+            .environment(\.interfaceStyle, style)
+            .environment(\.glassMaterialOverride, .opaque)
+        try await TypefluxNavigationTestSupport.withWindow(view) { window, host in
+            let field = try #require(TypefluxNavigationTestSupport.searchField(in: host))
+            let recorder = InputResizeRecorder(input: field)
+            let anchor = recorder.screenTop
+            defer { recorder.stop() }
+            for height: CGFloat in [200, 450, 180, 600, 220] {
+                state.height = height / 2
+                var frame = window.frame
+                frame.origin.y = frame.maxY - height
+                frame.size.height = height
+                window.setFrame(frame, display: false)
+                host.layoutSubtreeIfNeeded()
+                try await Task.sleep(for: .milliseconds(80))
+                recorder.sample()
+            }
+            #expect(!recorder.samples.isEmpty)
+            #expect(recorder.samples.allSatisfy { abs($0 - anchor) < 0.5 },
+                    "Input moved during native resizing: \(recorder.samples)")
+        }
+    }
+
+    @Test(arguments: InterfaceStyle.allCases)
     func accessibilityOverridesRemoveTheVisualEffect(_ style: InterfaceStyle) async throws {
         for options in [TypefluxAccessibilityOptions(reduceTransparency: true),
                         TypefluxAccessibilityOptions(increasedContrast: true)] {
@@ -107,6 +134,31 @@ struct TypefluxSpotlightSurfaceLayoutTests {
 
     private func descendants(_ view: NSView) -> [NSView] {
         [view] + view.subviews.flatMap(descendants)
+    }
+
+    @MainActor private final class InputResizeRecorder {
+        private let input: NSView
+        private var observers: [NSObjectProtocol] = []
+        private(set) var samples: [CGFloat] = []
+
+        init(input: NSView) {
+            self.input = input
+            var ancestor: NSView? = input
+            while let current = ancestor {
+                current.postsFrameChangedNotifications = true
+                observers.append(NotificationCenter.default.addObserver(
+                    forName: NSView.frameDidChangeNotification, object: current, queue: nil
+                ) { [weak self] _ in MainActor.assumeIsolated { self?.sample() } })
+                ancestor = current.superview
+            }
+        }
+
+        var screenTop: CGFloat {
+            input.window?.convertToScreen(input.convert(input.bounds, to: nil)).maxY ?? 0
+        }
+
+        func sample() { samples.append(screenTop) }
+        func stop() { observers.forEach(NotificationCenter.default.removeObserver) }
     }
 
     @MainActor private final class ResultState: ObservableObject {

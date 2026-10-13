@@ -63,6 +63,7 @@ extension AskLauncherToggleTests {
 
         func close() {
             controller.dismissLauncher()
+            if let window = controller.launcherWindow { TypefluxNavigationTestSupport.closeWindow(window) }
             fixture.model.resetSession()
             // After the windows' last writes, so nothing recreates the domain.
             defaults.removePersistentDomain(forName: suite)
@@ -110,7 +111,7 @@ extension AskLauncherToggleTests {
     }
 
     fileprivate func openSteadyLauncher(initialQuery: String = "a") async throws -> Session {
-        _ = NSApplication.shared
+        TypefluxNavigationTestSupport.prepareApplication()
         let suite = "ask-steady-" + UUID().uuidString
         let defaults = try #require(UserDefaults(suiteName: suite))
         let fixture = try AskTestFixture()

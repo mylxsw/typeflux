@@ -134,29 +134,58 @@ struct AskSpotlightPanelTests {
         }
     }
 
-    @Test func arrowMonitorLeavesMarkedTextAloneAndReleasesItsHandler() throws {
-        _ = NSApplication.shared
-        let window = AskTestVoiceWindow(contentRect: NSRect(x: 0, y: 0, width: 400, height: 200),
-                              styleMask: .borderless, backing: .buffered, defer: false)
-        window.isReleasedWhenClosed = false
-        defer { window.close() }
-        let editor = MarkedEditor(frame: NSRect(x: 0, y: 0, width: 400, height: 200))
-        window.contentView = editor
-        let monitor = AskArrowKeyMonitor.MonitorView()
-        var moves: [Int] = []
-        monitor.onMove = { moves.append($0) }
-        editor.addSubview(monitor)
-        window.makeKeyAndOrderFront(nil)
-        #expect(window.makeFirstResponder(editor))
-        editor.marked = true
-        try TypefluxNavigationTestSupport.sendKey(125, to: window)
-        #expect(moves.isEmpty)
-        editor.marked = false
-        try TypefluxNavigationTestSupport.sendKey(125, to: window)
-        #expect(moves == [1])
-        monitor.removeFromSuperview()
-        try TypefluxNavigationTestSupport.sendKey(126, to: window)
-        #expect(moves == [1], "Detached monitors must release their event handler")
+    @Test func arrowMonitorLeavesMarkedTextAloneAndReleasesItsHandler() async throws {
+        try await TypefluxNavigationTestSupport.withWindow(Color.clear,
+                                                           size: NSSize(width: 400, height: 200)) { window, _ in
+            let editor = MarkedEditor(frame: NSRect(x: 0, y: 0, width: 400, height: 200))
+            window.contentView = editor
+            let monitor = AskArrowKeyMonitor.MonitorView()
+            var moves: [Int] = []
+            monitor.onMove = { moves.append($0) }
+            editor.addSubview(monitor)
+            #expect(window.makeFirstResponder(editor))
+            editor.marked = true
+            try TypefluxNavigationTestSupport.sendKey(125, to: window)
+            #expect(moves.isEmpty)
+            editor.marked = false
+            try TypefluxNavigationTestSupport.sendKey(125, to: window)
+            #expect(moves == [1])
+            monitor.removeFromSuperview()
+            try TypefluxNavigationTestSupport.sendKey(126, to: window)
+            #expect(moves == [1], "Detached monitors must release their event handler")
+        }
+    }
+
+    @Test func paletteWindowTeardownAllowsANonactivatingClipboardPanelToTakeFocus() async throws {
+        weak var paletteWindow: NSWindow?
+        let view = AskSearchPaletteView(conversations: [], available: [.newConversation],
+                                       onAction: { _ in }, onOpen: { _ in }, onClose: {})
+        try await TypefluxNavigationTestSupport.withWindow(view) { window, _ in
+            paletteWindow = window
+            #expect(window.isKeyWindow)
+        }
+        #expect(paletteWindow?.isVisible != true)
+        #expect(paletteWindow?.contentView == nil)
+        try await SettingsBehaviorTestSupport.withFixture { settings in
+            let model = ClipboardPanelModel()
+            model.reset(entries: [ClipboardTestSupport.entry(.text, text: "Original")])
+            let controller = ClipboardPanelController(settingsStore: settings)
+            var ownedWindow: NSWindow?
+            defer {
+                controller.dismiss()
+                if let ownedWindow { TypefluxNavigationTestSupport.closeWindow(ownedWindow) }
+            }
+            controller.present(model)
+            let window = try #require(controller.presentedWindow)
+            ownedWindow = window
+            let host = try #require(window.contentView)
+            try await SettingsBehaviorTestSupport.wait {
+                guard let field = TypefluxNavigationTestSupport.searchField(in: host),
+                      let editor = field.currentEditor() else { return false }
+                return window.isKeyWindow && window.firstResponder === editor
+            }
+            #expect(window.styleMask.contains(.nonactivatingPanel))
+        }
     }
 
     private func mouseEvent(_ type: NSEvent.EventType, at point: NSPoint, in window: NSWindow) throws -> NSEvent {
