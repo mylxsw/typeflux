@@ -65,7 +65,7 @@ struct AppKitTestActionsTests {
         let recorder = Recorder()
         let prototype = NSButtonCell()
         prototype.setButtonType(.radio)
-        let matrix = NSMatrix(frame: .zero, mode: .radioMode, prototype: prototype,
+        let matrix = NSMatrix(frame: .zero, mode: .radioModeMatrix, prototype: prototype,
                               numberOfRows: 2, numberOfColumns: 1)
         matrix.target = recorder
         matrix.action = #selector(Recorder.record)
