@@ -36,7 +36,7 @@ struct AskWorkflowFilesCard: View {
     /// "Entries are marked [Entry]. Other files can be used from an entry: Python `import helper`…"
     private var hint: some View {
         VStack(alignment: .leading, spacing: 4) {
-            AgentFlowLayout(spacing: 4) {
+            AskFlowLayout(spacing: 4) {
                 Text(L("ask.workflow.editor.files.hintEntry"))
                 AskWorkflowEntryBadge(text: L("ask.workflow.editor.files.entry"))
                 Text(L("ask.workflow.editor.files.hintUse"))

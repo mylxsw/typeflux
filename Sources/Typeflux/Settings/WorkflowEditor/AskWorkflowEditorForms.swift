@@ -181,7 +181,7 @@ struct AskWorkflowKeywordsForm: View {
         let options = optionsOf(index)
         let controlColor = TypefluxColor.controlBackground.color
         let borderColor = TypefluxColor.separator.color
-        return AgentFlowLayout(spacing: 5) {
+        return AskFlowLayout(spacing: 5) {
             ForEach(options.keys.sorted(), id: \.self) { key in
                 HStack(spacing: 3) {
                     Text("\(key)=\(options[key] ?? "")").font(.system(size: 11.5, design: .monospaced))
@@ -413,7 +413,7 @@ struct AskWorkflowInputForm: View {
     }
 
     private var argv: some View {
-        AgentFlowLayout(spacing: 6) {
+        AskFlowLayout(spacing: 6) {
             Text(program).font(.system(size: 12.5, design: .monospaced)).foregroundStyle(StudioTheme.textSecondary)
                 .frame(height: 26)
             ForEach(Array(template.enumerated()), id: \.offset) { index, _ in
