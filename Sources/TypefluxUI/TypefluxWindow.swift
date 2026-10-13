@@ -12,6 +12,8 @@ public struct TypefluxWindow<Detail: View>: View {
     private let groups: [TypefluxToolbarGroup]
     private let prominent: TypefluxToolbarAction?
     private let center: AnyView?
+    private let toolbarAccessories: AnyView?
+    private let separatesToolbarGroups: Bool
     @ObservedObject private var searchState: TypefluxSearchState
     private let searchEnabled: Bool
     private let searchPrompt: String
@@ -34,6 +36,7 @@ public struct TypefluxWindow<Detail: View>: View {
                 groups: [TypefluxToolbarGroup] = [], prominent: TypefluxToolbarAction? = nil,
                 sidebarVisibility: Binding<NavigationSplitViewVisibility>? = nil,
                 center: AnyView? = nil,
+                toolbarAccessories: AnyView? = nil, separatesToolbarGroups: Bool = false,
                 @ViewBuilder sidebar: () -> some View, @ViewBuilder detail: () -> Detail) {
         self.title = title
         self.sidebar = AnyView(sidebar())
@@ -43,6 +46,8 @@ public struct TypefluxWindow<Detail: View>: View {
         self.groups = groups
         self.prominent = prominent
         self.center = center
+        self.toolbarAccessories = toolbarAccessories
+        self.separatesToolbarGroups = separatesToolbarGroups
         self.detail = detail()
         self.sidebarVisibility = sidebarVisibility
     }
@@ -92,11 +97,14 @@ public struct TypefluxWindow<Detail: View>: View {
                             ToolbarItem(placement: .primaryAction) { Spacer() }
                         #endif
                     }
-                    TypefluxToolbar(groups: groups, prominent: prominent)
+                    TypefluxToolbar(groups: groups, prominent: prominent, accessories: toolbarAccessories,
+                                    separatesGroups: separatesToolbarGroups)
                 }
                 .background(TypefluxWindowTitleBridge(
                     title: title,
-                    actionTitles: Set(groups.flatMap(\.actions).map(\.title))
+                    actionTitles: Set(groups.flatMap(\.actions).map(\.title) + (prominent.map { [$0.title] } ?? [])),
+                    actionIdentifiers: Set(groups.flatMap(\.actions).map(\.accessibilityIdentifier)
+                        + (prominent.map { [$0.accessibilityIdentifier] } ?? []))
                 )
                 .frame(width: 0, height: 0))
         }

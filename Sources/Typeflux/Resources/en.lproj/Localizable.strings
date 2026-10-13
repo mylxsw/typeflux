@@ -4470,6 +4470,7 @@
 "ask.notes.saving" = "Saving…";
 "ask.notes.outline" = "Outline";
 "ask.notes.more" = "More";
+"ask.notes.share" = "Share";
 "ask.notes.exportAs" = "Export As";
 "ask.notes.export.markdown" = "Markdown (.md)";
 "ask.notes.export.html" = "Web Page (.html)";

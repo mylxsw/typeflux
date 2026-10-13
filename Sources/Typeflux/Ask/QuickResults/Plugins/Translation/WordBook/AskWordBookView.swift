@@ -4,21 +4,15 @@ import SwiftUI
 struct AskWordBookView: View {
     @ObservedObject var model: AskWordBookViewModel
     var onClose: () -> Void
+    @Environment(\.interfaceStyle) private var style
     @StateObject private var search = TypefluxSearchState()
     @State private var showsLookup = false
     @State private var regenerating: AskWordBookEntry?
 
     var body: some View {
-        TypefluxWindow(title: L("ask.wordBook.title"), search: search, searchPrompt: L("ask.wordBook.search"),
-                       groups: toolbarGroups, prominent: TypefluxToolbarAction(
-                        id: "wordBook.new", title: L("ask.wordBook.firstLookup"), systemImage: "plus",
-                        isEnabled: model.lookingUp == nil, perform: { showsLookup = true })) {
-            AskWordBookList(model: model)
-        } detail: {
-            detailColumn
-        }
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) { AskWordBookFilterMenu(model: model) }
+        GeometryReader { geometry in
+            let compact = geometry.size.width < AskLibraryLayout.expandedToolbarMinimumWidth || search.isExpanded
+            libraryWindow(compact: compact)
         }
         .onAppear { search.query = model.filterText }
         .onChange(of: search.query) { model.filterText = $0 }
@@ -33,7 +27,54 @@ struct AskWordBookView: View {
         } message: { entry in
             Text(L("ask.wordBook.regenerate.message", entry.headword, model.modelName()))
         }
+        .tint(TypefluxColor.accent.color)
         .accessibilityIdentifier("ask.wordBook")
+    }
+
+    private func libraryWindow(compact: Bool) -> some View {
+        TypefluxWindow(title: L("ask.wordBook.title"), search: search, searchPrompt: L("ask.wordBook.search"),
+                       groups: visibleToolbarGroups(compact: compact), prominent: TypefluxToolbarAction(
+                        id: "wordBook.new", title: L("ask.wordBook.firstLookup"), systemImage: "plus",
+                        isEnabled: model.lookingUp == nil, perform: { showsLookup = true }),
+                       toolbarAccessories: AnyView(toolbarAccessories(compact: compact)),
+                       separatesToolbarGroups: true) {
+            AskWordBookList(model: model)
+        } detail: {
+            detailColumn
+        }
+    }
+
+    private func visibleToolbarGroups(compact: Bool) -> [TypefluxToolbarGroup] {
+        toolbarGroups.map { group in
+            TypefluxToolbarGroup(id: group.id, actions: group.actions.filter {
+                compact ? $0.id == "wordBook.star"
+                    : ["wordBook.star", "wordBook.copy", "wordBook.delete"].contains($0.id)
+            })
+        }
+    }
+
+    private func toolbarAccessories(compact: Bool) -> some View {
+        HStack(spacing: TypefluxSpacing.compact.value(for: style)) {
+            if !compact { AskWordBookFilterMenu(model: model) }
+            Menu {
+                if compact { AskWordBookFilterMenu(model: model) }
+                ForEach(toolbarGroups.flatMap(\.actions).filter {
+                    compact ? $0.id != "wordBook.star"
+                        : !["wordBook.star", "wordBook.copy", "wordBook.delete"].contains($0.id)
+                }) { action in
+                    Button(role: action.role, action: action.perform) {
+                        Label(action.title, systemImage: action.systemImage)
+                    }
+                    .disabled(!action.isEnabled)
+                    .accessibilityIdentifier(action.accessibilityIdentifier)
+                }
+            } label: {
+                Label(L("ask.wordBook.more"), systemImage: "ellipsis").labelStyle(.iconOnly)
+            }
+            .help(L("ask.wordBook.more"))
+            .accessibilityLabel(L("ask.wordBook.more"))
+            .accessibilityIdentifier("ask.wordBook.more")
+        }
     }
 
     @ViewBuilder private var detailColumn: some View {

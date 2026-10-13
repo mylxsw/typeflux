@@ -21,7 +21,10 @@ struct AskLibraryWindowSnapshotTests {
             for (window, name) in [(noteWindow, "notes"), (wordWindow, "wordbook")] {
                 window.setContentSize(NSSize(width: 1100, height: 800))
                 window.setFrameOrigin(NSPoint(x: 40, y: 40))
-                try await AskLibraryTestSupport.capture(window, name: "\(name)-read-\(suffix)")
+                let readName = "\(name)-read-\(suffix)"
+                try await captureAndCheckProminentFill(in: window,
+                                                      action: name == "notes" ? "notes.new" : "wordBook.new",
+                                                      snapshot: readName)
                 _ = try await AskLibraryTestSupport.search(name == "notes" ? "Reading" : word,
                                                           in: window)
                 try await AskLibraryTestSupport.capture(window, name: "\(name)-search-\(suffix)")
@@ -74,10 +77,104 @@ struct AskLibraryWindowSnapshotTests {
         notes.setSelecting(false)
     }
 
-    @Test(arguments: [false, true])
-    func accessibilityFallbacks(dark: Bool) async throws {
+    @Test(arguments: InterfaceStyle.allCases, [false, true])
+    func minimumLibraryStates(style: InterfaceStyle, dark: Bool) async throws {
         guard ProcessInfo.processInfo.environment["TYPEFLUX_LIBRARY_SNAPSHOTS"] != nil else { return }
-        try await AskLibraryTestSupport.withLibraries(style: .liquidGlass, dark: dark) { libraries in
+        try await AskLibraryTestSupport.withLibraries(style: style, dark: dark) { libraries in
+            let noteWindow = try #require(libraries.notes.window)
+            let wordWindow = try #require(libraries.words.window)
+            let notes = try #require(libraries.notes.model)
+            let words = try #require(libraries.words.model)
+            let suffix = "minimum-\(style.rawValue)-\(dark ? "dark" : "light")"
+            noteWindow.setContentSize(AskNotesWindowController.minimumSize)
+            wordWindow.setContentSize(AskWordBookWindowController.minimumSize)
+            try await AskLibraryTestSupport.capture(noteWindow, name: "notes-read-\(suffix)")
+            try await AskLibraryTestSupport.capture(wordWindow, name: "wordbook-read-\(suffix)")
+            notes.setMode(.edit)
+            try await AskLibraryTestSupport.capture(noteWindow, name: "notes-edit-\(suffix)")
+            notes.setMode(.split)
+            try await AskLibraryTestSupport.capture(noteWindow, name: "notes-split-\(suffix)")
+            notes.setMode(.read)
+            notes.setSelecting(true)
+            notes.pickAll()
+            try await AskLibraryTestSupport.capture(noteWindow, name: "notes-selection-\(suffix)")
+            notes.setSelecting(false)
+            notes.select(libraries.noteID)
+            notes.deleteSelected()
+            notes.scope = .trash
+            notes.select(libraries.noteID)
+            try await AskLibraryTestSupport.capture(noteWindow, name: "notes-trash-\(suffix)")
+            notes.restoreFromTrash()
+            notes.scope = .all
+            _ = try await AskLibraryTestSupport.search("no matching note", in: noteWindow)
+            _ = try await AskLibraryTestSupport.search("no matching word", in: wordWindow)
+            try await AskLibraryTestSupport.capture(noteWindow, name: "notes-search-empty-\(suffix)")
+            try await AskLibraryTestSupport.capture(wordWindow, name: "wordbook-search-empty-\(suffix)")
+            #expect(notes.notes.isEmpty && words.entries.isEmpty)
+        }
+    }
+
+    @Test(arguments: InterfaceStyle.allCases, [false, true])
+    func minimumWindowErrorsAndRecovery(style: InterfaceStyle, dark: Bool) async throws {
+        guard ProcessInfo.processInfo.environment["TYPEFLUX_LIBRARY_SNAPSHOTS"] != nil else { return }
+        try await AskLibraryTestSupport.withLibraries(style: style, dark: dark) { libraries in
+            let noteWindow = try #require(libraries.notes.window)
+            let wordWindow = try #require(libraries.words.window)
+            let notes = try #require(libraries.notes.model)
+            let words = try #require(libraries.words.model)
+            let suffix = "minimum-\(style.rawValue)-\(dark ? "dark" : "light")"
+            noteWindow.setContentSize(AskNotesWindowController.minimumSize)
+            wordWindow.setContentSize(AskWordBookWindowController.minimumSize)
+            notes.autosaveDelay = .seconds(60)
+            notes.beginEditing()
+            notes.draftBody = "Keep this unsaved draft"
+            var external = try #require(notes.selected)
+            external.body = "Changed externally"
+            notes.store.save(external)
+            notes.reload()
+            #expect(!notes.finishEditing() && notes.draftConflict)
+            try await AskLibraryTestSupport.capture(noteWindow, name: "notes-save-conflict-\(suffix)")
+            notes.saveDraftCopy()
+            #expect(!notes.editing && !notes.draftConflict)
+            try await AskLibraryTestSupport.capture(noteWindow, name: "notes-save-recovered-\(suffix)")
+            words.dictionary = AskFailingWordLookup()
+            await words.lookUp("unavailableword")
+            #expect(words.notice == "offline" && words.lookingUp == nil)
+            try await AskLibraryTestSupport.capture(wordWindow, name: "wordbook-lookup-error-\(suffix)")
+            words.dictionary = AskTestWordLookup(answer: .card(wordBookCard))
+            await words.lookUp("serendipity")
+            #expect(words.notice == nil && words.displayed?.lookup.card == wordBookCard)
+            try await AskLibraryTestSupport.capture(wordWindow, name: "wordbook-lookup-recovered-\(suffix)")
+        }
+    }
+
+    @Test(arguments: InterfaceStyle.allCases, [false, true])
+    func emptyLibraries(style: InterfaceStyle, dark: Bool) async throws {
+        guard ProcessInfo.processInfo.environment["TYPEFLUX_LIBRARY_SNAPSHOTS"] != nil else { return }
+        try await AskLibraryTestSupport.withLibraries(style: style, dark: dark) { libraries in
+            let notes = try #require(libraries.notes.model)
+            let words = try #require(libraries.words.model)
+            notes.setSelecting(true)
+            notes.pickAll()
+            notes.trashPicked()
+            notes.setSelecting(false)
+            for entry in words.entries { words.delete(entry) }
+            notes.notice = nil
+            words.notice = nil
+            #expect(notes.notes.isEmpty && words.entries.isEmpty)
+            let suffix = "\(style.rawValue)-\(dark ? "dark" : "light")"
+            for (window, name) in [(try #require(libraries.notes.window), "notes"),
+                                   (try #require(libraries.words.window), "wordbook")] {
+                window.setContentSize(NSSize(width: 1100, height: 800))
+                try await AskLibraryTestSupport.capture(window, name: "\(name)-empty-library-\(suffix)")
+            }
+        }
+    }
+
+    @Test(arguments: InterfaceStyle.allCases, [false, true])
+    func accessibilityFallbacks(style: InterfaceStyle, dark: Bool) async throws {
+        guard ProcessInfo.processInfo.environment["TYPEFLUX_LIBRARY_SNAPSHOTS"] != nil else { return }
+        try await AskLibraryTestSupport.withLibraries(style: style, dark: dark) { libraries in
             let notes = try #require(libraries.notes.model)
             let words = try #require(libraries.words.model)
             for reduced in [true, false] {
@@ -85,9 +182,9 @@ struct AskLibraryWindowSnapshotTests {
                 let noteWindow = try #require(libraries.notes.window)
                 let wordWindow = try #require(libraries.words.window)
                 let noteHost = NSHostingView(rootView: AskNotesView(model: notes) {}
-                    .environment(\.interfaceStyle, .liquidGlass).environment(\.typefluxAccessibilityOptions, options))
+                    .environment(\.interfaceStyle, style).environment(\.typefluxAccessibilityOptions, options))
                 let wordHost = NSHostingView(rootView: AskWordBookView(model: words) {}
-                    .environment(\.interfaceStyle, .liquidGlass).environment(\.typefluxAccessibilityOptions, options))
+                    .environment(\.interfaceStyle, style).environment(\.typefluxAccessibilityOptions, options))
                 noteHost.sizingOptions = []
                 wordHost.sizingOptions = []
                 noteWindow.contentView = noteHost
@@ -95,7 +192,8 @@ struct AskLibraryWindowSnapshotTests {
                 for (window, name) in [(noteWindow, "notes"), (wordWindow, "wordbook")] {
                     window.appearance = NSAppearance(named: reduced ? (dark ? .darkAqua : .aqua)
                         : (dark ? .accessibilityHighContrastDarkAqua : .accessibilityHighContrastAqua))
-                    let suffix = "\(reduced ? "reduce-transparency" : "increase-contrast")-\(dark ? "dark" : "light")"
+                    let mode = reduced ? "reduce-transparency" : "increase-contrast"
+                    let suffix = "\(mode)-\(style.rawValue)-\(dark ? "dark" : "light")"
                     try await AskLibraryTestSupport.capture(window, name: "\(name)-\(suffix)")
                 }
             }

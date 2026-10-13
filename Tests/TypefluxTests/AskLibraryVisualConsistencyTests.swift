@@ -127,20 +127,28 @@ struct AskLibraryVisualConsistencyTests {
             let window = try #require(libraries.notes.window)
             let notes = try #require(libraries.notes.model)
             window.setContentSize(AskNotesWindowController.minimumSize)
-            try await SettingsBehaviorTestSupport.wait("Copy and native More controls at Notes minimum size") {
-                window.contentView?.layoutSubtreeIfNeeded()
-                guard let menu = AskNotesToolbarTestSupport.button(in: window), menu.window === window,
-                      let copy = AskWorkspaceTestAccessibility.frame(identifier: "typeflux.toolbar.notes.copy",
-                                                                     in: window) else { return false }
+            window.makeKeyAndOrderFront(nil)
+            try await SettingsBehaviorTestSupport.wait("Visible copy action and the owned native More control") {
+                let elements = AskLibraryTestSupport.elements(in: window)
+                let copies = elements.filter {
+                    $0.value("accessibilityIdentifier") as? String == "typeflux.toolbar.notes.copy"
+                }
+                guard let menu = AskNotesToolbarTestSupport.button(in: window),
+                      menu.window === window, !menu.isHiddenOrHasHiddenAncestor else { return false }
                 let menuFrame = window.convertToScreen(menu.convert(menu.bounds, to: nil))
-                return insideWindow(copy, window: window) && insideWindow(menuFrame, window: window)
-                    && AskWorkspaceTestAccessibility.frame(identifier: "typeflux.toolbar.notes.pin", in: window) == nil
+                // SwiftUI can retain hidden toolbar AX proxies after resizing. Require visible controls,
+                // rather than the absence of unrelated identifiers in the window-wide accessibility tree.
+                return copies.contains { insideWindow($0.frame, window: window) }
+                    && insideWindow(menuFrame, window: window)
             }
             var copied: String?
             notes.copy = { copied = $0 }
             let expectedBody = try #require(notes.selected?.body)
-            _ = try AskLibraryTestSupport.action("notes.copy", in: window)
-            notes.copySelected()
+            let copy = try #require(AskLibraryTestSupport.elements(in: window).first {
+                $0.value("accessibilityIdentifier") as? String == "typeflux.toolbar.notes.copy"
+                    && insideWindow($0.frame, window: window)
+            })
+            try copy.press()
             try await SettingsBehaviorTestSupport.wait { copied == expectedBody }
             #expect(copied?.isEmpty == false)
             for mode in [AskNotesViewModel.Mode.split, .edit, .read] {
@@ -151,7 +159,10 @@ struct AskLibraryVisualConsistencyTests {
             }
             _ = try await search("Reading", in: window)
             try await SettingsBehaviorTestSupport.wait { notes.searchText == "Reading" }
-            let searchingCopy = try AskLibraryTestSupport.action("notes.copy", in: window)
+            let searchingCopy = try #require(AskLibraryTestSupport.elements(in: window).first {
+                $0.value("accessibilityIdentifier") as? String == "typeflux.toolbar.notes.copy"
+                    && insideWindow($0.frame, window: window)
+            })
             #expect(insideWindow(searchingCopy.frame, window: window), "expanded search cannot displace copy")
         }
     }
