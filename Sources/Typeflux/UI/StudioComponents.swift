@@ -924,7 +924,7 @@ struct StudioPill: View {
         HStack(spacing: 4) {
             if let systemImage {
                 Image(systemName: systemImage)
-                    .font(.system(.subheadline - 1, weight: .semibold))
+                    .font(.system(.caption, weight: .semibold))
             }
             Text(title)
                 .font(.system(.subheadline, weight: .semibold))
@@ -949,7 +949,7 @@ struct StudioTag: View {
         HStack(spacing: 3) {
             if let systemImage {
                 Image(systemName: systemImage)
-                    .font(.system(.subheadline - 2, weight: .bold))
+                    .font(.system(.caption2, weight: .bold))
             }
             Text(title)
                 .font(.system(.footnote, weight: .semibold))
