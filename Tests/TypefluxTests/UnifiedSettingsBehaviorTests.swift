@@ -101,20 +101,23 @@ struct UnifiedSettingsBehaviorTests {
             let model = fixture.model
             try await Controls.withWindow(StudioPersonaRosterView(viewModel: model, onDelete: { _ in }),
                                           width: 300, height: 800) { _, host in
-                func tables(in view: NSView) -> [NSTableView] {
+                @MainActor func tables(in view: NSView) -> [NSTableView] {
                     (view as? NSTableView).map { [$0] } ?? view.subviews.flatMap { tables(in: $0) }
                 }
-                let table = try #require(tables(in: host).first)
-                func row(_ title: String) throws -> Int {
-                    try #require((0 ..< table.numberOfRows).first { index in
+                let firstTable = tables(in: host).first
+                let table = try #require(firstTable)
+                @MainActor func row(_ title: String) throws -> Int {
+                    let index = (0 ..< table.numberOfRows).first { index in
                         guard let view = table.rowView(atRow: index, makeIfNecessary: true) else { return false }
                         return Controls.contains(title, in: view)
-                    })
+                    }
+                    return try #require(index)
                 }
                 try table.selectRowIndexes(IndexSet(integer: row(fixture.custom.name)), byExtendingSelection: false)
                 try await Controls.wait { model.selectedPersonaID == fixture.custom.id }
                 model.personaDraftPrompt = "Unsaved changes"
-                let original = try #require(model.personas.first { $0.id == SettingsStore.defaultPersonaID })
+                let defaultPersona = model.personas.first { $0.id == SettingsStore.defaultPersonaID }
+                let original = try #require(defaultPersona)
                 try table.selectRowIndexes(IndexSet(integer: row(original.name)), byExtendingSelection: false)
                 try await Controls.wait { model.pendingPersonaNavigation != nil }
                 #expect(model.selectedPersonaID == fixture.custom.id)
@@ -130,19 +133,24 @@ struct UnifiedSettingsBehaviorTests {
 
     /// Native menu selection sends the same action as keyboard selection without opening a system menu.
     static func selectPopupItem(_ title: String, in window: NSWindow) throws {
-        func popups(in view: NSView) -> [NSPopUpButton] {
+        @MainActor func popups(in view: NSView) -> [NSPopUpButton] {
             (view as? NSPopUpButton).map { [$0] } ?? view.subviews.flatMap { popups(in: $0) }
         }
-        let content = try #require(window.contentView)
-        let popup = try #require(popups(in: content).first { $0.itemTitles.contains(title) })
+        let contentView = window.contentView
+        let content = try #require(contentView)
+        let matchingPopup = popups(in: content).first { $0.itemTitles.contains(title) }
+        let popup = try #require(matchingPopup)
         popup.selectItem(withTitle: title)
-        let action = try #require(popup.action)
-        #expect(NSApp.sendAction(action, to: popup.target, from: popup))
+        let popupAction = popup.action
+        let action = try #require(popupAction)
+        let sent = NSApp.sendAction(action, to: popup.target, from: popup)
+        #expect(sent)
     }
 
     private func control(_ identifier: String, in root: Any) throws -> Controls.Element {
-        try #require(Controls.elements(in: root).first {
+        let element = Controls.elements(in: root).first {
             $0.value("accessibilityIdentifier") as? String == identifier
-        })
+        }
+        return try #require(element)
     }
 }

@@ -91,12 +91,21 @@ struct UnifiedSettingsSnapshotTests {
         model.currentSection = .agent
         try await capture(StudioView(viewModel: model, agentPane: .mcpServers, imageSettingsModel: images),
                           "mcp-empty", output, wide: true, model: model)
-        model.importMCPServers([MCPServerConfig(name: "Local tools", transport: .stdio(.init(command: "tool"))),
+        // An invalid host fails URL validation before any network or OAuth activity.
+        let invalidURL = "http://["
+        try #require(URL(string: invalidURL) == nil)
+        model.importMCPServers([MCPServerConfig(name: "Local tools", transport: .http(.init(url: invalidURL))),
                                 MCPServerConfig(name: "Disabled", transport: .http(.init(
                                     url: "https://example.invalid/mcp"
                                 )), enabled: false)])
         if let server = model.mcpServers.first {
-            model.mcpServerTestResults[server.id] = .failure(message: "Connection unavailable")
+            model.testMCPConnection(for: server)
+            try await SettingsBehaviorTestSupport.wait {
+                if case .failure? = model.mcpServerTestResults[server.id] {
+                    return true
+                }
+                return false
+            }
         }
         try await capture(StudioView(viewModel: model, agentPane: .mcpServers, imageSettingsModel: images),
                           "mcp-error-and-disabled", output, wide: true, model: model)
