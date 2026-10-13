@@ -144,18 +144,13 @@ enum AskMetrics {
     /// Leading space for the title bar tools, past the traffic lights with an
     /// 8pt gap so the collapsed pill never touches the zoom button.
     static let trafficLightInset: CGFloat = 86
-    /// Width of an icon button in the title bar row (compose, sidebar, search).
-    static let titleBarButtonWidth: CGFloat = 30
-    /// Header title inset when the sidebar is collapsed: past the pill holding
-    /// the toggle, search and compose buttons, plus the gap between pills.
-    static let collapsedTitleInset: CGFloat = trafficLightInset + titleBarButtonWidth * 3 + 6 + 12
     /// One centred reading column shared by the transcript and the composer, so
     /// questions, answers and the input line up instead of spanning the window.
     /// The library template's reading column is 680pt of content; the composer
     /// card is 20pt wider on each side so its text lines up with the column.
     static let columnWidth: CGFloat = 728
     static let columnInset: CGFloat = 24
-    static let composerMaxWidth: CGFloat = 728
+    static let composerMaxWidth: CGFloat = 720
     /// The empty state's three suggestion cards.
     static let suggestionsMaxWidth: CGFloat = 680
     static let transcriptMaxWidth: CGFloat = columnWidth - columnInset * 2
@@ -316,42 +311,6 @@ enum AskActivityState {
     }
 
     var needsAttention: Bool { self == .attention || self == .failed }
-}
-
-/// Compatibility label for attachment and context tokens with semantic state tint.
-struct AskChip: View {
-    /// `unavailable` is a solid, muted chip whose tooltip gives the reason. A
-    /// dashed outline used to read as a broken control.
-    enum Style { case neutral, active, warning, unavailable }
-
-    var title: String
-    var systemImage: String
-    var style: Style = .neutral
-    var action: (() -> Void)?
-    var onRemove: (() -> Void)?
-    var help: String?
-    var disabled = false
-
-    var body: some View {
-        TypefluxToken(title, removeLabel: L("ask.remove"), systemImage: systemImage,
-                      action: disabled ? nil : action, onRemove: onRemove)
-            .foregroundStyle(foreground)
-            .opacity(disabled && style != .unavailable ? 0.55 : 1)
-            .accessibilityLabel(title)
-            .accessibilityValue(disabled ? L("ask.image.disabled") : "")
-            .accessibilityHint(help ?? title)
-            .help(help ?? title)
-    }
-
-    private var foreground: Color {
-        switch style {
-        case .neutral: return StudioTheme.textSecondary
-        case .active: return AskTheme.accentText
-        case .warning: return StudioTheme.warning
-        case .unavailable: return StudioTheme.textTertiary
-        }
-    }
-
 }
 
 struct AskStatusBadge: View {
@@ -1319,21 +1278,6 @@ struct AskMultiplierBadge: View {
     }
 }
 
-/// Compatibility wrapper around the library's native segmented picker.
-struct AskSegmentedControl<Value: Hashable>: View {
-    var options: [(value: Value, title: String)]
-    @Binding var selection: Value
-    var title: String = ""
-
-    var body: some View {
-        TypefluxSegmentedControl(title, selection: $selection) {
-            ForEach(options.indices, id: \.self) { index in
-                Text(options[index].title).tag(options[index].value)
-            }
-        }
-    }
-}
-
 /// Motion shared by the conversation window's panels and transcript, so the
 /// sidebar, the usage panel and loaded conversations move the same way.
 /// Reduce Motion keeps the state change but drops the travel.
@@ -1397,24 +1341,5 @@ struct AskEdgeFade: View {
             Color.clear.frame(height: bottomClear)
         }
         .allowsHitTesting(false)
-    }
-}
-
-/// An icon button in the title bar row: borderless like the toolbar items of
-/// native apps, with a hover wash and the shortcut in its tooltip.
-struct AskTitleBarButton: View {
-    var symbol: String
-    var label: String
-    var shortcut: String?
-    var action: () -> Void
-    static var size: CGSize { CGSize(width: AskMetrics.titleBarButtonWidth, height: 28) }
-
-    static func help(label: String, shortcut: String?) -> String {
-        shortcut.map { label + " " + $0 } ?? label
-    }
-
-    var body: some View {
-        TypefluxIconButton(label, systemImage: symbol, action: action)
-            .help(Self.help(label: label, shortcut: shortcut))
     }
 }

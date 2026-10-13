@@ -12,8 +12,6 @@ public struct TypefluxWindow<Detail: View>: View {
     private let groups: [TypefluxToolbarGroup]
     private let prominent: TypefluxToolbarAction?
     private let center: AnyView?
-    private let sidebarWidth: CGFloat?
-    private let sidebarToggle: TypefluxToolbarAction?
     @ObservedObject private var searchState: TypefluxSearchState
     private let searchEnabled: Bool
     private let searchPrompt: String
@@ -35,7 +33,7 @@ public struct TypefluxWindow<Detail: View>: View {
     public init(title: String, search: TypefluxSearchState? = nil, searchPrompt: String = "",
                 groups: [TypefluxToolbarGroup] = [], prominent: TypefluxToolbarAction? = nil,
                 sidebarVisibility: Binding<NavigationSplitViewVisibility>? = nil,
-                center: AnyView? = nil, sidebarWidth: CGFloat? = nil, sidebarToggle: TypefluxToolbarAction? = nil,
+                center: AnyView? = nil,
                 @ViewBuilder sidebar: () -> some View, @ViewBuilder detail: () -> Detail) {
         self.title = title
         self.sidebar = AnyView(sidebar())
@@ -45,14 +43,12 @@ public struct TypefluxWindow<Detail: View>: View {
         self.groups = groups
         self.prominent = prominent
         self.center = center
-        self.sidebarWidth = sidebarWidth
-        self.sidebarToggle = sidebarToggle
         self.detail = detail()
         self.sidebarVisibility = sidebarVisibility
     }
 
     public var body: some View {
-        configuredSplitView
+        splitView
             .background {
                 if searchEnabled {
                     TypefluxSearchToolbarBridge(state: searchState, style: style).frame(width: 0, height: 0)
@@ -65,14 +61,6 @@ public struct TypefluxWindow<Detail: View>: View {
             )
     }
 
-    @ViewBuilder private var configuredSplitView: some View {
-        if #available(macOS 14, *), sidebarToggle != nil {
-            splitView.toolbar(removing: .sidebarToggle)
-        } else {
-            splitView
-        }
-    }
-
     private var splitView: some View {
         NavigationSplitView(columnVisibility: sidebarVisibility ?? $columnVisibility) {
             sidebar
@@ -82,8 +70,7 @@ public struct TypefluxWindow<Detail: View>: View {
                         TypefluxColor.windowBackground.color
                     }
                 }
-                .navigationSplitViewColumnWidth(min: sidebarWidth ?? 180, ideal: sidebarWidth ?? 220,
-                                                max: sidebarWidth ?? 300)
+                .navigationSplitViewColumnWidth(min: 180, ideal: 220, max: 300)
         } detail: {
             searchableDetail.frame(maxWidth: .infinity, maxHeight: .infinity)
                 .environment(\.typefluxToolbarSearchQuery, searchEnabled ? searchState.query : nil)
@@ -91,18 +78,6 @@ public struct TypefluxWindow<Detail: View>: View {
                 .navigationTitle("")
                 .toolbar {
                     titleToolbarItem
-                    if #available(macOS 14, *), let sidebarToggle {
-                        ToolbarItem(placement: .navigation) {
-                            Button(action: sidebarToggle.perform) {
-                                Label(sidebarToggle.title, systemImage: sidebarToggle.systemImage).labelStyle(.iconOnly)
-                            }
-                            .help(sidebarToggle.title)
-                            .disabled(!sidebarToggle.isEnabled)
-                            .accessibilityLabel(sidebarToggle.title)
-                            .accessibilityIdentifier(sidebarToggle.accessibilityIdentifier)
-                            .keyboardShortcut(sidebarToggle.keyboardShortcut)
-                        }
-                    }
                     if let center {
                         ToolbarItem(id: "typeflux.window.segments", placement: .principal) { center }
                     }

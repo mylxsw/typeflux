@@ -91,7 +91,7 @@ struct AskLauncherLightPaletteTests {
         }
     }
 
-    @Test func `dark launcher selection and keywords stay neutral and readable`() {
+    @Test func darkLauncherSelectionAndKeywordsStayNeutralAndReadable() {
         for color in [AskTheme.launcherSelection, AskTheme.launcherKeyword, AskTheme.launcherKeywordText] {
             let value = resolve(color, dark: true)
             #expect(abs(value.red - value.green) < 0.005)
@@ -150,7 +150,7 @@ struct AskLauncherLightPaletteTests {
         #expect(AskIconChipFace.wellFill(.neutral, hovering: true) == AskTheme.hoverFill)
         #expect(AskIconChipFace.wellFill(.unavailable, hovering: true) == .clear)
         #expect(AskIconChipFace.wellFill(.warning, hovering: false) == StudioTheme.warning.opacity(0.14))
-        for style in [AskChip.Style.neutral, .warning, .unavailable] {
+        for style in [AskContextItem.Style.neutral, .warning, .unavailable] {
             #expect(AskIconChipFace.wellEdge(style) == .clear)
         }
         // Light and dark both tint the well with the accent.

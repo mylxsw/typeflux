@@ -6,6 +6,9 @@ import SwiftUI
 /// chip; the words live in a hover card, so a long window title can no longer
 /// push the whole group into an overflow menu.
 struct AskContextItem: Identifiable, Equatable {
+    /// Semantic context state, also used by the launcher's compact icon face.
+    enum Style: Equatable { case neutral, active, warning, unavailable }
+
     enum Kind: String, CaseIterable {
         case screenshot, source, selection, memory
     }
@@ -21,7 +24,7 @@ struct AskContextItem: Identifiable, Equatable {
     var systemImage: String
     /// Draws this app's icon in place of `systemImage` when it can be resolved.
     var appBundleID: String?
-    var style: AskChip.Style
+    var style: Style
     var title: String
     var detail: String?
     var hint: String?
@@ -240,7 +243,7 @@ struct AskIconChipFace: View {
     }
 
     /// On is the accent, hover brightens an off icon.
-    static func iconColor(_ style: AskChip.Style, hovering: Bool) -> Color {
+    static func iconColor(_ style: AskContextItem.Style, hovering: Bool) -> Color {
         switch style {
         case .active: return AskTheme.accent
         case .warning: return StudioTheme.warning

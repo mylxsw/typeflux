@@ -299,9 +299,10 @@ struct AskToolStepRow: View {
             if expanded {
                 VStack(alignment: .leading, spacing: 8) {
                     if result != nil {
-                        AskSegmentedControl(options: [(Pane.arguments, L("ask.tool.arguments")),
-                                                      (Pane.result, L("ask.tool.result"))],
-                                            selection: $pane)
+                        TypefluxSegmentedControl(L("ask.tool.arguments"), selection: $pane) {
+                            Text(L("ask.tool.arguments")).tag(Pane.arguments)
+                            Text(L("ask.tool.result")).tag(Pane.result)
+                        }
                             .frame(width: 112)
                     }
                     if pane == .arguments || result == nil {
@@ -451,8 +452,11 @@ private struct AskSourceList: View {
         HStack(spacing: 6) {
             Text(L("ask.sources")).font(.subheadline).foregroundStyle(StudioTheme.textTertiary)
             ForEach(Array(sources.prefix(6).enumerated()), id: \.offset) { index, url in
-                AskChip(title: "\(index + 1) " + (url.host ?? url.absoluteString), systemImage: "link",
-                        action: { NSWorkspace.shared.open(url) }, help: url.absoluteString)
+                TypefluxToken("\(index + 1) " + (url.host ?? url.absoluteString), removeLabel: L("ask.remove"),
+                              systemImage: "link", action: { NSWorkspace.shared.open(url) })
+                    .foregroundStyle(TypefluxColor.secondaryLabel.color)
+                    .accessibilityHint(url.absoluteString)
+                    .help(url.absoluteString)
             }
             if sources.count > 6 {
                 Text("+\(sources.count - 6)").font(.subheadline).foregroundStyle(StudioTheme.textTertiary)

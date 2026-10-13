@@ -150,12 +150,6 @@ struct AskLiquidGlassRedesignTests {
             == .send(enabled: true))
     }
 
-    @Test func headerInk() {
-        #expect(AskHeaderIconButton.ink(active: true, hovering: false) == AskTheme.accent)
-        #expect(AskHeaderIconButton.ink(active: false, hovering: true) == StudioTheme.textPrimary)
-        #expect(AskHeaderIconButton.ink(active: false, hovering: false) == StudioTheme.textSecondary)
-    }
-
     @Test func pressStylesScaleGently() {
         #expect(AskPressableStyle().scale == AskPressableStyle.pressedScale)
         #expect(AskPressableStyle.subtle.scale > AskPressableStyle.pressedScale)

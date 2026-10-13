@@ -9,7 +9,7 @@ extension AskIconChipFace {
 
     /// The well behind the icon: tinted when the switch is on, a warning wash
     /// when it failed, and the hover wash under an off icon.
-    static func wellFill(_ style: AskChip.Style, hovering: Bool) -> Color {
+    static func wellFill(_ style: AskContextItem.Style, hovering: Bool) -> Color {
         switch style {
         case .active: return AskTheme.switchOnFill
         case .warning: return StudioTheme.warning.opacity(0.14)
@@ -18,7 +18,7 @@ extension AskIconChipFace {
         }
     }
 
-    static func wellEdge(_ style: AskChip.Style) -> Color {
+    static func wellEdge(_ style: AskContextItem.Style) -> Color {
         style == .active ? AskTheme.switchOnEdge : .clear
     }
 

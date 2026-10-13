@@ -101,7 +101,11 @@ struct AskUsagePanel: View {
                     if let context = model.usageContext { contextCard(context) }
                     if let budget = model.selected?.run?.budget { AskBudgetView(budget: budget) }
                     if scopeOptions.count > 1 {
-                        AskSegmentedControl(options: scopeOptions, selection: $runId, title: L("ask.usage.title"))
+                        TypefluxSegmentedControl(L("ask.usage.title"), selection: $runId) {
+                            ForEach(scopeOptions.indices, id: \.self) { index in
+                                Text(scopeOptions[index].title).tag(scopeOptions[index].value)
+                            }
+                        }
                             .padding(.top, 4)
                     }
                     if model.hasUsageRecords, let totals {

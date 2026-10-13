@@ -32,6 +32,7 @@ struct AskWorkspaceLibraryTests {
         #expect(chrome.idleBorder == TypefluxColor.separator.color)
         #expect(chrome.editorFontSize == NSFont.preferredFont(forTextStyle: .body).pointSize)
         #expect(AskMetrics.transcriptMaxWidth == 680)
+        #expect(AskMetrics.composerMaxWidth - chrome.horizontalInset * 2 == AskMetrics.transcriptMaxWidth)
     }
 
     @Test func sharedCompatibilityNamesResolveToTheSameSemanticTokens() {
@@ -81,6 +82,74 @@ struct AskWorkspaceLibraryTests {
                 #expect(hosting.fittingSize.width == (page == .models
                     ? AskModelEffortCard.modelsWidth : AskModelEffortCard.width))
                 #expect(hosting.fittingSize.height > 0)
+            }
+        }
+    }
+
+    @Test(arguments: [false, true])
+    func nativeTokensKeepPreviewAndRemovalIndependent(hasPreview: Bool) async throws {
+        var previews = 0
+        var removals = 0
+        let preview: (() -> Void)? = hasPreview ? { previews += 1 } : nil
+        let token = TypefluxToken("Screenshot", removeLabel: "Remove screenshot", systemImage: "photo",
+                                  action: preview, onRemove: { removals += 1 })
+        try await TypefluxNavigationTestSupport.withWindow(token.padding(24)) { _, host in
+            if hasPreview {
+                try SettingsBehaviorTestSupport.button("Screenshot", in: host).press()
+                #expect(previews == 1)
+                #expect(removals == 0)
+            } else {
+                #expect(!SettingsBehaviorTestSupport.elements(in: host).contains {
+                    $0.label == "Screenshot" && $0.role == NSAccessibility.Role.button.rawValue
+                })
+            }
+            try SettingsBehaviorTestSupport.button("Remove screenshot", in: host).press()
+            #expect(removals == 1)
+            #expect(previews == (hasPreview ? 1 : 0))
+        }
+    }
+
+    @Test func nativeUsageSegmentsPreserveTheOptionalAllRunsSelection() async throws {
+        var runID: String?
+        let selection = Binding(get: { runID }, set: { runID = $0 })
+        let picker = TypefluxSegmentedControl("Usage scope", selection: selection) {
+            Text("All runs").tag(String?.none)
+            Text("Current run").tag(Optional("run"))
+        }
+        try await TypefluxNavigationTestSupport.withWindow(picker.padding(24)) { _, host in
+            try SettingsBehaviorTestSupport.button("Current run", in: host).press()
+            #expect(runID == "run")
+            try SettingsBehaviorTestSupport.button("All runs", in: host).press()
+            #expect(runID == nil)
+        }
+    }
+
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["TYPEFLUX_UI_NAVIGATION_LIVE"] == "1"),
+          arguments: InterfaceStyle.allCases)
+    func libraryToolbarKeepsOneSidebarActionAndDispatchesNativeActions(style: InterfaceStyle) async throws {
+        var sidebarCalls = 0
+        var newCalls = 0
+        let sidebar = TypefluxToolbarAction(id: "sidebar", title: "Toggle history", systemImage: "sidebar.left",
+                                           shortcut: "s", modifiers: [.command, .control]) { sidebarCalls += 1 }
+        let new = TypefluxToolbarAction(id: "new", title: "New conversation", systemImage: "plus") { newCalls += 1 }
+        let view = TypefluxWindow(title: "Conversation", search: TypefluxSearchState(), searchPrompt: "Search",
+                                  prominent: new, sidebarToggle: sidebar) {
+            List { Text("History") }
+        } detail: { Text("Solid content") }
+        try await TypefluxNavigationTestSupport.withWindow(view.environment(\.interfaceStyle, style)) { window, _ in
+            try SettingsBehaviorTestSupport.button("New conversation", in: window).press()
+            #expect(newCalls == 1)
+            let automaticItems = window.toolbar?.items.filter {
+                $0.itemIdentifier == .toggleSidebar
+                    || $0.itemIdentifier.rawValue.localizedCaseInsensitiveContains("toggleSidebar")
+            } ?? []
+            if #available(macOS 14, *) {
+                #expect(automaticItems.isEmpty)
+                try SettingsBehaviorTestSupport.button("Toggle history", in: window).press()
+                #expect(sidebarCalls == 1)
+            } else {
+                #expect(automaticItems.count == 1)
+                #expect(sidebarCalls == 0)
             }
         }
     }

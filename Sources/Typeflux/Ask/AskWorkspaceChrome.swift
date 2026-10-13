@@ -65,39 +65,6 @@ struct AskPressableStyle: ButtonStyle {
     }
 }
 
-/// An SF Symbol button inside the header's actions capsule.
-struct AskHeaderIconButton: View {
-    var symbol: String
-    var label: String
-    var shortcut: String?
-    var active = false
-    var action: () -> Void
-    static func ink(active: Bool, hovering: Bool) -> Color {
-        if active { return AskTheme.accent }
-        return hovering ? StudioTheme.textPrimary : StudioTheme.textSecondary
-    }
-
-    var body: some View {
-        TypefluxIconButton(label, systemImage: symbol, action: action)
-            .foregroundStyle(active ? TypefluxColor.accent.color : TypefluxColor.secondaryLabel.color)
-            .help(AskTitleBarButton.help(label: label, shortcut: shortcut))
-    }
-
-}
-
-/// A drawn line icon (usage, trash) inside the header's actions capsule.
-struct AskHeaderLineButton: View {
-    var kind: AskLineGlyph.Kind
-    var label: String
-    var active = false
-    var action: () -> Void
-    var body: some View {
-        TypefluxIconButton(label, systemImage: kind == .usage ? "chart.pie" : "trash", action: action)
-            .foregroundStyle(active ? TypefluxColor.accent.color : TypefluxColor.secondaryLabel.color)
-    }
-
-}
-
 /// An icon-only action under an answer. The words live in the tooltip and the
 /// accessibility label, so the strip stays as quiet as the design's.
 struct AskIconGhostButton: View {

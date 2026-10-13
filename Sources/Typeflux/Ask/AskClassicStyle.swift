@@ -81,8 +81,8 @@ struct AskClassicDivider: View {
     }
 }
 
-/// Chrome for auxiliary columns and drawers at a window edge. Liquid Glass floats it as an inset glass panel; classic lays
-/// it flush against the edge, solid, with a hairline on its inner side. A
+/// Chrome for auxiliary columns and drawers at a window edge. Liquid Glass floats
+/// an inset glass panel; classic lays it flush, solid, with a hairline on its inner side. A
 /// classic drawer over the conversation also casts a shadow along that side.
 struct AskSidePanelChrome: ViewModifier {
     /// The window edge the column sits against.
@@ -94,7 +94,6 @@ struct AskSidePanelChrome: ViewModifier {
     /// Over the conversation, as a drawer, rather than beside it.
     var floating = false
     @Environment(\.interfaceStyle) private var style
-    @Environment(\.colorScheme) private var colorScheme
 
     @ViewBuilder
     func body(content: Content) -> some View {

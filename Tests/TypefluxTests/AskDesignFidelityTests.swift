@@ -24,7 +24,7 @@ struct AskDesignFidelityTests {
         #expect(AskMetrics.sidebarWidth == 264)
         #expect(AskMetrics.headerCapsuleHeight == 36)
         #expect(AskMetrics.transcriptMaxWidth == 680)
-        #expect(AskMetrics.composerMaxWidth == 728)
+        #expect(AskMetrics.composerMaxWidth == 720)
         #expect(AskMetrics.composerControlHeight == 34)
         #expect(AskSendButton.size == 36)
         #expect(AskMetrics.suggestionsMaxWidth == 680)

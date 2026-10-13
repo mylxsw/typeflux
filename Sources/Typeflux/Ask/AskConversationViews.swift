@@ -1107,6 +1107,7 @@ private struct AskMessageView: View {
     var onSaveNote: ((String?) -> Void)?
     /// The whole answer is in the notebook.
     var savedToNotes = false
+    @Environment(\.interfaceStyle) private var style
     @State private var copied = false
     @State private var hovering = false
 
