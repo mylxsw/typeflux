@@ -317,6 +317,7 @@ final class AskWordBookViewModel: ObservableObject {
     func lookUp(_ text: String? = nil) async {
         let word = (text ?? lookupText).trimmingCharacters(in: .whitespacesAndNewlines)
         guard !word.isEmpty, lookingUp == nil else { return }
+        notice = nil
         lookupText = word
         preview = nil
         freshKey = nil

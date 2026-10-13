@@ -92,7 +92,16 @@ struct AskNoteDetailView: View {
 
     private func header(_ note: AskNote, compact: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            titleField(compact: compact)
+            if model.editing {
+                titleField(compact: compact)
+            } else {
+                Text(note.title.isEmpty ? L("ask.notes.untitled") : note.title)
+                    .font(compact ? .title2 : .title).fontWeight(.bold)
+                    .foregroundStyle(TypefluxColor.label.color)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityAddTraits(.isHeader)
+                    .accessibilityIdentifier("ask.notes.title")
+            }
             if model.editing {
                 Text(L(model.hasUnsavedDraft || model.pendingTitle != nil ? "ask.notes.saving" : "ask.notes.autosaved"))
                     .font(.caption).foregroundStyle(TypefluxColor.secondaryLabel.color)

@@ -2,6 +2,7 @@ import SwiftUI
 
 /// The native sidebar list owns keyboard navigation and multi-selection.
 struct AskNotesList: View {
+    @Environment(\.interfaceStyle) private var style
     @ObservedObject var model: AskNotesViewModel
 
     var body: some View {
@@ -15,6 +16,7 @@ struct AskNotesList: View {
             }
         }
         .listStyle(.sidebar)
+        .environment(\.defaultMinListRowHeight, TypefluxControlHeight.sidebarRow.value(for: style))
         .overlay {
             if model.notes.isEmpty {
                 TypefluxEmptyState(emptyText, systemImage: model.inTrash ? "trash" : "note.text",

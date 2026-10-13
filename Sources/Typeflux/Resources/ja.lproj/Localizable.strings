@@ -4448,6 +4448,7 @@
 "ask.notes.saving" = "保存中…";
 "ask.notes.outline" = "アウトライン";
 "ask.notes.more" = "その他";
+"ask.notes.share" = "共有";
 "ask.notes.exportAs" = "書き出し形式";
 "ask.notes.export.markdown" = "Markdown (.md)";
 "ask.notes.export.html" = "Web ページ (.html)";

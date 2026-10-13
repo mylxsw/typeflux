@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct AskWordBookList: View {
+    @Environment(\.interfaceStyle) private var style
     @ObservedObject var model: AskWordBookViewModel
 
     var body: some View {
@@ -9,7 +10,8 @@ struct AskWordBookList: View {
             ForEach(model.sections) { section in
                 Section {
                     ForEach(section.entries) { entry in
-                        AskWordBookRow(entry: entry).tag(entry.key)
+                        AskWordBookRow(entry: entry, selected: model.transient == nil && model.selectedKey == entry.key)
+                            .tag(entry.key)
                             .contextMenu {
                                 Button(L(entry.isStarred ? "ask.wordBook.unstar" : "ask.wordBook.star")) {
                                     model.toggleStar(entry)
@@ -24,6 +26,7 @@ struct AskWordBookList: View {
             }
         }
         .listStyle(.sidebar)
+        .environment(\.defaultMinListRowHeight, TypefluxControlHeight.sidebarRow.value(for: style))
         .overlay {
             if model.entries.isEmpty {
                 TypefluxEmptyState(L(model.filterText.isEmpty

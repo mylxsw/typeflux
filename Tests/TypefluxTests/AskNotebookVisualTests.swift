@@ -324,7 +324,7 @@ struct AskNotebookVisualTests {
 
     private func checkReadControls(_ window: NSWindow) throws {
         let compact = (window.contentView?.bounds.width ?? 0) < AskNotesView.expandedToolbarMinimumWidth
-        let identifiers = compact ? ["notes.copy"] : ["notes.copy", "notes.pin", "notes.edit", "notes.delete"]
+        let identifiers = compact ? ["notes.copy"] : ["notes.copy", "notes.pin", "notes.share", "notes.delete"]
         for identifier in identifiers {
             let action = try AskLibraryTestSupport.action(identifier, in: window)
             let frame = action.frame

@@ -6,10 +6,11 @@ import UniformTypeIdentifiers
 struct AskNotesView: View {
     @ObservedObject var model: AskNotesViewModel
     var onClose: () -> Void
+    @Environment(\.interfaceStyle) var style
     @FocusState private var focus: AskNotesField?
     @State private var dropTargeted = false
     @StateObject private var search = TypefluxSearchState()
-    static let expandedToolbarMinimumWidth: CGFloat = 1200
+    static let expandedToolbarMinimumWidth = AskLibraryLayout.expandedToolbarMinimumWidth
 
     var body: some View {
         GeometryReader { geometry in
@@ -35,17 +36,18 @@ struct AskNotesView: View {
         .accessibilityIdentifier("ask.notes")
     }
 
-    /// Keep the direct copy action reachable while secondary actions collapse into a native menu.
+    /// Install all library actions in one toolbar so SwiftUI preserves their order after the title.
     private func libraryWindow(compact: Bool) -> some View {
         TypefluxWindow(title: L("ask.notes.title"), search: search, searchPrompt: L("ask.notes.search"),
-                       groups: compact ? [] : toolbarGroups, prominent: TypefluxToolbarAction(
+                       groups: visibleToolbarGroups(compact: compact), prominent: TypefluxToolbarAction(
                         id: "notes.new", title: L("ask.notes.new"), systemImage: "square.and.pencil",
-                        perform: { model.createNote() })) {
+                        perform: { model.createNote() }),
+                       toolbarAccessories: AnyView(toolbarAccessories(compact: compact)),
+                       separatesToolbarGroups: true) {
             AskNotesList(model: model)
         } detail: {
             AskNoteDetailView(model: model, focus: $focus)
         }
-        .toolbar { libraryToolbar(compact: compact) }
     }
 
     /// Reads the dropped files' URLs, then hands them over on the main actor.
@@ -88,7 +90,8 @@ struct AskNotesView: View {
     @ViewBuilder private var noticeBar: some View {
         if let notice = model.notice {
             HStack(spacing: 10) {
-                Text(notice).font(.callout).foregroundStyle(TypefluxColor.label.color).lineLimit(1)
+                Text(notice).font(.callout).foregroundStyle(TypefluxColor.label.color)
+                    .fixedSize(horizontal: false, vertical: true)
                 if model.draftConflict {
                     Button(L("ask.notes.saveCopy")) { model.saveDraftCopy() }
                         .buttonStyle(.plain).font(.callout).fontWeight(.semibold)
@@ -110,7 +113,8 @@ struct AskNotesView: View {
                 .buttonStyle(.plain).foregroundStyle(TypefluxColor.tertiaryLabel.color)
                 .accessibilityLabel(L("ask.artifact.close"))
             }
-            .padding(.horizontal, 14).frame(height: 34)
+            .padding(.horizontal, 14).padding(.vertical, TypefluxSpacing.compact.value(for: style))
+            .frame(minHeight: 34)
             .background(TypefluxColor.contentBackground.color)
             .padding(.bottom, 12)
             .transition(.opacity)
