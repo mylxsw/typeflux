@@ -1740,7 +1740,7 @@
 "models.httpError" = "The provider returned HTTP %d. Check the endpoint and credentials.";
 "models.search" = "Search models or providers";
 "models.back" = "뒤로";
-"models.tab.scenes" = "모델 구성";
+"models.tab.scenes" = "시나리오";
 "models.tab.speech" = "음성 인식";
 "models.tab.language" = "대규모 언어 모델";
 "models.sceneHint" = "Choose a provider and model for each application scenario";
@@ -4737,3 +4737,6 @@
 "ask.plugin.kill.warning" = "강제 종료하면 저장하지 않은 변경 사항이 손실될 수 있습니다.";
 "ask.plugin.kill.failed" = "“%@” 앱을 강제 종료할 수 없습니다.";
 "ask.settings.keywords.kind.kill.hint" = "실행 중인 앱을 표시하고 선택한 앱을 강제 종료합니다.";
+
+"models.tab.providers" = "제공자";
+"models.tab.local" = "로컬 모델";

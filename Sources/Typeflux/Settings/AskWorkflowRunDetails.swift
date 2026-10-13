@@ -27,13 +27,13 @@ struct AskWorkflowRunDetails: View, Identifiable {
                     .padding(12)
             }
             .frame(height: 220)
-            .background(ModelVisualStyle.input, in: RoundedRectangle(cornerRadius: 8))
+            .background(TypefluxColor.controlBackground.color, in: RoundedRectangle(cornerRadius: 8))
             HStack {
                 Spacer()
                 Button(L("ask.workflow.editor.close")) { dismiss() }
-                    .buttonStyle(ModelActionStyle()).keyboardShortcut(.cancelAction)
+                    .buttonStyle(.bordered).keyboardShortcut(.cancelAction)
             }
         }
-        .padding(20).frame(width: 520).background(ModelVisualStyle.canvas)
+        .padding(20).frame(width: 520).background(TypefluxColor.windowBackground.color)
     }
 }

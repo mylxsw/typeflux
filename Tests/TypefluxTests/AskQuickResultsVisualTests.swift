@@ -21,7 +21,7 @@ struct AskQuickResultsVisualTests {
         AppLocalization.shared.setLanguage(.simplifiedChinese)
         defer { AppLocalization.shared.setLanguage(previousLanguage) }
         for (name, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
-            try await render(LauncherSettingsView(settings: settings).padding(24).background(ModelVisualStyle.canvas),
+            try await render(LauncherSettingsView(settings: settings).padding(24).background(TypefluxColor.windowBackground.color),
                              size: .init(width: 620, height: 270), appearance: appearance,
                              file: root.appendingPathComponent("built-in-number-conversions-\(name).png"))
         }

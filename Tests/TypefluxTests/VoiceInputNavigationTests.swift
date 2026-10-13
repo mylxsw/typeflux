@@ -76,7 +76,9 @@ final class VoiceInputNavigationTests: XCTestCase {
     }
 
     func testTabBarRendersEveryVoiceInputTab() {
-        let bar = VoiceInputTabBar(selection: .vocabulary, count: { $0 == .vocabulary ? 12 : nil }, onSelect: { _ in })
+        let bar = TypefluxSegmentedControl("Voice Input", selection: .constant(StudioSection.vocabulary)) {
+            ForEach(StudioSection.voiceInputCases) { Text($0.title).tag($0) }
+        }
         let host = NSHostingView(rootView: bar)
         host.layoutSubtreeIfNeeded()
 
@@ -84,13 +86,20 @@ final class VoiceInputNavigationTests: XCTestCase {
         XCTAssertGreaterThan(host.fittingSize.height, 0)
     }
 
-    func testTabInvokesItsAction() {
-        var tapped = false
-        let tab = StudioUnderlineTab(title: "History", count: nil, selected: false) { tapped = true }
-
-        tab.action()
-
-        XCTAssertTrue(tapped)
+    func testVocabularyActionRemainsAvailableBelowToolbarTabs() async throws {
+        try await SettingsBehaviorTestSupport.withFixture { settings in
+            let model = StudioViewModel(settingsStore: settings, historyStore: InMemoryHistoryStore(),
+                initialSection: .vocabulary,
+                modelLibrary: AskModelLibrary(defaults: settings.defaults, automaticallyLoadsCatalog: false))
+            try await TypefluxNavigationTestSupport.withWindow(StudioView(viewModel: model)) { window, _ in
+                try SettingsBehaviorTestSupport.button(L("vocabulary.action.newWord"), in: window).press()
+                try await SettingsBehaviorTestSupport.wait { window.attachedSheet != nil }
+                let sheet = try XCTUnwrap(window.attachedSheet)
+                try SettingsBehaviorTestSupport.button(L("common.cancel"), in: sheet).press()
+                try await SettingsBehaviorTestSupport.wait { window.attachedSheet == nil }
+                XCTAssertTrue(model.vocabularyEntries.isEmpty)
+            }
+        }
     }
 }
 

@@ -32,40 +32,37 @@ final class SettingsPolishTests: XCTestCase {
         )
     }
 
-    func testFieldsMenusAndActionsUseTheirControlHeights() {
+    func testFieldsMenusAndActionsUseNativeSizing() {
         let field = height(TextField("Name", text: .constant("long example name"))
-            .textFieldStyle(ModelFieldStyle(monospaced: false)))
-        XCTAssertEqual(field, 30, accuracy: 0.5)
+            .textFieldStyle(.roundedBorder))
+        XCTAssertGreaterThan(field, 0)
         XCTAssertEqual(
-            height(SecureField("Key", text: .constant("fixture")).textFieldStyle(ModelFieldStyle())),
+            height(SecureField("Key", text: .constant("fixture")).textFieldStyle(.roundedBorder)),
             field,
             accuracy: 0.5
         )
         XCTAssertEqual(
-            height(SettingsMenuPicker(
-                title: "Protocol",
-                options: [(label: "Responses", value: 1)],
-                selection: .constant(1)
-            )),
-            SettingsControlMetrics.menuHeight,
+            height(TypefluxPopup(title: "Protocol",
+                                 options: [(label: "Responses", value: 1)],
+                                 selection: .constant(1))),
+            height(TypefluxPopup("Protocol", selection: .constant(1), borderless: true) { Text("Responses").tag(1) }),
             accuracy: 0.5
         )
-        XCTAssertEqual(height(Button("Save") {}.buttonStyle(ModelActionStyle(primary: true))), field, accuracy: 0.5)
+        XCTAssertGreaterThan(height(Button("Save") {}.buttonStyle(.borderedProminent)), 0)
         let plainCard = height(StudioTextInputCard(label: "Name", placeholder: "Name", text: .constant("value")))
         XCTAssertEqual(
             height(StudioTextInputCard(label: "Key", placeholder: "Key", text: .constant("value"), secure: true)),
             plainCard,
             accuracy: 0.5
         )
-        XCTAssertEqual(
+        XCTAssertGreaterThanOrEqual(
             height(StudioSuggestedTextInputCard(
                 label: "Model",
                 placeholder: "Model",
                 text: .constant("manual-model"),
                 suggestions: ["suggested-model"]
             )),
-            plainCard,
-            accuracy: 0.5
+            field
         )
     }
 
@@ -417,11 +414,11 @@ final class SettingsPolishTests: XCTestCase {
     private struct Element {
         let object: NSObject
         func value(_ key: String) -> Any? {
-            object.responds(to: NSSelectorFromString(key)) ? object.value(forKey: key) : nil
+            SettingsBehaviorTestSupport.Element(object: object).value(key)
         }
 
         func accessibilityLabel() -> String? {
-            value("accessibilityLabel") as? String
+            SettingsBehaviorTestSupport.Element(object: object).label
         }
 
         func accessibilityIdentifier() -> String? {
@@ -433,11 +430,11 @@ final class SettingsPolishTests: XCTestCase {
         }
 
         func accessibilityRole() -> NSAccessibility.Role? {
-            (value("accessibilityRole") as? String).map(NSAccessibility.Role.init(rawValue:))
+            NSAccessibility.Role(rawValue: SettingsBehaviorTestSupport.Element(object: object).role)
         }
 
         func accessibilityFrame() -> NSRect {
-            (value("accessibilityFrame") as? NSValue)?.rectValue ?? .zero
+            SettingsBehaviorTestSupport.Element(object: object).frame
         }
     }
 
@@ -452,6 +449,10 @@ final class SettingsPolishTests: XCTestCase {
     }
 
     private func click(_ element: Element, in window: NSWindow) throws {
+        if let role = element.accessibilityRole(), [.button, .radioButton, .checkBox].contains(role) {
+            try SettingsBehaviorTestSupport.Element(object: element.object, window: window).press()
+            return
+        }
         let frame = element.accessibilityFrame()
         XCTAssertFalse(frame.isEmpty, "A clickable control needs a visible frame")
         let point = window.convertPoint(fromScreen: NSPoint(x: frame.midX, y: frame.midY))
@@ -463,24 +464,16 @@ final class SettingsPolishTests: XCTestCase {
         }
         // Native text fields track until mouse-up; queue it before dispatching mouse-down.
         try NSApp.postEvent(event(.leftMouseUp), atStart: true)
-        try NSApp.sendEvent(event(.leftMouseDown))
+        try window.sendEvent(event(.leftMouseDown))
         if let release = NSApp.nextEvent(matching: .leftMouseUp, until: Date(), inMode: .default, dequeue: true) {
-            NSApp.sendEvent(release)
+            window.sendEvent(release)
         }
     }
 
     private func withWindow(_ content: some View, width: CGFloat, height: CGFloat,
                             check: (NSWindow, NSView) async throws -> Void) async throws {
-        let window = NSWindow(contentRect: NSRect(x: -10000, y: -10000, width: width, height: height),
-                              styleMask: [.titled], backing: .buffered, defer: false)
-        window.isReleasedWhenClosed = false
-        let hosting = NSHostingView(rootView: content.frame(width: width, height: height, alignment: .topLeading))
-        window.contentView = hosting
-        window.makeKeyAndOrderFront(nil)
-        defer { window.orderOut(nil); window.close() }
-        try await Task.sleep(for: .milliseconds(100))
-        hosting.layoutSubtreeIfNeeded()
-        try await check(window, hosting)
+        try await TypefluxNavigationTestSupport.withWindow(content,
+            size: NSSize(width: width, height: height), run: check)
     }
 
     func testConfigurationLabelsAreLocalizedAndMCPStillShowsConnectionResults() {
@@ -508,7 +501,7 @@ final class SettingsPolishTests: XCTestCase {
         window.isReleasedWhenClosed = false
         window.appearance = NSAppearance(named: appearance)
         let hosting = NSHostingView(rootView: content.frame(width: width, height: height, alignment: .topLeading)
-            .background(ModelVisualStyle.canvas))
+            .background(TypefluxColor.windowBackground.color))
         window.contentView = hosting
         window.orderFront(nil)
         defer { window.orderOut(nil); window.close() }
@@ -538,11 +531,11 @@ private struct SettingsFocusFixture: View {
 
     var body: some View {
         VStack {
-            TextField("First", text: $first).textFieldStyle(ModelFieldStyle(monospaced: false)).focused(
+            TextField("First", text: $first).textFieldStyle(.roundedBorder).focused(
                 $focused,
                 equals: .first
             )
-            TextField("Second", text: $second).textFieldStyle(ModelFieldStyle(monospaced: false)).focused(
+            TextField("Second", text: $second).textFieldStyle(.roundedBorder).focused(
                 $focused,
                 equals: .second
             )

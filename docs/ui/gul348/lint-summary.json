@@ -1,0 +1,10 @@
+{
+  "main": 96,
+  "current": 78,
+  "newByFileAndRule": 0,
+  "diagnosticsOnModifiedLines": 0,
+  "library": 0,
+  "newAndRewrittenTestFiles": 0,
+  "productionSwiftFiles": 62,
+  "baselineModified": false
+}

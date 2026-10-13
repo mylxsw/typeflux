@@ -89,8 +89,8 @@ struct AskWorkflowEditorCenter: View {
             VStack(spacing: 0) {
                 if showsRunSettings {
                     AskWorkflowRunSettings(model: model)
-                        .background(ModelVisualStyle.surface)
-                    Rectangle().fill(ModelVisualStyle.divider).frame(height: 1)
+                        .background(TypefluxColor.contentBackground.color)
+                    Rectangle().fill(TypefluxColor.separator.color).frame(height: 1)
                 }
                 if let path = model.selectedFile, path != AskWorkflowManifest.fileName,
                    model.draft?.files[path] != nil {
@@ -99,7 +99,7 @@ struct AskWorkflowEditorCenter: View {
                     Text(L("ask.workflow.editor.noScript")).foregroundStyle(StudioTheme.textSecondary)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
-                Rectangle().fill(ModelVisualStyle.divider).frame(height: 1)
+                Rectangle().fill(TypefluxColor.separator.color).frame(height: 1)
                 AskWorkflowStatusBar(model: model)
             }
             .codeCard()
@@ -151,7 +151,7 @@ struct AskWorkflowEditorCenter: View {
             VStack(spacing: 0) {
                 code(AskWorkflowManifest.fileName)
                 if let suggestion = model.scriptSuggestion {
-                    Rectangle().fill(ModelVisualStyle.divider).frame(height: 1)
+                    Rectangle().fill(TypefluxColor.separator.color).frame(height: 1)
                     HStack(spacing: 8) {
                         Image(systemName: "wand.and.stars").foregroundStyle(StudioTheme.warning)
                         Text(L("ask.workflow.editor.quickFix.script", model.draft?.manifest?.command.script ?? "",
@@ -165,7 +165,7 @@ struct AskWorkflowEditorCenter: View {
                     .background(StudioTheme.warning.opacity(0.10))
                 }
                 if AskWorkflowStatusBar.hasNews(model) {
-                    Rectangle().fill(ModelVisualStyle.divider).frame(height: 1)
+                    Rectangle().fill(TypefluxColor.separator.color).frame(height: 1)
                     AskWorkflowStatusBar(model: model)
                 }
             }
@@ -187,7 +187,7 @@ struct AskWorkflowEditorCenter: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 if AskWorkflowStatusBar.hasNews(model) {
-                    Rectangle().fill(ModelVisualStyle.divider).frame(height: 1)
+                    Rectangle().fill(TypefluxColor.separator.color).frame(height: 1)
                     AskWorkflowStatusBar(model: model)
                 }
             }
@@ -200,7 +200,7 @@ extension View {
     func codeCard() -> some View {
         background(Color(nsColor: .textBackgroundColor).opacity(0.55))
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(ModelVisualStyle.border))
+            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(TypefluxColor.separator.color))
             .padding(.horizontal, 20).padding(.bottom, 16)
     }
 }
@@ -231,11 +231,11 @@ struct AskWorkflowFileTab: View {
             }
             .padding(.horizontal, 10).frame(height: 26)
             .background(
-                selected ? ModelVisualStyle.surface : .clear,
+                selected ? TypefluxColor.contentBackground.color : .clear,
                 in: RoundedRectangle(cornerRadius: 7, style: .continuous)
             )
             .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous)
-                .strokeBorder(selected ? ModelVisualStyle.border : .clear))
+                .strokeBorder(selected ? TypefluxColor.separator.color : .clear))
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -260,7 +260,7 @@ struct AskWorkflowStatusBar: View {
             trailing
         }
         .font(.system(size: 11)).padding(.horizontal, 12).frame(height: 28)
-        .background(ModelVisualStyle.surface)
+        .background(TypefluxColor.contentBackground.color)
     }
 
     @ViewBuilder private var leading: some View {
@@ -322,7 +322,7 @@ struct AskWorkflowFlowStrip: View {
         HStack(spacing: 0) {
             ForEach(Array(steps.enumerated()), id: \.element) { index, step in
                 if index > 0 {
-                    Rectangle().fill(ModelVisualStyle.border).frame(width: 14, height: 1)
+                    Rectangle().fill(TypefluxColor.separator.color).frame(width: 14, height: 1)
                 }
                 node(step, number: index + 1)
             }
@@ -410,11 +410,11 @@ struct AskWorkflowFlowStrip: View {
             .padding(.leading, 8).padding(.trailing, 10).frame(height: 44)
             .frame(maxWidth: .infinity)
             .background(
-                selected ? ModelVisualStyle.surface : .clear,
+                selected ? TypefluxColor.contentBackground.color : .clear,
                 in: RoundedRectangle(cornerRadius: 10, style: .continuous)
             )
             .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .strokeBorder(selected ? ModelVisualStyle.border : .clear))
+                .strokeBorder(selected ? TypefluxColor.separator.color : .clear))
             .shadow(color: .black.opacity(selected ? 0.12 : 0), radius: 2, y: 1)
             .contentShape(Rectangle())
         }

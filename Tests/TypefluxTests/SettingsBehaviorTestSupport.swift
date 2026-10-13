@@ -43,8 +43,8 @@ enum SettingsBehaviorTestSupport {
             return NSRect(origin: position.pointValue, size: size.sizeValue)
         }
 
-        func press() throws {
-            if try pressNativeSegment() || pressNativeSwitch() { return }
+        @MainActor func press() throws {
+            if try pressNativeSegment() || pressNativeSwitch() || pressNativeToolbarAction() { return }
             if let button = object as? NSButton {
                 button.performClick(nil)
                 return
@@ -64,13 +64,41 @@ enum SettingsBehaviorTestSupport {
             #expect(accepted, "The control must accept its press action: \(label)")
         }
 
+        @MainActor private func pressNativeToolbarAction() throws -> Bool {
+            guard role == NSAccessibility.Role.button.rawValue, object is NSView, let window else { return false }
+            for view in window.toolbar?.items.compactMap(\.view) ?? [] {
+                if let button = SettingsBehaviorTestSupport.elements(in: view).first(where: {
+                    $0.role == role && $0.label == label && $0.object !== object
+                }) {
+                    try button.press()
+                    return true
+                }
+            }
+            func controls(in view: NSView) -> [NSSegmentedControl] {
+                (view as? NSSegmentedControl).map { [$0] } ?? view.subviews.flatMap { controls(in: $0) }
+            }
+            for control in window.toolbar?.items.flatMap({ $0.view.map { controls(in: $0) } ?? [] }) ?? [] {
+                if let index = (0 ..< control.segmentCount).first(where: {
+                    control.toolTip(forSegment: $0) == label || control.label(forSegment: $0) == label
+                }) {
+                    control.selectedSegment = index
+                    control.sendAction(control.action, to: control.target)
+                    return true
+                }
+            }
+            return false
+        }
+
         private func pressNativeSegment() throws -> Bool {
             guard role == NSAccessibility.Role.radioButton.rawValue, let window,
                   let content = window.contentView else { return false }
             func segments(in view: NSView) -> [NSSegmentedControl] {
                 (view as? NSSegmentedControl).map { [$0] } ?? view.subviews.flatMap { segments(in: $0) }
             }
-            for control in segments(in: content) {
+            let toolbarSegments = window.toolbar?.items.flatMap { item in
+                item.view.map { segments(in: $0) } ?? []
+            } ?? []
+            for control in segments(in: content) + toolbarSegments {
                 if let index = (0 ..< control.segmentCount).first(where: { control.label(forSegment: $0) == label }) {
                     control.selectedSegment = index
                     let action = try #require(control.action)

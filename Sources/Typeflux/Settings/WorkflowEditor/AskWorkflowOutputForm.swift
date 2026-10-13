@@ -44,16 +44,19 @@ struct AskWorkflowOutputForm: View {
                     ) {
                         model.setOutputFlag("close", $0)
                     }
-                    Rectangle().fill(ModelVisualStyle.divider).frame(height: 1)
+                    Rectangle().fill(TypefluxColor.separator.color).frame(height: 1)
                     toggleRow(L("ask.workflow.editor.output.scriptActions"),
                               detail: L("ask.workflow.editor.output.scriptActionsDetail"),
                               isOn: output.scriptActions, locked: false) {
                         model.setOutputFlag("scriptActions", $0)
                     }
                 }
-                .background(ModelVisualStyle.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .background(
+                    TypefluxColor.contentBackground.color,
+                    in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                )
                 .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .strokeBorder(ModelVisualStyle.border))
+                    .strokeBorder(TypefluxColor.separator.color))
             }
             askWorkflowProblemsText(model.problems(for: .output).filter { !$0.field.hasPrefix("output.on") })
         }
@@ -164,7 +167,7 @@ struct AskWorkflowActionList: View {
         VStack(alignment: .leading, spacing: 0) {
             ForEach(Array(rows.enumerated()), id: \.offset) { index, row in
                 if index > 0 {
-                    Rectangle().fill(ModelVisualStyle.divider).frame(height: 1)
+                    Rectangle().fill(TypefluxColor.separator.color).frame(height: 1)
                 }
                 AskWorkflowActionRow(model: model, list: list, index: index, row: row, menu: $menu,
                                      problem: problems["output.\(list.rawValue)[\(index)]"]) {
@@ -179,10 +182,10 @@ struct AskWorkflowActionList: View {
                 Text(L("ask.workflow.editor.output." + list.rawValue + "Empty")).font(.system(size: 12))
                     .foregroundStyle(StudioTheme.textTertiary).padding(.horizontal, 14).padding(.vertical, 12)
             }
-            Rectangle().fill(ModelVisualStyle.divider).frame(height: 1)
+            Rectangle().fill(TypefluxColor.separator.color).frame(height: 1)
             Button { menu = menu == .add(list) ? nil : .add(list) } label: {
                 Label(L("ask.workflow.editor.output.addAction"), systemImage: "plus")
-                    .font(.system(size: 12.5, weight: .medium)).foregroundStyle(ModelVisualStyle.accent)
+                    .font(.system(size: 12.5, weight: .medium)).foregroundStyle(TypefluxColor.accent.color)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.horizontal, 14).frame(height: 40).contentShape(Rectangle())
             }
@@ -198,8 +201,8 @@ struct AskWorkflowActionList: View {
                 ? L("ask.workflow.problem.tooManyActions", AskWorkflowManifest.Output.maximumActions) : "")
             .accessibilityIdentifier("ask.workflow.editor.output.add." + list.rawValue)
         }
-        .background(ModelVisualStyle.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(ModelVisualStyle.border))
+        .background(TypefluxColor.contentBackground.color, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(TypefluxColor.separator.color))
     }
 
     /// Moves the dragged row onto the row it is dropped on.
@@ -342,7 +345,10 @@ struct AskWorkflowPlaceholderField: View {
                     Text(L("ask.workflow.editor.output.insert")).font(.system(size: 11))
                         .foregroundStyle(StudioTheme.textTertiary).padding(.horizontal, 6).frame(height: 18)
                         .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous)
-                            .strokeBorder(ModelVisualStyle.border, style: StrokeStyle(lineWidth: 1, dash: [3, 2])))
+                            .strokeBorder(
+                                TypefluxColor.separator.color,
+                                style: StrokeStyle(lineWidth: 1, dash: [3, 2])
+                            ))
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain).fixedSize()
@@ -351,9 +357,9 @@ struct AskWorkflowPlaceholderField: View {
         }
         .padding(.leading, 8).padding(.trailing, 5).padding(.vertical, 4)
         .frame(minHeight: 28)
-        .background(ModelVisualStyle.control, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .background(TypefluxColor.controlBackground.color, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous)
-            .strokeBorder(focused ? AskTheme.accent : ModelVisualStyle.border))
+            .strokeBorder(focused ? AskTheme.accent : TypefluxColor.separator.color))
         .onAppear { text = value }
         .onChange(of: value) { newValue in
             if !focused {
@@ -494,22 +500,16 @@ private struct AskWorkflowMenuCard<Content: View>: View {
         } else {
             card
                 .background(StudioTheme.modalSurface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(ModelVisualStyle.border))
+                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(TypefluxColor.separator.color))
                 .shadow(color: .black.opacity(0.3), radius: 18, y: 10)
         }
     }
 }
 
-private struct AskWorkflowMenuInPopoverKey: EnvironmentKey {
-    static let defaultValue = false
-}
-
 extension EnvironmentValues {
-    /// Menus shown in a popover leave the chrome to it.
-    var askWorkflowMenuInPopover: Bool {
-        get { self[AskWorkflowMenuInPopoverKey.self] }
-        set { self[AskWorkflowMenuInPopoverKey.self] = newValue }
-    }
+    // Menus shown in a popover leave the chrome to it.
+    @Entry var askWorkflowMenuInPopover: Bool = false
 }
 
 extension View {
@@ -694,8 +694,8 @@ struct AskWorkflowWillRun: View {
         }
         .padding(.horizontal, 12).padding(.vertical, 10)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(ModelVisualStyle.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(ModelVisualStyle.border))
+        .background(TypefluxColor.contentBackground.color, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(TypefluxColor.separator.color))
     }
 
     private func line(marker: String, title: String, value: String?, failed: Bool) -> some View {

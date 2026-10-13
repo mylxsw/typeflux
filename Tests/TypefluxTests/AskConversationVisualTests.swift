@@ -367,7 +367,7 @@ struct AskConversationVisualTests {
         if ProcessInfo.processInfo.environment["TYPEFLUX_SCROLL_LARGE_CATALOG"] == "1" {
             try library.addModels((0..<300).map { .init(id: "fixture-model-\($0)", name: "Fixture \($0)") }, providerID: "openAI")
         }
-        viewModel.selectModelPageTab(.language)
+        viewModel.selectModelPageTab(.providers)
         for (name, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
             try await render(
                 StudioView(viewModel: viewModel),
@@ -396,13 +396,13 @@ struct AskConversationVisualTests {
                 size: NSSize(width: 580, height: 470), appearance: appearance,
                 file: root.appendingPathComponent("models-catalog-\(name).png")
             )
-            viewModel.selectModelPageTab(.speech)
+            viewModel.selectModelPageTab(.providers)
             try await render(StudioView(viewModel: viewModel), size: NSSize(width: 1200, height: 880),
                              appearance: appearance, file: root.appendingPathComponent("models-speech-\(name).png"))
             viewModel.selectModelPageTab(.scenes)
             try await render(StudioView(viewModel: viewModel), size: NSSize(width: 1200, height: 880),
                              appearance: appearance, file: root.appendingPathComponent("models-scenes-\(name).png"))
-            viewModel.selectModelPageTab(.language)
+            viewModel.selectModelPageTab(.providers)
         }
         try await render(
             AskLauncherView(model: fixture.model, onDismiss: {}),
@@ -498,7 +498,7 @@ struct AskConversationVisualTests {
         let viewModel = StudioViewModel(settingsStore: SettingsStore(defaults: defaults),
                                         historyStore: FileHistoryStore(baseDir: root.appendingPathComponent("list-history")),
                                         initialSection: .models, modelLibrary: library)
-        viewModel.selectModelPageTab(.language)
+        viewModel.selectModelPageTab(.providers)
         try await render(ModelSettingsPage(viewModel: viewModel, library: library) { EmptyView() }
                          .padding(24).background(StudioTheme.background),
                          size: NSSize(width: 1000, height: 900), appearance: .darkAqua,

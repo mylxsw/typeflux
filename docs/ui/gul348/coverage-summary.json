@@ -1,0 +1,649 @@
+{
+  "covered": 1216,
+  "executable": 1403,
+  "percent": 86.67,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Ask/AskImageRecoveryPicker.swift",
+      "covered": 0,
+      "executable": 23,
+      "percent": 0.0,
+      "uncovered": [
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        26,
+        27,
+        28,
+        30,
+        31,
+        32,
+        34,
+        35,
+        144,
+        158,
+        162
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskModelViews.swift",
+      "covered": 2,
+      "executable": 6,
+      "percent": 33.33,
+      "uncovered": [
+        60,
+        214,
+        396,
+        399
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Settings/AddModelEndpointView.swift",
+      "covered": 28,
+      "executable": 32,
+      "percent": 87.5,
+      "uncovered": [
+        40,
+        53,
+        54,
+        55
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Settings/AgentSettingsComponents.swift",
+      "covered": 24,
+      "executable": 24,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/AskCloudflareSearchSettingsView.swift",
+      "covered": 8,
+      "executable": 9,
+      "percent": 88.89,
+      "uncovered": [
+        29
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Settings/AskImageSettingsView.swift",
+      "covered": 13,
+      "executable": 17,
+      "percent": 76.47,
+      "uncovered": [
+        58,
+        59,
+        60,
+        193
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Settings/AskKeywordEditorSheet.swift",
+      "covered": 21,
+      "executable": 25,
+      "percent": 84.0,
+      "uncovered": [
+        182,
+        254,
+        265,
+        270
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Settings/AskKeywordListComponents.swift",
+      "covered": 10,
+      "executable": 12,
+      "percent": 83.33,
+      "uncovered": [
+        121,
+        172
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Settings/AskLauncherPluginSettingsView.swift",
+      "covered": 7,
+      "executable": 7,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/AskTitleSettingsView.swift",
+      "covered": 7,
+      "executable": 7,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/AskToolsSettingsView+Overview.swift",
+      "covered": 17,
+      "executable": 17,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/AskToolsSettingsView+Skills.swift",
+      "covered": 24,
+      "executable": 24,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/AskToolsSettingsView+Tools.swift",
+      "covered": 10,
+      "executable": 10,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/AskTranslationSettingsView.swift",
+      "covered": 24,
+      "executable": 31,
+      "percent": 77.42,
+      "uncovered": [
+        112,
+        141,
+        151,
+        159,
+        162,
+        165,
+        182
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Settings/AskWorkflowRunDetails.swift",
+      "covered": 3,
+      "executable": 3,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/AskWorkflowSettingsRow.swift",
+      "covered": 5,
+      "executable": 5,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/AskWorkflowSettingsView.swift",
+      "covered": 15,
+      "executable": 17,
+      "percent": 88.24,
+      "uncovered": [
+        257,
+        258
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Settings/ClipboardDataSettingsViews.swift",
+      "covered": 2,
+      "executable": 2,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/ClipboardSettingsView.swift",
+      "covered": 28,
+      "executable": 28,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/CloudProviderModelsView.swift",
+      "covered": 11,
+      "executable": 15,
+      "percent": 73.33,
+      "uncovered": [
+        56,
+        75,
+        83,
+        95
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Settings/LauncherSearchSettingsView+Browsers.swift",
+      "covered": 1,
+      "executable": 1,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/LauncherSearchSettingsView.swift",
+      "covered": 9,
+      "executable": 9,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/LauncherSettingsView.swift",
+      "covered": 1,
+      "executable": 1,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/MCPServerEditorView.swift",
+      "covered": 14,
+      "executable": 14,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/MCPServerStatusPresentation.swift",
+      "covered": 3,
+      "executable": 3,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/MemoryNotesEditorView.swift",
+      "covered": 23,
+      "executable": 23,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/ModelCatalogView.swift",
+      "covered": 17,
+      "executable": 17,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/ModelFormRow.swift",
+      "covered": 3,
+      "executable": 3,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/ModelProviderRow.swift",
+      "covered": 12,
+      "executable": 12,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/ModelSettingsPage.swift",
+      "covered": 87,
+      "executable": 89,
+      "percent": 97.75,
+      "uncovered": [
+        69,
+        194
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Settings/ProviderModelsView.swift",
+      "covered": 94,
+      "executable": 114,
+      "percent": 82.46,
+      "uncovered": [
+        50,
+        60,
+        124,
+        125,
+        126,
+        128,
+        129,
+        131,
+        142,
+        175,
+        195,
+        219,
+        220,
+        221,
+        222,
+        227,
+        228,
+        229,
+        230,
+        280
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Settings/SettingsControls.swift",
+      "covered": 1,
+      "executable": 1,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/SettingsPaneLayout.swift",
+      "covered": 2,
+      "executable": 2,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/SettingsSearchScope.swift",
+      "covered": 1,
+      "executable": 1,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/SettingsView.swift",
+      "covered": 327,
+      "executable": 411,
+      "percent": 79.56,
+      "uncovered": [
+        1199,
+        1200,
+        1201,
+        1202,
+        1203,
+        1204,
+        1205,
+        1206,
+        1207,
+        1208,
+        1230,
+        1235,
+        1242,
+        2362,
+        2363,
+        2364,
+        2374,
+        2375,
+        2376,
+        2377,
+        2378,
+        2379,
+        2380,
+        2381,
+        2382,
+        2389,
+        2390,
+        2391,
+        2392,
+        2393,
+        2394,
+        2395,
+        2396,
+        2407,
+        2408,
+        2430,
+        2431,
+        2434,
+        2443,
+        2448,
+        2456,
+        2457,
+        2460,
+        2462,
+        2463,
+        2469,
+        2474,
+        2482,
+        2483,
+        2488,
+        2489,
+        2525,
+        2526,
+        2527,
+        2528,
+        2529,
+        2530,
+        2531,
+        2532,
+        2533,
+        2534,
+        2535,
+        2536,
+        2537,
+        2538,
+        2539,
+        2540,
+        2541,
+        2542,
+        2543,
+        2544,
+        2545,
+        2548,
+        2549,
+        2552,
+        2644,
+        2645,
+        2646,
+        2685,
+        2794,
+        2797,
+        2802,
+        2828,
+        2831
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Settings/SettingsViewModel.swift",
+      "covered": 2,
+      "executable": 2,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/SettingsWindowController.swift",
+      "covered": 9,
+      "executable": 11,
+      "percent": 81.82,
+      "uncovered": [
+        62,
+        63
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Settings/StudioModels.swift",
+      "covered": 5,
+      "executable": 5,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/WorkflowEditor/AskWorkflowEditorCenter.swift",
+      "covered": 9,
+      "executable": 13,
+      "percent": 69.23,
+      "uncovered": [
+        92,
+        93,
+        102,
+        154
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Settings/WorkflowEditor/AskWorkflowEditorComponents.swift",
+      "covered": 7,
+      "executable": 7,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/WorkflowEditor/AskWorkflowEditorForms.swift",
+      "covered": 28,
+      "executable": 37,
+      "percent": 75.68,
+      "uncovered": [
+        205,
+        323,
+        327,
+        330,
+        564,
+        572,
+        585,
+        595,
+        597
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Settings/WorkflowEditor/AskWorkflowEditorPanels.swift",
+      "covered": 13,
+      "executable": 18,
+      "percent": 72.22,
+      "uncovered": [
+        87,
+        88,
+        269,
+        270,
+        271
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Settings/WorkflowEditor/AskWorkflowEditorView.swift",
+      "covered": 16,
+      "executable": 16,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/WorkflowEditor/AskWorkflowFilesCard.swift",
+      "covered": 7,
+      "executable": 7,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/WorkflowEditor/AskWorkflowGallerySheet.swift",
+      "covered": 23,
+      "executable": 23,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/WorkflowEditor/AskWorkflowOutputForm.swift",
+      "covered": 19,
+      "executable": 21,
+      "percent": 90.48,
+      "uncovered": [
+        503,
+        504
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/UI/StudioComponents.swift",
+      "covered": 6,
+      "executable": 6,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/UI/StudioShell.swift",
+      "covered": 1,
+      "executable": 2,
+      "percent": 50.0,
+      "uncovered": [
+        14
+      ]
+    },
+    {
+      "file": "Sources/TypefluxUI/TypefluxPopup.swift",
+      "covered": 13,
+      "executable": 13,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/TypefluxUI/TypefluxSecureField.swift",
+      "covered": 2,
+      "executable": 2,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/TypefluxUI/TypefluxTextField.swift",
+      "covered": 1,
+      "executable": 1,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/TypefluxUI/TypefluxWindow.swift",
+      "covered": 4,
+      "executable": 4,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/ModelConnectionStatus.swift",
+      "covered": 4,
+      "executable": 4,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/ModelDetailHeader.swift",
+      "covered": 16,
+      "executable": 16,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/ModelIconTile.swift",
+      "covered": 12,
+      "executable": 12,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/ModelProviderBackButton.swift",
+      "covered": 10,
+      "executable": 10,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/ModelRowDivider.swift",
+      "covered": 5,
+      "executable": 5,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/ModelScenePicker.swift",
+      "covered": 20,
+      "executable": 21,
+      "percent": 95.24,
+      "uncovered": [
+        10
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Settings/ModelSectionLabel.swift",
+      "covered": 10,
+      "executable": 10,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/ModelUsageBadge.swift",
+      "covered": 6,
+      "executable": 6,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/SettingsControlMetrics.swift",
+      "covered": 0,
+      "executable": 0,
+      "percent": null,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/TypefluxUI/TypefluxSearchablePopup.swift",
+      "covered": 114,
+      "executable": 116,
+      "percent": 98.28,
+      "uncovered": [
+        99,
+        100
+      ]
+    }
+  ]
+}

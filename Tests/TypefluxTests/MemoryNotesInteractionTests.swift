@@ -135,7 +135,7 @@ final class MemoryNotesInteractionTests: XCTestCase {
         window.isReleasedWhenClosed = false
         window.appearance = NSAppearance(named: .aqua)
         let host = NSHostingView(rootView: view
-            .padding(24).frame(width: 760, height: 520, alignment: .topLeading).background(ModelVisualStyle.canvas))
+            .padding(24).frame(width: 760, height: 520, alignment: .topLeading).background(TypefluxColor.windowBackground.color))
         window.contentView = host
         window.orderFront(nil)
         return (window, host)

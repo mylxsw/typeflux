@@ -6,7 +6,7 @@ import TypefluxUI
 @Suite("TypefluxUI native content menus", .serialized, .exclusiveUIState)
 @MainActor
 struct TypefluxUIControlsMenuTests {
-    // Native menu tracking runs in a dedicated process, like SettingsMenuPickerTests.
+    // Native menu tracking runs in a dedicated process, like TypefluxPopupMenuTests.
     @Test(.enabled(if: ProcessInfo.processInfo.environment["TYPEFLUX_UI_CONTENT_MENUS"] == "1"))
     func `both pop-up styles select and both pull-down styles dispatch`() async throws {
         _ = NSApplication.shared

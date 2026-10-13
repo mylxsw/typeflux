@@ -37,7 +37,7 @@ struct AskWorkflowGallerySheet: View {
     var body: some View {
         HStack(spacing: 0) {
             sidebar.frame(width: 230)
-            Rectangle().fill(ModelVisualStyle.border).frame(width: 1)
+            Rectangle().fill(TypefluxColor.separator.color).frame(width: 1)
             ZStack(alignment: .topTrailing) {
                 Group {
                     if let id = updating, let item = gallery.item(id), let update = store.galleryUpdate(item) {
@@ -80,8 +80,11 @@ struct AskWorkflowGallerySheet: View {
                     .accessibilityIdentifier("ask.workflow.gallery.search")
             }
             .font(.system(size: 12.5)).padding(.horizontal, 9).frame(height: 30)
-            .background(ModelVisualStyle.control, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(ModelVisualStyle.border))
+            .background(
+                TypefluxColor.controlBackground.color,
+                in: RoundedRectangle(cornerRadius: 8, style: .continuous)
+            )
+            .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(TypefluxColor.separator.color))
             .padding(.top, 16)
             VStack(spacing: 2) {
                 categoryRow(nil, title: L("ask.workflow.gallery.category.all"), count: gallery.items.count)
@@ -180,8 +183,8 @@ struct AskWorkflowGallerySheet: View {
             .frame(height: 24)
         }
         .padding(14).frame(maxWidth: .infinity).frame(height: 180)
-        .background(ModelVisualStyle.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(ModelVisualStyle.border))
+        .background(TypefluxColor.contentBackground.color, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(TypefluxColor.separator.color))
         .contentShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .onTapGesture { selected = item.id }
         .accessibilityElement(children: .contain)
@@ -335,7 +338,7 @@ extension AskWorkflowGallerySheet {
         return VStack(spacing: 0) {
             ForEach(Array(rows.enumerated()), id: \.offset) { index, row in
                 if index > 0 {
-                    Rectangle().fill(ModelVisualStyle.divider).frame(height: 1)
+                    Rectangle().fill(TypefluxColor.separator.color).frame(height: 1)
                 }
                 HStack(alignment: .firstTextBaseline, spacing: 12) {
                     Text(row.0).foregroundStyle(StudioTheme.textTertiary).frame(width: 76, alignment: .leading)
@@ -345,8 +348,8 @@ extension AskWorkflowGallerySheet {
                 .font(.system(size: 12.5)).padding(.horizontal, 14).padding(.vertical, 11)
             }
         }
-        .background(ModelVisualStyle.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(ModelVisualStyle.border))
+        .background(TypefluxColor.contentBackground.color, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(TypefluxColor.separator.color))
     }
 
     /// "Python 3 (comes with macOS, nothing to install)", or how to get it when it is missing.
@@ -377,8 +380,8 @@ extension AskWorkflowGallerySheet {
             }
         }
         .padding(14).frame(maxWidth: .infinity, alignment: .leading)
-        .background(ModelVisualStyle.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(ModelVisualStyle.border))
+        .background(TypefluxColor.contentBackground.color, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(TypefluxColor.separator.color))
     }
 
     private func launcherPreview(_ item: AskWorkflowGallery.Item,
@@ -390,8 +393,8 @@ extension AskWorkflowGallerySheet {
             output: AskWorkflowManifest.Output(display: Self.previewDisplay(item)), timeout: item.manifest.timeout,
             folder: item.folder
         )
-        .background(ModelVisualStyle.surface, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(ModelVisualStyle.border))
+        .background(TypefluxColor.contentBackground.color, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(TypefluxColor.separator.color))
     }
 
     /// How the sample output shows: as the example shows it, and as text for one that shows
@@ -411,7 +414,7 @@ extension AskWorkflowGallerySheet {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color(nsColor: .textBackgroundColor).opacity(0.55),
                     in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(ModelVisualStyle.border))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(TypefluxColor.separator.color))
     }
 
     static let previewLines = 20
@@ -469,7 +472,8 @@ extension AskWorkflowGallerySheet {
             ), suffix: L("ask.workflow.editor.diff.diffSuffix"), marked: update.userModified,
             markHint: L("ask.workflow.gallery.update.markHint")) { EmptyView() }
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(ModelVisualStyle.border))
+                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .strokeBorder(TypefluxColor.separator.color))
         }
         .padding(24)
     }
@@ -580,9 +584,12 @@ struct AskWorkflowGalleryStarter: View {
                         }
                     }
                     .padding(12).frame(maxWidth: .infinity)
-                    .background(ModelVisualStyle.surface, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .background(
+                        TypefluxColor.contentBackground.color,
+                        in: RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    )
                     .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .strokeBorder(ModelVisualStyle.border))
+                        .strokeBorder(TypefluxColor.separator.color))
                 }
             }
             HStack {

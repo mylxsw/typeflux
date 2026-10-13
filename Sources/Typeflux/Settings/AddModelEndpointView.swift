@@ -17,103 +17,43 @@ struct AddModelEndpointView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack(alignment: .top, spacing: 12) {
-                ModelIconTile(size: 38) {
-                    ModelProviderIcon(provider: .customLLM, size: 22)
-                }
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(L("models.addEndpoint")).font(.system(size: 17, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textPrimary)
-                    Text(L("models.protocolHint")).font(.system(size: 12.5))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-            .padding(.bottom, 18)
-
-            ModelSurface {
-                VStack(alignment: .leading, spacing: 0) {
-                    formRow(L("ask.models.name")) {
-                        TextField(L("ask.models.name"), text: $name)
-                            .textFieldStyle(ModelFieldStyle(monospaced: false))
+        TypefluxSheet(title: L("models.addEndpoint"), cancelTitle: L("ask.models.cancel"),
+                      confirmTitle: L("ask.models.save"), isConfirmEnabled: canSave,
+                      cancel: { dismiss() }, confirm: save, content: {
+            Text(L("models.protocolHint")).font(.subheadline).foregroundStyle(.secondary)
+            TypefluxForm {
+                Section {
+                    ModelFormRow(title: L("ask.models.name")) { TypefluxTextField(L("ask.models.name"), text: $name) }
+                    ModelFormRow(title: L("models.protocol")) {
+                        TypefluxPopup(L("models.protocol"), selection: $apiStyle, borderless: true) {
+                            ForEach(LLMRemoteAPIStyle.customChoices, id: \.self) { style in
+                                Text(style.displayName).tag(style)
+                            }
+                        }
                     }
-                    ModelRowDivider()
-                    formRow(L("models.protocol")) {
-                        SettingsMenuPicker(title: L("models.protocol"),
-                                           options: LLMRemoteAPIStyle.customChoices.map { (
-                                               label: $0.displayName,
-                                               value: $0
-                                           ) },
-                                           selection: $apiStyle)
+                    ModelFormRow(title: L("ask.models.url")) {
+                        TypefluxTextField(L("ask.models.url"), text: $endpoint, prompt: "https://api.example.com/v1")
                     }
-                    ModelRowDivider()
-                    formRow(L("ask.models.url")) {
-                        TextField("https://api.example.com/v1", text: $endpoint)
-                            .textFieldStyle(ModelFieldStyle())
+                    ModelFormRow(title: "API Key") {
+                        HStack {
+                            if showsKey {
+                                TypefluxTextField("API Key", text: $key)
+                            } else {
+                                TypefluxSecureField("API Key", text: $key)
+                            }
+                            TypefluxIconButton(L(showsKey ? "models.hideKey" : "models.showKey"),
+                                               systemImage: showsKey ? "eye.slash" : "eye") { showsKey.toggle() }
+                        }
                     }
-                    ModelRowDivider()
-                    formRow("API Key") { keyField }
-                    ModelRowDivider()
-                    formRow(L("ask.models.modelID")) {
-                        TextField("gpt-5-sol", text: $model)
-                            .textFieldStyle(ModelFieldStyle())
+                    ModelFormRow(title: L("ask.models.modelID")) {
+                        TypefluxTextField(L("ask.models.modelID"), text: $model, prompt: "gpt-5-sol")
                     }
                 }
-            }
-
-            if let error {
-                Text(error).font(.system(size: 12)).foregroundStyle(StudioTheme.danger)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.horizontal, 4).padding(.top, 10)
-            }
-
-            HStack(spacing: 8) {
-                Spacer()
-                Button(L("ask.models.cancel")) { dismiss() }
-                    .keyboardShortcut(.cancelAction)
-                Button(L("ask.models.save"), action: save)
-                    .buttonStyle(ModelActionStyle(primary: true))
-                    .disabled(!canSave)
-                    .keyboardShortcut(.defaultAction)
-            }
-            .padding(.top, 20)
-        }
-        .buttonStyle(ModelActionStyle())
-        .padding(24)
-        .frame(width: 520)
-        .background(ModelVisualStyle.canvas)
-    }
-
-    private var keyField: some View {
-        Group {
-            if showsKey {
-                TextField("sk-…", text: $key)
-            } else {
-                SecureField("sk-…", text: $key)
-            }
-        }
-        .textFieldStyle(ModelFieldStyle(trailingAccessoryWidth: 24))
-        .overlay(alignment: .trailing) {
-            Button { showsKey.toggle() } label: {
-                Image(systemName: showsKey ? "eye.slash" : "eye")
-                    .font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
-                    .frame(width: 26, height: 26).contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .padding(.trailing, 3)
-            .help(L(showsKey ? "models.hideKey" : "models.showKey"))
-            .accessibilityLabel(L(showsKey ? "models.hideKey" : "models.showKey"))
-        }
-    }
-
-    private func formRow(_ title: String, @ViewBuilder content: () -> some View) -> some View {
-        HStack(spacing: 16) {
-            Text(title).font(.system(size: 13)).foregroundStyle(StudioTheme.textSecondary)
-                .frame(width: 80, alignment: .leading)
-            content()
-        }
-        .padding(.horizontal, 18).padding(.vertical, 10)
+                if let error {
+                    Text(error).foregroundStyle(TypefluxColor.danger.color)
+                }
+            }.frame(height: 320)
+        }).frame(width: 560)
     }
 
     private func save() {

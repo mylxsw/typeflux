@@ -24,15 +24,33 @@ struct SettingsWindowNavigationTests {
             let host = try #require(window.contentView)
             for section in StudioSection.allCases {
                 model.navigate(to: section)
-                try await UI.wait { window.title.hasPrefix(section.heading) }
+                let title = section == .models ? section.title : section.heading
+                do { try await UI.wait { window.title.hasPrefix(title) } }
+                catch {
+                    Issue.record("Expected title \(title) for \(section.rawValue); found \(window.title)")
+                    throw error
+                }
                 #expect(!UI.elements(in: host).contains {
                     $0.value("accessibilityIdentifier") as? String == "studio.page.title"
                 })
             }
+            // AppKit can collapse the split column while destinations change their preferred widths.
+            // Exercise the native disclosure before checking navigation rows.
+            if UI.contains("Show Sidebar", in: window) {
+                try UI.button("Show Sidebar", in: window).press()
+            }
             for section in StudioSection.sidebarUpperCases {
-                try await UI.wait { UI.contains(section.sidebarTitle, in: window) }
+                do { try await UI.wait { UI.contains(section.sidebarTitle, in: window) } }
+                catch {
+                    Issue.record("Missing sidebar label \(section.sidebarTitle)")
+                    throw error
+                }
                 try UI.button(section.sidebarTitle, in: window).press()
-                try await UI.wait { model.currentSection.sidebarSection == section }
+                do { try await UI.wait { model.currentSection.sidebarSection == section } }
+                catch {
+                    Issue.record("Sidebar \(section.rawValue) did not navigate; found \(model.currentSection.rawValue)")
+                    throw error
+                }
             }
             #expect(StudioSection.sidebarUpperCases == [.home, .models, .agent, .launcher, .settings])
             controller.show(settingsStore: settings, historyStore: FileHistoryStore(baseDir: directory),
@@ -87,11 +105,11 @@ struct SettingsWindowNavigationTests {
             try await UI.wait { model.searchQuery == "history-query" }
 
             model.navigate(to: .models)
-            model.selectModelPageTab(.language)
+            model.selectModelPageTab(.providers)
             try await type("OpenAI", in: window)
             try await UI.wait { model.modelSearchQuery == "OpenAI" }
             #expect(model.searchQuery.isEmpty)
-            model.selectModelPageTab(.speech)
+            model.selectModelPageTab(.providers)
             try await UI.wait { model.modelSearchQuery.isEmpty && searchItem(window)?.searchField.stringValue == "" }
             model.selectModelPageTab(.scenes)
             try await UI.wait { searchItem(window) == nil }

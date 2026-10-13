@@ -1430,8 +1430,8 @@ final class StudioViewModel: ObservableObject {
     var isShowingModelProviderDetail: Bool {
         switch modelPageTab {
         case .scenes: false
-        case .speech: isShowingSpeechProviderDetail
-        case .language: modelLibrary.providers.contains { $0.id == selectedLanguageProviderID }
+        case .providers, .local:
+            isShowingSpeechProviderDetail || modelLibrary.providers.contains { $0.id == selectedLanguageProviderID }
         }
     }
 

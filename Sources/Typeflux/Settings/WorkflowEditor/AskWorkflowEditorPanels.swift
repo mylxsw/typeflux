@@ -33,7 +33,7 @@ struct AskWorkflowTestPanel: View {
                     .foregroundStyle(StudioTheme.textTertiary).padding(.horizontal, 14).padding(.vertical, 6)
                 Spacer()
             }
-            Rectangle().fill(ModelVisualStyle.divider).frame(height: 1)
+            Rectangle().fill(TypefluxColor.separator.color).frame(height: 1)
             history
         }
     }
@@ -71,8 +71,11 @@ struct AskWorkflowTestPanel: View {
                 }
             }
             .padding(.leading, 8).padding(.trailing, 4).frame(height: 34)
-            .background(ModelVisualStyle.control, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).strokeBorder(ModelVisualStyle.border))
+            .background(
+                TypefluxColor.controlBackground.color,
+                in: RoundedRectangle(cornerRadius: 9, style: .continuous)
+            )
+            .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous).strokeBorder(TypefluxColor.separator.color))
             Toggle(L("ask.workflow.editor.test.previewActions"), isOn: $model.previewActionsOnly)
                 .toggleStyle(.checkbox).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
                 .accessibilityIdentifier("ask.workflow.editor.test.previewActions")
@@ -81,8 +84,8 @@ struct AskWorkflowTestPanel: View {
             if model.testUsesSelection {
                 TextEditor(text: $model.testSelection).font(.system(size: 12)).frame(height: 54)
                     .scrollContentBackground(.hidden).padding(4)
-                    .background(ModelVisualStyle.control, in: RoundedRectangle(cornerRadius: 7))
-                    .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(ModelVisualStyle.border))
+                    .background(TypefluxColor.controlBackground.color, in: RoundedRectangle(cornerRadius: 7))
+                    .overlay(RoundedRectangle(cornerRadius: 7).strokeBorder(TypefluxColor.separator.color))
             }
             if model.isTesting {
                 HStack(spacing: 6) {
@@ -195,14 +198,14 @@ struct AskWorkflowTestPanel: View {
         .font(.system(size: 11.5, design: .monospaced)).textSelection(.enabled)
         .padding(10)
         .background(Color(nsColor: .textBackgroundColor).opacity(0.55), in: RoundedRectangle(cornerRadius: 9))
-        .overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(ModelVisualStyle.border))
+        .overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(TypefluxColor.separator.color))
     }
 
     private func mono(_ text: String) -> some View {
         Text(text).font(.system(size: 11.5, design: .monospaced)).textSelection(.enabled)
             .frame(maxWidth: .infinity, alignment: .leading).padding(10)
             .background(Color(nsColor: .textBackgroundColor).opacity(0.55), in: RoundedRectangle(cornerRadius: 9))
-            .overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(ModelVisualStyle.border))
+            .overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(TypefluxColor.separator.color))
     }
 
     /// "Actions 2": how many actions this run has.
@@ -263,7 +266,9 @@ struct AskWorkflowTestActions: View {
                     .foregroundStyle(StudioTheme.textTertiary)
             }
             ForEach(Array(result.actionSteps.enumerated()), id: \.offset) { index, step in
-                if index > 0 { Rectangle().fill(ModelVisualStyle.divider).frame(height: 1) }
+                if index > 0 {
+                    Rectangle().fill(TypefluxColor.separator.color).frame(height: 1)
+                }
                 row(step, outcome: result.actionOutcomes.indices.contains(index) ? result.actionOutcomes[index] : nil)
             }
             let missing = Array(Set(result.actionSteps.flatMap(\.missing))).sorted()
@@ -372,11 +377,11 @@ struct AskWorkflowAssistantPanel: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal, 10).padding(.vertical, 7)
                             .background(
-                                ModelVisualStyle.surface,
+                                TypefluxColor.contentBackground.color,
                                 in: RoundedRectangle(cornerRadius: 9, style: .continuous)
                             )
                             .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous)
-                                .strokeBorder(ModelVisualStyle.border))
+                                .strokeBorder(TypefluxColor.separator.color))
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
@@ -499,7 +504,7 @@ struct AskWorkflowAssistantPanel: View {
                 proposalActions(proposal)
             }
         }
-        .background(ModelVisualStyle.surface, in: RoundedRectangle(cornerRadius: 12))
+        .background(TypefluxColor.contentBackground.color, in: RoundedRectangle(cornerRadius: 12))
         .overlay(RoundedRectangle(cornerRadius: 12)
             .strokeBorder(AskWorkflowEditorStyle.assistant.opacity(proposal.state == .pending ? 0.5 : 0.15)))
     }
@@ -656,8 +661,8 @@ extension AskWorkflowAssistantPanel {
                 .font(.system(size: 11))
             }
             .padding(10)
-            .background(ModelVisualStyle.surface, in: RoundedRectangle(cornerRadius: 12))
-            .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(ModelVisualStyle.border))
+            .background(TypefluxColor.contentBackground.color, in: RoundedRectangle(cornerRadius: 12))
+            .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(TypefluxColor.separator.color))
         }
         .padding(12)
     }

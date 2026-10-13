@@ -9,24 +9,24 @@ struct AskCloudflareSearchSettingsView: View {
         VStack(alignment: .leading, spacing: 10) {
             AgentFormRow(label: L("ask.settings.search.cloudflare.account"), required: true) {
                 TextField(L("agent.search.cloudflare.accountPlaceholder"), text: $configuration.accountID)
-                    .textFieldStyle(ModelFieldStyle())
+                    .textFieldStyle(.roundedBorder)
             }
             AgentFormRow(label: L("ask.settings.search.cloudflare.gateway"), required: true) {
-                TextField("default", text: $configuration.gatewayID).textFieldStyle(ModelFieldStyle())
+                TextField("default", text: $configuration.gatewayID).textFieldStyle(.roundedBorder)
             }
             AgentFormRow(label: L("ask.settings.search.cloudflare.provider")) {
-                SettingsMenuPicker(title: L("ask.settings.search.cloudflare.provider"),
-                                   options: AskCloudflareSearchConfiguration.providers.map { (
-                                       label: Self.engineName($0),
-                                       value: $0
-                                   ) },
-                                   selection: $configuration.provider)
+                TypefluxPopup(title: L("ask.settings.search.cloudflare.provider"),
+                              options: AskCloudflareSearchConfiguration.providers.map { (
+                                  label: Self.engineName($0),
+                                  value: $0
+                              ) },
+                              selection: $configuration.provider)
             }
             AgentDisclosureButton(title: L("agent.search.advanced"), expanded: $showsAdvanced)
             if showsAdvanced || !configuration.byokAlias.isEmpty {
                 AgentFormRow(label: L("ask.settings.search.cloudflare.alias")) {
                     TextField(L("agent.search.cloudflare.aliasPlaceholder"), text: $configuration.byokAlias)
-                        .textFieldStyle(ModelFieldStyle())
+                        .textFieldStyle(.roundedBorder)
                 }
             }
         }
