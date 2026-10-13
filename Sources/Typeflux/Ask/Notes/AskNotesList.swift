@@ -2,6 +2,7 @@ import SwiftUI
 
 /// The native sidebar list owns keyboard navigation and multi-selection.
 struct AskNotesList: View {
+    @Environment(\.interfaceStyle) private var style
     @ObservedObject var model: AskNotesViewModel
 
     var body: some View {
@@ -15,16 +16,12 @@ struct AskNotesList: View {
             }
         }
         .listStyle(.sidebar)
-        .overlay {
-            if model.notes.isEmpty {
-                TypefluxEmptyState(emptyText, systemImage: model.inTrash ? "trash" : "note.text",
-                                   description: "") {
-                    if !model.searchText.isEmpty, !model.inTrash {
-                        TypefluxButton(L("ask.notes.newTitled", AskNotesViewModel.parseSearch(model.searchText).text)) {
-                            model.createNote(title: AskNotesViewModel.parseSearch(model.searchText).text)
-                        }
-                    }
-                }
+        .environment(\.defaultMinListRowHeight, TypefluxControlHeight.sidebarRow.value(for: style))
+        .overlay(alignment: .topLeading) {
+            if model.notes.isEmpty, model.inTrash || model.scope != .all || !model.searchText.isEmpty {
+                Text(emptyText).font(.callout).foregroundStyle(TypefluxColor.secondaryLabel.color)
+                    .lineLimit(1).help(emptyText)
+                    .padding(TypefluxSpacing.regular.value(for: style))
             }
         }
         .safeAreaInset(edge: .bottom) {
@@ -41,6 +38,6 @@ struct AskNotesList: View {
 
     private var emptyText: String {
         if model.inTrash { return L("ask.notes.trash.none") }
-        return L(model.searchText.isEmpty && model.scope == .all ? "ask.notes.empty" : "ask.notes.noMatch")
+        return L("ask.notes.noMatch")
     }
 }

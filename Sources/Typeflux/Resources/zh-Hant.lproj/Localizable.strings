@@ -4456,6 +4456,7 @@
 "ask.notes.saving" = "正在儲存…";
 "ask.notes.outline" = "大綱";
 "ask.notes.more" = "更多";
+"ask.notes.share" = "分享";
 "ask.notes.exportAs" = "匯出為";
 "ask.notes.export.markdown" = "Markdown 檔案 (.md)";
 "ask.notes.export.html" = "HTML 網頁 (.html)";

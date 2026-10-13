@@ -35,7 +35,7 @@ struct ModelScenePopupTests {
                             coordinator.menuWillOpen(menu)
                             #expect(menu.items.filter { $0.tag >= 0 && !$0.isHidden }.count == 2)
                             coordinator.menuDidClose(menu)
-                            menu.performActionForItem(at: 2)
+                            try selectItem(at: 2, in: menu)
                             #expect(value == "b")
                             let invalid = NSMenuItem()
                             invalid.tag = -1
@@ -65,7 +65,7 @@ struct ModelScenePopupTests {
                 let coordinator = try #require(menu.delegate as? TypefluxSearchablePopup<String>.Coordinator)
                 coordinator.menuWillOpen(menu)
                 let index = try #require(menu.items.firstIndex { $0.title.contains("OpenAI") && $0.action != nil })
-                menu.performActionForItem(at: index)
+                try selectItem(at: index, in: menu)
                 try await SettingsBehaviorTestSupport.wait { coordinator.pendingUpdate != nil }
                 #expect(button.menu === menu)
                 coordinator.menuDidClose(menu)
@@ -85,20 +85,34 @@ struct ModelScenePopupTests {
                                   styleMask: [.titled], backing: .buffered, defer: false)
             window.isReleasedWhenClosed = false
             window.contentView = search
-            window.makeKeyAndOrderFront(nil)
-            defer { window.close() }
+            window.orderFront(nil)
+            defer { TypefluxNavigationTestSupport.closeWindow(window) }
             search.layoutSubtreeIfNeeded()
             let field = try #require(descendants(search).compactMap { $0 as? NSSearchField }.first)
             let delegate = try #require(field.delegate as? TypefluxNativeSearchField.Coordinator)
-            field.stringValue = "Alpha"
+            // Let SwiftUI install a nonempty value before the native edit and clear. Changing
+            // the binding back to its initial value in one turn can coalesce away the redraw.
+            coordinator.query = "Alpha"
+            try await SettingsBehaviorTestSupport.wait("Popup search binding installation") {
+                field.stringValue == "Alpha"
+            }
+            field.stringValue = "Beta"
             delegate.controlTextDidChange(Notification(name: NSControl.textDidChangeNotification, object: field))
-            #expect(coordinator.query == "Alpha")
+            #expect(coordinator.query == "Beta")
             coordinator.query = ""
-            try await SettingsBehaviorTestSupport.wait { field.stringValue.isEmpty }
+            try await SettingsBehaviorTestSupport.wait("Popup search clear without editor focus") {
+                field.stringValue.isEmpty
+            }
         }
     }
 
     private func descendants(_ view: NSView) -> [NSView] {
         [view] + view.subviews.flatMap(descendants)
+    }
+
+    private func selectItem(at index: Int, in menu: NSMenu) throws {
+        let item = menu.items[index]
+        let action = try #require(item.action)
+        #expect(NSApp.sendAction(action, to: item.target, from: item))
     }
 }

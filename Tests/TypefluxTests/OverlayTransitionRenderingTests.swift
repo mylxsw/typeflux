@@ -6,17 +6,14 @@ import Testing
 struct OverlayTransitionRenderingTests {
     @Test(arguments: InterfaceStyle.allCases) @MainActor
     func noticesAndFailuresFitTheirContentAfterCapsuleTransitions(style: InterfaceStyle) async throws {
-        let previousWindows = Set(NSApplication.shared.windows.map(\.windowNumber))
         let suiteName = "OverlaySharedLayoutTests.\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suiteName))
         defer { defaults.removePersistentDomain(forName: suiteName) }
         defaults.set(style.rawValue, forKey: "ui.overlayStyle")
         let controller = OverlayController(appState: AppStateStore(), settingsStore: SettingsStore(defaults: defaults))
-        defer { controller.dismissImmediately() }
+        defer { close(controller) }
         controller.showLockedRecording()
-        let window = try #require(NSApplication.shared.windows.first {
-            !previousWindows.contains($0.windowNumber) && $0.isVisible
-        })
+        let window = try #require(controller.presentedWindow, "Missing the owned overlay panel")
         try await settle(1)
         let recordingFrame = window.frame
         controller.showNotice(message: "Copied to clipboard")
@@ -56,18 +53,14 @@ struct OverlayTransitionRenderingTests {
 
     @Test(arguments: InterfaceStyle.allCases) @MainActor
     func resultDialogFitsShortTextAndCapsLongTextAfterRecording(style: InterfaceStyle) async throws {
-        let application = NSApplication.shared
-        let previousWindows = Set(application.windows.map(\.windowNumber))
         let suiteName = "OverlayResultLayoutTests.\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suiteName))
         defer { defaults.removePersistentDomain(forName: suiteName) }
         defaults.set(style.rawValue, forKey: "ui.overlayStyle")
         let controller = OverlayController(appState: AppStateStore(), settingsStore: SettingsStore(defaults: defaults))
-        defer { controller.dismissImmediately() }
+        defer { close(controller) }
         controller.showLockedRecording()
-        let window = try #require(application.windows.first {
-            !previousWindows.contains($0.windowNumber) && $0.isVisible
-        })
+        let window = try #require(controller.presentedWindow, "Missing the owned result overlay panel")
         controller.updateRecordingPreviewText("A recording caption before the result dialog.")
         try await settle(1)
         let captionFrame = window.frame
@@ -105,18 +98,14 @@ struct OverlayTransitionRenderingTests {
 
     @Test @MainActor
     func recordingHintStaysCenteredAndFollowsTheCapsuleDuringMorphing() async throws {
-        let application = NSApplication.shared
-        let previousWindows = Set(application.windows.map(\.windowNumber))
         let suiteName = "OverlayHintMotionTests.\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suiteName))
         defer { defaults.removePersistentDomain(forName: suiteName) }
         defaults.set(InterfaceStyle.classic.rawValue, forKey: "ui.overlayStyle")
         let controller = OverlayController(appState: AppStateStore(), settingsStore: SettingsStore(defaults: defaults))
-        defer { controller.dismissImmediately() }
+        defer { close(controller) }
         controller.showLockedRecording(hintText: "Using the structured writing expert persona")
-        let window = try #require(application.windows.first {
-            !previousWindows.contains($0.windowNumber) && $0.isVisible
-        })
+        let window = try #require(controller.presentedWindow, "Missing the owned recording overlay panel")
         let metering = Task { @MainActor in
             var frame = 0
             while !Task.isCancelled {
@@ -146,18 +135,14 @@ struct OverlayTransitionRenderingTests {
 
     @Test(arguments: InterfaceStyle.allCases) @MainActor
     func recordingHintsKeepTheirRoundedEndsInsideTheWindow(style: InterfaceStyle) async throws {
-        let application = NSApplication.shared
-        let previousWindows = Set(application.windows.map(\.windowNumber))
         let suiteName = "OverlayHintRenderingTests.\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suiteName))
         defer { defaults.removePersistentDomain(forName: suiteName) }
         defaults.set(style.rawValue, forKey: "ui.overlayStyle")
         let controller = OverlayController(appState: AppStateStore(), settingsStore: SettingsStore(defaults: defaults))
-        defer { controller.dismissImmediately() }
+        defer { close(controller) }
         controller.showLockedRecording()
-        let window = try #require(application.windows.first {
-            !previousWindows.contains($0.windowNumber) && $0.isVisible
-        })
+        let window = try #require(controller.presentedWindow, "Missing the owned recording hint panel")
         let hints = [
             "本次请求将使用结构化处理专家人设进行处理",
             "This request will use the structured writing expert persona to organize the response clearly."
@@ -198,8 +183,6 @@ struct OverlayTransitionRenderingTests {
     @Test(arguments: InterfaceStyle.allCases) @MainActor
     func captionsRenderIntermediateSizesInBothDirections(style: InterfaceStyle) async throws {
         guard !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion else { return }
-        let application = NSApplication.shared
-        let previousWindows = Set(application.windows.map(\.windowNumber))
         let suiteName = "OverlayTransitionRenderingTests.\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suiteName))
         defer { defaults.removePersistentDomain(forName: suiteName) }
@@ -209,12 +192,10 @@ struct OverlayTransitionRenderingTests {
         // found by polling for it, so the assertions do not depend on wall-clock timing.
         let motionScale = 4.0
         controller.motionScale = motionScale
-        defer { controller.dismissImmediately() }
+        defer { close(controller) }
         controller.show()
         controller.updateLevel(0.5)
-        let window = try #require(application.windows.first {
-            !previousWindows.contains($0.windowNumber) && $0.isVisible
-        })
+        let window = try #require(controller.presentedWindow, "Missing the owned animated overlay panel")
         let appearing = try await captureFirst(window, name: "00-appearing") { $0.peakAlpha > 0.02 }
         try await settle(motionScale)
         let compact = try capture(window, name: "01-compact")
@@ -310,6 +291,14 @@ struct OverlayTransitionRenderingTests {
         #expect(!window.isVisible)
     }
 
+    @MainActor
+    private func close(_ controller: OverlayController) {
+        controller.dismissImmediately()
+        if let window = controller.presentedWindow {
+            TypefluxNavigationTestSupport.closeWindow(window)
+        }
+    }
+
     /// Waits past a motion's morph and its follow-up window geometry cleanup. The cleanup is
     /// scheduled before this sleep starts and fires on the same queue, so it always runs first.
     @MainActor
@@ -324,14 +313,16 @@ struct OverlayTransitionRenderingTests {
         of window: NSWindow, changingFrom previous: NSRect, timeout: TimeInterval = 5,
         sourceLocation: SourceLocation = #_sourceLocation
     ) async throws -> NSRect {
-        let deadline = Date().addingTimeInterval(timeout)
+        let deadline = ContinuousClock.now + .seconds(timeout)
         var last = window.frame
         var stableSamples = 0
         while stableSamples < 4 {
-            try #require(Date() < deadline,
+            try Task.checkCancellation()
+            try #require(ContinuousClock.now < deadline,
                          "The window frame never settled: previous \(previous), last \(last), visible \(window.isVisible)",
                          sourceLocation: sourceLocation)
             try await Task.sleep(for: .milliseconds(25))
+            window.contentView?.layoutSubtreeIfNeeded()
             let frame = window.frame
             stableSamples = frame == last && frame != previous ? stableSamples + 1 : 0
             last = frame

@@ -59,6 +59,22 @@ struct AskWorkspaceLibraryTests {
         #expect(defaults.shortcut == nil)
         #expect(defaults.keyboardShortcut == nil)
         #expect(defaults.modifiers == .command)
+        #expect(defaults.sharingText == nil && defaults.menuActions.isEmpty)
+    }
+
+    @Test func toolbarMenusKeepSharingAndOwnedChildCommandsCompatible() {
+        var opened = 0
+        var primary = 0
+        let child = TypefluxToolbarAction(id: "open", title: "Open", systemImage: "doc", shortcut: "o") {
+            opened += 1
+        }
+        let action = TypefluxToolbarAction(id: "actions", title: "Actions", systemImage: "ellipsis",
+                                           sharingText: "Shared content", menuActions: [child]) { primary += 1 }
+        #expect(action.sharingText == "Shared content")
+        #expect(action.menuActions.map(\.id) == ["open"])
+        #expect(action.menuActions.first?.keyboardShortcut != nil)
+        action.menuActions.first?.perform()
+        #expect(opened == 1 && primary == 0)
     }
 
     @Test func nativeReasoningCardHandlesSupportedAndUnsupportedModels() throws {

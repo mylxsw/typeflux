@@ -145,10 +145,20 @@ struct AskRedesignLayoutTests {
         let fixture = try AskTestFixture()
         let defaults = fixture.model.modelLibrary.settings.defaults
         defaults.set(false, forKey: "ask.sidebarCollapsed")
+        defer {
+            fixture.model.resetSession()
+            try? FileManager.default.removeItem(at: fixture.root)
+        }
         for appearance in [NSAppearance.Name.aqua, .darkAqua] {
-            let bitmap = try await render(AskConversationView(model: fixture.model).defaultAppStorage(defaults),
+            // Bitmap caching cannot capture WindowServer glass. Exercise the opaque fallback
+            // explicitly and sample semantic surfaces away from the Liquid Glass inset.
+            let bitmap = try await render(AskConversationView(model: fixture.model)
+                .defaultAppStorage(defaults)
+                .environment(\.interfaceStyle, .liquidGlass)
+                .environment(\.askGlassMaterialOverride, .opaque)
+                .environment(\.colorScheme, appearance == .aqua ? .light : .dark),
                                           size: NSSize(width: 1100, height: 740), appearance: appearance)
-            let sidebar = try pixel(bitmap, x: 240, y: 400)
+            let sidebar = try pixel(bitmap, x: 24, y: 400)
             let transcript = try pixel(bitmap, x: 300, y: 400)
             #expect(sidebar.alphaComponent > 0.999)
             #expect(transcript.alphaComponent > 0.999)
@@ -157,7 +167,6 @@ struct AskRedesignLayoutTests {
                 + abs(sidebar.blueComponent - transcript.blueComponent)
             #expect(delta > 0.01)
         }
-        fixture.model.resetSession()
     }
 
     private func pixel(_ bitmap: NSBitmapImageRep, x: Int, y: Int) throws -> NSColor {
@@ -177,7 +186,7 @@ struct AskRedesignLayoutTests {
         let hosting = NSHostingView(rootView: view)
         window.contentView = hosting
         window.orderFront(nil)
-        defer { window.orderOut(nil); window.close() }
+        defer { TypefluxNavigationTestSupport.closeWindow(window) }
         try await Task.sleep(for: .milliseconds(120))
         hosting.layoutSubtreeIfNeeded()
         let bitmap = try #require(hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds))

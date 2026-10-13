@@ -13,6 +13,7 @@ struct AskNotesMoreMenu: NSViewRepresentable {
         override init(frame: NSRect) {
             super.init(frame: frame)
             button.bezelStyle = .texturedRounded
+            button.isBordered = false
             button.imagePosition = .imageOnly
             (button.cell as? NSPopUpButtonCell)?.arrowPosition = .noArrow
             setAccessibilityElement(false)
@@ -62,6 +63,7 @@ struct AskNotesMoreMenu: NSViewRepresentable {
         weak var view: ToolbarView?
         var actions: [String: () -> Void] = [:]
         private var tracking = false
+        var sharePicker: NSSharingServicePicker?
 
         init(model: AskNotesViewModel, compact: Bool) {
             self.model = model
@@ -120,6 +122,7 @@ struct AskNotesMoreMenu: NSViewRepresentable {
         view.button.menu = nil
         view.button.isEnabled = false
         coordinator.actions.removeAll()
+        coordinator.sharePicker = nil
         coordinator.view = nil
     }
 }

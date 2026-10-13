@@ -4449,6 +4449,7 @@
 "ask.notes.saving" = "저장 중…";
 "ask.notes.outline" = "개요";
 "ask.notes.more" = "더 보기";
+"ask.notes.share" = "공유";
 "ask.notes.exportAs" = "다른 형식으로 내보내기";
 "ask.notes.export.markdown" = "Markdown (.md)";
 "ask.notes.export.html" = "웹 페이지 (.html)";

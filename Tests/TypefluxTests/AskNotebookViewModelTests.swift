@@ -399,7 +399,15 @@ struct AskNotebookViewModelTests {
             defer { store.rejectWrites = false; _ = notes.finishEditing() }
             try await TypefluxNavigationTestSupport.withWindow(AskNotesView(model: notes) {}
                 .environment(\.interfaceStyle, .classic)) { window, _ in
-                let field = try await AskLibraryTestSupport.search("Other", in: window)
+                try await SettingsBehaviorTestSupport.wait("Notes native toolbar search installation") {
+                    window.toolbar?.items.contains { $0 is NSSearchToolbarItem } == true
+                }
+                let field = try #require(window.toolbar?.items.compactMap {
+                    $0 as? NSSearchToolbarItem
+                }.first?.searchField)
+                #expect(field.window === window)
+                try TypefluxNavigationTestSupport.changeText("Other", in: field)
+                if let action = field.action { #expect(NSApp.sendAction(action, to: field.target, from: field)) }
                 try await SettingsBehaviorTestSupport.wait("Rejected Notes query restoration") {
                     field.stringValue.isEmpty
                 }

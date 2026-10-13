@@ -513,7 +513,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         NSApp.activate(ignoringOtherApps: true)
         conversationWindow.makeKeyAndOrderFront(nil)
         focusEditor(in: conversationWindow)
-        workspacePresentation.focusComposer()
+        AskComposerFocus.requestConversationFocus(in: conversationWindow, controller: self)
         conversationRefreshTask = Task { await model.refreshHistory(); await model.loadSavedChatDrafts() }
     }
 
@@ -549,7 +549,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     func windowDidDeminiaturize(_ notification: Notification) {
         guard let window = notification.object as? NSWindow, window === conversationWindow,
               !workspacePresentation.isSearching, !workspacePresentation.showsSidebarDrawer else { return }
-        workspacePresentation.focusComposer()
+        AskComposerFocus.requestConversationFocus(in: window, controller: self)
     }
 
     private func showControl(_ active: Bool) {
@@ -619,9 +619,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     }
 
     private func findEditor(in view: NSView?) -> NSTextView? {
-        guard let view else { return nil }
-        if let text = view as? AskComposerTextView.Editor, text.isEditable { return text }
-        return view.subviews.lazy.compactMap { self.findEditor(in: $0) }.first
+        AskComposerFocus.editor(in: view)
     }
 }
 

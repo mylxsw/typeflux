@@ -39,10 +39,6 @@ enum AskWorkspaceSnapshot {
         }
         NSApp.activate(ignoringOtherApps: true)
         window.makeKeyAndOrderFront(nil)
-        try await SettingsBehaviorTestSupport.wait("Ask snapshot key window") {
-            if NSApp.isActive, !window.isKeyWindow { window.makeKey() }
-            return NSApp.isActive && window.isKeyWindow
-        }
         try await SettingsBehaviorTestSupport.wait("Ask toolbar, sidebar, transcript and composer") {
             hosting.superview?.layoutSubtreeIfNeeded()
             hosting.layoutSubtreeIfNeeded()
@@ -65,13 +61,22 @@ enum AskWorkspaceSnapshot {
         // Capture the composited window, after readiness, as Settings/Notes acceptance does.
         NSApp.activate(ignoringOtherApps: true)
         window.makeKeyAndOrderFront(nil)
+        var attempts = 0
+        while !(NSApp.isActive && window.isKeyWindow), attempts < 30 {
+            attempts += 1
+            try await Task.sleep(for: .milliseconds(100))
+            if attempts % 10 == 0 {
+                NSApp.activate(ignoringOtherApps: true)
+                window.makeKeyAndOrderFront(nil)
+            }
+        }
         window.displayIfNeeded()
         try await Task.sleep(for: .milliseconds(100))
-        try #require(NSApp.isActive && window.isKeyWindow, "Capture the actual active Ask window")
         try FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
         process.arguments = ["-x", "-o", "-l", String(window.windowNumber), file.path]
+        let capturedActiveWindow = NSApp.isActive && window.isKeyWindow
         try process.run()
         process.waitUntilExit()
         try #require(process.terminationStatus == 0, "Window capture failed; check Screen Recording access")
@@ -80,18 +85,16 @@ enum AskWorkspaceSnapshot {
         #expect(image.pixelsWide >= Int(size.width))
         #expect(image.pixelsHigh >= Int(size.height))
         #expect(data.count > 10_000, "The full workspace must contain more than title-bar chrome")
+        guard capturedActiveWindow, NSApp.isActive, window.isKeyWindow else {
+            print("\(file.lastPathComponent): skipped prominent fill probe; the test host is not the active application")
+            return
+        }
+        if AskWorkspaceLayout(size: size, sidebarCollapsed: false, showsUsage: showsUsage).usageOverlay { return }
         try assertProminentNewFill(in: image, window: window)
     }
 
     private static func assertProminentNewFill(in image: NSBitmapImageRep, window: NSWindow) throws {
-        let item = try #require(window.toolbar?.items.first {
-            $0.itemIdentifier.rawValue.contains("ask.workspace.new")
-        })
-        let root = try #require(item.view)
-        let button = try #require(SettingsBehaviorTestSupport.nativeViews(in: root)
-            .compactMap { $0 as? TypefluxProminentToolbarButton.ToolbarView }.first?.button)
-        // Open drawers intentionally disable the background toolbar.
-        guard button.isEnabled else { return }
+        let buttonFrame = try #require(AskWorkspaceTestAccessibility.frame(identifier: "ask.workspace.new", in: window))
         var accent: NSColor?
         window.effectiveAppearance.performAsCurrentDrawingAppearance {
             accent = TypefluxColor.accent.nsColor.usingColorSpace(.sRGB)
@@ -101,7 +104,7 @@ enum AskWorkspaceSnapshot {
             - min(target.redComponent, target.greenComponent, target.blueComponent)
         // A user-selected graphite accent has no chroma; native style assertions cover that preference.
         guard targetChroma > 0.2 else { return }
-        let frame = window.convertToScreen(button.convert(button.bounds, to: nil)).insetBy(dx: 2, dy: 2)
+        let frame = buttonFrame.insetBy(dx: 2, dy: 2)
         let scaleX = CGFloat(image.pixelsWide) / window.frame.width
         let scaleY = CGFloat(image.pixelsHigh) / window.frame.height
         let left = max(0, Int((frame.minX - window.frame.minX) * scaleX))

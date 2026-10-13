@@ -230,6 +230,12 @@ final class AskNotesViewModel: ObservableObject {
         selecting ? picked : Set(selectedID.map { [$0] } ?? [])
     }
 
+    /// Sharing includes the current title and body, including edits that have not autosaved yet.
+    var sharingText: String? {
+        guard let note = selected, !note.isDeleted, !inTrash, !selecting else { return nil }
+        return (pendingTitle ?? note.title) + "\n\n" + (editing ? draftBody : note.body)
+    }
+
     func selectFromList(_ selection: Set<UUID>) {
         let visible = selection.intersection(Set(notes.map(\.id)))
         guard selection.isEmpty || !visible.isEmpty, visible != listSelection else { return }

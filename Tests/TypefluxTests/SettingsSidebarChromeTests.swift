@@ -152,7 +152,7 @@ struct SettingsSidebarChromeTests {
             controller.modelLibrary = AskModelLibrary(defaults: settings.defaults, automaticallyLoadsCatalog: false)
             controller.show(settingsStore: settings, historyStore: history, initialSection: .history)
             let window = try #require(controller.window)
-            defer { window.close() }
+            defer { TypefluxNavigationTestSupport.closeWindow(window) }
             #expect(window.toolbarStyle == .unified)
             #expect(window.toolbar != nil)
             for size in [NSSize(width: 1100, height: 800), NSSize(width: 1440, height: 900),
@@ -175,10 +175,11 @@ struct SettingsSidebarChromeTests {
                 }
                 try await Task.sleep(for: .milliseconds(180))
                 let bounds = window.convertToScreen(host.convert(host.bounds, to: nil))
-                for label in [L("history.action.exportMarkdown"), L("common.clear")] {
-                    let button = try #require(toolbarElements(in: window).first {
-                        $0.role == NSAccessibility.Role.button.rawValue && $0.label == label
-                    })
+                let controls = AskLibraryTestSupport.elements(in: window)
+                for identifier in ["typeflux.toolbar.history.export", "typeflux.toolbar.history.clear"] {
+                    let button = try #require(controls.first {
+                        $0.value("accessibilityIdentifier") as? String == identifier && !$0.frame.isEmpty
+                    }, "Missing history toolbar control: \(identifier)")
                     #expect(button.frame.width >= 20)
                     #expect(button.frame.minX >= bounds.minX - 1 && button.frame.maxX <= bounds.maxX + 1)
                 }
@@ -205,26 +206,34 @@ struct SettingsSidebarChromeTests {
                         }
                     }
                 }
-                if size.width < 1040 { try TypefluxNavigationTestSupport.toggleSidebar(in: window) }
+                if !UI.contains(L("ask.local.identity"), in: window) {
+                    try TypefluxNavigationTestSupport.toggleSidebar(in: window)
+                }
                 try await UI.wait { UI.contains(L("ask.local.identity"), in: window) }
                 let identity = try identity(in: window)
                 #expect(identity.frame.minY >= bounds.minY && identity.frame.maxX < bounds.minX + 264)
                 #expect(!UI.contains("Typeflux Cloud", in: window))
                 try await capture(window, name: "settings-history-\(style.rawValue)-\(Int(size.width))-dark")
             }
-            window.close()
+            TypefluxNavigationTestSupport.closeWindow(window)
             settings.appearanceMode = .light
             let lightController = SettingsWindowController()
             lightController.modelLibrary = controller.modelLibrary
             lightController.show(settingsStore: settings, historyStore: history, initialSection: .history)
             let lightWindow = try #require(lightController.window)
-            defer { lightWindow.close() }
+            defer { TypefluxNavigationTestSupport.closeWindow(lightWindow) }
             lightWindow.setContentSize(NSSize(width: 720, height: 500))
             lightWindow.setFrameOrigin(NSPoint(x: 80, y: 80))
             try await UI.wait("Light history filter menu") {
                 lightWindow.toolbar?.items.contains {
                     $0.itemIdentifier.rawValue.contains("history.filterMenu")
                 } == true
+            }
+            let lightHost = try #require(lightWindow.contentView)
+            try await UI.wait("Light History navigation rows") {
+                UI.elements(in: lightHost).contains {
+                    ($0.value("accessibilityIdentifier") as? String)?.hasPrefix("history.open.") == true
+                }
             }
             #expect(lightWindow.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .aqua)
             try await capture(lightWindow, name: "settings-history-\(style.rawValue)-720-light")

@@ -3,17 +3,22 @@ import SwiftUI
 public struct TypefluxToolbar: ToolbarContent {
     private let groups: [TypefluxToolbarGroup]
     private let prominent: TypefluxToolbarAction?
+    private let accessories: AnyView?
+    private let separatesGroups: Bool
     private let separatesProminent: Bool
 
     public init(groups: [TypefluxToolbarGroup] = [], prominent: TypefluxToolbarAction? = nil,
-                separatesProminent: Bool = false) {
+                accessories: AnyView? = nil, separatesGroups: Bool = false, separatesProminent: Bool = false) {
         self.groups = groups.filter { !$0.actions.isEmpty }
         self.prominent = prominent
+        self.accessories = accessories
+        self.separatesGroups = separatesGroups
         self.separatesProminent = separatesProminent
     }
 
     public var body: some ToolbarContent {
         ForEach(groups) { group in
+            if group.id != groups.first?.id { groupSpacer }
             if separatesProminent {
                 ToolbarItem(id: group.id, placement: .primaryAction) {
                     HStack(spacing: 0) {
@@ -27,27 +32,52 @@ public struct TypefluxToolbar: ToolbarContent {
                 }
             }
         }
+        if let accessories {
+            if !groups.isEmpty { groupSpacer }
+            ToolbarItemGroup(placement: .primaryAction) { accessories }
+        }
         if let prominent {
+            if !groups.isEmpty || accessories != nil { groupSpacer }
+            prominentItem(prominent)
+        }
+    }
+
+    @ToolbarContentBuilder private var groupSpacer: some ToolbarContent {
+        if separatesGroups || separatesProminent {
             #if compiler(>=6.2)
-                if #available(macOS 26, *), separatesProminent {
+                if #available(macOS 26, *) {
                     ToolbarSpacer(.fixed, placement: .primaryAction)
-                    prominentItem(prominent)
                 } else {
-                    prominentItem(prominent)
+                    legacySpacer
                 }
             #else
-                prominentItem(prominent)
+                legacySpacer
             #endif
         }
     }
 
-    private func prominentItem(_ action: TypefluxToolbarAction) -> some ToolbarContent {
-        ToolbarItem(id: action.accessibilityIdentifier, placement: .primaryAction) {
-            if separatesProminent {
-                TypefluxProminentToolbarButton(action: action)
+    private var legacySpacer: some ToolbarContent {
+        ToolbarItem(placement: .primaryAction) {
+            Spacer().frame(width: TypefluxSpacing.small.value(for: .classic))
+        }
+    }
+
+    @ToolbarContentBuilder private func prominentItem(_ action: TypefluxToolbarAction) -> some ToolbarContent {
+        #if compiler(>=6.2)
+            if #available(macOS 26, *) {
+                // The prominent button supplies its own material and accent, independently of the toolbar capsule.
+                newItem(action).sharedBackgroundVisibility(.hidden)
             } else {
-                TypefluxToolbarButton(action: action, prominent: true)
+                newItem(action)
             }
+        #else
+            newItem(action)
+        #endif
+    }
+
+    private func newItem(_ action: TypefluxToolbarAction) -> some ToolbarContent {
+        ToolbarItem(id: action.accessibilityIdentifier, placement: .primaryAction) {
+            TypefluxToolbarButton(action: action, prominent: true)
         }
     }
 }

@@ -92,7 +92,16 @@ struct AskNoteDetailView: View {
 
     private func header(_ note: AskNote, compact: Bool = false) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            titleField(compact: compact)
+            if model.editing {
+                titleField(compact: compact)
+            } else {
+                Text(note.title.isEmpty ? L("ask.notes.untitled") : note.title)
+                    .font(compact ? .title2 : .title).fontWeight(.bold)
+                    .foregroundStyle(TypefluxColor.label.color)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityAddTraits(.isHeader)
+                    .accessibilityIdentifier("ask.notes.title")
+            }
             if model.editing {
                 Text(L(model.hasUnsavedDraft || model.pendingTitle != nil ? "ask.notes.saving" : "ask.notes.autosaved"))
                     .font(.caption).foregroundStyle(TypefluxColor.secondaryLabel.color)
@@ -427,6 +436,14 @@ struct AskNoteDetailView: View {
     private var emptyState: some View {
         TypefluxEmptyState(L(model.inTrash ? "ask.notes.trash.none" : "ask.notes.emptyTitle"),
                            systemImage: model.inTrash ? "trash" : "note.text",
-                           description: model.inTrash ? "" : L("ask.notes.emptySubtitle"))
+                           description: model.inTrash ? ""
+                            : L("ask.notes.emptySubtitle") + "\n" + L("ask.notes.empty")) {
+            if !model.searchText.isEmpty, !model.inTrash {
+                TypefluxButton(L("ask.notes.newTitled", AskNotesViewModel.parseSearch(model.searchText).text)) {
+                    model.createNote(title: AskNotesViewModel.parseSearch(model.searchText).text)
+                }
+            }
+        }
+        .accessibilityIdentifier("ask.notes.emptyState")
     }
 }
