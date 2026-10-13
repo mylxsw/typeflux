@@ -40,10 +40,7 @@ struct HistorySettingsBackButtonTests {
         }
     }
 
-    // Disabled: after another window test it terminates the Swift Testing host (cross-test AppKit
-    // state); the single-window Back test covers the behaviour. Re-enable with the GUL-355 harness fix.
-    @Test(.disabled("Terminates the test host after other window tests; tracked in GUL-355"))
-    func `Back in one settings window leaves another window detail selected`() async throws {
+    @Test func `Back in one settings window leaves another window detail selected`() async throws {
         try await withModels { first, second in
             let recordID = try #require(first.displayedHistory.first?.id)
             #expect(second.displayedHistory.first?.id == recordID)
