@@ -33,7 +33,8 @@ public struct TypefluxGlassContainer<Content: View>: View {
             // Separate AppKit layers keep animated content from recompositing the glass.
             .background(GlassBackground(material: material, corner: radius.value(for: style),
                                         opaqueFill: TypefluxColor.windowBackground.color, placement: placement,
-                                        cornerStyle: radius == .spotlightInput ? .circular : .continuous))
+                                        cornerStyle: radius == .spotlightInput ? .circular : .continuous)
+                .accessibilityHidden(true))
             .overlay {
                 if material == .opaque, accessibility.increasedContrast, contrast != .increased {
                     shape.strokeBorder(TypefluxColor.separator.color, lineWidth: 1).allowsHitTesting(false)

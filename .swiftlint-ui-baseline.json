@@ -236,12 +236,6 @@
   {
     "file": "Sources/Typeflux/Ask/AskComposerViews.swift",
     "rule": "typeflux_literal_radius",
-    "match": "cornerRadius: 6",
-    "count": 1
-  },
-  {
-    "file": "Sources/Typeflux/Ask/AskComposerViews.swift",
-    "rule": "typeflux_literal_radius",
     "match": "cornerRadius: 8",
     "count": 1
   },
@@ -604,30 +598,6 @@
     "rule": "typeflux_literal_radius",
     "match": "cornerRadius: 4",
     "count": 1
-  },
-  {
-    "file": "Sources/Typeflux/Ask/AskLauncherSuggestions.swift",
-    "rule": "typeflux_literal_font",
-    "match": ".font(.system(size: 10.5",
-    "count": 1
-  },
-  {
-    "file": "Sources/Typeflux/Ask/AskLauncherSuggestions.swift",
-    "rule": "typeflux_literal_font",
-    "match": ".font(.system(size: 11.5",
-    "count": 1
-  },
-  {
-    "file": "Sources/Typeflux/Ask/AskLauncherSuggestions.swift",
-    "rule": "typeflux_literal_radius",
-    "match": "cornerRadius: 10",
-    "count": 3
-  },
-  {
-    "file": "Sources/Typeflux/Ask/AskLauncherSuggestions.swift",
-    "rule": "typeflux_literal_radius",
-    "match": "cornerRadius: 9",
-    "count": 2
   },
   {
     "file": "Sources/Typeflux/Ask/AskLauncherVoiceViews.swift",
@@ -1454,12 +1424,6 @@
   {
     "file": "Sources/Typeflux/Clipboard/ClipboardPanelRow.swift",
     "rule": "typeflux_literal_font",
-    "match": ".font(.system(size: 13",
-    "count": 1
-  },
-  {
-    "file": "Sources/Typeflux/Clipboard/ClipboardPanelRow.swift",
-    "rule": "typeflux_literal_font",
     "match": ".font(.system(size: compact ? 6.5",
     "count": 1
   },
@@ -1479,42 +1443,12 @@
     "file": "Sources/Typeflux/Clipboard/ClipboardPanelRow.swift",
     "rule": "typeflux_literal_radius",
     "match": "cornerRadius: 8",
-    "count": 2
+    "count": 1
   },
   {
     "file": "Sources/Typeflux/Clipboard/ClipboardPanelRow.swift",
     "rule": "typeflux_literal_radius",
     "match": "cornerRadius: compact ? 6",
-    "count": 1
-  },
-  {
-    "file": "Sources/Typeflux/Clipboard/ClipboardPreviewPane.swift",
-    "rule": "typeflux_literal_font",
-    "match": ".font(.system(size: 11.5",
-    "count": 1
-  },
-  {
-    "file": "Sources/Typeflux/Clipboard/ClipboardPreviewPane.swift",
-    "rule": "typeflux_literal_font",
-    "match": ".font(.system(size: 12.5",
-    "count": 1
-  },
-  {
-    "file": "Sources/Typeflux/Clipboard/ClipboardPreviewPane.swift",
-    "rule": "typeflux_literal_font",
-    "match": ".font(.system(size: 13",
-    "count": 1
-  },
-  {
-    "file": "Sources/Typeflux/Clipboard/ClipboardPreviewPane.swift",
-    "rule": "typeflux_literal_radius",
-    "match": "cornerRadius: 10",
-    "count": 1
-  },
-  {
-    "file": "Sources/Typeflux/Clipboard/ClipboardPreviewPane.swift",
-    "rule": "typeflux_literal_radius",
-    "match": "cornerRadius: 6",
     "count": 1
   },
   {

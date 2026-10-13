@@ -73,7 +73,6 @@ struct AskCommandPaletteView: View {
                             .accessibilityValue(match.command.plain ? match.command.name : "/" + match.command.name)
                             .accessibilityHint(match.command.disabledReason ?? match.command.detail ?? "")
                             .id(index)
-                            .onHover { if $0, match.command.enabled { onHighlight(index) } }
                         }
                     }
                     .padding(.horizontal, 6)

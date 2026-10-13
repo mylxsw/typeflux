@@ -57,7 +57,7 @@ struct AskLauncherHeaderTests {
         let editor = try #require(descendants(window.contentView!).compactMap { $0 as? AskComposerTextView.Editor }.first)
         let scroll = try #require(editor.enclosingScrollView)
         let editorFrame = window.convertToScreen(scroll.convert(scroll.bounds, to: nil))
-        #expect(editorFrame.minX < window.frame.minX + 40, "the editor starts at the card's left inset")
+        #expect(editorFrame.minX < window.frame.minX + 70, "the editor follows the search icon inside the capsule")
         // Captured content is no longer a row of chips above the editor.
         #expect(find("ask.content.source.preview", in: window) == nil)
         #expect(find("ask.content.selection.preview", in: window) == nil)
@@ -79,6 +79,7 @@ struct AskLauncherHeaderTests {
         #expect(request.source == fixture.model.launcherDraft.source)
         #expect(request.selection == "first line\nsecond line")
         let expected = AskMetrics.launcherHeight(editor: 32, banners: 0, suggestions: home)
+            + AskLauncherSpotlightLayout.chromeAdjustment(editor: 32, style: .liquidGlass, collapsed: false)
         #expect(abs(reported.height - expected) <= 4, "reported \(reported.height), expected \(expected)")
         try click(memory, in: window)
         try await fixture.wait { fixture.model.launcherDraft.memoryOff == true }
@@ -101,7 +102,7 @@ struct AskLauncherHeaderTests {
         #expect(abs(button.frame.midY - voice.frame.midY) < 2)
         #expect(button.frame.minX > voice.frame.maxX)
         #expect(button.frame.minY > model.frame.maxY)
-        #expect(button.frame.width == AskSendButton.size)
+        #expect(button.frame.width == TypefluxControlHeight.spotlightModeButton.value(for: .liquidGlass))
         #expect(button.value("accessibilityLabel") as? String == L("ask.quick.askAI"))
         try click(button, in: window)
         try await fixture.wait { opens == 1 }

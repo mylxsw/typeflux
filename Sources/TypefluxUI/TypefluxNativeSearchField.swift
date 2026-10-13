@@ -3,6 +3,7 @@ import SwiftUI
 
 /// NSSearchField supplies editing, the clear button, VoiceOver and input method support.
 struct TypefluxNativeSearchField: NSViewRepresentable {
+    @Environment(\.interfaceStyle) private var style
     @Binding var text: String
     @Binding var focused: Bool
     var prompt: String
@@ -44,7 +45,9 @@ struct TypefluxNativeSearchField: NSViewRepresentable {
     func sizeThatFits(_ proposal: ProposedViewSize, nsView: NSSearchField, context _: Context) -> CGSize? {
         // A taller capsule centers the native control; stretching its cell can
         // overlap the magnifier and placeholder on macOS 26.
-        CGSize(width: proposal.width ?? nsView.fittingSize.width, height: max(22, nsView.intrinsicContentSize.height))
+        let lineHeight = nsView.font.map { ceil($0.ascender - $0.descender + $0.leading) } ?? 0
+        return CGSize(width: proposal.width ?? nsView.fittingSize.width,
+                      height: max(22, max(nsView.intrinsicContentSize.height, borderless ? lineHeight + 4 : 0)))
     }
 
     func makeNSView(context: Context) -> NSSearchField {
@@ -61,9 +64,9 @@ struct TypefluxNativeSearchField: NSViewRepresentable {
 
     func updateNSView(_ field: NSSearchField, context: Context) {
         context.coordinator.parent = self
-        configure(field)
         field.isEnabled = context.environment.isEnabled
         field.controlSize = context.environment.controlSize == .small ? .small : .regular
+        configure(field)
         if field.stringValue != text {
             field.stringValue = text
         }
@@ -81,11 +84,15 @@ struct TypefluxNativeSearchField: NSViewRepresentable {
     }
 
     private func configure(_ field: NSSearchField) {
+        field.font = borderless ? TypefluxSpotlightMetrics.inputFont(for: style)
+            : NSFont.preferredFont(forTextStyle: .body)
         field.placeholderString = prompt
         field.setAccessibilityLabel(prompt)
         field.setAccessibilityIdentifier(identifier)
         field.isBezeled = !borderless
         field.drawsBackground = !borderless
+        field.focusRingType = borderless ? .none : .default
+        field.cell?.focusRingType = borderless ? .none : .default
         if let cell = field.cell as? NSSearchFieldCell {
             if borderless {
                 cell.searchButtonCell = nil
@@ -93,7 +100,6 @@ struct TypefluxNativeSearchField: NSViewRepresentable {
                 cell.resetSearchButtonCell()
             }
         }
-        field.font = NSFont.preferredFont(forTextStyle: .body)
     }
 
     static func dismantleNSView(_ field: NSSearchField, coordinator _: Coordinator) {

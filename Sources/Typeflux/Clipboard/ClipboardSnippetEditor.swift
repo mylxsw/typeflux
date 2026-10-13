@@ -23,7 +23,8 @@ struct ClipboardSnippetEditor: View {
                           confirm: model.commitSnippet) {
                 VStack(alignment: .leading, spacing: 12) {
                     if let error = model.snippetError {
-                        Text(error).font(.subheadline).foregroundStyle(.red).accessibilityIdentifier("snippet.error")
+                        Text(error).font(.subheadline).foregroundStyle(TypefluxColor.danger.color)
+                            .accessibilityIdentifier("snippet.error")
                     }
                     Text(L("clipboard.snippet.name")).font(.subheadline)
                     TextField(L("clipboard.snippet.name"), text: field(\.name))

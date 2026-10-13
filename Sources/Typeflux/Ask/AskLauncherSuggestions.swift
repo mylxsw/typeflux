@@ -47,6 +47,7 @@ struct AskLauncherSuggestions: View {
     @Environment(\.colorScheme) private var colorScheme
     var sections: [AskLauncherHome.Section]
     @Binding var highlighted: Int
+    @State private var hoveredID: String?
     var onPick: (AskLauncherHome.Item) -> Void
     var now = Date()
     var viewportHeight: CGFloat?
@@ -193,25 +194,13 @@ struct AskLauncherSuggestions: View {
             header(L("ask.home.section.apps"), subtitle: nil)
             rowList(rows, items: items, numbers: numbers, current: current)
         case let .keywords(chips, _):
-            ScrollViewReader { proxy in
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 6) {
-                        ForEach(chips) { chip in
-                            let item = AskLauncherHome.Item.chip(chip)
-                            chipView(chip, highlighted: item.id == current)
-                                .id(item.id)
-                                .onHover { if $0, let index = items.firstIndex(of: item) { highlighted = index } }
-                        }
-                    }
-                    .padding(.horizontal, Self.contentInset)
-                    .frame(height: Self.chipRowHeight)
-                }
-                .onChange(of: current) { id in
-                    if let id, id.hasPrefix("chip.") { proxy.scrollTo(id) }
-                }
-            }
-            .frame(height: Self.chipRowHeight)
-            .clipped()
+            AskLauncherKeywordRow(chips: chips, selectedID: current,
+                                  chipView: { chip, selected in chipView(chip, highlighted: selected) },
+                                  onPickOverflow: { chip in
+                                      let item = AskLauncherHome.Item.chip(chip)
+                                      if let index = items.firstIndex(of: item) { highlighted = index }
+                                      onPick(item)
+                                  })
         }
     }
 
@@ -223,7 +212,7 @@ struct AskLauncherSuggestions: View {
             }
             Spacer(minLength: 0)
         }
-        .font(.system(size: 11.5, weight: .medium))
+        .font(.subheadline.weight(.medium))
         .padding(.horizontal, Self.contentInset)
         .padding(.bottom, Self.headerBottomGap)
         .frame(height: Self.headerHeight, alignment: .bottomLeading)
@@ -235,7 +224,7 @@ struct AskLauncherSuggestions: View {
             ForEach(rows) { row in
                 let item = AskLauncherHome.Item.row(row)
                 rowView(row, number: numbers[row.id], highlighted: item.id == current)
-                    .onHover { if $0, let index = items.firstIndex(of: item) { highlighted = index } }
+                    .onHover { hoveredID = $0 ? item.id : (hoveredID == item.id ? nil : hoveredID) }
             }
         }
     }
@@ -283,6 +272,7 @@ struct AskLauncherSuggestions: View {
             }
             .padding(.horizontal, Self.contentInset)
             .frame(height: Self.rowHeight)
+            .background(!highlighted && hoveredID == row.id ? TypefluxColor.controlBackground.color : .clear)
             .modifier(TypefluxSpotlightRow(selected: highlighted))
         }
         .buttonStyle(.plain)
@@ -301,14 +291,16 @@ struct AskLauncherSuggestions: View {
             Image(systemName: row.symbol).font(.callout)
                 .foregroundStyle(highlighted ? TypefluxSpotlightRow.labelColor(selected: true) : Self.tint(row.tint))
                 .frame(width: 28, height: 28)
-                .background(Self.tileFill(row.tint), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous)
+                .background(Self.tileFill(row.tint), in: RoundedRectangle(
+                    cornerRadius: TypefluxRadius.navigationIcon.value(for: style), style: .continuous))
+                .overlay(RoundedRectangle(
+                    cornerRadius: TypefluxRadius.navigationIcon.value(for: style), style: .continuous)
                     .strokeBorder(Self.tileEdge(row.tint), lineWidth: 0.5))
         }
     }
 
     private func keywordLabel(_ keyword: String, highlighted: Bool = false) -> some View {
-        Text(keyword).font(.system(size: 10.5, design: .monospaced))
+        Text(keyword).font(.footnote.monospaced())
             .foregroundStyle(TypefluxSpotlightRow.labelColor(selected: highlighted, secondary: true))
             .padding(.horizontal, 5)
             .frame(height: 18)
@@ -320,22 +312,23 @@ struct AskLauncherSuggestions: View {
     private func chipView(_ chip: AskLauncherHome.Chip, highlighted: Bool) -> some View {
         Button { onPick(.chip(chip)) } label: {
             HStack(spacing: 6) {
-                keywordLabel(chip.keyword.keyword)
+                keywordLabel(chip.keyword.keyword, highlighted: highlighted)
                 Text(chip.title).font(.callout)
-                    .foregroundStyle(highlighted ? TypefluxColor.label.color : secondaryText)
+                    .foregroundStyle(TypefluxSpotlightRow.labelColor(selected: highlighted, secondary: !highlighted))
                     .lineLimit(1)
             }
             .padding(.leading, 5)
             .padding(.trailing, 9)
             .frame(height: Self.chipHeight)
-            .background(highlighted ? LegacyAskPalette.launcherSelection : LegacyAskPalette.launcherChipFill,
-                        in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .strokeBorder(LegacyAskPalette.launcherChipEdge))
+            .background(highlighted ? TypefluxColor.selection.color : TypefluxColor.controlBackground.color,
+                        in: RoundedRectangle(
+                            cornerRadius: TypefluxRadius.menuRow.value(for: style), style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: TypefluxRadius.menuRow.value(for: style), style: .continuous)
+                .strokeBorder(TypefluxColor.separator.color))
             .overlay {
                 if highlighted {
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .strokeBorder(LegacyAskPalette.launcherSelectionEdge, lineWidth: 0.5)
+                    RoundedRectangle(cornerRadius: TypefluxRadius.menuRow.value(for: style), style: .continuous)
+                        .strokeBorder(TypefluxColor.separator.color, lineWidth: 0.5)
                 }
             }
             .contentShape(Rectangle())
@@ -343,84 +336,5 @@ struct AskLauncherSuggestions: View {
         .buttonStyle(.plain)
         .accessibilityLabel(chip.keyword.keyword + " " + chip.title)
         .accessibilityAddTraits(highlighted ? .isSelected : [])
-    }
-}
-
-/// The home's keys, read before the editor sees them: ↑/↓, ←/→ and ⌘1…⌘9.
-/// The handler returns false to let a key through to the editor.
-struct AskLauncherHomeKeyMonitor: NSViewRepresentable {
-    enum Key: Equatable {
-        case vertical(Int)
-        case horizontal(Int)
-        case number(Int)
-    }
-
-    var onKey: (Key) -> Bool
-
-    static let leftKeyCode: UInt16 = 123
-    static let rightKeyCode: UInt16 = 124
-
-    /// The key an event stands for, or nil for every other key.
-    static func key(keyCode: UInt16, modifiers: NSEvent.ModifierFlags, characters: String?) -> Key? {
-        let modifiers = modifiers.intersection([.command, .option, .control, .shift])
-        if let digit = AskLauncherNumberShortcuts.number(keyCode: keyCode, modifiers: modifiers,
-                                                         characters: characters) {
-            return .number(digit)
-        }
-        guard modifiers.isEmpty else { return nil }
-        if let delta = AskArrowKeyMonitor.delta(keyCode: keyCode, modifiers: []) { return .vertical(delta) }
-        switch keyCode {
-        case leftKeyCode: return .horizontal(-1)
-        case rightKeyCode: return .horizontal(1)
-        default: return nil
-        }
-    }
-
-    final class MonitorView: NSView {
-        var onKey: (Key) -> Bool = { _ in false }
-        private var monitor: Any?
-
-        override func viewDidMoveToWindow() {
-            super.viewDidMoveToWindow()
-            removeMonitor()
-            guard window != nil else { return }
-            monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
-                guard let self, event.window === self.window,
-                      (self.window?.firstResponder as? NSTextView)?.hasMarkedText() != true,
-                      let key = AskLauncherHomeKeyMonitor.key(keyCode: event.keyCode, modifiers: event.modifierFlags,
-                                                              characters: event.charactersIgnoringModifiers)
-                else { return event }
-                if event.isARepeat, case .number = key { return nil }
-                return self.onKey(key) ? nil : event
-            }
-        }
-
-        override func removeFromSuperview() {
-            removeMonitor()
-            super.removeFromSuperview()
-        }
-
-        private func removeMonitor() {
-            if let monitor { NSEvent.removeMonitor(monitor) }
-            monitor = nil
-        }
-
-        deinit {
-            if let monitor { NSEvent.removeMonitor(monitor) }
-        }
-    }
-
-    func makeNSView(context _: Context) -> MonitorView {
-        let view = MonitorView()
-        view.onKey = onKey
-        return view
-    }
-
-    func updateNSView(_ view: MonitorView, context _: Context) {
-        view.onKey = onKey
-    }
-
-    static func dismantleNSView(_ view: MonitorView, coordinator _: ()) {
-        view.removeFromSuperview()
     }
 }

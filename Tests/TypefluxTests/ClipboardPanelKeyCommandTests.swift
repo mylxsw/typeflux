@@ -54,6 +54,10 @@ final class ClipboardPanelKeyCommandTests: XCTestCase {
     }
 
     func testPanelShortcuts() {
+        XCTAssertEqual(command(40, .command, "k"), .showActions)
+        XCTAssertEqual(command(40, .command, "K", queryIsEmpty: false, selection: true), .showActions)
+        XCTAssertNil(command(40, [], "k"))
+        XCTAssertNil(command(40, [.command, .shift], "k"))
         XCTAssertEqual(command(14, .command, "e"), .action(.editBeforePaste))
         XCTAssertEqual(command(43, .command, ","), .openSettings)
         XCTAssertEqual(command(35, [.command, .shift], "P"), .togglePause)

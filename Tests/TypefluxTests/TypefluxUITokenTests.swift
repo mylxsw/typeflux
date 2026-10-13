@@ -51,7 +51,8 @@ struct TypefluxUITokenTests {
         for (token, expected) in zip(TypefluxControlHeight.allCases, heights) {
             #expect(tokens.height(token) == expected)
         }
-        let widths: [CGFloat] = tokens.style == .classic ? [28, 200, 32, 14] : [36, 240, 38, 16]
+        let widths: [CGFloat] = tokens.style == .classic ? [28, 200, 32, 14, 640] : [36, 240, 38, 16, 680]
+        #expect(TypefluxControlWidth.allCases.count == widths.count)
         for (token, expected) in zip(TypefluxControlWidth.allCases, widths) {
             #expect(tokens.width(token) == expected)
         }

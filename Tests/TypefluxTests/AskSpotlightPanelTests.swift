@@ -51,11 +51,15 @@ struct AskSpotlightPanelTests {
                     #expect(elements.contains { $0.value("accessibilityIdentifier") as? String == identifier },
                             "Missing original control: \(identifier)")
                 }
-                let button = try #require(elements.first {
-                    $0.value("accessibilityIdentifier") as? String == "ask.launcher.openChat"
-                })
-                #expect(button.role == NSAccessibility.Role.button.rawValue)
-                #expect(button.frame.width == AskSendButton.size)
+                for identifier in ["ask.launcher.openChat", "ask.composer.voice"] {
+                    let button = try #require(elements.first {
+                        $0.value("accessibilityIdentifier") as? String == identifier
+                    })
+                    #expect(button.role == NSAccessibility.Role.button.rawValue)
+                    let diameter = style.usesGlass
+                        ? TypefluxControlHeight.spotlightModeButton.value(for: style) : AskMetrics.composerControlHeight
+                    #expect(button.frame.width == diameter)
+                }
             }
         }
     }
