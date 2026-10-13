@@ -31,7 +31,7 @@ public struct TypefluxToolbar: ToolbarContent {
             #if compiler(>=6.2)
                 if #available(macOS 26, *), separatesProminent {
                     ToolbarSpacer(.fixed, placement: .primaryAction)
-                    prominentItem(prominent).sharedBackgroundVisibility(.hidden)
+                    prominentItem(prominent)
                 } else {
                     prominentItem(prominent)
                 }

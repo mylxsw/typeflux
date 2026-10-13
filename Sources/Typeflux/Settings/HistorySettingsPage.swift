@@ -2,11 +2,11 @@ import SwiftUI
 
 struct HistorySettingsPage: View {
     @ObservedObject var viewModel: StudioViewModel
-    @Binding var selectedID: UUID?
+    @ObservedObject var navigation: HistorySettingsNavigation
 
     var body: some View {
         Group {
-            if let record = viewModel.displayedHistory.first(where: { $0.id == selectedID }) {
+            if let record = viewModel.displayedHistory.first(where: { $0.id == navigation.selectedID }) {
                 HistorySettingsDetailView(record: record, viewModel: viewModel)
             } else if viewModel.displayedHistory.isEmpty {
                 TypefluxEmptyState(L("history.empty"), systemImage: "clock",
@@ -24,7 +24,7 @@ struct HistorySettingsPage: View {
                         Section(section.id) {
                             ForEach(section.records) { record in
                                 HistorySettingsNavigationRow(record: record, viewModel: viewModel) {
-                                    selectedID = record.id
+                                    navigation.open(record.id)
                                 }
                             }
                         }

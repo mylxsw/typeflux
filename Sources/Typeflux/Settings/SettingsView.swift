@@ -47,7 +47,7 @@ struct StudioView: View {
     @ObservedObject var viewModel: StudioViewModel
     @StateObject private var imageSettings: AskImageSettingsModel
     @State private var vocabularyFilter: VocabularyFilter = .all
-    @State private var selectedHistoryID: UUID?
+    @StateObject private var historyNavigation: HistorySettingsNavigation
     @State private var isAddingVocabulary = false
     @State private var editingVocabularyEntry: VocabularyEntry?
     @State private var newVocabularyTerm = ""
@@ -74,10 +74,11 @@ struct StudioView: View {
     @State private var settingsPane: AppSettingsPane
 
     /// `launcherPane` opens the Launcher page at one of its panes, e.g. the keyword list.
-    /// `initialHistoryID` selects a detail in this view's own state, independently of other windows.
+    /// History selection is owned by this root or its presenting window, independently of other windows.
     init(viewModel: StudioViewModel, launcherPane: LauncherSettingsPane = .basics,
          settingsPane: AppSettingsPane = .general, agentPane: AgentSettingsPane = .overview,
-         imageSettingsModel: AskImageSettingsModel? = nil, initialHistoryID: UUID? = nil) {
+         imageSettingsModel: AskImageSettingsModel? = nil, initialHistoryID: UUID? = nil,
+         historyNavigation: HistorySettingsNavigation? = nil) {
         self.viewModel = viewModel
         _interfaceStyleObserver = StateObject(wrappedValue: InterfaceStyleObserver(settings: viewModel.askToolSettings))
         _imageSettings = StateObject(wrappedValue: imageSettingsModel ?? AskImageSettingsModel(
@@ -86,7 +87,8 @@ struct StudioView: View {
         _launcherPane = State(initialValue: launcherPane)
         _settingsPane = State(initialValue: settingsPane)
         _agentPane = State(initialValue: agentPane)
-        _selectedHistoryID = State(initialValue: initialHistoryID)
+        _historyNavigation = StateObject(wrappedValue: historyNavigation
+            ?? HistorySettingsNavigation(selectedID: initialHistoryID))
     }
 
     @State private var agentStatuses: [AgentCapabilityStatus] = []
@@ -149,7 +151,7 @@ struct StudioView: View {
             if searchScope?.usesModelQuery == true, viewModel.modelSearchQuery != query {
                 viewModel.modelSearchQuery = query
             } else if searchScope?.usesStudioQuery == true, viewModel.searchQuery != query {
-                if viewModel.currentSection == .history { selectedHistoryID = nil }
+                if viewModel.currentSection == .history { historyNavigation.showList() }
                 viewModel.searchQuery = query
             }
         }
@@ -165,11 +167,11 @@ struct StudioView: View {
         }
         .toolbar { libraryPageToolbar }
         .onChange(of: viewModel.currentSection) { section in
-            if section != .history { selectedHistoryID = nil }
+            if section != .history { historyNavigation.showList() }
         }
         .onChange(of: viewModel.displayedHistory.map(\.id)) { ids in
-            if let selectedHistoryID, !ids.contains(selectedHistoryID) {
-                self.selectedHistoryID = nil
+            if let selectedID = historyNavigation.selectedID, !ids.contains(selectedID) {
+                historyNavigation.showList()
             }
         }
         .interfaceStyle(following: interfaceStyleObserver)
@@ -621,7 +623,7 @@ struct StudioView: View {
         }
         if viewModel.currentSection == .history {
             ToolbarItem(id: HistorySettingsBackButton.toolbarIdentifier, placement: .navigation) {
-                HistorySettingsBackButton(selectedID: $selectedHistoryID)
+                HistorySettingsBackButton(selectedID: $historyNavigation.selectedID)
                     .disabled(!isShowingHistoryDetail)
             }
             ToolbarItem(id: "history.filterMenu", placement: .primaryAction) {
@@ -647,14 +649,14 @@ struct StudioView: View {
 
     private var historyFilterBinding: Binding<HistorySettingsFilter> {
         Binding(get: { viewModel.historyFilter }, set: { filter in
-            if filter != viewModel.historyFilter { selectedHistoryID = nil }
+            if filter != viewModel.historyFilter { historyNavigation.showList() }
             viewModel.historyFilter = filter
         })
     }
 
     private var isShowingHistoryDetail: Bool {
-        guard let selectedHistoryID else { return false }
-        return viewModel.displayedHistory.contains { $0.id == selectedHistoryID }
+        guard let selectedID = historyNavigation.selectedID else { return false }
+        return viewModel.displayedHistory.contains { $0.id == selectedID }
     }
 
     @ViewBuilder
@@ -714,7 +716,7 @@ struct StudioView: View {
     }
 
     private var historyPage: some View {
-        HistorySettingsPage(viewModel: viewModel, selectedID: $selectedHistoryID)
+        HistorySettingsPage(viewModel: viewModel, navigation: historyNavigation)
     }
 
     private var vocabularyPage: some View {
@@ -1259,7 +1261,7 @@ struct StudioView: View {
                 HistorySettingsNavigationRow(record: record, viewModel: viewModel) {
                     viewModel.historyFilter = .all
                     viewModel.navigate(to: .history)
-                    selectedHistoryID = record.id
+                    historyNavigation.open(record.id)
                 }
             }
         }

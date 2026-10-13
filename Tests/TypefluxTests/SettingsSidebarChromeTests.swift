@@ -188,21 +188,19 @@ struct SettingsSidebarChromeTests {
                 })
                 #expect(row.frame.width >= 20 && bounds.contains(row.frame))
                 if size.width == 1100 {
-                    try row.press()
+                    let record = try #require(controller.viewModel?.displayedHistory.first)
+                    controller.historyNavigation.open(record.id)
                     try await UI.wait("History detail navigation") {
-                        toolbarElements(in: window).contains {
-                            ($0.object as? NSButton)?.isEnabled == true
-                                && $0.value("accessibilityIdentifier") as? String
-                                    == HistorySettingsBackButton.accessibilityIdentifier
-                        }
+                        historyBackButton(in: window)?.isEnabled == true
+                            && UI.contains(L("history.detail.rawTranscript"), in: host)
                     }
-                    let back = try #require(toolbarElements(in: window).first {
-                        $0.value("accessibilityIdentifier") as? String
-                            == HistorySettingsBackButton.accessibilityIdentifier
-                    })
-                    try back.press()
+                    let back = try #require(historyBackButton(in: window))
+                    #expect(back.window === window)
+                    #expect(back.accessibilityIdentifier() == HistorySettingsBackButton.accessibilityIdentifier)
+                    let action = try #require(back.action)
+                    #expect(NSApp.sendAction(action, to: back.target, from: back))
                     try await UI.wait("Returning to history navigation rows") {
-                        UI.elements(in: host).contains {
+                        controller.historyNavigation.selectedID == nil && UI.elements(in: host).contains {
                             ($0.value("accessibilityIdentifier") as? String)?.hasPrefix("history.open.") == true
                         }
                     }
@@ -250,6 +248,14 @@ struct SettingsSidebarChromeTests {
 }
 
 private extension SettingsSidebarChromeTests {
+    func historyBackButton(in window: NSWindow) -> NSButton? {
+        guard let root = window.toolbar?.items.first(where: {
+            $0.itemIdentifier.rawValue == HistorySettingsBackButton.toolbarIdentifier
+        })?.view else { return nil }
+        return UI.nativeViews(in: root).compactMap { $0 as? HistorySettingsBackButton.ToolbarView }
+            .first { $0.window === window }?.button
+    }
+
     private func toolbarElements(in window: NSWindow) -> [UI.Element] {
         (window.toolbar?.items.compactMap(\.view).flatMap { UI.elements(in: $0) } ?? []) + UI.elements(in: window)
     }

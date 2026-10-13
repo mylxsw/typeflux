@@ -11,6 +11,7 @@ final class SettingsWindowController: NSObject {
     private var settingsStore: SettingsStore?
     private(set) var window: NSWindow?
     private(set) var viewModel: StudioViewModel?
+    private(set) var historyNavigation = HistorySettingsNavigation()
     private var appearanceObserver: NSObjectProtocol?
     private let dockVisibility: DockVisibilityController
 
@@ -91,7 +92,9 @@ final class SettingsWindowController: NSObject {
         }
         AppLocalization.shared.setLanguage(viewModel.appLanguage)
         if presentFeedback { viewModel.directFeedbackRequestID = UUID() }
-        let view = StudioView(viewModel: viewModel, launcherPane: launcherPane ?? .basics)
+        historyNavigation = HistorySettingsNavigation()
+        let view = StudioView(viewModel: viewModel, launcherPane: launcherPane ?? .basics,
+                              historyNavigation: historyNavigation)
         let hosting = NSHostingView(rootView: view)
         hosting.sizingOptions = []
 

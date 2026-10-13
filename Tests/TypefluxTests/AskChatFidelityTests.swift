@@ -8,6 +8,41 @@ import Testing
 struct AskChatFidelityTests {
     private typealias UI = SettingsBehaviorTestSupport
 
+    @Test(arguments: InterfaceStyle.allCases)
+    func emptyWorkspaceSuggestionCardsReserveEqualTitleHeights(style: InterfaceStyle) async throws {
+        try await UI.withFixture { settings in
+            settings.appLanguage = .english
+            AppLocalization.shared.setLanguage(.english)
+            let fixture = try AskTestFixture(modelLibrary: AskModelLibrary(defaults: settings.defaults,
+                automaticallyLoadsCatalog: false))
+            defer { fixture.model.resetSession() }
+            let view = AskConversationView(model: fixture.model).defaultAppStorage(settings.defaults)
+                .environment(\.interfaceStyle, style)
+            try await UI.withWindow(view, width: 1180, height: 760) { _, host in
+                let identifiers = ["ask.suggest.screen", "ask.suggest.selection", "ask.suggest.page"]
+                    .map { "ask.workspace.suggestion." + $0 }
+                try await UI.wait("Three suggestion cards") {
+                    let visible = UI.elements(in: host).filter {
+                        identifiers.contains($0.value("accessibilityIdentifier") as? String ?? "")
+                            && $0.role == NSAccessibility.Role.button.rawValue && $0.frame.height > 0
+                    }
+                    return visible.count == 3
+                }
+                let cards = try identifiers.map { identifier in
+                    try #require(UI.elements(in: host).first {
+                        $0.value("accessibilityIdentifier") as? String == identifier
+                            && $0.role == NSAccessibility.Role.button.rawValue
+                    })
+                }
+                for card in cards {
+                    #expect(abs(card.frame.height - cards[0].frame.height) < 0.5)
+                    #expect(abs(card.frame.minY - cards[0].frame.minY) < 0.5)
+                }
+                #expect(cards[0].frame.maxX < cards[1].frame.minX && cards[1].frame.maxX < cards[2].frame.minX)
+            }
+        }
+    }
+
     @Test func paletteQueryAndKeyboardSelectionUpdateBeforeTheNextDraw() {
         let model = AskPaletteModel()
         model.update(conversations: [.init(id: "swift", title: "Swift actors", updatedAt: .now)],

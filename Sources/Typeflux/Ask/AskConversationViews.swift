@@ -352,6 +352,12 @@ struct AskConversationView: View {
     private var workspaceShortcuts: some View {
         newPrivateShortcut
             .background {
+                // Keep this window's command registered while its visible button is hosted in the native toolbar.
+                Button(L("ask.new"), action: { model.newConversation() })
+                    .keyboardShortcut("n", modifiers: .command)
+                    .hidden().accessibilityHidden(true)
+            }
+            .background {
                 if layout.compactContent {
                     Button(L("ask.search"), action: openSearch).keyboardShortcut("k", modifiers: .command)
                         .hidden().accessibilityHidden(true)
@@ -737,6 +743,7 @@ struct AskConversationView: View {
             if screenshot { model.attachScreenshotForSuggestion(launcher: false) }
         }
         .keyboardShortcut(KeyEquivalent(Character(shortcut)), modifiers: .command)
+        .accessibilityIdentifier("ask.workspace.suggestion." + key)
         .disabled(!state.enabled && !addsModel)
         .help((addsModel ? L("ask.vision.addHelp") : caption) + " · ⌘" + shortcut)
     }
@@ -1417,7 +1424,7 @@ private struct AskSuggestionCard: View {
                                 .strokeBorder(iconTint.opacity(0.35), lineWidth: 0.5))
                         Text(title).font(.body).fontWeight(.semibold)
                             .foregroundStyle(available ? TypefluxColor.label.color : TypefluxColor.tertiaryLabel.color)
-                            .lineLimit(2)
+                            .lineLimit(2, reservesSpace: true)
                             .fixedSize(horizontal: false, vertical: true)
                         (Text(caption).foregroundColor(TypefluxColor.tertiaryLabel.color)
                             + Text(captionAction.map { " · " + $0 } ?? "")

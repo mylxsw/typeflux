@@ -10,14 +10,14 @@ struct HistorySettingsBackButtonTests {
 
     @Test func `wired Back actions follow detail selection and toolbar scope`() async throws {
         try await withModels { model, _ in
-            try await withWindow(model) { window, host in
+            try await withWindow(model) { window, host, navigation in
                 try await RenderedUI.wait { backButton(in: window) != nil }
                 #expect(try !requireBackButton(in: window).isEnabled)
                 for _ in 0 ..< 2 {
-                    try await openDetail(in: host)
+                    try await openDetail(in: host, model: model, navigation: navigation)
                     try await RenderedUI.wait { backButton(in: window)?.isEnabled == true }
                     let back = try requireBackButton(in: window)
-                    try RenderedUI.Element(object: back, window: window).press()
+                    try sendBackAction(back)
                     try await RenderedUI.wait { !RenderedUI.contains(L("history.detail.rawTranscript"), in: host) }
                     try await RenderedUI.wait { backButton(in: window)?.isEnabled == false }
                     #expect(RenderedUI.contains("Back fixture", in: host))
@@ -26,7 +26,7 @@ struct HistorySettingsBackButtonTests {
                 try await RenderedUI.wait { backButton(in: window) == nil }
                 model.navigate(to: .history)
                 try await RenderedUI.wait { backButton(in: window)?.isEnabled == false }
-                try await openDetail(in: host)
+                try await openDetail(in: host, model: model, navigation: navigation)
                 model.deleteHistoryRecord(id: try #require(model.displayedHistory.first?.id))
                 try await RenderedUI.wait { !RenderedUI.contains(L("history.detail.rawTranscript"), in: host) }
                 try await RenderedUI.wait { backButton(in: window)?.isEnabled == false }
@@ -38,8 +38,7 @@ struct HistorySettingsBackButtonTests {
         try await withModels { first, second in
             let recordID = try #require(first.displayedHistory.first?.id)
             #expect(second.displayedHistory.first?.id == recordID)
-            // Each root owns its selection. Seed detail state without asking an inactive list to take focus;
-            // the first test covers selecting the real navigation row through accessibility.
+            // Each root owns its selection; model navigation avoids AX press on SwiftUI controls.
             let views = [first, second].map {
                 AnyView(StudioView(viewModel: $0, initialHistoryID: recordID).frame(width: 1680, height: 820))
             }
@@ -56,7 +55,7 @@ struct HistorySettingsBackButtonTests {
                 let firstBack = try requireBackButton(in: firstWindow)
                 let secondBack = try requireBackButton(in: secondWindow)
                 #expect(firstBack !== secondBack)
-                try RenderedUI.Element(object: firstBack, window: firstWindow).press()
+                try sendBackAction(firstBack)
                 try await RenderedUI.wait("First window returning to its history list") {
                     backButton(in: firstWindow)?.isEnabled == false
                         && !RenderedUI.contains(L("history.detail.rawTranscript"), in: firstHost)
@@ -68,7 +67,7 @@ struct HistorySettingsBackButtonTests {
                 try await waitForDetail(in: secondWindow, host: secondHost)
                 let currentSecondBack = try requireBackButton(in: secondWindow)
                 #expect(currentSecondBack.isEnabled)
-                try RenderedUI.Element(object: currentSecondBack, window: secondWindow).press()
+                try sendBackAction(currentSecondBack)
                 try await RenderedUI.wait("Second window returning to its history list") {
                     backButton(in: secondWindow)?.isEnabled == false
                         && !RenderedUI.contains(L("history.detail.rawTranscript"), in: secondHost)
@@ -116,18 +115,25 @@ struct HistorySettingsBackButtonTests {
         return button
     }
 
-    private func openDetail(in host: NSView) async throws {
+    private func sendBackAction(_ button: NSButton) throws {
+        let action = try #require(button.action)
+        #expect(NSApp.sendAction(action, to: button.target, from: button))
+    }
+
+    private func openDetail(in host: NSView, model: StudioViewModel,
+                            navigation: HistorySettingsNavigation) async throws {
         try await RenderedUI.wait { RenderedUI.contains("Back fixture", in: host) }
-        try RenderedUI.button("Back fixture", in: host).press()
+        navigation.open(try #require(model.displayedHistory.first?.id))
         try await RenderedUI.wait { RenderedUI.contains(L("history.detail.rawTranscript"), in: host) }
     }
 
     private func withWindow(_ model: StudioViewModel,
-                            _ check: (NSWindow, NSView) async throws -> Void) async throws {
+                            _ check: (NSWindow, NSView, HistorySettingsNavigation) async throws -> Void) async throws {
+        let navigation = HistorySettingsNavigation()
         try await TypefluxNavigationTestSupport.withWindow(
-            StudioView(viewModel: model).frame(width: 1680, height: 820),
-            size: NSSize(width: 1680, height: 820), run: check
-        )
+            StudioView(viewModel: model, historyNavigation: navigation).frame(width: 1680, height: 820),
+            size: NSSize(width: 1680, height: 820)
+        ) { window, host in try await check(window, host, navigation) }
     }
 
     private func withModels(_ check: (StudioViewModel, StudioViewModel) async throws -> Void) async throws {

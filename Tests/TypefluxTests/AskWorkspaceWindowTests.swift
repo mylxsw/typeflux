@@ -2,6 +2,7 @@ import AppKit
 import SwiftUI
 import Testing
 @testable import Typeflux
+@testable import TypefluxUI
 
 @MainActor
 @Suite(.serialized, .exclusiveUIState)
@@ -36,7 +37,22 @@ struct AskWorkspaceWindowTests {
             let newItem = try #require(toolbar.items.first {
                 $0.itemIdentifier.rawValue.contains("ask.workspace.new")
             })
-            try SettingsBehaviorTestSupport.button(L("ask.new"), in: try #require(newItem.view)).press()
+            let newRoot = try #require(newItem.view)
+            let newView = try #require(SettingsBehaviorTestSupport.nativeViews(in: newRoot)
+                .compactMap { $0 as? TypefluxProminentToolbarButton.ToolbarView }.first)
+            let newButton = newView.button
+            #expect(newButton.window === window && newButton.isEnabled)
+            #expect(newButton.bezelColor == TypefluxColor.accent.nsColor)
+            #expect(newButton.keyEquivalent == "n" && newButton.keyEquivalentModifierMask == .command)
+            #expect(newButton.isBordered == !newView.usesGlass)
+            #if compiler(>=6.2)
+                if #available(macOS 26, *) {
+                    #expect(newItem.style == (newView.usesGlass ? .prominent : .plain))
+                    #expect(newItem.isBordered == newView.usesGlass)
+                }
+            #endif
+            let action = try #require(newButton.action)
+            #expect(NSApp.sendAction(action, to: newButton.target, from: newButton))
             try await SettingsBehaviorTestSupport.wait("New conversation toolbar action") {
                 fixture.model.selectedId == nil
             }
