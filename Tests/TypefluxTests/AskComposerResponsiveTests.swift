@@ -211,11 +211,103 @@ struct AskComposerResponsiveTests {
 
     @Test(arguments: InterfaceStyle.allCases, [false, true])
     func narrowQueuedEditKeepsVoiceSaveAndCancelReachable(style: InterfaceStyle, dark: Bool) async throws {
+        try await withQueuedEditWindow(style: style, dark: dark) { fixture, window, host in
+            let conversation = try #require(fixture.model.selectedId)
+            let queued = try #require(fixture.model.queuedMessages.first)
+            for width: CGFloat in [320, 360, 440, 640, 360] {
+                window.setContentSize(NSSize(width: width, height: 280))
+                try await settle(host)
+                #expect(fixture.model.isEditingQueued)
+                let voice = try #require(findVoice(host))
+                #expect(host.bounds.contains(voice.convert(voice.bounds, to: host)))
+                let point = voice.convert(NSPoint(x: voice.bounds.midX, y: voice.bounds.midY), to: host.superview)
+                #expect(host.hitTest(point) === voice)
+                let voiceFrame = window.convertToScreen(voice.convert(voice.bounds, to: nil))
+                var actionFrames: [(identifier: String, rect: NSRect)] = []
+                for identifier in ["ask.queue.save", "ask.queue.cancel", "ask.composer.model"] {
+                    let control = try accessibilityElement(identifier: identifier, in: window)
+                    let rect = try #require(control.value(forKey: "accessibilityFrame") as? NSValue).rectValue
+                    let context = "\(identifier): \(rect), width \(width), \(style.rawValue), dark=\(dark)"
+                    if identifier == "ask.composer.model" {
+                        #expect(rect.width > 0 && rect.height > 0, "\(context) must remain visible")
+                    } else {
+                        #expect(rect.width >= 20 && rect.height >= 20, "\(context) must retain its hit target")
+                    }
+                    #expect(window.frame.contains(rect), "\(context) must fit inside the window")
+                    #expect(!rect.intersects(voiceFrame), "\(context) must not overlap voice")
+                    actionFrames.append((identifier, rect))
+                }
+                for (index, left) in actionFrames.enumerated() {
+                    for right in actionFrames.dropFirst(index + 1) {
+                        #expect(!left.rect.intersects(right.rect), "\(left.identifier) overlaps \(right.identifier)")
+                    }
+                }
+                #expect(try queueAction("ask.queue.save", in: window).label == L("ask.queue.save"))
+                #expect(try queueAction("ask.queue.cancel", in: window).label == L("ask.queue.cancel"))
+                #expect(fixture.model.draft.text == "Updated request")
+                try await AskLibraryTestSupport.capture(window,
+                    name: "queued-edit-\(style.rawValue)-\(dark ? "dark" : "light")-\(Int(width))")
+            }
+            fixture.model.draft.text = ""
+            try await settle(host)
+            #expect(try queueAction("ask.queue.save", in: window).value("accessibilityEnabled") as? Bool == false)
+            fixture.model.draft.text = "Updated request"
+            try await settle(host)
+            try queueAction("ask.queue.save", in: window).press()
+            try await settle(host)
+            #expect(!fixture.model.isEditingQueued)
+            #expect(fixture.model.queuedMessages.first?.draft.text == "Updated request")
+            fixture.model.editQueued(queued.id)
+            fixture.model.draft.text = "Cancelled edit"
+            try await settle(host)
+            try queueAction("ask.queue.cancel", in: window).press()
+            try await settle(host)
+            #expect(!fixture.model.isEditingQueued)
+            #expect(fixture.model.queuedMessages.first?.draft.text == "Updated request")
+            fixture.model.approve(conversationId: conversation, allowed: false)
+            try await fixture.wait { fixture.model.busyIds.isEmpty }
+        }
+    }
+
+    @Test func failedQueuedEditCheckReleasesItsWindowQueueAndApprovals() async throws {
+        var failedFixture: AskTestFixture?
+        var failedWindow: NSWindow?
+        var conversationID: String?
         _ = NSApplication.shared
+        let enhanced = NSApp.accessibilityAttributeValue(.init(rawValue: "AXEnhancedUserInterface")) as? Bool ?? false
+        do {
+            try await withQueuedEditWindow(style: .liquidGlass, dark: false) { fixture, window, _ in
+                failedFixture = fixture
+                failedWindow = window
+                conversationID = fixture.model.selectedId
+                #expect(fixture.model.isEditingQueued && !fixture.model.pendingApprovals.isEmpty)
+                throw QueuedEditCheckFailure.expected
+            }
+            Issue.record("The fixture must propagate a failed check after teardown")
+        } catch QueuedEditCheckFailure.expected { }
+        let fixture = try #require(failedFixture)
+        let window = try #require(failedWindow)
+        #expect(!window.isVisible && window.contentView == nil)
+        #expect(window.childWindows?.isEmpty != false)
+        #expect(fixture.model.sendQueue.messages(try #require(conversationID)).isEmpty)
+        #expect(fixture.model.sendQueue.editing == nil && fixture.model.pendingApprovals.isEmpty)
+        #expect(fixture.model.busyIds.isEmpty)
+        #expect(!FileManager.default.fileExists(atPath: fixture.root.path))
+        #expect(NSApp.accessibilityAttributeValue(.init(rawValue: "AXEnhancedUserInterface")) as? Bool == enhanced)
+    }
+
+    private enum QueuedEditCheckFailure: Error { case expected }
+
+    private func withQueuedEditWindow(style: InterfaceStyle, dark: Bool,
+                                     run: (AskTestFixture, NSWindow, NSView) async throws -> Void) async throws {
+        _ = NSApplication.shared
+        let enhanced = NSApp.accessibilityAttributeValue(.init(rawValue: "AXEnhancedUserInterface")) as? Bool ?? false
         NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
-        defer { NSApp.accessibilitySetValue(false, forAttribute: .init(rawValue: "AXEnhancedUserInterface")) }
+        defer { NSApp.accessibilitySetValue(enhanced, forAttribute: .init(rawValue: "AXEnhancedUserInterface")) }
         let fixture = try AskTestFixture()
+        var hostedWindow: NSWindow?
         defer {
+            if let window = hostedWindow { TypefluxNavigationTestSupport.closeWindow(window) }
             fixture.model.resetSession()
             try? FileManager.default.removeItem(at: fixture.root)
         }
@@ -227,7 +319,6 @@ struct AskComposerResponsiveTests {
         fixture.model.submitDraft()
         try await fixture.wait { !fixture.model.pendingApprovals.isEmpty }
         await fixture.api.setTool(nil)
-        let conversation = try #require(fixture.model.selectedId)
         fixture.model.draft.text = "Queued request"
         fixture.model.submitDraft()
         let queued = try #require(fixture.model.queuedMessages.first)
@@ -235,6 +326,7 @@ struct AskComposerResponsiveTests {
         fixture.model.draft.text = "Updated request"
         #expect(fixture.model.isEditingQueued)
         let window = makeWindow()
+        hostedWindow = window
         let host = NSHostingView(rootView: VStack {
             Spacer(minLength: 0)
             AskComposer(model: fixture.model, compact: true, launcher: false)
@@ -244,49 +336,16 @@ struct AskComposerResponsiveTests {
         window.contentView = host
         window.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
         window.makeKeyAndOrderFront(nil)
-        defer { window.close() }
-        for width: CGFloat in [320, 360, 440, 640, 360] {
-            window.setContentSize(NSSize(width: width, height: 280))
-            try await settle(host)
-            #expect(fixture.model.isEditingQueued)
-            let voice = try #require(findVoice(host))
-            #expect(host.bounds.contains(voice.convert(voice.bounds, to: host)))
-            let voicePoint = voice.convert(NSPoint(x: voice.bounds.midX, y: voice.bounds.midY), to: host.superview)
-            #expect(host.hitTest(voicePoint) === voice)
-            let voiceFrame = window.convertToScreen(voice.convert(voice.bounds, to: nil))
-            var actionFrames: [NSRect] = []
-            for identifier in ["ask.queue.save", "ask.queue.cancel", "ask.composer.model"] {
-                let control = try accessibilityElement(identifier: identifier, in: window)
-                let rect = try #require(control.value(forKey: "accessibilityFrame") as? NSValue).rectValue
-                #expect(rect.width >= 20 && rect.height >= 20)
-                #expect(window.frame.contains(rect), "\(identifier) must fit at width \(width)")
-                #expect(!rect.intersects(voiceFrame))
-                actionFrames.append(rect)
-            }
-            #expect(!actionFrames[0].intersects(actionFrames[1]))
-            #expect(fixture.model.draft.text == "Updated request")
-            try await AskLibraryTestSupport.capture(window,
-                name: "queued-edit-\(style.rawValue)-\(dark ? "dark" : "light")-\(Int(width))")
-        }
-        fixture.model.draft.text = ""
         try await settle(host)
-        #expect(try SettingsBehaviorTestSupport.button(L("ask.queue.save"), in: window)
-            .value("accessibilityEnabled") as? Bool == false)
-        fixture.model.draft.text = "Updated request"
-        try await settle(host)
-        try SettingsBehaviorTestSupport.button(L("ask.queue.save"), in: window).press()
-        try await settle(host)
-        #expect(!fixture.model.isEditingQueued)
-        #expect(fixture.model.queuedMessages.first?.draft.text == "Updated request")
-        fixture.model.editQueued(queued.id)
-        fixture.model.draft.text = "Cancelled edit"
-        try await settle(host)
-        try SettingsBehaviorTestSupport.button(L("ask.queue.cancel"), in: window).press()
-        try await settle(host)
-        #expect(!fixture.model.isEditingQueued)
-        #expect(fixture.model.queuedMessages.first?.draft.text == "Updated request")
-        fixture.model.approve(conversationId: conversation, allowed: false)
-        try await fixture.wait { fixture.model.busyIds.isEmpty }
+        try await run(fixture, window, host)
+    }
+
+    private func queueAction(_ identifier: String, in window: NSWindow) throws -> SettingsBehaviorTestSupport.Element {
+        let root = try accessibilityElement(identifier: identifier, in: window)
+        let element = try #require(SettingsBehaviorTestSupport.elements(in: root).first {
+            $0.role == NSAccessibility.Role.button.rawValue
+        }, "Missing accessible button: \(identifier)")
+        return SettingsBehaviorTestSupport.Element(object: element.object, window: window)
     }
 
     private func makeWindow() -> NSWindow {

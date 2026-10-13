@@ -162,14 +162,22 @@ struct AskQueueEditActions: View {
     var body: some View {
         HStack(spacing: 6) {
             Button(action: onCancel) {
-                if compact { Image(systemName: "xmark") } else { Text(L("ask.queue.cancel")) }
+                if compact {
+                    Label(L("ask.queue.cancel"), systemImage: "xmark")
+                        .labelStyle(.iconOnly)
+                        .accessibilityLabel(Text(L("ask.queue.cancel")))
+                } else {
+                    Text(L("ask.queue.cancel"))
+                }
             }
             .buttonStyle(AskCapsuleButtonStyle(kind: .secondary))
             .accessibilityLabel(L("ask.queue.cancel"))
             .accessibilityIdentifier("ask.queue.cancel")
             Button(action: onSave) {
                 if compact {
-                    Image(systemName: "checkmark")
+                    Label(L("ask.queue.save"), systemImage: "checkmark")
+                        .labelStyle(.iconOnly)
+                        .accessibilityLabel(Text(L("ask.queue.save")))
                 } else {
                     Label(L("ask.queue.save"), systemImage: "checkmark")
                 }

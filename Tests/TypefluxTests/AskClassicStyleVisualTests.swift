@@ -56,8 +56,15 @@ struct AskClassicStyleVisualTests {
 
     @discardableResult
     private func render(_ view: some View, name: String, style: InterfaceStyle, dark: Bool, size: NSSize,
-                        settle: Duration = .milliseconds(300), invalidate: () -> Void = {}) async throws -> Data {
-        _ = NSApplication.shared
+                        settle: Duration = .milliseconds(300), minimumPNGBytes: Int = 4000,
+                        invalidate: () -> Void = {}) async throws -> Data {
+        let application = NSApplication.shared
+        let previousAppearance = application.appearance
+        let appearance = try #require(NSAppearance(named: dark ? .darkAqua : .aqua))
+        // Semantic Color bridges and native controls must resolve in the captured
+        // appearance, including when another scene just rendered the opposite mode.
+        application.appearance = appearance
+        defer { application.appearance = previousAppearance }
         func content() -> some View {
             view.environment(\.interfaceStyle, style)
                 // The bitmap cannot show behind-window glass; render its opaque fallback.
@@ -72,33 +79,36 @@ struct AskClassicStyleVisualTests {
         var restored = false
         defer { if !restored { AppLocalization.shared.setLanguage(previous) } }
         let hosting = NSHostingView(rootView: content())
-        hosting.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
+        hosting.appearance = appearance
         hosting.frame = CGRect(origin: .zero, size: size)
         let window = NSWindow(contentRect: hosting.frame, styleMask: [.borderless], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         window.contentView = hosting
         window.appearance = hosting.appearance
         defer { TypefluxNavigationTestSupport.closeWindow(window) }
+        window.orderFront(nil)
         hosting.layoutSubtreeIfNeeded()
         AppLocalization.shared.setLanguage(previous)
         try await Task.sleep(for: settle)
         AppLocalization.shared.setLanguage(.simplifiedChinese)
-        hosting.rootView = content()
-        invalidate()
-        hosting.needsLayout = true
-        hosting.layoutSubtreeIfNeeded()
-        hosting.displayIfNeeded()
         let bitmap = try #require(NSBitmapImageRep(
             bitmapDataPlanes: nil, pixelsWide: Int(size.width * 2), pixelsHigh: Int(size.height * 2),
             bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
             colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0
         ))
         bitmap.size = size
-        hosting.cacheDisplay(in: hosting.bounds, to: bitmap)
+        appearance.performAsCurrentDrawingAppearance {
+            hosting.rootView = content()
+            invalidate()
+            hosting.needsLayout = true
+            hosting.layoutSubtreeIfNeeded()
+            hosting.displayIfNeeded()
+            hosting.cacheDisplay(in: hosting.bounds, to: bitmap)
+        }
         AppLocalization.shared.setLanguage(previous)
         restored = true
         let png = try #require(bitmap.representation(using: .png, properties: [:]))
-        #expect(png.count > 4000, "\(name) rendered nothing")
+        #expect(png.count > minimumPNGBytes, "\(name) rendered nothing")
         if let directory = Self.directory {
             let root = URL(fileURLWithPath: directory)
             try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
@@ -108,26 +118,41 @@ struct AskClassicStyleVisualTests {
     }
 
     /// Classic columns use the system's semantic surfaces and a flush divider.
-    private func expectFlushColumns(_ png: Data, dark: Bool) throws {
+    private func expectFlushColumns(_ png: Data, dark: Bool) async throws {
         let bitmap = try #require(NSBitmapImageRep(data: png))
         func white(_ column: Int, _ row: Int) throws -> CGFloat {
             try #require(bitmap.colorAt(x: column, y: row)?.usingColorSpace(.sRGB)).whiteComponentApproximation
         }
         // 2x pixels, mid-height, below the history rows and above the footer.
         let row = bitmap.pixelsHigh / 2
-        var sidebar: CGFloat = 0
-        var canvas: CGFloat = 0
-        try #require(NSAppearance(named: dark ? .darkAqua : .aqua)).performAsCurrentDrawingAppearance {
-            sidebar = TypefluxColor.windowBackground.nsColor.usingColorSpace(.sRGB)?.whiteComponentApproximation ?? 0
-            canvas = TypefluxColor.contentBackground.nsColor.usingColorSpace(.sRGB)?.whiteComponentApproximation ?? 0
-        }
+        // Capture independent system-token swatches through the same SwiftUI/bitmap/PNG
+        // pipeline; raw NSColor components need not match a device-RGB capture's profile.
+        let sidebar = try await referenceColor(.windowBackground, dark: dark).whiteComponentApproximation
+        let canvas = try await referenceColor(.contentBackground, dark: dark).whiteComponentApproximation
+        let edge = try white(1, row), interior = try white(200, row)
+        let content = try white(Int(AskMetrics.sidebarWidth * 2) + 40, row)
+        let context = "Classic \(dark ? "dark" : "light"), sidebar \(edge)/\(interior) vs \(sidebar), canvas \(content) vs \(canvas)"
         // UI System v2 follows system colors instead of the former fixed #F4F4F4 sidebar.
-        #expect(abs(try white(1, row) - sidebar) < 0.02, "sidebar must be flush with the window edge")
-        #expect(abs(try white(200, row) - sidebar) < 0.02)
-        #expect(abs(try white(Int(AskMetrics.sidebarWidth * 2) + 40, row) - canvas) < 0.02, "canvas")
+        #expect(abs(edge - sidebar) < 0.02, "\(context): sidebar must be flush with the window edge")
+        #expect(abs(interior - sidebar) < 0.02, "\(context): sidebar interior")
+        #expect(abs(content - canvas) < 0.02, "\(context): canvas")
         let dividerContrast = try (Int(AskMetrics.sidebarWidth * 2) - 2 ..< Int(AskMetrics.sidebarWidth * 2))
             .map { abs(try white($0, row) - sidebar) }.max() ?? 0
         #expect(dividerContrast > 0.01, "the columns are divided by a hairline in either appearance")
+    }
+
+    private func referenceColor(_ token: TypefluxColor, dark: Bool) async throws -> NSColor {
+        let png = try await render(ReferenceSurface(token: token),
+                                   name: "reference-\(token.rawValue)-\(dark ? "dark" : "light")",
+                                   style: .classic, dark: dark, size: NSSize(width: 32, height: 32),
+                                   settle: .milliseconds(100), minimumPNGBytes: 0)
+        let bitmap = try #require(NSBitmapImageRep(data: png))
+        return try #require(bitmap.colorAt(x: bitmap.pixelsWide / 2, y: bitmap.pixelsHigh / 2)?.usingColorSpace(.sRGB))
+    }
+
+    private struct ReferenceSurface: View {
+        let token: TypefluxColor
+        var body: some View { token.color }
     }
 
     private func renderChat(_ fixture: AskTestFixture, _ scene: String, _ style: InterfaceStyle, dark: Bool,
@@ -163,7 +188,7 @@ struct AskClassicStyleVisualTests {
                                               style: style, dark: dark, size: .init(width: 1280, height: 800),
                                               settle: .milliseconds(600),
                                               invalidate: { fixture.model.objectWillChange.send() })
-                if style == .classic { try expectFlushColumns(thread, dark: dark) }
+                if style == .classic { try await expectFlushColumns(thread, dark: dark) }
                 try await renderChat(fixture, "chat-usage", style, dark: dark, size: .init(width: 1480, height: 820),
                                      showsUsage: true)
                 try await renderChat(fixture, "chat-narrow", style, dark: dark, size: .init(width: 620, height: 720))
