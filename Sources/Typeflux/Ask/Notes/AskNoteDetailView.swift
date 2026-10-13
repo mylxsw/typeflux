@@ -436,6 +436,14 @@ struct AskNoteDetailView: View {
     private var emptyState: some View {
         TypefluxEmptyState(L(model.inTrash ? "ask.notes.trash.none" : "ask.notes.emptyTitle"),
                            systemImage: model.inTrash ? "trash" : "note.text",
-                           description: model.inTrash ? "" : L("ask.notes.emptySubtitle"))
+                           description: model.inTrash ? ""
+                            : L("ask.notes.emptySubtitle") + "\n" + L("ask.notes.empty")) {
+            if !model.searchText.isEmpty, !model.inTrash {
+                TypefluxButton(L("ask.notes.newTitled", AskNotesViewModel.parseSearch(model.searchText).text)) {
+                    model.createNote(title: AskNotesViewModel.parseSearch(model.searchText).text)
+                }
+            }
+        }
+        .accessibilityIdentifier("ask.notes.emptyState")
     }
 }

@@ -16,42 +16,19 @@ struct TypefluxToolbarButton: View {
 
     @ViewBuilder var body: some View {
         Group {
-            if prominent { prominentButton } else { button }
+            if prominent {
+                TypefluxProminentToolbarButton(action: action, style: style, usesGlass: usesGlass)
+            } else {
+                TypefluxToolbarActionControl(action: action)
+            }
         }
         .tint(TypefluxColor.accent.color)
         .frame(width: TypefluxControlWidth.toolbarItem.value(for: style),
                height: TypefluxControlHeight.toolbarItem.value(for: style))
     }
 
-    private var button: some View {
-        Group {
-            if let text = action.sharingText {
-                ShareLink(item: text) { label }
-            } else {
-                Button(role: action.role, action: action.perform) { label }
-            }
-        }
-        .disabled(!action.isEnabled)
-        .help(action.title)
-        .accessibilityLabel(action.title)
-        .accessibilityIdentifier(action.accessibilityIdentifier)
-        .keyboardShortcut(action.keyboardShortcut)
-    }
-
-    private var label: some View {
-        Label(action.title, systemImage: action.systemImage).labelStyle(.iconOnly)
-    }
-
-    @ViewBuilder private var prominentButton: some View {
-        #if compiler(>=6.2)
-            if #available(macOS 26, *), style.usesGlass, !reduceTransparency, contrast != .increased,
-               !accessibility.reduceTransparency, !accessibility.increasedContrast {
-                button.buttonStyle(.glassProminent)
-            } else {
-                button.buttonStyle(.borderedProminent)
-            }
-        #else
-            button.buttonStyle(.borderedProminent)
-        #endif
+    private var usesGlass: Bool {
+        style.usesGlass && !reduceTransparency && contrast != .increased
+            && !accessibility.reduceTransparency && !accessibility.increasedContrast
     }
 }

@@ -102,7 +102,9 @@ public struct TypefluxWindow<Detail: View>: View {
                 }
                 .background(TypefluxWindowTitleBridge(
                     title: title,
-                    actionTitles: Set(groups.flatMap(\.actions).map(\.title) + (prominent.map { [$0.title] } ?? []))
+                    actionTitles: Set(groups.flatMap(\.actions).map(\.title) + (prominent.map { [$0.title] } ?? [])),
+                    actionIdentifiers: Set(groups.flatMap(\.actions).map(\.accessibilityIdentifier)
+                        + (prominent.map { [$0.accessibilityIdentifier] } ?? []))
                 )
                 .frame(width: 0, height: 0))
         }

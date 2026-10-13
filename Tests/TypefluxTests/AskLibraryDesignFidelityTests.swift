@@ -171,6 +171,61 @@ struct AskLibraryDesignFidelityTests {
         }
     }
 
+    @Test(arguments: InterfaceStyle.allCases, [false, true])
+    func emptyLibraryGuidanceLivesInTheDetailPane(style: InterfaceStyle, dark: Bool) async throws {
+        try await AskLibraryTestSupport.withLibraries(style: style, dark: dark) { libraries in
+            let notes = try #require(libraries.notes.model)
+            let words = try #require(libraries.words.model)
+            notes.setSelecting(true)
+            notes.pickAll()
+            notes.trashPicked()
+            notes.setSelecting(false)
+            for entry in words.entries { words.delete(entry) }
+            notes.notice = nil
+            words.notice = nil
+            let noteWindow = try #require(libraries.notes.window)
+            let wordWindow = try #require(libraries.words.window)
+            try await SettingsBehaviorTestSupport.wait {
+                SettingsBehaviorTestSupport.elements(in: noteWindow).contains {
+                    $0.text.contains(L("ask.notes.empty")) || $0.label.contains(L("ask.notes.empty"))
+                } && SettingsBehaviorTestSupport.contains(L("ask.wordBook.emptyBook.title"), in: wordWindow)
+            }
+            for (window, sidebarID, messages) in [
+                (noteWindow, "ask.notes.list", [L("ask.notes.emptyTitle"), L("ask.notes.empty")]),
+                (wordWindow, "ask.wordBook.list", [L("ask.wordBook.emptyBook.title"), L("ask.wordBook.emptyBook.detail")])
+            ] {
+                let elements = SettingsBehaviorTestSupport.elements(in: window)
+                let sidebar = try #require(elements.first {
+                    $0.value("accessibilityIdentifier") as? String == sidebarID
+                })
+                for message in messages {
+                    let guidance = elements.filter {
+                        ($0.text.contains(message) || $0.label.contains(message))
+                            && $0.frame.width > 0 && $0.frame.height > 0
+                            && $0.frame.height < window.frame.height / 2
+                    }
+                    #expect(!guidance.isEmpty)
+                    for element in guidance {
+                        #expect(element.frame.minX >= sidebar.frame.maxX - 1,
+                                "Full empty-library guidance belongs to the detail, not the sidebar")
+                    }
+                }
+                let sidebarElements = SettingsBehaviorTestSupport.elements(in: sidebar.object)
+                #expect(!sidebarElements.contains { $0.text == L("ask.wordBook.empty.shelf") })
+            }
+            // The search-based creation action moved with the empty state and remains usable.
+            notes.searchText = "A new searchable title"
+            try await SettingsBehaviorTestSupport.wait {
+                SettingsBehaviorTestSupport.contains(L("ask.notes.newTitled", notes.searchText), in: noteWindow)
+            }
+            try SettingsBehaviorTestSupport.button(L("ask.notes.newTitled", notes.searchText), in: noteWindow).press()
+            try await SettingsBehaviorTestSupport.wait {
+                notes.selected?.title == "A new searchable title" && notes.editing
+            }
+            #expect(notes.finishEditing())
+        }
+    }
+
     private func screenFrame(_ view: NSView, in window: NSWindow) -> NSRect {
         window.convertToScreen(view.convert(view.bounds, to: nil))
     }

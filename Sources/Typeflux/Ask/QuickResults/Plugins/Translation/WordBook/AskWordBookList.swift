@@ -27,11 +27,15 @@ struct AskWordBookList: View {
         }
         .listStyle(.sidebar)
         .environment(\.defaultMinListRowHeight, TypefluxControlHeight.sidebarRow.value(for: style))
-        .overlay {
-            if model.entries.isEmpty {
-                TypefluxEmptyState(L(model.filterText.isEmpty
+        .overlay(alignment: .topLeading) {
+            if model.entries.isEmpty, model.shelf != .all || !model.filterText.isEmpty {
+                let message = L(model.filterText.isEmpty
                     ? (model.shelf == .starred ? "ask.wordBook.empty.starred" : "ask.wordBook.empty.shelf")
-                    : "ask.wordBook.empty.search"), systemImage: "book.closed", description: "")
+                    : "ask.wordBook.empty.search")
+                Text(message.components(separatedBy: "\n").first ?? message)
+                    .font(.callout).foregroundStyle(TypefluxColor.secondaryLabel.color)
+                    .lineLimit(1).help(message)
+                    .padding(TypefluxSpacing.regular.value(for: style))
             }
         }
         .safeAreaInset(edge: .bottom) {
