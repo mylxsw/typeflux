@@ -236,6 +236,14 @@ struct AskWordBookViewModelTests {
         model.dictionary = AskFailingWordLookup()
         await model.lookUp("serendipity")
         #expect(model.notice == "offline" && model.lookingUp == nil && model.transient == nil)
+        model.dictionary = AskTestWordLookup(answer: .card(wordBookCard))
+        await model.lookUp("serendipity")
+        #expect(model.notice == nil && model.displayed?.lookup.card == wordBookCard)
+        // A cached card is another successful lookup, without calling the failing dictionary.
+        model.notice = "previous failure"
+        model.dictionary = AskFailingWordLookup()
+        await model.lookUp("serendipity")
+        #expect(model.notice == nil && model.lookingUp == nil)
     }
 
     @Test func thePreviewNeverLeavesTheMac() async throws {

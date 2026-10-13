@@ -7,10 +7,12 @@ struct TypefluxWindowTitleBridge: NSViewRepresentable {
     static let itemIdentifier = "typeflux.window.title"
     let title: String
     var actionTitles: Set<String> = []
+    var actionIdentifiers: Set<String> = []
 
     final class TitleView: NSView {
         var title = ""
         var actionTitles: Set<String> = []
+        var actionIdentifiers: Set<String> = []
         private var active = false
         private var titleObservation: NSKeyValueObservation?
         private var visibilityObservation: NSKeyValueObservation?
@@ -57,7 +59,11 @@ struct TypefluxWindowTitleBridge: NSViewRepresentable {
                         item.visibilityPriority = .user
                     }
                     let titles = [item.label] + ((item as? NSToolbarItemGroup)?.subitems.map(\.label) ?? [])
-                    if titles.contains(where: actionTitles.contains),
+                    let identifiers = [item.itemIdentifier.rawValue]
+                        + ((item as? NSToolbarItemGroup)?.subitems.map { $0.itemIdentifier.rawValue } ?? [])
+                    let isPrimary = titles.contains(where: actionTitles.contains)
+                        || identifiers.contains(where: actionIdentifiers.contains)
+                    if isPrimary,
                        item.visibilityPriority.rawValue < NSToolbarItem.VisibilityPriority.high.rawValue {
                         item.visibilityPriority = .high
                     }
@@ -84,12 +90,14 @@ struct TypefluxWindowTitleBridge: NSViewRepresentable {
         let view = TitleView()
         view.title = title
         view.actionTitles = actionTitles
+        view.actionIdentifiers = actionIdentifiers
         return view
     }
 
     func updateNSView(_ view: TitleView, context _: Context) {
         view.title = title
         view.actionTitles = actionTitles
+        view.actionIdentifiers = actionIdentifiers
         view.synchronize()
         view.schedule()
     }

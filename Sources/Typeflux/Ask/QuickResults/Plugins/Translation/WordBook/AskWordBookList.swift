@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct AskWordBookList: View {
+    @Environment(\.interfaceStyle) private var style
     @ObservedObject var model: AskWordBookViewModel
 
     var body: some View {
@@ -9,7 +10,8 @@ struct AskWordBookList: View {
             ForEach(model.sections) { section in
                 Section {
                     ForEach(section.entries) { entry in
-                        AskWordBookRow(entry: entry).tag(entry.key)
+                        AskWordBookRow(entry: entry, selected: model.transient == nil && model.selectedKey == entry.key)
+                            .tag(entry.key)
                             .contextMenu {
                                 Button(L(entry.isStarred ? "ask.wordBook.unstar" : "ask.wordBook.star")) {
                                     model.toggleStar(entry)
@@ -24,11 +26,16 @@ struct AskWordBookList: View {
             }
         }
         .listStyle(.sidebar)
-        .overlay {
-            if model.entries.isEmpty {
-                TypefluxEmptyState(L(model.filterText.isEmpty
+        .environment(\.defaultMinListRowHeight, TypefluxControlHeight.sidebarRow.value(for: style))
+        .overlay(alignment: .topLeading) {
+            if model.entries.isEmpty, model.shelf != .all || !model.filterText.isEmpty {
+                let message = L(model.filterText.isEmpty
                     ? (model.shelf == .starred ? "ask.wordBook.empty.starred" : "ask.wordBook.empty.shelf")
-                    : "ask.wordBook.empty.search"), systemImage: "book.closed", description: "")
+                    : "ask.wordBook.empty.search")
+                Text(message.components(separatedBy: "\n").first ?? message)
+                    .font(.callout).foregroundStyle(TypefluxColor.secondaryLabel.color)
+                    .lineLimit(1).help(message)
+                    .padding(TypefluxSpacing.regular.value(for: style))
             }
         }
         .safeAreaInset(edge: .bottom) {

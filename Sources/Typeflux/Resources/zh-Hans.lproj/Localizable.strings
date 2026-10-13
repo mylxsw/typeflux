@@ -4470,6 +4470,7 @@
 "ask.notes.saving" = "正在保存…";
 "ask.notes.outline" = "大纲";
 "ask.notes.more" = "更多";
+"ask.notes.share" = "分享";
 "ask.notes.exportAs" = "导出为";
 "ask.notes.export.markdown" = "Markdown 文件 (.md)";
 "ask.notes.export.html" = "HTML 网页 (.html)";

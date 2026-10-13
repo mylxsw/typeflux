@@ -2,6 +2,7 @@ import SwiftUI
 
 /// Solid reading content; the window toolbar owns actions for the displayed word.
 struct AskWordBookDetail: View {
+    @Environment(\.interfaceStyle) private var style
     @ObservedObject var model: AskWordBookViewModel
     var entry: AskWordBookEntry
     var regenerate: (AskWordBookEntry) -> Void
@@ -88,11 +89,13 @@ struct AskWordBookDetail: View {
                 Text(text).font(.callout).foregroundStyle(TypefluxColor.secondaryLabel.color)
                 Image(systemName: "speaker.wave.2").font(.caption).foregroundStyle(TypefluxColor.tertiaryLabel.color)
             }
-            .padding(.horizontal, 8).frame(height: 26)
+            .frame(minHeight: TypefluxControlHeight.button.value(for: style))
             .contentShape(Rectangle())
         }
-        .buttonStyle(.bordered)
+        .buttonStyle(.borderless)
+        .help(L("ask.plugin.action.speak") + " " + label)
         .accessibilityLabel(L("ask.plugin.action.speak") + " " + label)
+        .accessibilityIdentifier("ask.wordBook.pronunciation")
     }
 
     private func senses(_ card: AskWordCard) -> some View {

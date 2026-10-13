@@ -9,6 +9,8 @@ public struct TypefluxToolbarAction: Identifiable {
     public let accessibilityIdentifier: String
     public let shortcut: KeyEquivalent?
     public let modifiers: EventModifiers
+    /// When present, the control is a native ShareLink; perform remains for ordinary actions.
+    public let sharingText: String?
     public let perform: () -> Void
 
     public var keyboardShortcut: KeyboardShortcut? {
@@ -17,7 +19,8 @@ public struct TypefluxToolbarAction: Identifiable {
 
     public init(id: String, title: String, systemImage: String, role: ButtonRole? = nil,
                 isEnabled: Bool = true, accessibilityIdentifier: String? = nil,
-                shortcut: KeyEquivalent? = nil, modifiers: EventModifiers = .command, perform: @escaping () -> Void) {
+                shortcut: KeyEquivalent? = nil, modifiers: EventModifiers = .command,
+                sharingText: String? = nil, perform: @escaping () -> Void) {
         self.id = id
         self.title = title
         self.systemImage = systemImage
@@ -26,6 +29,7 @@ public struct TypefluxToolbarAction: Identifiable {
         self.accessibilityIdentifier = accessibilityIdentifier ?? "typeflux.toolbar." + id
         self.shortcut = shortcut
         self.modifiers = modifiers
+        self.sharingText = sharingText
         self.perform = perform
     }
 }
