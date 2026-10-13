@@ -1692,7 +1692,7 @@ struct AskComposer: View {
                             .frame(width: size, height: size)
                             .contentShape(Circle())
                     }
-                    .buttonStyle(.borderless)
+                    .buttonStyle(AskPressableStyle(scale: 1))
                     .foregroundStyle(TypefluxColor.secondaryLabel.color)
                     .help(L("ask.voice.cancel"))
                     .accessibilityLabel(L("ask.voice.cancel"))

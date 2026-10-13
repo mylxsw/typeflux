@@ -76,7 +76,7 @@ struct AskSearchPaletteView: View {
                                height: style == .classic ? 26 : 56)
                         .contentShape(Circle())
                 }
-                .buttonStyle(.borderless)
+                .buttonStyle(AskPressableStyle(scale: 1))
                 .foregroundStyle(TypefluxColor.secondaryLabel.color)
                 .help("Esc")
                 .accessibilityLabel(L("ask.remove"))

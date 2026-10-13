@@ -6,6 +6,40 @@ import Testing
 @Suite("Ask Spotlight keyboard routing", .exclusiveUIState)
 @MainActor
 struct AskSpotlightPanelTests {
+    @Test(arguments: [AskLauncherChatAction.openChat, .askAI])
+    func headerMouseDownReturnsBeforeTheCallerDeliversMouseUp(_ mode: AskLauncherChatAction) async throws {
+        for style in InterfaceStyle.allCases {
+            var actions = 0
+            let view = TypefluxSpotlightModeControl {
+                AskLauncherOpenChatButton(mode: mode, enabled: true) { actions += 1 }
+            }
+            .environment(\.interfaceStyle, style)
+            .environment(\.glassMaterialOverride, .opaque)
+            try await TypefluxNavigationTestSupport.withWindow(view) { window, _ in
+                let button = try #require(SettingsBehaviorTestSupport.elements(in: window).first {
+                    $0.value("accessibilityIdentifier") as? String == "ask.launcher.openChat"
+                })
+                let point = window.convertPoint(fromScreen: NSPoint(x: button.frame.midX, y: button.frame.midY))
+                let mouseDown = try mouseEvent(.leftMouseDown, at: point, in: window)
+                let mouseUp = try mouseEvent(.leftMouseUp, at: point, in: window)
+                let release = MouseReleaseWatchdog(event: mouseUp)
+                // A native modal tracking loop must fail this test instead of hanging the entire suite.
+                let timer = Timer(timeInterval: 1, repeats: false) { _ in
+                    MainActor.assumeIsolated { release.fire() }
+                }
+                RunLoop.main.add(timer, forMode: .common)
+                defer { timer.invalidate() }
+                NSApp.sendEvent(mouseDown)
+                timer.invalidate()
+                try #require(!release.fired, "Mouse-down waited for mouse-up in a modal tracking loop")
+                #expect(actions == 0)
+                NSApp.sendEvent(mouseUp)
+                try await Task.sleep(for: .milliseconds(150))
+                #expect(actions == 1, "Releasing the original header control must invoke its action once")
+            }
+        }
+    }
+
     @Test(arguments: InterfaceStyle.allCases)
     func launcherIdentifiersRemainOnTheirControlsAsTheQueryChanges(_ style: InterfaceStyle) async throws {
         let fixture = try AskTestFixture()
@@ -123,6 +157,24 @@ struct AskSpotlightPanelTests {
         monitor.removeFromSuperview()
         try TypefluxNavigationTestSupport.sendKey(126, to: window)
         #expect(moves == [1], "Detached monitors must release their event handler")
+    }
+
+    private func mouseEvent(_ type: NSEvent.EventType, at point: NSPoint, in window: NSWindow) throws -> NSEvent {
+        try #require(NSEvent.mouseEvent(with: type, location: point, modifierFlags: [],
+            timestamp: ProcessInfo.processInfo.systemUptime, windowNumber: window.windowNumber, context: nil,
+            eventNumber: 0, clickCount: 1, pressure: type == .leftMouseDown ? 1 : 0))
+    }
+
+    @MainActor private final class MouseReleaseWatchdog {
+        private let event: NSEvent
+        private(set) var fired = false
+
+        init(event: NSEvent) { self.event = event }
+
+        func fire() {
+            fired = true
+            NSApp.postEvent(event, atStart: true)
+        }
     }
 
     private final class MarkedEditor: NSTextView {

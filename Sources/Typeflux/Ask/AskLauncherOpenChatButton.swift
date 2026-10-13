@@ -26,7 +26,8 @@ struct AskLauncherOpenChatButton: View {
                 .frame(width: AskSendButton.size, height: AskSendButton.size)
                 .contentShape(Circle())
         }
-        .buttonStyle(.borderless)
+        // Preserve the send button's SwiftUI event handling without changing its bounds while pressed.
+        .buttonStyle(AskPressableStyle(scale: 1))
         .foregroundStyle(mode == .askAI ? tint : TypefluxColor.secondaryLabel.color)
         .disabled(!enabled)
         .help(mode.hint)
