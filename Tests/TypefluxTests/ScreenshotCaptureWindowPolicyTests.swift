@@ -109,8 +109,11 @@ struct ScreenshotCaptureWindowPolicyTests {
         #expect(launcher.isVisible)
     }
 
-    @Test(.enabled(if: CGPreflightScreenCaptureAccess()), arguments: [false, true])
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["TYPEFLUX_REAL_SCREEN_CAPTURE_TESTS"] == "1"),
+          arguments: [false, true])
     func realCaptureKeepsAppPagePixelsBehindCaptureControls(_ isLauncher: Bool) async throws {
+        try #require(CGPreflightScreenCaptureAccess(),
+                     "Grant screen recording access before running the real capture test")
         let screen = try #require(NSScreen.screens.first)
         let area = screen.visibleFrame
         let pageFrame = CGRect(x: area.midX - 120, y: area.midY - 90, width: 240, height: 180)

@@ -9,12 +9,16 @@
 Use the package manifest in `Package.swift` as the source of truth.
 
 - `swift build`: compile the app target.
-- `swift test` or `make test`: run the full test suite once at final validation, after all requested changes are complete.
-- `swift test --filter TypefluxTests.LLMRouterTests`: run one test class.
+- `make test SUITE="LLMRouterTests"` or `make test FILTER="LLMRouterTests/testMethod"`: run an explicit focused scope at final validation.
+- `make test-plan SUITE="LLMRouterTests"`: build/discover and preview the scope without executing tests.
+- `make test-unit`, `make test-integration`, or `make test-ui`: explicitly select a broader resource group when the change warrants it; see `docs/TESTING.md`.
+- `make test-full REASON="..."`: explicitly request full validation after announcing why it is needed. Never run unfiltered `swift test` proactively.
+- `make test-groups`: audit discovery and inspect group membership. `make test-scripts` validates Python development scripts.
+- `make test-screen-capture`: opt in to real desktop capture, with screen recording permission. Run it when changing native capture behavior; ordinary UI tests cover synthetic window policies.
 - `scripts/setup_dev_cert.sh` **(run once)**: create a local self-signed code-signing identity ("Typeflux Dev") in a dedicated passwordless keychain. Required for stable macOS privacy permission grants (microphone, accessibility) across rebuilds.
 - `make run`: build, bundle, and launch `~/Applications/Typeflux Dev.app`.
 - `make dev`: launch the dev app with terminal logs attached.
-- `make coverage`: run full-suite coverage at final validation and write HTML output to `coverage-report/`.
+- `make coverage SUITE="LLMRouterTests"`: collect focused coverage instead of a duplicate plain test run; HTML goes to `coverage-report/`.
 - `make format`: format code via `scripts/format.sh`.
 
 ## Coding Style & Naming Conventions
@@ -23,18 +27,21 @@ Follow existing Swift style in the repo: 4-space indentation, one top-level type
 
 ## Testing Guidelines
 
-Add tests in `Tests/TypefluxTests` for logic, routing, parsing, and provider behavior. Match production names where possible, for example `LLMRouter.swift` with `LLMRouterTests.swift`. Keep test names behavior-focused, such as `testCompleteRoutesToOpenAI`. All new and modified code must include sufficient unit tests, with a target of 90% unit test coverage. Complete final full-suite validation before opening a PR; for larger changes that touch core workflow paths, use `make coverage` as that final run. Follow the test execution policy below during implementation and failure retries. Swift Testing suites that host windows, send native events, switch or read `AppLocalization.shared` (including through `L()`), or otherwise run on the main actor must carry `.exclusiveUIState` (see `Tests/TypefluxTests/ExclusiveUIStateTrait.swift`); `.serialized` alone does not stop other suites from changing that shared state mid-test, and an `interface:` argument does not pin the language `L()` reads. `ExclusiveUIStateLanguageTests` audits this. Look up windows through the object that presented them, not by identifier alone, since windows from earlier tests can stay in `NSApp.windows`.
+Add tests in `Tests/TypefluxTests` for logic, routing, parsing, and provider behavior. Match production names where possible, for example `LLMRouter.swift` with `LLMRouterTests.swift`. Keep test names behavior-focused, such as `testCompleteRoutesToOpenAI`. All new and modified code must include sufficient unit tests, with a target of 90% unit test coverage for the changed code. Complete focused validation before opening a PR; coverage must use the same relevant scope and replace the plain test run. Follow the execution policy below. Swift Testing suites that host windows, send native events, switch or read `AppLocalization.shared` (including through `L()`), or otherwise run on the main actor must carry `.exclusiveUIState` (see `Tests/TypefluxTests/ExclusiveUIStateTrait.swift`); `.serialized` alone does not stop other suites from changing that shared state mid-test, and an `interface:` argument does not pin the language `L()` reads. `ExclusiveUIStateLanguageTests` audits this. Look up windows through the object that presented them, not by identifier alone, since windows from earlier tests can stay in `NSApp.windows`.
 
 ### Test Execution Policy for Agents
 
-The full test suite takes a long time. Follow this policy for the entire requested task, including tasks with multiple changes:
+Follow this policy for the entire requested task, including tasks with multiple changes:
 
-- During implementation, prefer focused tests for the changed behavior and directly affected dependencies. Use `swift test --filter <TestClassName>` or `swift test --filter <TestClassName>/<TestMethodName>`; do not run the full suite after each edit or subtask.
-- If tests fail, fix the cause and rerun only the failed tests with `--filter`. If exact test selection is unavailable, rerun the smallest containing suite. Do not rerun the full suite to retry failures, including failures discovered in the final full run.
-- If a run fails before tests execute (for example, a build or test-runner failure), fix the cause and retry the focused command. Do not switch to the full suite.
-- Only after all requested changes are complete and focused checks pass, run one final full test suite (`swift test` or `make test`). Do not repeat the full suite merely to confirm a failed-test fix.
-- Treat full-suite coverage runs (`make coverage`) as final validation too. When coverage is required, use that run as the final full test pass instead of also running a duplicate `swift test` or `make test` pass.
-- Report the focused checks, final full-suite result, and any failed-test retries separately. If full validation cannot finish, state the limitation clearly.
+- Finish all requested implementation and self-review first, then perform one focused validation pass. Do not execute tests after each edit or subtask. Builds, discovery and `--plan` do not execute tests. A requested performance investigation may use a declared before/after comparison of the same focused scope.
+- Choose suites/methods for every changed behavior, its directly affected callers and shared dependencies. Explain that mapping in the delivery. Resource groups are inventory aids, not automatic change-impact analysis; do not choose all UI tests for a single UI change.
+- Use `make test SUITE="SuiteA SuiteB"`, `make test FILTER="regex"`, or repeated `--suite`/`--filter` options on `scripts/test_groups.py`. An empty or unmatched scope is an error, never a fallback to all tests.
+- Do not proactively run full tests, full coverage or full UI/iOS validation. If full validation is warranted by a cross-cutting change or requested by the user, state the reason and scope before execution, then use `make test-full REASON="..."` or `make coverage-full REASON="..."`. A passing focused scope is sufficient for an ordinary PR; full validation is not a default PR gate.
+- If validation fails, fix the cause and retry only failed methods or the smallest containing suite. For build/runner failures, retry the same focused command. Never retry the full suite to fix a failure.
+- Coverage replaces the plain test pass for the same scope; do not run both. Report changed-code coverage separately from project-wide coverage.
+- Use audited parallel phases from the runner. Unknown suites and shared UI/localization tests remain serial. Do not launch simultaneous local SwiftPM/UI runs against the same build directory or desktop. Review isolation when adding or changing a registered parallel suite, including its helpers and called production code.
+- Use the normal runner first: it verifies reusable build/discovery metadata, never cached passing results. Known calculator, scroll, overlay and retry suites automatically use reviewed compact source closures. For method retries, retain the original `--profile`; use `--rebuild` to refresh metadata or `--swiftpm` for compatibility. Update a profile when its fixture dependencies change.
+- Report total command wall time, including preparation, discovery, runner startup and execution; phase timings alone are insufficient. Separate first use/rebuild from verified cache hits, and report failed-test retries and unverified behavior honestly.
 
 ## Commit & Pull Request Guidelines
 

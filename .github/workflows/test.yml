@@ -19,6 +19,11 @@ jobs:
       contains(github.event.comment.body, '@autotest') &&
       contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)
     runs-on: macos-latest
+    name: macOS / ${{ matrix.group }}
+    strategy:
+      fail-fast: false
+      matrix:
+        group: [unit, integration, ui]
 
     steps:
       - name: Checkout
@@ -26,14 +31,29 @@ jobs:
         with:
           ref: refs/pull/${{ github.event.issue.number }}/merge
 
-      - name: Test iOS development commands
-        run: make ios-test-scripts
+      - name: Test development scripts
+        if: matrix.group == 'unit'
+        run: make test-scripts
+
+      - name: Run macOS tests
+        run: python3 scripts/test_groups.py ${{ matrix.group }}
+
+  ios:
+    if: >-
+      github.event.issue.pull_request &&
+      github.event.issue.state == 'open' &&
+      contains(github.event.comment.body, '@autotest') &&
+      contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: refs/pull/${{ github.event.issue.number }}/merge
 
       - name: Test shared chat package
         run: swift test --package-path Packages/TypefluxChat --enable-code-coverage
 
       - name: Test iOS chat client
         run: scripts/test_ios.sh
-
-      - name: Run macOS tests
-        run: swift test

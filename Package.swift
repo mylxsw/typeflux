@@ -1,5 +1,18 @@
 // swift-tools-version: 5.9
 import PackageDescription
+import Foundation
+
+// The focused runner supplies reviewed source closures. The normal package and
+// explicit full validation retain every test file. Never change production targets.
+let testDirectory = Context.packageDirectory + "/Tests/TypefluxTests"
+let allTestFiles = try FileManager.default.contentsOfDirectory(atPath: testDirectory).filter { $0.hasSuffix(".swift") }
+let focusedTestFiles: [String]? = try Context.environment["TYPEFLUX_TEST_FILES"].map { value in
+    let files = try JSONDecoder().decode([String].self, from: Data(value.utf8))
+    guard !files.isEmpty, Set(files).isSubset(of: Set(allTestFiles)) else {
+        fatalError("Invalid focused test-source selection")
+    }
+    return files.sorted()
+}
 
 let package = Package(
     name: "Typeflux",
@@ -59,9 +72,11 @@ let package = Package(
             path: "Sources/TypefluxCLI"
         ),
         .testTarget(
-            name: "TypefluxTests",
+            name: focusedTestFiles == nil ? "TypefluxTests" : "TypefluxFocusedTests",
             dependencies: ["Typeflux"],
-            path: "Tests/TypefluxTests"
+            path: "Tests/TypefluxTests",
+            exclude: focusedTestFiles.map { selected in allTestFiles.filter { !selected.contains($0) } } ?? [],
+            sources: focusedTestFiles
         )
     ]
 )
