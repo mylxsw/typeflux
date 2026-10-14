@@ -3140,7 +3140,11 @@
 "studio.heading.launcher" = "ランチャー";
 "studio.subheading.launcher" = "ランチャーの計算機、アプリ検索、キーワード、独自のワークフロー。Agent を通さずランチャーから直接実行されます。";
 "studio.search.launcher" = "ランチャー設定を検索...";
-"launcher.pane.basics" = "内蔵機能";
+"launcher.pane.basics" = "一般";
+"launcher.inputSource.title" = "デフォルトの入力ソース";
+"launcher.inputSource.detail" = "ランチャーを開くときにこの入力ソースに切り替えます。「なし」を選ぶと現在の入力ソースを維持します。";
+"launcher.inputSource.none" = "なし";
+"launcher.inputSource.unavailable" = "入力ソースを利用できません";
 "launcher.basics.subtitle" = "結果をランチャー内に直接表示し、AI には送信しません。";
 "agent.group.capabilities" = "機能";
 "agent.group.personalization" = "パーソナライズ";

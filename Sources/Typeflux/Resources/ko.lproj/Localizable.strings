@@ -3140,7 +3140,11 @@
 "studio.heading.launcher" = "런처";
 "studio.subheading.launcher" = "런처의 계산기, 앱 검색, 키워드와 나만의 워크플로. 에이전트를 거치지 않고 런처에서 바로 실행됩니다.";
 "studio.search.launcher" = "런처 설정 검색...";
-"launcher.pane.basics" = "기본 기능";
+"launcher.pane.basics" = "일반";
+"launcher.inputSource.title" = "기본 입력기";
+"launcher.inputSource.detail" = "런처를 열 때 선택한 입력기로 전환합니다. 없음을 선택하면 현재 입력기를 유지합니다.";
+"launcher.inputSource.none" = "없음";
+"launcher.inputSource.unavailable" = "입력기를 사용할 수 없음";
 "launcher.basics.subtitle" = "결과를 런처에서 바로 보여 주며 AI로 보내지 않습니다.";
 "agent.group.capabilities" = "기능";
 "agent.group.personalization" = "개인화";

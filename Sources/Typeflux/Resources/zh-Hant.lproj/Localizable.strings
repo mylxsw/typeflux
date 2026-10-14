@@ -3147,7 +3147,11 @@
 "studio.heading.launcher" = "啟動器";
 "studio.subheading.launcher" = "啟動器裡的計算機、應用程式搜尋、關鍵詞和你自己的工作流程。它們由啟動器直接觸發，不經過 Agent。";
 "studio.search.launcher" = "搜尋啟動器設定...";
-"launcher.pane.basics" = "內建功能";
+"launcher.pane.basics" = "通用";
+"launcher.inputSource.title" = "預設輸入法";
+"launcher.inputSource.detail" = "開啟啟動器時切換到所選輸入法；選擇「無」則保留目前的輸入法。";
+"launcher.inputSource.none" = "無";
+"launcher.inputSource.unavailable" = "輸入法無法使用";
 "launcher.basics.subtitle" = "在啟動器裡直接得到結果，不傳送給 AI。";
 "agent.group.capabilities" = "能力";
 "agent.group.personalization" = "個人化";

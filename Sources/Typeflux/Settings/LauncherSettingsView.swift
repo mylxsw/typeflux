@@ -1,7 +1,9 @@
+import Carbon.HIToolbox
 import SwiftUI
 
-/// Launcher settings panes: results shown right in the launcher, keywords, translation, the
+/// Launcher settings panes: general preferences, results, keywords, translation, the
 /// clipboard and workflows. These run from the launcher without the Agent, so they live on their own page.
+@MainActor
 struct LauncherSettingsView: View {
     let settings: SettingsStore
     var pane: LauncherSettingsPane = .basics
@@ -10,7 +12,10 @@ struct LauncherSettingsView: View {
     var clipboardHistory: ClipboardHistoryStore?
     /// Opens the shortcut settings from the clipboard pane.
     var onEditShortcut: () -> Void = {}
+    var inputSources: any AskLauncherInputSourceListing = SystemAskLauncherInputSourceSelector()
 
+    @State var inputSourceID = ""
+    @State var availableInputSources: [AskLauncherInputSource] = []
     @State var quickCalculatorEnabled = true
     @State var quickNumberConversionsEnabled = true
     @State var inputHistoryEnabled = true
@@ -38,6 +43,9 @@ struct LauncherSettingsView: View {
             }
         }
         .onAppear(perform: reload)
+        .onReceive(DistributedNotificationCenter.default().publisher(
+            for: Notification.Name(kTISNotifyEnabledKeyboardInputSourcesChanged as String)
+        )) { _ in reloadInputSources() }
         .alert(L("ask.inputHistory.clear"), isPresented: $confirmingClearInputHistory) {
             Button(L("common.cancel"), role: .cancel) {}
             Button(L("ask.inputHistory.deleteAll"), role: .destructive) { settings.clearLauncherInputHistory() }
@@ -46,6 +54,15 @@ struct LauncherSettingsView: View {
 
     @ViewBuilder private var basicsPane: some View {
         AgentPaneHeader(symbol: pane.symbol, title: pane.title)
+        ModelSurface {
+            AgentSettingsRow(icon: "keyboard", title: L("launcher.inputSource.title"),
+                             subtitle: L("launcher.inputSource.detail"), subtitleLineLimit: nil) {
+                SettingsMenuPicker(title: L("launcher.inputSource.title"), options: inputSourceOptions,
+                                   selection: Binding(get: { inputSourceID }, set: setInputSource))
+                    .frame(width: 200)
+                    .accessibilityIdentifier("launcher.settings.inputSource")
+            }
+        }
         ModelSurface {
             VStack(alignment: .leading, spacing: 0) {
                 AgentSettingsRow(icon: "plus.forwardslash.minus", title: L("ask.settings.quick.calculator.title")) {
@@ -88,10 +105,30 @@ struct LauncherSettingsView: View {
     }
 
     func reload() {
+        reloadInputSources()
         quickCalculatorEnabled = settings.askQuickCalculatorEnabled
         quickNumberConversionsEnabled = settings.askQuickNumberConversionsEnabled
         inputHistoryEnabled = settings.askLauncherInputHistoryEnabled
         inputHistoryLimit = settings.askLauncherInputHistoryLimit
+    }
+
+    func reloadInputSources() {
+        inputSourceID = settings.askLauncherInputSourceID
+        availableInputSources = inputSources.availableSources()
+    }
+
+    var inputSourceOptions: [(label: String, value: String)] {
+        var options = [(label: L("launcher.inputSource.none"), value: "")]
+        options += availableInputSources.map { (label: $0.name, value: $0.id) }
+        if !inputSourceID.isEmpty, !availableInputSources.contains(where: { $0.id == inputSourceID }) {
+            options.append((label: L("launcher.inputSource.unavailable"), value: inputSourceID))
+        }
+        return options
+    }
+
+    func setInputSource(_ sourceID: String) {
+        inputSourceID = sourceID
+        settings.askLauncherInputSourceID = sourceID
     }
 
     func setInputHistoryEnabled(_ enabled: Bool) {

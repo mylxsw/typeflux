@@ -3150,7 +3150,11 @@
 "studio.heading.launcher" = "Launcher";
 "studio.subheading.launcher" = "Calculator, app search, keywords and your own workflows. They run from the launcher without the Agent.";
 "studio.search.launcher" = "Search launcher settings...";
-"launcher.pane.basics" = "Built-in";
+"launcher.pane.basics" = "General";
+"launcher.inputSource.title" = "Default Input Method";
+"launcher.inputSource.detail" = "Switch to this input method when opening the launcher. Choose None to keep the current input method.";
+"launcher.inputSource.none" = "None";
+"launcher.inputSource.unavailable" = "Input method unavailable";
 "launcher.basics.subtitle" = "Results shown right in the launcher, without sending anything to AI.";
 "agent.group.capabilities" = "Capabilities";
 "agent.group.personalization" = "Personalization";

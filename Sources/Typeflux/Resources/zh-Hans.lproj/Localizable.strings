@@ -3150,7 +3150,11 @@
 "studio.heading.launcher" = "启动器";
 "studio.subheading.launcher" = "启动器里的计算器、应用搜索、关键词和你自己的工作流。它们由启动器直接触发，不经过 Agent。";
 "studio.search.launcher" = "搜索启动器设置...";
-"launcher.pane.basics" = "内置功能";
+"launcher.pane.basics" = "通用";
+"launcher.inputSource.title" = "默认输入法";
+"launcher.inputSource.detail" = "打开启动器时切换到所选输入法；选择“无”则保持当前输入法。";
+"launcher.inputSource.none" = "无";
+"launcher.inputSource.unavailable" = "输入法不可用";
 "launcher.basics.subtitle" = "在启动器里直接得到结果，不发送给 AI。";
 "agent.group.capabilities" = "能力";
 "agent.group.personalization" = "个性化";
