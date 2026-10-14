@@ -1526,10 +1526,10 @@
 "ask.context.restore.selection" = "附加選取文字（%d 行）";
 "ask.context.undo" = "還原";
 "ask.context.removed.source" = "已移除應用程式資訊";
-"ask.context.removed.selection" = "已移除選取文字";
+"ask.context.removed.selection" = "已停用選取文字";
 "ask.context.removed.screenshot" = "已移除螢幕截圖";
 "ask.context.restored.source" = "已重新附加應用程式資訊";
-"ask.context.restored.selection" = "已重新附加選取文字";
+"ask.context.restored.selection" = "已啟用選取文字";
 "ask.context.restored.screenshot" = "已重新附加螢幕截圖";
 "ask.context.refresh.applied" = "已更新應用程式資訊，舊的選取文字已清除";
 "ask.context.undo.applied" = "已還原";
@@ -3648,7 +3648,7 @@
 "ask.home.section.recent" = "繼續對話";
 "ask.home.section.keywords" = "常用";
 "ask.home.more" = "更多";
-"ask.home.more.help" = "更多關鍵字";
+"ask.home.more.help" = "更多關鍵詞";
 "ask.home.section.tryKeywords" = "試試關鍵詞：輸入後加空格";
 "ask.home.text.translate" = "翻譯";
 "ask.home.text.translate.detail" = "保留原格式";
@@ -4838,3 +4838,10 @@
 "clipboard.hint.plainPaste" = "純文字";
 "clipboard.hint.quickPaste" = "貼上";
 "clipboard.hint.close" = "關閉";
+
+// Launcher selected-text switch and preview.
+"ask.context.selection.enabled" = "已啟用";
+"ask.context.selection.disabled" = "未啟用";
+"ask.context.selection.characters" = "%d 個字元";
+"ask.context.selection.disableHint" = "點擊圖示可停用，文字會保留";
+"ask.context.selection.enableHint" = "點擊圖示可再次使用這段文字";

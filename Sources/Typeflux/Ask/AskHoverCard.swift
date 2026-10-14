@@ -2,7 +2,8 @@ import AppKit
 import SwiftUI
 
 /// Hover cards for the composer's context chips, drawn in a borderless panel
-/// that never becomes key and ignores the mouse.
+/// that never becomes key. Read-only cards ignore the mouse; the selection
+/// preview accepts scrolling without taking focus from the launcher.
 ///
 /// They used to be SwiftUI popovers, which made the chips hard to click. An
 /// NSPopover is a transient window: once it was showing (150ms into a hover, so
@@ -51,10 +52,11 @@ final class AskHoverCardPresenter {
         return NSRect(x: x, y: y, width: size.width, height: size.height)
     }
 
-    func show(_ content: some View, owner: UUID, anchor: NSView) {
+    func show(_ content: some View, owner: UUID, anchor: NSView, interactive: Bool = false) {
         guard let window = anchor.window, window.isVisible else { return }
         let panel = self.panel ?? Self.makePanel()
         self.panel = panel
+        panel.ignoresMouseEvents = !interactive
         let hosting = NSHostingView(rootView: AnyView(AskHoverAnchor.styled(
             AskGlassCardSurface { content }.askPopIn(anchor: .bottom), of: anchor)))
         panel.contentView = hosting
@@ -70,6 +72,10 @@ final class AskHoverCardPresenter {
         }
         panel.orderFront(nil)
         self.owner = owner
+    }
+
+    func containsPointer(owner: UUID) -> Bool {
+        self.owner == owner && panel?.isVisible == true && panel?.frame.contains(NSEvent.mouseLocation) == true
     }
 
     /// Hides the card only if `owner` still owns it, so a chip leaving never

@@ -100,6 +100,28 @@ struct AskContextChipsTests {
         #expect(off.title == on.title)
     }
 
+    @Test func `launcher selection follows memory without removal or badges`() throws {
+        for excluded in [false, true] {
+            let chips = AskContextChips.launcherItems(items(source: "Safari", bundle: "com.apple.Safari",
+                                                            selection: "a\nb", selectionOff: excluded,
+                                                            memory: AskMemory(global: "Preference")))
+            #expect(chips.map(\.kind) == [.screenshot, .memory, .selection])
+            let selection = try #require(chips.last)
+            #expect(selection.systemImage == "text.quote")
+            #expect(selection.style == (excluded ? .neutral : .active))
+            #expect(selection.badge == nil && selection.sourceAppBundleID == nil)
+            #expect(!selection.removable)
+            #expect(selection.sourceAppName == "Safari")
+        }
+        #expect(AskContextChips.launcherItems(items()).map(\.kind) == [.screenshot])
+    }
+
+    @Test func `selection preview height is bounded without truncating the text`() {
+        #expect(AskSelectionHoverCard.textHeight("Short text") < AskSelectionHoverCard.maximumTextHeight)
+        #expect(AskSelectionHoverCard.textHeight(String(repeating: "long line\n", count: 100))
+            == AskSelectionHoverCard.maximumTextHeight)
+    }
+
     @Test func memoryBadgesItsSourceAppAndPinnedMemoryIsReadOnly() throws {
         let appMemory = AskMemory(app: .init(id: "com.google.Chrome", name: "Google Chrome", excerpts: ["x"]))
         let draft = try #require(items(memory: appMemory).first { $0.kind == .memory })
@@ -161,6 +183,9 @@ struct AskContextChipsTests {
                         "ask.context.screen.scope", "ask.context.selection.source", "ask.context.selection.excluded",
                         "ask.context.memory.offHint", "ask.context.memory.onHint",
                         "ask.context.selection.offHint", "ask.context.selection.onHint",
+                        "ask.context.selection.enabled", "ask.context.selection.disabled",
+                        "ask.context.selection.characters", "ask.context.selection.disableHint",
+                        "ask.context.selection.enableHint",
                         "ask.models.isDefault", "ask.models.supportsImages"] {
                 let value = bundle.localizedString(forKey: key, value: nil, table: nil)
                 #expect(value != key, "Missing \(key) for \(language.rawValue)")

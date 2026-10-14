@@ -57,6 +57,23 @@ enum AskContextChips {
     static let cardWidth: CGFloat = 240
     static let selectionPreviewLength = 60
 
+    /// The launcher keeps its existing switches first, then the selection.
+    /// An excluded selection stays here so it can be included again.
+    static func launcherItems(_ items: [AskContextItem]) -> [AskContextItem] {
+        let order: [AskContextItem.Kind] = [.screenshot, .memory, .selection]
+        return order.compactMap { kind in
+            guard var item = items.first(where: { $0.kind == kind }) else { return nil }
+            if kind == .selection {
+                item.systemImage = "text.quote"
+                item.title = L("ask.selection")
+                item.badge = nil
+                item.sourceAppBundleID = nil
+                item.removable = false
+            }
+            return item
+        }
+    }
+
     /// `AskContextCapture` joins the app name and window title with " — ".
     static func sourceParts(_ source: String) -> (app: String, window: String?) {
         guard let range = source.range(of: " — ") else { return (source, nil) }

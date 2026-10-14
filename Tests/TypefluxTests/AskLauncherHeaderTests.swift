@@ -87,6 +87,69 @@ struct AskLauncherHeaderTests {
         try await fixture.wait { fixture.model.launcherDraft.memoryOff == nil }
     }
 
+    @Test func `selection switch stays after memory and toggles the outgoing text`() async throws {
+        let fixture = try AskTestFixture()
+        captured(fixture)
+        let previousLanguage = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(.simplifiedChinese)
+        defer { AppLocalization.shared.setLanguage(previousLanguage) }
+        fixture.model.launcherDraft.selection = "In May, we merged around 2,500 code changes per day. "
+            + "In September, we merged more than 30,000 per day. As a result, we became "
+            + "bottlenecked by developer infrastructure built for human (rather than agent) scale."
+        fixture.model.launcherDraft.text = "请帮我分析这段内容"
+        let (window, _) = host(fixture)
+        defer { window.orderOut(nil); window.close(); fixture.model.resetSession() }
+        window.makeKeyAndOrderFront(nil)
+        try await Task.sleep(for: .milliseconds(300))
+        let original = fixture.model.launcherDraft
+        let selection = try element("ask.context.selection.toggle", in: window)
+        let memory = try element("ask.context.memory.toggle", in: window)
+        #expect(abs(selection.frame.minX - memory.frame.maxX - AskContextChips.spacing) < 1)
+        #expect(abs(selection.frame.midY - memory.frame.midY) < 2)
+        try saveSnapshot(#require(window.contentView), name: "selection-toggle-enabled")
+        try hover(selection, in: window, inside: true)
+        let card = try await hoverCard(in: window, fixture: fixture)
+        try await Task.sleep(for: .milliseconds(300))
+        #expect(!card.canBecomeKey && !card.canBecomeMain)
+        #expect(!card.ignoresMouseEvents, "the text can be scrolled without taking editor focus")
+        #expect(find("ask.context.selection.hoverText", in: card) != nil)
+        try saveSnapshot(#require(card.contentView), name: "selection-hover-enabled")
+        // Clicking after the hover opened must toggle on the first click.
+        try click(selection, in: window)
+        try await fixture.wait { fixture.model.launcherDraft.selectionOff == true }
+        #expect(!card.isVisible)
+        let off = fixture.model.launcherDraft
+        #expect(off.selection == original.selection && off.text == original.text)
+        #expect(off.source == original.source && off.memory == original.memory)
+        #expect(off.request(deviceId: "device", tools: []).selection == nil)
+        let disabled = try element("ask.context.selection.toggle", in: window)
+        try await fixture.wait {
+            find("ask.context.selection.toggle", in: window)?.value("accessibilityValue") as? String
+                == L("ask.context.selection.disabled")
+        }
+        try saveSnapshot(#require(window.contentView), name: "selection-toggle-disabled")
+        try hover(disabled, in: window, inside: true)
+        let disabledCard = try await hoverCard(in: window, fixture: fixture)
+        try await Task.sleep(for: .milliseconds(300))
+        #expect(find("ask.context.selection.hoverText", in: disabledCard) != nil,
+                "disabled text remains inspectable")
+        try saveSnapshot(#require(disabledCard.contentView), name: "selection-hover-disabled")
+        try click(disabled, in: window)
+        try await fixture.wait { fixture.model.launcherDraft.selectionOff == nil }
+        #expect(fixture.model.launcherDraft.request(deviceId: "device", tools: []).selection == original.selection)
+    }
+
+    @Test func `launcher without captured text has no selection switch`() async throws {
+        let fixture = try AskTestFixture()
+        captured(fixture)
+        fixture.model.launcherDraft.selection = nil
+        let (window, _) = host(fixture)
+        defer { window.orderOut(nil); window.close(); fixture.model.resetSession() }
+        try await Task.sleep(for: .milliseconds(300))
+        #expect(find("ask.context.selection.toggle", in: window) == nil)
+        #expect(find("ask.context.memory.toggle", in: window) != nil)
+    }
+
     @Test func headerSendsTheQuestionInsteadOfTransferringAnUnsentDraft() async throws {
         let fixture = try AskTestFixture()
         fixture.model.launcherDraft.text = "Help me think"

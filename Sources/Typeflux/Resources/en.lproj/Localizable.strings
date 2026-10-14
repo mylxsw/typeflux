@@ -1529,10 +1529,10 @@
 "ask.context.restore.selection" = "Attach selected text (%d lines)";
 "ask.context.undo" = "Undo";
 "ask.context.removed.source" = "App info removed";
-"ask.context.removed.selection" = "Selected text removed";
+"ask.context.removed.selection" = "Selected text disabled";
 "ask.context.removed.screenshot" = "Screenshot removed";
 "ask.context.restored.source" = "App info attached again";
-"ask.context.restored.selection" = "Selected text attached again";
+"ask.context.restored.selection" = "Selected text enabled";
 "ask.context.restored.screenshot" = "Screenshot attached again";
 "ask.context.refresh.applied" = "App info updated; old selected text cleared";
 "ask.context.undo.applied" = "Change undone";
@@ -4853,3 +4853,10 @@
 "clipboard.hint.plainPaste" = "Plain text";
 "clipboard.hint.quickPaste" = "Paste";
 "clipboard.hint.close" = "Close";
+
+// Launcher selected-text switch and preview.
+"ask.context.selection.enabled" = "Enabled";
+"ask.context.selection.disabled" = "Disabled";
+"ask.context.selection.characters" = "%d characters";
+"ask.context.selection.disableHint" = "Click the icon to disable; the text is kept";
+"ask.context.selection.enableHint" = "Click the icon to use this text again";

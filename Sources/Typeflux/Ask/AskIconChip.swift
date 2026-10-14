@@ -8,6 +8,8 @@ struct AskIconChip: View {
     var onRemove: (() -> Void)?
     /// Captured screenshot preview, supplied by the launcher only.
     var screenshot: NSImage?
+    /// Full captured text for the launcher's scrollable selection preview.
+    var selection: String?
     @Environment(\.isEnabled) private var enabled
     @Environment(\.askUsesLibraryTokens) private var libraryTokens
     @State private var hovering = false
@@ -19,9 +21,10 @@ struct AskIconChip: View {
     private struct CardContent: Equatable {
         let item: AskContextItem
         let screenshot: NSImage?
+        let selection: String?
     }
 
-    private var cardContent: CardContent { CardContent(item: item, screenshot: screenshot) }
+    private var cardContent: CardContent { CardContent(item: item, screenshot: screenshot, selection: selection) }
 
     var body: some View {
         chipControl
@@ -31,19 +34,28 @@ struct AskIconChip: View {
                 if showingCard { showCard(content) } else if hovering { scheduleCard(content) }
             }
             .onChange(of: enabled) { if !$0 { hovering = false; dismissCard() } }
-            // The card is a click-through panel, not a popover: a popover swallowed
-            // the click meant for the chip. See AskHoverCardPresenter.
+            // The card never takes key status: a popover swallowed the click
+            // meant for the chip. Selection cards accept scrolling only.
             .background(AskHoverAnchor(holder: anchor))
             .accessibilityElement(children: libraryTokens ? .contain : .ignore)
             .accessibilityAddTraits(.isButton)
             .accessibilityLabel(item.title)
+            .accessibilityValue(selection == nil ? "" : L(item.style == .active
+                ? "ask.context.selection.enabled" : "ask.context.selection.disabled"))
             .accessibilityHint([item.sourceAppName.map { L("ask.context.selection.source", $0) },
                                 item.detail, item.hint].compactMap { $0 }.joined(separator: ", "))
             .accessibilityAction {
                 dismissCard()
                 if let action { action() } else { explain() }
             }
-            .accessibilityAction(named: L("ask.remove")) { if item.removable { onRemove?() } }
+            .accessibilityActions {
+                if selection != nil {
+                    Button(L("ask.context.details")) { explain() }
+                }
+                if item.removable {
+                    Button(L("ask.remove")) { onRemove?() }
+                }
+            }
     }
 
     @ViewBuilder private var chipControl: some View {
@@ -87,8 +99,23 @@ struct AskIconChip: View {
     private func hover(_ inside: Bool) {
         hovering = inside && enabled
         hoverTask?.cancel()
-        guard hovering else { dismissCard(); return }
+        guard hovering else {
+            if selection != nil, showingCard { scheduleDismissal() } else { dismissCard() }
+            return
+        }
         scheduleCard(cardContent)
+    }
+
+    /// Let the pointer cross the small gap into the preview and scroll it.
+    /// Screenshot and memory cards retain their original click-through behavior.
+    private func scheduleDismissal() {
+        hoverTask = Task { @MainActor in
+            repeat {
+                try? await Task.sleep(nanoseconds: AskContextChips.hoverDelay)
+                guard !Task.isCancelled, !hovering else { return }
+            } while AskHoverCardPresenter.shared.containsPointer(owner: cardID)
+            dismissCard()
+        }
     }
 
     private func scheduleCard(_ content: CardContent) {
@@ -113,8 +140,13 @@ struct AskIconChip: View {
 
     private func showCard(_ content: CardContent) {
         guard enabled, let view = anchor.view else { return }
-        AskHoverCardPresenter.shared.show(AskContextCard(items: [content.item], screenshot: content.screenshot),
-                                          owner: cardID, anchor: view)
+        if let selection = content.selection {
+            AskHoverCardPresenter.shared.show(AskSelectionHoverCard(item: content.item, text: selection),
+                                              owner: cardID, anchor: view, interactive: true)
+        } else {
+            AskHoverCardPresenter.shared.show(AskContextCard(items: [content.item], screenshot: content.screenshot),
+                                              owner: cardID, anchor: view)
+        }
         showingCard = true
     }
 
