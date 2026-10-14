@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Typeflux · 翻译与单词释义重构（可交互设计稿）</title>
+<style>
+:root {
+  --bg: #1d1d1f; --card: rgba(255,255,255,.045); --card-hover: rgba(255,255,255,.08);
+  --border: rgba(255,255,255,.115); --border-soft: rgba(255,255,255,.07);
+  --text: #eeeeef; --text2: #b8b8bb; --text3: #85858a; --text4: #5d5d62;
+  --accent: #2f8cff; --accent-soft: rgba(47,140,255,.16); --accent-text: #7db5ff;
+  --ok: #34c759; --warn: #ff9f40; --danger: #ff6b61; --danger-soft: rgba(255,107,97,.12);
+  --tile: rgba(255,255,255,.07); --key: rgba(255,255,255,.09);
+  --stage: #0e0e10; --pop: #2a2a2d; --glass: rgba(34,34,38,.92); --side: rgba(255,255,255,.03);
+  --desk: radial-gradient(1200px 700px at 20% 10%, #2a3f63 0%, transparent 60%), radial-gradient(900px 600px at 90% 80%, #4a2e3e 0%, transparent 60%), linear-gradient(135deg, #1b2538 0%, #271d33 55%, #33241f 100%);
+  --shadow: 0 30px 80px rgba(0,0,0,.5);
+}
+body.light {
+  --bg: #f4f5f7; --card: rgba(255,255,255,.8); --card-hover: rgba(0,0,0,.045);
+  --border: rgba(97,115,143,.2); --border-soft: rgba(97,115,143,.12);
+  --text: #141414; --text2: #474747; --text3: #85868a; --text4: #b4b5b9;
+  --accent: #1f6fe0; --accent-soft: rgba(31,111,224,.11); --accent-text: #1f6fe0;
+  --ok: #1fab63; --warn: #d9761f; --danger: #d13328; --danger-soft: rgba(209,51,40,.08);
+  --tile: rgba(0,0,0,.05); --key: #fff;
+  --stage: #d9dde3; --pop: #fff; --glass: rgba(250,250,252,.94); --side: rgba(0,0,0,.025);
+  --desk: radial-gradient(1200px 700px at 20% 10%, #c7d8f2 0%, transparent 60%), radial-gradient(900px 600px at 90% 80%, #ecd3df 0%, transparent 60%), linear-gradient(135deg, #b9cbe6 0%, #d8c8e8 55%, #ecd6c6 100%);
+  --shadow: 0 30px 80px rgba(30,40,60,.22);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { font: 13px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif;
+  color: var(--text); background: var(--stage); display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+button, input, textarea, select { font: inherit; color: inherit; }
+svg { flex: none; display: block; }
+
+/* ---------- Stage ---------- */
+.stagebar { width: 1200px; max-width: calc(100vw - 32px); display: flex; flex-wrap: wrap; align-items: center; gap: 7px; padding: 18px 0 6px; color: var(--text2); }
+.stagebar b { color: var(--text); font-size: 14px; margin-right: 6px; }
+.stagebar .sp { flex: 1; }
+.pill { border: 1px solid var(--border); background: var(--card); border-radius: 999px; padding: 4px 11px; cursor: pointer; font-size: 12px; }
+.pill.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.caption { width: 1200px; max-width: calc(100vw - 32px); color: var(--text3); font-size: 12px; padding: 0 0 12px; min-height: 34px; }
+.caption b { color: var(--text2); font-weight: 600; }
+body.solo .stagebar, body.solo .caption { display: none; }
+
+/* ---------- Desktop ---------- */
+.desk { position: relative; width: 1200px; height: 820px; border-radius: 14px; overflow: hidden; background: var(--desk); box-shadow: var(--shadow); user-select: none; margin-bottom: 30px; }
+.menubar { height: 26px; display: flex; align-items: center; gap: 18px; padding: 0 14px; font-size: 12.5px; background: rgba(0,0,0,.22); color: rgba(255,255,255,.92); backdrop-filter: blur(20px); }
+body.light .menubar { background: rgba(255,255,255,.45); color: #1a1a1a; }
+.menubar .sp { flex: 1; }
+.app { position: absolute; left: 40px; top: 60px; width: 640px; height: 560px; border-radius: 12px; background: var(--bg); border: 1px solid var(--border); box-shadow: 0 22px 60px rgba(0,0,0,.35); overflow: hidden; }
+.app .tb { height: 38px; display: flex; align-items: center; gap: 8px; padding: 0 14px; border-bottom: 1px solid var(--border-soft); color: var(--text3); font-size: 12px; }
+.lights { display: flex; gap: 8px; }
+.lights i { width: 12px; height: 12px; border-radius: 50%; display: block; }
+.lights i:nth-child(1) { background: #ff5f57; } .lights i:nth-child(2) { background: #febc2e; } .lights i:nth-child(3) { background: #28c840; }
+.app .doc { padding: 22px 26px; color: var(--text2); font-size: 14.5px; line-height: 1.9; user-select: text; }
+.app .doc h3 { color: var(--text); margin: 0 0 10px; font-size: 17px; }
+.sel { background: rgba(47,140,255,.35); color: var(--text); border-radius: 2px; }
+.shotbox { position: absolute; border: 1.5px solid #2f8cff; box-shadow: 0 0 0 9999px rgba(0,0,0,.28); border-radius: 2px; pointer-events: none; }
+.shotbox::after { content: "截图翻译 · 已在本机识别 2 行"; position: absolute; left: 0; top: -24px; font-size: 11px; color: #fff; background: #2f8cff; border-radius: 5px; padding: 2px 7px; white-space: nowrap; }
+
+/* ---------- Common bits ---------- */
+.ib { width: 26px; height: 26px; border-radius: 7px; display: inline-grid; place-items: center; border: 0; background: transparent; color: var(--text3); cursor: pointer; position: relative; }
+.ib:hover { background: var(--card-hover); color: var(--text); }
+.ib.on { color: var(--accent); background: var(--accent-soft); }
+.ib.sm { width: 22px; height: 22px; border-radius: 6px; }
+.kbd { display: inline-flex; align-items: center; justify-content: center; min-width: 18px; height: 18px; padding: 0 4px; border-radius: 5px; font-size: 10.5px; background: var(--key); border: 1px solid var(--border-soft); color: var(--text2); }
+.tag { display: inline-flex; align-items: center; gap: 4px; height: 18px; padding: 0 6px; border-radius: 5px; font-size: 10.5px; background: var(--tile); color: var(--text3); white-space: nowrap; }
+.tag.ai { color: var(--accent-text); background: var(--accent-soft); }
+.tag.ok { color: var(--ok); background: rgba(52,199,89,.12); }
+.svc-ico { width: 18px; height: 18px; border-radius: 5px; display: grid; place-items: center; font-size: 10px; font-weight: 700; color: #fff; flex: none; }
+.toast { position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%); background: rgba(20,20,22,.92); color: #fff; padding: 7px 14px; border-radius: 10px; font-size: 12.5px; z-index: 400; opacity: 0; transition: opacity .18s; pointer-events: none; display: flex; gap: 8px; align-items: center; }
+.toast.show { opacity: 1; }
+.menu { position: absolute; z-index: 300; background: var(--pop); border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 16px 40px rgba(0,0,0,.35); padding: 5px; min-width: 170px; display: none; }
+.menu.show { display: block; }
+.menu .mi { display: flex; align-items: center; gap: 8px; padding: 6px 9px; border-radius: 6px; cursor: pointer; white-space: nowrap; }
+.menu .mi:hover { background: var(--accent); color: #fff; }
+.menu .mi .r { margin-left: auto; color: var(--text3); font-size: 11px; padding-left: 14px; }
+.menu .mi:hover .r { color: rgba(255,255,255,.8); }
+.menu .mi .ck { width: 12px; color: var(--accent); }
+.menu .mi:hover .ck { color: #fff; }
+.menu .sep { height: 1px; background: var(--border-soft); margin: 4px 2px; }
+.menu .mh { font-size: 11px; color: var(--text3); padding: 4px 9px 2px; }
+
+/* ---------- Translation panel ---------- */
+.panel { position: absolute; width: 452px; background: var(--glass); border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 26px 70px rgba(0,0,0,.45);
+  backdrop-filter: blur(28px) saturate(1.4); z-index: 60; display: none; flex-direction: column; overflow: hidden; }
+.panel.show { display: flex; animation: pin .15s ease-out; }
+@keyframes pin { from { opacity: 0; transform: scale(.985); } }
+.ph { display: flex; align-items: center; gap: 6px; padding: 9px 10px 6px 14px; cursor: grab; }
+.ph .t { font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 7px; }
+.ph .t .g { width: 20px; height: 20px; border-radius: 6px; background: var(--accent); color: #fff; display: grid; place-items: center; }
+.ph .sp { flex: 1; }
+.src { margin: 0 10px; border-radius: 10px; background: var(--card); border: 1px solid var(--border-soft); }
+.src.focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.src textarea { width: 100%; border: 0; outline: none; resize: none; background: transparent; padding: 9px 11px 2px; font-size: 14px; line-height: 1.5; min-height: 46px; max-height: 120px; display: block; }
+.src textarea::placeholder { color: var(--text3); }
+.src .from { display: flex; align-items: center; gap: 6px; padding: 8px 11px 0; font-size: 11px; color: var(--text3); }
+.src .from img, .src .from .thumb { width: 44px; height: 22px; border-radius: 4px; background: linear-gradient(90deg, #4b5d7e, #6d5a74); }
+.src .bar { display: flex; align-items: center; gap: 2px; padding: 2px 5px 5px 11px; color: var(--text3); font-size: 11px; }
+.src .bar .sp { flex: 1; }
+.lang { display: flex; align-items: center; gap: 6px; padding: 8px 10px; }
+.lang .lb { flex: 1; height: 30px; border-radius: 8px; border: 1px solid var(--border-soft); background: var(--card); display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; font-size: 12.5px; }
+.lang .lb:hover { background: var(--card-hover); }
+.lang .lb .d { color: var(--text3); }
+.lang .lb.tgt { color: var(--accent-text); }
+.lang .swap { width: 30px; height: 30px; }
+.stack { overflow-y: auto; padding: 0 10px 8px; flex: 1 1 auto; min-height: 0; }
+.sec { border-radius: 10px; border: 1px solid transparent; margin-bottom: 5px; background: var(--card); }
+.sec.focus { border-color: var(--accent); }
+.sec .sh { display: flex; align-items: center; gap: 7px; height: 32px; padding: 0 6px 0 10px; cursor: pointer; }
+.sec .sh .nm { font-size: 12px; color: var(--text2); font-weight: 500; }
+.sec .sh .idx { font-size: 10.5px; color: var(--text4); width: 22px; }
+.sec .sh .sp { flex: 1; }
+.sec .acts { display: flex; gap: 1px; opacity: .0; transition: opacity .12s; }
+.sec:hover .acts, .sec.focus .acts { opacity: 1; }
+.sec .chev { transition: transform .15s; }
+.sec.collapsed .chev { transform: rotate(-90deg); }
+.sec .sb { padding: 0 12px 10px 35px; font-size: 14px; line-height: 1.55; user-select: text; }
+.sec.collapsed .sb { display: none; }
+.sec .sb.loading { color: var(--text3); font-size: 12px; display: flex; align-items: center; gap: 7px; }
+.sec .sb.err { color: var(--danger); font-size: 12.5px; }
+.sec .sb.err a { color: var(--accent-text); cursor: pointer; margin-left: 6px; }
+.sec.line .sh { height: auto; min-height: 32px; padding-top: 6px; padding-bottom: 6px; }
+.sec.line .sh .nm { min-width: 74px; }
+.sec.line .ltx { font-size: 13px; color: var(--text); flex: 1; min-width: 0; user-select: text; }
+.sec.line .sp { display: none; }
+.sec .peek { font-size: 12px; color: var(--text3); max-width: 230px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sec:not(.collapsed) .peek { display: none; }
+.spin { width: 11px; height: 11px; border: 1.6px solid var(--text4); border-top-color: var(--accent); border-radius: 50%; animation: sp .7s linear infinite; }
+@keyframes sp { to { transform: rotate(360deg); } }
+.caret::after { content: "▍"; color: var(--accent); animation: blink 1s steps(1) infinite; margin-left: 1px; }
+@keyframes blink { 50% { opacity: 0; } }
+.pf { display: flex; align-items: center; gap: 10px; padding: 7px 14px 9px; border-top: 1px solid var(--border-soft); color: var(--text3); font-size: 11px; flex-wrap: wrap; }
+.pf span { display: inline-flex; gap: 4px; align-items: center; }
+
+/* ---------- Word card (inside a section) ---------- */
+.wc .hw { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.wc .hw b { font-size: 21px; letter-spacing: .2px; }
+.wc .phs { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 2px; }
+.wc .ph2 { display: inline-flex; align-items: center; gap: 4px; color: var(--text2); font-size: 12.5px; }
+.wc .ph2 i { font-style: normal; color: var(--text3); font-size: 11px; }
+.wc .tr { margin: 4px 0 6px; font-size: 15px; font-weight: 600; }
+.wc .sense { display: flex; gap: 8px; margin: 2px 0; }
+.wc .sense .pos { color: var(--accent-text); font-style: italic; font-weight: 600; width: 26px; flex: none; }
+.wc .forms { color: var(--text3); font-size: 12px; margin: 6px 0 2px; }
+.wc .ex { border-left: 2px solid var(--border); padding: 1px 0 1px 9px; margin: 6px 0; font-size: 13px; }
+.wc .ex .t { color: var(--text3); }
+.wc .ex b { color: var(--accent-text); font-weight: 600; }
+.wc .syn { color: var(--text3); font-size: 12px; margin-top: 4px; }
+.wc .more { color: var(--accent-text); font-size: 12px; cursor: pointer; margin-top: 4px; display: inline-block; }
+.wc .wbar { display: flex; gap: 6px; align-items: center; margin-top: 8px; }
+.wc .wbtn { height: 24px; border-radius: 7px; border: 1px solid var(--border-soft); background: var(--tile); padding: 0 8px; font-size: 11.5px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; color: var(--text2); }
+.panel .wc .wbtn .kbd { display: none; }
+.wc .wbtn { white-space: nowrap; }
+.wc .wbtn:hover { background: var(--card-hover); color: var(--text); }
+.wc .wbtn.on { color: #ffcc00; }
+
+/* ---------- Launcher ---------- */
+.launcher { position: absolute; left: 50%; top: 90px; transform: translateX(-50%); width: 680px; background: var(--glass); border: 1px solid var(--border);
+  border-radius: 16px; box-shadow: 0 26px 70px rgba(0,0,0,.45); backdrop-filter: blur(28px) saturate(1.4); z-index: 60; display: none; overflow: hidden; }
+.launcher.show { display: block; }
+.lin { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--border-soft); }
+.lin input { flex: 1; min-width: 0; border: 0; outline: none; background: transparent; font-size: 17px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px 0 6px; border-radius: 9px; flex: none; font-size: 13px; font-weight: 600; background: var(--accent-soft); color: var(--accent-text); }
+.chip .g { width: 20px; height: 20px; border-radius: 6px; display: grid; place-items: center; background: var(--accent); color: #fff; }
+.lsec { padding: 6px 12px 4px; color: var(--text3); font-size: 11.5px; font-weight: 600; }
+.lrow { display: flex; align-items: center; gap: 10px; padding: 8px 12px; margin: 0 8px; border-radius: 9px; }
+.lrow .ic { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent-text); }
+.lrow .sp { flex: 1; }
+.lfoot { display: flex; align-items: center; gap: 10px; padding: 9px 14px; border-top: 1px solid var(--border-soft); color: var(--text3); font-size: 11.5px; margin-top: 6px; }
+.lfoot .sp { flex: 1; }
+.launcher .lang { padding: 2px 12px 8px; }
+.launcher .stack { padding: 0 12px 0; max-height: 470px; }
+
+/* ---------- Settings window ---------- */
+.settings { position: absolute; left: 50%; top: 44px; transform: translateX(-50%); width: 1000px; height: 750px; border-radius: 12px; background: var(--bg); border: 1px solid var(--border); box-shadow: 0 30px 80px rgba(0,0,0,.45); display: none; overflow: hidden; z-index: 80; }
+.settings.show { display: flex; }
+.side { width: 200px; background: var(--side); border-right: 1px solid var(--border-soft); padding: 14px 10px; }
+.side .lights { margin: 0 4px 18px; }
+.side .it { display: flex; align-items: center; gap: 8px; padding: 6px 9px; border-radius: 7px; color: var(--text2); font-size: 13px; }
+.side .it.on { background: var(--accent-soft); color: var(--accent-text); font-weight: 600; }
+.side .it.sub { padding-left: 26px; font-size: 12.5px; }
+.main { flex: 1; overflow-y: auto; padding: 22px 30px 40px; user-select: none; }
+.main h2 { margin: 0 0 4px; font-size: 20px; }
+.main .lead { color: var(--text3); margin-bottom: 14px; font-size: 12.5px; }
+.slabel { font-size: 12px; color: var(--text3); font-weight: 600; margin: 18px 4px 7px; display: flex; align-items: center; }
+.slabel .sp { flex: 1; }
+.surface { background: var(--card); border: 1px solid var(--border-soft); border-radius: 12px; }
+.srow { display: flex; align-items: center; gap: 12px; padding: 11px 16px; border-top: 1px solid var(--border-soft); min-height: 52px; }
+.srow:first-child { border-top: 0; }
+.srow .tx { flex: 1; min-width: 0; }
+.srow .tx b { font-weight: 600; display: block; }
+.srow .tx small { color: var(--text3); font-size: 11.5px; }
+.seg { display: inline-flex; background: var(--tile); border-radius: 8px; padding: 2px; }
+.seg button { border: 0; background: transparent; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-size: 12px; color: var(--text2); }
+.seg button.on { background: var(--pop); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,.18); }
+.picker { height: 28px; border-radius: 7px; border: 1px solid var(--border); background: var(--pop); padding: 0 26px 0 10px; font-size: 12.5px; appearance: none; cursor: pointer;
+  background-image: linear-gradient(45deg, transparent 50%, var(--text3) 50%), linear-gradient(135deg, var(--text3) 50%, transparent 50%); background-position: right 12px top 12px, right 8px top 12px; background-size: 4px 4px; background-repeat: no-repeat; }
+.hk { min-width: 150px; height: 28px; border-radius: 7px; border: 1px solid var(--border); background: var(--pop); display: inline-flex; align-items: center; gap: 4px; padding: 0 10px; cursor: pointer; font-size: 12.5px; letter-spacing: 1px; }
+.hk.rec { border-color: var(--accent); color: var(--accent-text); box-shadow: 0 0 0 3px var(--accent-soft); letter-spacing: 0; }
+.hk .no { color: var(--text3); letter-spacing: 0; }
+.tgl { width: 34px; height: 20px; border-radius: 999px; background: var(--tile); border: 1px solid var(--border); position: relative; cursor: pointer; flex: none; }
+.tgl::after { content: ""; position: absolute; top: 1px; left: 1px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.3); transition: left .15s; }
+.tgl.on { background: var(--accent); border-color: var(--accent); }
+.tgl.on::after { left: 15px; }
+.svc { display: flex; align-items: center; gap: 10px; padding: 9px 14px 9px 8px; border-top: 1px solid var(--border-soft); min-height: 48px; background: transparent; }
+.svc:first-child { border-top: 0; }
+.svc.drag { opacity: .4; }
+.svc.over { box-shadow: inset 0 2px 0 var(--accent); }
+.svc .grip { color: var(--text4); cursor: grab; padding: 0 2px; }
+.svc .cb { width: 16px; height: 16px; border-radius: 4px; border: 1.5px solid var(--text4); display: grid; place-items: center; cursor: pointer; flex: none; }
+.svc .cb.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.svc .nm { font-weight: 600; min-width: 92px; }
+.svc .st { font-size: 11.5px; color: var(--text3); display: inline-flex; align-items: center; gap: 4px; }
+.svc .st i { width: 6px; height: 6px; border-radius: 50%; background: var(--text4); display: inline-block; }
+.svc .st.ok i { background: var(--ok); }
+.svc .sp { flex: 1; }
+.svc .ml { color: var(--text3); font-size: 12px; }
+.svc.off .nm, .svc.off .st { opacity: .55; }
+.btn { height: 26px; border-radius: 7px; border: 1px solid var(--border); background: var(--pop); padding: 0 10px; font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; }
+.btn:hover { background: var(--card-hover); }
+.btn.pri { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.ghost { border-color: transparent; background: transparent; color: var(--accent-text); }
+.note { color: var(--text3); font-size: 11.5px; margin: 8px 4px 0; line-height: 1.6; }
+.preview { position: sticky; top: 0; }
+.sheet { position: absolute; inset: 0; background: rgba(0,0,0,.3); display: none; align-items: flex-start; justify-content: center; padding-top: 120px; z-index: 90; }
+.sheet.show { display: flex; }
+.sheet .bx { width: 460px; background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 20px; box-shadow: var(--shadow); }
+.sheet .bx h4 { margin: 0 0 14px; font-size: 15px; }
+.sheet .fr { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.sheet .fr label { width: 110px; color: var(--text2); font-size: 12.5px; text-align: right; }
+.sheet .fr input { flex: 1; height: 28px; border-radius: 7px; border: 1px solid var(--border); background: var(--pop); padding: 0 9px; outline: none; }
+.sheet .act { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; }
+</style>
+</head>
+<body>
+<div class="stagebar" id="stagebar"><b>翻译与单词释义</b></div>
+<div class="caption" id="caption"></div>
+
+<div class="desk" id="desk">
+  <div class="menubar"><span></span><b>Safari</b><span>文件</span><span>编辑</span><span>显示</span><span class="sp"></span><span>文A</span><span>周三 10月14日 10:24</span></div>
+  <div class="app" id="app">
+    <div class="tb"><div class="lights"><i></i><i></i><i></i></div><span style="margin-left:10px">engineering.example.com · Postmortem</span></div>
+    <div class="doc" id="doc">
+      <h3>Incident 0917 postmortem</h3>
+      <p id="p1"><span id="sentence">The quick fix shipped yesterday, but the root cause is still unknown.</span> We will keep the feature flag on until the team confirms the patch.</p>
+      <p>It was pure <span id="word">serendipity</span> that the on-call engineer noticed the spike before customers did.</p>
+      <p style="color:var(--text3)">Next review: Friday. Owners: platform, billing.</p>
+      <div id="runbook" style="margin-top:14px;padding:10px 14px;border-radius:8px;background:var(--tile);font:13px/1.7 ui-monospace,Menlo,monospace;color:var(--text)">RUNBOOK · step 3<br>Deploy the patch behind the feature flag first.<br>Roll back if error rates rise above 1%.</div>
+    </div>
+  </div>
+  <div class="shotbox" id="shotbox" style="display:none"></div>
+
+  <!-- Translation panel -->
+  <div class="panel" id="panel">
+    <div class="ph" id="panelHead">
+      <span class="t"><span class="g">文</span>翻译</span>
+      <span class="tag" id="modeTag"></span>
+      <span class="sp"></span>
+      <button class="ib" id="histBtn" data-act="histMenu" title="历史（↑ ↓）"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2.5 8a5.5 5.5 0 1 0 1.6-3.9"/><path d="M2.5 2.5v2.6h2.6"/><path d="M8 5v3.2l2 1.3"/></svg></button>
+      <button class="ib" id="gearBtn" title="翻译设置"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="8" cy="8" r="2.2"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M3.4 12.6l1.4-1.4M11.2 4.8l1.4-1.4"/></svg></button>
+      <button class="ib" id="pinBtn" title="钉住 ⌘P：失去焦点也不关闭"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M9.8 1.8l4.4 4.4-2 .6-2.6 2.6.2 2.8-1.3 1.3-2.4-2.4L2.5 13.5M6.1 10.9L3.7 8.5 5 7.2l2.8.2 2.6-2.6z"/></svg></button>
+    </div>
+    <div class="src" id="src">
+      <div class="from" id="srcFrom" style="display:none"><span class="thumb"></span><span id="srcFromText">识别自截图 · 2 行 · 可以先改错字再 ↩</span></div>
+      <textarea id="input" rows="2" placeholder="输入要翻译的内容，↩ 翻译 · ⇧↩ 换行 · ↑ ↓ 历史"></textarea>
+      <div class="bar"><span id="detected"></span><span class="sp"></span>
+        <button class="ib sm" data-src="speak" title="朗读原文"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2.5 6h2.5L8.5 3v10L5 10H2.5z"/><path d="M11 5.5a3.5 3.5 0 0 1 0 5M12.8 3.8a6 6 0 0 1 0 8.4"/></svg></button>
+        <button class="ib sm" data-src="copy" title="复制原文"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="5" y="5" width="8.5" height="8.5" rx="1.6"/><path d="M3.5 10.5h-.4A1.1 1.1 0 0 1 2 9.4V3.1A1.1 1.1 0 0 1 3.1 2h6.3a1.1 1.1 0 0 1 1.1 1.1v.4"/></svg></button>
+        <button class="ib sm" data-src="clear" title="清空 ⌘⌫"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
+      </div>
+    </div>
+    <div class="lang">
+      <div class="lb" id="srcLang" data-act="srcMenu"></div>
+      <button class="ib swap" id="swapBtn" title="交换语言 ⌘⇧S"><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2.5 5.5h10l-2.5-2.5M13.5 10.5h-10l2.5 2.5"/></svg></button>
+      <div class="lb tgt" id="tgtLang" data-act="tgtMenu"></div>
+    </div>
+    <div class="stack" id="stack"></div>
+    <div class="pf"><span><span class="kbd">↩</span>复制第一项</span><span><span class="kbd">⌘1–9</span>复制第 n 项</span><span><span class="kbd">⌥↩</span>插入</span><span><span class="kbd">⇥</span>换语言</span><span><span class="kbd">⌘P</span>钉住</span></div>
+  </div>
+
+  <!-- Launcher -->
+  <div class="launcher" id="launcher">
+    <div class="lin"><span class="chip"><span class="g">文</span>翻译</span><input id="lInput" value="serendipity"><span class="tag">⌘P 在翻译面板中打开</span></div>
+    <div class="lsec" style="padding-top:10px">翻译</div>
+    <div class="lang" id="lLang"></div>
+    <div class="stack" id="lStack"></div>
+    <div class="lsec">AI</div>
+    <div class="lrow"><span class="ic"><svg width="15" height="15" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1.5l1.4 3.6 3.6 1.4-3.6 1.4L8 11.5 6.6 7.9 3 6.5l3.6-1.4z"/></svg></span><span>问 AI <span style="color:var(--text3)">“serendipity”</span></span><span class="sp"></span><span class="kbd">⌘↩</span></div>
+    <div class="lfoot"><span>＋</span><span>Typeflux Cloud ▾</span><span class="sp"></span><span>↩ 复制第一项 · ⌘1–9 复制第 n 项 · ⌥↩ 插入 · ⇥ 换语言 · ⌘S 收藏</span></div>
+  </div>
+
+  <!-- Settings -->
+  <div class="settings" id="settings">
+    <div class="side">
+      <div class="lights"><i></i><i></i><i></i></div>
+      <div class="it">通用</div><div class="it">模型</div><div class="it">快捷键</div><div class="it">启动器</div>
+      <div class="it sub">关键字</div><div class="it sub on">翻译</div><div class="it sub">单词本</div><div class="it">截图</div><div class="it">关于</div>
+    </div>
+    <div class="main" id="settingsMain">
+      <h2>翻译</h2>
+      <div class="lead">翻译面板、启动器 <span class="kbd">fy</span> 和截图翻译都使用这里的服务与顺序。</div>
+
+      <div class="slabel">快捷键</div>
+      <div class="surface">
+        <div class="srow"><div class="tx"><b>输入翻译</b><small>打开翻译面板，直接输入</small></div><span class="hk" data-hk="input"></span></div>
+        <div class="srow"><div class="tx"><b>划词翻译</b><small>翻译当前选中的文字；没有选中时等同输入翻译</small></div><span class="hk" data-hk="selection"></span></div>
+        <div class="srow"><div class="tx"><b>截图翻译</b><small>框选屏幕区域，识别文字后翻译（在本机识别）</small></div><span class="hk" data-hk="shot"></span></div>
+      </div>
+
+      <div class="slabel">翻译面板</div>
+      <div class="surface">
+        <div class="srow"><div class="tx"><b>打开位置</b><small>划词翻译时总在选区附近打开</small></div>
+          <div class="seg" data-seg="position"><button data-v="center">屏幕中央</button><button data-v="mouse">鼠标附近</button><button data-v="last">上次位置</button></div></div>
+        <div class="srow"><div class="tx"><b>最大高度</b><small>结果更多时在面板内滚动</small></div>
+          <select class="picker" data-pick="maxHeight"><option value="60">屏幕的 60%</option><option value="80">屏幕的 80%</option><option value="100">整个屏幕</option></select></div>
+        <div class="srow"><div class="tx"><b>翻译后自动复制</b><small>结果出来后放到剪贴板，不用再按 ↩</small></div>
+          <select class="picker" data-pick="autoCopy"><option value="off">不复制</option><option value="source">原文</option><option value="1">第一项服务</option><option value="2">第二项服务</option><option value="3">第三项服务</option></select></div>
+        <div class="srow"><div class="tx"><b>保留上次内容</b><small>在这段时间内再次打开，显示上次的原文和结果</small></div>
+          <select class="picker" data-pick="keep"><option value="0">不保留</option><option value="10">10 秒</option><option value="60">1 分钟</option><option value="300">5 分钟</option><option value="-1">一直保留</option></select></div>
+        <div class="srow"><div class="tx"><b>第二语言</b><small>原文是界面语言时，译成这种语言</small></div>
+          <select class="picker" data-pick="second"><option>英语</option><option>日语</option><option>韩语</option></select></div>
+      </div>
+
+      <div class="slabel">翻译服务<span class="sp"></span><button class="btn" id="addAI">＋ 添加 AI 翻译</button></div>
+      <div class="surface" id="svcList"></div>
+      <div class="note">勾选的服务<b>同时翻译</b>，按这里的顺序显示；拖动 ⋮⋮ 调整顺序。<br>
+        排在最前的 AI 服务负责<b>单词释义</b>（单词卡），其它服务对单词只给出简短译文。<br>
+        本机翻译和单词本不出本机；AI 与第三方服务只在按 ↩、使用快捷键或截图翻译时发送。密钥只保存在钥匙串。</div>
+    </div>
+    <div class="sheet" id="sheet"><div class="bx">
+      <h4 id="sheetTitle">配置 DeepL</h4>
+      <div class="fr"><label id="sheetKey">Auth Key</label><input type="password" value="" placeholder="必填"></div>
+      <div class="fr" id="sheetSecretRow"><label id="sheetSecret">Secret</label><input type="password" placeholder="必填"></div>
+      <div class="act"><button class="btn" id="sheetTest">测试连接</button><span style="flex:1"></span><button class="btn" id="sheetCancel">取消</button><button class="btn pri" id="sheetSave">保存</button></div>
+    </div></div>
+  </div>
+
+  <div class="menu" id="menu"></div>
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+// ---------- Data ----------
+const LANGS = [["auto","自动检测"],["zh-Hans","简体中文"],["zh-Hant","繁体中文"],["en","英语"],["ja","日语"],["ko","韩语"],["fr","法语"],["de","德语"],["es","西班牙语"],["ru","俄语"]];
+const langName = c => (LANGS.find(l => l[0] === c) || [c, c])[1];
+
+const SERVICE_META = {
+  device:  { name: "本机翻译", ico: "", color: "#6b7280", local: true, sym: "laptop", configured: true, delay: 120 },
+  ai:      { name: "AI 翻译", ico: "✦", color: "#2f8cff", ai: true, configured: true, delay: 900 },
+  deepl:   { name: "DeepL", ico: "D", color: "#0f2b46", configured: true, delay: 450, key: "Auth Key" },
+  google:  { name: "Google", ico: "G", color: "#4285f4", configured: false, delay: 380, key: "API Key" },
+  youdao:  { name: "有道", ico: "有", color: "#e3342f", configured: true, delay: 600, key: "应用 ID", secret: "应用密钥" },
+  baidu:   { name: "百度", ico: "百", color: "#3060e0", configured: false, delay: 520, key: "APP ID", secret: "密钥" },
+  microsoft: { name: "Microsoft", ico: "M", color: "#00a4ef", configured: false, delay: 420, key: "API Key" },
+  tencent: { name: "腾讯云", ico: "腾", color: "#00a3ff", configured: false, delay: 500, key: "SecretId", secret: "SecretKey" },
+  volc:    { name: "火山翻译", ico: "火", color: "#ff6a00", configured: false, delay: 480, key: "Access Key ID", secret: "Secret Access Key" },
+};
+const MODELS = ["Typeflux Cloud", "GPT-4.1 mini", "Claude Haiku 4.5", "Gemini 2.5 Flash", "Qwen3 (Ollama)"];
+
+const state = {
+  scene: "panel", light: false, pinned: false,
+  services: [
+    { id: "device", kind: "device", on: true },
+    { id: "ai-1", kind: "ai", on: true, model: "Typeflux Cloud" },
+    { id: "deepl", kind: "deepl", on: true },
+    { id: "youdao", kind: "youdao", on: true },
+    { id: "google", kind: "google", on: false },
+    { id: "ai-2", kind: "ai", on: false, model: "Claude Haiku 4.5" },
+    { id: "baidu", kind: "baidu", on: false },
+    { id: "microsoft", kind: "microsoft", on: false },
+    { id: "tencent", kind: "tencent", on: false },
+    { id: "volc", kind: "volc", on: false },
+  ],
+  collapsed: {}, results: {}, focus: 0, starred: false, src: "auto", tgt: "zh-Hans",
+  history: [], hIndex: -1, run: 0, opts: { position: "mouse", maxHeight: "80", autoCopy: "off", keep: "60", second: "英语" },
+  hotkeys: { input: "⌥⌘A", selection: "⌥⌘D", shot: "⌥⌘S" }, failures: {},
+};
+
+const WORD = {
+  headword: "serendipity", translation: "机缘巧合；意外之喜",
+  phonetics: [["UK", "/ˌserənˈdɪpəti/"], ["US", "/ˌserənˈdɪpəti/"]],
+  senses: [["n.", ["意外发现珍奇事物的本领", "机缘巧合", "意外之喜"]]],
+  forms: "复数 serendipities · 形容词 serendipitous · 副词 serendipitously",
+  examples: [["It was pure **serendipity** that we met.", "我们相遇纯属机缘巧合。"],
+             ["Many discoveries in science come from **serendipity**.", "科学上的许多发现都来自意外的运气。"],
+             ["She found the café by **serendipity**.", "她偶然发现了这家咖啡馆。"]],
+  synonyms: "luck · chance · fluke · good fortune",
+};
+const SAMPLES = {
+  "serendipity": { lang: "en", word: true, out: { device: "意外发现", deepl: "偶然性", youdao: "n. 意外发现珍奇事物的本领；机缘凑巧", google: "意外之喜", baidu: "意外发现珍宝的运气", microsoft: "偶然", tencent: "意外发现", volc: "机缘巧合", ai: "机缘巧合；意外之喜" } },
+  "the quick fix shipped yesterday, but the root cause is still unknown.": { lang: "en", out: {
+    device: "快速修复昨天已经发布，但根本原因仍然未知。", ai: "临时修复昨天已经上线，但根本原因还没查明。",
+    deepl: "快速修复程序已于昨天发布，但根本原因仍不清楚。", youdao: "快速修复昨天发布了，但根本原因仍然未知。",
+    google: "快速修复已于昨天发布，但根本原因仍然未知。", baidu: "快速修复昨天已经发布，但根本原因仍不清楚。",
+    microsoft: "快速修复程序昨天已发布，但根本原因仍然未知。", tencent: "快速修复昨天已上线，但根本原因尚不清楚。", volc: "快速修复昨天已发布，但根本原因仍未查明。" } },
+  "你好": { lang: "zh-Hans", word: true, card: { headword: "你好", translation: "hello; hi",
+    phonetics: [["拼音", "nǐ hǎo"]], senses: [["int.", ["hello", "hi", "how do you do"]]], forms: "",
+    examples: [["**你好**，请问会议室在哪里？", "Hello, where is the meeting room?"]], synonyms: "您好 · 嗨" },
+    out: { device: "Hello", deepl: "Hello", youdao: "hello; hi", google: "Hello", ai: "hello; hi", baidu: "Hello", microsoft: "Hello", tencent: "Hello", volc: "Hi" } },
+  "deploy the patch behind the feature flag first. roll back if error rates rise above 1%.": { lang: "en", shot: true, out: {
+    device: "先在功能开关后面部署补丁。如果错误率升到 1% 以上就回滚。", ai: "先把补丁部署在功能开关后面；错误率超过 1% 就回滚。",
+    deepl: "首先在功能标志后面部署补丁。如果错误率上升到 1% 以上，则回滚。", youdao: "首先在特性标志后部署补丁。如果错误率超过1%，就回滚。",
+    google: "首先在功能标志后面部署补丁。如果错误率上升到 1% 以上，请回滚。" } },
+};
+
+// ---------- Helpers ----------
+const $ = id => document.getElementById(id);
+const esc = s => s.replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+const bold = s => esc(s).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>");
+const metaOf = svc => SERVICE_META[svc.kind];
+const svcName = svc => svc.kind === "ai" ? "AI · " + svc.model : metaOf(svc).name;
+const enabled = () => state.services.filter(s => s.on);
+const firstAI = () => enabled().find(s => s.kind === "ai");
+let toastTimer;
+function toast(html) { const t = $("toast"); t.innerHTML = html; t.classList.add("show"); clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 1600); }
+function icon(svc, size = 18) {
+  const m = metaOf(svc);
+  if (m.sym === "laptop") return `<span class="svc-ico" style="background:${m.color};width:${size}px;height:${size}px"><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="1.6"><rect x="3" y="3.5" width="10" height="7" rx="1"/><path d="M1.5 12.5h13"/></svg></span>`;
+  return `<span class="svc-ico" style="background:${svc.kind === "ai" && svc.model !== "Typeflux Cloud" ? "#8b5cf6" : m.color};width:${size}px;height:${size}px">${m.ico}</span>`;
+}
+const I = {
+  speak: '<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2.5 6h2.5L8.5 3v10L5 10H2.5z"/><path d="M11 5.5a3.5 3.5 0 0 1 0 5M12.8 3.8a6 6 0 0 1 0 8.4"/></svg>',
+  copy: '<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="5" y="5" width="8.5" height="8.5" rx="1.6"/><path d="M3.5 10.5h-.4A1.1 1.1 0 0 1 2 9.4V3.1A1.1 1.1 0 0 1 3.1 2h6.3a1.1 1.1 0 0 1 1.1 1.1v.4"/></svg>',
+  more: '<svg width="9" height="9" viewBox="0 0 10 10" fill="currentColor"><path d="M2 3.5h6L5 7z"/></svg>',
+  insert: '<svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 4h10M3 8h6M3 12h10M11 6l2 2-2 2"/></svg>',
+  chev: '<svg class="chev" width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 4.5l3 3 3-3"/></svg>',
+  star: '<svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M8 1.6l1.9 4 4.4.5-3.3 3 .9 4.3L8 11.2 4.1 13.4l.9-4.3-3.3-3 4.4-.5z"/></svg>',
+  regen: '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13 8a5 5 0 1 1-1.5-3.6M13 2.5v2.6h-2.6"/></svg>',
+  book: '<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M3 2.5h7.5a2 2 0 0 1 2 2v9H5a2 2 0 0 1-2-2z"/><path d="M3 11.5a2 2 0 0 1 2-2h7.5"/></svg>',
+};
+
+// ---------- Translation run (simulated) ----------
+function sampleFor(text) { return SAMPLES[text.trim().toLowerCase()] || SAMPLES[text.trim()]; }
+function detect(text) {
+  const s = sampleFor(text); if (s) return s.lang;
+  return /[一-鿿]/.test(text) ? "zh-Hans" : "en";
+}
+function isWord(text) {
+  const t = text.trim(); if (!t || t.length > 64 || /\n/.test(t)) return false;
+  if (/[一-鿿]/.test(t)) return t.length <= 6 && !/[\s，。！？、]/.test(t);
+  return !/[.!?;,:]/.test(t) && t.split(/\s+/).length <= 4;
+}
+function fakeTranslate(text, kind) {
+  const s = sampleFor(text);
+  if (s && s.out[kind]) return s.out[kind];
+  const zh = /[一-鿿]/.test(text);
+  return (zh ? "[EN] " : "【译】") + text.trim() + (kind === "ai" ? "" : "");
+}
+function translate(text, opts = {}) {
+  text = text.trim(); const run = ++state.run;
+  state.results = {}; state.focus = 0; state.starred = false;
+  if (!text) { renderStacks(); return; }
+  if (!opts.fromHistory && state.history[0] !== text) state.history.unshift(text);
+  state.hIndex = -1;
+  const src = detect(text);
+  state.detected = src;
+  // A target the user picked stays; otherwise it follows the detected language.
+  if (state.src === "auto" && !state.tgtManual) state.tgt = src === "zh-Hans" ? "en" : "zh-Hans";
+  const word = isWord(text); const dictSvc = word ? firstAI() : null; state.wordRun = word && !!dictSvc;
+  enabled().forEach(svc => {
+    const m = metaOf(svc);
+    state.results[svc.id] = { status: "loading" };
+    const fail = state.failures[svc.kind] || (!m.configured ? "notConfigured" : null);
+    const delay = m.delay + Math.random() * 200;
+    setTimeout(() => {
+      if (run !== state.run) return;
+      if (fail) { state.results[svc.id] = { status: "error", reason: fail }; renderStacks(); return; }
+      if (dictSvc && svc.id === dictSvc.id) {
+        const s = sampleFor(text); const card = (s && s.card) || (s && s.word ? WORD : null);
+        if (card) { state.results[svc.id] = { status: "done", card, text: card.translation }; renderStacks(); maybeAutoCopy(text); return; }
+      }
+      const full = fakeTranslate(text, svc.kind);
+      if (m.ai) stream(svc, full, run, text); else { state.results[svc.id] = { status: "done", text: full }; renderStacks(); maybeAutoCopy(text); }
+    }, delay);
+  });
+  renderStacks();
+}
+function stream(svc, full, run, text) {
+  let i = 0;
+  const step = () => {
+    if (run !== state.run) return;
+    i = Math.min(full.length, i + 2);
+    state.results[svc.id] = { status: i < full.length ? "streaming" : "done", text: full.slice(0, i) };
+    renderStacks();
+    if (i < full.length) setTimeout(step, 45); else maybeAutoCopy(text);
+  };
+  step();
+}
+let autoCopied = -1;
+function maybeAutoCopy(text) {
+  const o = state.opts.autoCopy; if (o === "off" || autoCopied === state.run) return;
+  if (o === "source") { autoCopied = state.run; toast("已自动复制原文"); return; }
+  const svc = enabled()[Number(o) - 1]; if (!svc) return;
+  const r = state.results[svc.id];
+  if (r && r.status === "done") { autoCopied = state.run; toast(`已自动复制「${esc(svcName(svc))}」的结果`); }
+}
+
+// ---------- Rendering: result stack ----------
+function cardHTML(card) {
+  const ph = card.phonetics.map(([l, t]) => `<span class="ph2"><i>${l}</i>${esc(t)}<button class="ib sm" data-act="speakWord" title="朗读">${I.speak}</button></span>`).join("");
+  const senses = card.senses.map(([p, ms]) => `<div class="sense"><span class="pos">${p}</span><span>${ms.map(esc).join("；")}</span></div>`).join("");
+  const showAll = state.moreExamples;
+  const ex = card.examples.slice(0, showAll ? 3 : 2).map(([s, t]) => `<div class="ex"><div>${bold(s)}</div><div class="t">${esc(t)}</div></div>`).join("");
+  return `<div class="wc">
+    <div class="hw"><b>${esc(card.headword)}</b></div><div class="phs">${ph}</div>
+    <div class="tr">${esc(card.translation)}</div>
+    ${senses}
+    ${card.forms ? `<div class="forms">${esc(card.forms)}</div>` : ""}
+    ${ex}
+    ${card.examples.length > 2 && !showAll ? `<span class="more" data-act="moreEx">更多例句（${card.examples.length - 2}）</span>` : ""}
+    ${card.synonyms ? `<div class="syn">近义 ${esc(card.synonyms)}</div>` : ""}
+    <div class="wbar">
+      <button class="wbtn ${state.starred ? "on" : ""}" data-act="star">${I.star}${state.starred ? "已收藏" : "收藏"} <span class="kbd">⌘S</span></button>
+      <button class="wbtn" data-act="copyCard">${I.copy}复制整张 <span class="kbd">⇧⌘C</span></button>
+      <button class="wbtn" data-act="regen">${I.regen}重新生成 <span class="kbd">⌘R</span></button>
+      <button class="wbtn" data-act="book">${I.book}单词本 <span class="kbd">⌘B</span></button>
+    </div></div>`;
+}
+const REASONS = { notConfigured: ["还没有填写密钥", "去配置"], quota: ["本月额度已用完（456,789 / 500,000 字符）", "换一个服务"], network: ["网络连接超时", "重试"] };
+/// Display order: the services as configured, except that a word's card comes first.
+function displayed() {
+  const list = enabled(); const card = list.find(s => state.results[s.id] && state.results[s.id].card);
+  return card ? [card, ...list.filter(s => s !== card)] : list;
+}
+function stackHTML(compact) {
+  const list = displayed(); const wordMode = list.some(s => state.results[s.id] && state.results[s.id].card) || state.wordRun;
+  if (!Object.keys(state.results).length) {
+    return `<div style="color:var(--text3);font-size:12px;padding:6px 4px 10px">将同时使用 ${list.map(s => esc(svcName(s))).join("、")} 翻译。<span style="color:var(--accent-text);cursor:pointer" data-act="openSettings">调整服务</span></div>`;
+  }
+  return list.map((svc, i) => {
+    const r = state.results[svc.id] || { status: "loading" };
+    const col = state.collapsed[svc.id];
+    let body;
+    if (r.status === "loading") body = `<div class="sb loading"><span class="spin"></span>${metaOf(svc).ai ? "AI 正在翻译…" : "翻译中…"}</div>`;
+    else if (r.status === "error") { const [why, fix] = REASONS[r.reason]; body = `<div class="sb err">${why}<a data-act="fix" data-svc="${svc.id}" data-reason="${r.reason}">${fix}</a></div>`; }
+    else if (r.card) body = `<div class="sb">${cardHTML(r.card)}</div>`;
+    else body = `<div class="sb ${r.status === "streaming" ? "caret" : ""}">${esc(r.text)}</div>`;
+    const peek = r.text ? esc(r.text) : r.status === "error" ? "失败" : "";
+    if (wordMode && !r.card && !col) {
+      const t = r.status === "loading" ? '<span class="spin" style="display:inline-block"></span>' : r.status === "error" ? `<span style="color:var(--danger)">${REASONS[r.reason][0]}</span>` : esc(r.text || "");
+      return `<div class="sec line ${i === state.focus ? "focus" : ""}" data-i="${i}" data-svc="${svc.id}">
+        <div class="sh">${icon(svc)}<span class="nm">${esc(svcName(svc))}</span><span class="ltx">${t}</span>
+        <span class="acts"><button class="ib sm" data-act="speak" title="朗读">${I.speak}</button><button class="ib sm" data-act="copy" title="复制 ⌘${i + 1}">${I.copy}</button></span>
+        <span class="idx">⌘${i + 1}</span></div></div>`;
+    }
+    const tag = r.card ? `<span class="tag ai">单词卡</span>` : svc.kind === "device" ? `<span class="tag">不出本机</span>` : "";
+    return `<div class="sec ${col ? "collapsed" : ""} ${i === state.focus ? "focus" : ""}" data-i="${i}" data-svc="${svc.id}">
+      <div class="sh" data-act="toggle">${icon(svc)}<span class="nm">${esc(svcName(svc))}</span>${tag}<span class="peek">${peek}</span><span class="sp"></span>
+        <span class="acts">
+          <button class="ib sm" data-act="speak" title="朗读">${I.speak}</button>
+          <button class="ib sm" data-act="insert" title="插入到原应用 ⌥↩">${I.insert}</button>
+          <button class="ib sm" data-act="copy" title="复制 ⌘${i + 1}" style="width:auto;padding:0 3px;gap:1px;display:inline-flex;align-items:center">${I.copy}<span data-act="copyMenu" style="padding:3px 1px">${I.more}</span></button>
+        </span>
+        <span class="idx">⌘${i + 1}</span>
+        <button class="ib sm" data-act="toggle" title="${col ? "展开" : "收起"}">${I.chev}</button>
+      </div>${body}</div>`;
+  }).join("");
+}
+function langBarHTML() {
+  const detected = state.src === "auto" && state.detected ? ` <span class="d">· ${langName(state.detected)}</span>` : "";
+  return `<div class="lb" data-act="srcMenu">${langName(state.src)}${detected} ▾</div>
+    <button class="ib swap" data-act="swap" title="交换语言">⇄</button>
+    <div class="lb tgt" data-act="tgtMenu">${langName(state.tgt)} ▾</div>`;
+}
+function renderStacks() {
+  $("stack").innerHTML = stackHTML(false);
+  $("srcLang").innerHTML = `${langName(state.src)}${state.src === "auto" && state.detected ? ` <span class="d">· ${langName(state.detected)}</span>` : ""} ▾`;
+  $("tgtLang").innerHTML = `${langName(state.tgt)} ▾`;
+  $("detected").textContent = state.detected ? `${langName(state.detected)} · ${$("input").value.trim().length} 字` : "";
+  $("lLang").innerHTML = langBarHTML();
+  $("lStack").innerHTML = stackHTML(true);
+  // The panel never runs off the screen: it stops at the chosen share of it, and its list scrolls.
+  const p = $("panel"), screen = 794, top = p.offsetTop - 26;
+  p.style.maxHeight = Math.min(Number(state.opts.maxHeight) / 100 * screen, screen - top - 12) + "px";
+}
+
+// ---------- Rendering: settings ----------
+function renderSettings() {
+  const list = $("svcList");
+  list.innerHTML = state.services.map((svc, i) => {
+    const m = metaOf(svc);
+    const status = m.local ? `<span class="st ok"><i></i>不出本机 · macOS 15+</span>` : m.ai ? `<span class="st ok"><i></i>${svc === firstAI() ? "负责单词卡" : "仅简短译文"}</span>` : m.configured ? `<span class="st ok"><i></i>已配置</span>` : `<span class="st"><i></i>未配置</span>`;
+    const right = m.ai
+      ? `<span class="ml">模型</span><select class="picker" data-model="${svc.id}">${MODELS.map(x => `<option ${x === svc.model ? "selected" : ""}>${x}</option>`).join("")}</select>${svc.id !== "ai-1" ? `<button class="ib" data-del="${svc.id}" title="删除">✕</button>` : `<span style="width:26px"></span>`}`
+      : m.local ? `<button class="btn ghost">管理语言包</button>` : `<button class="btn" data-cfg="${svc.kind}">${m.configured ? "编辑" : "配置"}</button>`;
+    return `<div class="svc ${svc.on ? "" : "off"}" draggable="true" data-i="${i}">
+      <span class="grip">⋮⋮</span><span class="cb ${svc.on ? "on" : ""}" data-cb="${i}">${svc.on ? "✓" : ""}</span>
+      ${icon(svc, 22)}<span class="nm">${esc(svcName(svc))}</span>${status}<span class="sp"></span>${right}</div>`;
+  }).join("");
+  document.querySelectorAll("[data-hk]").forEach(el => {
+    const v = state.hotkeys[el.dataset.hk];
+    el.classList.toggle("rec", recording === el.dataset.hk);
+    el.innerHTML = recording === el.dataset.hk ? "按下快捷键…（esc 取消）" : v ? v.split("").join(" ") : `<span class="no">点击录制</span>`;
+  });
+  document.querySelectorAll("[data-seg]").forEach(seg => seg.querySelectorAll("button").forEach(b => b.classList.toggle("on", b.dataset.v === state.opts[seg.dataset.seg])));
+  document.querySelectorAll("[data-pick]").forEach(p => p.value = state.opts[p.dataset.pick]);
+}
+
+// ---------- Scenes ----------
+const SCENES = {
+  panel: { label: "① 输入翻译", cap: "<b>输入翻译</b>（快捷键 ⌥⌘A 或启动器 ⌘P）：多个服务<b>同时翻译</b>，按设置里的顺序排列；AI 流式输出。悬停一项显示朗读 / 插入 / 复制（▾ 里有「复制原文 + 译文」）。点标题收起，⌘1–9 复制第 n 项。试试输入别的内容并按 ↩。" },
+  word: { label: "② 划词 · 单词释义", cap: "<b>划词翻译</b>（⌥⌘D）选中 serendipity：面板在选区旁打开。<b>排在最前的 AI 服务</b>写单词卡，单词卡<b>置顶</b>（音标可朗读、释义、词形、例句、近义词、收藏 / 单词本）；其它服务收成一行简短译文，方便对照。单词本里已有的词直接显示，不再请求 AI。" },
+  error: { label: "③ 服务失败", cap: "某个服务失败<b>只影响它自己那一项</b>：未配置给出「去配置」，额度用完建议换服务，网络问题可单独重试，其它服务照常显示。原来的「失败时改用 AI」不再需要。" },
+  shot: { label: "④ 截图翻译", cap: "<b>截图翻译</b>（⌥⌘S）：框选区域 → 在本机识别文字 → 打开翻译面板，原文上方注明「识别自截图」，可以先改错字再按 ↩ 重新翻译。" },
+  launcher: { label: "⑤ 启动器 fy", cap: "启动器里的 <b>fy serendipity</b> 使用同一套结果列表（同样的服务与顺序）。⌘P 把当前结果移到可钉住的翻译面板，方便边看边写。" },
+  settings: { label: "⑥ 设置 → 翻译", cap: "<b>设置 → 启动器 → 翻译</b>：三个快捷键、面板行为、服务列表（设计稿为演示对照效果勾选了 DeepL、有道，快捷键也填了演示值；正式默认见文档 §4、§10）。勾选 = 参与翻译，拖动排序（会同步到面板与 ⌘n 序号）；AI 翻译可以添加多个，各选一个模型。点快捷键可录制，点「配置」打开密钥表单。" },
+};
+function setScene(s) {
+  state.scene = s; closeMenu();
+  ["panel", "launcher", "settings"].forEach(id => $(id).classList.remove("show"));
+  $("shotbox").style.display = "none"; $("srcFrom").style.display = "none";
+  document.querySelectorAll(".sel").forEach(e => e.classList.remove("sel"));
+  state.failures = {}; state.src = "auto"; state.tgtManual = false; state.moreExamples = false;
+  const p = $("panel");
+  if (s === "panel") { place(p, 690, 70); $("input").value = "The quick fix shipped yesterday, but the root cause is still unknown."; mode("输入翻译"); show(p); translate($("input").value); }
+  if (s === "word") { $("word").classList.add("sel"); place(p, 700, 40); $("input").value = "serendipity"; mode("划词翻译"); show(p); translate("serendipity"); }
+  if (s === "error") {
+    state.failures = { deepl: "quota" }; place(p, 690, 70);
+    const g = state.services.find(x => x.id === "google"); g.on = true;
+    $("input").value = "The quick fix shipped yesterday, but the root cause is still unknown."; mode("输入翻译"); show(p); translate($("input").value);
+  }
+  if (s === "shot") {
+    const sb = $("shotbox"); const rb = $("runbook").getBoundingClientRect(), dk = $("desk").getBoundingClientRect();
+    Object.assign(sb.style, { display: "block", left: (rb.left - dk.left + 8) + "px", top: (rb.top - dk.top + 30) + "px", width: (rb.width - 200) + "px", height: (rb.height - 36) + "px" });
+    place(p, 690, 70); $("srcFrom").style.display = "flex";
+    $("input").value = "Deploy the patch behind the feature flag first. Roll back if error rates rise above 1%."; mode("截图翻译"); show(p); translate($("input").value);
+  }
+  if (s === "launcher") { show($("launcher")); translate("serendipity"); }
+  if (s === "settings") { $("settings").classList.add("show"); renderSettings(); if (new URLSearchParams(location.search).get("svc") === "1") $("settingsMain").scrollTop = 560; }
+  document.querySelectorAll("#stagebar .pill[data-s]").forEach(b => b.classList.toggle("on", b.dataset.s === s));
+  $("caption").innerHTML = SCENES[s].cap;
+  const u = new URL(location); u.searchParams.set("s", s); history.replaceState(null, "", u);
+}
+function place(el, x, y) { el.style.left = x + "px"; el.style.top = y + "px"; }
+function show(el) { el.classList.add("show"); }
+function mode(t) { $("modeTag").textContent = t; }
+
+// ---------- Menus ----------
+function openMenu(anchor, items) {
+  const m = $("menu"), d = $("desk").getBoundingClientRect(), r = anchor.getBoundingClientRect();
+  m.innerHTML = items.map(it => it === "-" ? '<div class="sep"></div>' : it.h ? `<div class="mh">${it.h}</div>` : `<div class="mi" data-k="${it.k}"><span class="ck">${it.on ? "✓" : ""}</span>${it.t}${it.r ? `<span class="r">${it.r}</span>` : ""}</div>`).join("");
+  m.classList.add("show");
+  m.style.left = Math.min(r.left - d.left, 1200 - 230) + "px"; m.style.top = (r.bottom - d.top + 4) + "px";
+  m.onclick = e => { const mi = e.target.closest(".mi"); if (!mi) return; closeMenu(); items.find(x => x.k === mi.dataset.k).fn(); };
+}
+function closeMenu() { $("menu").classList.remove("show"); }
+function langMenu(anchor, which) {
+  const list = which === "src" ? LANGS : LANGS.filter(l => l[0] !== "auto");
+  openMenu(anchor, [{ h: which === "src" ? "原文语言" : "译成" }, ...list.map(([c, n]) => ({ k: c, t: n, on: state[which] === c, r: which === "tgt" && c === "en" ? "第二语言" : "", fn: () => { state[which] = c; if (which === "tgt") state.tgtManual = true; retranslate(); } }))]);
+}
+function retranslate() { translate(state.scene === "launcher" ? $("lInput").value : $("input").value, { fromHistory: true }); }
+
+// ---------- Section actions ----------
+function sectionAction(act, sec, el) {
+  const svc = state.services.find(s => s.id === sec.dataset.svc); const r = state.results[svc.id] || {};
+  const name = esc(svcName(svc));
+  if (act === "toggle") { state.collapsed[svc.id] = !state.collapsed[svc.id]; renderStacks(); return; }
+  state.focus = Number(sec.dataset.i);
+  if (act === "copy") toast(r.text ? `已复制「${name}」的译文` : "还没有结果");
+  if (act === "copyMenu") { openMenu(el, [
+    { k: "a", t: "复制译文", r: "⌘" + (Number(sec.dataset.i) + 1), fn: () => toast(`已复制「${name}」的译文`) },
+    { k: "b", t: "复制原文 + 译文", r: "双语对照", fn: () => toast("已复制双语对照") },
+    ...(r.card ? [{ k: "c", t: "复制整张单词卡", r: "⇧⌘C", fn: () => toast("已复制单词卡（Markdown）") }] : []),
+    "-", { k: "d", t: "插入到原应用", r: "⌥↩", fn: () => toast("已插入到 Safari") } ]); return; }
+  if (act === "speak") toast(`🔊 朗读「${name}」的译文`);
+  if (act === "insert") toast(state.scene === "word" ? "已替换选中的文字" : "已插入到 Safari");
+  if (act === "fix") {
+    const why = el.dataset.reason;
+    if (why === "network") { state.failures[svc.kind] = null; translate($("input").value, { fromHistory: true }); }
+    else if (why === "quota") { state.services.find(s => s.kind === "deepl").on = false; toast("已在本次会话停用 DeepL"); translate($("input").value, { fromHistory: true }); }
+    else setScene("settings");
+  }
+  renderStacks();
+}
+function cardAction(act) {
+  if (act === "star") { state.starred = !state.starred; toast(state.starred ? "已加入单词本收藏" : "已取消收藏"); }
+  if (act === "copyCard") toast("已复制单词卡（Markdown）");
+  if (act === "regen") { toast("AI 重新生成单词卡"); translate(state.scene === "launcher" ? $("lInput").value : $("input").value, { fromHistory: true }); return; }
+  if (act === "book") toast("打开单词本：serendipity");
+  if (act === "speakWord") toast("🔊 serendipity");
+  if (act === "moreEx") state.moreExamples = true;
+  renderStacks();
+}
+document.addEventListener("click", e => {
+  const a = e.target.closest("[data-act]");
+  if (!e.target.closest(".menu") && !(a && /Menu$/.test(a.dataset.act))) closeMenu();
+  if (!a) {
+    // Clicking the desktop closes an unpinned panel.
+    if (state.scene !== "settings" && e.target.closest(".desk") && !e.target.closest(".panel,.launcher,.menu,.toast") && $("panel").classList.contains("show") && !state.pinned) {
+      $("panel").classList.remove("show"); toast("面板未钉住，失去焦点后关闭 · 点上方「① 输入翻译」重新打开");
+    }
+    return;
+  }
+  const act = a.dataset.act, sec = a.closest(".sec");
+  if (act === "srcMenu" || act === "tgtMenu") { langMenu(a, act === "srcMenu" ? "src" : "tgt"); return; }
+  if (act === "histMenu") { historyMenu(a); return; }
+  if (act === "swap") { swap(); return; }
+  if (act === "openSettings") { setScene("settings"); return; }
+  if (["star", "copyCard", "regen", "book", "speakWord", "moreEx"].includes(act)) { cardAction(act); return; }
+  if (sec) sectionAction(act, sec, a);
+});
+function swap() {
+  if (!state.detected) return;
+  const from = state.src === "auto" ? state.detected : state.src;
+  state.src = state.tgt; state.tgt = from; state.tgtManual = true;
+  const out = displayed().map(s => state.results[s.id]).find(r => r && r.text && !r.card);
+  if (out && state.scene !== "launcher") $("input").value = out.text;
+  translate(state.scene === "launcher" ? $("lInput").value : $("input").value, { fromHistory: true });
+}
+$("swapBtn").onclick = swap;
+$("pinBtn").onclick = () => { state.pinned = !state.pinned; $("pinBtn").classList.toggle("on", state.pinned); toast(state.pinned ? "已钉住：切换到其它应用也保持显示" : "已取消钉住"); };
+$("gearBtn").onclick = () => setScene("settings");
+function historyMenu(anchor) { openMenu(anchor, state.history.length ? [{ h: "最近翻译（↑ ↓ 切换）" }, ...state.history.slice(0, 8).map((h, i) => ({ k: "h" + i, t: esc(h.length > 36 ? h.slice(0, 36) + "…" : h), fn: () => { $("input").value = h; translate(h, { fromHistory: true }); } }))] : [{ h: "还没有翻译记录" }]); }
+document.querySelectorAll("[data-src]").forEach(b => b.onclick = () => {
+  const k = b.dataset.src;
+  if (k === "speak") toast("🔊 朗读原文"); if (k === "copy") toast("已复制原文");
+  if (k === "clear") { $("input").value = ""; state.detected = null; translate(""); $("input").focus(); }
+});
+$("input").addEventListener("focus", () => $("src").classList.add("focus"));
+$("input").addEventListener("blur", () => $("src").classList.remove("focus"));
+$("input").addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey && !e.altKey && !e.metaKey) {
+    e.preventDefault();
+    // Unchanged text with results: Return copies the first item instead of translating again.
+    const first = displayed()[0], r = first && state.results[first.id];
+    if ($("input").value.trim() === state.history[0] && r && r.text) { toast(`已复制「${esc(svcName(first))}」的译文`); return; }
+    translate($("input").value);
+  }
+  if (e.key === "ArrowUp" && $("input").selectionStart === 0 && state.history.length) { e.preventDefault(); state.hIndex = Math.min(state.history.length - 1, state.hIndex + 1); $("input").value = state.history[state.hIndex]; }
+  if (e.key === "ArrowDown" && state.hIndex >= 0 && $("input").selectionEnd === $("input").value.length) { e.preventDefault(); state.hIndex--; $("input").value = state.hIndex >= 0 ? state.history[state.hIndex] : ""; }
+});
+$("lInput").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); translate($("lInput").value); } });
+document.addEventListener("keydown", e => {
+  if (state.scene === "settings") return;
+  if (e.metaKey && /^[1-9]$/.test(e.key)) { e.preventDefault(); const svc = displayed()[Number(e.key) - 1]; if (svc) { state.focus = Number(e.key) - 1; renderStacks(); toast(`已复制「${esc(svcName(svc))}」的译文`); } }
+  if (e.metaKey && e.key.toLowerCase() === "p") { e.preventDefault(); if (state.scene === "launcher") { $("launcher").classList.remove("show"); place($("panel"), 690, 70); $("input").value = $("lInput").value; mode("来自启动器"); show($("panel")); state.pinned = true; $("pinBtn").classList.add("on"); renderStacks(); toast("已移到翻译面板并钉住"); } else $("pinBtn").click(); }
+  if (e.key === "Tab" && document.activeElement && ["input", "lInput"].includes(document.activeElement.id)) {
+    e.preventDefault(); const order = ["zh-Hans", "en", "ja", "ko"]; const i = order.indexOf(state.tgt); state.tgt = order[(i + 1) % order.length]; state.tgtManual = true; retranslate();
+  }
+  if (e.altKey && e.key === "Enter") { e.preventDefault(); toast(state.scene === "word" ? "已替换选中的文字" : "已插入到 Safari"); }
+  if (e.key === "Escape" && !state.pinned && $("panel").classList.contains("show")) $("panel").classList.remove("show");
+});
+
+// Drag the panel by its header.
+(() => {
+  let drag = null;
+  $("panelHead").addEventListener("mousedown", e => { if (e.target.closest("button")) return; const p = $("panel"); drag = { x: e.clientX - p.offsetLeft, y: e.clientY - p.offsetTop }; });
+  document.addEventListener("mousemove", e => { if (!drag) return; place($("panel"), Math.max(0, Math.min(1200 - 452, e.clientX - drag.x)), Math.max(26, Math.min(700, e.clientY - drag.y))); });
+  document.addEventListener("mouseup", () => drag = null);
+})();
+
+// ---------- Settings interactions ----------
+let recording = null, cfgKind = null;
+$("settingsMain").addEventListener("click", e => {
+  const cb = e.target.closest("[data-cb]"); if (cb) { const s = state.services[cb.dataset.cb]; s.on = !s.on; if (s.on && !metaOf(s).configured) openSheet(s.kind); renderSettings(); return; }
+  const del = e.target.closest("[data-del]"); if (del) { state.services = state.services.filter(s => s.id !== del.dataset.del); renderSettings(); return; }
+  const cfg = e.target.closest("[data-cfg]"); if (cfg) { openSheet(cfg.dataset.cfg); return; }
+  const hk = e.target.closest("[data-hk]"); if (hk) { recording = recording === hk.dataset.hk ? null : hk.dataset.hk; renderSettings(); return; }
+  const sb = e.target.closest("[data-seg] button"); if (sb) { state.opts[sb.parentElement.dataset.seg] = sb.dataset.v; renderSettings(); return; }
+});
+$("settingsMain").addEventListener("change", e => {
+  if (e.target.dataset.pick) state.opts[e.target.dataset.pick] = e.target.value;
+  if (e.target.dataset.model) { state.services.find(s => s.id === e.target.dataset.model).model = e.target.value; renderSettings(); }
+});
+$("addAI").onclick = () => { const n = state.services.filter(s => s.kind === "ai").length + 1; state.services.splice(2, 0, { id: "ai-" + Date.now(), kind: "ai", on: true, model: MODELS[Math.min(n, MODELS.length - 1)] }); renderSettings(); toast("已添加 AI 翻译，可以选择模型"); };
+document.addEventListener("keydown", e => {
+  if (!recording) return;
+  e.preventDefault();
+  if (e.key === "Escape") { recording = null; renderSettings(); return; }
+  if (["Meta", "Alt", "Control", "Shift"].includes(e.key)) return;
+  const mods = (e.ctrlKey ? "⌃" : "") + (e.altKey ? "⌥" : "") + (e.shiftKey ? "⇧" : "") + (e.metaKey ? "⌘" : "");
+  if (!mods) { toast("请至少包含一个修饰键"); return; }
+  const key = (e.code.startsWith("Key") ? e.code.slice(3) : e.code.startsWith("Digit") ? e.code.slice(5) : e.key.toUpperCase());
+  const combo = mods + key;
+  const clash = Object.entries(state.hotkeys).find(([k, v]) => v === combo && k !== recording);
+  if (clash) { toast("与另一个翻译快捷键冲突"); return; }
+  state.hotkeys[recording] = combo; recording = null; renderSettings();
+});
+// Reorder by drag and drop.
+let dragFrom = null;
+$("svcList").addEventListener("dragstart", e => { const r = e.target.closest(".svc"); dragFrom = Number(r.dataset.i); r.classList.add("drag"); });
+$("svcList").addEventListener("dragover", e => { e.preventDefault(); document.querySelectorAll(".svc").forEach(x => x.classList.remove("over")); const r = e.target.closest(".svc"); if (r) r.classList.add("over"); });
+$("svcList").addEventListener("drop", e => { e.preventDefault(); const r = e.target.closest(".svc"); if (!r || dragFrom === null) return; const to = Number(r.dataset.i); const [m] = state.services.splice(dragFrom, 1); state.services.splice(to, 0, m); dragFrom = null; renderSettings(); });
+$("svcList").addEventListener("dragend", () => { dragFrom = null; renderSettings(); });
+function openSheet(kind) {
+  cfgKind = kind; const m = SERVICE_META[kind];
+  $("sheetTitle").textContent = "配置 " + m.name; $("sheetKey").textContent = m.key;
+  $("sheetSecretRow").style.display = m.secret ? "flex" : "none"; if (m.secret) $("sheetSecret").textContent = m.secret;
+  $("sheet").classList.add("show");
+}
+$("sheetCancel").onclick = () => $("sheet").classList.remove("show");
+$("sheetTest").onclick = () => toast("连接成功（设计稿模拟）");
+$("sheetSave").onclick = () => { SERVICE_META[cfgKind].configured = true; $("sheet").classList.remove("show"); renderSettings(); toast("密钥已保存到钥匙串"); };
+
+// ---------- Boot ----------
+const bar = $("stagebar");
+Object.entries(SCENES).forEach(([k, v]) => { const b = document.createElement("button"); b.className = "pill"; b.dataset.s = k; b.textContent = v.label; b.onclick = () => setScene(k); bar.appendChild(b); });
+const sp = document.createElement("span"); sp.className = "sp"; bar.appendChild(sp);
+const lt = document.createElement("button"); lt.className = "pill"; lt.textContent = "浅色"; lt.onclick = () => { document.body.classList.toggle("light"); lt.classList.toggle("on"); }; bar.appendChild(lt);
+const q = new URLSearchParams(location.search);
+if (q.get("light") === "1") { document.body.classList.add("light"); lt.classList.add("on"); }
+if (q.get("solo") === "1") document.body.classList.add("solo");
+if (q.get("instant") === "1") Object.values(SERVICE_META).forEach(m => m.delay = 0);
+setScene(SCENES[q.get("s")] ? q.get("s") : "panel");
+</script>
+</body>
+</html>
