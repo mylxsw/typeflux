@@ -31,7 +31,8 @@ enum SemanticModel {
         return bundled
     }
 
-    static func verify(_ url: URL, cancelled: () -> Bool = { false }) throws {
+    static func verify(_ url: URL, bytes: Int64 = Self.bytes, sha256: String = Self.sha256,
+                       cancelled: () -> Bool = { false }) throws {
         let handle = try FileHandle(forReadingFrom: url)
         defer { try? handle.close() }
         var hash = SHA256(), total: Int64 = 0
@@ -40,15 +41,16 @@ enum SemanticModel {
                 throw CancellationError()
             }
             total += Int64(data.count)
-            guard total <= self.bytes else { throw SemanticFileStore.Failure.invalidVector }
+            guard total <= bytes else { throw SemanticFileStore.Failure.invalidVector }
             hash.update(data: data)
         }
         let digest = hash.finalize().map { String(format: "%02x", $0) }.joined()
-        guard total == self.bytes, digest == self.sha256 else { throw SemanticFileStore.Failure.invalidVector }
+        guard total == bytes, digest == sha256 else { throw SemanticFileStore.Failure.invalidVector }
     }
 
-    static func install(_ source: URL, to target: URL, cancelled: () -> Bool) throws {
-        try self.verify(source, cancelled: cancelled)
+    static func install(_ source: URL, to target: URL, bytes: Int64 = Self.bytes, sha256: String = Self.sha256,
+                        cancelled: () -> Bool) throws {
+        try self.verify(source, bytes: bytes, sha256: sha256, cancelled: cancelled)
         if cancelled() {
             throw CancellationError()
         }
@@ -77,7 +79,10 @@ enum SemanticModel {
 
 protocol SemanticEmbedding: AnyObject {
     func embed(_ texts: [String], cancelled: () -> Bool) throws -> [[Float]]
+    func release()
 }
+
+extension SemanticEmbedding { func release() {} }
 
 protocol SemanticQueryEmbedding: AnyObject, Sendable {
     func query(_ text: String, lifecycle: AskSearchCancellation) async throws -> [Float]
@@ -105,15 +110,19 @@ struct SemanticModelFiles: SemanticModelHandling {
 }
 
 /// One serial owner per helper; query and indexing instances never share an inference queue.
-final class SemanticEmbeddingWorker: SemanticEmbedding, SemanticQueryEmbedding, @unchecked Sendable {
+final class SemanticEmbeddingWorker: SemanticEmbedding, SemanticQueryEmbedding, SemanticMediaEmbedding,
+    @unchecked Sendable {
     private let queue: DispatchQueue
     private let reader: AskFileReader
     private var idleGeneration = 0
+    private var queryCache: [String: [Float]] = [:]
+    private var queryOrder: [String] = []
 
     init(
         helper: URL,
         model: URL,
         indexing: Bool = false,
+        projector: URL? = nil,
         timeout: TimeInterval = 45,
         startupTimeout: TimeInterval = 90
     ) {
@@ -123,9 +132,10 @@ final class SemanticEmbeddingWorker: SemanticEmbedding, SemanticQueryEmbedding, 
         )
         self.reader = AskFileReader(
             executable: helper,
-            arguments: [model.path],
+            arguments: [model.path] + (projector.map { [$0.path] } ?? []),
             timeout: timeout,
-            startupTimeout: startupTimeout
+            startupTimeout: startupTimeout,
+            qualityOfService: projector != nil ? .background : (indexing ? .utility : .userInitiated)
         )
     }
 
@@ -138,6 +148,17 @@ final class SemanticEmbeddingWorker: SemanticEmbedding, SemanticQueryEmbedding, 
         return vectors
     }
 
+    func release() { reader.stop() }
+
+    func embed(_ input: SemanticMediaInput, cancelled: () -> Bool) throws -> [Float] {
+        guard !cancelled() else { throw CancellationError() }
+        let response = try reader.read(.init(operation: .embedding, path: "", media: input), isCancelled: cancelled)
+        if response.error == EINVAL { throw SemanticMediaInputError.unreadable }
+        guard response.error == nil, let vector = response.embeddings?.first,
+              SemanticFileStore.valid(vector) else { throw SemanticFileStore.Failure.invalidVector }
+        return vector
+    }
+
     func query(_ text: String, lifecycle: AskSearchCancellation) async throws -> [Float] {
         let token = AskSearchCancellation()
         return try await withTaskCancellationHandler {
@@ -145,14 +166,20 @@ final class SemanticEmbeddingWorker: SemanticEmbedding, SemanticQueryEmbedding, 
                 self.queue.async { [self] in
                     do {
                         self.idleGeneration += 1
-                        let vector = try embed(
+                        guard !token.isCancelled, !lifecycle.isCancelled else { throw CancellationError() }
+                        let vector = try self.queryCache[text] ?? embed(
                             ["task: search result | query: " + text],
                             cancelled: { token.isCancelled || lifecycle.isCancelled }
                         )[0]
+                        self.queryCache[text] = vector
+                        self.queryOrder.removeAll { $0 == text }; self.queryOrder.append(text)
+                        if self.queryOrder.count > 16 {
+                            self.queryCache.removeValue(forKey: self.queryOrder.removeFirst())
+                        }
                         continuation.resume(returning: vector)
                     } catch { continuation.resume(throwing: error) }
                     let ticket = self.idleGeneration
-                    self.queue.asyncAfter(deadline: .now() + 10) { [weak self] in
+                    self.queue.asyncAfter(deadline: .now() + 60) { [weak self] in
                         guard let self, idleGeneration == ticket else { return }
                         self.reader.stop()
                     }

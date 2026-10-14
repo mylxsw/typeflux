@@ -18,6 +18,31 @@ struct AskFileStreamingTests {
         return AskFileScope(settings: settings, fullDiskAccess: true, home: root.path)
     }
 
+    @Test func unlimitedDirectoryRequestSurvivesIPCAndKeepsExplicitLimits() throws {
+        let root = try fixture()
+        defer { try? FileManager.default.removeItem(at: root) }
+        for index in 0 ..< 257 {
+            try Data().write(to: root.appendingPathComponent("file-\(index).txt"))
+        }
+        let request = AskFileReadRequest(operation: .directory, path: root.path, scope: scope(root), limit: nil)
+        let decoded = try JSONDecoder().decode(AskFileReadRequest.self, from: JSONEncoder().encode(request))
+        #expect(decoded.limit == nil)
+        var frames = 0, count = 0
+        let reader = AskFileReader()
+        try reader.stream(decoded) { frame in
+            #expect(frame.entries.count <= 128)
+            count += frame.entries.count; frames += 1
+            return true
+        }
+        #expect(count == 257 && frames >= 4)
+        for limit in [0, 1, 128, 256] {
+            let response = try reader.read(.init(operation: .directory, path: root.path,
+                                                scope: scope(root), limit: limit))
+            #expect(response.entries.count == limit)
+        }
+        #expect(AskFileReadRequest(operation: .directory, path: root.path).limit == AskFileCrawler.maximumEntries)
+    }
+
     @Test func tenThousandSlowButAdvancingEntriesSurviveTheIdleDeadline() throws {
         let root = try fixture()
         defer { try? FileManager.default.removeItem(at: root) }

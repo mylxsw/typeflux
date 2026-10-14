@@ -26,17 +26,19 @@ final class AskFileReader: AskFileReading {
     private let arguments: [String]
     private let timeout: TimeInterval
     private let startupTimeout: TimeInterval
+    private let qualityOfService: QualityOfService?
     private var process: Process?
     private var input: FileHandle?
     private var output: FileHandle?
     private var buffer = Data()
 
     init(executable: URL? = nil, arguments: [String] = ["file-index-worker"],
-         timeout: TimeInterval = 5, startupTimeout: TimeInterval? = nil) {
+         timeout: TimeInterval = 5, startupTimeout: TimeInterval? = nil, qualityOfService: QualityOfService? = nil) {
         self.executable = executable
         self.arguments = arguments
         self.timeout = timeout
         self.startupTimeout = startupTimeout ?? (executable == nil ? max(30, timeout) : timeout)
+        self.qualityOfService = qualityOfService
     }
 
     deinit { stop() }
@@ -131,6 +133,7 @@ final class AskFileReader: AskFileReading {
 
     private func start() throws {
         let process = Process()
+        if let qualityOfService { process.qualityOfService = qualityOfService }
         let incoming = Pipe(), outgoing = Pipe()
         process.executableURL = executable ?? Self.executableURL
         process.arguments = arguments

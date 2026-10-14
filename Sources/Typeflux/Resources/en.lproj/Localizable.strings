@@ -5068,8 +5068,8 @@
 // Local semantic file search (experimental).
 "semantic.section" = "Experimental";
 "semantic.title" = "Semantic file search";
-"semantic.subtitle" = "Find files by meaning; reads local text and PDFs with a text layer.";
-"semantic.offDetail" = "Text and PDF · About 310 MB first download · Runs on this Mac";
+"semantic.subtitle" = "Search local documents, images, audio and video by meaning.";
+"semantic.offDetail" = "Local processing · Text model 310 MB · Media encoders 555 MB";
 "semantic.unsupported" = "Requires Apple Silicon and macOS 14 or later.";
 "semantic.experimental" = "Experimental";
 "semantic.filesOff" = "File search is off, so semantic search is paused";
@@ -5101,13 +5101,13 @@
 "semantic.model.downloaded" = "Model downloaded and ready to use.";
 "semantic.model.badge" = "Text model";
 "semantic.model.downloadedBadge" = "Downloaded";
-"semantic.model.help" = "This version reads text and PDFs with a text layer; other files remain searchable by name.";
+"semantic.model.help" = "Documents are indexed first. Images, audio and video follow when idle, in that order. Media encoders (555 MB) download once when needed.";
 "semantic.priority" = "Background indexing pauses automatically during recording, transcription, Low Power Mode or high thermal pressure.";
 "semantic.cancel" = "Cancel";
 "semantic.enable.download" = "Download Model and Turn On";
 "semantic.enable" = "Turn On and Build Index";
 "semantic.manage.title" = "Manage semantic file search";
-"semantic.manage.subtitle" = "Text and PDF · Processed on this Mac";
+"semantic.manage.subtitle" = "Documents and media · Processed on this Mac";
 "semantic.progress.download" = "Model download";
 "semantic.progress.scanning" = "Counting: %@ entries scanned, %@ supported files found";
 "semantic.progress.indexing" = "%@ of %@ files processed";
@@ -5122,7 +5122,6 @@
 "semantic.clear" = "Clear Content Index…";
 "semantic.remove" = "Delete Model…";
 "semantic.storage.help" = "These actions only affect the content index. The file name index is kept separately.";
-"semantic.limit" = "Index limit reached. Narrow the scope in file search settings. Up to 50,000 supported files or 1,000,000 scanned entries per root, 100,000 chunks total, 64 chunks and 16 MB per file.";
 "semantic.close" = "Done";
 "semantic.clear.title" = "Clear the content index?";
 "semantic.clear.message" = "Removes the content and semantic index but keeps the downloaded model. Semantic file search turns off; regular file search keeps working.";
@@ -5452,7 +5451,7 @@
 "launcher.search.files.scope.shared" = "Name and semantic search share these folders";
 "launcher.search.files.addFolder" = "Add Folder";
 "launcher.search.files.exclusionsHint" = "Set exclusions in the Exclude tab";
-"launcher.search.files.scope.footnote" = "Semantic search reads only local text and PDFs with a text layer in these folders. Undownloaded cloud files remain searchable by name.";
+"launcher.search.files.scope.footnote" = "Semantic search indexes local documents first, then images, audio and video when idle. Cloud files not downloaded remain searchable by name.";
 "launcher.search.index.scope.shared" = "Both indexes use the folders above";
 "launcher.search.index.name.summary" = "%@ files · %@ memory · Updated %@";
 "semantic.index.badge" = "Semantic search";
@@ -5462,3 +5461,17 @@
 "semantic.index.setup.ready" = "The local model is downloaded. Enabling will index content within the folders above.";
 "semantic.metric.location" = "Processed on";
 "semantic.metric.local" = "This Mac";
+
+"semantic.searching" = "Searching file contents…";
+
+"semantic.media.downloading" = "Downloading media encoders…";
+
+"semantic.media.waiting" = "Documents searchable · Media indexing waits for idle time";
+
+"semantic.media.failed" = "Media indexing failed; documents remain searchable";
+
+"ask.search.type.audio" = "Audio";
+
+"ask.search.type.video" = "Videos";
+
+"semantic.atTime" = "At %@";

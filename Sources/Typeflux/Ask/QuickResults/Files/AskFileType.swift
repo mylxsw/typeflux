@@ -6,6 +6,8 @@ enum AskFileType: String, CaseIterable, Sendable {
     case folder
     case document
     case image
+    case audio
+    case video
     case pdf
     case sheet
     case code
@@ -14,6 +16,8 @@ enum AskFileType: String, CaseIterable, Sendable {
         .document: ["doc", "docx", "pages", "txt", "rtf", "rtfd", "md", "markdown", "odt", "epub", "tex", "wps"],
         .image: ["png", "jpg", "jpeg", "gif", "heic", "heif", "webp", "tiff", "tif", "bmp", "svg", "raw", "cr2", "nef",
                  "psd", "sketch", "fig", "ico", "icns"],
+        .audio: ["wav", "mp3", "m4a", "aac", "flac", "aiff", "aif", "ogg", "opus", "caf"],
+        .video: ["mp4", "mov", "m4v", "mkv", "avi", "webm"],
         .pdf: ["pdf"],
         .sheet: ["xls", "xlsx", "numbers", "csv", "tsv", "key", "ppt", "pptx", "odp", "ods"],
         .code: ["swift", "m", "h", "c", "cc", "cpp", "hpp", "go", "py", "js", "jsx", "ts", "tsx", "rs", "java", "kt",

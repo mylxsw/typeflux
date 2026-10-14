@@ -104,7 +104,6 @@ struct SemanticFileSearchSettingsView: View {
                     .disabled(!service.modelReady)
             }
             if status.action == .permission { permissionHelp }
-            if service.limited { Self.caption(L("semantic.limit")) }
             if let confirmation {
                 FileIndexInlineConfirmation(
                     title: L(confirmation == .model ? "semantic.remove.title" : "semantic.clear.title"),
@@ -236,10 +235,14 @@ struct SemanticProgressView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             switch progress {
-            case let .download(fraction):
+            case let .download(fraction), let .mediaDownload(fraction):
+                let media: Bool = { if case .mediaDownload = progress { true } else { false } }()
                 ProgressView(value: fraction).progressViewStyle(.linear)
                 HStack {
-                    Text(detailed ? SemanticFileSearchStatus.downloaded(fraction) : L("semantic.progress.download"))
+                    Text(detailed ? SemanticFileSearchStatus.downloaded(
+                        fraction, total: media ? SemanticMediaModel.bytes : SemanticModel.bytes
+                    )
+                        : L(media ? "semantic.media.downloading" : "semantic.progress.download"))
                     Spacer()
                     Text(verbatim: "\(Int((fraction * 100).rounded()))%").monospacedDigit()
                 }

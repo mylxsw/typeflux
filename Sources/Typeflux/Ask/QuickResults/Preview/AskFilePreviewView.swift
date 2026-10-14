@@ -88,7 +88,11 @@ struct AskFilePreviewView: View {
         case .pdf:
             ScrollView {
                 VStack(spacing: 10) {
-                    ForEach(Array(content.images.enumerated()), id: \.offset) { _, image in
+                    ForEach(Array(content.images.enumerated()), id: \.offset) { index, image in
+                        if content.pageNumbers.indices.contains(index) {
+                            Text(L("semantic.page", content.pageNumbers[index]))
+                                .font(.system(size: 10)).foregroundStyle(StudioTheme.textSecondary)
+                        }
                         Image(nsImage: image).resizable().scaledToFit().background(.white).shadow(radius: 2)
                     }
                     Text(String(format: L("ask.preview.pages"), content.pageCount)).font(.system(size: 10))

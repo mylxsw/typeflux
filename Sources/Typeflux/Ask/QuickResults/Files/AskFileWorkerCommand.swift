@@ -4,14 +4,17 @@ import ImageIO
 
 /// Private line-delimited protocol between the index and its disposable file-system worker.
 struct AskFileReadRequest: Codable {
-    enum Operation: String, Codable { case directory, entry, resolve, preview, content, embedding }
+    enum Operation: String, Codable { case directory, entry, resolve, preview, content, media, embedding }
     var operation: Operation
     var path: String
     var scope: AskFileScope?
     var blocked: [String] = []
-    var limit: Int = AskFileCrawler.maximumEntries
+    /// Nil streams the entire directory in bounded frames, without a total entry quota.
+    var limit: Int? = AskFileCrawler.maximumEntries
     var readText: Bool = true
     var texts: [String]?
+    var scratch: String?
+    var media: SemanticMediaInput?
 }
 
 struct AskFileReadResponse: Codable {
@@ -28,6 +31,7 @@ struct AskFileReadResponse: Codable {
     var imageHeight: Int?
     var pages: [SemanticPage]?
     var embeddings: [[Float]]?
+    var media: SemanticMediaInput?
 }
 
 /// Runs before AppKit startup. Only this child performs potentially stuck directory reads.
@@ -69,6 +73,9 @@ public enum AskFileWorkerCommand {
                        emit: (AskFileReadResponse) throws -> Void) throws {
         // Acknowledge startup separately from directory progress; the first syscall gets an idle deadline.
         try emit(AskFileReadResponse(more: true))
+        if request.operation == .media {
+            try emit(try SemanticMediaExtractor.extract(request, mounts: mounts, emit: emit)); return
+        }
         try emit(try response(request, mounts: mounts, emit: emit))
     }
 
@@ -108,7 +115,7 @@ public enum AskFileWorkerCommand {
         var batch = AskFileReadResponse()
         var count = 0
         var lastProgress = ProcessInfo.processInfo.systemUptime
-        while count < max(0, request.limit) {
+        while request.limit.map({ count < max(0, $0) }) ?? true {
             // Also report progress when scanning filtered names, without sending unbounded frames.
             let now = ProcessInfo.processInfo.systemUptime
             if batch.entries.count >= 128 || now - lastProgress >= 0.1 {

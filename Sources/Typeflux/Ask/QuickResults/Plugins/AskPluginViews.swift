@@ -162,13 +162,13 @@ struct AskPluginResultsView: View {
     }
 
     static func itemHeight(_ item: AskPluginItem) -> CGFloat {
-        item.excerpt == nil ? itemHeight : excerptItemHeight
+        item.loading ? 28 : (item.excerpt == nil ? itemHeight : excerptItemHeight)
     }
 
     /// As `itemsHeight(_:)`, measuring the visible rows when some carry a passage.
     static func itemsHeight(_ items: [AskPluginItem]) -> CGFloat {
         let visible = items.prefix(maximumVisibleItems)
-        guard visible.contains(where: { $0.excerpt != nil }) else { return itemsHeight(items.count) }
+        guard visible.contains(where: { $0.excerpt != nil || $0.loading }) else { return itemsHeight(items.count) }
         return visible.reduce(0) { $0 + itemHeight($1) } + CGFloat(visible.count - 1) * itemSpacing
     }
 
@@ -509,7 +509,8 @@ struct AskPluginResultsView: View {
                 .opacity(running ? 0.5 : 1)
         } else if let output, output.wordCard == nil, !output.items.isEmpty {
             VStack(alignment: .leading, spacing: 0) {
-                itemList(output, pending: running, dimmed: running && plan.mode != .live)
+                itemList(output, pending: running && !(streaming && output.items.contains { $0.fileHit != nil }),
+                         dimmed: running && plan.mode != .live)
                 if let note = output.note {
                     Text(note).font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
                         .lineLimit(1)
@@ -654,14 +655,22 @@ struct AskPluginResultsView: View {
                 // Histories can contain hundreds of images. Build and decode rows only as they enter the viewport.
                 LazyVStack(spacing: Self.itemSpacing) {
                     ForEach(Array(output.items.enumerated()), id: \.element.id) { index, item in
-                        AskPluginItemRow(item: item, symbol: display.symbol, selected: index == output.selectedItem,
-                                         emphasized: highlighted, height: Self.itemHeight(item)) {
-                            guard !pending, onSelectItem(item.id) else { return }
-                            onMain()
+                        if item.loading {
+                            AskContentSearchProgressView().id(item.id)
+                        } else {
+                            AskPluginItemRow(item: item, symbol: display.symbol,
+                                             selected: index == output.selectedItem,
+                                             emphasized: highlighted, height: Self.itemHeight(item)) {
+                                guard !pending, onSelectItem(item.id) else { return }
+                                onMain()
+                            }
+                            .modifier(AskLauncherNumberBadge(number:
+                                !item.valid || Self.numberedItemCount(display) == nil
+                                ? nil : AskLauncherNumberShortcuts.number(
+                                    at: output.items[..<index].filter(\.valid).count
+                                )))
+                            .id(item.id)
                         }
-                        .modifier(AskLauncherNumberBadge(number: !item.valid || Self.numberedItemCount(display) == nil
-                            ? nil : AskLauncherNumberShortcuts.number(at: index)))
-                        .id(item.id)
                     }
                 }
                 .transaction { $0.animation = nil; $0.disablesAnimations = true }

@@ -5053,8 +5053,8 @@
 // Local semantic file search (experimental).
 "semantic.section" = "實驗性功能";
 "semantic.title" = "語意檔案搜尋";
-"semantic.subtitle" = "依內容語意尋找；僅處理本機文字與含文字層的 PDF。";
-"semantic.offDetail" = "文字與 PDF · 首次下載約 310 MB · 本機執行";
+"semantic.subtitle" = "依語意搜尋本機文件、圖片、音訊和影片。";
+"semantic.offDetail" = "本機處理 · 文字模型 310 MB · 媒體編碼器 555 MB";
 "semantic.unsupported" = "需要 Apple Silicon 和 macOS 14 或更新版本。";
 "semantic.experimental" = "實驗性";
 "semantic.filesOff" = "檔案搜尋已關閉，語意搜尋已暫停";
@@ -5086,13 +5086,13 @@
 "semantic.model.downloaded" = "模型已下載，可直接使用。";
 "semantic.model.badge" = "文字模型";
 "semantic.model.downloadedBadge" = "已下載";
-"semantic.model.help" = "首版支援文字與帶文字層的 PDF；其他檔案仍可依名稱尋找。";
+"semantic.model.help" = "優先索引文件；閒置時依序處理圖片、音訊和影片。需要時會下載一次媒體編碼器（555 MB）。";
 "semantic.priority" = "背景索引會在錄音、轉寫、低耗電模式或裝置過熱時自動暫停。";
 "semantic.cancel" = "取消";
 "semantic.enable.download" = "下載模型並啟用";
 "semantic.enable" = "啟用並建立索引";
 "semantic.manage.title" = "管理語意檔案搜尋";
-"semantic.manage.subtitle" = "支援文字與 PDF · 本機處理";
+"semantic.manage.subtitle" = "文件與媒體 · 本機處理";
 "semantic.progress.download" = "模型下載";
 "semantic.progress.scanning" = "正在統計：已掃描 %@ 項，找到 %@ 個支援的檔案";
 "semantic.progress.indexing" = "已處理 %@ / %@ 個檔案";
@@ -5107,7 +5107,6 @@
 "semantic.clear" = "清空內容索引…";
 "semantic.remove" = "刪除模型…";
 "semantic.storage.help" = "這裡的操作只影響內容索引。原有檔案名稱索引獨立保留。";
-"semantic.limit" = "已達索引上限，請在檔案搜尋設定中縮小範圍。每個根目錄最多索引 5 萬個支援的檔案、掃描 100 萬項；總計 10 萬個區塊，每個檔案最多 64 個區塊、16 MB。";
 "semantic.close" = "完成";
 "semantic.clear.title" = "清空內容索引？";
 "semantic.clear.message" = "移除已建立的內文和語意索引，保留下載的模型。語意檔案搜尋將關閉；一般檔案搜尋繼續可用。";
@@ -5353,7 +5352,7 @@
 "launcher.search.files.scope.shared" = "檔案名稱與語意搜尋共用這份範圍";
 "launcher.search.files.addFolder" = "加入資料夾";
 "launcher.search.files.exclusionsHint" = "排除規則在「排除」中設定";
-"launcher.search.files.scope.footnote" = "語意搜尋只讀取範圍內的本機文字與含文字層的 PDF。尚未下載的雲端檔案仍可依名稱搜尋。";
+"launcher.search.files.scope.footnote" = "語意搜尋優先索引本機文件，閒置時依序處理圖片、音訊和影片。尚未下載的雲端檔案仍可依檔名搜尋。";
 "launcher.search.index.scope.shared" = "兩種索引，共用上方的範圍";
 "launcher.search.index.name.summary" = "%@ 個檔案 · 佔用記憶體 %@ · 最近更新 %@";
 "semantic.index.badge" = "語意搜尋";
@@ -5363,3 +5362,17 @@
 "semantic.index.setup.ready" = "本機模型已下載。啟用後會在上述範圍內建立內容索引。";
 "semantic.metric.location" = "處理位置";
 "semantic.metric.local" = "本機";
+
+"semantic.searching" = "正在搜尋檔案內容…";
+
+"semantic.media.downloading" = "正在下載媒體編碼器…";
+
+"semantic.media.waiting" = "文件已可搜尋 · 媒體索引等待閒置";
+
+"semantic.media.failed" = "媒體索引失敗，文件仍可搜尋";
+
+"ask.search.type.audio" = "音訊";
+
+"ask.search.type.video" = "影片";
+
+"semantic.atTime" = "符合位置 %@";

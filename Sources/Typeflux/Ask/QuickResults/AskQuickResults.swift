@@ -46,6 +46,7 @@ struct AskQuickResults: Equatable {
     /// The clear winner, listed first and taking Return. Without one the header's AI action takes Return.
     var best: Row?
     var notice: Notice?
+    var searchingContent = false
     /// The expression being typed while the last result stays on screen, dimmed.
     var pendingExpression: String?
     var highlighted = 0

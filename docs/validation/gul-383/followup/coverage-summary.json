@@ -1,0 +1,251 @@
+{
+  "changed_app_executable_lines": {
+    "covered": 742,
+    "count": 778,
+    "percent": 95.37
+  },
+  "project_wide_focused_lines": {
+    "count": 240296,
+    "covered": 18978,
+    "percent": 7.897759430036288
+  },
+  "denominator": "Changed/new executable Swift lines under Sources/Typeflux; native helper and vendor C++ excluded. New files included.",
+  "test_commands_wall_seconds": {
+    "initial_scope": 156.98,
+    "failed_method_retry": 89.85,
+    "extraction_contract": 67.59,
+    "total": 314.42
+  },
+  "build_discovery_only_wall_seconds": {
+    "initial_preparation": 206.88,
+    "final_formatting": 28.39
+  },
+  "unique_methods": 199,
+  "suites": 32,
+  "files": {
+    "Sources/Typeflux/Ask/AskComposerViews.swift": {
+      "covered": 11,
+      "executable": 15,
+      "percent": 73.33
+    },
+    "Sources/Typeflux/Ask/QuickResults/AskQuickResults.swift": {
+      "covered": 1,
+      "executable": 1,
+      "percent": 100.0
+    },
+    "Sources/Typeflux/Ask/QuickResults/AskQuickResultsView+Layout.swift": {
+      "covered": 1,
+      "executable": 1,
+      "percent": 100.0
+    },
+    "Sources/Typeflux/Ask/QuickResults/AskQuickResultsView.swift": {
+      "covered": 2,
+      "executable": 2,
+      "percent": 100.0
+    },
+    "Sources/Typeflux/Ask/QuickResults/AskQuickSearchSession.swift": {
+      "covered": 3,
+      "executable": 3,
+      "percent": 100.0
+    },
+    "Sources/Typeflux/Ask/QuickResults/Files/AskFileCrawler.swift": {
+      "covered": 4,
+      "executable": 4,
+      "percent": 100.0
+    },
+    "Sources/Typeflux/Ask/QuickResults/Files/AskFileReader.swift": {
+      "covered": 3,
+      "executable": 3,
+      "percent": 100.0
+    },
+    "Sources/Typeflux/Ask/QuickResults/Files/AskFileWorkerCommand.swift": {
+      "covered": 4,
+      "executable": 5,
+      "percent": 80.0
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/AskLauncherPlugin.swift": {
+      "covered": 1,
+      "executable": 1,
+      "percent": 100.0
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/AskPluginSession.swift": {
+      "covered": 14,
+      "executable": 14,
+      "percent": 100.0
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/AskPluginViews.swift": {
+      "covered": 16,
+      "executable": 19,
+      "percent": 84.21
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Files/AskFileSearchPlugin.swift": {
+      "covered": 15,
+      "executable": 15,
+      "percent": 100.0
+    },
+    "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewContent.swift": {
+      "covered": 3,
+      "executable": 3,
+      "percent": 100.0
+    },
+    "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewController.swift": {
+      "covered": 3,
+      "executable": 3,
+      "percent": 100.0
+    },
+    "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewLoader.swift": {
+      "covered": 2,
+      "executable": 2,
+      "percent": 100.0
+    },
+    "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPDF.swift": {
+      "covered": 61,
+      "executable": 61,
+      "percent": 100.0
+    },
+    "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewRenderer.swift": {
+      "covered": 16,
+      "executable": 16,
+      "percent": 100.0
+    },
+    "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewView.swift": {
+      "covered": 5,
+      "executable": 5,
+      "percent": 100.0
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/AskContentSearchProgressView.swift": {
+      "covered": 11,
+      "executable": 11,
+      "percent": 100.0
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticEmbeddingWorker.swift": {
+      "covered": 28,
+      "executable": 28,
+      "percent": 100.0
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileContentWorker.swift": {
+      "covered": 4,
+      "executable": 4,
+      "percent": 100.0
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer.swift": {
+      "covered": 105,
+      "executable": 105,
+      "percent": 100.0
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFilePolicy.swift": {
+      "covered": 18,
+      "executable": 18,
+      "percent": 100.0
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift": {
+      "covered": 68,
+      "executable": 75,
+      "percent": 90.67
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore.swift": {
+      "covered": 118,
+      "executable": 119,
+      "percent": 99.16
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticMediaExtractor.swift": {
+      "covered": 157,
+      "executable": 158,
+      "percent": 99.37
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticMediaPriority.swift": {
+      "covered": 7,
+      "executable": 7,
+      "percent": 100.0
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticMediaWorker.swift": {
+      "covered": 45,
+      "executable": 64,
+      "percent": 70.31
+    },
+    "Sources/Typeflux/Settings/SemanticFileSearchSettingsView.swift": {
+      "covered": 6,
+      "executable": 6,
+      "percent": 100.0
+    },
+    "Sources/Typeflux/Settings/SemanticFileSearchStatus.swift": {
+      "covered": 10,
+      "executable": 10,
+      "percent": 100.0
+    }
+  },
+  "uncovered_changed_lines": [
+    [
+      "Sources/Typeflux/Ask/AskComposerViews.swift",
+      [
+        742,
+        743,
+        744,
+        745
+      ]
+    ],
+    [
+      "Sources/Typeflux/Ask/QuickResults/Files/AskFileWorkerCommand.swift",
+      [
+        77
+      ]
+    ],
+    [
+      "Sources/Typeflux/Ask/QuickResults/Plugins/AskPluginViews.swift",
+      [
+        664,
+        665,
+        666
+      ]
+    ],
+    [
+      "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+      [
+        68,
+        69,
+        70,
+        71,
+        72,
+        274,
+        275
+      ]
+    ],
+    [
+      "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore.swift",
+      [
+        197
+      ]
+    ],
+    [
+      "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticMediaExtractor.swift",
+      [
+        60
+      ]
+    ],
+    [
+      "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticMediaWorker.swift",
+      [
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        48,
+        49,
+        50,
+        51
+      ]
+    ]
+  ],
+  "profile_compatibility": "Excluded only the extended extraction test method counters before merging; app counters unchanged, final merge/export without warnings."
+}
