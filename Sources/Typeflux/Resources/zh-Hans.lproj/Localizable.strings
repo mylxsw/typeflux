@@ -5053,3 +5053,12 @@
 "ask.context.selection.characters" = "%d 个字符";
 "ask.context.selection.disableHint" = "点击图标可停用，文本会保留";
 "ask.context.selection.enableHint" = "点击图标可再次使用这段文本";
+
+// Launcher primary action
+"ask.launcher.action.wait" = "正在等待当前结果";
+"ask.launcher.action.input" = "请输入内容后继续";
+"ask.launcher.action.unavailable" = "当前没有可执行的操作";
+"ask.launcher.action.run" = "运行%@";
+"ask.launcher.action.confirm" = "确认";
+"ask.launcher.action.open" = "打开%@";
+"ask.launcher.action.copyResult" = "复制结果";

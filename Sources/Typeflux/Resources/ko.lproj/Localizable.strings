@@ -5004,3 +5004,12 @@
 "ask.context.selection.characters" = "%d자";
 "ask.context.selection.disableHint" = "아이콘을 클릭하여 사용을 중지해도 텍스트는 유지됩니다";
 "ask.context.selection.enableHint" = "아이콘을 클릭하여 이 텍스트를 다시 사용할 수 있습니다";
+
+// Launcher primary action
+"ask.launcher.action.wait" = "최신 결과를 기다리는 중";
+"ask.launcher.action.input" = "계속하려면 내용을 입력하세요";
+"ask.launcher.action.unavailable" = "실행할 수 있는 작업이 없습니다";
+"ask.launcher.action.run" = "%@ 실행";
+"ask.launcher.action.confirm" = "확인";
+"ask.launcher.action.open" = "%@ 열기";
+"ask.launcher.action.copyResult" = "결과 복사";

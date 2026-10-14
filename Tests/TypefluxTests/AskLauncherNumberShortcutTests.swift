@@ -56,7 +56,7 @@ struct AskLauncherNumberShortcutTests {
         #expect(changes.last == false)
     }
 
-    @Test(arguments: [AskLauncherChatAction.openChat, .askAI])
+    @Test(arguments: [AskLauncherChatAction.openChat, .askAI, .execute("Open Notes")])
     func chatActionHintRendersInBothThemesAndCompactLayouts(mode: AskLauncherChatAction) async throws {
         let previousLanguage = AppLocalization.shared.language
         AppLocalization.shared.setLanguage(.simplifiedChinese)
@@ -100,7 +100,12 @@ struct AskLauncherNumberShortcutTests {
                             .appendingPathComponent("chat-\(mode)-\(Int(width))-\(theme)-\(visible ? "held" : "idle").png"))
                     }
                 }
-                #expect(renders[0] != renders[1], "The open-chat shortcut must appear while Command is held")
+                if mode.shortcut == nil {
+                    #expect(renders[0] == renders[1],
+                            "An execution button must not claim the Command-Return AI shortcut")
+                } else {
+                    #expect(renders[0] != renders[1], "The chat shortcut must appear while Command is held")
+                }
             }
         }
     }

@@ -5004,3 +5004,12 @@
 "ask.context.selection.characters" = "%d 文字";
 "ask.context.selection.disableHint" = "アイコンをクリックして無効にしても、テキストは保持されます";
 "ask.context.selection.enableHint" = "アイコンをクリックすると、このテキストを再び使用できます";
+
+// Launcher primary action
+"ask.launcher.action.wait" = "最新の結果を待っています";
+"ask.launcher.action.input" = "内容を入力してください";
+"ask.launcher.action.unavailable" = "実行できる操作はありません";
+"ask.launcher.action.run" = "%@を実行";
+"ask.launcher.action.confirm" = "確認";
+"ask.launcher.action.open" = "%@を開く";
+"ask.launcher.action.copyResult" = "結果をコピー";

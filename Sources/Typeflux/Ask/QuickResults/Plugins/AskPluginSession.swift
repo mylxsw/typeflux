@@ -478,11 +478,21 @@ extension AskPluginSession {
     /// The shown result, or the one streaming in.
     var currentOutput: AskPluginOutput? { output ?? (isRunning ? partial : nil) }
 
+    /// A finished result or a submitted run can move without starting another request.
+    var canHandOff: Bool {
+        guard plugin != nil, request != nil, isPlanCurrent else { return false }
+        switch phase {
+        case .done: return true
+        case let .running(plan): return plan.mode == .onSubmit && task != nil
+        default: return false
+        }
+    }
+
     /// Hands the shown result to `sink`'s owner. A run still streaming keeps going and
     /// reports there from now on; the launcher can close without stopping it. Nil
     /// when there is no result to hand over.
     func handOff(to sink: @escaping AskPluginHandoff.Sink) -> AskPluginHandoff? {
-        guard let plugin, let request else { return nil }
+        guard canHandOff, let plugin, let request else { return nil }
         switch phase {
         case let .done(plan, output):
             return AskPluginHandoff(plugin: plugin, plan: plan, request: request, output: output, running: false,

@@ -5038,3 +5038,12 @@
 "ask.context.selection.characters" = "%d 個字元";
 "ask.context.selection.disableHint" = "點擊圖示可停用，文字會保留";
 "ask.context.selection.enableHint" = "點擊圖示可再次使用這段文字";
+
+// Launcher primary action
+"ask.launcher.action.wait" = "正在等待目前結果";
+"ask.launcher.action.input" = "請輸入內容後繼續";
+"ask.launcher.action.unavailable" = "目前沒有可執行的操作";
+"ask.launcher.action.run" = "執行%@";
+"ask.launcher.action.confirm" = "確認";
+"ask.launcher.action.open" = "開啟%@";
+"ask.launcher.action.copyResult" = "複製結果";
