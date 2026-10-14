@@ -254,6 +254,7 @@ struct SemanticFileContentTests {
 
 final class SemanticFixtureReader: AskFileReading, @unchecked Sendable {
     var path: String
+    var directoryEntries: [AskFileCrawler.Entry]?
     var text = "Project reimbursement policy"
     var modified = Date(timeIntervalSince1970: 100)
     var removed = false
@@ -267,7 +268,7 @@ final class SemanticFixtureReader: AskFileReading, @unchecked Sendable {
             throw CancellationError()
         }
         if request.operation == .directory {
-            return .init(entries: removed ? [] : [.init(path: path, kind: .file, modified: modified)])
+            return .init(entries: removed ? [] : directoryEntries ?? [.init(path: path, kind: .file, modified: modified)])
         }
         if failed {
             return .init(error: EACCES)
@@ -292,6 +293,20 @@ final class SemanticFixtureEncoder: SemanticEmbedding, @unchecked Sendable {
 
 @Suite("Semantic incremental indexing")
 struct SemanticFileIndexerTests {
+    @Test func unsupportedFilesDoNotConsumeTheSemanticFileLimit() throws {
+        let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
+        let path = root.path + "/notes.md"
+        let reader = SemanticFixtureReader(path: path), encoder = SemanticFixtureEncoder()
+        reader.directoryEntries = (0 ..< 50_000).map {
+            .init(path: root.path + "/asset-\($0).bin", kind: .file, modified: reader.modified)
+        } + [.init(path: path, kind: .file, modified: reader.modified)]
+        let store = try SemanticFileStore(url: root.appendingPathComponent("index.sqlite"))
+        let result = try SemanticFileIndexer.run(scope: semanticScope(root.path), store: store, reader: reader,
+            encoder: encoder, cancelled: { false }, progress: { _ in })
+        #expect(result.files == 1); #expect(!result.limited)
+        #expect(try store.counts().files == 1)
+    }
+
     @Test func emptyOrScannedContentIsSkippedWithoutLoadingModel() throws {
         let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
         let reader = SemanticFixtureReader(path: root.path + "/scan.pdf"), encoder = SemanticFixtureEncoder()

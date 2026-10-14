@@ -5117,7 +5117,7 @@
 "semantic.clear" = "Clear Content Index…";
 "semantic.remove" = "Delete Model…";
 "semantic.storage.help" = "These actions only affect the content index. The file name index is kept separately.";
-"semantic.limit" = "Index limit reached. Select smaller folders. Up to 50,000 entries per root, 100,000 chunks total, 64 chunks per file and 16 MB per file.";
+"semantic.limit" = "Index limit reached. Select smaller folders. Up to 50,000 supported files or 1,000,000 scanned entries per root, 100,000 chunks total, 64 chunks and 16 MB per file.";
 "semantic.close" = "Done";
 "semantic.clear.title" = "Clear the content index?";
 "semantic.clear.message" = "Removes the content and semantic index but keeps the downloaded model and folder choices. Semantic file search turns off; file name search keeps working.";

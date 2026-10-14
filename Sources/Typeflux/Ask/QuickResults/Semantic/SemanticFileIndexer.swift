@@ -3,6 +3,7 @@ import Foundation
 enum SemanticFileIndexer {
     struct Summary: Sendable { var files = 0; var skipped = 0; var limited = false }
     private enum Failure: Error { case inference(Error) }
+    private static let maximumFilesPerRoot = 50_000
 
     // Reconcile metadata on launch/FSEvents; only changed files need extraction and embedding.
     // Partial scans never remove entries. Search rechecks permissions and file presence.
@@ -14,12 +15,18 @@ enum SemanticFileIndexer {
         var seen = Set<String>(), summary = Summary()
         var failure: Error?
         for root in scope.roots {
-            let visited = AskFileCrawler.crawl(root, scope: scope, limit: 50000, reader: reader,
+            var eligibleFiles = 0
+            let visited = AskFileCrawler.crawl(root, scope: scope, reader: reader,
                                                isCancelled: cancelled, skipped: { _, _ in summary.skipped += 1 },
                                                visit: { entry in
                                                    guard !cancelled() else { return false }
                                                    guard entry.kind == .file,
                                                          SemanticFilePolicy.allows(entry.path) else { return true }
+                                                   guard eligibleFiles < maximumFilesPerRoot else {
+                                                       summary.limited = true
+                                                       return false
+                                                   }
+                                                   eligibleFiles += 1
                                                    do {
                                                        if try self.index(
                                                            entry.path,
@@ -50,7 +57,7 @@ enum SemanticFileIndexer {
                                                    }
                                                    return true
                                                })
-            if visited >= 50000 {
+            if visited >= AskFileCrawler.maximumEntries {
                 summary.limited = true
             }
             if cancelled() {

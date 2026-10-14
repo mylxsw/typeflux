@@ -5117,7 +5117,7 @@
 "semantic.clear" = "清空内容索引…";
 "semantic.remove" = "删除模型…";
 "semantic.storage.help" = "这里的操作只影响内容索引。原有文件名索引独立保留。";
-"semantic.limit" = "已达到索引上限，请缩小目录范围。每个根目录最多扫描 5 万项，总计 10 万个分块，每文件最多 64 个分块、16 MB。";
+"semantic.limit" = "已达到索引上限，请缩小目录范围。每个根目录最多索引 5 万个受支持文件、扫描 100 万项；总计 10 万个分块，每文件最多 64 个分块、16 MB。";
 "semantic.close" = "完成";
 "semantic.clear.title" = "清空内容索引？";
 "semantic.clear.message" = "移除已建立的正文和语义索引，保留下载的模型与目录选择。语义文件搜索将关闭；原有文件名搜索继续可用。";
