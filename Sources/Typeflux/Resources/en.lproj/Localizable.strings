@@ -4964,6 +4964,7 @@
 "calendar.placeholder" = "Date, holiday or event: Dec 25, next Fri, review…";
 "calendar.local" = "On this Mac";
 "calendar.today" = "Today";
+"calendar.today.help" = "Back to today and clear the input";
 "calendar.previous" = "Previous month or year";
 "calendar.next" = "Next month or year";
 "calendar.keys" = "←→↑↓ Date · ⌘←→ Month · ⇥ Events · ↩ Open · ⌘C Copy · ⌥↩ Insert · esc Back";

@@ -4915,6 +4915,7 @@
 "calendar.placeholder" = "日付、祝日、予定：12-25、next fri…";
 "calendar.local" = "このMac上";
 "calendar.today" = "今日";
+"calendar.today.help" = "今日に戻り、入力をクリア";
 "calendar.previous" = "前の月・年";
 "calendar.next" = "次の月・年";
 "calendar.keys" = "←→↑↓ 日付 · ⌘←→ 月 · ⇥ 予定 · ↩ 開く · ⌘C コピー · ⌥↩ 挿入 · esc 戻る";

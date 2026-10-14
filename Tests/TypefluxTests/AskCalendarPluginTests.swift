@@ -36,6 +36,8 @@ struct AskCalendarPluginTests {
         #expect(plugin.entersOnReturn && plugin.runsWithoutInput && !plugin.usesSelectionInput)
         #expect(plugin.defaultKeywords == AskCalendarPlugin.keywords)
         #expect(plugin.symbol == "calendar" && !plugin.title.isEmpty)
+        // Red is reserved for destructive keywords such as `kill`.
+        #expect(plugin.keywordColor == AskTheme.accent)
         #expect(!plugin.placeholder(selectionLines: nil).isEmpty)
         #expect(plugin.chipDetail(for: plugin.defaultKeywords[0], language: .english) == nil)
         let request = AskPluginRequest(

@@ -9,7 +9,7 @@
   --bg: #1b1b1d; --card: rgba(255,255,255,.045); --card-hover: rgba(255,255,255,.075);
   --border: rgba(255,255,255,.115); --border-soft: rgba(255,255,255,.07);
   --text: #eeeeef; --text2: #b8b8bb; --text3: #85858a; --text4: #5d5d62; --accent: #2f8cff; --accent-soft: rgba(47,140,255,.16);
-  --cal: #ff5a4f; --cal-soft: rgba(255,90,79,.16); --cal-text: #ff8a80;
+  --cal: #2f8cff; --cal-soft: rgba(47,140,255,.16); --cal-text: #7db5ff;
   --off: #34c759; --off-soft: rgba(52,199,89,.13); --work: #ff9f40; --work-soft: rgba(255,159,64,.14);
   --fest: #ff8a80; --term: #64c8a8;
   --tile: rgba(255,255,255,.07); --key: rgba(255,255,255,.09);
@@ -21,7 +21,7 @@ body.light {
   --bg: #f4f5f7; --card: rgba(255,255,255,.75); --card-hover: rgba(0,0,0,.045);
   --border: rgba(97,115,143,.18); --border-soft: rgba(97,115,143,.11);
   --text: #141414; --text2: #474747; --text3: #85868a; --text4: #b4b5b9; --accent: #1f6fe0; --accent-soft: rgba(31,111,224,.12);
-  --cal: #e8382d; --cal-soft: rgba(232,56,45,.10); --cal-text: #d13328;
+  --cal: #1f6fe0; --cal-soft: rgba(31,111,224,.12); --cal-text: #1f6fe0;
   --off: #1fab63; --off-soft: rgba(31,171,99,.11); --work: #e0782a; --work-soft: rgba(224,120,42,.11);
   --fest: #d13328; --term: #1c9a7a;
   --tile: rgba(0,0,0,.05); --key: #fff;
@@ -90,7 +90,7 @@ body.light .menubar { background: rgba(255,255,255,.45); color: #1a1a1a; }
 .sec .sp { flex: 1; }
 .sec .m { font-weight: 400; }
 .item { display: flex; align-items: center; gap: 11px; padding: 0 10px; min-height: 46px; border-radius: 10px; cursor: pointer; }
-.item.on { background: var(--card-hover); box-shadow: inset 0 0 0 1px rgba(255,90,79,.5); }
+.item.on { background: var(--card-hover); box-shadow: inset 0 0 0 1px rgba(47,140,255,.5); }
 .item:hover { background: var(--card-hover); }
 .item .ic { width: 28px; height: 28px; border-radius: 7px; display: grid; place-items: center; flex: none; color: #fff; }
 .item .t { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -106,9 +106,11 @@ body.light .menubar { background: rgba(255,255,255,.45); color: #1a1a1a; }
 .mhead .ttl { font-size: 17px; font-weight: 700; letter-spacing: -.2px; cursor: pointer; }
 .mhead .sub { color: var(--text3); font-size: 12px; }
 .mhead .sp { flex: 1; }
-.nav { display: inline-flex; gap: 2px; background: var(--tile); border-radius: 8px; padding: 2px; }
-.nav button { border: 0; background: transparent; height: 22px; min-width: 24px; padding: 0 7px; border-radius: 6px; cursor: pointer; color: var(--text2); font-size: 12px; display: inline-flex; align-items: center; justify-content: center; }
-.nav button:hover { background: var(--card-hover); color: var(--text); }
+.nav { display: inline-flex; gap: 6px; }
+.nav button { border: 1px solid var(--border); background: transparent; height: 26px; min-width: 28px; padding: 0 8px; border-radius: 7px; cursor: pointer; color: var(--text); font-size: 12px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; }
+.nav button:hover:not(:disabled) { background: var(--card-hover); }
+.nav button:disabled { color: var(--text3); cursor: default; }
+.nav button .s { color: var(--text3); font-size: 11px; }
 .calwrap { display: grid; grid-template-columns: 384px 1fr; gap: 14px; padding-bottom: 12px; }
 .grid { display: grid; grid-template-columns: var(--cols); }
 .grid.wk { --cols: 22px repeat(7, 1fr); }
@@ -149,7 +151,7 @@ body.light .menubar { background: rgba(255,255,255,.45); color: #1a1a1a; }
 .dayh .big { font-size: 22px; font-weight: 700; letter-spacing: -.3px; }
 .dayh .wd2 { font-size: 13px; color: var(--text2); font-weight: 600; }
 .tag { font-size: 11px; font-weight: 600; border-radius: 5px; padding: 1px 6px; white-space: nowrap; }
-.tag.today { background: var(--cal); color: #fff; }
+.tag.today { background: var(--accent); color: #fff; }
 .tag.rel { background: var(--tile); color: var(--text2); }
 .dayh .d2 { color: var(--text3); font-size: 12px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .badges { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
@@ -504,8 +506,7 @@ function renderLauncher() {
     const opt = arg.mode === 'year' ? `→ ${arg.year} 年` : arg.mode === 'range' ? '→ 间隔' : arg.mode === 'search' ? '→ 搜索日程' : '';
     $('#chipSlot').innerHTML = `<span class="chip"><span class="g">${ic('cal', 13, 2.4)}</span>日历${opt ? `<span class="opt">${opt}</span>` : ''}</span>`;
     q.placeholder = '日期、节日或日程：12-25、下周五、春节、评审…';
-    $('#headRight').innerHTML = same(state.sel, TODAY) && state.month.getMonth() === TODAY.getMonth() && state.month.getFullYear() === TODAY.getFullYear() && !q.value
-      ? '' : `<button class="hbtn" data-act="today">今天<span class="s">⌘T</span></button>`;
+    $('#headRight').innerHTML = '';
   } else {
     $('#chipSlot').innerHTML = '';
     q.placeholder = '随便问，或输入关键字…';
@@ -548,12 +549,18 @@ function renderBody() {
       : `<span><kbd>←→↑↓</kbd>选择日期</span><span><kbd>⌘←→</kbd>切换月份</span>${eventsOnSel().length ? '<span><kbd>⇥</kbd>日程</span>' : ''}<span><kbd>↩</kbd>在日历中打开</span><span><kbd>⌘C</kbd>复制</span><span><kbd>⌥↩</kbd>插入日期</span><span class="sp"></span><span><kbd>esc</kbd>${text ? '清空' : '返回'}</span>`;
 }
 
+/* "Today" sits apart from the arrows and is disabled when today is already shown as a plain date. */
+const atToday = () => same(state.sel, TODAY) && !$('#q').value;
+const navHTML = (prev, next, prevTip, nextTip) => `<span class="nav">
+  <button data-act="today" title="回到今天，并清空输入" ${atToday() ? 'disabled' : ''}>今天<span class="s">⌘T</span></button>
+  <button data-act="${prev}" title="${prevTip}">${ic('left', 13, 2.4)}</button>
+  <button data-act="${next}" title="${nextTip}">${ic('right', 13, 2.4)}</button></span>`;
 function monthHead() {
   const m = state.month, l = lunar(D(m.getFullYear(), m.getMonth(), 15));
   return `<div class="mhead"><span class="ttl" data-act="toyear">${m.getFullYear()}年${m.getMonth() + 1}月</span>
     ${state.lunar ? `<span class="sub">${l.year}年 · ${ZODIAC[l.year[1]]}年</span>` : ''}
     <span class="sp"></span>
-    <span class="nav"><button data-act="prev" title="上个月 ⌘←">${ic('left', 13, 2.4)}</button><button data-act="today">今天</button><button data-act="next" title="下个月 ⌘→">${ic('right', 13, 2.4)}</button></span></div>`;
+    ${navHTML('prev', 'next', '上个月 ⌘←', '下个月 ⌘→')}</div>`;
 }
 
 function gridHTML(arg) {
@@ -685,7 +692,7 @@ function rangeHTML(arg) {
 
 function renderYear(y) {
   let h = `<div class="mhead"><span class="ttl">${y}年</span>${state.lunar ? `<span class="sub">${lunar(D(y, 6, 1)).year}年 · ${ZODIAC[lunar(D(y, 6, 1)).year[1]]}年</span>` : ''}<span class="sp"></span>
-    <span class="nav"><button data-act="yprev">${ic('left', 13, 2.4)}</button><button data-act="today">今天</button><button data-act="ynext">${ic('right', 13, 2.4)}</button></span></div>`;
+    ${navHTML('yprev', 'ynext', '上一年', '下一年')}</div>`;
   if (state.lunar && !hasSchedule(y)) h += `<div class="ynote">${ic('info', 13)}${y} 年放假安排尚未公布（通常在前一年 11 月发布），公布后随应用更新；现在只标出节日。</div>`;
   h += `<div class="year">`;
   for (let mo = 0; mo < 12; mo++) {

@@ -4,7 +4,7 @@ struct CalendarKeywordChip: View {
     @ObservedObject var model: CalendarLauncherModel
 
     var body: some View {
-        AskKeywordChip(title: L("calendar.title"), symbol: "calendar", detail: detail, tint: .red)
+        AskKeywordChip(title: L("calendar.title"), symbol: "calendar", detail: detail, tint: AskTheme.accent)
     }
 
     private var detail: String? {
@@ -17,17 +17,25 @@ struct CalendarKeywordChip: View {
     }
 }
 
-struct CalendarHeaderAction: View {
-    @ObservedObject var model: CalendarLauncherModel
-    var onToday: () -> Void
+/// The month toolbar's buttons: the whole frame is clickable and highlights on hover.
+struct CalendarToolbarButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        CalendarToolbarButton(configuration: configuration)
+    }
+}
+
+private struct CalendarToolbarButton: View {
+    let configuration: ButtonStyleConfiguration
+    @Environment(\.isEnabled) private var isEnabled
+    @State private var hovering = false
 
     var body: some View {
-        if model.query != .date(model.today) {
-            Button(L("calendar.today") + " ⌘T", action: onToday)
-                .buttonStyle(.plain).font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
-                .padding(.horizontal, 8).padding(.vertical, 6)
-                .overlay(RoundedRectangle(cornerRadius: 7).stroke(AskTheme.separator))
-                .accessibilityLabel(L("calendar.today"))
-        }
+        let shape = RoundedRectangle(cornerRadius: 7)
+        configuration.label
+            .foregroundStyle(isEnabled ? StudioTheme.textPrimary : StudioTheme.textTertiary)
+            .background((hovering || configuration.isPressed) && isEnabled ? AskTheme.hoverFill : .clear, in: shape)
+            .overlay(shape.stroke(AskTheme.separator))
+            .contentShape(shape)
+            .onHover { hovering = $0 }
     }
 }
