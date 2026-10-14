@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Typeflux · 录屏改版（可交互设计稿）</title>
+<style>
+:root {
+  --text: #eeeeef; --text2: #b8b8bb; --text3: #85858a; --accent: #2f8cff; --accent-soft: #15263e;
+  --border: rgba(255,255,255,.10); --glass: rgba(44,44,52,.96); --press: rgba(255,255,255,.12); --hover: rgba(255,255,255,.08);
+  --tile: rgba(255,255,255,.07); --pop: #2c2c34; --stage: #0e0e10; --danger: #ff4d4f; --rec: #ff3b30; --warn: #ffb020; --ok: #29c76e;
+  --desk: linear-gradient(135deg, #1d2a3f 0%, #2b1f3a 55%, #3a2a24 100%);
+  --app: #17181c; --app2: #202127; --appText: #e6e6ea; --appText2: #9a9aa3; --appLine: rgba(255,255,255,.08);
+  --win: #1e1f24; --win2: #26272d; --menubar: rgba(30,30,36,.55); --shadow: 0 8px 28px rgba(0,0,0,.35);
+  --dim: rgba(0,0,0,.42); --blur: none;
+}
+body.light {
+  --text: #141414; --text2: #474747; --text3: #85868a; --accent: #1f6fe0; --accent-soft: #e7efff;
+  --border: #e2e5ea; --glass: rgba(255,255,255,.97); --press: rgba(0,0,0,.09); --hover: rgba(0,0,0,.06);
+  --tile: #eef0f3; --pop: #fff; --stage: #d9dde3;
+  --desk: linear-gradient(135deg, #b9cbe6 0%, #d8c8e8 55%, #ecd6c6 100%);
+  --app: #ffffff; --app2: #f4f5f7; --appText: #1d1d1f; --appText2: #6e6e73; --appLine: rgba(0,0,0,.08);
+  --win: #f6f6f8; --win2: #ffffff; --menubar: rgba(255,255,255,.55); --shadow: 0 8px 28px rgba(20,30,50,.18);
+  --dim: rgba(20,30,50,.28);
+}
+/* Liquid Glass: the same surfaces, translucent and blurred, with a top highlight. */
+body.glass { --glass: rgba(40,40,48,.58); --pop: rgba(44,44,52,.72); --blur: blur(22px) saturate(1.7); --border: rgba(255,255,255,.16); }
+body.glass.light { --glass: rgba(255,255,255,.62); --pop: rgba(255,255,255,.78); --border: rgba(255,255,255,.7); }
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { font: 13px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif;
+  color: var(--text); background: var(--stage); display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+button { font: inherit; color: inherit; }
+svg { flex: none; display: block; }
+.mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-variant-numeric: tabular-nums; }
+
+/* ---------- Stage ---------- */
+.stagebar { width: 1180px; max-width: calc(100vw - 32px); display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; padding: 18px 0 6px; color: var(--text2); }
+.stagebar b { color: var(--text); font-size: 14px; margin-right: 6px; }
+.stagebar .grp { color: var(--text3); font-size: 11px; margin-left: 6px; }
+.stagebar .sp { flex: 1; }
+.pill { border: 1px solid var(--border); background: var(--tile); border-radius: 999px; padding: 4px 11px; cursor: pointer; font-size: 12px; user-select: none; }
+.pill.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.caption { width: 1180px; max-width: calc(100vw - 32px); color: var(--text3); font-size: 12px; padding: 0 0 12px; min-height: 30px; }
+.caption b { color: var(--text2); font-weight: 600; }
+body.solo .stagebar, body.solo .caption { display: none; }
+.desk { width: 1180px; height: 720px; border-radius: 14px; background: var(--desk); position: relative; overflow: hidden; box-shadow: 0 30px 80px rgba(0,0,0,.4); user-select: none; }
+body.solo .desk { border-radius: 0; box-shadow: none; }
+
+/* ---------- Desktop: menu bar and two app windows ---------- */
+.menubar { position: absolute; left: 0; right: 0; top: 0; height: 26px; background: var(--menubar); backdrop-filter: blur(20px); display: flex; align-items: center; gap: 16px; padding: 0 14px; font-size: 12.5px; color: var(--text); z-index: 5; }
+.menubar b { font-weight: 700; }
+.menubar .sp { flex: 1; }
+.menubar .mbi { display: flex; align-items: center; gap: 5px; opacity: .85; }
+.mbrec { display: flex; align-items: center; gap: 5px; background: var(--rec); color: #fff; border-radius: 5px; padding: 1px 7px; font-size: 11.5px; cursor: pointer; }
+.mbrec.paused { background: var(--warn); color: #241a00; }
+.app { position: absolute; background: var(--app); border-radius: 12px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,.35); color: var(--appText); }
+.app .tb { height: 34px; background: var(--app2); border-bottom: 1px solid var(--appLine); display: flex; align-items: center; padding: 0 12px; gap: 8px; }
+.dots { display: flex; gap: 7px; } .dots i { width: 11px; height: 11px; border-radius: 50%; background: #ff5f57; display: block; }
+.dots i:nth-child(2) { background: #febc2e; } .dots i:nth-child(3) { background: #28c840; }
+.dots.mute i { background: var(--text3); opacity: .35; }
+.app .tb .t { margin-left: 8px; font-weight: 600; font-size: 12px; color: var(--appText2); }
+.app .side { position: absolute; left: 0; top: 34px; bottom: 0; width: 150px; border-right: 1px solid var(--appLine); padding: 12px 8px; }
+.app .side div { height: 26px; border-radius: 6px; padding: 4px 10px; color: var(--appText2); font-size: 12.5px; }
+.app .side div.on { background: rgba(127,127,140,.14); color: var(--appText); font-weight: 600; }
+.app .main { position: absolute; left: 150px; top: 34px; right: 0; bottom: 0; padding: 18px 22px; }
+.app h3 { margin: 0 0 4px; font-size: 17px; }
+.app .muted { color: var(--appText2); font-size: 12px; }
+.kpis { display: flex; gap: 10px; margin-top: 14px; }
+.kpi { flex: 1; background: var(--app2); border-radius: 10px; padding: 10px 12px; }
+.kpi .n { font-size: 19px; font-weight: 700; margin-top: 2px; }
+.kpi .d { font-size: 11px; color: #29c76e; }
+.chart { margin-top: 12px; height: 170px; background: var(--app2); border-radius: 10px; padding: 12px; }
+.bars { display: flex; align-items: flex-end; gap: 9px; height: 118px; margin-top: 8px; }
+.bars i { flex: 1; background: linear-gradient(#5aa2ff, #2f8cff); border-radius: 4px 4px 0 0; display: block; }
+.code { padding: 12px 16px; font: 12px/1.75 ui-monospace, Menlo, monospace; color: var(--appText2); white-space: pre; }
+.code b { color: #c792ea; font-weight: 400; } .code i { color: #82aaff; font-style: normal; } .code u { color: #c3e88d; text-decoration: none; }
+body.light .code b { color: #9b3fb8; } body.light .code i { color: #2a5bd7; } body.light .code u { color: #3a8a1c; }
+.cursor { position: absolute; width: 18px; height: 18px; pointer-events: none; z-index: 60; filter: drop-shadow(0 1px 2px rgba(0,0,0,.5)); }
+
+/* ---------- Capture overlay ---------- */
+.layer { position: absolute; inset: 0; z-index: 10; }
+.layer.pick { cursor: crosshair; }
+.hole { position: absolute; box-shadow: 0 0 0 9999px var(--dim); pointer-events: none; border-radius: 1px; }
+.hole.region { border: 1.5px solid var(--accent); }
+.hole.win { border-radius: 12px; box-shadow: 0 0 0 9999px var(--dim), inset 0 0 0 2px var(--accent); background: rgba(47,140,255,.10); }
+.hole.display { box-shadow: inset 0 0 0 3px var(--accent); background: rgba(47,140,255,.10); }
+.handle { position: absolute; width: 9px; height: 9px; border-radius: 50%; background: #fff; border: 1.5px solid var(--accent); transform: translate(-50%,-50%); pointer-events: auto; }
+.sizechip { position: absolute; background: rgba(0,0,0,.72); color: #fff; font: 11px ui-monospace, Menlo, monospace; padding: 3px 7px; border-radius: 5px; white-space: nowrap; pointer-events: none; }
+.target-label { position: absolute; transform: translate(-50%,-50%); display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px 18px; border-radius: 12px;
+  background: rgba(0,0,0,.66); color: #fff; text-align: center; pointer-events: none; }
+.target-label b { font-size: 14px; white-space: nowrap; } .target-label span { white-space: nowrap; } .target-label span { font-size: 12px; opacity: .78; }
+
+/* Recording frame: corner brackets, not a dim mask, so the user keeps working. */
+.recframe { position: absolute; pointer-events: none; border: 1.5px solid rgba(255,59,48,.75); }
+.recframe.paused { border: 1.5px dashed var(--warn); }
+.recframe i { position: absolute; width: 16px; height: 16px; border: 3px solid var(--rec); }
+.recframe.paused i { border-color: var(--warn); }
+.recframe i:nth-child(1) { left: -3px; top: -3px; border-right: 0; border-bottom: 0; }
+.recframe i:nth-child(2) { right: -3px; top: -3px; border-left: 0; border-bottom: 0; }
+.recframe i:nth-child(3) { left: -3px; bottom: -3px; border-right: 0; border-top: 0; }
+.recframe i:nth-child(4) { right: -3px; bottom: -3px; border-left: 0; border-top: 0; }
+
+/* ---------- Toolbar (same tokens as the screenshot toolbar) ---------- */
+.bar { position: absolute; display: flex; align-items: center; gap: 2px; padding: 4px; border-radius: 12px; background: var(--glass); border: 1px solid var(--border);
+  box-shadow: var(--shadow); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); z-index: 30; white-space: nowrap; }
+body.glass .bar, body.glass .pop, body.glass .pill2, body.glass .toast { box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,.18); }
+.ib { min-width: 30px; height: 30px; border-radius: 8px; border: 0; background: transparent; display: inline-flex; align-items: center; justify-content: center; gap: 5px; cursor: pointer; color: var(--text); opacity: .78; position: relative; padding: 0 7px; font-size: 12.5px; }
+.ib:hover { background: var(--hover); opacity: 1; }
+.ib.on { background: var(--accent-soft); color: var(--accent); opacity: 1; }
+.ib.dis { opacity: .28; cursor: default; }
+.ib.dis:hover { background: transparent; }
+.ib .badge { position: absolute; right: 2px; top: 2px; width: 8px; height: 8px; border-radius: 50%; background: var(--warn); box-shadow: 0 0 0 1.5px var(--glass); }
+.ib .caret { opacity: .6; margin-left: -2px; }
+.sep { width: 1px; height: 18px; background: var(--border); margin: 0 4px; flex: none; }
+.grip { width: 14px; height: 30px; display: grid; place-items: center; color: var(--text3); cursor: grab; }
+.seg { display: inline-flex; background: var(--tile); border-radius: 8px; padding: 2px; gap: 2px; }
+.seg button { border: 0; background: transparent; min-width: 26px; height: 26px; padding: 0 9px; border-radius: 6px; cursor: pointer; color: var(--text2); font-size: 12.5px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; white-space: nowrap; }
+.seg button.on { background: var(--press); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.18); font-weight: 600; }
+body.light .seg button.on { background: #fff; }
+.seg.sm button { height: 22px; font-size: 12px; padding: 0 8px; }
+.primary { height: 30px; padding: 0 12px; border-radius: 8px; border: 0; background: var(--accent); color: #fff; display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 12.5px; cursor: pointer; white-space: nowrap; }
+.primary.rec { background: var(--rec); }
+.primary:disabled { opacity: .4; cursor: default; }
+.primary .k { font-weight: 400; opacity: .75; font-size: 11.5px; }
+.ghost { height: 30px; padding: 0 11px; border-radius: 8px; border: 0; background: var(--tile); color: var(--text); display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; cursor: pointer; white-space: nowrap; }
+.ghost:hover { background: var(--press); }
+.ghost.danger { color: var(--danger); background: transparent; }
+.ghost.danger:hover { background: rgba(255,77,79,.12); }
+.recdot { width: 10px; height: 10px; border-radius: 50%; background: #fff; display: block; }
+.summary { position: absolute; z-index: 30; display: flex; align-items: center; gap: 10px; transform: translateX(-50%); font-size: 11.5px; color: #fff; white-space: nowrap; pointer-events: none; }
+.summary span { background: rgba(0,0,0,.6); padding: 3px 9px; border-radius: 999px; }
+.summary kbd, .hint kbd { font: 11px ui-monospace, Menlo, monospace; background: rgba(255,255,255,.16); border-radius: 4px; padding: 0 4px; margin-right: 3px; }
+
+/* ---------- Popovers ---------- */
+.pop { position: absolute; background: var(--pop); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 18px 50px rgba(0,0,0,.45); padding: 12px 14px; z-index: 40;
+  backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); }
+.pop h5 { margin: 0 0 10px; font-size: 13px; font-weight: 600; display: flex; align-items: center; gap: 7px; }
+.pop .row { display: grid; grid-template-columns: 74px 1fr; align-items: center; gap: 10px; min-height: 32px; }
+.pop .row .k { color: var(--text2); font-size: 12px; }
+.pop .note { font-size: 11.5px; color: var(--text3); margin-top: 8px; line-height: 1.5; }
+.pop .acts { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+.pop hr { border: 0; border-top: 1px solid var(--border); margin: 8px 0; }
+.select { height: 26px; border-radius: 7px; background: var(--tile); border: 0; padding: 0 9px; font-size: 12px; color: var(--text); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.tog { display: inline-flex; align-items: center; gap: 8px; cursor: pointer; font-size: 12px; color: var(--text2); white-space: nowrap; }
+.tog i { width: 30px; height: 18px; border-radius: 999px; background: var(--tile); border: 1px solid var(--border); position: relative; display: block; }
+.tog i::after { content: ""; position: absolute; top: 1px; left: 1px; width: 14px; height: 14px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.3); transition: left .12s; }
+.tog.on i { background: var(--accent); border-color: var(--accent); }
+.tog.on i::after { left: 13px; }
+.meter { display: flex; gap: 2px; align-items: flex-end; height: 14px; }
+.meter i { width: 3px; border-radius: 1px; background: var(--ok); display: block; transition: height .08s; }
+.tip { position: absolute; background: rgba(0,0,0,.84); color: #fff; font-size: 11.5px; padding: 5px 9px; border-radius: 6px; white-space: nowrap; pointer-events: none; z-index: 50; transform: translateX(-50%); }
+
+/* ---------- Camera bubble ---------- */
+.cam { position: absolute; border-radius: 14px; overflow: hidden; z-index: 20; cursor: grab; box-shadow: 0 6px 20px rgba(0,0,0,.45), 0 0 0 2px rgba(255,255,255,.85);
+  background: radial-gradient(circle at 50% 38%, #f2c9a8 0 17%, transparent 17.5%), radial-gradient(ellipse at 50% 105%, #3d5a80 0 42%, transparent 42.5%), linear-gradient(160deg, #6b7a8f, #2e3440); }
+.cam.static { cursor: default; }
+.cam .rz { position: absolute; right: 2px; bottom: 2px; width: 14px; height: 14px; cursor: nwse-resize; border-right: 3px solid #fff; border-bottom: 3px solid #fff; border-radius: 0 0 6px 0; opacity: .9; }
+.cam .tag { position: absolute; left: 6px; top: 6px; font-size: 10px; background: rgba(0,0,0,.55); color: #fff; padding: 1px 6px; border-radius: 999px; display: flex; align-items: center; gap: 4px; }
+.cam .tag::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--ok); }
+.snap { position: absolute; width: 28px; height: 28px; border: 2px dashed rgba(255,255,255,.6); border-radius: 8px; pointer-events: none; z-index: 19; }
+
+/* ---------- Countdown ---------- */
+.count { position: absolute; transform: translate(-50%,-50%); width: 132px; height: 132px; border-radius: 50%; background: rgba(0,0,0,.6); color: #fff; display: grid; place-items: center; z-index: 30;
+  font: 600 64px/1 -apple-system, BlinkMacSystemFont, sans-serif; }
+.count svg { position: absolute; inset: 0; transform: rotate(-90deg); }
+.count circle.run { animation: ring 1s linear infinite; }
+@keyframes ring { from { stroke-dashoffset: 0; } to { stroke-dashoffset: 389; } }
+.hint { position: absolute; transform: translateX(-50%); z-index: 30; background: rgba(0,0,0,.66); color: #fff; font-size: 12px; padding: 5px 12px; border-radius: 999px; white-space: nowrap; }
+
+/* ---------- Recording pill ---------- */
+.pill2 { position: absolute; z-index: 30; display: flex; align-items: center; gap: 2px; padding: 4px; border-radius: 14px; background: var(--glass); border: 1px solid var(--border);
+  box-shadow: var(--shadow); backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); white-space: nowrap; }
+.live { display: flex; align-items: center; gap: 8px; padding: 0 10px 0 8px; height: 30px; }
+.live .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--rec); animation: pulse 1.2s ease-in-out infinite; }
+.live.paused .dot { background: var(--warn); animation: none; }
+.live .time { font: 600 14px ui-monospace, "SF Mono", Menlo, monospace; min-width: 48px; }
+.live.paused .time { animation: blink 1.2s steps(2) infinite; }
+.live .lim { color: var(--text3); font-size: 12px; margin-left: -4px; }
+.live .state { font-size: 12px; color: var(--warn); }
+@keyframes pulse { 50% { opacity: .35; } }
+@keyframes blink { 50% { opacity: .35; } }
+.gifbar { position: absolute; left: 10px; right: 10px; bottom: 2px; height: 2px; border-radius: 2px; background: var(--tile); overflow: hidden; }
+.gifbar i { display: block; height: 100%; background: var(--accent); }
+.gifbar.near i { background: var(--warn); }
+.stop { height: 30px; padding: 0 12px 0 10px; border-radius: 9px; border: 0; background: var(--rec); color: #fff; display: inline-flex; align-items: center; gap: 6px; font-weight: 600; font-size: 12.5px; cursor: pointer; }
+.stop .sq { width: 10px; height: 10px; border-radius: 2px; background: #fff; }
+
+/* ---------- Editor window ---------- */
+.editor { position: absolute; left: 130px; top: 54px; width: 920px; height: 632px; border-radius: 12px; background: var(--win); z-index: 25; box-shadow: 0 30px 80px rgba(0,0,0,.5), 0 0 0 1px var(--border);
+  display: flex; flex-direction: column; overflow: hidden; color: var(--text); }
+body.glass .editor { background: color-mix(in srgb, var(--win) 82%, transparent); backdrop-filter: blur(30px) saturate(1.6); }
+.etb { height: 46px; display: flex; align-items: center; gap: 10px; padding: 0 14px; border-bottom: 1px solid var(--border); flex: none; }
+.etb .name { font-weight: 600; font-size: 13px; padding: 3px 6px; border-radius: 6px; outline: none; border: 1px solid transparent; }
+.etb .name:hover { border-color: var(--border); }
+.etb .name:focus { border-color: var(--accent); background: var(--tile); }
+.etb .ext { color: var(--text3); font-size: 13px; margin-left: -8px; }
+.etb .sp { flex: 1; }
+.player { margin: 14px 16px 0; flex: 1 1 auto; min-height: 200px; border-radius: 10px; background: #0b0b0d; position: relative; overflow: hidden; display: grid; place-items: center; }
+.frame { position: relative; overflow: hidden; border-radius: 3px; box-shadow: 0 0 0 1px rgba(255,255,255,.06); }
+.bigplay { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); width: 56px; height: 56px; border-radius: 50%; background: rgba(0,0,0,.55); display: grid; place-items: center; cursor: pointer; color: #fff; backdrop-filter: blur(8px); }
+.transport { display: flex; align-items: center; gap: 8px; padding: 8px 16px 0; flex: none; }
+.transport .t { font: 12px ui-monospace, Menlo, monospace; color: var(--text2); }
+.transport .sp { flex: 1; }
+.transport .meta { font-size: 11.5px; color: var(--text3); }
+.timeline { position: relative; margin: 8px 16px 0; height: 104px; flex: none; }
+.ruler { position: absolute; left: 0; right: 0; top: 0; height: 16px; font: 10px ui-monospace, Menlo, monospace; color: var(--text3); }
+.ruler span { position: absolute; transform: translateX(-50%); top: 0; }
+.ruler span:first-child { transform: none; }
+.ruler span:first-child::after { left: 0; }
+.ruler span::after { content: ""; position: absolute; left: 50%; top: 13px; width: 1px; height: 4px; background: var(--text3); opacity: .6; }
+.strip { position: absolute; left: 0; right: 0; top: 20px; height: 52px; border-radius: 7px; overflow: hidden; display: flex; background: #000; }
+.strip .th { flex: 1; border-right: 1px solid rgba(0,0,0,.6); position: relative; overflow: hidden; }
+.wave { position: absolute; left: 0; right: 0; top: 76px; height: 24px; border-radius: 6px; background: var(--tile); overflow: hidden; display: flex; align-items: center; gap: 1px; padding: 0 2px; }
+.wave i { flex: 1; background: var(--accent); opacity: .55; border-radius: 1px; display: block; }
+.wave .lbl { position: absolute; left: 8px; top: 50%; transform: translateY(-50%); font-size: 10.5px; color: var(--text2); background: var(--win); padding: 0 5px; border-radius: 4px; }
+.wave.none { justify-content: center; font-size: 11px; color: var(--text3); }
+.shade { position: absolute; top: 20px; bottom: 4px; background: rgba(0,0,0,.55); pointer-events: none; }
+body.light .shade { background: rgba(240,242,246,.72); }
+.sel { position: absolute; top: 18px; bottom: 2px; border-top: 2px solid var(--accent); border-bottom: 2px solid var(--accent); pointer-events: none; }
+.th-handle { position: absolute; top: 18px; bottom: 2px; width: 12px; background: var(--accent); cursor: ew-resize; display: grid; place-items: center; z-index: 3; }
+.th-handle.l { border-radius: 6px 0 0 6px; transform: translateX(-12px); }
+.th-handle.r { border-radius: 0 6px 6px 0; }
+.th-handle::after { content: ""; width: 2px; height: 18px; border-radius: 1px; background: rgba(255,255,255,.85); }
+.playhead { position: absolute; top: 12px; bottom: 0; width: 2px; margin-left: -1px; background: #fff; z-index: 4; pointer-events: none; box-shadow: 0 0 0 1px rgba(0,0,0,.35); }
+.playhead::before { content: ""; position: absolute; left: -5px; top: -2px; width: 12px; height: 12px; border-radius: 3px 3px 6px 6px; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.4); }
+.timeline.locked { opacity: .5; pointer-events: none; }
+.selinfo { display: flex; align-items: center; gap: 10px; padding: 8px 16px 0; font-size: 12px; color: var(--text2); flex: none; }
+.selinfo b { color: var(--text); font-variant-numeric: tabular-nums; }
+.selinfo .sp { flex: 1; }
+.selinfo .keys { color: var(--text3); font-size: 11.5px; }
+.selinfo .keys kbd { font: 10.5px ui-monospace, Menlo, monospace; border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; margin: 0 2px; }
+.link { color: var(--accent); cursor: pointer; border: 0; background: transparent; padding: 0; font-size: 12px; }
+.warnbar { margin: 8px 16px 0; display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 8px; background: rgba(255,176,32,.12); color: var(--warn); font-size: 12px; flex: none; }
+body.light .warnbar { color: #9a6200; }
+.warnbar .sp { flex: 1; }
+.efoot { margin-top: auto; height: 58px; display: flex; align-items: center; gap: 8px; padding: 0 14px; border-top: 1px solid var(--border); flex: none; }
+.efoot .sp { flex: 1; }
+.efoot .info { font-size: 11.5px; color: var(--text3); }
+.efoot .info b { color: var(--text2); font-weight: 500; }
+.progress { width: 230px; height: 30px; border-radius: 8px; background: var(--tile); position: relative; overflow: hidden; display: flex; align-items: center; padding: 0 10px; font-size: 12px; font-weight: 600; }
+.progress i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--accent-soft); border-right: 2px solid var(--accent); transition: width .2s; }
+.progress span { position: relative; }
+
+/* ---------- Toast (same as the screenshot toast) ---------- */
+.toast { position: absolute; right: 18px; bottom: 18px; width: 420px; border-radius: 14px; background: var(--glass); border: 1px solid var(--border); box-shadow: 0 18px 50px rgba(0,0,0,.45);
+  backdrop-filter: var(--blur); -webkit-backdrop-filter: var(--blur); padding: 12px; z-index: 40; display: flex; gap: 12px; }
+.toast .thumb { width: 108px; height: 68px; border-radius: 8px; overflow: hidden; flex: none; position: relative; cursor: grab; box-shadow: 0 0 0 1px var(--border); }
+.toast .thumb .dur { position: absolute; right: 4px; bottom: 4px; font: 10px ui-monospace, Menlo, monospace; background: rgba(0,0,0,.7); color: #fff; border-radius: 4px; padding: 0 4px; }
+.toast .body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.toast .ttl { font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 6px; }
+.toast .sub { font-size: 11.5px; color: var(--text3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.toast .acts { display: flex; gap: 6px; margin-top: auto; }
+.toast .acts .ghost { height: 26px; font-size: 12px; padding: 0 9px; }
+.toast .x { position: absolute; right: 8px; top: 8px; width: 20px; height: 20px; border-radius: 50%; border: 0; background: transparent; color: var(--text3); cursor: pointer; display: grid; place-items: center; }
+
+/* ---------- Compare ---------- */
+.cmp { position: absolute; inset: 26px 0 0; padding: 22px 48px 30px; overflow: auto; z-index: 10; background: var(--stage); }
+.cmp h4 { margin: 0 0 14px; font-size: 15px; color: #fff; }
+body.light .cmp h4 { color: #141414; }
+.cmpgrid { display: grid; grid-template-columns: 150px 1fr 1fr; gap: 1px; background: var(--border); border-radius: 12px; overflow: hidden; border: 1px solid var(--border); }
+.cmpgrid > div { background: var(--win); padding: 9px 12px; font-size: 12px; color: var(--text2); line-height: 1.5; backdrop-filter: var(--blur); }
+.cmpgrid > div.h { font-weight: 600; color: var(--text); font-size: 12.5px; }
+.cmpgrid > div.k { color: var(--text); font-weight: 600; }
+.cmpgrid .bad { color: #ff7a7c; } body.light .cmpgrid .bad { color: #c62f31; }
+.flow { display: flex; align-items: stretch; gap: 8px; margin-top: 16px; }
+.flow > div { flex: 1; background: var(--glass); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; font-size: 11.5px; color: var(--text2); cursor: pointer; backdrop-filter: var(--blur); }
+.flow > div:hover { border-color: var(--accent); }
+.flow b { display: block; color: var(--text); font-size: 12.5px; margin-bottom: 2px; }
+.flow .arrow { flex: none; align-self: center; color: var(--text3); background: none; border: 0; padding: 0; cursor: default; }
+</style>
+</head>
+<body>
+<div class="stagebar" id="stagebar">
+  <b>录屏改版</b>
+  <span class="pill" data-screen="compare">现状 vs 方案</span>
+  <span class="grp">准备</span>
+  <span class="pill" data-screen="region">区域</span>
+  <span class="pill" data-screen="window">窗口</span>
+  <span class="pill" data-screen="display">全屏</span>
+  <span class="pill" data-screen="options">选项</span>
+  <span class="pill" data-screen="camera">摄像头</span>
+  <span class="pill" data-screen="gif">GIF</span>
+  <span class="pill" data-screen="perm">缺权限</span>
+  <span class="grp">录制</span>
+  <span class="pill" data-screen="countdown">倒计时</span>
+  <span class="pill" data-screen="recording">录制中</span>
+  <span class="pill" data-screen="paused">已暂停</span>
+  <span class="pill" data-screen="giflimit">GIF 将满</span>
+  <span class="pill" data-screen="discard">丢弃确认</span>
+  <span class="grp">之后</span>
+  <span class="pill" data-screen="editor">剪辑</span>
+  <span class="pill" data-screen="gifeditor">GIF 超长</span>
+  <span class="pill" data-screen="export">保存中</span>
+  <span class="pill" data-screen="saved">已保存</span>
+  <span class="pill" data-screen="recover">恢复</span>
+  <span class="sp"></span>
+  <span class="pill" id="glassToggle">Liquid Glass</span>
+  <span class="pill" id="themeToggle">浅色</span>
+</div>
+<div class="caption" id="caption"></div>
+<div class="desk" id="desk"></div>
+
+<script>
+const $ = s => document.querySelector(s);
+const desk = $('#desk');
+const P = 'fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"';
+const ICONS = {
+  region: `<path d="M3 7V4h3M14 4h3v3M17 13v3h-3M6 16H3v-3"/>`,
+  window: `<rect x="2.5" y="4" width="15" height="12" rx="2"/><path d="M2.5 7.5h15"/><circle cx="5" cy="5.8" r=".5" fill="currentColor"/>`,
+  display: `<rect x="2.5" y="3.5" width="15" height="10" rx="1.5"/><path d="M7 17h6M10 13.5V17"/>`,
+  speaker: `<path d="M3.5 8v4h3l4 3.5v-11L6.5 8h-3Z"/><path d="M13.5 7.5a3.5 3.5 0 0 1 0 5M15.5 5.5a6.5 6.5 0 0 1 0 9"/>`,
+  speakerOff: `<path d="M3.5 8v4h3l4 3.5v-11L6.5 8h-3Z"/><path d="m13.5 8 4 4M17.5 8l-4 4"/>`,
+  mic: `<rect x="7.5" y="2.5" width="5" height="9.5" rx="2.5"/><path d="M4.5 9.5a5.5 5.5 0 0 0 11 0M10 15v2.5"/>`,
+  micOff: `<rect x="7.5" y="2.5" width="5" height="9.5" rx="2.5"/><path d="M4.5 9.5a5.5 5.5 0 0 0 11 0M10 15v2.5M3 3l14 14"/>`,
+  camera: `<rect x="2.5" y="5.5" width="11" height="9" rx="2"/><path d="m13.5 9 4-2.5v7l-4-2.5"/>`,
+  sliders: `<path d="M4 6h7M15 6h1M4 14h1M9 14h7"/><circle cx="13" cy="6" r="2"/><circle cx="7" cy="14" r="2"/>`,
+  chevron: `<path d="m6 8 4 4 4-4"/>`,
+  x: `<path d="m5 5 10 10M15 5 5 15"/>`,
+  pause: `<path d="M7 4.5v11M13 4.5v11" stroke-width="2.4"/>`,
+  play: `<path d="M6.5 4.2v11.6L16 10 6.5 4.2Z" fill="currentColor"/>`,
+  restart: `<path d="M4 10a6 6 0 1 0 2-4.5M4 3.5V7h3.5"/>`,
+  trash: `<path d="M4 6h12M8 6V4h4v2M5.5 6l.8 10h7.4l.8-10"/>`,
+  folder: `<path d="M3 6a1 1 0 0 1 1-1h4l1.5 1.5H16a1 1 0 0 1 1 1V15a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6Z"/>`,
+  copy: `<rect x="6.5" y="6.5" width="10" height="10" rx="1.5"/><path d="M13.5 4V3.5a1 1 0 0 0-1-1h-9a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1H4"/>`,
+  warn: `<path d="M10 3 18 16.5H2L10 3Z"/><path d="M10 8v4M10 14.2v.3"/>`,
+  check: `<path d="m4.5 10.5 3.5 3.5 7.5-8"/>`,
+  grip: `<circle cx="7.5" cy="5" r="1" fill="currentColor" stroke="none"/><circle cx="12.5" cy="5" r="1" fill="currentColor" stroke="none"/><circle cx="7.5" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="12.5" cy="10" r="1" fill="currentColor" stroke="none"/><circle cx="7.5" cy="15" r="1" fill="currentColor" stroke="none"/><circle cx="12.5" cy="15" r="1" fill="currentColor" stroke="none"/>`,
+  film: `<rect x="3" y="3.5" width="14" height="13" rx="1.5"/><path d="M6.5 3.5v13M13.5 3.5v13M3 7h3.5M3 13h3.5M13.5 7H17M13.5 13H17"/>`,
+  gif: `<rect x="2.5" y="4.5" width="15" height="11" rx="2"/><path d="M8 8.2H6.6a1.2 1.2 0 0 0-1.2 1.2v1.2a1.2 1.2 0 0 0 1.2 1.2H8V10H7M10 8v4M12.5 12V8h2.2M12.5 10h1.8"/>`,
+  reveal: `<circle cx="9" cy="9" r="5"/><path d="m13 13 4 4"/>`,
+  timer: `<circle cx="10" cy="11" r="6"/><path d="M10 8v3l2 1.5M8 2.5h4"/>`,
+  scissors: `<circle cx="5.5" cy="6" r="2.2"/><circle cx="5.5" cy="14" r="2.2"/><path d="M7.4 7.2 16.5 14M7.4 12.8 16.5 6"/>`,
+  open: `<path d="M8 4H4.5a1 1 0 0 0-1 1v10.5a1 1 0 0 0 1 1H15a1 1 0 0 0 1-1V12M11 3.5h5.5V9M16.5 3.5 9 11"/>`,
+  lock: `<rect x="4.5" y="9" width="11" height="8" rx="1.5"/><path d="M7 9V6.5a3 3 0 0 1 6 0V9"/>`,
+};
+const ic = (n, size = 16) => `<svg width="${size}" height="${size}" viewBox="0 0 20 20" ${P}>${ICONS[n]}</svg>`;
+const CURSOR = `<svg class="cursor" viewBox="0 0 20 20"><path d="M4 2.5v13.2l3.4-3.1 2.2 5 2.3-1-2.2-4.9h4.6L4 2.5Z" fill="#fff" stroke="#000" stroke-width="1.1" stroke-linejoin="round"/></svg>`;
+
+// ---------- Fixed desktop geometry (desk points) ----------
+const DESK = { w: 1180, h: 720 };
+const WINDOWS = {
+  a: { x: 96, y: 58, w: 720, h: 452, app: 'Safari', title: '销售看板 · Typeflux Cloud' },
+  b: { x: 760, y: 236, w: 384, h: 300, app: 'Xcode', title: 'RecorderView.swift' },
+};
+const DISPLAY = { x: 0, y: 0, w: DESK.w, h: DESK.h, name: '内建视网膜显示屏' };
+const QUALITY = { mp4: [[1280, '720p'], [1920, '1080p'], [2560, '1440p'], [3840, '4K']], gif: [[640, '小'], [960, '标准']] };
+
+const S = {
+  phase: 'setup', mode: 'region', format: 'mp4',
+  sys: true, mic: true, cam: false, micDenied: false,
+  camCorner: 'br', camSize: 0.22,
+  quality: 1920, gifQuality: 960, fps: 30, countdown: 3, cursor: true,
+  region: { x: 250, y: 118, w: 560, h: 340 }, win: 'a', hoverWin: null,
+  pop: null, tip: null,
+  cd: 3, elapsed: 0, paused: false,
+  dur: 12.4, a: 0, b: 12.4, head: 0, playing: false, pct: 0,
+  toast: null, cancelled: false, mouse: { x: 640, y: 300 },
+};
+let timers = [];
+const clearTimers = () => { timers.forEach(t => { clearInterval(t); clearTimeout(t); }); timers = []; };
+
+const target = () => S.mode === 'region' ? S.region : S.mode === 'window' ? WINDOWS[S.win] : DISPLAY;
+const fmt = s => { s = Math.max(0, Math.floor(s)); return `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; };
+const fmt1 = s => { const m = Math.floor(s / 60); return `${String(m).padStart(2, '0')}:${(s - m * 60).toFixed(1).padStart(4, '0')}`; };
+const sec = s => `${s.toFixed(1)} 秒`;
+const isGif = () => S.format === 'gif';
+const maxDim = () => isGif() ? S.gifQuality : S.quality;
+function outSize() {
+  const t = target(); let w = t.w * 2, h = t.h * 2; // Retina points to pixels; never scaled up.
+  const f = Math.min(1, maxDim() / Math.max(w, h));
+  return [Math.max(2, Math.floor(w * f / 2) * 2), Math.max(2, Math.floor(h * f / 2) * 2)];
+}
+function estimateMB(seconds) {
+  const [w, h] = outSize(); const px = w * h / (1920 * 1080);
+  const mb = isGif() ? seconds * 0.32 * px * 2.2 : seconds * 0.62 * px * (S.fps / 30) + (S.sys || micOn() ? seconds * 0.02 : 0);
+  return Math.max(0.1, mb).toFixed(1);
+}
+const micOn = () => S.mic && !S.micDenied;
+const audioLabel = () => isGif() ? '无声' : S.sys && micOn() ? '系统声音 + 麦克风' : S.sys ? '系统声音' : micOn() ? '麦克风' : '无声';
+
+// ---------- Desktop ----------
+function appA(scale = 1) {
+  return `<div class="tb"><div class="dots"><i></i><i></i><i></i></div><div class="t">${WINDOWS.a.title}</div></div>
+    <div class="side"><div>概览</div><div class="on">销售看板</div><div>订单</div><div>客户</div><div>团队成员</div><div>设置</div></div>
+    <div class="main"><h3>本周销售概览</h3><div class="muted">2026-10-08 — 2026-10-14 · 全部渠道</div>
+      <div class="kpis"><div class="kpi"><div class="muted">收入</div><div class="n">¥ 284,310</div><div class="d">▲ 12.4%</div></div>
+      <div class="kpi"><div class="muted">新客户</div><div class="n">1,206</div><div class="d">▲ 8.1%</div></div>
+      <div class="kpi"><div class="muted">转化率</div><div class="n">3.82%</div><div class="d">▲ 0.4 pt</div></div></div>
+      <div class="chart"><div class="muted">每日收入</div><div class="bars">${[46, 62, 54, 78, 70, 92, 84].map(h => `<i style="height:${h}%"></i>`).join('')}</div></div></div>`;
+}
+function appB() {
+  return `<div class="tb"><div class="dots"><i></i><i></i><i></i></div><div class="t">${WINDOWS.b.title}</div></div>
+<div class="code"><b>struct</b> <i>RecorderView</i>: View {
+    <b>@State</b> <b>var</b> elapsed = <u>0.0</u>
+    <b>var</b> body: <b>some</b> View {
+        HStack {
+            Circle().fill(.red)
+            Text(elapsed.<i>formatted</i>())
+            Button(<u>"Stop"</u>) { stop() }
+        }
+    }
+}</div>`;
+}
+function desktop() {
+  const a = WINDOWS.a, b = WINDOWS.b;
+  const rec = (S.phase === 'recording');
+  const mb = rec ? `<span class="mbrec ${S.paused ? 'paused' : ''}" data-act="stop" title="停止录制">${S.paused ? ic('pause', 11) : '<span class="recdot" style="width:8px;height:8px;border-radius:2px"></span>'}<span class="mono">${fmt(S.elapsed)}</span></span>` : '';
+  return `<div class="menubar"><span>&#63743;</span><b>Safari</b><span>文件</span><span>编辑</span><span>显示</span><span>历史记录</span><span>窗口</span><span class="sp"></span>
+    ${mb}<span class="mbi">${ic('region', 14)}</span><span class="mbi">${ic('speaker', 14)}</span><span>10月14日 周二 12:05</span></div>
+    <div class="app" style="left:${a.x}px;top:${a.y}px;width:${a.w}px;height:${a.h}px">${appA()}</div>
+    <div class="app" style="left:${b.x}px;top:${b.y}px;width:${b.w}px;height:${b.h}px">${appB()}</div>`;
+}
+
+// ---------- Camera bubble ----------
+function camRect(t) {
+  const s = Math.round(Math.min(t.w, t.h) * S.camSize * 1.35), pad = 14;
+  const w = Math.round(s * 1.15), h = s;
+  const x = S.camCorner.includes('r') ? t.x + t.w - w - pad : t.x + pad;
+  const y = S.camCorner.includes('b') ? t.y + t.h - h - pad : t.y + pad;
+  return { x, y, w, h };
+}
+function camBubble(t, live = true, editable = true) {
+  if (!S.cam) return '';
+  const r = camRect(t);
+  return `<div class="cam ${editable ? '' : 'static'}" id="cam" style="left:${r.x}px;top:${r.y}px;width:${r.w}px;height:${r.h}px">
+    ${live ? '<span class="tag">实时</span>' : ''}${editable ? '<span class="rz" id="camrz"></span>' : ''}</div>`;
+}
+
+// ---------- Setup ----------
+function holeFor(t) {
+  if (S.mode === 'region') {
+    const hs = [[0, 0], [.5, 0], [1, 0], [0, .5], [1, .5], [0, 1], [.5, 1], [1, 1]]
+      .map(([u, v]) => `<span class="handle" data-h="${u},${v}" style="left:${u * 100}%;top:${v * 100}%"></span>`).join('');
+    return `<div class="hole region" style="left:${t.x}px;top:${t.y}px;width:${t.w}px;height:${t.h}px">${S.phase === 'setup' ? hs : ''}</div>
+      <div class="sizechip" style="left:${t.x}px;top:${Math.max(30, t.y - 24)}px">${t.w} × ${t.h} pt</div>`;
+  }
+  if (S.mode === 'window') {
+    return `<div class="hole win" style="left:${t.x}px;top:${t.y}px;width:${t.w}px;height:${t.h}px"></div>`;
+  }
+  return `<div class="hole display" style="left:0;top:0;width:${DESK.w}px;height:${DESK.h}px"></div>`;
+}
+function captureBar() {
+  const g = isGif();
+  const src = [['region', '区域', '拖动框选要录制的范围'], ['window', '窗口', '录制一个窗口，它移动或被遮挡也能录到'], ['display', '全屏', '录制整个显示器']]
+    .map(([k, l, t]) => `<button class="${S.mode === k ? 'on' : ''}" data-mode="${k}" data-tip="${t}">${ic(k, 15)}${l}</button>`).join('');
+  const fmtSeg = `<button class="${!g ? 'on' : ''}" data-fmt="mp4" data-tip="视频，可带声音">${ic('film', 15)}MP4</button><button class="${g ? 'on' : ''}" data-fmt="gif" data-tip="动图，无声，最长 30 秒">${ic('gif', 15)}GIF</button>`;
+  const sysTip = g ? 'GIF 不含声音' : S.sys ? '录制系统声音：开（不含 Typeflux 自己的声音）' : '录制系统声音：关';
+  const micTip = g ? 'GIF 不含声音' : S.micDenied ? '没有麦克风权限' : S.mic ? '录制麦克风：开' : '录制麦克风：关';
+  const meter = (!g && S.mic && !S.micDenied) ? `<span class="meter" id="meter">${[0, 1, 2, 3].map(() => '<i style="height:4px"></i>').join('')}</span>` : '';
+  return `<div class="bar" id="cbar" style="left:50%;transform:translateX(-50%);bottom:56px">
+    <span class="grip">${ic('grip', 14)}</span>
+    <span class="seg">${src}</span><span class="sep"></span>
+    <span class="seg">${fmtSeg}</span><span class="sep"></span>
+    <button class="ib ${!g && S.sys ? 'on' : ''} ${g ? 'dis' : ''}" data-act="sys" data-tip="${sysTip}">${ic(!g && S.sys ? 'speaker' : 'speakerOff')}</button>
+    <button class="ib ${!g && S.mic && !S.micDenied ? 'on' : ''} ${g ? 'dis' : ''}" data-act="mic" data-tip="${micTip}">${ic(!g && S.mic && !S.micDenied ? 'mic' : 'micOff')}${meter}${S.micDenied && !g ? '<span class="badge"></span>' : ''}</button>
+    <button class="ib ${S.cam ? 'on' : ''}" data-act="cam" data-tip="${S.cam ? '摄像头画中画：开 · 拖动画面换位置' : '摄像头画中画：关'}">${ic('camera')}</button>
+    <span class="sep"></span>
+    <button class="ib ${S.pop === 'options' ? 'on' : ''}" data-act="options" data-tip="画质、帧率、倒计时、鼠标指针、保存位置">${ic('sliders')}选项<span class="caret">${ic('chevron', 12)}</span></button>
+    <span class="sep"></span>
+    <button class="ib" data-act="cancel" data-tip="取消（esc）">${ic('x')}</button>
+    <button class="primary rec" data-act="start" ${S.mode === 'region' && (S.region.w < 40 || S.region.h < 40) ? 'disabled' : ''}><span class="recdot"></span>开始录制</button>
+  </div>`;
+}
+function summaryLine() {
+  const [w, h] = outSize();
+  const parts = [`${w} × ${h}`, isGif() ? `GIF · 10 FPS · 无声 · 最长 30 秒` : `MP4 · ${S.fps} FPS · ${audioLabel()}`];
+  if (S.cam) parts.push('摄像头');
+  parts.push(S.countdown ? `倒计时 ${S.countdown} 秒` : '立即开始');
+  return `<div class="summary" style="left:50%;bottom:22px"><span>${parts.join(' · ')}</span><span><kbd>↩</kbd>开始 <kbd>esc</kbd>取消</span></div>`;
+}
+function optionsPop() {
+  const g = isGif();
+  const q = QUALITY[g ? 'gif' : 'mp4'].map(([v, l]) => `<button class="${maxDim() === v ? 'on' : ''}" data-q="${v}">${l}</button>`).join('');
+  const fps = g ? `<span class="k" style="color:var(--text3)">GIF 固定 10 FPS</span>` : [24, 30, 60].map(v => `<button class="${S.fps === v ? 'on' : ''}" data-fps="${v}">${v}</button>`).join('');
+  const cd = [[0, '关'], [3, '3 秒'], [5, '5 秒'], [10, '10 秒']].map(([v, l]) => `<button class="${S.countdown === v ? 'on' : ''}" data-cd="${v}">${l}</button>`).join('');
+  const [w, h] = outSize();
+  return `<div class="pop" style="left:50%;bottom:104px;transform:translateX(30px);width:330px">
+    <h5>${ic('sliders')}录制选项</h5>
+    <div class="row"><span class="k">画质</span><span><span class="seg sm">${q}</span></span></div>
+    <div class="row"><span class="k">帧率</span><span>${g ? fps : `<span class="seg sm">${fps}</span>`}</span></div>
+    <div class="row"><span class="k">倒计时</span><span><span class="seg sm">${cd}</span></span></div>
+    <div class="row"><span class="k">鼠标指针</span><span><span class="tog ${S.cursor ? 'on' : ''}" data-act="cursor"><i></i>${S.cursor ? '录进画面' : '不录'}</span></span></div>
+    <hr>
+    <div class="row"><span class="k">保存到</span><span><span class="select">${ic('folder', 14)}图片 › Typeflux ${ic('chevron', 12)}</span></span></div>
+    <div class="note">输出 ${w} × ${h}。画质只会缩小，不会把小区域放大。以上设置会记住，下次录屏沿用。</div>
+  </div>`;
+}
+function micPop() {
+  return `<div class="pop" style="left:50%;bottom:104px;transform:translateX(-40px);width:300px">
+    <h5>${ic('warn')}需要麦克风权限</h5>
+    <div style="font-size:12px;color:var(--text2)">在「系统设置 › 隐私与安全性 › 麦克风」中允许 Typeflux，回到这里后会自动生效，不用重新开始。</div>
+    <div class="acts"><button class="ghost" data-act="micOffNow">这次不录麦克风</button><button class="primary" data-act="grantMic">打开系统设置</button></div>
+  </div>`;
+}
+function setupLayer() {
+  const t = target();
+  let label = '';
+  if (S.mode === 'window') {
+    const hv = WINDOWS[S.hoverWin || S.win];
+    label = `<div class="target-label" style="left:${hv.x + hv.w / 2}px;top:${hv.y + hv.h / 2}px"><b>${hv.title}</b><span>${hv.app}</span><span>${hv.w * 2} × ${hv.h * 2} · ${S.hoverWin && S.hoverWin !== S.win ? '点击选择这个窗口' : '已选择 · 窗口移动或被遮挡也能录到'}</span></div>`;
+  }
+  if (S.mode === 'display') {
+    label = `<div class="target-label" style="left:${DESK.w / 2}px;top:${DESK.h / 2 - 40}px"><b>${DISPLAY.name}</b><span>${DESK.w * 2} × ${DESK.h * 2} · 有多个显示器时，点一下要录的那块屏幕</span></div>`;
+  }
+  const hole = S.mode === 'window' ? holeFor(WINDOWS[S.hoverWin || S.win]) : holeFor(t);
+  const pop = S.pop === 'options' ? optionsPop() : S.pop === 'perm' ? micPop() : '';
+  return `<div class="layer pick" id="pick">${hole}${label}${camBubble(t)}${captureBar()}${summaryLine()}${pop}</div>`;
+}
+
+// ---------- Countdown / recording ----------
+function countdownLayer() {
+  const t = target();
+  return `<div class="layer">${holeFor(t)}${camBubble(t, true, false)}
+    <div class="count" style="left:${t.x + t.w / 2}px;top:${t.y + t.h / 2}px">
+      <svg width="132" height="132"><circle cx="66" cy="66" r="62" fill="none" stroke="rgba(255,255,255,.18)" stroke-width="4"/>
+      <circle class="run" cx="66" cy="66" r="62" fill="none" stroke="#fff" stroke-width="4" stroke-dasharray="389" stroke-linecap="round"/></svg>${S.cd}</div>
+    <div class="hint" style="left:${t.x + t.w / 2}px;top:${t.y + t.h / 2 + 84}px"><kbd>esc</kbd>取消 &nbsp; <kbd>空格</kbd>立即开始</div></div>`;
+}
+function pillPos(t) {
+  // Prefer below the recorded area, then above it, then inside its bottom edge. The pill is never recorded.
+  const w = isGif() ? 330 : 300, h = 40;
+  let y = t.y + t.h + 12;
+  if (y + h > DESK.h - 8) y = t.y - h - 12;
+  if (y < 34) y = t.y + t.h - h - 14;
+  return { x: Math.min(Math.max(t.x + t.w / 2 - w / 2, 8), DESK.w - w - 8), y };
+}
+function recordingLayer() {
+  const t = target(), p = pillPos(t), g = isGif();
+  const near = g && S.elapsed >= 25;
+  const lim = g ? `<span class="lim mono">/ 00:30</span>` : '';
+  const meter = (!g && micOn() && !S.paused) ? `<span class="meter" id="meter" title="麦克风电平">${[0, 1, 2, 3].map(() => '<i style="height:4px"></i>').join('')}</span>` : '';
+  const pop = S.pop === 'discard' ? `<div class="pop" style="left:${p.x + 60}px;top:${p.y - 128}px;width:280px">
+      <h5>${ic('trash')}丢弃这段录制？</h5><div style="font-size:12px;color:var(--text2)">已录制的 ${fmt(S.elapsed)} 会被删除，无法恢复。</div>
+      <div class="acts"><button class="ghost" data-act="closepop">继续录制</button><button class="primary" style="background:var(--danger)" data-act="discardNow">丢弃</button></div></div>`
+    : S.pop === 'restart' ? `<div class="pop" style="left:${p.x + 30}px;top:${p.y - 128}px;width:290px">
+      <h5>${ic('restart')}重新开始？</h5><div style="font-size:12px;color:var(--text2)">删除已录制的 ${fmt(S.elapsed)}，倒计时后从头录制，设置不变。</div>
+      <div class="acts"><button class="ghost" data-act="closepop">取消</button><button class="primary" data-act="restartNow">重新开始</button></div></div>` : '';
+  const tip = near ? `<div class="hint" style="left:${p.x + 165}px;top:${p.y - 34}px">GIF 最长 30 秒，还剩 ${30 - Math.floor(S.elapsed)} 秒自动停止</div>` : '';
+  return `<div class="layer" style="pointer-events:none"><div class="recframe ${S.paused ? 'paused' : ''}" style="left:${t.x}px;top:${t.y}px;width:${t.w}px;height:${t.h}px"><i></i><i></i><i></i><i></i></div>
+    ${camBubble(t, true, false)}
+    <div class="pill2" style="left:${p.x}px;top:${p.y}px;pointer-events:auto">
+      <span class="live ${S.paused ? 'paused' : ''}"><span class="dot"></span><span class="time">${fmt(S.elapsed)}</span>${lim}${S.paused ? '<span class="state">已暂停</span>' : ''}${meter}</span>
+      <span class="sep"></span>
+      <button class="ib ${S.paused ? 'on' : ''}" data-act="pause" data-tip="${S.paused ? '继续录制' : '暂停（暂停的时间不会出现在文件里）'}">${ic(S.paused ? 'play' : 'pause')}</button>
+      <button class="ib" data-act="restart" data-tip="重新开始">${ic('restart')}</button>
+      <button class="ib" data-act="discard" data-tip="丢弃">${ic('trash')}</button>
+      <span class="sep"></span>
+      <button class="stop" data-act="stop"><span class="sq"></span>停止</button>
+      ${g ? `<span class="gifbar ${near ? 'near' : ''}"><i style="width:${Math.min(100, S.elapsed / 30 * 100)}%"></i></span>` : ''}
+    </div>${tip}${pop}</div>`;
+}
+
+// ---------- Editor ----------
+function miniFrame(w, h, t, i = 0) {
+  // A scaled copy of the recorded area, with the pointer moving over time.
+  const src = target(), sc = Math.min(w / src.w, h / src.h);
+  const fw = Math.round(src.w * sc), fh = Math.round(src.h * sc);
+  const cx = 0.25 + 0.5 * (0.5 + 0.5 * Math.sin(t * 0.7 + i)), cy = 0.3 + 0.4 * (0.5 + 0.5 * Math.cos(t * 0.5));
+  const a = WINDOWS.a, b = WINDOWS.b;
+  const inner = `<div style="position:absolute;left:0;top:0;width:${DESK.w}px;height:${DESK.h}px;background:var(--desk);transform:scale(${sc});transform-origin:0 0">
+      <div style="position:absolute;left:${-src.x}px;top:${-src.y}px;width:${DESK.w}px;height:${DESK.h}px">
+      <div class="app" style="left:${a.x}px;top:${a.y}px;width:${a.w}px;height:${a.h}px">${appA()}</div>
+      ${S.mode === 'window' && S.win === 'a' ? '' : `<div class="app" style="left:${b.x}px;top:${b.y}px;width:${b.w}px;height:${b.h}px">${appB()}</div>`}</div></div>`;
+  const cam = S.cam ? (() => { const r = camRect({ x: 0, y: 0, w: src.w, h: src.h }); return `<div class="cam static" style="left:${r.x * sc}px;top:${r.y * sc}px;width:${r.w * sc}px;height:${r.h * sc}px;border-radius:${14 * sc}px;box-shadow:0 0 0 ${Math.max(1, 2 * sc)}px rgba(255,255,255,.85)"></div>`; })() : '';
+  const cur = S.cursor ? `<svg style="position:absolute;left:${cx * fw}px;top:${cy * fh}px;width:${Math.max(8, 18 * sc)}px;height:${Math.max(8, 18 * sc)}px" viewBox="0 0 20 20"><path d="M4 2.5v13.2l3.4-3.1 2.2 5 2.3-1-2.2-4.9h4.6L4 2.5Z" fill="#fff" stroke="#000" stroke-width="1.1"/></svg>` : '';
+  return `<div class="frame" style="width:${fw}px;height:${fh}px">${inner}${cam}${cur}</div>`;
+}
+let WAVE = [];
+for (let i = 0; i < 150; i++) WAVE.push(0.15 + 0.85 * Math.abs(Math.sin(i * 0.37) * Math.cos(i * 0.11 + 1) * (0.6 + 0.4 * Math.sin(i * 1.7))));
+function editorLayer() {
+  const g = isGif(), len = S.b - S.a, over = g && len > 30.05;
+  const exporting = S.phase === 'export';
+  const pct = v => (v / S.dur * 100).toFixed(3) + '%';
+  const tick = S.dur > 40 ? 10 : S.dur > 16 ? 5 : 2;
+  const ticks = []; for (let s = 0; s <= S.dur + 0.001; s += tick) ticks.push(`<span style="left:${pct(s)}">${fmt(s)}</span>`);
+  const thumbs = Array.from({ length: 10 }, (_, i) => `<div class="th">${miniFrame(84, 52, (i + .5) * S.dur / 10, i)}</div>`).join('');
+  const [w, h] = outSize();
+  const hasAudio = !g && (S.sys || micOn());
+  const wave = g ? `<div class="wave none">GIF 不含声音</div>` : hasAudio
+    ? `<div class="wave">${WAVE.map(v => `<i style="height:${(v * 100).toFixed(0)}%"></i>`).join('')}<span class="lbl">${audioLabel()}</span></div>`
+    : `<div class="wave none">这段录制没有声音</div>`;
+  const info = `<b>${g ? 'GIF' : 'MP4'}</b> · ${w} × ${h} · ${g ? '10' : S.fps} FPS · 约 ${estimateMB(Math.min(len, g ? 30 : len))} MB`;
+  const actions = exporting
+    ? `<div class="progress"><i style="width:${S.pct}%"></i><span>正在保存 ${g ? 'GIF' : 'MP4'} · ${Math.floor(S.pct)}%</span></div><button class="ghost" data-act="cancelExport">取消</button>`
+    : `<button class="ghost" data-act="copyFile" data-tip="把文件复制到剪贴板，可以直接粘贴到聊天或邮件">${ic('copy', 15)}复制</button>
+       <button class="ghost" data-act="saveAs">另存为…</button>
+       <button class="primary" data-act="save" ${over ? 'disabled' : ''}>${ic('check', 15)}保存 ${g ? 'GIF' : 'MP4'} <span class="k">⌘S</span></button>`;
+  return `<div class="layer" style="background:rgba(0,0,0,.18)"><div class="editor" id="editor">
+    <div class="etb"><div class="dots"><i></i><i></i><i></i></div>
+      <span class="name" contenteditable="true" spellcheck="false" data-tip="点击改名">录屏 2026-10-14 12.05.32</span><span class="ext">.${g ? 'gif' : 'mp4'}</span>
+      <span class="sp"></span>
+      <span class="seg"><button class="${!g ? 'on' : ''}" data-fmt="mp4">${ic('film', 15)}MP4</button><button class="${g ? 'on' : ''}" data-fmt="gif">${ic('gif', 15)}GIF</button></span>
+    </div>
+    <div class="player" id="player">${miniFrame(860, 316, S.head)}${S.playing ? '' : `<div class="bigplay" data-act="play">${ic('play', 26)}</div>`}</div>
+    <div class="transport">
+      <button class="ib" data-act="play" data-tip="播放 / 暂停（空格）">${ic(S.playing ? 'pause' : 'play')}</button>
+      <span class="t">${fmt1(S.head)} / ${fmt1(S.dur)}</span><span class="sp"></span>
+      <span class="meta">${S.mode === 'region' ? '区域' : S.mode === 'window' ? WINDOWS[S.win].app + ' 窗口' : '全屏'} · ${audioLabel()}${S.cam ? ' · 摄像头' : ''}</span>
+    </div>
+    <div class="timeline ${exporting ? 'locked' : ''}" id="tl">
+      <div class="ruler">${ticks.join('')}</div>
+      <div class="strip">${thumbs}</div>${wave}
+      <div class="shade" style="left:0;width:${pct(S.a)}"></div><div class="shade" style="left:${pct(S.b)};right:0"></div>
+      <div class="sel" style="left:${pct(S.a)};width:${pct(len)}"></div>
+      <div class="th-handle l" data-drag="a" style="left:${pct(S.a)}"></div><div class="th-handle r" data-drag="b" style="left:${pct(S.b)}"></div>
+      <div class="playhead" style="left:${pct(S.head)}"></div>
+    </div>
+    <div class="selinfo">${ic('scissors', 14)}保留 <b>${fmt1(S.a)} – ${fmt1(S.b)}</b> · 共 <b>${sec(len)}</b>
+      ${S.a > 0 || S.b < S.dur ? `<button class="link" data-act="resetTrim">恢复完整</button>` : ''}<span class="sp"></span>
+      <span class="keys">拖动两端的把手剪掉头尾 · <kbd>I</kbd><kbd>O</kbd> 设为起点 / 终点 · <kbd>空格</kbd> 播放</span></div>
+    ${over ? `<div class="warnbar">${ic('warn', 15)}GIF 最长 30 秒，现在选了 ${sec(len)}。<span class="sp"></span><button class="ghost" style="height:24px" data-act="fit30">保留开头 30 秒</button><button class="ghost" style="height:24px" data-act="tomp4">改存 MP4</button></div>` : ''}
+    <div class="efoot">
+      <button class="ghost danger" data-act="discardEditor">${ic('trash', 15)}丢弃</button>
+      <span class="info">${info}</span><span class="sp"></span>
+      ${exporting ? '' : `<span class="select" data-tip="保存位置，点击更改">${ic('folder', 14)}图片 › Typeflux ${ic('chevron', 12)}</span>`}
+      ${actions}
+    </div>
+  </div>${S.pop === 'discardEditor' ? `<div class="pop" style="left:150px;top:520px;width:280px"><h5>${ic('trash')}丢弃这段录制？</h5>
+    <div style="font-size:12px;color:var(--text2)">还没保存，丢弃后无法恢复。</div><div class="acts"><button class="ghost" data-act="closepop">保留</button><button class="primary" style="background:var(--danger)" data-act="discardNow">丢弃</button></div></div>` : ''}</div>`;
+}
+
+// ---------- Toasts ----------
+function toastLayer() {
+  if (S.toast === 'saved') {
+    const g = isGif();
+    return `<div class="toast"><div class="thumb" data-tip="拖到任意应用即可发送文件">${miniFrame(108, 68, 3)}<span class="dur">${fmt(S.b - S.a)}</span></div>
+      <div class="body"><div class="ttl" style="color:var(--ok)">${ic('check', 15)}<span style="color:var(--text)">已保存</span></div>
+      <div class="sub">录屏 2026-10-14 12.05.32.${g ? 'gif' : 'mp4'}</div><div class="sub">图片 › Typeflux · ${estimateMB(S.b - S.a)} MB</div>
+      <div class="acts"><button class="ghost" data-act="toastClose">${ic('reveal', 13)}在 Finder 中显示</button><button class="ghost" data-act="toastClose">${ic('copy', 13)}复制</button><button class="ghost" data-act="toastClose">${ic('open', 13)}打开</button></div></div>
+      <button class="x" data-act="toastClose">${ic('x', 12)}</button></div>`;
+  }
+  if (S.toast === 'recover') {
+    return `<div class="toast"><div class="thumb">${miniFrame(108, 68, 1)}<span class="dur">00:42</span></div>
+      <div class="body"><div class="ttl">${ic('restart', 15)}上次的录屏还没保存</div>
+      <div class="sub">今天 11:58 · 00:42 · Typeflux 退出时自动保留</div>
+      <div class="acts"><button class="primary" style="height:26px;font-size:12px" data-act="openRecovered">打开剪辑</button><button class="ghost danger" data-act="toastClose">丢弃</button><button class="ghost" data-act="toastClose">稍后</button></div></div></div>`;
+  }
+  return '';
+}
+
+// ---------- Compare ----------
+function compareLayer() {
+  const rows = [
+    ['入口到开始', '先弹出一个 540×740 的表单窗口，区域要再点「框选区域…」才能去屏幕上选；屏幕叫 “Display”', '直接进入屏幕上的选择：和截图一样框选；切到「窗口」悬停高亮、点一下选中；「全屏」点哪块屏录哪块'],
+    ['设置项', '来源 / 文件与声音 / 摄像头 / 更多选项 四张卡片，长说明常驻；用户要读完整张表', '一条和截图工具栏同款的工具条：来源、格式、声音、摄像头都是一键开关，次要项收进「选项」；下方一行说清最终结果'],
+    ['摄像头', '下拉选「右下」，一个滑块调 22%，只有示意图', '开关一打开就在选区里出现实时画面，拖到哪个角就是哪个角，拖右下角改大小'],
+    ['GIF 限制', '一段长说明文字', '音频按钮直接变灰并提示原因；录制中显示 “/ 00:30” 和进度条，最后 5 秒提醒'],
+    ['录制中', '一个 460×280 的窗口，三行重复的状态文字，暂停 + 不明含义的 “⋯” 菜单', '录制区四角红框（不遮挡、不压暗）+ 一枚胶囊：计时、电平、暂停、重来、丢弃、停止；菜单栏同步计时，点击即停止'],
+    ['剪辑', '两根独立滑块 + 两个秒数输入框，黑边预览，看不到内容', '缩略图时间轴 + 两端把手直接拖，播放头可拖可点，下面是声音波形；I / O 键设起止'],
+    ['保存', '“保存位置 saved”、保存 MP4 / 保存到其他位置…', '文件名可直接改；显示尺寸、帧率和预计大小；保存 ⌘S、另存为、复制文件；保存后右下角弹出可拖拽的缩略图'],
+    ['一致性', '设置窗口是系统表单风格，和截图浮层两套语言', '工具条、弹层、提示、Toast 全部复用截图浮层的 token 与组件；跟随 Classic / Liquid Glass、明暗'],
+  ];
+  const steps = [['region', '1 选择', '区域 / 窗口 / 全屏，工具条一次设好'], ['countdown', '2 倒计时', 'esc 取消，空格跳过'], ['recording', '3 录制', '胶囊控制 + 菜单栏计时'], ['editor', '4 剪辑', '时间轴拖把手，选格式'], ['saved', '5 完成', '缩略图 Toast，可拖拽发送']];
+  return `<div class="cmp"><h4>问题在哪里，改成什么样</h4>
+    <div class="cmpgrid"><div class="h"></div><div class="h">现在</div><div class="h">改版</div>
+      ${rows.map(([k, a, b]) => `<div class="k">${k}</div><div class="bad">${a}</div><div>${b}</div>`).join('')}</div>
+    <div class="flow">${steps.map(([id, t, d], i) => `${i ? `<div class="arrow">→</div>` : ''}<div data-goto="${id}"><b>${t}</b>${d}</div>`).join('')}</div></div>`;
+}
+
+// ---------- Render ----------
+function render() {
+  let html = desktop();
+  if (S.screen === 'compare') html += `<div class="layer" style="background:var(--dim)"></div>` + compareLayer();
+  else if (S.phase === 'setup' && !S.cancelled) html += setupLayer();
+  else if (S.phase === 'countdown') html += countdownLayer();
+  else if (S.phase === 'recording') html += recordingLayer();
+  else if (S.phase === 'editor' || S.phase === 'export') html += editorLayer();
+  if (S.cancelled) html += `<div class="hint" style="left:50%;top:330px">已取消。点上方「区域」重新开始。</div>`;
+  html += toastLayer();
+  if (S.phase === 'setup' && !S.cancelled && S.screen !== 'compare') html += CURSOR.replace('class="cursor"', `class="cursor" style="left:${S.mouse.x}px;top:${S.mouse.y}px;display:none"`);
+  desk.innerHTML = html;
+  if (S.tip) showTip(S.tip.el, S.tip.text);
+}
+
+// ---------- Tooltips ----------
+function showTip(sel, text) {
+  const el = typeof sel === 'string' ? desk.querySelector(sel) : sel;
+  if (!el || !desk.contains(el)) return;
+  const d = desk.getBoundingClientRect(), r = el.getBoundingClientRect();
+  const tip = document.createElement('div');
+  tip.className = 'tip'; tip.textContent = text;
+  const above = r.top - d.top > 60;
+  tip.style.left = (r.left - d.left + r.width / 2) + 'px';
+  tip.style.top = above ? (r.top - d.top - 30) + 'px' : (r.bottom - d.top + 8) + 'px';
+  desk.appendChild(tip);
+}
+desk.addEventListener('mouseover', e => {
+  const el = e.target.closest('[data-tip]');
+  desk.querySelectorAll('.tip').forEach(t => t.remove());
+  if (el && !drag) showTip(el, el.dataset.tip);
+});
+
+// ---------- Flow ----------
+function startCountdown() {
+  clearTimers(); S.pop = null; S.tip = null;
+  if (!S.countdown) return startRecording();
+  S.phase = 'countdown'; S.cd = S.countdown; render();
+  timers.push(setInterval(() => { S.cd--; if (S.cd <= 0) startRecording(); else render(); }, 1000));
+}
+function startRecording(at = 0) {
+  clearTimers(); S.phase = 'recording'; S.elapsed = at; S.paused = false; S.pop = null; render();
+  timers.push(setInterval(() => {
+    if (S.paused || S.pop) return;
+    S.elapsed++;
+    if (isGif() && S.elapsed >= 30) return stopRecording();
+    render();
+  }, 1000));
+  timers.push(setInterval(animateMeter, 110));
+}
+function stopRecording() {
+  clearTimers();
+  S.dur = Math.round((Math.max(isGif() ? Math.min(S.elapsed, 30) : S.elapsed, 2) + 0.4) * 10) / 10;
+  S.a = 0; S.b = S.dur; S.head = 0; S.playing = false; S.phase = 'editor'; S.pop = null; render();
+}
+function animateMeter() {
+  const m = desk.querySelector('#meter'); if (!m) return;
+  const lvl = 0.25 + Math.random() * 0.75;
+  m.querySelectorAll('i').forEach((i, k) => { const on = lvl > k / 4; i.style.height = (on ? 4 + k * 3 : 3) + 'px'; i.style.opacity = on ? 1 : .3; i.style.background = k === 3 && on ? 'var(--warn)' : 'var(--ok)'; });
+}
+function togglePlay() {
+  S.playing = !S.playing;
+  clearTimers();
+  if (S.playing) {
+    if (S.head < S.a || S.head >= S.b - 0.05) S.head = S.a;
+    timers.push(setInterval(() => { S.head += 0.1; if (S.head >= S.b) { S.head = S.b; S.playing = false; clearTimers(); } render(); }, 100));
+  }
+  render();
+}
+function exportNow() {
+  clearTimers(); S.playing = false; S.phase = 'export'; S.pct = 0; render();
+  timers.push(setInterval(() => { S.pct += 7 + Math.random() * 6; if (S.pct >= 100) { clearTimers(); S.phase = 'done'; S.toast = 'saved'; render(); } else render(); }, 160));
+}
+
+const ACTIONS = {
+  sys: () => { if (!isGif()) S.sys = !S.sys; },
+  mic: () => { if (isGif()) return; if (S.micDenied) { S.pop = S.pop === 'perm' ? null : 'perm'; return; } S.mic = !S.mic; },
+  cam: () => { S.cam = !S.cam; },
+  options: () => { S.pop = S.pop === 'options' ? null : 'options'; },
+  cursor: () => { S.cursor = !S.cursor; },
+  cancel: () => { clearTimers(); S.cancelled = true; S.pop = null; },
+  start: () => startCountdown(),
+  micOffNow: () => { S.mic = false; S.micDenied = false; S.pop = null; },
+  grantMic: () => { S.micDenied = false; S.mic = true; S.pop = null; },
+  pause: () => { S.paused = !S.paused; S.pop = null; },
+  restart: () => { S.pop = S.pop === 'restart' ? null : 'restart'; },
+  restartNow: () => startCountdown(),
+  discard: () => { S.pop = S.pop === 'discard' ? null : 'discard'; },
+  discardNow: () => { clearTimers(); S.pop = null; S.phase = 'setup'; S.cancelled = true; },
+  closepop: () => { S.pop = null; },
+  stop: () => stopRecording(),
+  play: () => togglePlay(),
+  resetTrim: () => { S.a = 0; S.b = S.dur; },
+  fit30: () => { S.b = Math.min(S.dur, S.a + 30); S.head = Math.min(Math.max(S.head, S.a), S.b); },
+  tomp4: () => { S.format = 'mp4'; },
+  save: () => exportNow(),
+  saveAs: () => exportNow(),
+  copyFile: () => { S.toast = null; exportNow(); },
+  cancelExport: () => { clearTimers(); S.phase = 'editor'; },
+  discardEditor: () => { S.pop = S.pop === 'discardEditor' ? null : 'discardEditor'; },
+  toastClose: () => { S.toast = null; S.cancelled = S.phase !== 'editor'; },
+  openRecovered: () => { S.toast = null; S.dur = 42.4; S.a = 0; S.b = 42.4; S.head = 0; S.phase = 'editor'; },
+};
+desk.addEventListener('click', e => {
+  const t = e.target;
+  const goto = t.closest('[data-goto]'); if (goto) return show(goto.dataset.goto);
+  const mode = t.closest('[data-mode]'); if (mode) { S.mode = mode.dataset.mode; S.pop = null; S.hoverWin = null; return render(); }
+  const f = t.closest('[data-fmt]');
+  if (f) { S.format = f.dataset.fmt; if (S.phase === 'editor' && isGif() && S.b - S.a > 30) {} return render(); }
+  const q = t.closest('[data-q]'); if (q) { if (isGif()) S.gifQuality = +q.dataset.q; else S.quality = +q.dataset.q; return render(); }
+  const fp = t.closest('[data-fps]'); if (fp) { S.fps = +fp.dataset.fps; return render(); }
+  const cd = t.closest('[data-cd]'); if (cd) { S.countdown = +cd.dataset.cd; return render(); }
+  const a = t.closest('[data-act]');
+  if (a && ACTIONS[a.dataset.act]) { ACTIONS[a.dataset.act](); desk.querySelectorAll('.tip').forEach(x => x.remove()); return render(); }
+  // A click on a window in window mode selects it; on the display in display mode keeps it.
+  if (S.phase === 'setup' && S.mode === 'window' && t.closest('#pick') && !t.closest('.bar,.pop,.cam')) {
+    const w = winAt(pt(e)); if (w) { S.win = w; S.hoverWin = null; render(); }
+  }
+  if (S.pop && !t.closest('.pop,.bar,.pill2') && S.phase === 'setup') { S.pop = null; render(); }
+});
+
+// ---------- Pointer: region drawing, window hover, camera drag, trim ----------
+let drag = null;
+const pt = e => { const r = desk.getBoundingClientRect(); return { x: Math.round(e.clientX - r.left), y: Math.round(e.clientY - r.top) }; };
+const winAt = p => ['b', 'a'].find(k => { const w = WINDOWS[k]; return p.x >= w.x && p.x <= w.x + w.w && p.y >= w.y && p.y <= w.y + w.h; }) || null;
+const clampRegion = r => {
+  const x1 = Math.max(0, Math.min(r.x, r.x + r.w)), y1 = Math.max(26, Math.min(r.y, r.y + r.h));
+  const x2 = Math.min(DESK.w, Math.max(r.x, r.x + r.w)), y2 = Math.min(DESK.h, Math.max(r.y, r.y + r.h));
+  return { x: x1, y: y1, w: x2 - x1, h: y2 - y1 };
+};
+desk.addEventListener('mousedown', e => {
+  const p = pt(e), t = e.target;
+  if (S.phase === 'setup' && !S.cancelled && S.screen !== 'compare') {
+    if (t.closest('.bar,.pop,.summary')) return;
+    if (t.id === 'camrz') { drag = { kind: 'camsize', p, size: S.camSize }; e.preventDefault(); return; }
+    if (t.closest('#cam')) { drag = { kind: 'cam', p }; e.preventDefault(); return; }
+    if (S.pop) return;
+    if (S.mode !== 'region') return;
+    const h = t.closest('[data-h]'), r = S.region;
+    if (h) { const [u, v] = h.dataset.h.split(',').map(Number); drag = { kind: 'resize', u, v, start: { ...r } }; }
+    else if (p.x > r.x && p.x < r.x + r.w && p.y > r.y && p.y < r.y + r.h) drag = { kind: 'move', p, start: { ...r } };
+    else { drag = { kind: 'new', p }; S.region = { x: p.x, y: p.y, w: 0, h: 0 }; }
+    e.preventDefault(); return;
+  }
+  if ((S.phase === 'editor') && t.closest('#tl')) {
+    const tl = desk.querySelector('#tl').getBoundingClientRect();
+    const toT = ev => Math.max(0, Math.min(S.dur, (ev.clientX - tl.left) / tl.width * S.dur));
+    const h = t.closest('[data-drag]');
+    drag = { kind: h ? 'trim-' + h.dataset.drag : 'scrub', toT };
+    if (!h) { S.head = Math.min(Math.max(toT(e), S.a), S.b); render(); }
+    e.preventDefault();
+  }
+});
+window.addEventListener('mousemove', e => {
+  const p = pt(e);
+  if (!drag) {
+    if (S.phase === 'setup' && S.mode === 'window' && !S.pop && S.screen !== 'compare') {
+      if (e.target.closest && e.target.closest('.bar,.summary')) return;
+      const w = winAt(p); if (w !== S.hoverWin) { S.hoverWin = w; render(); }
+    }
+    return;
+  }
+  const d = drag;
+  if (d.kind === 'new') S.region = clampRegion({ x: d.p.x, y: d.p.y, w: p.x - d.p.x, h: p.y - d.p.y });
+  else if (d.kind === 'move') {
+    const s = d.start; S.region = { ...s, x: Math.max(0, Math.min(DESK.w - s.w, s.x + p.x - d.p.x)), y: Math.max(26, Math.min(DESK.h - s.h, s.y + p.y - d.p.y)) };
+  } else if (d.kind === 'resize') {
+    const s = d.start; let x1 = s.x, y1 = s.y, x2 = s.x + s.w, y2 = s.y + s.h;
+    if (d.u === 0) x1 = p.x; if (d.u === 1) x2 = p.x; if (d.v === 0) y1 = p.y; if (d.v === 1) y2 = p.y;
+    S.region = clampRegion({ x: x1, y: y1, w: x2 - x1, h: y2 - y1 });
+  } else if (d.kind === 'cam') {
+    const t = target(); S.camCorner = (p.y > t.y + t.h / 2 ? 'b' : 't') + (p.x > t.x + t.w / 2 ? 'r' : 'l');
+  } else if (d.kind === 'camsize') {
+    S.camSize = Math.max(0.12, Math.min(0.4, d.size + (p.x - d.p.x) / 900));
+  } else if (d.kind === 'trim-a') { S.a = Math.min(d.toT(e), S.b - 0.5); S.head = Math.max(S.head, S.a); }
+  else if (d.kind === 'trim-b') { S.b = Math.max(d.toT(e), S.a + 0.5); S.head = Math.min(S.head, S.b); }
+  else if (d.kind === 'scrub') S.head = Math.min(Math.max(d.toT(e), S.a), S.b);
+  render();
+});
+window.addEventListener('mouseup', () => { if (drag) { drag = null; render(); } });
+
+// ---------- Keyboard ----------
+window.addEventListener('keydown', e => {
+  if (e.target.isContentEditable) { if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); } return; }
+  if (S.phase === 'setup' && !S.cancelled) {
+    if (e.key === 'Enter') { e.preventDefault(); startCountdown(); }
+    if (e.key === 'Escape') { if (S.pop) S.pop = null; else ACTIONS.cancel(); render(); }
+    if (e.key === 'Tab') { e.preventDefault(); const m = ['region', 'window', 'display']; S.mode = m[(m.indexOf(S.mode) + 1) % 3]; render(); }
+  } else if (S.phase === 'countdown') {
+    if (e.key === 'Escape') { clearTimers(); S.phase = 'setup'; render(); }
+    if (e.key === ' ') { e.preventDefault(); startRecording(); }
+  } else if (S.phase === 'editor') {
+    if (e.key === ' ') { e.preventDefault(); togglePlay(); }
+    if (e.key === 'i' || e.key === 'I') { S.a = Math.min(S.head, S.b - 0.5); render(); }
+    if (e.key === 'o' || e.key === 'O') { S.b = Math.max(S.head, S.a + 0.5); render(); }
+    if (e.key === 's' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); exportNow(); }
+  }
+});
+
+// ---------- Screens ----------
+const CAPTIONS = {
+  compare: '<b>现状 vs 方案</b>：问题不在功能缺失，而在「先填表、再操作」的交互模型。改版把录屏放回屏幕上，和截图共用一套浮层语言。点下面的流程卡片跳到对应画面。',
+  region: '<b>区域</b>：和截图一样直接在屏幕上拖。可拖动选区、拖 8 个把手改大小、在外面重新拖一个。工具条固定在屏幕底部中间（可拖走），开始后自动隐藏，不会被录进去；下方一行写明最终会得到什么。<b>↩</b> 开始，<b>esc</b> 取消，<b>⇥</b> 切换来源。',
+  window: '<b>窗口</b>：鼠标移到哪个窗口，哪个窗口高亮并显示应用名和尺寸，点一下选中。录的是窗口本身：它被遮挡、移动时仍然录得到。试试把鼠标在两个窗口之间移动。',
+  display: '<b>全屏</b>：整块屏幕高亮。多显示器时，每块屏幕各自高亮，点哪块录哪块，不用在下拉框里认 “Display 1 / 2”。',
+  options: '<b>选项</b>：低频设置收进一个弹层：画质（只缩小不放大）、帧率、倒计时、鼠标指针、保存位置。GIF 模式下画质只给「小 / 标准」，帧率固定 10。',
+  camera: '<b>摄像头</b>：打开开关，选区里立刻出现实时画面（此时才请求摄像头权限）。拖动画面到任意一侧，松手吸附到最近的角；拖右下角改大小（12%–40%）。',
+  gif: '<b>GIF</b>：切到 GIF，声音按钮直接变灰（悬停说明原因），下方摘要写明「10 FPS · 无声 · 最长 30 秒」。不再需要一段长说明文字。',
+  perm: '<b>缺权限</b>：麦克风按钮带黄点，点开说明去哪里开、开了以后不用重来；也可以一键「这次不录麦克风」。权限问题在开始之前就解决，而不是点开始后弹错误。',
+  countdown: '<b>倒计时</b>：选区中央 3-2-1，空格立即开始、esc 回到准备。工具条已经消失。',
+  recording: '<b>录制中</b>：录制范围只画四角红框，不压暗、不挡操作。控制收成一枚胶囊，放在录制范围外（贴不下时放进内侧底部，且不会被录进去）：计时、麦克风电平、暂停、重来、丢弃、停止。菜单栏同步显示计时，点一下就停止。',
+  paused: '<b>已暂停</b>：红点变黄、计时闪烁、边框变成虚线，一眼就知道「现在没在录」。暂停的时间不会出现在文件里。',
+  giflimit: '<b>GIF 将满</b>：GIF 计时显示「/ 00:30」和进度条，最后 5 秒变黄并提示，到 30 秒自动停止进入剪辑。',
+  discard: '<b>丢弃确认</b>：危险操作只做一次轻量确认，默认按钮是「继续录制」。录制计时在确认期间暂停显示。',
+  editor: '<b>剪辑</b>：一个窗口完成预览、剪辑、导出。时间轴是缩略图 + 声音波形，拖两端蓝色把手剪掉头尾，点击 / 拖动定位播放头，<b>I / O</b> 设起止、<b>空格</b> 播放。标题里的文件名可以直接改；底部写明尺寸、帧率和预计大小。',
+  gifeditor: '<b>GIF 超长</b>：在 MP4 录制里改存 GIF，选段超过 30 秒时，保存按钮置灰，同时给出两个可以直接点的解决办法，而不是只报错。',
+  export: '<b>保存中</b>：保存按钮原位变成进度条，可以取消；时间轴锁定。',
+  saved: '<b>已保存</b>：剪辑窗口关闭，右下角弹出和截图同款的 Toast：缩略图可以直接拖进聊天 / 邮件，旁边是在 Finder 中显示、复制、打开。',
+  recover: '<b>恢复</b>：Typeflux 退出时还没保存的录制，下次启动用同一个 Toast 提示，一键打开剪辑或丢弃。',
+};
+function reset() {
+  clearTimers();
+  Object.assign(S, { phase: 'setup', mode: 'region', format: 'mp4', sys: true, mic: true, cam: false, micDenied: false, camCorner: 'br', camSize: 0.22,
+    quality: 1920, gifQuality: 960, fps: 30, countdown: 3, cursor: true, region: { x: 250, y: 118, w: 560, h: 340 }, win: 'a', hoverWin: null,
+    pop: null, tip: null, cd: 3, elapsed: 0, paused: false, dur: 12.4, a: 0, b: 12.4, head: 0, playing: false, pct: 0, toast: null, cancelled: false });
+}
+function show(id) {
+  reset(); S.screen = id;
+  const setups = {
+    region: () => {}, window: () => { S.mode = 'window'; S.hoverWin = 'b'; }, display: () => { S.mode = 'display'; },
+    options: () => { S.pop = 'options'; }, camera: () => { S.cam = true; },
+    gif: () => { S.format = 'gif'; S.tip = { el: '[data-act="mic"]', text: 'GIF 不含声音' }; },
+    perm: () => { S.micDenied = true; S.pop = 'perm'; },
+  };
+  if (setups[id]) setups[id]();
+  if (id === 'countdown') { S.cam = true; render(); startCountdown(); }
+  else if (id === 'recording') { S.cam = true; startRecording(8); }
+  else if (id === 'paused') { S.cam = true; startRecording(23); S.paused = true; }
+  else if (id === 'giflimit') { S.format = 'gif'; S.mode = 'window'; S.win = 'b'; startRecording(26); }
+  else if (id === 'discard') { startRecording(14); S.pop = 'discard'; }
+  else if (id === 'editor') { S.cam = true; S.dur = 18.6; S.a = 1.8; S.b = 15.2; S.head = 6.4; S.phase = 'editor'; }
+  else if (id === 'gifeditor') { S.format = 'gif'; S.dur = 48.2; S.a = 4; S.b = 46; S.head = 12; S.phase = 'editor'; }
+  else if (id === 'export') { S.cam = true; S.dur = 18.6; S.a = 1.8; S.b = 15.2; S.head = 1.8; S.phase = 'export'; S.pct = 46; }
+  else if (id === 'saved') { S.dur = 18.6; S.a = 1.8; S.b = 15.2; S.phase = 'done'; S.toast = 'saved'; }
+  else if (id === 'recover') { S.phase = 'done'; S.toast = 'recover'; }
+  if (S.phase === 'setup' && id !== 'compare') S.screen = 'setup';
+  if (id === 'compare') S.screen = 'compare';
+  document.querySelectorAll('.pill[data-screen]').forEach(p => p.classList.toggle('on', p.dataset.screen === id));
+  $('#caption').innerHTML = CAPTIONS[id] || '';
+  history.replaceState(null, '', '?' + new URLSearchParams({ ...Object.fromEntries(new URLSearchParams(location.search)), s: id }));
+  render();
+  if (S.tip) S.tip = null; // only for the first paint
+}
+document.querySelectorAll('.pill[data-screen]').forEach(p => p.addEventListener('click', () => show(p.dataset.screen)));
+$('#themeToggle').addEventListener('click', e => { document.body.classList.toggle('light'); e.target.classList.toggle('on'); render(); });
+$('#glassToggle').addEventListener('click', e => { document.body.classList.toggle('glass'); e.target.classList.toggle('on'); render(); });
+
+const params = new URLSearchParams(location.search);
+if (params.get('light') === '1') { document.body.classList.add('light'); $('#themeToggle').classList.add('on'); }
+if (params.get('glass') === '1') { document.body.classList.add('glass'); $('#glassToggle').classList.add('on'); }
+if (params.get('solo')) document.body.classList.add('solo');
+show(params.get('solo') || params.get('s') || 'compare');
+</script>
+</body>
+</html>
