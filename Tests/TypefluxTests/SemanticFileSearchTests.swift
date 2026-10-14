@@ -13,7 +13,7 @@ func semanticFixture() throws -> URL {
 
 func semanticScope(_ root: String) -> AskFileScope {
     var names = AskLauncherSearchSettings(); names.fileRoots = [root]; names.excludedPaths = []
-    return SemanticFilePolicy.scope(.init(enabled: true, roots: [root]), names: names, fullDiskAccess: true)
+    return SemanticFilePolicy.scope(names: names, fullDiskAccess: true)
 }
 
 func semanticVector(_ index: Int = 0) -> [Float] {
@@ -27,8 +27,10 @@ struct SemanticFilePolicyTests {
         defer { defaults.removePersistentDomain(forName: name) }
         let settings = SettingsStore(defaults: defaults)
         #expect(settings.semanticFileSearch == .init())
-        settings.semanticFileSearch = .init(enabled: true, roots: ["/work"])
-        #expect(SettingsStore(defaults: defaults).semanticFileSearch == .init(enabled: true, roots: ["/work"]))
+        settings.semanticFileSearch = .init(enabled: true)
+        #expect(SettingsStore(defaults: defaults).semanticFileSearch == .init(enabled: true))
+        defaults.set(Data(#"{"enabled":true,"roots":["/old/scope"]}"#.utf8), forKey: "ask.search.semantic")
+        #expect(settings.semanticFileSearch == .init(enabled: true), "legacy roots are ignored")
         defaults.set(Data("broken".utf8), forKey: "ask.search.semantic")
         #expect(settings.semanticFileSearch == .init())
     }
@@ -49,11 +51,18 @@ struct SemanticFilePolicyTests {
     @Test func `explicit scope and credentials are conservative`() {
         var names = AskLauncherSearchSettings()
         names.fileRoots = ["/work"]; names.excludedPaths = ["/work/private"]
-        let scope = SemanticFilePolicy.scope(.init(enabled: true, roots: ["/other", "/work/docs", "/work/private/sub"]),
-                                             names: names, fullDiskAccess: true)
-        #expect(scope.roots == ["/work/docs"])
+        names.excludedExtensions = ["csv"]
+        let scope = SemanticFilePolicy.scope(names: names, fullDiskAccess: true)
+        #expect(scope.roots == ["/work"])
+        #expect(scope.includes("/work/docs/note.md", isDirectory: false))
+        #expect(!scope.includes("/work/private/sub/note.md", isDirectory: false))
+        #expect(!scope.includes("/work/docs/table.csv", isDirectory: false))
         #expect(!scope.includes("/work/docs/.hidden.txt", isDirectory: false))
-        #expect(SemanticFilePolicy.scope(.init(), names: names, fullDiskAccess: true).roots.isEmpty)
+        names.includeHidden = true
+        #expect(SemanticFilePolicy.scope(names: names, fullDiskAccess: true)
+            .includes("/work/docs/.hidden.txt", isDirectory: false))
+        names.fileRoots = []
+        #expect(SemanticFilePolicy.scope(names: names, fullDiskAccess: true).roots.isEmpty)
         for path in [
             "/work/.env.txt",
             "/work/.ssh/note.txt",
@@ -70,10 +79,11 @@ struct SemanticFilePolicyTests {
     }
 
     @Test func deniedPermissionRemainsVisibleWithoutReadingProtectedRoots() {
-        let home = NSHomeDirectory(), documents = NSHomeDirectory() + "/Documents"
+        let documents = NSHomeDirectory() + "/Documents"
         var names = AskLauncherSearchSettings()
-        names.fileRoots = [home]; names.excludedPaths = []
-        let scope = SemanticFilePolicy.scope(.init(enabled: true, roots: [documents]), names: names, fullDiskAccess: false)
+        names.excludedPaths = []
+        names.fileRoots = [documents]
+        let scope = SemanticFilePolicy.scope(names: names, fullDiskAccess: false)
         #expect(scope.roots == [documents])
         #expect(scope.blockedInScope == [documents])
         #expect(!scope.includes(documents + "/report.txt", isDirectory: false))
@@ -301,9 +311,14 @@ struct SemanticFileIndexerTests {
             .init(path: root.path + "/asset-\($0).bin", kind: .file, modified: reader.modified)
         } + [.init(path: path, kind: .file, modified: reader.modified)]
         let store = try SemanticFileStore(url: root.appendingPathComponent("index.sqlite"))
+        var progress: [SemanticFileIndexer.Summary] = []
         let result = try SemanticFileIndexer.run(scope: semanticScope(root.path), store: store, reader: reader,
-            encoder: encoder, cancelled: { false }, progress: { _ in })
+            encoder: encoder, cancelled: { false }, progress: { progress.append($0) })
         #expect(result.files == 1); #expect(!result.limited)
+        #expect(result.scanned == 50_001 && result.discovered == 1)
+        #expect(result.total == 1 && result.processed == 1)
+        #expect(progress.contains { $0.total == nil && $0.scanned >= 1_000 })
+        #expect(progress.contains { $0.total == 1 && $0.processed == 0 })
         #expect(try store.counts().files == 1)
     }
 

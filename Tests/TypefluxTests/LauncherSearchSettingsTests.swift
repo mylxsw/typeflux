@@ -129,6 +129,25 @@ struct LauncherSearchSettingsViewTests {
         #expect(LauncherSearchSettingsView.adding([], to: ["~"]) == ["~"])
     }
 
+    @Test func fileNameIndexClearConfirmsInline() async throws {
+        typealias Support = SettingsBehaviorTestSupport
+        let (settings, defaults, suite) = try store()
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let index = AskTestFileIndex()
+        index.status = AskFileIndexStatus(phase: .ready, count: 42)
+        try await Support.withFixture { _ in
+            let view = LauncherSearchSettingsView(settings: settings, index: index, tab: .files)
+            try await Support.withWindow(view, width: 760, height: 1100) { window, host in
+                try await Support.wait { Support.contains(L("launcher.search.index.name"), in: host) }
+                try Support.button(L("launcher.search.index.clear"), in: host).press()
+                try await Support.wait { Support.contains(L("launcher.search.index.clear.message"), in: host) }
+                #expect(index.clears == 0 && window.attachedSheet == nil)
+                try Support.button(L("launcher.search.index.clear.confirm"), in: host).press()
+                #expect(index.clears == 1 && window.attachedSheet == nil)
+            }
+        }
+    }
+
     @Test func statusReadsInWords() {
         #expect(LauncherSearchSettingsView.phaseText(AskFileIndexStatus(phase: .ready), enabled: false)
             == L("launcher.search.index.off"))

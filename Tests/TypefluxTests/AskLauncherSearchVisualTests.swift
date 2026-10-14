@@ -141,5 +141,19 @@ struct AskLauncherSearchVisualTests {
                                  wait: .milliseconds(300))
             }
         }
+        let (semantic, semanticRoot, _, _) = try SemanticFileServiceTests().fixture()
+        defer { try? FileManager.default.removeItem(at: semanticRoot) }
+        #expect(semantic.setEnabled(true))
+        await semantic.prepareModelIfNeeded()
+        try await SemanticFileServiceTests.wait { semantic.phase == .ready }
+        for (theme, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
+            let view = LauncherSearchSettingsView(settings: settings, index: index, fullDiskAccess: { false },
+                                                  semanticService: semantic, tab: .files)
+                .padding(24).frame(width: 760, alignment: .top)
+                .background(StudioTheme.surface)
+            try await render(view, size: NSSize(width: 760, height: 900), appearance: appearance,
+                             file: output.appendingPathComponent("settings-files-content-ready-\(theme).png"),
+                             wait: .milliseconds(300))
+        }
     }
 }

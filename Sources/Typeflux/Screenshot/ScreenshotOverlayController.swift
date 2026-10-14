@@ -30,6 +30,7 @@ final class ScreenshotOverlayController: ScreenshotOverlayPresenting {
     private let primaryDisplayHeight: () -> CGFloat
     /// The pointer in global Quartz points.
     private let pointerLocation: () -> CGPoint
+    private let modifierFlags: () -> NSEvent.ModifierFlags
     /// Sizes mosaics to the text under them.
     private let textMeasurer: (any ScreenshotTextHeightMeasuring)?
     /// Finds sensitive text to suggest mosaics for.
@@ -41,11 +42,13 @@ final class ScreenshotOverlayController: ScreenshotOverlayPresenting {
          pointerLocation: @escaping () -> CGPoint = {
              CGEvent(source: nil)?.location ?? .zero
          },
+         modifierFlags: @escaping () -> NSEvent.ModifierFlags = { NSEvent.modifierFlags },
          textMeasurer: (any ScreenshotTextHeightMeasuring)? = nil,
          sensitiveScanner: (any ScreenshotSensitiveInfoScanning)? = nil,
          toolStyles: ScreenshotToolStyleStore = ScreenshotToolStyleStore()) {
         self.primaryDisplayHeight = primaryDisplayHeight
         self.pointerLocation = pointerLocation
+        self.modifierFlags = modifierFlags
         self.textMeasurer = textMeasurer
         self.sensitiveScanner = sensitiveScanner
         self.toolStyles = toolStyles
@@ -57,8 +60,10 @@ final class ScreenshotOverlayController: ScreenshotOverlayPresenting {
         dismiss()
         self.onEvent = onEvent
         let primaryHeight = primaryDisplayHeight()
+        let initialModifierFlags = modifierFlags()
         for display in snapshot.displays {
-            let view = ScreenshotOverlayView(display: display, windows: snapshot.windows, textMeasurer: textMeasurer,
+            let view = ScreenshotOverlayView(display: display, windows: snapshot.windows,
+                                             initialModifierFlags: initialModifierFlags, textMeasurer: textMeasurer,
                                              sensitiveScanner: sensitiveScanner, toolStyles: toolStyles)
             view.onActivate = { [weak self] view in self?.activate(view) ?? true }
             view.onEvent = { [weak self] view, event in self?.forward(event, from: view) }

@@ -4,12 +4,12 @@ import SwiftUI
 import Testing
 @testable import Typeflux
 
-/// Native renders of the semantic search card, sheets and result rows. Set
+/// Native renders of the inline semantic settings and result rows. Set
 /// `TYPEFLUX_SEMANTIC_SCREENSHOTS` to a folder to keep the PNGs.
 @Suite("Semantic settings visuals", .serialized, .exclusiveUIState)
 @MainActor
 struct SemanticFileSearchVisualTests {
-    /// Renders `view` at its natural height; a sheet that clips its content fails here.
+    /// Renders `view` at its natural height so expanded inline controls remain visible.
     @discardableResult
     static func render(_ view: some View, width: CGFloat, name: String) async throws -> NSSize {
         _ = NSApplication.shared
@@ -55,38 +55,30 @@ struct SemanticFileSearchVisualTests {
         }
         try await Self.render(card(unsupported), width: 760, name: "unsupported")
         let off = try await Self.render(card(service), width: 760, name: "card-off")
-        #expect(service.setEnabled(true, roots: [root.path]))
+        #expect(service.setEnabled(true))
         await service.prepareModelIfNeeded()
         try await SemanticFileServiceTests.wait { service.phase == .ready }
         let ready = try await Self.render(card(service), width: 760, name: "card-ready")
-        #expect(ready.height > off.height, "the enabled card adds status and the Manage action")
+        #expect(ready.height > 100 && off.height > 100, "both inline states remain readable")
         try await Self.render(card(service, filesEnabled: false), width: 760, name: "card-files-off")
         await service.clear(removeModel: true)
     }
 
-    @Test func `native setup and management fit their content`() async throws {
+    @Test func `inline setup and management render without a sheet`() async throws {
         let language = AppLocalization.shared.language
         AppLocalization.shared.setLanguage(.simplifiedChinese)
         defer { AppLocalization.shared.setLanguage(language) }
         let (service, root, _, _) = try SemanticFileServiceTests().fixture()
         defer { try? FileManager.default.removeItem(at: root) }
-        service.setRoots([root.path])
-        let width = SemanticFileSearchSheet.width
-        let setup = try await Self.render(SemanticFileSearchSheet(service: service, setup: true, onClose: {}),
-                                          width: width, name: "setup")
-        #expect(setup.height > 400 && setup.height < 760)
+        let setup = try await Self.render(SemanticFileSearchSettingsView(service: service, filesEnabled: true),
+                                          width: 760, name: "inline-setup")
+        #expect(setup.height > 100)
         #expect(service.setEnabled(true))
         await service.prepareModelIfNeeded()
         try await SemanticFileServiceTests.wait { service.phase == .ready }
-        let manage = try await Self.render(SemanticFileSearchSheet(service: service, setup: false, onClose: {}),
-                                           width: width, name: "manage")
-        #expect(manage.height > 400 && manage.height < 760)
-        let many = (0 ..< 9).map { root.appendingPathComponent("folder-\($0)").path }
-        service.setRoots(many)
-        let scrolling = try await Self.render(SemanticFileSearchSheet(service: service, setup: false, onClose: {}),
-                                              width: width, name: "manage-many")
-        #expect(abs(scrolling.height - manage.height) < CGFloat(SemanticFileSearchSheet.visibleFolders) * 69,
-                "long folder lists scroll instead of growing the sheet")
+        let manage = try await Self.render(SemanticFileSearchSettingsView(service: service, filesEnabled: true),
+                                           width: 760, name: "inline-manage")
+        #expect(manage.height > 100)
         await service.clear(removeModel: true)
     }
 

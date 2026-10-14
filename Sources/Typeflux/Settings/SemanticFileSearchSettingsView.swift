@@ -1,87 +1,177 @@
 import AppKit
 import SwiftUI
 
-/// The disabled-by-default "Experimental" card on the launcher's Files tab.
+/// The content index lives beside the file name index and shares its search scope.
 struct SemanticFileSearchSettingsView: View {
     @ObservedObject var service: SemanticFileSearchService
     var filesEnabled: Bool
-    let pickFolders: () -> [String]?
-    @State private var presentation: Presentation?
-    @State private var permission = false
-    enum Presentation: String, Identifiable {
-        case setup, manage
-        var id: String { rawValue }
+    @State private var confirmation: Deletion?
+
+    enum Deletion { case index, model }
+
+    private var enabled: Bool {
+        service.supported && service.preferences.enabled
     }
 
-    init(service: SemanticFileSearchService, filesEnabled: Bool,
-         pickFolders: @escaping () -> [String]? = { LauncherSearchSettingsView.pickFolders(allowApps: false) }) {
-        self.service = service; self.filesEnabled = filesEnabled; self.pickFolders = pickFolders
+    private var modelAvailable: Bool {
+        service.modelReady || service.storage().model > 0
     }
 
-    private var enabled: Bool { self.service.supported && self.service.preferences.enabled }
+    private var hasScope: Bool {
+        !SemanticFilePolicy.scope(names: service.settings.askLauncherSearchSettings, fullDiskAccess: true).roots.isEmpty
+    }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            ModelSectionLabel(title: L("semantic.section"))
-            ModelSurface {
-                VStack(alignment: .leading, spacing: 0) {
-                    AgentSettingsRow(icon: "sparkles", title: L("semantic.title"), subtitle: L("semantic.subtitle"),
-                                     badge: L("semantic.experimental"), badgeAccent: true, subtitleLineLimit: nil) {
-                        Toggle("", isOn: Binding(
-                            get: { self.enabled },
-                            set: { enabled in
-                                if enabled { self.presentation = .setup } else { self.service.setEnabled(false) }
-                            }
-                        ))
-                        .labelsHidden().toggleStyle(.switch)
-                        .disabled(!self.service.supported || !self.filesEnabled)
-                        .accessibilityLabel(L("semantic.title")).accessibilityIdentifier("semantic.enabled")
+        let status = service.status(filesEnabled: filesEnabled)
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Circle().fill(Self.statusColor(status.tone)).frame(width: 7, height: 7)
+                Text(L("semantic.metrics"))
+                    .font(.system(size: 14, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
+                Text(L("semantic.index.badge"))
+                    .font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
+                Spacer(minLength: 8)
+                Toggle("", isOn: Binding(
+                    get: { enabled },
+                    set: { value in
+                        if value {
+                            enable()
+                        } else {
+                            service.setEnabled(false)
+                            confirmation = nil
+                        }
                     }
-                    self.detail.padding(.leading, 66).padding(.trailing, 18).padding(.bottom, 16)
-                }
+                ))
+                .labelsHidden().toggleStyle(.switch)
+                .disabled(!service.supported || !filesEnabled || (!enabled && !hasScope))
+                .accessibilityLabel(L("semantic.title")).accessibilityIdentifier("semantic.enabled")
             }
+            Self.caption(L("semantic.subtitle"))
+            detail
         }
-        .sheet(item: self.$presentation) { mode in
-            SemanticFileSearchSheet(service: self.service, setup: mode == .setup, pickFolders: self.pickFolders) {
-                self.presentation = nil
-            }
-        }
-        .semanticPermissionAlert(isPresented: self.$permission, service: self.service)
+        .padding(.horizontal, 18).padding(.vertical, 16)
     }
 
     @ViewBuilder private var detail: some View {
-        if !self.service.supported {
+        if !service.supported {
             Self.caption(L("semantic.unsupported"))
+        } else if !enabled {
+            setup
         } else {
-            let status = self.service.status(filesEnabled: self.filesEnabled)
-            VStack(alignment: .leading, spacing: 10) {
-                if status.tone == .off {
-                    Self.caption(status.text)
-                } else {
-                    SemanticStatusLine(status: status)
-                    if let progress = status.progress {
-                        SemanticProgressView(progress: progress, detailed: true)
-                    }
-                }
-                if self.enabled {
-                    HStack(spacing: 14) {
-                        Button(L("semantic.manage")) { self.presentation = .manage }
-                            .buttonStyle(ModelActionStyle())
-                            .accessibilityIdentifier("semantic.manage")
-                        if self.filesEnabled { self.action(status.action) }
-                    }
+            management
+        }
+    }
+
+    private var setup: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Self.caption(L("semantic.index.off"))
+            Rectangle().fill(ModelVisualStyle.divider).frame(height: 1)
+            Text(L("semantic.index.setup"))
+                .font(.system(size: 12.5, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
+            Self.caption(L(modelAvailable ? "semantic.index.setup.ready" : "semantic.index.setup.download"))
+            Button(L(modelAvailable ? "semantic.enable" : "semantic.enable.download"), action: enable)
+                .buttonStyle(ModelActionStyle(primary: true))
+                .disabled(!filesEnabled || !hasScope)
+                .accessibilityIdentifier("semantic.setup.enable")
+            Link(L("semantic.about"), destination: URL(string: "https://huggingface.co/google/embeddinggemma-2")!)
+                .font(.system(size: 12))
+            if !hasScope { Self.caption(L("semantic.folders.empty")) }
+            if !filesEnabled { Self.caption(L("semantic.filesOff")) }
+        }
+    }
+
+    private var management: some View {
+        let status = service.status(filesEnabled: filesEnabled)
+        let storage = service.storage()
+        return VStack(alignment: .leading, spacing: 12) {
+            SemanticStatusLine(status: status)
+            Rectangle().fill(ModelVisualStyle.divider).frame(height: 1)
+            if let progress = status.progress {
+                SemanticProgressView(progress: progress, detailed: true)
+            }
+            HStack(spacing: 20) {
+                metric(L("semantic.metric.index"),
+                       storage.index > 0 ? SemanticFileSearchStatus.size(storage.index) : "—")
+                metric(L("semantic.metric.model"),
+                       service.modelReady && storage.model > 0 ? SemanticFileSearchStatus.size(storage.model) : "—")
+                metric(L("semantic.metric.location"), L("semantic.metric.local"))
+            }
+            .accessibilityIdentifier("semantic.metrics")
+            HStack(spacing: 14) {
+                lifecycleButton
+                Self.destructiveLink(L("semantic.clear")) { confirmation = .index }
+                Self.destructiveLink(L("semantic.remove")) { confirmation = .model }
+                    .disabled(!service.modelReady)
+            }
+            if status.action == .permission { permissionHelp }
+            if service.limited { Self.caption(L("semantic.limit")) }
+            if let confirmation {
+                FileIndexInlineConfirmation(
+                    title: L(confirmation == .model ? "semantic.remove.title" : "semantic.clear.title"),
+                    message: L(confirmation == .model ? "semantic.remove.message" : "semantic.clear.message"),
+                    confirm: L(confirmation == .model ? "semantic.remove.confirm" : "semantic.clear.confirm")
+                ) {
+                    Task { await service.clear(removeModel: confirmation == .model) }
+                    self.confirmation = nil
+                } onCancel: {
+                    self.confirmation = nil
                 }
             }
         }
     }
 
-    @ViewBuilder private func action(_ action: SemanticFileSearchStatus.Action) -> some View {
-        switch action {
-        case .none: EmptyView()
-        case .download: Self.link(L("semantic.download")) { self.service.downloadModel() }
-        case .retryDownload: Self.link(L("semantic.retryDownload")) { self.service.downloadModel() }
-        case .retry: Self.link(L("semantic.retry")) { self.service.start(force: true) }
-        case .permission: Self.link(L("semantic.checkPermission")) { self.permission = true }
+    private var permissionHelp: some View {
+        let folders = service.blocked.map { AskLauncherSearchSettings.abbreviate($0) }.joined(separator: ", ")
+        return VStack(alignment: .leading, spacing: 8) {
+            Self.caption(L("semantic.permission.message", folders))
+            HStack(spacing: 12) {
+                Self.link(L("semantic.permission.open")) { NSWorkspace.shared.open(AskFullDiskAccess.settingsURL) }
+                Self.link(L("semantic.permission.recheck")) { service.start(force: true) }
+            }
+        }
+    }
+
+    @ViewBuilder private var lifecycleButton: some View {
+        let active = service.preferences.enabled && filesEnabled
+        switch service.phase {
+        case .downloading:
+            Self.link(L("semantic.cancelDownload")) { service.cancelDownload() }
+        case .indexing, .preparing:
+            Self.link(L("semantic.pause")) { service.pause(true) }
+        case .paused:
+            Self.link(L("semantic.resume")) { service.pause(false) }
+        case .modelRequired:
+            Self.link(L("semantic.download")) { service.downloadModel() }.disabled(!active)
+        case .failed:
+            Self.link(L(service.modelReady ? "semantic.retry" : "semantic.retryDownload")) {
+                if service.modelReady { service.start(force: true) } else { service.downloadModel() }
+            }.disabled(!active)
+        case .ready, .off:
+            Self.link(L("semantic.rebuild")) { Task { await service.rebuild() } }
+                .disabled(!active || !service.modelReady)
+        }
+    }
+
+    private func enable() {
+        guard service.setEnabled(true) else { return }
+        Task { await service.prepareModelIfNeeded() }
+    }
+
+    private func metric(_ title: String, _ value: String) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(title).font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
+            Text(value).font(.system(size: 14, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
+                .lineLimit(1).minimumScaleFactor(0.7)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private static func statusColor(_ tone: SemanticFileSearchStatus.Tone) -> Color {
+        switch tone {
+        case .off: StudioTheme.textTertiary
+        case .busy: ModelVisualStyle.accent
+        case .ready: StudioTheme.success
+        case .warning: StudioTheme.warning
         }
     }
 
@@ -94,72 +184,81 @@ struct SemanticFileSearchSettingsView: View {
         Button(title, action: action).buttonStyle(.plain)
             .font(.system(size: 12.5, weight: .medium)).foregroundStyle(ModelVisualStyle.accent)
     }
+
+    static func destructiveLink(_ title: String, action: @escaping () -> Void) -> some View {
+        Button(title, role: .destructive, action: action).buttonStyle(.plain)
+            .font(.system(size: 12.5, weight: .medium)).foregroundStyle(StudioTheme.danger)
+    }
 }
 
-/// A colored dot and the current state, e.g. "Ready · 1,248 files · 2,816 passages".
+/// Confirms an index action in its row, without interrupting the settings page.
+struct FileIndexInlineConfirmation: View {
+    let title: String
+    let message: String
+    let confirm: String
+    let onConfirm: () -> Void
+    let onCancel: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title).font(.system(size: 12.5, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
+            Text(message).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+            HStack(spacing: 10) {
+                Button(confirm, role: .destructive, action: onConfirm).buttonStyle(ModelActionStyle())
+                Button(L("semantic.cancel"), action: onCancel).buttonStyle(ModelActionStyle())
+            }
+        }
+        .padding(12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(ModelVisualStyle.control, in: RoundedRectangle(cornerRadius: 8))
+        .accessibilityIdentifier("file.index.confirmation")
+    }
+}
+
+/// A colored dot and the current content-index state.
 struct SemanticStatusLine: View {
     let status: SemanticFileSearchStatus
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
-            Circle().fill(self.color).frame(width: 7, height: 7).alignmentGuide(.firstTextBaseline) { $0.height - 1 }
-            Text(self.status.text).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
+        Text(status.text).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary)
+            .fixedSize(horizontal: false, vertical: true)
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("semantic.status")
     }
-
-    private var color: Color {
-        switch self.status.tone {
-        case .off: StudioTheme.textTertiary
-        case .busy: ModelVisualStyle.accent
-        case .ready: StudioTheme.success
-        case .warning: StudioTheme.warning
-        }
-    }
 }
 
-/// Download progress is measured; indexing streams folders, so it has no known total.
+/// Progress is shared by the inline index row and status tests.
 struct SemanticProgressView: View {
     let progress: SemanticFileSearchStatus.Progress
-    /// The settings card shows the downloaded size; the sheet names the stage instead.
     var detailed = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            switch self.progress {
+            switch progress {
             case let .download(fraction):
                 ProgressView(value: fraction).progressViewStyle(.linear)
                 HStack {
-                    Text(self.detailed
-                        ? SemanticFileSearchStatus.downloaded(fraction) : L("semantic.progress.download"))
+                    Text(detailed ? SemanticFileSearchStatus.downloaded(fraction) : L("semantic.progress.download"))
                     Spacer()
                     Text(verbatim: "\(Int((fraction * 100).rounded()))%").monospacedDigit()
                 }
                 .font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
-            case .indexing:
+            case let .scanning(scanned, discovered):
                 ProgressView().progressViewStyle(.linear)
-                if !self.detailed {
-                    Text(L("semantic.progress.index")).font(.system(size: 11.5))
-                        .foregroundStyle(StudioTheme.textTertiary)
+                Text(L("semantic.progress.scanning", scanned.formatted(), discovered.formatted()))
+                    .font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
+            case let .indexing(processed, total):
+                let fraction = total > 0 ? min(1, Double(processed) / Double(total)) : 1
+                ProgressView(value: fraction).progressViewStyle(.linear)
+                HStack {
+                    Text(L("semantic.progress.indexing", processed.formatted(), total.formatted()))
+                    Spacer()
+                    Text(verbatim: "\(Int((fraction * 100).rounded()))%").monospacedDigit()
                 }
+                .font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
             }
         }
         .controlSize(.small)
-    }
-}
-
-extension View {
-    /// Explains Full Disk Access for selected folders and rechecks once it is granted.
-    func semanticPermissionAlert(isPresented: Binding<Bool>, service: SemanticFileSearchService) -> some View {
-        let folders = service.blocked.map { AskLauncherSearchSettings.abbreviate($0) }.joined(separator: ", ")
-        return alert(L("semantic.permission.title"), isPresented: isPresented) {
-            Button(L("semantic.permission.recheck")) { service.start(force: true) }
-            Button(L("semantic.permission.open")) { NSWorkspace.shared.open(AskFullDiskAccess.settingsURL) }
-            Button(L("semantic.permission.later"), role: .cancel) {}
-        } message: {
-            Text(L("semantic.permission.message", folders))
-        }
     }
 }
