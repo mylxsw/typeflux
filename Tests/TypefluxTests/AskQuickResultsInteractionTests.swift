@@ -98,12 +98,13 @@ struct AskQuickResultsInteractionTests {
         try await body(pasteboard)
     }
 
-    @Test func returnCopiesTheResultAndClosesTheLauncher() async throws {
+    @Test(arguments: [("1234567.89*2", "2469135.78"), ("1000/60", "16.6666666666667")])
+    func returnCopiesTheResultAndClosesTheLauncher(text: String, expected: String) async throws {
         try await withPasteboard { pasteboard in
-            let launcher = try await Launcher(text: "1234567.89*2")
+            let launcher = try await Launcher(text: text)
             defer { launcher.close() }
             try await launcher.press(Self.returnKey)
-            #expect(pasteboard.string(forType: .string) == "2469135.78")
+            #expect(pasteboard.string(forType: .string) == expected)
             #expect(launcher.dismissed == 1)
             #expect(launcher.fixture.model.launcherDraft.text.isEmpty, "the expression is not restored next time")
             #expect(await launcher.fixture.api.sends.isEmpty, "nothing goes to the AI")

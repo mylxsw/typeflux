@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+    <key>NSCalendarsFullAccessUsageDescription</key>
+    <string>Typeflux reads your calendar events locally to show your schedule and meeting links. Events are not uploaded.</string>
+    <key>NSCalendarsUsageDescription</key>
+    <string>Typeflux reads your calendar events locally to show your schedule and meeting links. Events are not uploaded.</string>
     <key>CFBundleDevelopmentRegion</key>
     <string>en</string>
     <key>CFBundleLocalizations</key>

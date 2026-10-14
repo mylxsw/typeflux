@@ -21,6 +21,7 @@ enum AskPluginRegistry {
         AskBrowserSearchPlugin.bookmarksID,
         AskKillAppPlugin.id,
         AskSystemMonitorPlugin.id,
+        AskCalendarPlugin.id,
         AskEmojiPlugin.id
     ] + AskSystemCommand.allCases.map(\.id)
 
@@ -35,6 +36,7 @@ enum AskPluginRegistry {
                     + AskBrowserSearchPlugin.keywords
                     + AskKillAppPlugin.keywords
                     + AskSystemMonitorPlugin.keywords
+                    + AskCalendarPlugin.keywords
                     + AskEmojiPlugin.keywords
                     + AskSystemCommand.allCases.map {
                         AskKeyword(keyword: $0.defaultKeyword, pluginID: $0.id)
@@ -219,6 +221,7 @@ extension AskConversationModel {
             }),
             AskKillAppPlugin(),
             AskSystemMonitorPlugin(),
+            AskCalendarPlugin(),
             AskEmojiPlugin(usage: { [weak self] in self?.emojiUsage.value ?? EmojiUsage() })
         ] + AskSystemCommand.allCases.map { AskSystemCommandPlugin(command: $0) } + workflowPlugins()
     }
@@ -394,7 +397,7 @@ extension AskConversationModel {
         case let .capture(mode, followUp):
             guard let onStartScreenshot else { return .stay }
             finishPluginResult()
-            // Let the launcher close first; the capture leaves Typeflux's windows out anyway.
+            // Close the launcher for its screenshot command; shortcut captures keep visible app windows.
             DispatchQueue.main.async { onStartScreenshot(mode, followUp) }
             return .close
         case let .screenshotFollowUp(followUp):

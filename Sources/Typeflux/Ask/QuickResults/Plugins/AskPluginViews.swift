@@ -25,6 +25,7 @@ struct AskPluginDisplay: Equatable {
     var savesNoteWhenDone = false
     /// The system monitor (`top`) takes the results' place.
     var systemMonitor = false
+    var calendar = false
 
     var output: AskPluginOutput? { if case let .done(_, output) = phase { output } else { nil } }
     var asksAI: Bool { offersAskAI && highlighted == 1 }
@@ -92,6 +93,7 @@ struct AskPluginResultsView: View {
     var onHighlight: (Int) -> Void
     /// A click on a list's row chooses it (then Return's action runs).
     var onSelectItem: (String) -> Bool = { _ in true }
+    var calendarProvider: (any CalendarEventProviding)?
 
     // Shared with the quick results, so both lists line up.
     static let listPadding = AskQuickResultsView.listPadding
@@ -225,6 +227,7 @@ struct AskPluginResultsView: View {
     /// Everything the list adds to the launcher card.
     static func height(for display: AskPluginDisplay) -> CGFloat {
         if display.systemMonitor { return SystemMonitorLauncherView.height }
+        if display.calendar { return CalendarLauncherView.height }
         return 1 + listPadding * 2 + sectionHeight + rowSpacing + mainHeight(display)
     }
 
@@ -232,6 +235,7 @@ struct AskPluginResultsView: View {
     static func hint(for display: AskPluginDisplay) -> String {
         // The monitor names its keys in its own footer.
         if display.systemMonitor { return "" }
+        if display.calendar { return "" }
         // The chat button already names this action in the bottom bar.
         if display.hint?.pluginID == AskOpenChatPlugin.id {
             return display.asksAI ? L("ask.launcher.hint") : ""
@@ -429,6 +433,9 @@ struct AskPluginResultsView: View {
                     .foregroundStyle(StudioTheme.textTertiary)
                 if hint.pluginID == AskSystemMonitorPlugin.id {
                     SystemMonitorHintSummary(store: .shared).layoutPriority(-1)
+                }
+                if hint.pluginID == AskCalendarPlugin.id {
+                    CalendarHintSummary(options: hint.options, provider: calendarProvider)
                 }
                 Spacer(minLength: 8)
                 Text(Self.hintRowKeys(hint, highlighted: highlighted))

@@ -660,6 +660,14 @@ final class ScreenshotOverlayView: NSView {
     }
 
     private func updateCursor(at point: CGPoint) {
+        if let toolbar, !toolbar.isHidden, toolbar.hitTest(point) != nil {
+            NSCursor.pointingHand.set()
+            return
+        }
+        updateCanvasCursor(at: point)
+    }
+
+    private func updateCanvasCursor(at point: CGPoint) {
         if isPickingColor {
             NSCursor.crosshair.set()
             return
