@@ -116,15 +116,21 @@ struct AskFileScope: Equatable, Sendable, Codable {
     }
 }
 
-/// Whether Typeflux has Full Disk Access. The system's privacy database can only
-/// be opened with it, and trying does not ask the user anything.
+/// Whether Typeflux has Full Disk Access. Opening a protected privacy database
+/// does not prompt the user. macOS has used both per-user and system locations.
 enum AskFullDiskAccess {
-    static func isGranted(home: String = NSHomeDirectory()) -> Bool {
-        let path = home + "/Library/Application Support/com.apple.TCC/TCC.db"
-        let handle = open(path, O_RDONLY)
-        guard handle >= 0 else { return false }
-        close(handle)
-        return true
+    static func isGranted(databasePaths: [String]? = nil) -> Bool {
+        let paths = databasePaths ?? [
+            NSHomeDirectory() + "/Library/Application Support/com.apple.TCC/TCC.db",
+            "/Library/Application Support/com.apple.TCC/TCC.db"
+        ]
+        for path in paths {
+            let handle = open(path, O_RDONLY | O_CLOEXEC)
+            guard handle >= 0 else { continue }
+            close(handle)
+            return true
+        }
+        return false
     }
 
     /// System Settings › Privacy & Security › Full Disk Access.

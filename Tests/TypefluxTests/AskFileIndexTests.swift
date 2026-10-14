@@ -463,6 +463,18 @@ struct AskFileIndexServiceTests {
         #expect(status.progress == nil)
         status.phase = .ready
         #expect(!status.isBuilding && status.progress == nil)
-        #expect(AskFullDiskAccess.isGranted(home: "/nonexistent") == false)
+        #expect(AskFullDiskAccess.isGranted(databasePaths: ["/nonexistent/TCC.db"]) == false)
+    }
+
+    @Test func fullDiskAccessProbeUsesAvailableDatabaseLocation() throws {
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: folder) }
+        let missing = folder.appendingPathComponent("user/TCC.db").path
+        let available = folder.appendingPathComponent("system/TCC.db")
+        try FileManager.default.createDirectory(at: available.deletingLastPathComponent(), withIntermediateDirectories: true)
+        try Data().write(to: available)
+        #expect(!AskFullDiskAccess.isGranted(databasePaths: [missing]))
+        #expect(AskFullDiskAccess.isGranted(databasePaths: [missing, available.path]))
     }
 }
