@@ -303,48 +303,56 @@ struct HelpOverlayModelTests {
         #expect(controller.isPresented && kit.model.query == "fy", "the same panel opens again")
     }
 
-    /// Writes PNGs of every page in both styles and appearances when `TYPEFLUX_HELP_SNAPSHOT` names a folder.
+    /// When `TYPEFLUX_HELP_SNAPSHOT` names a folder, writes the real panel as shown on screen, with
+    /// the launcher's real keywords and the Chinese interface, for every page in both styles and
+    /// appearances. On-screen capture is the only way to see Liquid Glass as the app draws it.
     @Test func `snapshots for design review`() throws {
         guard let directory = ProcessInfo.processInfo.environment["TYPEFLUX_HELP_SNAPSHOT"] else { return }
-        let kit = try harness()
-        kit.state.keywords += [HelpCatalogTests.japanese, HelpCatalogTests.workflow, HelpCatalogTests.files,
-                             HelpCatalogTests.shot, HelpCatalogTests.help]
-        kit.state.permissions = [
-            HelpPermissionStatus(id: .microphone, title: "Microphone", detail: "", granted: true),
-            HelpPermissionStatus(id: .accessibility, title: "Accessibility", detail: "Not allowed", granted: false)
+        let previous = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(.simplifiedChinese)
+        defer { AppLocalization.shared.setLanguage(previous) }
+        let fixture = try AskTestFixture()
+        let defaults = try #require(UserDefaults(suiteName: "help-snapshot-" + UUID().uuidString))
+        let settings = SettingsStore(defaults: defaults)
+        settings.keywordHotkeys = [
+            KeywordHotkey(binding: HelpCatalogTests.controlOptionR, keyword: "rw", pluginID: AskPromptPlugin.id)
         ]
-        kit.settings.keywordHotkeys = [KeywordHotkey(binding: HelpCatalogTests.controlOptionR, keyword: "rw",
-                                                   pluginID: AskPromptPlugin.id)]
-        kit.model.prepare(query: "")
+        let model = HelpOverlayModel(sources: .init(
+            keywords: { fixture.model.helpKeywordSources(language: $0) },
+            usage: { ["fy": 42, "rw": 26, "f": 15, "g": 11, "jt": 9, "clip": 5] },
+            settings: settings,
+            permissions: {
+                [PrivacyGuard.PermissionID.microphone, .accessibility].map {
+                    HelpPermissionStatus(id: $0, title: $0.title, detail: L("permission.accessibility.detail.required"),
+                                         granted: $0 == .microphone)
+                }
+            }
+        ))
         for style in InterfaceStyle.allCases {
             for dark in [true, false] {
+                settings.interfaceStyle = style
+                settings.appearanceMode = dark ? .dark : .light
                 for page in HelpPage.allCases {
-                    kit.model.show(page)
-                    try snapshot(kit.model, style: style, dark: dark,
-                                 to: Self.snapshotURL(directory, style: style, dark: dark, name: page.rawValue))
+                    try capture(model, settings: settings, query: "", page: page,
+                                to: Self.snapshotURL(directory, style: style, dark: dark, name: page.rawValue))
                 }
-                try captureOnScreen(kit, style: style, dark: dark, directory: directory)
-                kit.model.query = "fy"
-                try snapshot(kit.model, style: style, dark: dark,
-                             to: Self.snapshotURL(directory, style: style, dark: dark, name: "search"))
-                kit.model.query = ""
+                try capture(model, settings: settings, query: "截图", page: .start,
+                            to: Self.snapshotURL(directory, style: style, dark: dark, name: "search"))
             }
         }
     }
 
-    /// The real panel on screen, so Liquid Glass samples the desktop the way it does in the app.
-    private func captureOnScreen(_ kit: Harness, style: InterfaceStyle, dark: Bool, directory: String) throws {
-        kit.settings.interfaceStyle = style
-        kit.settings.appearanceMode = dark ? .dark : .light
-        let controller = HelpOverlayController(settingsStore: kit.settings, model: kit.model)
-        controller.show(query: "")
+    private func capture(_ model: HelpOverlayModel, settings: SettingsStore, query: String, page: HelpPage,
+                         to url: URL) throws {
+        let controller = HelpOverlayController(settingsStore: settings, model: model)
+        controller.show(query: query)
         defer { controller.dismiss() }
+        if query.isEmpty { model.show(page) }
         let panel = try #require(controller.presentedWindow)
-        RunLoop.main.run(until: Date().addingTimeInterval(1.2))
-        let path = directory + "/onscreen-\(style.rawValue)-\(dark ? "dark" : "light")-start.png"
+        RunLoop.main.run(until: Date().addingTimeInterval(1.0))
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
-        process.arguments = ["-x", "-o", "-l\(panel.windowNumber)", path]
+        process.arguments = ["-x", "-o", "-l\(panel.windowNumber)", url.path]
         try process.run()
         process.waitUntilExit()
     }
@@ -352,18 +360,6 @@ struct HelpOverlayModelTests {
     static func snapshotURL(_ directory: String, style: InterfaceStyle, dark: Bool, name: String) -> URL {
         let file = "\(style.rawValue)-\(dark ? "dark" : "light")-\(name).png"
         return URL(fileURLWithPath: directory).appendingPathComponent(file)
-    }
-
-    private func snapshot(_ model: HelpOverlayModel, style: InterfaceStyle, dark: Bool, to url: URL) throws {
-        let view = HelpOverlayView(model: model).environment(\.interfaceStyle, style)
-            .background(dark ? Color(white: 0.16) : Color(white: 0.82))
-        let host = NSHostingView(rootView: view)
-        host.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
-        host.frame = NSRect(x: 0, y: 0, width: 1440, height: 900)
-        host.layoutSubtreeIfNeeded()
-        let rep = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
-        host.cacheDisplay(in: host.bounds, to: rep)
-        try #require(rep.representation(using: .png, properties: [:])).write(to: url)
     }
 
     private func render(_ model: HelpOverlayModel, style: InterfaceStyle) throws {

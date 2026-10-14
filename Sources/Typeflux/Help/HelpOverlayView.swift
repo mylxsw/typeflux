@@ -51,7 +51,7 @@ struct HelpOverlayView: View {
         } else {
             ZStack {
                 HelpBackdropBlur()
-                Color.black.opacity(colorScheme == .dark ? 0.30 : 0.04)
+                Color.black.opacity(colorScheme == .dark ? 0.55 : 0.10)
             }
         }
     }
@@ -69,8 +69,10 @@ struct HelpOverlayView: View {
             }
         }
         .foregroundStyle(StudioTheme.textPrimary)
+        // On glass the panel is the launcher's own diffuse glass, so the two read as one family.
         .background(AskGlassBackground(material: material, corner: style.help.panelCorner,
-                                       opaqueFill: style.usesGlass ? AskTheme.launcherSurface : AskClassic.canvas))
+                                       opaqueFill: style.usesGlass ? AskTheme.launcherSurface : AskClassic.canvas,
+                                       diffuseLauncher: style.usesGlass))
         .clipShape(shape)
         .overlay(shape.strokeBorder(style.usesGlass ? AskTheme.floatingBorder : AskClassic.launcherBorder,
                                     lineWidth: contrast == .increased ? 1 : 0.5))

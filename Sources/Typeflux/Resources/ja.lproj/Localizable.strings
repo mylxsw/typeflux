@@ -5257,6 +5257,7 @@
 "help.key.chat.settings" = "Ask の設定";
 "help.faq.status" = "権限";
 "help.faq.granted" = "許可済み";
+"help.faq.notGranted" = "未許可";
 "help.faq.fix" = "許可する";
 "help.faq.questions" = "質問";
 "help.faq.relevant" = "該当する可能性あり";

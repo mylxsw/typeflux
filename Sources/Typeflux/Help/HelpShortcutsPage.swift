@@ -84,15 +84,16 @@ struct HelpQuestionsPage: View {
                     HelpGroupTitle(title: L("help.faq.status"))
                     HelpBlock {
                         ForEach(Array(model.permissions.enumerated()), id: \.element.id) { index, permission in
-                            HelpRow(symbol: nil, title: permission.title, showsDivider: index > 0) {
+                            // What is missing goes on the second line; the trailing label stays short.
+                            HelpRow(symbol: nil, title: permission.title,
+                                    detail: permission.granted ? "" : permission.detail, showsDivider: index > 0) {
                                 HStack(spacing: 10) {
                                     Circle().fill(permission.granted ? StudioTheme.success : StudioTheme.warning)
                                         .frame(width: 7, height: 7)
-                                    Text(permission.granted ? L("help.faq.granted") : permission.detail)
+                                    Text(L(permission.granted ? "help.faq.granted" : "help.faq.notGranted"))
                                         .font(.system(size: 12))
                                         .foregroundStyle(permission.granted
                                             ? StudioTheme.textTertiary : StudioTheme.warning)
-                                        .lineLimit(1)
                                     if !permission.granted {
                                         HelpButton(title: L("help.faq.fix")) { model.fix(permission.id) }
                                     }
@@ -225,7 +226,7 @@ struct HelpSearchView: View {
         case let .keyword(keyword):
             HelpRow(symbol: keyword.symbol, title: keyword.title, detail: keyword.detail, selected: selected,
                     dimmed: !keyword.isAvailable, showsDivider: !first, action: open) {
-                HelpKeywordLabel(keyword: keyword.keyword)
+                HelpKeywordLabel(keyword: keyword.keyword, maxAliases: 2)
             }
         case let .shortcut(shortcut):
             HelpRow(symbol: "keyboard", title: shortcut.title, detail: shortcut.section.title, selected: selected,

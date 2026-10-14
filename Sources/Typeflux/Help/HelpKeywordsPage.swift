@@ -88,7 +88,7 @@ struct HelpKeywordsPage: View {
                        showsDivider: !first, action: select) {
             HStack(spacing: 8) {
                 if let shortcut = keyword.shortcut { HelpKeycaps(keys: shortcut) }
-                HelpKeywordLabel(keyword: keyword.keyword)
+                HelpKeywordLabel(keyword: keyword.keyword, maxAliases: 2)
             }
         }
     }

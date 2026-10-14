@@ -133,6 +133,17 @@ struct HelpCatalogTests {
         #expect(catalog.questions.allSatisfy { !$0.question.hasPrefix("help.") && !$0.answer.hasPrefix("help.") })
     }
 
+    @Test func `fixed key titles follow the interface language`() {
+        let previous = AppLocalization.shared.language
+        defer { AppLocalization.shared.setLanguage(previous) }
+        AppLocalization.shared.setLanguage(.english)
+        let english = HelpCatalog.fixedShortcuts.map(\.title)
+        AppLocalization.shared.setLanguage(.simplifiedChinese)
+        let chinese = HelpCatalog.fixedShortcuts.map(\.title)
+        #expect(english != chinese)
+        #expect(chinese.first == L("help.key.launcher.send"))
+    }
+
     @Test func `pages and groups have titles`() {
         for page in HelpPage.allCases {
             #expect(!page.title.hasPrefix("help.") && !page.subtitle.hasPrefix("help.") && !page.symbol.isEmpty)

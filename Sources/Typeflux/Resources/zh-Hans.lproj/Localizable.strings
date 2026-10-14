@@ -5332,6 +5332,7 @@
 "help.key.chat.settings" = "随便问设置";
 "help.faq.status" = "权限";
 "help.faq.granted" = "已允许";
+"help.faq.notGranted" = "未允许";
 "help.faq.fix" = "去授权";
 "help.faq.questions" = "问题";
 "help.faq.relevant" = "可能和你有关";

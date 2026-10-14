@@ -5257,6 +5257,7 @@
 "help.key.chat.settings" = "Ask 설정";
 "help.faq.status" = "권한";
 "help.faq.granted" = "허용됨";
+"help.faq.notGranted" = "허용 안 됨";
 "help.faq.fix" = "허용하기";
 "help.faq.questions" = "질문";
 "help.faq.relevant" = "해당될 수 있음";

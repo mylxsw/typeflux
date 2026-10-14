@@ -5291,6 +5291,7 @@
 "help.key.chat.settings" = "隨便問設定";
 "help.faq.status" = "權限";
 "help.faq.granted" = "已允許";
+"help.faq.notGranted" = "未允許";
 "help.faq.fix" = "前往授權";
 "help.faq.questions" = "問題";
 "help.faq.relevant" = "可能和你有關";

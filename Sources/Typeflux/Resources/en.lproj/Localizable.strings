@@ -5332,6 +5332,7 @@
 "help.key.chat.settings" = "Ask settings";
 "help.faq.status" = "Permissions";
 "help.faq.granted" = "Allowed";
+"help.faq.notGranted" = "Not allowed";
 "help.faq.fix" = "Grant";
 "help.faq.questions" = "Questions";
 "help.faq.relevant" = "May apply to you";
