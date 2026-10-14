@@ -296,18 +296,10 @@ struct ScreenshotEditorToolbar: View {
             if state.showsScrollCapture {
                 iconButton("rectangle.expand.vertical", help: "\(L("screenshot.tool.scroll"))  S",
                            isEnabled: state.canScrollCapture) { perform(.scrollCapture) }
-                Button { perform(.record) } label: {
-                    Label(L("recording.title"), systemImage: "record.circle")
-                        .font(.system(size: 12.5, weight: .medium))
-                        .foregroundStyle(Color.primary.opacity(0.75))
-                        .padding(.horizontal, 7).frame(height: 30)
-                        .contentShape(Rectangle())
-                }
-                .buttonStyle(.plain)
-                .disabled(!state.canScrollCapture)
-                .opacity(state.canScrollCapture ? 1 : 0.35)
-                .help(L("recording.title"))
-                .accessibilityIdentifier("screenshot.record")
+                iconButton("record.circle", help: L("recording.title"),
+                           isEnabled: state.canScrollCapture) { perform(.record) }
+                    .accessibilityLabel(L("recording.title"))
+                    .accessibilityIdentifier("screenshot.record")
             }
             if state.showsPin {
                 iconButton("pin", help: "\(L("screenshot.tool.pin"))  F") { perform(.pin) }

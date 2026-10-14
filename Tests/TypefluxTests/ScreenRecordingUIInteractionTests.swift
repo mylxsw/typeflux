@@ -26,7 +26,14 @@ struct ScreenRecordingUIInteractionTests {
                 let button = try #require(SettingsBehaviorTestSupport.elements(in: content).first {
                     $0.value("accessibilityIdentifier") as? String == "screenshot.record"
                 })
-                #expect(button.frame.width > 30 && button.frame.height > 0)
+                let pin = try #require(SettingsBehaviorTestSupport.elements(in: content).first {
+                    $0.value("accessibilityIdentifier") as? String == "screenshot.pin"
+                })
+                #expect(button.frame.size == CGSize(width: 30, height: 30))
+                #expect(button.frame.size == pin.frame.size)
+                #expect(button.frame.minY == pin.frame.minY)
+                #expect(pin.frame.minX - button.frame.maxX == 2)
+                #expect(button.label == L("recording.title"))
                 #expect(window.frame.contains(button.frame))
                 #expect(button.value("isAccessibilityEnabled") as? Bool == editable)
                 if editable {
@@ -42,8 +49,15 @@ struct ScreenRecordingUIInteractionTests {
                 $0.value("accessibilityIdentifier") as? String == "screenshot.record"
             })
         }
-        let image = try await ScreenshotSnapshotSupport.toolbar(.init())
-        try ScreenshotSnapshotSupport.write(#require(image.cgImage), name: "screenshot-recording-entry")
+        let previousLanguage = AppLocalization.shared.language
+        defer { AppLocalization.shared.setLanguage(previousLanguage) }
+        AppLocalization.shared.setLanguage(.simplifiedChinese)
+        for dark in [true, false] {
+            let image = try await ScreenshotSnapshotSupport.toolbar(.init(), dark: dark)
+            try ScreenshotSnapshotSupport.write(#require(image.cgImage),
+                                                name: dark ? "screenshot-recording-entry" :
+                                                    "screenshot-recording-entry-light")
+        }
     }
 
     @Test func `native selection toolbar remains visible through refresh and language changes`() async throws {
