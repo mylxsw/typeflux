@@ -296,6 +296,10 @@ struct ScreenshotEditorToolbar: View {
             if state.showsScrollCapture {
                 iconButton("rectangle.expand.vertical", help: "\(L("screenshot.tool.scroll"))  S",
                            isEnabled: state.canScrollCapture) { perform(.scrollCapture) }
+                iconButton("record.circle", help: L("recording.title"),
+                           isEnabled: state.canScrollCapture) { perform(.record) }
+                    .accessibilityLabel(L("recording.title"))
+                    .accessibilityIdentifier("screenshot.record")
             }
             if state.showsPin {
                 iconButton("pin", help: "\(L("screenshot.tool.pin"))  F") { perform(.pin) }
@@ -352,9 +356,6 @@ struct ScreenshotEditorToolbar: View {
         VStack(alignment: .leading, spacing: 1) {
             menuRow("square.and.arrow.down.on.square", L("screenshot.more.copyAndSave"), shortcut: "⌥↩") {
                 perform(.copyAndSave)
-            }
-            if state.showsScrollCapture, state.canScrollCapture {
-                menuRow("record.circle", L("recording.title")) { perform(.record) }
             }
             if state.canShowSensitivePanel {
                 menuRow("checkmark.shield", L("screenshot.more.sensitive"),

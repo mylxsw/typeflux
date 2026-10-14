@@ -53,7 +53,7 @@ extension ScreenRecordingWindowController {
                         self?.preview.level ?? 0
                     }, close: { model.cancel() },
                     chooseDirectory: { [weak self] in self?.chooseDirectory() }),
-                    in: panel
+                    in: panel, sizesToContent: true
                 )
                 window = panel
             }
@@ -240,14 +240,19 @@ extension ScreenRecordingWindowController {
                 window?.orderFrontRegardless()
                 if let window, let view = window.contentView, let area = activeScreen?.visibleFrame {
                     let fitting = view.fittingSize
-                    let size = CGSize(width: min(fitting.width, area.width - 24), height: fitting.height)
-                    if window.frame.size != size {
+                    // Keep the last usable frame if SwiftUI has not produced a size yet.
+                    if fitting.width.isFinite, fitting.height.isFinite, fitting.width > 0, fitting.height > 0 {
+                        let size = CGSize(width: min(fitting.width, area.width - 24),
+                                          height: min(fitting.height, area.height - 24))
                         let origin = CGPoint(
                             x: min(max(window.frame.midX - size.width / 2, area.minX + 12),
                                    area.maxX - size.width - 12),
-                            y: window.frame.minY
+                            y: min(max(window.frame.minY, area.minY + 12), area.maxY - size.height - 12)
                         )
-                        window.setFrame(CGRect(origin: origin, size: size), display: true)
+                        let frame = CGRect(origin: origin, size: size)
+                        if window.frame != frame {
+                            window.setFrame(frame, display: true)
+                        }
                     }
                 }
             }
