@@ -9,9 +9,20 @@ struct AskTranslationPanelView: View {
     var onContentHeightChange: (CGFloat) -> Void = { _ in }
     @State private var editorHeight: CGFloat = 48
     @State private var measuredChromeHeight: CGFloat?
+    @Environment(\.interfaceStyle) private var style
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorSchemeContrast) private var contrast
+
+    private var chrome: AskComposerChrome {
+        AskTranslationAppearance.chrome(style: style, increasedContrast: contrast == .increased)
+    }
+
+    private var material: AskGlassMaterial {
+        AskGlassMaterial.resolve(reduceTransparency: reduceTransparency, style: style)
+    }
 
     static func chromeHeight(screenshot: Bool) -> CGFloat {
-        screenshot ? 190 : 158
+        screenshot ? 214 : 182
     }
 
     var body: some View {
@@ -46,17 +57,22 @@ struct AskTranslationPanelView: View {
             guard required.allSatisfy({ heights[$0] != nil }) else { return }
             let chromeParts: [AskTranslationContentHeight.Part] = [.title, .original, .notice, .footer]
             let chrome = chromeParts.reduce(CGFloat.zero) { $0 + (heights[$1] ?? 0) }
-                + (heights[.notice] == nil ? 24 : 32)
+                + (heights[.notice] == nil ? 24 : 32) + AskMetrics.launcherGutter * 2
             measuredChromeHeight = chrome
             onContentHeightChange(chrome + (heights[.languages] ?? 0) + (heights[.results] ?? 0) + 8)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .background(AskTheme.launcherSurface)
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-        .overlay { RoundedRectangle(cornerRadius: 14).strokeBorder(AskTheme.border, lineWidth: 1) }
+        .background(chrome.glassBackground(material))
+        .clipShape(RoundedRectangle(cornerRadius: chrome.corner, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: chrome.corner, style: .continuous)
+                .strokeBorder(chrome.idleBorder(on: material, increasedContrast: contrast == .increased), lineWidth: 1)
+        }
+        .padding(AskMetrics.launcherGutter)
+        .tint(AskTheme.accent)
         .background(AskTranslationConfigurationPresenter(model: model.configuration, onConfigured: { provider in
             model.translate(options: ["retryService": "provider." + provider.rawValue])
-        }))
+        }, onLanguagesReady: model.retryDownloadedLanguages))
         .accessibilityIdentifier("ask.translation.panel")
     }
 
@@ -110,7 +126,7 @@ struct AskTranslationPanelView: View {
                 .padding(.horizontal, 11).padding(.top, 8)
             }
             AskComposerTextView(text: $model.text, placeholder: L("ask.translation.panel.placeholder"),
-                                contextID: "translation-panel", fontSize: 14, maximumHeight: 96,
+                                contextID: "translation-panel", fontSize: chrome.editorFontSize, maximumHeight: 96,
                                 onSubmit: model.submit, onDismiss: model.escape,
                                 onHeightChange: { editorHeight = min(96, max(48, $0)) })
                 .frame(height: editorHeight).padding(.horizontal, 6).padding(.top, 5)
@@ -132,8 +148,11 @@ struct AskTranslationPanelView: View {
             .font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
             .padding(.leading, 11).padding(.trailing, 5).padding(.bottom, 5)
         }
-        .background(AskTranslationAppearance.cardFill, in: RoundedRectangle(cornerRadius: 10))
-        .overlay { RoundedRectangle(cornerRadius: 10).strokeBorder(AskTheme.border, lineWidth: 1) }
+        .background(AskTranslationAppearance.cardFill(style: style), in: RoundedRectangle(cornerRadius: 10))
+        .overlay { RoundedRectangle(cornerRadius: 10).strokeBorder(
+            AskTranslationAppearance.border(style: style),
+            lineWidth: 1
+        ) }
     }
 
     private var footer: some View {

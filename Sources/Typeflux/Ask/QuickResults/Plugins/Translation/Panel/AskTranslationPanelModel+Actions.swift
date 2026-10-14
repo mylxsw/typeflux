@@ -2,6 +2,17 @@ import Foundation
 
 @MainActor
 extension AskTranslationPanelModel {
+    func retryDownloadedLanguages() {
+        guard let stack = output?.translation, output?.original == trimmedText,
+              stack.results.contains(where: {
+                  if case let .failed(failure) = $0.state, case .download = failure.recovery {
+                      return true
+                  }
+                  return false
+              }) else { return }
+        translate(options: ["retryService": "device"])
+    }
+
     var stack: AskTranslationStack {
         if let stack = output?.translation {
             return stack
@@ -109,9 +120,8 @@ extension AskTranslationPanelModel {
         case let .rerun(options):
             rerun(options)
         case .swapTranslation: swapLanguages()
-        case let .configureTranslation(provider): configuration.edit(provider)
-        case .manageTranslationLanguages: onOpenURL(AskTranslationSettingsModel.languagePackagesURL)
-        case .openSettings, .openWordBook: openDestination(action.kind)
+        case .configureTranslation, .manageTranslationLanguages, .downloadTranslationLanguages,
+             .openSettings, .openWordBook: openDestination(action.kind)
         case let .toggleStar(lookup):
             let starred = plugin.wordBook?.entry(forKey: lookup.key)?.isStarred != true
             plugin.wordBook?.setStarred(starred, lookup: lookup, at: now())
@@ -121,10 +131,13 @@ extension AskTranslationPanelModel {
     }
 
     private func openDestination(_ kind: AskPluginAction.Kind) {
-        if case let .openWordBook(key) = kind {
-            onWordBook(key)
-        } else {
-            onSettings()
+        switch kind {
+        case let .openWordBook(key): onWordBook(key)
+        case let .configureTranslation(provider): configuration.edit(provider)
+        case .manageTranslationLanguages: onOpenURL(AskTranslationSettingsModel.languagePackagesURL)
+        case let .downloadTranslationLanguages(source, target):
+            configuration.downloadLanguages(source: source, target: target)
+        default: onSettings()
         }
     }
 

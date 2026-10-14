@@ -5253,7 +5253,7 @@
 "ask.translation.panel.source.screenshot" = "截图翻译";
 "ask.translation.panel.source.launcher" = "来自启动器";
 "ask.translation.panel.position" = "打开位置";
-"ask.translation.panel.position.subtitle" = "划词翻译时总在选区附近打开";
+"ask.translation.panel.position.subtitle" = "所有入口均使用此位置；钉住的面板保持原位";
 "ask.translation.panel.position.center" = "屏幕中央";
 "ask.translation.panel.position.mouse" = "鼠标附近";
 "ask.translation.panel.position.lastPosition" = "上次位置";
@@ -5293,10 +5293,6 @@
 "ask.translation.panel.insertionFailed" = "未能写回原应用，译文已复制，可手动粘贴";
 "ask.translation.panel.shortcuts" = "快捷键";
 "ask.translation.panel.preferences" = "翻译面板";
-"hotkeys.action.inputTranslation.title" = "输入翻译";
-"hotkeys.action.inputTranslation.subtitle" = "打开翻译面板，直接输入";
-"hotkeys.action.selectionTranslation.title" = "划词翻译";
-"hotkeys.action.selectionTranslation.subtitle" = "翻译当前选中的文字；没有选中时等同输入翻译";
 "hotkeys.action.screenshotTranslation.title" = "截图翻译";
 "hotkeys.action.screenshotTranslation.subtitle" = "框选屏幕区域，在本机识别文字后翻译";
 
@@ -5462,3 +5458,13 @@
 "semantic.index.setup.ready" = "本地模型已下载。启用后会在上述范围内建立内容索引。";
 "semantic.metric.location" = "处理位置";
 "semantic.metric.local" = "本机";
+
+"hotkeys.action.translate.title" = "翻译";
+
+"hotkeys.action.translate.subtitle" = "翻译选中文字；没有选中文字时打开面板输入";
+
+"ask.translation.stack.downloadRequired" = "下载本机翻译语言包（%@ → %@）";
+
+"ask.translation.stack.download" = "下载";
+
+"ask.translation.stack.ready" = "按 Return 开始翻译";

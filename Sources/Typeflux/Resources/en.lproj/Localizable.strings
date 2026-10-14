@@ -5248,12 +5248,12 @@
 "ask.translation.model.pickAgain" = "Pick again";
 
 // Translation panel
-"ask.translation.panel.source.input" = "Input";
-"ask.translation.panel.source.selection" = "Selection";
-"ask.translation.panel.source.screenshot" = "Screenshot";
+"ask.translation.panel.source.input" = "Input translation";
+"ask.translation.panel.source.selection" = "Selection translation";
+"ask.translation.panel.source.screenshot" = "Screenshot translation";
 "ask.translation.panel.source.launcher" = "From launcher";
 "ask.translation.panel.position" = "Open position";
-"ask.translation.panel.position.subtitle" = "Selection translation always opens near the selection";
+"ask.translation.panel.position.subtitle" = "All entry points follow this position; pinned panels stay in place";
 "ask.translation.panel.position.center" = "Screen center";
 "ask.translation.panel.position.mouse" = "Near pointer";
 "ask.translation.panel.position.lastPosition" = "Last position";
@@ -5293,10 +5293,6 @@
 "ask.translation.panel.insertionFailed" = "Could not insert into the source app. Translation copied for manual paste";
 "ask.translation.panel.shortcuts" = "Shortcuts";
 "ask.translation.panel.preferences" = "Translation panel";
-"hotkeys.action.inputTranslation.title" = "Input translation";
-"hotkeys.action.inputTranslation.subtitle" = "Open the translation panel and type directly";
-"hotkeys.action.selectionTranslation.title" = "Selection translation";
-"hotkeys.action.selectionTranslation.subtitle" = "Translate the selected text; with nothing selected, same as input translation";
 "hotkeys.action.screenshotTranslation.title" = "Screenshot translation";
 "hotkeys.action.screenshotTranslation.subtitle" = "Select a screen area; text is recognized on this Mac, then translated";
 
@@ -5462,3 +5458,13 @@
 "semantic.index.setup.ready" = "The local model is downloaded. Enabling will index content within the folders above.";
 "semantic.metric.location" = "Processed on";
 "semantic.metric.local" = "This Mac";
+
+"hotkeys.action.translate.title" = "Translate";
+
+"hotkeys.action.translate.subtitle" = "Translate selected text immediately, or open the panel to type";
+
+"ask.translation.stack.downloadRequired" = "Download the on-device language pack (%@ → %@)";
+
+"ask.translation.stack.download" = "Download";
+
+"ask.translation.stack.ready" = "Press Return to translate";

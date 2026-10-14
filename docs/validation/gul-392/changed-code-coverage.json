@@ -1,0 +1,156 @@
+{
+  "base": "df4b361f75a7493a96e250baeccf5ab559255ea5",
+  "covered": 282,
+  "executable": 304,
+  "percent": 92.76,
+  "files": [
+    {
+      "path": "Sources/Typeflux/App/AppCoordinator.swift",
+      "covered": 0,
+      "executable": 1,
+      "uncovered": [
+        313
+      ]
+    },
+    {
+      "path": "Sources/Typeflux/Ask/AskConversationModel+Plugins.swift",
+      "covered": 3,
+      "executable": 3,
+      "uncovered": []
+    },
+    {
+      "path": "Sources/Typeflux/Ask/QuickResults/Plugins/AskLauncherPlugin.swift",
+      "covered": 0,
+      "executable": 0,
+      "uncovered": []
+    },
+    {
+      "path": "Sources/Typeflux/Ask/QuickResults/Plugins/AskPluginViews.swift",
+      "covered": 1,
+      "executable": 2,
+      "uncovered": [
+        503
+      ]
+    },
+    {
+      "path": "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskTranslationConfigurationPresenter.swift",
+      "covered": 10,
+      "executable": 15,
+      "uncovered": [
+        5,
+        6,
+        11,
+        12,
+        13
+      ]
+    },
+    {
+      "path": "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskTranslationEngines.swift",
+      "covered": 20,
+      "executable": 23,
+      "uncovered": [
+        48,
+        49,
+        50
+      ]
+    },
+    {
+      "path": "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskTranslationFanout.swift",
+      "covered": 20,
+      "executable": 20,
+      "uncovered": []
+    },
+    {
+      "path": "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskTranslationLanguageDownload.swift",
+      "covered": 19,
+      "executable": 29,
+      "uncovered": [
+        8,
+        22,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36
+      ]
+    },
+    {
+      "path": "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskTranslationStackView.swift",
+      "covered": 27,
+      "executable": 27,
+      "uncovered": []
+    },
+    {
+      "path": "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/Panel/AskTranslationPanelController.swift",
+      "covered": 83,
+      "executable": 85,
+      "uncovered": [
+        300,
+        301
+      ]
+    },
+    {
+      "path": "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/Panel/AskTranslationPanelCoordinator.swift",
+      "covered": 1,
+      "executable": 1,
+      "uncovered": []
+    },
+    {
+      "path": "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/Panel/AskTranslationPanelModel+Actions.swift",
+      "covered": 19,
+      "executable": 19,
+      "uncovered": []
+    },
+    {
+      "path": "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/Panel/AskTranslationPanelModel.swift",
+      "covered": 7,
+      "executable": 7,
+      "uncovered": []
+    },
+    {
+      "path": "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/Panel/AskTranslationPanelPlacement.swift",
+      "covered": 16,
+      "executable": 16,
+      "uncovered": []
+    },
+    {
+      "path": "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/Panel/AskTranslationPanelView.swift",
+      "covered": 23,
+      "executable": 23,
+      "uncovered": []
+    },
+    {
+      "path": "Sources/Typeflux/Hotkey/HotkeyTarget.swift",
+      "covered": 0,
+      "executable": 0,
+      "uncovered": []
+    },
+    {
+      "path": "Sources/Typeflux/Settings/AskTranslationSettingsModel.swift",
+      "covered": 18,
+      "executable": 18,
+      "uncovered": []
+    },
+    {
+      "path": "Sources/Typeflux/Settings/HotkeySettingsPresentation.swift",
+      "covered": 2,
+      "executable": 2,
+      "uncovered": []
+    },
+    {
+      "path": "Sources/Typeflux/Settings/SettingsStore+Hotkeys.swift",
+      "covered": 12,
+      "executable": 12,
+      "uncovered": []
+    },
+    {
+      "path": "Sources/Typeflux/Settings/SettingsStore.swift",
+      "covered": 1,
+      "executable": 1,
+      "uncovered": []
+    }
+  ]
+}

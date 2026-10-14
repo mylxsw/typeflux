@@ -99,7 +99,7 @@ struct AskTranslationPanelSelectionTests {
         #expect(fixture.ai.requests.count == 1)
     }
 
-    @Test func `unpinned panel recaptures and moves beside the new selection`() async throws {
+    @Test func `unpinned selection follows center instead of the selection bounds`() async throws {
         let fixture = TranslationPanelFixture()
         defer { fixture.clean() }
         let injector = TranslationPanelInjector()
@@ -109,6 +109,7 @@ struct AskTranslationPanelSelectionTests {
         await fixture.model.waitForTranslation()
         let window = try #require(entry.controller.presentedWindow)
         try await Task.sleep(for: .milliseconds(200))
+        window.setFrameOrigin(CGPoint(x: window.frame.minX + 30, y: window.frame.minY - 30))
         let before = window.frame.origin
         let screen = try #require(window.screen).visibleFrame
         let bounds = CGRect(x: screen.midX, y: screen.midY, width: 100, height: 20)
@@ -119,7 +120,7 @@ struct AskTranslationPanelSelectionTests {
         await fixture.model.waitForTranslation()
         try await Task.sleep(for: .milliseconds(200))
         let expected = AskTranslationPanelPlacement.frame(size: window.frame.size, screen: screen,
-                                                          position: .center, mouse: .zero, selection: bounds)
+                                                          position: .center, mouse: .zero)
         #expect(window.frame.origin != before && !fixture.model.pinned)
         #expect(abs(window.frame.minX - expected.minX) < 1 && abs(window.frame.minY - expected.minY) < 1)
         #expect(fixture.ai.requests.count == 2 && injector.captures.count == 2)

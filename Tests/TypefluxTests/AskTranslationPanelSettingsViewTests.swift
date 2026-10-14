@@ -6,7 +6,7 @@ import Testing
 @Suite("Translation panel settings UI", .exclusiveUIState)
 @MainActor
 struct AskTranslationPanelSettingsViewTests {
-    @Test func `both appearances show panel preferences and the same three shortcuts`() async throws {
+    @Test func `both appearances show panel preferences and the same two shortcuts`() async throws {
         _ = NSApplication.shared
         let savedLanguage = AppLocalization.shared.language
         defer { AppLocalization.shared.setLanguage(savedLanguage) }
@@ -32,6 +32,7 @@ struct AskTranslationPanelSettingsViewTests {
             defer { window.orderOut(nil); window.close() }
             try await Task.sleep(for: .milliseconds(150))
             let controls = SettingsBehaviorTestSupport.elements(in: window)
+            #expect(AppHotkeyAction.translation == [.translate, .screenshotTranslation])
             for action in AppHotkeyAction.translation {
                 let subtitle = try #require(controls.first {
                     $0.value("accessibilityIdentifier") as? String

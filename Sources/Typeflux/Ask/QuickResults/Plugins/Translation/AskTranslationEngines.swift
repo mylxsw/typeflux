@@ -7,8 +7,19 @@ import Translation
 protocol AskTranslationEngine: Sendable {
     /// Whether this engine can translate `source` into `target` right now.
     func canTranslate(from source: String?, to target: String) async -> Bool
+    func availability(from source: String?, to target: String) async -> AskTranslationAvailability
     func translate(_ text: String, from source: String?, to target: String) async throws -> String
 }
+
+enum AskTranslationAvailability: Sendable { case installed, supported, unsupported }
+
+extension AskTranslationEngine {
+    func availability(from source: String?, to target: String) async -> AskTranslationAvailability {
+        await canTranslate(from: source, to: target) ? .installed : .unsupported
+    }
+}
+
+enum AskOnDeviceTranslationError: Error { case downloadRequired }
 
 protocol AskTranslationStreaming: AskTranslationEngine {
     func streamTranslation(_ text: String, from source: String?, to target: String) -> AsyncThrowingStream<String, Error>
@@ -18,16 +29,40 @@ protocol AskTranslationStreaming: AskTranslationEngine {
 /// Mac. Used where the language pair is downloaded and the system lets an app
 /// open a session directly (macOS 26). Earlier systems use the AI engine.
 struct AskOnDeviceTranslationEngine: AskTranslationEngine {
+    var checkAvailability: @Sendable (String?, String) async -> AskTranslationAvailability = {
+        await systemAvailability(from: $0, to: $1)
+    }
+
     func canTranslate(from source: String?, to target: String) async -> Bool {
+        await availability(from: source, to: target) == .installed
+    }
+
+    func availability(from source: String?, to target: String) async -> AskTranslationAvailability {
+        await checkAvailability(source, target)
+    }
+
+    private static func systemAvailability(from source: String?,
+                                           to target: String) async -> AskTranslationAvailability {
         #if canImport(Translation)
-        guard #available(macOS 26.0, *), let source else { return false }
-        let status = await LanguageAvailability().status(from: Locale.Language(identifier: source),
-                                                         to: Locale.Language(identifier: target))
-        return status == .installed
+            guard #available(macOS 26.0, *), let source else { return .unsupported }
+            let status = await LanguageAvailability().status(from: Locale.Language(identifier: source),
+                                                             to: Locale.Language(identifier: target))
+            return mappedAvailability(status)
         #else
-        return false
+            return .unsupported
         #endif
     }
+
+    #if canImport(Translation)
+    @available(macOS 15.0, *)
+    static func mappedAvailability(_ status: LanguageAvailability.Status) -> AskTranslationAvailability {
+        switch status {
+        case .installed: .installed
+        case .supported: .supported
+        default: .unsupported
+        }
+    }
+    #endif
 
     func translate(_ text: String, from source: String?, to target: String) async throws -> String {
         #if canImport(Translation)

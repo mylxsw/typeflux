@@ -88,6 +88,7 @@ final class AskTranslationPanelModel: ObservableObject {
             targetLanguage = nil
             pinned = false
             configuration.cancelEdit()
+            configuration.languageDownload = nil
             if source != .launcher {
                 plugin.fanout?.reset()
             }
@@ -166,14 +167,9 @@ final class AskTranslationPanelModel: ObservableObject {
     func dismiss() {
         cancelTranslation()
         configuration.cancelEdit()
+        configuration.languageDownload = nil
         dismissedAt = now()
         onDismiss()
-    }
-
-    func lostFocus() {
-        if !pinned, configuration.editing == nil {
-            dismiss()
-        }
     }
 
     func escape() {
@@ -281,4 +277,13 @@ final class AskTranslationPanelModel: ObservableObject {
         }
         running = false
     }
+}
+
+extension AskTranslationPanelModel {
+    func lostFocus() {
+        if !pinned, configuration.editing == nil, configuration.languageDownload == nil {
+            dismiss()
+        }
+    }
+
 }

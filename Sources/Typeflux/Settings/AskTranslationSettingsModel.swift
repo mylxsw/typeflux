@@ -12,6 +12,7 @@ final class AskTranslationSettingsModel: ObservableObject {
     @Published private(set) var testing = false
     @Published private(set) var notice: String?
     @Published private(set) var noticeIsError = false
+    @Published var languageDownload: AskTranslationLanguageDownload?
 
     let store: SettingsStore
     let credentials: any AskTranslationCredentialStoring
@@ -39,6 +40,28 @@ final class AskTranslationSettingsModel: ObservableObject {
     // MARK: - Ordered services
 
     static let languagePackagesURL = URL(string: "x-apple.systempreferences:com.apple.Localization-Settings.extension")!
+
+    func downloadLanguages(source: String, target: String) {
+        languageDownload = .init(source: source, target: target)
+    }
+
+    func prepareLanguages(_ request: AskTranslationLanguageDownload,
+                          prepare: () async throws -> Void, onReady: () -> Void,
+                          openSettings: (URL) -> Void) async {
+        do {
+            try await prepare()
+            guard !Task.isCancelled, languageDownload?.id == request.id else { return }
+            languageDownload = nil
+            onReady()
+        } catch {
+            guard !Task.isCancelled, languageDownload?.id == request.id else { return }
+            languageDownload = nil
+            if error is CancellationError {
+                return
+            }
+            openSettings(Self.languagePackagesURL)
+        }
+    }
 
     func setEnabled(_ id: String, _ enabled: Bool) {
         guard let service = settings.services.first(where: { $0.id == id }) else { return }

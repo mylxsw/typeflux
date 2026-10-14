@@ -294,6 +294,9 @@ extension AskConversationModel {
         case .manageTranslationLanguages:
             openURL(AskTranslationSettingsModel.languagePackagesURL)
             return .stay
+        case let .downloadTranslationLanguages(source, target):
+            translationSettingsModel.downloadLanguages(source: source, target: target)
+            return .stay
         case .signIn:
             onSignIn()
             return .stay

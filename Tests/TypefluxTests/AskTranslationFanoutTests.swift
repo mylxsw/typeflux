@@ -323,3 +323,63 @@ struct AskTranslationFanoutTests {
         #expect(empty.isEmpty)
     }
 }
+
+private struct AvailableDeviceTranslation: AskTranslationEngine {
+    var status: AskTranslationAvailability
+    func canTranslate(from _: String?, to _: String) async -> Bool {
+        status == .installed
+    }
+
+    func availability(from _: String?, to _: String) async -> AskTranslationAvailability {
+        status
+    }
+
+    func translate(_ text: String, from _: String?, to _: String) async throws -> String {
+        "Translated: " + text
+    }
+}
+
+extension AskTranslationFanoutTests {
+    @Test func `on device availability distinguishes installed missing pack and unsupported`() async throws {
+        let savedLanguage = AppLocalization.shared.language
+        defer { AppLocalization.shared.setLanguage(savedLanguage) }
+        AppLocalization.shared.setLanguage(.english)
+        for status in [AskTranslationAvailability.installed, .supported, .unsupported] {
+            let engine = AskOnDeviceTranslationEngine(checkAvailability: { source, target in
+                #expect(source == "en" && target == "zh-Hans")
+                return status
+            })
+            #expect(await engine.availability(from: "en", to: "zh-Hans") == status)
+            #expect(await engine.canTranslate(from: "en", to: "zh-Hans") == (status == .installed))
+            let rows = try await AskTranslationFanout().run(
+                .init(text: "A source sentence.", source: "en", target: "zh-Hans", interface: .english,
+                      services: [.device], submitted: true),
+                engine: { _ in AvailableDeviceTranslation(status: status) }, name: { _ in "On-device" }
+            )
+            let row = try #require(rows.first)
+            switch status {
+            case .installed:
+                #expect(row.completedText == "Translated: A source sentence.")
+            case .supported:
+                guard case let .failed(failure) = row.state else { Issue.record("Missing download recovery"); continue }
+                #expect(failure.message == L("ask.translation.stack.downloadRequired",
+                                             AskTranslationLanguages.name("en", in: .english),
+                                             AskTranslationLanguages.name("zh-Hans", in: .english)))
+                #expect(failure.action(for: .device)?.title == "Download")
+                #expect(failure.action(for: .device)?.kind == .downloadTranslationLanguages(
+                    source: "en",
+                    target: "zh-Hans"
+                ))
+                let fixture = TranslationPanelFixture()
+                defer { fixture.clean() }
+                try fixture.model.perform(#require(failure.action(for: .device)))
+                #expect(fixture.model.configuration.languageDownload?.source == "en")
+                #expect(fixture.model.configuration.languageDownload?.target == "zh-Hans")
+            case .unsupported:
+                guard case let .failed(failure) = row.state else { Issue.record("Missing unsupported error"); continue }
+                #expect(failure.message == L("ask.plugin.translate.unavailable"))
+                #expect(failure.action(for: .device)?.kind == .manageTranslationLanguages)
+            }
+        }
+    }
+}
