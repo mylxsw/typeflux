@@ -7,13 +7,45 @@ import Testing
 struct ScreenshotCaptureWindowPolicyTests {
     private let frame = CGRect(x: 200, y: 200, width: 240, height: 180)
 
-    init() { _ = NSApplication.shared }
+    init() {
+        _ = NSApplication.shared
+    }
+
+    @Test func `window IDs outside the Quartz range are ignored`() {
+        for number in [Int.min, -1, 0, Int(UInt32.max) + 1, Int.max] {
+            #expect(ScreenshotCaptureWindowPolicy.captureWindowID(number) == nil)
+        }
+        #expect(ScreenshotCaptureWindowPolicy.captureWindowID(1) == 1)
+        #expect(ScreenshotCaptureWindowPolicy.captureWindowID(Int(UInt32.max)) == UInt32.max)
+    }
+
+    private final class NumberedPanel: NSPanel {
+        var reportedNumber: Int?
+        override var windowNumber: Int {
+            reportedNumber ?? super.windowNumber
+        }
+    }
+
+    @Test func `visible recording controls with oversized numbers do not crash exclusion`() {
+        let panel = NumberedPanel(contentRect: frame, styleMask: .borderless, backing: .buffered, defer: false)
+        panel.isReleasedWhenClosed = false
+        panel.identifier = ScreenRecordingWindowController.identifier
+        panel.orderFrontRegardless()
+        let original = panel.windowNumber
+        defer { panel.reportedNumber = nil; panel.close() }
+        #expect(ScreenshotCaptureWindowPolicy.excludedWindowIDs().contains(CGWindowID(original)))
+        panel.reportedNumber = Int(UInt32.max) + 1
+        #expect(!ScreenshotCaptureWindowPolicy.excludedWindowIDs().contains(CGWindowID(original)))
+        panel.reportedNumber = original
+        #expect(ScreenshotCaptureWindowPolicy.excludedWindowIDs().contains(CGWindowID(original)))
+    }
 
     @Test func appPagesRemainCapturable() {
         let window = NSWindow(contentRect: frame, styleMask: [.titled], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         defer { window.close() }
-        for identifier in ["ask-launcher", "ask-conversations", "settings", "word-cards", "notes", "ask-answer"] {
+        for identifier in ["ask-launcher", "ask-conversations", "settings", "word-cards", "notes", "ask-answer",
+                           "recording-preview"] {
             window.identifier = .init("ai.gulu.app.typeflux.window.\(identifier)")
             #expect(!ScreenshotCaptureWindowPolicy.excludes(window))
         }
@@ -110,8 +142,9 @@ struct ScreenshotCaptureWindowPolicyTests {
     }
 
     @Test(.enabled(if: ProcessInfo.processInfo.environment["TYPEFLUX_REAL_SCREEN_CAPTURE_TESTS"] == "1"),
-          arguments: [false, true])
-    func realCaptureKeepsAppPagePixelsBehindCaptureControls(_ isLauncher: Bool) async throws {
+          arguments: ["page", "launcher", "recording-preview"])
+    func realCaptureKeepsAppPagePixelsBehindCaptureControls(_ kind: String) async throws {
+        let isLauncher = kind == "launcher"
         try #require(CGPreflightScreenCaptureAccess(),
                      "Grant screen recording access before running the real capture test")
         let screen = try #require(NSScreen.screens.first)
@@ -121,7 +154,8 @@ struct ScreenshotCaptureWindowPolicyTests {
             ? NSPanel(contentRect: pageFrame, styleMask: [.borderless, .nonactivatingPanel],
                       backing: .buffered, defer: false)
             : NSWindow(contentRect: pageFrame, styleMask: [.borderless], backing: .buffered, defer: false)
-        page.identifier = isLauncher ? TypefluxWindowIdentity.askLauncherWindowIdentifier : nil
+        page.identifier = isLauncher ? TypefluxWindowIdentity.askLauncherWindowIdentifier :
+            (kind == "recording-preview" ? ScreenRecordingWindowController.previewIdentifier : nil)
         (page as? NSPanel)?.hidesOnDeactivate = false
         page.isReleasedWhenClosed = false
         page.title = "Typeflux screenshot regression test"

@@ -78,15 +78,4 @@ extension ScreenRecordingWindowController {
     @objc func stop() {
         model?.stop()
     }
-
-    func offerRecovery(_ model: ScreenRecordingCoordinator) {
-        guard let source = model.findRecoverableSources().first else { return }
-        toast.showRecovery(
-            source,
-            open: { [weak self] in self?.show(model); model.recover(source) },
-            discard: { [weak self] in
-                model.discardRecovered(source); self?.offerRecovery(model)
-            }
-        )
-    }
 }

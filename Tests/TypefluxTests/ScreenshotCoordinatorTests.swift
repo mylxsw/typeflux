@@ -211,6 +211,25 @@ final class ScreenshotCoordinatorTests: XCTestCase {
         XCTAssertEqual(toasts.shown.last, .busy)
     }
 
+    func testUnsavedRecordingAllowsScreenshotAndAnotherRecordingFromScreenshotEntry() async {
+        let fixture = ScreenRecordingSessionControllerTests.Fixture()
+        let first = await fixture.record()
+        let sut = makeCoordinator()
+        sut.isRecordingActive = { fixture.controller.isCaptureActive }
+        sut.onRecordingRequested = { format, region in fixture.controller.show(format: format, region: region) }
+        fixture.controller.isOtherCaptureActive = { sut.state != .idle }
+        await started(sut)
+        XCTAssertTrue(overlay.isShowing)
+        XCTAssertTrue(first.window.window?.isVisible == true)
+        XCTAssertFalse(toasts.shown.contains(.busy))
+        sut.handle(.cancelled)
+        sut.start(mode: .recording)
+        XCTAssertEqual(fixture.controller.sessions.count, 2)
+        XCTAssertEqual(fixture.controller.sessions.last?.model.state, .setup)
+        XCTAssertEqual(first.model.state, .preview)
+        await fixture.clean()
+    }
+
     func testRecordingSelectedRegionHandsOffWithoutRendering() async {
         let sut = makeCoordinator(render: { _, _, _ in
             XCTFail("A live recording must not render static annotations")

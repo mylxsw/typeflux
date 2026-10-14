@@ -62,7 +62,7 @@ enum HotkeySettingsPresentation {
 
     static func group(of action: AppHotkeyAction) -> HotkeyGroup {
         switch action {
-        case .openChat, .openStudio: .launcher
+        case .openChat, .openStudio, .openHelp: .launcher
         case .screenshotText, .openNotes, .openWordBook, .inputTranslation, .selectionTranslation, .screenshotTranslation: .content
         }
     }
@@ -88,6 +88,7 @@ enum HotkeySettingsPresentation {
         case .openNotes: "note.text"
         case .openWordBook: "character.book.closed"
         case .openStudio: "macwindow"
+        case .openHelp: "questionmark.circle"
         }
     }
 

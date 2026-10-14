@@ -2,7 +2,7 @@
 
 The translation panel adds explicit input, selected-text and screenshot entry points while sharing the launcher's translation stack. It supports pinning, safe insertion, local history, retention, placement and height preferences, automatic copying, and the documented keyboard commands. Launcher Command-P transfers current results and ongoing work without starting another provider request. English and Simplified Chinese strings are included.
 
-This branch preserves the P1 review fixes from PR #486 and incorporates main at `c9724857`. Until #486 merges, those fixes also appear in the PR against main.
+This branch preserves the P1 review fixes from PR #486 and incorporates main at `67dffc3c`. Until #486 merges, those fixes also appear in the PR against main.
 
 ## Design and native macOS captures
 
@@ -29,6 +29,14 @@ make coverage \
 
 # Smallest containing suites after fixing the failing placement assertion
 make coverage SUITE="AskTranslationPanelPolicyTests AskTranslationPanelControllerTests"
+
+# After integrating new main: affected entry points, shortcuts and usage guide
+make coverage SUITE="AskTranslationPanelCoordinatorTests AskTranslationPanelControllerTests AskTranslationPanelSettingsViewTests AskTranslationRoutingTests AskPluginSessionTests HotkeyConflictCheckerTests KeywordHotkeyTests HelpCatalogTests"
+
+# Collect the remaining focused scope against the same final test binary
+make coverage \
+  SUITE="AskTranslationPanelModelTests AskTranslationPanelPolicyTests AskTranslationSettingsTests AskTranslationSettingsModelTests AskTranslationFanoutTests AskTranslationStackViewTests AskTranslationEngineFactoryTests AskTranslatePluginTests AskScreenshotFollowUpTests TextSelectionSnapshotTests" \
+  FILTER="AskQuickResultsInteractionTests/translationStack.*"
 ```
 
 The normal runner was used first. For this Mac toolchain, coverage subsequently used a temporary Swift wrapper selecting `--build-system native` and adding `-Xswiftc -profile-generate -Xswiftc -profile-coverage-mapping` to coverage builds. The wrapper called the same `make coverage` scopes above; repository runner scripts were not changed. UI fixtures ran serially with `.exclusiveUIState`.
@@ -40,16 +48,18 @@ The normal runner was used first. For this Mac toolchain, coverage subsequently 
 | First instrumented native rebuild | 255.66 s | Discovery blocked by archive metadata files; removed those task-created files |
 | Focused coverage with verified discovery/build cache | 77.55 s | 22 XCTest methods passed; 105/106 Swift Testing methods passed |
 | Policy/controller retry, including refreshed native captures | 84.31 s | All 8 methods passed |
+| Final main integration, 8 related suites | 176.55 s | All 49 methods passed; includes rebuilding |
+| Remaining focused scope, same final binary | 50.25 s | All 88 methods passed; includes preparation/build |
 | Strict SwiftLint on 12 affected production files | 4.07 s | Zero violations |
 | `git diff --check` | — | Passed |
 
-The one executed test failure was a placement assertion comparing CGFloat and Double expressions through `#expect`; it now compares a CGFloat difference with a 0.001 tolerance. Native capture was also ordered before bitmap cache capture to preserve the window backing contents. All **128 unique selected test methods pass after the targeted retry**. No full repository suite was run.
+The one executed test failure was a placement assertion comparing CGFloat and Double expressions through `#expect`; it now compares a CGFloat difference with a 0.001 tolerance. Native capture was also ordered before bitmap cache capture to preserve the window backing contents. The initial focused pass was repaired with the targeted retry. After main updated, **137 selected methods passed across the two final phases** (115 Swift Testing and 22 XCTest). No full repository suite was run.
 
 ## Changed-code coverage
 
-[Machine-readable coverage](changed-code-coverage.json): **91.68% — 1146/1250 executable added or modified production Swift lines** against `origin/main` at `c9724857`, including preserved P1 review changes.
+[Machine-readable coverage](changed-code-coverage.json): **91.68% — 1146/1250 executable added or modified production Swift lines** against `origin/main` at `67dffc3c`, including preserved P1 review changes.
 
-LLVM profiles from this task's focused pass and targeted retry were merged. Coverage counts LCOV executable lines intersected with added/modified Swift lines from `git diff origin/main`; tests and documentation are excluded. Every changed production Swift file was instrumented. The retry changed only tests, so test-function profile mismatch warnings do not affect this production-only measurement. This is changed-code coverage, not project-wide coverage.
+Coverage counts LCOV executable lines intersected with added/modified Swift lines from `git diff origin/main`; tests and documentation are excluded. Every changed production Swift file was instrumented. An attempted merge of older profiles after main updated produced counter mismatch warnings; those profiles were discarded from the final measurement. Only the two final phases' profiles, with the same binary signature, were merged, and the final export completed without mismatch warnings. This is changed-code coverage, not project-wide coverage.
 
 Uncovered paths include production AppCoordinator/DI assembly, some physical Accessibility selection geometry, and parts of screenshot forwarding/settings interactions. Safe external-app delivery and OCR outcomes are tested through injected implementations; actual provider credentials, external-app paste and physical region selection were not exercised.
 
@@ -63,5 +73,6 @@ The complete path was reviewed from hotkey registration and screenshot follow-up
 - Private launcher previews remain private after transfer and language swapping. Transferred work keeps its source fanout and model/engine choice; later launcher work uses a separate fanout.
 - Selected-result keyboard movement scrolls within the panel. IME composition, input selection and caret boundaries retain normal editing behavior.
 - Tasks, window event monitors, observers and temporary translation sheets have cancellation/removal paths.
+- Main's appended help strings and new help shortcut remain intact alongside translation strings and shortcut groups; no translation behavior changed during conflict resolution.
 
 No credentials were added. History stays in local defaults with bounded storage. No unrelated refactor or runner changes were included.

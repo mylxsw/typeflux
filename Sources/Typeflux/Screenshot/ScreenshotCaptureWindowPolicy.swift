@@ -16,7 +16,14 @@ enum ScreenshotCaptureWindowPolicy {
     @MainActor
     static func excludedWindowIDs() -> [CGWindowID] {
         (NSApp?.windows ?? []).filter { $0.isVisible && excludes($0) }.compactMap {
-            $0.windowNumber > 0 ? CGWindowID($0.windowNumber) : nil
+            captureWindowID($0.windowNumber)
         }
+    }
+
+    /// AppKit exposes an Int, but Quartz only accepts a nonzero 32-bit ID.
+    /// A stale or unrepresentable number must not trap while preparing capture.
+    static func captureWindowID(_ number: Int) -> CGWindowID? {
+        guard let id = CGWindowID(exactly: number), id != kCGNullWindowID else { return nil }
+        return id
     }
 }

@@ -12,6 +12,7 @@ enum AskPluginRegistry {
         AskOpenChatPlugin.id,
         AskPrefixPlugin.id,
         AskSettingsPlugin.id,
+        AskHelpPlugin.id,
         AskHistoryPlugin.id,
         AskClipboardPlugin.id,
         AskNotesPlugin.id,
@@ -30,7 +31,7 @@ enum AskPluginRegistry {
             .addingEnglishNames(AskKeywordAliases
                 .consolidate(AskTranslatePlugin.keywords + AskPromptPlugin.keywords + AskWebSearchPlugin
                     .keywords + AskFileSearchPlugin.keywords + AskOpenChatPlugin.keywords + AskPrefixPlugin
-                    .keywords + AskSettingsPlugin.keywords + AskHistoryPlugin.keywords + AskClipboardPlugin
+                    .keywords + AskSettingsPlugin.keywords + AskHelpPlugin.keywords + AskHistoryPlugin.keywords + AskClipboardPlugin
                     .keywords + AskNotesPlugin.keywords + AskScreenshotPlugin.keywords
                     + AskScreenshotTextPlugin.keywords
                     + AskBrowserSearchPlugin.keywords
@@ -204,6 +205,7 @@ extension AskConversationModel {
                 self?.launcherKeywordDirectory(language: language) ?? []
             }),
             AskSettingsPlugin(),
+            AskHelpPlugin(),
             AskHistoryPlugin(conversations: { [weak self] in await self?.launcherChatHistory() ?? .empty }),
             AskClipboardPlugin(entries: { [weak self] in self?.clipboardEntries() ?? [] }),
             AskNotesPlugin(store: notes),
@@ -270,6 +272,11 @@ extension AskConversationModel {
             guard let onOpenSettings else { return .stay }
             finishPluginResult()
             onOpenSettings(.settings)
+            return .close
+        case let .openHelp(query):
+            guard let onOpenHelp else { return .stay }
+            finishPluginResult()
+            onOpenHelp(query)
             return .close
         case let .openConversation(id, account):
             guard session()?.owner == account, !isDeletedConversation(id) else { return .stay }

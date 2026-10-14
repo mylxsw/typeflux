@@ -14,6 +14,10 @@ final class AppCoordinator {
     private var authLogoutObserver: NSObjectProtocol?
     private var authSubscriptionObserver: NSObjectProtocol?
     private var permissionAnalyticsTimer: Timer?
+    private lazy var helpOverlayController = HelpOverlayController.app(
+        settings: di.settingsStore, ask: di.askConversationWindowController,
+        openSettings: { [weak self] destination in self?.statusBarController?.showSettings(for: destination) }
+    )
 
     // swiftlint:disable:next function_body_length
     func start() {
@@ -144,10 +148,10 @@ final class AppCoordinator {
         }
 
         let screenshotCoordinator = di.screenshotCoordinator
-        let screenRecordingCoordinator = di.screenRecordingCoordinator
-        di.screenRecordingWindow.offerRecovery(screenRecordingCoordinator)
+        let screenRecordingCoordinator = di.screenRecordingSessions
+        screenRecordingCoordinator.offerRecovery()
         screenshotCoordinator.isRecordingActive = { [weak screenRecordingCoordinator] in
-            screenRecordingCoordinator?.isBusy ?? false
+            screenRecordingCoordinator?.isCaptureActive ?? false
         }
         screenshotCoordinator.onRecordingRequested = { [weak screenRecordingCoordinator] format, region in
             screenRecordingCoordinator?.show(format: format, region: region)
@@ -218,6 +222,7 @@ final class AppCoordinator {
             onOpenOnboarding: { [weak self] in
                 self?.showOnboarding()
             },
+            onOpenHelp: { [weak self] in self?.showHelp(query: "") },
             onOpenAskConversations: { [weak self] in
                 self?.di.askConversationWindowController?.showConversation()
             },
@@ -235,6 +240,9 @@ final class AppCoordinator {
             onClosePinnedScreenshots: { [weak screenshotCoordinator] in screenshotCoordinator?.pins.closeAll() }
         )
         statusBarController?.start()
+        di.askConversationWindowController?.model.onOpenHelp = { [weak self] query in
+            self?.showHelp(query: query)
+        }
         di.askConversationWindowController?.model.onOpenSettings = { [weak self] section in
             self?.statusBarController?.showSettings(section: section)
         }
@@ -269,10 +277,10 @@ final class AppCoordinator {
         }
     }
 
-    var hasScreenRecording: Bool { di.screenRecordingCoordinator.isBusy }
+    var hasScreenRecording: Bool { di.screenRecordingSessions.isBusy }
 
     func finishScreenRecordingForTermination() async {
-        await di.screenRecordingCoordinator.prepareForTermination()
+        await di.screenRecordingSessions.prepareForTermination()
     }
 
     func stop() {
@@ -314,12 +322,20 @@ final class AppCoordinator {
             AskWordBookWindowController.shared.show()
         case .action(.openStudio):
             statusBarController?.showSettings(section: .home)
+        case .action(.openHelp):
+            showHelp(query: "")
         case let .keyword(id):
             guard let hotkey = di.settingsStore.keywordHotkeys.first(where: { $0.id == id }), hotkey.enabled,
                   let model = di.askConversationWindowController?.model else { return }
             workflowController?.cancelRecording()
             model.runKeywordShortcut(hotkey)
         }
+    }
+
+    /// Opens the usage guide over the screen, closing the launcher it may have come from.
+    func showHelp(query: String) {
+        di.askConversationWindowController?.dismissLauncher()
+        helpOverlayController.show(query: query)
     }
 
     private func presentOnboarding() {

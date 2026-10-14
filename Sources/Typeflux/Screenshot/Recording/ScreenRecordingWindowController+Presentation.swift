@@ -105,7 +105,7 @@ extension ScreenRecordingWindowController {
                 backing: .buffered,
                 defer: false
             )
-            panel.identifier = Self.identifier
+            panel.identifier = Self.previewIdentifier
             panel.title = L("recording.previewTitle")
             panel.titleVisibility = .hidden; panel.titlebarAppearsTransparent = true; panel
                 .titlebarSeparatorStyle = .none
@@ -120,7 +120,11 @@ extension ScreenRecordingWindowController {
                 saveAs: { [weak self] in self?.saveAs() }),
                 in: panel
             )
-            panel.center(); window = panel; applyAppearance()
+            panel.center()
+            if let previous = NSApp.orderedWindows.first(where: { $0.identifier == Self.previewIdentifier }) {
+                panel.cascadeTopLeft(from: NSPoint(x: previous.frame.minX + 24, y: previous.frame.maxY - 24))
+            }
+            window = panel; applyAppearance()
             if keyMonitor == nil {
                 keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
                     let handled = MainActor.assumeIsolated { self?.handleEditorKey(event) ?? false }
