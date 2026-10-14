@@ -42,8 +42,11 @@ struct ScreenRecordingPreviewView: View {
                 .background(.black).clipShape(RoundedRectangle(cornerRadius: 10))
                 .padding(.horizontal, 16).padding(.top, 14)
             HStack(spacing: 10) {
-                Button(action: model.togglePlayback) { Image(systemName: model.isPlaying ? "pause.fill" : "play.fill") }
-                    .buttonStyle(.plain).accessibilityLabel(L("recording.play"))
+                Button(action: model.togglePlayback) {
+                    Image(systemName: model.isPlaying ? "pause.fill" : "play.fill")
+                        .frame(width: 30, height: 30).contentShape(Rectangle())
+                }
+                .buttonStyle(.plain).accessibilityLabel(L("recording.play"))
                 Text(ScreenRecordingLayout.preciseTime(model.currentTime) + " / " + ScreenRecordingLayout
                     .preciseTime(model.duration))
                     .font(.system(size: 12, design: .monospaced))
@@ -59,7 +62,8 @@ struct ScreenRecordingPreviewView: View {
                 Text(ScreenRecordingLayout.preciseTime(model.trimStart) + " – " + ScreenRecordingLayout
                     .preciseTime(model.trimEnd)).fontWeight(.semibold).monospacedDigit()
                 Text(L("recording.selectionSeconds", model.selectionDuration))
-                Button(L("recording.resetTrim"), action: model.resetTrim).buttonStyle(.link)
+                Button(L("recording.resetTrim"), action: model.resetTrim)
+                    .buttonStyle(AskWorkflowActionStyle(kind: .ghost, small: true))
                 Spacer()
                 Text(L("recording.timelineKeys")).foregroundStyle(StudioTheme.textTertiary).font(.system(size: 11))
             }.font(.system(size: 12)).padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 8)
@@ -70,7 +74,7 @@ struct ScreenRecordingPreviewView: View {
                     Spacer()
                     Button(L("recording.keep30"), action: model.keepFirstGIFSegment)
                     Button(L("recording.switchMP4")) { model.options.format = .mp4 }
-                }.font(.system(size: 12)).padding(8).background(
+                }.buttonStyle(ModelActionStyle()).font(.system(size: 12)).padding(8).background(
                     StudioTheme.warning.opacity(0.12),
                     in: RoundedRectangle(cornerRadius: 8)
                 )
@@ -89,8 +93,12 @@ struct ScreenRecordingPreviewView: View {
 
     private var footer: some View {
         HStack(spacing: 8) {
-            Button(action: close) { Label(L("recording.discard"), systemImage: "trash") }
-                .buttonStyle(.plain).foregroundStyle(StudioTheme.danger)
+            Button(action: close) {
+                Label(L("recording.discard"), systemImage: "trash")
+                    .padding(.horizontal, 8).frame(height: 30).contentShape(Rectangle())
+            }
+            .buttonStyle(.plain).foregroundStyle(StudioTheme.danger)
+            .accessibilityIdentifier("recording.preview.discard")
             Text(model.options.format.rawValue
                 .uppercased() +
                 " · \(Int(model.previewOutputSize.width)) × \(Int(model.previewOutputSize.height)) · \(model.options.captureFPS) FPS · " +
@@ -106,15 +114,22 @@ struct ScreenRecordingPreviewView: View {
                     height: 30
                 )
                 Button(L("recording.cancelExport"), action: model.cancelExport)
+                    .accessibilityIdentifier("recording.preview.cancelExport")
             } else {
-                Button(action: chooseDirectory) { Label(
-                    model.destinationDirectory.lastPathComponent,
-                    systemImage: "folder"
-                ) }
+                Button(action: chooseDirectory) {
+                    Label {
+                        Text(model.destinationDirectory.lastPathComponent)
+                            .lineLimit(1).truncationMode(.middle).frame(maxWidth: 110)
+                            .fixedSize(horizontal: true, vertical: false)
+                    } icon: { Image(systemName: "folder") }
+                }
                 .help(model.destinationDirectory.path)
+                .accessibilityIdentifier("recording.preview.directory")
                 Button { model.export(copy: true) } label: { Label(L("recording.copy"), systemImage: "doc.on.doc") }
                     .disabled(!model.canExport)
+                    .accessibilityIdentifier("recording.preview.copy")
                 Button(L("recording.saveAs"), action: saveAs).disabled(!model.canExport)
+                    .accessibilityIdentifier("recording.preview.saveAs")
                 Button { model.export() } label: {
                     HStack(spacing: 6) {
                         Label(
@@ -122,12 +137,12 @@ struct ScreenRecordingPreviewView: View {
                             systemImage: "checkmark"
                         )
                         Text("⌘S").font(.system(size: 11)).opacity(0.75)
-                    }.padding(.horizontal, 12).frame(height: 30).foregroundStyle(.white)
-                        .background(AskTheme.accent, in: RoundedRectangle(cornerRadius: 8))
-                }.buttonStyle(.plain).disabled(!model.canExport).opacity(model.canExport ? 1 : 0.4)
+                    }
+                }.buttonStyle(ModelActionStyle(primary: true)).disabled(!model.canExport)
+                    .accessibilityIdentifier("recording.preview.save")
                     .keyboardShortcut("s", modifiers: .command)
             }
-        }.controlSize(.small)
+        }.buttonStyle(ModelActionStyle())
     }
 }
 

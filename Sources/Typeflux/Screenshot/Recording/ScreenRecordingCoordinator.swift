@@ -65,6 +65,11 @@ final class ScreenRecordingCoordinator: ObservableObject {
         state != .idle
     }
 
+    /// Finished media owns its editor, but no longer owns the capture pipeline.
+    var isCaptureActive: Bool {
+        ![.idle, .preview, .exporting, .completed].contains(state)
+    }
+
     var isOtherCaptureActive: () -> Bool = { false }
     var present: (ScreenRecordingCoordinator) -> Void = { _ in }
     var dismiss: () -> Void = {}
