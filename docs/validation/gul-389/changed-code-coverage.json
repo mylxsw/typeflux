@@ -1,0 +1,68 @@
+{
+  "base": "9e471b5222e9c7991110dc30970cdba852b96c4e",
+  "covered": 180,
+  "executable": 195,
+  "percent": 92.31,
+  "method": "Added/modified production Swift lines intersected with LCOV executable lines; tests and strings excluded. Only profiles from this run.",
+  "files": {
+    "Sources/Typeflux/Ask/QuickResults/Plugins/AskPluginViews.swift": {
+      "covered": 1,
+      "executable": 1,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskTranslationEngines.swift": {
+      "covered": 0,
+      "executable": 1,
+      "percent": 0.0,
+      "uncovered": [
+        105
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskTranslationFanout.swift": {
+      "covered": 15,
+      "executable": 15,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskTranslationStackView.swift": {
+      "covered": 52,
+      "executable": 52,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskWordCard.swift": {
+      "covered": 1,
+      "executable": 1,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskWordCardView.swift": {
+      "covered": 106,
+      "executable": 120,
+      "percent": 88.33,
+      "uncovered": [
+        96,
+        97,
+        121,
+        122,
+        183,
+        184,
+        232,
+        233,
+        234,
+        235,
+        236,
+        237,
+        238,
+        275
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/Panel/AskTranslationPanelView.swift": {
+      "covered": 5,
+      "executable": 5,
+      "percent": 100.0,
+      "uncovered": []
+    }
+  }
+}

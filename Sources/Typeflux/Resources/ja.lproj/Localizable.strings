@@ -3718,9 +3718,9 @@
 "ask.translation.field.secret" = "シークレットキー";
 "ask.translation.field.region" = "リージョン";
 "ask.translation.field.regionOptional" = "リージョン（任意）";
-"ask.translation.error.notConfigured" = "キーが未設定です。「設定 → ランチャー → 翻訳」で追加してください";
+"ask.translation.error.notConfigured" = "APIキーが未設定です";
 "ask.translation.error.unsupportedLanguage" = "このサービスはこの言語の組み合わせに対応していません";
-"ask.translation.error.authentication" = "キーが拒否されました。「設定 → ランチャー → 翻訳」で確認してください";
+"ask.translation.error.authentication" = "APIキーが無効です";
 "ask.translation.error.quota" = "サービスの利用枠または残高がなくなりました";
 "ask.translation.error.rateLimited" = "リクエストが多すぎます。しばらくしてからお試しください";
 "ask.translation.error.tooLong" = "このサービスで扱えるより長いテキストです";

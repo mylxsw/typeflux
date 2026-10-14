@@ -3728,9 +3728,9 @@
 "ask.translation.field.secret" = "Secret Key";
 "ask.translation.field.region" = "Region";
 "ask.translation.field.regionOptional" = "Region (optional)";
-"ask.translation.error.notConfigured" = "No keys yet. Add them in Settings → Launcher → Translation.";
+"ask.translation.error.notConfigured" = "No API key yet";
 "ask.translation.error.unsupportedLanguage" = "This service does not translate this language pair.";
-"ask.translation.error.authentication" = "The keys were rejected. Check them in Settings → Launcher → Translation.";
+"ask.translation.error.authentication" = "Invalid API key";
 "ask.translation.error.quota" = "The service's quota or balance has run out.";
 "ask.translation.error.rateLimited" = "Too many requests. Try again in a moment.";
 "ask.translation.error.tooLong" = "The text is too long for this service.";
@@ -5439,3 +5439,7 @@
 "help.start.tip.apps" = "Type an app name to open it";
 "help.start.tip.recent" = "↑ in an empty field brings back recent input";
 "help.start.tip.selection" = "Select text first, then open it";
+
+"ask.translation.panel.screenshot.editHint" = "you can fix typos, then press ↩";
+"ask.plugin.wordCard.moreExamples" = "More examples (%d)";
+"ask.translation.stack.configure" = "Configure";

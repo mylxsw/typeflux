@@ -13,6 +13,7 @@ struct AskWordCardView: View {
     var dimmed = false
     var stackStyle = false
     var onAction: (AskPluginAction) -> Void
+    @State private var expandedExamples = false
 
     static let maximumHeight: CGFloat = 300
     static let headwordHeight: CGFloat = 30
@@ -28,8 +29,13 @@ struct AskWordCardView: View {
     static let exampleInset: CGFloat = 10
     private static let meaningScheme = "typeflux-meaning"
 
-    private static var width: CGFloat { AskPluginResultsView.textWidth }
-    private static var meaningWidth: CGFloat { width - posWidth - 10 }
+    private static var width: CGFloat {
+        AskPluginResultsView.textWidth
+    }
+
+    private static var meaningWidth: CGFloat {
+        width - posWidth - 10
+    }
 
     static func meaningsText(_ sense: AskWordCard.Sense) -> String {
         sense.meanings.joined(separator: AskWordCard.meaningSeparator)
@@ -44,10 +50,12 @@ struct AskWordCardView: View {
     }
 
     /// `**word**` marks the word in an example; drawn bold, measured without the marks.
-    static func plain(_ example: String) -> String { example.replacingOccurrences(of: "**", with: "") }
+    static func plain(_ example: String) -> String {
+        example.replacingOccurrences(of: "**", with: "")
+    }
 
     /// The card's full height before any scrolling.
-    static func contentHeight(_ card: AskWordCard) -> CGFloat {
+    static func contentHeight(_ card: AskWordCard, expandedExamples: Bool = false, stackStyle: Bool = false) -> CGFloat {
         let text = AskPluginResultsView.textHeight
         var height = headwordHeight
         if let translation = card.translatedText {
@@ -56,57 +64,82 @@ struct AskWordCardView: View {
         height += card.senses.reduce(0) { total, sense in
             total + senseSpacing + max(20, text(meaningsText(sense), meaningFont, 2, meaningWidth))
         }
-        if !card.forms.isEmpty { height += 8 + text(formsText(card), detailFont, 0, width) }
+        if !card.forms.isEmpty {
+            height += 8 + text(formsText(card), detailFont, 0, width)
+        }
         if !card.examples.isEmpty {
-            height += sectionSpacing + 1 + 8 + labelHeight
-            height += card.examples.reduce(0) { total, example in
+            height += sectionSpacing + (stackStyle ? 0 : 1 + 8 + labelHeight)
+            height += visibleExamples(card, expanded: expandedExamples).reduce(0) { total, example in
                 total + 8 + text(plain(example.source), exampleFont, 0, width - exampleInset)
                     + (example.target.isEmpty ? 0 : 2 + text(example.target, translationFont, 0, width - exampleInset))
             }
+            if card.examples.count > 2, !expandedExamples {
+                height += 24
+            }
         }
-        if !card.synonyms.isEmpty { height += sectionSpacing + text(synonymsText(card), detailFont, 0, width) }
+        if !card.synonyms.isEmpty {
+            height += sectionSpacing + text(synonymsText(card), detailFont, 0, width)
+        }
         return ceil(height)
     }
 
-    static func height(_ card: AskWordCard, stackStyle: Bool = false) -> CGFloat {
-        min(maximumHeight, contentHeight(card) + (stackStyle ? 20 : 0))
+    static func height(_ card: AskWordCard, stackStyle: Bool = false, expandedExamples: Bool = false) -> CGFloat {
+        min(maximumHeight, contentHeight(card, expandedExamples: expandedExamples, stackStyle: stackStyle)
+            + (stackStyle ? 20 : 0))
     }
 
     var body: some View {
-        ScrollView(.vertical) {
-            VStack(alignment: .leading, spacing: 0) {
-                if stackStyle { headword }
-                if let translation = card.translatedText {
-                    Text(translation).font(stackStyle ? .system(size: 14.5, weight: .semibold) : Font(Self.translatedWordFont)).foregroundStyle(StudioTheme.textPrimary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .textSelection(.enabled)
-                        .accessibilityIdentifier("ask.plugin.wordCard.translation")
-                        .padding(.bottom, 4)
-                }
-                if !stackStyle { headword }
-                ForEach(Array(card.senses.enumerated()), id: \.offset) { index, sense in
-                    senseRow(sense, first: index == 0)
-                        .padding(.top, Self.senseSpacing)
-                }
-                if !card.forms.isEmpty {
-                    Text(Self.formsText(card)).font(Font(Self.detailFont)).foregroundStyle(StudioTheme.textTertiary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.top, 8)
-                }
-                if !card.examples.isEmpty { examples }
-                if !card.synonyms.isEmpty {
-                    Text(Self.synonymsText(card)).font(Font(Self.detailFont)).foregroundStyle(StudioTheme.textTertiary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.top, Self.sectionSpacing)
-                        .textSelection(.enabled)
-                }
+        Group {
+            if stackStyle {
+                contents
+            } else {
+                ScrollView(.vertical) { contents }
+                    .frame(height: Self.height(card, expandedExamples: expandedExamples))
             }
-            .opacity(dimmed ? 0.5 : 1)
         }
-        .frame(height: Self.height(card, stackStyle: stackStyle))
+        .onChange(of: card) { _ in expandedExamples = false }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("ask.plugin.wordCard")
+    }
+
+    private var contents: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            if stackStyle {
+                headword
+            }
+            if let translation = card.translatedText {
+                Text(translation)
+                    .font(stackStyle ? .system(size: 14.5, weight: .semibold) : Font(Self.translatedWordFont))
+                    .foregroundStyle(StudioTheme.textPrimary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .textSelection(.enabled)
+                    .accessibilityIdentifier("ask.plugin.wordCard.translation")
+                    .padding(.bottom, 4)
+            }
+            if !stackStyle {
+                headword
+            }
+            ForEach(Array(card.senses.enumerated()), id: \.offset) { index, sense in
+                senseRow(sense, first: index == 0)
+                    .padding(.top, Self.senseSpacing)
+            }
+            if !card.forms.isEmpty {
+                Text(Self.formsText(card)).font(Font(Self.detailFont)).foregroundStyle(StudioTheme.textTertiary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, 8)
+            }
+            if !card.examples.isEmpty {
+                examples
+            }
+            if !card.synonyms.isEmpty {
+                Text(Self.synonymsText(card)).font(Font(Self.detailFont)).foregroundStyle(StudioTheme.textTertiary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, Self.sectionSpacing)
+                    .textSelection(.enabled)
+            }
+        }
+        .opacity(dimmed ? 0.5 : 1)
     }
 
     private var headword: some View {
@@ -114,40 +147,43 @@ struct AskWordCardView: View {
             : AnyLayout(HStackLayout(alignment: .firstTextBaseline, spacing: 12))
         return layout {
             Text(card.headword).font(.system(size: stackStyle || card.translatedText == nil ? 22 : 13,
-                                            weight: stackStyle || card.translatedText == nil ? .semibold : .regular))
+                                             weight: stackStyle || card.translatedText == nil ? .semibold : .regular))
                 .foregroundStyle(stackStyle ? StudioTheme.textPrimary : StudioTheme.textSecondary)
                 .lineLimit(1).truncationMode(.tail).textSelection(.enabled)
             HStack(spacing: 12) {
-                ForEach(Array(card.phonetics.enumerated()), id: \.offset) { _, phonetic in
+                ForEach(Array(card.phonetics.enumerated()), id: \.offset) { index, phonetic in
                     HStack(spacing: 4) {
                         Text(phonetic.label).font(.system(size: 10.5)).foregroundStyle(StudioTheme.textTertiary)
-                        Text(phonetic.text).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary).lineLimit(1)
+                        Text(phonetic.text).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary)
+                            .lineLimit(1)
                         Button {
-                            onAction(AskPluginAction(kind: .speak(card.headword, language: Self.voice(for: phonetic, default: language)),
-                                                     title: L("ask.plugin.action.speak"), symbol: "speaker.wave.2", shortcut: nil))
+                            onAction(AskPluginAction(
+                                kind: .speak(card.headword, language: Self.voice(for: phonetic, default: language)),
+                                title: L("ask.plugin.action.speak"),
+                                symbol: "speaker.wave.2",
+                                shortcut: nil
+                            ))
                         } label: {
                             Image(systemName: "speaker.wave.2").font(.system(size: 10))
                                 .frame(width: 20, height: 20)
-                                .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                                .background(
+                                    AskTheme.hoverFill,
+                                    in: RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                )
                                 .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain).foregroundStyle(StudioTheme.textSecondary)
                         .accessibilityLabel(L("ask.plugin.action.speak") + " " + phonetic.label)
+                        .accessibilityIdentifier("ask.plugin.wordCard.phonetic.\(index)")
                     }
                     .fixedSize()
                 }
             }
-            if !stackStyle { Spacer(minLength: 0) }
+            if !stackStyle {
+                Spacer(minLength: 0)
+            }
         }
         .frame(height: Self.headwordHeight + (stackStyle ? 20 : 0), alignment: .leading)
-    }
-
-    /// "UK" and "US" phonetics are read with British and American voices.
-    static func voice(for phonetic: AskWordCard.Phonetic, default language: String) -> String {
-        let label = phonetic.label.uppercased()
-        if label.contains("UK") || label.contains("BR") || phonetic.label.contains("英") { return "en-GB" }
-        if label.contains("US") || label.contains("AM") || phonetic.label.contains("美") { return "en-US" }
-        return language
     }
 
     private func senseRow(_ sense: AskWordCard.Sense, first: Bool) -> some View {
@@ -182,7 +218,9 @@ struct AskWordCardView: View {
             var part = AttributedString(meaning)
             part.link = URL(string: "\(Self.meaningScheme)://\(index)")
             part.foregroundColor = StudioTheme.textPrimary
-            if first, index == 0 { part.font = .system(size: 14.5, weight: .semibold) }
+            if first, index == 0 {
+                part.font = .system(size: 14.5, weight: .semibold)
+            }
             text += part
         }
         return text
@@ -190,12 +228,15 @@ struct AskWordCardView: View {
 
     private var examples: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Rectangle().fill(AskTheme.separator).frame(height: 1)
-            Text(L("ask.plugin.wordCard.examples")).font(.system(size: 11, weight: .semibold))
-                .foregroundStyle(StudioTheme.textTertiary)
-                .frame(height: Self.labelHeight, alignment: .bottom)
-                .padding(.top, 8)
-            ForEach(Array(card.examples.enumerated()), id: \.offset) { _, example in
+            if !stackStyle {
+                Rectangle().fill(AskTheme.separator).frame(height: 1)
+                Text(L("ask.plugin.wordCard.examples")).font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(StudioTheme.textTertiary)
+                    .frame(height: Self.labelHeight, alignment: .bottom)
+                    .padding(.top, 8)
+            }
+            ForEach(Array(Self.visibleExamples(card, expanded: expandedExamples).enumerated()),
+                    id: \.offset) { index, example in
                 VStack(alignment: .leading, spacing: 2) {
                     Text(Self.emphasized(example.source)).font(Font(Self.exampleFont))
                         .foregroundStyle(StudioTheme.textPrimary)
@@ -208,9 +249,34 @@ struct AskWordCardView: View {
                 .overlay(alignment: .leading) { Rectangle().fill(AskTheme.separator).frame(width: 2) }
                 .padding(.top, 8)
                 .textSelection(.enabled)
+                .accessibilityIdentifier("ask.plugin.wordCard.example.\(index)")
+            }
+            if card.examples.count > 2, !expandedExamples {
+                Button(L("ask.plugin.wordCard.moreExamples", card.examples.count - 2)) { expandedExamples = true }
+                    .buttonStyle(.plain).font(.system(size: 12)).foregroundStyle(AskTheme.accent)
+                    .padding(.top, 4)
+                    .accessibilityIdentifier("ask.plugin.wordCard.moreExamples")
             }
         }
         .padding(.top, Self.sectionSpacing)
+    }
+}
+
+extension AskWordCardView {
+    /// "UK" and "US" phonetics are read with British and American voices.
+    static func voice(for phonetic: AskWordCard.Phonetic, default language: String) -> String {
+        let label = phonetic.label.uppercased()
+        if label.contains("UK") || label.contains("BR") || phonetic.label.contains("英") {
+            return "en-GB"
+        }
+        if label.contains("US") || label.contains("AM") || phonetic.label.contains("美") {
+            return "en-US"
+        }
+        return language
+    }
+
+    static func visibleExamples(_ card: AskWordCard, expanded: Bool) -> [AskWordCard.Example] {
+        Array(card.examples.prefix(expanded ? card.examples.count : 2))
     }
 
     /// The example with its `**word**` in the accent colour, and no asterisks.

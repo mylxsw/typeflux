@@ -102,7 +102,7 @@ final class AskAITranslationEngine: AskTranslationStreaming, AskWordLookingUp, @
         Keep "headword" in the input language. Always put a concise, natural \(targetName) equivalent in "translation", \
         including for words and short phrases. Use a word or short phrase, not a dictionary explanation; \
         for slang or nicknames choose the closest equivalent and explain cultural nuances in "senses".
-        Give 2 natural example sentences in the word's language with their \(targetName) translation, \
+        Give 3 natural example sentences in the word's language with their \(targetName) translation, \
         and wrap the word in ** ** inside each example.
         Phonetics: IPA for English with labels "UK" and "US"; pinyin for Chinese; kana reading for Japanese. \
         Leave the list empty when unsure.

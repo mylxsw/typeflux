@@ -39,6 +39,24 @@ struct AskTranslationResult: Equatable, Identifiable, Sendable {
             nil
         }
     }
+
+    var collapseKey: String {
+        "ask.translation.collapsed." + id
+    }
+
+    /// Zero follows the lookup layout; explicit choices survive new inputs and window hosts.
+    func isCollapsed(preference: Int, lookup: Bool) -> Bool {
+        switch preference {
+        case 1: true
+        case 2: false
+        default: lookup && card == nil
+        }
+    }
+
+    func copyBoth(original: String) -> AskPluginAction? {
+        guard let completedText else { return nil }
+        return AskTranslatePlugin.copyAction(original + "\n\n" + completedText)
+    }
 }
 
 /// A failure belongs to one service, with an actionable and credential-safe message.
@@ -89,7 +107,7 @@ struct AskTranslationFailure: Equatable, Sendable {
         switch recovery {
         case .configure:
             .init(kind: service.provider.map(AskPluginAction.Kind.configureTranslation) ?? .openSettings,
-                  title: L("ask.translation.service.configure"), symbol: "gearshape")
+                  title: L("ask.translation.stack.configure"), symbol: "gearshape")
         case .skip: .init(
                 kind: .rerun(["skipService": service.id]),
                 title: L("ask.translation.stack.skip"),
