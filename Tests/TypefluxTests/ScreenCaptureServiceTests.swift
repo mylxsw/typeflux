@@ -91,15 +91,15 @@ struct ScreenCaptureServiceTests {
             ScreenCaptureTestSupport.window(16, processID: 7, title: "Screenshot preview")
         ]
         // An unrelated app must remain selectable even if the provider returns its ID.
-        let capturer = service(source, controls: [10, 11, 16, 999])
+        let capturer = service(source, controls: [11, 16, 999])
         let snapshot = try await capturer.snapshot(ScreenCaptureRequest(windowExclusion: .screenshotControls))
-        #expect(snapshot.windows.map(\.id) == [11, 12, 13, 14, 15])
-        #expect(source.captures.allSatisfy { $0.excluded == [10, 16] })
+        #expect(snapshot.windows.map(\.id) == [10, 11, 12, 13, 14, 15])
+        #expect(source.captures.allSatisfy { $0.excluded == [16] })
         let withoutWindows = try await capturer.snapshot(ScreenCaptureRequest(
             includesWindows: false, windowExclusion: .screenshotControls
         ))
         #expect(withoutWindows.windows.isEmpty)
-        #expect(source.captures.allSatisfy { $0.excluded == [10, 16] })
+        #expect(source.captures.allSatisfy { $0.excluded == [16] })
     }
 
     @Test func explicitScreenshotWithoutControlsIncludesOwnWindows() async throws {

@@ -79,7 +79,7 @@ final class StatusBarMenuSupportTests: XCTestCase {
     }
 
     @MainActor
-    func testScreenshotToTextMenuEntryStartsTheTextScreenshot() throws {
+    func testScreenshotToTextMenuEntryStartsTheTextScreenshot() async throws {
         if ProcessInfo.processInfo.environment["CI"] == "true" {
             throw XCTSkip("Requires a GUI WindowServer session")
         }
@@ -87,11 +87,15 @@ final class StatusBarMenuSupportTests: XCTestCase {
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
         var started = 0
+        let didStart = expectation(description: "Screenshot to text starts after the menu closes")
         let controller = StatusBarController(
             appState: AppStateStore(),
             settingsStore: SettingsStore(defaults: defaults),
             historyStore: EmptyHistoryStore(),
-            onScreenshotText: { started += 1 }
+            onScreenshotText: {
+                started += 1
+                didStart.fulfill()
+            }
         )
         controller.start()
         defer { controller.stop() }
@@ -101,7 +105,8 @@ final class StatusBarMenuSupportTests: XCTestCase {
         XCTAssertEqual(menu.items[index - 1].title, L("menu.screenshot"), "Right after Screenshot")
         menu.performActionForItem(at: index)
         // It starts once the menu has closed.
-        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+        XCTAssertEqual(started, 0)
+        await fulfillment(of: [didStart], timeout: 2)
         XCTAssertEqual(started, 1)
     }
 

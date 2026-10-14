@@ -293,7 +293,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         panel.isMovableByWindowBackground = false
         panel.hidesOnDeactivate = false
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-        panel.identifier = ScreenshotCaptureWindowPolicy.launcherIdentifier
+        panel.identifier = TypefluxWindowIdentity.askLauncherWindowIdentifier
         let drag = AskWindowDragHandlers(
             move: { [weak self] origin in self?.dragLauncher(to: origin) ?? origin },
             end: { [weak self] in self?.finishLauncherDrag() },

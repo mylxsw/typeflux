@@ -394,7 +394,7 @@ extension AskConversationModel {
         case let .capture(mode, followUp):
             guard let onStartScreenshot else { return .stay }
             finishPluginResult()
-            // Let the launcher close first; the capture leaves Typeflux's windows out anyway.
+            // Close the launcher for its screenshot command; shortcut captures keep visible app windows.
             DispatchQueue.main.async { onStartScreenshot(mode, followUp) }
             return .close
         case let .screenshotFollowUp(followUp):
