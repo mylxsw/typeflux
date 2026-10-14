@@ -1,7 +1,7 @@
 {
-  "covered": 1134,
-  "executable": 1204,
-  "percent": 94.19,
+  "covered": 1137,
+  "executable": 1207,
+  "percent": 94.2,
   "files": [
     {
       "file": "Sources/Typeflux/App/DIContainer.swift",
@@ -15,9 +15,9 @@
     },
     {
       "file": "Sources/Typeflux/Ask/AskComposerViews.swift",
-      "covered": 28,
-      "executable": 33,
-      "percent": 84.85,
+      "covered": 31,
+      "executable": 36,
+      "percent": 86.11,
       "uncovered": [
         866,
         867,

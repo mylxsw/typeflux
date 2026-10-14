@@ -40,21 +40,26 @@ struct AskLauncherOpenChatButton: View {
     var disabledReason: String?
     var tint: Color = AskTheme.accent
     var action: () -> Void
+    @State private var hovered = false
 
     var body: some View {
         Group {
-            if mode != .openChat {
+            if mode == .askAI {
                 AskSendButton(enabled: enabled, tint: tint, animatesEmphasis: false,
                               symbol: mode.symbol, action: action)
             } else {
                 Button(action: action) {
                     Image(systemName: mode.symbol)
-                        .font(.system(size: 16, weight: .medium))
+                        .font(mode == .openChat ? .system(size: 16, weight: .medium)
+                              : .system(size: 15, weight: .regular))
                         .frame(width: AskSendButton.size, height: AskSendButton.size)
                         .contentShape(Circle())
                 }
                 .buttonStyle(.plain)
-                .foregroundStyle(StudioTheme.textSecondary)
+                .foregroundStyle(mode == .openChat ? StudioTheme.textSecondary
+                    : AskVoiceButton.Appearance.iconColor(phase: .idle, hovered: enabled && hovered))
+                .opacity(mode == .openChat || enabled ? 1 : 0.45)
+                .onHover { hovered = $0 }
                 .disabled(!enabled)
             }
         }

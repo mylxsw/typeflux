@@ -1983,19 +1983,12 @@ struct AskComposer: View {
 
     private var launcherHint: String {
         if !active {
-            let primary = launcherPrimaryAction
-            // One source names Return; existing hints contribute only the other shortcuts.
-            let secondary = launcherSecondaryHint.components(separatedBy: " · ").filter { !$0.hasPrefix("↩") }
-            let askAI = pluginDisplay.map { $0.offersAskAI } ?? model.launcherDraft.canSend
-            var parts = [primary.enabled ? "↩ " + primary.title : primary.hint] + secondary
-            if pluginDisplay?.translation == true { return parts.joined(separator: " · ") }
-            if askAI, primary.mode != .askAI, !parts.contains(where: { $0.contains("⌘↩") }) {
-                parts.append(L("ask.plugin.hint.askAI"))
-            }
-            if launcherCanOpenFeatureWindow, !parts.contains(where: { $0.contains("⌘O") }) {
-                parts.append("⌘O " + L("ask.plugin.action.openInWindow"))
-            }
-            return parts.joined(separator: " · ")
+            return AskLauncherContext.supportingHint(
+                secondary: launcherSecondaryHint, primary: launcherPrimaryAction,
+                canAskAI: pluginDisplay?.translation != true
+                    && (pluginDisplay.map { $0.offersAskAI } ?? model.launcherDraft.canSend),
+                canOpenFeatureWindow: pluginDisplay?.translation != true && launcherCanOpenFeatureWindow
+            )
         }
         return launcherSecondaryHint
     }
