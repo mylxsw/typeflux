@@ -14,7 +14,9 @@
     "initial_scope": 156.98,
     "failed_method_retry": 89.85,
     "extraction_contract": 67.59,
-    "total": 314.42
+    "total": 422.01,
+    "snapshot_build_failure": 66.88,
+    "snapshot_retry": 40.71
   },
   "build_discovery_only_wall_seconds": {
     "initial_preparation": 206.88,
@@ -247,5 +249,5 @@
       ]
     ]
   ],
-  "profile_compatibility": "Excluded only the extended extraction test method counters before merging; app counters unchanged, final merge/export without warnings."
+  "profile_compatibility": "Test-only counters filtered per profile before merging; app counters unchanged. Final merge/export without warnings."
 }

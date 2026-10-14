@@ -97,13 +97,14 @@ struct AskContentPreviewTests {
         defer { AppLocalization.shared.setLanguage(language) }
         let state = AskFilePreviewState()
         var hit = previewHit("Expense policy.pdf"); hit.path = url.path
-        hit.evidence = .init(text: "Project reimbursement policy", page: 4)
-        state.hit = hit
+        hit.evidence = .init(text: "Project reimbursement policy", page: 4); state.hit = hit
         state.content = .init(kind: .pdf, images: matched.images.map { NSImage(cgImage: $0, size: .zero) },
                               pageCount: 6, pageNumbers: [4], fileSize: 4096)
         state.detail = state.content?.detail
-        try await SemanticFileSearchVisualTests.render(AskFilePreviewView(state: state).frame(width: 360, height: 600),
-                                                       width: 360, name: "pdf-match")
+        // Native glass is composited outside cacheDisplay; use the app's opaque classic appearance.
+        try await SemanticFileSearchVisualTests.render(AskFilePreviewView(state: state)
+            .environment(\.interfaceStyle, .classic).frame(width: 360, height: 600),
+            width: 360, name: "pdf-match")
     }
 
     @Test func whitespaceNormalizationKeepsUnicodePDFOffsets() {
