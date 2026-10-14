@@ -1,7 +1,6 @@
 import Foundation
 
-/// The Launcher → Translation pane: which engine translates, the AI's model,
-/// and the services' keys, edited one service at a time and tested before saving.
+/// The ordered service list and credential editor in Launcher → Translation.
 @MainActor
 final class AskTranslationSettingsModel: ObservableObject {
     @Published private(set) var settings: AskTranslationSettings
@@ -29,38 +28,52 @@ final class AskTranslationSettingsModel: ObservableObject {
         reloadConfigured()
     }
 
+    deinit { testTask?.cancel() }
+
     func reloadConfigured() {
         configured = Set(AskTranslationProvider.allCases.filter {
             credentials.credentials(for: $0)?.isComplete(for: $0) == true
         })
     }
 
-    // MARK: - Engine
+    // MARK: - Ordered services
 
-    /// The AI first, then every service; ones without keys say so.
-    var engineOptions: [(label: String, value: String)] {
-        [(label: L("ask.translation.engine.ai"), value: AskTranslationEngineChoice.ai.rawValue)]
-            + AskTranslationProvider.allCases.map { provider in
-                (label: configured.contains(provider) ? provider.title
-                    : L("ask.translation.engine.notConfigured", provider.title),
-                 value: provider.rawValue)
-            }
+    static let languagePackagesURL = URL(string: "x-apple.systempreferences:com.apple.Localization-Settings.extension")!
+
+    func setEnabled(_ id: String, _ enabled: Bool) {
+        guard let service = settings.services.first(where: { $0.id == id }) else { return }
+        update { settings in
+            guard let index = settings.services.firstIndex(where: { $0.id == id }) else { return }
+            settings.services[index].enabled = enabled
+        }
+        if enabled, let provider = service.provider, !configured.contains(provider) { edit(provider) }
     }
 
-    func setEngine(_ rawValue: String) {
-        update { $0.engine = AskTranslationEngineChoice(rawValue: rawValue) }
+    func setModel(_ reference: String, for id: String) {
+        update { settings in
+            guard let index = settings.services.firstIndex(where: { $0.id == id && $0.isAI }) else { return }
+            settings.services[index].kind = .ai(modelReference: reference)
+        }
     }
 
-    func setModel(_ reference: String) {
-        update { $0.modelReference = reference }
+    @discardableResult
+    func addAI() -> String {
+        let service = AskTranslationService.ai(id: UUID().uuidString, enabled: false)
+        update { $0.services.append(service) }
+        return service.id
     }
 
-    func setPrefersOnDevice(_ value: Bool) {
-        update { $0.prefersOnDevice = value }
+    func removeAI(_ id: String) {
+        guard id != settings.firstAI?.id else { return }
+        update { $0.services.removeAll { $0.id == id && $0.isAI } }
     }
 
-    func setFallsBackToAI(_ value: Bool) {
-        update { $0.fallsBackToAI = value }
+    func move(_ id: String, to index: Int) {
+        update { settings in
+            guard let from = settings.services.firstIndex(where: { $0.id == id }) else { return }
+            let service = settings.services.remove(at: from)
+            settings.services.insert(service, at: min(max(0, index), settings.services.count))
+        }
     }
 
     func setSecondLanguage(_ code: String) {
@@ -95,6 +108,8 @@ final class AskTranslationSettingsModel: ObservableObject {
 
     func edit(_ provider: AskTranslationProvider) {
         cancelTest()
+        settings = store.askTranslationSettings
+        reloadConfigured()
         editing = provider
         draft = credentials.credentials(for: provider) ?? AskTranslationCredentials()
         notice = nil
@@ -126,12 +141,12 @@ final class AskTranslationSettingsModel: ObservableObject {
         return true
     }
 
-    /// Forgets the service's keys; translations that used it go back to the AI.
+    /// Forgetting keys disables that service without changing any other service.
     func remove() {
         guard let editing else { return }
         credentials.remove(editing)
         configured.remove(editing)
-        if settings.engine == .service(editing) { setEngine(AskTranslationEngineChoice.ai.rawValue) }
+        for service in settings.services where service.provider == editing { setEnabled(service.id, false) }
         cancelEdit()
     }
 

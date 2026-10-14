@@ -84,33 +84,68 @@ struct AskTranslationSettingsTests {
         return SettingsStore(defaults: defaults)
     }
 
-    @Test func defaultsKeepTheOldBehaviour() {
-        let settings = store().askTranslationSettings
+    @Test func newInstallEnablesOnlyDeviceAndFirstAI() {
+        let store = store()
+        let settings = store.askTranslationSettings
         #expect(settings == AskTranslationSettings())
-        #expect(settings.engine == .ai && settings.modelReference.isEmpty)
-        #expect(settings.prefersOnDevice && settings.fallsBackToAI)
+        #expect(settings.services.filter(\.enabled).map(\.id) == ["device", "ai.primary"])
+        #expect(settings.modelReference.isEmpty)
+        #expect(store.defaults.data(forKey: SettingsStore.askTranslationSettingsKey) != nil)
     }
 
     @Test func savesAndReadsBack() throws {
         let store = store()
-        store.askTranslationSettings = AskTranslationSettings(engine: .service(.deepl), modelReference: "custom:x",
-                                                              prefersOnDevice: false, fallsBackToAI: false)
-        #expect(store.askTranslationSettings.engine == .service(.deepl))
-        #expect(store.askTranslationSettings.modelReference == "custom:x")
-        #expect(!store.askTranslationSettings.prefersOnDevice && !store.askTranslationSettings.fallsBackToAI)
-        // Missing fields read as their defaults; an unknown engine reads as the AI.
-        store.defaults.set(Data(#"{"engine":"babel"}"#.utf8), forKey: SettingsStore.askTranslationSettingsKey)
-        #expect(store.askTranslationSettings == AskTranslationSettings())
+        let settings = AskTranslationSettings(services: [.ai(modelReference: "custom:x"), .provider(.deepl, enabled: true)]).normalized()
+        store.askTranslationSettings = settings
+        #expect(store.askTranslationSettings == settings)
+        let data = try JSONEncoder().encode(settings)
+        #expect(try JSONDecoder().decode(AskTranslationSettings.self, from: data) == settings)
         store.defaults.set(Data("nonsense".utf8), forKey: SettingsStore.askTranslationSettingsKey)
         #expect(store.askTranslationSettings == AskTranslationSettings())
     }
 
-    @Test func engineChoiceRoundTrips() {
-        for choice in [AskTranslationEngineChoice.ai] + AskTranslationProvider.allCases.map(AskTranslationEngineChoice.service) {
-            #expect(AskTranslationEngineChoice(rawValue: choice.rawValue) == choice)
+    @Test(arguments: ["ai", "deepl", "google", "microsoft", "youdao", "baidu", "tencent", "volcengine", "unknown"])
+    func migratesEveryEngineAndFlagCombination(engine: String) throws {
+        for device in [false, true] {
+            for fallback in [false, true] {
+                let store = store()
+                let data = try JSONSerialization.data(withJSONObject: ["engine": engine, "modelReference": "custom:removed",
+                                                                       "prefersOnDevice": device, "fallsBackToAI": fallback])
+                store.defaults.set(data, forKey: SettingsStore.askTranslationLegacySettingsKey)
+                let migrated = store.askTranslationSettings
+                #expect(migrated.services.first(where: { $0.kind == .device })?.enabled == device)
+                #expect(migrated.firstAI?.enabled == true && migrated.modelReference == "custom:removed")
+                let enabled = migrated.services.filter(\.enabled).map(\.id)
+                let provider = AskTranslationProvider(rawValue: engine)
+                #expect(enabled == (device ? ["device"] : []) + (provider.map { ["provider." + $0.rawValue] } ?? []) + ["ai.primary"])
+                #expect(migrated.services.count == 9)
+                #expect(store.defaults.data(forKey: SettingsStore.askTranslationLegacySettingsKey) == data)
+                #expect(store.defaults.data(forKey: SettingsStore.askTranslationSettingsKey) != nil)
+                store.defaults.set(Data(#"{"engine":"google"}"#.utf8), forKey: SettingsStore.askTranslationLegacySettingsKey)
+                #expect(store.askTranslationSettings == migrated, "v2 wins over v1")
+            }
         }
-        #expect(AskTranslationEngineChoice.ai.provider == nil)
-        #expect(AskTranslationEngineChoice.service(.baidu).provider == .baidu)
+        #expect(AskTranslationSettings.migrateV1(Data("broken".utf8)) == nil)
+        #expect(AskTranslationSettings.migrateV1(Data("{}".utf8)) == AskTranslationSettings())
+    }
+
+    @Test func normalizationRepairsIDsAndPreservesMissingModels() {
+        var duplicate = AskTranslationService.device
+        duplicate.id = "ai.primary"
+        let settings = AskTranslationSettings(services: [.ai(modelReference: "gone"), duplicate, .device,
+                                                         .provider(.deepl), .provider(.deepl),
+                                                         .ai(id: "", modelReference: "also-gone", enabled: false)]).normalized()
+        #expect(Set(settings.services.map(\.id)).count == settings.services.count)
+        #expect(settings.services.filter { $0.kind == .device }.count == 1)
+        #expect(settings.services.filter { $0.provider == .deepl }.count == 1)
+        #expect(settings.services.filter(\.isAI).map(\.modelReference) == ["gone", "also-gone"])
+        #expect(AskTranslationSettings(services: []).normalized().firstAI?.enabled == false)
+        let collision = AskTranslationSettings(services: [.ai(id: "device"), .provider(.deepl)]).normalized()
+        #expect(Set(collision.services.map(\.id)).count == collision.services.count)
+        let store = store()
+        let malformed = AskTranslationSettings(services: [.ai(id: "same"), .ai(id: "same")])
+        store.defaults.set(try? JSONEncoder().encode(malformed), forKey: SettingsStore.askTranslationSettingsKey)
+        #expect(store.askTranslationSettings == store.askTranslationSettings, "repaired IDs persist")
     }
 
     @Test func translationModelFollowsTheTextModelUntilChosen() throws {

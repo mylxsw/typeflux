@@ -11,6 +11,7 @@ struct AskWordCardView: View {
     /// The word's language, for reading it aloud when a phonetic does not say which accent.
     var language: String
     var dimmed = false
+    var stackStyle = false
     var onAction: (AskPluginAction) -> Void
 
     static let maximumHeight: CGFloat = 300
@@ -67,20 +68,23 @@ struct AskWordCardView: View {
         return ceil(height)
     }
 
-    static func height(_ card: AskWordCard) -> CGFloat { min(maximumHeight, contentHeight(card)) }
+    static func height(_ card: AskWordCard, stackStyle: Bool = false) -> CGFloat {
+        min(maximumHeight, contentHeight(card) + (stackStyle ? 20 : 0))
+    }
 
     var body: some View {
         ScrollView(.vertical) {
             VStack(alignment: .leading, spacing: 0) {
+                if stackStyle { headword }
                 if let translation = card.translatedText {
-                    Text(translation).font(Font(Self.translatedWordFont)).foregroundStyle(StudioTheme.textPrimary)
+                    Text(translation).font(stackStyle ? .system(size: 14.5, weight: .semibold) : Font(Self.translatedWordFont)).foregroundStyle(StudioTheme.textPrimary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .fixedSize(horizontal: false, vertical: true)
                         .textSelection(.enabled)
                         .accessibilityIdentifier("ask.plugin.wordCard.translation")
                         .padding(.bottom, 4)
                 }
-                headword
+                if !stackStyle { headword }
                 ForEach(Array(card.senses.enumerated()), id: \.offset) { index, sense in
                     senseRow(sense, first: index == 0)
                         .padding(.top, Self.senseSpacing)
@@ -100,41 +104,42 @@ struct AskWordCardView: View {
             }
             .opacity(dimmed ? 0.5 : 1)
         }
-        .frame(height: Self.height(card))
+        .frame(height: Self.height(card, stackStyle: stackStyle))
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("ask.plugin.wordCard")
     }
 
     private var headword: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 12) {
-            Text(card.headword).font(.system(size: card.translatedText == nil ? 22 : 13,
-                                            weight: card.translatedText == nil ? .semibold : .regular))
-                .foregroundStyle(StudioTheme.textSecondary)
-                .lineLimit(1).truncationMode(.tail)
-                .textSelection(.enabled)
-            ForEach(Array(card.phonetics.enumerated()), id: \.offset) { _, phonetic in
-                HStack(spacing: 4) {
-                    Text(phonetic.label).font(.system(size: 10.5)).foregroundStyle(StudioTheme.textTertiary)
-                    Text(phonetic.text).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary)
-                        .lineLimit(1)
-                    Button {
-                        onAction(AskPluginAction(kind: .speak(card.headword, language: Self.voice(for: phonetic, default: language)),
-                                                 title: L("ask.plugin.action.speak"), symbol: "speaker.wave.2", shortcut: nil))
-                    } label: {
-                        Image(systemName: "speaker.wave.2").font(.system(size: 10))
-                            .frame(width: 20, height: 20)
-                            .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-                            .contentShape(Rectangle())
+        let layout = stackStyle ? AnyLayout(VStackLayout(alignment: .leading, spacing: 4))
+            : AnyLayout(HStackLayout(alignment: .firstTextBaseline, spacing: 12))
+        return layout {
+            Text(card.headword).font(.system(size: stackStyle || card.translatedText == nil ? 22 : 13,
+                                            weight: stackStyle || card.translatedText == nil ? .semibold : .regular))
+                .foregroundStyle(stackStyle ? StudioTheme.textPrimary : StudioTheme.textSecondary)
+                .lineLimit(1).truncationMode(.tail).textSelection(.enabled)
+            HStack(spacing: 12) {
+                ForEach(Array(card.phonetics.enumerated()), id: \.offset) { _, phonetic in
+                    HStack(spacing: 4) {
+                        Text(phonetic.label).font(.system(size: 10.5)).foregroundStyle(StudioTheme.textTertiary)
+                        Text(phonetic.text).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary).lineLimit(1)
+                        Button {
+                            onAction(AskPluginAction(kind: .speak(card.headword, language: Self.voice(for: phonetic, default: language)),
+                                                     title: L("ask.plugin.action.speak"), symbol: "speaker.wave.2", shortcut: nil))
+                        } label: {
+                            Image(systemName: "speaker.wave.2").font(.system(size: 10))
+                                .frame(width: 20, height: 20)
+                                .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+                                .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain).foregroundStyle(StudioTheme.textSecondary)
+                        .accessibilityLabel(L("ask.plugin.action.speak") + " " + phonetic.label)
                     }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(StudioTheme.textSecondary)
-                    .accessibilityLabel(L("ask.plugin.action.speak") + " " + phonetic.label)
+                    .fixedSize()
                 }
-                .fixedSize()
             }
-            Spacer(minLength: 0)
+            if !stackStyle { Spacer(minLength: 0) }
         }
-        .frame(height: Self.headwordHeight)
+        .frame(height: Self.headwordHeight + (stackStyle ? 20 : 0), alignment: .leading)
     }
 
     /// "UK" and "US" phonetics are read with British and American voices.
@@ -149,7 +154,7 @@ struct AskWordCardView: View {
         HStack(alignment: .firstTextBaseline, spacing: 10) {
             Text(sense.pos).font(.system(size: 11.5, weight: .bold)).italic()
                 .foregroundStyle(AskTheme.accent)
-                .frame(width: Self.posWidth, alignment: .trailing)
+                .frame(width: stackStyle ? 22 : Self.posWidth, alignment: .trailing)
             Text(meanings(sense, first: first))
                 .font(Font(Self.meaningFont)).lineSpacing(2)
                 .tint(StudioTheme.textPrimary)

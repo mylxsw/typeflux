@@ -18,15 +18,15 @@ final class AskTranslationLLMService: LLMService, @unchecked Sendable {
         self.chosen = chosen
     }
 
-    convenience init(settings: SettingsStore, textProcessing: LLMService) {
+    convenience init(settings: SettingsStore, textProcessing: LLMService, reference: String? = nil) {
         self.init(
-            reference: { [weak settings] in settings?.askTranslationSettings.modelReference ?? "" },
+            reference: { [weak settings] in reference ?? settings?.askTranslationSettings.modelReference ?? "" },
             exists: { [weak settings] reference in
                 settings.flatMap { ModelRegistry.read($0.defaults)?.resolve(reference) } != nil
             },
             textProcessing: textProcessing,
             chosen: OpenAICompatibleLLMService(settingsStore: settings, configuration: { [weak settings] in
-                settings?.translationLLMConfiguration()
+                settings?.translationLLMConfiguration(reference: reference)
                     ?? SettingsStore.TextLLMConfiguration(provider: .custom, baseURL: "", model: "", apiKey: "")
             }, sendsPromptsAsWritten: true)
         )

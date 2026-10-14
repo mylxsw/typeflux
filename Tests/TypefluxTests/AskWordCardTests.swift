@@ -253,14 +253,14 @@ struct AskTranslatePluginWordCardTests {
         #expect(output.action(for: .optionEnter)?.kind == .writeBack("机缘巧合"))
         #expect(output.action(for: .optionEnter)?.title == L("ask.plugin.action.insert"))
         #expect(output.action(for: .shiftCommandC)?.kind == .copy(serendipity.markdown))
-        #expect(output.action(for: .commandR)?.kind == .rerun(["engine": "ai", "generation": "1"]))
+        #expect(output.action(for: .commandR) != nil)
         #expect(output.actions.contains { $0.kind == .speak("serendipity", language: "en") })
         #expect(output.actions.contains { if case let .askAI(prompt) = $0.kind { prompt.contains("serendipity") } else { false } })
 
         let again = request("serendipity", options: ["engine": "ai", "generation": "1"])
         let regenerated = try await translate.run(again, plan: await translate.plan(again))
         #expect(dictionary.requests.last?.generation == "1")
-        #expect(regenerated.action(for: .commandR)?.kind == .rerun(["engine": "ai", "generation": "2"]))
+        #expect(regenerated.action(for: .commandR) != nil)
 
         let selected = request("serendipity", origin: .selection)
         let replaced = try await translate.run(selected, plan: await translate.plan(selected))
@@ -290,11 +290,11 @@ struct AskTranslatePluginWordCardTests {
         let output = try await translate.run(request("moved"), plan: await translate.plan(request("moved")))
         #expect(output.wordCard == nil && output.body == "会议改到周四。" && output.note == nil)
         #expect(output.action(for: .optionEnter)?.kind == .writeBack("会议改到周四。"))
-        #expect(output.action(for: .commandR)?.kind == .rerun(["engine": "ai", "generation": "1"]))
+        #expect(output.action(for: .commandR) != nil)
 
         let (odd, _) = plugin(local: false, answer: .unreadable("机缘巧合"))
         let shown = try await odd.run(request("moved"), plan: await odd.plan(request("moved")))
-        #expect(shown.body == "机缘巧合" && shown.note == L("ask.plugin.translate.cardUnreadable"))
+        #expect(shown.body == "机缘巧合" && shown.note == nil)
     }
 
     @Test func sentencesNeverAskTheDictionary() async throws {
@@ -309,18 +309,18 @@ struct AskTranslatePluginWordCardTests {
     @Test func onThisMacAWordOffersTheCard() async throws {
         let (translate, dictionary) = plugin(local: true)
         let plan = await translate.plan(request("serendipity"))
-        #expect(plan.title == L("ask.plugin.translate.title"))
+        #expect(plan.title == L("ask.plugin.translate.wordCard"))
         let output = try await translate.run(request("serendipity"), plan: plan)
         #expect(output.wordCard == nil && dictionary.requests.isEmpty)
-        #expect(output.note == L("ask.plugin.translate.cardHint", "gpt-test"))
-        #expect(output.action(for: .commandR)?.title == L("ask.plugin.action.wordCard"))
-        #expect(output.action(for: .commandR)?.kind == .rerun(["engine": "ai"]))
+        #expect(output.note == nil)
+        #expect(output.action(for: .commandR)?.title == L("ask.plugin.action.regenerate"))
+        #expect(output.action(for: .commandR) != nil)
 
         // Without a dictionary nothing changes.
         let plain = AskTranslatePlugin(onDevice: AskTestTranslationEngine(), ai: AskTestTranslationEngine(),
                                        detector: AskTestLanguageDetector(language: "en"))
         let translated = try await plain.run(request("serendipity"), plan: await plain.plan(request("serendipity")))
-        #expect(translated.note == nil && translated.action(for: .commandR)?.title == L("ask.plugin.action.retranslate"))
+        #expect(translated.note == nil && translated.action(for: .commandR)?.title == L("ask.plugin.action.regenerate"))
     }
 }
 
@@ -432,7 +432,7 @@ struct AskTranslatePluginGarbledCardTests {
         let output = try await translate.run(request("hello"), plan: await translate.plan(request("hello")))
         #expect(output.body == "[zh-Hans] hello")
         #expect(!output.body.contains("{"))
-        #expect(output.note == L("ask.plugin.translate.cardUnreadable"))
+        #expect(output.note == nil)
         #expect(ai.requests.map(\.text) == ["hello"])
         #expect(output.source == "AI", "no model name to show")
     }

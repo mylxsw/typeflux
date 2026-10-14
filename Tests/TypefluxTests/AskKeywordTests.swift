@@ -7,7 +7,10 @@ final class AskTestTranslationEngine: AskTranslationEngine, @unchecked Sendable 
     var available: Bool
     var failure: Error?
     var delay: Duration = .zero
-    private(set) var requests: [(text: String, source: String?, target: String)] = []
+    var response: String?
+    private let lock = NSLock()
+    private var recorded: [(text: String, source: String?, target: String)] = []
+    var requests: [(text: String, source: String?, target: String)] { lock.withLock { recorded } }
 
     init(available: Bool = true, failure: Error? = nil) {
         self.available = available
@@ -19,10 +22,10 @@ final class AskTestTranslationEngine: AskTranslationEngine, @unchecked Sendable 
     }
 
     func translate(_ text: String, from source: String?, to target: String) async throws -> String {
-        requests.append((text, source, target))
+        lock.withLock { recorded.append((text, source, target)) }
         if delay != .zero { try await Task.sleep(for: delay) }
         if let failure { throw failure }
-        return "[\(target)] \(text)"
+        return response ?? "[\(target)] \(text)"
     }
 }
 

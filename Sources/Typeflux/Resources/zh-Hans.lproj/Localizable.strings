@@ -3745,7 +3745,7 @@
 "ask.translation.onDevice.subtitle" = "离线、免费，可以边输入边翻";
 "ask.translation.fallback" = "服务商失败时改用 AI";
 "ask.translation.fallback.subtitle" = "包括密钥错误、额度用完、网络问题和不支持的语言";
-"ask.translation.section.services" = "翻译服务商";
+"ask.translation.section.services" = "翻译服务";
 "ask.translation.services.footnote" = "使用翻译服务商时，按回车后文本才会发送给该服务商。密钥保存在钥匙串中。";
 "ask.translation.service.configured" = "已连接";
 "ask.translation.service.notConfigured" = "未配置";
@@ -5131,3 +5131,29 @@
 "recording.pickWindow" = "悬停高亮窗口，点一下选中。";
 
 "recording.pickDisplay" = "点一下要录制的屏幕。";
+
+// Concurrent translation services
+"ask.translation.stack.addAI" = "添加 AI 翻译";
+"ask.translation.stack.removeAI" = "删除 AI 翻译";
+"ask.translation.stack.local" = "不出本机 · 本机语言包";
+"ask.translation.stack.dictionary" = "负责单词卡";
+"ask.translation.stack.brief" = "仅简短译文";
+"ask.translation.stack.reorder" = "拖动排序";
+"ask.translation.stack.languages" = "管理语言包";
+"ask.translation.stack.private" = "不出本机";
+"ask.translation.stack.card" = "单词卡";
+"ask.translation.stack.detect" = "自动检测";
+"ask.translation.stack.swap" = "交换语言";
+"ask.translation.stack.loading" = "正在翻译…";
+"ask.translation.stack.network" = "网络连接超时";
+"ask.translation.stack.failed" = "翻译失败，请重试";
+"ask.translation.stack.unsupported" = "不支持 %@ → %@";
+"ask.translation.stack.skip" = "换一个服务";
+"ask.translation.stack.empty" = "没有启用的翻译服务";
+"ask.translation.stack.expand" = "展开结果";
+"ask.translation.stack.collapse" = "收起结果";
+"ask.translation.stack.copyTranslation" = "复制译文";
+"ask.translation.stack.copyBoth" = "复制原文 + 译文";
+"ask.translation.stack.hint" = "↩ 复制第一项 · ⌘1–9 复制第 n 项 · ⌥↩ 插入 · ⇥ 换语言";
+"ask.translation.stack.footnote" = "勾选的服务会同时翻译，按这里的顺序显示；拖动调整顺序。\n排在最前的 AI 服务负责单词卡，其它服务只给出简短译文。\n本机翻译和单词本不出本机；AI 与服务商只在按 Return 或重新生成后发送。密钥只保存在钥匙串中。";
+"ask.translation.stack.deviceTitle" = "本机翻译";

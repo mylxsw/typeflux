@@ -26,6 +26,7 @@ struct AskPluginDisplay: Equatable {
     /// The system monitor (`top`) takes the results' place.
     var systemMonitor = false
     var calendar = false
+    var translation = false
 
     var output: AskPluginOutput? { if case let .done(_, output) = phase { output } else { nil } }
     var asksAI: Bool { offersAskAI && highlighted == 1 }
@@ -89,6 +90,7 @@ struct AskPluginResultsView: View {
     /// Return on the plugin's row: run, or the result's main action.
     var onMain: () -> Void
     var onAction: (AskPluginAction) -> Void
+    var translationSettings: AskTranslationSettingsModel?
     var onAskAI: () -> Void
     var onHighlight: (Int) -> Void
     /// A click on a list's row chooses it (then Return's action runs).
@@ -186,6 +188,7 @@ struct AskPluginResultsView: View {
     /// The result's height: a flat list, or a card with header, text (and the
     /// original when comparing), a note and actions.
     static func cardHeight(output: AskPluginOutput?, failure: AskPluginFailure?, comparing: Bool) -> CGFloat {
+        if let stack = output?.translation { return AskTranslationStackView.height(stack, comparing: comparing) }
         if output?.emoji != nil { return EmojiResultsView.height }
         if let output, output.wordCard == nil, !output.items.isEmpty {
             return itemsHeight(output.items.count) + (output.note != nil ? 12 + noteHeight : 0)
@@ -216,7 +219,8 @@ struct AskPluginResultsView: View {
     static func mainHeight(_ display: AskPluginDisplay) -> CGFloat {
         if display.hint != nil { return askHeight }
         switch display.phase {
-        case .waiting, .ready: return rowHeight
+        case .waiting: return rowHeight
+        case .ready: return rowHeight + (display.translation ? 38 : 0)
         case .running:
             return cardHeight(output: display.partial ?? display.previous, failure: nil, comparing: display.comparing)
         case let .done(_, output): return cardHeight(output: output, failure: nil, comparing: display.comparing)
@@ -244,6 +248,7 @@ struct AskPluginResultsView: View {
         if display.hint != nil {
             return display.asksAI ? L("ask.plugin.hint.keyword") : L("ask.plugin.hint.keyword.enter")
         }
+        if (display.output ?? display.partial)?.translation != nil { return L("ask.translation.stack.hint") }
         if display.asksAI { return L("ask.launcher.hint") }
         let option = display.optionName.map { L("ask.plugin.hint.option", $0) }
         let askAI = display.offersAskAI ? L("ask.plugin.hint.askAI") : nil
@@ -338,7 +343,18 @@ struct AskPluginResultsView: View {
             case .waiting:
                 row(title: L("ask.plugin.waiting"), meta: [], enabled: false)
             case let .ready(plan):
-                row(title: plan.title, meta: plan.meta, enabled: true, action: plan.action(for: .enter))
+                if display.translation {
+                    VStack(spacing: 8) {
+                        AskTranslationStackView(
+                            stack: .init(results: [], source: plan.values["source"], target: plan.values["target"] ?? "en",
+                                         interface: AppLocalization.shared.language, submitted: false, isLookup: false),
+                            original: question, actions: [], onAction: onAction
+                        ).languageBar
+                        row(title: plan.title, meta: [], enabled: true)
+                    }
+                } else {
+                    row(title: plan.title, meta: plan.meta, enabled: true, action: plan.action(for: .enter))
+                }
             case .running, .done: EmptyView()
             case let .failed(plan, failure):
                 card(plan: plan, output: nil, failure: failure, running: false)
@@ -457,7 +473,22 @@ struct AskPluginResultsView: View {
     @ViewBuilder
     private func card(plan: AskPluginPlan, output: AskPluginOutput?, failure: AskPluginFailure?, running: Bool,
                       streaming: Bool = false) -> some View {
-        if let output, let emoji = output.emoji {
+        if let output, let translation = output.translation {
+            AskTranslationStackView(stack: translation, original: output.original, actions: output.actions,
+                                    selected: output.selectedItem, starred: output.starred == true, comparing: display.comparing, running: running,
+                                    onAction: onAction, onSelect: onSelectItem)
+                .opacity(running && !streaming ? 0.5 : 1)
+                .disabled(running && !streaming)
+                .background {
+                    if let translationSettings {
+                        AskTranslationConfigurationPresenter(model: translationSettings, onConfigured: { provider in
+                            if let id = translation.results.first(where: { $0.service.provider == provider })?.id {
+                                onAction(.init(kind: .rerun(["retryService": id]), title: "", symbol: ""))
+                            }
+                        })
+                    }
+                }
+        } else if let output, let emoji = output.emoji {
             EmojiResultsView(output: output, presentation: emoji, onSelect: onSelectItem,
                              onMain: onMain, onAction: onAction)
                 .disabled(running)

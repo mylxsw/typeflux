@@ -10,151 +10,100 @@ final class AskTestTranslationSettingsBox: @unchecked Sendable {
     init(_ value: AskTranslationSettings = AskTranslationSettings()) { self.value = value }
 }
 
-@Suite("Ask translate plugin engines", .exclusiveUIState)
+@Suite("Ask translate plugin services", .exclusiveUIState)
+@MainActor
 struct AskTranslationRoutingTests {
-    private struct Setup {
-        let plugin: AskTranslatePlugin
-        let device: AskTestTranslationEngine
-        let ai: AskTestTranslationEngine
-        let services: [AskTranslationProvider: AskTestTranslationEngine]
-        let settings: AskTestTranslationSettingsBox
+    private func request(_ text: String = "The meeting is on Thursday.", options: [String: String] = [:]) -> AskPluginRequest {
+        .init(text: text, origin: .argument, keyword: AskTranslatePlugin.keywords[0], options: options,
+              interfaceLanguage: .simplifiedChinese)
     }
 
-    private func setup(local: Bool = true, settings: AskTranslationSettings = AskTranslationSettings(),
-                       ai: Bool = true, services: Bool = true, failing: Error? = nil,
-                       dictionary: (any AskWordLookingUp)? = nil) -> Setup {
-        let device = AskTestTranslationEngine(available: local)
-        let aiEngine = AskTestTranslationEngine()
-        let engines = Dictionary(uniqueKeysWithValues: AskTranslationProvider.allCases.map {
-            ($0, AskTestTranslationEngine(failure: failing))
-        })
-        let box = AskTestTranslationSettingsBox(settings)
-        let lookUp: @Sendable (AskTranslationProvider) -> any AskTranslationEngine = { engines[$0]! }
-        let aiOrNil: (any AskTranslationEngine)? = ai ? aiEngine : nil
-        var plugin = AskTranslatePlugin(onDevice: device, ai: aiOrNil, dictionary: dictionary)
-        plugin.aiName = { "gpt-test" }
-        plugin.engineSettings = { box.value }
-        plugin.service = services ? lookUp : nil
-        plugin.detector = AskTestLanguageDetector(language: "en")
-        return Setup(plugin: plugin, device: device, ai: aiEngine, services: engines, settings: box)
+    @Test func typingUsesOnlyDeviceAndReturnFansOut() async throws {
+        let device = AskTestTranslationEngine()
+        let ai = AskTestTranslationEngine()
+        let provider = AskTestTranslationEngine()
+        let settings = AskTranslationSettings(services: [.device, .provider(.deepl, enabled: true), .ai()])
+        let plugin = AskTranslatePlugin(onDevice: device, ai: ai, serviceSettings: { settings }, service: { _ in provider },
+                                        fanout: AskTranslationFanout(), detector: AskTestLanguageDetector(language: "en"))
+        let input = request()
+        var plan = await plugin.plan(input)
+        #expect(plan.mode == .live)
+        let preview = try await plugin.run(input, plan: plan)
+        #expect(preview.translation?.results.map(\.id) == ["device"])
+        #expect(ai.requests.isEmpty && provider.requests.isEmpty)
+        plan.values["submitted"] = "true"
+        let output = try await plugin.run(input, plan: plan)
+        #expect(output.translation?.results.map(\.id) == ["device", "provider.deepl", "ai.primary"])
+        #expect(ai.requests.count == 1 && provider.requests.count == 1)
+        #expect(output.action(for: .enter)?.kind == .copy("[zh-Hans] " + input.text))
     }
 
-    private func request(_ text: String = "Hello world", options: [String: String] = [:]) -> AskPluginRequest {
-        AskPluginRequest(text: text, origin: .argument, keyword: AskTranslatePlugin.keywords[0], options: options,
-                         interfaceLanguage: .simplifiedChinese)
-    }
-
-    private func run(_ setup: Setup, _ request: AskPluginRequest) async throws -> AskPluginOutput {
-        try await setup.plugin.run(request, plan: await setup.plugin.plan(request))
-    }
-
-    @Test func thisMacStillComesFirst() async throws {
-        let deepl = setup(settings: AskTranslationSettings(engine: .service(.deepl)))
-        let plan = await deepl.plugin.plan(request())
-        #expect(plan.values["engine"] == "device" && plan.mode == .live)
-        let output = try await run(deepl, request())
-        #expect(output.source == L("ask.plugin.source.device"))
-        #expect(deepl.services[.deepl]!.requests.isEmpty)
-    }
-
-    @Test func theChosenServiceTranslatesAfterReturn() async throws {
-        let deepl = setup(local: false, settings: AskTranslationSettings(engine: .service(.deepl)))
-        let plan = await deepl.plugin.plan(request())
-        #expect(plan.values["engine"] == "deepl")
-        #expect(plan.mode == .onSubmit, "nothing goes to a service while typing")
-        #expect(plan.title == L("ask.plugin.translate.title"))
-        let output = try await run(deepl, request())
-        #expect(output.body == "[zh-Hans] Hello world")
-        #expect(output.source == "DeepL" && !output.sourceIsAI && output.note == nil)
-        #expect(deepl.services[.deepl]!.requests.count == 1 && deepl.ai.requests.isEmpty)
-        #expect(output.action(for: .commandR)?.kind == .rerun(["engine": "ai"]), "⌘R still asks the AI")
-    }
-
-    @Test func turningOffOnDeviceSkipsThisMac() async throws {
-        let remote = setup(settings: AskTranslationSettings(engine: .service(.youdao), prefersOnDevice: false))
-        #expect(await remote.plugin.plan(request()).values["engine"] == "youdao")
-        let ai = setup(settings: AskTranslationSettings(prefersOnDevice: false))
-        #expect(await ai.plugin.plan(request()).values["engine"] == "ai")
-        let output = try await run(ai, request())
-        #expect(output.sourceIsAI && output.note == nil, "the AI was chosen, not a fallback")
-        #expect(ai.device.requests.isEmpty)
-    }
-
-    @Test func aKeywordCanNameAService() async throws {
-        let keyword = setup()
-        let asked = request(options: ["engine": "baidu"])
-        let plan = await keyword.plugin.plan(asked)
-        #expect(plan.values["engine"] == "baidu", "even where this Mac could translate")
-        let output = try await run(keyword, asked)
-        #expect(output.source == AskTranslationProvider.baidu.title)
-        #expect(keyword.services[.baidu]!.requests.count == 1)
-        // Without services the keyword's choice falls back to the usual engines.
-        let none = setup(services: false)
-        #expect(await none.plugin.plan(asked).values["engine"] == "device")
-        let detail = keyword.plugin.chipDetail(
-            for: AskKeyword(keyword: "dl", pluginID: "translate", options: ["engine": "deepl", "target": "ja"]),
-            language: .english
-        )
-        #expect(detail == "Japanese · DeepL")
-        #expect(keyword.plugin.chipDetail(for: AskKeyword(keyword: "dl", pluginID: "translate",
-                                                          options: ["engine": "deepl"]), language: .english) == "DeepL")
-    }
-
-    @Test func aFailingServiceHandsOverToTheAI() async throws {
-        let failing = setup(local: false, settings: AskTranslationSettings(engine: .service(.google)),
-                            failing: AskTranslationServiceError.quota)
-        let output = try await run(failing, request())
-        #expect(output.sourceIsAI && output.source == L("ask.plugin.source.ai", "gpt-test"))
-        #expect(output.note == L("ask.plugin.translate.serviceFallback", "Google",
-                                 AskTranslationServiceError.quota.localizedDescription))
-        #expect(failing.ai.requests.count == 1)
-        #expect(output.action(for: .commandR) == nil, "already the AI")
-    }
-
-    @Test func withoutFallbackTheServiceErrorShows() async {
-        let strict = setup(local: false, settings: AskTranslationSettings(engine: .service(.google), fallsBackToAI: false),
-                           failing: AskTranslationServiceError.authentication)
-        await #expect(throws: AskPluginFailure(
-            message: L("ask.translation.error.from", "Google", AskTranslationServiceError.authentication.localizedDescription),
-            retry: false
-        )) { try await run(strict, request()) }
-        let noAI = setup(local: false, settings: AskTranslationSettings(engine: .service(.google)), ai: false,
-                         failing: URLError(.timedOut))
-        do {
-            _ = try await run(noAI, request())
-            Issue.record("expected a failure")
-        } catch let failure as AskPluginFailure {
-            #expect(failure.retry, "a network error may pass")
-            #expect(failure.message.hasPrefix("Google"))
-        } catch {
-            Issue.record("unexpected \(error)")
+    @Test func keywordOverridesUseExactlyOneService() async throws {
+        let device = AskTestTranslationEngine()
+        let ai = AskTestTranslationEngine()
+        let provider = AskTestTranslationEngine()
+        let plugin = AskTranslatePlugin(onDevice: device, ai: ai, service: { _ in provider },
+                                        detector: AskTestLanguageDetector(language: "en"))
+        for engine in ["deepl", "ai", "device"] {
+            let input = request(options: ["engine": engine])
+            let plan = await plugin.plan(input)
+            #expect(plan.mode == (engine == "device" ? .live : .onSubmit))
+            let output = try await plugin.run(input, plan: plan)
+            #expect(output.translation?.results.count == 1)
+            #expect(output.translation?.results.first?.service.id == (engine == "deepl" ? "provider.deepl" : engine == "ai" ? "ai.primary" : "device"))
         }
+        #expect(device.requests.count == 1 && ai.requests.count == 1 && provider.requests.count == 1)
+        let keyword = AskKeyword(keyword: "dl", pluginID: "translate", options: ["engine": "deepl", "target": "ja"])
+        #expect(plugin.chipDetail(for: keyword, language: .english) == "Japanese · DeepL")
+        #expect(plugin.selectedServices(request(options: ["engine": "unknown"])) == AskTranslationSettings().services)
     }
 
-    @Test func cancellingDoesNotFallBack() async {
-        let cancelled = setup(local: false, settings: AskTranslationSettings(engine: .service(.google)),
-                              failing: CancellationError())
-        await #expect(throws: CancellationError.self) { try await run(cancelled, request()) }
-        #expect(cancelled.ai.requests.isEmpty)
+    @Test func unavailableDeviceAndServiceFailureStayInTheirOwnRows() async throws {
+        let device = AskTestTranslationEngine(available: false)
+        let ai = AskTestTranslationEngine()
+        let provider = AskTestTranslationEngine(failure: AskTranslationServiceError.authentication)
+        let settings = AskTranslationSettings(services: [.device, .provider(.deepl, enabled: true), .ai()])
+        let plugin = AskTranslatePlugin(onDevice: device, ai: ai, serviceSettings: { settings }, service: { _ in provider },
+                                        detector: AskTestLanguageDetector(language: "en"))
+        let output = try await plugin.run(request(), plan: await plugin.plan(request()))
+        let rows = try #require(output.translation?.results)
+        #expect(rows.count == 3)
+        if case .failed = rows[0].state {} else { Issue.record("Device failure missing") }
+        if case let .failed(failure) = rows[1].state { #expect(failure.recovery == .configure) } else { Issue.record("Provider failure missing") }
+        #expect(rows[2].completedText != nil && ai.requests.count == 1)
+        #expect(output.action(for: .enter) == nil, "a failed first item cannot copy another service implicitly")
     }
 
-    @Test func wordsTranslatedByAServiceOfferACard() async throws {
-        let lookup = AskTestWordLookup(answer: .translation("x"))
-        let words = setup(local: false, settings: AskTranslationSettings(engine: .service(.deepl)), dictionary: lookup)
-        let plan = await words.plugin.plan(request("apple"))
-        #expect(plan.values["engine"] == "deepl" && plan.title == L("ask.plugin.translate.title"))
-        let output = try await run(words, request("apple"))
-        #expect(output.note == L("ask.plugin.translate.cardHint", "gpt-test"))
-        #expect(output.action(for: .commandR)?.title == L("ask.plugin.action.wordCard"))
-        #expect(lookup.requests.isEmpty)
+    @Test func pendingReturnAuthorizesOnlyTheTextItWasPressedFor() async throws {
+        let device = AskTestTranslationEngine()
+        let ai = AskTestTranslationEngine()
+        let plugin = AskTranslatePlugin(onDevice: device, ai: ai, detector: AskTestLanguageDetector(language: "en"))
+        let session = AskPluginSession(plugins: [plugin]) { AskTranslatePlugin.keywords }
+        session.debounce = .zero
+        session.enter(AskTranslatePlugin.keywords[0])
+        session.update(text: "Old sentence.", selection: nil, language: .english)
+        #expect(session.run(), "Return is queued while planning")
+        session.update(text: "New sentence.", selection: nil, language: .english)
+        for _ in 0..<200 where session.output?.original != "New sentence." { try await Task.sleep(for: .milliseconds(5)) }
+        #expect(ai.requests.isEmpty && session.output?.translation?.submitted == false)
+        session.update(text: "Submitted sentence.", selection: nil, language: .english)
+        #expect(session.run())
+        for _ in 0..<200 where session.output?.translation?.submitted != true { try await Task.sleep(for: .milliseconds(5)) }
+        #expect(ai.requests.map(\.text) == ["Submitted sentence."])
+        session.deactivate()
     }
 
-    @Test func serviceFailuresSayWhetherRetryingHelps() {
+    @Test func manualTargetSurvivesInputChangesAndSourceCanBeReset() async throws {
+        let plugin = AskTranslatePlugin(onDevice: AskTestTranslationEngine(), ai: nil,
+                                        detector: AskTestLanguageDetector(language: "en"))
+        #expect(await plugin.plan(request(options: ["target": "ja"])).values["target"] == "ja")
+        #expect(await plugin.plan(request("Changed text.", options: ["target": "ja", "source": "fr"])).values["source"] == "fr")
+        #expect(await plugin.plan(request(options: ["source": ""])).values["source"] == "en")
+        let empty = request("")
+        #expect(try await plugin.run(empty, plan: await plugin.plan(empty)).items.count == 1)
         #expect(!AskTranslatePlugin.failure(AskTranslationServiceError.quota, provider: .deepl).retry)
-        #expect(AskTranslatePlugin.failure(AskTranslationServiceError.rateLimited, provider: .deepl).retry)
-        let plain = AskPluginFailure(message: "boom")
-        #expect(AskTranslatePlugin.reason(plain) == "boom")
-        #expect(AskTranslatePlugin.failure(plain, provider: .deepl).message == L("ask.translation.error.from", "DeepL", "boom"))
+        #expect(AskTranslatePlugin.failure(URLError(.timedOut), provider: .deepl).retry)
+        #expect(AskTranslatePlugin.reason(AskPluginFailure(message: "boom")) == "boom")
     }
 }
 
@@ -209,26 +158,54 @@ struct AskTranslationSettingsModelTests {
         return AskTranslationSettingsModel(store: SettingsStore(defaults: defaults), credentials: credentials)
     }
 
-    @Test func choicesAreSaved() {
+    @Test func orderedServicesPersistAndUnconfiguredEnablingOpensTheSheet() {
         let model = model(AskTestTranslationCredentials([.deepl: .init(key: "k")]))
         #expect(model.configured == [.deepl])
-        #expect(model.engineOptions.first?.value == "ai")
-        #expect(model.engineOptions.count == AskTranslationProvider.allCases.count + 1)
-        #expect(model.engineOptions.contains { $0.value == "deepl" && $0.label == "DeepL" })
-        #expect(model.engineOptions.contains {
-            $0.value == "google" && $0.label == L("ask.translation.engine.notConfigured", "Google")
-        })
-        model.setEngine("deepl")
-        model.setModel("custom:fast")
-        model.setPrefersOnDevice(false)
-        model.setFallsBackToAI(false)
+        model.setEnabled("provider.deepl", true)
+        #expect(model.editing == nil)
+        model.setEnabled("provider.google", true)
+        #expect(model.editing == .google)
+        model.cancelEdit()
+        let id = model.addAI()
+        #expect(model.settings.services.last?.id == id && model.settings.services.last?.enabled == false)
+        model.setModel("custom:fast", for: id)
+        model.setEnabled(id, true)
+        model.move(id, to: 1)
+        #expect(model.settings.firstAI?.id == id)
+        model.removeAI(id)
+        #expect(model.settings.firstAI?.id == id, "the first AI cannot be deleted")
+        model.removeAI("ai.primary")
+        #expect(!model.settings.services.contains { $0.id == "ai.primary" })
+        model.move(id, to: -10)
+        #expect(model.settings.services.first?.id == id)
+        model.move(id, to: 999)
+        #expect(model.settings.services.last?.id == id)
         model.setSecondLanguage("ja")
-        #expect(model.store.askTranslationSettings == AskTranslationSettings(
-            engine: .service(.deepl), modelReference: "custom:fast", prefersOnDevice: false, fallsBackToAI: false
-        ))
         #expect(model.store.askTranslationSecondLanguage == "ja" && model.secondLanguage == "ja")
-        model.setEngine("deepl")
-        #expect(model.settings.engine == .service(.deepl))
+        #expect(model.store.askTranslationSettings == model.settings)
+        let unchanged = model.settings
+        model.setEnabled("missing", true)
+        model.setModel("x", for: "device")
+        model.removeAI("device")
+        model.move("missing", to: 0)
+        #expect(model.settings == unchanged)
+    }
+
+    @Test func editingKeysKeepsServiceChangesMadeInAnotherWindow() {
+        let credentials = AskTestTranslationCredentials([.deepl: .init(key: "k")])
+        let launcher = model(credentials)
+        let settings = AskTranslationSettingsModel(store: launcher.store, credentials: credentials)
+        settings.setEnabled("provider.deepl", true)
+        let extra = settings.addAI()
+        settings.move(extra, to: 0)
+        settings.setModel("custom:fast", for: extra)
+        launcher.edit(.deepl)
+        #expect(launcher.settings == settings.settings)
+        launcher.remove()
+        let saved = launcher.store.askTranslationSettings
+        #expect(saved.firstAI?.id == extra && saved.firstAI?.modelReference == "custom:fast")
+        #expect(saved.services.map(\.id) == settings.settings.services.map(\.id))
+        #expect(saved.services.first { $0.provider == .deepl }?.enabled == false)
     }
 
     @Test func modelOptionsFollowTheTextModelFirst() {
@@ -253,12 +230,12 @@ struct AskTranslationSettingsModelTests {
         #expect(model.canSave && model.save())
         #expect(credentials.credentials(for: .youdao) == AskTranslationCredentials(key: "app", secret: "sec"))
         #expect(model.configured.contains(.youdao) && model.editing == nil)
-        model.setEngine("youdao")
+        model.setEnabled("provider.youdao", true)
         model.edit(.youdao)
         #expect(model.draft.key == "app")
         model.remove()
         #expect(credentials.credentials(for: .youdao) == nil && !model.configured.contains(.youdao))
-        #expect(model.settings.engine == .ai, "a removed service no longer translates")
+        #expect(model.settings.services.first { $0.provider == .youdao }?.enabled == false)
         model.remove()
         model.edit(.deepl)
         model.draft.key = "k"

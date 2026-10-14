@@ -30,37 +30,19 @@ struct AskLocalizationPolishTests {
         }
     }
 
-    @Test func cloudSignInFailureFallsBackOnlyToAConfiguredService() async throws {
-        let device = AskTestTranslationEngine(available: false)
-        let cloudEngine = AskTestTranslationEngine(failure: TypefluxCloudLLMError.notLoggedIn)
-        let service = AskTestTranslationEngine()
-        let request = AskPluginRequest(text: "Hello world", origin: .argument, keyword: AskTranslatePlugin.keywords[0],
+    @Test func cloudSignInFailureStaysInItsOwnService() async throws {
+        let cloud = AskTestTranslationEngine(failure: TypefluxCloudLLMError.notLoggedIn)
+        let provider = AskTestTranslationEngine()
+        let settings = AskTranslationSettings(services: [.ai(), .provider(.deepl, enabled: true)])
+        let plugin = AskTranslatePlugin(onDevice: AskTestTranslationEngine(), ai: cloud, serviceSettings: { settings },
+                                        service: { _ in provider }, detector: AskTestLanguageDetector(language: "en"))
+        let request = AskPluginRequest(text: "Hello world.", origin: .selection, keyword: AskTranslatePlugin.keywords[0],
                                        options: [:], interfaceLanguage: .simplifiedChinese)
-        var plugin = AskTranslatePlugin(onDevice: device, ai: cloudEngine, service: { _ in service }, signedOutFallback: { .deepl },
-                                         detector: AskTestLanguageDetector(language: "en"))
-        let plan = await plugin.plan(request)
-        let output = try await plugin.run(request, plan: plan)
-        #expect(output.body == "[zh-Hans] Hello world" && output.source == "DeepL" && !output.sourceIsAI)
-        #expect(output.note == L("ask.plugin.translate.signInFallback", "DeepL"))
-        #expect(service.requests.count == 1 && cloudEngine.requests.count == 1)
-        service.failure = AskTranslationServiceError.authentication
-        do {
-            _ = try await plugin.run(request, plan: plan)
-            Issue.record("Failed fallback must surface its service error")
-        } catch let error as AskPluginFailure { #expect(!error.retry) }
-        #expect(cloudEngine.requests.count == 2, "The fallback must not recurse back into Cloud")
-        plugin.signedOutFallback = { nil }
-        do {
-            _ = try await plugin.run(request, plan: plan)
-            Issue.record("No configured fallback requires sign-in")
-        } catch TypefluxCloudLLMError.notLoggedIn {}
-        cloudEngine.failure = URLError(.timedOut)
-        plugin.signedOutFallback = { .deepl }
-        do {
-            _ = try await plugin.run(request, plan: plan)
-            Issue.record("Network errors must not silently switch engines")
-        } catch is URLError {}
-        #expect(service.requests.count == 2)
+        let output = try await plugin.run(request, plan: await plugin.plan(request))
+        let rows = try #require(output.translation?.results)
+        if case let .failed(failure) = rows[0].state { #expect(failure.recovery == .configure) } else { Issue.record("Missing sign-in failure") }
+        #expect(rows[1].completedText != nil)
+        #expect(provider.requests.count == 1 && cloud.requests.count == 1)
     }
 
     @Test func fallbackProviderRequiresCompleteCredentialsAndPrefersTheChosenEngine() {
