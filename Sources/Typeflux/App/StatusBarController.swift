@@ -36,6 +36,7 @@ final class StatusBarController: NSObject {
     private let notificationService: LocalNotificationSending
     private let onRetryHistory: (HistoryRecord) -> Void
     private let onOpenOnboarding: () -> Void
+    private let onOpenHelp: () -> Void
     private let onOpenAskConversations: () -> Void
     private let onScreenshot: () -> Void
     private let onScreenshotText: () -> Void
@@ -64,6 +65,7 @@ final class StatusBarController: NSObject {
         notificationService: LocalNotificationSending = NoopLocalNotificationService(),
         onRetryHistory: @escaping (HistoryRecord) -> Void = { _ in },
         onOpenOnboarding: @escaping () -> Void = {},
+        onOpenHelp: @escaping () -> Void = {},
         onOpenAskConversations: @escaping () -> Void = {},
         onScreenshot: @escaping () -> Void = {},
         onScreenshotText: @escaping () -> Void = {},
@@ -81,6 +83,7 @@ final class StatusBarController: NSObject {
         self.notificationService = notificationService
         self.onRetryHistory = onRetryHistory
         self.onOpenOnboarding = onOpenOnboarding
+        self.onOpenHelp = onOpenHelp
         self.onOpenAskConversations = onOpenAskConversations
         self.onScreenshot = onScreenshot
         self.onScreenshotText = onScreenshotText
@@ -221,6 +224,7 @@ final class StatusBarController: NSObject {
         menu.addItem(makeSettingsItem())
         menu.addItem(NSMenuItem.separator())
 
+        menu.addItem(makeItem(title: L("menu.help"), action: #selector(openHelp)))
         menu.addItem(makeItem(title: L("menu.setupGuide"), action: #selector(openOnboarding)))
         menu.addItem(makeUpdateMenuItem())
         let feedbackItem = NSMenuItem(title: L("menu.feedback"), action: nil, keyEquivalent: "")
@@ -637,6 +641,10 @@ final class StatusBarController: NSObject {
         onOpenOnboarding()
     }
 
+    @objc private func openHelp() {
+        onOpenHelp()
+    }
+
     @objc private func openAskConversations() {
         onOpenAskConversations()
     }
@@ -736,5 +744,28 @@ enum StatusBarMenuSupport {
     private static func truncated(_ text: String, limit: Int) -> String {
         guard text.count > limit else { return text }
         return String(text.prefix(max(0, limit - 3))) + "..."
+    }
+}
+
+/// Opening a particular settings page, for links from the usage guide.
+extension StatusBarController {
+    /// Opens one pane of Settings, such as Shortcuts.
+    func showAppSettings(_ pane: AppSettingsPane) {
+        openStudio(.settings)
+        SettingsWindowController.shared.requestSettingsPane(pane)
+    }
+
+    /// Opens one pane of the launcher settings, such as Keywords.
+    func showLauncherSettings(_ pane: LauncherSettingsPane) {
+        SettingsWindowController.shared.show(
+            settingsStore: settingsStore,
+            historyStore: historyStore,
+            initialSection: .launcher,
+            launcherPane: pane,
+            modelManager: modelManager,
+            localModelManager: localModelManager,
+            notificationService: notificationService,
+            onRetryHistory: onRetryHistory
+        )
     }
 }

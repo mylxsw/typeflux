@@ -1,0 +1,378 @@
+import AppKit
+import Combine
+import Foundation
+import SwiftUI
+import Testing
+@testable import Typeflux
+
+/// What the model's sources return, changed by the tests.
+final class HelpModelTestState {
+    var keywords: [AskKeyword] = [HelpCatalogTests.translate, HelpCatalogTests.polish,
+                                  HelpCatalogTests.summarize, HelpCatalogTests.lock]
+    var permissions: [HelpPermissionStatus] = []
+    var refreshes = 0
+}
+
+@Suite(.serialized, .exclusiveUIState)
+@MainActor
+struct HelpOverlayModelTests {
+    /// Records what the guide asked the app to do.
+    final class Recorder {
+        var closes = 0
+        var tried: [(AskKeyword, String)] = []
+        var asked: [String] = []
+        var launcherOpens = 0
+        var settings: [HelpSettingsDestination] = []
+        var fixed: [PrivacyGuard.PermissionID] = []
+        var urls: [URL] = []
+    }
+
+    struct Harness {
+        let model: HelpOverlayModel
+        let settings: SettingsStore
+        let center: NotificationCenter
+        let workflows: PassthroughSubject<Void, Never>
+        let recorder: Recorder
+        let state: HelpModelTestState
+    }
+
+    func harness() throws -> Harness {
+        let defaults = try #require(UserDefaults(suiteName: "help-model-" + UUID().uuidString))
+        let settings = SettingsStore(defaults: defaults)
+        let center = NotificationCenter()
+        let workflows = PassthroughSubject<Void, Never>()
+        let state = HelpModelTestState()
+        let model = HelpOverlayModel(sources: .init(
+            keywords: { _ in state.keywords.map { HelpCatalogTests.source($0, selection: true) } },
+            usage: { [:] },
+            settings: settings,
+            permissions: { state.permissions },
+            refreshWorkflows: { state.refreshes += 1 },
+            workflowChanges: workflows.eraseToAnyPublisher()
+        ), center: center)
+        let recorder = Recorder()
+        model.actions = .init(
+            close: { recorder.closes += 1 },
+            tryKeyword: { recorder.tried.append(($0, $1)) },
+            askAI: { recorder.asked.append($0) },
+            openLauncher: { recorder.launcherOpens += 1 },
+            openSettings: { recorder.settings.append($0) },
+            fixPermission: { recorder.fixed.append($0) },
+            openURL: { recorder.urls.append($0) }
+        )
+        return Harness(model: model, settings: settings, center: center, workflows: workflows,
+                       recorder: recorder, state: state)
+    }
+
+    func settle() async {
+        for _ in 0 ..< 5 { await Task.yield() }
+        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+    }
+
+    @Test func `opening starts fresh on the start page or searching`() async throws {
+        let kit = try harness()
+        kit.model.page = .faq
+        kit.model.filter = .system
+        kit.model.prepare(query: "")
+        #expect(kit.model.page == .start && kit.model.filter == nil && kit.model.isPresented)
+        #expect(kit.model.catalog.keywords.count == 4)
+        #expect(kit.model.selectedKeywordID == HelpCatalogTests.translate.pluginID + ":fy")
+        await settle()
+        #expect(kit.state.refreshes == 1, "workflows are read again each time the guide opens")
+        kit.model.prepare(query: "rw")
+        #expect(kit.model.isSearching && kit.model.query == "rw")
+        #expect(kit.model.searchItems.first == .keyword(kit.model.catalog.keywords[1]))
+    }
+
+    @Test func `changed shortcuts keywords and workflows show at once while presented`() async throws {
+        let kit = try harness()
+        kit.model.prepare(query: "")
+        #expect(kit.model.catalog.shortcuts(in: .global).first { $0.target == .action(.openHelp) }?.keys == nil)
+        kit.settings.setHotkey(HelpCatalogTests.controlOptionR, for: .openHelp)
+        // The store posts on the default center; the model listens to the one it was given.
+        kit.center.post(name: .hotkeySettingsDidChange, object: nil)
+        await settle()
+        #expect(kit.model.catalog.shortcuts(in: .global).first { $0.target == .action(.openHelp) }?.keys
+            == ["⌃", "⌥", "R"])
+        kit.state.keywords.append(HelpCatalogTests.workflow)
+        kit.workflows.send(())
+        await settle()
+        #expect(kit.model.catalog.keywords(in: .mine).map(\.keyword.keyword) == ["ip"])
+        kit.state.keywords.append(HelpCatalogTests.japanese)
+        kit.center.post(name: .askLauncherSearchSettingsDidChange, object: nil)
+        await settle()
+        #expect(kit.model.catalog.keywords(in: .mine).count == 2)
+        kit.model.dismissed()
+        kit.state.keywords = []
+        kit.center.post(name: .askLauncherSearchSettingsDidChange, object: nil)
+        await settle()
+        #expect(kit.model.catalog.keywords.count == 6, "a closed guide does not rebuild")
+    }
+
+    @Test func `escape clears the search before closing`() throws {
+        let kit = try harness()
+        kit.model.prepare(query: "fy")
+        #expect(kit.model.handle(.escape) && kit.model.query.isEmpty && kit.recorder.closes == 0)
+        #expect(kit.model.handle(.escape) && kit.recorder.closes == 1)
+    }
+
+    @Test func `command numbers switch pages and find focuses the field`() throws {
+        let kit = try harness()
+        kit.model.prepare(query: "x")
+        let request = kit.model.focusRequest
+        #expect(kit.model.handle(.page(3)) && kit.model.page == .shortcuts && !kit.model.isSearching)
+        #expect(!kit.model.handle(.page(9)))
+        #expect(kit.model.handle(.find) && kit.model.focusRequest == request + 1)
+    }
+
+    @Test func `arrows move through keywords and return tries the selected one`() throws {
+        let kit = try harness()
+        kit.model.prepare(query: "")
+        #expect(!kit.model.handle(.down), "the start page has no list to move through")
+        kit.model.show(.keywords)
+        #expect(kit.model.handle(.down))
+        #expect(kit.model.selectedKeyword?.keyword == HelpCatalogTests.polish)
+        kit.model.handle(.up)
+        kit.model.handle(.up)
+        #expect(kit.model.selectedKeyword?.keyword == HelpCatalogTests.translate)
+        #expect(kit.model.handle(.enter))
+        #expect(kit.recorder.closes == 1 && kit.recorder.tried.map(\.0) == [HelpCatalogTests.translate])
+        #expect(kit.recorder.tried.first?.1 == "")
+        #expect(kit.model.handle(.commandEnter) && kit.recorder.tried.count == 2)
+    }
+
+    @Test func `an unavailable keyword is not tried`() throws {
+        let kit = try harness()
+        kit.model.prepare(query: "")
+        var keyword = try #require(kit.model.catalog.keywords.first)
+        keyword.keyword.enabled = false
+        kit.model.tryKeyword(keyword, argument: "hello")
+        #expect(kit.recorder.tried.isEmpty && kit.recorder.closes == 0)
+        kit.model.tryKeyword(try #require(kit.model.catalog.keywords.first), argument: "hello")
+        #expect(kit.recorder.tried.first?.1 == "hello")
+    }
+
+    @Test func `search results move and open where they belong`() throws {
+        let kit = try harness()
+        kit.model.prepare(query: "s")
+        let items = kit.model.searchItems
+        #expect(items.count > 1)
+        #expect(kit.model.handle(.down) && kit.model.searchFocus == 1)
+        for _ in 0 ..< items.count + 2 { kit.model.handle(.down) }
+        #expect(kit.model.searchFocus == items.count - 1)
+        kit.model.query = "rw"
+        #expect(kit.model.searchFocus == 0, "a new query starts at the top")
+        #expect(kit.model.handle(.enter))
+        #expect(kit.model.page == .keywords && !kit.model.isSearching)
+        #expect(kit.model.selectedKeyword?.keyword == HelpCatalogTests.polish)
+        kit.model.query = "cmd k"
+        #expect(kit.model.handle(.enter) && kit.model.page == .shortcuts)
+        let question = try #require(kit.model.catalog.questions.last)
+        kit.model.open(.question(question))
+        #expect(kit.model.page == .faq && kit.model.openQuestionID == question.id)
+        kit.model.open(.command(HelpCommand(name: "/help", title: "")))
+        #expect(kit.model.page == .shortcuts)
+    }
+
+    @Test func `nothing found offers the question to the AI`() throws {
+        let kit = try harness()
+        kit.model.prepare(query: "  sync to my phone ")
+        #expect(kit.model.searchResults.isEmpty && !kit.model.handle(.enter))
+        #expect(kit.model.handle(.commandEnter))
+        #expect(kit.recorder.asked == ["sync to my phone"] && kit.recorder.closes == 1)
+        kit.model.query = ""
+        kit.model.askAI()
+        #expect(kit.recorder.asked.count == 1)
+    }
+
+    @Test func `a missing permission marks the questions it explains`() throws {
+        let kit = try harness()
+        kit.state.permissions = [
+            HelpPermissionStatus(id: .microphone, title: "Mic", detail: "", granted: true),
+            HelpPermissionStatus(id: .accessibility, title: "AX", detail: "Required", granted: false)
+        ]
+        kit.model.prepare(query: "")
+        #expect(kit.model.missingPermissions.map(\.id) == [.accessibility])
+        #expect(kit.model.relevantQuestions.map(\.id) == ["voiceNoResponse", "textNotInserted"])
+        #expect(kit.model.openQuestionID == "voiceNoResponse", "the first likely answer is open")
+        let unrelated = try #require(kit.model.catalog.questions.first { $0.id == "privacy" })
+        #expect(!kit.model.isRelevant(unrelated))
+        kit.model.toggleQuestion("voiceNoResponse")
+        #expect(kit.model.openQuestionID == nil)
+        kit.model.fix(.accessibility)
+        #expect(kit.recorder.fixed == [.accessibility] && kit.recorder.closes == 1)
+        kit.state.permissions[1].granted = true
+        kit.model.reloadPermissions()
+        #expect(kit.model.missingPermissions.isEmpty && kit.model.relevantQuestions.isEmpty)
+    }
+
+    @Test func `filters keep a visible selection`() throws {
+        let kit = try harness()
+        kit.model.prepare(query: "")
+        kit.model.show(.keywords)
+        kit.model.setFilter(.system)
+        #expect(kit.model.visibleKeywords.map(\.keyword) == [HelpCatalogTests.lock])
+        #expect(kit.model.selectedKeyword?.keyword == HelpCatalogTests.lock)
+        kit.model.setFilter(nil)
+        #expect(kit.model.selectedKeyword?.keyword == HelpCatalogTests.lock, "a selection still visible stays")
+        kit.model.showKeyword(HelpCatalogTests.polish.pluginID + ":rw")
+        #expect(kit.model.page == .keywords && kit.model.selectedKeyword?.keyword == HelpCatalogTests.polish)
+    }
+
+    @Test func `links close the guide before leaving it`() throws {
+        let kit = try harness()
+        kit.model.openSettings(.shortcuts)
+        kit.model.openLauncher()
+        kit.model.open(HelpOverlayModel.feedbackURL)
+        #expect(kit.recorder.settings == [.shortcuts] && kit.recorder.launcherOpens == 1)
+        #expect(kit.recorder.urls == [HelpOverlayModel.feedbackURL] && kit.recorder.closes == 3)
+    }
+
+    @Test func `keys map to the guide's actions`() {
+        #expect(HelpOverlayController.key(keyCode: 53, characters: "", command: false) == .escape)
+        #expect(HelpOverlayController.key(keyCode: 126, characters: "", command: false) == .up)
+        #expect(HelpOverlayController.key(keyCode: 125, characters: "", command: false) == .down)
+        #expect(HelpOverlayController.key(keyCode: 36, characters: "\r", command: false) == .enter)
+        #expect(HelpOverlayController.key(keyCode: 76, characters: "\r", command: true) == .commandEnter)
+        #expect(HelpOverlayController.key(keyCode: 3, characters: "f", command: true) == .find)
+        #expect(HelpOverlayController.key(keyCode: 19, characters: "2", command: true) == .page(2))
+        #expect(HelpOverlayController.key(keyCode: 23, characters: "5", command: true) == nil)
+        #expect(HelpOverlayController.key(keyCode: 3, characters: "f", command: false) == nil)
+    }
+
+    @Test func `the panel shrinks with the screen within its bounds`() {
+        #expect(HelpOverlayView.panelSize(in: CGSize(width: 1920, height: 1080)) == HelpOverlayView.panelSize)
+        let scaled = HelpOverlayView.panelSize(in: CGSize(width: 1100, height: 760))
+        #expect(abs(scaled.width - 990) < 0.01 && abs(scaled.height - 653.6) < 0.01)
+        #expect(HelpOverlayView.panelSize(in: CGSize(width: 800, height: 500)) == HelpOverlayView.minimumPanelSize)
+    }
+
+    @Test func `examples suit what the keyword takes`() throws {
+        let catalog = HelpCatalog.build(HelpCatalogTests.input())
+        let translate = try #require(catalog.keywords.first { $0.keyword == HelpCatalogTests.translate })
+        #expect(HelpKeywordDetail.examples(translate) == ["fy " + L("help.keyword.example.translate"), "fy"])
+        let lock = try #require(catalog.keywords.first { $0.keyword == HelpCatalogTests.lock })
+        #expect(HelpKeywordDetail.examples(lock) == ["lockscreen"])
+        let files = try #require(catalog.keywords.first { $0.keyword == HelpCatalogTests.files })
+        #expect(HelpKeywordDetail.examples(files) == ["f " + L("help.keyword.example.search")])
+    }
+
+    @Test func `the guide renders every page in both interface styles`() throws {
+        let kit = try harness()
+        kit.state.permissions = [
+            HelpPermissionStatus(id: .accessibility, title: "AX", detail: "Required", granted: false)
+        ]
+        kit.model.prepare(query: "")
+        for style in InterfaceStyle.allCases {
+            for page in HelpPage.allCases {
+                kit.model.show(page)
+                try render(kit.model, style: style)
+            }
+            kit.model.query = "rw"
+            try render(kit.model, style: style)
+            kit.model.query = "nothing-like-this"
+            try render(kit.model, style: style)
+            kit.model.query = ""
+        }
+    }
+
+    @Test func `the panel covers the screen, takes keys and hides again`() throws {
+        let kit = try harness()
+        let controller = HelpOverlayController(settingsStore: kit.settings, model: kit.model)
+        kit.model.actions.close = { [weak controller] in kit.recorder.closes += 1; controller?.dismiss() }
+        #expect(!controller.isPresented && controller.presentedWindow == nil)
+        controller.dismiss()
+        controller.show(query: "")
+        defer { controller.dismiss() }
+        let panel = try #require(controller.presentedWindow)
+        #expect(controller.isPresented && kit.model.isPresented)
+        #expect(panel.level == HelpOverlayController.level && !panel.hidesOnDeactivate)
+        #expect(panel.frame == HelpOverlayController.screenUnderPointer()?.frame)
+        func key(_ code: UInt16, _ characters: String, _ flags: NSEvent.ModifierFlags = []) throws -> NSEvent {
+            try #require(NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: flags, timestamp: 0,
+                                          windowNumber: panel.windowNumber, context: nil, characters: characters,
+                                          charactersIgnoringModifiers: characters, isARepeat: false, keyCode: code))
+        }
+        panel.makeFirstResponder(nil)
+        #expect(controller.handle(try key(0, "a")) && kit.model.query == "a", "typing anywhere searches")
+        #expect(controller.handle(try key(20, "3", .command)) && kit.model.page == .shortcuts && kit.model.query.isEmpty)
+        #expect(!controller.handle(try key(14, "e", .control)), "control chords are not typed into the search")
+        #expect(controller.handle(try key(53, "\u{1b}")))
+        #expect(kit.recorder.closes == 1 && !controller.isPresented && !kit.model.isPresented)
+        controller.show(query: "fy")
+        #expect(controller.isPresented && kit.model.query == "fy", "the same panel opens again")
+    }
+
+    /// Writes PNGs of every page in both styles and appearances when `TYPEFLUX_HELP_SNAPSHOT` names a folder.
+    @Test func `snapshots for design review`() throws {
+        guard let directory = ProcessInfo.processInfo.environment["TYPEFLUX_HELP_SNAPSHOT"] else { return }
+        let kit = try harness()
+        kit.state.keywords += [HelpCatalogTests.japanese, HelpCatalogTests.workflow, HelpCatalogTests.files,
+                             HelpCatalogTests.shot, HelpCatalogTests.help]
+        kit.state.permissions = [
+            HelpPermissionStatus(id: .microphone, title: "Microphone", detail: "", granted: true),
+            HelpPermissionStatus(id: .accessibility, title: "Accessibility", detail: "Not allowed", granted: false)
+        ]
+        kit.settings.keywordHotkeys = [KeywordHotkey(binding: HelpCatalogTests.controlOptionR, keyword: "rw",
+                                                   pluginID: AskPromptPlugin.id)]
+        kit.model.prepare(query: "")
+        for style in InterfaceStyle.allCases {
+            for dark in [true, false] {
+                for page in HelpPage.allCases {
+                    kit.model.show(page)
+                    try snapshot(kit.model, style: style, dark: dark,
+                                 to: Self.snapshotURL(directory, style: style, dark: dark, name: page.rawValue))
+                }
+                try captureOnScreen(kit, style: style, dark: dark, directory: directory)
+                kit.model.query = "fy"
+                try snapshot(kit.model, style: style, dark: dark,
+                             to: Self.snapshotURL(directory, style: style, dark: dark, name: "search"))
+                kit.model.query = ""
+            }
+        }
+    }
+
+    /// The real panel on screen, so Liquid Glass samples the desktop the way it does in the app.
+    private func captureOnScreen(_ kit: Harness, style: InterfaceStyle, dark: Bool, directory: String) throws {
+        kit.settings.interfaceStyle = style
+        kit.settings.appearanceMode = dark ? .dark : .light
+        let controller = HelpOverlayController(settingsStore: kit.settings, model: kit.model)
+        controller.show(query: "")
+        defer { controller.dismiss() }
+        let panel = try #require(controller.presentedWindow)
+        RunLoop.main.run(until: Date().addingTimeInterval(1.2))
+        let path = directory + "/onscreen-\(style.rawValue)-\(dark ? "dark" : "light")-start.png"
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+        process.arguments = ["-x", "-o", "-l\(panel.windowNumber)", path]
+        try process.run()
+        process.waitUntilExit()
+    }
+
+    static func snapshotURL(_ directory: String, style: InterfaceStyle, dark: Bool, name: String) -> URL {
+        let file = "\(style.rawValue)-\(dark ? "dark" : "light")-\(name).png"
+        return URL(fileURLWithPath: directory).appendingPathComponent(file)
+    }
+
+    private func snapshot(_ model: HelpOverlayModel, style: InterfaceStyle, dark: Bool, to url: URL) throws {
+        let view = HelpOverlayView(model: model).environment(\.interfaceStyle, style)
+            .background(dark ? Color(white: 0.16) : Color(white: 0.82))
+        let host = NSHostingView(rootView: view)
+        host.appearance = NSAppearance(named: dark ? .darkAqua : .aqua)
+        host.frame = NSRect(x: 0, y: 0, width: 1440, height: 900)
+        host.layoutSubtreeIfNeeded()
+        let rep = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+        host.cacheDisplay(in: host.bounds, to: rep)
+        try #require(rep.representation(using: .png, properties: [:])).write(to: url)
+    }
+
+    private func render(_ model: HelpOverlayModel, style: InterfaceStyle) throws {
+        let view = HelpOverlayView(model: model).environment(\.interfaceStyle, style)
+        let host = NSHostingView(rootView: view)
+        host.frame = NSRect(x: 0, y: 0, width: 1440, height: 900)
+        host.layoutSubtreeIfNeeded()
+        let rep = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+        host.cacheDisplay(in: host.bounds, to: rep)
+        #expect(rep.pixelsWide > 0)
+    }
+}

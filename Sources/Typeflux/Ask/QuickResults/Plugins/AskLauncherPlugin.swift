@@ -110,6 +110,8 @@ struct AskPluginAction: Equatable, Sendable {
         case emoji(EmojiAction)
         case systemCommand(AskSystemCommand)
         case openSettings
+        /// Opens the usage guide, searching for this text when it is not empty (`help 截图`).
+        case openHelp(query: String)
         case configureTranslation(AskTranslationProvider)
         case manageTranslationLanguages
         case swapTranslation(String, source: String, target: String)

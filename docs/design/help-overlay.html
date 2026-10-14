@@ -198,6 +198,7 @@ kbd { display: inline-grid; place-items: center; min-width: 20px; height: 20px; 
 
 /* ---------- Start page: illustrated entry tiles ---------- */
 .hero { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+.hero .tile[data-act="kw"] { grid-column: 1 / -1; }
 .tile { position: relative; border-radius: var(--r-block); background: var(--block); border: 1px solid var(--block-edge); cursor: pointer; overflow: hidden; display: flex; flex-direction: column; }
 .tile:hover { border-color: color-mix(in srgb, var(--accent) 45%, var(--block-edge)); }
 .tile .art { height: 118px; position: relative; display: flex; align-items: center; justify-content: center; gap: 14px; background: var(--field); border-bottom: 1px solid var(--block-edge); overflow: hidden; }
@@ -439,7 +440,7 @@ const SYSTEM = [['lockscreen', '锁定屏幕'], ['sleep', '进入睡眠'], ['dis
 SYSTEM.forEach(([k, t]) => KWS.push({ id: k, g: 'system', kws: [k], icon: 'power', name: t, ds: '系统命令，输入英文全名或中文名都能找到。', used: 0, sys: 1 }));
 
 const SHORTCUTS = [
-  ['全局', [['语音输入', '按住说话，松开写入', 'fn', '按住'], ['随便问', '连按两次，第二次按住提问', 'fn fn'], ['辅助语音输入', '用另一个人设', 'fn ⇧'], ['启动器', '', '⌘ Space'],
+  ['全局', [['语音输入', '按住说话，松开写入', 'fn', '按住'], ['辅助语音输入', '用另一个人设', 'fn ⇧'], ['启动器 · 随便问', '打开启动器，可带上选中的文字', '⌘ Space'],
     ['人设切换器', '', '⌥ ⌘ P'], ['剪贴板与历史', '', '⌥ ⌘ O'], ['截图', '', '⌥ ⌘ A'], ['截图识字', '', null], ['打开对话窗口', '', null], ['使用指南', '', null]], '修改'],
   ['关键词快捷键', [['润色 · rw', '直接执行，替换选中文字', '⌃ ⌥ R'], ['翻译 · fy', '直接执行，浮窗显示', '⌃ ⌥ T']], '添加'],
   ['启动器', [['发送、运行或打开', '', '↩'], ['问 AI', '跳过关键词和快捷结果', '⌘ ↩'], ['进入关键词', '', 'Space'], ['补全关键词', '', '⇥'], ['次要动作', '例如替换选中文字', '⌥ ↩'],
@@ -483,10 +484,8 @@ function pageStart() {
   const tiles = [
     ['voice', `<span class="cap press">fn</span><span class="wave">${wave}</span><span class="typed"><b>下周进入开发</b><span class="cur"></span></span>`,
       '语音输入', '按住 fn 说话，松开后文字写进光标所在的位置。'],
-    ['ask', `<span class="capwrap"><span class="cap tap">fn</span><span class="x2">×2</span></span><span class="bubble"><span class="q">${ic('spark', 12)}把这段改短一点</span>已改写选中的 3 行</span>`,
-      '随便问', '连按两次 fn，第二次按住说出问题；选中文字时可以让它改写。'],
-    ['launcher', `<span class="cap">⌘</span><span class="plus">+</span><span class="cap wide">Space</span>`,
-      '启动器', '打字提问、算数、打开应用和文件。选中文字后打开，可以直接处理它。'],
+    ['launcher', `<span class="cap">⌘</span><span class="plus">+</span><span class="cap wide">Space</span><span class="bubble"><span class="q">${ic('spark', 12)}把这段改短一点</span>已改写选中的 3 行</span>`,
+      '启动器 · 随便问', '提问、算数、打开应用和文件。选中文字后打开，可以直接处理它。'],
     ['kw', `<div class="mini"><div class="mi">${ic('search', 13)}<span class="chip">fy</span><b>hello world</b><span class="cur"></span></div><div class="mr">${ic('translate', 13)}你好，世界<span class="m">↩ 复制</span></div></div>`,
       '关键词', `在启动器开头输入关键词和空格，进入对应功能。共 ${KWS.length} 个。`],
   ];
@@ -558,7 +557,7 @@ function pageSearch() {
 }
 
 /* ------------------------------ Render ------------------------------ */
-const TITLES = { start: ['开始', '四个入口覆盖 Typeflux 的全部功能'], keywords: ['关键词', '在启动器开头输入，后面加空格'], shortcuts: ['快捷键', ''], faq: ['常见问题', ''] };
+const TITLES = { start: ['开始', '所有功能都从这里开始'], keywords: ['关键词', '在启动器开头输入，后面加空格'], shortcuts: ['快捷键', ''], faq: ['常见问题', ''] };
 function render() {
   renderNav();
   const [t, sub] = st.query ? ['搜索', `「${st.query}」· ${search(st.query).total} 个结果`] : TITLES[st.page];
@@ -581,7 +580,7 @@ function bind() {
   document.querySelectorAll('[data-gofaq]').forEach(e => e.onclick = () => { st.open = +e.dataset.gofaq; clearQuery(); go('faq'); });
   document.querySelectorAll('[data-faq]').forEach(e => e.onclick = () => { st.open = st.open === +e.dataset.faq ? -1 : +e.dataset.faq; render(); });
   document.querySelectorAll('[data-act]').forEach(e => e.onclick = () => e.dataset.act === 'kw' ? go('keywords')
-    : toast({ voice: '关闭指南，回到原来的应用按住 fn 说一句话', ask: '关闭指南并打开随便问', launcher: '关闭指南并打开启动器' }[e.dataset.act]));
+    : toast({ voice: '关闭指南，回到原来的应用按住 fn 说一句话', launcher: '关闭指南并打开启动器' }[e.dataset.act]));
   document.querySelectorAll('[data-settings]').forEach(e => e.onclick = () => toast('关闭指南，打开设置中对应的页面'));
   document.querySelectorAll('[data-ex]').forEach(e => e.onclick = () => tryKeyword(e.dataset.ex));
   const t = $('#tryKw'); if (t) t.onclick = () => tryKeyword();
@@ -646,7 +645,7 @@ function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add
 /* ============================== Screens ============================== */
 const CAPTIONS = {
   entry: '<b>① 入口</b>：在启动器输入 <b>help</b>（别名「帮助」「?」）按 ↩ 打开；<b>help 截图</b> 打开后直接搜索。另外还有启动器底栏的 ? 按钮、对话里的 /help、菜单栏「使用指南…」、可选的全局快捷键（默认不设置）。按 ↩ 或点第一行打开。',
-  start: '<b>② 开始</b>：四个入口做成带小插图的大卡片——按键会按下、波形会动、启动器里会出现结果，一眼看懂怎么用；点卡片直接试。下面是你还没试过的关键词和几条启动器技巧。打开时焦点在搜索框，直接打字就会搜索。右上角切换 Liquid Glass / 经典、深色 / 浅色。',
+  start: '<b>② 开始</b>：入口做成带小插图的大卡片（随便问就是启动器，合并成一张；按键都读取用户当前的设置）——按键会按下、波形会动、启动器里会出现结果，一眼看懂怎么用；点卡片直接试。下面是你还没试过的关键词和几条启动器技巧。打开时焦点在搜索框，直接打字就会搜索。右上角切换 Liquid Glass / 经典、深色 / 浅色。',
   keywords: '<b>③ 关键词</b>：读取你当前的关键词（改过的名字、别名、自建的、工作流、停用的都如实显示）。左边列表，右边详情；示例点一下就在启动器里试。↑↓ 选择，↩ 试一试。',
   shortcuts: '<b>④ 快捷键</b>：显示当前绑定，没设置的显示「未设置」，点了去设置。下面是启动器、结果、对话窗口的按键和 / 命令。',
   search: '<b>⑤ 搜索</b>：关键词、名称、说明、按键、命令和常见问题一起搜；输入「cmd k」也能找到 ⌘K。改改搜索框试试。',

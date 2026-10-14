@@ -14,6 +14,10 @@ final class AppCoordinator {
     private var authLogoutObserver: NSObjectProtocol?
     private var authSubscriptionObserver: NSObjectProtocol?
     private var permissionAnalyticsTimer: Timer?
+    private lazy var helpOverlayController = HelpOverlayController.app(
+        settings: di.settingsStore, ask: di.askConversationWindowController,
+        openSettings: { [weak self] destination in self?.statusBarController?.showSettings(for: destination) }
+    )
 
     // swiftlint:disable:next function_body_length
     func start() {
@@ -203,6 +207,7 @@ final class AppCoordinator {
             onOpenOnboarding: { [weak self] in
                 self?.showOnboarding()
             },
+            onOpenHelp: { [weak self] in self?.showHelp(query: "") },
             onOpenAskConversations: { [weak self] in
                 self?.di.askConversationWindowController?.showConversation()
             },
@@ -220,6 +225,9 @@ final class AppCoordinator {
             onClosePinnedScreenshots: { [weak screenshotCoordinator] in screenshotCoordinator?.pins.closeAll() }
         )
         statusBarController?.start()
+        di.askConversationWindowController?.model.onOpenHelp = { [weak self] query in
+            self?.showHelp(query: query)
+        }
         di.askConversationWindowController?.model.onOpenSettings = { [weak self] section in
             self?.statusBarController?.showSettings(section: section)
         }
@@ -293,12 +301,20 @@ final class AppCoordinator {
             AskWordBookWindowController.shared.show()
         case .action(.openStudio):
             statusBarController?.showSettings(section: .home)
+        case .action(.openHelp):
+            showHelp(query: "")
         case let .keyword(id):
             guard let hotkey = di.settingsStore.keywordHotkeys.first(where: { $0.id == id }), hotkey.enabled,
                   let model = di.askConversationWindowController?.model else { return }
             workflowController?.cancelRecording()
             model.runKeywordShortcut(hotkey)
         }
+    }
+
+    /// Opens the usage guide over the screen, closing the launcher it may have come from.
+    func showHelp(query: String) {
+        di.askConversationWindowController?.dismissLauncher()
+        helpOverlayController.show(query: query)
     }
 
     private func presentOnboarding() {

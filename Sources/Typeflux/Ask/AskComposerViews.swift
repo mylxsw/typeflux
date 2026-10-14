@@ -465,6 +465,8 @@ struct AskComposer: View {
                 performPluginAction(.init(kind: .systemCommand(command), title: entry.title, symbol: entry.symbol))
             } else if close, entry.keyword.pluginID == AskSettingsPlugin.id {
                 performPluginAction(.init(kind: .openSettings, title: entry.title, symbol: entry.symbol))
+            } else if close, entry.keyword.pluginID == AskHelpPlugin.id {
+                performPluginAction(.init(kind: .openHelp(query: ""), title: entry.title, symbol: entry.symbol))
             } else if close, AskScreenshotPlugin.startsCapture(entry.keyword) {
                 performPluginAction(.init(kind: AskScreenshotPlugin.captureKind(for: entry.keyword),
                                           title: entry.title, symbol: entry.symbol))
@@ -729,6 +731,12 @@ struct AskComposer: View {
     private func runPluginMain() {
         if pluginDisplay?.hint?.pluginID == AskSettingsPlugin.id || plugins.keyword?.pluginID == AskSettingsPlugin.id {
             performPluginAction(.init(kind: .openSettings, title: "", symbol: ""))
+            return
+        }
+        if pluginDisplay?.hint?.pluginID == AskHelpPlugin.id || plugins.keyword?.pluginID == AskHelpPlugin.id {
+            let query = plugins.keyword == nil ? "" : draft.wrappedValue.text
+            performPluginAction(.init(kind: .openHelp(query: query.trimmingCharacters(in: .whitespacesAndNewlines)),
+                                      title: "", symbol: ""))
             return
         }
         if pluginDisplay?.hint?.pluginID == AskOpenChatPlugin.id || plugins.keyword?.pluginID == AskOpenChatPlugin.id {
@@ -1628,12 +1636,19 @@ struct AskComposer: View {
         }
         // Return can arrive before SwiftUI has refreshed the keyword hint.
         if launcher, key == .enter, !plugins.isActive, !showsQuickResults,
-           plugins.hint?.pluginID != AskSettingsPlugin.id || pluginHighlight == 0 {
+           ![AskSettingsPlugin.id, AskHelpPlugin.id].contains(plugins.hint?.pluginID ?? "") || pluginHighlight == 0 {
             let match = AskKeywordMatcher.match(draft.wrappedValue.text, keywords: plugins.availableKeywords)
             switch match {
             case let .hint(keyword) where keyword.pluginID == AskSettingsPlugin.id,
                  let .active(keyword, _) where keyword.pluginID == AskSettingsPlugin.id:
                 performPluginAction(.init(kind: .openSettings, title: "", symbol: ""))
+                return true
+            case let .hint(keyword) where keyword.pluginID == AskHelpPlugin.id:
+                performPluginAction(.init(kind: .openHelp(query: ""), title: "", symbol: ""))
+                return true
+            case let .active(keyword, argument) where keyword.pluginID == AskHelpPlugin.id:
+                performPluginAction(.init(kind: .openHelp(query: argument.trimmingCharacters(in: .whitespacesAndNewlines)),
+                                          title: "", symbol: ""))
                 return true
             default: break
             }
