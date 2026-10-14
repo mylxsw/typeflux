@@ -96,8 +96,10 @@ struct AskLauncherToggleTests {
         f.model.launcherDraft.text = "Unfinished question"
 
         controller.toggleLauncher()
-        try await f.wait { panel() != nil }
-        let launcher = try #require(panel())
+        try await f.wait { controller.launcherWindow?.isVisible == true }
+        let launcher = try #require(controller.launcherWindow)
+        #expect(launcher.identifier == TypefluxWindowIdentity.askLauncherWindowIdentifier)
+        #expect(!ScreenshotCaptureWindowPolicy.excludes(launcher))
 
         // Check both initial presentation and reuse of the same panel.
         for _ in 0..<2 {

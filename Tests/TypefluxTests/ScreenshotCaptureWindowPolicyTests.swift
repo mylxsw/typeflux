@@ -13,7 +13,7 @@ struct ScreenshotCaptureWindowPolicyTests {
         let window = NSWindow(contentRect: frame, styleMask: [.titled], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
         defer { window.close() }
-        for identifier in ["ask-conversations", "settings", "word-cards", "notes", "ask-answer"] {
+        for identifier in ["ask-launcher", "ask-conversations", "settings", "word-cards", "notes", "ask-answer"] {
             window.identifier = .init("ai.gulu.app.typeflux.window.\(identifier)")
             #expect(!ScreenshotCaptureWindowPolicy.excludes(window))
         }
@@ -30,12 +30,11 @@ struct ScreenshotCaptureWindowPolicyTests {
         #expect(panels.allSatisfy { ScreenshotCaptureWindowPolicy.excludes($0) })
     }
 
-    @Test func launcherAndCaptureNoticesAreExcluded() {
+    @Test func captureNoticesAreExcluded() {
         let panel = NSPanel(contentRect: frame, styleMask: [.titled], backing: .buffered, defer: false)
         panel.isReleasedWhenClosed = false
         defer { panel.close() }
-        for identifier in [ScreenshotCaptureWindowPolicy.launcherIdentifier,
-                           ScreenshotCaptureWindowPolicy.toastIdentifier,
+        for identifier in [ScreenshotCaptureWindowPolicy.toastIdentifier,
                            ScreenshotCaptureWindowPolicy.permissionIdentifier] {
             panel.identifier = identifier
             #expect(ScreenshotCaptureWindowPolicy.excludes(panel))
@@ -62,12 +61,65 @@ struct ScreenshotCaptureWindowPolicyTests {
         #expect(!ScreenshotCaptureWindowPolicy.excludedWindowIDs().contains(CGWindowID(control.windowNumber)))
     }
 
-    @Test(.enabled(if: CGPreflightScreenCaptureAccess()))
-    func realCaptureKeepsAppPagePixelsBehindCaptureControls() async throws {
+    @Test func explicitCaptureKeepsTheVisibleLauncherSelectableAndOpen() async throws {
+        let launcher = NSPanel(contentRect: frame, styleMask: [.borderless, .nonactivatingPanel],
+                               backing: .buffered, defer: false)
+        launcher.identifier = TypefluxWindowIdentity.askLauncherWindowIdentifier
+        launcher.hidesOnDeactivate = false
+        launcher.isReleasedWhenClosed = false
+        let control = ScreenshotFloatingPanel(frame: frame)
+        let overlay = ScreenshotOverlayController(primaryDisplayHeight: { 768 }, pointerLocation: { .zero })
+        defer {
+            overlay.dismiss()
+            control.close()
+            launcher.close()
+        }
+        launcher.orderFrontRegardless()
+        control.orderFrontRegardless()
+        let launcherID = CGWindowID(launcher.windowNumber)
+        let controlID = CGWindowID(control.windowNumber)
+        let processID = ProcessInfo.processInfo.processIdentifier
+        let content = ScreenCaptureContent(
+            displays: [.init(id: 1, frame: CGRect(x: 0, y: 0, width: 1024, height: 768), scale: 1)],
+            windows: [ScreenCaptureTestSupport.window(controlID, processID: processID, frame: frame),
+                      ScreenCaptureTestSupport.window(launcherID, processID: processID, frame: frame)]
+        ) { _, excluded, size in
+            #expect(excluded == [controlID], "The launcher must remain in the captured pixels")
+            return ScreenCaptureTestSupport.image(width: size.width, height: size.height)
+        }
+        let service = ScreenCaptureService(permission: FakeScreenCapturePermission(granted: true),
+                                           loadContent: { content })
+        let snapshot = try await service.snapshot(ScreenCaptureRequest(windowExclusion: .screenshotControls))
+        #expect(snapshot.windows.map(\.id) == [launcherID])
+        let display = try #require(snapshot.displays.first)
+        var selection = ScreenshotSelection(
+            displayFrame: display.frame,
+            scale: display.scale,
+            windows: snapshot.windows
+        )
+        let point = CGPoint(x: frame.midX, y: frame.midY)
+        selection.pointerMoved(to: point)
+        #expect(selection.hovered == frame)
+        _ = selection.mouseDown(at: point)
+        #expect(selection.mouseUp(at: point) == .committed)
+        #expect(selection.rect == frame)
+        overlay.present(snapshot) { _ in }
+        #expect(launcher.isVisible)
+        overlay.dismiss()
+        #expect(launcher.isVisible)
+    }
+
+    @Test(.enabled(if: CGPreflightScreenCaptureAccess()), arguments: [false, true])
+    func realCaptureKeepsAppPagePixelsBehindCaptureControls(_ isLauncher: Bool) async throws {
         let screen = try #require(NSScreen.screens.first)
         let area = screen.visibleFrame
         let pageFrame = CGRect(x: area.midX - 120, y: area.midY - 90, width: 240, height: 180)
-        let page = NSWindow(contentRect: pageFrame, styleMask: [.borderless], backing: .buffered, defer: false)
+        let page: NSWindow = isLauncher
+            ? NSPanel(contentRect: pageFrame, styleMask: [.borderless, .nonactivatingPanel],
+                      backing: .buffered, defer: false)
+            : NSWindow(contentRect: pageFrame, styleMask: [.borderless], backing: .buffered, defer: false)
+        page.identifier = isLauncher ? TypefluxWindowIdentity.askLauncherWindowIdentifier : nil
+        (page as? NSPanel)?.hidesOnDeactivate = false
         page.isReleasedWhenClosed = false
         page.title = "Typeflux screenshot regression test"
         page.isOpaque = true
