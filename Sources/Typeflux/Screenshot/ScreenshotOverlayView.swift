@@ -46,7 +46,7 @@ final class ScreenshotOverlayView: NSView {
     private var toolbarDragStart: CGSize?
     /// Space is held: dragging moves the region instead of growing it.
     private(set) var spaceHeld = false
-    private var shiftHeld = false
+    private var shiftHeld: Bool
 
     /// The user pressed on this display; other displays drop their selection. Returns false
     /// when another display is being marked up, and the press is ignored so no work is lost.
@@ -81,10 +81,12 @@ final class ScreenshotOverlayView: NSView {
     static let toolbarShadowInset: CGFloat = 18
 
     init(display: ScreenSnapshot.Display, windows: [ScreenSnapshot.Window],
+         initialModifierFlags: NSEvent.ModifierFlags = [],
          textMeasurer: (any ScreenshotTextHeightMeasuring)? = nil,
          sensitiveScanner: (any ScreenshotSensitiveInfoScanning)? = nil,
          toolStyles: ScreenshotToolStyleStore = ScreenshotToolStyleStore()) {
         self.display = display
+        shiftHeld = initialModifierFlags.contains(.shift)
         self.textMeasurer = textMeasurer
         self.toolStyles = toolStyles
         syncedStyles = toolStyles.styles
@@ -335,11 +337,13 @@ final class ScreenshotOverlayView: NSView {
         if keyCode == Key.space { spaceHeld = false }
     }
 
-    /// ⇧ pressed while the loupe shows copies the color under the pointer.
+    /// ⇧ pressed alone while the loupe shows copies the color under the pointer.
     func handleFlagsChanged(_ flags: NSEvent.ModifierFlags) {
         let shift = flags.contains(.shift)
         defer { shiftHeld = shift }
-        guard shift, !shiftHeld, showsLoupe, let hex = pickedColor?.hex else { return }
+        guard shift, !shiftHeld,
+              flags.isDisjoint(with: [.command, .option, .control, .function]),
+              showsLoupe, let hex = pickedColor?.hex else { return }
         onEvent?(self, .colorPicked(hex))
     }
 

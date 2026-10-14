@@ -151,6 +151,25 @@ final class ScreenshotOverlayTests: XCTestCase {
         XCTAssertEqual(events().last, .committed, "Not once a region is chosen")
     }
 
+    func testShortcutShiftDoesNotCopyColorUntilPressedAgainAlone() {
+        let view = ScreenshotOverlayView(display: Self.display(), windows: [],
+                                         initialModifierFlags: [.command, .shift])
+        var events: [ScreenshotOverlayView.LocalEvent] = []
+        view.onEvent = { _, event in events.append(event) }
+        view.pointerMoved(to: CGPoint(x: 30, y: 30))
+
+        view.handleFlagsChanged([.command, .shift])
+        view.handleFlagsChanged(.shift)
+        view.handleFlagsChanged([])
+        view.handleFlagsChanged([.command, .shift])
+        view.handleFlagsChanged(.shift)
+        XCTAssertTrue(events.isEmpty, "The shortcut's Shift must not pick a color")
+
+        view.handleFlagsChanged([])
+        view.handleFlagsChanged(.shift)
+        XCTAssertEqual(events, [.colorPicked("#000000")])
+    }
+
     func testClearSelectionAndReleaseImage() {
         let (view, _) = makeView()
         view.selectAll()
@@ -296,6 +315,21 @@ final class ScreenshotOverlayTests: XCTestCase {
             .finish(.copy, displayID: 2, rect: CGRect(x: 200, y: 0, width: 300, height: 150)),
             .colorPicked("#000000"), .cancelled
         ])
+    }
+
+    func testControllerPreservesHeldShortcutModifiersAcrossOverlayPresentation() {
+        let controller = ScreenshotOverlayController(primaryDisplayHeight: { 100 }, pointerLocation: { .zero },
+                                                     modifierFlags: { [.command, .shift] })
+        var events: [ScreenshotOverlayEvent] = []
+        controller.present(snapshot()) { events.append($0) }
+        defer { controller.dismiss() }
+
+        let view = controller.views[0]
+        view.handleFlagsChanged(.shift)
+        XCTAssertTrue(events.isEmpty)
+        view.handleFlagsChanged([])
+        view.handleFlagsChanged(.shift)
+        XCTAssertEqual(events, [.colorPicked("#000000")])
     }
 
     func testDismissClosesEverythingAndStopsEvents() {
