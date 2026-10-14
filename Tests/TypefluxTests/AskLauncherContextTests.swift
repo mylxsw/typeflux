@@ -146,6 +146,21 @@ struct AskLauncherContextTests {
         #expect(AskLauncherContext.hintTiers("↩ Open · → More · ⌘↩ Ask AI") == ["↩ Open · → More · ⌘↩ Ask AI", "↩ Open"])
     }
 
+    @Test func footerOmitsThePrimaryActionButKeepsOtherShortcuts() {
+        let primary = AskLauncherPrimaryAction.confirm("Search open tabs")
+        let secondary = "↩ Search open tabs · ↑ Recent input · ←→ Switch · ⌘K Context"
+        let hint = AskLauncherContext.supportingHint(secondary: secondary, primary: primary,
+                                                     canAskAI: false, canOpenFeatureWindow: false)
+        #expect(hint == "↑ Recent input · ←→ Switch · ⌘K Context")
+        #expect(AskLauncherContext.supportingHint(secondary: "", primary: primary,
+                                                  canAskAI: false, canOpenFeatureWindow: false).isEmpty)
+        let extended = AskLauncherContext.supportingHint(secondary: secondary, primary: primary,
+                                                         canAskAI: true, canOpenFeatureWindow: true)
+        #expect(extended.hasPrefix(hint + " · "))
+        #expect(extended.contains(L("ask.plugin.hint.askAI")))
+        #expect(extended.contains("⌘O " + L("ask.plugin.action.openInWindow")))
+    }
+
     @Test func sendIsLitOnlyWhenReturnAsksTheAI() throws {
         #expect(AskLauncherContext.sendIsProminent(quickResults: nil))
         var results = try #require(AskQuickResults.resolve(text: "1+1", previous: nil, chinese: true))

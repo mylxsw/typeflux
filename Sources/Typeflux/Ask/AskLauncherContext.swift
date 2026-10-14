@@ -102,6 +102,20 @@ enum AskLauncherContext {
         }
     }
 
+    /// The primary action is already shown by its button or the selected result.
+    static func supportingHint(secondary: String, primary: AskLauncherPrimaryAction,
+                               canAskAI: Bool, canOpenFeatureWindow: Bool) -> String {
+        var parts = secondary.components(separatedBy: " · ")
+            .filter { !$0.isEmpty && !$0.hasPrefix("↩") }
+        if canAskAI, primary.mode != .askAI, !parts.contains(where: { $0.contains("⌘↩") }) {
+            parts.append(L("ask.plugin.hint.askAI"))
+        }
+        if canOpenFeatureWindow, !parts.contains(where: { $0.contains("⌘O") }) {
+            parts.append("⌘O " + L("ask.plugin.action.openInWindow"))
+        }
+        return parts.joined(separator: " · ")
+    }
+
     /// The bottom bar's hint from longest to shortest: everything, then the main key
     /// with ⌘K, then the main key alone. The bar shows the first that fits.
     static func hintTiers(_ hint: String) -> [String] {
