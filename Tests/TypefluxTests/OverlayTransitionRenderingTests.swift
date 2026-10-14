@@ -1,3 +1,4 @@
+// swiftlint:disable identifier_name file_length
 import AppKit
 import Testing
 @testable import Typeflux
@@ -173,9 +174,10 @@ struct OverlayTransitionRenderingTests {
             var right = -1
             var top = bitmap.pixelsHigh
             var bottom = -1
+            let pixels = BitmapTestPixels(bitmap)
             for y in 0 ..< hintBottom {
                 for x in 0 ..< bitmap.pixelsWide {
-                    guard let color = bitmap.colorAt(x: x, y: y), color.alphaComponent > 0.1 else { continue }
+                    guard pixels.alpha(x: x, y: y) > 0.1 else { continue }
                     left = min(left, x)
                     right = max(right, x)
                     top = min(top, y)
@@ -196,6 +198,8 @@ struct OverlayTransitionRenderingTests {
     }
 
     @Test(arguments: InterfaceStyle.allCases) @MainActor
+    // Keep the complete bidirectional motion scenario together.
+    // swiftlint:disable:next function_body_length
     func captionsRenderIntermediateSizesInBothDirections(style: InterfaceStyle) async throws {
         guard !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion else { return }
         let application = NSApplication.shared
@@ -276,7 +280,8 @@ struct OverlayTransitionRenderingTests {
         controller.transitionToLLMPhase()
         // Recognition progress has nearly reached the LLM phase's starting point by now, so the
         // fill only becomes visibly brighter once the content phase has advanced past it.
-        _ = try await captureFirst(window, name: "08-thinking") { $0.totalBrightness > processing.totalBrightness }
+        let processingBrightness = processing.totalBrightness
+        _ = try await captureFirst(window, name: "08-thinking") { $0.totalBrightness > processingBrightness }
 
         let processingFrame = window.frame
         controller.updateStreamingText("A streaming processing caption uses the same capsule.")
@@ -387,14 +392,13 @@ private extension NSBitmapImageRep {
     }
 
     var opaqueHorizontalBands: [CGRect] {
-        guard bitsPerSample == 8, samplesPerPixel == 4, let data = bitmapData else { return [] }
-        let alphaOffset = bitmapFormat.contains(.alphaFirst) ? 0 : 3
+        let pixels = BitmapTestPixels(self)
         var bands: [CGRect] = []
         var current: CGRect?
         for y in 0 ..< pixelsHigh {
             var left = pixelsWide
             var right = -1
-            for x in 0 ..< pixelsWide where data[y * bytesPerRow + x * 4 + alphaOffset] > 230 {
+            for x in 0 ..< pixelsWide where pixels.alpha(x: x, y: y) > CGFloat(230) / 255 {
                 left = min(left, x)
                 right = max(right, x)
             }
@@ -424,9 +428,10 @@ private extension NSBitmapImageRep {
 
     var peakAlpha: CGFloat {
         var peak: CGFloat = 0
+        let pixels = BitmapTestPixels(self)
         for y in stride(from: 0, to: pixelsHigh, by: 4) {
             for x in stride(from: 0, to: pixelsWide, by: 4) {
-                peak = max(peak, colorAt(x: x, y: y)?.alphaComponent ?? 0)
+                peak = max(peak, pixels.alpha(x: x, y: y))
             }
         }
         return peak
@@ -456,12 +461,11 @@ private extension NSBitmapImageRep {
     var opaqueWidth: Int {
         var minX = pixelsWide
         var maxX = -1
+        let pixels = BitmapTestPixels(self)
         for y in stride(from: 0, to: pixelsHigh, by: 2) {
-            for x in 0 ..< pixelsWide {
-                if let color = colorAt(x: x, y: y), color.alphaComponent > 0.9 {
-                    minX = min(minX, x)
-                    maxX = max(maxX, x)
-                }
+            for x in 0 ..< pixelsWide where pixels.alpha(x: x, y: y) > 0.9 {
+                minX = min(minX, x)
+                maxX = max(maxX, x)
             }
         }
         return max(0, maxX - minX + 1)

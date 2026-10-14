@@ -111,9 +111,17 @@ dev-macmini: ## Run against the Mac mini API (PLATFORM=macos|ios, optional DEVIC
 build: ## Build the Swift package
 	swift build
 
-.PHONY: test
-test: ## Run all unit tests
-	swift test
+# Export scope values as data rather than interpolating regexes into shell code.
+export FILTER SUITE REASON
+.PHONY: test test-plan test-full coverage-full
+test: ## Run a focused scope: FILTER=regex or SUITE="SuiteA SuiteB"
+	python3 ./scripts/test_groups.py --from-env
+
+test-plan: ## Discover and preview the focused scope without executing tests
+	python3 ./scripts/test_groups.py --from-env --plan
+
+test-full: ## Explicit full validation; requires REASON="why full testing is needed"
+	python3 ./scripts/test_groups.py --from-env --full
 
 .PHONY: test-unit test-integration test-ui test-benchmark test-screen-capture test-groups test-scripts
 test-unit: ## Run tests without UI, filesystem, process, network, or timer fixtures
@@ -138,8 +146,11 @@ test-scripts: ## Test development scripts without building the app
 	python3 -m unittest discover -s scripts/tests -p 'test_*.py' -v
 
 .PHONY: coverage
-coverage: ## Generate code coverage report
-	./scripts/coverage.sh
+coverage: ## Focused coverage; requires FILTER or SUITE
+	./scripts/coverage.sh --from-env
+
+coverage-full: ## Explicit full coverage; requires REASON
+	./scripts/coverage.sh --from-env --full
 
 .PHONY: dmg
 dmg: ## Build a DMG disk image

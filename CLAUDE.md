@@ -12,15 +12,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 # Build
 swift build
 
-# Final validation only: run all tests once after all requested changes are complete
-swift test
-# or
-make test
+# Final validation: run only changed behavior and affected dependencies
+make test SUITE="LLMRouterTests"
+make test FILTER="LLMRouterTests/testMethod"
+make test-plan SUITE="LLMRouterTests" # discovery/selection, no test execution
+
+# Full validation is opt-in; announce the reason before running
+make test-full REASON="explicitly requested cross-feature regression check"
 
 # Run a single test class
 swift test --filter TypefluxTests.LLMRouterTests
 
-# During implementation: resource groups, discovery audit, or script-only checks
+# Broader scopes only when relevant; discovery and script-only checks
 make test-unit         # tests without recognized UI/integration fixtures
 make test-integration  # storage, network, process, and timer fixtures
 make test-ui           # main actor and shared UI/localization state
@@ -37,8 +40,8 @@ make run
 # Launch dev app with terminal logs attached (most useful for development)
 make dev
 
-# Final validation with coverage (replaces the plain full test run; HTML in coverage-report/)
-make coverage
+# Focused coverage replaces plain validation; HTML in coverage-report/
+make coverage SUITE="LLMRouterTests"
 
 # Format code (runs scripts/format.sh)
 make format
@@ -132,18 +135,20 @@ The app must run as a `.app` bundle (not a bare CLI binary) for macOS privacy pe
 
 ## Testing
 
-Tests live in `Tests/TypefluxTests/`. The test target imports the main `Typeflux` executable target directly. All new and modified code must include sufficient unit tests, with a target of 90% unit test coverage. Run `swift test --filter <TestClassName>` to run a subset. Use `@Sendable` closures with the `Recorder` actor pattern (see `RequestRetryTests`) for concurrency-safe test helpers. Swift Testing suites that host windows, send native events, switch or read `AppLocalization.shared` (including through `L()`), or otherwise run on the main actor must carry `.exclusiveUIState` (see `Tests/TypefluxTests/ExclusiveUIStateTrait.swift`); `.serialized` alone does not stop other suites from changing that shared state mid-test, and an `interface:` argument does not pin the language `L()` reads. `ExclusiveUIStateLanguageTests` audits this. Look up windows through the object that presented them, not by identifier alone, since windows from earlier tests can stay in `NSApp.windows`.
+Tests live in `Tests/TypefluxTests/`. The test target imports the main `Typeflux` executable target directly. All new and modified code must include sufficient unit tests, with a target of 90% unit test coverage for the changed code. Run `swift test --filter <TestClassName>` to run a subset. Use `@Sendable` closures with the `Recorder` actor pattern (see `RequestRetryTests`) for concurrency-safe test helpers. Swift Testing suites that host windows, send native events, switch or read `AppLocalization.shared` (including through `L()`), or otherwise run on the main actor must carry `.exclusiveUIState` (see `Tests/TypefluxTests/ExclusiveUIStateTrait.swift`); `.serialized` alone does not stop other suites from changing that shared state mid-test, and an `interface:` argument does not pin the language `L()` reads. `ExclusiveUIStateLanguageTests` audits this. Look up windows through the object that presented them, not by identifier alone, since windows from earlier tests can stay in `NSApp.windows`.
 
 ### Test Execution Policy for Agents
 
-The full test suite takes a long time. Follow this policy for the entire requested task, including tasks with multiple changes:
+Follow this policy for the entire requested task, including tasks with multiple changes:
 
-- During implementation, prefer focused tests for the changed behavior and directly affected dependencies. Use `swift test --filter <TestClassName>` or `swift test --filter <TestClassName>/<TestMethodName>`; do not run the full suite after each edit or subtask.
-- If tests fail, fix the cause and rerun only the failed tests with `--filter`. If exact test selection is unavailable, rerun the smallest containing suite. Do not rerun the full suite to retry failures, including failures discovered in the final full run.
-- If a run fails before tests execute (for example, a build or test-runner failure), fix the cause and retry the focused command. Do not switch to the full suite.
-- Only after all requested changes are complete and focused checks pass, run one final full test suite (`swift test` or `make test`). Do not repeat the full suite merely to confirm a failed-test fix.
-- Treat full-suite coverage runs (`make coverage`) as final validation too. When coverage is required, use that run as the final full test pass instead of also running a duplicate `swift test` or `make test` pass.
-- Report the focused checks, final full-suite result, and any failed-test retries separately. If full validation cannot finish, state the limitation clearly.
+- Finish all requested implementation and self-review first, then perform one focused validation pass. Do not execute tests after each edit or subtask. Builds, discovery and `--plan` do not execute tests. A requested performance investigation may use a declared before/after comparison of the same focused scope.
+- Choose suites/methods for every changed behavior, its directly affected callers and shared dependencies. Explain that mapping in the delivery. Resource groups are inventory aids, not automatic change-impact analysis; do not choose all UI tests for a single UI change.
+- Use `make test SUITE="SuiteA SuiteB"`, `make test FILTER="regex"`, or repeated `--suite`/`--filter` options on `scripts/test_groups.py`. An empty or unmatched scope is an error, never a fallback to all tests.
+- Do not proactively run full tests, full coverage or full UI/iOS validation. If full validation is warranted by a cross-cutting change or requested by the user, state the reason and scope before execution, then use `make test-full REASON="..."` or `make coverage-full REASON="..."`. A passing focused scope is sufficient for an ordinary PR; full validation is not a default PR gate.
+- If validation fails, fix the cause and retry only failed methods or the smallest containing suite. For build/runner failures, retry the same focused command. Never retry the full suite to fix a failure.
+- Coverage replaces the plain test pass for the same scope; do not run both. Report changed-code coverage separately from project-wide coverage.
+- Use audited parallel phases from the runner. Unknown suites and shared UI/localization tests remain serial. Do not launch simultaneous local SwiftPM/UI runs against the same build directory or desktop. Review isolation when adding or changing a registered parallel suite, including its helpers and called production code.
+- Report scope, results, build/discovery and execution costs, failed-test retries and any unverified behavior honestly.
 
 ## Development Standards
 

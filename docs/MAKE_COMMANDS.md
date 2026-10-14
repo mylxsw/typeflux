@@ -10,7 +10,9 @@ This document explains the purpose of each `make` command in the repository, whe
 | `make dev` | Build and launch the packaged development app with terminal logs | Debugging runtime behavior |
 | `make full-dev` | Launch the dev app with SenseVoice bundled into the app | Test the full packaged local-model flow |
 | `make build` | Compile the Swift package | Fast compile check |
-| `make test` | Run the unit test suite | Logic and regression validation |
+| `make test SUITE="SuiteA SuiteB"` | Run changed behavior and affected dependencies | Default final validation |
+| `make test-plan SUITE="SuiteA"` | Preview discovered scope and execution phases | Review selection without executing tests |
+| `make test-full REASON="..."` | Explicit full regression | Announce why full validation is needed |
 | `make test-unit` | Run tests without recognized UI or integration fixtures | Fast feedback across logic suites |
 | `make test-integration` | Run storage, network, process, and timer fixtures | Integration behavior |
 | `make test-ui` | Run main actor and shared UI state tests | Native UI and localization validation |
@@ -18,7 +20,8 @@ This document explains the purpose of each `make` command in the repository, whe
 | `make test-screen-capture` | Run real desktop capture with screen recording access | Native capture integration |
 | `make test-groups` | Audit discovery and list group sizes | Inspect test classification |
 | `make test-scripts` | Run Python development-script tests | Script and command orchestration changes |
-| `make coverage` | Generate code coverage output | Larger refactors or quality checks |
+| `make coverage SUITE="SuiteA"` | Focused coverage output | Replaces plain tests for the same scope |
+| `make coverage-full REASON="..."` | Explicit full coverage | Announced cross-feature validation |
 | `make release` | Build the signed release app bundle and zip archive | Prepare `.app` and `.zip` artifacts |
 | `make full-release` | Build the full notarized release with bundled SenseVoice | Prepare full `.zip` and `.dmg` installers |
 | `make dmg` | Build the signed DMG from the release app bundle | Prepare `.dmg` artifact |
@@ -186,43 +189,36 @@ Use it when:
 
 ### `make test`
 
-Command:
+Finish implementation and self-review, then run one focused validation pass:
 
 ```bash
-make test
+make test SUITE="LLMRouterTests RequestRetryTests"
+make test FILTER="LLMRouterTests/testCompleteRoutesToOpenAI"
+make test-plan SUITE="LLMRouterTests" # discovery only
 ```
 
-What it does:
+The scope must cover changed behavior and affected dependencies. Empty, invalid
+and unmatched selections fail instead of running all tests. The runner audits
+actual discovery, builds once, and executes audited parallel phases followed by
+serial suites. Resource groups remain available for explicitly broader changes.
+See [test selection and isolation](TESTING.md).
 
-- runs `swift test`
+Full validation requires an announced reason:
 
-Use it when:
-
-- you changed routing, parsing, settings, workflow logic, providers, or other testable code
-
-During implementation, use `swift test --filter <SuiteName>` or one of
-`make test-unit`, `make test-integration`, and `make test-ui`. Each group builds
-once, audits discovery, and runs its selected suites. `make test` remains the
-unfiltered final validation. See [test grouping and isolation](TESTING.md) for
-classification rules, warm-build commands, and CI behavior.
+```bash
+make test-full REASON="explicit cross-feature regression request"
+```
 
 ### `make coverage`
 
-Command:
-
 ```bash
-make coverage
+make coverage SUITE="LLMRouterTests RequestRetryTests"
 ```
 
-What it does:
-
-- runs the coverage script
-- generates a coverage report under `coverage-report/`
-
-Use it when:
-
-- you want to inspect coverage after a larger change
-- you are validating critical workflow paths
+Collects coverage for the relevant scope and writes HTML to `coverage-report/`.
+Use this instead of a duplicate plain test pass. Its project-wide percentage is
+not a measurement of changed-code coverage. Unscoped coverage fails; full
+coverage uses `make coverage-full REASON="..."` after stating why it is needed.
 
 ### `make release`
 
@@ -425,7 +421,7 @@ Use it when:
 
 ```bash
 make build
-make test
+make test SUITE="<suites affected by the change>"
 make dev
 make full-dev
 ```

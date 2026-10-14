@@ -1,61 +1,111 @@
-# Test groups
+# Focused test validation
 
-Use a focused suite while implementing a change. Use a resource group when the
-change affects several features. Run `make test` or `make coverage` once for final
-validation; a passing group does not replace the full suite.
+Complete all implementation and self-review, then run one validation pass for
+changed behavior and its affected callers/dependencies. Do not test after each
+edit or automatically run the entire suite before a PR. On failures, fix and
+retry only failed methods or the smallest containing suite. Coverage replaces
+plain validation for the same scope. Performance work may declare a focused
+before/after comparison.
+
+```bash
+make test SUITE="LLMRouterTests RequestRetryTests"
+make test FILTER="LLMRouterTests/testCompleteRoutesToOpenAI"
+make test-plan SUITE="LLMRouterTests" # build/discover; no execution
+make coverage SUITE="LLMRouterTests"
+python3 scripts/test_groups.py --suite LLMRouterTests --suite RequestRetryTests
+python3 scripts/test_groups.py --filter 'OverlayTransitionRenderingTests/captionsRender' --skip-build
+```
+
+Each repeated suite or filter must match actual discovery. Filters are regexes
+against discovered IDs, combined by union; an optional resource group intersects
+that selection. Suite names are exact and include nested suites. Empty scopes,
+unknown suites, invalid or unmatched filters fail; they never fall back to all
+tests. A scope covering the entire discovered inventory also requires explicit
+full mode. `make test` without `FILTER` or `SUITE` fails before building.
+
+The agent chooses the functional scope after reading changed code and its
+callers. A matching filename alone is not sufficient for shared services. Record
+the change-to-suite mapping in the PR, including UI/integration checks when
+relevant. Resource classification does not infer affected tests automatically.
+
+Full testing is opt-in. State the reason and scope before executing it:
+
+```bash
+make test-full REASON="explicitly requested cross-feature regression"
+make coverage-full REASON="explicitly requested full coverage"
+python3 scripts/test_groups.py --full --reason 'explicit regression request'
+```
+
+Unfiltered `swift test`, `swift test --enable-code-coverage`, and full iOS/UI
+commands must follow the same announced opt-in policy. The reason flag makes
+intent explicit; it cannot verify whether an agent actually announced the run.
+
+## Broader scopes and discovery
 
 | Command | Selection |
 | --- | --- |
-| `make test-unit` | Tests without recognized UI, storage, process, network, or timer dependencies |
-| `make test-integration` | Filesystem, SQLite, keychain, URLSession, subprocess, and timer fixtures |
-| `make test-ui` | Main actor, AppKit application/window/pasteboard, and shared localization state |
-| `make test-benchmark` | Synthetic benchmark suites; enables `TYPEFLUX_SEARCH_BENCH=1` |
-| `make test-screen-capture` | Real desktop capture; requires screen recording permission |
-| `make test-groups` | Build, audit actual test discovery, and list group sizes and suite assignments |
-| `make test-scripts` | Python development-script tests, without building Swift |
-| `make test` | Existing unfiltered Swift suite; benchmarks retain their opt-in behavior |
-| `make coverage` | Existing unfiltered coverage run and HTML report |
+| `make test-unit` | Tests without recognized UI, storage, process, network or timer markers |
+| `make test-integration` | Filesystem, SQLite, keychain, URLSession, process and timer fixtures |
+| `make test-ui` | Main actor, AppKit application/window/pasteboard and localization state |
+| `make test-benchmark` | Synthetic benchmarks; enables `TYPEFLUX_SEARCH_BENCH=1` |
+| `make test-screen-capture` | Real desktop capture; needs screen recording permission |
+| `make test-groups` | Build/audit discovery and list group sizes and suite assignments |
+| `make test-scripts` | Python script tests, without building Swift |
 
-`scripts/test_groups.py` calls `swift test list` to build and discover both XCTest
-and Swift Testing tests. It maps every discovered suite to a group, then runs the
-selected suites with `--skip-build`. Each invocation reports discovery/build and
-test execution times separately. After a build, reuse it explicitly:
+These are explicit broad selections, not the default for an ordinary task.
+A change to one UI component should select its relevant suites, not all UI tests.
+For script changes, select the relevant Python unittest modules rather than
+running unrelated Swift tests.
 
-```bash
-python3 scripts/test_groups.py unit --skip-build
-python3 scripts/test_groups.py integration --skip-build
-python3 scripts/test_groups.py ui --skip-build
-```
+`scripts/test_groups.py` builds/discovers once using `swift test list`, then uses
+`--skip-build` for execution. It reports build/discovery and execution times
+separately. Only supply `--skip-build` yourself when sources and configuration
+have not changed since the last build. `--jobs 4` limits build jobs, not test
+workers. `--plan` previews selected methods and their execution phases.
 
-Omit `--skip-build` after changing Swift sources. `--jobs 4` limits build jobs on
-machines with limited memory; it does not create parallel test processes.
+Classification uses source markers at file granularity, with extensions and
+nested suites taking the strongest resource group. Mixed files are conservative.
+Markers in comments may over-classify; dependencies hidden behind helpers are
+not inferred. Actual discovery is audited: empty discovery, unsupported targets
+or IDs, and suites without source mappings fail. Counts are test methods;
+parameterized cases may execute more than once.
 
-## Classification and isolation
+## Parallel execution and UI efficiency
 
-Classification is conservative and based on the test source files in
-`Tests/TypefluxTests`, rather than an allowlist that must be updated for each new
-test. Files ending in `BenchmarkTests.swift` go to `benchmark`. Other files with
-`@MainActor`, `.exclusiveUIState`, shared localization, or AppKit state references
-go to `ui`. Storage, process, URLSession, and sleep references go to `integration`.
-The remaining files go to `unit`. See the marker expressions in
-`scripts/test_groups.py` for the exact rules.
+The runner uses sequential phases against one build directory:
 
-Every suite in a mixed file takes that file's group. Extension files can upgrade
-the original suite's group; nested suites follow their outer suite. This can put
-pure tests in a heavier group, including when markers occur in comments or test
-fixtures. Dependencies hidden behind helpers are not inferred. Group names are
-a feedback selection strategy, not a proof that tests have no side effects.
+1. Audited CPU-heavy XCTest suites use `--parallel --num-workers 4`.
+2. Audited pure Swift Testing suites use in-process `--parallel`, with XCTest
+   disabled to avoid creating a worker process for each cheap test.
+3. All remaining suites use `--no-parallel` and preserve `.exclusiveUIState`.
 
-The discovery audit rejects empty discovery, unsupported targets or identifiers,
-and suites that cannot be mapped to a source. Selection uses anchored suite names, so
-`ExampleTests` cannot accidentally select `ExampleTestsExtra`. The four groups
-form a disjoint partition of the discovered tests. Discovery counts describe
-test methods, including disabled methods; parameterized test cases may execute
-more than once.
+The initial reviewed registry covers synthetic scroll stitching and calculator
+recognition, lexing and numeric formatting. Calculator error messages and format
+labels read localization through production helpers, so their suites stay serial.
+Unknown suites default to serial. Review shared state in both fixtures and called production code when adding or
+changing a suite in `PARALLEL_SUITES`. Resource group names alone are not proof of
+isolation. UI markers always override the registry. Discovered method signatures
+that disagree with the registered framework fall back to serial execution with
+both frameworks enabled, so a framework migration cannot silently drop tests.
 
-Group runs use `--no-parallel` and preserve `.exclusiveUIState`. Do not run local
-groups concurrently: AppKit focus and the system pasteboard are shared across
-processes, and the trait's lock only protects one process.
+`--workers N` limits XCTest processes only; it does not bound Swift Testing
+concurrency. `--serial` provides a same-scope baseline or diagnostic mode.
+Coverage uses one serial phase to preserve one profile. Execution stops on the
+first failing phase, reports failure and never automatically retries; later
+phases must be reported as unexecuted when applicable.
+
+Do not run simultaneous local SwiftPM/UI commands against the same `.build` or
+desktop. `.exclusiveUIState` protects only one process; different macOS CI runners
+have isolated desktops and may run resource groups concurrently.
+
+Overlay rendering checks read common packed alpha buffers directly instead of
+creating an `NSColor` for every alpha sample. Other layouts fall back to AppKit.
+Equivalent pixel fixtures cover padding, orientation, alpha placement,
+premultiplication, different color spaces and 16-bit/RGB fallback. RGB samples
+keep the existing AppKit color conversion: a bitmap color-space tag alone does
+not guarantee equivalence to `colorAt(...).usingColorSpace(.sRGB)`. Sampling
+positions, animation duration and assertions remain intact. A fixed processing
+frame brightness is computed once rather than on every poll.
 
 ## CI and performance work
 
@@ -112,3 +162,28 @@ the explicit native-capture entry, the normal window-policy suite passed with
 that case disabled; native capture still needs working system permission on
 this machine. The connection timeout case dropped from 30.006 seconds to less
 than 0.01 seconds. These are local samples, not CI timing guarantees.
+
+## Focused execution measurements
+
+The current focused runner validated 36 synthetic scroll stitching methods with
+four XCTest workers in 14.98 seconds (execution phase including runner startup).
+The same methods reported 30.58 seconds in a serial baseline, excluding startup.
+Seven selected Swift Testing methods passed in a separate 1.86-second phase;
+selection included one parameterized method filter to check method-level scope.
+
+After fixing pixel fixtures and retaining AppKit RGB semantics, the three alpha
+reader methods and five Overlay rendering methods passed in a 44.21-second
+execution phase. Build/discovery was 34.31 seconds. The caption transition method
+took 29.40 seconds; its baseline samples were 40.58 seconds with a failed transient
+frame assertion and 27.93 seconds passing in the earlier full-run log. These
+samples do not establish a stable end-to-end UI speedup. A standalone debug scan
+of 921,600 alpha samples took 0.240 seconds through AppKit and 0.091 seconds through
+the new reader, with every sample and the accumulated values matching. This
+measures the alpha hotspot, not window rendering or animation settling.
+
+No full Swift/iOS/coverage run was performed for this focused-runner update.
+Cold compilation still covers the monolithic app/test target. Further compile
+reduction needs a separately scoped extraction of pure feature modules with
+their own test targets; the existing shared-chat package already has its own
+independent scope. Measure cold build, discovery, test execution and retries
+separately before choosing that structural change.

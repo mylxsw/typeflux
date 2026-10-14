@@ -1,18 +1,18 @@
 #!/bin/bash
-set -e
+set -euo pipefail
+cd "$(dirname "$0")/.."
 
 COVERAGE_DIR="coverage-report"
 
 echo "Running tests with code coverage enabled..."
-# AppKit tests share window focus and the localization singleton across suites.
-swift test --no-parallel --enable-code-coverage
+python3 scripts/test_groups.py --coverage "$@"
 
 BIN_PATH=$(swift build --show-bin-path)
 
 # Find the .profdata file
-PROFDATA=$(find .build -name "default.profdata" -type f 2>/dev/null | head -1)
-if [ -z "$PROFDATA" ]; then
-    echo "Error: Could not find .profdata file in .build/"
+PROFDATA="${BIN_PATH}/codecov/default.profdata"
+if [ ! -f "$PROFDATA" ]; then
+    echo "Error: Could not find $PROFDATA"
     exit 1
 fi
 

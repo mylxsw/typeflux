@@ -127,14 +127,106 @@ class TestGroupCommandTests(unittest.TestCase):
         self.assertRegex("TypefluxTests.LogicTests/testValue", command[5])
         self.assertIsNone(re.search(command[5], "TypefluxTests.VisualTests/render()"))
         self.assertEqual(calls[1].kwargs["cwd"], ROOT)
-        self.assertIn("Test execution (unit):", stdout)
+        self.assertIn("Test execution (serial):", stdout)
 
-    def test_all_remains_unfiltered_and_does_not_enable_benchmarks(self):
+    def test_full_requires_reason_and_keeps_benchmarks_opt_in(self):
         with patch.dict(os.environ, {}, clear=True):
-            result, calls, _, _ = self.invoke([])
+            result, calls, stdout, _ = self.invoke(["--full", "--reason", "requested regression"])
         self.assertEqual(result, 0)
-        self.assertEqual(calls[1].args[0], ["swift", "test", "--skip-build", "--no-parallel"])
+        self.assertEqual(calls[1].args[0][:5], ["swift", "test", "--skip-build", "--no-parallel", "--filter"])
+        for suite in ("LogicTests", "DiskTests", "VisualTests", "SearchBenchmarkTests"):
+            self.assertRegex(f"TypefluxTests.{suite}/testValue", calls[1].args[0][5])
+        self.assertIn("Full validation reason: requested regression", stdout)
         self.assertNotIn("TYPEFLUX_SEARCH_BENCH", calls[1].kwargs["env"])
+
+    def test_unscoped_and_ambiguous_full_commands_fail_before_building(self):
+        for args in ([], ["--plan"], ["--full"], ["--full", "--reason", " "],
+                     ["unit", "--full", "--reason", "request"],
+                     ["--suite", "LogicTests", "--full", "--reason", "request"]):
+            with self.subTest(args=args), patch.object(GROUPING.subprocess, "run") as run, \
+                    redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+                GROUPING.main(args)
+            run.assert_not_called()
+
+    def test_explicit_filters_suites_and_group_intersection(self):
+        result, calls, _, _ = self.invoke(["--suite", "LogicTests", "--filter", "DiskTests/testRead"])
+        self.assertEqual(result, 0)
+        pattern = calls[1].args[0][-1]
+        self.assertRegex("TypefluxTests.LogicTests/testValue", pattern)
+        self.assertRegex("TypefluxTests.DiskTests/testRead", pattern)
+        self.assertNotRegex("TypefluxTests.VisualTests/render()", pattern)
+        result, calls, _, _ = self.invoke(["unit", "--filter", "LogicTests|DiskTests"])
+        self.assertEqual(result, 0)
+        self.assertNotRegex("TypefluxTests.DiskTests/testRead", calls[1].args[0][-1])
+
+    def test_bad_scopes_fail_without_falling_back_to_full(self):
+        for args in (["--filter", "("], ["--filter", "UnknownTests"], ["--suite", "LogicTestsExtra"],
+                     ["--filter", ".*"], ["--suite", "LogicTests", "--filter", "missing"],
+                     ["ui", "--suite", "LogicTests"]):
+            with self.subTest(args=args):
+                result, calls, _, stderr = self.invoke(args)
+                self.assertEqual(result, 1)
+                self.assertEqual(len(calls), 1)
+                self.assertIn("Error:", stderr)
+
+    def test_plan_and_global_list_execute_discovery_only(self):
+        for args in (["--list"], ["--filter", "LogicTests", "--plan"]):
+            result, calls, stdout, _ = self.invoke(args)
+            self.assertEqual(result, 0)
+            self.assertEqual(len(calls), 1)
+            self.assertIn("LogicTests", stdout)
+
+    def test_make_environment_is_data_and_coverage_has_one_serial_profile(self):
+        with patch.dict(os.environ, {"SUITE": "LogicTests DiskTests", "FILTER": "", "REASON": ""}, clear=True):
+            result, calls, _, _ = self.invoke(["--from-env", "--coverage"])
+        self.assertEqual(result, 0)
+        self.assertIn("--enable-code-coverage", calls[0].args[0])
+        self.assertIn("--enable-code-coverage", calls[1].args[0])
+        self.assertIn("--no-parallel", calls[1].args[0])
+        with patch.dict(os.environ, {"FILTER": "$(touch marker)"}, clear=True):
+            result, calls, _, _ = self.invoke(["--from-env"])
+        self.assertEqual(result, 1)
+        self.assertEqual(len(calls), 1)
+
+    def test_audited_frameworks_use_separate_phases_and_ui_never_parallelizes(self):
+        ids = {"TypefluxTests.ScrollStitcherTests/testValue",
+               "TypefluxTests.AskCalculatorDetectionTests/recognizesArithmetic(text:expected:)",
+               "TypefluxTests.VisualTests/render()"}
+        sources = {"ScrollStitcherTests": "unit", "AskCalculatorDetectionTests": "unit", "VisualTests": "ui"}
+        phases = GROUPING.execution_phases(ids, sources)
+        self.assertEqual([mode for mode, _ in phases], ["xctest", "swift-testing", "serial"])
+        xctest = GROUPING.phase_command(*phases[0], workers=2)
+        self.assertIn("--disable-swift-testing", xctest)
+        self.assertEqual(xctest[xctest.index("--num-workers") + 1], "2")
+        testing = GROUPING.phase_command(*phases[1], workers=2)
+        self.assertIn("--disable-xctest", testing)
+        self.assertNotIn("--num-workers", testing)
+        self.assertRegex("TypefluxTests.AskCalculatorDetectionTests/recognizesArithmetic(text:expected:)", testing[-1])
+        self.assertRegex("TypefluxTests.AskCalculatorDetectionTests/recognizesArithmetic", testing[-1])
+        self.assertNotRegex("TypefluxTests.AskCalculatorDetectionTests/recognizesArithmeticExtra()", testing[-1])
+        self.assertEqual(GROUPING.execution_phases(ids, sources, serial=True), [("serial", ids)])
+        sources["ScrollStitcherTests"] = "ui"
+        self.assertNotIn("xctest", [mode for mode, _ in GROUPING.execution_phases(ids, sources)])
+
+    def test_method_filters_preserve_partial_selection_and_compress_complete_suites(self):
+        first = "TypefluxTests.OuterTests.Nested/run(value:)"
+        second = "TypefluxTests.OuterTests/other()"
+        pattern = GROUPING.test_filter({first}, {first, second})
+        self.assertRegex(first, pattern)
+        self.assertNotRegex(second, pattern)
+        pattern = GROUPING.test_filter({first, second}, {first, second})
+        self.assertEqual(pattern, GROUPING.suite_filter({"OuterTests"}))
+
+    def test_framework_migration_cannot_disable_the_discovered_tests(self):
+        ids = {"TypefluxTests.ScrollStitcherTests/run()", "TypefluxTests.AskCalculatorDetectionTests/testValue"}
+        sources = {"ScrollStitcherTests": "unit", "AskCalculatorDetectionTests": "unit"}
+        self.assertEqual(GROUPING.execution_phases(ids, sources), [("serial", ids)])
+
+    def test_first_phase_failure_stops_later_phases(self):
+        with patch.object(GROUPING, "PARALLEL_SUITES", {"LogicTests": "xctest"}):
+            result, calls, _, _ = self.invoke(["--suite", "LogicTests", "--suite", "VisualTests"], test_returncode=6)
+        self.assertEqual(result, 6)
+        self.assertEqual(len(calls), 2)
 
     def test_benchmark_enables_only_the_child_environment(self):
         with patch.dict(os.environ, {"TYPEFLUX_SEARCH_BENCH": "0", "EXAMPLE": "preserved"}, clear=True):
@@ -176,7 +268,7 @@ class TestGroupCommandTests(unittest.TestCase):
 
     def test_invalid_jobs_and_group_fail_before_building(self):
         for arguments in (["unit", "--jobs", "0"], ["unit", "--jobs", "-2"],
-                          ["unit", "--jobs", "bad"], ["unknown"]):
+                          ["unit", "--jobs", "bad"], ["--workers", "0"], ["unknown"]):
             with self.subTest(arguments=arguments), patch.object(GROUPING.subprocess, "run") as run, \
                     redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
                 GROUPING.main(arguments)
@@ -194,7 +286,7 @@ class TestGroupCommandTests(unittest.TestCase):
                 '    log.write(json.dumps({"args": sys.argv[1:], "cwd": os.getcwd()}) + "\\n")\n'
                 'if sys.argv[-1] == "list":\n'
                 '    print("TypefluxTests.LLMRouterTests/testRoutes")\n'
-                '    print("TypefluxTests.ProcessCommandRunnerTests/testExit")\n'
+                '    print("TypefluxTests.OverlayTransitionRenderingTests/render()")\n'
                 'else:\n'
                 '    sys.exit(5)\n', encoding="utf-8",
             )
@@ -207,7 +299,7 @@ class TestGroupCommandTests(unittest.TestCase):
                 cwd=directory, env=environment, text=True, capture_output=True,
             )
             calls = [json.loads(line) for line in log.read_text().splitlines()]
-            self.assertEqual(result.returncode, 5)
+            self.assertEqual(result.returncode, 5, result.stderr)
             self.assertEqual(len(calls), 2)
             self.assertTrue(all(call["cwd"] == str(ROOT) for call in calls))
             self.assertEqual(calls[0]["args"], ["test", "--skip-build", "list"])
