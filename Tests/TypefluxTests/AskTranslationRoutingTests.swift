@@ -74,6 +74,47 @@ struct AskTranslationRoutingTests {
         #expect(output.action(for: .enter) == nil, "a failed first item cannot copy another service implicitly")
     }
 
+    @Test func checkedAIOwnsTheKeywordOverrideAndRegenerationTarget() async throws {
+        let settings = AskTranslationSettings(services: [.device, .ai(enabled: false), .ai(id: "second")])
+        let plugin = AskTranslatePlugin(onDevice: AskTestTranslationEngine(), ai: AskTestTranslationEngine(),
+                                        serviceSettings: { settings }, detector: AskTestLanguageDetector(language: "en"))
+        #expect(plugin.selectedServices(request(options: ["engine": "ai"])).map(\.id) == ["second"])
+        let input = request("apple")
+        let preview = try await plugin.run(input, plan: await plugin.plan(input))
+        if case let .rerun(options) = preview.action(for: .commandR)?.kind {
+            #expect(options["regenerateService"] == "second")
+        } else { Issue.record("Missing regeneration target") }
+        let noAI = AskTranslationSettings(services: [.ai(enabled: false), .ai(id: "second", enabled: false)])
+        let fallback = AskTranslatePlugin(onDevice: AskTestTranslationEngine(), ai: nil, serviceSettings: { noAI })
+        #expect(fallback.selectedServices(request(options: ["engine": "ai"])).first?.id == "ai.primary")
+    }
+
+    @Test(arguments: [false, true])
+    func cachedCardsUseTheCheckedAIOrGiveWayToBriefTranslations(checked: Bool) async throws {
+        let book = makeTestWordBook()
+        let card = AskWordCard(headword: "apple", translation: "苹果")
+        book.record(.init(headword: "apple", source: "en", target: "zh-Hans", card: card), at: Date(), counts: false)
+        let ai = AskTestTranslationEngine()
+        let provider = AskTestTranslationEngine()
+        let settings = AskTranslationSettings(services: [
+            .device, .ai(enabled: false), .ai(id: "second", enabled: checked), .provider(.deepl, enabled: true)
+        ])
+        let plugin = AskTranslatePlugin(onDevice: AskTestTranslationEngine(), ai: ai, wordBook: book,
+                                        serviceSettings: { settings }, service: { _ in provider },
+                                        detector: AskTestLanguageDetector(language: "en"))
+        let input = request("apple")
+        var plan = await plugin.plan(input)
+        plan.values["submitted"] = "true"
+        let output = try await plugin.run(input, plan: plan)
+        #expect(ai.requests.isEmpty && provider.requests.count == 1)
+        if checked {
+            #expect(output.translation?.results.first?.id == "second" && output.wordCard == card)
+        } else {
+            #expect(output.translation?.results.map(\.id) == ["device", "provider.deepl"])
+            #expect(output.wordCard == nil && output.translation?.results.allSatisfy { $0.card == nil } == true)
+        }
+    }
+
     @Test func pendingReturnAuthorizesOnlyTheTextItWasPressedFor() async throws {
         let device = AskTestTranslationEngine()
         let ai = AskTestTranslationEngine()
@@ -191,6 +232,21 @@ struct AskTranslationSettingsModelTests {
         #expect(model.settings == unchanged)
     }
 
+    @Test func uncheckedFirstAIStaysProtectedAndCheckedAIControlsTheModel() {
+        let model = model()
+        model.setModel("custom:home", for: "ai.primary")
+        model.setEnabled("ai.primary", false)
+        let second = model.addAI()
+        model.setModel("custom:second", for: second)
+        model.setEnabled(second, true)
+        #expect(model.settings.firstEnabledAI?.id == second)
+        #expect(model.settings.modelReference == "custom:second")
+        model.removeAI("ai.primary")
+        #expect(model.settings.firstAI?.id == "ai.primary")
+        model.removeAI(second)
+        #expect(model.settings.firstEnabledAI == nil && model.settings.modelReference == "custom:home")
+    }
+
     @Test func editingKeysKeepsServiceChangesMadeInAnotherWindow() {
         let credentials = AskTestTranslationCredentials([.deepl: .init(key: "k")])
         let launcher = model(credentials)
@@ -215,7 +271,7 @@ struct AskTranslationSettingsModelTests {
         #expect(options.map(\.value) == ["", "custom:fast"])
         #expect(options[0].label == L("ask.translation.model.follow") && options[1].label == "Mine · Fast")
         let gone = AskTranslationSettingsModel.modelOptions(providers: providers, selected: "custom:gone")
-        #expect(gone.last?.value == "custom:gone" && gone.last?.label == L("ask.models.unavailable"))
+        #expect(gone.last?.value == "custom:gone" && gone.last?.label == L("ask.translation.model.pickAgain"))
     }
 
     @Test func editingSavesAndRemovesKeys() {

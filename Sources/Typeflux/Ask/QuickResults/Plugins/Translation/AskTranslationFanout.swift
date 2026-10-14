@@ -201,7 +201,9 @@ final class AskTranslationFanout {
             skipped.insert(skip)
         }
         let only = request.options["regenerateService"] ?? (reuse ? request.options["retryService"] : nil)
-        let firstAI = request.services.first(where: \.isAI)
+        let firstAI = request.services.first {
+            $0.isAI && ($0.enabled || request.options["regenerateService"] == $0.id)
+        }
         let active = activeServices(request, firstAI: firstAI, only: only, reuse: reuse)
         var results = active.map { service in
             var row = reuse && (only != nil || request.options["skipService"] != nil)
@@ -215,7 +217,7 @@ final class AskTranslationFanout {
             }
             return row
         }
-        if let kept = request.kept, !results.isEmpty {
+        if let kept = request.kept, firstAI != nil, !results.isEmpty {
             results[0].state = .done(kept.translatedText ?? kept.summary, kept)
             results[0].fromWordBook = true
         }
@@ -241,9 +243,9 @@ final class AskTranslationFanout {
                 service.id != only && (!reuse || !previous.contains(where: { $0.id == service.id }))
             }
         }
-        if request.kept != nil {
+        if request.kept != nil, let firstAI {
             active.removeAll(where: \.isAI)
-            active.insert(firstAI ?? .ai(), at: 0)
+            active.insert(firstAI, at: 0)
         } else if AskWordCard.isLookup(request.text), let firstAI,
                   let index = active.firstIndex(where: { $0.id == firstAI.id }) {
             active.insert(active.remove(at: index), at: 0)

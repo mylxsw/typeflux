@@ -69,7 +69,7 @@ struct AskTranslationSettingsView: View {
     private func status(_ service: AskTranslationService) -> String {
         switch service.kind {
         case .device: L("ask.translation.stack.local")
-        case .ai: L(service.id == model.settings.firstAI?.id ? "ask.translation.stack.dictionary" : "ask.translation.stack.brief")
+        case .ai: L(service.id == model.settings.firstEnabledAI?.id ? "ask.translation.stack.dictionary" : "ask.translation.stack.brief")
         case let .provider(provider): L(configured(provider) ? "ask.translation.service.configured" : "ask.translation.service.notConfigured")
         }
     }
@@ -86,19 +86,22 @@ struct AskTranslationSettingsView: View {
                 .labelsHidden().toggleStyle(.checkbox).accessibilityLabel(title(service))
             AskTranslationServiceIcon(service: service)
             Text(title(service)).font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(service.enabled ? StudioTheme.textPrimary : StudioTheme.textSecondary)
+                .foregroundStyle(StudioTheme.textPrimary).opacity(service.enabled ? 1 : 0.55)
                 .lineLimit(1)
             HStack(spacing: 4) {
                 Circle().fill(service.provider.map(configured) == false ? StudioTheme.textTertiary : StudioTheme.success)
                     .frame(width: 5, height: 5)
                 Text(status(service)).font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
             }
+            .opacity(service.enabled ? 1 : 0.55)
             Spacer(minLength: 8)
             switch service.kind {
             case .device:
                 Button(L("ask.translation.stack.languages")) { NSWorkspace.shared.open(AskTranslationSettingsModel.languagePackagesURL) }
                     .buttonStyle(ModelActionStyle())
             case let .ai(reference):
+                Text(L("ask.translation.model"))
+                    .font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
                 SettingsMenuPicker(title: L("ask.translation.model"), options: AskTranslationSettingsModel.modelOptions(
                     providers: library.selectableProviders(loggedIn: auth.isLoggedIn, hasImage: false, scenario: "rewrite"), selected: reference
                 ), selection: Binding(get: { reference }, set: { model.setModel($0, for: service.id) }))

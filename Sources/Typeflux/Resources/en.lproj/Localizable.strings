@@ -3748,7 +3748,7 @@
 "ask.translation.section.engine" = "Engine";
 "ask.translation.engine" = "Translation engine";
 "ask.translation.engine.subtitle" = "Used when this Mac cannot translate the language pair";
-"ask.translation.model" = "Translation model";
+"ask.translation.model" = "Model";
 "ask.translation.model.subtitle" = "AI translations and word cards use this model";
 "ask.translation.onDevice" = "Prefer on-device translation";
 "ask.translation.onDevice.subtitle" = "Offline and free, and it translates while you type";
@@ -5164,5 +5164,6 @@
 "ask.translation.stack.copyTranslation" = "Copy translation";
 "ask.translation.stack.copyBoth" = "Copy original + translation";
 "ask.translation.stack.hint" = "↩ Copy first · ⌘1–9 Copy result · ⌥↩ Insert · ⇥ Language";
-"ask.translation.stack.footnote" = "Enabled services translate concurrently in this order. Drag to reorder.\nThe first AI service writes word cards; other services give brief translations.\nOn-device translation and the word book stay on this Mac. AI and providers receive text only after Return or Regenerate. Keys stay in Keychain.";
+"ask.translation.stack.footnote" = "Enabled services translate concurrently in this order. Drag to reorder.\nThe first checked AI service writes word cards; other services give brief translations.\nOn-device translation and the word book stay on this Mac. AI and providers receive text only after Return or Regenerate. Keys stay in Keychain.";
 "ask.translation.stack.deviceTitle" = "On-device translation";
+"ask.translation.model.pickAgain" = "Pick again";

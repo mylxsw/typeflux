@@ -1,6 +1,8 @@
 # Concurrent launcher translations (GUL-387)
 
-The launcher `fy` now previews local translations and saved word cards while typing. Return submits the ordered, enabled services concurrently; each result completes or fails independently. The first AI service writes word cards, additional AI services translate briefly, and saved cards bypass every AI service until explicit regeneration.
+The launcher `fy` now previews local translations and saved word cards while typing. Return submits the ordered, enabled services concurrently; each result completes or fails independently. The first checked AI service writes word cards, additional AI services translate briefly, and saved cards bypass every AI service until explicit regeneration. When no AI is checked, enabled services show brief translations without a word card. The first AI entry stays protected from deletion; the word-book model follows the first checked AI, falling back to that first entry when none is checked.
+
+The [P1 review fixes and native before/after captures](review/README.md) document the checked-AI routing correction and settings refinements after PR #483.
 
 The service list persists as v2, migrates every v1 engine/on-device/fallback combination while retaining v1, supports multiple models and drag ordering, and reuses the provider credential sheet. Keys remain in Keychain. The launcher and the future translation panel share `AskTranslationStackView`.
 

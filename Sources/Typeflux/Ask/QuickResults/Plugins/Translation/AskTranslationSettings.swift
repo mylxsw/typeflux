@@ -157,8 +157,9 @@ struct AskTranslationSettings: Codable, Equatable, Sendable {
     }
 
     var firstAI: AskTranslationService? { services.first(where: \.isAI) }
-    /// The word book follows the first AI service, including when it is disabled in the launcher.
-    var modelReference: String { firstAI?.modelReference ?? "" }
+    var firstEnabledAI: AskTranslationService? { services.first { $0.isAI && $0.enabled } }
+    /// Keep a model home even when the launcher has no checked AI services.
+    var modelReference: String { (firstEnabledAI ?? firstAI)?.modelReference ?? "" }
 
     /// Preserve all AI models (even removed ones), repairing duplicate IDs and singleton services.
     func normalized() -> Self {

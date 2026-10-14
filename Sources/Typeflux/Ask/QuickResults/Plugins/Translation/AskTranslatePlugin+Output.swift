@@ -14,8 +14,8 @@ extension AskTranslatePlugin {
         ) }
             ?? plainOutput(first, request: request, plan: plan, target: target)
         output.actions += firstActions(first, request: request, target: target)
-        if let firstAI = selectedServices(request)
-            .first(where: \.isAI) {
+        let services = selectedServices(request)
+        if let firstAI = services.first(where: { $0.isAI && $0.enabled }) ?? services.first(where: \.isAI) {
             output.actions.append(Self.regenerateAction(firstAI.id))
         }
         if wordBook != nil {

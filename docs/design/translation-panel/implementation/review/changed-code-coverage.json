@@ -1,0 +1,49 @@
+{
+  "covered": 21,
+  "executable": 21,
+  "percent": 100.0,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskTranslatePlugin+Output.swift",
+      "covered": 2,
+      "executable": 2,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskTranslatePlugin.swift",
+      "covered": 5,
+      "executable": 5,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskTranslationFanout.swift",
+      "covered": 6,
+      "executable": 6,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskTranslationSettings.swift",
+      "covered": 2,
+      "executable": 2,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/AskTranslationSettingsModel.swift",
+      "covered": 1,
+      "executable": 1,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/AskTranslationSettingsView.swift",
+      "covered": 5,
+      "executable": 5,
+      "percent": 100.0,
+      "uncovered": []
+    }
+  ]
+}

@@ -76,7 +76,8 @@ struct AskTranslatePlugin: AskLauncherPlugin {
         let services = selectedServices(request)
         let asked = request.options[Self.engineOption]
         let chosen = asked != nil && asked != "ai"
-        let kept = request.options["regenerateService"] == nil && request.options[Self.generationOption] == nil && !chosen
+        let kept = services.contains { $0.isAI && $0.enabled }
+            && request.options["regenerateService"] == nil && request.options[Self.generationOption] == nil && !chosen
             ? keptCard(request.text, source: source, target: target) : nil
         let local = kept == nil && services.contains { $0.enabled && $0.kind == .device }
             ? await onDevice.canTranslate(from: source, to: target) : false
@@ -115,7 +116,8 @@ struct AskTranslatePlugin: AskLauncherPlugin {
         let target = plan.values["target"] ?? AskTranslationLanguages.code(for: request.interfaceLanguage)
         let submitted = plan.mode == .onSubmit || plan.values["submitted"] == "true"
         let services = selectedServices(request)
-        let kept = request.options["regenerateService"] == nil && request.options[Self.generationOption] == nil
+        let kept = services.contains { $0.isAI && $0.enabled }
+            && request.options["regenerateService"] == nil && request.options[Self.generationOption] == nil
             && (request.options[Self.engineOption] == nil || request.options[Self.engineOption] == "ai") ? keptCard(request.text, source: source, target: target) : nil
         let coordinator: AskTranslationFanout
         if let fanout { coordinator = fanout } else { coordinator = await MainActor.run { AskTranslationFanout() } }
@@ -151,7 +153,7 @@ struct AskTranslatePlugin: AskLauncherPlugin {
         let settings = serviceSettings()
         guard let asked = request.options[Self.engineOption] else { return settings.services }
         if asked == "device" { return [.device] }
-        if asked == "ai", var firstAI = settings.firstAI { firstAI.enabled = true; return [firstAI] }
+        if asked == "ai", var firstAI = settings.firstEnabledAI ?? settings.firstAI { firstAI.enabled = true; return [firstAI] }
         if let provider = AskTranslationProvider(rawValue: asked) { return [.provider(provider, enabled: true)] }
         return settings.services
     }

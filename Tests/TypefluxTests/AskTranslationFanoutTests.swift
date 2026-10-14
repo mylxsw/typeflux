@@ -154,7 +154,7 @@ struct AskTranslationFanoutTests {
         #expect(updates.contains(.streaming(" Bonjour ")))
     }
 
-    @Test func onlyFirstAIWritesCardsAndSavedCardsSkipEveryAI() async throws {
+    @Test func onlyFirstCheckedAIWritesCardsAndSavedCardsSkipEveryAI() async throws {
         let device = AskTestTranslationEngine()
         let first = AskTestTranslationEngine()
         let second = AskTestTranslationEngine()
@@ -191,13 +191,26 @@ struct AskTranslationFanoutTests {
             .count == 2)
         var disabled = services
         disabled[1].enabled = false
-        _ = try await coordinator.run(.init(text: "pear", source: "en", target: "zh-Hans", interface: .english,
+        let promoted = try await coordinator.run(.init(text: "pear", source: "en", target: "zh-Hans", interface: .english,
                                             services: disabled, submitted: true), engine: engines, name: { $0.id },
                                       dictionary: { _ in dictionary })
-        #expect(dictionary.requests.count == 2, "a later AI does not assume dictionary responsibility")
-        _ = try await coordinator.run(.init(text: "word", source: nil, target: "zh-Hans", interface: .english,
+        #expect(promoted.first?.id == "second" && promoted.first?.card == card)
+        #expect(dictionary.requests.count == 3 && first.requests.isEmpty && second.requests.count == 1)
+        let cached = try await coordinator.run(.init(text: "pear", source: "en", target: "zh-Hans", interface: .english,
+                                                    services: disabled, submitted: false, kept: card),
+                                              engine: engines, name: { $0.id }, dictionary: { _ in dictionary })
+        #expect(cached.first?.id == "second" && cached.first?.fromWordBook == true)
+        #expect(dictionary.requests.count == 3)
+        disabled[2].enabled = false
+        let noAI = try await coordinator.run(.init(text: "pear", source: "en", target: "zh-Hans", interface: .english,
+                                                  services: disabled, submitted: true, kept: card),
+                                            engine: engines, name: { $0.id }, dictionary: { _ in dictionary })
+        #expect(noAI.map(\.id) == ["device"] && noAI.allSatisfy { $0.card == nil })
+        #expect(noAI.first?.completedText == "[zh-Hans] pear" && dictionary.requests.count == 3)
+        let deviceOnly = try await coordinator.run(.init(text: "word", source: nil, target: "zh-Hans", interface: .english,
                                             services: [.device], submitted: false, kept: card), engine: engines,
                                       name: { $0.id })
+        #expect(deviceOnly.allSatisfy { $0.card == nil })
     }
 
     @Test func previewNeverCallsRemoteEvenForLookupAndRetriesAreIsolated() async throws {

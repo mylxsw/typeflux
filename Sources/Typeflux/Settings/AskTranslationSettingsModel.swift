@@ -99,7 +99,7 @@ final class AskTranslationSettingsModel: ObservableObject {
             }
         }
         if !selected.isEmpty, !options.contains(where: { $0.value == selected }) {
-            options.append((label: L("ask.models.unavailable"), value: selected))
+            options.append((label: L("ask.translation.model.pickAgain"), value: selected))
         }
         return options
     }

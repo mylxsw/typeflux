@@ -3748,7 +3748,7 @@
 "ask.translation.section.engine" = "引擎";
 "ask.translation.engine" = "首选翻译引擎";
 "ask.translation.engine.subtitle" = "本机翻译不了这对语言时使用";
-"ask.translation.model" = "翻译模型";
+"ask.translation.model" = "模型";
 "ask.translation.model.subtitle" = "AI 翻译和生成单词卡都用这个模型";
 "ask.translation.onDevice" = "本机能翻时优先用本机";
 "ask.translation.onDevice.subtitle" = "离线、免费，可以边输入边翻";
@@ -5164,5 +5164,6 @@
 "ask.translation.stack.copyTranslation" = "复制译文";
 "ask.translation.stack.copyBoth" = "复制原文 + 译文";
 "ask.translation.stack.hint" = "↩ 复制第一项 · ⌘1–9 复制第 n 项 · ⌥↩ 插入 · ⇥ 换语言";
-"ask.translation.stack.footnote" = "勾选的服务会同时翻译，按这里的顺序显示；拖动调整顺序。\n排在最前的 AI 服务负责单词卡，其它服务只给出简短译文。\n本机翻译和单词本不出本机；AI 与服务商只在按 Return 或重新生成后发送。密钥只保存在钥匙串中。";
+"ask.translation.stack.footnote" = "勾选的服务会同时翻译，按这里的顺序显示；拖动调整顺序。\n勾选服务中排在最前的 AI 负责单词卡，其它服务只给出简短译文。\n本机翻译和单词本不出本机；AI 与服务商只在按 Return 或重新生成后发送。密钥只保存在钥匙串中。";
 "ask.translation.stack.deviceTitle" = "本机翻译";
+"ask.translation.model.pickAgain" = "重新选择";
