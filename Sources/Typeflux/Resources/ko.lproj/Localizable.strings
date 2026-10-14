@@ -3724,9 +3724,9 @@
 "ask.translation.field.secret" = "시크릿 키";
 "ask.translation.field.region" = "리전";
 "ask.translation.field.regionOptional" = "리전(선택)";
-"ask.translation.error.notConfigured" = "아직 키가 없습니다. 설정 → 런처 → 번역에서 추가하세요";
+"ask.translation.error.notConfigured" = "API 키가 없습니다";
 "ask.translation.error.unsupportedLanguage" = "이 서비스는 이 언어 조합을 지원하지 않습니다";
-"ask.translation.error.authentication" = "키가 거부되었습니다. 설정 → 런처 → 번역에서 확인하세요";
+"ask.translation.error.authentication" = "API 키가 유효하지 않습니다";
 "ask.translation.error.quota" = "서비스 사용량 또는 잔액이 소진되었습니다";
 "ask.translation.error.rateLimited" = "요청이 너무 많습니다. 잠시 후 다시 시도하세요";
 "ask.translation.error.tooLong" = "이 서비스가 처리하기에는 텍스트가 너무 깁니다";

@@ -1,0 +1,146 @@
+{
+  "panel-dark": {
+    "design_pixels": [
+      904,
+      998
+    ],
+    "native_pixels": [
+      452,
+      472
+    ],
+    "design_scale": 2,
+    "native_note": "Original window capture; unchanged pixels."
+  },
+  "panel-light": {
+    "design_pixels": [
+      904,
+      998
+    ],
+    "native_pixels": [
+      452,
+      472
+    ],
+    "design_scale": 2,
+    "native_note": "Original window capture; unchanged pixels."
+  },
+  "word-dark": {
+    "design_pixels": [
+      904,
+      1272
+    ],
+    "native_pixels": [
+      452,
+      656
+    ],
+    "design_scale": 2,
+    "native_note": "Original window capture; unchanged pixels."
+  },
+  "word-light": {
+    "design_pixels": [
+      904,
+      1272
+    ],
+    "native_pixels": [
+      452,
+      656
+    ],
+    "design_scale": 2,
+    "native_note": "Original window capture; unchanged pixels."
+  },
+  "error-dark": {
+    "design_pixels": [
+      904,
+      1130
+    ],
+    "native_pixels": [
+      452,
+      537
+    ],
+    "design_scale": 2,
+    "native_note": "Original window capture; unchanged pixels."
+  },
+  "error-light": {
+    "design_pixels": [
+      904,
+      1130
+    ],
+    "native_pixels": [
+      452,
+      535
+    ],
+    "design_scale": 2,
+    "native_note": "Original window capture; unchanged pixels."
+  },
+  "shot-dark": {
+    "design_pixels": [
+      904,
+      1146
+    ],
+    "native_pixels": [
+      452,
+      519
+    ],
+    "design_scale": 2,
+    "native_note": "Original window capture; unchanged pixels."
+  },
+  "shot-light": {
+    "design_pixels": [
+      904,
+      1146
+    ],
+    "native_pixels": [
+      452,
+      519
+    ],
+    "design_scale": 2,
+    "native_note": "Original window capture; unchanged pixels."
+  },
+  "launcher-dark": {
+    "design_pixels": [
+      1360,
+      1422
+    ],
+    "native_pixels": [
+      700,
+      657
+    ],
+    "design_scale": 2,
+    "native_note": "Original window capture; unchanged pixels."
+  },
+  "launcher-light": {
+    "design_pixels": [
+      1360,
+      1422
+    ],
+    "native_pixels": [
+      700,
+      657
+    ],
+    "design_scale": 2,
+    "native_note": "Original window capture; unchanged pixels."
+  },
+  "settings-dark": {
+    "design_pixels": [
+      2000,
+      1500
+    ],
+    "native_pixels": [
+      900,
+      1160
+    ],
+    "design_scale": 2,
+    "native_note": "Original window capture; unchanged pixels."
+  },
+  "settings-light": {
+    "design_pixels": [
+      2000,
+      1500
+    ],
+    "native_pixels": [
+      900,
+      1160
+    ],
+    "design_scale": 2,
+    "native_note": "Original window capture; unchanged pixels."
+  }
+}

@@ -80,7 +80,7 @@ struct AskTranslationPanelControllerTests {
         defer { fixture.clean() }
         let model = fixture.model
         let controller = AskTranslationPanelController(model: model)
-        let original = "The best way to predict the future is to invent it."
+        let original = "The quick fix shipped yesterday, but the root cause is still unknown."
         let card = AskWordCard(headword: "serendipity", translation: "机缘巧合",
                                phonetics: [
                                    .init(label: "UK", text: "/ˌserənˈdɪpəti/"),
@@ -92,24 +92,45 @@ struct AskTranslationPanelControllerTests {
                                           .init(
                                               source: "Science often advances through serendipity.",
                                               target: "科学常常因偶然发现而进步。"
+                                          ), .init(
+                                              source: "A little **serendipity** changed everything.",
+                                              target: "一点机缘巧合改变了一切。"
                                           )],
                                synonyms: ["chance", "luck"])
         for (appearance, mode) in [("dark", AppearanceMode.dark), ("light", .light)] {
             fixture.settings.appearanceMode = mode
             for name in ["panel", "word", "error", "shot"] {
                 let isWord = name == "word"
-                let text = isWord ? "serendipity" : original
-                let rows: [AskTranslationResult] = [
+                let text = isWord ? "serendipity" : name == "shot"
+                    ? "Deploy the patch behind the feature flag first. Roll back if error rates rise above 1%." :
+                    original
+                var rows: [AskTranslationResult] = [
                     .init(service: isWord ? .ai() : .device,
                           name: isWord ? "AI · Typeflux Cloud" : L("ask.translation.stack.deviceTitle"),
-                          state: .done(isWord ? "机缘巧合" : "预测未来的最好方式就是创造它。", isWord ? card : nil)),
+                          state: .done(
+                              isWord ? "机缘巧合" : name == "shot" ? "先在功能开关后面部署补丁。如果错误率升到 1% 以上就回滚。" :
+                                  "快速修复昨天已发布，但根本原因仍不清楚。",
+                              isWord ? card : nil
+                          )),
                     .init(service: isWord ? .device : .ai(),
                           name: isWord ? L("ask.translation.stack.deviceTitle") : "AI · Typeflux Cloud",
-                          state: .done(isWord ? "意外发现" : "预见未来最好的办法，就是亲手创造未来。")),
+                          state: .done(isWord ? "意外发现" : name == "shot" ? "先把补丁部署在功能开关后面；错误率超过 1% 就回滚。" :
+                              "临时修复昨天已经上线了，但问题的根本原因还没有查明。")),
                     .init(service: .provider(.deepl), name: "DeepL", state: name == "error"
-                        ? .failed(.init(message: L("ask.translation.error.notConfigured"), recovery: .configure))
-                        : .done(isWord ? "偶然发现" : "预测未来的最佳方法是创造未来。"))
+                        ? .failed(.init(message: L("ask.translation.error.quota"), recovery: .skip))
+                        :
+                        .done(isWord ? "偶然发现" : name == "shot" ? "首先在功能标志后面部署补丁。如果错误率上升到 1% 以上，则回滚。" :
+                            "快速修复已于昨日发布，但根本原因仍然未知。"))
                 ]
+                rows.append(.init(service: .provider(.youdao), name: L("ask.translation.provider.youdao"),
+                                  state: .done(isWord ? "机缘巧合；意外的好运" : name == "shot"
+                                      ? "首先在特性标志后部署补丁。如果错误率超过1%，就回滚。"
+                                      : "快速修复昨天发布了，但根本原因仍然未知。")))
+                if name == "error" {
+                    rows.append(.init(service: .provider(.google), name: "Google", state: .failed(.init(
+                        message: L("ask.translation.error.notConfigured"), recovery: .configure
+                    ))))
+                }
                 let lookup = AskWordBookLookup(headword: "serendipity", source: "en", target: "zh-Hans", card: card)
                 let output = AskPluginOutput(body: rows[0].text ?? "", original: text, meta: [], source: rows[0].name,
                                              actions: [AskTranslatePlugin.copyAction(

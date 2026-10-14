@@ -1,6 +1,13 @@
 import AppKit
 import SwiftUI
 
+enum AskTranslationAppearance {
+    static let cardFill = StudioTheme.dynamic(
+        light: NSColor(calibratedWhite: 1, alpha: 0.8),
+        dark: NSColor(calibratedWhite: 1, alpha: 0.045)
+    )
+}
+
 /// Shared translation content; window ownership and keyboard handling stay with its host.
 struct AskTranslationStackView: View {
     var stack: AskTranslationStack
@@ -11,6 +18,7 @@ struct AskTranslationStackView: View {
     var comparing = false
     var running = false
     var viewportHeight: CGFloat?
+    var defaults: UserDefaults?
     var onAction: (AskPluginAction) -> Void
     var onSelect: (String) -> Bool = { _ in true }
 
@@ -50,6 +58,7 @@ struct AskTranslationStackView: View {
                             AskTranslationResultView(result: result, stack: stack, original: original,
                                                      number: index + 1, selected: selected == index,
                                                      actions: actions, starred: starred, running: running,
+                                                     defaults: defaults,
                                                      onAction: onAction,
                                                      onSelect: { _ = onSelect(result.id) })
                                 .id(result.id)
@@ -87,7 +96,8 @@ struct AskTranslationStackView: View {
             }
             .menuStyle(.borderlessButton).tint(StudioTheme.textPrimary)
             .frame(maxWidth: .infinity).padding(.horizontal, 10).frame(height: 30)
-            .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 8))
+            .background(AskTranslationAppearance.cardFill, in: RoundedRectangle(cornerRadius: 8))
+            .overlay { RoundedRectangle(cornerRadius: 8).strokeBorder(AskTheme.border, lineWidth: 1) }
             Button {
                 if let text = stack.results.first?.completedText, let source = stack.source {
                     onAction(.init(
@@ -114,7 +124,8 @@ struct AskTranslationStackView: View {
             }
             .menuStyle(.borderlessButton).tint(AskTheme.accent)
             .frame(maxWidth: .infinity).padding(.horizontal, 10).frame(height: 30)
-            .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 8))
+            .background(AskTranslationAppearance.cardFill, in: RoundedRectangle(cornerRadius: 8))
+            .overlay { RoundedRectangle(cornerRadius: 8).strokeBorder(AskTheme.border, lineWidth: 1) }
         }
         .font(.system(size: 12))
         .accessibilityIdentifier("ask.translation.languages")
@@ -172,10 +183,25 @@ private struct AskTranslationResultView: View {
     var onAction: (AskPluginAction) -> Void
     var onSelect: () -> Void
     @State private var hovering = false
-    @State private var collapsed = false
-    @State private var expandedLookup = false
+    @AppStorage private var collapsePreference: Int
     private var compact: Bool {
-        collapsed || (stack.isLookup && result.card == nil && !expandedLookup)
+        result.isCollapsed(preference: collapsePreference, lookup: stack.isLookup)
+    }
+
+    init(result: AskTranslationResult, stack: AskTranslationStack, original: String, number: Int,
+         selected: Bool, actions: [AskPluginAction], starred: Bool, running: Bool,
+         defaults: UserDefaults?, onAction: @escaping (AskPluginAction) -> Void, onSelect: @escaping () -> Void) {
+        self.result = result
+        self.stack = stack
+        self.original = original
+        self.number = number
+        self.selected = selected
+        self.actions = actions
+        self.starred = starred
+        self.running = running
+        self.onAction = onAction
+        self.onSelect = onSelect
+        _collapsePreference = AppStorage(wrappedValue: 0, result.collapseKey, store: defaults)
     }
 
     var body: some View {
@@ -190,7 +216,7 @@ private struct AskTranslationResultView: View {
         }
         .padding(.horizontal, 10).padding(.vertical, compact ? 8 : 10)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 11))
+        .background(AskTranslationAppearance.cardFill, in: RoundedRectangle(cornerRadius: 11))
         .overlay { RoundedRectangle(cornerRadius: 11).strokeBorder(
             selected ? AskTheme.accent.opacity(0.8) : .clear,
             lineWidth: 1
@@ -222,6 +248,9 @@ private struct AskTranslationResultView: View {
                     Text(failure.message).foregroundStyle(StudioTheme.danger).lineLimit(1)
                     if let action = failure
                         .action(for: result.service) {
+                        if failure.recovery == .configure {
+                            Text("·").foregroundStyle(StudioTheme.textTertiary)
+                        }
                         Button(action.title) { onAction(action) }.buttonStyle(.plain).foregroundStyle(AskTheme.accent)
                             .disabled(running)
                             .accessibilityIdentifier("ask.translation.result." + result.id + ".recovery")
@@ -240,14 +269,11 @@ private struct AskTranslationResultView: View {
                 Text("⌘\(number)").font(.system(size: 10)).foregroundStyle(StudioTheme.textTertiary)
             }
             Button {
-                if stack.isLookup, result.card == nil {
-                    expandedLookup.toggle()
-                } else {
-                    collapsed.toggle()
-                }
+                collapsePreference = compact ? 2 : 1
             } label: { Image(systemName: compact ? "chevron.right" : "chevron.down").font(.system(size: 9)) }
                 .buttonStyle(.plain).foregroundStyle(StudioTheme.textTertiary)
                 .accessibilityLabel(L(compact ? "ask.translation.stack.expand" : "ask.translation.stack.collapse"))
+                .accessibilityIdentifier("ask.translation.result." + result.id + ".collapse")
         }
         .font(.system(size: 11.5))
         .contentShape(Rectangle()).onTapGesture(perform: onSelect)
@@ -262,6 +288,9 @@ private struct AskTranslationResultView: View {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text(failure.message).foregroundStyle(StudioTheme.danger).fixedSize(horizontal: false, vertical: true)
                 if let action = failure.action(for: result.service) {
+                    if failure.recovery == .configure {
+                        Text("·").foregroundStyle(StudioTheme.textTertiary)
+                    }
                     Button(action.title) { onAction(action) }.buttonStyle(.plain).foregroundStyle(AskTheme.accent)
                         .disabled(running).accessibilityIdentifier("ask.translation.result." + result.id + ".recovery")
                 }
@@ -286,6 +315,7 @@ private struct AskTranslationResultView: View {
             Button {
                 onAction(.init(kind: .speak(result.completedText ?? "", language: stack.target), title: "", symbol: ""))
             } label: { Image(systemName: "speaker.wave.2") }.help(L("ask.plugin.action.speak"))
+                .accessibilityIdentifier("ask.translation.result." + result.id + ".speak")
             Button { onAction(AskTranslatePlugin.insertAction(
                 result.completedText ?? "",
                 replaces: stack.replacesSelection
@@ -293,24 +323,12 @@ private struct AskTranslationResultView: View {
                 .help(L("ask.plugin.action.insert"))
                 .disabled(result.card != nil && result.card?.translatedText == nil)
             Menu {
-                Button(L("ask.translation.stack.copyTranslation")) {
-                    onAction(AskTranslatePlugin.copyAction(result.completedText ?? ""))
-                }
-                Button(L("ask.translation.stack.copyBoth")) {
-                    onAction(AskTranslatePlugin.copyAction(original + "\n\n" + (result.completedText ?? "")))
-                }
-                if let card = result.card {
-                    Button(L("ask.plugin.action.copyCard")) { onAction(AskTranslatePlugin.copyAction(card.markdown)) }
-                }
-                Divider()
-                Button(L("ask.plugin.action.insert")) { onAction(AskTranslatePlugin.insertAction(
-                    result.completedText ?? "",
-                    replaces: stack.replacesSelection
-                )) }
-                .disabled(result.card != nil && result.card?.translatedText == nil)
+                AskTranslationCopyOptions(result: result, original: original,
+                                          replacesSelection: stack.replacesSelection, onAction: onAction)
             } label: { Image(systemName: "doc.on.doc") }
                 .menuStyle(.borderlessButton).tint(StudioTheme.textTertiary).fixedSize()
                 .help(L("ask.plugin.action.copy"))
+                .accessibilityIdentifier("ask.translation.result." + result.id + ".copyMenu")
         }
         .font(.system(size: 10)).buttonStyle(.plain).foregroundStyle(StudioTheme.textTertiary)
     }
@@ -325,7 +343,7 @@ private struct AskTranslationResultView: View {
                 Button { onAction(action) } label: {
                     HStack(spacing: 4) {
                         Image(systemName: action.shortcut == .commandS && starred ? "star.fill" : action.symbol)
-                        Text(action.title)
+                        Text(action.shortcut == .shiftCommandC ? L("ask.plugin.action.copyCard") : action.title)
                         Text(key(action.shortcut)).foregroundStyle(StudioTheme.textTertiary)
                     }
                     .font(.system(size: 10.5)).padding(.horizontal, 7).frame(height: 23)
@@ -345,6 +363,34 @@ private struct AskTranslationResultView: View {
         case .commandB: "⌘B"
         default: ""
         }
+    }
+}
+
+/// Actions offered by each completed result's copy menu.
+struct AskTranslationCopyOptions: View {
+    var result: AskTranslationResult
+    var original: String
+    var replacesSelection: Bool
+    var onAction: (AskPluginAction) -> Void
+
+    var body: some View {
+        Button(L("ask.translation.stack.copyTranslation")) {
+            onAction(AskTranslatePlugin.copyAction(result.completedText ?? ""))
+        }
+        Button(L("ask.translation.stack.copyBoth")) {
+            if let action = result.copyBoth(original: original) {
+                onAction(action)
+            }
+        }
+        .accessibilityIdentifier("ask.translation.result." + result.id + ".copyBoth")
+        if let card = result.card {
+            Button(L("ask.plugin.action.copyCard")) { onAction(AskTranslatePlugin.copyAction(card.markdown)) }
+        }
+        Divider()
+        Button(L("ask.plugin.action.insert")) {
+            onAction(AskTranslatePlugin.insertAction(result.completedText ?? "", replaces: replacesSelection))
+        }
+        .disabled(result.card != nil && result.card?.translatedText == nil)
     }
 }
 

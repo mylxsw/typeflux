@@ -86,7 +86,7 @@ struct AskWordCard: Codable, Equatable, Sendable {
         card.forms = forms.map { Form(label: clean($0.label), value: clean($0.value)) }
             .filter { !$0.value.isEmpty }.prefix(4).map { $0 }
         card.examples = examples.map { Example(source: clean($0.source), target: clean($0.target)) }
-            .filter { !$0.source.isEmpty }.prefix(2).map { $0 }
+            .filter { !$0.source.isEmpty }.prefix(3).map { $0 }
         card.synonyms = synonyms.map(clean).filter { !$0.isEmpty }.prefix(5).map { $0 }
         return card
     }

@@ -102,6 +102,32 @@ Typeflux also supports longer sessions through a locked recording flow. This is 
 
 If you use longer recordings often, verify the selected speech backend can handle the expected audio length and latency.
 
+## Translation Panel
+
+Open the panel from **Settings → Launcher → Translation** by recording an Input Translation, Selection Translation, or Screenshot Translation shortcut. All three shortcuts are unset by default. The launcher also accepts `fy`, `tr`, or `翻译`; press **⌘P** there to move the current text and results into a pinned panel.
+
+Enter text and press **Return** to translate with all checked services. Selection Translation immediately translates the current selection. Screenshot Translation recognizes text on this Mac and opens an editable original; correct recognition errors and press Return to translate again. Only the on-device translator and saved word cards run while typing in `fy`; AI and providers wait for explicit submission.
+
+The default services are **On-device Translation + the first AI service**. Enable providers, add AI services, choose models and reorder results in Settings → Launcher → Translation. Each result offers speech, insertion, and a copy menu containing **translation**, **original + translation**, and, for a word card, **the whole card**. Collapse choices are remembered per service across the panel and launcher. Word cards appear first, show two examples initially, and offer “More examples”; UK and US pronunciation buttons read the word in their respective accents.
+
+A failed service leaves the other results available. **Retry** only retries that result; **Use another service** skips an exhausted service until a new session; **Configure** opens that provider's key form. Credentials stay in the macOS Keychain. The panel's history menu can clear locally saved inputs.
+
+| Shortcut | Action |
+| --- | --- |
+| Return / Shift Return | Translate edited input, or copy the first completed result / insert a newline |
+| ⌘1–9 | Copy result n |
+| ⌥Return | Insert the selected result into the original app; replace the selection when translating selected text |
+| ⌘↑ / ⌘↓ | Select the previous / next result |
+| Tab / Shift Tab | Cycle target languages |
+| ⌘⇧S | Swap languages and use the first translation as the original |
+| ⌘P | Pin / unpin the panel; move from the launcher into a pinned panel |
+| ⌘R | Regenerate the selected AI result |
+| ⌘S / ⇧⌘C / ⌘B | Star a word card / copy the whole card / open the word book |
+| ⌘Delete | Clear the original |
+| Escape | Close an unpinned panel; in a pinned panel, clear first, then close |
+
+A pinned panel stays visible when you switch apps. Settings also control placement, maximum screen height, automatic copying, how long the last input is retained, and the second language. Results scroll inside the height limit.
+
 ## Common Settings
 
 The most important settings for day-to-day use are:

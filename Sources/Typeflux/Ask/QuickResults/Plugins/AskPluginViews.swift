@@ -489,6 +489,7 @@ struct AskPluginResultsView: View {
         if let output, let translation = output.translation {
             AskTranslationStackView(stack: translation, original: output.original, actions: output.actions,
                                     selected: output.selectedItem, starred: output.starred == true, comparing: display.comparing, running: running,
+                                    defaults: translationSettings?.store.defaults,
                                     onAction: onAction, onSelect: onSelectItem)
                 .opacity(running && !streaming ? 0.5 : 1)
                 .disabled(running && !streaming)

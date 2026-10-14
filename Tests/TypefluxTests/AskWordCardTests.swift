@@ -74,7 +74,7 @@ struct AskWordCardTests {
         #expect(card.senses.count == 3)
         #expect(card.senses.allSatisfy { $0.meanings == ["a", "b", "c", "d"] })
         #expect(card.forms.count == 4)
-        #expect(card.examples.map(\.source) == ["one", "three"])
+        #expect(card.examples.map(\.source) == ["one", "three", "four"])
         #expect(card.synonyms == ["a", "b", "c", "d", "e"])
     }
 

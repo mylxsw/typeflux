@@ -3731,9 +3731,9 @@
 "ask.translation.field.secret" = "密鑰";
 "ask.translation.field.region" = "地域";
 "ask.translation.field.regionOptional" = "地域（選填）";
-"ask.translation.error.notConfigured" = "尚未填寫密鑰，請到「設定 → 啟動器 → 翻譯」中設定";
+"ask.translation.error.notConfigured" = "尚未填寫密鑰";
 "ask.translation.error.unsupportedLanguage" = "這個服務不支援該語言組合";
-"ask.translation.error.authentication" = "密鑰被拒絕，請到「設定 → 啟動器 → 翻譯」中檢查";
+"ask.translation.error.authentication" = "密鑰無效";
 "ask.translation.error.quota" = "服務的額度或餘額已用完";
 "ask.translation.error.rateLimited" = "請求太頻繁，請稍後再試";
 "ask.translation.error.tooLong" = "文字太長，超出了這個服務的限制";

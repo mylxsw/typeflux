@@ -3734,9 +3734,9 @@
 "ask.translation.field.secret" = "密钥";
 "ask.translation.field.region" = "地域";
 "ask.translation.field.regionOptional" = "地域（可选）";
-"ask.translation.error.notConfigured" = "还没有填写密钥，请到「设置 → 启动器 → 翻译」里配置";
+"ask.translation.error.notConfigured" = "还没有填写密钥";
 "ask.translation.error.unsupportedLanguage" = "这个服务不支持该语言对";
-"ask.translation.error.authentication" = "密钥被拒绝，请到「设置 → 启动器 → 翻译」里检查";
+"ask.translation.error.authentication" = "密钥无效";
 "ask.translation.error.quota" = "服务的额度或余额已用完";
 "ask.translation.error.rateLimited" = "请求太频繁，请稍后再试";
 "ask.translation.error.tooLong" = "文本太长，超出了这个服务的限制";
@@ -5444,6 +5444,10 @@
 "help.start.tip.apps" = "输入应用名打开";
 "help.start.tip.recent" = "空输入框按 ↑ 找回最近输入";
 "help.start.tip.selection" = "先选中文字再打开";
+
+"ask.translation.panel.screenshot.editHint" = "可改错字，再按 ↩";
+"ask.plugin.wordCard.moreExamples" = "更多例句（%d）";
+"ask.translation.stack.configure" = "去配置";
 "launcher.search.files.master.subtitle" = "在启动器中搜索文件名。关闭后，文件名和语义搜索都会停止。";
 "launcher.search.files.scope.shared" = "文件名与语义搜索共用这份范围";
 "launcher.search.files.addFolder" = "添加文件夹";

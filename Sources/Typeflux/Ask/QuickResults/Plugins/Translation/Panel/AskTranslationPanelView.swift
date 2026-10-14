@@ -30,6 +30,7 @@ struct AskTranslationPanelView: View {
                                             ?? (Self.chromeHeight(screenshot: model.screenshot != nil)
                                                 + editorHeight - 48 + (model.notice == nil ? 0 : 24)))
                                     ),
+                                    defaults: model.settings.defaults,
                                     onAction: model.perform, onSelect: model.select)
                 .padding(.horizontal, 10)
             if let notice = model.notice {
@@ -100,8 +101,10 @@ struct AskTranslationPanelView: View {
                 HStack(spacing: 6) {
                     Image(nsImage: image).resizable().scaledToFill().frame(width: 44, height: 22).clipped()
                         .clipShape(RoundedRectangle(cornerRadius: 4))
-                    Text(L("ask.translation.panel.screenshot", model.screenshotLines))
+                    Text(L("ask.translation.panel.screenshot", model.screenshotLines)
+                        + " · " + L("ask.translation.panel.screenshot.editHint"))
                         .font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
+                        .fixedSize(horizontal: false, vertical: true)
                     Spacer()
                 }
                 .padding(.horizontal, 11).padding(.top, 8)
@@ -129,7 +132,7 @@ struct AskTranslationPanelView: View {
             .font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
             .padding(.leading, 11).padding(.trailing, 5).padding(.bottom, 5)
         }
-        .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 10))
+        .background(AskTranslationAppearance.cardFill, in: RoundedRectangle(cornerRadius: 10))
         .overlay { RoundedRectangle(cornerRadius: 10).strokeBorder(AskTheme.border, lineWidth: 1) }
     }
 
