@@ -404,6 +404,8 @@ final class ScreenshotOverlayView: NSView {
         case .pin: finish(.pin)
         case let .followUp(followUp): finish(.followUp(followUp))
         case .scrollCapture: startScrollCapture()
+        case .record:
+            if canScrollCapture { finish(.record) }
         case .toggleMoreMenu:
             showsMoreMenu.toggle()
             showsColorPanel = false

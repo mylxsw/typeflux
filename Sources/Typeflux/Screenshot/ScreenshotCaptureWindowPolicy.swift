@@ -11,6 +11,7 @@ enum ScreenshotCaptureWindowPolicy {
         window is ScreenshotOverlayPanel || window is ScreenshotFloatingPanel || window is ScreenshotPinPanel
             || window.identifier == launcherIdentifier || window.identifier == toastIdentifier
             || window.identifier == permissionIdentifier
+            || window.identifier == ScreenRecordingWindowController.identifier
     }
 
     @MainActor

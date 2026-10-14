@@ -75,7 +75,7 @@ final class StatusBarMenuSupportTests: XCTestCase {
         menu.performActionForItem(at: menu.index(of: close))
         XCTAssertEqual(restores, 1)
         XCTAssertEqual(closes, 1)
-        XCTAssertEqual(menu.items[menu.index(of: restore) - 1].title, L("menu.screenshotText"))
+        XCTAssertEqual(menu.items[menu.index(of: restore) - 1].title, L("recording.title"))
     }
 
     @MainActor
@@ -101,6 +101,31 @@ final class StatusBarMenuSupportTests: XCTestCase {
         XCTAssertEqual(menu.items[index - 1].title, L("menu.screenshot"), "Right after Screenshot")
         menu.performActionForItem(at: index)
         // It starts once the menu has closed.
+        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+        XCTAssertEqual(started, 1)
+    }
+
+    @MainActor
+    func testRecordingMenuEntryStartsAfterTheMenuCloses() throws {
+        if ProcessInfo.processInfo.environment["CI"] == "true" {
+            throw XCTSkip("Requires a GUI WindowServer session")
+        }
+        let suite = "ScreenRecordingMenuTests." + UUID().uuidString
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        var started = 0
+        let controller = StatusBarController(
+            appState: AppStateStore(), settingsStore: SettingsStore(defaults: defaults),
+            historyStore: EmptyHistoryStore(), onScreenRecording: { started += 1 }
+        )
+        controller.start()
+        defer { controller.stop() }
+        let rootMenu = try XCTUnwrap(controller.menu)
+        let menu = try XCTUnwrap(rootMenu.items.first { $0.title == L("menu.toolbox") }?.submenu)
+        let index = try XCTUnwrap(menu.items.firstIndex { $0.title == L("recording.title") })
+        XCTAssertEqual(menu.items[index - 1].title, L("menu.screenshotText"))
+        menu.performActionForItem(at: index)
+        XCTAssertEqual(started, 0)
         RunLoop.main.run(until: Date().addingTimeInterval(0.05))
         XCTAssertEqual(started, 1)
     }

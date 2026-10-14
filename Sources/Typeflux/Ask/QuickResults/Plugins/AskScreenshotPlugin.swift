@@ -15,7 +15,10 @@ struct AskScreenshotPlugin: AskLauncherPlugin {
                    options: [ScreenshotMode.option: ScreenshotMode.scrolling.rawValue]),
         AskKeyword(keyword: "jtai", pluginID: id,
                    options: [ScreenshotMode.option: ScreenshotMode.region.rawValue,
-                             ScreenshotFollowUp.option: ScreenshotFollowUp.askAI.rawValue])
+                             ScreenshotFollowUp.option: ScreenshotFollowUp.askAI.rawValue]),
+        AskKeyword(keyword: "lp", pluginID: id, options: [ScreenshotMode.option: ScreenshotMode.recording.rawValue]),
+        AskKeyword(keyword: "录屏", pluginID: id, options: [ScreenshotMode.option: ScreenshotMode.recording.rawValue]),
+        AskKeyword(keyword: "gif", pluginID: id, options: [ScreenshotMode.option: ScreenshotMode.gif.rawValue])
     ]
 
     /// Keywords that start a screenshot at once on Return, even before they are entered.
@@ -35,25 +38,54 @@ struct AskScreenshotPlugin: AskLauncherPlugin {
     /// A read-only Screen Recording check; never prompts.
     var isPermissionGranted: @Sendable () -> Bool = { CGPreflightScreenCaptureAccess() }
 
-    var id: String { Self.id }
-    var title: String { L("screenshot.title") }
-    var symbol: String { "camera.viewfinder" }
-    var defaultKeywords: [AskKeyword] { Self.keywords }
-    var optionName: String? { L("screenshot.plugin.option") }
-    var runsWithoutInput: Bool { true }
-    var usesSelectionInput: Bool { false }
-    var entersOnReturn: Bool { true }
+    var id: String {
+        Self.id
+    }
 
-    func placeholder(selectionLines: Int?) -> String { L("screenshot.plugin.placeholder") }
+    var title: String {
+        L("screenshot.title")
+    }
+
+    var symbol: String {
+        "camera.viewfinder"
+    }
+
+    var defaultKeywords: [AskKeyword] {
+        Self.keywords
+    }
+
+    var optionName: String? {
+        L("screenshot.plugin.option")
+    }
+
+    var runsWithoutInput: Bool {
+        true
+    }
+
+    var usesSelectionInput: Bool {
+        false
+    }
+
+    var entersOnReturn: Bool {
+        true
+    }
+
+    func placeholder(selectionLines _: Int?) -> String {
+        L("screenshot.plugin.placeholder")
+    }
 
     /// "Needs permission" until Screen Recording is granted; otherwise the mode, when not the usual one.
-    func chipDetail(for keyword: AskKeyword, language: AppLanguage) -> String? {
+    func chipDetail(for keyword: AskKeyword, language _: AppLanguage) -> String? {
         guard isPermissionGranted() else { return L("screenshot.permission.needed") }
-        if ScreenshotFollowUp(options: keyword.options) == .askAI { return L("screenshot.followUp.askAI") }
+        if ScreenshotFollowUp(options: keyword.options) == .askAI {
+            return L("screenshot.followUp.askAI")
+        }
         return switch ScreenshotMode(options: keyword.options) {
         case .region: nil
         case .fullScreen: L("screenshot.mode.fullScreen.short")
         case .scrolling: L("screenshot.mode.scrolling.short")
+        case .recording: L("recording.title")
+        case .gif: L("recording.gif")
         }
     }
 
@@ -69,15 +101,17 @@ struct AskScreenshotPlugin: AskLauncherPlugin {
         ])
     }
 
-    func run(_ request: AskPluginRequest, plan: AskPluginPlan,
-             progress: @escaping AskPluginProgress) async throws -> AskPluginOutput {
+    func run(_: AskPluginRequest, plan _: AskPluginPlan,
+             progress _: @escaping AskPluginProgress) async throws -> AskPluginOutput {
         // The launcher carries out the plan's action; there is nothing to run.
         throw CancellationError()
     }
 
     /// ⇥ cycles through framing a region, the whole display and a scrolling capture.
-    func nextOptions(after plan: AskPluginPlan, request: AskPluginRequest, step: Int) -> [String: String]? {
-        let modes = ScreenshotMode.allCases
+    func nextOptions(after _: AskPluginPlan, request: AskPluginRequest, step: Int) -> [String: String]? {
+        let mode = ScreenshotMode(options: request.options)
+        let modes: [ScreenshotMode] = mode == .recording || mode == .gif
+            ? [.recording, .gif] : [.region, .fullScreen, .scrolling]
         let current = modes.firstIndex(of: ScreenshotMode(options: request.options)) ?? 0
         return [ScreenshotMode.option: modes[(current + step % modes.count + modes.count) % modes.count].rawValue]
     }
@@ -87,6 +121,8 @@ struct AskScreenshotPlugin: AskLauncherPlugin {
         case .region: L("screenshot.mode.region")
         case .fullScreen: L("screenshot.mode.fullScreen")
         case .scrolling: L("screenshot.mode.scrolling")
+        case .recording: L("recording.title")
+        case .gif: L("recording.gif")
         }
     }
 }

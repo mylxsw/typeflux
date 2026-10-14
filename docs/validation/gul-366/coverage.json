@@ -1,0 +1,50 @@
+{
+  "scope": "New screen recording module; includes native adapters and UI",
+  "covered_lines": 1580,
+  "executable_lines": 2163,
+  "line_coverage_percent": 73.05,
+  "files": [
+    {
+      "file": "Typeflux/Screenshot/Recording/ScreenRecordingCapture.swift",
+      "covered": 0,
+      "count": 304,
+      "percent": 0
+    },
+    {
+      "file": "Typeflux/Screenshot/Recording/ScreenRecordingCoordinator+Sources.swift",
+      "covered": 4,
+      "count": 53,
+      "percent": 7.55
+    },
+    {
+      "file": "Typeflux/Screenshot/Recording/ScreenRecordingCoordinator.swift",
+      "covered": 493,
+      "count": 561,
+      "percent": 87.88
+    },
+    {
+      "file": "Typeflux/Screenshot/Recording/ScreenRecordingExporter.swift",
+      "covered": 160,
+      "count": 173,
+      "percent": 92.49
+    },
+    {
+      "file": "Typeflux/Screenshot/Recording/ScreenRecordingModels.swift",
+      "covered": 108,
+      "count": 108,
+      "percent": 100
+    },
+    {
+      "file": "Typeflux/Screenshot/Recording/ScreenRecordingView.swift",
+      "covered": 475,
+      "count": 602,
+      "percent": 78.9
+    },
+    {
+      "file": "Typeflux/Screenshot/Recording/ScreenRecordingWriter.swift",
+      "covered": 340,
+      "count": 362,
+      "percent": 93.92
+    }
+  ]
+}

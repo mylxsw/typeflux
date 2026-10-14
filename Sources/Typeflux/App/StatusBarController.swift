@@ -39,6 +39,7 @@ final class StatusBarController: NSObject {
     private let onOpenAskConversations: () -> Void
     private let onScreenshot: () -> Void
     private let onScreenshotText: () -> Void
+    private let onScreenRecording: () -> Void
     /// How many screenshots are pinned, and how many of them let clicks through.
     private let pinnedScreenshots: () -> (count: Int, clickThrough: Int)
     private let onRestorePinnedScreenshots: () -> Void
@@ -66,6 +67,7 @@ final class StatusBarController: NSObject {
         onOpenAskConversations: @escaping () -> Void = {},
         onScreenshot: @escaping () -> Void = {},
         onScreenshotText: @escaping () -> Void = {},
+        onScreenRecording: @escaping () -> Void = {},
         pinnedScreenshots: @escaping () -> (count: Int, clickThrough: Int) = { (0, 0) },
         onRestorePinnedScreenshots: @escaping () -> Void = {},
         onClosePinnedScreenshots: @escaping () -> Void = {}
@@ -82,6 +84,7 @@ final class StatusBarController: NSObject {
         self.onOpenAskConversations = onOpenAskConversations
         self.onScreenshot = onScreenshot
         self.onScreenshotText = onScreenshotText
+        self.onScreenRecording = onScreenRecording
         self.pinnedScreenshots = pinnedScreenshots
         self.onRestorePinnedScreenshots = onRestorePinnedScreenshots
         self.onClosePinnedScreenshots = onClosePinnedScreenshots
@@ -246,7 +249,10 @@ final class StatusBarController: NSObject {
         menu.delegate = self
         menu.addItem(makeScreenshotItem())
         menu.addItem(makeScreenshotTextItem())
-        for item in makePinnedScreenshotItems() { menu.addItem(item) }
+        menu.addItem(makeItem(title: L("recording.title"), action: #selector(startScreenRecording)))
+        for item in makePinnedScreenshotItems() {
+            menu.addItem(item)
+        }
         menu.addItem(makeItem(title: L("menu.notes"), action: #selector(openNotes)))
         menu.addItem(makeItem(title: L("ask.wordBook.title"), action: #selector(openWordBook)))
         return menu
@@ -430,6 +436,10 @@ final class StatusBarController: NSObject {
         let equivalent = settingsStore.screenshotHotkey.flatMap(StatusBarMenuSupport.keyEquivalent(for:))
         item.keyEquivalent = equivalent?.key ?? ""
         item.keyEquivalentModifierMask = equivalent?.modifiers ?? []
+    }
+
+    @objc private func startScreenRecording() {
+        DispatchQueue.main.async { [onScreenRecording] in onScreenRecording() }
     }
 
     @objc private func takeScreenshot() {

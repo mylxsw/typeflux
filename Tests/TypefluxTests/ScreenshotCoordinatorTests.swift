@@ -191,6 +191,42 @@ final class ScreenshotCoordinatorTests: XCTestCase {
         await coordinator.pendingTask?.value
     }
 
+    func testRecordingModesDispatchWithoutFreezingDisplays() {
+        let capturer = FakeScreenCapturer(.success(Self.snapshot()))
+        let sut = makeCoordinator(capturer: capturer)
+        var formats: [ScreenRecordingFormat] = []
+        sut.onRecordingRequested = { format, target in
+            formats.append(format)
+            XCTAssertNil(target)
+        }
+        sut.start(mode: .recording)
+        sut.start(mode: .gif)
+        XCTAssertEqual(formats, [.mp4, .gif])
+        XCTAssertTrue(capturer.requests.isEmpty)
+        XCTAssertEqual(sut.state, .idle)
+        sut.isRecordingActive = { true }
+        sut.start(mode: .region)
+        sut.start(mode: .recording)
+        XCTAssertEqual(formats.count, 2)
+        XCTAssertEqual(toasts.shown.last, .busy)
+    }
+
+    func testRecordingSelectedRegionHandsOffWithoutRendering() async {
+        let sut = makeCoordinator(render: { _, _, _ in
+            XCTFail("A live recording must not render static annotations")
+            throw ScreenCaptureError.unavailable
+        })
+        var target: ScreenRecordingTarget?
+        sut.onRecordingRequested = { _, region in target = region }
+        await started(sut)
+        let rect = CGRect(x: 10, y: 20, width: 50, height: 30)
+        sut.handle(.finish(.record, displayID: 1, rect: rect))
+        XCTAssertEqual(target, .region(displayID: 1, rect: rect))
+        XCTAssertEqual(sut.state, .idle)
+        XCTAssertFalse(overlay.isShowing)
+        XCTAssertTrue(output.copiedText.isEmpty)
+    }
+
     // MARK: Starting
 
     func testStartFreezesAllDisplaysAndShowsOneOverlay() async {
