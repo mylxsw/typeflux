@@ -211,6 +211,10 @@ struct AskPluginItem: Equatable, Sendable, Identifiable {
     var autocomplete: String?
     /// Return, ⌥↩ and ⌘C for this row, and asking the AI about it.
     var actions: [AskPluginAction] = []
+    /// A short tag after the title, e.g. "Content match".
+    var badge: String?
+    /// A matched passage on its own line below the subtitle; such rows are taller.
+    var excerpt: String?
 }
 
 /// An image to show as a result: a file on this Mac and its size in points.

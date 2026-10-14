@@ -1,0 +1,7 @@
+diff --git a/src/llama-context.cpp b/src/llama-context.cpp
+--- a/src/llama-context.cpp
++++ b/src/llama-context.cpp
+@@ -2136,2 +2136,2 @@
+-    bool has_logits     = true;
++    bool has_logits     = !(cparams.embeddings && !cparams.causal_attn);
+     bool has_embd       = cparams.embeddings;

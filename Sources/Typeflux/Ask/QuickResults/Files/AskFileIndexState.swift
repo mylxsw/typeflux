@@ -54,6 +54,7 @@ struct AskFileDirectory: Equatable, Sendable {
 
 /// A file found for the launcher's text.
 struct AskFileHit: Equatable, Sendable, Identifiable {
+    struct Evidence: Equatable, Sendable { var text: String; var page: Int? }
     var path: String
     var name: String
     var kind: AskFileRecord.Kind
@@ -64,6 +65,7 @@ struct AskFileHit: Equatable, Sendable, Identifiable {
     var match: Double = 0
     /// Characters of `name` that matched.
     var highlights: [Range<Int>] = []
+    var evidence: Evidence?
 
     var id: String { path }
     var url: URL { URL(fileURLWithPath: path, isDirectory: kind == .folder) }

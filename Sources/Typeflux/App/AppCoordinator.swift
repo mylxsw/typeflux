@@ -119,8 +119,11 @@ final class AppCoordinator {
             textRecognizer: di.imageTextRecognizer
         )
         workflowController.enforceClipboardRetentionPolicy()
+        let semanticSearch = SemanticFileSearchService.shared
+        workflowController.onForegroundActivityChanged = { [weak semanticSearch] busy in semanticSearch?.setForegroundBusy(busy) }
         di.clipboardMonitor.start()
         if let ask = di.askConversationWindowController {
+            ask.model.semanticSearch = semanticSearch
             workflowController.onAskRequested = { [weak ask] in ask?.toggleLauncher() }
             // Build the launcher while the app is idle, so the first ⌥Space shows it at once.
             DispatchQueue.main.async { [weak ask] in ask?.prewarmLauncher() }

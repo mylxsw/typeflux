@@ -56,6 +56,8 @@ final class AskFileReader: AskFileReading {
             result.entries += response.entries
             result.path = response.path ?? result.path
             result.text = response.text ?? result.text
+            result.pages = response.pages ?? result.pages
+            result.embeddings = response.embeddings ?? result.embeddings
             result.truncated = response.truncated ?? result.truncated
             result.fileSize = response.fileSize ?? result.fileSize
             result.modified = response.modified ?? result.modified

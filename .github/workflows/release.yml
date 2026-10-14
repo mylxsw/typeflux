@@ -59,8 +59,8 @@ jobs:
           restore-keys: |
             typeflux-bundled-models-${{ runner.os }}-
 
-      - name: Install create-dmg
-        run: brew install create-dmg
+      - name: Install packaging tools
+        run: brew install create-dmg cmake
 
       - name: Import Developer ID certificate
         env:

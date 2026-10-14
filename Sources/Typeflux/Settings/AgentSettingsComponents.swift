@@ -31,6 +31,7 @@ struct AgentSettingsRow<Trailing: View>: View {
     let title: String
     var subtitle: String?
     var badge: String?
+    var badgeAccent = false
     var subtitleLineLimit: Int? = 2
     var titleLineLimit: Int? = 1
     @ViewBuilder var trailing: Trailing
@@ -48,7 +49,7 @@ struct AgentSettingsRow<Trailing: View>: View {
                         .lineLimit(titleLineLimit)
                         .truncationMode(.middle)
                         .fixedSize(horizontal: false, vertical: true)
-                    if let badge { ModelUsageBadge(text: badge) }
+                    if let badge { ModelUsageBadge(text: badge, accent: badgeAccent) }
                 }
                 if let subtitle, !subtitle.isEmpty {
                     Text(subtitle)

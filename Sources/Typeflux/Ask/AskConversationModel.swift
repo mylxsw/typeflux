@@ -45,6 +45,7 @@ final class AskConversationModel: ObservableObject {
     var launcherExecutedInput: String?
     /// Files and folders the launcher can open; tests supply their own.
     var fileIndex: any AskFileSearching = AskFileIndex.shared
+    var semanticSearch: (any SemanticFileSearching)?
     /// Whether a found file is still there; tests decide instead.
     var fileExists: (String) -> Bool = { FileManager.default.fileExists(atPath: $0) }
     /// Opens a file in a given application; tests record it instead.

@@ -4,13 +4,14 @@ import ImageIO
 
 /// Private line-delimited protocol between the index and its disposable file-system worker.
 struct AskFileReadRequest: Codable {
-    enum Operation: String, Codable { case directory, entry, resolve, preview }
+    enum Operation: String, Codable { case directory, entry, resolve, preview, content, embedding }
     var operation: Operation
     var path: String
     var scope: AskFileScope?
     var blocked: [String] = []
     var limit: Int = AskFileCrawler.maximumEntries
     var readText: Bool = true
+    var texts: [String]?
 }
 
 struct AskFileReadResponse: Codable {
@@ -25,6 +26,8 @@ struct AskFileReadResponse: Codable {
     var modified: Date?
     var imageWidth: Int?
     var imageHeight: Int?
+    var pages: [SemanticPage]?
+    var embeddings: [[Float]]?
 }
 
 /// Runs before AppKit startup. Only this child performs potentially stuck directory reads.
@@ -49,6 +52,8 @@ public enum AskFileWorkerCommand {
             result.entries += frame.entries
             result.path = frame.path ?? result.path
             result.text = frame.text ?? result.text
+            result.pages = frame.pages ?? result.pages
+            result.embeddings = frame.embeddings ?? result.embeddings
             result.truncated = frame.truncated ?? result.truncated
             result.fileSize = frame.fileSize ?? result.fileSize
             result.modified = frame.modified ?? result.modified
@@ -70,6 +75,8 @@ public enum AskFileWorkerCommand {
     private static func response(_ request: AskFileReadRequest, mounts: AskFileMounts,
                                  emit: (AskFileReadResponse) throws -> Void) throws -> AskFileReadResponse {
         if request.operation == .preview { return preview(request, mounts: mounts) }
+        if request.operation == .content { return content(request, mounts: mounts) }
+        if request.operation == .embedding { return AskFileReadResponse(error: EINVAL) }
         if request.operation == .resolve {
             return AskFileReadResponse(path: resolve(request.path, blocked: request.blocked, mounts: mounts))
         }
@@ -193,7 +200,7 @@ public enum AskFileWorkerCommand {
     }
 
     /// Opening ancestors with O_NOFOLLOW prevents an alias (or a replaced directory) bypassing the policy.
-    private static func openDirectory(_ path: String, blocked: [String]) -> Int32 {
+    static func openDirectory(_ path: String, blocked: [String]) -> Int32 {
         guard path.hasPrefix("/"), AskFileScope.normalize(path) == path else { errno = EINVAL; return -1 }
         var descriptor = open("/", O_RDONLY | O_DIRECTORY | O_CLOEXEC)
         var current = ""

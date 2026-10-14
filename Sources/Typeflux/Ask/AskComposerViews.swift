@@ -384,7 +384,8 @@ struct AskComposer: View {
                                               files: model.quickFilesEnabled ? model.fileIndex : nil,
                                               settings: model.launcherSearchSettings,
                                               entries: model.launcherSearchEntries(language: AppLocalization.shared.language),
-                                              browsers: model.browserSearch, browserSettings: model.browserSearchSettings)
+                                              browsers: model.browserSearch, browserSettings: model.browserSearchSettings,
+                                              semantic: model.semanticSearch)
         if resetActions { quickActions = nil }
         quickSearch.update(text: draft.wrappedValue.text,
                            chinese: AppLocalization.shared.language == .simplifiedChinese,

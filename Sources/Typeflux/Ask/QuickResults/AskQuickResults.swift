@@ -179,6 +179,7 @@ struct AskQuickResults: Equatable {
         var entries: [AskLauncherSearchEntry] = []
         var browsers: (any AskBrowserSearching)?
         var browserSettings = AskBrowserSearchSettings()
+        var semantic: (any SemanticFileSearching)?
     }
 
     /// At most this many of each kind in the launcher; files beyond it are behind "Show all".
@@ -335,7 +336,7 @@ struct AskQuickResults: Equatable {
         var candidates: [(row: Row, score: Double, app: Bool)] = []
         if let app = apps.first { candidates.append((.app(0), app.score, true)) }
         if let pane = panes.first { candidates.append((.pane(0), pane.score, true)) }
-        for (index, file) in files.enumerated() { candidates.append((.file(index), file.score, false)) }
+        for (index, file) in files.enumerated() where file.evidence == nil { candidates.append((.file(index), file.score, false)) }
         // Applications win a tie; then the order they came in.
         candidates.sort { lhs, rhs in lhs.score != rhs.score ? lhs.score > rhs.score : lhs.app && !rhs.app }
         guard let first = candidates.first else { return nil }
