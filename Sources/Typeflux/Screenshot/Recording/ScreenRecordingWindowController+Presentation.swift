@@ -192,7 +192,7 @@ extension ScreenRecordingWindowController {
             appKitTargetFrame()
         }
         guard frame.width > 0 else { return }
-        let panel = makePanel(frame: frame.insetBy(dx: -3, dy: -3), interactive: false)
+        let panel = makePanel(frame: ScreenRecordingBorderView.panelFrame(around: frame), interactive: false)
         panel.contentView = ScreenRecordingBorderView()
         panel.orderFrontRegardless(); border = panel
     }
@@ -283,7 +283,7 @@ extension ScreenRecordingWindowController {
         }
         if model.state == .recording || model.state == .paused {
             if case .window = model.selectedSource?.target, let border {
-                border.setFrame(appKitTargetFrame().insetBy(dx: -3, dy: -3), display: true)
+                border.setFrame(ScreenRecordingBorderView.panelFrame(around: appKitTargetFrame()), display: true)
             }
             (border?.contentView as? ScreenRecordingBorderView)?.paused = model.state == .paused
         }

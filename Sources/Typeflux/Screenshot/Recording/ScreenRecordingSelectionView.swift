@@ -231,6 +231,12 @@ final class ScreenRecordingOverlayPanel: NSPanel {
 }
 
 final class ScreenRecordingBorderView: NSView {
+    /// Keep the entire stroke (including the thicker corner brackets) outside
+    /// the captured pixels, even before window exclusions reach the compositor.
+    static func panelFrame(around captureFrame: CGRect) -> CGRect {
+        captureFrame.insetBy(dx: -6, dy: -6)
+    }
+
     var paused = false {
         didSet { needsDisplay = true }
     }
@@ -238,17 +244,18 @@ final class ScreenRecordingBorderView: NSView {
     override func draw(_: NSRect) {
         let color = paused ? NSColor.systemOrange : .systemRed
         color.withAlphaComponent(0.75).setStroke()
-        let outline = NSBezierPath(rect: bounds.insetBy(dx: 3, dy: 3))
+        let strokeBounds = bounds.insetBy(dx: 2, dy: 2)
+        let outline = NSBezierPath(rect: strokeBounds)
         outline.lineWidth = 1.5
         if paused {
             outline.setLineDash([6, 4], count: 2, phase: 0)
         }
         outline.stroke()
         color.setStroke()
-        let corners = [(bounds.minX + 3, bounds.minY + 3, CGFloat(1), CGFloat(1)),
-                       (bounds.maxX - 3, bounds.minY + 3, -1, 1),
-                       (bounds.minX + 3, bounds.maxY - 3, 1, -1),
-                       (bounds.maxX - 3, bounds.maxY - 3, -1, -1)]
+        let corners = [(strokeBounds.minX, strokeBounds.minY, CGFloat(1), CGFloat(1)),
+                       (strokeBounds.maxX, strokeBounds.minY, -1, 1),
+                       (strokeBounds.minX, strokeBounds.maxY, 1, -1),
+                       (strokeBounds.maxX, strokeBounds.maxY, -1, -1)]
         for (cornerX, cornerY, directionX, directionY) in corners {
             let bracket = NSBezierPath()
             bracket.move(to: CGPoint(x: cornerX + directionX * 16, y: cornerY))
