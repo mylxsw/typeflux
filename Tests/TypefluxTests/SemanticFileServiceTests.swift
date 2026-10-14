@@ -285,18 +285,8 @@ struct SemanticFileServiceTests {
         }
     }
 
-    @Test func nativeControlsDisableUnsupportedHardwareAndCompleteSetup() async throws {
+    @Test func nativeControlsUseInlineSetupAndManagement() async throws {
         typealias Support = SettingsBehaviorTestSupport
-        @MainActor func press(_ title: String, in root: Any,
-                              sourceLocation: SourceLocation = #_sourceLocation) async throws {
-            try await Self.ready(sourceLocation: sourceLocation) {
-                Support.elements(in: root).contains {
-                    $0.role == NSAccessibility.Role.button.rawValue && $0.label == title &&
-                        $0.value("isAccessibilityEnabled") as? Bool != false
-                }
-            }
-            try Support.button(title, in: root).press()
-        }
         let (unsupported, unsupportedRoot, _, _) = try fixture(supported: false)
         let (service, root, _, _) = try fixture()
         defer {
@@ -305,7 +295,7 @@ struct SemanticFileServiceTests {
         }
         try await Support.withFixture { _ in
             try await Support.withWindow(SemanticFileSearchSettingsView(service: unsupported, filesEnabled: true),
-                                    width: 760, height: 260) { _, host in
+                                         width: 760, height: 300) { _, host in
                 let toggle = try #require(Support.elements(in: host).first {
                     $0.value("accessibilityIdentifier") as? String == "semantic.enabled"
                 })
@@ -313,61 +303,31 @@ struct SemanticFileServiceTests {
                 #expect(Support.contains(L("semantic.unsupported"), in: host))
             }
             let view = SemanticFileSearchSettingsView(service: service, filesEnabled: true)
-            try await Support.withWindow(view, width: 760, height: 280) { window, host in
-                #expect(Support.contains(L("semantic.offDetail"), in: host))
-                let toggle = try #require(Support.elements(in: host).first {
-                    $0.value("accessibilityIdentifier") as? String == "semantic.enabled"
-                })
-                #expect(toggle.value("isAccessibilityEnabled") as? Bool == true)
-                try toggle.press()
-                try await Self.ready { window.attachedSheet != nil }
-                let firstSetup = try #require(window.attachedSheet)
-                try await Task.sleep(for: .milliseconds(200))
-                try await Self.ready { Support.contains(L("semantic.cancel"), in: firstSetup) }
-                try await press(L("semantic.cancel"), in: firstSetup)
-                try await Self.ready { window.attachedSheet == nil }
-                #expect(!service.preferences.enabled)
-
-                // Setup reads the existing file-search scope and can enable immediately.
-                try toggle.press()
-                try await Self.ready { window.attachedSheet != nil }
-                let setup = try #require(window.attachedSheet)
-                try await Self.ready { Support.contains(L("semantic.enable.download"), in: setup) }
-                let enable = try Support.button(L("semantic.enable.download"), in: setup)
-                #expect(enable.value("isAccessibilityEnabled") as? Bool == true)
-                #expect(Support.contains(L("semantic.folders.count", 1), in: setup))
-                try await press(L("semantic.enable.download"), in: setup)
-                try await Self.ready { window.attachedSheet == nil }
+            try await Support.withWindow(view, width: 760, height: 560) { window, host in
+                #expect(Support.contains(L("semantic.privacy"), in: host))
+                #expect(Support.contains(L("semantic.enable.download"), in: host))
+                #expect(window.attachedSheet == nil)
+                try Support.button(L("semantic.enable.download"), in: host).press()
                 try await Self.ready { service.phase == .ready }
+                #expect(window.attachedSheet == nil)
                 #expect(service.settings.askLauncherSearchSettings.fileRoots == [root.path])
-                try await Self.ready { Support.contains(service.status().text, in: host) }
+                #expect(Support.contains(L("semantic.metric.index"), in: host))
 
-                // Manage: lifecycle controls act at once; scope is read-only here.
-                try await press(L("semantic.manage"), in: host)
-                try await Self.ready { window.attachedSheet != nil }
-                let manage = try #require(window.attachedSheet)
-                try await Self.ready { Support.contains(L("semantic.manage.title"), in: manage) }
-                // A finished index offers Rebuild; Pause appears only while work runs (fixtures finish at once).
-                #expect(!Support.contains(L("semantic.pause"), in: manage))
                 service.pause(true)
                 try await Self.ready { service.phase == .paused }
-                try await press(L("semantic.resume"), in: manage)
+                try Support.button(L("semantic.resume"), in: host).press()
                 try await Self.ready { service.phase == .ready }
-                // Rebuild clears asynchronously; wait until the index went off and came back.
+
                 var phases: [SemanticFileSearchService.Phase] = []
                 let watch = service.$phase.sink { phases.append($0) }
                 defer { watch.cancel() }
-                try await press(L("semantic.rebuild"), in: manage)
+                try await Self.ready { Support.contains(L("semantic.rebuild"), in: host) }
+                try Support.button(L("semantic.rebuild"), in: host).press()
                 try await Self.ready {
                     phases.contains(.off) && service.phase == .ready && service.files == 1
                         && service.preferences.enabled
                 }
-                #expect(Support.contains(L("semantic.folders.count", 1), in: manage))
-                #expect(service.settings.askLauncherSearchSettings.fileRoots == [root.path]
-                    && service.preferences.enabled)
-                try await press(L("semantic.close"), in: manage)
-                try await Self.ready { window.attachedSheet == nil }
-                #expect(service.preferences.enabled && service.phase == .ready)
+                #expect(window.attachedSheet == nil)
             }
         }
         await service.clear(removeModel: true)
@@ -394,7 +354,7 @@ struct SemanticFileServiceTests {
         await service.clear(removeModel: true)
     }
 
-    @Test func nativeManagementConfirmsClearingAndModelRemoval() async throws {
+    @Test func nativeManagementConfirmsClearingAndModelRemovalInline() async throws {
         typealias Support = SettingsBehaviorTestSupport
         let (service, root, _, _) = try fixture()
         defer { try? FileManager.default.removeItem(at: root) }
@@ -404,31 +364,30 @@ struct SemanticFileServiceTests {
         let stored = service.storage()
         #expect(stored.index > 0 && stored.model > 0)
         try await Support.withFixture { _ in
-            for (key, confirm) in [("semantic.clear", "semantic.clear.confirm"),
-                                   ("semantic.remove", "semantic.remove.confirm")] {
-                var closed = false
-                let sheet = SemanticFileSearchSheet(service: service, setup: false) { closed = true }
-                try await Support.withWindow(sheet, width: SemanticFileSearchSheet.width, height: 720) { window, host in
+            let view = SemanticFileSearchSettingsView(service: service, filesEnabled: true)
+            try await Support.withWindow(view, width: 760, height: 620) { window, host in
+                for (key, confirm) in [("semantic.clear", "semantic.clear.confirm"),
+                                       ("semantic.remove", "semantic.remove.confirm")] {
                     try await Self.ready { Support.contains(L(key), in: host) }
                     try Support.button(L(key), in: host).press()
-                    try await Self.ready { window.attachedSheet != nil }
-                    let confirmation = try #require(window.attachedSheet)
                     let message = key == "semantic.clear" ? "semantic.clear.message" : "semantic.remove.message"
-                    #expect(Support.contains(L(message), in: confirmation))
-                    try await Self.ready { Support.contains(L(confirm), in: confirmation) }
-                    try Support.button(L(confirm), in: confirmation).press()
-                    // Removal finishes after the sheet closes; the model flag drops only once files are gone.
+                    try await Self.ready { Support.contains(L(message), in: host) }
+                    #expect(window.attachedSheet == nil)
+                    try Support.button(L(confirm), in: host).press()
                     try await Self.ready {
-                        closed && !service.preferences.enabled && service.phase == .off &&
+                        !service.preferences.enabled && service.phase == .off &&
                             service.modelReady == (key == "semantic.clear")
                     }
+                    #expect(service.settings.askLauncherSearchSettings.fileRoots == [root.path])
+                    if key == "semantic.clear" {
+                        try Support.button(L("semantic.enable"), in: host).press()
+                        try await Self.ready { service.phase == .ready }
+                    }
                 }
-                // Clearing keeps the model and file-search scope; removal deletes the weights.
-                #expect(service.settings.askLauncherSearchSettings.fileRoots == [root.path])
-                #expect(service.modelReady == (key == "semantic.clear"))
             }
         }
         #expect(!FileManager.default.fileExists(atPath: service.modelURL.path))
         #expect(service.storage().index == 0 && service.storage().model == 0)
     }
+
 }

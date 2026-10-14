@@ -3633,6 +3633,12 @@
 "launcher.search.index.truncated" = "已滿，請縮小範圍";
 "launcher.search.index.rebuild" = "重建索引";
 "launcher.search.index.clear" = "清除索引";
+"launcher.search.index.name" = "檔案名稱索引";
+"launcher.search.index.name.subtitle" = "用於依名稱尋找檔案。";
+"launcher.search.index.shared" = "兩種索引共用上方的資料夾與排除規則。檔案名稱索引記錄範圍內的檔案；內容索引只處理支援且可讀取的本機檔案。";
+"launcher.search.index.clear.title" = "清除檔案名稱索引？";
+"launcher.search.index.clear.message" = "清除後，依檔案名稱搜尋會暫停，直到重新建立索引。內容索引和原始檔案不受影響。";
+"launcher.search.index.clear.confirm" = "確認清除";
 "launcher.search.exclude.paths" = "依路徑排除";
 "launcher.search.exclude.types" = "依檔案類型排除";
 "launcher.search.exclude.types.placeholder" = "副檔名，如 log";
@@ -5047,7 +5053,7 @@
 // Local semantic file search (experimental).
 "semantic.section" = "實驗性功能";
 "semantic.title" = "語意檔案搜尋";
-"semantic.subtitle" = "依檔案內容與含義尋找，只索引你選擇的資料夾。";
+"semantic.subtitle" = "依內容語意尋找；僅處理本機文字與含文字層的 PDF。";
 "semantic.offDetail" = "文字與 PDF · 首次下載約 310 MB · 本機執行";
 "semantic.unsupported" = "需要 Apple Silicon 和 macOS 14 或更新版本。";
 "semantic.experimental" = "實驗性";

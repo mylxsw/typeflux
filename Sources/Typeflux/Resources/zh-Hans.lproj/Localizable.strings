@@ -3636,6 +3636,12 @@
 "launcher.search.index.truncated" = "已满，请缩小范围";
 "launcher.search.index.rebuild" = "重建索引";
 "launcher.search.index.clear" = "清除索引";
+"launcher.search.index.name" = "文件名索引";
+"launcher.search.index.name.subtitle" = "用于按名称查找文件。";
+"launcher.search.index.shared" = "两种索引共用上方的文件夹和排除规则。文件名索引记录范围内的文件；内容索引只处理支持且可读取的本地文件。";
+"launcher.search.index.clear.title" = "清除文件名索引？";
+"launcher.search.index.clear.message" = "清除后，按文件名搜索会暂停，直到你重建索引。内容索引和原文件不受影响。";
+"launcher.search.index.clear.confirm" = "确认清除";
 "launcher.search.exclude.paths" = "按路径排除";
 "launcher.search.exclude.types" = "按文件类型排除";
 "launcher.search.exclude.types.placeholder" = "扩展名，如 log";
@@ -5062,7 +5068,7 @@
 // Local semantic file search (experimental).
 "semantic.section" = "实验性功能";
 "semantic.title" = "语义文件搜索";
-"semantic.subtitle" = "按文件内容与含义查找，只索引你选择的文件夹。";
+"semantic.subtitle" = "按内容含义查找；仅处理本地文本和带文字层的 PDF。";
 "semantic.offDetail" = "文本与 PDF · 首次下载约 310 MB · 本机运行";
 "semantic.unsupported" = "需要 Apple Silicon 和 macOS 14 或更新版本。";
 "semantic.experimental" = "实验性";

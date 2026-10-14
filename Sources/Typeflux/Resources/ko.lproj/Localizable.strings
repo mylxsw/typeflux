@@ -3626,6 +3626,12 @@
 "launcher.search.index.truncated" = "가득 참: 범위를 줄이세요";
 "launcher.search.index.rebuild" = "색인 다시 만들기";
 "launcher.search.index.clear" = "색인 지우기";
+"launcher.search.index.name" = "파일 이름 색인";
+"launcher.search.index.name.subtitle" = "이름으로 파일을 찾습니다.";
+"launcher.search.index.shared" = "두 색인은 위의 폴더와 제외 규칙을 함께 사용합니다. 파일 이름 색인은 검색 범위의 파일을 기록하고, 내용 색인은 지원되는 로컬 파일만 읽습니다.";
+"launcher.search.index.clear.title" = "파일 이름 색인을 지울까요?";
+"launcher.search.index.clear.message" = "지우면 색인을 다시 만들 때까지 파일 이름 검색이 중지됩니다. 내용 색인과 원본 파일에는 영향이 없습니다.";
+"launcher.search.index.clear.confirm" = "색인 지우기";
 "launcher.search.exclude.paths" = "경로로 제외";
 "launcher.search.exclude.types" = "파일 유형으로 제외";
 "launcher.search.exclude.types.placeholder" = "확장자(예: log)";
@@ -5013,7 +5019,7 @@
 // Local semantic file search (experimental).
 "semantic.section" = "실험적 기능";
 "semantic.title" = "의미 기반 파일 검색";
-"semantic.subtitle" = "파일 내용과 의미로 찾습니다. 선택한 폴더만 색인합니다.";
+"semantic.subtitle" = "내용의 의미로 찾습니다. 로컬 텍스트와 텍스트 레이어가 있는 PDF만 처리합니다.";
 "semantic.offDetail" = "텍스트 및 PDF · 처음 약 310 MB 다운로드 · 이 Mac에서 실행";
 "semantic.unsupported" = "Apple Silicon 및 macOS 14 이상이 필요합니다.";
 "semantic.experimental" = "실험적";

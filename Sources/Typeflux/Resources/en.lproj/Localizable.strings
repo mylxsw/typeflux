@@ -3636,6 +3636,12 @@
 "launcher.search.index.truncated" = "Full: narrow the folders";
 "launcher.search.index.rebuild" = "Rebuild Index";
 "launcher.search.index.clear" = "Clear Index";
+"launcher.search.index.name" = "File name index";
+"launcher.search.index.name.subtitle" = "Finds files by name.";
+"launcher.search.index.shared" = "Both indexes use the folders above and the same exclusions. The file name index tracks files in scope; the content index reads only supported local files.";
+"launcher.search.index.clear.title" = "Clear the file name index?";
+"launcher.search.index.clear.message" = "File name search pauses until you rebuild this index. The content index and your files are unaffected.";
+"launcher.search.index.clear.confirm" = "Clear index";
 "launcher.search.exclude.paths" = "Exclude by path";
 "launcher.search.exclude.types" = "Exclude by file type";
 "launcher.search.exclude.types.placeholder" = "Extension, such as log";
@@ -5062,7 +5068,7 @@
 // Local semantic file search (experimental).
 "semantic.section" = "Experimental";
 "semantic.title" = "Semantic file search";
-"semantic.subtitle" = "Find files by what they say. Only folders you choose are indexed.";
+"semantic.subtitle" = "Find files by meaning; reads local text and PDFs with a text layer.";
 "semantic.offDetail" = "Text and PDF · About 310 MB first download · Runs on this Mac";
 "semantic.unsupported" = "Requires Apple Silicon and macOS 14 or later.";
 "semantic.experimental" = "Experimental";

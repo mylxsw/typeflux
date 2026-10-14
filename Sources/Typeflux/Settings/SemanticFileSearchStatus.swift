@@ -1,6 +1,6 @@
 import Foundation
 
-/// What the settings card and the management sheet say about content search right now.
+/// What the inline content-index row says about content search right now.
 struct SemanticFileSearchStatus: Equatable {
     enum Tone: Equatable { case off, busy, ready, warning }
     enum Progress: Equatable { case download(Double), scanning(Int, Int), indexing(Int, Int) }

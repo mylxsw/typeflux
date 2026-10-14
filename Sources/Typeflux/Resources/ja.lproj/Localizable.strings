@@ -3626,6 +3626,12 @@
 "launcher.search.index.truncated" = "上限に達しました";
 "launcher.search.index.rebuild" = "インデックスを再作成";
 "launcher.search.index.clear" = "インデックスを消去";
+"launcher.search.index.name" = "ファイル名インデックス";
+"launcher.search.index.name.subtitle" = "名前からファイルを検索します。";
+"launcher.search.index.shared" = "両方のインデックスは上のフォルダと除外ルールを共有します。ファイル名インデックスは対象範囲のファイルを記録し、内容インデックスは対応するローカルファイルのみを読み取ります。";
+"launcher.search.index.clear.title" = "ファイル名インデックスを消去しますか？";
+"launcher.search.index.clear.message" = "消去後はインデックスを再作成するまでファイル名検索が停止します。内容インデックスと元のファイルには影響しません。";
+"launcher.search.index.clear.confirm" = "消去する";
 "launcher.search.exclude.paths" = "パスで除外";
 "launcher.search.exclude.types" = "種類で除外";
 "launcher.search.exclude.types.placeholder" = "拡張子（例：log）";
@@ -5013,7 +5019,7 @@
 // Local semantic file search (experimental).
 "semantic.section" = "試験的な機能";
 "semantic.title" = "セマンティックファイル検索";
-"semantic.subtitle" = "ファイルの内容と意味で検索します。選択したフォルダだけを索引します。";
+"semantic.subtitle" = "内容の意味から検索します。ローカルのテキストとテキストレイヤー付き PDF のみを処理します。";
 "semantic.offDetail" = "テキストと PDF · 初回ダウンロード約 310 MB · この Mac で実行";
 "semantic.unsupported" = "Apple Silicon と macOS 14 以降が必要です。";
 "semantic.experimental" = "試験的";

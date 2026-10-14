@@ -31,6 +31,7 @@ struct LauncherSearchSettingsView: View {
     @State var hasFullDiskAccess = false
     @State private var newExtension = ""
     @State private var newFolderName = ""
+    @State private var confirmingNameIndexClear = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
@@ -152,7 +153,6 @@ struct LauncherSearchSettingsView: View {
                     .accessibilityIdentifier("launcher.search.files.enabled")
             }
         }
-        SemanticFileSearchSettingsView(service: semanticService, filesEnabled: filesEnabled)
         AgentSettingsSection(title: L("launcher.search.files.roots"), detail: "\(search.fileRoots.count)",
                              footnote: L("launcher.search.files.footnote")) {
             if search.fileRoots.isEmpty {
@@ -181,35 +181,57 @@ struct LauncherSearchSettingsView: View {
             .padding(.horizontal, 18).padding(.vertical, 10)
         }
         AgentSettingsSection(title: L("launcher.search.index")) {
-            indexStatus
+            nameIndexRow
             ModelRowDivider(leading: 18)
-            HStack(spacing: 8) {
-                Button(L("launcher.search.index.rebuild")) { index.rebuild() }
-                    .disabled(!filesEnabled || status.isBuilding)
-                Button(L("launcher.search.index.clear"), role: .destructive) { index.clear() }
-                    .disabled(status.phase == .off)
-                Spacer()
-            }
-            .controlSize(.small)
-            .padding(.horizontal, 18).padding(.vertical, 10)
+            SemanticFileSearchSettingsView(service: semanticService, filesEnabled: filesEnabled)
         }
+        Text(L("launcher.search.index.shared"))
+            .font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
+            .fixedSize(horizontal: false, vertical: true).padding(.horizontal, 4)
     }
 
-    private var indexStatus: some View {
-        HStack(spacing: 0) {
-            statusCell(L("launcher.search.index.count"), status.count.formatted())
-            statusCell(L("launcher.search.index.memory"), ByteCountFormatter.string(fromByteCount: Int64(status.bytes),
-                                                                                    countStyle: .memory))
-            statusCell(L("launcher.search.index.updated"),
-                       status.updatedAt.map { AskQuickResultsView.relative($0) } ?? "—")
-            statusCell(L("launcher.search.index.state"), Self.phaseText(status, enabled: filesEnabled))
-        }
-        .overlay(alignment: .bottom) {
+    private var nameIndexRow: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Circle().fill(filesEnabled ? StudioTheme.success : StudioTheme.textTertiary)
+                    .frame(width: 7, height: 7)
+                Text(L("launcher.search.index.name"))
+                    .font(.system(size: 14, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
+                Spacer(minLength: 8)
+                Text(Self.phaseText(status, enabled: filesEnabled))
+                    .font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
+            }
+            SemanticFileSearchSettingsView.caption(L("launcher.search.index.name.subtitle"))
+            HStack(spacing: 20) {
+                indexMetric(L("launcher.search.index.count"), status.count.formatted())
+                indexMetric(L("launcher.search.index.memory"), ByteCountFormatter.string(
+                    fromByteCount: Int64(status.bytes), countStyle: .memory
+                ))
+                indexMetric(L("launcher.search.index.updated"),
+                            status.updatedAt.map { AskQuickResultsView.relative($0) } ?? "—")
+            }
             if let progress = status.progress {
-                ProgressView(value: progress).progressViewStyle(.linear).padding(.horizontal, 18)
+                ProgressView(value: progress).progressViewStyle(.linear).controlSize(.small)
+            }
+            HStack(spacing: 14) {
+                SemanticFileSearchSettingsView.link(L("launcher.search.index.rebuild")) { index.rebuild() }
+                    .disabled(!filesEnabled || status.isBuilding)
+                SemanticFileSearchSettingsView.destructiveLink(L("launcher.search.index.clear")) {
+                    confirmingNameIndexClear = true
+                }.disabled(status.phase == .off)
+            }
+            if confirmingNameIndexClear {
+                FileIndexInlineConfirmation(title: L("launcher.search.index.clear.title"),
+                                            message: L("launcher.search.index.clear.message"),
+                                            confirm: L("launcher.search.index.clear.confirm")) {
+                    index.clear()
+                    confirmingNameIndexClear = false
+                } onCancel: {
+                    confirmingNameIndexClear = false
+                }
             }
         }
-        .accessibilityElement(children: .combine)
+        .padding(.horizontal, 18).padding(.vertical, 16)
         .accessibilityIdentifier("launcher.search.index.status")
     }
 
@@ -223,14 +245,13 @@ struct LauncherSearchSettingsView: View {
         }
     }
 
-    private func statusCell(_ title: String, _ value: String) -> some View {
+    private func indexMetric(_ title: String, _ value: String) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(title).font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
             Text(value).font(.system(size: 14, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
                 .lineLimit(1).minimumScaleFactor(0.7)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 18).padding(.vertical, 12)
     }
 
     private func quickAdd(_ title: String, _ path: String) -> some View {
