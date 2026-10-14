@@ -113,6 +113,8 @@ struct AskPluginResultsView: View {
     static let skeletonHeight: CGFloat = 44
     static let caret = " ▍"
     static let itemHeight: CGFloat = 44
+    /// A row with a matched passage below its subtitle.
+    static let excerptItemHeight: CGFloat = 62
     static let itemSpacing: CGFloat = 2
     /// Longer lists scroll; the launcher does not grow past this many rows.
     static let maximumVisibleItems = 6
@@ -157,6 +159,17 @@ struct AskPluginResultsView: View {
         return visible * itemHeight + (visible - 1) * itemSpacing
     }
 
+    static func itemHeight(_ item: AskPluginItem) -> CGFloat {
+        item.excerpt == nil ? itemHeight : excerptItemHeight
+    }
+
+    /// As `itemsHeight(_:)`, measuring the visible rows when some carry a passage.
+    static func itemsHeight(_ items: [AskPluginItem]) -> CGFloat {
+        let visible = items.prefix(maximumVisibleItems)
+        guard visible.contains(where: { $0.excerpt != nil }) else { return itemsHeight(items.count) }
+        return visible.reduce(0) { $0 + itemHeight($1) } + CGFloat(visible.count - 1) * itemSpacing
+    }
+
     /// Heights already measured: the launcher asks for the same text's height several times per update.
     private static let markdownHeights: NSCache<NSString, NSNumber> = {
         let cache = NSCache<NSString, NSNumber>()
@@ -188,7 +201,7 @@ struct AskPluginResultsView: View {
     static func cardHeight(output: AskPluginOutput?, failure: AskPluginFailure?, comparing: Bool) -> CGFloat {
         if output?.emoji != nil { return EmojiResultsView.height }
         if let output, output.wordCard == nil, !output.items.isEmpty {
-            return itemsHeight(output.items.count) + (output.note != nil ? 12 + noteHeight : 0)
+            return itemsHeight(output.items) + (output.note != nil ? 12 + noteHeight : 0)
         }
         var height = cardPadding.top + headerHeight + 8 + cardPadding.bottom
         if let output, let card = output.wordCard {
@@ -610,7 +623,7 @@ struct AskPluginResultsView: View {
                 LazyVStack(spacing: Self.itemSpacing) {
                     ForEach(Array(output.items.enumerated()), id: \.element.id) { index, item in
                         AskPluginItemRow(item: item, symbol: display.symbol, selected: index == output.selectedItem,
-                                         emphasized: highlighted, height: Self.itemHeight) {
+                                         emphasized: highlighted, height: Self.itemHeight(item)) {
                             guard !pending, onSelectItem(item.id) else { return }
                             onMain()
                         }
@@ -626,7 +639,7 @@ struct AskPluginResultsView: View {
                 if let id { reader.scrollTo(id) }
             }
         }
-        .frame(height: Self.itemsHeight(output.items.count))
+        .frame(height: Self.itemsHeight(output.items))
         .opacity(dimmed ? 0.5 : 1)
         .allowsHitTesting(!pending)
         .accessibilityElement(children: .contain)

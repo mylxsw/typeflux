@@ -1,4 +1,5 @@
 import AppKit
+import Combine
 import Foundation
 import SwiftUI
 import Testing
@@ -263,16 +264,30 @@ struct SemanticFileServiceTests {
         #expect(throws: CancellationError.self) { try SemanticModel.install(source, to: target, cancelled: { true }) }
     }
 
+    /// Like `SettingsBehaviorTestSupport.wait`, but reports the step that never became ready.
+    static func ready(sourceLocation: SourceLocation = #_sourceLocation,
+                      _ condition: @MainActor () -> Bool) async throws {
+        let deadline = ContinuousClock.now + .seconds(3)
+        while !condition() {
+            guard ContinuousClock.now < deadline else {
+                Issue.record("UI state did not become ready within three seconds", sourceLocation: sourceLocation)
+                throw CancellationError()
+            }
+            try await Task.sleep(for: .milliseconds(10))
+        }
+    }
+
     @Test func nativeControlsDisableUnsupportedHardwareAndCompleteSetup() async throws {
-        typealias UI = SettingsBehaviorTestSupport
-        @MainActor func press(_ title: String, in root: Any) async throws {
-            try await UI.wait {
-                UI.elements(in: root).contains {
+        typealias Support = SettingsBehaviorTestSupport
+        @MainActor func press(_ title: String, in root: Any,
+                              sourceLocation: SourceLocation = #_sourceLocation) async throws {
+            try await Self.ready(sourceLocation: sourceLocation) {
+                Support.elements(in: root).contains {
                     $0.role == NSAccessibility.Role.button.rawValue && $0.label == title &&
                         $0.value("isAccessibilityEnabled") as? Bool != false
                 }
             }
-            try UI.button(title, in: root).press()
+            try Support.button(title, in: root).press()
         }
         let (unsupported, unsupportedRoot, _, _) = try fixture(supported: false)
         let (service, root, _, _) = try fixture()
@@ -280,142 +295,134 @@ struct SemanticFileServiceTests {
             try? FileManager.default.removeItem(at: root)
             try? FileManager.default.removeItem(at: unsupportedRoot)
         }
-        try await UI.withFixture { _ in
-            try await UI.withWindow(SemanticFileSearchSettingsView(service: unsupported, filesEnabled: true),
-                                    width: 760, height: 220) { _, host in
-                let toggle = try #require(UI.elements(in: host).first {
+        try await Support.withFixture { _ in
+            try await Support.withWindow(SemanticFileSearchSettingsView(service: unsupported, filesEnabled: true),
+                                    width: 760, height: 260) { _, host in
+                let toggle = try #require(Support.elements(in: host).first {
                     $0.value("accessibilityIdentifier") as? String == "semantic.enabled"
                 })
                 #expect(toggle.value("isAccessibilityEnabled") as? Bool == false)
+                #expect(Support.contains(L("semantic.unsupported"), in: host))
             }
             let view = SemanticFileSearchSettingsView(service: service, filesEnabled: true,
                 pickFolders: { [root.path, "/outside-content-scope"] })
-            try await UI.withWindow(view, width: 760, height: 240) { window, host in
-                let toggle = try #require(UI.elements(in: host).first {
+            try await Support.withWindow(view, width: 760, height: 280) { window, host in
+                #expect(Support.contains(L("semantic.offDetail"), in: host))
+                let toggle = try #require(Support.elements(in: host).first {
                     $0.value("accessibilityIdentifier") as? String == "semantic.enabled"
                 })
                 #expect(toggle.value("isAccessibilityEnabled") as? Bool == true)
                 try toggle.press()
-                try await UI.wait { window.attachedSheet != nil }
+                try await Self.ready { window.attachedSheet != nil }
                 let firstSetup = try #require(window.attachedSheet)
                 try await Task.sleep(for: .milliseconds(200))
-                try await UI.wait { UI.contains(L("semantic.cancel"), in: firstSetup) }
+                try await Self.ready { Support.contains(L("semantic.cancel"), in: firstSetup) }
                 try await press(L("semantic.cancel"), in: firstSetup)
-                try await UI.wait { window.attachedSheet == nil }
+                try await Self.ready { window.attachedSheet == nil }
                 #expect(!service.preferences.enabled)
+
+                // Setup: the primary action waits for a folder, then downloads and closes.
                 try toggle.press()
-                try await UI.wait { window.attachedSheet != nil }
-                let sheet = try #require(window.attachedSheet)
-                let content = sheet
-                try await UI.wait { UI.contains(L("semantic.enable"), in: content) }
-                let enable = try UI.button(L("semantic.enable"), in: content)
+                try await Self.ready { window.attachedSheet != nil }
+                let setup = try #require(window.attachedSheet)
+                try await Self.ready { Support.contains(L("semantic.enable.download"), in: setup) }
+                let enable = try Support.button(L("semantic.enable.download"), in: setup)
                 #expect(enable.value("isAccessibilityEnabled") as? Bool == false)
-                try await press(L("launcher.search.add"), in: content)
-                try await UI.wait { UI.contains(L("semantic.scopeError"), in: content) }
-                try await press(L("semantic.enable"), in: content)
-                try await UI.wait { service.phase == .ready }
-                try await UI.wait { UI.contains(L("semantic.pause"), in: content) }
-                try await press(L("semantic.pause"), in: content)
-                try await UI.wait { service.phase == .paused }
-                try await press(L("semantic.resume"), in: content)
-                try await UI.wait { service.phase == .ready }
-                try await press(L("semantic.rebuild"), in: content)
-                try await Task.sleep(for: .milliseconds(30))
-                try await UI.wait { service.phase == .ready && service.files == 1 }
-                for key in ["semantic.clear", "semantic.remove"] {
-                    try await press(L(key), in: content)
-                    try await UI.wait { sheet.attachedSheet != nil }
-                    let confirmation = try #require(sheet.attachedSheet)
-                    try await press(L("semantic.confirm"), in: confirmation)
-                    try await UI.wait { !service.preferences.enabled && service.phase == .off }
+                try await press(L("semantic.folders.add"), in: setup)
+                try await Self.ready { Support.contains(L("semantic.scopeError"), in: setup) }
+                #expect(Support.contains(L("semantic.folders.count", 1), in: setup))
+                try await press(L("semantic.enable.download"), in: setup)
+                try await Self.ready { window.attachedSheet == nil }
+                try await Self.ready { service.phase == .ready }
+                #expect(service.preferences.roots == [root.path])
+                try await Self.ready { Support.contains(service.status().text, in: host) }
+
+                // Manage: lifecycle controls act at once; folder edits wait for Done.
+                try await press(L("semantic.manage"), in: host)
+                try await Self.ready { window.attachedSheet != nil }
+                let manage = try #require(window.attachedSheet)
+                try await Self.ready { Support.contains(L("semantic.manage.title"), in: manage) }
+                // A finished index offers Rebuild; Pause appears only while work runs (fixtures finish at once).
+                #expect(!Support.contains(L("semantic.pause"), in: manage))
+                service.pause(true)
+                try await Self.ready { service.phase == .paused }
+                try await press(L("semantic.resume"), in: manage)
+                try await Self.ready { service.phase == .ready }
+                // Rebuild clears asynchronously; wait until the index went off and came back.
+                var phases: [SemanticFileSearchService.Phase] = []
+                let watch = service.$phase.sink { phases.append($0) }
+                defer { watch.cancel() }
+                try await press(L("semantic.rebuild"), in: manage)
+                try await Self.ready {
+                    phases.contains(.off) && service.phase == .ready && service.files == 1
+                        && service.preferences.enabled
                 }
-                try await UI.wait { !service.modelReady }
-                #expect(!FileManager.default.fileExists(atPath: service.modelURL.path))
-                try await press(L("semantic.close"), in: content)
-                try await UI.wait { window.attachedSheet == nil }
+                try await press(L("ask.remove"), in: manage)
+                try await Self.ready { Support.contains(L("semantic.folders.none"), in: manage) }
+                #expect(service.preferences.roots == [root.path] && service.preferences.enabled)
+                try await press(L("semantic.close"), in: manage)
+                try await Self.ready { window.attachedSheet == nil }
+                try await Self.ready { !service.preferences.enabled && service.phase == .off }
+                #expect(service.preferences.roots.isEmpty)
             }
         }
         await service.clear(removeModel: true)
     }
 
-    @Test func `native settings render in both appearances and unsupported state`() async throws {
-        _ = NSApplication.shared
-        let (service, root, _, _) = try fixture(supported: false)
-        defer { try? FileManager.default.removeItem(at: root) }
-        let window = NSWindow(
-            contentRect: .init(x: 0, y: 0, width: 760, height: 250),
-            styleMask: [.borderless],
-            backing: .buffered,
-            defer: false
-        )
-        window.isReleasedWhenClosed = false
-        defer { window.orderOut(nil); window.close() }
-        for (name, scheme, appearance) in [
-            ("light", ColorScheme.light, NSAppearance.Name.aqua),
-            ("dark", .dark, .darkAqua)
-        ] {
-            window.appearance = NSAppearance(named: appearance)
-            let host = NSHostingView(rootView: SemanticFileSearchSettingsView(service: service, filesEnabled: true)
-                .padding(24).frame(width: 760, height: 250).background(StudioTheme.background).environment(
-                    \.colorScheme,
-                    scheme
-                ))
-            window.contentView = host; window.orderFront(nil)
-            try await Task.sleep(for: .milliseconds(100)); host.layoutSubtreeIfNeeded()
-            let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
-            host.cacheDisplay(in: host.bounds, to: bitmap)
-            #expect(bitmap.pixelsWide > 0)
-            if let folder = ProcessInfo.processInfo.environment["TYPEFLUX_SEMANTIC_SCREENSHOTS"],
-               let data = bitmap.representation(using: .png, properties: [:]) {
-                let destination = URL(fileURLWithPath: folder)
-                try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
-                try data.write(to: destination.appendingPathComponent("unsupported-\(name).png"))
-            }
-        }
-    }
-
-    @Test func `native setup and management use existing settings surfaces`() async throws {
-        _ = NSApplication.shared
-        let language = AppLocalization.shared.language
-        AppLocalization.shared.setLanguage(.simplifiedChinese)
-        defer { AppLocalization.shared.setLanguage(language) }
+    @Test func foldersEditedDuringRebuildAreNotRestored() async throws {
         let (service, root, _, _) = try fixture()
         defer { try? FileManager.default.removeItem(at: root) }
-        service.setRoots([root.path])
-        let window = NSWindow(
-            contentRect: .init(x: 0, y: 0, width: 620, height: 670),
-            styleMask: [.borderless],
-            backing: .buffered,
-            defer: false
-        )
-        window.isReleasedWhenClosed = false
-        defer { window.orderOut(nil); window.close() }
-        for setup in [true, false] {
-            if !setup {
-                #expect(service.setEnabled(true))
-                await service.prepareModelIfNeeded()
-                try await Self.wait { service.phase == .ready }
-            }
-            for (name, scheme, appearance) in [
-                ("light", ColorScheme.light, NSAppearance.Name.aqua),
-                ("dark", .dark, .darkAqua)
-            ] {
-                window.appearance = NSAppearance(named: appearance)
-                let view = SemanticFileSearchSheet(service: service, setup: setup, onClose: {})
-                let host = NSHostingView(rootView: view.environment(\.colorScheme, scheme))
-                window.contentView = host; window.orderFront(nil)
-                try await Task.sleep(for: .milliseconds(100)); host.layoutSubtreeIfNeeded()
-                let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
-                host.cacheDisplay(in: host.bounds, to: bitmap)
-                #expect(bitmap.pixelsHigh > 600)
-                if let folder = ProcessInfo.processInfo.environment["TYPEFLUX_SEMANTIC_SCREENSHOTS"],
-                   let data = bitmap.representation(using: .png, properties: [:]) {
-                    let destination = URL(fileURLWithPath: folder)
-                    try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
-                    try data.write(to: destination.appendingPathComponent("\(setup ? "setup" : "manage")-\(name).png"))
+        #expect(service.setEnabled(true, roots: [root.path]))
+        await service.prepareModelIfNeeded()
+        try await Self.wait { service.phase == .ready }
+        let rebuild = Task { await service.rebuild() }
+        // Act while the rebuild is clearing: it has switched the feature off but not restarted it.
+        var spins = 0
+        while service.settings.semanticFileSearch.enabled, spins < 100_000 {
+            await Task.yield(); spins += 1
+        }
+        service.setRoots([])
+        await rebuild.value
+        #expect(!service.settings.semanticFileSearch.enabled && service.settings.semanticFileSearch.roots.isEmpty)
+        #expect(service.phase == .off)
+        await service.clear(removeModel: true)
+    }
+
+    @Test func nativeManagementConfirmsClearingAndModelRemoval() async throws {
+        typealias Support = SettingsBehaviorTestSupport
+        let (service, root, _, _) = try fixture()
+        defer { try? FileManager.default.removeItem(at: root) }
+        #expect(service.setEnabled(true, roots: [root.path]))
+        await service.prepareModelIfNeeded()
+        try await Self.wait { service.phase == .ready }
+        let stored = service.storage()
+        #expect(stored.index > 0 && stored.model > 0)
+        try await Support.withFixture { _ in
+            for (key, confirm) in [("semantic.clear", "semantic.clear.confirm"),
+                                   ("semantic.remove", "semantic.remove.confirm")] {
+                var closed = false
+                let sheet = SemanticFileSearchSheet(service: service, setup: false) { closed = true }
+                try await Support.withWindow(sheet, width: SemanticFileSearchSheet.width, height: 720) { window, host in
+                    try await Self.ready { Support.contains(L(key), in: host) }
+                    try Support.button(L(key), in: host).press()
+                    try await Self.ready { window.attachedSheet != nil }
+                    let confirmation = try #require(window.attachedSheet)
+                    let message = key == "semantic.clear" ? "semantic.clear.message" : "semantic.remove.message"
+                    #expect(Support.contains(L(message), in: confirmation))
+                    try await Self.ready { Support.contains(L(confirm), in: confirmation) }
+                    try Support.button(L(confirm), in: confirmation).press()
+                    // Removal finishes after the sheet closes; the model flag drops only once files are gone.
+                    try await Self.ready {
+                        closed && !service.preferences.enabled && service.phase == .off &&
+                            service.modelReady == (key == "semantic.clear")
+                    }
                 }
+                // Clearing keeps the model and the folder choice; removal deletes the weights.
+                #expect(service.preferences.roots == [root.path])
+                #expect(service.modelReady == (key == "semantic.clear"))
             }
         }
-        await service.clear(removeModel: true)
+        #expect(!FileManager.default.fileExists(atPath: service.modelURL.path))
+        #expect(service.storage().index == 0 && service.storage().model == 0)
     }
 }

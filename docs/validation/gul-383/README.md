@@ -33,6 +33,19 @@ Coverage initially combined the complete focused pass with the final affected-su
 - Download continuations complete once, cancellation releases the session, and temporary files are owned before callbacks return. Size/hash validation and atomic replacement precede model activation. File contents and query text are absent from process arguments and logs.
 - The runtime source/revision/profile are pinned. The packaged arm64/macOS 14 helper was checked for system-only dynamic dependencies and verified with an isolated ad-hoc hardened-runtime signature. Runtime/model licenses and implementation documentation are included.
 
-The native click test covers the disabled unsupported-device switch, cancel, directory validation, enable, pause/resume, rebuild, clear index, remove model and close. Screenshots cover setup, management and unsupported states in light/dark appearances.
+## Design fidelity pass
+
+A review against the approved interactive design found the first native version used different names, layout and flow. The settings card, setup, management and result rows were reworked to match the design:
+
+- Files tab: an "Experimental" section with the semantic file search card (accent badge, off-state detail, status dot, download/indexing progress, Manage… plus a retry/download/permission link). File search off shows the paused warning; unsupported devices show the requirement and cannot enable the switch.
+- Setup: privacy notice, content folder scope with counts, model card with download size, "Download Model and Turn On"; the sheet closes and the card shows progress.
+- Management: status notice, folders edited as a draft applied on Done (an empty list turns the feature off), indexed files / index / model size, Pause/Resume or Rebuild, and separate confirmations for clearing the index and deleting the model. Sheets size to their content; long folder lists scroll.
+- Results: content matches show a "Content match" badge, folder and PDF page, then the passage, in both mixed search and `f` mode. Line breaks inside CJK passages no longer add spaces.
+- ja/ko/zh-Hant previously shipped English copies of these strings; all five languages are now translated.
+- A rebuild running while folders are edited no longer restores the old folders.
+
+Validation ran on the Apple Silicon worker against the final tree. `make test SUITE="SemanticFileServiceTests SemanticFileSearchVisualTests SemanticFileSearchStatusTests SemanticHybridSearchTests AskQuickResultsFileTests AskFileSearchPluginTests AskPluginListViewTests AskWorkflowItemRowTests AskFloatingPanelStyleTests LauncherSearchSettingsViewTests LocalizationResourceTests AgentSettingsRedesignTests"` passed: 62 Swift Testing + 37 XCTest, 278.89 s wall including the rebuild. `make coverage` passes the same suites but this toolchain writes no profile, so coverage came from the same suites under `swift test --build-system native --enable-code-coverage --no-parallel`, which also passed: 65 Swift Testing + 37 XCTest, 185 s wall incremental. Line coverage of the lines changed in this pass is **95.84%** (438/457). The uncovered lines are mostly the cancel-download, download and retry buttons in management, which fixtures finish too fast to show. SwiftLint against the repository baseline reports no new findings in the touched files compared with the PR head.
+
+The native click test covers the disabled unsupported-device switch, cancel, directory validation, setup closing into the card, Manage, resume, rebuild, draft folder removal applied on Done, and confirmed clearing/model removal. Screenshots in `native/` cover the card (off, ready, file search off, unsupported), setup, management (including a scrolling folder list), and content-match rows in `f` mode and mixed launcher results (plain and selected), in light and dark appearances. Fixture folders are temporary directories, so their paths look longer than real `~/Documents` folders.
 
 Intel/macOS 13 hardware execution, release notarization and large-directory performance/recall benchmarking were not run. The model ranking check uses synthetic text fixtures; image/audio embeddings and OCR are outside this first version.

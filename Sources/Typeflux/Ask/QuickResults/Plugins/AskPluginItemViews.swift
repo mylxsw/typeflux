@@ -24,11 +24,18 @@ struct AskPluginItemRow: View {
         Button(action: onPick) {
             HStack(spacing: 11) {
                 AskPluginItemIcon(icon: item.icon, symbol: symbol, filled: filled)
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(item.title).font(.system(size: 13.5, weight: .semibold)).lineLimit(1)
-                        .foregroundStyle(item.valid ? StudioTheme.textPrimary : StudioTheme.textSecondary)
+                VStack(alignment: .leading, spacing: item.excerpt == nil ? 1 : 2) {
+                    HStack(spacing: 6) {
+                        Text(item.title).font(.system(size: 13.5, weight: .semibold)).lineLimit(1)
+                            .foregroundStyle(item.valid ? StudioTheme.textPrimary : StudioTheme.textSecondary)
+                        if let badge = item.badge { ModelUsageBadge(text: badge) }
+                    }
                     if !item.subtitle.isEmpty {
                         Text(item.subtitle).font(.system(size: 11.5)).lineLimit(1)
+                            .foregroundStyle(item.excerpt == nil ? StudioTheme.textSecondary : StudioTheme.textTertiary)
+                    }
+                    if let excerpt = item.excerpt {
+                        Text(excerpt).font(.system(size: 12)).lineLimit(1).truncationMode(.tail)
                             .foregroundStyle(StudioTheme.textSecondary)
                     }
                 }

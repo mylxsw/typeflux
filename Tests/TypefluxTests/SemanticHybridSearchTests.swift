@@ -150,6 +150,9 @@ struct SemanticHybridSearchTests {
         #expect(partials.first?.items.first?.title == "reimbursement.md")
         #expect(output.items.map(\.title) == ["reimbursement.md", "guide.pdf"])
         #expect(output.items[1].subtitle.contains("3"))
+        #expect(output.items[1].badge == L("semantic.result"))
+        #expect(output.items[1].excerpt == "Reimbursement requests use the expense form")
+        #expect(output.items[0].badge == nil && output.items[0].excerpt == nil)
         #expect(output.items[1].actions.contains {
             if case .reveal = $0.kind {
                 true
@@ -169,5 +172,31 @@ struct SemanticHybridSearchTests {
         let off = AskFileSearchPlugin(index: { nil }, settings: { .init() }, semantic: { semantic })
         _ = try await off.run(request, plan: off.plan(request), progress: { _ in })
         #expect(await semantic.calls == 1)
+    }
+
+    @Test func `content matches get a taller row with their passage`() throws {
+        #expect(AskFileSearchPlugin.passage("  Line one\n\n  line\ttwo ") == "Line one line two")
+        #expect(AskFileSearchPlugin.passage("请在 15 个工作日内提交申请，\n并附上发票") == "请在 15 个工作日内提交申请，并附上发票")
+        #expect(AskFileSearchPlugin.passage("见附件\nPDF") == "见附件 PDF")
+        var paged = hit
+        paged.evidence?.page = nil
+        let item = AskFileSearchPlugin.item(paged)
+        #expect(item.subtitle == "/work" && item.excerpt == hit.evidence?.text)
+        let plain = AskPluginItem(id: "a", title: "a")
+        #expect(AskPluginResultsView.itemsHeight([plain, plain]) == AskPluginResultsView.itemsHeight(2))
+        #expect(AskPluginResultsView.itemsHeight([plain, item]) == AskPluginResultsView.itemHeight
+            + AskPluginResultsView.excerptItemHeight + AskPluginResultsView.itemSpacing)
+        let many = Array(repeating: item, count: AskPluginResultsView.maximumVisibleItems + 3)
+        #expect(AskPluginResultsView.itemsHeight(many) == CGFloat(AskPluginResultsView.maximumVisibleItems)
+            * AskPluginResultsView.excerptItemHeight
+            + CGFloat(AskPluginResultsView.maximumVisibleItems - 1) * AskPluginResultsView.itemSpacing)
+
+        var name = hit; name.evidence = nil; name.path = "/work/guide-name.pdf"
+        let results = try #require(AskQuickResults.assemble("guide", matches: [], hits: [name, hit], status: nil,
+                                                            settings: .init()))
+        let rows = results.listRows.filter { results.file(at: $0) != nil }
+        let heights = rows.map { AskQuickResultsView.rowHeight($0, in: results) }
+        #expect(heights.sorted() == [AskQuickResultsView.fileHeight, AskQuickResultsView.contentFileHeight])
+        #expect(AskQuickResultsView.rowHeight(rows[0]) == AskQuickResultsView.fileHeight)
     }
 }

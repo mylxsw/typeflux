@@ -359,10 +359,23 @@ extension SemanticFileSearchService {
         self.store = nil; self.scope = nil; self.fingerprint = nil; self.removing = false
     }
 
+    /// Bytes on disk for the content index (database and journal) and the model weights.
+    func storage() -> (index: Int64, model: Int64) {
+        func size(_ url: URL) -> Int64 {
+            ((try? FileManager.default.attributesOfItem(atPath: url.path))?[.size] as? NSNumber)?.int64Value ?? 0
+        }
+        let database = self.directory.appendingPathComponent("semantic-files.sqlite")
+        let index = ["", "-wal", "-shm"].reduce(Int64(0)) {
+            $0 + size(URL(fileURLWithPath: database.path + $1))
+        }
+        return (index, size(self.modelURL))
+    }
+
     func rebuild() async {
         let roots = self.preferences.roots
         await self.clear()
-        guard self.phase == .off else { return }
+        // Folders edited while clearing win; never restore the scope the rebuild started with.
+        guard self.phase == .off, self.settings.semanticFileSearch.roots == roots else { return }
         _ = self.setEnabled(true, roots: roots)
     }
 }

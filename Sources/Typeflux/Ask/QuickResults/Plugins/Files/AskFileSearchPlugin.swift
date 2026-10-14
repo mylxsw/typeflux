@@ -117,9 +117,32 @@ struct AskFileSearchPlugin: AskLauncherPlugin {
                                            title: L("ask.quick.action.searchIn"), symbol: "magnifyingglass",
                                            shortcut: nil))
         }
-        let detail = hit.evidence.map { L("semantic.result") + ($0.page.map { " · " + L("semantic.page", $0) } ?? "") + " · " + $0.text }
-        return AskPluginItem(id: hit.path, title: hit.name, subtitle: detail ?? (place + " · " + AskQuickResultsView.relative(hit.modified)),
-                             icon: .fileIcon(url), actions: actions)
+        // A content match names the page it came from and shows the passage on its own line.
+        let subtitle = hit.evidence.map { place + ($0.page.map { " · " + L("semantic.page", $0) } ?? "") }
+        return AskPluginItem(id: hit.path, title: hit.name,
+                             subtitle: subtitle ?? (place + " · " + AskQuickResultsView.relative(hit.modified)),
+                             icon: .fileIcon(url), actions: actions,
+                             badge: hit.evidence == nil ? nil : L("semantic.result"),
+                             excerpt: hit.evidence.map { Self.passage($0.text) })
+    }
+
+    /// A stored chunk on one line. Whitespace runs read as one space, except that a line
+    /// break between two CJK characters joins them, as CJK text has no spaces between words.
+    static func passage(_ text: String) -> String {
+        func wide(_ character: Character) -> Bool { (character.unicodeScalars.first?.value ?? 0) >= 0x2E80 }
+        var result = "", gap: Character?
+        for character in text {
+            if character.isWhitespace {
+                if gap == nil || character.isNewline { gap = character }
+                continue
+            }
+            if let space = gap, let last = result.last, !(space.isNewline && wide(last) && wide(character)) {
+                result.append(" ")
+            }
+            gap = nil
+            result.append(character)
+        }
+        return result
     }
 
     static func notice(_ text: String, symbol: String) -> AskPluginItem {
