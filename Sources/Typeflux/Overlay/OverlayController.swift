@@ -772,6 +772,7 @@ final class OverlayController {
         }
         dismissWorkItem?.cancel()
         stopProcessingProgress()
+        ensureWindow()
         model.noticeDismissible = false
         model.presentation = .notice
         model.statusText = L("overlay.notice.title")
