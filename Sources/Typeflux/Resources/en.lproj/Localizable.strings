@@ -4870,7 +4870,7 @@
 "recording.from" = "From";
 "recording.to" = "To";
 "recording.cancelExport" = "Cancel export";
-"recording.saveAs" = "Save elsewhere…";
+"recording.saveAs" = "Save As…";
 "recording.export" = "Export";
 "recording.discardQuestion" = "Discard this recording?";
 "recording.discardHint" = "The unsaved recording will be deleted.";
@@ -4933,7 +4933,7 @@
 
 "recording.source.region" = "Region";
 
-"recording.source.display" = "Screen";
+"recording.source.display" = "Full Screen";
 
 "recording.source.window" = "Window";
 
@@ -4947,7 +4947,7 @@
 
 "recording.selectedDuration" = "Selected: %.2f seconds";
 
-"recording.resetTrim" = "Use full recording";
+"recording.resetTrim" = "Restore full";
 
 "recording.gifExportHint" = "GIF has no sound. Select up to 30 seconds; output is 10 FPS and up to 960 px.";
 
@@ -5053,3 +5053,77 @@
 "ask.context.selection.characters" = "%d characters";
 "ask.context.selection.disableHint" = "Click the icon to disable; the text is kept";
 "ask.context.selection.enableHint" = "Click the icon to use this text again";
+
+"recording.copy" = "Copy";
+
+"recording.countdownKeys" = "Space to start now · esc to go back";
+
+"recording.countdownSummary" = "Countdown %d s";
+
+"recording.estimated" = "About %@";
+
+"recording.fileName" = "File name";
+
+"recording.gifSilent" = "GIF has no sound";
+
+"recording.gifSmall" = "Small · 640 px";
+
+"recording.gifStandard" = "Standard · 960 px";
+
+"recording.gifTooLong" = "GIF can include up to 30 seconds";
+
+"recording.keep30" = "Keep first 30 seconds";
+
+"recording.keepRange" = "Keep";
+
+"recording.later" = "Later";
+
+"recording.liveCamera" = "Live";
+
+"recording.max30" = "Up to 30 seconds";
+
+"recording.microphoneLevel" = "Microphone input level";
+
+"recording.noAudioTrack" = "This recording has no sound";
+
+"recording.noUpscale" = "Sources are reduced to fit, never enlarged.";
+
+"recording.openEditor" = "Open editor";
+
+"recording.options" = "Options";
+
+"recording.play" = "Play / pause";
+
+"recording.recoveryHint" = "An unsaved recording is ready to edit.";
+
+"recording.remaining" = "Auto stop in %d s";
+
+"recording.restart" = "Restart";
+
+"recording.restartQuestion" = "Discard this take and start again?";
+
+"recording.selectionKeys" = "↩ Start · esc Cancel · Tab Source";
+
+"recording.selectionSeconds" = "· %.1f s";
+
+"recording.switchMP4" = "Save as MP4";
+
+"recording.systemAudioScope" = "Excludes Typeflux audio. Window capture includes all audio from that app.";
+
+"recording.timelineKeys" = "Drag ends to trim · I / O set ends · Space play";
+
+"recording.unsaved" = "Unsaved recording";
+
+"recording.microphonePermissionHint" = "Allow Typeflux in System Settings → Privacy & Security → Microphone. Return here to continue.";
+
+"recording.cameraPermissionHint" = "Allow Typeflux in System Settings → Privacy & Security → Camera. Return here to continue.";
+
+"recording.skipMicrophone" = "Record without microphone";
+
+"recording.skipCamera" = "Record without camera";
+
+"recording.optionsTitle" = "Recording options";
+
+"recording.pickWindow" = "Hover a window, then click to select it.";
+
+"recording.pickDisplay" = "Click the screen you want to record.";

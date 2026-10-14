@@ -1,3 +1,4 @@
+// swiftlint:disable file_length
 import AppKit
 import AVKit
 import ScreenCaptureKit
@@ -25,8 +26,41 @@ final class ScreenRecordingCoordinator: ObservableObject {
     @Published private(set) var savedURL: URL?
     @Published private(set) var player: AVPlayer?
     @Published private(set) var recovered: [URL] = []
+    @Published var fileName = ""
+    @Published var outputDirectory: URL? {
+        didSet {
+            if let outputDirectory {
+                defaults.set(outputDirectory.path, forKey: "screenshot.recording.directory")
+            }
+        }
+    }
+
+    @Published private(set) var currentTime: Double = 0
+    @Published private(set) var isPlaying = false
+    @Published private(set) var media = ScreenRecordingPreviewMedia()
+    var prepareCapture: () async -> Void = {}
+    var liveSession: AVCaptureSession? {
+        engine.previewSession
+    }
+
+    var liveAudioLevel: Float {
+        engine.audioLevel
+    }
+
+    private var playerObserver: Any?
+    private var mediaTask: Task<Void, Never>?
+    private var deviceTask: Task<Void, Never>?
+    private var countdownWait: Task<Void, Error>?
     private(set) var sourceURL: URL?
     private(set) var pendingTask: Task<Void, Never>?
+    var screenPermissionGranted: Bool {
+        permission.isGranted
+    }
+
+    var defaultDestinationDirectory: URL {
+        saveDirectory()
+    }
+
     var isBusy: Bool {
         state != .idle
     }
@@ -84,19 +118,22 @@ final class ScreenRecordingCoordinator: ObservableObject {
             }
         }
     }
+}
 
+extension ScreenRecordingCoordinator {
     func start() {
-        guard state == .setup, let target = choices.first(where: { $0.id == selectedID })?.target else { return }
+        guard canStart, let target = choices.first(where: { $0.id == selectedID })?.target else { return }
         guard permission.isGranted else {
             permissionFailure = .permission
             error = L("recording.error.permission")
             return
         }
         options.save(to: defaults)
+        defaults.set(sourceKind.rawValue, forKey: "screenshot.recording.sourceKind")
         pendingTask?.cancel()
         isLoadingSources = false
         state = .countdown
-        countdown = max(0, min(5, options.countdown))
+        countdown = max(0, min(10, options.countdown))
         error = nil
         permissionFailure = nil
         startingFailure = nil
@@ -107,15 +144,16 @@ final class ScreenRecordingCoordinator: ObservableObject {
             do {
                 try await authorizeDevices(options)
                 try Task.checkCancellation()
-                while countdown > 0 {
-                    updateIndicator(String(countdown))
-                    try await waitSecond()
-                    try Task.checkCancellation()
-                    countdown -= 1
-                }
+                try await runCountdown()
                 state = .starting
+                await prepareCapture()
+                try Task.checkCancellation()
                 showBorder(target)
                 sessionDirectory = try files.createSession(options: options)
+                try Data(sourceKind.rawValue.utf8).write(
+                    to: sessionDirectory!.appendingPathComponent("source-kind.txt"),
+                    options: .atomic
+                )
                 let url = sessionDirectory!.appendingPathComponent("source.mov")
                 try await engine.start(target: target, options: options, url: url)
                 try Task.checkCancellation()
@@ -126,21 +164,39 @@ final class ScreenRecordingCoordinator: ObservableObject {
                 state = .recording
                 elapsed = 0
                 monitor()
-            } catch {
-                await engine.cancel()
-                guard generation == token else { return }
-                if let sessionDirectory {
-                    files.discard(sessionDirectory)
+            } catch { await handleStartupFailure(error, token: token) }
+        }
+    }
+
+    private func handleStartupFailure(_ error: Error, token: Int) async {
+        await engine.cancel()
+        guard generation == token else { return }
+        if let sessionDirectory {
+            files.discard(sessionDirectory)
+        }
+        sessionDirectory = nil
+        state = .setup
+        self.error = error is CancellationError ? nil : error.localizedDescription
+        permissionFailure = (error as? ScreenRecordingFailure).flatMap {
+            [.permission, .microphonePermission, .cameraPermission].contains($0) ? $0 : nil
+        }
+        showBorder(nil)
+        updateIndicator(nil)
+    }
+
+    private func runCountdown() async throws {
+        while countdown > 0 {
+            updateIndicator(String(countdown))
+            let delay = Task { try await waitSecond() }
+            countdownWait = delay
+            do { try await delay.value } catch {
+                if countdown > 0 {
+                    throw error
                 }
-                sessionDirectory = nil
-                state = .setup
-                self.error = error is CancellationError ? nil : error.localizedDescription
-                permissionFailure = (error as? ScreenRecordingFailure).flatMap {
-                    [.permission, .microphonePermission, .cameraPermission].contains($0) ? $0 : nil
-                }
-                showBorder(nil)
-                updateIndicator(nil)
             }
+            countdownWait = nil
+            try Task.checkCancellation()
+            countdown = max(0, countdown - 1)
         }
     }
 
@@ -198,8 +254,20 @@ final class ScreenRecordingCoordinator: ObservableObject {
     }
 
     func recover(_ url: URL) {
-        guard state == .setup else { return }
+        guard state == .setup || state == .idle else { return }
         pendingTask?.cancel()
+        if let data = try? Data(contentsOf: url.deletingLastPathComponent().appendingPathComponent("options.json")),
+           let recoveredOptions = try? JSONDecoder()
+           .decode(ScreenRecordingOptions.self, from: data) {
+            options = recoveredOptions
+        }
+        if let kind = try? String(
+            contentsOf: url.deletingLastPathComponent().appendingPathComponent("source-kind.txt"),
+            encoding: .utf8
+        ),
+            let value = ScreenRecordingSourceKind(rawValue: kind) {
+            sourceKind = value
+        }
         state = .stopping
         sessionDirectory = url.deletingLastPathComponent()
         error = nil
@@ -222,31 +290,64 @@ final class ScreenRecordingCoordinator: ObservableObject {
         sourceURL = url
         self.duration = duration
         trimStart = 0
-        trimEnd = options.format == .gif ? min(30, duration) : duration
+        trimEnd = duration
+        removePlayerObserver()
         player = AVPlayer(url: url)
+        currentTime = 0
+        isPlaying = false
+        if fileName.isEmpty {
+            let formatter = DateFormatter()
+            formatter.dateFormat = "yyyy-MM-dd HH.mm.ss"
+            fileName = L("recording.title") + " " + formatter.string(from: Date())
+        }
+        playerObserver = player?.addPeriodicTimeObserver(
+            forInterval: CMTime(seconds: 0.05, preferredTimescale: 600),
+            queue: .main
+        ) { [weak self] time in
+            MainActor.assumeIsolated {
+                guard let self else { return }
+                self.currentTime = time.seconds
+                if self.currentTime >= self.trimEnd, self.isPlaying {
+                    self.player?.pause(); self.isPlaying = false
+                }
+            }
+        }
+        mediaTask?.cancel()
+        let mediaJob = Task.detached(priority: .userInitiated) { try await ScreenRecordingPreviewMedia.load(url) }
+        mediaTask = Task { [weak self] in
+            do {
+                let result = try await withTaskCancellationHandler { try await mediaJob.value } onCancel: {
+                    mediaJob.cancel()
+                }
+                guard let self, !Task.isCancelled, sourceURL == url else { return }
+                media = result
+            } catch { /* The video remains editable even when a damaged audio track cannot be previewed. */ }
+        }
         state = .preview
         present(self)
     }
 
     func seek(_ seconds: Double) {
         player?.pause()
+        isPlaying = false
+        currentTime = max(0, min(duration, seconds))
         player?.seek(to: CMTime(seconds: max(0, min(duration, seconds)), preferredTimescale: 600),
                      toleranceBefore: .zero, toleranceAfter: .zero)
     }
 
-    func export(directory: URL? = nil) {
+    func export(directory: URL? = nil, destinationURL: URL? = nil, copy: Bool = false) {
         guard state == .preview, let sourceURL, let sessionDirectory else { return }
         let trim = ScreenRecordingTrim(start: trimStart, end: trimEnd)
-        do { _ = try trim.validated(duration: duration, format: options.format) } catch {
-            self.error = error.localizedDescription; return
-        }
+        guard trimIsValid else { error = ScreenRecordingFailure.invalidRange.localizedDescription; return }
         player?.pause()
+        isPlaying = false
         state = .exporting
         error = nil
         progress = 0
         let format = options.format
         let output = sessionDirectory.appendingPathComponent(UUID().uuidString + "." + format.rawValue)
-        let destination = directory ?? saveDirectory()
+        let destination = directory ?? outputDirectory ?? saveDirectory()
+        let name = ScreenRecordingLayout.fileName(fileName)
         let token = generation
         pendingTask = Task { [weak self, exporter, files] in
             do {
@@ -258,15 +359,16 @@ final class ScreenRecordingCoordinator: ObservableObject {
                         }
                     }
                 try Task.checkCancellation()
-                let published = try await Task.detached { try files.publish(output, in: destination, format: format) }
-                    .value
+                let published = try await Task.detached { try files.publish(
+                    output,
+                    in: destination,
+                    format: format,
+                    name: name,
+                    destinationURL: destinationURL
+                ) }
+                .value
                 guard let self, generation == token else { return }
-                savedURL = published
-                player = nil
-                self.sourceURL = nil
-                files.discard(sessionDirectory)
-                self.sessionDirectory = nil
-                state = .completed
+                await completeExport(published, copy: copy, session: sessionDirectory, token: token)
             } catch {
                 guard let self, generation == token else { return }
                 try? FileManager.default.removeItem(at: output)
@@ -274,6 +376,22 @@ final class ScreenRecordingCoordinator: ObservableObject {
                 state = .preview
             }
         }
+    }
+
+    private func completeExport(_ published: URL, copy: Bool, session: URL, token: Int) async {
+        savedURL = published
+        if copy {
+            Self.copyFile(published)
+        }
+        removePlayerObserver()
+        player = nil
+        mediaTask?.cancel()
+        await mediaTask?.value
+        guard generation == token else { return }
+        sourceURL = nil
+        files.discard(session)
+        sessionDirectory = nil
+        state = .completed
     }
 
     func cancelExport() {
@@ -286,16 +404,25 @@ final class ScreenRecordingCoordinator: ObservableObject {
         guard state != .idle else { return }
         generation += 1
         let previous = pendingTask
+        let previousMedia = mediaTask
+        let previousDevices = deviceTask
         previous?.cancel()
+        countdownWait?.cancel()
+        deviceTask?.cancel()
+        mediaTask?.cancel()
         isLoadingSources = false
         stopMonitoring()
         overlay.dismiss()
         state = .stopping
         pendingTask = Task { [weak self] in
             await previous?.value
+            await previousMedia?.value
+            await previousDevices?.value
             guard let self else { return }
             await engine.cancel()
             player?.pause()
+            isPlaying = false
+            removePlayerObserver()
             player = nil
             sourceURL = nil
             if let sessionDirectory {
@@ -317,6 +444,8 @@ final class ScreenRecordingCoordinator: ObservableObject {
         default: break
         }
         await pendingTask?.value
+        mediaTask?.cancel()
+        await mediaTask?.value
         player?.pause()
         stopMonitoring()
     }
@@ -333,22 +462,47 @@ final class ScreenRecordingCoordinator: ObservableObject {
 }
 
 extension ScreenRecordingCoordinator {
-    func show(format: ScreenRecordingFormat = .mp4, region: ScreenRecordingTarget? = nil) {
+    func show(format: ScreenRecordingFormat? = nil, region: ScreenRecordingTarget? = nil) {
         guard !isBusy else { present(self); return }
         guard !isOtherCaptureActive() else { return }
         generation += 1
         state = .setup
-        options.format = format
+        if let format {
+            options.format = format
+        }
         error = nil
         permissionFailure = nil
         savedURL = nil
+        fileName = ""
+        outputDirectory = defaults.string(forKey: "screenshot.recording.directory").map { URL(
+            fileURLWithPath: $0,
+            isDirectory: true
+        ) }
+        media = ScreenRecordingPreviewMedia()
         recovered = files.recoverableSources()
         if let region {
             sourceKind = .region
-            choices = [ScreenRecordingChoice(id: "region", title: L("recording.region"), target: region)]
+            choices = [ScreenRecordingChoice(
+                id: "region",
+                title: L("recording.region"),
+                target: region,
+                frame: {
+                    if case let .region(_, rect) = region {
+                        return rect
+                    }; return .zero
+                }(),
+                scale: {
+                    if case let .region(id, _) = region {
+                        let width = CGDisplayBounds(id).width
+                        guard width > 0 else { return 1 }
+                        return CGFloat(CGDisplayCopyDisplayMode(id)?.pixelWidth ?? Int(width)) / width
+                    }; return 1
+                }()
+            )]
             selectedID = "region"
         } else {
-            sourceKind = .display
+            sourceKind = ScreenRecordingSourceKind(rawValue: defaults
+                .string(forKey: "screenshot.recording.sourceKind") ?? "region") ?? .region
             choices = []; selectedID = ""
         }
         present(self)
@@ -365,8 +519,9 @@ extension ScreenRecordingCoordinator {
             error = L("recording.error.permission")
             return
         }
-        error = nil
-        permissionFailure = nil
+        if permissionFailure == .permission || permissionFailure == nil {
+            error = nil; permissionFailure = nil
+        }
         isLoadingSources = true
         let token = generation
         pendingTask = Task { [weak self, loadChoices] in
@@ -381,7 +536,8 @@ extension ScreenRecordingCoordinator {
                 guard let self, generation == token, state == .setup else { return }
                 choices = choices.filter { $0.id == "region" } + values
                 if !choices.contains(where: { $0.id == self.selectedID }) {
-                    selectedID = choices.first(where: { $0.target.kind == self.sourceKind })?.id ?? ""
+                    selectedID = sourceKind != .window && visibleSources
+                        .count == 1 ? (visibleSources.first?.id ?? "") : ""
                 }
             } catch {
                 guard let self, generation == token, !(error is CancellationError) else { return }
@@ -399,13 +555,15 @@ extension ScreenRecordingCoordinator {
     }
 
     var destinationDirectory: URL {
-        saveDirectory()
+        outputDirectory ?? saveDirectory()
     }
 
     func selectSourceKind(_ kind: ScreenRecordingSourceKind) {
         guard state == .setup else { return }
         sourceKind = kind
-        selectedID = choices.first(where: { $0.target.kind == kind })?.id ?? ""
+        selectedID = kind == .window ? "" :
+            (choices.filter { $0.target.kind == kind }
+                .count == 1 ? (choices.first(where: { $0.target.kind == kind })?.id ?? "") : "")
     }
 
     func selectRegion() {
@@ -426,8 +584,13 @@ extension ScreenRecordingCoordinator {
                     case let .finish(_, displayID, rect, _):
                         overlay.dismiss()
                         choices.removeAll { $0.id == "region" }
-                        choices.insert(ScreenRecordingChoice(id: "region", title: L("recording.region"),
-                                                             target: .region(displayID: displayID, rect: rect)), at: 0)
+                        choices.insert(ScreenRecordingChoice(
+                            id: "region",
+                            title: L("recording.region"),
+                            target: .region(displayID: displayID, rect: rect),
+                            frame: rect,
+                            scale: 2
+                        ), at: 0)
                         selectedID = "region"
                         sourceKind = .region
                         state = .setup
@@ -446,5 +609,138 @@ extension ScreenRecordingCoordinator {
                 present(self)
             }
         }
+    }
+}
+
+extension ScreenRecordingCoordinator {
+    func select(_ choice: ScreenRecordingChoice) {
+        guard state == .setup else { return }
+        if choice.target.kind == .region {
+            choices.removeAll { $0.id == "region" }
+        }
+        if !choices.contains(where: { $0.id == choice.id }) {
+            choices.insert(choice, at: 0)
+        }
+        selectedID = choice.id
+        sourceKind = choice.target.kind
+    }
+
+    func skipCountdown() {
+        guard state == .countdown else { return }
+        countdown = 0
+        countdownWait?.cancel()
+    }
+
+    func returnToSelection() {
+        guard state == .countdown else { return }
+        pendingTask?.cancel()
+        countdownWait?.cancel()
+    }
+
+    func restart() {
+        guard state == .recording || state == .paused else { return }
+        stopMonitoring()
+        state = .stopping
+        let token = generation
+        pendingTask = Task { [weak self] in
+            guard let self else { return }
+            await engine.cancel()
+            guard !Task.isCancelled, generation == token else { return }
+            if let sessionDirectory {
+                files.discard(sessionDirectory)
+            }
+            sessionDirectory = nil
+            showBorder(nil)
+            state = .setup
+            start()
+        }
+    }
+
+    func reportDevicePermissionFailure(_ type: AVMediaType) {
+        guard state == .setup else { return }
+        let failure: ScreenRecordingFailure = type == .audio ? .microphonePermission : .cameraPermission
+        guard permissionFailure != failure else { return }
+        permissionFailure = failure
+        error = failure.localizedDescription
+    }
+
+    func setDevice(_ type: AVMediaType, enabled: Bool) {
+        guard state == .setup else { return }
+        if type == .video {
+            options.camera = enabled
+        } else {
+            options.microphone = enabled
+        }
+        deviceTask?.cancel()
+        if !enabled {
+            if (type == .audio && permissionFailure == .microphonePermission) ||
+                (type == .video && permissionFailure == .cameraPermission) {
+                permissionFailure = nil; error = nil
+            }
+            return
+        }
+        let requested = options
+        deviceTask = Task { [weak self] in
+            guard let self else { return }
+            do {
+                try await authorizeDevices(requested)
+                try Task.checkCancellation()
+                permissionFailure = nil
+                error = nil
+            } catch {
+                guard !Task.isCancelled else { return }
+                permissionFailure = error as? ScreenRecordingFailure
+                self.error = error.localizedDescription
+            }
+        }
+    }
+
+    func togglePlayback() {
+        guard state == .preview, let player else { return }
+        if isPlaying {
+            player.pause(); isPlaying = false; return
+        }
+        if currentTime < trimStart || currentTime >= trimEnd {
+            currentTime = trimStart
+            player.seek(
+                to: CMTime(seconds: trimStart, preferredTimescale: 600),
+                toleranceBefore: .zero,
+                toleranceAfter: .zero
+            )
+        }
+        player.play()
+        isPlaying = true
+    }
+
+    private func removePlayerObserver() {
+        if let playerObserver {
+            player?.removeTimeObserver(playerObserver)
+        }
+        playerObserver = nil
+    }
+
+    func keepFirstGIFSegment() {
+        guard state == .preview else { return }
+        trimEnd = min(duration, trimStart + 30)
+    }
+
+    func finishSavedPresentation() {
+        guard state == .completed else { return }
+        state = .idle
+        dismiss()
+    }
+
+    func findRecoverableSources() -> [URL] {
+        files.recoverableSources()
+    }
+
+    func discardRecovered(_ url: URL) {
+        files.discard(url.deletingLastPathComponent())
+        recovered.removeAll { $0 == url }
+    }
+
+    static func copyFile(_ url: URL) {
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.writeObjects([url as NSURL])
     }
 }

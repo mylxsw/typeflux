@@ -1,6 +1,40 @@
 import AppKit
 
 extension ScreenRecordingCoordinator {
+    var selectionHint: String {
+        switch sourceKind {
+        case .region: L("recording.regionHint")
+        case .window: L("recording.pickWindow")
+        case .display: L("recording.pickDisplay")
+        }
+    }
+
+    var outputSize: CGSize {
+        (try? ScreenRecordingGeometry.outputSize(points: selectedSource?.frame.size ?? media.size,
+                                                 scale: selectedSource?.scale ?? 1,
+                                                 maxDimension: options.dimension)) ?? media.size
+    }
+
+    var outputSummary: String {
+        let size = (state == .preview || state == .exporting) ? previewOutputSize : outputSize
+        return "\(Int(size.width)) × \(Int(size.height)) · \(options.format.rawValue.uppercased()) · \(options.captureFPS) FPS · " +
+            audioSummary +
+            (options.format == .gif ? " · " + L("recording.max30") : " · " + L(
+                "recording.countdownSummary",
+                options.countdown
+            ))
+    }
+
+    var previewOutputSize: CGSize {
+        guard options.format == .gif else { return media.size }
+        return (try? ScreenRecordingGeometry.outputSize(points: media.size, scale: 1, maxDimension: 960)) ?? media.size
+    }
+
+    var estimatedBytes: Int64 {
+        guard duration > 0 else { return 0 }
+        return Int64(Double(media.fileBytes) * selectionDuration / duration * (options.format == .gif ? 1.5 : 1))
+    }
+
     var selectedSource: ScreenRecordingChoice? {
         choices.first { $0.id == selectedID }
     }
@@ -10,7 +44,12 @@ extension ScreenRecordingCoordinator {
     }
 
     var canStart: Bool {
-        state == .setup && selectedSource != nil && permissionFailure != .permission
+        state == .setup && selectedSource != nil && permissionFailure == nil && {
+            if case let .region(_, rect) = selectedSource?.target {
+                return ScreenRecordingLayout.validRegion(rect)
+            }
+            return true
+        }()
     }
 
     var selectionDuration: Double {
@@ -61,13 +100,13 @@ extension ScreenRecordingCoordinator {
 
     func setTrimStart(_ seconds: Double) {
         guard state == .preview, seconds.isFinite else { return }
-        trimStart = min(max(0, seconds), max(0, trimEnd - 0.01))
+        trimStart = min(max(0, seconds), max(0, trimEnd - min(0.5, duration)))
         seek(trimStart)
     }
 
     func setTrimEnd(_ seconds: Double) {
         guard state == .preview, seconds.isFinite else { return }
-        trimEnd = max(min(duration, seconds), min(duration, trimStart + 0.01))
+        trimEnd = max(min(duration, seconds), min(duration, trimStart + min(0.5, duration)))
         seek(trimEnd)
     }
 

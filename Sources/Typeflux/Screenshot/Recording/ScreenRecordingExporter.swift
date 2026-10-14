@@ -150,7 +150,14 @@ struct ScreenRecordingFiles {
         try? manager.removeItem(at: directory)
     }
 
-    func publish(_ source: URL, in directory: URL, format: ScreenRecordingFormat, date: Date = Date()) throws -> URL {
+    func publish(
+        _ source: URL,
+        in directory: URL,
+        format: ScreenRecordingFormat,
+        date: Date = Date(),
+        name: String? = nil,
+        destinationURL: URL? = nil
+    ) throws -> URL {
         try manager.createDirectory(at: directory, withIntermediateDirectories: true)
         let staging = directory.appendingPathComponent(".typeflux-recording-\(UUID().uuidString).\(format.rawValue)")
         defer { try? manager.removeItem(at: staging) }
@@ -158,7 +165,17 @@ struct ScreenRecordingFiles {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "yyyy-MM-dd HH.mm.ss"
-        let base = "Typeflux Recording " + formatter.string(from: date)
+        if let destinationURL {
+            guard destinationURL.deletingLastPathComponent().standardizedFileURL == directory.standardizedFileURL
+            else { throw CocoaError(.fileWriteInvalidFileName) }
+            if manager.fileExists(atPath: destinationURL.path) {
+                _ = try manager.replaceItemAt(destinationURL, withItemAt: staging)
+            } else {
+                try manager.moveItem(at: staging, to: destinationURL)
+            }
+            return destinationURL
+        }
+        let base = name.map(ScreenRecordingLayout.fileName) ?? ("Typeflux Recording " + formatter.string(from: date))
         for suffix in 0 ..< 10000 {
             let name = base + (suffix == 0 ? "" : " (\(suffix + 1))") + "." + format.rawValue
             let result = directory.appendingPathComponent(name)

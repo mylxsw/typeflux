@@ -4855,7 +4855,7 @@
 "recording.from" = "開始";
 "recording.to" = "結束";
 "recording.cancelExport" = "取消匯出";
-"recording.saveAs" = "儲存到其他位置…";
+"recording.saveAs" = "另存新檔…";
 "recording.export" = "匯出";
 "recording.discardQuestion" = "捨棄這次錄製？";
 "recording.discardHint" = "尚未儲存的錄製內容將被刪除。";
@@ -4918,7 +4918,7 @@
 
 "recording.source.region" = "區域";
 
-"recording.source.display" = "螢幕";
+"recording.source.display" = "全螢幕";
 
 "recording.source.window" = "視窗";
 
@@ -4932,7 +4932,7 @@
 
 "recording.selectedDuration" = "已選時間：%.2f 秒";
 
-"recording.resetTrim" = "使用完整錄製";
+"recording.resetTrim" = "恢復完整";
 
 "recording.gifExportHint" = "GIF 不含聲音。請選擇最多 30 秒；匯出為每秒 10 格，最長邊 960 像素。";
 
@@ -5038,3 +5038,77 @@
 "ask.context.selection.characters" = "%d 個字元";
 "ask.context.selection.disableHint" = "點擊圖示可停用，文字會保留";
 "ask.context.selection.enableHint" = "點擊圖示可再次使用這段文字";
+
+"recording.copy" = "複製";
+
+"recording.countdownKeys" = "空白鍵 立即開始 · esc 返回";
+
+"recording.countdownSummary" = "倒數 %d 秒";
+
+"recording.estimated" = "約 %@";
+
+"recording.fileName" = "檔案名稱";
+
+"recording.gifSilent" = "GIF 不含聲音";
+
+"recording.gifSmall" = "小 · 640 px";
+
+"recording.gifStandard" = "標準 · 960 px";
+
+"recording.gifTooLong" = "GIF 最多保留 30 秒";
+
+"recording.keep30" = "保留開頭 30 秒";
+
+"recording.keepRange" = "保留";
+
+"recording.later" = "稍後";
+
+"recording.liveCamera" = "即時";
+
+"recording.max30" = "最長 30 秒";
+
+"recording.microphoneLevel" = "麥克風輸入電平";
+
+"recording.noAudioTrack" = "這段錄製沒有聲音";
+
+"recording.noUpscale" = "只縮小，不放大。";
+
+"recording.openEditor" = "開啟剪輯";
+
+"recording.options" = "選項";
+
+"recording.play" = "播放 / 暫停";
+
+"recording.recoveryHint" = "上次未儲存的錄製可以繼續編輯。";
+
+"recording.remaining" = "還剩 %d 秒自動停止";
+
+"recording.restart" = "重來";
+
+"recording.restartQuestion" = "捨棄本次錄製並重新開始？";
+
+"recording.selectionKeys" = "↩ 開始 · esc 取消 · ⇥ 切換來源";
+
+"recording.selectionSeconds" = "· 共 %.1f 秒";
+
+"recording.switchMP4" = "改存 MP4";
+
+"recording.systemAudioScope" = "不含 Typeflux 自己的聲音；錄視窗時包含該應用程式的全部聲音。";
+
+"recording.timelineKeys" = "拖動兩端剪掉頭尾 · I / O 設起止點 · 空白鍵 播放";
+
+"recording.unsaved" = "未儲存的錄製";
+
+"recording.microphonePermissionHint" = "在系統設定 → 隱私權與安全性 → 麥克風中允許 Typeflux，回到這裡即可繼續。";
+
+"recording.cameraPermissionHint" = "在系統設定 → 隱私權與安全性 → 相機中允許 Typeflux，回到這裡即可繼續。";
+
+"recording.skipMicrophone" = "這次不錄麥克風";
+
+"recording.skipCamera" = "這次不錄相機";
+
+"recording.optionsTitle" = "錄製選項";
+
+"recording.pickWindow" = "懸停反白視窗，按一下選取。";
+
+"recording.pickDisplay" = "按一下要錄製的螢幕。";
