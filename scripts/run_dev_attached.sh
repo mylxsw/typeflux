@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-APP_DIR="${TYPEFLUX_DEV_APP_DIR:-${TYPEFLUX_DEV_APP_DIR:-$HOME/Applications/Typeflux Dev.app}}"
+APP_DIR="${TYPEFLUX_DEV_APP_DIR:-$HOME/Applications/Typeflux Dev.app}"
 APP_EXEC="$APP_DIR/Contents/MacOS/Typeflux"
 LOG_PID=""
 DEV_VARIANT="${TYPEFLUX_DEV_VARIANT:-minimal}"
@@ -133,6 +133,8 @@ cleanup() {
 
 trap 'cleanup 130' INT
 trap 'cleanup 143' TERM
+
+python3 "$ROOT_DIR/scripts/check_dev_app_conflicts.py" "$APP_DIR"
 
 # Keep development-only commands and defaults while optimizing the launcher.
 swift build --package-path "$ROOT_DIR" -c "$BUILD_CONFIGURATION" -Xswiftc -DDEBUG
@@ -284,6 +286,8 @@ if pgrep -f "$APP_EXEC" >/dev/null 2>&1; then
   pkill -f "$APP_EXEC" >/dev/null 2>&1 || true
   sleep 1
 fi
+
+python3 "$ROOT_DIR/scripts/check_dev_app_conflicts.py" "$APP_DIR"
 
 echo "App launched in attached dev mode: $APP_DIR"
 echo "Dev variant: $DEV_VARIANT"

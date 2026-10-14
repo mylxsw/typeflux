@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-APP_DIR="${TYPEFLUX_DEV_APP_DIR:-${TYPEFLUX_DEV_APP_DIR:-$HOME/Applications/Typeflux Dev.app}}"
+APP_DIR="${TYPEFLUX_DEV_APP_DIR:-$HOME/Applications/Typeflux Dev.app}"
 DEV_VARIANT="${TYPEFLUX_DEV_VARIANT:-minimal}"
 BUILD_CONFIGURATION="${TYPEFLUX_DEV_BUILD_CONFIGURATION:-release}"
 case "$BUILD_CONFIGURATION" in
@@ -12,6 +12,7 @@ esac
 
 # Kill any running instance before rebuilding, so the binary copy succeeds.
 pkill -f "Typeflux Dev.app/Contents/MacOS/Typeflux" 2>/dev/null || true
+python3 "$ROOT_DIR/scripts/check_dev_app_conflicts.py" "$APP_DIR"
 
 profile_supports_apple_sign_in() {
   local profile_path="$1"
@@ -265,6 +266,7 @@ else
   echo "Warning: To enable it, provide TYPEFLUX_DEV_PROVISIONING_PROFILE with a matching macOS provisioning profile that includes the Sign In with Apple capability."
 fi
 
+python3 "$ROOT_DIR/scripts/check_dev_app_conflicts.py" "$APP_DIR"
 open "$APP_DIR"
 
 echo "App launched: $APP_DIR"
