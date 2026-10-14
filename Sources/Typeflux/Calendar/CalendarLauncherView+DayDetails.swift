@@ -20,13 +20,12 @@ extension CalendarLauncherView {
                     weight: .bold
                 ))
                 Text(model.dates.format(model.selected, "EEE", locale: model.locale)).font(.system(size: 11))
-                if model.selected == model.today {
-                    Text(L("calendar.today")).font(.system(size: 10, weight: .semibold)).foregroundStyle(.white)
-                        .padding(.horizontal, 5).padding(.vertical, 2).background(
-                            .red,
-                            in: RoundedRectangle(cornerRadius: 4)
-                        )
-                }
+                let isToday = model.selected == model.today
+                Text(model.relativeDay).font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(isToday ? Color.white : StudioTheme.textSecondary)
+                    .padding(.horizontal, 5).padding(.vertical, 2)
+                    .background(isToday ? AskTheme.accent : AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 4))
+                    .accessibilityIdentifier("calendar.relativeDay")
             }
             if model.dates.calendar.component(.year, from: model.selected) != model.dates.calendar.component(
                 .year,
@@ -37,11 +36,6 @@ extension CalendarLauncherView {
             Text((model.preferences.showsLunar ? L("calendar.lunar", model.info.lunar) + " · " : "")
                 + L("calendar.weekDay", model.info.week, model.info.ordinal))
                 .font(.system(size: 10.5)).foregroundStyle(StudioTheme.textTertiary)
-            if model.selected != model.today {
-                Text(L(model.selected > model.today ? "calendar.after" : "calendar.before",
-                       abs(model.dates.days(from: model.today, to: model.selected))))
-                    .font(.system(size: 11)).foregroundStyle(.blue)
-            }
             holidayDetail
             if case .invalid = model.query {
                 Text(L("calendar.invalid")).font(.system(size: 12)).foregroundStyle(.orange)

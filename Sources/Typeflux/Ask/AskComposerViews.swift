@@ -1734,18 +1734,11 @@ struct AskComposer: View {
                 .accessibilityLabel(L("ask.voice.cancel"))
                 .accessibilityIdentifier("ask.voice.cancel")
             }
-            if pluginDisplay?.calendar == true, !active {
-                CalendarHeaderAction(model: model.calendarLauncher) {
-                    performCalendarEffect(model.calendarLauncher.handle(.commandT,
-                                                                          inputEmpty: draft.wrappedValue.text.isEmpty))
-                }
-            } else {
-                AskVoiceButton(voice: voice, contextID: contextID, enabled: true, shortcut: voiceShortcut)
-                    .frame(width: AskMetrics.composerControlHeight, height: AskMetrics.composerControlHeight)
-                    .accessibilityLabel(AskVoiceButton.title(phase: voice.phase,
-                                                            contextMatches: voice.context == contextID))
-                    .accessibilityIdentifier("ask.composer.voice")
-            }
+            AskVoiceButton(voice: voice, contextID: contextID, enabled: true, shortcut: voiceShortcut)
+                .frame(width: AskMetrics.composerControlHeight, height: AskMetrics.composerControlHeight)
+                .accessibilityLabel(AskVoiceButton.title(phase: voice.phase,
+                                                        contextMatches: voice.context == contextID))
+                .accessibilityIdentifier("ask.composer.voice")
             if !active, pluginDisplay?.calendar != true {
                 AskLauncherOpenChatButton(mode: launcherChatAction, enabled: launcherChatActionEnabled,
                                          tint: privateTint ? AskTheme.privateTint : AskTheme.accent,

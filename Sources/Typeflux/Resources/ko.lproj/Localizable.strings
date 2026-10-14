@@ -4780,6 +4780,7 @@
 "calendar.placeholder" = "날짜, 공휴일 또는 일정: 12-25, next fri…";
 "calendar.local" = "이 Mac에서";
 "calendar.today" = "오늘";
+"calendar.today.help" = "오늘로 돌아가고 입력 지우기";
 "calendar.previous" = "이전 달 또는 연도";
 "calendar.next" = "다음 달 또는 연도";
 "calendar.keys" = "←→↑↓ 날짜 · ⌘←→ 월 · ⇥ 일정 · ↩ 열기 · ⌘C 복사 · ⌥↩ 삽입 · esc 뒤로";

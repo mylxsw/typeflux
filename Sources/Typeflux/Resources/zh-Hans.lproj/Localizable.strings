@@ -4829,6 +4829,7 @@
 "calendar.placeholder" = "日期、节日或日程：12-25、下周五、春节、评审…";
 "calendar.local" = "在本机";
 "calendar.today" = "今天";
+"calendar.today.help" = "回到今天，并清空输入";
 "calendar.previous" = "上个月或上一年";
 "calendar.next" = "下个月或下一年";
 "calendar.keys" = "←→↑↓ 选择日期 · ⌘←→ 切换月份 · ⇥ 日程 · ↩ 打开 · ⌘C 复制 · ⌥↩ 插入 · esc 返回";

@@ -4814,6 +4814,7 @@
 "calendar.placeholder" = "日期、節日或行程：12-25、下週五、春節、評審…";
 "calendar.local" = "在本機";
 "calendar.today" = "今天";
+"calendar.today.help" = "回到今天，並清除輸入";
 "calendar.previous" = "上個月或上一年";
 "calendar.next" = "下個月或下一年";
 "calendar.keys" = "←→↑↓ 選擇日期 · ⌘←→ 切換月份 · ⇥ 行程 · ↩ 開啟 · ⌘C 複製 · ⌥↩ 插入 · esc 返回";
