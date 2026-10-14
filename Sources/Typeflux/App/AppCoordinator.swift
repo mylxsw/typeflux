@@ -144,10 +144,10 @@ final class AppCoordinator {
         }
 
         let screenshotCoordinator = di.screenshotCoordinator
-        let screenRecordingCoordinator = di.screenRecordingCoordinator
-        di.screenRecordingWindow.offerRecovery(screenRecordingCoordinator)
+        let screenRecordingCoordinator = di.screenRecordingSessions
+        screenRecordingCoordinator.offerRecovery()
         screenshotCoordinator.isRecordingActive = { [weak screenRecordingCoordinator] in
-            screenRecordingCoordinator?.isBusy ?? false
+            screenRecordingCoordinator?.isCaptureActive ?? false
         }
         screenshotCoordinator.onRecordingRequested = { [weak screenRecordingCoordinator] format, region in
             screenRecordingCoordinator?.show(format: format, region: region)
@@ -254,10 +254,10 @@ final class AppCoordinator {
         }
     }
 
-    var hasScreenRecording: Bool { di.screenRecordingCoordinator.isBusy }
+    var hasScreenRecording: Bool { di.screenRecordingSessions.isBusy }
 
     func finishScreenRecordingForTermination() async {
-        await di.screenRecordingCoordinator.prepareForTermination()
+        await di.screenRecordingSessions.prepareForTermination()
     }
 
     func stop() {

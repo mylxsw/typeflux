@@ -3,11 +3,11 @@ import AVFoundation
 import Combine
 import SwiftUI
 
-/// Every recorder surface uses the same exclusion identifier, including surfaces
-/// made visible before the capture filter is constructed.
+/// Live capture controls are excluded; completed recording editors remain capturable.
 @MainActor
 final class ScreenRecordingWindowController: NSObject, NSWindowDelegate {
     static let identifier = NSUserInterfaceItemIdentifier("ai.gulu.app.typeflux.window.screen-recording")
+    static let previewIdentifier = NSUserInterfaceItemIdentifier("ai.gulu.app.typeflux.window.recording-preview")
     var window: NSWindow?
     var border: NSPanel?
     var selectionPanels: [NSPanel] = []
@@ -32,11 +32,12 @@ final class ScreenRecordingWindowController: NSObject, NSWindowDelegate {
     weak var model: ScreenRecordingCoordinator?
 
     init(settings: SettingsStore? = nil,
-         preview: any ScreenRecordingDevicePreviewing = ScreenRecordingDevicePreview()) {
+         preview: any ScreenRecordingDevicePreviewing = ScreenRecordingDevicePreview(),
+         toast: ScreenRecordingToastController? = nil) {
         let settings = settings ?? SettingsStore()
         self.settings = settings
         self.preview = preview
-        toast = ScreenRecordingToastController(settings: settings)
+        self.toast = toast ?? ScreenRecordingToastController(settings: settings)
         interfaceStyle = InterfaceStyleObserver(settings: settings)
         super.init()
         appearanceObservation = NotificationCenter.default.addObserver(
@@ -213,7 +214,8 @@ final class ScreenRecordingWindowController: NSObject, NSWindowDelegate {
     }
 
     func hide() {
-        window?.orderOut(nil); window = nil
+        window?.orderOut(nil)
+        window?.contentView = nil; window?.delegate = nil; window = nil
         border?.orderOut(nil); border = nil
         cameraPanel?.orderOut(nil); cameraPanel = nil; cameraView = nil
         selectionPanels.forEach { $0.orderOut(nil) }; selectionPanels = []; selectionViews = []

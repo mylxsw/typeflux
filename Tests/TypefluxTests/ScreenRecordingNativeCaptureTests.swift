@@ -15,6 +15,7 @@ struct ScreenRecordingNativeCaptureTests {
         let frame = CGRect(x: screen.visibleFrame.midX - 120, y: screen.visibleFrame.midY - 90, width: 240, height: 180)
         let page = NSWindow(contentRect: frame, styleMask: .borderless, backing: .buffered, defer: false)
         page.isReleasedWhenClosed = false; page.title = "Typeflux recording fixture"; page.backgroundColor = .green
+        page.identifier = ScreenRecordingWindowController.previewIdentifier
         let control = NSPanel(contentRect: frame, styleMask: .borderless, backing: .buffered, defer: false)
         control.isReleasedWhenClosed = false; control.identifier = ScreenRecordingWindowController.identifier
         control.level = .floating; control.backgroundColor = .red
@@ -23,6 +24,7 @@ struct ScreenRecordingNativeCaptureTests {
         try await Task.sleep(for: .milliseconds(200))
         let choices = try await ScreenRecordingCoordinator.catalog()
         #expect(choices.contains { $0.target == .display(displayID) })
+        #expect(choices.contains { $0.target == .window(CGWindowID(page.windowNumber)) })
         #expect(!choices.contains { $0.target == .window(CGWindowID(control.windowNumber)) })
         let rect = ScreenCaptureGeometry.flipped(frame, primaryDisplayHeight: NSScreen.screens.first?.frame.height ?? 0)
         let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".mov")
