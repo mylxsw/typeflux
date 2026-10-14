@@ -7,6 +7,97 @@ import Testing
 @Suite(.exclusiveUIState)
 @MainActor
 struct ScreenRecordingUIInteractionTests {
+    @Test func `screenshot toolbar exposes recording without opening More`() async throws {
+        _ = NSApplication.shared
+        NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
+        defer { NSApp.accessibilitySetValue(false, forAttribute: .init(rawValue: "AXEnhancedUserInterface")) }
+        var actions = 0
+        for editable in [true, false] {
+            var state = ScreenshotEditorToolbarModel.State()
+            state.canScrollCapture = editable
+            try await SettingsBehaviorTestSupport.withWindow(
+                ScreenshotEditorToolbar(state: state) {
+                    if case .record = $0 {
+                        actions += 1
+                    }
+                },
+                width: 1200, height: 120
+            ) { window, content in
+                let button = try #require(SettingsBehaviorTestSupport.elements(in: content).first {
+                    $0.value("accessibilityIdentifier") as? String == "screenshot.record"
+                })
+                #expect(button.frame.width > 30 && button.frame.height > 0)
+                #expect(window.frame.contains(button.frame))
+                #expect(button.value("isAccessibilityEnabled") as? Bool == editable)
+                if editable {
+                    try button.press()
+                }
+            }
+        }
+        #expect(actions == 1)
+        var state = ScreenshotEditorToolbarModel.State()
+        state.showsScrollCapture = false
+        try await SettingsBehaviorTestSupport.withWindow(ScreenshotEditorToolbar(state: state) { _ in }) { _, content in
+            #expect(!SettingsBehaviorTestSupport.elements(in: content).contains {
+                $0.value("accessibilityIdentifier") as? String == "screenshot.record"
+            })
+        }
+        let image = try await ScreenshotSnapshotSupport.toolbar(.init())
+        try ScreenshotSnapshotSupport.write(#require(image.cgImage), name: "screenshot-recording-entry")
+    }
+
+    @Test func `native selection toolbar remains visible through refresh and language changes`() async throws {
+        _ = NSApplication.shared
+        NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
+        let previous = AppLocalization.shared.language
+        defer {
+            NSApp.accessibilitySetValue(false, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
+            AppLocalization.shared.setLanguage(previous)
+        }
+        let fixture = ScreenRecordingCoordinatorTests.Fixture()
+        await fixture.setup()
+        let presenter = ScreenRecordingWindowController(preview: ScreenRecordingVisualTests.Devices())
+        presenter.show(fixture.model)
+        defer { presenter.hide() }
+        for language in AppLanguage.allCases {
+            AppLocalization.shared.setLanguage(language)
+            try await Task.sleep(for: .milliseconds(150))
+            presenter.syncChrome()
+            let window = try #require(presenter.window)
+            let content = try #require(window.contentView)
+            #expect(window.isVisible)
+            #expect(window.frame.width > 500 && window.frame.height > 40)
+            #expect(try #require(presenter.activeScreen).visibleFrame.contains(window.frame))
+            #expect(content.fittingSize.width > 500 && content.fittingSize.height > 40)
+            #expect(presenter.selectionPanels.allSatisfy { $0.level < window.level })
+            let start = try #require(SettingsBehaviorTestSupport.elements(in: content).first {
+                $0.value("accessibilityIdentifier") as? String == "recording.start"
+            })
+            #expect(start.frame.width > 30 && start.frame.height > 20)
+            #expect(window.frame.contains(start.frame))
+            let bitmap = try #require(content.bitmapImageRepForCachingDisplay(in: content.bounds))
+            content.cacheDisplay(in: content.bounds, to: bitmap)
+            try ScreenshotSnapshotSupport.write(
+                #require(bitmap.cgImage),
+                name: "recording-native-toolbar-\(language.rawValue)"
+            )
+        }
+        // A transient unmeasurable host must not collapse a usable panel.
+        let window = try #require(presenter.window)
+        let content = window.contentView
+        let frame = window.frame
+        window.contentView = NSView(frame: CGRect(origin: .zero, size: frame.size))
+        presenter.syncChrome()
+        #expect(window.frame == frame)
+        window.contentView = content
+        // A toolbar dragged off screen must remain reachable after the next refresh.
+        window.setFrameOrigin(CGPoint(x: -20000, y: 20000))
+        presenter.syncChrome()
+        #expect(try #require(presenter.activeScreen).visibleFrame.contains(window.frame))
+        presenter.hide(); await presenter.deviceTask?.value
+        await fixture.clean()
+    }
+
     @Test func `toolbar buttons drive source format devices and capture controls`() async throws {
         _ = NSApplication.shared
         NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
@@ -124,6 +215,9 @@ struct ScreenRecordingUIInteractionTests {
             (node.label == title || node.value("accessibilityTitle") as? String == title) &&
                 node.object.responds(to: NSSelectorFromString("accessibilityPerformPress"))
         }, "Missing button: \(title)")
+        #expect(window.isVisible && window.frame.width > 0 && window.frame.height > 0)
+        #expect(button.frame.width > 0 && button.frame.height > 0)
+        #expect(window.frame.contains(button.frame), "The button must be inside the visible native panel")
         try button.press()
     }
 }

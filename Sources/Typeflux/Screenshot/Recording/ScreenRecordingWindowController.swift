@@ -152,9 +152,11 @@ final class ScreenRecordingWindowController: NSObject, NSWindowDelegate {
         return panel
     }
 
-    func host(_ view: some View, in window: NSWindow) {
+    func host(_ view: some View, in window: NSWindow, sizesToContent: Bool = false) {
         let host = NSHostingView(rootView: view.interfaceStyle(following: interfaceStyle))
-        host.sizingOptions = []
+        // The selection toolbar is measured through fittingSize. Disabling intrinsic
+        // sizing makes that measurement zero and collapses its native panel.
+        host.sizingOptions = sizesToContent ? [.intrinsicContentSize] : []
         window.contentView = host
     }
 
