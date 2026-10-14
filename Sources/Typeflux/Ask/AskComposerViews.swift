@@ -1988,6 +1988,7 @@ struct AskComposer: View {
             let secondary = launcherSecondaryHint.components(separatedBy: " · ").filter { !$0.hasPrefix("↩") }
             let askAI = pluginDisplay.map { $0.offersAskAI } ?? model.launcherDraft.canSend
             var parts = [primary.enabled ? "↩ " + primary.title : primary.hint] + secondary
+            if pluginDisplay?.translation == true { return parts.joined(separator: " · ") }
             if askAI, primary.mode != .askAI, !parts.contains(where: { $0.contains("⌘↩") }) {
                 parts.append(L("ask.plugin.hint.askAI"))
             }
