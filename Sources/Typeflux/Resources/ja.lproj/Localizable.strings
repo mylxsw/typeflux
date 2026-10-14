@@ -5173,7 +5173,6 @@
 "ask.plugin.help.title" = "使い方ガイド";
 "ask.plugin.help.placeholder" = "ガイドを検索、または ↩ で開く";
 "help.title" = "Typeflux 使い方ガイド";
-"help.close" = "閉じる（esc）";
 "help.page.start" = "はじめに";
 "help.page.start.subtitle" = "すべての機能はここから";
 "help.page.keywords" = "キーワード";
@@ -5257,6 +5256,7 @@
 "help.key.chat.settings" = "Ask の設定";
 "help.faq.status" = "権限";
 "help.faq.granted" = "許可済み";
+"help.faq.notGranted" = "未許可";
 "help.faq.fix" = "許可する";
 "help.faq.questions" = "質問";
 "help.faq.relevant" = "該当する可能性あり";

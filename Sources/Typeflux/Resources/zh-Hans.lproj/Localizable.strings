@@ -5248,7 +5248,6 @@
 "ask.plugin.help.title" = "使用指南";
 "ask.plugin.help.placeholder" = "搜索指南，或按 ↩ 打开";
 "help.title" = "Typeflux 使用指南";
-"help.close" = "关闭（esc）";
 "help.page.start" = "开始";
 "help.page.start.subtitle" = "所有功能都从这里开始";
 "help.page.keywords" = "关键词";
@@ -5332,6 +5331,7 @@
 "help.key.chat.settings" = "随便问设置";
 "help.faq.status" = "权限";
 "help.faq.granted" = "已允许";
+"help.faq.notGranted" = "未允许";
 "help.faq.fix" = "去授权";
 "help.faq.questions" = "问题";
 "help.faq.relevant" = "可能和你有关";

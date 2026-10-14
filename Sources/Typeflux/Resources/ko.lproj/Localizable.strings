@@ -5173,7 +5173,6 @@
 "ask.plugin.help.title" = "사용 가이드";
 "ask.plugin.help.placeholder" = "가이드 검색, 또는 ↩로 열기";
 "help.title" = "Typeflux 사용 가이드";
-"help.close" = "닫기(esc)";
 "help.page.start" = "시작";
 "help.page.start.subtitle" = "모든 기능은 여기서 시작합니다";
 "help.page.keywords" = "키워드";
@@ -5257,6 +5256,7 @@
 "help.key.chat.settings" = "Ask 설정";
 "help.faq.status" = "권한";
 "help.faq.granted" = "허용됨";
+"help.faq.notGranted" = "허용 안 됨";
 "help.faq.fix" = "허용하기";
 "help.faq.questions" = "질문";
 "help.faq.relevant" = "해당될 수 있음";

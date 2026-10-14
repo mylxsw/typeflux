@@ -1,16 +1,16 @@
+import AppKit
 import SwiftUI
 
 /// Geometry that differs between Liquid Glass and classic, like `AskStyleMetrics`.
 struct HelpMetrics: Equatable {
-    var panelCorner: CGFloat
     var blockCorner: CGFloat
     var rowCorner: CGFloat
     var navRowHeight: CGFloat
     var keycapCorner: CGFloat
 
-    static let liquidGlass = HelpMetrics(panelCorner: 26, blockCorner: 14, rowCorner: 10, navRowHeight: 36,
+    static let liquidGlass = HelpMetrics(blockCorner: 14, rowCorner: 10, navRowHeight: 36,
                                          keycapCorner: 5)
-    static let classic = HelpMetrics(panelCorner: 12, blockCorner: 10, rowCorner: 6, navRowHeight: 30,
+    static let classic = HelpMetrics(blockCorner: 10, rowCorner: 6, navRowHeight: 30,
                                      keycapCorner: 4)
 }
 
@@ -46,26 +46,50 @@ enum HelpTheme {
     static func well(_ style: InterfaceStyle) -> Color { style.usesGlass ? AskTheme.hoverFill : AskClassic.sidebar }
 }
 
-/// A key drawn as a keycap, the way the launcher draws ⌘1…⌘9.
+/// A key drawn as a keycap. Small ones are the launcher's ⌘1…⌘9 badges; large ones, on the
+/// start page, are opaque caps with a lower edge that sink when pressed.
 struct HelpKeycap: View {
     var key: String
     var large = false
     var pressed = false
     @Environment(\.interfaceStyle) private var style
 
+    /// The side of a large key, seen below its top.
+    static let keyEdge = StudioTheme.dynamic(
+        light: NSColor(srgbRed: 0, green: 0, blue: 0, alpha: 0.16),
+        dark: NSColor(srgbRed: 0, green: 0, blue: 0, alpha: 0.55)
+    )
+
     var body: some View {
-        let shape = RoundedRectangle(cornerRadius: large ? (style.usesGlass ? 10 : 8) : style.help.keycapCorner,
-                                     style: .continuous)
-        Text(key)
-            .font(.system(size: large ? 15 : 11.5, weight: large ? .medium : .regular))
-            .foregroundStyle(large ? StudioTheme.textPrimary : StudioTheme.textSecondary)
-            .padding(.horizontal, large ? 13 : 5)
-            .frame(minWidth: large ? 46 : 20, minHeight: large ? 46 : 20)
+        if large { largeKey } else { smallKey }
+    }
+
+    private var smallKey: some View {
+        let shape = RoundedRectangle(cornerRadius: style.help.keycapCorner, style: .continuous)
+        return Text(key)
+            .font(.system(size: 11.5))
+            .foregroundStyle(StudioTheme.textSecondary)
+            .padding(.horizontal, 5)
+            .frame(minWidth: 20, minHeight: 20)
             .background(shape.fill(AskTheme.keycapSurface))
-            .overlay(shape.strokeBorder(pressed ? AskTheme.accent : AskTheme.launcherShortcutEdge,
-                                        lineWidth: pressed ? 1 : 0.5))
-            .shadow(color: .black.opacity(large && !pressed ? 0.12 : 0), radius: 6, y: 3)
+            .overlay(shape.strokeBorder(AskTheme.launcherShortcutEdge, lineWidth: 0.5))
+            .accessibilityHidden(true)
+    }
+
+    private var largeKey: some View {
+        let shape = RoundedRectangle(cornerRadius: style.usesGlass ? 10 : 8, style: .continuous)
+        let depth: CGFloat = pressed ? 0.5 : 2.5
+        return Text(key)
+            .font(.system(size: 15, weight: .medium))
+            .foregroundStyle(StudioTheme.textPrimary)
+            .padding(.horizontal, 14)
+            .frame(minWidth: key.count > 2 ? 110 : 46, minHeight: 44)
+            .background(shape.fill(AskTheme.popoverSurface))
+            .overlay(shape.strokeBorder(pressed ? AskTheme.accent : AskTheme.border, lineWidth: pressed ? 1.2 : 1))
+            .background(shape.fill(Self.keyEdge).offset(y: depth))
+            .shadow(color: .black.opacity(pressed ? 0.06 : 0.14), radius: pressed ? 2 : 7, y: pressed ? 1 : 4)
             .offset(y: pressed ? 2 : 0)
+            .animation(.easeOut(duration: 0.12), value: pressed)
             .accessibilityHidden(true)
     }
 }
@@ -98,6 +122,8 @@ struct HelpKeywordLabel: View {
     var keyword: AskKeyword
     var showsAliases = true
     var large = false
+    /// Rows show a couple of aliases; the detail pane lists them all.
+    var maxAliases = Int.max
 
     var body: some View {
         HStack(spacing: 5) {
@@ -108,7 +134,7 @@ struct HelpKeywordLabel: View {
                 .frame(minHeight: large ? 24 : 20)
                 .background(RoundedRectangle(cornerRadius: 5, style: .continuous).fill(AskTheme.launcherKeyword))
             if showsAliases, !keyword.aliases.isEmpty {
-                Text(keyword.aliases.joined(separator: " · "))
+                Text(keyword.aliases.prefix(maxAliases).joined(separator: " · "))
                     .font(.system(size: 11.5, design: .monospaced))
                     .foregroundStyle(StudioTheme.textTertiary)
                     .lineLimit(1)

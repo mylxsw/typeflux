@@ -3,7 +3,7 @@ import SwiftUI
 /// Every shortcut with the keys the user set: Typeflux's global ones (an unset one leads to
 /// the Shortcuts settings), keyword shortcuts, the fixed keys and the `/` commands.
 struct HelpShortcutsPage: View {
-    @ObservedObject var model: HelpOverlayModel
+    @ObservedObject var model: HelpGuideModel
 
     var body: some View {
         ScrollView {
@@ -75,7 +75,7 @@ struct HelpShortcutsPage: View {
 
 /// Permission checks first, then the questions; ones a missing permission explains come first.
 struct HelpQuestionsPage: View {
-    @ObservedObject var model: HelpOverlayModel
+    @ObservedObject var model: HelpGuideModel
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -84,15 +84,16 @@ struct HelpQuestionsPage: View {
                     HelpGroupTitle(title: L("help.faq.status"))
                     HelpBlock {
                         ForEach(Array(model.permissions.enumerated()), id: \.element.id) { index, permission in
-                            HelpRow(symbol: nil, title: permission.title, showsDivider: index > 0) {
+                            // What is missing goes on the second line; the trailing label stays short.
+                            HelpRow(symbol: nil, title: permission.title,
+                                    detail: permission.granted ? "" : permission.detail, showsDivider: index > 0) {
                                 HStack(spacing: 10) {
                                     Circle().fill(permission.granted ? StudioTheme.success : StudioTheme.warning)
                                         .frame(width: 7, height: 7)
-                                    Text(permission.granted ? L("help.faq.granted") : permission.detail)
+                                    Text(L(permission.granted ? "help.faq.granted" : "help.faq.notGranted"))
                                         .font(.system(size: 12))
                                         .foregroundStyle(permission.granted
                                             ? StudioTheme.textTertiary : StudioTheme.warning)
-                                        .lineLimit(1)
                                     if !permission.granted {
                                         HelpButton(title: L("help.faq.fix")) { model.fix(permission.id) }
                                     }
@@ -152,7 +153,7 @@ struct HelpQuestionsPage: View {
 
 /// Results across keywords, shortcuts, commands and questions, or a way to ask the AI.
 struct HelpSearchView: View {
-    @ObservedObject var model: HelpOverlayModel
+    @ObservedObject var model: HelpGuideModel
 
     var body: some View {
         let items = model.searchItems
@@ -195,11 +196,11 @@ struct HelpSearchView: View {
 
     private struct Group {
         var title: String
-        var items: [(offset: Int, element: HelpOverlayModel.SearchItem)]
+        var items: [(offset: Int, element: HelpGuideModel.SearchItem)]
     }
 
     /// Splits the flat result list into its groups, keeping each item's index for the highlight.
-    private func grouped(_ items: [HelpOverlayModel.SearchItem]) -> [Group] {
+    private func grouped(_ items: [HelpGuideModel.SearchItem]) -> [Group] {
         var groups: [Group] = []
         for (offset, item) in items.enumerated() {
             let title = switch item {
@@ -218,14 +219,14 @@ struct HelpSearchView: View {
     }
 
     @ViewBuilder
-    private func row(_ item: HelpOverlayModel.SearchItem, index: Int, first: Bool) -> some View {
+    private func row(_ item: HelpGuideModel.SearchItem, index: Int, first: Bool) -> some View {
         let selected = model.searchFocus == index
         let open = { model.searchFocus = index; model.open(item) }
         switch item {
         case let .keyword(keyword):
             HelpRow(symbol: keyword.symbol, title: keyword.title, detail: keyword.detail, selected: selected,
                     dimmed: !keyword.isAvailable, showsDivider: !first, action: open) {
-                HelpKeywordLabel(keyword: keyword.keyword)
+                HelpKeywordLabel(keyword: keyword.keyword, maxAliases: 2)
             }
         case let .shortcut(shortcut):
             HelpRow(symbol: "keyboard", title: shortcut.title, detail: shortcut.section.title, selected: selected,

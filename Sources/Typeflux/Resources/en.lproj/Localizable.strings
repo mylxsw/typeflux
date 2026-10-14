@@ -5248,7 +5248,6 @@
 "ask.plugin.help.title" = "Usage guide";
 "ask.plugin.help.placeholder" = "Search the guide, or press ↩ to open it";
 "help.title" = "Typeflux Guide";
-"help.close" = "Close (esc)";
 "help.page.start" = "Start";
 "help.page.start.subtitle" = "Every feature starts from one of these";
 "help.page.keywords" = "Keywords";
@@ -5332,6 +5331,7 @@
 "help.key.chat.settings" = "Ask settings";
 "help.faq.status" = "Permissions";
 "help.faq.granted" = "Allowed";
+"help.faq.notGranted" = "Not allowed";
 "help.faq.fix" = "Grant";
 "help.faq.questions" = "Questions";
 "help.faq.relevant" = "May apply to you";

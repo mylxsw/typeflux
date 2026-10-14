@@ -3,7 +3,7 @@ import SwiftUI
 /// Every keyword the launcher knows right now, grouped by use, with a detail pane for the
 /// selected one. ↑↓ move the selection and Return tries the keyword in the launcher.
 struct HelpKeywordsPage: View {
-    @ObservedObject var model: HelpOverlayModel
+    @ObservedObject var model: HelpGuideModel
     @Environment(\.interfaceStyle) private var style
 
     var body: some View {
@@ -88,7 +88,7 @@ struct HelpKeywordsPage: View {
                        showsDivider: !first, action: select) {
             HStack(spacing: 8) {
                 if let shortcut = keyword.shortcut { HelpKeycaps(keys: shortcut) }
-                HelpKeywordLabel(keyword: keyword.keyword)
+                HelpKeywordLabel(keyword: keyword.keyword, maxAliases: 2)
             }
         }
     }
@@ -96,7 +96,7 @@ struct HelpKeywordsPage: View {
 
 /// What the selected keyword does, how to type it, its keys and where it comes from.
 struct HelpKeywordDetail: View {
-    @ObservedObject var model: HelpOverlayModel
+    @ObservedObject var model: HelpGuideModel
 
     var body: some View {
         if let keyword = model.selectedKeyword {

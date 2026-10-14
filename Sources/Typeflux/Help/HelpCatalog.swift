@@ -297,7 +297,8 @@ extension HelpCatalog {
         }
     }
 
-    static let fixedShortcuts: [HelpShortcut] = {
+    /// Built on each read so the titles follow the interface language.
+    static var fixedShortcuts: [HelpShortcut] {
         let rows = [
             FixedKey(.launcher, "send", ["↩"]),
             FixedKey(.launcher, "askAI", ["⌘", "↩"], detailed: true),
@@ -327,7 +328,7 @@ extension HelpCatalog {
             return HelpShortcut(id: "\(row.section.rawValue).\(row.name)", section: row.section, title: L(base),
                                 detail: row.detailed ? L(base + ".detail") : "", keys: row.keys)
         }
-    }()
+    }
 
     /// The `/` commands, by the names `AskCommand` gives them.
     static var commands: [HelpCommand] {
