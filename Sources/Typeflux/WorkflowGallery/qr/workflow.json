@@ -4,7 +4,7 @@
   "name": "@L:qr.name",
   "description": "@L:qr.summary",
   "icon": "sf:qrcode",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "Typeflux",
   "keywords": [
     {
@@ -13,7 +13,7 @@
     }
   ],
   "input": {
-    "argument": "optional",
+    "argument": "required",
     "selection": "ifEmpty"
   },
   "run": {

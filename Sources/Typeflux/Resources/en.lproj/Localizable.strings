@@ -3425,7 +3425,7 @@
 "ask.workflow.gallery.codec.usage.2" = "Base64-encodes";
 "ask.workflow.gallery.codec.usage.3" = "-d decodes, -e encodes";
 "ask.workflow.gallery.uuid.name" = "UUID / Password";
-"ask.workflow.gallery.uuid.summary" = "Copies it straight to the clipboard and says so in the bottom bar.";
+"ask.workflow.gallery.uuid.summary" = "Copies it straight to the clipboard and shows a confirmation.";
 "ask.workflow.gallery.uuid.demonstrates" = "A workflow that only does something: nothing shown, copy + bottom bar";
 "ask.workflow.gallery.uuid.keyword.uuid" = "New UUID";
 "ask.workflow.gallery.uuid.keyword.pwd" = "New password";

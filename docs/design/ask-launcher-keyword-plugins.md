@@ -332,7 +332,7 @@ struct AskPluginAction: Equatable {
 - `LLMRouterTests`：`streamComplete` 按服务商转发，以及不支持流式时的整段回退。
 ## 14. Launcher discovery and system commands (2026-10-10)
 
-Normal launcher search includes enabled, reachable keywords and installed workflows. It matches their keywords and names, ranking exact matches before prefixes and substrings. These local features appear before applications and files. Return or Tab enters the chosen feature with an empty query; on-submit workflows still require a subsequent Return to run. Selecting Ask AI continues to submit the original query.
+Normal launcher search includes enabled, reachable keywords and installed workflows. It matches their keywords and names, ranking exact matches before prefixes and substrings. These local features appear before applications and files. Return runs a selected workflow immediately when `input.argument` is `optional` or `none`; workflows requiring text enter their input mode first. Tab only enters the chosen feature with an empty query. Directory choices and home keyword chips follow the same workflow rule. Selecting Ask AI continues to submit the original query.
 
 Settings → Launcher → Keywords includes an 18-command system catalog. Commands use their full English names (lowercase, without spaces or punctuation) as default keywords and remain searchable by name. Users can add, edit, disable or delete their own aliases. English and Chinese command names are searchable in either interface language.
 
