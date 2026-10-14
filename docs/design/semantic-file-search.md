@@ -1,0 +1,23 @@
+## Local content search (GUL-383)
+
+The approved launcher design adds an experimental content-search switch to Launcher → Built-in Search → Files. It defaults off. Apple Silicon, macOS 14+ and Metal are required; unsupported devices cannot enable it, including through a persisted setting. Existing filename search, its snapshot and its default Return policy stay independent.
+
+Users explicitly select content folders within the filename search scope. Hidden files, configured exclusions, credential paths, symlinks, non-local mounts, packages and cloud-only placeholders are skipped. Full Disk Access is checked before indexing and again before returning results. UTF-8 text/Markdown/CSV/TSV/reStructuredText and text-layer PDFs are supported. Scanned PDFs need OCR and are not indexed. Reads are isolated in the existing cancellable file worker, with descriptor-based checks and limits of 16 MB, 128,000 extracted characters and 500 PDF pages per file. At most 64 overlapping UTF-8 chunks are embedded per file, 50,000 entries are scanned per selected root, and the database holds at most 100,000 chunks. Settings show skipped counts and truncation.
+
+The independent `SemanticSearch/semantic-files.sqlite` WAL database stores metadata, chunk text, page numbers, FTS5 terms and normalized Float32 vectors. CJK unigram/bigram pretokenization is shared between indexing and queries. File replacement is transactional; the vector profile invalidates incompatible saved embeddings. Launch/FSEvents reconcile metadata, reusing unchanged vectors. Cancelled or incomplete scans do not prune unvisited entries. Queries apply current scope/type/extension/folder restrictions before ranking, collapse chunks per file and revalidate current file metadata before publication.
+
+Names publish first. A separate, debounced query helper supplies asynchronous content hits in both mixed search and `f` mode. Name hits retain their scores and `match`; content-only hits cannot take default Return. Explicitly selected mixed-search rows survive late publication. Content hits show an excerpt and PDF page; existing open/reveal/copy actions continue to operate on the file. Queries are bounded separately from the filename search's 40-character limit. Indexing pauses for voice recording/processing, Low Power Mode or serious thermal pressure. The inference processes are separate for indexing and interactive queries, and the query helper releases its model after 10 idle seconds.
+
+The downloadable model is `ggml-org/embeddinggemma-2-GGUF`, revision `bfcd298762cc34d0357ece5ebdd31791a3a374d8`, Q8_0 text weights (309,855,456 bytes), SHA-256 `2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135`. Downloads have progress/cancellation/retry, are verified, then atomically installed. Files and queries never go to this download endpoint. The model card and license are linked from setup. No image/audio projector is downloaded. Clearing the content index switches the feature off and keeps the model; removing the model removes both. Neither action modifies source files or the filename index.
+
+## Building and validation
+
+`swift build` keeps the normal macOS 13 application target. `bash scripts/build_semantic_helper.sh` builds the separate arm64/macOS 14 Metal helper using pinned llama.cpp `4d756bc72bf00a4aacf410ae15a2d315f3db400d` (b11461). Developers need CMake and Xcode; `TYPEFLUX_CMAKE` can select CMake. Release/development bundle scripts install and sign the helper under `Resources/LocalRuntimes/SemanticSearch`. Intel-only releases omit it. Users install no build tools or Python. The non-causal logits-allocation patch and embedding pipeline were informed by DigUp (MIT); bundled notices retain attribution.
+
+Run focused suites `SemanticFilePolicyTests SemanticFileStoreTests SemanticFileContentTests SemanticFileIndexerTests SemanticFileServiceTests SemanticHybridSearchTests`, together with affected launcher/file-reader suites. Optional `TYPEFLUX_SEMANTIC_TEST_MODEL` supplies the pinned weights for the actual checksum/atomic-install test; normal tests use isolated fixtures and never fetch a model. For real Metal inference and English/Chinese retrieval:
+
+```sh
+python3 scripts/validate_semantic_helper.py --helper .build/semantic/TypefluxSemanticHelper --model <pinned-model.gguf> --report <report.json>
+```
+
+First release is bounded exact vector scanning, intended for selected personal document folders. It does not add OCR, image/audio embeddings, ANN extensions, automatic home-directory content indexing or cloud embedding services.

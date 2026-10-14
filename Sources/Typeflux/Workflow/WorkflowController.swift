@@ -159,7 +159,8 @@ final class WorkflowController {
     let monotonicNow: () -> TimeInterval
 
     var currentSelectedText: String?
-    var isRecording = false
+    var onForegroundActivityChanged: ((Bool) -> Void)?
+    var isRecording = false { didSet { onForegroundActivityChanged?(isRecording || processingTask != nil) } }
     var isAudioRecorderStarted = false
     var isAudioRecorderStarting = false
     var recordingAudioReadiness: RecordingAudioReadiness?
@@ -181,7 +182,7 @@ final class WorkflowController {
     var inputContextTask: Task<InputContextSnapshot?, Never>?
     var recentInputMemoryScope: RecentInputMemoryScope?
     var recentInputMemoryObservationTask: Task<Void, Never>?
-    var processingTask: Task<Void, Never>?
+    var processingTask: Task<Void, Never>? { didSet { onForegroundActivityChanged?(isRecording || processingTask != nil) } }
     var activeRealtimeTranscriptionSession: (any RealtimeTranscriptionSession)?
     var activeRealtimeAudioBufferPump: RealtimeAudioBufferPump?
     var automaticVocabularyObservationTask: Task<Void, Never>?

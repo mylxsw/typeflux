@@ -198,7 +198,8 @@ extension AskConversationModel {
             AskWebSearchPlugin(),
             AskFileSearchPlugin(
                 index: { [weak self] in self.flatMap { $0.quickFilesEnabled ? $0.fileIndex : nil } },
-                settings: { [weak settings] in settings?.askLauncherSearchSettings ?? AskLauncherSearchSettings() }
+                settings: { [weak settings] in settings?.askLauncherSearchSettings ?? AskLauncherSearchSettings() },
+                semantic: { [weak self] in self?.semanticSearch }
             ),
             AskOpenChatPlugin(),
             AskPrefixPlugin(entries: { [weak self] language in

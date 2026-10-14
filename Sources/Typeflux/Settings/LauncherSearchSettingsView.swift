@@ -19,6 +19,7 @@ struct LauncherSearchSettingsView: View {
     let settings: SettingsStore
     var index: any AskFileSearching = AskFileIndex.shared
     var fullDiskAccess: () -> Bool = { AskFullDiskAccess.isGranted() }
+    var semanticService: SemanticFileSearchService = .shared
 
     @State var tab: Tab = .general
     @State var search = AskLauncherSearchSettings()
@@ -151,6 +152,7 @@ struct LauncherSearchSettingsView: View {
                     .accessibilityIdentifier("launcher.search.files.enabled")
             }
         }
+        SemanticFileSearchSettingsView(service: semanticService, filesEnabled: filesEnabled)
         AgentSettingsSection(title: L("launcher.search.files.roots"), detail: "\(search.fileRoots.count)",
                              footnote: L("launcher.search.files.footnote")) {
             if search.fileRoots.isEmpty {

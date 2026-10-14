@@ -305,7 +305,8 @@ struct AskQuickResultsView: View {
                     .foregroundStyle(StudioTheme.textPrimary)
                     .lineLimit(1).truncationMode(.middle)
                     .layoutPriority(1)
-                Text(AskLauncherSearchSettings.abbreviate(file.folder)).font(.system(size: 11.5))
+                Text(file.evidence.map { L("semantic.result") + ($0.page.map { " · " + L("semantic.page", $0) } ?? "") + " · " + $0.text }
+                     ?? AskLauncherSearchSettings.abbreviate(file.folder)).font(.system(size: 11.5))
                     .foregroundStyle(StudioTheme.textTertiary)
                     .lineLimit(1).truncationMode(.middle)
                 Spacer(minLength: 8)

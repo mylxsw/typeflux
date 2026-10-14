@@ -3,7 +3,7 @@ import Foundation
 /// File mode: `f` and a name lists every matching file and folder, best first,
 /// with nothing typed the most recently changed ones. ⇥ narrows to a type
 /// (folders, documents, pictures, PDFs…). Return opens, ⌘R shows in Finder,
-/// ⇧⌘C copies the path, ⌘Y previews. Only names are searched, never contents.
+/// ⇧⌘C copies the path, ⌘Y previews. Optional local content search publishes after names.
 struct AskFileSearchPlugin: AskLauncherPlugin {
     static let id = "files"
     static let typeOption = "type"
@@ -13,6 +13,7 @@ struct AskFileSearchPlugin: AskLauncherPlugin {
     /// The index to search; read when a run starts, so tests can swap it.
     var index: @MainActor @Sendable () -> (any AskFileSearching)?
     var settings: @Sendable () -> AskLauncherSearchSettings
+    var semantic: @MainActor @Sendable () -> (any SemanticFileSearching)? = { nil }
 
     var id: String { Self.id }
     var title: String { L("ask.plugin.files.title") }
@@ -60,7 +61,14 @@ struct AskFileSearchPlugin: AskLauncherPlugin {
             }
         } onCancel: { token.cancel() }
         try Task.checkCancellation()
-        var items = hits.map(Self.item)
+        var combined = hits
+        if let service = await semantic(), await service.isEnabled, SemanticFilePolicy.query(text, type: type) != nil {
+            if !hits.isEmpty { await progress(output(hits.map(Self.item), note: nil)) }
+            let content = await service.search(text, type: type, limit: settings.limit)
+            try Task.checkCancellation()
+            combined = SemanticFilePolicy.merge(hits, content, limit: settings.limit)
+        }
+        var items = combined.map(Self.item)
         if items.isEmpty {
             items.append(Self.notice(L(query.isEmpty ? "ask.plugin.files.none.recent" : "ask.plugin.files.none"),
                                      symbol: "doc.questionmark"))
@@ -109,7 +117,8 @@ struct AskFileSearchPlugin: AskLauncherPlugin {
                                            title: L("ask.quick.action.searchIn"), symbol: "magnifyingglass",
                                            shortcut: nil))
         }
-        return AskPluginItem(id: hit.path, title: hit.name, subtitle: place + " · " + AskQuickResultsView.relative(hit.modified),
+        let detail = hit.evidence.map { L("semantic.result") + ($0.page.map { " · " + L("semantic.page", $0) } ?? "") + " · " + $0.text }
+        return AskPluginItem(id: hit.path, title: hit.name, subtitle: detail ?? (place + " · " + AskQuickResultsView.relative(hit.modified)),
                              icon: .fileIcon(url), actions: actions)
     }
 

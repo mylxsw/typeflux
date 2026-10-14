@@ -139,6 +139,9 @@ verify_main_executable_architecture
 
 rm -rf "$APP_BUNDLE/Contents/Resources/BundledModels"
 rm -rf "$APP_BUNDLE/Contents/Resources/LocalRuntimes"
+if [[ "$RELEASE_ARCH" != "x86_64" ]]; then
+  bash "$ROOT_DIR/scripts/install_semantic_helper.sh" "$APP_BUNDLE/Contents/Resources/LocalRuntimes"
+fi
 SHERPA_RUNTIME_ROOT="$APP_BUNDLE/Contents/Resources/LocalRuntimes/sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts"
 if [[ "$RELEASE_VARIANT" != "app-only" ]]; then
   "${ROOT_DIR}/scripts/install_bundled_sherpa_runtime.sh" "$SHERPA_RUNTIME_ROOT"

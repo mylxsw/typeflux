@@ -136,6 +136,9 @@ cp "$BIN" "$APP_DIR/Contents/MacOS/Typeflux"
 cp "$ROOT_DIR/app/Typeflux.icns" "$APP_DIR/Contents/Resources/Typeflux.icns"
 bash "$ROOT_DIR/scripts/copy_resource_bundles.sh" "$BIN_DIR" "$APP_DIR/Contents/Resources"
 install_bundled_models
+if [[ "$(uname -m)" == "arm64" ]]; then
+  bash "$ROOT_DIR/scripts/install_semantic_helper.sh" "$APP_DIR/Contents/Resources/LocalRuntimes"
+fi
 
 set_plist_value() {
   local key="$1"
@@ -242,6 +245,10 @@ fi
 #   TYPEFLUX_DEV_PROVISIONING_PROFILE="/path/to/profile.provisionprofile" \
 #   TYPEFLUX_DEV_CODESIGN_IDENTITY="Apple Development: Your Name (...)" ./scripts/run_dev_app.sh
 if command -v codesign >/dev/null 2>&1; then
+  semantic_helper="$APP_DIR/Contents/Resources/LocalRuntimes/SemanticSearch/TypefluxSemanticHelper"
+  if [[ -f "$semantic_helper" ]]; then
+    codesign --force --sign "$TYPEFLUX_DEV_CODESIGN_IDENTITY" --options runtime "$semantic_helper"
+  fi
   codesign --force --deep --sign "$TYPEFLUX_DEV_CODESIGN_IDENTITY" \
     --entitlements "$entitlements_to_use" "$APP_DIR"
   verify_stable_signature
