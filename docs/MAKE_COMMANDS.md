@@ -195,12 +195,15 @@ Finish implementation and self-review, then run one focused validation pass:
 make test SUITE="LLMRouterTests RequestRetryTests"
 make test FILTER="LLMRouterTests/testCompleteRoutesToOpenAI"
 make test-plan SUITE="LLMRouterTests" # discovery only
+make test PROFILE=overlay FILTER="captionsRenderIntermediateSizes"
 ```
 
 The scope must cover changed behavior and affected dependencies. Empty, invalid
-and unmatched selections fail instead of running all tests. The runner audits
-actual discovery, builds once, and executes audited parallel phases followed by
-serial suites. Resource groups remain available for explicitly broader changes.
+and unmatched selections fail instead of running all tests. The runner verifies reusable build/discovery metadata, compiles reviewed compact
+test scopes when available, and executes batched native parallel phases followed
+by serial suites. Passing results are never cached. Total wall time includes
+preparation and process startup; `--rebuild` refreshes metadata and `--swiftpm`
+uses the ordinary complete-source compatibility path. Resource groups remain available for explicitly broader changes.
 See [test selection and isolation](TESTING.md).
 
 Full validation requires an announced reason:

@@ -209,9 +209,9 @@ struct OverlayTransitionRenderingTests {
         defer { defaults.removePersistentDomain(forName: suiteName) }
         defaults.set(style.rawValue, forKey: "ui.overlayStyle")
         let controller = OverlayController(appState: AppStateStore(), settingsStore: SettingsStore(defaults: defaults))
-        // Motion runs several times slower than in production and every intermediate frame is
+        // Motion runs twice as slowly as in production and every intermediate frame is
         // found by polling for it, so the assertions do not depend on wall-clock timing.
-        let motionScale = 4.0
+        let motionScale = 2.0
         controller.motionScale = motionScale
         defer { controller.dismissImmediately() }
         controller.show()

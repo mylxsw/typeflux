@@ -148,7 +148,8 @@ Follow this policy for the entire requested task, including tasks with multiple 
 - If validation fails, fix the cause and retry only failed methods or the smallest containing suite. For build/runner failures, retry the same focused command. Never retry the full suite to fix a failure.
 - Coverage replaces the plain test pass for the same scope; do not run both. Report changed-code coverage separately from project-wide coverage.
 - Use audited parallel phases from the runner. Unknown suites and shared UI/localization tests remain serial. Do not launch simultaneous local SwiftPM/UI runs against the same build directory or desktop. Review isolation when adding or changing a registered parallel suite, including its helpers and called production code.
-- Report scope, results, build/discovery and execution costs, failed-test retries and any unverified behavior honestly.
+- Use the normal runner first: it verifies reusable build/discovery metadata, never cached passing results. Known calculator, scroll, overlay and retry suites automatically use reviewed compact source closures. For method retries, retain the original `--profile`; use `--rebuild` to refresh metadata or `--swiftpm` for compatibility. Update a profile when its fixture dependencies change.
+- Report total command wall time, including preparation, discovery, runner startup and execution; phase timings alone are insufficient. Separate first use/rebuild from verified cache hits, and report failed-test retries and unverified behavior honestly.
 
 ## Development Standards
 

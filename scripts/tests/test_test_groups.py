@@ -101,6 +101,15 @@ class TestGroupingTests(unittest.TestCase):
         self.assertEqual(sources["AskFileIndexBenchmarkTests"], "benchmark")
         self.assertEqual(sources["LLMRouterTests"], "unit")
 
+    def test_compact_target_ids_and_legacy_module_filters_preserve_scope(self):
+        ids = ["TypefluxFocusedTests.LogicTests/value()", "TypefluxFocusedTests.OtherTests/other()"]
+        groups = GROUPING.partition_tests("\n".join(ids), {"LogicTests": "unit", "OtherTests": "unit"})
+        selected = GROUPING.select_tests(groups, filters=[r"^TypefluxTests\.LogicTests/value"])
+        self.assertEqual(selected, {ids[0]})
+        self.assertEqual(GROUPING.select_tests(groups, suites=["LogicTests", "OtherTests"], partial_build=True), set(ids))
+        with self.assertRaises(ValueError):
+            GROUPING.select_tests(groups, suites=["LogicTests", "OtherTests"])
+
 
 class TestGroupCommandTests(unittest.TestCase):
     def invoke(self, args, test_returncode=0, discovery=None, failure=None):
@@ -115,7 +124,7 @@ class TestGroupCommandTests(unittest.TestCase):
             "SearchBenchmarkTests": "benchmark",
         }), patch.object(GROUPING.subprocess, "run", side_effect=failure or responses) as run, \
                 redirect_stdout(stdout), redirect_stderr(stderr):
-            result = GROUPING.main(args)
+            result = GROUPING.main(["--swiftpm", *args])
         return result, run.call_args_list, stdout.getvalue(), stderr.getvalue()
 
     def test_group_builds_once_then_runs_an_anchored_filter_without_parallel_workers(self):
@@ -242,7 +251,7 @@ class TestGroupCommandTests(unittest.TestCase):
         self.assertEqual(result, 0)
         self.assertEqual(len(calls), 1)
         self.assertIn("ui: 1 suites, 1 discovered tests", stdout)
-        self.assertTrue(stdout.endswith("VisualTests\n"))
+        self.assertIn("VisualTests\n", stdout)
 
     def test_selection_errors_and_discovery_failures_never_run_tests(self):
         for discovery in ("TypefluxTests.UnknownTests/testValue", "", "TypefluxTests.DiskTests/testRead"):
@@ -295,7 +304,7 @@ class TestGroupCommandTests(unittest.TestCase):
             environment = dict(os.environ, PATH=f"{directory}{os.pathsep}{os.environ['PATH']}",
                                GROUP_TEST_LOG=str(log))
             result = subprocess.run(
-                [sys.executable, str(ROOT / "scripts/test_groups.py"), "unit", "--skip-build"],
+                [sys.executable, str(ROOT / "scripts/test_groups.py"), "unit", "--skip-build", "--swiftpm"],
                 cwd=directory, env=environment, text=True, capture_output=True,
             )
             calls = [json.loads(line) for line in log.read_text().splitlines()]

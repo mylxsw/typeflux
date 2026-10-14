@@ -112,7 +112,7 @@ build: ## Build the Swift package
 	swift build
 
 # Export scope values as data rather than interpolating regexes into shell code.
-export FILTER SUITE REASON
+export FILTER SUITE REASON PROFILE
 .PHONY: test test-plan test-full coverage-full
 test: ## Run a focused scope: FILTER=regex or SUITE="SuiteA SuiteB"
 	python3 ./scripts/test_groups.py --from-env

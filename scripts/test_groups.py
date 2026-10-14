@@ -3,12 +3,18 @@
 
 import argparse
 from collections import defaultdict
+from contextlib import nullcontext
+import json
 import os
 from pathlib import Path
 import re
 import subprocess
 import sys
 import time
+
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import test_runtime as runtime
+from test_profiles import PROFILES, selected_profile_files
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -66,12 +72,12 @@ def partition_tests(output, sources):
         line = line.strip()
         match = TEST_ID.fullmatch(line)
         if match is None:
-            if line.startswith(("TypefluxTests.", "TypefluxTests/")):
+            if line.startswith(("TypefluxTests.", "TypefluxTests/", "TypefluxFocusedTests.", "TypefluxFocusedTests/")):
                 raise ValueError(f"Unsupported test identifier: {line}")
             continue
         if line in tests:
             continue
-        if match[1] != "TypefluxTests":
+        if match[1] not in {"TypefluxTests", "TypefluxFocusedTests"}:
             raise ValueError(f"Unsupported test target: {match[1]}")
         tests.add(line)
         suite = match[2].split(".")[0]
@@ -88,7 +94,7 @@ def suite_filter(suites):
     if not suites:
         raise ValueError("The selected group contains no tests")
     names = "|".join(re.escape(suite) for suite in sorted(suites))
-    return rf"^TypefluxTests[./](?:{names})[./]"
+    return rf"^Typeflux(?:Focused)?Tests[./](?:{names})[./]"
 
 
 def positive_integer(value):
@@ -98,7 +104,7 @@ def positive_integer(value):
     return number
 
 
-def select_tests(groups, group=None, suites=(), filters=(), full=False):
+def select_tests(groups, group=None, suites=(), filters=(), full=False, partial_build=False):
     inventory = {test for entries in groups.values() for tests in entries.values() for test in tests}
     if full:
         return inventory
@@ -114,7 +120,8 @@ def select_tests(groups, group=None, suites=(), filters=(), full=False):
             pattern = re.compile(expression)
         except re.error as error:
             raise ValueError(f"Invalid filter {expression!r}: {error}") from error
-        matches = {test for test in inventory if pattern.search(test)}
+        matches = {test for test in inventory if pattern.search(test)
+                   or pattern.search(test.replace("TypefluxFocusedTests", "TypefluxTests", 1))}
         if not matches:
             raise ValueError(f"Filter matches no discovered tests: {expression}")
         selected.update(matches)
@@ -123,7 +130,7 @@ def select_tests(groups, group=None, suites=(), filters=(), full=False):
         selected = selected & members if suites or filters else members
     if not selected:
         raise ValueError("The selected scope contains no tests")
-    if selected == inventory:
+    if selected == inventory and not partial_build:
         raise ValueError("Selection covers the entire inventory; use --full --reason instead")
     return selected
 
@@ -186,7 +193,10 @@ def main(argv=None):
     parser.add_argument("--serial", action="store_true", help="disable audited parallelism for timing comparisons")
     parser.add_argument("--workers", type=positive_integer, default=4, help="parallel XCTest workers (default: 4); Swift Testing runs in-process")
     parser.add_argument("--coverage", action="store_true", help="collect coverage for this scope; runs serial to keep one profile")
-    parser.add_argument("--skip-build", action="store_true", help="reuse an up-to-date local test build")
+    parser.add_argument("--skip-build", action="store_true", help="require an unchanged verified native build (manual bypass with --swiftpm)")
+    parser.add_argument("--rebuild", action="store_true", help="refresh build/discovery instead of using verified caches")
+    parser.add_argument("--swiftpm", action="store_true", help="compatibility path using ordinary SwiftPM and the complete test source set")
+    parser.add_argument("--profile", choices=tuple(PROFILES), help="reviewed compact build scope, optionally narrowed by --suite/--filter")
     parser.add_argument("--jobs", type=positive_integer, help="limit Swift build jobs (not test workers)")
     args = parser.parse_args(argv)
     if args.from_env:
@@ -195,10 +205,17 @@ def main(argv=None):
         if os.environ.get("SUITE"):
             args.suite.extend(os.environ["SUITE"].split())
         args.reason = args.reason or os.environ.get("REASON")
+        args.profile = args.profile or os.environ.get("PROFILE") or None
+    if args.profile and args.profile not in PROFILES:
+        parser.error("unknown compact build profile")
     if args.full and (not args.reason or not args.reason.strip()):
         parser.error("--full requires a nonempty --reason (announce the reason before running)")
+    if args.profile and (args.group or args.full or args.coverage or args.swiftpm):
+        parser.error("--profile cannot be combined with resource groups, full/coverage runs or --swiftpm")
     if args.full and (args.group or args.suite or args.filter):
         parser.error("--full cannot be combined with a group, suite or filter")
+    if args.profile and not (args.suite or args.filter):
+        args.suite.extend(PROFILES[args.profile]["suites"])
     if not (args.group or args.suite or args.filter or args.full or args.list):
         parser.error("choose --suite, --filter or a resource group; no implicit full run")
     started = time.monotonic()
@@ -208,50 +225,87 @@ def main(argv=None):
     if args.coverage:
         build_options.append("--enable-code-coverage")
     try:
-        discovery = subprocess.run(
-            ["swift", "test", *build_options, "list"], cwd=ROOT,
-            stdout=subprocess.PIPE, text=True, check=True,
-        )
-        sources = source_groups(ROOT / "Tests/TypefluxTests")
-        groups = partition_tests(discovery.stdout, sources)
-        discovery_seconds = time.monotonic() - started
-        for group, suites in groups.items():
-            count = sum(len(tests) for tests in suites.values())
-            print(f"{group}: {len(suites)} suites, {count} discovered tests", flush=True)
-        if args.list and not (args.group or args.suite or args.filter or args.full):
-            print("\n".join(sorted(sources.keys() & set().union(*(set(s) for s in groups.values())))))
-            return 0
-        selected = select_tests(groups, args.group, args.suite, args.filter, args.full)
-        if args.list:
-            print("\n".join(sorted({TEST_ID.fullmatch(t)[2].split('.')[0] for t in selected})))
-            return 0
-        phases = execution_phases(selected, sources, args.serial or args.coverage)
-        print(f"Discovery/build: {discovery_seconds:.2f}s; selected {len(selected)} test methods", flush=True)
-        if args.full:
-            print(f"Full validation reason: {args.reason}", flush=True)
-        if args.plan:
-            for mode, tests in phases:
-                print(f"{mode}: {len(tests)} test methods\n" + "\n".join(sorted(tests)))
-            return 0
-        environment = dict(os.environ)
+        environment = runtime.child_environment()
+        environment["PWD"] = str(ROOT)
+        environment.pop("TYPEFLUX_TEST_FILES", None)
         if args.group == "benchmark":
             environment["TYPEFLUX_SEARCH_BENCH"] = "1"
-        for mode, tests in phases:
-            print(f"Running {mode}: {len(tests)} test methods", flush=True)
-            run_started = time.monotonic()
-            inventory = {test for suites in groups.values() for cases in suites.values() for test in cases}
-            result = subprocess.run(phase_command(mode, tests, args.workers, args.coverage, inventory), cwd=ROOT, env=environment)
-            print(f"Test execution ({mode}): {time.monotonic() - run_started:.2f}s", flush=True)
-            if result.returncode:
-                print("Fix and retry only the failed method(s) or smallest containing suite; no automatic retry.", file=sys.stderr)
-                return result.returncode if result.returncode >= 0 else 128 - result.returncode
-        return 0
+        native = sys.platform == "darwin" and not (args.swiftpm or args.coverage)
+        tools = runtime.native_tools(environment) if native else None
+        native = native and tools is not None
+        files = (selected_profile_files(args.suite, args.profile)
+                 if native and not (args.group or args.full or (args.filter and not args.profile)) else None)
+        if files:
+            missing = [file for file in files if not (ROOT / "Tests/TypefluxTests" / file).is_file()]
+            if missing:
+                raise ValueError(f"Missing compact-profile sources: {', '.join(missing)}")
+            environment["TYPEFLUX_TEST_FILES"] = json.dumps(files)
+            print(f"Compact build: {len(files)} test/fixture files", flush=True)
+        with runtime.runner_lock(ROOT) if native else nullcontext(None) as directory:
+            return run_scope(args, started, build_options, environment, files, tools, directory)
     except (OSError, ValueError) as error:
         print(f"Error: {error}", file=sys.stderr)
         return 1
     except subprocess.CalledProcessError as error:
         return error.returncode if error.returncode >= 0 else 128 - error.returncode
+    finally:
+        print(f"Total wall time: {time.monotonic() - started:.2f}s", flush=True)
 
+
+def run_scope(args, started, build_options, environment, files, tools, directory):
+    if directory:
+        discovery, bundle, inputs, artifacts, fingerprints = runtime.prepare(
+            ROOT, files, args, environment, directory, tools)
+    else:
+        result = subprocess.run(["swift", "test", *build_options, "list"], cwd=ROOT, env=environment,
+                                stdout=subprocess.PIPE, text=True, check=True)
+        discovery = result.stdout
+    sources = source_groups(ROOT / "Tests/TypefluxTests")
+    groups = partition_tests(discovery, sources)
+    if directory:
+        runtime.save_build(directory, discovery, inputs, artifacts, files)
+    discovery_seconds = time.monotonic() - started
+    for group, suites in groups.items():
+        count = sum(len(tests) for tests in suites.values())
+        print(f"{group}: {len(suites)} suites, {count} discovered tests", flush=True)
+    if args.list and not (args.group or args.suite or args.filter or args.full):
+        print("\n".join(sorted(sources.keys() & set().union(*(set(s) for s in groups.values())))))
+        return 0
+    partial_build = bool(files) and len(files) < len(list((ROOT / "Tests/TypefluxTests").glob("*.swift")))
+    selected = select_tests(groups, args.group, args.suite, args.filter, args.full, partial_build)
+    if args.list:
+        print("\n".join(sorted({TEST_ID.fullmatch(t)[2].split('.')[0] for t in selected})))
+        return 0
+    phases = execution_phases(selected, sources, args.serial or args.coverage)
+    print(f"Discovery/build: {discovery_seconds:.2f}s; selected {len(selected)} test methods", flush=True)
+    if args.full:
+        print(f"Full validation reason: {args.reason}", flush=True)
+    if args.plan:
+        for mode, tests in phases:
+            print(f"{mode}: {len(tests)} test methods\n" + "\n".join(sorted(tests)))
+        return 0
+    for mode, tests in phases:
+        print(f"Running {mode}: {len(tests)} test methods", flush=True)
+        run_started = time.monotonic()
+        inventory = {test for suites in groups.values() for cases in suites.values() for test in cases}
+        if directory:
+            status = runtime.run_native(mode, tests, args.workers, bundle, tools,
+                                        runtime.native_environment(bundle, environment, tools),
+                                        lambda cases: test_filter(cases, inventory), ROOT, inventory)
+        else:
+            status = subprocess.run(phase_command(mode, tests, args.workers, args.coverage, inventory),
+                                    cwd=ROOT, env=environment).returncode
+        print(f"Test execution ({mode}): {time.monotonic() - run_started:.2f}s", flush=True)
+        if status:
+            print("Fix and retry only the failed method(s) or smallest containing suite; no automatic retry.", file=sys.stderr)
+            return status if status >= 0 else 128 - status
+    if directory:
+        fingerprints.entries = fingerprints.seen.copy()
+        if (runtime.build_inputs(ROOT, files, environment, fingerprints) != inputs
+                or runtime.artifact_digest(bundle, tools, fingerprints) != artifacts):
+            raise ValueError("Inputs or build products changed during testing; results do not validate the current checkout")
+        fingerprints.save()
+    return 0
 
 if __name__ == "__main__":
     sys.exit(main())

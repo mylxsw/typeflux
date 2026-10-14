@@ -57,11 +57,53 @@ A change to one UI component should select its relevant suites, not all UI tests
 For script changes, select the relevant Python unittest modules rather than
 running unrelated Swift tests.
 
-`scripts/test_groups.py` builds/discovers once using `swift test list`, then uses
-`--skip-build` for execution. It reports build/discovery and execution times
-separately. Only supply `--skip-build` yourself when sources and configuration
-have not changed since the last build. `--jobs 4` limits build jobs, not test
-workers. `--plan` previews selected methods and their execution phases.
+`scripts/test_groups.py` reports **total command wall time**, including input
+verification, build/discovery, process startup and execution. Known suite names
+automatically compile only their reviewed test/fixture source closure in the
+separate `TypefluxFocusedTests` target. The ordinary `TypefluxTests` target and
+production targets stay intact; switching back does not discard the complete
+test target's compilation. No dependency closure is inferred from regexes.
+
+| Build profile | Reviewed test/fixture files | Selection |
+| --- | ---: | --- |
+| calculator | 2 | Recognition, evaluation, lexing and number/format suites |
+| scroll | 3 | Vertical/directional stitching with synthetic pages |
+| overlay | 4 | Overlay rendering, alpha reader and UI-state trait |
+| retry | 2 | Request retry and connection timeout suites |
+
+```bash
+make test SUITE="AskCalculatorDetectionTests AskCalculatorLexerTests"
+make test PROFILE=overlay FILTER="captionsRenderIntermediateSizes"
+python3 scripts/test_groups.py --profile scroll --filter 'ScrollStitcherTests/testFramesJoin'
+python3 scripts/test_groups.py --suite LLMRouterTests --rebuild
+python3 scripts/test_groups.py --suite LLMRouterTests --swiftpm
+```
+
+An explicit profile is a build boundary; every suite/filter must match within it.
+Profile-only commands select that profile's suites. Automatic compact builds
+apply only when every explicit suite has a reviewed profile and there are no
+additional regex/group/full/coverage scopes. Unknown suites use ordinary sources.
+Review/update profile fixtures when dependencies change; compilation failures
+never silently broaden execution. Filters using the old `TypefluxTests` prefix
+also match equivalent focused-target IDs. Counts describe the active build's
+inventory, not necessarily the whole project.
+
+The runner locks its preparation/execution and verifies source, manifest, lockfile,
+local-package/dependency, toolchain, build-environment and artifact fingerprints.
+Unchanged builds reuse discovery metadata and launch the native macOS runners.
+Every invocation executes the selected tests again; passing results are never
+cached. File fingerprints use contents and inode/size/mtime/ctime, so restoring a
+source's modification time does not bless changed contents. Changes made during
+build/testing invalidate the result. Removed/corrupt cache or changed products
+force preparation again. Environment values are hashed, not written to cache;
+runtime/provider credentials are removed from test-tool subprocess environments.
+
+`--rebuild` refreshes preparation. `--skip-build` on the native path requires a
+matching verified build. `--swiftpm` retains the ordinary complete-source path;
+coverage and unsupported platforms use that path too. Direct runners depend on
+macOS/Xcode layout, with explicit compatibility mode for other setups. Avoid raw
+`swift test --skip-build` after a compact build: it bypasses scope/freshness checks.
+`--jobs 4` limits build jobs, not workers. `--plan` executes no tests.
 
 Classification uses source markers at file granularity, with extensions and
 nested suites taking the strongest resource group. Mixed files are conservative.
@@ -74,10 +116,11 @@ parameterized cases may execute more than once.
 
 The runner uses sequential phases against one build directory:
 
-1. Audited CPU-heavy XCTest suites use `--parallel --num-workers 4`.
-2. Audited pure Swift Testing suites use in-process `--parallel`, with XCTest
-   disabled to avoid creating a worker process for each cheap test.
-3. All remaining suites use `--no-parallel` and preserve `.exclusiveUIState`.
+1. Audited CPU-heavy XCTest suites use up to four native worker processes, each
+   running a batch of methods. Actual XCTest counts must match selection;
+   unlike one process per method, process startup is paid once per worker.
+2. Audited pure Swift Testing suites use one native helper with `--parallel`.
+3. All remaining suites execute serially and preserve `.exclusiveUIState`.
 
 The initial reviewed registry covers synthetic scroll stitching and calculator
 recognition, lexing and numeric formatting. Calculator error messages and format
@@ -88,7 +131,7 @@ isolation. UI markers always override the registry. Discovered method signatures
 that disagree with the registered framework fall back to serial execution with
 both frameworks enabled, so a framework migration cannot silently drop tests.
 
-`--workers N` limits XCTest processes only; it does not bound Swift Testing
+`--workers N` limits batched XCTest processes only; it does not bound Swift Testing
 concurrency. `--serial` provides a same-scope baseline or diagnostic mode.
 Coverage uses one serial phase to preserve one profile. Execution stops on the
 first failing phase, reports failure and never automatically retries; later
@@ -104,7 +147,9 @@ Equivalent pixel fixtures cover padding, orientation, alpha placement,
 premultiplication, different color spaces and 16-bit/RGB fallback. RGB samples
 keep the existing AppKit color conversion: a bitmap color-space tag alone does
 not guarantee equivalence to `colorAt(...).usingColorSpace(.sRGB)`. Sampling
-positions, animation duration and assertions remain intact. A fixed processing
+positions and assertions remain intact. The caption transition test uses a 2x
+production motion duration instead of 4x and still requires actual intermediate
+frames in both directions; production timings are unchanged. A fixed processing
 frame brightness is computed once rather than on every poll.
 
 ## CI and performance work
@@ -165,7 +210,7 @@ than 0.01 seconds. These are local samples, not CI timing guarantees.
 
 ## Focused execution measurements
 
-The current focused runner validated 36 synthetic scroll stitching methods with
+The earlier resource-group runner validated 36 synthetic scroll stitching methods with
 four XCTest workers in 14.98 seconds (execution phase including runner startup).
 The same methods reported 30.58 seconds in a serial baseline, excluding startup.
 Seven selected Swift Testing methods passed in a separate 1.86-second phase;
@@ -182,8 +227,50 @@ the new reader, with every sample and the accumulated values matching. This
 measures the alpha hotspot, not window rendering or animation settling.
 
 No full Swift/iOS/coverage run was performed for this focused-runner update.
-Cold compilation still covers the monolithic app/test target. Further compile
-reduction needs a separately scoped extraction of pure feature modules with
-their own test targets; the existing shared-chat package already has its own
+Production compilation still covers the monolithic app target. Compact profiles
+now reduce test-module compilation; further production compile reduction needs
+a separately scoped extraction of pure feature modules with their own targets; the existing shared-chat package already has its own
 independent scope. Measure cold build, discovery, test execution and retries
 separately before choosing that structural change.
+
+## Total command wall time after preparation changes
+
+Measurements on the same local Mac use an external monotonic timer around the
+whole command, including Python startup, verification, compilation/discovery,
+runner startup, execution and final input/product verification. Every selected
+method executes again on cache hits. No passing results are reused.
+
+| Scope | Previous complete command | New preparation/rebuild and execution | Verified cache hit and execution |
+| --- | ---: | ---: | ---: |
+| Calculator recognition/lexing/numbers, 14 methods | 65.99s | 14.95s | 0.91s |
+| Alpha reader and Overlay, 8 methods | 59.47s | 38.69s | 30.81s |
+
+A neutral comment was temporarily added to the Overlay test file to force a
+source change in both build modes. Building/discovering the same five Overlay
+methods without executing them took 37.23s with complete test sources and 10.65s
+with the compact closure. The temporary edit was removed and the restored source
+was rebuilt and validated. This isolates test-module preparation costs.
+
+The batched native scroll run passed 36 methods in four processes: 8.22s execution,
+26.98s total with preparation. The retry profile passed 17 methods, 14.61s total.
+All four profile closures have been compiled and exercised. The XCTest-only
+profile exposed Swift Testing's empty-library exit (69); discovery now accepts
+that specific empty result and still audits the combined inventory. Other errors
+remain failures, never triggers for a full-suite retry.
+
+Early first-use samples were slower: calculator 70.48s and scroll 83.50s before
+native cold discovery was added; first creation of the UI target/cache was 67.81s.
+These setup samples are retained to avoid presenting cache-hit latency as cold
+latency. A completely fresh checkout still needs production/dependency compilation
+and initial fingerprinting. Different compact closures can also require linking
+and discovery again. Timings are local samples under variable machine load,
+not universal latency guarantees. Python 3.11+ and the inspected macOS/Xcode
+runner layout are required by the native cache path; `--swiftpm` is the explicit
+compatibility option.
+
+Focused Python verification covers the runner, cache/profile behavior, Makefile
+and coverage orchestration. Current runtime/profile line coverage is 95.3%/95.8%;
+ordinary test selection/orchestration coverage was 92.4%. UI assertions, production
+animation durations and production timeout behavior remain unchanged. The test
+slowdown uses 2x production motion instead of 4x; both direction/intermediate-frame
+assertions passed in the restored-source and verified-cache measurements.
