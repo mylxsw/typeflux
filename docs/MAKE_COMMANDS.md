@@ -11,6 +11,13 @@ This document explains the purpose of each `make` command in the repository, whe
 | `make full-dev` | Launch the dev app with SenseVoice bundled into the app | Test the full packaged local-model flow |
 | `make build` | Compile the Swift package | Fast compile check |
 | `make test` | Run the unit test suite | Logic and regression validation |
+| `make test-unit` | Run tests without recognized UI or integration fixtures | Fast feedback across logic suites |
+| `make test-integration` | Run storage, network, process, and timer fixtures | Integration behavior |
+| `make test-ui` | Run main actor and shared UI state tests | Native UI and localization validation |
+| `make test-benchmark` | Run opt-in synthetic benchmarks | Performance measurements |
+| `make test-screen-capture` | Run real desktop capture with screen recording access | Native capture integration |
+| `make test-groups` | Audit discovery and list group sizes | Inspect test classification |
+| `make test-scripts` | Run Python development-script tests | Script and command orchestration changes |
 | `make coverage` | Generate code coverage output | Larger refactors or quality checks |
 | `make release` | Build the signed release app bundle and zip archive | Prepare `.app` and `.zip` artifacts |
 | `make full-release` | Build the full notarized release with bundled SenseVoice | Prepare full `.zip` and `.dmg` installers |
@@ -192,6 +199,12 @@ What it does:
 Use it when:
 
 - you changed routing, parsing, settings, workflow logic, providers, or other testable code
+
+During implementation, use `swift test --filter <SuiteName>` or one of
+`make test-unit`, `make test-integration`, and `make test-ui`. Each group builds
+once, audits discovery, and runs its selected suites. `make test` remains the
+unfiltered final validation. See [test grouping and isolation](TESTING.md) for
+classification rules, warm-build commands, and CI behavior.
 
 ### `make coverage`
 

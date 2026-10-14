@@ -11,6 +11,9 @@ Use the package manifest in `Package.swift` as the source of truth.
 - `swift build`: compile the app target.
 - `swift test` or `make test`: run the full test suite once at final validation, after all requested changes are complete.
 - `swift test --filter TypefluxTests.LLMRouterTests`: run one test class.
+- `make test-unit`, `make test-integration`, or `make test-ui`: run a resource group during implementation; see `docs/TESTING.md`. These do not replace final full-suite validation.
+- `make test-groups`: audit discovery and inspect group membership. `make test-scripts` validates Python development scripts.
+- `make test-screen-capture`: opt in to real desktop capture, with screen recording permission. Run it when changing native capture behavior; ordinary UI tests cover synthetic window policies.
 - `scripts/setup_dev_cert.sh` **(run once)**: create a local self-signed code-signing identity ("Typeflux Dev") in a dedicated passwordless keychain. Required for stable macOS privacy permission grants (microphone, accessibility) across rebuilds.
 - `make run`: build, bundle, and launch `~/Applications/Typeflux Dev.app`.
 - `make dev`: launch the dev app with terminal logs attached.

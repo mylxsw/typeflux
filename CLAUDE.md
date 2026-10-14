@@ -20,6 +20,14 @@ make test
 # Run a single test class
 swift test --filter TypefluxTests.LLMRouterTests
 
+# During implementation: resource groups, discovery audit, or script-only checks
+make test-unit         # tests without recognized UI/integration fixtures
+make test-integration  # storage, network, process, and timer fixtures
+make test-ui           # main actor and shared UI/localization state
+make test-screen-capture # explicit native capture; needs screen recording access
+make test-groups       # audit complete discovery and show assignments
+make test-scripts      # Python development scripts; no Swift build
+
 # Run a specific test method
 swift test --filter TypefluxTests.LLMRouterTests/testMethodName
 

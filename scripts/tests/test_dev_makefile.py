@@ -13,6 +13,30 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class DevelopmentMakefileTests(unittest.TestCase):
+    def test_real_screen_capture_target_explicitly_enables_only_its_swift_command(self):
+        with tempfile.TemporaryDirectory(prefix="typeflux-make-") as temporary:
+            workspace = Path(temporary)
+            shutil.copyfile(ROOT / "Makefile", workspace / "Makefile")
+            swift = workspace / "swift"
+            swift.write_text(
+                '#!/usr/bin/env python3\n'
+                'import json, os, sys\n'
+                'print(json.dumps({"args": sys.argv[1:], '
+                '"capture": os.getenv("TYPEFLUX_REAL_SCREEN_CAPTURE_TESTS")}))\n'
+            )
+            swift.chmod(0o755)
+            environment = dict(os.environ, PATH=f"{workspace}{os.pathsep}{os.environ['PATH']}",
+                               TYPEFLUX_REAL_SCREEN_CAPTURE_TESTS="0")
+            output = subprocess.check_output(
+                ["make", "--no-print-directory", "test-screen-capture"],
+                cwd=workspace, env=environment, text=True,
+            )
+            self.assertEqual(json.loads(output.splitlines()[-1]), {
+                "args": ["test", "--no-parallel", "--filter", "ScreenshotCaptureWindowPolicyTests"],
+                "capture": "1",
+            })
+            self.assertEqual(environment["TYPEFLUX_REAL_SCREEN_CAPTURE_TESTS"], "0")
+
     def test_ios_platform_selects_native_ios_launcher_and_forwards_device(self):
         with tempfile.TemporaryDirectory(prefix="typeflux-make-") as temporary:
             workspace = Path(temporary)
