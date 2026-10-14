@@ -5289,11 +5289,11 @@
 "ask.translation.panel.shortcuts" = "快捷键";
 "ask.translation.panel.preferences" = "翻译面板";
 "hotkeys.action.inputTranslation.title" = "输入翻译";
-"hotkeys.action.inputTranslation.subtitle" = "打开翻译面板，输入文字后按 ↩ 翻译";
+"hotkeys.action.inputTranslation.subtitle" = "打开翻译面板，直接输入";
 "hotkeys.action.selectionTranslation.title" = "划词翻译";
-"hotkeys.action.selectionTranslation.subtitle" = "立即翻译选中的文字";
+"hotkeys.action.selectionTranslation.subtitle" = "翻译当前选中的文字；没有选中时等同输入翻译";
 "hotkeys.action.screenshotTranslation.title" = "截图翻译";
-"hotkeys.action.screenshotTranslation.subtitle" = "框选区域，在本机识别文字后翻译";
+"hotkeys.action.screenshotTranslation.subtitle" = "框选屏幕区域，在本机识别文字后翻译";
 
 /* Usage guide (help) */
 "menu.help" = "使用指南…";

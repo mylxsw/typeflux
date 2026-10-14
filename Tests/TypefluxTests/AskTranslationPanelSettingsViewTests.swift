@@ -33,6 +33,12 @@ struct AskTranslationPanelSettingsViewTests {
             try await Task.sleep(for: .milliseconds(150))
             let controls = SettingsBehaviorTestSupport.elements(in: window)
             for action in AppHotkeyAction.translation {
+                let subtitle = try #require(controls.first {
+                    $0.value("accessibilityIdentifier") as? String
+                        == "ask.translation.shortcut." + action.rawValue + ".subtitle"
+                })
+                #expect(subtitle.text == L("hotkeys.action." + action.rawValue + ".subtitle"))
+                #expect(subtitle.frame.height > 0)
                 let button = try #require(controls.first {
                     $0.value("accessibilityIdentifier") as? String == "ask.translation.shortcut." + action.rawValue
                 })

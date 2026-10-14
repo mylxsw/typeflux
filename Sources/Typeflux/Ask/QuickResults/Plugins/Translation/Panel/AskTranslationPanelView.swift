@@ -6,7 +6,9 @@ struct AskTranslationPanelView: View {
     @ObservedObject var model: AskTranslationPanelModel
     @ObservedObject var history: AskTranslationHistory
     var height: CGFloat
+    var onContentHeightChange: (CGFloat) -> Void = { _ in }
     @State private var editorHeight: CGFloat = 48
+    @State private var measuredChromeHeight: CGFloat?
 
     static func chromeHeight(screenshot: Bool) -> CGFloat {
         screenshot ? 190 : 158
@@ -15,23 +17,37 @@ struct AskTranslationPanelView: View {
     var body: some View {
         VStack(spacing: 8) {
             titleBar
+                .translationContentHeight(.title)
             original
                 .padding(.horizontal, 10)
+                .translationContentHeight(.original)
             AskTranslationStackView(stack: model.stack, original: model.output?.original ?? model.text,
                                     actions: model.output?.actions ?? [], selected: model.output?.selectedItem ?? 0,
                                     starred: model.output?.starred == true, running: model.running,
                                     viewportHeight: max(
                                         42,
-                                        height - Self.chromeHeight(screenshot: model.screenshot != nil)
-                                            - (editorHeight - 48) - (model.notice == nil ? 0 : 24)
+                                        height - (measuredChromeHeight
+                                            ?? (Self.chromeHeight(screenshot: model.screenshot != nil)
+                                                + editorHeight - 48 + (model.notice == nil ? 0 : 24)))
                                     ),
                                     onAction: model.perform, onSelect: model.select)
                 .padding(.horizontal, 10)
             if let notice = model.notice {
                 Text(notice).font(.system(size: 11)).foregroundStyle(StudioTheme.danger)
                     .lineLimit(2).padding(.horizontal, 12)
+                    .translationContentHeight(.notice)
             }
             footer
+                .translationContentHeight(.footer)
+        }
+        .onPreferenceChange(AskTranslationContentHeight.self) { heights in
+            let required: [AskTranslationContentHeight.Part] = [.title, .original, .languages, .results, .footer]
+            guard required.allSatisfy({ heights[$0] != nil }) else { return }
+            let chromeParts: [AskTranslationContentHeight.Part] = [.title, .original, .notice, .footer]
+            let chrome = chromeParts.reduce(CGFloat.zero) { $0 + (heights[$1] ?? 0) }
+                + (heights[.notice] == nil ? 24 : 32)
+            measuredChromeHeight = chrome
+            onContentHeightChange(chrome + (heights[.languages] ?? 0) + (heights[.results] ?? 0) + 8)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(AskTheme.launcherSurface)
@@ -122,6 +138,7 @@ struct AskTranslationPanelView: View {
             .font(.system(size: 10)).foregroundStyle(StudioTheme.textTertiary)
             .frame(maxWidth: .infinity, minHeight: 28)
             .background(AskTheme.hoverFill)
+            .accessibilityIdentifier("ask.translation.panel.footer")
     }
 
     private func icon(_ symbol: String, title: String, action: @escaping () -> Void) -> some View {
