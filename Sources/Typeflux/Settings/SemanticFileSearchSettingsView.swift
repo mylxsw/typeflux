@@ -22,31 +22,34 @@ struct SemanticFileSearchSettingsView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            AgentSettingsRow(icon: "sparkles", title: L("semantic.metrics"), subtitle: L("semantic.subtitle"),
-                             badge: L("semantic.experimental"), badgeAccent: true, subtitleLineLimit: nil) {
-                if enabled || !service.supported {
-                    Toggle("", isOn: Binding(
-                        get: { enabled },
-                        set: { value in
-                            if !value {
-                                service.setEnabled(false)
-                                confirmation = nil
-                            }
+        let status = service.status(filesEnabled: filesEnabled)
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                Circle().fill(Self.statusColor(status.tone)).frame(width: 7, height: 7)
+                Text(L("semantic.metrics"))
+                    .font(.system(size: 14, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
+                Text(L("semantic.index.badge"))
+                    .font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
+                Spacer(minLength: 8)
+                Toggle("", isOn: Binding(
+                    get: { enabled },
+                    set: { value in
+                        if value {
+                            enable()
+                        } else {
+                            service.setEnabled(false)
+                            confirmation = nil
                         }
-                    ))
-                    .labelsHidden().toggleStyle(.switch)
-                    .disabled(!service.supported || !filesEnabled)
-                    .accessibilityLabel(L("semantic.title")).accessibilityIdentifier("semantic.enabled")
-                } else {
-                    Button(L(modelAvailable ? "semantic.enable" : "semantic.enable.download"), action: enable)
-                        .buttonStyle(ModelActionStyle(primary: true))
-                        .disabled(!filesEnabled || !hasScope)
-                        .accessibilityIdentifier("semantic.setup.enable")
-                }
+                    }
+                ))
+                .labelsHidden().toggleStyle(.switch)
+                .disabled(!service.supported || !filesEnabled || (!enabled && !hasScope))
+                .accessibilityLabel(L("semantic.title")).accessibilityIdentifier("semantic.enabled")
             }
-            detail.padding(.leading, 66).padding(.trailing, 18).padding(.bottom, 16)
+            Self.caption(L("semantic.subtitle"))
+            detail
         }
+        .padding(.horizontal, 18).padding(.vertical, 16)
     }
 
     @ViewBuilder private var detail: some View {
@@ -61,8 +64,15 @@ struct SemanticFileSearchSettingsView: View {
 
     private var setup: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Self.caption(L("semantic.privacy"))
-            Self.caption(L(modelAvailable ? "semantic.model.downloaded" : "semantic.model.download"))
+            Self.caption(L("semantic.index.off"))
+            Rectangle().fill(ModelVisualStyle.divider).frame(height: 1)
+            Text(L("semantic.index.setup"))
+                .font(.system(size: 12.5, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
+            Self.caption(L(modelAvailable ? "semantic.index.setup.ready" : "semantic.index.setup.download"))
+            Button(L(modelAvailable ? "semantic.enable" : "semantic.enable.download"), action: enable)
+                .buttonStyle(ModelActionStyle(primary: true))
+                .disabled(!filesEnabled || !hasScope)
+                .accessibilityIdentifier("semantic.setup.enable")
             Link(L("semantic.about"), destination: URL(string: "https://huggingface.co/google/embeddinggemma-2")!)
                 .font(.system(size: 12))
             if !hasScope { Self.caption(L("semantic.folders.empty")) }
@@ -75,15 +85,16 @@ struct SemanticFileSearchSettingsView: View {
         let storage = service.storage()
         return VStack(alignment: .leading, spacing: 12) {
             SemanticStatusLine(status: status)
+            Rectangle().fill(ModelVisualStyle.divider).frame(height: 1)
             if let progress = status.progress {
                 SemanticProgressView(progress: progress, detailed: true)
             }
             HStack(spacing: 20) {
-                metric(L("semantic.metric.files"), service.files.formatted())
                 metric(L("semantic.metric.index"),
                        storage.index > 0 ? SemanticFileSearchStatus.size(storage.index) : "—")
                 metric(L("semantic.metric.model"),
                        service.modelReady && storage.model > 0 ? SemanticFileSearchStatus.size(storage.model) : "—")
+                metric(L("semantic.metric.location"), L("semantic.metric.local"))
             }
             .accessibilityIdentifier("semantic.metrics")
             HStack(spacing: 14) {
@@ -155,6 +166,15 @@ struct SemanticFileSearchSettingsView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    private static func statusColor(_ tone: SemanticFileSearchStatus.Tone) -> Color {
+        switch tone {
+        case .off: StudioTheme.textTertiary
+        case .busy: ModelVisualStyle.accent
+        case .ready: StudioTheme.success
+        case .warning: StudioTheme.warning
+        }
+    }
+
     static func caption(_ text: String) -> some View {
         Text(text).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary)
             .fixedSize(horizontal: false, vertical: true)
@@ -201,23 +221,10 @@ struct SemanticStatusLine: View {
     let status: SemanticFileSearchStatus
 
     var body: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
-            Circle().fill(color).frame(width: 7, height: 7)
-                .alignmentGuide(.firstTextBaseline) { $0.height - 1 }
-            Text(status.text).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-        }
+        Text(status.text).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary)
+            .fixedSize(horizontal: false, vertical: true)
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("semantic.status")
-    }
-
-    private var color: Color {
-        switch status.tone {
-        case .off: StudioTheme.textTertiary
-        case .busy: ModelVisualStyle.accent
-        case .ready: StudioTheme.success
-        case .warning: StudioTheme.warning
-        }
     }
 }
 

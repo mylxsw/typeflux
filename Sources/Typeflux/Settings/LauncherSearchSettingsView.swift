@@ -146,48 +146,97 @@ struct LauncherSearchSettingsView: View {
 
     @ViewBuilder private var filesTab: some View {
         ModelSurface {
-            AgentSettingsRow(icon: "doc.text.magnifyingglass", title: L("ask.settings.quick.files.title")) {
+            HStack(spacing: 16) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(L("ask.settings.quick.files.title"))
+                        .font(.system(size: 15, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
+                    Text(L("launcher.search.files.master.subtitle"))
+                        .font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 8)
                 Toggle("", isOn: Binding(get: { filesEnabled }, set: setFilesEnabled))
                     .labelsHidden().toggleStyle(.switch)
                     .accessibilityLabel(L("ask.settings.quick.files.title"))
                     .accessibilityIdentifier("launcher.search.files.enabled")
             }
+            .padding(.horizontal, 20).padding(.vertical, 19)
         }
-        AgentSettingsSection(title: L("launcher.search.files.roots"), detail: "\(search.fileRoots.count)",
-                             footnote: L("launcher.search.files.footnote")) {
-            if search.fileRoots.isEmpty {
-                AgentSettingsEmptyRow(text: L("launcher.search.files.empty"))
-                ModelRowDivider(leading: 18)
-            }
-            ForEach(search.fileRoots, id: \.self) { root in
-                pathRow(root, icon: "folder") { update { $0.fileRoots.removeAll { $0 == root } } }
-                ModelRowDivider(leading: 66)
-            }
-            AgentSettingsActionRow(icon: "plus", title: L("launcher.search.add")) {
-                if let paths = Self.pickFolders(allowApps: false) {
-                    update { $0.fileRoots = Self.adding(paths, to: $0.fileRoots) }
+        VStack(alignment: .leading, spacing: 8) {
+            sectionHeader(L("launcher.search.files.roots"), detail: L("launcher.search.files.scope.shared"))
+            ModelSurface {
+                VStack(alignment: .leading, spacing: 0) {
+                    if search.fileRoots.isEmpty {
+                        AgentSettingsEmptyRow(text: L("launcher.search.files.empty"))
+                    }
+                    ForEach(search.fileRoots, id: \.self) { root in
+                        if root != search.fileRoots.first { ModelRowDivider(leading: 18) }
+                        compactFileRoot(root)
+                    }
+                    ModelRowDivider(leading: 18)
+                    HStack(spacing: 14) {
+                        SemanticFileSearchSettingsView.link(L("launcher.search.files.addFolder")) {
+                            if let paths = Self.pickFolders(allowApps: false) {
+                                update { $0.fileRoots = Self.adding(paths, to: $0.fileRoots) }
+                            }
+                        }
+                        SemanticFileSearchSettingsView.link(L("launcher.search.reset")) {
+                            update { $0.fileRoots = AskLauncherSearchSettings.defaultFileRoots }
+                        }
+                        Spacer(minLength: 8)
+                        Text(L("launcher.search.files.exclusionsHint"))
+                            .font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
+                    }
+                    .padding(.horizontal, 18).padding(.vertical, 12)
                 }
             }
-            ModelRowDivider(leading: 66)
-            HStack(spacing: 8) {
-                quickAdd(L("launcher.search.files.icloud"), "~/Library/Mobile Documents")
-                quickAdd(L("launcher.search.files.cloudStorage"), "~/Library/CloudStorage")
-                Spacer()
-                Button(L("launcher.search.reset")) {
-                    update { $0.fileRoots = AskLauncherSearchSettings.defaultFileRoots }
+            Text(L("launcher.search.files.scope.footnote"))
+                .font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
+                .fixedSize(horizontal: false, vertical: true).padding(.horizontal, 4)
+        }
+        VStack(alignment: .leading, spacing: 8) {
+            sectionHeader(L("launcher.search.index"), detail: L("launcher.search.index.scope.shared"))
+            ModelSurface {
+                VStack(alignment: .leading, spacing: 0) {
+                    nameIndexRow
+                    ModelRowDivider(leading: 18)
+                    SemanticFileSearchSettingsView(service: semanticService, filesEnabled: filesEnabled)
                 }
-                .controlSize(.small)
             }
-            .padding(.horizontal, 18).padding(.vertical, 10)
+            Text(L("launcher.search.index.shared"))
+                .font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
+                .fixedSize(horizontal: false, vertical: true).padding(.horizontal, 4)
         }
-        AgentSettingsSection(title: L("launcher.search.index")) {
-            nameIndexRow
-            ModelRowDivider(leading: 18)
-            SemanticFileSearchSettingsView(service: semanticService, filesEnabled: filesEnabled)
+    }
+
+    private func sectionHeader(_ title: String, detail: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 12) {
+            ModelSectionLabel(title: title)
+            Spacer(minLength: 8)
+            Text(detail).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
+                .multilineTextAlignment(.trailing)
         }
-        Text(L("launcher.search.index.shared"))
-            .font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
-            .fixedSize(horizontal: false, vertical: true).padding(.horizontal, 4)
+        .padding(.trailing, 4)
+    }
+
+    private func compactFileRoot(_ root: String) -> some View {
+        HStack(spacing: 12) {
+            Image(systemName: "folder")
+                .font(.system(size: 15)).foregroundStyle(StudioTheme.textSecondary)
+                .frame(width: 34, height: 34)
+                .background(ModelVisualStyle.control, in: RoundedRectangle(cornerRadius: 8))
+            VStack(alignment: .leading, spacing: 3) {
+                Text(AskFileLabels.folder(root)).font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(StudioTheme.textPrimary)
+                Text(root).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
+                    .lineLimit(1).truncationMode(.middle)
+            }
+            Spacer(minLength: 8)
+            SemanticFileSearchSettingsView.link(L("ask.remove")) {
+                update { $0.fileRoots.removeAll { $0 == root } }
+            }
+        }
+        .padding(.horizontal, 18).padding(.vertical, 12)
     }
 
     private var nameIndexRow: some View {
@@ -202,14 +251,11 @@ struct LauncherSearchSettingsView: View {
                     .font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
             }
             SemanticFileSearchSettingsView.caption(L("launcher.search.index.name.subtitle"))
-            HStack(spacing: 20) {
-                indexMetric(L("launcher.search.index.count"), status.count.formatted())
-                indexMetric(L("launcher.search.index.memory"), ByteCountFormatter.string(
-                    fromByteCount: Int64(status.bytes), countStyle: .memory
-                ))
-                indexMetric(L("launcher.search.index.updated"),
-                            status.updatedAt.map { AskQuickResultsView.relative($0) } ?? "—")
-            }
+            Text(L("launcher.search.index.name.summary", status.count.formatted(),
+                   ByteCountFormatter.string(fromByteCount: Int64(status.bytes), countStyle: .memory),
+                   status.updatedAt.map { AskQuickResultsView.relative($0) } ?? "—"))
+                .font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
             if let progress = status.progress {
                 ProgressView(value: progress).progressViewStyle(.linear).controlSize(.small)
             }
@@ -243,21 +289,6 @@ struct LauncherSearchSettingsView: View {
         case let .building(found, _): return L("launcher.search.index.building", found.formatted())
         case .ready: return L(status.truncated ? "launcher.search.index.truncated" : "launcher.search.index.live")
         }
-    }
-
-    private func indexMetric(_ title: String, _ value: String) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
-            Text(title).font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
-            Text(value).font(.system(size: 14, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
-                .lineLimit(1).minimumScaleFactor(0.7)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private func quickAdd(_ title: String, _ path: String) -> some View {
-        Button("+ " + title) { update { $0.fileRoots = Self.adding([path], to: $0.fileRoots) } }
-            .controlSize(.small)
-            .disabled(search.fileRoots.contains(path))
     }
 
     // MARK: - Exclusions
