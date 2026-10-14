@@ -1,0 +1,227 @@
+{
+  "covered": 1137,
+  "executable": 1207,
+  "percent": 94.2,
+  "files": [
+    {
+      "file": "Sources/Typeflux/App/DIContainer.swift",
+      "covered": 0,
+      "executable": 2,
+      "percent": 0.0,
+      "uncovered": [
+        81,
+        90
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskComposerViews.swift",
+      "covered": 31,
+      "executable": 36,
+      "percent": 86.11,
+      "uncovered": [
+        866,
+        867,
+        1346,
+        1347,
+        1348
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskConversationModel+Plugins.swift",
+      "covered": 17,
+      "executable": 24,
+      "percent": 70.83,
+      "uncovered": [
+        348,
+        349,
+        350,
+        351,
+        352,
+        353,
+        354
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskConversationModel.swift",
+      "covered": 2,
+      "executable": 2,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskConversationWindowController.swift",
+      "covered": 0,
+      "executable": 1,
+      "percent": 0.0,
+      "uncovered": [
+        89
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskLauncherPrimaryAction.swift",
+      "covered": 12,
+      "executable": 12,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/AskLauncherPlugin.swift",
+      "covered": 13,
+      "executable": 13,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/AskPluginSession.swift",
+      "covered": 66,
+      "executable": 67,
+      "percent": 98.51,
+      "uncovered": [
+        234
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/AskPluginViews.swift",
+      "covered": 33,
+      "executable": 33,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskTranslatePlugin+Output.swift",
+      "covered": 109,
+      "executable": 109,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskTranslatePlugin.swift",
+      "covered": 45,
+      "executable": 45,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskTranslationEngineFactory.swift",
+      "covered": 48,
+      "executable": 48,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskTranslationEngines.swift",
+      "covered": 6,
+      "executable": 6,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskTranslationFanout.swift",
+      "covered": 273,
+      "executable": 278,
+      "percent": 98.2,
+      "uncovered": [
+        209,
+        210,
+        211,
+        344,
+        345
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskTranslationLLMService.swift",
+      "covered": 2,
+      "executable": 3,
+      "percent": 66.67,
+      "uncovered": [
+        29
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskTranslationSettings.swift",
+      "covered": 71,
+      "executable": 71,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskTranslationStackView.swift",
+      "covered": 272,
+      "executable": 310,
+      "percent": 87.74,
+      "uncovered": [
+        65,
+        66,
+        67,
+        68,
+        70,
+        71,
+        72,
+        73,
+        82,
+        83,
+        84,
+        85,
+        86,
+        87,
+        88,
+        97,
+        98,
+        99,
+        100,
+        233,
+        234,
+        235,
+        236,
+        237,
+        277,
+        280,
+        281,
+        287,
+        288,
+        290,
+        291,
+        297,
+        298,
+        299,
+        343,
+        347,
+        348,
+        349
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskWordCardView.swift",
+      "covered": 33,
+      "executable": 35,
+      "percent": 94.29,
+      "uncovered": [
+        126,
+        127
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Settings/AskTranslationSettingsModel.swift",
+      "covered": 29,
+      "executable": 29,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/AskTranslationSettingsView.swift",
+      "covered": 75,
+      "executable": 83,
+      "percent": 90.36,
+      "uncovered": [
+        57,
+        58,
+        127,
+        128,
+        129,
+        130,
+        132,
+        133
+      ]
+    }
+  ]
+}

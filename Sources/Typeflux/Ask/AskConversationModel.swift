@@ -69,6 +69,9 @@ final class AskConversationModel: ObservableObject {
     }
     /// AI translation with the text-processing model; the window controller supplies it.
     var translationAI: (any AskTranslationEngine)?
+    var translationEngineFactory: AskTranslationEngineFactory?
+    lazy var translationFanout = translationEngineFactory?.makeSession() ?? AskTranslationFanout()
+    lazy var translationSettingsModel = AskTranslationSettingsModel(store: modelLibrary.settings)
     /// AI prompts (`rw`, `sum`) with the text-processing model; the window controller supplies it.
     var promptAI: (any AskTextGenerating)?
     /// The user's workflows (`docs/design/ask-launcher-workflows.md`); the window controller supplies them.

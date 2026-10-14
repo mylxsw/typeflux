@@ -276,6 +276,11 @@ struct AskComposer: View {
     @State private var primaryActivationGate = AskLauncherActivationGate()
 
     private func runLauncherPrimaryAction() {
+        if plugins.plugin?.id == AskTranslatePlugin.id, !launcherPluginInputIsCurrent,
+           !AskTranslatePlugin.opensWordBook(plugins.keyword?.options ?? [:]) {
+            plugins.update(text: draft.wrappedValue.text, selection: draft.wrappedValue.sentSelection,
+                           language: AppLocalization.shared.language)
+        }
         let action = launcherPrimaryAction
         guard action.enabled, !launcherEditorIsComposing else { return }
         let selection: String
@@ -673,7 +678,10 @@ struct AskComposer: View {
                                                           AskEmojiPlugin.id, AskCalendarPlugin.id].contains(plugin.id),
                                     savesNoteWhenDone: plugins.savesNoteWhenDone,
                                     systemMonitor: plugin.id == AskSystemMonitorPlugin.id,
-                                    calendar: plugin.id == AskCalendarPlugin.id)
+                                    calendar: plugin.id == AskCalendarPlugin.id,
+                                    translation: plugin.id == AskTranslatePlugin.id
+                                        && !AskTranslatePlugin.opensWordBook(plugins.keyword?.options ?? [:])
+                                        && plugins.request?.text.isEmpty == false)
         }
         if quickSearch.presentation?.features.isEmpty != false,
            let hint = plugins.hint, let plugin = plugins.plugin(for: hint) {
@@ -732,6 +740,14 @@ struct AskComposer: View {
             return
         }
         if pluginDisplay?.hint != nil { _ = acceptPluginHint(run: true); return }
+        if plugins.currentOutput?.translation?.submitted == false, plugins.run() { return }
+        if plugins.plugin?.id == AskTranslatePlugin.id, !plugins.isPlanCurrent, plugins.run() { return }
+        if plugins.plugin?.id == AskTranslatePlugin.id, plugins.isRunning, plugins.run() { return }
+        if plugins.isRunning, plugins.isPlanCurrent, let output = plugins.currentOutput,
+           output.translation?.submitted == true, let action = output.action(for: .enter) {
+            performPluginAction(action)
+            return
+        }
         switch plugins.phase {
         case let .ready(plan):
             // A plan that acts (open a search) must be for the text as typed; it lands within moments.
@@ -793,6 +809,11 @@ struct AskComposer: View {
         switch key {
         case .up, .down: movePluginHighlight(key == .up ? -1 : 1)
         case let .number(number):
+            if let translation = plugins.currentOutput?.translation {
+                guard plugins.isPlanCurrent, number >= 1, number <= translation.results.count else { return true }
+                if let text = translation.results[number - 1].completedText { performPluginAction(AskTranslatePlugin.copyAction(text)) }
+                return true
+            }
             guard let count = AskPluginResultsView.numberedItemCount(display) else { return false }
             guard number <= count else { return false }
             pluginHighlight = 0
@@ -822,7 +843,8 @@ struct AskComposer: View {
             default: .shiftCommandC
             }
             // A result still streaming can already be saved (⌘S) or moved to a window (⌘O).
-            let offering = [.commandS, .commandO].contains(key) ? plugins.currentOutput : plugins.output
+            let usesPartial = plugins.currentOutput?.translation != nil && shortcut != .commandR
+            let offering = usesPartial || [.commandS, .commandO].contains(key) ? plugins.currentOutput : plugins.output
             // ⇧⌘C, ⌘S, ⌘B and ⌘O fall through to the editor when the result offers nothing for them.
             guard let action = offering?.action(for: shortcut) ?? plugins.failure?.action(for: shortcut) else {
                 return ![.shiftCommandC, .commandS, .commandB, .commandO].contains(key)
@@ -839,6 +861,11 @@ struct AskComposer: View {
             guard let offered else { return false }
             performPluginAction(offered)
         case .commandC:
+            if plugins.isPlanCurrent, plugins.currentOutput?.translation != nil,
+               let action = plugins.currentOutput?.action(for: .commandC), case let .copy(text) = action.kind {
+                model.copyPluginText(text)
+                return true
+            }
             // With nothing selected in the editor, ⌘C copies the result (or a search's link) and stays.
             let offered: AskPluginAction?
             switch plugins.phase {
@@ -1312,11 +1339,13 @@ struct AskComposer: View {
                 AskPluginResultsView(display: pluginDisplay, question: draft.wrappedValue.text,
                                      minimumHeight: pluginHeight,
                                      onMain: runPluginMain, onAction: performPluginAction,
+                                     translationSettings: model.translationSettingsModel,
                                      onAskAI: askAIFromPlugin,
                                      onHighlight: { pluginHighlight = $0 },
                                      onSelectItem: { id in
-                                         guard plugins.isPlanCurrent, let output = plugins.output,
-                                               let index = output.items.firstIndex(where: { $0.id == id }) else { return false }
+                                         guard plugins.isPlanCurrent, let output = plugins.currentOutput,
+                                               let index = output.translation?.results.firstIndex(where: { $0.id == id })
+                                                ?? output.items.firstIndex(where: { $0.id == id }) else { return false }
                                          return plugins.selectItem(index)
                                      }, calendarProvider: pluginDisplay.hint?.pluginID == AskCalendarPlugin.id
                                         ? model.calendarLauncher.provider : nil)
@@ -1956,8 +1985,9 @@ struct AskComposer: View {
         if !active {
             return AskLauncherContext.supportingHint(
                 secondary: launcherSecondaryHint, primary: launcherPrimaryAction,
-                canAskAI: pluginDisplay.map { $0.offersAskAI } ?? model.launcherDraft.canSend,
-                canOpenFeatureWindow: launcherCanOpenFeatureWindow
+                canAskAI: pluginDisplay?.translation != true
+                    && (pluginDisplay.map { $0.offersAskAI } ?? model.launcherDraft.canSend),
+                canOpenFeatureWindow: pluginDisplay?.translation != true && launcherCanOpenFeatureWindow
             )
         }
         return launcherSecondaryHint

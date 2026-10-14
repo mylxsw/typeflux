@@ -28,6 +28,14 @@ final class TypefluxCloudFeatureTests: XCTestCase {
         XCTAssertEqual(unscoped, "unset")
     }
 
+    func testTranslationStreamKeepsItsFeatureScope() async throws {
+        let engine = AskAITranslationEngine(service: FeatureEchoService()) { "test" }
+        var text = ""
+        for try await piece in engine.streamTranslation("Hello.", from: "en", to: "fr") { text += piece }
+        XCTAssertEqual(text, "translation")
+        XCTAssertNil(LLMFeatureContext.feature)
+    }
+
     func testOnlyCloudEmitsFeatureAndKeepsHistoricalScenario() throws {
         for feature in TypefluxCloudFeature.allCases {
             let connection = ResolvedLLMConnection(provider: .typefluxCloud, baseURL: URL(string: "https://example.invalid")!, model: "default", apiKey: "token", additionalHeaders: [:])

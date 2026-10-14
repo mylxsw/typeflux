@@ -40,7 +40,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     private lazy var interfaceStyle = InterfaceStyleObserver(settings: settings)
 
     init(settings: SettingsStore, injector: TextInjector, registry: MCPRegistry, modelLibrary: AskModelLibrary,
-         llmService: LLMService? = nil, dockVisibility: DockVisibilityController = .shared,
+         llmService: LLMService? = nil, translationEngines: AskTranslationEngineFactory? = nil, dockVisibility: DockVisibilityController = .shared,
          launcherInputSource: any AskLauncherInputSourceSelecting = SystemAskLauncherInputSourceSelector(),
          screenCapture: any ScreenCapturing = ScreenCaptureService(),
          screenCapturePermission: any ScreenCapturePermissionProviding = ScreenCapturePermission.live,
@@ -86,6 +86,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         maintenanceTasks.append(Task.detached(priority: .utility) { sandbox.pruneWorkspaces() })
         // Keyword plugins: translation falls back to the text-processing model, and
         // ⌥Return types results into the app the launcher came from.
+        model.translationEngineFactory = translationEngines
         if let llmService {
             // Translation may have a model of its own; without one it uses the text-processing model.
             model.translationAI = AskAITranslationEngine(

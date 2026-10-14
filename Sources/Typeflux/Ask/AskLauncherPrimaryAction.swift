@@ -50,6 +50,18 @@ struct AskLauncherPrimaryAction: Equatable {
             return hint.pluginID == AskOpenChatPlugin.id
                 ? Self(mode: .openChat, enabled: canAskAI) : .confirm(display.title)
         }
+        if display.translation {
+            let output = display.output ?? display.partial
+            if !current || output?.translation?.submitted == false {
+                return .confirm(L("ask.plugin.translate.title"))
+            }
+            if case let .running(plan) = display.phase {
+                if plan.values["submitted"] != "true" { return .confirm(L("ask.plugin.translate.title")) }
+                let copy = output?.action(for: .enter)
+                return .confirm(copy?.title ?? display.title, enabled: copy != nil,
+                                reason: L("ask.launcher.action.wait"))
+            }
+        }
         let action: AskPluginAction?
         switch display.phase {
         case .waiting:

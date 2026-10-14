@@ -1,14 +1,17 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
-/// Launcher → Translation: the engine, the AI's model, and the translation services.
+/// Launcher → Translation: enabled services, order, AI models and provider credentials.
 struct AskTranslationSettingsView: View {
     @StateObject private var model: AskTranslationSettingsModel
     @ObservedObject private var library: AskModelLibrary
     @ObservedObject private var auth = AuthState.shared
+    @State private var dragging: String?
 
     @MainActor
-    init(settings: SettingsStore, library: AskModelLibrary? = nil) {
-        _model = StateObject(wrappedValue: AskTranslationSettingsModel(store: settings))
+    init(settings: SettingsStore, library: AskModelLibrary? = nil,
+         credentials: any AskTranslationCredentialStoring = AskKeychainTranslationCredentials()) {
+        _model = StateObject(wrappedValue: AskTranslationSettingsModel(store: settings, credentials: credentials))
         self.library = library ?? .shared
     }
 
@@ -18,106 +21,123 @@ struct AskTranslationSettingsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            ModelSectionLabel(title: L("ask.translation.section.engine"))
             ModelSurface {
-                VStack(alignment: .leading, spacing: 0) {
-                    AgentSettingsRow(icon: "arrow.triangle.branch", title: L("ask.translation.engine"),
-                                     subtitle: L("ask.translation.engine.subtitle"), subtitleLineLimit: nil) {
-                        SettingsMenuPicker(title: L("ask.translation.engine"), options: model.engineOptions,
-                                           selection: Binding(get: { model.settings.engine.rawValue },
-                                                              set: model.setEngine))
-                            .frame(width: 200)
-                    }
-                    ModelRowDivider(leading: 66)
-                    AgentSettingsRow(icon: "sparkles", title: L("ask.translation.model"),
-                                     subtitle: L("ask.translation.model.subtitle"), subtitleLineLimit: nil) {
-                        SettingsMenuPicker(
-                            title: L("ask.translation.model"),
-                            options: AskTranslationSettingsModel.modelOptions(
-                                providers: library.selectableProviders(loggedIn: auth.isLoggedIn, hasImage: false,
-                                                                       scenario: "rewrite"),
-                                selected: model.settings.modelReference
-                            ),
-                            selection: Binding(get: { model.settings.modelReference }, set: model.setModel)
-                        )
-                        .frame(width: 200)
-                    }
-                    ModelRowDivider(leading: 66)
-                    toggleRow(icon: "laptopcomputer", title: "ask.translation.onDevice",
-                              subtitle: "ask.translation.onDevice.subtitle",
-                              isOn: Binding(get: { model.settings.prefersOnDevice }, set: model.setPrefersOnDevice))
-                    ModelRowDivider(leading: 66)
-                    toggleRow(icon: "arrow.uturn.backward", title: "ask.translation.fallback",
-                              subtitle: "ask.translation.fallback.subtitle",
-                              isOn: Binding(get: { model.settings.fallsBackToAI }, set: model.setFallsBackToAI))
-                    ModelRowDivider(leading: 66)
-                    AgentSettingsRow(icon: "globe", title: L("ask.settings.plugins.translate.second"),
-                                     subtitle: L("ask.settings.plugins.translate.secondSubtitle"), subtitleLineLimit: nil) {
-                        SettingsMenuPicker(title: L("ask.settings.plugins.translate.second"),
-                                           options: AskTranslationLanguages.common.map { (
-                                               label: AskTranslationLanguages.name($0, in: interface),
-                                               value: $0
-                                           ) },
-                                           selection: Binding(get: { model.secondLanguage }, set: model.setSecondLanguage))
-                            .frame(width: 200)
-                    }
+                AgentSettingsRow(icon: "globe", title: L("ask.settings.plugins.translate.second"),
+                                 subtitle: L("ask.settings.plugins.translate.secondSubtitle"), subtitleLineLimit: nil) {
+                    SettingsMenuPicker(title: L("ask.settings.plugins.translate.second"),
+                                       options: AskTranslationLanguages.common.map { (label: AskTranslationLanguages.name($0, in: interface), value: $0) },
+                                       selection: Binding(get: { model.secondLanguage }, set: model.setSecondLanguage))
+                        .frame(width: 180)
                 }
             }
-            ModelSectionLabel(title: L("ask.translation.section.services")).padding(.top, 14)
+            HStack {
+                ModelSectionLabel(title: L("ask.translation.section.services"))
+                Spacer()
+                Button { model.addAI() } label: { Label(L("ask.translation.stack.addAI"), systemImage: "plus") }
+                    .buttonStyle(ModelActionStyle())
+            }
+            .padding(.top, 14)
             ModelSurface {
-                VStack(alignment: .leading, spacing: 0) {
-                    ForEach(Array(AskTranslationProvider.allCases.enumerated()), id: \.element) { index, provider in
+                VStack(spacing: 0) {
+                    ForEach(Array(model.settings.services.enumerated()), id: \.element.id) { index, service in
                         if index > 0 { ModelRowDivider(leading: 18) }
-                        serviceRow(provider)
+                        serviceRow(service)
+                            .onDrop(of: [UTType.text], delegate: AskTranslationServiceDropDelegate(
+                                id: service.id, services: model.settings.services, move: model.move, dragging: $dragging
+                            ))
                     }
                 }
             }
-            Text(L("ask.translation.services.footnote"))
-                .font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary).padding(.horizontal, 4)
+            Text(L("ask.translation.stack.footnote"))
+                .font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
+                .fixedSize(horizontal: false, vertical: true).padding(.horizontal, 4)
         }
         .onAppear(perform: model.reloadConfigured)
         .sheet(isPresented: Binding(get: { model.editing != nil }, set: { if !$0 { model.cancelEdit() } })) {
-            if let provider = model.editing {
-                AskTranslationProviderSheet(model: model, provider: provider)
-            }
+            if let provider = model.editing { AskTranslationProviderSheet(model: model, provider: provider) }
         }
     }
 
-    private func toggleRow(icon: String, title: String, subtitle: String, isOn: Binding<Bool>) -> some View {
-        AgentSettingsRow(icon: icon, title: L(title), subtitle: L(subtitle), subtitleLineLimit: nil) {
-            Toggle("", isOn: isOn).labelsHidden().toggleStyle(.switch).accessibilityLabel(L(title))
+    private func title(_ service: AskTranslationService) -> String {
+        switch service.kind {
+        case .device: L("ask.translation.stack.deviceTitle")
+        case let .ai(reference): AskPluginRegistry.sourceLabel(AskPluginRegistry.translationModelName(model.store, reference: reference))
+        case let .provider(provider): provider.title
         }
     }
 
-    private func serviceRow(_ provider: AskTranslationProvider) -> some View {
-        let configured = model.configured.contains(provider)
-        return HStack(spacing: 10) {
-            Text(provider.title)
-                .font(.system(size: StudioTheme.Typography.settingTitle, weight: .semibold))
-                .foregroundStyle(StudioTheme.textPrimary)
+    private func status(_ service: AskTranslationService) -> String {
+        switch service.kind {
+        case .device: L("ask.translation.stack.local")
+        case .ai: L(service.id == model.settings.firstAI?.id ? "ask.translation.stack.dictionary" : "ask.translation.stack.brief")
+        case let .provider(provider): L(configured(provider) ? "ask.translation.service.configured" : "ask.translation.service.notConfigured")
+        }
+    }
+
+    private func configured(_ provider: AskTranslationProvider) -> Bool { model.configured.contains(provider) }
+
+    private func serviceRow(_ service: AskTranslationService) -> some View {
+        HStack(spacing: 10) {
+            Text("⋮⋮").font(.system(size: 13))
+                .foregroundStyle(StudioTheme.textTertiary).frame(width: 12, height: 28).contentShape(Rectangle())
+                .onDrag { dragging = service.id; return NSItemProvider(object: service.id as NSString) }
+                .accessibilityLabel(L("ask.translation.stack.reorder"))
+            Toggle("", isOn: Binding(get: { service.enabled }, set: { model.setEnabled(service.id, $0) }))
+                .labelsHidden().toggleStyle(.checkbox).accessibilityLabel(title(service))
+            AskTranslationServiceIcon(service: service)
+            Text(title(service)).font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(service.enabled ? StudioTheme.textPrimary : StudioTheme.textSecondary)
+                .lineLimit(1)
             HStack(spacing: 4) {
-                Circle().fill(configured ? StudioTheme.success : StudioTheme.textTertiary).frame(width: 6, height: 6)
-                Text(L(configured ? "ask.translation.service.configured" : "ask.translation.service.notConfigured"))
-                    .font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
+                Circle().fill(service.provider.map(configured) == false ? StudioTheme.textTertiary : StudioTheme.success)
+                    .frame(width: 5, height: 5)
+                Text(status(service)).font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
             }
-            if model.settings.engine == .service(provider) {
-                ModelUsageBadge(text: L("ask.translation.service.inUse"))
+            Spacer(minLength: 8)
+            switch service.kind {
+            case .device:
+                Button(L("ask.translation.stack.languages")) { NSWorkspace.shared.open(AskTranslationSettingsModel.languagePackagesURL) }
+                    .buttonStyle(ModelActionStyle())
+            case let .ai(reference):
+                SettingsMenuPicker(title: L("ask.translation.model"), options: AskTranslationSettingsModel.modelOptions(
+                    providers: library.selectableProviders(loggedIn: auth.isLoggedIn, hasImage: false, scenario: "rewrite"), selected: reference
+                ), selection: Binding(get: { reference }, set: { model.setModel($0, for: service.id) }))
+                    .frame(width: 165)
+                if service.id != model.settings.firstAI?.id {
+                    Button { model.removeAI(service.id) } label: { Image(systemName: "xmark") }
+                        .buttonStyle(.plain).foregroundStyle(StudioTheme.textTertiary)
+                        .accessibilityLabel(L("ask.translation.stack.removeAI"))
+                }
+            case let .provider(provider):
+                Button(L(configured(provider) ? "ask.translation.service.edit" : "ask.translation.service.configure")) { model.edit(provider) }
+                    .buttonStyle(ModelActionStyle())
             }
-            Spacer()
-            Button(L(configured ? "ask.translation.service.edit" : "ask.translation.service.configure")) {
-                model.edit(provider)
-            }
-            .buttonStyle(ModelActionStyle())
-            .accessibilityIdentifier("ask.translation.service." + provider.rawValue)
         }
-        .padding(.horizontal, 18).padding(.vertical, 12)
+        .padding(.horizontal, 14).frame(height: 50)
+        .accessibilityIdentifier("ask.translation.service." + service.id)
     }
+}
+
+private struct AskTranslationServiceDropDelegate: DropDelegate {
+    let id: String
+    var services: [AskTranslationService]
+    var move: (String, Int) -> Void
+    @Binding var dragging: String?
+
+    func dropEntered(info: DropInfo) {
+        guard let dragging, dragging != id,
+              let index = services.firstIndex(where: { $0.id == id }) else { return }
+        move(dragging, index)
+    }
+    func dropUpdated(info: DropInfo) -> DropProposal? { DropProposal(operation: .move) }
+    func performDrop(info: DropInfo) -> Bool { dragging = nil; return true }
 }
 
 /// The keys for one translation service, with a connection test.
 struct AskTranslationProviderSheet: View {
     @ObservedObject var model: AskTranslationSettingsModel
     let provider: AskTranslationProvider
+    var onSaved: () -> Void = {}
     @State private var showsSecret = false
 
     var body: some View {
@@ -159,10 +179,11 @@ struct AskTranslationProviderSheet: View {
                 Button(L("ask.workflow.cancel")) { model.cancelEdit() }
                     .buttonStyle(ModelActionStyle())
                     .keyboardShortcut(.cancelAction)
-                Button(L("ask.settings.keywords.save")) { model.save() }
+                Button(L("ask.settings.keywords.save")) { if model.save() { onSaved() } }
                     .buttonStyle(ModelActionStyle(primary: true))
                     .keyboardShortcut(.return, modifiers: .command)
                     .disabled(!model.canSave)
+                    .accessibilityIdentifier("ask.translation.provider.save")
             }
         }
         .padding(22)

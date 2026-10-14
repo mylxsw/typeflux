@@ -129,6 +129,7 @@ final class AskPluginSession: ObservableObject {
     }
 
     private func activate(_ found: AskKeyword) {
+        (plugin(for: found) as? AskTranslatePlugin)?.fanout?.reset()
         overrides = [:]
         chained = nil
         waitingForInput = false
@@ -164,6 +165,12 @@ final class AskPluginSession: ObservableObject {
     func update(text: String, selection: String?, language: AppLanguage, runWhenPlanned: Bool = false) {
         guard let keyword, let plugin else { return }
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if plugin.id == AskTranslatePlugin.id, let previousRequest = request,
+           previousRequest.origin == .argument, previousRequest.text != trimmed {
+            for key in ["retryService", "skipService", "regenerateService", AskTranslatePlugin.generationOption] {
+                overrides.removeValue(forKey: key)
+            }
+        }
         guard !waitingForInput || !trimmed.isEmpty || runWhenPlanned else { return }
         waitingForInput = false
         let selected = plugin.usesSelectionInput && selection?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
@@ -184,6 +191,7 @@ final class AskPluginSession: ObservableObject {
         }
         next?.chain = chain(for: trimmed)
         guard next != request else { return }
+        pendingRun = false
         request = next
         if let output { set(\.previous, output) }
         cancel()
@@ -202,7 +210,7 @@ final class AskPluginSession: ObservableObject {
                     try? await Task.sleep(for: plan.debounce ?? self.debounce)
                     guard !Task.isCancelled, current == self.generation else { return }
                 }
-                await self.execute(plan, request: next, generation: current, plugin: plugin)
+                await self.execute(plan, request: next, generation: current, plugin: plugin, submitted: runNow)
             } else {
                 self.set(\.phase, .ready(plan))
             }
@@ -213,10 +221,17 @@ final class AskPluginSession: ObservableObject {
     @discardableResult
     func run() -> Bool {
         guard let request, let plugin else { return false }
+        if plugin.id == AskTranslatePlugin.id, !AskTranslatePlugin.opensWordBook(request.options), !isPlanCurrent {
+            pendingRun = true
+            return true
+        }
         let plan: AskPluginPlan
         switch phase {
         case let .ready(ready): plan = ready
         case let .failed(failed, failure) where failure.retry: plan = failed
+        case let .done(preview, output) where output.translation?.submitted == false: plan = preview
+        case let .running(preview) where plugin.id == AskTranslatePlugin.id && preview.values["submitted"] != "true"
+            && preview.mode == .live && !AskTranslatePlugin.opensWordBook(request.options): plan = preview
         default: return false
         }
         // The shown plan is for older text: run as soon as the current one is made.
@@ -226,7 +241,7 @@ final class AskPluginSession: ObservableObject {
         let current = generation
         set(\.phase, .running(plan))
         task = Task { [weak self] in
-            await self?.execute(plan, request: request, generation: current, plugin: plugin)
+            await self?.execute(plan, request: request, generation: current, plugin: plugin, submitted: true)
         }
         return true
     }
@@ -234,10 +249,16 @@ final class AskPluginSession: ObservableObject {
     /// Runs again with options added: another target language (⇥), another engine (⌘R).
     /// A request waiting for Return keeps waiting; one that ran runs again.
     func rerun(with options: [String: String], selection: String?, text: String, language: AppLanguage) {
-        let ranBefore: Bool
+        var ranBefore: Bool
         switch phase {
         case .running, .done, .failed: ranBefore = true
         case .waiting, .ready: ranBefore = false
+        }
+        if plugin?.id == AskTranslatePlugin.id, !AskTranslatePlugin.opensWordBook(request?.options ?? [:]) {
+            ranBefore = (isPlanCurrent && plan?.values["submitted"] == "true") || options["regenerateService"] != nil
+            for key in ["retryService", "skipService", "regenerateService", AskTranslatePlugin.generationOption] {
+                overrides.removeValue(forKey: key)
+            }
         }
         overrides.merge(options) { $1 }
         request = nil
@@ -280,16 +301,26 @@ final class AskPluginSession: ObservableObject {
         return true
     }
 
-    private func execute(_ plan: AskPluginPlan, request: AskPluginRequest, generation current: Int,
-                         plugin: any AskLauncherPlugin, shown: AskPluginOutput? = nil) async {
+    private func execute(_ original: AskPluginPlan, request: AskPluginRequest, generation current: Int,
+                         plugin: any AskLauncherPlugin, shown: AskPluginOutput? = nil, submitted: Bool = false) async {
+        var plan = original
+        if plugin.id == AskTranslatePlugin.id, !AskTranslatePlugin.opensWordBook(request.options),
+           submitted || original.mode == .onSubmit {
+            plan.values["submitted"] = "true"
+            set(\.phase, .running(plan))
+        }
         do {
             if !Task.isCancelled, current == generation, request.origin == .argument, request.chain.isEmpty {
                 onRunInput?(request.keyword, request.text, plugin.title)
             }
-            var output = try await plugin.run(request, plan: plan) { [weak self] partial in
+            var output = try await plugin.run(request, plan: plan) { [weak self] incoming in
                 guard let self else { return }
-                if let sink = self.handoffSinks[current] { sink(.progress(partial)); return }
+                if let sink = self.handoffSinks[current] { sink(.progress(incoming)); return }
                 guard current == self.generation, self.isRunning else { return }
+                var partial = incoming
+                if let shown = self.partial ?? self.previous, incoming.translation != nil, shown.original == incoming.original {
+                    partial.selectedItem = Self.selection(keeping: shown, in: incoming)
+                }
                 self.set(\.partial, partial)
             }
             if let sink = handoffSinks.removeValue(forKey: current) {
@@ -301,6 +332,8 @@ final class AskPluginSession: ObservableObject {
                 // A timed rerun keeps the chosen row, and its actions already ran for the first result.
                 output.followUp = shown.followUp
                 output.selectedItem = Self.selection(keeping: shown, in: output)
+            } else if let partial, output.translation != nil {
+                output.selectedItem = Self.selection(keeping: partial, in: output)
             } else if !output.items.isEmpty, output.selected == nil {
                 output.selectedItem = output.selectableIndices.first ?? -1
             }
@@ -334,9 +367,12 @@ final class AskPluginSession: ObservableObject {
     /// Moves the chosen row of a list by `delta`. False at either end, or without a
     /// list, so the arrows can move on to "Ask AI".
     func moveSelection(_ delta: Int) -> Bool {
+        guard delta != 0 else { return false }
+        if let output = currentOutput, let translation = output.translation {
+            return selectTranslation(output.selectedItem + delta, count: translation.results.count)
+        }
         guard case let .done(plan, output) = phase, !output.items.isEmpty else { return false }
         let indices = output.selectableIndices
-        guard delta != 0 else { return false }
         let position = indices.firstIndex(of: output.selectedItem) ?? (delta > 0 ? -1 : indices.count)
         let nextPosition = position + delta
         guard indices.indices.contains(nextPosition) else { return false }
@@ -350,6 +386,7 @@ final class AskPluginSession: ObservableObject {
     /// Chooses a row (a click, or the arrows coming back from "Ask AI").
     @discardableResult
     func selectItem(_ index: Int) -> Bool {
+        if let output = currentOutput, let translation = output.translation { return selectTranslation(index, count: translation.results.count) }
         guard case let .done(plan, output) = phase, !output.items.isEmpty else { return false }
         let index = min(max(0, index), output.items.count - 1)
         guard output.items[index].valid else { return false }
@@ -359,8 +396,27 @@ final class AskPluginSession: ObservableObject {
         return true
     }
 
+    private func selectTranslation(_ index: Int, count: Int) -> Bool {
+        if isRunning, var partial, index >= 0, index < count {
+            partial.selectedItem = index
+            set(\.partial, partial)
+            return true
+        }
+        guard case let .done(plan, output) = phase, index >= 0, index < count else { return false }
+        var selected = output
+        selected.selectedItem = index
+        set(\.phase, .done(plan, selected))
+        return true
+    }
+
     /// The row that was chosen before, found by its id in the new list; else the same place.
     static func selection(keeping shown: AskPluginOutput, in output: AskPluginOutput) -> Int {
+        if let stack = output.translation, !stack.results.isEmpty {
+            let shownID = shown.translation.flatMap { stack in
+                stack.results.indices.contains(shown.selectedItem) ? stack.results[shown.selectedItem].id : nil
+            }
+            return stack.results.firstIndex(where: { $0.id == shownID }) ?? 0
+        }
         guard !output.items.isEmpty else { return 0 }
         if let id = shown.selected?.id,
            let index = output.items.firstIndex(where: { $0.valid && $0.id == id }) { return index }
@@ -409,12 +465,16 @@ extension AskPluginSession {
     /// The shown result was used (copied, read aloud, starred…) or stayed long enough:
     /// the word it looked up goes into the word book.
     func settleWordBook() {
-        guard let lookup = output?.wordBook else { return }
+        guard let lookup = currentOutput?.wordBook else { return }
         recordWordBook?(lookup)
     }
 
     /// Shows the word as starred or not without running again: the result, or its row in a list.
     func showStarred(_ starred: Bool, key: String) {
+        if let partial, partial.wordBook?.key == key {
+            set(\.partial, partial.starring(starred))
+            return
+        }
         guard case let .done(plan, output) = phase else { return }
         if output.wordBook?.key == key {
             set(\.phase, .done(plan, output.starring(starred)))

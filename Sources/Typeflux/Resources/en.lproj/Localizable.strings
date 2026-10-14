@@ -5140,3 +5140,29 @@
 "recording.pickWindow" = "Hover a window, then click to select it.";
 
 "recording.pickDisplay" = "Click the screen you want to record.";
+
+// Concurrent translation services
+"ask.translation.stack.addAI" = "Add AI translation";
+"ask.translation.stack.removeAI" = "Remove AI translation";
+"ask.translation.stack.local" = "On this Mac · installed languages";
+"ask.translation.stack.dictionary" = "Writes word cards";
+"ask.translation.stack.brief" = "Brief translations only";
+"ask.translation.stack.reorder" = "Drag to reorder";
+"ask.translation.stack.languages" = "Manage languages";
+"ask.translation.stack.private" = "On this Mac";
+"ask.translation.stack.card" = "Word card";
+"ask.translation.stack.detect" = "Auto detect";
+"ask.translation.stack.swap" = "Swap languages";
+"ask.translation.stack.loading" = "Translating…";
+"ask.translation.stack.network" = "Network connection timed out";
+"ask.translation.stack.failed" = "Translation failed. Try again.";
+"ask.translation.stack.unsupported" = "Unsupported: %@ → %@";
+"ask.translation.stack.skip" = "Use another service";
+"ask.translation.stack.empty" = "No translation services enabled";
+"ask.translation.stack.expand" = "Expand result";
+"ask.translation.stack.collapse" = "Collapse result";
+"ask.translation.stack.copyTranslation" = "Copy translation";
+"ask.translation.stack.copyBoth" = "Copy original + translation";
+"ask.translation.stack.hint" = "↩ Copy first · ⌘1–9 Copy result · ⌥↩ Insert · ⇥ Language";
+"ask.translation.stack.footnote" = "Enabled services translate concurrently in this order. Drag to reorder.\nThe first AI service writes word cards; other services give brief translations.\nOn-device translation and the word book stay on this Mac. AI and providers receive text only after Return or Regenerate. Keys stay in Keychain.";
+"ask.translation.stack.deviceTitle" = "On-device translation";

@@ -114,84 +114,124 @@ struct AskKeychainTranslationCredentials: AskTranslationCredentialStoring {
     }
 }
 
-/// The engine translations use when this Mac cannot translate the pair.
-enum AskTranslationEngineChoice: Hashable, Sendable {
-    case ai
-    case service(AskTranslationProvider)
-
-    init(rawValue: String) {
-        self = AskTranslationProvider(rawValue: rawValue).map(Self.service) ?? .ai
+/// One independently enabled translation service. IDs survive model changes and reordering.
+struct AskTranslationService: Codable, Equatable, Identifiable, Sendable {
+    enum Kind: Codable, Equatable, Sendable {
+        case device
+        // The service name is part of the v2 persistence contract.
+        // swiftlint:disable:next identifier_name
+        case ai(modelReference: String)
+        case provider(AskTranslationProvider)
     }
 
-    var rawValue: String {
-        switch self {
-        case .ai: "ai"
-        case let .service(provider): provider.rawValue
+    var id: String
+    var kind: Kind
+    var enabled: Bool
+
+    static let device = Self(id: "device", kind: .device, enabled: true)
+    static func ai(id: String = "ai.primary", modelReference: String = "", enabled: Bool = true) -> Self {
+        Self(id: id, kind: .ai(modelReference: modelReference), enabled: enabled)
+    }
+    static func provider(_ provider: AskTranslationProvider, enabled: Bool = false) -> Self {
+        Self(id: "provider." + provider.rawValue, kind: .provider(provider), enabled: enabled)
+    }
+    var isAI: Bool { if case .ai = kind { true } else { false } }
+    var modelReference: String? { if case let .ai(reference) = kind { reference } else { nil } }
+    var provider: AskTranslationProvider? { if case let .provider(provider) = kind { provider } else { nil } }
+    var symbol: String {
+        switch kind {
+        case .device: "laptopcomputer"
+        case .ai: "sparkle"
+        case .provider: "character.bubble"
         }
-    }
-
-    var provider: AskTranslationProvider? {
-        if case let .service(provider) = self { return provider }
-        return nil
     }
 }
 
-/// How the translation plugin picks its engine. The defaults are the plugin's
-/// behaviour before it could be configured: this Mac first, then the AI with
-/// the text-processing model.
+/// Ordered services for both the launcher and the future translation panel.
 struct AskTranslationSettings: Codable, Equatable, Sendable {
-    var engine: AskTranslationEngineChoice = .ai
-    /// A model in Settings → Models; empty follows the text-processing model.
-    var modelReference = ""
-    var prefersOnDevice = true
-    /// A service that fails (keys, quota, network, language) hands the text to the AI.
-    var fallsBackToAI = true
+    var services: [AskTranslationService]
 
-    init(engine: AskTranslationEngineChoice = .ai, modelReference: String = "", prefersOnDevice: Bool = true,
-         fallsBackToAI: Bool = true) {
-        self.engine = engine
-        self.modelReference = modelReference
-        self.prefersOnDevice = prefersOnDevice
-        self.fallsBackToAI = fallsBackToAI
+    init(services: [AskTranslationService]? = nil, modelReference: String = "") {
+        self.services = services ?? [.device, .ai(modelReference: modelReference)]
+            + AskTranslationProvider.allCases.map { .provider($0) }
     }
 
-    private enum CodingKeys: String, CodingKey { case engine, modelReference, prefersOnDevice, fallsBackToAI }
+    var firstAI: AskTranslationService? { services.first(where: \.isAI) }
+    /// The word book follows the first AI service, including when it is disabled in the launcher.
+    var modelReference: String { firstAI?.modelReference ?? "" }
 
-    init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        engine = AskTranslationEngineChoice(rawValue: try container.decodeIfPresent(String.self, forKey: .engine) ?? "ai")
-        modelReference = try container.decodeIfPresent(String.self, forKey: .modelReference) ?? ""
-        prefersOnDevice = try container.decodeIfPresent(Bool.self, forKey: .prefersOnDevice) ?? true
-        fallsBackToAI = try container.decodeIfPresent(Bool.self, forKey: .fallsBackToAI) ?? true
+    /// Preserve all AI models (even removed ones), repairing duplicate IDs and singleton services.
+    func normalized() -> Self {
+        var singleton = Set<String>()
+        var result: [AskTranslationService] = []
+        for service in services {
+            let key = service.provider.map { "provider." + $0.rawValue } ?? (service.kind == .device ? "device" : nil)
+            if let key, !singleton.insert(key).inserted { continue }
+            result.append(service)
+        }
+        if !result.contains(where: \.isAI) { result.append(.ai(enabled: false)) }
+        if !singleton.contains("device") { var device = AskTranslationService.device; device.enabled = false; result.append(device) }
+        for provider in AskTranslationProvider.allCases where !singleton.contains("provider." + provider.rawValue) {
+            result.append(.provider(provider))
+        }
+        var ids = Set<String>()
+        for index in result.indices {
+            if result[index].id.isEmpty || !ids.insert(result[index].id).inserted {
+                result[index].id = UUID().uuidString
+                ids.insert(result[index].id)
+            }
+        }
+        return Self(services: result)
     }
 
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encode(engine.rawValue, forKey: .engine)
-        try container.encode(modelReference, forKey: .modelReference)
-        try container.encode(prefersOnDevice, forKey: .prefersOnDevice)
-        try container.encode(fallsBackToAI, forKey: .fallsBackToAI)
+    /// v1 remains on disk for rollback. The removed fallback flag has no effect.
+    static func migrateV1(_ data: Data) -> Self? {
+        struct Legacy: Decodable {
+            var engine: String?
+            var modelReference: String?
+            var prefersOnDevice: Bool?
+        }
+        guard let old = try? JSONDecoder().decode(Legacy.self, from: data) else { return nil }
+        var services: [AskTranslationService] = []
+        if old.prefersOnDevice ?? true { services.append(.device) }
+        let provider = old.engine.flatMap(AskTranslationProvider.init(rawValue:))
+        if let provider { services.append(.provider(provider, enabled: true)) }
+        services.append(.ai(modelReference: old.modelReference ?? ""))
+        if old.prefersOnDevice == false { var device = AskTranslationService.device; device.enabled = false; services.append(device) }
+        services += AskTranslationProvider.allCases.filter { $0 != provider }.map { .provider($0) }
+        return Self(services: services)
     }
 }
 
 extension SettingsStore {
-    static let askTranslationSettingsKey = "ask.translation.settings.v1"
+    static let askTranslationSettingsKey = "ask.translation.settings.v2"
+    static let askTranslationLegacySettingsKey = "ask.translation.settings.v1"
 
     var askTranslationSettings: AskTranslationSettings {
         get {
-            defaults.data(forKey: Self.askTranslationSettingsKey)
-                .flatMap { try? JSONDecoder().decode(AskTranslationSettings.self, from: $0) } ?? AskTranslationSettings()
+            if let data = defaults.data(forKey: Self.askTranslationSettingsKey),
+               let settings = try? JSONDecoder().decode(AskTranslationSettings.self, from: data) {
+                let normalized = settings.normalized()
+                if normalized != settings, let data = try? JSONEncoder().encode(normalized) {
+                    defaults.set(data, forKey: Self.askTranslationSettingsKey)
+                }
+                return normalized
+            }
+            let migrated = defaults.data(forKey: Self.askTranslationLegacySettingsKey)
+                .flatMap(AskTranslationSettings.migrateV1) ?? AskTranslationSettings()
+            if let data = try? JSONEncoder().encode(migrated) { defaults.set(data, forKey: Self.askTranslationSettingsKey) }
+            return migrated
         }
         set {
-            if let data = try? JSONEncoder().encode(newValue) { defaults.set(data, forKey: Self.askTranslationSettingsKey) }
+            if let data = try? JSONEncoder().encode(newValue.normalized()) { defaults.set(data, forKey: Self.askTranslationSettingsKey) }
         }
     }
 
     /// The model AI translations and word cards use: the one chosen for translation,
     /// or the text-processing model. A chosen model that was removed stays unavailable
     /// rather than quietly switching to another one.
-    func translationLLMConfiguration() -> TextLLMConfiguration {
-        let reference = askTranslationSettings.modelReference
+    func translationLLMConfiguration(reference: String? = nil) -> TextLLMConfiguration {
+        let reference = reference ?? askTranslationSettings.modelReference
         guard !reference.isEmpty else { return textLLMConfiguration() }
         if let (provider, model) = ModelRegistry.read(defaults)?.resolve(reference) {
             let configuration = provider.connection(settings: self, model: model)

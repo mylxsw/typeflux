@@ -88,6 +88,9 @@ extension AskQuickResultsInteractionTests {
             #expect(model.plugins.output?.body == "[zh-Hans] hello", "English text goes into the second language")
             #expect(translation.ai.requests.isEmpty)
             try await launcher.press(Self.returnKey)
+            try await settle { model.plugins.output?.translation?.submitted == true }
+            #expect(translation.ai.requests.count == 1 && launcher.dismissed == 0)
+            try await launcher.press(Self.returnKey)
             #expect(pasteboard.string(forType: .string) == "[zh-Hans] hello")
             #expect(launcher.dismissed == 1)
             #expect(!model.plugins.isActive && model.launcherDraft.text.isEmpty)
@@ -128,7 +131,7 @@ extension AskQuickResultsInteractionTests {
             try await launcher.press(Self.tab, .shift)
             try await settle { model.plugins.output?.body == "[zh-Hans] hi" }
             try await launcher.press(15, .command)
-            try await settle { model.plugins.output?.sourceIsAI == true }
+            try await settle { model.plugins.output?.translation?.submitted == true && translation.ai.requests.count == 1 }
             #expect(translation.ai.requests.count == 1)
             try await launcher.press(2, .command)
             #expect(model.plugins.comparing)
@@ -189,6 +192,10 @@ extension AskQuickResultsInteractionTests {
                 try await launcher.press(Self.returnKey, .command)
             }
             if clickHeader {
+                try await settle { model.plugins.output?.translation?.submitted == true }
+                #expect(launcher.dismissed == 0)
+                #expect(try await launcher.sentCount() == 0)
+                try await launcher.press(Self.returnKey)
                 #expect(pasteboard.string(forType: .string) == "[zh-Hans] hello")
                 #expect(launcher.dismissed == 1)
                 #expect(await launcher.fixture.api.sends.isEmpty)

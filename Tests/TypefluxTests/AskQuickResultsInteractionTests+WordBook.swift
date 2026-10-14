@@ -48,6 +48,8 @@ extension AskQuickResultsInteractionTests {
             #expect(model.plugins.output?.starred == false)
 
             try await launcher.press(Self.returnKey)
+            for _ in 0..<400 where model.plugins.output?.translation?.submitted != true { try await Task.sleep(for: .milliseconds(5)) }
+            try await launcher.press(Self.returnKey)
             #expect(pasteboard.string(forType: .string) == "[zh-Hans] resilient")
             #expect(launcher.dismissed == 1)
             #expect(translation.store.entry(forKey: lookup.key)?.lookupCount == 1, "counted once in this session")

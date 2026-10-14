@@ -110,6 +110,9 @@ struct AskPluginAction: Equatable, Sendable {
         case emoji(EmojiAction)
         case systemCommand(AskSystemCommand)
         case openSettings
+        case configureTranslation(AskTranslationProvider)
+        case manageTranslationLanguages
+        case swapTranslation(String, source: String, target: String)
         case signIn
         case openConversation(String, account: String)
         case copy(String)
@@ -231,6 +234,7 @@ struct AskPluginOutput: Equatable, Sendable {
     var actions: [AskPluginAction]
     /// A dictionary entry shown in place of `body`, which then holds its one-line summary.
     var wordCard: AskWordCard?
+    var translation: AskTranslationStack?
     /// The run did what it was for (a workflow that opens something): the launcher closes.
     var dismisses = false
     /// What a workflow does after the run: copy, notify, open… (`AskWorkflowActionRunner`).
@@ -267,6 +271,19 @@ struct AskPluginOutput: Equatable, Sendable {
     /// What a key does. With a list it is the chosen row's (Return, ⌥↩, ⌘C), and
     /// the result's for the rest (⌘R, ⌘E).
     func action(for shortcut: AskPluginAction.Shortcut) -> AskPluginAction? {
+        if let translation {
+            if shortcut == .enter { return actions.first { $0.shortcut == .enter } }
+            let selected = translation.results.indices.contains(selectedItem) ? translation.results[selectedItem] : nil
+            if shortcut == .optionEnter, let selected, selected.card == nil || selected.card?.translatedText != nil,
+               let text = selected.completedText {
+                return actions.first { $0.shortcut == .optionEnter && $0.kind == .writeBack(text) }
+                    ?? AskTranslatePlugin.insertAction(text, replaces: translation.replacesSelection)
+            }
+            if shortcut == .commandC, let text = selected?.completedText { return AskTranslatePlugin.copyAction(text, shortcut: .commandC) }
+            if shortcut == .commandR, let selected, selected.service.isAI { return AskTranslatePlugin.regenerateAction(selected.id) }
+            if [.optionEnter, .commandC].contains(shortcut) { return nil }
+            return actions.first { $0.shortcut == shortcut }
+        }
         if !items.isEmpty {
             if let action = selected?.actions.first(where: { $0.shortcut == shortcut }) { return action }
             return [.enter, .optionEnter, .commandC].contains(shortcut) ? nil

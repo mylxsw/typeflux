@@ -78,6 +78,8 @@ final class DIContainer {
         )
     }()
 
+    lazy var translationEngines = AskTranslationEngineFactory(settings: settingsStore, textProcessing: llmService)
+
     lazy var askConversationWindowController: AskConversationWindowController? = {
         do { return try AskConversationWindowController(
             settings: settingsStore,
@@ -85,6 +87,7 @@ final class DIContainer {
             registry: mcpRegistry,
             modelLibrary: modelLibrary,
             llmService: llmService,
+            translationEngines: translationEngines,
             screenCapture: screenCapture,
             screenCapturePermission: screenCapturePermission,
             clipboardHistoryStore: clipboardHistoryStore,

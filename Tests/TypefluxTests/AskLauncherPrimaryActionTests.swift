@@ -99,6 +99,30 @@ struct AskLauncherPrimaryActionTests {
         #expect(!AskLauncherPrimaryAction.plugin(display, current: true, canAskAI: false).enabled)
     }
 
+    @Test func translationPrimaryActionSubmitsPreviewsAndCopiesCompletedPartialResults() {
+        let copy = AskTranslatePlugin.copyAction("translated", shortcut: .enter)
+        let stack = AskTranslationStack(results: [.init(service: .device, name: "Device", state: .done("translated"))],
+                                        source: "en", target: "fr", interface: .english, submitted: false, isLookup: false)
+        var output = AskPluginOutput(body: "translated", original: "input", meta: [], source: "Device",
+                                     actions: [copy], translation: stack)
+        let preview = AskPluginPlan(mode: .live, title: "Translate")
+        var display = AskPluginDisplay(title: "Translate", symbol: "character", phase: .done(preview, output),
+                                       translation: true)
+        for current in [false, true] {
+            let action = AskLauncherPrimaryAction.plugin(display, current: current, canAskAI: false)
+            #expect(action.enabled && action.title == L("ask.plugin.translate.title"))
+        }
+        display.phase = .running(preview)
+        #expect(AskLauncherPrimaryAction.plugin(display, current: true, canAskAI: false).enabled)
+        output.translation?.submitted = true
+        display.partial = output
+        display.phase = .running(.init(mode: .live, title: "Translate", values: ["submitted": "true"]))
+        let copyPartial = AskLauncherPrimaryAction.plugin(display, current: true, canAskAI: false)
+        #expect(copyPartial.enabled && copyPartial.title == copy.title)
+        display.partial?.actions = []
+        #expect(!AskLauncherPrimaryAction.plugin(display, current: true, canAskAI: false).enabled)
+    }
+
     @Test(arguments: [false, true])
     func primaryButtonAndReturnOpenTheSameSelectedFile(click: Bool) async throws {
         let host = AskQuickResultsInteractionTests.FileHost()
@@ -177,13 +201,19 @@ struct AskLauncherPrimaryActionTests {
             try await launcher.fixture.wait { model.plugins.output?.body == "[zh-Hans] hello" }
             try await Task.sleep(for: .milliseconds(60))
             #expect(try element("ask.launcher.openChat", in: launcher.window).value("accessibilityLabel") as? String
-                == L("ask.plugin.action.copy"))
+                == L("ask.plugin.translate.title"))
             #expect(find("ask.launcher.featureWindow", in: launcher.window) != nil)
             try await pressButton(popOut ? "ask.launcher.featureWindow" : "ask.launcher.openChat", in: launcher)
+            if !popOut {
+                try await launcher.fixture.wait { model.plugins.output?.translation?.submitted == true }
+                try await Task.sleep(for: .milliseconds(60))
+                try await pressButton(in: launcher)
+            }
             if popOut { #expect(windows.count == 1 && windows[0].body == "[zh-Hans] hello") } else {
                 #expect(windows.isEmpty)
             }
-            #expect(translation.device.requests.count == 1 && translation.ai.requests.isEmpty)
+            #expect(translation.device.requests.count == (popOut ? 1 : 2))
+            #expect(translation.ai.requests.count == (popOut ? 0 : 1))
             #expect(pasteboard.string(forType: .string) == (popOut ? nil : "[zh-Hans] hello"))
             #expect(await launcher.fixture.api.sends.isEmpty)
         }

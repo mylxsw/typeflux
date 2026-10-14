@@ -85,7 +85,7 @@ struct AskTranslatePluginTests {
         #expect(plan.meta.map(\.text) == [AskTranslationLanguages.name("en", in: .simplifiedChinese),
                                            AskTranslationLanguages.name("zh-Hans", in: .simplifiedChinese)])
         #expect(plan.meta.last?.emphasized == true)
-        #expect(plan.title == L("ask.plugin.translate.title"))
+        #expect(plan.title == L("ask.plugin.translate.wordCard"))
     }
 
     @Test func theSelectionAndTheAIWaitForReturn() async {
@@ -96,7 +96,7 @@ struct AskTranslatePluginTests {
         let (remote, _) = plugin(local: false)
         let typed = await remote.plan(request())
         #expect(typed.mode == .onSubmit, "nothing leaves the Mac while typing")
-        #expect(typed.values["engine"] == "ai")
+        #expect(typed.values["engine"] == "fanout")
         let asked = await translate.plan(request(options: ["engine": "ai"]))
         #expect(asked.mode == .onSubmit && asked.values["engine"] == "ai")
         let unknown = await plugin(source: nil).0.plan(request())
@@ -111,14 +111,14 @@ struct AskTranslatePluginTests {
         let local = try await translate.run(request(), plan: await translate.plan(request()))
         #expect(local.body == "[zh-Hans] Hello world")
         #expect(device.requests.count == 1 && ai.requests.isEmpty)
-        #expect(!local.sourceIsAI && local.source == L("ask.plugin.source.device") && local.note == nil)
+        #expect(!local.sourceIsAI && local.source == L("ask.translation.stack.deviceTitle") && local.note == nil)
         #expect(local.action(for: .enter)?.kind == .copy(local.body))
         #expect(local.action(for: .optionEnter)?.kind == .writeBack(local.body))
         #expect(local.action(for: .optionEnter)?.title == L("ask.plugin.action.insert"))
-        #expect(local.action(for: .commandR)?.kind == .rerun(["engine": "ai"]))
+        #expect(local.action(for: .commandR) != nil)
         #expect(local.action(for: .commandD)?.kind == .compare)
-        #expect(local.actions.contains { $0.kind == .speak(local.body, language: "zh-Hans") })
-        #expect(local.actions.contains { if case .askAI = $0.kind { true } else { false } })
+        #expect(local.translation?.results.first?.completedText == local.body)
+        #expect(local.translation?.submitted == false)
 
         let selected = request("Hello", origin: .selection)
         let replaced = try await translate.run(selected, plan: await translate.plan(selected))
@@ -126,9 +126,9 @@ struct AskTranslatePluginTests {
 
         let (remote, _) = plugin(local: false, ai: ai)
         let fallback = try await remote.run(request(), plan: await remote.plan(request()))
-        #expect(fallback.sourceIsAI && fallback.source == L("ask.plugin.source.ai", "gpt-test"))
-        #expect(fallback.note == L("ask.plugin.translate.aiFallback"))
-        #expect(fallback.action(for: .commandR) == nil, "already the AI")
+        #expect(fallback.translation?.results.first(where: { $0.service.isAI })?.service.isAI == true)
+        #expect(fallback.translation?.results.first(where: { $0.service.isAI })?.completedText == "[zh-Hans] Hello world")
+        #expect(fallback.note == nil && fallback.action(for: .commandR) != nil)
         let asked = request(options: ["engine": "ai"])
         let chosen = try await translate.run(asked, plan: await translate.plan(asked))
         #expect(chosen.sourceIsAI && chosen.note == nil, "the user asked for the AI")
@@ -136,9 +136,10 @@ struct AskTranslatePluginTests {
 
     @Test func withoutAModelTheAICannotStepIn() async {
         let (translate, _) = plugin(local: false, ai: nil)
-        await #expect(throws: AskPluginFailure(message: L("ask.plugin.translate.noModel"), retry: false)) {
-            try await translate.run(request(), plan: await translate.plan(request()))
-        }
+        let output = try? await translate.run(request(), plan: await translate.plan(request()))
+        if case let .failed(failure) = output?.translation?.results.first(where: { $0.service.isAI })?.state {
+            #expect(failure.message == L("ask.plugin.translate.noModel") && failure.recovery == .configure)
+        } else { Issue.record("Missing model row") }
     }
 
     @Test func tabStepsTheTarget() async {

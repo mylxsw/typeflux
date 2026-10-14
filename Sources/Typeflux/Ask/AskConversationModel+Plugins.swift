@@ -112,9 +112,9 @@ enum AskPluginRegistry {
 
     /// The display name of the model AI translations use: the one chosen for
     /// translation, or the text-processing model.
-    static func translationModelName(_ settings: SettingsStore?) -> String {
+    static func translationModelName(_ settings: SettingsStore?, reference: String? = nil) -> String {
         guard let settings else { return "AI" }
-        let reference = settings.askTranslationSettings.modelReference
+        let reference = reference ?? settings.askTranslationSettings.modelReference
         guard !reference.isEmpty else { return modelName(settings) }
         if reference == "cloud:default" { return LLMRemoteProvider.typefluxCloud.displayName }
         return ModelRegistry.read(settings.defaults)?.resolve(reference)?.1.name ?? L("ask.models.unavailable")
@@ -179,13 +179,11 @@ extension AskConversationModel {
                 dictionary: translationAI as? any AskWordLookingUp,
                 wordBook: wordBook?.store,
                 aiName: { [weak settings] in AskPluginRegistry.translationModelName(settings) },
-                engineSettings: { [weak settings] in settings?.askTranslationSettings ?? AskTranslationSettings() },
+                serviceSettings: { [weak settings] in settings?.askTranslationSettings ?? AskTranslationSettings() },
                 service: { AskServiceTranslationEngine(client: AskServiceTranslationEngine.client(for: $0)) },
-                signedOutFallback: { [weak settings] in
-                    AskTranslationProvider.configuredFallback(credentials: AskKeychainTranslationCredentials(),
-                                                              preferred: settings?.askTranslationSettings.engine
-                                                                  .provider)
-                },
+                fanout: translationFanout,
+                engines: translationEngineFactory.map { factory in { @Sendable service in factory.engine(for: service) } },
+                serviceName: translationEngineFactory.map { factory in { @Sendable service in factory.name(for: service) } },
                 secondLanguage: { [weak settings] language in
                     settings?.askTranslationSecondLanguage ?? AskTranslationLanguages.defaultSecond(for: language)
                 }
@@ -277,6 +275,17 @@ extension AskConversationModel {
             finishPluginResult()
             openConversationFromLauncher(id)
             return .close
+        case let .configureTranslation(provider):
+            translationSettingsModel.edit(provider)
+            return .stay
+        case let .swapTranslation(text, source, target):
+            launcherDraft.text = text
+            plugins.rerun(with: ["source": source, "target": target], selection: nil, text: text,
+                          language: AppLocalization.shared.language)
+            return .stay
+        case .manageTranslationLanguages:
+            openURL(AskTranslationSettingsModel.languagePackagesURL)
+            return .stay
         case .signIn:
             onSignIn()
             return .stay
@@ -336,8 +345,13 @@ extension AskConversationModel {
             return .close
         case let .runWith(text):
             launcherDraft.text = text
-            plugins.rerun(with: [:], selection: launcherDraft.sentSelection, text: text,
-                          language: AppLocalization.shared.language)
+            if plugins.plugin?.id == AskTranslatePlugin.id, plugins.output?.items.isEmpty == false {
+                plugins.update(text: text, selection: launcherDraft.sentSelection,
+                               language: AppLocalization.shared.language, runWhenPlanned: true)
+            } else {
+                plugins.rerun(with: [:], selection: launcherDraft.sentSelection, text: text,
+                              language: AppLocalization.shared.language)
+            }
             return .stay
         case let .enterKeyword(id):
             guard let keyword = plugins.availableKeywords.first(where: { $0.id == id && $0.enabled })
