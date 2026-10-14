@@ -92,7 +92,7 @@ struct KeywordHotkeyRunnerTests {
     }
 
     @Test func `shortcuts are an app settings tab`() {
-        #expect(AppSettingsPane.allCases == [.general, .hotkeys, .appearance, .advanced])
+        #expect(AppSettingsPane.allCases == [.general, .appearance, .hotkeys, .advanced])
         #expect(AppSettingsPane.hotkeys.symbol == "keyboard")
         #expect(AppSettingsPane.hotkeys.title == L("studio.section.hotkeys"))
     }
