@@ -81,6 +81,10 @@ final class AskTranslationSettingsModel: ObservableObject {
         store.askTranslationSecondLanguage = code
     }
 
+    func setPanelPreference<Value: Equatable>(_ value: Value, at keyPath: WritableKeyPath<AskTranslationSettings, Value>) {
+        update { $0[keyPath: keyPath] = value }
+    }
+
     private func update(_ change: (inout AskTranslationSettings) -> Void) {
         var next = settings
         change(&next)

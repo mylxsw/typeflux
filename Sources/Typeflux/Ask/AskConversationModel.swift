@@ -45,6 +45,7 @@ final class AskConversationModel: ObservableObject {
     var launcherExecutedInput: String?
     /// Files and folders the launcher can open; tests supply their own.
     var fileIndex: any AskFileSearching = AskFileIndex.shared
+    var semanticSearch: (any SemanticFileSearching)?
     /// Whether a found file is still there; tests decide instead.
     var fileExists: (String) -> Bool = { FileManager.default.fileExists(atPath: $0) }
     /// Opens a file in a given application; tests record it instead.
@@ -70,6 +71,8 @@ final class AskConversationModel: ObservableObject {
     /// AI translation with the text-processing model; the window controller supplies it.
     var translationAI: (any AskTranslationEngine)?
     var translationEngineFactory: AskTranslationEngineFactory?
+    var onTranslateScreenshot: ((ScreenshotFollowUpImage) -> Void)?
+    var onMoveTranslationToPanel: ((AskPluginSession, () -> Void) -> Bool)?
     lazy var translationFanout = translationEngineFactory?.makeSession() ?? AskTranslationFanout()
     lazy var translationSettingsModel = AskTranslationSettingsModel(store: modelLibrary.settings)
     /// AI prompts (`rw`, `sum`) with the text-processing model; the window controller supplies it.

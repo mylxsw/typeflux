@@ -531,7 +531,13 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             }
         }
         if localClickMonitor == nil {
-            localClickMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown]) { [weak self] event in
+            localClickMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .keyDown]) { [weak self] event in
+                if let self, event.type == .keyDown, event.window === self.launcher,
+                   event.modifierFlags.intersection([.command, .option, .control, .shift]) == .command,
+                   event.keyCode == 35, (self.launcher?.firstResponder as? NSTextView)?.hasMarkedText() != true,
+                   self.model.onMoveTranslationToPanel?(self.model.plugins, { self.dismissLauncher() }) == true {
+                    return nil
+                }
                 if let self, event.window != self.launcher, event.window == self.conversationWindow, !self.model.recordingIsActive() { self.dismissLauncher() }
                 return event
             }

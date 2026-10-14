@@ -66,7 +66,7 @@ struct AskClipboardSnapshot: Equatable {
 }
 
 /// The launcher's side of a workflow's actions. Writing back, opening and asking the
-/// AI close the launcher; notes after that appear in a small panel instead of the bar.
+/// AI close the launcher; notes after that use the voice-input notice UI.
 @MainActor
 final class AskWorkflowLauncherActionHost: AskWorkflowActionHost {
     private weak var model: AskConversationModel?
@@ -104,6 +104,7 @@ final class AskWorkflowLauncherActionHost: AskWorkflowActionHost {
             clipboard = AskClipboardSnapshot.take(AskQuickResults.pasteboard)
         }
         AskQuickResults.copy(text)
+        hud(L("workflow.result.copied"))
     }
 
     func writeBack(_ text: String) {
@@ -115,7 +116,7 @@ final class AskWorkflowLauncherActionHost: AskWorkflowActionHost {
         await model?.notifyUser(title, body) ?? false
     }
 
-    /// In the bar while the launcher is open (the summary carries it), else a small panel.
+    /// In the bar while open; after closing, the voice-input notice UI keeps it visible.
     func hud(_ text: String) {
         if closed {
             model?.passiveNotice(text)

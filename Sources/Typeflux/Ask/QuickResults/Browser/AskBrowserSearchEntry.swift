@@ -14,6 +14,7 @@ struct AskBrowserSearchEntry: Equatable, Sendable, Identifiable {
         var order: Int
         var entry: AskBrowserSearchEntry
     }
+
     enum Kind: String, Sendable { case tab, bookmark }
     var id: String
     var kind: Kind
@@ -47,18 +48,32 @@ struct AskBrowserSearchEntry: Equatable, Sendable, Identifiable {
 
     func item(settings: AskBrowserSearchSettings, icon: AskPluginItem.Icon? = nil) -> AskPluginItem {
         let action: AskPluginAction.Kind
-        if let target { action = .focusBrowserTab(target) } else if let link = Self.bookmarkURL(url) {
+        if let target {
+            action = .focusBrowserTab(target)
+        } else if let link = Self.bookmarkURL(url) {
             let browser = AskSearchBrowser(rawValue: settings.bookmarkBrowser) ?? browser
             action = settings.bookmarkBrowser == "default" ? .open(link) : .openIn(link, application: browser.bundleID)
         } else {
             return .init(id: id, title: title, subtitle: subtitle, valid: false)
         }
+        let rowIcon: AskPluginItem.Icon = if kind == .tab, let siteIcon = AskBrowserFaviconCache.faviconURL(for: url) {
+            .websiteIcon(siteIcon, fallback: Self.fileIconURL(icon))
+        } else {
+            icon ?? .symbol(kind == .tab ? "rectangle.on.rectangle" : "bookmark")
+        }
         return .init(id: id, title: title.isEmpty ? url : title, subtitle: subtitle,
-                     icon: icon ?? .symbol(kind == .tab ? "rectangle.on.rectangle" : "bookmark"), actions: [
+                     icon: rowIcon, actions: [
                          .init(kind: action, title: L(kind == .tab ? "ask.browser.focus" : "ask.quick.action.open"),
                                symbol: "arrow.up.forward.app", shortcut: .enter),
                          .init(kind: .copy(url), title: L("ask.browser.copy"), symbol: "link", shortcut: .commandC)
                      ])
+    }
+
+    private static func fileIconURL(_ icon: AskPluginItem.Icon?) -> URL? {
+        if case let .fileIcon(url) = icon {
+            return url
+        }
+        return nil
     }
 
     /// Bookmarklets must never execute as a side effect of search.

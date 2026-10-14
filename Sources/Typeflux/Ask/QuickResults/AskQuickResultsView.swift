@@ -34,6 +34,8 @@ struct AskQuickResultsView: View {
     static let askHeight: CGFloat = 42
     static let appHeight: CGFloat = 42
     static let fileHeight: CGFloat = 42
+    /// A content match adds its folder and page, then the matched passage.
+    static let contentFileHeight: CGFloat = 62
     static let moreHeight: CGFloat = 30
     static let noticeHeight: CGFloat = 30
     static let rowSpacing: CGFloat = 2
@@ -301,22 +303,22 @@ struct AskQuickResultsView: View {
             HStack(spacing: 12) {
                 AskFileIconView(url: file.url, thumbnail: thumbnails && file.kind == .file, modified: file.modified)
                     .frame(width: 28, height: 28)
-                Self.marked(file.name, file.highlights).font(.system(size: 13.5))
-                    .foregroundStyle(StudioTheme.textPrimary)
-                    .lineLimit(1).truncationMode(.middle)
-                    .layoutPriority(1)
-                Text(AskLauncherSearchSettings.abbreviate(file.folder)).font(.system(size: 11.5))
-                    .foregroundStyle(StudioTheme.textTertiary)
-                    .lineLimit(1).truncationMode(.middle)
-                Spacer(minLength: 8)
-                Text(highlighted ? L("ask.quick.file.actions") : Self.relative(file.modified))
-                    .font(.system(size: 11.5))
-                    .foregroundStyle(StudioTheme.textTertiary)
-                    .lineLimit(1)
-                    .fixedSize()
+                if let evidence = file.evidence {
+                    contentMatch(file, evidence: evidence, highlighted: highlighted)
+                } else {
+                    Self.marked(file.name, file.highlights).font(.system(size: 13.5))
+                        .foregroundStyle(StudioTheme.textPrimary)
+                        .lineLimit(1).truncationMode(.middle)
+                        .layoutPriority(1)
+                    Text(AskLauncherSearchSettings.abbreviate(file.folder)).font(.system(size: 11.5))
+                        .foregroundStyle(StudioTheme.textTertiary)
+                        .lineLimit(1).truncationMode(.middle)
+                    Spacer(minLength: 8)
+                    fileTrailing(file, highlighted: highlighted)
+                }
             }
             .padding(.horizontal, 10)
-            .frame(height: Self.fileHeight)
+            .frame(height: file.evidence == nil ? Self.fileHeight : Self.contentFileHeight)
             .background(highlighted ? AskTheme.hoverFill : Color.clear,
                         in: RoundedRectangle(cornerRadius: 14, style: .continuous))
             .overlay {

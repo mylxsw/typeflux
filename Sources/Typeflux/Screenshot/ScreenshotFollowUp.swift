@@ -6,7 +6,7 @@ import Foundation
 enum ScreenshotFollowUp: String, CaseIterable, Equatable, Sendable {
     /// Recognize its text and show it in the launcher.
     case recognizeText
-    /// Recognize its text, then translate it in the launcher.
+    /// Recognize its text on this Mac, then open the translation panel.
     case translate
     /// Put it in the launcher as an image attachment of a new question.
     case askAI

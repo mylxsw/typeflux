@@ -1,7 +1,7 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// Launcher → Translation: enabled services, order, AI models and provider credentials.
+/// Launcher → Translation: shortcuts, panel behavior and ordered services.
 struct AskTranslationSettingsView: View {
     @StateObject private var model: AskTranslationSettingsModel
     @ObservedObject private var library: AskModelLibrary
@@ -21,15 +21,7 @@ struct AskTranslationSettingsView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            ModelSurface {
-                AgentSettingsRow(icon: "globe", title: L("ask.settings.plugins.translate.second"),
-                                 subtitle: L("ask.settings.plugins.translate.secondSubtitle"), subtitleLineLimit: nil) {
-                    SettingsMenuPicker(title: L("ask.settings.plugins.translate.second"),
-                                       options: AskTranslationLanguages.common.map { (label: AskTranslationLanguages.name($0, in: interface), value: $0) },
-                                       selection: Binding(get: { model.secondLanguage }, set: model.setSecondLanguage))
-                        .frame(width: 180)
-                }
-            }
+            AskTranslationPanelSettingsView(model: model)
             HStack {
                 ModelSectionLabel(title: L("ask.translation.section.services"))
                 Spacer()

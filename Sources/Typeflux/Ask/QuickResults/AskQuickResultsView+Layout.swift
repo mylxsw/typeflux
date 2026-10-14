@@ -27,8 +27,9 @@ extension AskQuickResultsView {
         return index == 0 || section(index - 1) != section(index) ? section(index) : nil
     }
 
-    static func rowHeight(_ row: AskQuickResults.Row) -> CGFloat {
-        switch row {
+    static func rowHeight(_ row: AskQuickResults.Row, in results: AskQuickResults? = nil) -> CGFloat {
+        if results?.file(at: row)?.evidence != nil { return contentFileHeight }
+        return switch row {
         case .calculation: calculationHeight
         case .format: formatHeight
         case .feature, .browser, .app, .pane: appHeight
@@ -45,7 +46,7 @@ extension AskQuickResultsView {
 
     static func contentHeight(for results: AskQuickResults) -> CGFloat {
         let rows = results.listRows
-        let content = rows.reduce(CGFloat(0)) { $0 + rowHeight($1) }
+        let content = rows.reduce(CGFloat(0)) { $0 + rowHeight($1, in: results) }
         let sections = CGFloat(rows.indices.filter { sectionStart(at: $0, in: rows, results: results) != nil }.count)
         let notice = results.notice == nil ? 0 : noticeHeight + rowSpacing
         return 1 + listPadding * 2 + content + CGFloat(max(0, rows.count - 1)) * rowSpacing

@@ -1,0 +1,121 @@
+{
+  "new_module_lines": {
+    "count": 2519,
+    "covered": 2362,
+    "percent": 93.77
+  },
+  "helper_lines": {
+    "count": 63,
+    "covered": 61,
+    "percent": 96.83
+  },
+  "project_swift_lines_from_focused_runs": {
+    "count": 231849,
+    "covered": 9111,
+    "percent": 3.93
+  },
+  "files": [
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticEmbeddingWorker.swift",
+      "count": 176,
+      "covered": 156,
+      "percent": 88.63636363636364
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileContentWorker.swift",
+      "count": 67,
+      "covered": 65,
+      "percent": 97.01492537313433
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer.swift",
+      "count": 140,
+      "covered": 124,
+      "percent": 88.57142857142857
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFilePolicy.swift",
+      "count": 145,
+      "covered": 135,
+      "percent": 93.10344827586206
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+      "count": 566,
+      "covered": 532,
+      "percent": 93.99293286219081
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore.swift",
+      "count": 426,
+      "covered": 413,
+      "percent": 96.94835680751174
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticModelDownload.swift",
+      "count": 109,
+      "covered": 101,
+      "percent": 92.66055045871559
+    },
+    {
+      "file": "Sources/Typeflux/Settings/SemanticFileSearchSettingsView.swift",
+      "count": 160,
+      "covered": 158,
+      "percent": 98.75
+    },
+    {
+      "file": "Sources/Typeflux/Settings/SemanticFileSearchSheet.swift",
+      "count": 730,
+      "covered": 678,
+      "percent": 92.87671232876711
+    }
+  ],
+  "timings": {
+    "coverage-delivery.log": {
+      "runner_wall_seconds": 315.11,
+      "file_wall_seconds": 315.24
+    },
+    "coverage-last-retry.log": {
+      "runner_wall_seconds": 124.12,
+      "file_wall_seconds": 130.3
+    },
+    "coverage-ui-fixed.log": {
+      "runner_wall_seconds": 130.04,
+      "file_wall_seconds": 141.02
+    },
+    "coverage-service.log": {
+      "runner_wall_seconds": 221.44,
+      "file_wall_seconds": 221.54
+    },
+    "coverage-merged.log": {
+      "runner_wall_seconds": 326.98,
+      "file_wall_seconds": 329.99
+    }
+  },
+  "runtime": {
+    "passed": true,
+    "dimension": 768,
+    "queries": 2,
+    "scores": [
+      [
+        0.755892900219677,
+        0.5937284125732752,
+        0.6053830051262241
+      ],
+      [
+        0.718274270285837,
+        0.5811251457498703,
+        0.5656723177036497
+      ]
+    ],
+    "invalid_requests_rejected": 3,
+    "wall_seconds": 6.08
+  },
+  "integration": {
+    "main_commit": "5c79e4e0",
+    "swift_testing_passed": 129,
+    "xctest_passed": 25,
+    "total_passed": 154,
+    "failed": 0
+  }
+}

@@ -3,7 +3,7 @@ import Foundation
 /// File mode: `f` and a name lists every matching file and folder, best first,
 /// with nothing typed the most recently changed ones. ⇥ narrows to a type
 /// (folders, documents, pictures, PDFs…). Return opens, ⌘R shows in Finder,
-/// ⇧⌘C copies the path, ⌘Y previews. Only names are searched, never contents.
+/// ⇧⌘C copies the path, ⌘Y previews. Optional local content search publishes after names.
 struct AskFileSearchPlugin: AskLauncherPlugin {
     static let id = "files"
     static let typeOption = "type"
@@ -13,6 +13,7 @@ struct AskFileSearchPlugin: AskLauncherPlugin {
     /// The index to search; read when a run starts, so tests can swap it.
     var index: @MainActor @Sendable () -> (any AskFileSearching)?
     var settings: @Sendable () -> AskLauncherSearchSettings
+    var semantic: @MainActor @Sendable () -> (any SemanticFileSearching)? = { nil }
 
     var id: String { Self.id }
     var title: String { L("ask.plugin.files.title") }
@@ -60,7 +61,14 @@ struct AskFileSearchPlugin: AskLauncherPlugin {
             }
         } onCancel: { token.cancel() }
         try Task.checkCancellation()
-        var items = hits.map(Self.item)
+        var combined = hits
+        if let service = await semantic(), await service.isEnabled, SemanticFilePolicy.query(text, type: type) != nil {
+            if !hits.isEmpty { await progress(output(hits.map(Self.item), note: nil)) }
+            let content = await service.search(text, type: type, limit: settings.limit)
+            try Task.checkCancellation()
+            combined = SemanticFilePolicy.merge(hits, content, limit: settings.limit)
+        }
+        var items = combined.map(Self.item)
         if items.isEmpty {
             items.append(Self.notice(L(query.isEmpty ? "ask.plugin.files.none.recent" : "ask.plugin.files.none"),
                                      symbol: "doc.questionmark"))
@@ -109,8 +117,32 @@ struct AskFileSearchPlugin: AskLauncherPlugin {
                                            title: L("ask.quick.action.searchIn"), symbol: "magnifyingglass",
                                            shortcut: nil))
         }
-        return AskPluginItem(id: hit.path, title: hit.name, subtitle: place + " · " + AskQuickResultsView.relative(hit.modified),
-                             icon: .fileIcon(url), actions: actions)
+        // A content match names the page it came from and shows the passage on its own line.
+        let subtitle = hit.evidence.map { place + ($0.page.map { " · " + L("semantic.page", $0) } ?? "") }
+        return AskPluginItem(id: hit.path, title: hit.name,
+                             subtitle: subtitle ?? (place + " · " + AskQuickResultsView.relative(hit.modified)),
+                             icon: .fileIcon(url), actions: actions,
+                             badge: hit.evidence == nil ? nil : L("semantic.result"),
+                             excerpt: hit.evidence.map { Self.passage($0.text) })
+    }
+
+    /// A stored chunk on one line. Whitespace runs read as one space, except that a line
+    /// break between two CJK characters joins them, as CJK text has no spaces between words.
+    static func passage(_ text: String) -> String {
+        func wide(_ character: Character) -> Bool { (character.unicodeScalars.first?.value ?? 0) >= 0x2E80 }
+        var result = "", gap: Character?
+        for character in text {
+            if character.isWhitespace {
+                if gap == nil || character.isNewline { gap = character }
+                continue
+            }
+            if let space = gap, let last = result.last, !(space.isNewline && wide(last) && wide(character)) {
+                result.append(" ")
+            }
+            gap = nil
+            result.append(character)
+        }
+        return result
     }
 
     static func notice(_ text: String, symbol: String) -> AskPluginItem {

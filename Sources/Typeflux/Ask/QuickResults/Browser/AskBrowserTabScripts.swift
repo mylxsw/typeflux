@@ -4,14 +4,15 @@ import Foundation
 /// JXA uses the browser's scripting dictionary without evaluating anything in a web page.
 enum AskBrowserTabScripts {
     static func list(_ browser: AskSearchBrowser) -> String {
-        let title = browser == .safari ? "tab.name()" : "tab.title()"
-        let identifier = browser == .safari ? "String(index + 1)" : "String(tab.id())"
+        let titles = browser == .safari ? "group.tabs.name()" : "group.tabs.title()"
+        let identifiers = browser == .safari ? "[]" : "group.tabs.id()"
+        let identifier = browser == .safari ? "String(index + 1)" : "String(ids[index])"
         let groups = switch browser {
         case .dia:
-            "window.profiles().map(function(profile) { return {name:profile.name(), tabs:profile.tabs()}; }).concat([{name:'', tabs:window.tabs()}])"
+            "window.profiles().map(function(profile) { return {name:profile.name(), tabs:profile.tabs}; }).concat([{name:'', tabs:window.tabs}])"
         case .arc:
-            "window.spaces().map(function(space) { return {name:space.title(), tabs:space.tabs()}; }).concat([{name:'', tabs:window.tabs()}])"
-        default: "[{name:'', tabs:window.tabs()}]"
+            "window.spaces().map(function(space) { return {name:space.title(), tabs:space.tabs}; }).concat([{name:'', tabs:window.tabs}])"
+        default: "[{name:'', tabs:window.tabs}]"
         }
         return """
         (function() {
@@ -23,12 +24,14 @@ enum AskBrowserTabScripts {
               var windowID = String(window.id());
               var groups = \(groups);
               groups.forEach(function(group) {
-                group.tabs.forEach(function(tab, index) {
+                // Read each property of the entire collection in one Apple Event.
+                var urls = group.tabs.url(), titles = \(titles), ids = \(identifiers);
+                urls.forEach(function(url, index) {
                   var tabID = \(identifier), key = windowID + ':' + tabID;
                   if (seen[key]) return;
                   seen[key] = true;
                   result.push({windowID:windowID, tabID:tabID, index:index+1,
-                               title:\(title) || '', url:tab.url() || '', profile:group.name || ''});
+                               title:titles[index] || '', url:url || '', profile:group.name || ''});
                 });
               });
             });
@@ -95,4 +98,5 @@ enum AskBrowserTabScripts {
         return .init(entries: entries)
     }
 }
+
 // swiftlint:enable line_length

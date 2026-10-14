@@ -8,11 +8,15 @@ struct AskLauncherScreenshot {
     let source: AskScreenshotTextSource
 }
 
-/// What happens after a screenshot in the launcher: its text in a result card (`ocr`), that
-/// text translated (`fy`), or the image attached to a new question (`jtai`). The screenshot
+/// What happens after a screenshot: local text (`ocr`), the translation panel,
+/// or the image attached to a new question (`jtai`). The screenshot
 /// module calls this through `ScreenshotFollowUpHandling`, so it never depends on `Ask/`.
 extension AskConversationModel: ScreenshotFollowUpHandling {
     func handle(_ followUp: ScreenshotFollowUp, image: ScreenshotFollowUpImage) {
+        if followUp == .translate, let onTranslateScreenshot {
+            onTranslateScreenshot(image)
+            return
+        }
         switch followUp {
         case .recognizeText, .translate:
             let screenshot = makeLauncherScreenshot(image)
@@ -96,6 +100,10 @@ extension AskConversationModel: ScreenshotFollowUpHandling {
         case .recognizeText:
             showScreenshotText()
         case .translate:
+            if let onTranslateScreenshot {
+                onTranslateScreenshot(screenshot.image)
+                return .close
+            }
             translateWhenRead(screenshot)
         }
         return .stay

@@ -10,6 +10,7 @@ struct AskTranslationStackView: View {
     var starred = false
     var comparing = false
     var running = false
+    var viewportHeight: CGFloat?
     var onAction: (AskPluginAction) -> Void
     var onSelect: (String) -> Bool = { _ in true }
 
@@ -36,24 +37,31 @@ struct AskTranslationStackView: View {
                     .textSelection(.enabled).lineLimit(3).frame(maxWidth: .infinity, alignment: .leading)
                     .padding(10).background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 9))
             }
-            ScrollView(.vertical) {
-                VStack(spacing: 5) {
-                    if stack.results.isEmpty {
-                        Text(L("ask.translation.stack.empty")).font(.system(size: 12))
-                            .foregroundStyle(StudioTheme.textTertiary)
-                            .padding(14)
+            ScrollViewReader { proxy in
+                ScrollView(.vertical) {
+                    VStack(spacing: 5) {
+                        if stack.results.isEmpty {
+                            Text(L("ask.translation.stack.empty")).font(.system(size: 12))
+                                .foregroundStyle(StudioTheme.textTertiary)
+                                .padding(14)
+                        }
+                        ForEach(Array(stack.results.enumerated()), id: \.element.id) { index, result in
+                            AskTranslationResultView(result: result, stack: stack, original: original,
+                                                     number: index + 1, selected: selected == index,
+                                                     actions: actions, starred: starred, running: running,
+                                                     onAction: onAction,
+                                                     onSelect: { _ = onSelect(result.id) })
+                                .id(result.id)
+                        }
                     }
-                    ForEach(Array(stack.results.enumerated()), id: \.element.id) { index, result in
-                        AskTranslationResultView(result: result, stack: stack, original: original,
-                                                 number: index + 1, selected: selected == index,
-                                                 actions: actions, starred: starred, running: running,
-                                                 onAction: onAction,
-                                                 onSelect: { _ = onSelect(result.id) })
-                    }
+                }
+                .onChange(of: selected) { index in
+                    guard stack.results.indices.contains(index) else { return }
+                    proxy.scrollTo(stack.results[index].id, anchor: .center)
                 }
             }
         }
-        .frame(height: Self.height(stack, comparing: comparing))
+        .frame(height: viewportHeight ?? Self.height(stack, comparing: comparing))
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("ask.translation.stack")
     }

@@ -24,11 +24,18 @@ struct AskPluginItemRow: View {
         Button(action: onPick) {
             HStack(spacing: 11) {
                 AskPluginItemIcon(icon: item.icon, symbol: symbol, filled: filled)
-                VStack(alignment: .leading, spacing: 1) {
-                    Text(item.title).font(.system(size: 13.5, weight: .semibold)).lineLimit(1)
-                        .foregroundStyle(item.valid ? StudioTheme.textPrimary : StudioTheme.textSecondary)
+                VStack(alignment: .leading, spacing: item.excerpt == nil ? 1 : 2) {
+                    HStack(spacing: 6) {
+                        Text(item.title).font(.system(size: 13.5, weight: .semibold)).lineLimit(1)
+                            .foregroundStyle(item.valid ? StudioTheme.textPrimary : StudioTheme.textSecondary)
+                        if let badge = item.badge { ModelUsageBadge(text: badge) }
+                    }
                     if !item.subtitle.isEmpty {
                         Text(item.subtitle).font(.system(size: 11.5)).lineLimit(1)
+                            .foregroundStyle(item.excerpt == nil ? StudioTheme.textSecondary : StudioTheme.textTertiary)
+                    }
+                    if let excerpt = item.excerpt {
+                        Text(excerpt).font(.system(size: 12)).lineLimit(1).truncationMode(.tail)
                             .foregroundStyle(StudioTheme.textSecondary)
                     }
                 }
@@ -70,7 +77,9 @@ struct AskPluginItemIcon: View {
 
     var body: some View {
         Group {
-            if case let .fileIcon(url) = icon {
+            if case let .websiteIcon(url, fallback) = icon {
+                AskBrowserFaviconView(url: url, fallback: fallback, symbol: symbol, filled: filled)
+            } else if case let .fileIcon(url) = icon {
                 AskFileIconView(url: url, thumbnail: false).frame(width: 26, height: 26)
             } else if let image = icon.flatMap(Self.image) {
                 Image(nsImage: image).resizable().interpolation(.high).scaledToFit()
@@ -100,7 +109,7 @@ struct AskPluginItemIcon: View {
     static func image(_ icon: AskPluginItem.Icon) -> NSImage? {
         let key: String
         switch icon {
-        case .symbol: return nil
+        case .symbol, .websiteIcon: return nil
         case let .image(url): key = "image:" + url.path
         case let .fileIcon(url): key = "file:" + url.path
         case let .fileType(type): key = "type:" + type
@@ -109,7 +118,7 @@ struct AskPluginItemIcon: View {
             return cached
         }
         let image: NSImage? = switch icon {
-        case .symbol: nil
+        case .symbol, .websiteIcon: nil
         case let .image(url): NSImage(contentsOf: url)
         case let .fileIcon(url):
             FileManager.default.fileExists(atPath: url.path) ? NSWorkspace.shared.icon(forFile: url.path) : nil

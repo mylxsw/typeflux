@@ -17,6 +17,10 @@ final class AskQuickSearchSession: ObservableObject {
     private let imageCache: AskResultImageCache
     private let publicationGrace: Duration
     private var browserTask: Task<Void, Never>?
+    private var semanticTask: Task<Void, Never>?
+    private var semanticResults: [AskFileHit] = []
+    private var semanticReady = true
+    private var currentSemantic: ObjectIdentifier?
     private var browserResults: [AskBrowserSearchEntry] = []
     private var browserReady = true
     private var currentBrowserSettings = AskBrowserSearchSettings()
@@ -64,12 +68,16 @@ final class AskQuickSearchSession: ObservableObject {
         let previous = results
         let presentation = self.presentation
         let appID = sources.apps.map(ObjectIdentifier.init), fileID = sources.files.map(ObjectIdentifier.init)
+        let semanticID = sources.semantic.map(ObjectIdentifier.init)
         let sameQuery = currentText == text && currentSettings == sources.settings && currentEntries == sources.entries
             && currentBrowserSettings == sources.browserSettings && currentApp == appID && currentFile == fileID
             && currentCalculator == calculator && currentNumberConversions == numberConversions && currentChinese == chinese
+            && currentSemantic == semanticID
         cancel()
         currentApp = appID
         currentFile = fileID
+        currentSemantic = semanticID
+        semanticResults = []; semanticReady = true
         currentCalculator = calculator
         currentNumberConversions = numberConversions
         currentChinese = chinese
@@ -101,12 +109,13 @@ final class AskQuickSearchSession: ObservableObject {
             }
         }
         let query = AskSearchQuery(text)
-        guard query.isSearchable || query.hasFilters else {
+        let semanticEnabled = sources.files != nil && sources.semantic?.isEnabled == true && SemanticFilePolicy.query(text) != nil
+        guard query.isSearchable || query.hasFilters || semanticEnabled else {
             results = numberResults
             results?.keepChoice(from: previous)
             return
         }
-        let appIndex = query.hasFilters ? nil : sources.apps
+        let appIndex = query.hasFilters || !query.isSearchable ? nil : sources.apps
         let features = AskLauncherSearchEntry.search(sources.entries, text: text)
         let browserEnabled = !query.hasFilters && sources.browsers != nil &&
             ((sources.browserSettings.tabsEnabled && sources.browserSettings.directTabs) ||
@@ -132,6 +141,14 @@ final class AskQuickSearchSession: ObservableObject {
         immediate?.keepChoice(from: previous)
         results = (sameQuery ? previous : nil) ?? immediate ?? AskQuickResults(apps: [], lead: false)
         if browserEnabled { startBrowserQuery(text: text, sources: sources, ticket: ticket) }
+        if semanticEnabled, let semantic = sources.semantic {
+            semanticReady = false
+            semanticTask = Task { [weak self] in
+                let hits = await semantic.search(text, type: .all, limit: 24)
+                guard let self, generation == ticket, !Task.isCancelled else { return }
+                semanticResults = hits; semanticReady = true; publish()
+            }
+        }
         startQueries(text: text, query: query, appIndex: appIndex, fileIndex: sources.files,
                      fuzzy: sources.settings.fuzzy, ticket: ticket)
     }
@@ -234,9 +251,19 @@ final class AskQuickSearchSession: ObservableObject {
 
     private func commitResults() {
         guard appsReady || currentSettings.mode == .filesFirst else { return }
-        isSearching = !appsReady || fileResults == nil || !browserReady
+        isSearching = !appsReady || fileResults == nil || !browserReady || !semanticReady
+        let names = fileResults?.hits ?? retainedFiles
+        var combined = SemanticFilePolicy.merge(names, semanticResults, limit: 48)
+        // A late batch must not evict a row the user already chose.
+        if let current = results, current.chosen, let selected = current.file(at: current.highlightedRow),
+           let hit = combined.first(where: { $0.path == selected.path }),
+           !combined.filter({ $0.isFolder == selected.isFolder })
+               .prefix(selected.isFolder ? AskQuickResults.folderLimit : AskQuickResults.fileLimit)
+               .contains(where: { $0.path == selected.path }) {
+            combined.removeAll { $0.path == hit.path }; combined.insert(hit, at: 0)
+        }
         var next = AskQuickResults.addingNumberConversions(numberResults, to:
-            AskQuickResults.assemble(currentText, matches: appResults, hits: fileResults?.hits ?? retainedFiles,
+            AskQuickResults.assemble(currentText, matches: appResults, hits: combined,
                 status: fileResults?.status, settings: currentSettings, entries: currentEntries))
         next = AskQuickResults.addingBrowsers(browserResults, to: next)
         next?.keepChoice(from: results?.chosen == true ? results : previousChoice)
@@ -255,6 +282,7 @@ final class AskQuickSearchSession: ObservableObject {
 
     func cancel() {
         generation += 1
+        semanticTask?.cancel(); semanticTask = nil
         browserTask?.cancel()
         browserTask = nil
         delay?.cancel()
@@ -267,5 +295,5 @@ final class AskQuickSearchSession: ObservableObject {
         pendingResults = nil
     }
 
-    deinit { delay?.cancel(); browserTask?.cancel(); publication?.cancel() }
+    deinit { delay?.cancel(); browserTask?.cancel(); semanticTask?.cancel(); publication?.cancel() }
 }

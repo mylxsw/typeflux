@@ -119,8 +119,11 @@ final class AppCoordinator {
             textRecognizer: di.imageTextRecognizer
         )
         workflowController.enforceClipboardRetentionPolicy()
+        let semanticSearch = SemanticFileSearchService.shared
+        workflowController.onForegroundActivityChanged = { [weak semanticSearch] busy in semanticSearch?.setForegroundBusy(busy) }
         di.clipboardMonitor.start()
         if let ask = di.askConversationWindowController {
+            ask.model.semanticSearch = semanticSearch
             workflowController.onAskRequested = { [weak ask] in ask?.toggleLauncher() }
             // Build the launcher while the app is idle, so the first ⌥Space shows it at once.
             DispatchQueue.main.async { [weak ask] in ask?.prewarmLauncher() }
@@ -157,8 +160,23 @@ final class AppCoordinator {
                 screenshotCoordinator?.start(mode: mode, followUp: followUp)
             }
             model.screenshotTextRecognizer = TiledImageTextRecognizer(base: di.imageTextRecognizer)
-            // Text, translation and questions after a screenshot happen in the launcher.
-            screenshotCoordinator.followUpHandler = model
+            model.onTranslateScreenshot = { [weak self] image in self?.di.translationPanel.openScreenshot(image) }
+            model.onMoveTranslationToPanel = { [weak self, weak model] session, close in
+                guard let self, di.translationPanel.moveFromLauncher(session, closeLauncher: close) else { return false }
+                // A new launcher run must not reset the fanout now owned by the panel.
+                model?.translationFanout = di.translationEngines.makeSession()
+                if let model { model.plugins.replacePlugins(model.makeLauncherPlugins()) }
+                return true
+            }
+            // Text and questions stay in the launcher; translation opens its panel.
+            di.translationPanel.otherScreenshotHandler = model
+        }
+        screenshotCoordinator.followUpHandler = di.translationPanel
+        di.translationPanelModel.onSettings = { [weak self] in
+            guard let self else { return }
+            SettingsWindowController.shared.show(settingsStore: di.settingsStore, historyStore: di.historyStore,
+                initialSection: .launcher, launcherPane: .translation,
+                modelManager: di.ollamaModelManager, localModelManager: di.localModelManager)
         }
 
         di.hotkeyService.onShortcutRequested = { [weak self, weak screenshotCoordinator] target in
@@ -284,6 +302,12 @@ final class AppCoordinator {
             di.askConversationWindowController?.showConversation()
         case .action(.screenshotText):
             screenshotCoordinator?.start(mode: .region, followUp: .recognizeText)
+        case .action(.inputTranslation):
+            di.translationPanel.openInput()
+        case .action(.selectionTranslation):
+            di.translationPanel.openSelection()
+        case .action(.screenshotTranslation):
+            screenshotCoordinator?.start(mode: .region, followUp: .translate)
         case .action(.openNotes):
             AskNotesWindowController.shared.show()
         case .action(.openWordBook):
