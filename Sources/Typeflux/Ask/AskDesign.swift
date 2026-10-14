@@ -829,6 +829,7 @@ struct AskSendButton: View {
     /// opening the launcher's highlighted application.
     var prominent = true
     var animatesEmphasis = true
+    var symbol = "arrow.up"
     var action: () -> Void
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -836,7 +837,7 @@ struct AskSendButton: View {
 
     var body: some View {
         Button(action: action) {
-            Image(systemName: "arrow.up")
+            Image(systemName: symbol)
                 .font(.system(size: 16, weight: .semibold))
                 .frame(width: AskSendButton.size, height: AskSendButton.size)
                 .contentShape(Circle())

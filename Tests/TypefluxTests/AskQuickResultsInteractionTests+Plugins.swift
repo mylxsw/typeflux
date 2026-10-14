@@ -168,8 +168,8 @@ extension AskQuickResultsInteractionTests {
     }
 
     @Test(arguments: [false, true])
-    func headerAndCommandReturnTakeTheResultToTheAI(clickHeader: Bool) async throws {
-        try await withPasteboard { _ in
+    func headerConfirmsThePluginAndCommandReturnTakesTheResultToAI(clickHeader: Bool) async throws {
+        try await withPasteboard { pasteboard in
             let accessibility = AskWorkspaceTestAccessibility()
             defer { accessibility.restore() }
             let translation = Translation()
@@ -188,8 +188,14 @@ extension AskQuickResultsInteractionTests {
             } else {
                 try await launcher.press(Self.returnKey, .command)
             }
-            #expect(try await launcher.sentCount() == 1)
-            #expect(await launcher.fixture.api.sends.first?.text.contains("[zh-Hans] hello") == true)
+            if clickHeader {
+                #expect(pasteboard.string(forType: .string) == "[zh-Hans] hello")
+                #expect(launcher.dismissed == 1)
+                #expect(await launcher.fixture.api.sends.isEmpty)
+            } else {
+                #expect(try await launcher.sentCount() == 1)
+                #expect(await launcher.fixture.api.sends.first?.text.contains("[zh-Hans] hello") == true)
+            }
             #expect(!model.plugins.isActive)
         }
     }

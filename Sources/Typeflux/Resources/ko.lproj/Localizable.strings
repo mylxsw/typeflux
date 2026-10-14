@@ -3679,6 +3679,15 @@
 "ask.openChat.hint" = "채팅 창 열기 ⌘O";
 "ask.openChat.wait" = "녹음 또는 첨부 파일 로딩이 끝날 때까지 기다려 주세요.";
 "ask.openChat.placeholder" = "입력한 내용을 초안으로 엽니다";
+
+// Launcher primary action
+"ask.launcher.action.wait" = "최신 결과를 기다리는 중";
+"ask.launcher.action.input" = "계속하려면 내용을 입력하세요";
+"ask.launcher.action.unavailable" = "실행할 수 있는 작업이 없습니다";
+"ask.launcher.action.run" = "%@ 실행";
+"ask.launcher.action.confirm" = "확인";
+"ask.launcher.action.open" = "%@ 열기";
+"ask.launcher.action.copyResult" = "결과 복사";
 "ask.settings.keywords.kind.chat.hint" = "메시지를 보내지 않고 채팅 창 열기";
 "ask.drafts.saved" = "저장된 초안";
 "ask.drafts.untitled" = "제목 없는 초안";

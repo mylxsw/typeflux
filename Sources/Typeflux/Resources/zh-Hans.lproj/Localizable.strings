@@ -3689,6 +3689,15 @@
 "ask.openChat.hint" = "打开聊天窗口 ⌘O";
 "ask.openChat.wait" = "请先完成录音或等待附件加载完成";
 "ask.openChat.placeholder" = "可输入正文，打开后作为草稿";
+
+// Launcher primary action
+"ask.launcher.action.wait" = "正在等待当前结果";
+"ask.launcher.action.input" = "请输入内容后继续";
+"ask.launcher.action.unavailable" = "当前没有可执行的操作";
+"ask.launcher.action.run" = "运行%@";
+"ask.launcher.action.confirm" = "确认";
+"ask.launcher.action.open" = "打开%@";
+"ask.launcher.action.copyResult" = "复制结果";
 "ask.settings.keywords.kind.chat.hint" = "打开聊天窗口，不发送消息";
 "ask.drafts.saved" = "暂存草稿";
 "ask.drafts.untitled" = "未命名草稿";

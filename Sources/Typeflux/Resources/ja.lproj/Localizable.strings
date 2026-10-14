@@ -3679,6 +3679,15 @@
 "ask.openChat.hint" = "チャットウインドウを開く ⌘O";
 "ask.openChat.wait" = "録音や添付ファイルの読み込みが終わるまでお待ちください。";
 "ask.openChat.placeholder" = "入力した内容を下書きとして開きます";
+
+// Launcher primary action
+"ask.launcher.action.wait" = "最新の結果を待っています";
+"ask.launcher.action.input" = "内容を入力してください";
+"ask.launcher.action.unavailable" = "実行できる操作はありません";
+"ask.launcher.action.run" = "%@を実行";
+"ask.launcher.action.confirm" = "確認";
+"ask.launcher.action.open" = "%@を開く";
+"ask.launcher.action.copyResult" = "結果をコピー";
 "ask.settings.keywords.kind.chat.hint" = "メッセージを送信せずにチャットを開く";
 "ask.drafts.saved" = "保存した下書き";
 "ask.drafts.untitled" = "無題の下書き";

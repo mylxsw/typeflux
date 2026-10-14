@@ -3689,6 +3689,15 @@
 "ask.openChat.hint" = "Open chat window ⌘O";
 "ask.openChat.wait" = "Finish recording or loading attachments before opening chat.";
 "ask.openChat.placeholder" = "Optional message — opens as a draft";
+
+// Launcher primary action
+"ask.launcher.action.wait" = "Waiting for current results";
+"ask.launcher.action.input" = "Enter content to continue";
+"ask.launcher.action.unavailable" = "No action available";
+"ask.launcher.action.run" = "Run %@";
+"ask.launcher.action.confirm" = "Confirm";
+"ask.launcher.action.open" = "Open %@";
+"ask.launcher.action.copyResult" = "Copy result";
 "ask.settings.keywords.kind.chat.hint" = "Open the chat window without sending a message";
 "ask.drafts.saved" = "Saved drafts";
 "ask.drafts.untitled" = "Untitled draft";
