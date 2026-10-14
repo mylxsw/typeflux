@@ -383,7 +383,7 @@ struct AskComposer: View {
                 model.enterLauncherSearchEntry(entry)
                 performPluginAction(.init(kind: .openChat, title: entry.title, symbol: entry.symbol))
             } else {
-                model.enterLauncherSearchEntry(entry)
+                model.enterLauncherSearchEntry(entry, run: close)
                 pluginHighlight = 0
                 pluginReserve = 0
             }
@@ -622,9 +622,10 @@ struct AskComposer: View {
         return false
     }
 
-    /// ⇥ on a lone keyword, or a click on its row: enter keyword mode.
-    private func acceptPluginHint() -> Bool {
-        guard plugins.acceptHint() else { return false }
+    /// Tab enters keyword mode; Return can also run a workflow that needs no input.
+    private func acceptPluginHint(run: Bool = false) -> Bool {
+        let enteredWorkflow = run && plugins.hint.map { model.enterLauncherWorkflow($0, run: true) } == true
+        guard enteredWorkflow || plugins.acceptHint() else { return false }
         pluginHighlight = 0
         pluginReserve = 0
         draft.wrappedValue.text = ""
@@ -647,7 +648,7 @@ struct AskComposer: View {
             performPluginAction(.init(kind: AskScreenshotPlugin.captureKind(for: hint), title: "", symbol: ""))
             return
         }
-        if pluginDisplay?.hint != nil { _ = acceptPluginHint(); return }
+        if pluginDisplay?.hint != nil { _ = acceptPluginHint(run: true); return }
         switch plugins.phase {
         case let .ready(plan):
             // A plan that acts (open a search) must be for the text as typed; it lands within moments.
@@ -912,7 +913,7 @@ struct AskComposer: View {
     }
 
     /// Runs a home row: a keyword on the selection, a question, or a conversation.
-    /// A chip enters its keyword and waits, as typing it and a space would.
+    /// A workflow chip runs at once when its input is optional or unused.
     private func pick(_ item: AskLauncherHome.Item) {
         let keyword: AskKeyword, run: Bool
         switch item {
@@ -1735,18 +1736,11 @@ struct AskComposer: View {
                 .accessibilityLabel(L("ask.voice.cancel"))
                 .accessibilityIdentifier("ask.voice.cancel")
             }
-            if pluginDisplay?.calendar == true, !active {
-                CalendarHeaderAction(model: model.calendarLauncher) {
-                    performCalendarEffect(model.calendarLauncher.handle(.commandT,
-                                                                          inputEmpty: draft.wrappedValue.text.isEmpty))
-                }
-            } else {
-                AskVoiceButton(voice: voice, contextID: contextID, enabled: true, shortcut: voiceShortcut)
-                    .frame(width: AskMetrics.composerControlHeight, height: AskMetrics.composerControlHeight)
-                    .accessibilityLabel(AskVoiceButton.title(phase: voice.phase,
-                                                            contextMatches: voice.context == contextID))
-                    .accessibilityIdentifier("ask.composer.voice")
-            }
+            AskVoiceButton(voice: voice, contextID: contextID, enabled: true, shortcut: voiceShortcut)
+                .frame(width: AskMetrics.composerControlHeight, height: AskMetrics.composerControlHeight)
+                .accessibilityLabel(AskVoiceButton.title(phase: voice.phase,
+                                                        contextMatches: voice.context == contextID))
+                .accessibilityIdentifier("ask.composer.voice")
             if !active, pluginDisplay?.calendar != true {
                 AskLauncherOpenChatButton(mode: launcherChatAction, enabled: launcherChatActionEnabled,
                                          tint: privateTint ? AskTheme.privateTint : AskTheme.accent,
@@ -2082,13 +2076,19 @@ struct AskComposer: View {
     /// The footer holds switches; the launcher previews its screenshot on hover.
     private var contextChips: some View {
         HStack(spacing: AskContextChips.spacing) {
-            ForEach(contextItems.filter { $0.kind == .screenshot || $0.kind == .memory }) { item in
+            ForEach(launcher ? AskContextChips.launcherItems(contextItems)
+                : contextItems.filter { $0.kind == .screenshot || $0.kind == .memory }) { item in
                 if item.kind == .screenshot {
                     AskIconChip(item: screenshotSwitch(item), action: screenshotToggleAction,
                                 screenshot: screenshotHoverPreview)
                         .accessibilityIdentifier("ask.context.screenshot.toggle")
+                } else if item.kind == .selection {
+                    AskIconChip(item: item, action: selectionToggle, selection: draft.wrappedValue.selection)
+                        .disabled(model.capturing)
+                        .accessibilityIdentifier("ask.context.selection.toggle")
                 } else {
                     AskIconChip(item: item, action: memoryToggle)
+                        .accessibilityIdentifier("ask.context.memory.toggle")
                 }
             }
         }
@@ -2143,6 +2143,14 @@ struct AskComposer: View {
     /// Memory switches off and on without being discarded, for a new question
     /// and for a follow-up on the memory pinned to the conversation.
     private func memoryToggle() { model.toggleMemory(launcher: launcher) }
+
+    private func selectionToggle() {
+        if draft.wrappedValue.selectionOff == true {
+            model.restoreCapturedContent(.selection, launcher: launcher)
+        } else {
+            model.removeCapturedContent(.selection, launcher: launcher)
+        }
+    }
 
     private func remove(_ kind: AskContextItem.Kind) {
         switch kind {

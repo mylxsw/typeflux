@@ -56,6 +56,20 @@ final class CalendarLauncherModel: ObservableObject {
         dates.calendar.startOfDay(for: now())
     }
 
+    /// Whether the launcher already shows today as a plain date, so "Today" has nothing to do.
+    var isAtToday: Bool {
+        query == .date(today)
+    }
+
+    /// How far the selected day is from today, for the tag beside its date: "Today", "In 3 days".
+    var relativeDay: String {
+        let days = dates.days(from: today, to: selected)
+        if days == 0 {
+            return L("calendar.today")
+        }
+        return L(days > 0 ? "calendar.after" : "calendar.before", abs(days))
+    }
+
     var info: CalendarDayInfo {
         CalendarDayInfo(selected, dates: dates)
     }

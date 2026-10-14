@@ -11,6 +11,8 @@ struct ScreenRecordingPresentationTests {
         await fixture.setup()
         #expect(fixture.model.canStart)
         fixture.model.selectSourceKind(.window)
+        #expect(fixture.model.selectedID.isEmpty)
+        fixture.model.select(fixture.model.visibleSources[0])
         #expect(fixture.model.selectedID == "window")
         #expect(fixture.model.visibleSources.map(\.id) == ["window"])
         fixture.model.selectSourceKind(.region)

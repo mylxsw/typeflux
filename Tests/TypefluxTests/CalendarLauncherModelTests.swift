@@ -200,4 +200,25 @@ struct CalendarLauncherModelTests {
         try await settle(model)
         #expect(model.preferences.showsEvents && model.searchEvents.count == 1)
     }
+
+    @Test func `today button state and relative day tag follow the selection`() async throws {
+        let model = model()
+        defer { model.close() }
+        try await activate(model)
+        #expect(model.isAtToday)
+        #expect(model.relativeDay == L("calendar.today"))
+        _ = model.handle(.right, inputEmpty: true)
+        #expect(!model.isAtToday)
+        #expect(model.relativeDay == L("calendar.after", 1))
+        model.select(CalendarFixtures.date(2026, 10, 9))
+        #expect(model.relativeDay == L("calendar.before", 5))
+        #expect(model.handle(.commandT, inputEmpty: true) == .clearInput)
+        #expect(model.isAtToday)
+        model.update("2027")
+        #expect(!model.isAtToday)
+        model.update("评审")
+        #expect(!model.isAtToday)
+        _ = model.handle(.commandT, inputEmpty: false)
+        #expect(model.isAtToday && model.selected == model.today)
+    }
 }

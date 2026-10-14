@@ -57,16 +57,29 @@ struct CalendarLauncherView: View {
                 Text(headerZodiac).font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
             }
             Spacer()
-            HStack(spacing: 12) {
-                Button { navigate(-1) } label: { Image(systemName: "chevron.left") }
-                    .accessibilityLabel(L("calendar.previous"))
-                Button(L("calendar.today")) { onEffect(model.handle(.commandT, inputEmpty: true)) }
-                    .accessibilityIdentifier("calendar.today")
-                Button { navigate(1) } label: { Image(systemName: "chevron.right") }
-                    .accessibilityLabel(L("calendar.next"))
-            }.font(.system(size: 11.5)).buttonStyle(.plain)
-                .padding(.horizontal, 12).frame(height: 26)
-                .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 8))
+            HStack(spacing: 6) {
+                Button { onEffect(model.handle(.commandT, inputEmpty: true)) } label: {
+                    HStack(spacing: 4) {
+                        Text(L("calendar.today"))
+                        Text("⌘T").foregroundStyle(StudioTheme.textTertiary)
+                    }.padding(.horizontal, 10).frame(height: 26)
+                }
+                .disabled(model.isAtToday)
+                .help(L("calendar.today.help"))
+                .accessibilityIdentifier("calendar.today")
+                Button { navigate(-1) } label: {
+                    Image(systemName: "chevron.left").frame(width: 28, height: 26)
+                }
+                .help(L("calendar.previous"))
+                .accessibilityLabel(L("calendar.previous"))
+                .accessibilityIdentifier("calendar.previous")
+                Button { navigate(1) } label: {
+                    Image(systemName: "chevron.right").frame(width: 28, height: 26)
+                }
+                .help(L("calendar.next"))
+                .accessibilityLabel(L("calendar.next"))
+                .accessibilityIdentifier("calendar.next")
+            }.font(.system(size: 11.5)).buttonStyle(CalendarToolbarButtonStyle())
         }.frame(height: 30)
     }
 
@@ -137,7 +150,7 @@ struct CalendarLauncherView: View {
                 Text(String(dates.calendar.component(.day, from: day)))
                     .font(.system(size: 14, weight: today ? .bold : .medium))
                     .foregroundStyle(today ? .white : StudioTheme.textPrimary)
-                    .frame(width: 23, height: 23).background(today ? Color.red : .clear, in: Circle())
+                    .frame(width: 23, height: 23).background(today ? AskTheme.accent : .clear, in: Circle())
                 if model.preferences.showsLunar || holiday != nil {
                     Text(label).font(.system(size: 9.5)).lineLimit(1)
                         .foregroundStyle(info.festival != nil || info.solarTerm != nil ? Color.teal : StudioTheme
@@ -159,7 +172,7 @@ struct CalendarLauncherView: View {
                             .foregroundStyle(holiday.working ? Color.orange : Color.green).padding(3)
                     }
                 }
-                .overlay(RoundedRectangle(cornerRadius: 9).stroke(selected ? Color.blue : .clear, lineWidth: 1.5))
+                .overlay(RoundedRectangle(cornerRadius: 9).stroke(selected ? AskTheme.accent : .clear, lineWidth: 1.5))
                 .opacity(inMonth ? 1 : 0.35)
         }.buttonStyle(.plain)
             .onTapGesture(count: 2) { onEffect(.open(day, event: nil, join: false)) }

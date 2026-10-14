@@ -41,14 +41,7 @@ extension CalendarLauncherView {
                                         ) : nil
                                         Text(String(model.dates.calendar.component(.day, from: date)))
                                             .font(.system(size: 9.5))
-                                            .foregroundStyle(holiday.map { $0.working ? Color.orange : .green }
-                                                ??
-                                                (model.dates.calendar
-                                                    .isDate(date, inSameDayAs: model.today) ||
-                                                    (model.preferences.showsLunar
-                                                        && CalendarDayInfo(date, dates: model.dates).festival != nil) ?
-                                                    .red : StudioTheme
-                                                    .textSecondary))
+                                            .foregroundStyle(yearDayColor(date, holiday: holiday))
                                             .opacity(model.dates.calendar.isDate(
                                                 date,
                                                 equalTo: day,
@@ -114,5 +107,19 @@ extension CalendarLauncherView {
                 }
             }
         }.frame(height: 347, alignment: .top)
+    }
+
+    /// Holidays keep their rest / work colors; today uses the accent and festivals the grid's teal.
+    func yearDayColor(_ date: Date, holiday: HolidaySchedule.Status?) -> Color {
+        if let holiday {
+            return holiday.working ? .orange : .green
+        }
+        if model.dates.calendar.isDate(date, inSameDayAs: model.today) {
+            return AskTheme.accent
+        }
+        if model.preferences.showsLunar, CalendarDayInfo(date, dates: model.dates).festival != nil {
+            return .teal
+        }
+        return StudioTheme.textSecondary
     }
 }

@@ -1529,10 +1529,10 @@
 "ask.context.restore.selection" = "附带选中文字（%d 行）";
 "ask.context.undo" = "撤销";
 "ask.context.removed.source" = "已移除应用信息";
-"ask.context.removed.selection" = "已移除选中文字";
+"ask.context.removed.selection" = "已停用选中文本";
 "ask.context.removed.screenshot" = "已移除屏幕截图";
 "ask.context.restored.source" = "已重新附带应用信息";
-"ask.context.restored.selection" = "已重新附带选中文字";
+"ask.context.restored.selection" = "已启用选中文本";
 "ask.context.restored.screenshot" = "已重新附带屏幕截图";
 "ask.context.refresh.applied" = "已更新应用信息，旧选中文字已清除";
 "ask.context.undo.applied" = "已撤销";
@@ -3150,7 +3150,11 @@
 "studio.heading.launcher" = "启动器";
 "studio.subheading.launcher" = "启动器里的计算器、应用搜索、关键词和你自己的工作流。它们由启动器直接触发，不经过 Agent。";
 "studio.search.launcher" = "搜索启动器设置...";
-"launcher.pane.basics" = "内置功能";
+"launcher.pane.basics" = "通用";
+"launcher.inputSource.title" = "默认输入法";
+"launcher.inputSource.detail" = "打开启动器时切换到所选输入法；选择“无”则保持当前输入法。";
+"launcher.inputSource.none" = "无";
+"launcher.inputSource.unavailable" = "输入法不可用";
 "launcher.basics.subtitle" = "在启动器里直接得到结果，不发送给 AI。";
 "agent.group.capabilities" = "能力";
 "agent.group.personalization" = "个性化";
@@ -3425,7 +3429,7 @@
 "ask.workflow.gallery.codec.usage.2" = "Base64 编码";
 "ask.workflow.gallery.codec.usage.3" = "-d 解码，-e 编码";
 "ask.workflow.gallery.uuid.name" = "生成 UUID / 密码";
-"ask.workflow.gallery.uuid.summary" = "直接复制到剪切板，底栏提示「已复制」。";
+"ask.workflow.gallery.uuid.summary" = "直接复制到剪贴板，并显示成功提示。";
 "ask.workflow.gallery.uuid.demonstrates" = "「只做事」的工作流：不显示，复制 + 底栏提示";
 "ask.workflow.gallery.uuid.keyword.uuid" = "生成 UUID";
 "ask.workflow.gallery.uuid.keyword.pwd" = "生成密码";
@@ -4870,7 +4874,7 @@
 "recording.from" = "开始";
 "recording.to" = "结束";
 "recording.cancelExport" = "取消导出";
-"recording.saveAs" = "保存到其他位置…";
+"recording.saveAs" = "另存为…";
 "recording.export" = "导出";
 "recording.discardQuestion" = "丢弃这次录制？";
 "recording.discardHint" = "尚未保存的录制内容将被删除。";
@@ -4933,7 +4937,7 @@
 
 "recording.source.region" = "区域";
 
-"recording.source.display" = "屏幕";
+"recording.source.display" = "全屏";
 
 "recording.source.window" = "窗口";
 
@@ -4947,7 +4951,7 @@
 
 "recording.selectedDuration" = "已选时长：%.2f 秒";
 
-"recording.resetTrim" = "使用完整录制";
+"recording.resetTrim" = "恢复完整";
 
 "recording.gifExportHint" = "GIF 不包含声音。请选择最多 30 秒；导出为 10 帧/秒，最长边 960 像素。";
 
@@ -4964,6 +4968,7 @@
 "calendar.placeholder" = "日期、节日或日程：12-25、下周五、春节、评审…";
 "calendar.local" = "在本机";
 "calendar.today" = "今天";
+"calendar.today.help" = "回到今天，并清空输入";
 "calendar.previous" = "上个月或上一年";
 "calendar.next" = "下个月或下一年";
 "calendar.keys" = "←→↑↓ 选择日期 · ⌘←→ 切换月份 · ⇥ 日程 · ↩ 打开 · ⌘C 复制 · ⌥↩ 插入 · esc 返回";
@@ -5090,3 +5095,84 @@
 "semantic.deleteWarning" = "只移除本地内容搜索数据并关闭该功能，保留原始文件和文件名索引。";
 "semantic.result" = "内容匹配";
 "semantic.page" = "第 %d 页";
+
+// Launcher selected-text switch and preview.
+"ask.context.selection.enabled" = "已启用";
+"ask.context.selection.disabled" = "未启用";
+"ask.context.selection.characters" = "%d 个字符";
+"ask.context.selection.disableHint" = "点击图标可停用，文本会保留";
+"ask.context.selection.enableHint" = "点击图标可再次使用这段文本";
+
+"recording.copy" = "复制";
+
+"recording.countdownKeys" = "空格 立即开始 · esc 返回";
+
+"recording.countdownSummary" = "倒计时 %d 秒";
+
+"recording.estimated" = "约 %@";
+
+"recording.fileName" = "文件名";
+
+"recording.gifSilent" = "GIF 不含声音";
+
+"recording.gifSmall" = "小 · 640 px";
+
+"recording.gifStandard" = "标准 · 960 px";
+
+"recording.gifTooLong" = "GIF 最多保留 30 秒";
+
+"recording.keep30" = "保留开头 30 秒";
+
+"recording.keepRange" = "保留";
+
+"recording.later" = "稍后";
+
+"recording.liveCamera" = "实时";
+
+"recording.max30" = "最长 30 秒";
+
+"recording.microphoneLevel" = "麦克风输入电平";
+
+"recording.noAudioTrack" = "这段录制没有声音";
+
+"recording.noUpscale" = "只缩小，不放大。";
+
+"recording.openEditor" = "打开剪辑";
+
+"recording.options" = "选项";
+
+"recording.play" = "播放 / 暂停";
+
+"recording.recoveryHint" = "上次未保存的录制可以继续编辑。";
+
+"recording.remaining" = "还剩 %d 秒自动停止";
+
+"recording.restart" = "重来";
+
+"recording.restartQuestion" = "丢弃本次录制并重新开始？";
+
+"recording.selectionKeys" = "↩ 开始 · esc 取消 · ⇥ 切换来源";
+
+"recording.selectionSeconds" = "· 共 %.1f 秒";
+
+"recording.switchMP4" = "改存 MP4";
+
+"recording.systemAudioScope" = "不含 Typeflux 自己的声音；录窗口时包含该应用的全部声音。";
+
+"recording.timelineKeys" = "拖动两端剪掉头尾 · I / O 设起止点 · 空格 播放";
+
+"recording.unsaved" = "未保存的录制";
+
+"recording.microphonePermissionHint" = "在系统设置 → 隐私与安全性 → 麦克风中允许 Typeflux，回到这里即可继续。";
+
+"recording.cameraPermissionHint" = "在系统设置 → 隐私与安全性 → 摄像头中允许 Typeflux，回到这里即可继续。";
+
+"recording.skipMicrophone" = "这次不录麦克风";
+
+"recording.skipCamera" = "这次不录摄像头";
+
+"recording.optionsTitle" = "录制选项";
+
+"recording.pickWindow" = "悬停高亮窗口，点一下选中。";
+
+"recording.pickDisplay" = "点一下要录制的屏幕。";

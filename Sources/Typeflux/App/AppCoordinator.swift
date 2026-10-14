@@ -145,6 +145,7 @@ final class AppCoordinator {
 
         let screenshotCoordinator = di.screenshotCoordinator
         let screenRecordingCoordinator = di.screenRecordingCoordinator
+        di.screenRecordingWindow.offerRecovery(screenRecordingCoordinator)
         screenshotCoordinator.isRecordingActive = { [weak screenRecordingCoordinator] in
             screenRecordingCoordinator?.isBusy ?? false
         }

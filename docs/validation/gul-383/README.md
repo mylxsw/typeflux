@@ -6,7 +6,8 @@ The selected scope covered the seven new semantic-search suites, filename index/
 
 | Run | Result | Wall time including build/discovery |
 | --- | --- | --- |
-| Full focused scope | 128 Swift Testing cases and one XCTest; the native click test exposed a missing wait for the rendered Resume button | 315.24 s |
+| Final integration with `main` (`5c79e4e0`), including localization resources | 129 Swift Testing cases + 25 XCTest cases, **154/154 passed** | 329.99 s |
+| Original focused scope | 128 Swift Testing cases and one XCTest; the native click test exposed a missing wait for the rendered Resume button | 315.24 s |
 | Final affected callers and failed suite: `SemanticHybridSearchTests SemanticFileServiceTests AskQuickSearchSessionTests AskFileSearchPluginTests` | 44/44 passed, including the native click flow and the separate folder-selection limit regression | 130.30 s |
 | Packaged, signed helper with real weights | English/Chinese retrieval, finite normalized 768D vectors, three invalid requests rejected | 6.08 s |
 
@@ -18,11 +19,11 @@ The real model was downloaded through the production download delegate with inte
 
 LLVM line coverage is **93.77% for the new semantic modules and native settings views** (2,362/2,519 LLVM-counted lines), and **96.83% for the separate helper** (61/63). The corresponding new-module region coverage is 82.60%. Per-file details and timing measurements are in `validation.json`.
 
-The focused runs produce 3.98% line coverage over all instrumented project Swift sources. Full-project tests were outside this validation scope.
+The focused runs produce 3.93% line coverage over all instrumented project Swift sources. Full-project tests were outside this validation scope.
 
 In this environment, `swift test --enable-code-coverage list` did not generate instrumentation. A local command wrapper selected `--build-system native` and passed `-Xswiftc -profile-generate -Xswiftc -profile-coverage-mapping` through the existing runner. The repository's runner was unchanged. Both build/discovery and execution used these options.
 
-Coverage combines the complete focused pass with the final affected-suite pass. Before merging binary profiles, `llvm-profdata merge --no-function` removed earlier `TypefluxTests`, `SemanticFilePolicyO5merge` and `AskQuickSearchSessionC13commitResults` records. Those two changed production function families use only the final rerun's counters; unchanged production functions retain the complete scope's measurements. The merge completed without counter mismatches.
+Coverage initially combined the complete focused pass with the final affected-suite pass. Before merging binary profiles, `llvm-profdata merge --no-function` removed earlier `TypefluxTests`, `SemanticFilePolicyO5merge` and `AskQuickSearchSessionC13commitResults` records. Those two changed production function families use only the final rerun's counters; unchanged production functions retain the complete scope's measurements. The merge completed without counter mismatches. After integrating `main`, the full selected scope and localization resources ran again. The final report uses that passing integration profile, supplemented only with earlier `Semantic` production-function counters for the unchanged feature sources (including the explicitly verified live download). The feature sources are byte-for-byte identical to `aec306d9`; profile merging completed without counter mismatches.
 
 ## Self-review
 

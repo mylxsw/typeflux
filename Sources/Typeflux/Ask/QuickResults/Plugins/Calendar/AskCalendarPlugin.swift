@@ -17,7 +17,7 @@ struct AskCalendarPlugin: AskLauncherPlugin {
     }
 
     var keywordColor: Color {
-        .red
+        AskTheme.accent
     }
 
     var defaultKeywords: [AskKeyword] {

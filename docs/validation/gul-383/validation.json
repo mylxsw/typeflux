@@ -10,9 +10,9 @@
     "percent": 96.83
   },
   "project_swift_lines_from_focused_runs": {
-    "count": 228781,
-    "covered": 9098,
-    "percent": 3.98
+    "count": 231849,
+    "covered": 9111,
+    "percent": 3.93
   },
   "files": [
     {
@@ -86,6 +86,10 @@
     "coverage-service.log": {
       "runner_wall_seconds": 221.44,
       "file_wall_seconds": 221.54
+    },
+    "coverage-merged.log": {
+      "runner_wall_seconds": 326.98,
+      "file_wall_seconds": 329.99
     }
   },
   "runtime": {
@@ -106,5 +110,12 @@
     ],
     "invalid_requests_rejected": 3,
     "wall_seconds": 6.08
+  },
+  "integration": {
+    "main_commit": "5c79e4e0",
+    "swift_testing_passed": 129,
+    "xctest_passed": 25,
+    "total_passed": 154,
+    "failed": 0
   }
 }

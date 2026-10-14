@@ -124,6 +124,7 @@ struct LauncherSettingsPolishTests {
                                      name: "page-\(pane.rawValue)-\(Int(height))-\(light ? "light" : "dark")",
                                      light: light) { window in
                         if pane == .basics {
+                            #expect(SettingsBehaviorTestSupport.contains(L("launcher.inputSource.title"), in: window))
                             #expect(find("launcher.settings.numberConversions", in: window) != nil)
                             #expect(!SettingsBehaviorTestSupport.contains(
                                 L("ask.settings.quick.numberConversions.subtitle"), in: window

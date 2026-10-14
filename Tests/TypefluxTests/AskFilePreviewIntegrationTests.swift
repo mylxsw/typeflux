@@ -6,7 +6,7 @@ import Testing
 @Suite("Launcher preview integration", .exclusiveUIState)
 @MainActor
 struct AskFilePreviewIntegrationTests {
-    private struct PreviewInputSource: AskLauncherInputSourceSelecting { func selectEnglish() {} }
+    private struct PreviewInputSource: AskLauncherInputSourceSelecting { func select(sourceID: String) {} }
 
     @Test func `typing preserves the preview while results are pending and after the same file settles`() async throws {
         let oldStore = KeychainTokenStore.useInMemoryStoreForTesting

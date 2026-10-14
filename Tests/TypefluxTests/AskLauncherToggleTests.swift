@@ -36,24 +36,28 @@ struct AskLauncherToggleTests {
 
     @MainActor
     private final class InputSourceRecorder: AskLauncherInputSourceSelecting {
-        var onSelect: () -> Void = {}
-        func selectEnglish() { onSelect() }
+        var onSelect: (String) -> Void = { _ in }
+        func select(sourceID: String) {
+            onSelect(sourceID)
+        }
     }
 
-    @Test func selectsEnglishAfterFocusOnlyWhenOpeningLauncher() async throws {
+    @Test func `selects configured source after focus only when opening launcher`() throws {
         _ = NSApplication.shared
         let f = try AskTestFixture(authenticated: false)
         let suite = "ask-input-source-" + UUID().uuidString
         let defaults = try #require(UserDefaults(suiteName: suite))
+        let settings = SettingsStore(defaults: defaults)
+        settings.askLauncherInputSourceID = "test.input-method"
         let inputSource = InputSourceRecorder()
-        var selections = 0
-        inputSource.onSelect = {
-            selections += 1
-            let editor = self.panel()?.firstResponder as? NSTextView
+        let controller = AskConversationWindowController(settings: settings, model: f.model,
+                                                         launcherInputSource: inputSource)
+        var selections: [String] = []
+        inputSource.onSelect = { [weak controller] sourceID in
+            selections.append(sourceID)
+            let editor = controller?.launcherWindow?.firstResponder as? NSTextView
             #expect(editor?.isEditable == true)
         }
-        let controller = AskConversationWindowController(settings: SettingsStore(defaults: defaults), model: f.model,
-                                                        launcherInputSource: inputSource)
         defer {
             controller.dismissLauncher()
             f.model.resetSession()
@@ -61,24 +65,45 @@ struct AskLauncherToggleTests {
         }
 
         controller.prewarmLauncher()
-        #expect(selections == 0)
+        #expect(selections.isEmpty)
         controller.showLauncher()
-        #expect(selections == 1)
+        #expect(selections == ["test.input-method"])
 
         // Refocusing an open launcher must preserve a manual input-source change.
-        panel()?.makeFirstResponder(nil)
+        controller.launcherWindow?.makeFirstResponder(nil)
         controller.showLauncher()
-        #expect(selections == 1)
+        #expect(selections.count == 1)
         controller.dismissLauncher()
-        #expect(selections == 1)
+        #expect(selections.count == 1)
 
+        settings.askLauncherInputSourceID = "test.other-input-method"
         controller.showLauncher()
-        #expect(selections == 2)
+        #expect(selections == ["test.input-method", "test.other-input-method"])
         controller.showConversation()
-        #expect(selections == 2)
-        for window in NSApp.windows where window.identifier?.rawValue == "ai.gulu.app.typeflux.window.ask-conversations" {
-            window.orderOut(nil)
+        #expect(selections.count == 2)
+        controller.conversationWindow?.orderOut(nil)
+        controller.dismissLauncher()
+        settings.askLauncherInputSourceID = ""
+        controller.showLauncher()
+        #expect(selections.count == 2, "None preserves the current source on a fresh opening")
+    }
+
+    @Test func `unconfigured launcher does not switch input source`() throws {
+        _ = NSApplication.shared
+        let f = try AskTestFixture(authenticated: false)
+        let suite = "ask-input-source-default-" + UUID().uuidString
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        let inputSource = InputSourceRecorder()
+        inputSource.onSelect = { _ in Issue.record("An unconfigured launcher must preserve the current input source") }
+        let controller = AskConversationWindowController(settings: SettingsStore(defaults: defaults), model: f.model,
+                                                         launcherInputSource: inputSource)
+        defer {
+            controller.dismissLauncher()
+            f.model.resetSession()
+            defaults.removePersistentDomain(forName: suite)
         }
+        controller.showLauncher()
+        #expect(controller.launcherWindow?.firstResponder is NSTextView)
     }
 
     private func panel() -> NSWindow? {

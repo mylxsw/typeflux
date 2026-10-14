@@ -28,7 +28,7 @@ extension CalendarLauncherView {
 
     var permission: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Image(systemName: "calendar.badge.clock").font(.system(size: 22)).foregroundStyle(.red)
+            Image(systemName: "calendar.badge.clock").font(.system(size: 22)).foregroundStyle(AskTheme.accent)
             Text(L("calendar.permission.title")).font(.system(size: 13, weight: .semibold))
             Text(L("calendar.permission.body")).font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
             Button(L(model.access == .denied ? "calendar.permission.settings" : "calendar.permission.allow")) {
