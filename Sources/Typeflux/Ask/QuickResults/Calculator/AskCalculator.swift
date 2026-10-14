@@ -28,9 +28,11 @@ enum AskCalculator {
     }
 
     /// Shapes that parse as arithmetic but are something else: dates and phone numbers.
+    /// Date components must be in range so division such as `1000/60` stays arithmetic.
     private static let lookalikes: [NSRegularExpression] = [
-        #"^\d{4}[-/.]\d{1,2}([-/.]\d{1,2})?$"#, // 2024-10-05, 2024/10
-        #"^\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4}$"#, // 10/5/2024
+        #"^\d{4}[-/.](?:0?[1-9]|1[0-2])(?:[-/.](?:0?[1-9]|[12]\d|3[01]))?$"#, // 2024-10-05, 2024/10
+        #"^(?:0?[1-9]|1[0-2])[-/.](?:0?[1-9]|[12]\d|3[01])[-/.]\d{2,4}$"#, // 10/5/2024
+        #"^(?:0?[1-9]|[12]\d|3[01])[-/.](?:0?[1-9]|1[0-2])[-/.]\d{2,4}$"#, // 31/12/2024
         #"^\d{3,4}-\d{7,8}$"#, // 010-12345678
         #"^\d{3}-\d{4}-\d{4}$"# // 138-1234-5678
     ].map { try! NSRegularExpression(pattern: $0) }
