@@ -7,12 +7,21 @@ protocol AskBrowserSearching: Sendable {
         -> AskBrowserSearchSnapshot?
     func snapshot(kind: AskBrowserSearchEntry.Kind, browsers: [AskSearchBrowser], interactive: Bool) async
         -> AskBrowserSearchSnapshot
+    func refreshSnapshot(kind: AskBrowserSearchEntry.Kind, browsers: [AskSearchBrowser], interactive: Bool) async
+        -> AskBrowserSearchSnapshot
     func focus(_ target: AskBrowserTabTarget) async throws
 }
 
 extension AskBrowserSearching {
-    func cachedSnapshot(kind: AskBrowserSearchEntry.Kind, browsers: [AskSearchBrowser], interactive: Bool) async
-        -> AskBrowserSearchSnapshot? { nil }
+    func cachedSnapshot(kind _: AskBrowserSearchEntry.Kind, browsers _: [AskSearchBrowser], interactive _: Bool) async
+        -> AskBrowserSearchSnapshot? {
+        nil
+    }
+
+    func refreshSnapshot(kind: AskBrowserSearchEntry.Kind, browsers: [AskSearchBrowser], interactive: Bool) async
+        -> AskBrowserSearchSnapshot {
+        await snapshot(kind: kind, browsers: browsers, interactive: interactive)
+    }
 }
 
 actor AskBrowserSearchService: AskBrowserSearching {
@@ -26,8 +35,9 @@ actor AskBrowserSearchService: AskBrowserSearching {
     private let home: URL
     private let running: @MainActor @Sendable (AskSearchBrowser) -> Bool
     private let authorized: @Sendable (AskSearchBrowser) -> Bool
+    private let clock: @Sendable () -> Date
     private var cache: [String: Cache] = [:]
-    private var pending: [String: Task<AskBrowserSearchSnapshot, Never>] = [:]
+    private var pending: [String: (id: UUID, task: Task<AskBrowserSearchSnapshot, Never>)] = [:]
 
     init(runner: (any ProcessCommandRunning)? = nil,
          home: URL = FileManager.default.homeDirectoryForCurrentUser,
@@ -37,12 +47,14 @@ actor AskBrowserSearchService: AskBrowserSearching {
          authorized: @escaping @Sendable (AskSearchBrowser) -> Bool = { browser in
              let target = NSAppleEventDescriptor(bundleIdentifier: browser.bundleID)
              return AEDeterminePermissionToAutomateTarget(target.aeDesc, typeWildCard, typeWildCard, false) == noErr
-         }) {
+         },
+         clock: @escaping @Sendable () -> Date = { Date() }) {
         self.runner = runner ?? AskAutomationScriptRunner(timeout: 20, outputLimit: 1_000_000)
         backgroundRunner = runner ?? AskAutomationScriptRunner(timeout: 3, outputLimit: 1_000_000)
         self.home = home
         self.running = running
         self.authorized = authorized
+        self.clock = clock
     }
 
     private func cacheKey(kind: AskBrowserSearchEntry.Kind, browsers: [AskSearchBrowser], interactive: Bool) -> String {
@@ -54,31 +66,56 @@ actor AskBrowserSearchService: AskBrowserSearching {
         -> AskBrowserSearchSnapshot? {
         let key = cacheKey(kind: kind, browsers: browsers, interactive: interactive)
         let lifetime: TimeInterval = kind == .tab ? 2 : 5
-        guard let cached = cache[key], Date().timeIntervalSince(cached.date) < lifetime else { return nil }
+        guard let cached = cache[key], clock().timeIntervalSince(cached.date) < lifetime else { return nil }
         return cached.snapshot
     }
 
-    // Cache reuse, browser selection and independent source batches share this lifecycle.
-    // swiftlint:disable:next cyclomatic_complexity
     func snapshot(kind: AskBrowserSearchEntry.Kind, browsers: [AskSearchBrowser],
                   interactive: Bool) async -> AskBrowserSearchSnapshot {
-        let selected = AskSearchBrowser.allCases.filter { browsers.contains($0) }
         let key = cacheKey(kind: kind, browsers: browsers, interactive: interactive)
-        cache = cache.filter { Date().timeIntervalSince($0.value.date) < 5 }
-        if cache.count > 8 { cache.removeAll() }
-        if let cached = await cachedSnapshot(kind: kind, browsers: browsers, interactive: interactive) { return cached }
-        if let task = pending[key] { return await task.value }
+        if let cached = await cachedSnapshot(kind: kind, browsers: browsers, interactive: interactive) {
+            return cached
+        }
+        let recent = kind == .tab ? cache[key]
+            .flatMap { clock().timeIntervalSince($0.date) < 60 ? $0.snapshot : nil } : nil
+        let task = refreshTask(kind: kind, browsers: browsers, interactive: interactive)
+        // Keep cached tabs actionable while a bounded refresh updates the next rerun.
+        // Focus still checks the live tab identity and URL before switching.
+        if let recent {
+            return recent
+        }
+        return await task.value
+    }
+
+    func refreshSnapshot(kind: AskBrowserSearchEntry.Kind, browsers: [AskSearchBrowser], interactive: Bool) async
+        -> AskBrowserSearchSnapshot {
+        await refreshTask(kind: kind, browsers: browsers, interactive: interactive).value
+    }
+
+    /// Cache reuse, browser selection and independent source batches share this lifecycle.
+    private func refreshTask(kind: AskBrowserSearchEntry.Kind, browsers: [AskSearchBrowser], interactive: Bool)
+        -> Task<AskBrowserSearchSnapshot, Never> {
+        let key = cacheKey(kind: kind, browsers: browsers, interactive: interactive)
+        cache = cache.filter { clock().timeIntervalSince($0.value.date) < ($0.key.hasPrefix("tab:") ? 60 : 5) }
+        if let pending = pending[key] {
+            return pending.task
+        }
+        let id = UUID()
         let runner = interactive ? runner : backgroundRunner, home = home, running = running, authorized = authorized
-        let task = Task {
-            await withTaskGroup(of: (Int, AskBrowserSearchSnapshot).self) { group in
-                for (index, browser) in selected.enumerated() {
+        let task = Task { [weak self] in
+            let snapshot = await withTaskGroup(of: (Int, AskBrowserSearchSnapshot).self) { group in
+                for (index, browser) in AskSearchBrowser.allCases.filter({ browsers.contains($0) }).enumerated() {
                     group.addTask {
-                        if kind == .bookmark { return (index, AskBrowserBookmarks.read(browser, home: home)) }
+                        if kind == .bookmark {
+                            return (index, AskBrowserBookmarks.read(browser, home: home))
+                        }
                         guard await running(browser) else { return (index, .init()) }
                         // Background search may only use a grant the user already gave.
                         // The system permission check is synchronous and can wait on TCC;
                         // keep it off the main actor so it cannot freeze the launcher.
-                        if !interactive, !authorized(browser) { return (index, .init()) }
+                        if !interactive, !authorized(browser) {
+                            return (index, .init())
+                        }
                         do {
                             let result = try await runner.run(executablePath: "/usr/bin/osascript",
                                                               arguments: [
@@ -106,16 +143,31 @@ actor AskBrowserSearchService: AskBrowserSearching {
                 }
                 return snapshot
             }
+            await self?.store(snapshot, key: key, id: id)
+            return snapshot
         }
-        pending[key] = task
-        let snapshot = await task.value
+        pending[key] = (id, task)
+        return task
+    }
+
+    private func store(_ snapshot: AskBrowserSearchSnapshot, key: String, id: UUID) {
+        // A focus operation can invalidate a refresh while its browser is replying.
+        guard pending[key]?.id == id else { return }
         pending[key] = nil
-        cache[key] = Cache(date: Date(), snapshot: snapshot)
-        return snapshot
+        if cache.count >= 16 {
+            cache.removeAll()
+        }
+        cache[key] = Cache(date: clock(), snapshot: snapshot)
     }
 
     func focus(_ target: AskBrowserTabTarget) async throws {
-        defer { cache = cache.filter { !$0.key.hasPrefix("tab:") } }
+        defer {
+            cache = cache.filter { !$0.key.hasPrefix("tab:") }
+            for (key, refresh) in pending where key.hasPrefix("tab:") {
+                refresh.task.cancel()
+                pending[key] = nil
+            }
+        }
         let result = try await runner.run(executablePath: "/usr/bin/osascript",
                                           arguments: ["-l", "JavaScript", "-e", AskBrowserTabScripts.focus(target)],
                                           environment: nil, currentDirectoryURL: nil)

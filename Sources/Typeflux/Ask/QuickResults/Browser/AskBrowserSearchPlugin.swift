@@ -3,6 +3,7 @@ import AppKit
 struct AskBrowserSearchPlugin: AskLauncherPlugin {
     static let tabsID = "browserTabs"
     static let bookmarksID = "browserBookmarks"
+    static let refreshOption = "browserRefresh"
     static let keywords = [
         AskKeyword(keyword: "tab", pluginID: tabsID),
         AskKeyword(keyword: "bmk", pluginID: bookmarksID)
@@ -52,7 +53,7 @@ struct AskBrowserSearchPlugin: AskLauncherPlugin {
     }
 
     func plan(_: AskPluginRequest) async -> AskPluginPlan {
-        .init(mode: .live, title: title, debounce: .milliseconds(100))
+        .init(mode: .live, title: title, debounce: .milliseconds(16))
     }
 
     func run(_ request: AskPluginRequest, plan _: AskPluginPlan,
@@ -60,9 +61,12 @@ struct AskBrowserSearchPlugin: AskLauncherPlugin {
         let preferences = settings()
         let enabled = kind == .tab ? preferences.tabsEnabled : preferences.bookmarksEnabled
         guard enabled else { return output([notice("ask.browser.disabled")]) }
-        let snapshot = await service.snapshot(kind: kind,
-                                              browsers: kind == .tab ? preferences.tabBrowsers : preferences
-                                                  .bookmarkBrowsers, interactive: true)
+        let browsers = kind == .tab ? preferences.tabBrowsers : preferences.bookmarkBrowsers
+        let snapshot: AskBrowserSearchSnapshot = if request.options[Self.refreshOption] == "true" {
+            await service.refreshSnapshot(kind: kind, browsers: browsers, interactive: true)
+        } else {
+            await service.snapshot(kind: kind, browsers: browsers, interactive: true)
+        }
         try Task.checkCancellation()
         let query = request.origin == .selection ? "" : request.text
         let entries = AskBrowserSearchEntry.search(snapshot.entries, query: query, limit: 100)
@@ -72,10 +76,13 @@ struct AskBrowserSearchPlugin: AskLauncherPlugin {
                 return entry.item(settings: preferences, icon: app.map(AskPluginItem.Icon.fileIcon))
             }
         }
-        if items.isEmpty { items.append(notice(query.isEmpty ? "ask.browser.empty" : "ask.browser.noMatch")) }
+        if items.isEmpty {
+            items.append(notice(query.isEmpty ? "ask.browser.empty" : "ask.browser.noMatch"))
+        }
         items += snapshot.issues.map(\.item)
         var result = output(items)
         result.rerunAfter = kind == .tab ? 3 : 6
+        result.variables[Self.refreshOption] = ""
         return result
     }
 
@@ -86,7 +93,7 @@ struct AskBrowserSearchPlugin: AskLauncherPlugin {
     private func output(_ items: [AskPluginItem]) -> AskPluginOutput {
         .init(body: items.map(\.title).joined(separator: "\n"), original: "", meta: [], source: title,
               actions: [.init(
-                  kind: .rerun([:]),
+                  kind: .rerun([Self.refreshOption: "true"]),
                   title: L("ask.browser.refresh"),
                   symbol: "arrow.clockwise",
                   shortcut: .commandR
