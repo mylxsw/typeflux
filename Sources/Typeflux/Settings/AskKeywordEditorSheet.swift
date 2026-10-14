@@ -96,6 +96,7 @@ struct AskKeywordEditorSheet: View {
         case .clip: "clip"
         case .kill: "kill"
         case .emoji: "emoji"
+        case .calendar: "cal"
         case .system: ""
         case .workflow: ""
         }
@@ -210,6 +211,8 @@ struct AskKeywordEditorSheet: View {
             hint(L("ask.settings.keywords.kind.kill.hint"))
         case .emoji:
             hint(L("emoji.summary"))
+        case .calendar:
+            CalendarKeywordSettingsView(options: $draft.calendarOptions)
         case .system:
             field(L("ask.system.title")) {
                 Picker("", selection: $draft.systemCommand) {

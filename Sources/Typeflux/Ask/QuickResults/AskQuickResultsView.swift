@@ -23,6 +23,7 @@ struct AskQuickResultsView: View {
     var onHighlight: (Int) -> Void
     var onAction: (AskQuickAction) -> Void = { _ in }
     var onShowFileActions: (AskFileHit) -> Void = { _ in }
+    var calendarProvider: (any CalendarEventProviding)?
 
     @State private var pointer = AskSearchPointer(position: NSEvent.mouseLocation)
     @State private var copied: Int?
@@ -167,15 +168,20 @@ struct AskQuickResultsView: View {
     private func featureRow(_ entry: AskLauncherSearchEntry, row: AskQuickResults.Row, highlighted: Bool) -> some View {
         Button { onRun(row, true) } label: {
             HStack(spacing: 12) {
-                tile(entry.symbol, tint: AskTheme.accent)
+                tile(entry.symbol, tint: entry.keyword.pluginID == AskCalendarPlugin.id ? .red : AskTheme.accent)
                 Text(entry.title).font(.system(size: 13.5)).foregroundStyle(StudioTheme.textPrimary).lineLimit(1)
                 if !entry.keyword.keyword.isEmpty {
                     Text(entry.keyword.keyword).font(.system(size: 11.5, design: .monospaced))
                         .foregroundStyle(StudioTheme.textTertiary)
                 }
                 Spacer(minLength: 8)
-                Text(highlighted ? L(entry.command == nil ? "ask.plugin.prefix.enter" : "ask.system.run") + " ↩" : entry.detail)
-                    .font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
+                if entry.keyword.pluginID == AskCalendarPlugin.id {
+                    CalendarHintSummary(options: entry.keyword.options, provider: calendarProvider)
+                } else {
+                    Text(highlighted
+                        ? L(entry.command == nil ? "ask.plugin.prefix.enter" : "ask.system.run") + " ↩" : entry.detail)
+                        .font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
+                }
             }
             .padding(.horizontal, 10).frame(height: Self.appHeight)
             .background(highlighted ? AskTheme.hoverFill : Color.clear,

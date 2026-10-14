@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+    <key>NSCalendarsFullAccessUsageDescription</key>
+    <string>Typeflux reads your calendar events locally to show your schedule and meeting links. Events are not uploaded.</string>
+    <key>NSCalendarsUsageDescription</key>
+    <string>Typeflux reads your calendar events locally to show your schedule and meeting links. Events are not uploaded.</string>
     <key>NSAppleEventsUsageDescription</key>
     <string>Typeflux uses browser automation to search open tabs, switch to a selected tab, insert text, and perform browser actions that you approve in Ask conversations.</string>
     <key>NSScreenCaptureUsageDescription</key>

@@ -102,6 +102,7 @@ final class AskConversationModel: ObservableObject {
     /// The system monitor in the launcher (`top`); see `AskConversationModel+SystemMonitor`.
     lazy var emojiUsage = EmojiUsageStore(defaults: modelLibrary.settings.defaults)
     let systemMonitor = SystemMonitorLauncherModel()
+    lazy var calendarLauncher = CalendarLauncherModel()
     /// The monitor's own window (⌘O from the launcher); tests use their own.
     lazy var systemMonitorWindow: SystemMonitorWindowController = .shared
     /// The launcher's keyword plugins (`fy` → translate); see `AskConversationModel+Plugins`.
