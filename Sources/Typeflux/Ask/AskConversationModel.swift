@@ -327,6 +327,8 @@ final class AskConversationModel: ObservableObject {
 
     var onShowConversation: (() -> Void)?
     var onOpenSettings: ((StudioSection) -> Void)?
+    /// Opens the usage guide, searching for the text when it is not empty; set by the app.
+    var onOpenHelp: ((String) -> Void)?
     /// Starts a screenshot, going straight to a follow-up when there is one; set by the app,
     /// which owns the screenshot coordinator.
     var onStartScreenshot: ((ScreenshotMode, ScreenshotFollowUp?) -> Void)?

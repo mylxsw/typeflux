@@ -42,6 +42,11 @@ final class SettingsWindowController: NSObject {
         }
     }
 
+    /// Switches the Settings section to one of its panes; the window must be shown.
+    func requestSettingsPane(_ pane: AppSettingsPane) {
+        viewModel?.settingsPaneRequest = pane
+    }
+
     func show(
         settingsStore: SettingsStore,
         historyStore: HistoryStore,

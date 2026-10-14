@@ -164,7 +164,7 @@ extension AskConversationModel {
             plugins.update(text: launcherDraft.text, selection: launcherDraft.sentSelection,
                            language: AppLocalization.shared.language)
         case .help:
-            break // The palette shows every command.
+            onOpenHelp?(argument?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "")
         case .settings:
             onOpenSettings?(.agent)
         }

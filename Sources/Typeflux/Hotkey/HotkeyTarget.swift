@@ -34,6 +34,7 @@ enum AppHotkeyAction: String, CaseIterable, Codable, Sendable {
     case openNotes
     case openWordBook
     case openStudio
+    case openHelp
 
     var title: String {
         L("hotkeys.action.\(rawValue).title")
