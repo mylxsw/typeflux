@@ -33,7 +33,7 @@ The installed Swift build backend did not emit profiles through the runner's cov
 
 The integrated scope ran 191 Swift Testing methods across 32 suites plus four XCTest feature tests (369.275 seconds including rebuild/discovery). One existing workflow Tab/Return fixture timed out in the combined native run; it passed unchanged in an isolated method retry (78.667 seconds). All other selected methods passed in the combined run. Profiles from the integrated scope and the targeted retry were merged with `llvm-profdata merge`; no passing-results cache was used.
 
-Changed-code coverage: **94.19% (1134/1204 executable changed lines)**. The final footer-only capture rerun kept the translation shortcuts visible after the new main header added auxiliary hints: one screenshot method passed (63.929 seconds)..
+Changed-code coverage: **94.19% (1134/1204 executable changed lines)**. The final footer-only capture rerun kept the translation shortcuts visible after the new main header added auxiliary hints: one screenshot method passed (63.929 seconds).
 
 Changed-code coverage is executable added/modified production Swift lines against merged main (`5f4fddea`) from `git diff origin/main --unified=0`, intersected with `llvm-cov export -format=lcov` line records. Tests and localization resources are excluded from the denominator. [Per-file measurements](changed-code-coverage.json) include uncovered lines; the project-wide number from this focused run is not the changed-code metric.
 
@@ -48,4 +48,3 @@ Reviewed entry-to-result flow, empty and corrupt settings, duplicate IDs, remove
 Fixed queued Return authorization surviving input edits, partial selection changing at final completion, cached-card regeneration retaining the cached marker, retries rerunning siblings, and insertion controls accepting cards without target-language meanings. Native regression tests cover partial Return/Command-number copying, selected insertion, Tab's privacy behavior, provider-sheet save and isolated retry, card regeneration/star/copy/book shortcuts, and disabled insertion of incomplete cards. Credential editing refreshes service settings first so removing keys cannot overwrite another window’s newly saved AI models/order.
 
 External provider credentials, quotas and installed language packages are not exercised against live services; provider client tests and injected native fixtures cover their routing and failure UI.
-
