@@ -25,6 +25,9 @@ final class ScreenRecordingWriter: @unchecked Sendable {
     private var lastAudioTime: [Track: Double] = [:]
     private var terminal = false
     private var failure: Error?
+    private var finalization: CheckedContinuation<URL, Error>?
+    private var finalizationDeadline: DispatchWorkItem?
+    private var finishingContainer = false
     var onFailure: (@Sendable (Error) -> Void)?
 
     init(url: URL, size: CGSize, options: ScreenRecordingOptions) throws {
@@ -189,7 +192,9 @@ final class ScreenRecordingWriter: @unchecked Sendable {
             queue.async { [self] in continuation.resume(returning: timeline.position(at: time) ?? 0) }
         }
     }
+}
 
+extension ScreenRecordingWriter {
     func finish(at time: Double) async throws -> URL {
         try await withCheckedThrowingContinuation { continuation in
             queue.async { [self] in
@@ -210,31 +215,66 @@ final class ScreenRecordingWriter: @unchecked Sendable {
                                        lastVideoTime + 1 / Double(options.captureFPS),
                                        timeline.position(at: time) ?? 0
                                    ))
-                let tail = duration - 1 / Double(options.captureFPS)
-                if tail > lastVideoTime, video.isReadyForMoreMediaData {
-                    _ = pixels.append(lastPixel, withPresentationTime: CMTime(seconds: tail, preferredTimescale: 60000))
-                }
-                assetWriter.endSession(atSourceTime: CMTime(seconds: duration, preferredTimescale: 60000))
-                video.markAsFinished()
-                audio.values.forEach { $0.markAsFinished() }
-                self.lastPixel = nil
-                lastScreen = nil
-                camera = nil
-                assetWriter.finishWriting { [self] in
-                    if assetWriter.status == .completed {
-                        continuation.resume(returning: assetWriter.outputURL)
-                    } else {
-                        continuation.resume(throwing: assetWriter.error ?? ScreenRecordingFailure.encoding)
-                    }
+                finalizeContainer(duration: duration, lastPixel: lastPixel, continuation: continuation)
+            }
+        }
+    }
+
+    private func finalizeContainer(
+        duration: Double,
+        lastPixel: CVPixelBuffer,
+        continuation: CheckedContinuation<URL, Error>
+    ) {
+        finalization = continuation
+        // Finishing audio first lets the muxer release video backpressure.
+        audio.values.forEach { $0.markAsFinished() }
+        let deadline = DispatchWorkItem { [weak self] in
+            self?.completeFinalization(.failure(ScreenRecordingFailure.encoding))
+        }
+        finalizationDeadline = deadline
+        queue.asyncAfter(deadline: .now() + 5, execute: deadline)
+        video.requestMediaDataWhenReady(on: queue) { [self] in
+            guard finalization != nil, !finishingContainer, video.isReadyForMoreMediaData else { return }
+            finishingContainer = true
+            let tail = duration - 1 / Double(options.captureFPS)
+            if tail > lastVideoTime,
+               !pixels.append(
+                   lastPixel,
+                   withPresentationTime: CMTime(seconds: tail, preferredTimescale: 60000)
+               ) {
+                completeFinalization(.failure(assetWriter.error ?? ScreenRecordingFailure.encoding))
+                return
+            }
+            assetWriter.endSession(atSourceTime: CMTime(seconds: duration, preferredTimescale: 60000))
+            video.markAsFinished()
+            self.lastPixel = nil; lastScreen = nil; camera = nil
+            assetWriter.finishWriting { [self] in
+                queue.async { [self] in
+                    let result: Result<URL, Error> = assetWriter
+                        .status == .completed ? .success(assetWriter.outputURL) :
+                        .failure(assetWriter.error ?? ScreenRecordingFailure.encoding)
+                    completeFinalization(result)
                 }
             }
         }
+    }
+
+    private func completeFinalization(_ result: Result<URL, Error>) {
+        guard let continuation = finalization else { return }
+        finalization = nil
+        finalizationDeadline?.cancel(); finalizationDeadline = nil
+        if case .failure = result, assetWriter.status == .writing {
+            assetWriter.cancelWriting()
+        }
+        lastPixel = nil; lastScreen = nil; camera = nil
+        continuation.resume(with: result)
     }
 
     func cancel() async {
         await withCheckedContinuation { continuation in
             queue.async { [self] in
                 terminal = true
+                completeFinalization(.failure(CancellationError()))
                 if assetWriter.status == .writing {
                     assetWriter.cancelWriting()
                 }

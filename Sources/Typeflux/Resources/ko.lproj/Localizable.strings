@@ -4821,7 +4821,7 @@
 "recording.from" = "시작";
 "recording.to" = "끝";
 "recording.cancelExport" = "내보내기 취소";
-"recording.saveAs" = "다른 위치에 저장…";
+"recording.saveAs" = "다른 이름으로 저장…";
 "recording.export" = "내보내기";
 "recording.discardQuestion" = "이 녹화를 삭제할까요?";
 "recording.discardHint" = "저장하지 않은 녹화가 삭제됩니다。";
@@ -4884,7 +4884,7 @@
 
 "recording.source.region" = "영역";
 
-"recording.source.display" = "화면";
+"recording.source.display" = "전체 화면";
 
 "recording.source.window" = "창";
 
@@ -4898,7 +4898,7 @@
 
 "recording.selectedDuration" = "선택한 길이: %.2f초";
 
-"recording.resetTrim" = "전체 녹화 사용";
+"recording.resetTrim" = "전체 복원";
 
 "recording.gifExportHint" = "GIF에는 소리가 없습니다. 최대 30초를 선택하세요. 10 FPS, 최대 960 px로 저장됩니다.";
 
@@ -5004,3 +5004,77 @@
 "ask.context.selection.characters" = "%d자";
 "ask.context.selection.disableHint" = "아이콘을 클릭하여 사용을 중지해도 텍스트는 유지됩니다";
 "ask.context.selection.enableHint" = "아이콘을 클릭하여 이 텍스트를 다시 사용할 수 있습니다";
+
+"recording.copy" = "복사";
+
+"recording.countdownKeys" = "스페이스 바로 시작 · esc 돌아가기";
+
+"recording.countdownSummary" = "카운트다운 %d초";
+
+"recording.estimated" = "약 %@";
+
+"recording.fileName" = "파일 이름";
+
+"recording.gifSilent" = "GIF에는 소리가 없습니다";
+
+"recording.gifSmall" = "작게 · 640 px";
+
+"recording.gifStandard" = "표준 · 960 px";
+
+"recording.gifTooLong" = "GIF는 최대 30초입니다";
+
+"recording.keep30" = "처음 30초 유지";
+
+"recording.keepRange" = "유지";
+
+"recording.later" = "나중에";
+
+"recording.liveCamera" = "실시간";
+
+"recording.max30" = "최대 30초";
+
+"recording.microphoneLevel" = "마이크 입력 수준";
+
+"recording.noAudioTrack" = "이 녹화에는 소리가 없습니다";
+
+"recording.noUpscale" = "크기는 줄이기만 하며 확대하지 않습니다.";
+
+"recording.openEditor" = "편집기 열기";
+
+"recording.options" = "옵션";
+
+"recording.play" = "재생 / 일시 정지";
+
+"recording.recoveryHint" = "저장하지 않은 녹화를 계속 편집할 수 있습니다.";
+
+"recording.remaining" = "%d초 후 자동 정지";
+
+"recording.restart" = "다시 시작";
+
+"recording.restartQuestion" = "이 녹화를 버리고 다시 시작할까요?";
+
+"recording.selectionKeys" = "↩ 시작 · esc 취소 · Tab 소스";
+
+"recording.selectionSeconds" = "· %.1f초";
+
+"recording.switchMP4" = "MP4로 변경";
+
+"recording.systemAudioScope" = "Typeflux 소리를 제외합니다. 창 녹화에는 해당 앱의 모든 소리가 포함됩니다.";
+
+"recording.timelineKeys" = "양 끝을 끌어 자르기 · I / O 시작·끝 · 스페이스 재생";
+
+"recording.unsaved" = "저장하지 않은 녹화";
+
+"recording.microphonePermissionHint" = "시스템 설정 → 개인정보 보호 및 보안 → 마이크에서 Typeflux를 허용한 다음 돌아오세요.";
+
+"recording.cameraPermissionHint" = "시스템 설정 → 개인정보 보호 및 보안 → 카메라에서 Typeflux를 허용한 다음 돌아오세요.";
+
+"recording.skipMicrophone" = "이번에는 마이크 없이 녹화";
+
+"recording.skipCamera" = "이번에는 카메라 없이 녹화";
+
+"recording.optionsTitle" = "녹화 옵션";
+
+"recording.pickWindow" = "창 위로 포인터를 옮긴 다음 클릭하세요.";
+
+"recording.pickDisplay" = "녹화할 화면을 클릭하세요.";

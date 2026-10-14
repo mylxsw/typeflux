@@ -1,32 +1,68 @@
 import AppKit
+import AVFoundation
 import Combine
 import SwiftUI
 
-/// One stable window ID is kept through setup, recording and export, so the
-/// capture filter excludes the controls even when the content changes.
+/// Every recorder surface uses the same exclusion identifier, including surfaces
+/// made visible before the capture filter is constructed.
 @MainActor
 final class ScreenRecordingWindowController: NSObject, NSWindowDelegate {
     static let identifier = NSUserInterfaceItemIdentifier("ai.gulu.app.typeflux.window.screen-recording")
-    private(set) var window: NSWindow?
-    private(set) var border: NSPanel?
-    private var statusItem: NSStatusItem?
-    private var stateObservation: AnyCancellable?
-    private var appearanceObservation: NSObjectProtocol?
-    private let settings: SettingsStore
-    private let interfaceStyle: InterfaceStyleObserver
+    var window: NSWindow?
+    var border: NSPanel?
+    var selectionPanels: [NSPanel] = []
+    var selectionViews: [ScreenRecordingSelectionView] = []
+    var cameraPanel: NSPanel?
+    var cameraView: ScreenRecordingCameraBubbleView?
+    var statusItem: NSStatusItem?
+    var observations: [AnyCancellable] = []
+    var appearanceObservation: NSObjectProtocol?
+    var activationObservation: NSObjectProtocol?
+    var refreshTask: Task<Void, Never>?
+    var deviceTask: Task<Void, Never>?
+    var keyMonitor: Any?
+    var lastState: ScreenRecordingCoordinator.State?
+    var activeScreen: NSScreen?
+    var lastDeviceFlags: [Bool] = []
+    let preview: any ScreenRecordingDevicePreviewing
+    let toast: ScreenRecordingToastController
+    let permissionGuide = ScreenshotPermissionGuideController()
+    let settings: SettingsStore
+    let interfaceStyle: InterfaceStyleObserver
     weak var model: ScreenRecordingCoordinator?
 
-    init(settings: SettingsStore? = nil) {
+    init(settings: SettingsStore? = nil,
+         preview: any ScreenRecordingDevicePreviewing = ScreenRecordingDevicePreview()) {
         let settings = settings ?? SettingsStore()
         self.settings = settings
+        self.preview = preview
+        toast = ScreenRecordingToastController(settings: settings)
         interfaceStyle = InterfaceStyleObserver(settings: settings)
         super.init()
         appearanceObservation = NotificationCenter.default.addObserver(
-            forName: .appearanceModeDidChange, object: nil, queue: .main
+            forName: .appearanceModeDidChange,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.applyAppearance() }
+        }
+        activationObservation = NotificationCenter.default.addObserver(
+            forName: NSApplication.didBecomeActiveNotification,
+            object: nil,
+            queue: .main
         ) { [weak self] _ in
             MainActor.assumeIsolated {
-                guard let self else { return }
-                self.window?.appearance = AppAppearance.nsAppearance(for: self.settings.appearanceMode)
+                guard let self, let model = self.model, model.state == .setup else { return }
+                if model.permissionFailure == .permission {
+                    model.reloadChoices()
+                }
+                if model.options.camera {
+                    model.setDevice(.video, enabled: true)
+                }
+                if model.options.microphone, model.options.capturesAudio {
+                    model.setDevice(.audio, enabled: true)
+                }
+                self.lastDeviceFlags = []
             }
         }
     }
@@ -35,153 +71,157 @@ final class ScreenRecordingWindowController: NSObject, NSWindowDelegate {
         if let appearanceObservation {
             NotificationCenter.default.removeObserver(appearanceObservation)
         }
+        if let activationObservation {
+            NotificationCenter.default.removeObserver(activationObservation)
+        }
+        refreshTask?.cancel()
+        deviceTask?.cancel()
+        if let keyMonitor {
+            NSEvent.removeMonitor(keyMonitor)
+        }
     }
 
     static func contentSize(for state: ScreenRecordingCoordinator.State, available: CGSize) -> CGSize {
         let desired = switch state {
-        case .preview, .exporting: CGSize(width: 680, height: 660)
-        case .setup, .selecting, .idle: CGSize(width: 540, height: 740)
-        case .countdown: CGSize(width: 460, height: 340)
-        default: CGSize(width: 460, height: 280)
+        case .preview, .exporting: CGSize(width: 920, height: 632)
+        case .setup, .selecting, .idle: CGSize(width: 850, height: 100)
+        case .countdown: CGSize(width: 160, height: 180)
+        default: CGSize(width: 440, height: 82)
         }
         return CGSize(width: min(desired.width, available.width), height: min(desired.height, available.height))
     }
 
     func show(_ model: ScreenRecordingCoordinator) {
-        self.model = model
-        if window == nil {
-            let window = NSPanel(contentRect: CGRect(x: 0, y: 0, width: 488, height: 540),
-                                 styleMask: [.titled, .closable, .resizable, .fullSizeContentView], backing: .buffered,
-                                 defer: false)
-            window.identifier = Self.identifier
-            window.title = L("recording.title")
-            window.titleVisibility = .hidden
-            window.titlebarAppearsTransparent = true
-            window.titlebarSeparatorStyle = .none
-            window.isOpaque = false
-            window.backgroundColor = .clear
-            window.appearance = AppAppearance.nsAppearance(for: settings.appearanceMode)
-            window.isReleasedWhenClosed = false
-            window.hidesOnDeactivate = false
-            window.level = .floating
-            window.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-            window.delegate = self
-            let hosting = NSHostingView(rootView: ScreenRecordingView(model: model, close: { [weak self] in
-                self?.requestClose()
-            }, chooseDirectory: { [weak self] in self?.chooseDirectory() }).interfaceStyle(following: interfaceStyle))
-            hosting.sizingOptions = []
-            hosting.autoresizingMask = [.width, .height]
-            window.contentView = hosting
-            window.minSize = CGSize(width: 460, height: 260)
-            window.center()
-            self.window = window
-            stateObservation = model.$state.sink { [weak self] state in
+        if self.model !== model {
+            observations = []
+            self.model = model
+            model.prepareCapture = { [weak self] in
+                guard let self else { return }
+                deviceTask?.cancel()
+                await deviceTask?.value
+                await preview.stop()
+                lastDeviceFlags = []
+                render(.starting)
+                indicator("● 00:00")
+            }
+            observations.append(model.$state.sink { [weak self] state in
                 DispatchQueue.main.async {
-                    guard let self, self.model?.state == state, let window = self.window else { return }
-                    let available = window.screen?.visibleFrame.size ?? CGSize(width: 900, height: 800)
-                    window.setContentSize(Self.contentSize(for: state,
-                                                           available: CGSize(
-                                                               width: available.width - 32,
-                                                               height: available.height - 48
-                                                           )))
-                    window.setFrame(window.constrainFrameRect(window.frame, to: window.screen), display: true)
+                    guard let self, self.model?.state == state else { return }
+                    self.render(state)
+                }
+            })
+        }
+        if keyMonitor == nil {
+            keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+                let handled = MainActor.assumeIsolated {
+                    self?.handleSelectionKey(event) == true || self?.handleEditorKey(event) == true
+                }
+                return handled ? nil : event
+            }
+        }
+        activeScreen = NSScreen.screens.first { $0.frame.contains(NSEvent.mouseLocation) } ?? NSScreen.main
+        render(model.state)
+        if refreshTask == nil {
+            refreshTask = Task { [weak self] in
+                while !Task.isCancelled {
+                    try? await Task.sleep(for: .milliseconds(100))
+                    guard let self, !Task.isCancelled else { return }
+                    syncChrome()
                 }
             }
         }
-        window?.makeKeyAndOrderFront(nil)
-        NSApp.activate(ignoringOtherApps: true)
     }
 
-    func hide() {
-        window?.orderOut(nil)
-    }
-
-    func windowShouldClose(_: NSWindow) -> Bool {
-        requestClose(); return false
-    }
-
-    func requestClose() {
-        guard let model, model.state != .stopping, model.state != .starting else { return }
-        if model.state == .exporting {
-            model.cancelExport(); return
-        }
-        if [.recording, .paused, .preview].contains(model.state) {
-            let alert = NSAlert()
-            alert.messageText = L("recording.discardQuestion")
-            alert.informativeText = L("recording.discardHint")
-            alert.addButton(withTitle: L(model.state == .preview ? "recording.continueEditing" : "recording.keep"))
-            alert.addButton(withTitle: L("recording.discard"))
-            guard alert.runModal() == .alertSecondButtonReturn else { return }
-        }
-        model.cancel()
-    }
-
-    func chooseDirectory() {
-        guard model?.canExport == true else { return }
-        let panel = NSOpenPanel()
-        panel.canChooseDirectories = true
-        panel.canChooseFiles = false
-        panel.canCreateDirectories = true
-        panel.allowsMultipleSelection = false
-        panel.prompt = L("recording.export")
-        panel.directoryURL = model?.destinationDirectory
-        if panel.runModal() == .OK, let url = panel.url {
-            model?.export(directory: url)
-        }
-    }
-
-    func indicator(_ title: String?) {
-        guard let title else {
-            if let statusItem {
-                NSStatusBar.system.removeStatusItem(statusItem)
-            }
-            statusItem = nil
-            return
-        }
-        if statusItem == nil {
-            let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-            let menu = NSMenu()
-            for (key, selector) in [
-                ("recording.stop", #selector(stop)),
-                ("recording.showControls", #selector(showControls))
-            ] {
-                let entry = NSMenuItem(title: L(key), action: selector, keyEquivalent: "")
-                entry.target = self
-                menu.addItem(entry)
-            }
-            item.menu = menu
-            statusItem = item
-        }
-        statusItem?.button?.title = title
-        statusItem?.button?.font = .monospacedDigitSystemFont(ofSize: 12, weight: .medium)
-    }
-
-    @objc private func stop() {
-        model?.stop()
-    }
-
-    @objc private func showControls() {
-        if let model {
-            show(model)
-        }
-    }
-
-    func outline(_ target: ScreenRecordingTarget?) {
-        border?.orderOut(nil)
-        border = nil
-        guard case let .region(_, rect) = target else { return }
-        let frame = ScreenCaptureGeometry.flipped(rect, primaryDisplayHeight: NSScreen.screens.first?.frame.height ?? 0)
-        let panel = NSPanel(contentRect: frame.insetBy(dx: -2, dy: -2), styleMask: [.borderless, .nonactivatingPanel],
-                            backing: .buffered, defer: false)
+    func makePanel(frame: CGRect, interactive: Bool = true) -> NSPanel {
+        let panel = ScreenRecordingOverlayPanel(
+            contentRect: frame,
+            styleMask: [.borderless, .nonactivatingPanel],
+            backing: .buffered,
+            defer: false
+        )
         panel.identifier = Self.identifier
         panel.isOpaque = false
         panel.backgroundColor = .clear
+        panel.isReleasedWhenClosed = false
+        panel.hidesOnDeactivate = false
         panel.hasShadow = false
-        panel.ignoresMouseEvents = true
-        panel.level = .floating
-        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
-        panel.contentView = NSHostingView(rootView: Rectangle().stroke(Color.red, lineWidth: 3))
-        panel.orderFrontRegardless()
-        border = panel
+        panel.level = NSWindow.Level(rawValue: NSWindow.Level.screenSaver.rawValue + (interactive ? 1 : 0))
+        panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .stationary, .ignoresCycle]
+        panel.ignoresMouseEvents = !interactive
+        panel.appearance = AppAppearance.nsAppearance(for: settings.appearanceMode)
+        return panel
+    }
+
+    func host(_ view: some View, in window: NSWindow) {
+        let host = NSHostingView(rootView: view.interfaceStyle(following: interfaceStyle))
+        host.sizingOptions = []
+        window.contentView = host
+    }
+
+    func showPermissionGuideIfNeeded() {
+        guard let model, model.permissionFailure == .permission, !permissionGuide.isVisible else { return }
+        selectionPanels.forEach { $0.orderOut(nil) }
+        window?.orderOut(nil)
+        permissionGuide.show(actions: ScreenshotPermissionGuideActions(
+            openSettings: { model.openPermissions() },
+            recheck: { model.reloadChoices(); return model.screenPermissionGranted },
+            restart: { ScreenshotAppRelauncher.relaunch() },
+            later: { model.cancel() }
+        ))
+    }
+
+    func appKitTargetFrame() -> CGRect {
+        guard let choice = model?.selectedSource else { return .zero }
+        var frame = choice.frame
+        if case let .window(id) = choice.target,
+           let info = (CGWindowListCopyWindowInfo(.optionIncludingWindow, id) as? [[String: Any]])?.first,
+           let bounds = info[kCGWindowBounds as String] as? NSDictionary,
+           let current = CGRect(dictionaryRepresentation: bounds) {
+            frame = current
+        }
+        return ScreenCaptureGeometry.flipped(frame, primaryDisplayHeight: NSScreen.screens.first?.frame.height ?? 0)
+    }
+
+    func updateCamera() {
+        guard let model, model.options.camera, model.selectedSource != nil,
+              [.setup, .countdown, .starting, .recording, .paused].contains(model.state) else {
+            cameraPanel?.orderOut(nil); cameraPanel = nil; cameraView = nil; return
+        }
+        if cameraPanel == nil {
+            let panel = makePanel(frame: .zero)
+            panel.level = NSWindow.Level(rawValue: NSWindow.Level.screenSaver.rawValue + 1)
+            let view = ScreenRecordingCameraBubbleView(model: model)
+            panel.contentView = view
+            cameraPanel = panel; cameraView = view
+        }
+        guard cameraView?.isDragging != true else { return }
+        let target = appKitTargetFrame()
+        guard target.width > 0, target.height > 0 else { return }
+        let local = ScreenRecordingGeometry.cameraRect(
+            in: target.size,
+            fraction: model.options.cameraFraction,
+            corner: model.options.cameraCorner
+        )
+        cameraPanel?.setFrame(local.offsetBy(dx: target.minX, dy: target.minY), display: true)
+        cameraView?.targetFrame = target
+        cameraView?.updateChrome()
+        cameraView?.preview.session = [.setup, .countdown].contains(model.state) ? preview.session : model.liveSession
+        cameraPanel?.ignoresMouseEvents = model.state != .setup
+        cameraPanel?.orderFrontRegardless()
+    }
+
+    func hide() {
+        window?.orderOut(nil); window = nil
+        border?.orderOut(nil); border = nil
+        cameraPanel?.orderOut(nil); cameraPanel = nil; cameraView = nil
+        selectionPanels.forEach { $0.orderOut(nil) }; selectionPanels = []; selectionViews = []
+        refreshTask?.cancel(); refreshTask = nil
+        deviceTask?.cancel()
+        deviceTask = Task { [preview] in await preview.stop() }
+        lastDeviceFlags = []; lastState = nil
+        if let keyMonitor {
+            NSEvent.removeMonitor(keyMonitor); self.keyMonitor = nil
+        }
+        permissionGuide.dismiss()
     }
 }

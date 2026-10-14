@@ -33,12 +33,14 @@ struct ScreenRecordingMediaTests {
         return try #require(sample)
     }
 
-    static func audioSample(at seconds: Double, frequency: Double = 440, rate: Double = 48000, channels: Int = 2) throws -> CMSampleBuffer {
+    static func audioSample(at seconds: Double, frequency: Double = 440, rate: Double = 48000,
+                            channels: Int = 2) throws -> CMSampleBuffer {
         let frames = Int(rate / 10)
         let stride = channels * 4
         var description = AudioStreamBasicDescription(mSampleRate: rate, mFormatID: kAudioFormatLinearPCM,
                                                       mFormatFlags: kAudioFormatFlagIsFloat | kAudioFormatFlagIsPacked,
-                                                      mBytesPerPacket: UInt32(stride), mFramesPerPacket: 1, mBytesPerFrame: UInt32(stride),
+                                                      mBytesPerPacket: UInt32(stride), mFramesPerPacket: 1,
+                                                      mBytesPerFrame: UInt32(stride),
                                                       mChannelsPerFrame: UInt32(channels),
                                                       mBitsPerChannel: 32, mReserved: 0)
         var format: CMAudioFormatDescription?
@@ -61,7 +63,9 @@ struct ScreenRecordingMediaTests {
         var data = [Float](repeating: 0, count: frames * channels)
         for frame in 0 ..< frames {
             let value = Float(sin(Double(frame) / rate * frequency * 2 * .pi) * 0.2)
-            for channel in 0 ..< channels { data[frame * channels + channel] = value }
+            for channel in 0 ..< channels {
+                data[frame * channels + channel] = value
+            }
         }
         #expect(CMBlockBufferReplaceDataBytes(with: &data, blockBuffer: bytes, offsetIntoDestination: 0,
                                               dataLength: frames * stride) == noErr)
@@ -96,7 +100,11 @@ struct ScreenRecordingMediaTests {
             try writer.offer(videoSample(at: time, gray: UInt8(frame * 15)), track: .screen, hostTime: time)
             if withAudio {
                 try writer.offer(audioSample(at: time), track: .systemAudio, hostTime: time)
-                try writer.offer(audioSample(at: time, frequency: 880, rate: 44100, channels: 1), track: .microphone, hostTime: time)
+                try writer.offer(
+                    audioSample(at: time, frequency: 880, rate: 44100, channels: 1),
+                    track: .microphone,
+                    hostTime: time
+                )
             }
             _ = await writer.elapsed(at: time)
             // Give the asynchronous hardware encoder time to become ready.
@@ -186,5 +194,24 @@ struct ScreenRecordingMediaTests {
         #expect(retimed.presentationTimeStamp.seconds == 2.5)
         #expect(retimed.duration == sample.duration)
         #expect(CMSampleBufferGetNumSamples(retimed) == 4800)
+    }
+}
+
+extension ScreenRecordingMediaTests {
+    @Test func `finishing waits for encoder backpressure before preserving static tail`() async throws {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".mov")
+        defer { try? FileManager.default.removeItem(at: url) }
+        var options = ScreenRecordingOptions()
+        options.systemAudio = true
+        let writer = try ScreenRecordingWriter(url: url, size: CGSize(width: 760, height: 420), options: options)
+        for index in 0 ..< 12 {
+            let time = 100 + Double(index) * 3
+            try writer.offer(Self.videoSample(at: time, width: 760, height: 420), track: .screen, hostTime: time)
+            try writer.offer(Self.audioSample(at: time), track: .systemAudio, hostTime: time)
+            _ = await writer.elapsed(at: time)
+        }
+        _ = try await writer.finish(at: 138.6)
+        let duration = try await AVURLAsset(url: url).load(.duration).seconds
+        #expect(abs(duration - 38.6) < 0.05)
     }
 }
