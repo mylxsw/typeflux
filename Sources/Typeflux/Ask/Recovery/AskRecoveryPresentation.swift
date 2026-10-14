@@ -9,6 +9,17 @@ struct AskRecoveryPresentation: Equatable {
     let canContinue: Bool
 
     init(run: AskRun?, entries: [AskExecutionEntry], deviceId: String, local _: Bool) {
+        // A completed run is the authoritative result. An older local claim can
+        // outlive its acknowledgement, but it cannot make the finished answer
+        // uncertain or require the user to resume the task.
+        if run?.status == "completed" {
+            unknown = false
+            otherDevice = false
+            active = false
+            savedReceipts = 0
+            canContinue = false
+            return
+        }
         // Keep historical evidence in the journal without treating an earlier
         // task's outcome as a problem with the user's current request.
         let currentEntries = entries.filter { $0.audit == nil || $0.audit?.identity.runId == run?.id }

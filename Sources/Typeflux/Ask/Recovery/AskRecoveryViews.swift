@@ -198,7 +198,7 @@ struct AskRecoveryInspector: View {
         }
         .frame(minWidth: 320, idealWidth: 480, maxWidth: 480, alignment: .leading)
         .fixedSize(horizontal: false, vertical: true)
-        .background(AskTheme.popoverSurface)
+        .background(AskTheme.popoverSurface.ignoresSafeArea())
         .transaction {
             if reduceMotion {
                 $0.animation = nil; $0.disablesAnimations = true
