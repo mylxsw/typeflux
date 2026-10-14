@@ -1,0 +1,82 @@
+{
+  "pinned-selection-before-after-dark": {
+    "before": [
+      452,
+      338
+    ],
+    "after": [
+      452,
+      338
+    ]
+  },
+  "pinned-selection-before-after-light": {
+    "before": [
+      452,
+      338
+    ],
+    "after": [
+      452,
+      338
+    ]
+  },
+  "panel-height-before-after-dark": {
+    "before": [
+      452,
+      433
+    ],
+    "after": [
+      452,
+      405
+    ]
+  },
+  "panel-height-before-after-light": {
+    "before": [
+      452,
+      433
+    ],
+    "after": [
+      452,
+      405
+    ]
+  },
+  "screenshot-height-before-after-dark": {
+    "before": [
+      452,
+      465
+    ],
+    "after": [
+      452,
+      435
+    ]
+  },
+  "screenshot-height-before-after-light": {
+    "before": [
+      452,
+      465
+    ],
+    "after": [
+      452,
+      435
+    ]
+  },
+  "settings-before-after-dark": {
+    "before": [
+      840,
+      660
+    ],
+    "after": [
+      840,
+      660
+    ]
+  },
+  "settings-before-after-light": {
+    "before": [
+      840,
+      660
+    ],
+    "after": [
+      840,
+      660
+    ]
+  }
+}

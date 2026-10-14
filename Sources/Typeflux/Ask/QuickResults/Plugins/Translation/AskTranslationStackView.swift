@@ -32,6 +32,7 @@ struct AskTranslationStackView: View {
     var body: some View {
         VStack(spacing: 8) {
             languageBar
+                .translationContentHeight(.languages, enabled: viewportHeight != nil)
             if comparing {
                 Text(original).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary)
                     .textSelection(.enabled).lineLimit(3).frame(maxWidth: .infinity, alignment: .leading)
@@ -54,6 +55,7 @@ struct AskTranslationStackView: View {
                                 .id(result.id)
                         }
                     }
+                    .translationContentHeight(.results, enabled: viewportHeight != nil)
                 }
                 .onChange(of: selected) { index in
                     guard stack.results.indices.contains(index) else { return }

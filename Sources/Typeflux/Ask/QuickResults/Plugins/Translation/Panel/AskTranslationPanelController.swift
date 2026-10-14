@@ -11,6 +11,7 @@ final class AskTranslationPanelController: NSObject, NSWindowDelegate {
     private var clickMonitor: Any?
     private var activationObserver: NSObjectProtocol?
     private var observation: AnyCancellable?
+    private var measuredContentHeight: CGFloat?
     private lazy var style = InterfaceStyleObserver(settings: model.settings)
 
     init(model: AskTranslationPanelModel) {
@@ -112,7 +113,7 @@ final class AskTranslationPanelController: NSObject, NSWindowDelegate {
             + (model.notice == nil ? 0 : 24)
         return CGSize(width: min(AskTranslationPanelPlacement.width, screen.visibleFrame.width),
                       height: AskTranslationPanelPlacement.height(
-                          content: chrome + AskTranslationStackView.height(model.stack),
+                          content: measuredContentHeight ?? (chrome + AskTranslationStackView.height(model.stack)),
                           screen: screen.visibleFrame,
                           preference: model.settings.askTranslationSettings.maxHeight
                       ))
@@ -143,8 +144,17 @@ final class AskTranslationPanelController: NSObject, NSWindowDelegate {
     }
 
     private func root(height: CGFloat) -> AnyView {
-        AnyView(AskTranslationPanelView(model: model, history: model.history, height: height)
-            .interfaceStyle(following: style))
+        AnyView(AskTranslationPanelView(model: model, history: model.history, height: height,
+                                        onContentHeightChange: { [weak self] height in
+                                            self?.contentHeightChanged(height)
+                                        })
+                                        .interfaceStyle(following: style))
+    }
+
+    private func contentHeightChanged(_ height: CGFloat) {
+        guard height.isFinite, height > 0, abs(height - (measuredContentHeight ?? 0)) > 0.5 else { return }
+        measuredContentHeight = height
+        DispatchQueue.main.async { [weak self] in self?.refreshLayout() }
     }
 
     private func updateRoot() {

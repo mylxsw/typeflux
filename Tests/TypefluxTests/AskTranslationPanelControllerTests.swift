@@ -216,6 +216,48 @@ extension AskTranslationPanelControllerTests {
 }
 
 extension AskTranslationPanelControllerTests {
+    @Test func `sentence panel fits three and four result rows without a blank block above the footer`() async throws {
+        _ = NSApplication.shared
+        let enhanced = NSApp.accessibilityAttributeValue(.init(rawValue: "AXEnhancedUserInterface")) as? Bool ?? false
+        NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
+        defer { NSApp.accessibilitySetValue(enhanced, forAttribute: .init(rawValue: "AXEnhancedUserInterface")) }
+        let fixture = TranslationPanelFixture()
+        defer { fixture.clean() }
+        let model = fixture.model
+        model.open(source: .input, text: "A short source sentence.")
+        model.pinned = true
+        let controller = AskTranslationPanelController(model: model)
+        var threeRowHeight: CGFloat = 0
+        for count in [3, 4] {
+            let rows = (0 ..< count).map { index in
+                AskTranslationResult(service: .ai(id: "row.\(index)"), name: "AI \(index)",
+                                     state: .done("A short translated sentence."))
+            }
+            model.output = .init(body: "A short translated sentence.", original: model.text, meta: [], source: "AI",
+                                 actions: [], translation: .init(results: rows, source: "en", target: "fr",
+                                                                 interface: .english, submitted: true, isLookup: false))
+            if !controller.isPresented {
+                controller.present()
+            }
+            try await Task.sleep(for: .milliseconds(250))
+            let window = try #require(controller.presentedWindow)
+            let controls = SettingsBehaviorTestSupport.elements(in: window)
+            let lastRow = try #require(controls.first {
+                $0.value("accessibilityIdentifier") as? String == "ask.translation.result." + rows[count - 1].id
+            })
+            #expect(lastRow.frame.height > 0)
+            let bottomInset = lastRow.frame.minY - window.frame.minY
+            #expect(bottomInset >= 28 && bottomInset <= 48,
+                    "Only the 28-point footer and normal spacing follow the last row")
+            if count == 3 {
+                threeRowHeight = window.frame.height
+            } else {
+                #expect(window.frame.height > threeRowHeight + 40 && window.frame.height < threeRowHeight + 90)
+            }
+            #expect(window.frame.height <= window.screen!.visibleFrame.height * 0.8)
+        }
+    }
+
     @Test func `moving the current result scrolls inside the height limit`() async throws {
         _ = NSApplication.shared
         let fixture = TranslationPanelFixture()

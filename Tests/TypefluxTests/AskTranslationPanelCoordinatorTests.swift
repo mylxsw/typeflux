@@ -92,7 +92,7 @@ struct AskTranslationPanelCoordinatorTests {
         return coordinator
     }
 
-    @Test func `input waits for return selection sends at once and repeating shortcut refocuses`() async {
+    @Test func `input waits for return and selection sends immediately on every shortcut`() async {
         let fixture = TranslationPanelFixture()
         defer { fixture.clean() }
         let injector = TranslationPanelInjector()
@@ -109,7 +109,9 @@ struct AskTranslationPanelCoordinatorTests {
         #expect(fixture.model.source == .selection && fixture.model.text == "Selected sentence.")
         #expect(fixture.ai.requests.count == 1 && injector.captures == [.explicitSelectionAction])
         entry.openSelection()
-        #expect(injector.captures.count == 1)
+        await entry.waitForEntry()
+        await fixture.model.waitForTranslation()
+        #expect(injector.captures.count == 2 && fixture.ai.requests.count == 2)
         fixture.model.pinned = true
         entry.insert("Replacement")
         await entry.waitForDelivery()
@@ -118,7 +120,7 @@ struct AskTranslationPanelCoordinatorTests {
         injector.snapshot.selectedText = nil
         entry.openSelection()
         await entry.waitForEntry()
-        #expect(fixture.model.source == .input && fixture.ai.requests.count == 1)
+        #expect(fixture.model.source == .input && fixture.ai.requests.count == 2)
     }
 
     @Test func `screenshots recognize locally then translate or show recoverable errors`() async {

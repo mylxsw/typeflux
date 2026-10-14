@@ -96,7 +96,13 @@ struct AskTranslationPanelSettingsView: View {
         HStack(spacing: 10) {
             Image(systemName: HotkeySettingsPresentation.icon(of: action))
                 .foregroundStyle(StudioTheme.textSecondary).frame(width: 18)
-            Text(action.title).font(.system(size: 13, weight: .medium)).foregroundStyle(StudioTheme.textPrimary)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(action.title).font(.system(size: 13, weight: .medium)).foregroundStyle(StudioTheme.textPrimary)
+                Text(L("hotkeys.action." + action.rawValue + ".subtitle"))
+                    .font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("ask.translation.shortcut." + action.rawValue + ".subtitle")
+            }
             Spacer()
             Button {
                 if recording == action {
@@ -127,6 +133,6 @@ struct AskTranslationPanelSettingsView: View {
                 .disabled(shortcuts.row(for: .action(action))?.binding == nil)
                 .help(L("settings.shortcuts.unset"))
         }
-        .padding(.horizontal, 18).frame(height: 46)
+        .padding(.horizontal, 18).padding(.vertical, 12)
     }
 }

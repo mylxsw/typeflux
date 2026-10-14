@@ -9,6 +9,7 @@ final class AskTranslationPanelCoordinator: ScreenshotFollowUpHandling {
     private let injector: any TextInjector
     private let recognizer: any ImageTextRecognizing
     private var entryTask: Task<Void, Never>?
+    private var selectionTask: Task<Void, Never>?
     private var deliveryTask: Task<Void, Never>?
     private var generation = UUID()
     private var selection: TextSelectionSnapshot?
@@ -30,7 +31,7 @@ final class AskTranslationPanelCoordinator: ScreenshotFollowUpHandling {
         model.onDismiss = { [weak self] in self?.cancelEntry(); hide() }
     }
 
-    deinit { entryTask?.cancel(); deliveryTask?.cancel() }
+    deinit { entryTask?.cancel(); selectionTask?.cancel(); deliveryTask?.cancel() }
 
     func handle(_ followUp: ScreenshotFollowUp, image: ScreenshotFollowUpImage) {
         if followUp == .translate {
@@ -53,27 +54,30 @@ final class AskTranslationPanelCoordinator: ScreenshotFollowUpHandling {
     }
 
     func openSelection() {
-        if controller.isPresented {
-            controller.focus(); return
-        }
-        cancelEntry()
+        selectionTask?.cancel()
         let current = generation
-        processID = frontmost()
-        entryTask = Task { [weak self, injector] in
+        selectionTask = Task { [weak self, injector] in
             let snapshot = await injector.selectionSnapshot(for: .explicitSelectionAction)
             guard let self, generation == current, !Task.isCancelled else { return }
-            entryTask = nil
+            selectionTask = nil
             guard snapshot.hasAskSelectionContext, let text = snapshot.selectedText else {
                 openInput()
                 return
             }
+            cancelEntry()
             selection = snapshot
             selectedText = text
             processID = snapshot.processID
+            let keepsPosition = controller.isPresented && model.pinned
             model.open(source: .selection, text: text)
-            // Opaque accessibility bridges have no range bounds; open beside the pointer then.
-            let mouse = NSEvent.mouseLocation
-            controller.present(selection: snapshot.selectionBounds ?? CGRect(origin: mouse, size: .zero))
+            model.pinned = keepsPosition
+            if keepsPosition {
+                controller.focus()
+            } else {
+                // Opaque accessibility bridges have no range bounds; open beside the pointer then.
+                let mouse = NSEvent.mouseLocation
+                controller.present(selection: snapshot.selectionBounds ?? CGRect(origin: mouse, size: .zero))
+            }
             model.translate()
         }
     }
@@ -150,6 +154,7 @@ final class AskTranslationPanelCoordinator: ScreenshotFollowUpHandling {
     }
 
     func waitForEntry() async {
+        await selectionTask?.value
         await entryTask?.value
     }
 
@@ -158,6 +163,8 @@ final class AskTranslationPanelCoordinator: ScreenshotFollowUpHandling {
     }
 
     private func cancelEntry() {
+        selectionTask?.cancel()
+        selectionTask = nil
         entryTask?.cancel()
         entryTask = nil
         generation = UUID()

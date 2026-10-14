@@ -5289,11 +5289,11 @@
 "ask.translation.panel.shortcuts" = "Shortcuts";
 "ask.translation.panel.preferences" = "Translation panel";
 "hotkeys.action.inputTranslation.title" = "Input translation";
-"hotkeys.action.inputTranslation.subtitle" = "Open the panel and press Return after entering text";
+"hotkeys.action.inputTranslation.subtitle" = "Open the translation panel and type directly";
 "hotkeys.action.selectionTranslation.title" = "Selection translation";
-"hotkeys.action.selectionTranslation.subtitle" = "Translate selected text immediately";
+"hotkeys.action.selectionTranslation.subtitle" = "Translate the selected text; with nothing selected, same as input translation";
 "hotkeys.action.screenshotTranslation.title" = "Screenshot translation";
-"hotkeys.action.screenshotTranslation.subtitle" = "Capture a region and translate text recognized on this Mac";
+"hotkeys.action.screenshotTranslation.subtitle" = "Select a screen area; text is recognized on this Mac, then translated";
 
 /* Usage guide (help) */
 "menu.help" = "Usage Guide…";

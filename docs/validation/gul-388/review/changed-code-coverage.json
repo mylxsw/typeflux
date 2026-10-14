@@ -1,0 +1,52 @@
+{
+  "covered": 67,
+  "executable": 68,
+  "percent": 98.53,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskTranslationContentHeight.swift",
+      "covered": 12,
+      "executable": 12,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskTranslationStackView.swift",
+      "covered": 2,
+      "executable": 2,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/Panel/AskTranslationPanelController.swift",
+      "covered": 11,
+      "executable": 11,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/Panel/AskTranslationPanelCoordinator.swift",
+      "covered": 17,
+      "executable": 17,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/Panel/AskTranslationPanelView.swift",
+      "covered": 17,
+      "executable": 18,
+      "percent": 94.44,
+      "uncovered": [
+        9
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Settings/AskTranslationPanelSettingsView.swift",
+      "covered": 8,
+      "executable": 8,
+      "percent": 100.0,
+      "uncovered": []
+    }
+  ],
+  "not_instrumented": []
+}
