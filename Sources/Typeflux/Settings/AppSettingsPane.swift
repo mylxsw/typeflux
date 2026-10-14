@@ -3,8 +3,8 @@ import Foundation
 /// App preferences remain under the existing Settings entry point.
 enum AppSettingsPane: String, CaseIterable, SettingsPaneItem {
     case general
-    case hotkeys
     case appearance
+    case hotkeys
     case advanced
 
     var id: String {

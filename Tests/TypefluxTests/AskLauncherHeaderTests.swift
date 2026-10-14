@@ -177,6 +177,7 @@ struct AskLauncherHeaderTests {
     @Test func emptyHeaderOpensChatAndTypingChangesTheSameButton() async throws {
         let fixture = try AskTestFixture()
         captured(fixture)
+        fixture.model.launcherWindowMode = .simple
         fixture.model.draft.text = "Existing draft"
         var opens = 0
         fixture.model.onShowConversation = { opens += 1 }

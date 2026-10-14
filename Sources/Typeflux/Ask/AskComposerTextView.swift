@@ -467,11 +467,8 @@ struct AskComposerTextView: NSViewRepresentable {
             onOpenChat()
             return true
         }
-        static func isOpenChatShortcut(_ event: NSEvent) -> Bool {
-            event.type == .keyDown && event.modifierFlags.intersection([.command, .option, .control, .shift]) == .command
-                && event.charactersIgnoringModifiers?.lowercased() == "o"
-        }
         override func performKeyEquivalent(with event: NSEvent) -> Bool {
+            if ignoresRepeatedSubmission(event) { return true }
             if window?.firstResponder === self, voice?.isActive != true, !hasMarkedText(),
                let key = AskCommandKey(event) {
                 if event.isARepeat, case .number = key { return true }
@@ -497,6 +494,7 @@ struct AskComposerTextView: NSViewRepresentable {
         }
 
         override func keyDown(with event: NSEvent) {
+            if ignoresRepeatedSubmission(event) { return }
             if !hasMarkedText(), voice?.isActive != true, let key = AskCommandKey(event),
                onHistoryKey?(key) == true { return }
             if openChatShortcut(event) { return }
@@ -536,5 +534,19 @@ struct AskComposerTextView: NSViewRepresentable {
             defer { typing = false }
             super.keyDown(with: event)
         }
+
+    }
+}
+
+extension AskComposerTextView.Editor {
+    static func isOpenChatShortcut(_ event: NSEvent) -> Bool {
+        event.type == .keyDown && event.modifierFlags.intersection([.command, .option, .control, .shift]) == .command
+            && event.charactersIgnoringModifiers?.lowercased() == "o"
+    }
+
+    fileprivate func ignoresRepeatedSubmission(_ event: NSEvent) -> Bool {
+        guard contextID == "launcher", event.isARepeat, !hasMarkedText(),
+              let key = AskCommandKey(event) else { return false }
+        return key == .enter || key == .commandEnter
     }
 }

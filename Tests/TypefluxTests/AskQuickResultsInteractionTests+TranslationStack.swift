@@ -154,6 +154,20 @@ extension AskQuickResultsInteractionTests {
         #expect(launcher.fixture.model.plugins.output?.action(for: .optionEnter) == nil)
     }
 
+    @Test func translationStackReturnDuringPlanningUsesTheCurrentInput() async throws {
+        let data = TranslationStackFixture()
+        let launcher = try await Launcher(text: "", prepare: data.install)
+        defer { launcher.close() }
+        try await translationInput("fy A sentence.", into: launcher)
+        data.device.delay = .milliseconds(150)
+        launcher.editor.insertText(" Changed.", replacementRange: NSRange(location: NSNotFound, length: 0))
+        try await launcher.press(Self.returnKey)
+        try await translationWait { launcher.fixture.model.plugins.output?.translation?.submitted == true }
+        #expect(data.ai.requests.map(\.text) == ["A sentence. Changed."])
+        #expect(data.deepl.requests.map(\.text) == ["A sentence. Changed."])
+        #expect(launcher.dismissed == 0)
+    }
+
     @Test func translationStackEditingAfterSubmissionReturnsToPrivatePreview() async throws {
         let data = TranslationStackFixture()
         let launcher = try await Launcher(text: "", prepare: data.install)

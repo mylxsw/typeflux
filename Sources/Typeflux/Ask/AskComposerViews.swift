@@ -90,6 +90,8 @@ struct AskComposer: View {
     @ObservedObject private var inputHistory: AskLauncherInputHistoryStore
     /// The launcher's keyword mode (`fy` → translate).
     @ObservedObject private var plugins: AskPluginSession
+    @ObservedObject private var launcherMonitor: SystemMonitorLauncherModel
+    @ObservedObject private var launcherCalendar: CalendarLauncherModel
     @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     @Environment(\.askGlassMaterialOverride) private var glassOverride
     @Environment(\.colorSchemeContrast) private var contrast
@@ -117,6 +119,8 @@ struct AskComposer: View {
         self.onFilePreview = onFilePreview
         self.voice = model.voiceInput
         self.plugins = model.plugins
+        self.launcherMonitor = model.systemMonitor
+        self.launcherCalendar = model.calendarLauncher
         self.inputHistory = model.launcherInputHistory
         self._quickSearch = StateObject(wrappedValue: launcher ? model.quickSearch : AskQuickSearchSession())
         self._voiceShortcut = State(initialValue: model.modelLibrary.settings.activationHotkey)
@@ -194,24 +198,117 @@ struct AskComposer: View {
 
     private var draft: Binding<AskDraft> { launcher ? $model.launcherDraft : $model.draft }
     private var canSend: Bool { launcher ? model.canSendLauncher : model.canSend }
-    private var launcherChatAction: AskLauncherChatAction {
-        .resolve(draft: model.launcherDraft, pluginOffersAskAI: pluginDisplay?.offersAskAI == true,
-                 loadingAttachments: model.isLoadingAttachments(launcher: true))
-    }
-    private var launcherChatActionEnabled: Bool {
-        if launcherChatAction == .openChat { return model.canOpenChatFromLauncher }
-        if plugins.isActive {
-            return pluginDisplay?.offersAskAI == true && model.canOpenChatFromLauncher
-                && model.submissionPreflights[true] == nil
-        }
-        return model.canSendLauncher
+    private var launcherChatFallback: AskLauncherPrimaryAction {
+        .chat(draft: model.launcherDraft, canSend: model.canSendLauncher,
+              canOpen: model.canOpenChatFromLauncher, loadingAttachments: loadingAttachments)
     }
 
-    private func runLauncherChatAction() {
-        guard launcherChatActionEnabled else { return }
-        if launcherChatAction == .openChat { openChat() }
-        else if plugins.isActive { askAIFromPlugin() }
-        else { model.submitLauncher() }
+    /// Shared by the header, Return and the footer; local actions never depend on AI readiness.
+    var launcherPrimaryAction: AskLauncherPrimaryAction {
+        let action: AskLauncherPrimaryAction
+        if model.launcherHistoryMode, !paletteOpen {
+            action = .confirm(L("ask.inputHistory.fill"), enabled: model.highlightedLauncherHistory != nil)
+        } else if AskPermissionMode.command(draft.wrappedValue.text).recognized,
+                  AskPermissionMode.command(draft.wrappedValue.text).mode != nil || !paletteOpen {
+            action = .confirm(L("ask.launcher.action.confirm"))
+        } else if paletteOpen {
+            action = .confirm(palette.highlightedCommand?.title ?? L("ask.launcher.action.unavailable"),
+                              enabled: palette.highlightedCommand?.enabled == true,
+                              reason: palette.highlightedCommand?.disabledReason)
+        } else if model.workflowApproval != nil {
+            action = .confirm(L("ask.workflow.approval.allow"))
+        } else if let display = pluginDisplay {
+            if display.calendar {
+                let calendar = launcherCalendar
+                let enabled: Bool
+                switch calendar.query {
+                case .invalid: enabled = false
+                case .search: enabled = calendar.chosenEvent != nil
+                default: enabled = true
+                }
+                let title = calendar.interval != nil ? L("ask.launcher.action.copyResult")
+                    : L("ask.quick.action.open")
+                action = .confirm(title, enabled: enabled)
+            } else if display.systemMonitor {
+                let rows = launcherMonitor.rows(model.systemMonitorWindow.store.snapshot,
+                                                filter: draft.wrappedValue.text)
+                let title = launcherMonitor.confirming == nil
+                    ? L("ask.quick.action.open") : L("ask.quick.action.quit")
+                let enabled = launcherMonitor.confirming != nil || launcherMonitor.selected(in: rows) != nil
+                action = .confirm(title, enabled: enabled)
+            } else {
+                action = .plugin(display, current: launcherPluginInputIsCurrent,
+                                 canAskAI: model.canOpenChatFromLauncher && model.submissionPreflights[true] == nil,
+                                 canRunWithoutInput: plugins.plugin?.runsWithoutInput == true && plugins.request == nil)
+            }
+        } else if showsQuickResults, let results = presentedQuickResults {
+            if let panel = quickActions {
+                action = .confirm(panel.highlightedAction?.title ?? panel.title,
+                                  enabled: panel.highlightedAction != nil && !quickResultsArePending,
+                                  reason: L("ask.launcher.action.wait"))
+            } else {
+                action = .quickResult(results, pending: quickResultsArePending, chat: launcherChatFallback)
+            }
+        } else if showsLauncherSuggestions, let item = highlightedHomeItem {
+            switch item {
+            case let .row(row): action = .confirm(row.title)
+            case let .chip(chip): action = .confirm(chip.title)
+            }
+        } else {
+            action = launcherChatFallback
+        }
+        guard active || voice.isActive || model.recordingIsActive() else { return action }
+        var blocked = action
+        blocked.enabled = false
+        blocked.disabledReason = L("ask.openChat.wait")
+        return blocked
+    }
+
+    private var launcherPluginInputIsCurrent: Bool {
+        guard plugins.isPlanCurrent, let request = plugins.request, let plugin = plugins.plugin else { return false }
+        let text = draft.wrappedValue.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let selection = plugin.usesSelectionInput
+            ? draft.wrappedValue.sentSelection?.trimmingCharacters(in: .whitespacesAndNewlines) : nil
+        let expected = text.isEmpty ? selection ?? "" : text
+        return request.text == expected && request.selection == (selection?.isEmpty == false ? selection : nil)
+    }
+
+    @State private var primaryActivationGate = AskLauncherActivationGate()
+
+    private func runLauncherPrimaryAction() {
+        if plugins.plugin?.id == AskTranslatePlugin.id, !launcherPluginInputIsCurrent,
+           !AskTranslatePlugin.opensWordBook(plugins.keyword?.options ?? [:]) {
+            plugins.update(text: draft.wrappedValue.text, selection: draft.wrappedValue.sentSelection,
+                           language: AppLocalization.shared.language)
+        }
+        let action = launcherPrimaryAction
+        guard action.enabled, !launcherEditorIsComposing else { return }
+        let selection: String
+        if model.launcherHistoryMode {
+            selection = "history:" + String(describing: model.highlightedLauncherHistory?.id)
+        } else if paletteOpen {
+            selection = palette.highlightedCommand?.id ?? "palette"
+        } else if let panel = quickActions {
+            selection = String(describing: panel.target) + ":\(panel.highlighted)"
+        } else if showsQuickResults, let results = quickResults {
+            selection = results.identity(of: results.highlightedRow)
+        } else {
+            selection = plugins.output?.selected?.id ?? "home:\(suggestionIndex)"
+        }
+        let target = AskLauncherActivationGate.Target(mode: action.mode, text: draft.wrappedValue.text,
+                                                     selection: selection, confirming: quickActions?.confirming == true)
+        guard primaryActivationGate.accept(target, now: ProcessInfo.processInfo.systemUptime) else { return }
+        if routeCommandKey(.enter) { return }
+        if showsLauncherSuggestions, let item = highlightedHomeItem { pick(item); return }
+        // An active feature owns Return, including when no action can be performed.
+        guard !plugins.isActive else { return }
+        if action.mode == .openChat { openChat() } else { model.submitLauncher() }
+    }
+
+    private var launcherEditorIsComposing: Bool {
+        guard let editor = NSApp.keyWindow?.firstResponder as? AskComposerTextView.Editor,
+              editor.contextID == contextID else { return false }
+        return editor.hasMarkedText()
     }
     /// The launcher is the workspace composer summoned by a hotkey: the same
     /// controls and states on a glass card, so it sits on whatever window it floats over.
@@ -240,18 +337,9 @@ struct AskComposer: View {
     }
 
     private func submit() {
-        if launcher, model.launcherInputHistoryKey(.enter) { return }
-        if model.consumeModeCommand(launcher: launcher) { closePalette(); return }
-        // Submitting in keyword mode asks the AI, like ⌘Return, when there is something to ask.
-        if launcher, plugins.isActive, !active {
-            if pluginDisplay?.offersAskAI != false { askAIFromPlugin() }
-            return
-        }
-        if launcher, showsLauncherSuggestions, !active, let item = highlightedHomeItem {
-            pick(item)
-            return
-        }
-        if launcher { model.submitLauncher() } else { model.submitDraft() }
+        if launcher { runLauncherPrimaryAction(); return }
+        if model.consumeModeCommand(launcher: false) { closePalette(); return }
+        model.submitDraft()
     }
     @State private var suggestionIndex = 0
     /// A local answer for the launcher's text, such as a calculation.
@@ -264,6 +352,7 @@ struct AskComposer: View {
     private var presentedQuickResults: AskQuickResults? { quickSearch.presentation }
     private var quickResultsArePending: Bool {
         quickSearch.pendingResults != nil || !quickSearch.isCurrent(text: draft.wrappedValue.text)
+            || presentedQuickResults?.stale == true
     }
     /// The tallest the quick results have been since they appeared. The list keeps
     /// that height while typing, so the panel does not shrink and grow with every
@@ -382,7 +471,7 @@ struct AskComposer: View {
                 model.enterLauncherSearchEntry(entry)
                 performPluginAction(.init(kind: .openChat, title: entry.title, symbol: entry.symbol))
             } else {
-                model.enterLauncherSearchEntry(entry)
+                model.enterLauncherSearchEntry(entry, run: close)
                 pluginHighlight = 0
                 pluginReserve = 0
             }
@@ -624,9 +713,10 @@ struct AskComposer: View {
         return false
     }
 
-    /// ⇥ on a lone keyword, or a click on its row: enter keyword mode.
-    private func acceptPluginHint() -> Bool {
-        guard plugins.acceptHint() else { return false }
+    /// Tab enters keyword mode; Return can also run a workflow that needs no input.
+    private func acceptPluginHint(run: Bool = false) -> Bool {
+        let enteredWorkflow = run && plugins.hint.map { model.enterLauncherWorkflow($0, run: true) } == true
+        guard enteredWorkflow || plugins.acceptHint() else { return false }
         pluginHighlight = 0
         pluginReserve = 0
         draft.wrappedValue.text = ""
@@ -649,7 +739,7 @@ struct AskComposer: View {
             performPluginAction(.init(kind: AskScreenshotPlugin.captureKind(for: hint), title: "", symbol: ""))
             return
         }
-        if pluginDisplay?.hint != nil { _ = acceptPluginHint(); return }
+        if pluginDisplay?.hint != nil { _ = acceptPluginHint(run: true); return }
         if plugins.currentOutput?.translation?.submitted == false, plugins.run() { return }
         if plugins.plugin?.id == AskTranslatePlugin.id, !plugins.isPlanCurrent, plugins.run() { return }
         if plugins.plugin?.id == AskTranslatePlugin.id, plugins.isRunning, plugins.run() { return }
@@ -848,10 +938,28 @@ struct AskComposer: View {
         return true
     }
 
-    /// ⌘O: the system monitor moves into its window; elsewhere it opens the chat.
+    var launcherCanOpenFeatureWindow: Bool {
+        guard plugins.isActive, !active, !voice.isActive, model.workflowApproval == nil else { return false }
+        if pluginDisplay?.calendar == true || pluginDisplay?.systemMonitor == true { return true }
+        guard launcherPluginInputIsCurrent, plugins.canHandOff else { return false }
+        // The result window renders text. Lists and images must keep their feature's interface.
+        if let output = plugins.currentOutput {
+            return output.items.isEmpty && output.image == nil && output.emoji == nil && !output.body.isEmpty
+        }
+        return plugins.plugin is AskPromptPlugin || plugins.plugin is AskTranslatePlugin
+    }
+
+    private func openLauncherFeatureWindow() {
+        guard launcherCanOpenFeatureWindow, !launcherEditorIsComposing else { return }
+        if pluginDisplay?.calendar == true { _ = calendarKey(.commandO); return }
+        if pluginDisplay?.systemMonitor == true { _ = systemMonitorKey(.commandO); return }
+        performPluginAction(.init(kind: .openInWindow, title: L("ask.plugin.action.openInWindow"),
+                                  symbol: "macwindow.on.rectangle", shortcut: .commandO))
+    }
+
+    /// ⌘O follows the independent window control; unsupported features never fall through to Chat.
     private func openChatOrMonitorWindow() {
-        if pluginDisplay?.calendar == true, calendarKey(.commandO) { return }
-        if pluginDisplay?.systemMonitor == true, systemMonitorKey(.commandO) == true { return }
+        if plugins.isActive { openLauncherFeatureWindow(); return }
         openChat()
     }
 
@@ -903,7 +1011,9 @@ struct AskComposer: View {
     var showsLauncherSuggestions: Bool {
         launcher && !model.launcherHistoryMode && !launcherCollapsed && !plugins.isActive
             && !draft.wrappedValue.hasText && (draft.wrappedValue.references ?? []).isEmpty
-            && (draft.wrappedValue.attachments ?? []).isEmpty && !model.isLoadingAttachments(launcher: true) && !paletteOpen
+            && (draft.wrappedValue.attachments ?? []).isEmpty && (draft.wrappedValue.skills ?? []).isEmpty
+            && (draft.wrappedValue.mcpServers ?? []).isEmpty
+            && !model.isLoadingAttachments(launcher: true) && !paletteOpen
     }
 
     /// What the launcher's home offers for its context; empty outside the launcher.
@@ -933,7 +1043,7 @@ struct AskComposer: View {
     }
 
     /// Runs a home row: a keyword on the selection, a question, or a conversation.
-    /// A chip enters its keyword and waits, as typing it and a space would.
+    /// A workflow chip runs at once when its input is optional or unused.
     private func pick(_ item: AskLauncherHome.Item) {
         let keyword: AskKeyword, run: Bool
         switch item {
@@ -1486,6 +1596,21 @@ struct AskComposer: View {
     }
 
     private func commandKey(_ key: AskCommandKey) -> Bool {
+        if launcher, key == .enter { runLauncherPrimaryAction(); return true }
+        if launcher, key == .commandO { openChatOrMonitorWindow(); return true }
+        if launcher, key == .commandEnter {
+            if routeCommandKey(key) { return true }
+            if plugins.isActive {
+                if pluginDisplay?.offersAskAI == true { askAIFromPlugin() }
+            } else {
+                model.submitLauncher()
+            }
+            return true
+        }
+        return routeCommandKey(key)
+    }
+
+    private func routeCommandKey(_ key: AskCommandKey) -> Bool {
         if launcher, !paletteOpen, model.launcherInputHistoryKey(key) { return true }
         if launcher, !active, !paletteOpen, !plugins.isActive, !draft.wrappedValue.hasText,
            key == .up, !showsLauncherSuggestions || suggestionIndex == 0 {
@@ -1656,7 +1781,8 @@ struct AskComposer: View {
     }
 
     private func historyKey(_ key: AskCommandKey) -> Bool {
-        launcher && model.launcherInputHistoryKey(key)
+        // Return shares the primary action's readiness and duplicate-activation guard.
+        launcher && key != .enter && model.launcherInputHistoryKey(key)
     }
 
     private func emptyLauncherBackspace() -> Bool {
@@ -1708,7 +1834,7 @@ struct AskComposer: View {
 
     /// The launcher's first row: the recording dot while dictating,
     /// the editor (the words being recognised), then the microphone
-    /// and chat/AI button, or the elapsed time, cancel and stop while recording.
+    /// and primary/window actions, or the elapsed time, cancel and stop while recording.
     private var launcherHeader: some View {
         HStack(alignment: .top, spacing: 10) {
             if active {
@@ -1763,10 +1889,25 @@ struct AskComposer: View {
                 .accessibilityLabel(AskVoiceButton.title(phase: voice.phase,
                                                         contextMatches: voice.context == contextID))
                 .accessibilityIdentifier("ask.composer.voice")
-            if !active, pluginDisplay?.calendar != true {
-                AskLauncherOpenChatButton(mode: launcherChatAction, enabled: launcherChatActionEnabled,
+            if !active {
+                if launcherCanOpenFeatureWindow {
+                    Button(action: openLauncherFeatureWindow) {
+                        Image(systemName: "macwindow.on.rectangle")
+                            .font(.system(size: 16, weight: .medium))
+                            .frame(width: AskSendButton.size, height: AskSendButton.size)
+                            .contentShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(StudioTheme.textSecondary)
+                    .help(L("ask.plugin.action.openInWindow") + " · ⌘O")
+                    .accessibilityLabel(L("ask.plugin.action.openInWindow"))
+                    .accessibilityIdentifier("ask.launcher.featureWindow")
+                    .modifier(AskLauncherShortcutBadge(key: "O", leadingInset: 24, topInset: -5))
+                }
+                AskLauncherOpenChatButton(mode: launcherPrimaryAction.mode, enabled: launcherPrimaryAction.enabled,
+                                         disabledReason: launcherPrimaryAction.disabledReason,
                                          tint: privateTint ? AskTheme.privateTint : AskTheme.accent,
-                                          action: runLauncherChatAction)
+                                         action: runLauncherPrimaryAction)
             }
         }
         .padding(.horizontal, chrome.horizontalInset)
@@ -1841,6 +1982,24 @@ struct AskComposer: View {
     }
 
     private var launcherHint: String {
+        if !active {
+            let primary = launcherPrimaryAction
+            // One source names Return; existing hints contribute only the other shortcuts.
+            let secondary = launcherSecondaryHint.components(separatedBy: " · ").filter { !$0.hasPrefix("↩") }
+            let askAI = pluginDisplay.map { $0.offersAskAI } ?? model.launcherDraft.canSend
+            var parts = [primary.enabled ? "↩ " + primary.title : primary.hint] + secondary
+            if askAI, primary.mode != .askAI, !parts.contains(where: { $0.contains("⌘↩") }) {
+                parts.append(L("ask.plugin.hint.askAI"))
+            }
+            if launcherCanOpenFeatureWindow, !parts.contains(where: { $0.contains("⌘O") }) {
+                parts.append("⌘O " + L("ask.plugin.action.openInWindow"))
+            }
+            return parts.joined(separator: " · ")
+        }
+        return launcherSecondaryHint
+    }
+
+    private var launcherSecondaryHint: String {
         if !active, model.launcherHistoryMode { return L("ask.inputHistory.hint") }
         if !active, let pluginDisplay { return AskPluginResultsView.hint(for: pluginDisplay) }
         if !active, showsLauncherSuggestions, let item = highlightedHomeItem {

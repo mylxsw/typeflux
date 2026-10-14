@@ -63,7 +63,7 @@
   - 输入行左侧（上下文标记右边）出现**关键字标签**：插件颜色、图标、插件名，关键字带预设参数时也显示（例如「翻译 → 日语」）。
   - 占位文字换成插件自己的提示，例如「要翻译的内容 · 留空翻译选中的 2 行」。
   - 参数为空时按 ⌫，标签变回文字 `fy`，可以继续编辑或删掉。
-- 结果区由插件独占，最后一行保留「问 AI」（⌘↩）。
+- 结果区由插件独占。主按钮与当前回车动作保持一致；「问 AI」保留为 ⌘↩，独立窗口入口使用窗口图标与 ⌘O。
 
 ## 3. 输入来源（按你的规则）
 
@@ -332,7 +332,28 @@ struct AskPluginAction: Equatable {
 - `LLMRouterTests`：`streamComplete` 按服务商转发，以及不支持流式时的整段回退。
 ## 14. Launcher discovery and system commands (2026-10-10)
 
-Normal launcher search includes enabled, reachable keywords and installed workflows. It matches their keywords and names, ranking exact matches before prefixes and substrings. These local features appear before applications and files. Return or Tab enters the chosen feature with an empty query; on-submit workflows still require a subsequent Return to run. Selecting Ask AI continues to submit the original query.
+Normal launcher search includes enabled, reachable keywords and installed workflows. It matches their keywords and names, ranking exact matches before prefixes and substrings. These local features appear before applications and files. Return runs a selected workflow immediately when `input.argument` is `optional` or `none`; workflows requiring text enter their input mode first. Tab only enters the chosen feature with an empty query. Directory choices and home keyword chips follow the same workflow rule. Selecting Ask AI continues to submit the original query.
+
+## Launcher primary action (GUL-386)
+
+The header and Return share one primary action. The button uses a chat bubble to open
+an empty chat, an upward arrow to send to AI, or a Return symbol to confirm the current
+local action. Its accessible name, tooltip, enabled state and footer describe the same
+target. A selected home item also owns Return when the editor is empty.
+
+History, command menus, approvals, keyword actions and search results retain their
+existing keyboard routing. Calculations copy; files open; keyword results use their
+declared Return action. Waiting, stale and unavailable targets stay disabled and never
+fall through to Chat. Attachments alone can send; automatically captured context and
+tool tokens alone cannot. Command-Return remains the explicit AI action.
+
+The independent window control uses `macwindow.on.rectangle` and Command-O. Calendar
+and system monitor retain their own window behavior. Current text results and submitted
+text streams can move through the existing result handoff without running again.
+Empty keyword input, pending approvals, live debounce, lists and images do not offer a
+generic text window. An unsupported keyword window shortcut never opens Chat instead.
+Holding Return does not repeat submissions; rapid duplicate activations are suppressed
+without preventing an explicit second confirmation or changing the selected target.
 
 Settings → Launcher → Keywords includes an 18-command system catalog. Commands use their full English names (lowercase, without spaces or punctuation) as default keywords and remain searchable by name. Users can add, edit, disable or delete their own aliases. English and Chinese command names are searchable in either interface language.
 

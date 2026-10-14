@@ -26,10 +26,9 @@ struct AskRecoveryNoticePresentationTests {
         #expect(!presentation.canEnd)
     }
 
-    @Test(arguments: ["waiting_tool", "completed"])
-    func `unsynced results on another device explain where to continue`(status: String) {
+    @Test func `unsynced results on another device explain where to continue`() {
         var value = AskRecoveryFixture.conversation()
-        value.run?.status = status
+        value.run?.status = "waiting_tool"
         let audit = AskRecoveryFixture.audit(value)
         let entry = AskExecutionEntry(id: audit.identity.key, audit: audit, receipt: AskRecoveryFixture.receipt(value))
         let presentation = AskRecoveryPresentation(
@@ -57,20 +56,33 @@ struct AskRecoveryNoticePresentationTests {
     }
 
     @Test(arguments: [false, true])
-    func `confirmed results stay silent but unsynced results need attention`(inference: Bool) {
+    func `completed answer stays settled despite unacknowledged local receipt`(inference: Bool) {
         var value = AskRecoveryFixture.conversation(model: inference)
         value.run?.status = "completed"
         let receipt = AskRecoveryFixture.receipt(value, model: inference)
         var audit = AskRecoveryFixture.audit(value, model: inference)
         let saved = AskExecutionEntry(id: audit.identity.key, audit: audit, receipt: receipt)
         let pending = AskRecoveryPresentation(run: value.run, entries: [saved], deviceId: "device", local: false)
-        #expect(pending.isVisible && !pending.canContinue)
-        #expect(!pending.unknown && pending.savedReceipts == 1)
+        #expect(!pending.isVisible && !pending.canContinue)
+        #expect(!pending.unknown && pending.savedReceipts == 0)
         audit.record(.acknowledged)
         let confirmed = AskExecutionEntry(id: audit.identity.key, audit: audit, receipt: receipt)
         let settled = AskRecoveryPresentation(run: value.run, entries: [confirmed], deviceId: "device", local: false)
         #expect(!settled.isVisible && !settled.canContinue)
         #expect(!settled.unknown && settled.savedReceipts == 0)
+    }
+
+    @Test func `completed answer ignores stale uncertain claim and recovery marker`() {
+        var value = AskRecoveryFixture.conversation()
+        value.run?.status = "completed"
+        value.run?.pending = []
+        value.run?.recovery = .init(state: "unknown_outcome", sequence: 3)
+        let audit = AskRecoveryFixture.audit(value)
+        let stale = AskExecutionEntry(id: audit.identity.key, audit: audit)
+        let presentation = AskRecoveryPresentation(run: value.run, entries: [stale], deviceId: "device", local: true)
+        #expect(!presentation.isVisible && !presentation.unknown)
+        #expect(AskRunPhase.resolve(run: value.run, busy: false, pendingApproval: false,
+                                    recovery: presentation) == .completed(steps: 1))
     }
 
     @Test func `unknown current outcome and unreadable legacy record still need attention`() {
@@ -111,7 +123,8 @@ struct AskRecoveryNoticePresentationTests {
         #expect(entry.unknown)
         #expect(presentation.isVisible == (status == "waiting_tool"))
         value.run?.recovery = .init(state: "unknown_outcome", sequence: 2)
-        #expect(AskRecoveryPresentation(run: value.run, entries: [entry], deviceId: "device", local: false).unknown)
+        #expect(AskRecoveryPresentation(run: value.run, entries: [entry], deviceId: "device", local: false).unknown
+            == (status != "completed"))
     }
 
     @Test func `unfinished current execution cannot offer to continue before inspection or sync`() {
@@ -153,6 +166,28 @@ struct AskRecoveryNoticePresentationTests {
 @Suite("Ask recovery notice interactions", .serialized, .exclusiveUIState)
 @MainActor
 struct AskRecoveryNoticeInteractionTests {
+    @Test func `finished one question answer ignores an unconfirmed local claim`() async throws {
+        let fixture = try AskTestFixture()
+        defer { fixture.model.resetSession() }
+        var value = AskRecoveryFixture.conversation(model: true)
+        value.title = "hello"
+        value.messages = [
+            .init(id: "question", role: "user", text: "hello", createdAt: Date()),
+            .init(id: "answer", role: "assistant", text: "Hello!", createdAt: Date())
+        ]
+        value.run?.status = "completed"
+        value.run?.inference = nil
+        let audit = AskRecoveryFixture.audit(value, model: true)
+        #expect(try await fixture.cache.claimExecution(audit, owner: "owner"))
+        await fixture.api.seed(value)
+        await fixture.model.select(value.id)
+        #expect(fixture.model.selected?.messages.last?.text == "Hello!")
+        #expect(fixture.model.selectedRecoveryEntries.count == 1)
+        #expect(!fixture.model.hasRecoveryNotice)
+        #expect(!fixture.model.recoveryBlocksResume(value))
+        #expect(fixture.model.runPhase == .completed(steps: 1))
+    }
+
     @Test func `completed retry with delivered failure stays quiet after reopening`() async throws {
         let fixture = try AskTestFixture()
         defer { fixture.model.resetSession() }

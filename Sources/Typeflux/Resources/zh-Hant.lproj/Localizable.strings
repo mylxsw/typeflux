@@ -3426,7 +3426,7 @@
 "ask.workflow.gallery.codec.usage.2" = "Base64 編碼";
 "ask.workflow.gallery.codec.usage.3" = "-d 解碼，-e 編碼";
 "ask.workflow.gallery.uuid.name" = "產生 UUID / 密碼";
-"ask.workflow.gallery.uuid.summary" = "直接複製到剪貼簿，底欄提示「已複製」。";
+"ask.workflow.gallery.uuid.summary" = "直接複製到剪貼簿，並顯示成功提示。";
 "ask.workflow.gallery.uuid.demonstrates" = "「只做事」的工作流程：不顯示，複製 + 底欄提示";
 "ask.workflow.gallery.uuid.keyword.uuid" = "產生 UUID";
 "ask.workflow.gallery.uuid.keyword.pwd" = "產生密碼";
@@ -3686,6 +3686,15 @@
 "ask.openChat.hint" = "開啟聊天視窗 ⌘O";
 "ask.openChat.wait" = "請先完成錄音或等待附件載入完成";
 "ask.openChat.placeholder" = "可輸入正文，開啟後作為草稿";
+
+// Launcher primary action
+"ask.launcher.action.wait" = "正在等待目前結果";
+"ask.launcher.action.input" = "請輸入內容後繼續";
+"ask.launcher.action.unavailable" = "目前沒有可執行的操作";
+"ask.launcher.action.run" = "執行%@";
+"ask.launcher.action.confirm" = "確認";
+"ask.launcher.action.open" = "開啟%@";
+"ask.launcher.action.copyResult" = "複製結果";
 "ask.settings.keywords.kind.chat.hint" = "開啟聊天視窗，不傳送訊息";
 "ask.drafts.saved" = "暫存草稿";
 "ask.drafts.untitled" = "未命名草稿";

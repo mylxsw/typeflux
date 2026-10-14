@@ -3429,7 +3429,7 @@
 "ask.workflow.gallery.codec.usage.2" = "Base64-encodes";
 "ask.workflow.gallery.codec.usage.3" = "-d decodes, -e encodes";
 "ask.workflow.gallery.uuid.name" = "UUID / Password";
-"ask.workflow.gallery.uuid.summary" = "Copies it straight to the clipboard and says so in the bottom bar.";
+"ask.workflow.gallery.uuid.summary" = "Copies it straight to the clipboard and shows a confirmation.";
 "ask.workflow.gallery.uuid.demonstrates" = "A workflow that only does something: nothing shown, copy + bottom bar";
 "ask.workflow.gallery.uuid.keyword.uuid" = "New UUID";
 "ask.workflow.gallery.uuid.keyword.pwd" = "New password";
@@ -3689,6 +3689,15 @@
 "ask.openChat.hint" = "Open chat window ⌘O";
 "ask.openChat.wait" = "Finish recording or loading attachments before opening chat.";
 "ask.openChat.placeholder" = "Optional message — opens as a draft";
+
+// Launcher primary action
+"ask.launcher.action.wait" = "Waiting for current results";
+"ask.launcher.action.input" = "Enter content to continue";
+"ask.launcher.action.unavailable" = "No action available";
+"ask.launcher.action.run" = "Run %@";
+"ask.launcher.action.confirm" = "Confirm";
+"ask.launcher.action.open" = "Open %@";
+"ask.launcher.action.copyResult" = "Copy result";
 "ask.settings.keywords.kind.chat.hint" = "Open the chat window without sending a message";
 "ask.drafts.saved" = "Saved drafts";
 "ask.drafts.untitled" = "Untitled draft";
