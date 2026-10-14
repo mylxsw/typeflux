@@ -108,12 +108,12 @@ struct SemanticFileServiceTests {
         let (service, root, _, _) = try fixture(supported: false)
         defer { try? FileManager.default.removeItem(at: root) }
         service.start()
-        #expect(service.phase == .off); #expect(!service.setEnabled(true, roots: [root.path]))
+        #expect(service.phase == .off); #expect(!service.setEnabled(true))
         #expect(!service.preferences.enabled)
         #expect(await service.search("query", type: .all, limit: 10).isEmpty)
         #expect(!FileManager.default.fileExists(atPath: root.appendingPathComponent("semantic-files.sqlite").path))
         #expect(!service.setEnabled(true))
-        service.settings.semanticFileSearch = .init(enabled: true, roots: [root.path])
+        service.settings.semanticFileSearch = .init(enabled: true)
         service.start(force: true)
         #expect(service.phase == .off, "persisted preferences cannot bypass the hardware gate")
         await service.clear()
@@ -122,8 +122,13 @@ struct SemanticFileServiceTests {
     @Test func `model download retry search rebuild and removal`() async throws {
         let (service, root, reader, models) = try fixture()
         defer { try? FileManager.default.removeItem(at: root) }
+        var names = service.settings.askLauncherSearchSettings
+        names.fileRoots = []
+        service.settings.askLauncherSearchSettings = names
         #expect(!service.setEnabled(true))
-        #expect(service.setEnabled(true, roots: [root.path]))
+        names.fileRoots = [root.path]
+        service.settings.askLauncherSearchSettings = names
+        #expect(service.setEnabled(true))
         try await Self.wait { service.phase == .modelRequired }
         models.status = 503
         service.downloadModel()
@@ -145,8 +150,11 @@ struct SemanticFileServiceTests {
         service.pause(true)
         try await Self.wait { service.phase == .paused }
         #expect(service.files == 1)
+        #expect(!service.isEnabled)
+        #expect(await service.search("报销流程", type: .all, limit: 10).isEmpty)
         service.pause(false)
         try await Self.wait { service.phase == .ready }
+        #expect(service.isEnabled)
         service.setForegroundBusy(true)
         try await Self.wait { service.phase == .paused }
         service.setForegroundBusy(false)
@@ -160,10 +168,10 @@ struct SemanticFileServiceTests {
         #expect(!FileManager.default.fileExists(atPath: service.modelURL.path)); #expect(!service.modelReady)
     }
 
-    @Test func `download cancellation corruption and empty scope`() async throws {
+    @Test func `download cancellation corruption and disabling`() async throws {
         let (service, root, _, models) = try fixture()
         defer { try? FileManager.default.removeItem(at: root) }
-        #expect(service.setEnabled(true, roots: [root.path]))
+        #expect(service.setEnabled(true))
         try await Self.wait { service.phase == .modelRequired }
         models.delay = .seconds(1)
         service.downloadModel(); service.cancelDownload()
@@ -173,7 +181,7 @@ struct SemanticFileServiceTests {
         service.downloadModel()
         try await Self.wait { service.phase == .failed }
         #expect(!service.modelReady)
-        service.setRoots([])
+        service.setEnabled(false)
         #expect(service.phase == .off); #expect(!service.preferences.enabled)
         await service.clear()
         #expect(throws: (any Error).self) { try SemanticModel.verify(models.source) }
@@ -190,7 +198,7 @@ struct SemanticFileServiceTests {
             helper: URL(fileURLWithPath: "/usr/bin/true"), supported: true, watcher: watcher,
             access: { true }, resourceConstrained: { constrained.isCancelled }, models: models,
             makeReader: { reader }, makeEncoder: { _, _ in encoder }, makeQuery: { _, _ in SemanticFixtureQuery() })
-        fixture.settings.semanticFileSearch = .init(enabled: true, roots: [root.path])
+        fixture.settings.semanticFileSearch = .init(enabled: true)
         try await Self.wait { service.phase == .ready }
         #expect(watcher.started == [root.path])
         reader.modified = reader.modified.addingTimeInterval(1)
@@ -204,7 +212,7 @@ struct SemanticFileServiceTests {
         NotificationCenter.default.post(name: ProcessInfo.thermalStateDidChangeNotification, object: ProcessInfo.processInfo)
         try await Task.sleep(for: .milliseconds(30))
         try await Self.wait { service.phase == .paused }
-        fixture.settings.semanticFileSearch = .init(enabled: false, roots: [root.path])
+        fixture.settings.semanticFileSearch = .init(enabled: false)
         try await Self.wait { service.phase == .off }
         #expect(watcher.started.isEmpty)
         await service.clear(removeModel: true)
@@ -216,7 +224,7 @@ struct SemanticFileServiceTests {
         try FileManager.default.copyItem(at: models.source, to: service.modelURL)
         let index = root.appendingPathComponent("semantic-files.sqlite")
         try Data("corrupt index".utf8).write(to: index)
-        #expect(service.setEnabled(true, roots: [root.path]))
+        #expect(service.setEnabled(true))
         try await Self.wait { service.phase == .failed }
         #expect(service.modelReady)
         await service.clear()
@@ -304,8 +312,7 @@ struct SemanticFileServiceTests {
                 #expect(toggle.value("isAccessibilityEnabled") as? Bool == false)
                 #expect(Support.contains(L("semantic.unsupported"), in: host))
             }
-            let view = SemanticFileSearchSettingsView(service: service, filesEnabled: true,
-                pickFolders: { [root.path, "/outside-content-scope"] })
+            let view = SemanticFileSearchSettingsView(service: service, filesEnabled: true)
             try await Support.withWindow(view, width: 760, height: 280) { window, host in
                 #expect(Support.contains(L("semantic.offDetail"), in: host))
                 let toggle = try #require(Support.elements(in: host).first {
@@ -321,23 +328,21 @@ struct SemanticFileServiceTests {
                 try await Self.ready { window.attachedSheet == nil }
                 #expect(!service.preferences.enabled)
 
-                // Setup: the primary action waits for a folder, then downloads and closes.
+                // Setup reads the existing file-search scope and can enable immediately.
                 try toggle.press()
                 try await Self.ready { window.attachedSheet != nil }
                 let setup = try #require(window.attachedSheet)
                 try await Self.ready { Support.contains(L("semantic.enable.download"), in: setup) }
                 let enable = try Support.button(L("semantic.enable.download"), in: setup)
-                #expect(enable.value("isAccessibilityEnabled") as? Bool == false)
-                try await press(L("semantic.folders.add"), in: setup)
-                try await Self.ready { Support.contains(L("semantic.scopeError"), in: setup) }
+                #expect(enable.value("isAccessibilityEnabled") as? Bool == true)
                 #expect(Support.contains(L("semantic.folders.count", 1), in: setup))
                 try await press(L("semantic.enable.download"), in: setup)
                 try await Self.ready { window.attachedSheet == nil }
                 try await Self.ready { service.phase == .ready }
-                #expect(service.preferences.roots == [root.path])
+                #expect(service.settings.askLauncherSearchSettings.fileRoots == [root.path])
                 try await Self.ready { Support.contains(service.status().text, in: host) }
 
-                // Manage: lifecycle controls act at once; folder edits wait for Done.
+                // Manage: lifecycle controls act at once; scope is read-only here.
                 try await press(L("semantic.manage"), in: host)
                 try await Self.ready { window.attachedSheet != nil }
                 let manage = try #require(window.attachedSheet)
@@ -357,13 +362,12 @@ struct SemanticFileServiceTests {
                     phases.contains(.off) && service.phase == .ready && service.files == 1
                         && service.preferences.enabled
                 }
-                try await press(L("ask.remove"), in: manage)
-                try await Self.ready { Support.contains(L("semantic.folders.none"), in: manage) }
-                #expect(service.preferences.roots == [root.path] && service.preferences.enabled)
+                #expect(Support.contains(L("semantic.folders.count", 1), in: manage))
+                #expect(service.settings.askLauncherSearchSettings.fileRoots == [root.path]
+                    && service.preferences.enabled)
                 try await press(L("semantic.close"), in: manage)
                 try await Self.ready { window.attachedSheet == nil }
-                try await Self.ready { !service.preferences.enabled && service.phase == .off }
-                #expect(service.preferences.roots.isEmpty)
+                #expect(service.preferences.enabled && service.phase == .ready)
             }
         }
         await service.clear(removeModel: true)
@@ -372,7 +376,7 @@ struct SemanticFileServiceTests {
     @Test func foldersEditedDuringRebuildAreNotRestored() async throws {
         let (service, root, _, _) = try fixture()
         defer { try? FileManager.default.removeItem(at: root) }
-        #expect(service.setEnabled(true, roots: [root.path]))
+        #expect(service.setEnabled(true))
         await service.prepareModelIfNeeded()
         try await Self.wait { service.phase == .ready }
         let rebuild = Task { await service.rebuild() }
@@ -381,9 +385,11 @@ struct SemanticFileServiceTests {
         while service.settings.semanticFileSearch.enabled, spins < 100_000 {
             await Task.yield(); spins += 1
         }
-        service.setRoots([])
+        var names = service.settings.askLauncherSearchSettings
+        names.fileRoots = []
+        service.settings.askLauncherSearchSettings = names
         await rebuild.value
-        #expect(!service.settings.semanticFileSearch.enabled && service.settings.semanticFileSearch.roots.isEmpty)
+        #expect(!service.settings.semanticFileSearch.enabled && service.settings.askLauncherSearchSettings.fileRoots.isEmpty)
         #expect(service.phase == .off)
         await service.clear(removeModel: true)
     }
@@ -392,7 +398,7 @@ struct SemanticFileServiceTests {
         typealias Support = SettingsBehaviorTestSupport
         let (service, root, _, _) = try fixture()
         defer { try? FileManager.default.removeItem(at: root) }
-        #expect(service.setEnabled(true, roots: [root.path]))
+        #expect(service.setEnabled(true))
         await service.prepareModelIfNeeded()
         try await Self.wait { service.phase == .ready }
         let stored = service.storage()
@@ -417,8 +423,8 @@ struct SemanticFileServiceTests {
                             service.modelReady == (key == "semantic.clear")
                     }
                 }
-                // Clearing keeps the model and the folder choice; removal deletes the weights.
-                #expect(service.preferences.roots == [root.path])
+                // Clearing keeps the model and file-search scope; removal deletes the weights.
+                #expect(service.settings.askLauncherSearchSettings.fileRoots == [root.path])
                 #expect(service.modelReady == (key == "semantic.clear"))
             }
         }

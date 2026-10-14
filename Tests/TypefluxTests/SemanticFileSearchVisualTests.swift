@@ -55,7 +55,7 @@ struct SemanticFileSearchVisualTests {
         }
         try await Self.render(card(unsupported), width: 760, name: "unsupported")
         let off = try await Self.render(card(service), width: 760, name: "card-off")
-        #expect(service.setEnabled(true, roots: [root.path]))
+        #expect(service.setEnabled(true))
         await service.prepareModelIfNeeded()
         try await SemanticFileServiceTests.wait { service.phase == .ready }
         let ready = try await Self.render(card(service), width: 760, name: "card-ready")
@@ -70,7 +70,6 @@ struct SemanticFileSearchVisualTests {
         defer { AppLocalization.shared.setLanguage(language) }
         let (service, root, _, _) = try SemanticFileServiceTests().fixture()
         defer { try? FileManager.default.removeItem(at: root) }
-        service.setRoots([root.path])
         let width = SemanticFileSearchSheet.width
         let setup = try await Self.render(SemanticFileSearchSheet(service: service, setup: true, onClose: {}),
                                           width: width, name: "setup")
@@ -82,7 +81,9 @@ struct SemanticFileSearchVisualTests {
                                            width: width, name: "manage")
         #expect(manage.height > 400 && manage.height < 760)
         let many = (0 ..< 9).map { root.appendingPathComponent("folder-\($0)").path }
-        service.setRoots(many)
+        var names = service.settings.askLauncherSearchSettings
+        names.fileRoots = many
+        service.settings.askLauncherSearchSettings = names
         let scrolling = try await Self.render(SemanticFileSearchSheet(service: service, setup: false, onClose: {}),
                                               width: width, name: "manage-many")
         #expect(abs(scrolling.height - manage.height) < CGFloat(SemanticFileSearchSheet.visibleFolders) * 69,

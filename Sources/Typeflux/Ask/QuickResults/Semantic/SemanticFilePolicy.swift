@@ -3,7 +3,6 @@ import Metal
 
 struct SemanticFileSettings: Codable, Equatable, Sendable {
     var enabled = false
-    var roots: [String] = []
 }
 
 extension SettingsStore {
@@ -48,17 +47,8 @@ enum SemanticFilePolicy {
         return self.extensions.contains((path as NSString).pathExtension.lowercased())
     }
 
-    static func scope(_ preferences: SemanticFileSettings, names: AskLauncherSearchSettings,
-                      fullDiskAccess: Bool) -> AskFileScope {
-        let parent = AskFileScope(settings: names, fullDiskAccess: fullDiskAccess)
-        var authorized = parent
-        authorized.blocked = []
-        var scope = parent
-        scope.roots = Array(Set(preferences.roots.map { AskFileScope.normalize(AskLauncherSearchSettings.expand($0)) }
-                .filter { authorized.includes($0, isDirectory: true) })).sorted()
-        // Content search never overrides a filename exclusion with a nested root.
-        scope.roots.removeAll { root in parent.excludedPaths.contains { AskFileScope.isInside(root, $0) } }
-        scope.includeHidden = false
+    static func scope(names: AskLauncherSearchSettings, fullDiskAccess: Bool) -> AskFileScope {
+        var scope = AskFileScope(settings: names, fullDiskAccess: fullDiskAccess)
         scope.excludedFolderNames.formUnion([".ssh", ".aws", ".config", ".gnupg", ".git", "node_modules", ".build"])
         return scope
     }

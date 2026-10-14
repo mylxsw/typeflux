@@ -1,7 +1,15 @@
 import Foundation
 
 enum SemanticFileIndexer {
-    struct Summary: Sendable { var files = 0; var skipped = 0; var limited = false }
+    struct Summary: Equatable, Sendable {
+        var files = 0
+        var skipped = 0
+        var limited = false
+        var scanned = 0
+        var discovered = 0
+        var total: Int?
+        var processed = 0
+    }
     private enum Failure: Error { case inference(Error) }
     private static let maximumFilesPerRoot = 50_000
 
@@ -14,6 +22,35 @@ enum SemanticFileIndexer {
                     progress: (Summary) -> Void) throws -> Summary {
         var seen = Set<String>(), summary = Summary()
         var failure: Error?
+        var total = 0
+        // Count supported files first so indexing can show a measured completion percentage.
+        for root in scope.roots {
+            var eligibleFiles = 0
+            let visited = AskFileCrawler.crawl(root, scope: scope, reader: reader,
+                                               isCancelled: cancelled, visit: { entry in
+                                                   summary.scanned += 1
+                                                   if entry.kind == .file, SemanticFilePolicy.allows(entry.path) {
+                                                       guard eligibleFiles < maximumFilesPerRoot else {
+                                                           summary.limited = true
+                                                           return false
+                                                       }
+                                                       eligibleFiles += 1
+                                                       total += 1
+                                                       summary.discovered = total
+                                                   }
+                                                   if summary.scanned.isMultiple(of: 1_000) {
+                                                       progress(summary)
+                                                   }
+                                                   return true
+                                               })
+            if visited >= AskFileCrawler.maximumEntries { summary.limited = true }
+            if cancelled() { throw CancellationError() }
+            if summary.limited { break }
+        }
+        let discoveryLimited = summary.limited
+        summary.limited = false
+        summary.total = total
+        progress(summary)
         for root in scope.roots {
             var eligibleFiles = 0
             let visited = AskFileCrawler.crawl(root, scope: scope, reader: reader,
@@ -37,9 +74,6 @@ enum SemanticFileIndexer {
                                                            cancelled: cancelled
                                                        ) {
                                                            seen.insert(entry.path); summary.files += 1
-                                                           if summary.files % 10 == 0 {
-                                                               progress(summary)
-                                                           }
                                                        } else {
                                                            summary.skipped += 1
                                                        }
@@ -55,6 +89,8 @@ enum SemanticFileIndexer {
                                                        }
                                                        try? store.remove(entry.path); summary.skipped += 1
                                                    }
+                                                   summary.processed += 1
+                                                   if summary.processed.isMultiple(of: 10) { progress(summary) }
                                                    return true
                                                })
             if visited >= AskFileCrawler.maximumEntries {
@@ -70,6 +106,7 @@ enum SemanticFileIndexer {
                 break
             }
         }
+        summary.limited = summary.limited || discoveryLimited
         if summary.skipped == 0, !summary.limited {
             try store.prune(keeping: seen, cancelled: cancelled)
         }

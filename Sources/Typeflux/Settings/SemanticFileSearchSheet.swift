@@ -1,14 +1,11 @@
 import AppKit
 import SwiftUI
 
-/// First-run setup and later management. Folder edits stay a draft until the primary action.
+/// First-run setup and later management for the shared file-search scope.
 struct SemanticFileSearchSheet: View {
     @ObservedObject var service: SemanticFileSearchService
     let setup: Bool
-    let pickFolders: () -> [String]?
     let onClose: () -> Void
-    @State private var roots: [String]
-    @State private var invalidRoot = false
     @State private var deletion: Deletion?
     @State private var permission = false
     enum Deletion: String, Identifiable {
@@ -20,11 +17,12 @@ struct SemanticFileSearchSheet: View {
     /// Rows shown before the folder list scrolls, so the sheet never outgrows the window.
     static let visibleFolders = 4
 
-    init(service: SemanticFileSearchService, setup: Bool,
-         pickFolders: @escaping () -> [String]? = { LauncherSearchSettingsView.pickFolders(allowApps: false) },
-         onClose: @escaping () -> Void) {
-        self.service = service; self.setup = setup; self.pickFolders = pickFolders; self.onClose = onClose
-        _roots = State(initialValue: service.preferences.roots)
+    init(service: SemanticFileSearchService, setup: Bool, onClose: @escaping () -> Void) {
+        self.service = service; self.setup = setup; self.onClose = onClose
+    }
+
+    private var roots: [String] {
+        SemanticFilePolicy.scope(names: self.service.settings.askLauncherSearchSettings, fullDiskAccess: true).roots
     }
 
     var body: some View {
@@ -179,13 +177,7 @@ struct SemanticFileSearchSheet: View {
                     } else {
                         self.folderRows
                     }
-                    ModelRowDivider(leading: self.roots.isEmpty ? 18 : 66)
-                    AgentSettingsActionRow(icon: "plus", title: L("semantic.folders.add"), action: self.addFolders)
                 }
-            }
-            if self.invalidRoot {
-                Text(L("semantic.scopeError")).font(.system(size: 12)).foregroundStyle(StudioTheme.warning)
-                    .padding(.horizontal, 4)
             }
             Self.hint(L("semantic.folders.help"))
         }
@@ -196,11 +188,7 @@ struct SemanticFileSearchSheet: View {
             ForEach(Array(self.roots.enumerated()), id: \.element) { index, root in
                 if index > 0 { ModelRowDivider(leading: 66) }
                 AgentSettingsRow(icon: "folder", title: AskFileLabels.folder(root),
-                                 subtitle: AskLauncherSearchSettings.abbreviate(root)) {
-                    AgentSettingsIconButton(systemImage: "minus", help: L("ask.remove")) {
-                        self.roots.removeAll { $0 == root }
-                    }
-                }
+                                 subtitle: AskLauncherSearchSettings.abbreviate(root))
                 .help(root)
             }
         }
@@ -219,38 +207,19 @@ struct SemanticFileSearchSheet: View {
                     .disabled(self.roots.isEmpty || !self.service.supported ||
                         !self.service.settings.askQuickFileSearchEnabled)
             } else {
-                Button(L("semantic.close"), action: self.save)
+                Button(L("semantic.close"), action: self.onClose)
                     .buttonStyle(ModelActionStyle(primary: true)).keyboardShortcut(.defaultAction)
             }
         }
     }
 
     private func enable() {
-        guard self.service.setEnabled(true, roots: self.roots) else {
-            self.invalidRoot = true
-            return
-        }
+        guard self.service.setEnabled(true) else { return }
         self.onClose()
         Task {
             // Preparation verifies an existing model before deciding to download.
             await self.service.prepareModelIfNeeded()
         }
-    }
-
-    /// Applying an empty folder list turns content search off, as the hint promises.
-    private func save() {
-        if self.roots != self.service.preferences.roots {
-            self.service.setRoots(self.roots)
-        }
-        self.onClose()
-    }
-
-    private func addFolders() {
-        guard let selected = self.pickFolders() else { return }
-        let names = self.service.settings.askLauncherSearchSettings
-        let allowed = SemanticFilePolicy.scope(.init(roots: selected), names: names, fullDiskAccess: true).roots
-        self.invalidRoot = allowed.count != Set(selected).count
-        self.roots = Array(Set(self.roots + allowed)).sorted()
     }
 
     static func hint(_ text: String) -> some View {

@@ -14,11 +14,14 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
     @Published private(set) var chunks = 0
     @Published private(set) var skipped = 0
     @Published private(set) var limited = false
+    @Published private(set) var indexProgress: SemanticFileIndexer.Summary?
     @Published private(set) var blocked: [String] = []
     @Published private(set) var modelReady = false
     @Published private(set) var preferences: SemanticFileSettings
     let supported: Bool
-    var isEnabled: Bool { supported && settings.semanticFileSearch.enabled && settings.askQuickFileSearchEnabled }
+    var isEnabled: Bool {
+        supported && preferences.enabled && settings.askQuickFileSearchEnabled && phase == .ready
+    }
     let settings: SettingsStore
     private let directory: URL
     private let helper: URL
@@ -96,30 +99,18 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
         self.start(force: true)
     }
 
-    @discardableResult func setEnabled(_ enabled: Bool, roots: [String]? = nil) -> Bool {
+    @discardableResult func setEnabled(_ enabled: Bool) -> Bool {
         guard !enabled || (self.supported && self.settings.askQuickFileSearchEnabled) else { return false }
         var next = self.settings.semanticFileSearch
         next.enabled = enabled
-        if let roots {
-            next.roots = roots
-        }
         if enabled,
-           SemanticFilePolicy.scope(next, names: self.settings.askLauncherSearchSettings, fullDiskAccess: true).roots
+           SemanticFilePolicy.scope(names: self.settings.askLauncherSearchSettings, fullDiskAccess: true).roots
            .isEmpty {
             return false
         }
         self.settings.semanticFileSearch = next
         self.start(force: true)
         return true
-    }
-
-    func setRoots(_ roots: [String]) {
-        var next = self.settings.semanticFileSearch; next.roots = roots
-        if roots.isEmpty {
-            next.enabled = false
-        }
-        self.settings.semanticFileSearch = next
-        self.start(force: true)
     }
 
     func pause(_ paused: Bool) {
@@ -135,6 +126,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
         let key = String(describing: preferences) + String(describing: names) +
             String(self.settings.askQuickFileSearchEnabled)
         guard force || self.fingerprint != key else { return }
+        if self.fingerprint != key || !self.backgroundPaused { self.indexProgress = nil }
         self.fingerprint = key
         token.cancel(); token = AskSearchCancellation()
         let token = token
@@ -148,7 +140,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
             return
         }
         self.phase = .preparing
-        let preferences = preferences, directory = directory, model = self.modelURL, helper = helper, access = access
+        let directory = directory, model = self.modelURL, helper = helper, access = access
         let models = models, makeReader = makeReader, makeEncoder = makeEncoder
         let paused = self.backgroundPaused
         self.work = Task { [weak self] in
@@ -157,7 +149,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
             do {
                 let prepared = try await Task.detached(priority: .utility) {
                     guard !token.isCancelled else { throw CancellationError() }
-                    let scope = SemanticFilePolicy.scope(preferences, names: names, fullDiskAccess: access())
+                    let scope = SemanticFilePolicy.scope(names: names, fullDiskAccess: access())
                     guard FileManager.default.fileExists(atPath: model.path) else {
                         return (scope, Optional<Result<SemanticFileStore, Error>>.none)
                     }
@@ -176,16 +168,17 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
                 let database = try databaseResult.get()
                 self.store = database
                 guard FileManager.default.isExecutableFile(atPath: helper.path) else { self.phase = .failed; return }
+                await self.updateCounts(database)
                 self.queryWorker = self.makeQuery(helper, model)
                 self.watcher.start(paths: prepared.0.roots, since: nil) { [weak self] _, _ in
                     Task { @MainActor in self?.scheduleReconcile() }
                 }
                 if paused {
-                    await self.updateCounts(database)
                     guard !token.isCancelled, !Task.isCancelled else { return }
                     self.phase = .paused
                     return
                 }
+                self.limited = false; self.skipped = 0
                 self.phase = .indexing
                 let result = try await Task.detached(priority: .utility) { [weak self] in
                     let reader = makeReader()
@@ -198,7 +191,8 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
                         cancelled: { token.isCancelled }, progress: { summary in
                             Task { @MainActor [weak self] in
                                 guard let self, !token.isCancelled else { return }
-                                self.files = summary.files; self.skipped = summary.skipped
+                                self.indexProgress = summary
+                                self.files = max(self.files, summary.files); self.skipped = summary.skipped
                             }
                         }
                     )
@@ -207,6 +201,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
                 self.skipped = result.skipped; self.limited = result.limited
                 await self.updateCounts(database)
                 guard !token.isCancelled, !Task.isCancelled else { return }
+                self.indexProgress = nil
                 self.phase = .ready
                 if self.dirty {
                     self.dirty = false; self.scheduleReconcile()
@@ -243,7 +238,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
 
 extension SemanticFileSearchService {
     func search(_ text: String, type: AskFileType = .all, limit: Int = 24) async -> [AskFileHit] {
-        guard limit > 0, self.supported, self.preferences.enabled, self.settings.askQuickFileSearchEnabled,
+        guard limit > 0, self.isEnabled,
               !self.removing,
               let query = SemanticFilePolicy.query(text, type: type), let store, let scope,
               let queryWorker else { return [] }
@@ -351,7 +346,8 @@ extension SemanticFileSearchService {
                     try FileManager.default.removeItem(at: model)
                 }
             }.value
-            self.files = 0; self.chunks = 0; self.skipped = 0; self.phase = .off
+            self.files = 0; self.chunks = 0; self.skipped = 0; self.limited = false
+            self.indexProgress = nil; self.phase = .off
             if removeModel {
                 self.modelReady = false
             }
@@ -372,10 +368,10 @@ extension SemanticFileSearchService {
     }
 
     func rebuild() async {
-        let roots = self.preferences.roots
+        let scope = self.settings.askLauncherSearchSettings.fileIndexFingerprint
         await self.clear()
-        // Folders edited while clearing win; never restore the scope the rebuild started with.
-        guard self.phase == .off, self.settings.semanticFileSearch.roots == roots else { return }
-        _ = self.setEnabled(true, roots: roots)
+        // Scope edits during clearing win; never restore an outdated filename-search scope.
+        guard self.phase == .off, self.settings.askLauncherSearchSettings.fileIndexFingerprint == scope else { return }
+        _ = self.setEnabled(true)
     }
 }

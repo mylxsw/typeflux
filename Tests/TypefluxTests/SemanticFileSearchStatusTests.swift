@@ -8,9 +8,10 @@ struct SemanticFileSearchStatusTests {
     typealias Status = SemanticFileSearchStatus
 
     func status(_ phase: SemanticFileSearchService.Phase, enabled: Bool = true, filesEnabled: Bool = true,
-                modelReady: Bool = true, blocked: [String] = []) -> Status {
+                modelReady: Bool = true, blocked: [String] = [],
+                indexProgress: SemanticFileIndexer.Summary? = nil) -> Status {
         .of(.init(phase: phase, enabled: enabled, filesEnabled: filesEnabled, modelReady: modelReady,
-                  files: 1248, chunks: 2816, blocked: blocked))
+                  files: 1248, chunks: 2816, blocked: blocked, indexProgress: indexProgress))
     }
 
     @Test func `off and suspended states explain themselves without actions`() {
@@ -23,7 +24,13 @@ struct SemanticFileSearchStatusTests {
         let download = status(.downloading(0.4), modelReady: false)
         #expect(download == .init(tone: .busy, text: L("semantic.downloading"), progress: .download(0.4)))
         let indexing = status(.indexing)
-        #expect(indexing.progress == .indexing && indexing.text == L("semantic.indexing", 1248.formatted()))
+        #expect(indexing.progress == .scanning(0, 0) && indexing.text == L("semantic.indexing", 1248.formatted()))
+        var measured = SemanticFileIndexer.Summary()
+        measured.scanned = 3_000; measured.discovered = 220
+        #expect(status(.indexing, indexProgress: measured).progress == .scanning(3_000, 220))
+        measured.total = 220; measured.processed = 55
+        #expect(status(.indexing, indexProgress: measured).progress == .indexing(55, 220))
+        #expect(status(.paused, indexProgress: measured).progress == .indexing(55, 220))
         #expect(status(.paused) == .init(tone: .busy, text: L("semantic.paused", 1248.formatted())))
     }
 

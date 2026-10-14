@@ -5,7 +5,6 @@ import SwiftUI
 struct SemanticFileSearchSettingsView: View {
     @ObservedObject var service: SemanticFileSearchService
     var filesEnabled: Bool
-    let pickFolders: () -> [String]?
     @State private var presentation: Presentation?
     @State private var permission = false
     enum Presentation: String, Identifiable {
@@ -13,9 +12,8 @@ struct SemanticFileSearchSettingsView: View {
         var id: String { rawValue }
     }
 
-    init(service: SemanticFileSearchService, filesEnabled: Bool,
-         pickFolders: @escaping () -> [String]? = { LauncherSearchSettingsView.pickFolders(allowApps: false) }) {
-        self.service = service; self.filesEnabled = filesEnabled; self.pickFolders = pickFolders
+    init(service: SemanticFileSearchService, filesEnabled: Bool) {
+        self.service = service; self.filesEnabled = filesEnabled
     }
 
     private var enabled: Bool { self.service.supported && self.service.preferences.enabled }
@@ -42,7 +40,7 @@ struct SemanticFileSearchSettingsView: View {
             }
         }
         .sheet(item: self.$presentation) { mode in
-            SemanticFileSearchSheet(service: self.service, setup: mode == .setup, pickFolders: self.pickFolders) {
+            SemanticFileSearchSheet(service: self.service, setup: mode == .setup) {
                 self.presentation = nil
             }
         }
@@ -120,7 +118,7 @@ struct SemanticStatusLine: View {
     }
 }
 
-/// Download progress is measured; indexing streams folders, so it has no known total.
+/// Counts eligible files before embedding so indexing has a measured total.
 struct SemanticProgressView: View {
     let progress: SemanticFileSearchStatus.Progress
     /// The settings card shows the downloaded size; the sheet names the stage instead.
@@ -138,12 +136,19 @@ struct SemanticProgressView: View {
                     Text(verbatim: "\(Int((fraction * 100).rounded()))%").monospacedDigit()
                 }
                 .font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
-            case .indexing:
+            case let .scanning(scanned, discovered):
                 ProgressView().progressViewStyle(.linear)
-                if !self.detailed {
-                    Text(L("semantic.progress.index")).font(.system(size: 11.5))
-                        .foregroundStyle(StudioTheme.textTertiary)
+                Text(L("semantic.progress.scanning", scanned.formatted(), discovered.formatted()))
+                    .font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
+            case let .indexing(processed, total):
+                let fraction = total > 0 ? min(1, Double(processed) / Double(total)) : 1
+                ProgressView(value: fraction).progressViewStyle(.linear)
+                HStack {
+                    Text(L("semantic.progress.indexing", processed.formatted(), total.formatted()))
+                    Spacer()
+                    Text(verbatim: "\(Int((fraction * 100).rounded()))%").monospacedDigit()
                 }
+                .font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
             }
         }
         .controlSize(.small)

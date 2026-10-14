@@ -41,6 +41,36 @@ struct SemanticHybridSearchTests {
         #expect(progressCalls == 0); #expect(await semantic.calls == 0)
     }
 
+    @Test func filenameResultsRemainAvailableBeforeAndDuringPausedIndexing() async throws {
+        let (service, root, _, _) = try SemanticFileServiceTests().fixture()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let files = AskTestFileIndex([("/work/report.md", .file, 0)])
+        let plugin = AskFileSearchPlugin(index: { files }, settings: { .init() }, semantic: { service })
+        let request = AskPluginRequest(text: "report", origin: .argument,
+                                       keyword: AskFileSearchPlugin.keywords[0], options: [:],
+                                       interfaceLanguage: .english)
+        #expect(service.setEnabled(true))
+        try await SemanticFileServiceTests.wait { service.phase == .modelRequired }
+        for phase in [SemanticFileSearchService.Phase.modelRequired, .paused] {
+            if phase == .paused {
+                await service.prepareModelIfNeeded()
+                try await SemanticFileServiceTests.wait { service.phase == .ready }
+                service.pause(true)
+                try await SemanticFileServiceTests.wait { service.phase == .paused }
+            }
+            #expect(!service.isEnabled)
+            let output = try await plugin.run(request, plan: plugin.plan(request), progress: { _ in })
+            #expect(output.items.first?.title == "report.md")
+            let session = AskQuickSearchSession()
+            session.update(text: "report", chinese: false, calculator: false,
+                           sources: .init(files: files, semantic: service))
+            try await SemanticFileServiceTests.wait { !session.isSearching }
+            #expect(session.results?.files.first?.name == "report.md")
+            session.cancel()
+        }
+        await service.clear(removeModel: true)
+    }
+
     @Test func `long natural query and late cancellation`() async throws {
         let semantic = SemanticDelayedSearch(hits: [hit]), session = AskQuickSearchSession()
         let files = AskTestFileIndex()
