@@ -403,6 +403,20 @@ struct AskQuickSearchSessionTests {
         #expect(index.calls.isEmpty)
     }
 
+    @Test func fourDigitDivisionUsesTheCalculatorInsteadOfContentSearch() throws {
+        let index = AskControlledSearchIndex()
+        let session = AskQuickSearchSession()
+        defer { session.cancel() }
+        update(session, "1000/60", apps: index, files: index, calculator: true)
+        let results = try #require(session.results)
+        #expect(results.calculation?.expression == "1000 ÷ 60")
+        #expect(results.value(of: .calculation) == "16.6666666666667")
+        #expect(results.highlightedRow == .calculation)
+        #expect(results.apps.isEmpty && results.files.isEmpty)
+        #expect(session.presentation == results)
+        #expect(!session.isSearching && index.calls.isEmpty)
+    }
+
     @Test func filtersSkipApplicationsAndIndexingWithoutHitsIsVisible() async throws {
         let index = AskControlledSearchIndex()
         index.status = .init(phase: .building(found: 12, estimate: 100))

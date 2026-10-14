@@ -4774,3 +4774,225 @@
 "auth.web.requestRejected" = "ログイン要求が拒否されました。開発用・本番用クライアントとコールバック URL の設定を確認してください。";
 "auth.web.serviceUnavailable" = "ログインサービスを利用できません。API とデータベースを確認して再試行してください。";
 "auth.web.rateLimited" = "ログイン試行が多すぎます。しばらく待ってから再試行してください。";
+
+/* Screen recording */
+"recording.title" = "画面収録";
+"recording.gif" = "GIF を収録";
+"recording.region" = "選択範囲";
+"recording.display" = "ディスプレイ %d";
+"recording.source" = "収録対象";
+"recording.selectSource" = "ディスプレイまたはウインドウを選択";
+"recording.chooseRegion" = "範囲を選択…";
+"recording.refresh" = "更新";
+"recording.format" = "形式";
+"recording.resolution" = "長辺";
+"recording.fps" = "フレームレート";
+"recording.systemAudio" = "システム音声";
+"recording.microphone" = "マイク";
+"recording.audioScope" = "システム音声には Typeflux の再生音は含まれません。ウインドウの録画時は、そのアプリ全体の音声が含まれます。";
+"recording.gifHint" = "GIF：音声なし、10 FPS、最大 960 px・30 秒。上限で自動停止します。";
+"recording.cursor" = "カーソルを表示";
+"recording.camera" = "カメラのピクチャ・イン・ピクチャ";
+"recording.cameraPosition" = "カメラの位置";
+"recording.cameraSize" = "カメラの大きさ";
+"recording.corner.topLeft" = "左上";
+"recording.corner.topRight" = "右上";
+"recording.corner.bottomLeft" = "左下";
+"recording.corner.bottomRight" = "右下";
+"recording.delay" = "カウントダウン";
+"recording.cancel" = "キャンセル";
+"recording.recover" = "収録を復元";
+"recording.start" = "収録を開始";
+"recording.countdown" = "カウントダウン後に収録を開始します。";
+"recording.starting" = "収録を開始中…";
+"recording.stopping" = "収録を終了中…";
+"recording.paused" = "収録を一時停止中";
+"recording.active" = "収録中 — 停止後にプレビューと保存ができます。";
+"recording.resume" = "再開";
+"recording.pause" = "一時停止";
+"recording.stop" = "収録を停止";
+"recording.discard" = "破棄";
+"recording.saved" = "収録を保存しました";
+"recording.open" = "開く";
+"recording.reveal" = "Finder に表示";
+"recording.done" = "完了";
+"recording.permissions" = "画面収録の設定を開く";
+"recording.trim" = "録画をトリミング";
+"recording.from" = "開始";
+"recording.to" = "終了";
+"recording.cancelExport" = "書き出しをキャンセル";
+"recording.saveAs" = "別の場所に保存…";
+"recording.export" = "書き出す";
+"recording.discardQuestion" = "この収録を破棄しますか？";
+"recording.discardHint" = "未保存の収録は削除されます。";
+"recording.keep" = "保持";
+"recording.showControls" = "収録コントロールを表示";
+"recording.error.permission" = "システム設定で Typeflux の画面収録を許可してから更新してください。";
+"recording.error.microphonePermission" = "システム設定でマイクを許可するか、マイク収録をオフにしてください。";
+"recording.error.cameraPermission" = "システム設定でカメラを許可するか、カメラをオフにしてください。";
+"recording.error.unavailable" = "収録対象またはデバイスを利用できません。更新して選び直してください。";
+"recording.error.noFrames" = "映像を取得できませんでした。収録対象と権限を確認してください。";
+"recording.error.encoding" = "収録をエンコードできません。空き容量を確認し、解像度を下げてください。";
+"recording.error.invalidRange" = "収録の範囲内で開始より後の終了時間を選択してください。GIF は最大 30 秒です。";
+"recording.error.interrupted" = "収録が中断されました。取得できた内容をプレビュー用に保持します。";
+
+"recording.previewTitle" = "プレビューと保存";
+
+"recording.setupHint" = "録画する内容を選んで開始します。";
+
+"recording.elapsed" = "録画時間";
+
+"recording.more" = "その他の録画操作";
+
+"recording.destination" = "保存先";
+
+"recording.saveFormat" = "%@ を保存";
+
+"recording.exporting" = "%@ を保存中…";
+
+"recording.output" = "ファイルと音声";
+
+"recording.mp4Choice" = "動画 · MP4";
+
+"recording.gifChoice" = "アニメ · GIF";
+
+"recording.audioHint" = "動画に音声を含めるには、音声ソースをオンにします。";
+
+"recording.cameraSection" = "カメラ映像";
+
+"recording.cameraHint" = "配置のプレビューです。開始時にカメラへのアクセスを求めます。";
+
+"recording.cameraLayout" = "カメラ配置プレビュー";
+
+"recording.moreOptions" = "その他の設定";
+
+"recording.noDelay" = "カウントダウンなし";
+
+"recording.seconds" = "%d 秒";
+
+"recording.secondsUnit" = "秒";
+
+"recording.quality" = "動画サイズ";
+
+"recording.quality.small" = "コンパクト · 最大 1280 px";
+
+"recording.quality.standard" = "標準 · 最大 1920 px";
+
+"recording.quality.high" = "大 · 最大 3840 px";
+
+"recording.qualityHint" = "サイズやフレームレートを上げると容量が増えます。小さい映像は拡大しません。";
+
+"recording.source.region" = "範囲";
+
+"recording.source.display" = "画面";
+
+"recording.source.window" = "ウインドウ";
+
+"recording.regionHint" = "録画したい範囲をドラッグして選択します。";
+
+"recording.loadingSources" = "画面とウインドウを検索中…";
+
+"recording.noWindows" = "ウインドウがありません。開いてから更新してください。";
+
+"recording.noDisplays" = "画面がありません。画面収録の権限を確認してください。";
+
+"recording.selectedDuration" = "選択範囲：%.2f 秒";
+
+"recording.resetTrim" = "録画全体を使用";
+
+"recording.gifExportHint" = "GIF は無音です。30 秒以内を選択してください。10 FPS、最大 960 px で保存します。";
+
+"recording.microphoneSettings" = "マイクの設定を開く";
+
+"recording.cameraSettings" = "カメラの設定を開く";
+
+"recording.silent" = "音声なし";
+
+"recording.continueEditing" = "編集を続ける";
+
+// Launcher calendar
+"calendar.title" = "カレンダー";
+"calendar.placeholder" = "日付、祝日、予定：12-25、next fri…";
+"calendar.local" = "このMac上";
+"calendar.today" = "今日";
+"calendar.previous" = "前の月・年";
+"calendar.next" = "次の月・年";
+"calendar.keys" = "←→↑↓ 日付 · ⌘←→ 月 · ⇥ 予定 · ↩ 開く · ⌘C コピー · ⌥↩ 挿入 · esc 戻る";
+"calendar.lunar" = "旧暦 %@";
+"calendar.week" = "第%d週";
+"calendar.weekDay" = "第%d週 · %d日目";
+"calendar.after" = "%d日後";
+"calendar.before" = "%d日前";
+"calendar.restBadge" = "休";
+"calendar.workBadge" = "勤";
+"calendar.rest" = "休日";
+"calendar.work" = "振替出勤";
+"calendar.workday" = "振替出勤日";
+"calendar.holidayDetail" = "%@ · %d/%d日";
+"calendar.unpublished" = "%@年の休日予定は未発表";
+"calendar.invalid" = "1901–2099年の有効な日付を入力してください。";
+"calendar.agenda" = "予定";
+"calendar.empty" = "この日の予定はありません";
+"calendar.new" = "カレンダーで新規作成 ⌘N";
+"calendar.permission.title" = "予定を表示";
+"calendar.permission.body" = "許可すると予定と会議リンクを表示します。データはこのMac内でのみ読み取ります。";
+"calendar.permission.allow" = "カレンダーへのアクセスを許可";
+"calendar.permission.settings" = "システム設定を開く";
+"calendar.permission.hide" = "今後表示しない";
+"calendar.allDay" = "終日";
+"calendar.ongoing" = "進行中 · 残り%d分";
+"calendar.starts" = "%d分後";
+"calendar.open" = "カレンダーで開く ↩";
+"calendar.join" = "会議に参加 ↩";
+"calendar.copy" = "コピー";
+"calendar.openFailed" = "カレンダーを開けませんでした";
+"calendar.interval" = "日付の間隔";
+"calendar.days" = "%d日";
+"calendar.weeksDays" = "%d週%d日";
+"calendar.inclusive" = "両端を含む：%d日";
+"calendar.workingResting" = "勤務%d日 · 休み%d日";
+"calendar.working" = "勤務%d日";
+"calendar.estimated" = "%@年は未発表のため週末のみで計算。";
+"calendar.weekendsOnly" = "週末のみで計算";
+"calendar.copyDays" = "日数をコピー ↩";
+"calendar.copyWorking" = "勤務日数をコピー";
+"calendar.restCount" = "休%d日";
+"calendar.searchWindow" = "過去30日から今後90日の予定";
+"calendar.noResults" = "一致する予定・日付がありません。12-25、+30、next friをお試しください。";
+"calendar.past" = "過去";
+"calendar.upcoming" = "今後";
+"calendar.settings.lunar" = "旧暦・節日・二十四節気を表示";
+"calendar.settings.holidays" = "中国本土の休日・振替出勤を表示";
+"calendar.settings.weeks" = "ISO週番号を表示";
+"calendar.settings.events" = "予定を表示";
+"calendar.settings.format" = "日付コピーの形式";
+"calendar.settings.full" = "日付と曜日";
+"calendar.settings.short" = "月と日";
+"calendar.settings.system" = "システムの長い日付";
+"calendar.settings.calendars" = "表示するカレンダー";
+"calendar.settings.all" = "すべて（祝日購読を除く）";
+"calendar.settings.permission" = "calでアクセスを許可すると選択できます。";
+"calendar.holiday.newYear" = "元旦";
+"calendar.holiday.springFestival" = "春節";
+"calendar.holiday.qingming" = "清明節";
+"calendar.holiday.labor" = "労働節";
+"calendar.holiday.dragonBoat" = "端午節";
+"calendar.holiday.midAutumn" = "中秋節";
+"calendar.holiday.national" = "国慶節";
+"ask.settings.keywords.kind.calendar.hint" = "日付、休日、ローカル予定を確認";
+"calendar.nextHoliday" = "%@まであと%d日";
+"calendar.unavailable" = "%@年の休日予定は未収録";
+"calendar.months" = "約%.1fか月";
+"calendar.attendees" = "参加者%d人";
+"calendar.organizer" = "主催者：%@";
+"calendar.eventCount" = "予定%d件";
+"calendar.nextEvent" = "次の予定 %@ %@";
+"calendar.searchTitle" = "予定を検索";
+"calendar.startsHours" = "%d時間%d分後";
+"calendar.startsDays" = "%d日後";
+"calendar.keys.year" = "←→↑↓ 月を選択 · ↩ 月を開く · ⌘T 今日 · esc 戻る";
+"calendar.keys.range" = "↩ 間隔をコピー · ⌘←→ 月 · ⌘T 今日 · esc 消去";
+"calendar.keys.search" = "↑↓ 予定 · ↩ 開く · ⇥ 日付へ · ⌘C コピー · esc 消去";
+"calendar.keys.agenda" = "↑↓ 予定 · ↩ 開く・参加 · ⌘O カレンダー · ⌘C コピー · ⇥ 日付 · esc 戻る";
+"calendar.settings.allCalendars" = "すべてのカレンダー";
+"calendar.settings.eventsDisabled" = "予定は非表示です。カレンダーのキーワード設定で有効にすると検索できます。";

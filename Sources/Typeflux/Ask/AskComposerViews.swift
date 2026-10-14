@@ -505,7 +505,8 @@ struct AskComposer: View {
             switch key {
             case .commandEnter: model.submitLauncher(); return true
             case .escape, .commandO, .commandC, .commandZ, .shiftTab,
-                 .commandD, .commandE, .commandS, .commandB, .commandDelete, .optionCommandDelete: return false
+                 .commandD, .commandE, .commandS, .commandB, .commandDelete, .optionCommandDelete,
+                 .left, .commandLeft, .commandRight, .commandT, .commandN: return false
             default: return true
             }
         }
@@ -562,7 +563,7 @@ struct AskComposer: View {
             guard case let .browser(index) = results.highlightedRow, results.browserEntries.indices.contains(index) else { return false }
             AskQuickResults.copy(results.browserEntries[index].url)
         case .escape, .shiftTab, .commandD, .commandE, .commandZ, .commandS, .commandB, .commandO,
-             .commandDelete, .optionCommandDelete:
+             .commandDelete, .optionCommandDelete, .left, .commandLeft, .commandRight, .commandT, .commandN:
             return false
         }
         return true
@@ -584,9 +585,11 @@ struct AskComposer: View {
             return AskPluginDisplay(hint: nil, title: plugin.title, symbol: plugin.symbol, optionName: plugin.optionName,
                                     phase: plugins.phase, previous: plugins.previous, partial: plugins.partial,
                                     comparing: plugins.comparing, highlighted: asks ? pluginHighlight : 0,
-                                    offersAskAI: asks && ![AskKillAppPlugin.id, AskSystemMonitorPlugin.id, AskEmojiPlugin.id].contains(plugin.id),
+                                    offersAskAI: asks && ![AskKillAppPlugin.id, AskSystemMonitorPlugin.id,
+                                                          AskEmojiPlugin.id, AskCalendarPlugin.id].contains(plugin.id),
                                     savesNoteWhenDone: plugins.savesNoteWhenDone,
-                                    systemMonitor: plugin.id == AskSystemMonitorPlugin.id)
+                                    systemMonitor: plugin.id == AskSystemMonitorPlugin.id,
+                                    calendar: plugin.id == AskCalendarPlugin.id)
         }
         if quickSearch.presentation?.features.isEmpty != false,
            let hint = plugins.hint, let plugin = plugins.plugin(for: hint) {
@@ -689,6 +692,7 @@ struct AskComposer: View {
     private func pluginKey(_ key: AskCommandKey) -> Bool {
         guard launcher, !active, let display = pluginDisplay else { return false }
         if display.systemMonitor, let handled = systemMonitorKey(key) { return handled }
+        if display.calendar { return calendarKey(key) }
         let selection = draft.wrappedValue.sentSelection, text = draft.wrappedValue.text
         let language = AppLocalization.shared.language
         if display.hint != nil {
@@ -771,9 +775,30 @@ struct AskComposer: View {
             // Ask the AI about the chosen file: it becomes an attachment of a new question.
             guard case let .fileIcon(url)? = plugins.output?.selected?.icon else { return false }
             model.attachFileToLauncher(url)
-        case .right, .optionCommandC, .commandDown, .commandDelete, .optionCommandDelete: return false
+        case .right, .left, .commandLeft, .commandRight, .commandT, .commandN,
+             .optionCommandC, .commandDown, .commandDelete, .optionCommandDelete: return false
         }
         return true
+    }
+
+    private func performCalendarEffect(_ effect: CalendarEffect) {
+        if model.performCalendarEffect(effect) == .close {
+            onDismiss()
+        }
+    }
+
+    private func calendarKey(_ key: AskCommandKey) -> Bool {
+        let effect = model.calendarLauncher.handle(key, inputEmpty: draft.wrappedValue.text.isEmpty)
+        guard effect != .unhandled else { return false }
+        performCalendarEffect(effect)
+        return true
+    }
+
+    private func moveLauncherHorizontal(_ delta: Int) -> Bool {
+        if pluginDisplay?.calendar == true {
+            return calendarKey(delta < 0 ? .left : .right)
+        }
+        return moveEmojiSelection(delta)
     }
 
     /// Keys for the system monitor (`top`); nil leaves the key to keyword mode's usual handling.
@@ -803,6 +828,7 @@ struct AskComposer: View {
 
     /// ⌘O: the system monitor moves into its window; elsewhere it opens the chat.
     private func openChatOrMonitorWindow() {
+        if pluginDisplay?.calendar == true, calendarKey(.commandO) { return }
         if pluginDisplay?.systemMonitor == true, systemMonitorKey(.commandO) == true { return }
         openChat()
     }
@@ -1085,7 +1111,7 @@ struct AskComposer: View {
                 .frame(height: launcherResultsViewportHeight, alignment: .top)
                 .clipped()
             }
-            if launcher && !launcherCollapsed {
+            if launcher && !launcherCollapsed && (pluginDisplay?.calendar != true || active) {
                 launcherBar
             }
         }
@@ -1163,6 +1189,20 @@ struct AskComposer: View {
                                           onEffect: { effect in
                                               if model.performSystemMonitorEffect(effect) == .close { onDismiss() }
                                           })
+            } else if let pluginDisplay, pluginDisplay.calendar {
+                CalendarLauncherView(model: model.calendarLauncher, onEffect: performCalendarEffect,
+                                     onSelect: { day in
+                                         model.calendarLauncher.select(day)
+                                         draft.wrappedValue.text = ""
+                                     }, onHideEvents: model.hideCalendarEvents,
+                                     feedback: model.commandFeedback)
+                    .onAppear {
+                        model.calendarLauncher.activate(text: draft.wrappedValue.text,
+                                                        options: plugins.keyword?.options ?? [:],
+                                                        language: AppLocalization.shared.language)
+                    }
+                    .onChange(of: draft.wrappedValue.text) { model.calendarLauncher.update($0) }
+                    .onDisappear { model.calendarLauncher.close() }
             } else if let pluginDisplay {
                 AskPluginResultsView(display: pluginDisplay, question: draft.wrappedValue.text,
                                      minimumHeight: pluginHeight,
@@ -1173,7 +1213,8 @@ struct AskComposer: View {
                                          guard plugins.isPlanCurrent, let output = plugins.output,
                                                let index = output.items.firstIndex(where: { $0.id == id }) else { return false }
                                          return plugins.selectItem(index)
-                                     })
+                                     }, calendarProvider: pluginDisplay.hint?.pluginID == AskCalendarPlugin.id
+                                        ? model.calendarLauncher.provider : nil)
             } else if showsQuickResults, let quickResults = presentedQuickResults {
                 AskQuickResultsView(results: quickResults, question: draft.wrappedValue.text,
                                     minimumHeight: resultsHeight, viewportHeight: launcherResultsViewportHeight,
@@ -1196,7 +1237,11 @@ struct AskComposer: View {
                                               }) else { return }
                                         self.quickResults?.highlight(target)
                                     },
-                                    onAction: runPanelAction, onShowFileActions: showQuickFileActions)
+                                    onAction: runPanelAction, onShowFileActions: showQuickFileActions,
+                                    calendarProvider: quickResults.features.contains {
+                                        $0.keyword.pluginID == AskCalendarPlugin.id
+                                    }
+                                        ? model.calendarLauncher.provider : nil)
                     // Pending rows keep their brightness instead of flashing disabled
                     // on every keystroke. All keyboard and action paths also reject them.
                     .disabled(active)
@@ -1362,6 +1407,16 @@ struct AskComposer: View {
 
     /// Esc steps back one layer (`AskLauncherEscape`); false closes the launcher.
     private func escapeKey() -> Bool {
+        if pluginDisplay?.calendar == true {
+            if calendarKey(.escape) {
+                return true
+            }
+            let keyword = plugins.keyword?.keyword ?? "cal"
+            exitKeyword()
+            draft.wrappedValue.text = keyword
+            return true
+        }
+
         // The monitor steps back first: the question, the chosen row, the focused card, the filter.
         if pluginDisplay?.systemMonitor == true {
             if systemMonitorKey(.escape) == true { return true }
@@ -1447,6 +1502,13 @@ struct AskComposer: View {
             return true
         }
         if launcher, key == .enter, !plugins.isActive, !showsQuickResults,
+           plugins.hint?.pluginID != AskCalendarPlugin.id || pluginHighlight == 0,
+           model.enterLauncherKeywordFromText(pluginID: AskCalendarPlugin.id) {
+            pluginHighlight = 0
+            pluginReserve = 0
+            return true
+        }
+        if launcher, key == .enter, !plugins.isActive, !showsQuickResults,
            plugins.hint?.pluginID != AskKillAppPlugin.id || pluginHighlight == 0,
            model.enterLauncherKeywordFromText(pluginID: AskKillAppPlugin.id) {
             pluginHighlight = 0
@@ -1496,7 +1558,7 @@ struct AskComposer: View {
             closePalette()
         case .commandEnter, .optionEnter, .shiftTab, .commandR, .commandD, .commandC, .shiftCommandC, .commandE,
              .commandZ, .commandS, .commandB, .commandO, .right, .commandY, .optionCommandC, .shiftCommandEnter, .commandDown,
-             .number, .commandDelete, .optionCommandDelete:
+             .number, .commandDelete, .optionCommandDelete, .left, .commandLeft, .commandRight, .commandT, .commandN:
             // ⌘Return sends as before, with the palette still open; the rest are the editor's.
             return false
         }
@@ -1599,7 +1661,7 @@ struct AskComposer: View {
             onSlashQuery: launcher ? nil : slashChanged,
             onCommandKey: commandKey,
             onHistoryKey: historyKey,
-            onHorizontalArrow: launcher ? moveEmojiSelection : nil,
+            onHorizontalArrow: launcher ? moveLauncherHorizontal : nil,
             onEmptyBackspace: launcher ? emptyLauncherBackspace : nil,
             onOpenChat: launcher ? openChatOrMonitorWindow : nil,
             onContextShortcut: launcher ? toggleContextPanel : nil
@@ -1630,10 +1692,16 @@ struct AskComposer: View {
                     .padding(.vertical, 2)
             }
             if !active, let keyword = plugins.keyword, let plugin = plugins.plugin {
-                AskKeywordChip(title: plugin.title, symbol: plugin.symbol,
-                               detail: plugin.chipDetail(for: keyword, language: AppLocalization.shared.language),
-                               tint: plugin.keywordColor)
-                    .padding(.vertical, 2)
+                Group {
+                    if plugin.id == AskCalendarPlugin.id {
+                        CalendarKeywordChip(model: model.calendarLauncher)
+                    } else {
+                        AskKeywordChip(title: plugin.title, symbol: plugin.symbol,
+                                       detail: plugin.chipDetail(for: keyword,
+                                                                 language: AppLocalization.shared.language),
+                                       tint: plugin.keywordColor)
+                    }
+                }.padding(.vertical, 2)
             }
             if !active, model.launcherHistoryMode {
                 Text(L("ask.inputHistory.chip")).font(.system(size: 11, weight: .semibold))
@@ -1666,11 +1734,19 @@ struct AskComposer: View {
                 .accessibilityLabel(L("ask.voice.cancel"))
                 .accessibilityIdentifier("ask.voice.cancel")
             }
-            AskVoiceButton(voice: voice, contextID: contextID, enabled: true, shortcut: voiceShortcut)
-                .frame(width: AskMetrics.composerControlHeight, height: AskMetrics.composerControlHeight)
-                .accessibilityLabel(AskVoiceButton.title(phase: voice.phase, contextMatches: voice.context == contextID))
-                .accessibilityIdentifier("ask.composer.voice")
-            if !active {
+            if pluginDisplay?.calendar == true, !active {
+                CalendarHeaderAction(model: model.calendarLauncher) {
+                    performCalendarEffect(model.calendarLauncher.handle(.commandT,
+                                                                          inputEmpty: draft.wrappedValue.text.isEmpty))
+                }
+            } else {
+                AskVoiceButton(voice: voice, contextID: contextID, enabled: true, shortcut: voiceShortcut)
+                    .frame(width: AskMetrics.composerControlHeight, height: AskMetrics.composerControlHeight)
+                    .accessibilityLabel(AskVoiceButton.title(phase: voice.phase,
+                                                            contextMatches: voice.context == contextID))
+                    .accessibilityIdentifier("ask.composer.voice")
+            }
+            if !active, pluginDisplay?.calendar != true {
                 AskLauncherOpenChatButton(mode: launcherChatAction, enabled: launcherChatActionEnabled,
                                          tint: privateTint ? AskTheme.privateTint : AskTheme.accent,
                                           action: runLauncherChatAction)
@@ -2107,6 +2183,7 @@ struct AskComposer: View {
             return AskMetrics.launcherHeight(editor: editorHeight, banners: 0)
                 + supplementalHeight + commands + quick + panel + keyword
                 + (!recording && showsLauncherSuggestions ? homeHeight : 0)
+                - (!recording && pluginDisplay?.calendar == true ? layout.footerHeight : 0)
         }
         return AskMetrics.launcherHeight(editor: editorHeight, banners: banners,
                                                  suggestions: !recording && showsLauncherSuggestions ? homeHeight : 0,

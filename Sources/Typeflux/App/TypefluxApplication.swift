@@ -17,6 +17,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var appCoordinator: AppCoordinator?
     private var languageObserver: NSObjectProtocol?
     private var appearanceObserver: NSObjectProtocol?
+    private var isFinishingRecording = false
 
     func applicationDidFinishLaunching(_: Notification) {
         let settingsStore = SettingsStore()
@@ -54,6 +55,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 handleBilling: { await BillingReturnLink.handle(auth: .shared) }
             )
         }
+    }
+
+    func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        guard appCoordinator?.hasScreenRecording == true else { return .terminateNow }
+        guard !isFinishingRecording else { return .terminateLater }
+        isFinishingRecording = true
+        Task { @MainActor in
+            await appCoordinator?.finishScreenRecordingForTermination()
+            sender.reply(toApplicationShouldTerminate: true)
+        }
+        return .terminateLater
     }
 
     func applicationWillTerminate(_: Notification) {

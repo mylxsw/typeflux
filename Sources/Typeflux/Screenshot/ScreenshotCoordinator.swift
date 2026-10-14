@@ -62,6 +62,8 @@ final class ScreenshotCoordinator {
     weak var followUpHandler: (any ScreenshotFollowUpHandling)?
     /// Bumped by every teardown, so a capture or delivery from an earlier session is ignored.
     private var session = 0
+    var isRecordingActive: () -> Bool = { false }
+    var onRecordingRequested: ((ScreenRecordingFormat, ScreenRecordingTarget?) -> Void)?
 
     init(capture: any ScreenCapturing,
          permission: any ScreenCapturePermissionProviding,
@@ -104,6 +106,12 @@ final class ScreenshotCoordinator {
     /// while capturing or finishing, it is ignored with a notice. With a `followUp`, the chosen
     /// region goes straight to it instead of the editor.
     func start(mode: ScreenshotMode = .region, followUp: ScreenshotFollowUp? = nil) {
+        guard !isRecordingActive() else { toast.show(.busy); return }
+        if mode == .recording || mode == .gif {
+            guard state == .idle else { toast.show(.busy); return }
+            onRecordingRequested?(mode == .gif ? .gif : .mp4, nil)
+            return
+        }
         switch state {
         case .idle:
             break
@@ -217,6 +225,13 @@ final class ScreenshotCoordinator {
                         annotations: [ScreenshotAnnotation]) {
         guard state == .selecting || state == .editing || state == .editingLongImage,
               let display = snapshot?.display(id: displayID) else { return }
+        if action == .record {
+            guard state != .editingLongImage, annotations.isEmpty else { return }
+            let region = ScreenRecordingTarget.region(displayID: displayID, rect: rect.intersection(display.frame))
+            teardown()
+            onRecordingRequested?(.mp4, region)
+            return
+        }
         let image: CGImage
         do {
             // Only the rendered image leaves the overlay, so nothing under a mosaic is ever copied or saved.
@@ -271,7 +286,7 @@ final class ScreenshotCoordinator {
         switch action {
         case .copy:
             toast.show(output.copy(png) ? .copied : .failed)
-        case .followUp, .pin:
+        case .followUp, .pin, .record:
             // Handed over in `finish` without encoding; never delivered here.
             break
         case .save, .copyAndSave:
@@ -297,7 +312,7 @@ final class ScreenshotCoordinator {
         case let .save(image, scale):
             encodeThenOutput(image, scale: scale, action: .save)
         case let .edit(image, scale, screen):
-            guard state == .idle else {
+            guard state == .idle, !isRecordingActive() else {
                 toast.show(.busy)
                 return
             }

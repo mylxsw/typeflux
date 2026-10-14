@@ -304,11 +304,61 @@ final class ScreenshotEditorOverlayTests: XCTestCase {
         drag(view, from: CGPoint(x: 100, y: 100), to: CGPoint(x: 100, y: 100))
 
         view.pointerMoved(to: CGPoint(x: 100, y: 100))
+        XCTAssertEqual(NSCursor.current, .pointingHand)
         view.pointerMoved(to: CGPoint(x: 150, y: 150))
+        XCTAssertEqual(NSCursor.current, .crosshair)
         view.handleKeyDown(ScreenshotAnnotationTool.text.keyCode, modifiers: [])
         view.pointerMoved(to: CGPoint(x: 150, y: 150))
-        view.pointerMoved(to: CGPoint(x: 300, y: 250))
-        XCTAssertEqual(view.selection.pointer, CGPoint(x: 300, y: 250))
+        XCTAssertEqual(NSCursor.current, .iBeam)
+        view.pointerMoved(to: CGPoint(x: 300, y: 295))
+        XCTAssertEqual(NSCursor.current, .crosshair)
+        XCTAssertEqual(view.selection.pointer, CGPoint(x: 300, y: 295))
+    }
+
+    func testToolbarCursorOverridesDrawingAndColorPicking() throws {
+        let (view, _) = makeView(width: 1200, height: 800)
+        let window = NSWindow(contentRect: view.bounds, styleMask: .borderless, backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = view
+        defer { window.close() }
+        frame(view, from: CGPoint(x: 100, y: 100), to: CGPoint(x: 1000, y: 400))
+        let toolbar = try XCTUnwrap(view.toolbar)
+
+        func hoverFirstButton() {
+            toolbar.layoutSubtreeIfNeeded()
+            let inset = ScreenshotOverlayView.toolbarShadowInset
+            view.pointerMoved(to: CGPoint(x: toolbar.frame.minX + inset + 15,
+                                          y: toolbar.frame.minY + inset + 15))
+            XCTAssertEqual(NSCursor.current, .pointingHand)
+        }
+
+        hoverFirstButton()
+        if ProcessInfo.processInfo.environment[ScreenshotSnapshotSupport.environmentKey] != nil {
+            let bitmap = try XCTUnwrap(toolbar.bitmapImageRepForCachingDisplay(in: toolbar.bounds))
+            toolbar.cacheDisplay(in: toolbar.bounds, to: bitmap)
+            let cursor = NSCursor.current
+            let inset = ScreenshotOverlayView.toolbarShadowInset
+            let cursorFrame = CGRect(x: inset + 15 - cursor.hotSpot.x, y: inset + 15 - cursor.hotSpot.y,
+                                     width: cursor.image.size.width, height: cursor.image.size.height)
+            let preview = NSImage(size: toolbar.bounds.size, flipped: toolbar.isFlipped) { _ in
+                bitmap.draw(in: toolbar.bounds, from: .zero, operation: .sourceOver, fraction: 1,
+                            respectFlipped: true, hints: nil)
+                cursor.image.draw(in: cursorFrame, from: .zero, operation: .sourceOver, fraction: 1,
+                                  respectFlipped: true, hints: nil)
+                return true
+            }
+            let image = try XCTUnwrap(preview.cgImage(forProposedRect: nil, context: nil, hints: nil))
+            try ScreenshotSnapshotSupport.write(image, name: "gul-365-toolbar-hand-cursor")
+        }
+        for tool in ScreenshotAnnotationTool.allCases {
+            view.toolbarModel.perform(.tool(tool))
+            hoverFirstButton()
+        }
+        view.toolbarModel.perform(.pickColor)
+        hoverFirstButton()
+        view.pointerMoved(to: CGPoint(x: 500, y: 250))
+        XCTAssertEqual(NSCursor.current, .crosshair)
+        XCTAssertTrue(view.isPickingColor)
     }
 
     func testShiftOnRealEventsConstrainsTheShape() throws {
@@ -399,6 +449,15 @@ final class ScreenshotEditorOverlayTests: XCTestCase {
         XCTAssertNil(toolbar.hitTest(CGPoint(x: toolbar.frame.minX + inset / 2, y: toolbar.frame.midY)))
         let firstButton = CGPoint(x: toolbar.frame.minX + inset + 15, y: toolbar.frame.minY + inset + 15)
         XCTAssertNotNil(toolbar.hitTest(firstButton))
+        view.pointerMoved(to: firstButton)
+        XCTAssertEqual(NSCursor.current, .pointingHand)
+        view.pointerMoved(to: CGPoint(x: toolbar.frame.minX + inset / 2, y: toolbar.frame.midY))
+        XCTAssertEqual(NSCursor.current, .crosshair)
+
+        view.mouseDown(at: CGPoint(x: 10, y: 10), clickCount: 1)
+        XCTAssertTrue(toolbar.isHidden)
+        view.pointerMoved(to: firstButton)
+        XCTAssertEqual(NSCursor.current, .crosshair)
     }
 
     func testTheOptionsRowShowsTheSelectedMarksStyle() {

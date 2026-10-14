@@ -14,12 +14,12 @@ struct AskScreenshotPluginTests {
     private let fullScreen = AskScreenshotPlugin.keywords[2]
     private let scrolling = AskScreenshotPlugin.keywords[3]
 
-    @Test func keywordsAndRegistration() {
-        #expect(AskScreenshotPlugin.keywords.map(\.keyword) == ["jt", "截图", "jtqp", "jtgd", "jtai"])
+    @Test func `keywords and registration`() {
+        #expect(AskScreenshotPlugin.keywords.map(\.keyword) == ["jt", "截图", "jtqp", "jtgd", "jtai", "lp", "录屏", "gif"])
         #expect(AskPluginRegistry.pluginIDs.contains(AskScreenshotPlugin.id))
         let defaults = AskPluginRegistry.defaultKeywords.filter { $0.pluginID == AskScreenshotPlugin.id }
         // `jt` and `截图` do the same thing, so they become one entry with an alias.
-        #expect(defaults.map(\.allKeywords) == [["jt", "截图"], ["jtqp"], ["jtgd"], ["jtai"]])
+        #expect(defaults.map(\.allKeywords) == [["jt", "截图"], ["jtqp"], ["jtgd"], ["jtai"], ["lp", "录屏"], ["gif"]])
         let plugin = AskScreenshotPlugin()
         #expect(plugin.runsWithoutInput && !plugin.usesSelectionInput && plugin.entersOnReturn)
         #expect(plugin.title == L("screenshot.title") && plugin.symbol == "camera.viewfinder")
@@ -27,14 +27,14 @@ struct AskScreenshotPluginTests {
         #expect(plugin.placeholder(selectionLines: 2) == L("screenshot.plugin.placeholder"))
     }
 
-    @Test func savedKeywordListsGainTheScreenshotKeywords() {
+    @Test func `saved keyword lists gain the screenshot keywords`() {
         let saved = [AskKeyword(keyword: "fy", pluginID: AskTranslatePlugin.id)]
         let known = AskPluginRegistry.coveredGroups.filter { $0 != AskScreenshotPlugin.id }
         let keywords = AskPluginRegistry.keywords(saved: saved, known: known)
         #expect(keywords.contains { $0.pluginID == AskScreenshotPlugin.id && $0.contains("jt") })
     }
 
-    @Test func returnStartsTheModeOfTheKeyword() async {
+    @Test func `return starts the mode of the keyword`() async {
         let plugin = AskScreenshotPlugin(isPermissionGranted: { true })
 
         let regionPlan = await plugin.plan(request(region))
@@ -52,7 +52,7 @@ struct AskScreenshotPluginTests {
         #expect(scrollingPlan.action(for: .enter)?.kind == .capture(mode: .scrolling))
     }
 
-    @Test func missingPermissionIsShownOnTheChipAndThePlan() async {
+    @Test func `missing permission is shown on the chip and the plan`() async {
         let plugin = AskScreenshotPlugin(isPermissionGranted: { false })
 
         #expect(plugin.chipDetail(for: region, language: .english) == L("screenshot.permission.needed"))
@@ -72,7 +72,7 @@ struct AskScreenshotPluginTests {
             == L("screenshot.title") + " · " + L("screenshot.mode.fullScreen.short"))
     }
 
-    @Test func tabSwitchesBetweenModes() async {
+    @Test func `tab switches between modes`() async {
         let plugin = AskScreenshotPlugin(isPermissionGranted: { true })
         let plan = await plugin.plan(request(region))
 
@@ -83,7 +83,22 @@ struct AskScreenshotPluginTests {
         #expect(plugin.nextOptions(after: plan, request: request(region, options: [:]), step: 3) == ["mode": "region"])
     }
 
-    @Test func runningDirectlyIsNotPossible() async {
+    @Test func `recording keywords route and cycle formats`() async throws {
+        let plugin = AskScreenshotPlugin(isPermissionGranted: { true })
+        let video = try #require(AskScreenshotPlugin.keywords.first { $0.keyword == "lp" })
+        let gif = try #require(AskScreenshotPlugin.keywords.first { $0.keyword == "gif" })
+        #expect(AskScreenshotPlugin.captureKind(for: video) == .capture(mode: .recording))
+        #expect(AskScreenshotPlugin.captureKind(for: gif) == .capture(mode: .gif))
+        #expect(plugin.chipDetail(for: video, language: .english) == L("recording.title"))
+        #expect(plugin.chipDetail(for: gif, language: .english) == L("recording.gif"))
+        let plan = await plugin.plan(request(video))
+        #expect(plan.title == L("recording.title"))
+        #expect(plugin.nextOptions(after: plan, request: request(video), step: 1) == ["mode": "gif"])
+        #expect(plugin.nextOptions(after: plan, request: request(gif), step: 1) == ["mode": "recording"])
+        #expect(AskScreenshotPlugin.title(of: .gif) == L("recording.gif"))
+    }
+
+    @Test func `running directly is not possible`() async {
         let plugin = AskScreenshotPlugin(isPermissionGranted: { true })
         let plan = await plugin.plan(request(region))
         await #expect(throws: CancellationError.self) {
@@ -91,14 +106,14 @@ struct AskScreenshotPluginTests {
         }
     }
 
-    @Test func modeOptionsFallBackToRegion() {
+    @Test func `mode options fall back to region`() {
         #expect(ScreenshotMode(options: [:]) == .region)
         #expect(ScreenshotMode(options: ["mode": "bogus"]) == .region)
         #expect(ScreenshotMode(options: ["mode": "fullScreen"]) == .fullScreen)
         #expect(ScreenshotMode(options: ["mode": "scrolling"]) == .scrolling)
     }
 
-    @Test func captureActionClosesTheLauncherThenStarts() async throws {
+    @Test func `capture action closes the launcher then starts`() async throws {
         let fixture = try AskTestFixture()
         defer { fixture.model.resetSession() }
         let model = fixture.model
@@ -110,7 +125,9 @@ struct AskScreenshotPluginTests {
         model.onStartScreenshot = { mode, _ in started.append(mode) }
         #expect(model.performPluginAction(action) == .close)
         #expect(started.isEmpty, "Starts only after the launcher has closed")
-        for _ in 0 ..< 100 where started.isEmpty { try await Task.sleep(for: .milliseconds(5)) }
+        for _ in 0 ..< 100 where started.isEmpty {
+            try await Task.sleep(for: .milliseconds(5))
+        }
         #expect(started == [.fullScreen])
     }
 }

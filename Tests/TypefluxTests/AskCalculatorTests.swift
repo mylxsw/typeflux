@@ -23,6 +23,29 @@ struct AskCalculatorDetectionTests {
         #expect(shown(text) == expected, "\(text)")
     }
 
+    @Test(arguments: ["1000/60", "1000 / 60", "1000÷60", "１０００／６０", "1000/60="])
+    func divisionWithAFourDigitDividendIsArithmetic(text: String) {
+        #expect(shown(text) == "16.6666666666667")
+    }
+
+    @Test(arguments: [
+        ("1000/0", "error:divisionByZero"), ("2024/00", "error:divisionByZero"),
+        ("2024-13", "2011"), ("2024-0", "2024"), ("2024/12/32", "5.27083333333333")
+    ])
+    func invalidDateComponentsRemainArithmetic(text: String, expected: String) {
+        #expect(!AskCalculator.looksLikeSomethingElse(text))
+        #expect(shown(text) == expected)
+    }
+
+    @Test(arguments: [
+        "2024-1", "2024/01", "2024/12", "2024-12-31", "2024/1/1", "2024.10.05",
+        "1/31/2024", "12/31/24", "31/12/2024", "31/12/24"
+    ])
+    func dateComponentsWithinRangeAreLeftAlone(text: String) {
+        #expect(AskCalculator.looksLikeSomethingElse(text))
+        #expect(AskCalculator.read(text) == .notExpression)
+    }
+
     @Test(arguments: [
         "pi", "e", "hello", "hello 1+1", "1+1 是多少", "2024-10-05", "2024/10/5", "2024-10",
         "10/5/2024", "138-1234-5678", "010-12345678", "1.2.3", "192.168.0.1", "", "   ", "1+1\n2+2",

@@ -141,6 +141,13 @@ final class AppCoordinator {
         }
 
         let screenshotCoordinator = di.screenshotCoordinator
+        let screenRecordingCoordinator = di.screenRecordingCoordinator
+        screenshotCoordinator.isRecordingActive = { [weak screenRecordingCoordinator] in
+            screenRecordingCoordinator?.isBusy ?? false
+        }
+        screenshotCoordinator.onRecordingRequested = { [weak screenRecordingCoordinator] format, region in
+            screenRecordingCoordinator?.show(format: format, region: region)
+        }
         di.hotkeyService.onScreenshotRequested = { [weak screenshotCoordinator] in
             screenshotCoordinator?.start(mode: .region)
         }
@@ -201,6 +208,7 @@ final class AppCoordinator {
             onScreenshotText: { [weak screenshotCoordinator] in
                 screenshotCoordinator?.start(mode: .region, followUp: .recognizeText)
             },
+            onScreenRecording: { [weak screenRecordingCoordinator] in screenRecordingCoordinator?.show() },
             pinnedScreenshots: { [weak screenshotCoordinator] in
                 (screenshotCoordinator?.pins.pinCount ?? 0, screenshotCoordinator?.pins.clickThroughCount ?? 0)
             },
@@ -240,6 +248,12 @@ final class AppCoordinator {
         } else {
             presentPermissionGuidanceIfNeeded()
         }
+    }
+
+    var hasScreenRecording: Bool { di.screenRecordingCoordinator.isBusy }
+
+    func finishScreenRecordingForTermination() async {
+        await di.screenRecordingCoordinator.prepareForTermination()
     }
 
     func stop() {

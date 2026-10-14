@@ -404,6 +404,8 @@ final class ScreenshotOverlayView: NSView {
         case .pin: finish(.pin)
         case let .followUp(followUp): finish(.followUp(followUp))
         case .scrollCapture: startScrollCapture()
+        case .record:
+            if canScrollCapture { finish(.record) }
         case .toggleMoreMenu:
             showsMoreMenu.toggle()
             showsColorPanel = false
@@ -658,6 +660,14 @@ final class ScreenshotOverlayView: NSView {
     }
 
     private func updateCursor(at point: CGPoint) {
+        if let toolbar, !toolbar.isHidden, toolbar.hitTest(point) != nil {
+            NSCursor.pointingHand.set()
+            return
+        }
+        updateCanvasCursor(at: point)
+    }
+
+    private func updateCanvasCursor(at point: CGPoint) {
         if isPickingColor {
             NSCursor.crosshair.set()
             return

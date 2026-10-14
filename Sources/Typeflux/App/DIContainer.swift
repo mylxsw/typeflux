@@ -43,6 +43,21 @@ final class DIContainer {
     lazy var sensitiveInfoScanner: any ScreenshotSensitiveInfoScanning = VisionSensitiveInfoScanner(
         recognizer: TiledImageTextRecognizer(base: imageTextRecognizer)
     )
+    lazy var screenRecordingWindow = ScreenRecordingWindowController(settings: settingsStore)
+    lazy var screenRecordingCoordinator: ScreenRecordingCoordinator = {
+        let coordinator = ScreenRecordingCoordinator(permission: screenCapturePermission, capture: screenCapture,
+                                                     defaults: settingsStore.defaults,
+                                                     saveDirectory: { [settingsStore] in
+                                                         settingsStore.screenshotSaveDirectory
+                                                     })
+        coordinator.isOtherCaptureActive = { [weak self] in self?.screenshotCoordinator.state != .idle }
+        coordinator.present = { [weak self] in self?.screenRecordingWindow.show($0) }
+        coordinator.dismiss = { [weak self] in self?.screenRecordingWindow.hide() }
+        coordinator.updateIndicator = { [weak self] in self?.screenRecordingWindow.indicator($0) }
+        coordinator.showBorder = { [weak self] in self?.screenRecordingWindow.outline($0) }
+        return coordinator
+    }()
+
     lazy var screenshotCoordinator: ScreenshotCoordinator = { [settingsStore, sensitiveInfoScanner] in
         // One store, so a style picked in the region editor is there in the long image editor too.
         let toolStyles = ScreenshotToolStyleStore(defaults: settingsStore.defaults)
@@ -62,6 +77,7 @@ final class DIContainer {
             makeScrollCapture: ScreenshotCoordinator.scrollCapture(for:)
         )
     }()
+
     lazy var askConversationWindowController: AskConversationWindowController? = {
         do { return try AskConversationWindowController(
             settings: settingsStore,

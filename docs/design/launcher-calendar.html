@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Typeflux · 启动器日历 cal（可交互设计稿）</title>
+<style>
+:root {
+  --bg: #1b1b1d; --card: rgba(255,255,255,.045); --card-hover: rgba(255,255,255,.075);
+  --border: rgba(255,255,255,.115); --border-soft: rgba(255,255,255,.07);
+  --text: #eeeeef; --text2: #b8b8bb; --text3: #85858a; --text4: #5d5d62; --accent: #2f8cff; --accent-soft: rgba(47,140,255,.16);
+  --cal: #ff5a4f; --cal-soft: rgba(255,90,79,.16); --cal-text: #ff8a80;
+  --off: #34c759; --off-soft: rgba(52,199,89,.13); --work: #ff9f40; --work-soft: rgba(255,159,64,.14);
+  --fest: #ff8a80; --term: #64c8a8;
+  --tile: rgba(255,255,255,.07); --key: rgba(255,255,255,.09);
+  --stage: #0e0e10; --pop: #2a2a2d; --glass: rgba(34,34,38,.90);
+  --desk: radial-gradient(1200px 700px at 20% 10%, #2a3f63 0%, transparent 60%), radial-gradient(900px 600px at 90% 80%, #4a2e3e 0%, transparent 60%), linear-gradient(135deg, #1b2538 0%, #271d33 55%, #33241f 100%);
+  --shadow: 0 30px 80px rgba(0,0,0,.5);
+}
+body.light {
+  --bg: #f4f5f7; --card: rgba(255,255,255,.75); --card-hover: rgba(0,0,0,.045);
+  --border: rgba(97,115,143,.18); --border-soft: rgba(97,115,143,.11);
+  --text: #141414; --text2: #474747; --text3: #85868a; --text4: #b4b5b9; --accent: #1f6fe0; --accent-soft: rgba(31,111,224,.12);
+  --cal: #e8382d; --cal-soft: rgba(232,56,45,.10); --cal-text: #d13328;
+  --off: #1fab63; --off-soft: rgba(31,171,99,.11); --work: #e0782a; --work-soft: rgba(224,120,42,.11);
+  --fest: #d13328; --term: #1c9a7a;
+  --tile: rgba(0,0,0,.05); --key: #fff;
+  --stage: #d9dde3; --pop: #fff; --glass: rgba(250,250,252,.92);
+  --desk: radial-gradient(1200px 700px at 20% 10%, #c7d8f2 0%, transparent 60%), radial-gradient(900px 600px at 90% 80%, #ecd3df 0%, transparent 60%), linear-gradient(135deg, #b9cbe6 0%, #d8c8e8 55%, #ecd6c6 100%);
+  --shadow: 0 30px 80px rgba(30,40,60,.22);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { font: 13px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif;
+  color: var(--text); background: var(--stage); display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+button, input { font: inherit; color: inherit; }
+svg { flex: none; display: block; }
+.num { font-variant-numeric: tabular-nums; }
+
+/* ---------- Stage ---------- */
+.stagebar { width: 1200px; max-width: calc(100vw - 32px); display: flex; flex-wrap: wrap; align-items: center; gap: 7px; padding: 18px 0 6px; color: var(--text2); }
+.stagebar b { color: var(--text); font-size: 14px; margin-right: 6px; }
+.stagebar .sp { flex: 1; }
+.pill { border: 1px solid var(--border); background: var(--card); border-radius: 999px; padding: 4px 11px; cursor: pointer; font-size: 12px; }
+.pill.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.caption { width: 1200px; max-width: calc(100vw - 32px); color: var(--text3); font-size: 12px; padding: 0 0 12px; min-height: 34px; }
+.caption b { color: var(--text2); font-weight: 600; }
+body.solo .stagebar, body.solo .caption { display: none; }
+
+/* ---------- Desktop ---------- */
+.desk { position: relative; width: 1200px; height: 800px; border-radius: 14px; overflow: hidden; background: var(--desk); box-shadow: var(--shadow); user-select: none; }
+.menubar { height: 26px; display: flex; align-items: center; gap: 18px; padding: 0 14px; font-size: 12.5px; background: rgba(0,0,0,.22); color: rgba(255,255,255,.92); backdrop-filter: blur(20px); }
+body.light .menubar { background: rgba(255,255,255,.45); color: #1a1a1a; }
+.menubar b { font-weight: 700; }
+.menubar .sp { flex: 1; }
+.app { position: absolute; left: 60px; top: 70px; width: 700px; height: 520px; border-radius: 12px; background: var(--bg); border: 1px solid var(--border); box-shadow: 0 22px 60px rgba(0,0,0,.35); overflow: hidden; z-index: 10; }
+.app .tb { height: 38px; display: flex; align-items: center; gap: 8px; padding: 0 14px; border-bottom: 1px solid var(--border-soft); color: var(--text3); font-size: 12px; }
+.lights { display: flex; gap: 8px; }
+.lights i { width: 12px; height: 12px; border-radius: 50%; display: block; }
+.lights i:nth-child(1) { background: #ff5f57; } .lights i:nth-child(2) { background: #febc2e; } .lights i:nth-child(3) { background: #28c840; }
+.app .doc { padding: 22px 26px; color: var(--text2); font-size: 14px; line-height: 1.9; }
+.app .doc .ins { background: var(--accent-soft); color: var(--text); border-radius: 3px; padding: 0 2px; }
+
+/* ---------- Launcher ---------- */
+.scrim { position: absolute; inset: 26px 0 0; z-index: 50; display: none; }
+.scrim.show { display: block; }
+.launcher { position: absolute; left: 50%; top: 92px; transform: translateX(-50%); width: 680px; background: var(--glass); border: 1px solid var(--border);
+  border-radius: 16px; box-shadow: 0 26px 70px rgba(0,0,0,.45); backdrop-filter: blur(28px) saturate(1.4); z-index: 60; display: none; overflow: hidden; }
+.launcher.show { display: block; animation: lin .16s ease-out; }
+@keyframes lin { from { opacity: 0; transform: translateX(-50%) scale(.98); } }
+.lin { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--border-soft); }
+.lin input { flex: 1; min-width: 0; border: 0; outline: none; background: transparent; font-size: 17px; }
+.lin input::placeholder { color: var(--text3); }
+.chip { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px 0 6px; border-radius: 9px; flex: none; font-size: 13px; font-weight: 600; white-space: nowrap;
+  background: var(--cal-soft); color: var(--cal-text); }
+.chip .g { width: 20px; height: 20px; border-radius: 6px; display: grid; place-items: center; background: var(--cal); color: #fff; }
+.chip .opt { font-weight: 500; opacity: .85; }
+.hbtn { height: 28px; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); cursor: pointer; font-size: 12.5px; white-space: nowrap; }
+.hbtn:hover { background: var(--card-hover); }
+.hbtn .s { color: var(--text3); font-size: 11px; }
+.hbtn.pri { background: var(--accent); border-color: var(--accent); color: #fff; }
+.hbtn.pri .s { color: rgba(255,255,255,.75); }
+.lbody { padding: 0 14px; }
+.lbar { display: flex; align-items: center; gap: 14px; padding: 8px 14px; border-top: 1px solid var(--border-soft); font-size: 12px; color: var(--text3); white-space: nowrap; }
+.lbar .sp { flex: 1; }
+.lbar kbd, .kbd { font: 11px ui-monospace, Menlo, monospace; background: var(--tile); border-radius: 4px; padding: 0 4px; margin-right: 3px; color: var(--text2); }
+
+/* hint / list items */
+.sec { font-size: 11.5px; font-weight: 600; color: var(--text3); padding: 10px 4px 4px; display: flex; gap: 8px; }
+.sec .sp { flex: 1; }
+.sec .m { font-weight: 400; }
+.item { display: flex; align-items: center; gap: 11px; padding: 0 10px; min-height: 46px; border-radius: 10px; cursor: pointer; }
+.item.on { background: var(--card-hover); box-shadow: inset 0 0 0 1px rgba(255,90,79,.5); }
+.item:hover { background: var(--card-hover); }
+.item .ic { width: 28px; height: 28px; border-radius: 7px; display: grid; place-items: center; flex: none; color: #fff; }
+.item .t { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.item .d { color: var(--text3); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.item .d b { color: var(--text2); font-weight: 600; }
+.item .r { margin-left: auto; color: var(--text3); font-size: 11.5px; display: flex; gap: 8px; align-items: center; white-space: nowrap; flex: none; }
+.minical { width: 28px; height: 28px; border-radius: 7px; background: #fff; overflow: hidden; display: flex; flex-direction: column; align-items: center; flex: none; box-shadow: 0 0 0 1px rgba(0,0,0,.08); }
+.minical i { font-style: normal; display: block; width: 100%; text-align: center; background: var(--cal); color: #fff; font-size: 7.5px; line-height: 9px; font-weight: 700; }
+.minical b { color: #111; font-size: 14px; line-height: 18px; font-weight: 600; }
+
+/* ---------- Calendar ---------- */
+.mhead { display: flex; align-items: center; gap: 10px; padding: 10px 2px 6px; }
+.mhead .ttl { font-size: 17px; font-weight: 700; letter-spacing: -.2px; cursor: pointer; }
+.mhead .sub { color: var(--text3); font-size: 12px; }
+.mhead .sp { flex: 1; }
+.nav { display: inline-flex; gap: 2px; background: var(--tile); border-radius: 8px; padding: 2px; }
+.nav button { border: 0; background: transparent; height: 22px; min-width: 24px; padding: 0 7px; border-radius: 6px; cursor: pointer; color: var(--text2); font-size: 12px; display: inline-flex; align-items: center; justify-content: center; }
+.nav button:hover { background: var(--card-hover); color: var(--text); }
+.calwrap { display: grid; grid-template-columns: 384px 1fr; gap: 14px; padding-bottom: 12px; }
+.grid { display: grid; grid-template-columns: var(--cols); }
+.grid.wk { --cols: 22px repeat(7, 1fr); }
+.grid.nowk { --cols: repeat(7, 1fr); }
+.wd { text-align: center; font-size: 11px; color: var(--text3); padding: 2px 0 6px; font-weight: 600; }
+.wd.we { color: var(--text4); }
+.wn { font-size: 10px; color: var(--text4); display: grid; place-items: center; font-variant-numeric: tabular-nums; }
+.cell { position: relative; height: 50px; margin: 1px; border-radius: 9px; display: flex; flex-direction: column; align-items: center; padding-top: 5px; cursor: pointer; transition: background .1s; }
+.cell:hover { background: var(--card-hover); }
+.cell .n { font-size: 15px; font-weight: 550; line-height: 22px; min-width: 24px; height: 22px; text-align: center; border-radius: 11px; font-variant-numeric: tabular-nums; }
+.cell .l { font-size: 10px; color: var(--text3); line-height: 13px; white-space: nowrap; max-width: 48px; overflow: hidden; text-overflow: ellipsis; }
+.cell .l.f { color: var(--fest); }
+.cell .l.t { color: var(--term); }
+.cell .l.h { color: var(--off); }
+.cell.we .n { color: var(--text2); }
+.cell.out { opacity: .38; }
+.cell.today .n { background: var(--cal); color: #fff; }
+.cell.sel { background: var(--card-hover); box-shadow: inset 0 0 0 1.5px var(--accent); }
+.cell.off { background: var(--off-soft); }
+.cell.work { background: var(--work-soft); }
+.cell.off.sel, .cell.work.sel { box-shadow: inset 0 0 0 1.5px var(--accent); }
+.cell .bd { position: absolute; top: 3px; right: 4px; font-size: 9px; font-weight: 700; line-height: 1; }
+.cell.off .bd { color: var(--off); } .cell.work .bd { color: var(--work); }
+.cell .dots { position: absolute; bottom: 4px; display: flex; gap: 3px; }
+.cell .dots i { width: 4px; height: 4px; border-radius: 50%; display: block; }
+.cell.inrange { background: var(--accent-soft); border-radius: 0; margin: 1px 0; }
+.cell.rs { border-radius: 9px 0 0 9px; } .cell.re { border-radius: 0 9px 9px 0; } .cell.rs.re { border-radius: 9px; }
+.cell.rs .n, .cell.re .n { background: var(--accent); color: #fff; }
+.grid.noLunar .cell { height: 42px; }
+.legend { display: flex; gap: 12px; font-size: 11px; color: var(--text3); padding: 6px 2px 0; }
+.legend span { display: inline-flex; align-items: center; gap: 4px; }
+.legend i { width: 9px; height: 9px; border-radius: 3px; display: inline-block; }
+
+/* agenda */
+.agenda { display: flex; flex-direction: column; min-width: 0; border-left: 1px solid var(--border-soft); padding-left: 14px; }
+.dayh { padding: 2px 0 6px; }
+.dayh .d1 { display: flex; align-items: baseline; gap: 8px; }
+.dayh .big { font-size: 22px; font-weight: 700; letter-spacing: -.3px; }
+.dayh .wd2 { font-size: 13px; color: var(--text2); font-weight: 600; }
+.tag { font-size: 11px; font-weight: 600; border-radius: 5px; padding: 1px 6px; white-space: nowrap; }
+.tag.today { background: var(--cal); color: #fff; }
+.tag.rel { background: var(--tile); color: var(--text2); }
+.dayh .d2 { color: var(--text3); font-size: 12px; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.badges { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 7px; }
+.badges .b { font-size: 11.5px; padding: 2px 8px; border-radius: 6px; display: inline-flex; gap: 5px; align-items: center; }
+.b.off { background: var(--off-soft); color: var(--off); }
+.b.work { background: var(--work-soft); color: var(--work); }
+.b.f { background: var(--cal-soft); color: var(--fest); }
+.b.t { background: rgba(100,200,168,.14); color: var(--term); }
+.ahead { display: flex; align-items: center; font-size: 11.5px; color: var(--text3); font-weight: 600; padding: 8px 0 4px; border-top: 1px solid var(--border-soft); margin-top: 6px; }
+.ahead .sp { flex: 1; }
+.ahead .m { font-weight: 400; }
+.evs { display: flex; flex-direction: column; gap: 2px; overflow: auto; max-height: 270px; }
+.ev { display: grid; grid-template-columns: 3px 44px 1fr; gap: 9px; padding: 6px 8px 6px 6px; border-radius: 8px; cursor: pointer; align-items: start; }
+.ev:hover { background: var(--card-hover); }
+.ev.sel { background: var(--accent-soft); }
+.ev .bar { width: 3px; border-radius: 2px; align-self: stretch; }
+.ev .tm { font-size: 11.5px; color: var(--text2); font-variant-numeric: tabular-nums; line-height: 1.35; }
+.ev .tm small { display: block; color: var(--text3); font-size: 10.5px; }
+.ev .tt { font-size: 12.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ev .sub { font-size: 11.5px; color: var(--text3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ev .st { font-size: 10.5px; font-weight: 600; margin-left: 6px; }
+.ev .st.live { color: var(--off); }
+.ev .st.soon { color: var(--accent); }
+.ev.past { opacity: .5; }
+.ev .acts { display: flex; gap: 5px; margin-top: 6px; flex-wrap: wrap; }
+.pact { height: 22px; border-radius: 6px; padding: 0 7px; border: 0; background: var(--tile); color: var(--text2); font-size: 11.5px; cursor: pointer; display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.pact:hover { background: var(--card-hover); color: var(--text); }
+.pact.pri { background: var(--accent); color: #fff; }
+.pact .s { color: var(--text3); font-size: 10.5px; }
+.pact.pri .s { color: rgba(255,255,255,.75); }
+.noev { color: var(--text3); font-size: 12.5px; padding: 14px 4px; }
+.noev .pact { margin-top: 8px; }
+.perm { border-radius: 12px; background: var(--card); border: 1px solid var(--border-soft); padding: 12px; margin-top: 4px; }
+.perm .h { display: flex; gap: 8px; align-items: center; font-weight: 600; font-size: 12.5px; }
+.perm p { margin: 6px 0 10px; color: var(--text3); font-size: 12px; }
+.perm .row { display: flex; gap: 6px; align-items: center; }
+.perm .row .lk { color: var(--text3); font-size: 11.5px; cursor: pointer; margin-left: 4px; }
+
+/* range */
+.range { border-radius: 12px; background: var(--card); border: 1px solid var(--border-soft); padding: 12px 14px; }
+.range .ft { font-size: 12px; color: var(--text3); }
+.range .big { font-size: 30px; font-weight: 700; letter-spacing: -.5px; margin: 2px 0; font-variant-numeric: tabular-nums; }
+.range .big small { font-size: 14px; color: var(--text3); font-weight: 500; margin-left: 3px; }
+.range .kv { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; font-size: 12.5px; margin-top: 8px; }
+.range .kv span:nth-child(odd) { color: var(--text3); }
+.range .kv span:nth-child(even) { text-align: right; font-variant-numeric: tabular-nums; }
+.range .note { margin-top: 8px; font-size: 11.5px; color: var(--text3); }
+.range .note.warn { color: var(--work); }
+
+/* year */
+.year { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px 14px; padding: 4px 0 12px; }
+.ym { border-radius: 10px; padding: 6px 6px 4px; cursor: pointer; }
+.ym:hover, .ym.sel { background: var(--card-hover); }
+.ym.sel { box-shadow: inset 0 0 0 1.5px var(--accent); }
+.ym .mt { font-size: 12px; font-weight: 700; margin: 0 0 3px 3px; display: flex; }
+.ym .mt .sp { flex: 1; }
+.ym .mt .c { font-weight: 400; color: var(--text3); font-size: 10.5px; }
+.ym .g { display: grid; grid-template-columns: repeat(7, 1fr); }
+.ym .g span { font-size: 9.5px; text-align: center; line-height: 17px; height: 17px; border-radius: 4px; font-variant-numeric: tabular-nums; }
+.ym .g span.h { color: var(--text4); font-weight: 600; }
+.ym .g span.off { background: var(--off-soft); color: var(--off); font-weight: 600; }
+.ym .g span.work { background: var(--work-soft); color: var(--work); font-weight: 600; }
+.ym .g span.f { color: var(--fest); font-weight: 600; }
+.ym .g span.today { background: var(--cal); color: #fff; font-weight: 700; }
+.ynote { font-size: 11.5px; color: var(--work); padding: 0 2px 10px; display: flex; gap: 6px; align-items: center; }
+
+/* search */
+.empty { padding: 26px; text-align: center; color: var(--text3); font-size: 12.5px; }
+.evicon { width: 28px; height: 28px; border-radius: 7px; display: flex; flex-direction: column; align-items: center; justify-content: center; flex: none; background: var(--tile); line-height: 1.05; }
+.evicon b { font-size: 12.5px; } .evicon i { font-style: normal; font-size: 8.5px; color: var(--text3); }
+.cdot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 5px; vertical-align: 1px; }
+mark { background: rgba(255,214,10,.35); color: inherit; border-radius: 2px; padding: 0 1px; }
+
+/* toast */
+.toast { position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%); background: var(--pop); border: 1px solid var(--border); border-radius: 999px; padding: 7px 14px; box-shadow: 0 10px 30px rgba(0,0,0,.3); font-size: 12.5px; display: none; z-index: 100; white-space: nowrap; }
+.toast.show { display: block; }
+.openhint { position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%); z-index: 20; font-size: 12px; color: rgba(255,255,255,.75); background: rgba(0,0,0,.25); padding: 6px 12px; border-radius: 999px; cursor: pointer; backdrop-filter: blur(10px); }
+body.light .openhint { color: #333; background: rgba(255,255,255,.5); }
+
+/* sysdialog for permission */
+.sysdlg { position: absolute; left: 50%; top: 230px; transform: translateX(-50%); width: 300px; background: var(--pop); border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 30px 80px rgba(0,0,0,.5); z-index: 110; padding: 18px; text-align: center; display: none; }
+.sysdlg.show { display: block; }
+.sysdlg .ti { font-weight: 700; margin: 8px 0 6px; }
+.sysdlg p { color: var(--text2); font-size: 12px; margin: 0 0 14px; }
+.sysdlg .btns { display: flex; flex-direction: column; gap: 6px; }
+.sysdlg .btns button { height: 28px; border-radius: 7px; border: 1px solid var(--border); background: var(--card); cursor: pointer; }
+.sysdlg .btns button.pri { background: var(--accent); color: #fff; border-color: var(--accent); }
+</style>
+</head>
+<body>
+
+<div class="stagebar">
+  <b>启动器日历 · cal</b>
+  <button class="pill" data-s="hint">① 输入关键字</button>
+  <button class="pill" data-s="month">② 月视图</button>
+  <button class="pill" data-s="agenda">③ 今天的日程</button>
+  <button class="pill" data-s="jump">④ 跳转日期</button>
+  <button class="pill" data-s="range">⑤ 日期间隔</button>
+  <button class="pill" data-s="search">⑥ 搜索日程</button>
+  <button class="pill" data-s="year">⑦ 年视图</button>
+  <button class="pill" data-s="perm">⑧ 未授权日历</button>
+  <span class="sp"></span>
+  <button class="pill" id="lunarBtn">农历/节假日</button>
+  <button class="pill" id="wkBtn">周数</button>
+  <button class="pill" id="lightBtn">浅色</button>
+</div>
+<div class="caption" id="caption"></div>
+
+<div class="desk" id="desk">
+  <div class="menubar"><b></b><b>备忘录</b><span>文件</span><span>编辑</span><span>格式</span><span>显示</span><span>窗口</span><span class="sp"></span>
+    <span>10月14日 周三 10:24</span></div>
+
+  <div class="app">
+    <div class="tb"><div class="lights"><i></i><i></i><i></i></div><span style="margin-left:8px">备忘录 — 周报</span></div>
+    <div class="doc" id="doc">本周进展<br>· 日历关键字设计稿已完成，评审定在 <span id="docIns"></span><br>· 下周继续推进通知中心</div>
+  </div>
+
+  <div class="openhint" id="openhint">按 ⌥Space 打开启动器</div>
+  <div class="scrim" id="scrim"></div>
+  <div class="launcher" id="launcher">
+    <div class="lin">
+      <span id="chipSlot"></span>
+      <input id="q" autocomplete="off" spellcheck="false" placeholder="随便问，或输入关键字…">
+      <span id="headRight"></span>
+    </div>
+    <div class="lbody" id="lbody"></div>
+    <div class="lbar" id="lbar"></div>
+  </div>
+  <div class="sysdlg" id="sysdlg">
+    <div style="display:flex;justify-content:center"><span class="minical" style="width:44px;height:44px;border-radius:10px"><i style="font-size:10px;line-height:13px">10月</i><b style="font-size:22px;line-height:30px">14</b></span></div>
+    <div class="ti">“Typeflux”想要完全访问你的日历</div>
+    <p>在启动器中输入 cal 时显示你的日程。日程只在本机读取，不会上传。</p>
+    <div class="btns"><button class="pri" data-perm="granted">允许完全访问</button><button data-perm="denied">不允许</button></div>
+  </div>
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const params = new URLSearchParams(location.search);
+const KEYWORDS = ['cal', '日历', 'rl'];
+
+/* ---------- Icons ---------- */
+const P = {
+  cal: '<rect x="3" y="5" width="18" height="16" rx="2.5"/><path d="M3 10h18M8 3v4M16 3v4"/>',
+  left: '<path d="M15 6l-6 6 6 6"/>', right: '<path d="M9 6l6 6-6 6"/>',
+  video: '<rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3z"/>',
+  pin: '<path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/>',
+  copy: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>',
+  open: '<path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
+  lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  spark: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/>',
+  info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>',
+  insert: '<path d="M4 12h12M12 8l4 4-4 4M20 5v14"/>',
+};
+const ic = (n, s = 14, w = 2) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round">${P[n]}</svg>`;
+
+/* ---------- Dates ---------- */
+const TODAY = new Date(2026, 9, 14, 12);           // Wed, Oct 14 2026 (simulated)
+const NOW_MIN = 10 * 60 + 24;                       // 10:24
+const D = (y, m, d) => new Date(y, m, d, 12);
+const key = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+const addDays = (d, n) => D(d.getFullYear(), d.getMonth(), d.getDate() + n);
+const diffDays = (a, b) => Math.round((D(b.getFullYear(), b.getMonth(), b.getDate()) - D(a.getFullYear(), a.getMonth(), a.getDate())) / 864e5);
+const same = (a, b) => key(a) === key(b);
+const WD = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+const firstWeekday = 1; // follows the system setting (Monday here)
+function isoWeek(d) {
+  const t = D(d.getFullYear(), d.getMonth(), d.getDate());
+  const day = (t.getDay() + 6) % 7; t.setDate(t.getDate() - day + 3);
+  const first = new Date(t.getFullYear(), 0, 4, 12);
+  return 1 + Math.round(((t - first) / 864e5 - 3 + ((first.getDay() + 6) % 7)) / 7);
+}
+const dayOfYear = d => diffDays(D(d.getFullYear(), 0, 1), d) + 1;
+const fmtLong = d => `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日 ${WD[d.getDay()]}`;
+const fmtShort = d => `${d.getMonth() + 1}月${d.getDate()}日`;
+
+/* Lunar dates from the platform's Chinese calendar (Foundation's Calendar(identifier: .chinese) in the app). */
+const LF = new Intl.DateTimeFormat('zh-CN-u-ca-chinese', { year: 'numeric', month: 'long', day: 'numeric' });
+const LDAY = ['', '初一', '初二', '初三', '初四', '初五', '初六', '初七', '初八', '初九', '初十', '十一', '十二', '十三', '十四', '十五', '十六', '十七', '十八', '十九', '二十', '廿一', '廿二', '廿三', '廿四', '廿五', '廿六', '廿七', '廿八', '廿九', '三十'];
+const lunarCache = {};
+function lunar(d) {
+  const k = key(d);
+  if (lunarCache[k]) return lunarCache[k];
+  const p = Object.fromEntries(LF.formatToParts(d).map(x => [x.type, x.value]));
+  const day = +p.day;
+  const r = { month: p.month, day, dayName: LDAY[day], year: p.yearName };
+  return (lunarCache[k] = r);
+}
+const ZODIAC = { 子: '鼠', 丑: '牛', 寅: '虎', 卯: '兔', 辰: '龙', 巳: '蛇', 午: '马', 未: '羊', 申: '猴', 酉: '鸡', 戌: '狗', 亥: '猪' };
+
+/* Solar terms, 21st-century approximation (accurate to the day for 2000–2099). */
+const TERMS = ['小寒', '大寒', '立春', '雨水', '惊蛰', '春分', '清明', '谷雨', '立夏', '小满', '芒种', '夏至', '小暑', '大暑', '立秋', '处暑', '白露', '秋分', '寒露', '霜降', '立冬', '小雪', '大雪', '冬至'];
+const TC = [5.4055, 20.12, 3.87, 18.73, 5.63, 20.646, 4.81, 20.1, 5.52, 21.04, 5.678, 21.37, 7.108, 22.83, 7.5, 23.13, 7.646, 23.042, 8.318, 23.438, 7.438, 22.36, 7.18, 21.94];
+const termCache = {};
+function termsOf(y) {
+  if (termCache[y]) return termCache[y];
+  const Y = y % 100, out = {};
+  TERMS.forEach((n, i) => {
+    const day = Math.floor(Y * 0.2422 + TC[i]) - Math.floor((i < 4 ? Y - 1 : Y) / 4);
+    out[key(D(y, Math.floor(i / 2), day))] = n;
+  });
+  return (termCache[y] = out);
+}
+const termOf = d => termsOf(d.getFullYear())[key(d)] || null;
+
+/* Festivals */
+const SOLAR_FEST = { '1-1': '元旦', '2-14': '情人节', '3-8': '妇女节', '5-1': '劳动节', '5-4': '青年节', '6-1': '儿童节', '9-10': '教师节', '10-1': '国庆节', '12-24': '平安夜', '12-25': '圣诞节' };
+const LUNAR_FEST = { '正月-1': '春节', '正月-15': '元宵节', '二月-2': '龙抬头', '五月-5': '端午节', '七月-7': '七夕', '七月-15': '中元节', '八月-15': '中秋节', '九月-9': '重阳节', '腊月-8': '腊八节', '腊月-23': '小年' };
+function festivalsOf(d) {
+  const out = [];
+  const s = SOLAR_FEST[`${d.getMonth() + 1}-${d.getDate()}`]; if (s) out.push(s);
+  const l = lunar(d); const lf = LUNAR_FEST[`${l.month}-${l.day}`]; if (lf) out.push(lf);
+  const nx = lunar(addDays(d, 1)); if (nx.month === '正月' && nx.day === 1) out.push('除夕');
+  // Mother's day: 2nd Sunday of May; Father's day: 3rd Sunday of June
+  if (d.getDay() === 0 && d.getMonth() === 4 && d.getDate() > 7 && d.getDate() <= 14) out.push('母亲节');
+  if (d.getDay() === 0 && d.getMonth() === 5 && d.getDate() > 14 && d.getDate() <= 21) out.push('父亲节');
+  return out;
+}
+
+/* Statutory holidays (Mainland China). Bundled per year; a year without an announced schedule only knows weekends. */
+const HOLIDAYS = {
+  2026: {
+    off: [['2026-01-01', '2026-01-03', '元旦'], ['2026-02-15', '2026-02-23', '春节'], ['2026-04-04', '2026-04-06', '清明节'], ['2026-05-01', '2026-05-05', '劳动节'],
+          ['2026-06-19', '2026-06-21', '端午节'], ['2026-09-25', '2026-09-27', '中秋节'], ['2026-10-01', '2026-10-07', '国庆节']],
+    work: { '2026-01-04': '元旦', '2026-02-14': '春节', '2026-02-28': '春节', '2026-05-09': '劳动节', '2026-09-20': '国庆节', '2026-10-10': '国庆节' },
+  },
+};
+const offMap = {};
+Object.values(HOLIDAYS).forEach(y => y.off.forEach(([a, b, n]) => {
+  const s = new Date(a + 'T12:00'), e = new Date(b + 'T12:00'); let i = 1; const total = diffDays(s, e) + 1;
+  for (let d = s; d <= e; d = addDays(d, 1), i++) offMap[key(d)] = { name: n, i, total };
+}));
+const hasSchedule = y => !!HOLIDAYS[y];
+function dayKind(d) {
+  if (!state.lunar) return null;
+  const k = key(d);
+  if (offMap[k]) return { kind: 'off', ...offMap[k] };
+  const y = HOLIDAYS[d.getFullYear()];
+  if (y && y.work[k]) return { kind: 'work', name: y.work[k] };
+  return null;
+}
+function isWorkday(d) {
+  if (offMap[key(d)]) return false;
+  if (HOLIDAYS[d.getFullYear()]?.work[key(d)]) return true;
+  return d.getDay() !== 0 && d.getDay() !== 6;
+}
+
+/* ---------- Events (simulated EventKit data) ---------- */
+const CALS = { work: { name: '工作', c: '#3d8bff' }, me: { name: '个人', c: '#34c759' }, fam: { name: '家庭', c: '#ff9f0a' }, bday: { name: '生日', c: '#bf5af2' } };
+const ONE_OFF = [
+  ['2026-10-09', '15:00', '16:00', '设计评审：快捷键冲突', 'work', '会议室 3F-A'],
+  ['2026-10-13', '15:30', '16:30', '洗牙', 'me', '瑞尔齿科 · 静安店'],
+  ['2026-10-14', '10:00', '10:30', '产品站会', 'work', 'Zoom', 'zoom'],
+  ['2026-10-14', '14:00', '15:00', '设计评审：日历功能', 'work', '会议室 3F-B · Zoom', 'zoom', '与会者 6 人 · 组织者 mylxsw'],
+  ['2026-10-14', '19:30', '21:00', '羽毛球', 'me', '源深体育中心'],
+  ['2026-10-15', '11:00', '11:30', '1:1 与 Lisa', 'work', 'Google Meet', 'meet'],
+  ['2026-10-15', '16:00', '17:00', '发布 v1.8', 'work', ''],
+  ['2026-10-16', null, null, '妈妈生日', 'bday', ''],
+  ['2026-10-17', '10:00', '11:30', '家长会', 'fam', '实验小学'],
+  ['2026-10-20', '14:00', '15:00', '设计评审：通知中心', 'work', '会议室 3F-B · Zoom', 'zoom'],
+  ['2026-10-22', null, null, '出差 · 上海', 'work', '至 10月23日'],
+  ['2026-10-23', null, null, '出差 · 上海', 'work', '第 2/2 天'],
+  ['2026-10-28', '10:00', '12:00', '季度复盘', 'work', '大会议室'],
+  ['2026-10-31', '18:30', '21:00', '朋友聚餐', 'me', '外滩 18 号'],
+  ['2026-11-03', '14:00', '15:00', '设计评审：多端同步', 'work', 'Zoom', 'zoom'],
+  ['2026-11-11', '20:00', '21:00', '年度体检预约', 'me', ''],
+  ['2026-11-18', '15:00', '16:00', '设计评审：年度回顾', 'work', '会议室 3F-A'],
+  ['2026-09-29', '14:00', '15:00', '设计评审：剪贴板', 'work', '会议室 3F-B'],
+];
+function eventsOn(d) {
+  const k = key(d);
+  const list = ONE_OFF.filter(e => e[0] === k).map(e => ({ date: k, start: e[1], end: e[2], title: e[3], cal: e[4], loc: e[5], link: e[6] || null, note: e[7] || '' }));
+  if (d.getDay() === 1 && !offMap[k] && d >= D(2026, 6, 1)) list.push({ date: k, start: '09:30', end: '10:00', title: '周会', cal: 'work', loc: '大会议室', link: null, note: '每周一重复' });
+  return list.sort((a, b) => (a.start ? 1 : 0) - (b.start ? 1 : 0) || String(a.start).localeCompare(String(b.start)));
+}
+const toMin = t => +t.slice(0, 2) * 60 + +t.slice(3);
+function evStatus(e) {
+  if (!e.start || e.date !== key(TODAY)) return null;
+  const s = toMin(e.start), en = toMin(e.end);
+  if (NOW_MIN >= en) return { cls: 'past', text: '已结束' };
+  if (NOW_MIN >= s) return { cls: 'live', text: `进行中 · 还剩 ${en - NOW_MIN} 分钟` };
+  const m = s - NOW_MIN; return { cls: 'soon', text: m >= 60 ? `${Math.floor(m / 60)} 小时${m % 60 ? ` ${m % 60} 分` : ''}后` : `${m} 分钟后` };
+}
+function nextEvent() {
+  return eventsOn(TODAY).find(e => e.start && toMin(e.start) > NOW_MIN);
+}
+
+/* ---------- Argument parsing ---------- */
+const CN_NUM = { 一: 1, 二: 2, 三: 3, 四: 4, 五: 5, 六: 6, 日: 0, 天: 0, 七: 0 };
+const FEST_NAMES = [...Object.values(SOLAR_FEST), ...Object.values(LUNAR_FEST), '除夕', '母亲节', '父亲节'];
+function findNext(pred, from = TODAY, max = 800) { for (let i = 0; i < max; i++) { const d = addDays(from, i); if (pred(d)) return d; } return null; }
+function parseOne(t) {
+  t = t.trim().toLowerCase();
+  if (!t) return null;
+  let m;
+  if ((m = t.match(/^(\d{4})[-/.年](\d{1,2})[-/.月](\d{1,2})日?$/))) return { date: D(+m[1], m[2] - 1, +m[3]) };
+  if ((m = t.match(/^(\d{1,2})[-/.月](\d{1,2})日?$/))) { let d = D(TODAY.getFullYear(), m[1] - 1, +m[2]); return { date: d }; }
+  if ((m = t.match(/^(\d{4})[-/.年](\d{1,2})月?$/))) return { month: D(+m[1], m[2] - 1, 1) };
+  if ((m = t.match(/^(\d{1,2})月$/))) return { month: D(TODAY.getFullYear(), m[1] - 1, 1) };
+  if ((m = t.match(/^(\d{4})年?$/)) && +m[1] >= 1900 && +m[1] <= 2100) return { year: +m[1] };
+  if ((m = t.match(/^([+-])(\d{1,4})(d|天|w|周)?$/))) { const n = +m[2] * (m[3] === 'w' || m[3] === '周' ? 7 : 1) * (m[1] === '-' ? -1 : 1); return { date: addDays(TODAY, n) }; }
+  if ((m = t.match(/^(\d{1,4})(天|周)(后|前)$/))) { const n = +m[1] * (m[2] === '周' ? 7 : 1) * (m[3] === '前' ? -1 : 1); return { date: addDays(TODAY, n) }; }
+  const rel = { 今天: 0, today: 0, 明天: 1, tomorrow: 1, 后天: 2, 大后天: 3, 昨天: -1, yesterday: -1, 前天: -2 };
+  if (t in rel) return { date: addDays(TODAY, rel[t]) };
+  if ((m = t.match(/^(下下|下|本|这|上)?(周|星期|礼拜)([一二三四五六日天])$/))) {
+    const target = CN_NUM[m[3]];
+    const monday = addDays(TODAY, -((TODAY.getDay() + 6) % 7));
+    const shift = { 下下: 14, 下: 7, 上: -7 }[m[1]] || 0;
+    return { date: addDays(monday, (target + 6) % 7 + shift) };
+  }
+  if (t === '下个月' || t === '下月') return { month: D(TODAY.getFullYear(), TODAY.getMonth() + 1, 1) };
+  if (t === '上个月' || t === '上月') return { month: D(TODAY.getFullYear(), TODAY.getMonth() - 1, 1) };
+  if (t === '本月' || t === '这个月') return { month: D(TODAY.getFullYear(), TODAY.getMonth(), 1) };
+  const fest = FEST_NAMES.find(n => n === t || n.replace(/节$/, '') === t);
+  if (fest) return { date: findNext(d => festivalsOf(d).includes(fest)), what: fest };
+  if (TERMS.includes(t)) return { date: findNext(d => termOf(d) === t), what: t };
+  return null;
+}
+function parseArg(text) {
+  const t = text.trim();
+  if (!t) return { mode: 'month' };
+  const parts = t.split(/\s*(?:到|至|~|～|—|\s+-\s+|\s+)\s*/).filter(Boolean);
+  if (parts.length === 2) {
+    const a = parseOne(parts[0]), b = parseOne(parts[1]);
+    if (a?.date && b?.date) return { mode: 'range', a: a.date, b: b.date };
+  }
+  const one = parseOne(t);
+  if (one?.date) return { mode: 'date', date: one.date, what: one.what };
+  if (one?.month) return { mode: 'month', month: one.month };
+  if (one?.year) return { mode: 'year', year: one.year };
+  return { mode: 'search', q: t };
+}
+
+/* ---------- State ---------- */
+const state = {
+  launcher: true, view: 'hint', sel: TODAY, month: D(2026, 9, 1), focus: 'grid', evSel: 0, yearSel: 9,
+  perm: 'granted', lunar: true, weeks: false, light: false, searchSel: 0, lastArg: '',
+};
+
+/* ---------- Rendering ---------- */
+function renderLauncher() {
+  $('#launcher').classList.toggle('show', state.launcher);
+  $('#scrim').classList.toggle('show', state.launcher);
+  $('#openhint').style.display = state.launcher ? 'none' : '';
+  if (!state.launcher) return;
+  const q = $('#q');
+  if (state.view === 'cal') {
+    const arg = parseArg(q.value);
+    const opt = arg.mode === 'year' ? `→ ${arg.year} 年` : arg.mode === 'range' ? '→ 间隔' : arg.mode === 'search' ? '→ 搜索日程' : '';
+    $('#chipSlot').innerHTML = `<span class="chip"><span class="g">${ic('cal', 13, 2.4)}</span>日历${opt ? `<span class="opt">${opt}</span>` : ''}</span>`;
+    q.placeholder = '日期、节日或日程：12-25、下周五、春节、评审…';
+    $('#headRight').innerHTML = same(state.sel, TODAY) && state.month.getMonth() === TODAY.getMonth() && state.month.getFullYear() === TODAY.getFullYear() && !q.value
+      ? '' : `<button class="hbtn" data-act="today">今天<span class="s">⌘T</span></button>`;
+  } else {
+    $('#chipSlot').innerHTML = '';
+    q.placeholder = '随便问，或输入关键字…';
+    $('#headRight').innerHTML = '';
+  }
+  renderBody();
+}
+
+function renderBody() {
+  const body = $('#lbody'), bar = $('#lbar');
+  const text = $('#q').value;
+  if (state.view !== 'cal') {
+    const kw = KEYWORDS.find(k => k === text.trim().toLowerCase());
+    if (!kw) { body.innerHTML = `<div class="empty">输入 <b>cal</b> 试试</div>`; bar.innerHTML = `<span class="sp"></span><span><kbd>esc</kbd>关闭</span>`; return; }
+    const l = lunar(TODAY), nx = state.perm === 'granted' ? nextEvent() : null;
+    const n = eventsOn(TODAY).length;
+    body.innerHTML = `
+      <div class="sec">关键字</div>
+      <div class="item on" data-act="enter" style="height:52px">
+        <span class="minical"><i>${TODAY.getMonth() + 1}月</i><b>${TODAY.getDate()}</b></span>
+        <div style="min-width:0"><div class="t">日历</div>
+          <div class="d">今天 <b>${fmtShort(TODAY)} ${WD[TODAY.getDay()]}</b> · 农历${l.month}${l.dayName} · 第 ${isoWeek(TODAY)} 周${state.perm === 'granted' ? ` · ${n} 个日程${nx ? `，下一个 <b>${nx.start} ${esc(nx.title)}</b>` : ''}` : ''}</div></div>
+        <div class="r"><span><span class="kbd">↩</span>打开</span></div>
+      </div>
+      <div class="sec">应用</div>
+      <div class="item"><span class="minical" style="opacity:.85"><i>OCT</i><b>14</b></span><div><div class="t">日历</div><div class="d">/System/Applications</div></div><div class="r"><span class="kbd">⌘2</span></div></div>
+      <div class="sec">AI</div>
+      <div class="item"><span class="ic" style="background:var(--accent-soft);color:var(--accent)">${ic('spark', 16)}</span><div><div class="t">问 AI “${esc(text)}”</div></div><div class="r"><span class="kbd">⌘↩</span></div></div>`;
+    bar.innerHTML = `<span><kbd>↩</kbd>打开日历</span><span><kbd>空格</kbd>进入并输入日期</span><span class="sp"></span><span><kbd>esc</kbd>关闭</span>`;
+    return;
+  }
+  const arg = parseArg(text);
+  if (arg.mode === 'search') { renderSearch(arg.q); return; }
+  if (arg.mode === 'year') { renderYear(arg.year); return; }
+  body.innerHTML = `${monthHead()}<div class="calwrap">${gridHTML(arg)}${arg.mode === 'range' ? rangeHTML(arg) : agendaHTML(arg)}</div>`;
+  bar.innerHTML = state.focus === 'agenda'
+    ? `<span><kbd>↑↓</kbd>选择日程</span><span><kbd>↩</kbd>${selectedEvent()?.link ? '加入会议' : '在日历中打开'}</span><span><kbd>⌘C</kbd>复制日程</span><span><kbd>⇥</kbd>回到日期</span><span class="sp"></span><span><kbd>esc</kbd>返回</span>`
+    : arg.mode === 'range'
+      ? `<span><kbd>↩</kbd>复制结果</span><span><kbd>⌘←→</kbd>切换月份</span><span class="sp"></span><span><kbd>esc</kbd>清空</span>`
+      : `<span><kbd>←→↑↓</kbd>选择日期</span><span><kbd>⌘←→</kbd>切换月份</span>${eventsOnSel().length ? '<span><kbd>⇥</kbd>日程</span>' : ''}<span><kbd>↩</kbd>在日历中打开</span><span><kbd>⌘C</kbd>复制</span><span><kbd>⌥↩</kbd>插入日期</span><span class="sp"></span><span><kbd>esc</kbd>${text ? '清空' : '返回'}</span>`;
+}
+
+function monthHead() {
+  const m = state.month, l = lunar(D(m.getFullYear(), m.getMonth(), 15));
+  return `<div class="mhead"><span class="ttl" data-act="toyear">${m.getFullYear()}年${m.getMonth() + 1}月</span>
+    ${state.lunar ? `<span class="sub">${l.year}年 · ${ZODIAC[l.year[1]]}年</span>` : ''}
+    <span class="sp"></span>
+    <span class="nav"><button data-act="prev" title="上个月 ⌘←">${ic('left', 13, 2.4)}</button><button data-act="today">今天</button><button data-act="next" title="下个月 ⌘→">${ic('right', 13, 2.4)}</button></span></div>`;
+}
+
+function gridHTML(arg) {
+  const m = state.month, y = m.getFullYear(), mo = m.getMonth();
+  const first = D(y, mo, 1);
+  const start = addDays(first, -((first.getDay() - firstWeekday + 7) % 7));
+  const order = [...Array(7)].map((_, i) => (firstWeekday + i) % 7);
+  let h = `<div><div class="grid ${state.weeks ? 'wk' : 'nowk'} ${state.lunar ? '' : 'noLunar'}">`;
+  if (state.weeks) h += `<div class="wd"></div>`;
+  h += order.map(i => `<div class="wd ${i === 0 || i === 6 ? 'we' : ''}">${'日一二三四五六'[i]}</div>`).join('');
+  const lo = arg.mode === 'range' ? (arg.a < arg.b ? arg.a : arg.b) : null, hi = arg.mode === 'range' ? (arg.a < arg.b ? arg.b : arg.a) : null;
+  for (let w = 0; w < 6; w++) {
+    if (state.weeks) h += `<div class="wn">${isoWeek(addDays(start, w * 7 + 3))}</div>`;
+    for (let i = 0; i < 7; i++) {
+      const d = addDays(start, w * 7 + i);
+      const cls = ['cell'];
+      if (d.getMonth() !== mo) cls.push('out');
+      if (d.getDay() === 0 || d.getDay() === 6) cls.push('we');
+      if (same(d, TODAY)) cls.push('today');
+      const k = dayKind(d);
+      if (k) cls.push(k.kind);
+      if (lo) { if (d >= lo && d <= hi) cls.push('inrange'); if (same(d, lo)) cls.push('rs'); if (same(d, hi)) cls.push('re'); }
+      else if (same(d, state.sel)) cls.push('sel');
+      let sub = '', sc = '';
+      if (state.lunar) {
+        const f = festivalsOf(d), t = termOf(d), l = lunar(d);
+        if (k && k.kind === 'off' && k.i === 1) { sub = k.name; sc = 'h'; }
+        else if (f.length) { sub = f[0]; sc = 'f'; }
+        else if (t) { sub = t; sc = 't'; }
+        else sub = l.day === 1 ? l.month : l.dayName;
+      }
+      const evs = state.perm === 'granted' ? eventsOn(d) : [];
+      const dots = [...new Set(evs.map(e => CALS[e.cal].c))].slice(0, 3).map(c => `<i style="background:${c}"></i>`).join('');
+      h += `<div class="${cls.join(' ')}" data-date="${key(d)}">
+        ${k ? `<span class="bd">${k.kind === 'off' ? '休' : '班'}</span>` : ''}
+        <span class="n">${d.getDate()}</span>${state.lunar ? `<span class="l ${sc}">${sub}</span>` : ''}
+        ${dots ? `<span class="dots">${dots}</span>` : ''}</div>`;
+    }
+  }
+  h += `</div>`;
+  if (state.lunar) h += `<div class="legend"><span><i style="background:var(--off-soft);box-shadow:inset 0 0 0 1px var(--off)"></i>放假</span><span><i style="background:var(--work-soft);box-shadow:inset 0 0 0 1px var(--work)"></i>调休上班</span>${state.perm === 'granted' ? Object.values(CALS).map(c => `<span><i style="background:${c.c};border-radius:50%;width:7px;height:7px"></i>${c.name}</span>`).join('') : ''}</div>`;
+  return h + `</div>`;
+}
+
+const eventsOnSel = () => state.perm === 'granted' ? eventsOn(state.sel) : [];
+const selectedEvent = () => eventsOnSel()[state.evSel] || null;
+
+function relText(d) {
+  const n = diffDays(TODAY, d);
+  if (n === 0) return null;
+  const names = { 1: '明天', 2: '后天', '-1': '昨天', '-2': '前天' };
+  return names[n] || (n > 0 ? `${n} 天后` : `${-n} 天前`);
+}
+
+function agendaHTML(arg) {
+  const d = state.sel, l = lunar(d), k = dayKind(d), t = termOf(d), f = state.lunar ? festivalsOf(d) : [];
+  const rel = relText(d);
+  let h = `<div class="agenda"><div class="dayh">
+    <div class="d1"><span class="big">${d.getMonth() + 1}月${d.getDate()}日</span><span class="wd2">${d.getFullYear() !== TODAY.getFullYear() ? `${d.getFullYear()} · ` : ''}${WD[d.getDay()]}</span>
+      ${same(d, TODAY) ? '<span class="tag today">今天</span>' : `<span class="tag rel">${rel}</span>`}</div>
+    <div class="d2">${state.lunar ? `农历${l.month}${l.dayName} · ` : ''}第 ${isoWeek(d)} 周 · 第 ${dayOfYear(d)} 天</div>`;
+  const badges = [];
+  if (state.lunar) {
+    if (k?.kind === 'off') badges.push(`<span class="b off">休 · ${k.name}假期第 ${k.i}/${k.total} 天</span>`);
+    if (k?.kind === 'work') badges.push(`<span class="b work">班 · ${k.name}调休上班</span>`);
+    f.forEach(x => badges.push(`<span class="b f">${x}</span>`));
+    if (t) badges.push(`<span class="b t">${t}</span>`);
+    if (!k && !f.length && !t && same(d, TODAY)) {
+      const nh = findNext(x => offMap[key(x)]?.i === 1, addDays(TODAY, 1), 400);
+      if (nh) badges.push(`<span class="b off" style="background:var(--tile);color:var(--text2)">距${offMap[key(nh)].name}放假还有 ${diffDays(TODAY, nh)} 天</span>`);
+      else badges.push(`<span class="b" style="background:var(--tile);color:var(--text3)">${TODAY.getFullYear() + 1} 年放假安排尚未公布</span>`);
+    }
+  }
+  if (arg.mode === 'date' && arg.what) badges.unshift(`<span class="b" style="background:var(--accent-soft);color:var(--accent)">下一个${esc(arg.what)} · ${rel || '今天'}</span>`);
+  if (badges.length) h += `<div class="badges">${badges.join('')}</div>`;
+  h += `</div>`;
+  if (state.perm !== 'granted') {
+    h += `<div class="ahead">日程</div><div class="perm">
+      <div class="h">${ic('lock', 14)}显示你的日程</div>
+      <p>${state.perm === 'denied' ? 'Typeflux 没有日历访问权限。到「系统设置 › 隐私与安全性 › 日历」里打开后，这里会显示日程。' : '允许访问日历后，这里会显示当天的日程和会议链接。日程只在本机读取，不会上传。'}</p>
+      <div class="row">${state.perm === 'denied'
+        ? `<button class="pact pri" data-act="opensettings">打开系统设置</button>`
+        : `<button class="pact pri" data-act="askperm">允许访问日历</button>`}<span class="lk" data-act="hideperm">不再提示</span></div></div>`;
+    return h + `</div>`;
+  }
+  const evs = eventsOn(d);
+  h += `<div class="ahead">日程<span class="sp"></span><span class="m">${evs.length ? `${evs.length} 个` : ''}</span></div>`;
+  if (!evs.length) {
+    h += `<div class="noev">这天没有日程<br><button class="pact" data-act="newev">${ic('plus', 12)}在日历中新建<span class="s">⌘N</span></button></div>`;
+  } else {
+    h += `<div class="evs">` + evs.map((e, i) => {
+      const st = evStatus(e), on = state.focus === 'agenda' && i === state.evSel;
+      return `<div class="ev ${on ? 'sel' : ''} ${st?.cls === 'past' ? 'past' : ''}" data-ev="${i}">
+        <span class="bar" style="background:${CALS[e.cal].c}"></span>
+        <div class="tm">${e.start ? `${e.start}<small>${e.end}</small>` : '全天'}</div>
+        <div style="min-width:0"><div class="tt">${esc(e.title)}</div>
+          ${st && st.cls !== 'past' ? `<div class="sub"><span class="st ${st.cls}" style="margin:0">${st.text}</span></div>` : ''}
+          <div class="sub">${e.link ? ic('video', 11) .replace('<svg', '<svg style="display:inline;vertical-align:-1px;margin-right:3px"') : ''}${esc(e.loc || CALS[e.cal].name)}</div>
+          ${on ? `${e.note ? `<div class="sub" style="margin-top:2px">${esc(e.note)}</div>` : ''}<div class="acts">
+            ${e.link ? `<button class="pact pri" data-act="join">${ic('video', 12)}加入 ${e.link === 'zoom' ? 'Zoom' : 'Meet'}<span class="s">↩</span></button>` : ''}
+            <button class="pact ${e.link ? '' : 'pri'}" data-act="openev">${ic('open', 12)}在日历中打开<span class="s">${e.link ? '⌘O' : '↩'}</span></button>
+            <button class="pact" data-act="copyev">${ic('copy', 12)}复制<span class="s">⌘C</span></button></div>` : ''}
+        </div></div>`;
+    }).join('') + `</div>`;
+  }
+  return h + `</div>`;
+}
+
+function rangeHTML(arg) {
+  const lo = arg.a < arg.b ? arg.a : arg.b, hi = arg.a < arg.b ? arg.b : arg.a;
+  const days = diffDays(lo, hi);
+  let work = 0, rest = 0, unknown = new Set();
+  for (let d = lo; d <= hi; d = addDays(d, 1)) { isWorkday(d) ? work++ : rest++; if (!hasSchedule(d.getFullYear())) unknown.add(d.getFullYear()); }
+  const w = Math.floor(days / 7), r = days % 7;
+  return `<div class="agenda"><div class="range">
+    <div class="ft">${fmtLong(lo)}<br>→ ${fmtLong(hi)}</div>
+    <div class="big">${days}<small>天</small></div>
+    <div class="ft">${w ? `${w} 周${r ? ` ${r} 天` : ''}` : `${r} 天`}${days >= 31 ? ` · 约 ${(days / 30.44).toFixed(1)} 个月` : ''}</div>
+    <div class="kv">
+      <span>含首尾共</span><span>${days + 1} 天</span>
+      <span>工作日</span><span>${work} 天</span>
+      <span>休息日</span><span>${rest} 天</span>
+      <span>距今</span><span>${relText(lo) || '今天'} → ${relText(hi) || '今天'}</span>
+    </div>
+    <div class="note ${unknown.size ? 'warn' : ''}">${unknown.size ? `${[...unknown].join('、')} 年放假安排未公布，这部分只按周末计算` : '工作日已按法定节假日和调休计算'}</div>
+    <div class="acts" style="display:flex;flex-wrap:wrap;gap:6px;margin-top:10px"><button class="pact pri" data-act="copyrange" data-copy="${days} 天">${ic('copy', 12)}复制天数<span class="s">↩</span></button><button class="pact" data-act="copyrangework" data-copy="${work} 个工作日">复制工作日</button></div>
+  </div></div>`;
+}
+
+function renderYear(y) {
+  let h = `<div class="mhead"><span class="ttl">${y}年</span>${state.lunar ? `<span class="sub">${lunar(D(y, 6, 1)).year}年 · ${ZODIAC[lunar(D(y, 6, 1)).year[1]]}年</span>` : ''}<span class="sp"></span>
+    <span class="nav"><button data-act="yprev">${ic('left', 13, 2.4)}</button><button data-act="today">今天</button><button data-act="ynext">${ic('right', 13, 2.4)}</button></span></div>`;
+  if (state.lunar && !hasSchedule(y)) h += `<div class="ynote">${ic('info', 13)}${y} 年放假安排尚未公布（通常在前一年 11 月发布），公布后随应用更新；现在只标出节日。</div>`;
+  h += `<div class="year">`;
+  for (let mo = 0; mo < 12; mo++) {
+    const first = D(y, mo, 1), start = addDays(first, -((first.getDay() - firstWeekday + 7) % 7));
+    let offDays = 0;
+    let g = [...Array(7)].map((_, i) => `<span class="h">${'日一二三四五六'[(firstWeekday + i) % 7]}</span>`).join('');
+    for (let i = 0; i < 42; i++) {
+      const d = addDays(start, i);
+      if (d.getMonth() !== mo) { g += '<span></span>'; continue; }
+      const k = dayKind(d); if (k?.kind === 'off') offDays++;
+      const c = same(d, TODAY) ? 'today' : k ? k.kind : (state.lunar && festivalsOf(d).some(x => ['春节', '中秋节', '端午节', '元旦', '国庆节', '除夕', '元宵节', '七夕'].includes(x))) ? 'f' : '';
+      g += `<span class="${c}" title="${fmtLong(d)}">${d.getDate()}</span>`;
+    }
+    h += `<div class="ym ${state.yearSel === mo ? 'sel' : ''}" data-month="${y}-${mo}"><div class="mt">${mo + 1}月<span class="sp"></span>${offDays ? `<span class="c">休 ${offDays} 天</span>` : ''}</div><div class="g">${g}</div></div>`;
+  }
+  $('#lbody').innerHTML = h + `</div>`;
+  $('#lbar').innerHTML = `<span><kbd>←→↑↓</kbd>选择月份</span><span><kbd>↩</kbd>打开这个月</span><span class="sp"></span><span><kbd>esc</kbd>清空</span>`;
+}
+
+function searchResults(q) {
+  const lq = q.toLowerCase(), out = [];
+  for (let i = -30; i <= 90; i++) {
+    const d = addDays(TODAY, i);
+    eventsOn(d).forEach(e => { if ((e.title + e.loc + CALS[e.cal].name).toLowerCase().includes(lq)) out.push({ d, e }); });
+  }
+  const upcoming = out.filter(x => diffDays(TODAY, x.d) >= 0), past = out.filter(x => diffDays(TODAY, x.d) < 0).reverse();
+  return { upcoming, past };
+}
+function renderSearch(q) {
+  const body = $('#lbody'), bar = $('#lbar');
+  if (state.perm !== 'granted') {
+    body.innerHTML = `<div class="empty">「${esc(q)}」不是日期。允许访问日历后，可以按标题、地点搜索日程。<br><br><button class="pact pri" data-act="askperm">允许访问日历</button></div>`;
+    bar.innerHTML = `<span class="sp"></span><span><kbd>esc</kbd>清空</span>`; return;
+  }
+  const { upcoming, past } = searchResults(q);
+  const all = [...upcoming, ...past];
+  state.searchSel = Math.min(state.searchSel, Math.max(0, all.length - 1));
+  const hl = s => esc(s).replace(new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), m => `<mark>${m}</mark>`);
+  const row = (x, i) => {
+    const st = evStatus(x.e);
+    return `<div class="item ${i === state.searchSel ? 'on' : ''}" data-sr="${i}">
+      <span class="evicon"><b>${x.d.getDate()}</b><i>${x.d.getMonth() + 1}月</i></span>
+      <div style="min-width:0"><div class="t">${hl(x.e.title)}</div><div class="d"><span class="cdot" style="background:${CALS[x.e.cal].c}"></span>${WD[x.d.getDay()]} ${x.e.start ? `${x.e.start}–${x.e.end}` : '全天'}${x.e.loc ? ` · ${hl(x.e.loc)}` : ''}</div></div>
+      <div class="r">${st && st.cls !== 'past' ? `<span style="color:var(--accent)">${st.text}</span>` : `<span>${relText(x.d) || '今天'}</span>`}${i === state.searchSel ? `<span class="kbd">↩</span>` : ''}</div></div>`;
+  };
+  if (!all.length) { body.innerHTML = `<div class="empty">没有标题或地点包含「${esc(q)}」的日程（过去 30 天到未来 90 天）。<br>它也不是可识别的日期，试试 12-25、下周五、春节。</div>`; }
+  else body.innerHTML = (upcoming.length ? `<div class="sec">接下来<span class="sp"></span><span class="m">未来 90 天 · ${upcoming.length} 个</span></div>` + upcoming.map((x, i) => row(x, i)).join('') : '')
+    + (past.length ? `<div class="sec">已过去<span class="sp"></span><span class="m">过去 30 天</span></div>` + past.map((x, i) => row(x, upcoming.length + i)).join('') : '') + '<div style="height:8px"></div>';
+  bar.innerHTML = `<span><kbd>↑↓</kbd>选择</span><span><kbd>↩</kbd>在日历中打开</span><span><kbd>⇥</kbd>在月视图中查看</span><span><kbd>⌘C</kbd>复制日程</span><span class="sp"></span><span><kbd>esc</kbd>清空</span>`;
+}
+
+/* ---------- Actions ---------- */
+let toastTimer;
+function toast(t) { const el = $('#toast'); el.innerHTML = t; el.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 2200); }
+function enterCal() { state.view = 'cal'; state.focus = 'grid'; $('#q').value = ''; selectDate(TODAY); renderLauncher(); $('#q').focus(); }
+function exitCal() { state.view = 'hint'; $('#q').value = 'cal'; renderLauncher(); }
+function selectDate(d) {
+  state.sel = d; state.evSel = 0;
+  if (d.getMonth() !== state.month.getMonth() || d.getFullYear() !== state.month.getFullYear()) state.month = D(d.getFullYear(), d.getMonth(), 1);
+  if (!eventsOnSel().length) state.focus = 'grid';
+}
+function moveMonth(n) {
+  const m = D(state.month.getFullYear(), state.month.getMonth() + n, 1);
+  const day = Math.min(state.sel.getDate(), new Date(m.getFullYear(), m.getMonth() + 1, 0).getDate());
+  selectDate(D(m.getFullYear(), m.getMonth(), day));
+}
+function goToday() { $('#q').value = ''; state.focus = 'grid'; selectDate(TODAY); renderLauncher(); $('#q').focus(); }
+function closeLauncher() { state.launcher = false; renderLauncher(); }
+function insertText(t) { closeLauncher(); $('#docIns').innerHTML = `<span class="ins">${esc(t)}</span>`; toast(`已插入到「备忘录」：${esc(t)}`); }
+function evText(e, d) { return `${e.title}，${fmtLong(d)} ${e.start ? `${e.start}–${e.end}` : '全天'}${e.loc ? `，${e.loc}` : ''}`; }
+
+function onArgChange() {
+  const arg = parseArg($('#q').value);
+  if (arg.mode === 'date') { state.focus = 'grid'; selectDate(arg.date); }
+  else if (arg.mode === 'month' && arg.month) { state.focus = 'grid'; selectDate(same(D(arg.month.getFullYear(), arg.month.getMonth(), 1), D(TODAY.getFullYear(), TODAY.getMonth(), 1)) ? TODAY : arg.month); }
+  else if (arg.mode === 'month') { /* empty: keep the current selection */ }
+  else if (arg.mode === 'range') { state.focus = 'grid'; selectDate(arg.a); }
+  else if (arg.mode === 'year') { state.yearSel = arg.year === TODAY.getFullYear() ? TODAY.getMonth() : 0; }
+  else if (arg.mode === 'search') state.searchSel = 0;
+  renderLauncher();
+}
+
+$('#q').addEventListener('input', () => {
+  const v = $('#q').value;
+  if (state.view !== 'cal') {
+    const m = v.match(/^(cal|日历|rl)[ :：]\s*(.*)$/i);
+    if (m) { state.view = 'cal'; $('#q').value = m[2]; onArgChange(); return; }
+    state.view = 'hint'; renderLauncher(); return;
+  }
+  onArgChange();
+});
+
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-act],[data-date],[data-ev],[data-sr],[data-month],[data-perm]');
+  if (!t) return;
+  if (t.dataset.perm) { state.perm = t.dataset.perm; $('#sysdlg').classList.remove('show'); toast(state.perm === 'granted' ? '已允许访问日历' : '未授权：仍可查看日期、农历和节假日'); renderLauncher(); return; }
+  if (t.dataset.date) {
+    const d = new Date(t.dataset.date + 'T12:00');
+    const arg = parseArg($('#q').value);
+    if (arg.mode === 'range' || arg.mode === 'date') $('#q').value = '';
+    state.focus = 'grid'; selectDate(d); renderLauncher(); $('#q').focus(); return;
+  }
+  if (t.dataset.ev) { state.focus = 'agenda'; state.evSel = +t.dataset.ev; renderLauncher(); return; }
+  if (t.dataset.sr) { state.searchSel = +t.dataset.sr; renderLauncher(); return; }
+  if (t.dataset.month) { const [y, m] = t.dataset.month.split('-').map(Number); $('#q').value = `${y}-${m + 1}`; onArgChange(); return; }
+  const a = t.dataset.act;
+  if (a === 'enter') enterCal();
+  else if (a === 'today') goToday();
+  else if (a === 'prev') { moveMonth(-1); renderLauncher(); }
+  else if (a === 'next') { moveMonth(1); renderLauncher(); }
+  else if (a === 'yprev' || a === 'ynext') { $('#q').value = String(parseArg($('#q').value).year + (a === 'ynext' ? 1 : -1)); onArgChange(); }
+  else if (a === 'toyear') { $('#q').value = String(state.month.getFullYear()); onArgChange(); }
+  else if (a === 'askperm') $('#sysdlg').classList.add('show');
+  else if (a === 'opensettings') toast('已打开「系统设置 › 隐私与安全性 › 日历」');
+  else if (a === 'hideperm') toast('已隐藏：可在「关键字 › 日历」里重新打开');
+  else if (a === 'join') { closeLauncher(); toast('正在打开 Zoom 会议…'); }
+  else if (a === 'openev') { closeLauncher(); toast('已在「日历」中打开这个日程'); }
+  else if (a === 'copyev') { const e = selectedEvent(); toast(`已复制：${esc(evText(e, state.sel))}`); }
+  else if (a === 'newev') { closeLauncher(); toast(`已在「日历」中打开 ${fmtShort(state.sel)}，可新建日程`); }
+  else if (a === 'copyrange' || a === 'copyrangework') toast(`已复制「${t.dataset.copy}」`);
+});
+document.addEventListener('dblclick', e => { const c = e.target.closest('[data-date]'); if (c) { closeLauncher(); toast(`已在「日历」中打开 ${fmtShort(new Date(c.dataset.date + 'T12:00'))}`); } });
+$('#openhint').onclick = () => { state.launcher = true; state.view = 'hint'; $('#q').value = 'cal'; renderLauncher(); $('#q').focus(); };
+
+document.addEventListener('keydown', e => {
+  if (!state.launcher) { if (e.altKey && e.code === 'Space') { e.preventDefault(); $('#openhint').onclick(); } return; }
+  const q = $('#q'), text = q.value;
+  if (state.view !== 'cal') {
+    if (e.key === 'Enter' && KEYWORDS.includes(text.trim().toLowerCase())) { e.preventDefault(); enterCal(); }
+    else if (e.key === 'Escape') closeLauncher();
+    return;
+  }
+  const arg = parseArg(text);
+  const cmd = e.metaKey;
+  if (e.key === 'Escape') {
+    e.preventDefault();
+    if (state.focus === 'agenda') { state.focus = 'grid'; renderLauncher(); }
+    else if (text) { q.value = ''; onArgChange(); }
+    else exitCal();
+    return;
+  }
+  if (e.key === 'Backspace' && !text) { e.preventDefault(); exitCal(); return; }
+  if (cmd && e.key.toLowerCase() === 't') { e.preventDefault(); goToday(); return; }
+  if (arg.mode === 'search') {
+    const all = state.perm === 'granted' ? (r => [...r.upcoming, ...r.past])(searchResults(arg.q)) : [];
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); state.searchSel = Math.max(0, Math.min(all.length - 1, state.searchSel + (e.key === 'ArrowDown' ? 1 : -1))); renderBody(); }
+    else if (e.key === 'Enter' && all.length) { e.preventDefault(); closeLauncher(); toast(`已在「日历」中打开：${esc(all[state.searchSel].e.title)}`); }
+    else if (e.key === 'Tab' && all.length) { e.preventDefault(); const x = all[state.searchSel]; q.value = ''; state.focus = 'agenda'; selectDate(x.d); state.evSel = eventsOn(x.d).findIndex(ev => ev.title === x.e.title); renderLauncher(); }
+    else if (cmd && e.key.toLowerCase() === 'c' && all.length) { e.preventDefault(); const x = all[state.searchSel]; toast(`已复制：${esc(evText(x.e, x.d))}`); }
+    return;
+  }
+  if (arg.mode === 'year') {
+    const mv = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -4, ArrowDown: 4 }[e.key];
+    if (mv && (e.key.startsWith('ArrowU') || e.key.startsWith('ArrowD') || cmd || !text)) { e.preventDefault(); state.yearSel = (state.yearSel + mv + 12) % 12; renderBody(); }
+    else if (e.key === 'Enter') { e.preventDefault(); q.value = `${arg.year}-${state.yearSel + 1}`; onArgChange(); }
+    return;
+  }
+  if (cmd && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) { e.preventDefault(); if (text && arg.mode !== 'range') q.value = ''; moveMonth(e.key === 'ArrowLeft' ? -1 : 1); renderLauncher(); return; }
+  if (e.key === 'Tab') {
+    e.preventDefault();
+    if (state.focus === 'grid' && eventsOnSel().length) { state.focus = 'agenda'; const i = eventsOnSel().findIndex(x => evStatus(x)?.cls !== 'past'); state.evSel = Math.max(0, i); }
+    else state.focus = 'grid';
+    renderBody(); return;
+  }
+  if (state.focus === 'agenda') {
+    const n = eventsOnSel().length, ev = selectedEvent();
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); state.evSel = Math.max(0, Math.min(n - 1, state.evSel + (e.key === 'ArrowDown' ? 1 : -1))); renderBody(); }
+    else if (e.key === 'Enter') { e.preventDefault(); closeLauncher(); toast(ev.link ? `正在打开 ${ev.link === 'zoom' ? 'Zoom' : 'Google Meet'} 会议…` : '已在「日历」中打开这个日程'); }
+    else if (cmd && e.key.toLowerCase() === 'o') { e.preventDefault(); closeLauncher(); toast('已在「日历」中打开这个日程'); }
+    else if (cmd && e.key.toLowerCase() === 'c') { e.preventDefault(); toast(`已复制：${esc(evText(ev, state.sel))}`); }
+    return;
+  }
+  const step = { ArrowLeft: -1, ArrowRight: 1, ArrowUp: -7, ArrowDown: 7 }[e.key];
+  if (step && arg.mode !== 'range' && (Math.abs(step) === 7 || !text)) {
+    e.preventDefault(); if (text) q.value = '';
+    selectDate(addDays(state.sel, step)); renderLauncher(); return;
+  }
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    if (arg.mode === 'range') { $('#lbody [data-act="copyrange"]').click(); return; }
+    if (e.altKey) { insertText(fmtLong(state.sel)); return; }
+    closeLauncher(); toast(`已在「日历」中打开 ${fmtShort(state.sel)}`); return;
+  }
+  if (cmd && e.key.toLowerCase() === 'c' && !window.getSelection().toString()) { e.preventDefault(); toast(`已复制「${fmtLong(state.sel)}」`); return; }
+  if (cmd && e.key.toLowerCase() === 'n') { e.preventDefault(); closeLauncher(); toast(`已在「日历」中打开 ${fmtShort(state.sel)}，可新建日程`); }
+});
+
+/* ---------- Screens ---------- */
+const CAPTIONS = {
+  hint: '<b>① 输入关键字</b>：输入 <b>cal</b>（别名 <b>日历</b>、<b>rl</b>），关键字区第一行就是「日历」，副标题直接给出今天的日期、农历、周数和下一个日程。↩ 打开；「cal 空格」直接进入并开始输入日期。「日历」App 照常出现在应用结果里。',
+  month: '<b>② 月视图</b>：左边是月历，标出今天、农历 / 节日 / 节气、法定假日（<b>休</b>）和调休上班（<b>班</b>），以及日程颜色点；右边是选中这天的信息和日程。←→↑↓ 选日期，⌘←→ 换月，⌘T 回到今天，↩ 在「日历」App 中打开这天，⌘C 复制日期，⌥↩ 把日期插入到原来的应用。点年月标题进入年视图。',
+  agenda: '<b>③ 今天的日程</b>：⇥ 把焦点移到右侧日程，默认选中下一个还没结束的日程。进行中的日程显示剩余时间；带会议链接的日程 ↩ 直接加入会议，⌘O 在「日历」中打开，⌘C 复制「标题，时间，地点」。',
+  jump: '<b>④ 跳转日期</b>：输入框里写日期就跳过去：<b>2027-02-07</b>、<b>12/25</b>、<b>12月25日</b>、<b>+30</b>、<b>3周后</b>、<b>下周五</b>、<b>春节</b>、<b>冬至</b>…… 右侧显示距今天数。这里输入的是「春节」，跳到下一个春节。',
+  range: '<b>⑤ 日期间隔</b>：输入两个日期（空格、「到」或 ~ 分隔），比如 <b>今天 到 12-31</b>：月历上高亮这段日期，右侧给出相隔天数、周数、工作日（按法定节假日和调休算）。↩ 复制结果。',
+  search: '<b>⑥ 搜索日程</b>：输入的不是日期时，按标题、地点搜索过去 30 天到未来 90 天的日程，接下来的在前。↩ 在「日历」中打开，⇥ 回到月视图并选中这个日程。',
+  year: '<b>⑦ 年视图</b>：输入年份（<b>2027</b>）或点月份标题，看全年的假期分布。2027 年的放假安排还没公布时，明确提示「尚未公布」，只标节日。↩ 或点月份进入那个月。',
+  perm: '<b>⑧ 未授权日历</b>：不授权也能用：日期、农历、节假日、间隔都在本机计算。日程区显示一张说明卡，<b>点按钮才弹系统授权框</b>，不在输入关键字时打扰。拒绝后按钮变成「打开系统设置」。',
+};
+function show(id) {
+  document.querySelectorAll('.pill[data-s]').forEach(p => p.classList.toggle('on', p.dataset.s === id));
+  $('#caption').innerHTML = CAPTIONS[id] || '';
+  Object.assign(state, { launcher: true, focus: 'grid', evSel: 0, searchSel: 0, perm: id === 'perm' ? 'none' : 'granted' });
+  $('#sysdlg').classList.remove('show');
+  $('#docIns').innerHTML = '';
+  const q = $('#q');
+  if (id === 'hint') { state.view = 'hint'; q.value = 'cal'; renderLauncher(); }
+  else {
+    state.view = 'cal';
+    q.value = { jump: '春节', range: '今天 到 12-31', search: '评审', year: '2027' }[id] || '';
+    selectDate(TODAY);
+    onArgChange();
+    if (id === 'agenda') { state.focus = 'agenda'; state.evSel = 1; renderLauncher(); }
+  }
+  setTimeout(() => q.focus(), 0);
+  history.replaceState(null, '', '?' + new URLSearchParams({ ...Object.fromEntries(params), s: id }).toString());
+}
+document.querySelectorAll('.pill[data-s]').forEach(p => p.onclick = () => show(p.dataset.s));
+$('#lightBtn').onclick = () => { state.light = !state.light; document.body.classList.toggle('light', state.light); $('#lightBtn').classList.toggle('on', state.light); };
+$('#lunarBtn').onclick = () => { state.lunar = !state.lunar; $('#lunarBtn').classList.toggle('on', state.lunar); renderLauncher(); };
+$('#wkBtn').onclick = () => { state.weeks = !state.weeks; $('#wkBtn').classList.toggle('on', state.weeks); renderLauncher(); };
+
+if (params.get('light') === '1') { state.light = true; document.body.classList.add('light'); $('#lightBtn').classList.add('on'); }
+if (params.get('solo') === '1') document.body.classList.add('solo');
+if (params.get('weeks') === '1') { state.weeks = true; }
+$('#lunarBtn').classList.toggle('on', state.lunar);
+$('#wkBtn').classList.toggle('on', state.weeks);
+show(params.get('s') || 'hint');
+</script>
+</body>
+</html>

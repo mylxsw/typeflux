@@ -6,6 +6,8 @@ enum ScreenshotMode: String, CaseIterable, Equatable, Sendable {
     case region
     case fullScreen
     case scrolling
+    case recording
+    case gif
 
     /// The launcher keyword option that picks a mode (`jtqp` → `fullScreen`, `jtgd` → `scrolling`).
     static let option = "mode"
