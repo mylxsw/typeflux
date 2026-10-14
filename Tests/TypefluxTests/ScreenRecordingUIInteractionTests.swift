@@ -7,6 +7,69 @@ import Testing
 @Suite(.exclusiveUIState)
 @MainActor
 struct ScreenRecordingUIInteractionTests {
+    @Test func `preview actions share control metrics and stay reachable in narrow windows`() async throws {
+        _ = NSApplication.shared
+        NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
+        let previous = AppLocalization.shared.language
+        defer {
+            NSApp.accessibilitySetValue(false, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
+            AppLocalization.shared.setLanguage(previous)
+        }
+        let fixture = ScreenRecordingCoordinatorTests.Fixture()
+        await fixture.recording()
+        fixture.model.stop(); await fixture.model.pendingTask?.value
+        fixture.model.outputDirectory = fixture.root.appendingPathComponent(String(repeating: "Long folder ", count: 8))
+        var directories = 0, saveAs = 0, discards = 0
+        for language in [AppLanguage.english, .simplifiedChinese] {
+            AppLocalization.shared.setLanguage(language)
+            for format in ScreenRecordingFormat.allCases {
+                fixture.model.options.format = format
+                try await SettingsBehaviorTestSupport.withWindow(
+                    ScreenRecordingPreviewView(model: fixture.model, close: { discards += 1 },
+                                               chooseDirectory: { directories += 1 }, saveAs: { saveAs += 1 }),
+                    width: 760, height: 632
+                ) { window, content in
+                    let nodes = SettingsBehaviorTestSupport.elements(in: content)
+                    var previousFrame: CGRect?
+                    for action in ["directory", "copy", "saveAs", "save"] {
+                        let button = try #require(nodes.first {
+                            $0.value("accessibilityIdentifier") as? String == "recording.preview." + action
+                        })
+                        #expect(button.frame.height == SettingsControlMetrics.height)
+                        #expect(window.frame.contains(button.frame))
+                        #expect(button.value("isAccessibilityEnabled") as? Bool == true)
+                        if let previousFrame {
+                            #expect(button.frame.minX >= previousFrame.maxX + 7)
+                            #expect(button.frame.minY == previousFrame.minY)
+                        }
+                        previousFrame = button.frame
+                        if action == "directory" || action == "saveAs" {
+                            try button.press()
+                        }
+                    }
+                    let discard = try #require(nodes.first {
+                        $0.value("accessibilityIdentifier") as? String == "recording.preview.discard"
+                    })
+                    #expect(discard.frame.height == SettingsControlMetrics.height)
+                    try discard.press()
+                }
+            }
+        }
+        #expect(directories == 4 && saveAs == 4 && discards == 4)
+        fixture.model.options.format = .gif
+        fixture.model.trimEnd = 0
+        try await SettingsBehaviorTestSupport
+            .withWindow(ScreenRecordingPreviewView(model: fixture.model)) { _, content in
+                for action in ["copy", "saveAs", "save"] {
+                    let button = try #require(SettingsBehaviorTestSupport.elements(in: content).first {
+                        $0.value("accessibilityIdentifier") as? String == "recording.preview." + action
+                    })
+                    #expect(button.value("isAccessibilityEnabled") as? Bool == false)
+                }
+            }
+        await fixture.clean()
+    }
+
     @Test func `screenshot toolbar exposes recording without opening More`() async throws {
         _ = NSApplication.shared
         NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))

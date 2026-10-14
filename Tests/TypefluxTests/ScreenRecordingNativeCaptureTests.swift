@@ -36,7 +36,8 @@ struct ScreenRecordingNativeCaptureTests {
         #expect(await engine.elapsed() > 0)
         _ = try await engine.stop()
         let asset = AVURLAsset(url: url)
-        #expect(try await asset.load(.duration).seconds > 0.2)
+        let duration = try await asset.load(.duration).seconds
+        #expect(duration > 0.2)
         let generator = AVAssetImageGenerator(asset: asset)
         let image = try generator.copyCGImage(at: CMTime(seconds: 0.1, preferredTimescale: 600), actualTime: nil)
         let pixels = try #require(ScreenshotMosaicEffects.Pixels(image, space: CGColorSpaceCreateDeviceRGB()))
@@ -44,6 +45,13 @@ struct ScreenRecordingNativeCaptureTests {
         #expect(pixels.bytes[offset] < 50)
         #expect(pixels.bytes[offset + 1] > 200)
         #expect(pixels.bytes[offset + 2] < 50)
+        let mp4 = url.deletingPathExtension().appendingPathExtension("mp4")
+        defer { try? FileManager.default.removeItem(at: mp4) }
+        try await ScreenRecordingExporter().export(source: url, destination: mp4, format: .mp4,
+                                                   trim: .init(start: 0, end: duration)) { _ in }
+        let exported = AVURLAsset(url: mp4)
+        #expect(try await exported.load(.duration).seconds > 0.2)
+        #expect(try await exported.loadTracks(withMediaType: .video).count == 1)
         await engine.cancel()
     }
 }

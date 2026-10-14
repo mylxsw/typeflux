@@ -7,7 +7,38 @@ import Testing
 struct ScreenshotCaptureWindowPolicyTests {
     private let frame = CGRect(x: 200, y: 200, width: 240, height: 180)
 
-    init() { _ = NSApplication.shared }
+    init() {
+        _ = NSApplication.shared
+    }
+
+    @Test func `window IDs outside the Quartz range are ignored`() {
+        for number in [Int.min, -1, 0, Int(UInt32.max) + 1, Int.max] {
+            #expect(ScreenshotCaptureWindowPolicy.captureWindowID(number) == nil)
+        }
+        #expect(ScreenshotCaptureWindowPolicy.captureWindowID(1) == 1)
+        #expect(ScreenshotCaptureWindowPolicy.captureWindowID(Int(UInt32.max)) == UInt32.max)
+    }
+
+    private final class NumberedPanel: NSPanel {
+        var reportedNumber: Int?
+        override var windowNumber: Int {
+            reportedNumber ?? super.windowNumber
+        }
+    }
+
+    @Test func `visible recording controls with oversized numbers do not crash exclusion`() {
+        let panel = NumberedPanel(contentRect: frame, styleMask: .borderless, backing: .buffered, defer: false)
+        panel.isReleasedWhenClosed = false
+        panel.identifier = ScreenRecordingWindowController.identifier
+        panel.orderFrontRegardless()
+        let original = panel.windowNumber
+        defer { panel.reportedNumber = nil; panel.close() }
+        #expect(ScreenshotCaptureWindowPolicy.excludedWindowIDs().contains(CGWindowID(original)))
+        panel.reportedNumber = Int(UInt32.max) + 1
+        #expect(!ScreenshotCaptureWindowPolicy.excludedWindowIDs().contains(CGWindowID(original)))
+        panel.reportedNumber = original
+        #expect(ScreenshotCaptureWindowPolicy.excludedWindowIDs().contains(CGWindowID(original)))
+    }
 
     @Test func appPagesRemainCapturable() {
         let window = NSWindow(contentRect: frame, styleMask: [.titled], backing: .buffered, defer: false)
