@@ -196,6 +196,62 @@ kbd { display: inline-grid; place-items: center; min-width: 20px; height: 20px; 
 .seg span.on { background: var(--seg-on); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.16); }
 .lead { color: var(--text2); margin: 0 4px; }
 
+/* ---------- Start page: illustrated entry tiles ---------- */
+.hero { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 4px; }
+.tile { position: relative; border-radius: var(--r-block); background: var(--block); border: 1px solid var(--block-edge); cursor: pointer; overflow: hidden; display: flex; flex-direction: column; }
+.tile:hover { border-color: color-mix(in srgb, var(--accent) 45%, var(--block-edge)); }
+.tile .art { height: 118px; position: relative; display: flex; align-items: center; justify-content: center; gap: 14px; background: var(--field); border-bottom: 1px solid var(--block-edge); overflow: hidden; }
+[data-style="glass"] .tile .art { background: color-mix(in srgb, var(--field) 70%, transparent); }
+.tile .txt { padding: 12px 16px 14px; display: flex; align-items: flex-end; gap: 12px; }
+.tile .txt .nm { font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+.tile .txt .ds { color: var(--text2); font-size: 12.5px; line-height: 1.5; }
+.tile .txt .go { margin-left: auto; color: var(--accent-text); font-size: 12px; white-space: nowrap; opacity: 0; transition: opacity .15s; }
+.tile:hover .txt .go { opacity: 1; }
+.tile .step { position: absolute; left: 12px; top: 10px; font-size: 11px; color: var(--text3); }
+/* Big keycaps drawn with the app's keycap token */
+.cap { min-width: 46px; height: 46px; padding: 0 12px; border-radius: 10px; display: inline-grid; place-items: center; font-size: 15px; color: var(--text);
+  background: var(--keycap); box-shadow: inset 0 0 0 1px var(--keycap-edge), 0 2px 0 var(--keycap-edge), 0 6px 14px rgba(0,0,0,.12); }
+[data-style="classic"] .cap { border-radius: 8px; }
+.cap.wide { min-width: 120px; }
+.cap.press { animation: press 2.4s ease-in-out infinite; }
+@keyframes press { 0%, 12% { transform: translateY(0); } 18%, 70% { transform: translateY(2px); box-shadow: inset 0 0 0 1px var(--accent), 0 0 0 var(--keycap-edge), 0 2px 6px rgba(0,0,0,.1); } 78%, 100% { transform: translateY(0); } }
+.cap.tap { animation: tap 2.4s ease-in-out infinite; }
+@keyframes tap { 0%, 8%, 22%, 30%, 100% { transform: translateY(0); } 12%, 34%, 80% { transform: translateY(2px); box-shadow: inset 0 0 0 1px var(--accent), 0 0 0 var(--keycap-edge); } }
+.plus { color: var(--text3); font-size: 14px; }
+.wave { display: flex; align-items: center; gap: 3px; height: 34px; }
+.wave i { width: 3px; border-radius: 2px; background: var(--accent); animation: wave 1.1s ease-in-out infinite; }
+@keyframes wave { 0%, 100% { height: 6px; } 50% { height: 28px; } }
+.typed { font-size: 13px; color: var(--text2); border-left: 1px solid var(--sep); padding-left: 14px; height: 34px; display: flex; align-items: center; }
+.typed b { font-weight: 500; color: var(--text); }
+.typed .cur { display: inline-block; width: 1.5px; height: 15px; background: var(--accent); margin-left: 1px; animation: blink 1s steps(1) infinite; }
+.bubble { max-width: 168px; padding: 8px 11px; border-radius: 12px 12px 12px 4px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--block-edge), 0 4px 12px rgba(0,0,0,.12); font-size: 12px; color: var(--text2); line-height: 1.45; }
+.bubble .q { color: var(--text); display: flex; gap: 5px; align-items: center; margin-bottom: 3px; }
+.bubble .q svg { color: var(--accent); }
+.capwrap { position: relative; display: inline-grid; }
+.x2 { position: absolute; right: -9px; top: -9px; min-width: 22px; height: 18px; padding: 0 5px; border-radius: 9px; display: grid; place-items: center; font-size: 10.5px; font-weight: 600; color: #fff; background: var(--accent); }
+.mini { width: 300px; border-radius: 11px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--block-edge), 0 6px 16px rgba(0,0,0,.14); overflow: hidden; }
+[data-style="classic"] .mini { border-radius: 8px; }
+.mini .mi { display: flex; align-items: center; gap: 7px; height: 36px; padding: 0 11px; font-size: 13px; color: var(--text3); }
+.mini .mi .chip { height: 21px; font-size: 12px; padding: 0 6px; }
+.mini .mi b { font-weight: 400; color: var(--text); }
+.mini .mr { display: flex; align-items: center; gap: 8px; height: 30px; margin: 0 4px 4px; padding: 0 8px; border-radius: 7px; background: var(--sel); box-shadow: inset 0 0 0 1px var(--sel-edge); font-size: 12px; }
+.mini .mr .m { margin-left: auto; color: var(--text3); font-size: 11px; }
+.mini .cur { display: inline-block; width: 1.5px; height: 14px; background: var(--accent); animation: blink 1s steps(1) infinite; }
+.trio { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.try { padding: 13px 14px; border-radius: var(--r-block); background: var(--block); border: 1px solid var(--block-edge); cursor: pointer; }
+.try:hover { border-color: color-mix(in srgb, var(--accent) 45%, var(--block-edge)); }
+.try .top { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.try .top .kwl { height: 24px; font-size: 13px; padding: 0 8px; }
+.try .top .nm { font-weight: 600; }
+.try .top svg { margin-left: auto; color: var(--text3); }
+.try .ds { color: var(--text2); font-size: 12px; line-height: 1.5; }
+.tips { display: flex; flex-wrap: wrap; gap: 8px; }
+.tipc { display: inline-flex; align-items: center; gap: 7px; height: 30px; padding: 0 12px; border-radius: 999px; background: var(--block); border: 1px solid var(--block-edge); color: var(--text2); font-size: 12.5px; }
+[data-style="classic"] .tipc { border-radius: 7px; }
+.tipc svg { color: var(--text3); }
+.tipc b { font-weight: 500; color: var(--text); }
+@media (prefers-reduced-motion: reduce) { .cap, .wave i, .cur, .caret { animation: none !important; } }
+
 /* Detail pane (keywords) */
 .detail { width: 340px; flex: none; border-left: 1px solid var(--sep); display: flex; flex-direction: column; }
 .detail .in { flex: 1; overflow-y: auto; padding: 4px 24px 16px; }
@@ -423,13 +479,21 @@ const kwLabels = (k, q) => k.kws.map((w, i) => i ? `<span class="alias">${hl(w, 
 /* ------------------------------ Pages ------------------------------ */
 function pageStart() {
   const unused = KWS.filter(k => !k.used && !k.mine && !k.sys && k.id !== 'help').slice(0, 3);
-  const entries = [['mic', '语音输入', '按住说话，松开后文字写进光标所在的位置', 'fn', '按住', 'voice'], ['spark', '随便问', '连按两次，第二次按住说出问题；选中文字时可以让它改写', 'fn fn', '', 'ask'],
-    ['launcher', '启动器', '打字提问、算数、打开应用和文件', '⌘ Space', '', 'launcher'], ['kw', '关键词', '在启动器开头输入关键词和空格，例如 fy hello', '', '', 'kw']];
-  const tips = [['calc', '算式', '输入 12*(3+4)，↩ 复制结果'], ['app', '应用名', '输入应用名称，↩ 打开'], ['up', '最近输入', '输入框为空时按 ↑'], ['text', '先选中文字再打开', '首页给出翻译、润色、总结等操作']];
-  return `<p class="lead">这四个入口覆盖 Typeflux 的全部功能，点一行可以直接试。</p>
-  <div class="gt">入口</div><div class="block">${entries.map(([i, t, d, k, m, a]) => `<div class="row click" data-act="${a}"><span class="ic">${ic(i)}</span><div class="main"><div class="t">${t}</div><div class="d">${d}</div></div><span class="r">${a === 'kw' ? '<span class="kwl">fy</span>' + K('Space') : K(k)}${m ? '&nbsp;' + m : ''}</span></div>`).join('')}</div>
-  <div class="gt">启动器里不用关键词也能做</div><div class="block">${tips.map(([i, t, d]) => `<div class="row"><span class="ic">${ic(i)}</span><div class="main"><div class="t">${t}</div><div class="d">${d}</div></div></div>`).join('')}</div>
-  ${unused.length ? `<div class="gt">你还没试过</div><div class="block">${unused.map(k => `<div class="row click" data-kw="${k.id}"><span class="ic">${ic(k.icon)}</span><div class="main"><div class="t">${k.name}</div><div class="d">${k.ds}</div></div><span class="r">${kwLabels(k)}</span></div>`).join('')}</div>` : ''}`;
+  const wave = Array.from({ length: 9 }, (_, i) => `<i style="animation-delay:${(i * 0.11).toFixed(2)}s"></i>`).join('');
+  const tiles = [
+    ['voice', `<span class="cap press">fn</span><span class="wave">${wave}</span><span class="typed"><b>下周进入开发</b><span class="cur"></span></span>`,
+      '语音输入', '按住 fn 说话，松开后文字写进光标所在的位置。'],
+    ['ask', `<span class="capwrap"><span class="cap tap">fn</span><span class="x2">×2</span></span><span class="bubble"><span class="q">${ic('spark', 12)}把这段改短一点</span>已改写选中的 3 行</span>`,
+      '随便问', '连按两次 fn，第二次按住说出问题；选中文字时可以让它改写。'],
+    ['launcher', `<span class="cap">⌘</span><span class="plus">+</span><span class="cap wide">Space</span>`,
+      '启动器', '打字提问、算数、打开应用和文件。选中文字后打开，可以直接处理它。'],
+    ['kw', `<div class="mini"><div class="mi">${ic('search', 13)}<span class="chip">fy</span><b>hello world</b><span class="cur"></span></div><div class="mr">${ic('translate', 13)}你好，世界<span class="m">↩ 复制</span></div></div>`,
+      '关键词', `在启动器开头输入关键词和空格，进入对应功能。共 ${KWS.length} 个。`],
+  ];
+  const tips = [['calc', '<b>12*(3+4)</b> 直接算'], ['app', '输入<b>应用名</b>打开'], ['up', '空输入框按 <b>↑</b> 找回最近输入'], ['text', '<b>先选中文字</b>再打开启动器']];
+  return `<div class="hero">${tiles.map(([a, art, t, d]) => `<div class="tile" data-act="${a}"><div class="art">${art}</div><div class="txt"><div><div class="nm">${t}</div><div class="ds">${d}</div></div><span class="go">${a === 'kw' ? '查看全部 →' : '试一试 →'}</span></div></div>`).join('')}</div>
+  ${unused.length ? `<div class="gt">你还没试过</div><div class="trio">${unused.map(k => `<div class="try" data-kw="${k.id}"><div class="top"><span class="kwl">${k.kws[0]}</span><span class="nm">${k.name}</span>${ic('chev', 14)}</div><div class="ds">${k.ds}</div></div>`).join('')}</div>` : ''}
+  <div class="gt">启动器里不用关键词也能做</div><div class="tips">${tips.map(([i, t]) => `<span class="tipc">${ic(i, 14)}<span>${t}</span></span>`).join('')}</div>`;
 }
 function kwRow(k) {
   return `<div class="row click ${st.sel === k.id ? 'sel' : ''} ${k.off ? 'off' : ''}" data-kw="${k.id}"><span class="ic">${ic(k.icon)}</span>
@@ -494,7 +558,7 @@ function pageSearch() {
 }
 
 /* ------------------------------ Render ------------------------------ */
-const TITLES = { start: ['开始', ''], keywords: ['关键词', '在启动器开头输入，后面加空格'], shortcuts: ['快捷键', ''], faq: ['常见问题', ''] };
+const TITLES = { start: ['开始', '四个入口覆盖 Typeflux 的全部功能'], keywords: ['关键词', '在启动器开头输入，后面加空格'], shortcuts: ['快捷键', ''], faq: ['常见问题', ''] };
 function render() {
   renderNav();
   const [t, sub] = st.query ? ['搜索', `「${st.query}」· ${search(st.query).total} 个结果`] : TITLES[st.page];
@@ -582,7 +646,7 @@ function toast(t) { const el = $('#toast'); el.textContent = t; el.classList.add
 /* ============================== Screens ============================== */
 const CAPTIONS = {
   entry: '<b>① 入口</b>：在启动器输入 <b>help</b>（别名「帮助」「?」）按 ↩ 打开；<b>help 截图</b> 打开后直接搜索。另外还有启动器底栏的 ? 按钮、对话里的 /help、菜单栏「使用指南…」、可选的全局快捷键（默认不设置）。按 ↩ 或点第一行打开。',
-  start: '<b>② 开始</b>：全屏遮罩 + 居中面板，结构和笔记本、对话窗口一致（侧栏 + 内容）。打开时焦点在搜索框，直接打字就会搜索。右上角切换 Liquid Glass / 经典、深色 / 浅色。',
+  start: '<b>② 开始</b>：四个入口做成带小插图的大卡片——按键会按下、波形会动、启动器里会出现结果，一眼看懂怎么用；点卡片直接试。下面是你还没试过的关键词和几条启动器技巧。打开时焦点在搜索框，直接打字就会搜索。右上角切换 Liquid Glass / 经典、深色 / 浅色。',
   keywords: '<b>③ 关键词</b>：读取你当前的关键词（改过的名字、别名、自建的、工作流、停用的都如实显示）。左边列表，右边详情；示例点一下就在启动器里试。↑↓ 选择，↩ 试一试。',
   shortcuts: '<b>④ 快捷键</b>：显示当前绑定，没设置的显示「未设置」，点了去设置。下面是启动器、结果、对话窗口的按键和 / 命令。',
   search: '<b>⑤ 搜索</b>：关键词、名称、说明、按键、命令和常见问题一起搜；输入「cmd k」也能找到 ⌘K。改改搜索框试试。',
