@@ -15,7 +15,9 @@ Explicit `tab` searches may request macOS Automation permission. Background/dire
 
 Bookmarks are read locally: Safari's `Library/Safari/Bookmarks.plist`; Chrome, Dia and Edge's profile `Bookmarks` files; Arc's `StorableSidebar.json`. Safari may require Full Disk Access. Missing files are normal; permission errors and corrupt files appear as separate rows, alongside any available results. Arc favorites and pinned trees count as bookmarks; daily/unpinned tabs and Safari Reading List do not. Bookmarklets are excluded.
 
-Browser data remains in memory on this Mac. Tab snapshots expire after two seconds; bookmark snapshots expire after five seconds. Requests coalesce, sources run independently, and old-query results cannot execute while a new query is pending. Lists periodically refresh, and Command-R requests another run.
+Browser data remains in memory on this Mac. Tab properties are read in collection batches instead of sending Apple Events for every tab. Fresh tab snapshots are reused for two seconds; snapshots up to 60 seconds old display immediately while one coalesced refresh updates the cache. Lists rerun every three seconds to pick up refreshed tabs. Older snapshots require a new read. Command-R waits for the latest snapshot. Focusing checks the live identity/URL and invalidates cached and pending tab reads. Bookmark snapshots expire after five seconds. Sources run independently, and old-query results cannot execute while a new query is pending.
+
+HTTP(S) tabs display the website's `/favicon.ico` asynchronously, with the browser icon as a fallback for loading, missing icons, redirects, non-web tabs and offline operation. Only the origin is requested, without tab paths, query strings, credentials or cookies; no third-party icon service is used. Downloads have a three-second timeout and a 256 KiB limit, images are downsampled to 56 pixels, and identical origins share an in-memory cache. Failed loads wait 60 seconds before retrying. Icon requests are canceled when their last visible row disappears.
 
 ## Validation
 

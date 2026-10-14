@@ -77,7 +77,9 @@ struct AskPluginItemIcon: View {
 
     var body: some View {
         Group {
-            if case let .fileIcon(url) = icon {
+            if case let .websiteIcon(url, fallback) = icon {
+                AskBrowserFaviconView(url: url, fallback: fallback, symbol: symbol, filled: filled)
+            } else if case let .fileIcon(url) = icon {
                 AskFileIconView(url: url, thumbnail: false).frame(width: 26, height: 26)
             } else if let image = icon.flatMap(Self.image) {
                 Image(nsImage: image).resizable().interpolation(.high).scaledToFit()
@@ -107,7 +109,7 @@ struct AskPluginItemIcon: View {
     static func image(_ icon: AskPluginItem.Icon) -> NSImage? {
         let key: String
         switch icon {
-        case .symbol: return nil
+        case .symbol, .websiteIcon: return nil
         case let .image(url): key = "image:" + url.path
         case let .fileIcon(url): key = "file:" + url.path
         case let .fileType(type): key = "type:" + type
@@ -116,7 +118,7 @@ struct AskPluginItemIcon: View {
             return cached
         }
         let image: NSImage? = switch icon {
-        case .symbol: nil
+        case .symbol, .websiteIcon: nil
         case let .image(url): NSImage(contentsOf: url)
         case let .fileIcon(url):
             FileManager.default.fileExists(atPath: url.path) ? NSWorkspace.shared.icon(forFile: url.path) : nil
