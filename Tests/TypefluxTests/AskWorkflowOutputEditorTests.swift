@@ -370,8 +370,8 @@ struct AskWorkflowActionHostTests {
         #expect(host.open(.application("Notes")) && host.closed && dismissed == 1)
         #expect(host.open(.link(URL(string: "https://example.com/page")!)) && dismissed == 1, "closes once")
         host.hud("after")
-        #expect(log == ["notify:T", "reveal:a.png", "speak:hello|en", "app:Nope", "app:Notes", "url:page",
-                        "notice:after"])
+        #expect(log == ["notify:T", "reveal:a.png", "speak:hello|en", "app:Nope", "app:Notes",
+                        "notice:while open", "url:page", "notice:after"])
         host.close()
         #expect(dismissed == 1)
     }
@@ -437,7 +437,7 @@ struct AskWorkflowActionHostTests {
     @Test func theNoticePanelShowsANoteForAMoment() async throws {
         _ = NSApplication.shared
         let panel = AskWorkflowNoticePanel()
-        panel.duration = .milliseconds(50)
+        panel.duration = 0.05
         #expect(!panel.isVisible)
         panel.show("Saved")
         #expect(panel.isVisible)
@@ -446,7 +446,6 @@ struct AskWorkflowActionHostTests {
             try await Task.sleep(for: .milliseconds(5))
         }
         #expect(!panel.isVisible)
-        let view = NSHostingView(rootView: AskWorkflowNoticeView(text: String(repeating: "long ", count: 40)))
-        #expect(view.fittingSize.width > 0)
+        #expect(panel.presentedWindow?.frame.width == NoticeToastLayout.width)
     }
 }

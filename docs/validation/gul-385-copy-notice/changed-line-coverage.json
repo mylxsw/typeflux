@@ -1,0 +1,23 @@
+{
+  "base": "5f4fddea",
+  "files": {
+    "Sources/Typeflux/Ask/AskConversationModel+WorkflowActions.swift": {
+      "covered": 1,
+      "executable": 1,
+      "uncovered_lines": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowNoticePanel.swift": {
+      "covered": 11,
+      "executable": 11,
+      "uncovered_lines": []
+    },
+    "Sources/Typeflux/Overlay/OverlayController.swift": {
+      "covered": 1,
+      "executable": 1,
+      "uncovered_lines": []
+    }
+  },
+  "covered": 13,
+  "executable": 13,
+  "percentage": 100.0
+}
