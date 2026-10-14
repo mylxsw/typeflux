@@ -18,8 +18,8 @@ Native SwiftUI/AppKit snapshots use stubbed search and translation data:
 
 ## Validation
 
-`swift build` passed (83.42 seconds). Focused behavior validation and targeted retries
-covered 155 distinct test methods, including parameterized cases:
+`swift build` passed (83.42 seconds). After merging `main` at `5c79e4e0`, focused
+instrumented validation passed 165 distinct test methods, including parameterized cases:
 
 | Suite | Methods | Change coverage |
 | --- | ---: | --- |
@@ -30,14 +30,14 @@ covered 155 distinct test methods, including parameterized cases:
 | AskPluginSessionTests | 9 | Keyword session transitions and result lifetimes |
 | AskLauncherInputHistoryInteractionTests | 6 | Native history shortcuts and input composition |
 | AskCalendarPluginTests | 5 | Calendar registration and key mapping |
+| AskWorkflowKeywordSelectionTests | 10 | Upstream optional/no-input workflows, selection, Tab entry and explicit Return execution |
 
-The final instrumented run selected 46 methods from the primary-action, header and
-number-hint suites, plus plugin confirmation, streaming result handoff and system
-monitor window interactions. All passed. Total command wall time was **349.58 seconds**:
-220.07 seconds for preparation/discovery and 129.50 seconds for execution/runner overhead.
+The final instrumented run selected all 165 methods in these eight suites. All passed.
+Total command wall time was **632.23 seconds**: 257.24 seconds for preparation/discovery
+and 374.97 seconds for execution/runner overhead.
 
-Coverage of added executable Swift lines in the staged diff was **263/290 (90.69%)**.
-The complete new resolver/debounce file, `AskLauncherPrimaryAction.swift`, had **95.95%**
+Coverage of added executable Swift lines relative to the merged `main` was **266/292 (91.10%)**.
+The complete new resolver/debounce file, `AskLauncherPrimaryAction.swift`, had **96.00%**
 line coverage. These are focused change metrics, not whole-project coverage.
 
 The repository's normal `make coverage SUITE=... FILTER=...` runner was used first.
@@ -58,7 +58,8 @@ Earlier validation attempts and fixes:
 | 401.03 s | 126 methods ran; one existing plugin test still expected the header to send AI. Updated it to expect plugin confirmation while retaining Command-Return AI checks. |
 | 68.99 s | The updated plugin expectation passed; fixed an optional initial height report in the screenshot fixture. |
 | 467.49 s | 43 methods passed on the native engine, but coverage was still absent. Explicit instrumentation before discovery resolved the toolchain issue. |
-| 349.58 s | Final instrumented 46-method scope passed and emitted coverage successfully. |
+| 349.58 s | Pre-merge instrumented 46-method scope passed and emitted coverage successfully. |
+| 632.23 s | After merging main, all 165 relevant methods passed, including the newly added optional/no-input workflow behavior. |
 
 `git diff --check` passed. SwiftLint on touched files still reports six existing
 complexity/type-size errors (seven in the HEAD baseline); comparison by file and rule
@@ -69,3 +70,6 @@ input-method ownership, result handoff lifetimes, account/draft isolation, sensi
 data handling, accessibility and documentation consistency. It tightened history
 Return readiness and both Command-O paths, and excluded approvals and unsupported
 rich results from generic text-window handoff.
+Merge review also kept the upstream workflow selection behavior: a no-input workflow
+entered with Tab can still be explicitly run through the primary action. Translation
+keys are grouped beside the existing chat keys to avoid competing file-end additions.

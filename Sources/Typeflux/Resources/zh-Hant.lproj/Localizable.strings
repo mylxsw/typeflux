@@ -3147,7 +3147,11 @@
 "studio.heading.launcher" = "啟動器";
 "studio.subheading.launcher" = "啟動器裡的計算機、應用程式搜尋、關鍵詞和你自己的工作流程。它們由啟動器直接觸發，不經過 Agent。";
 "studio.search.launcher" = "搜尋啟動器設定...";
-"launcher.pane.basics" = "內建功能";
+"launcher.pane.basics" = "通用";
+"launcher.inputSource.title" = "預設輸入法";
+"launcher.inputSource.detail" = "開啟啟動器時切換到所選輸入法；選擇「無」則保留目前的輸入法。";
+"launcher.inputSource.none" = "無";
+"launcher.inputSource.unavailable" = "輸入法無法使用";
 "launcher.basics.subtitle" = "在啟動器裡直接得到結果，不傳送給 AI。";
 "agent.group.capabilities" = "能力";
 "agent.group.personalization" = "個人化";
@@ -3422,7 +3426,7 @@
 "ask.workflow.gallery.codec.usage.2" = "Base64 編碼";
 "ask.workflow.gallery.codec.usage.3" = "-d 解碼，-e 編碼";
 "ask.workflow.gallery.uuid.name" = "產生 UUID / 密碼";
-"ask.workflow.gallery.uuid.summary" = "直接複製到剪貼簿，底欄提示「已複製」。";
+"ask.workflow.gallery.uuid.summary" = "直接複製到剪貼簿，並顯示成功提示。";
 "ask.workflow.gallery.uuid.demonstrates" = "「只做事」的工作流程：不顯示，複製 + 底欄提示";
 "ask.workflow.gallery.uuid.keyword.uuid" = "產生 UUID";
 "ask.workflow.gallery.uuid.keyword.pwd" = "產生密碼";
@@ -3682,6 +3686,15 @@
 "ask.openChat.hint" = "開啟聊天視窗 ⌘O";
 "ask.openChat.wait" = "請先完成錄音或等待附件載入完成";
 "ask.openChat.placeholder" = "可輸入正文，開啟後作為草稿";
+
+// Launcher primary action
+"ask.launcher.action.wait" = "正在等待目前結果";
+"ask.launcher.action.input" = "請輸入內容後繼續";
+"ask.launcher.action.unavailable" = "目前沒有可執行的操作";
+"ask.launcher.action.run" = "執行%@";
+"ask.launcher.action.confirm" = "確認";
+"ask.launcher.action.open" = "開啟%@";
+"ask.launcher.action.copyResult" = "複製結果";
 "ask.settings.keywords.kind.chat.hint" = "開啟聊天視窗，不傳送訊息";
 "ask.drafts.saved" = "暫存草稿";
 "ask.drafts.untitled" = "未命名草稿";
@@ -4855,7 +4868,7 @@
 "recording.from" = "開始";
 "recording.to" = "結束";
 "recording.cancelExport" = "取消匯出";
-"recording.saveAs" = "儲存到其他位置…";
+"recording.saveAs" = "另存新檔…";
 "recording.export" = "匯出";
 "recording.discardQuestion" = "捨棄這次錄製？";
 "recording.discardHint" = "尚未儲存的錄製內容將被刪除。";
@@ -4918,7 +4931,7 @@
 
 "recording.source.region" = "區域";
 
-"recording.source.display" = "螢幕";
+"recording.source.display" = "全螢幕";
 
 "recording.source.window" = "視窗";
 
@@ -4932,7 +4945,7 @@
 
 "recording.selectedDuration" = "已選時間：%.2f 秒";
 
-"recording.resetTrim" = "使用完整錄製";
+"recording.resetTrim" = "恢復完整";
 
 "recording.gifExportHint" = "GIF 不含聲音。請選擇最多 30 秒；匯出為每秒 10 格，最長邊 960 像素。";
 
@@ -5039,11 +5052,76 @@
 "ask.context.selection.disableHint" = "點擊圖示可停用，文字會保留";
 "ask.context.selection.enableHint" = "點擊圖示可再次使用這段文字";
 
-// Launcher primary action
-"ask.launcher.action.wait" = "正在等待目前結果";
-"ask.launcher.action.input" = "請輸入內容後繼續";
-"ask.launcher.action.unavailable" = "目前沒有可執行的操作";
-"ask.launcher.action.run" = "執行%@";
-"ask.launcher.action.confirm" = "確認";
-"ask.launcher.action.open" = "開啟%@";
-"ask.launcher.action.copyResult" = "複製結果";
+"recording.copy" = "複製";
+
+"recording.countdownKeys" = "空白鍵 立即開始 · esc 返回";
+
+"recording.countdownSummary" = "倒數 %d 秒";
+
+"recording.estimated" = "約 %@";
+
+"recording.fileName" = "檔案名稱";
+
+"recording.gifSilent" = "GIF 不含聲音";
+
+"recording.gifSmall" = "小 · 640 px";
+
+"recording.gifStandard" = "標準 · 960 px";
+
+"recording.gifTooLong" = "GIF 最多保留 30 秒";
+
+"recording.keep30" = "保留開頭 30 秒";
+
+"recording.keepRange" = "保留";
+
+"recording.later" = "稍後";
+
+"recording.liveCamera" = "即時";
+
+"recording.max30" = "最長 30 秒";
+
+"recording.microphoneLevel" = "麥克風輸入電平";
+
+"recording.noAudioTrack" = "這段錄製沒有聲音";
+
+"recording.noUpscale" = "只縮小，不放大。";
+
+"recording.openEditor" = "開啟剪輯";
+
+"recording.options" = "選項";
+
+"recording.play" = "播放 / 暫停";
+
+"recording.recoveryHint" = "上次未儲存的錄製可以繼續編輯。";
+
+"recording.remaining" = "還剩 %d 秒自動停止";
+
+"recording.restart" = "重來";
+
+"recording.restartQuestion" = "捨棄本次錄製並重新開始？";
+
+"recording.selectionKeys" = "↩ 開始 · esc 取消 · ⇥ 切換來源";
+
+"recording.selectionSeconds" = "· 共 %.1f 秒";
+
+"recording.switchMP4" = "改存 MP4";
+
+"recording.systemAudioScope" = "不含 Typeflux 自己的聲音；錄視窗時包含該應用程式的全部聲音。";
+
+"recording.timelineKeys" = "拖動兩端剪掉頭尾 · I / O 設起止點 · 空白鍵 播放";
+
+"recording.unsaved" = "未儲存的錄製";
+
+"recording.microphonePermissionHint" = "在系統設定 → 隱私權與安全性 → 麥克風中允許 Typeflux，回到這裡即可繼續。";
+
+"recording.cameraPermissionHint" = "在系統設定 → 隱私權與安全性 → 相機中允許 Typeflux，回到這裡即可繼續。";
+
+"recording.skipMicrophone" = "這次不錄麥克風";
+
+"recording.skipCamera" = "這次不錄相機";
+
+"recording.optionsTitle" = "錄製選項";
+
+"recording.pickWindow" = "懸停反白視窗，按一下選取。";
+
+"recording.pickDisplay" = "按一下要錄製的螢幕。";

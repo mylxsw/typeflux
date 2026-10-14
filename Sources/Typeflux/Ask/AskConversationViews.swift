@@ -925,7 +925,14 @@ struct AskConversationView: View {
                 inspect: { model.inspectingRecovery = true },
                 perform: { model.performRecovery($0) }
             )
-            .sheet(isPresented: $model.inspectingRecovery) { AskRecoveryInspector(model: model) }
+            .sheet(isPresented: $model.inspectingRecovery) {
+                if #available(macOS 13.3, *) {
+                    AskRecoveryInspector(model: model)
+                        .presentationBackground(AskTheme.popoverSurface)
+                } else {
+                    AskRecoveryInspector(model: model)
+                }
+            }
         }
         if let change = model.visibleVisionSwitch {
             let library = model.modelLibrary

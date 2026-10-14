@@ -238,7 +238,8 @@ struct AskComposer: View {
                 action = .confirm(title, enabled: enabled)
             } else {
                 action = .plugin(display, current: launcherPluginInputIsCurrent,
-                                 canAskAI: model.canOpenChatFromLauncher && model.submissionPreflights[true] == nil)
+                                 canAskAI: model.canOpenChatFromLauncher && model.submissionPreflights[true] == nil,
+                                 canRunWithoutInput: plugins.plugin?.runsWithoutInput == true && plugins.request == nil)
             }
         } else if showsQuickResults, let results = presentedQuickResults {
             if let panel = quickActions {
@@ -465,7 +466,7 @@ struct AskComposer: View {
                 model.enterLauncherSearchEntry(entry)
                 performPluginAction(.init(kind: .openChat, title: entry.title, symbol: entry.symbol))
             } else {
-                model.enterLauncherSearchEntry(entry)
+                model.enterLauncherSearchEntry(entry, run: close)
                 pluginHighlight = 0
                 pluginReserve = 0
             }
@@ -704,9 +705,10 @@ struct AskComposer: View {
         return false
     }
 
-    /// ⇥ on a lone keyword, or a click on its row: enter keyword mode.
-    private func acceptPluginHint() -> Bool {
-        guard plugins.acceptHint() else { return false }
+    /// Tab enters keyword mode; Return can also run a workflow that needs no input.
+    private func acceptPluginHint(run: Bool = false) -> Bool {
+        let enteredWorkflow = run && plugins.hint.map { model.enterLauncherWorkflow($0, run: true) } == true
+        guard enteredWorkflow || plugins.acceptHint() else { return false }
         pluginHighlight = 0
         pluginReserve = 0
         draft.wrappedValue.text = ""
@@ -729,7 +731,7 @@ struct AskComposer: View {
             performPluginAction(.init(kind: AskScreenshotPlugin.captureKind(for: hint), title: "", symbol: ""))
             return
         }
-        if pluginDisplay?.hint != nil { _ = acceptPluginHint(); return }
+        if pluginDisplay?.hint != nil { _ = acceptPluginHint(run: true); return }
         switch plugins.phase {
         case let .ready(plan):
             // A plan that acts (open a search) must be for the text as typed; it lands within moments.
@@ -1014,7 +1016,7 @@ struct AskComposer: View {
     }
 
     /// Runs a home row: a keyword on the selection, a question, or a conversation.
-    /// A chip enters its keyword and waits, as typing it and a space would.
+    /// A workflow chip runs at once when its input is optional or unused.
     private func pick(_ item: AskLauncherHome.Item) {
         let keyword: AskKeyword, run: Bool
         switch item {

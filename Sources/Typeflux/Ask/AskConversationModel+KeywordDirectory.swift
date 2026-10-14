@@ -14,10 +14,11 @@ extension AskConversationModel {
         return entries
     }
 
-    /// Searching discovers a feature; entering it never executes an on-submit workflow.
-    func enterLauncherSearchEntry(_ entry: AskLauncherSearchEntry) {
+    /// Return runs workflows with optional/no input; Tab only enters their input mode.
+    func enterLauncherSearchEntry(_ entry: AskLauncherSearchEntry, run: Bool = false) {
         guard let current = launcherSearchEntries(language: AppLocalization.shared.language).first(where: { $0.id == entry.id })
         else { return }
+        if enterLauncherWorkflow(current.keyword, run: run) { return }
         let listsAtOnce = [
             AskKillAppPlugin.id, AskPrefixPlugin.id, AskHistoryPlugin.id, AskClipboardPlugin.id, AskNotesPlugin.id,
             AskBrowserSearchPlugin.tabsID, AskBrowserSearchPlugin.bookmarksID, AskEmojiPlugin.id
@@ -25,6 +26,19 @@ extension AskConversationModel {
         plugins.enter(current.keyword, waitingForInput: !listsAtOnce.contains(current.keyword.pluginID))
         launcherDraft.text = ""
         plugins.update(text: "", selection: launcherDraft.sentSelection, language: AppLocalization.shared.language)
+    }
+
+    /// A selected workflow with a useful empty-input result needs only one Return.
+    /// Workflows requiring text and Tab completion keep waiting for input.
+    @discardableResult
+    func enterLauncherWorkflow(_ keyword: AskKeyword, run: Bool) -> Bool {
+        guard let workflow = plugins.plugin(for: keyword) as? AskWorkflowPlugin else { return false }
+        let runNow = run && workflow.runsWithoutInput
+        plugins.enter(keyword, waitingForInput: !runNow)
+        launcherDraft.text = ""
+        plugins.update(text: "", selection: launcherDraft.sentSelection, language: AppLocalization.shared.language,
+                       runWhenPlanned: runNow)
+        return true
     }
 
     /// Enters the directory even when Return precedes the view's keyword hint update.

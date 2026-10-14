@@ -54,10 +54,15 @@ struct ScreenRecordingCapturePlan {
         }
         let size = try ScreenRecordingGeometry.outputSize(points: points, scale: max(1, scale),
                                                           maxDimension: options.dimension)
-        return Self(filter: filter, configuration: configuration(size: size, sourceRect: sourceRect, options: options), size: size)
+        return Self(
+            filter: filter,
+            configuration: configuration(size: size, sourceRect: sourceRect, options: options),
+            size: size
+        )
     }
 
-    static func configuration(size: CGSize, sourceRect: CGRect?, options: ScreenRecordingOptions) -> SCStreamConfiguration {
+    static func configuration(size: CGSize, sourceRect: CGRect?,
+                              options: ScreenRecordingOptions) -> SCStreamConfiguration {
         let config = SCStreamConfiguration()
         config.width = Int(size.width)
         config.height = Int(size.height)
@@ -91,7 +96,12 @@ final class ScreenRecordingCapture: NSObject, SCStreamOutput, SCStreamDelegate,
     AVCaptureVideoDataOutputSampleBufferDelegate, AVCaptureAudioDataOutputSampleBufferDelegate, @unchecked Sendable {
     private let writer: ScreenRecordingWriter
     private let options: ScreenRecordingOptions
-    private let session = AVCaptureSession()
+    let session = AVCaptureSession()
+    private let meter = ScreenRecordingAudioMeter()
+    var audioLevel: Float {
+        meter.level
+    }
+
     private let deviceQueue = DispatchQueue(label: "Typeflux.Recording.devices", qos: .userInitiated)
     private let sampleQueue = DispatchQueue(label: "Typeflux.Recording.samples", qos: .userInitiated)
     private var stream: SCStream?
@@ -206,16 +216,25 @@ final class ScreenRecordingCapture: NSObject, SCStreamOutput, SCStreamDelegate,
     }
 
     func captureOutput(_ output: AVCaptureOutput, didOutput sample: CMSampleBuffer, from _: AVCaptureConnection) {
+        receiveDeviceSample(sample, video: output is AVCaptureVideoDataOutput)
+    }
+
+    func receiveDeviceSample(_ sample: CMSampleBuffer, video: Bool) {
+        if !video {
+            meter.update(sample)
+        }
         let stamp = session.masterClock.map {
             CMSyncConvertTime(sample.presentationTimeStamp, from: $0, to: CMClockGetHostTimeClock())
         } ?? sample.presentationTimeStamp
-        writer.offer(sample, track: output is AVCaptureVideoDataOutput ? .camera : .microphone, hostTime: stamp.seconds)
+        writer.offer(sample, track: video ? .camera : .microphone, hostTime: stamp.seconds)
     }
 }
 
 @MainActor
 protocol ScreenRecordingEngine: AnyObject {
     var onError: (@MainActor (Error) -> Void)? { get set }
+    var previewSession: AVCaptureSession? { get }
+    var audioLevel: Float { get }
     func start(target: ScreenRecordingTarget, options: ScreenRecordingOptions, url: URL) async throws
     func setPaused(_ paused: Bool)
     func elapsed() async -> Double
@@ -223,9 +242,27 @@ protocol ScreenRecordingEngine: AnyObject {
     func cancel() async
 }
 
+extension ScreenRecordingEngine {
+    var previewSession: AVCaptureSession? {
+        nil
+    }
+
+    var audioLevel: Float {
+        0
+    }
+}
+
 @MainActor
 final class NativeScreenRecordingEngine: ScreenRecordingEngine {
     var onError: (@MainActor (Error) -> Void)?
+    var previewSession: AVCaptureSession? {
+        source?.session
+    }
+
+    var audioLevel: Float {
+        source?.audioLevel ?? 0
+    }
+
     private var source: ScreenRecordingCapture?
     private var writer: ScreenRecordingWriter?
     private var generation = 0

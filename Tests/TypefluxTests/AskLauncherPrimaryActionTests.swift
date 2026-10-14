@@ -73,6 +73,9 @@ struct AskLauncherPrimaryActionTests {
         let output = AskPluginOutput(body: "result", original: "input", meta: [], source: "test", actions: [copy])
         var display = AskPluginDisplay(title: "Translate", symbol: "character", phase: .waiting, offersAskAI: false)
         #expect(!AskLauncherPrimaryAction.plugin(display, current: false, canAskAI: true).enabled)
+        let runnable = AskLauncherPrimaryAction.plugin(display, current: false, canAskAI: false,
+                                                       canRunWithoutInput: true)
+        #expect(runnable.enabled && runnable.mode == .execute(L("ask.launcher.action.run", "Translate")))
         for phase in [AskPluginSession.Phase.ready(plan), .running(plan), .done(plan, output),
                       .failed(plan, .init(message: "failed")), .failed(plan, .init(message: "failed", retry: false)),
                       .failed(plan, .init(message: "failed", retry: false, actions: [copy]))] {

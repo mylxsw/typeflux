@@ -33,7 +33,7 @@ final class ScreenshotPermissionProbe {
 @MainActor
 struct AskScreenshotPermissionTests {
     private final class InputSource: AskLauncherInputSourceSelecting {
-        func selectEnglish() {}
+        func select(sourceID: String) {}
     }
 
     @Test func openingTheNativeLauncherNeverRequestsDeniedAccess() async throws {

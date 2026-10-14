@@ -3140,7 +3140,11 @@
 "studio.heading.launcher" = "ランチャー";
 "studio.subheading.launcher" = "ランチャーの計算機、アプリ検索、キーワード、独自のワークフロー。Agent を通さずランチャーから直接実行されます。";
 "studio.search.launcher" = "ランチャー設定を検索...";
-"launcher.pane.basics" = "内蔵機能";
+"launcher.pane.basics" = "一般";
+"launcher.inputSource.title" = "デフォルトの入力ソース";
+"launcher.inputSource.detail" = "ランチャーを開くときにこの入力ソースに切り替えます。「なし」を選ぶと現在の入力ソースを維持します。";
+"launcher.inputSource.none" = "なし";
+"launcher.inputSource.unavailable" = "入力ソースを利用できません";
 "launcher.basics.subtitle" = "結果をランチャー内に直接表示し、AI には送信しません。";
 "agent.group.capabilities" = "機能";
 "agent.group.personalization" = "パーソナライズ";
@@ -3415,7 +3419,7 @@
 "ask.workflow.gallery.codec.usage.2" = "Base64 エンコード";
 "ask.workflow.gallery.codec.usage.3" = "-d でデコード、-e でエンコード";
 "ask.workflow.gallery.uuid.name" = "UUID / パスワード生成";
-"ask.workflow.gallery.uuid.summary" = "そのままクリップボードにコピーし、下部バーで知らせます。";
+"ask.workflow.gallery.uuid.summary" = "そのままクリップボードにコピーし、確認メッセージを表示します。";
 "ask.workflow.gallery.uuid.demonstrates" = "表示せずに処理だけするワークフロー：コピー + 下部バー";
 "ask.workflow.gallery.uuid.keyword.uuid" = "UUID を生成";
 "ask.workflow.gallery.uuid.keyword.pwd" = "パスワードを生成";
@@ -3675,6 +3679,15 @@
 "ask.openChat.hint" = "チャットウインドウを開く ⌘O";
 "ask.openChat.wait" = "録音や添付ファイルの読み込みが終わるまでお待ちください。";
 "ask.openChat.placeholder" = "入力した内容を下書きとして開きます";
+
+// Launcher primary action
+"ask.launcher.action.wait" = "最新の結果を待っています";
+"ask.launcher.action.input" = "内容を入力してください";
+"ask.launcher.action.unavailable" = "実行できる操作はありません";
+"ask.launcher.action.run" = "%@を実行";
+"ask.launcher.action.confirm" = "確認";
+"ask.launcher.action.open" = "%@を開く";
+"ask.launcher.action.copyResult" = "結果をコピー";
 "ask.settings.keywords.kind.chat.hint" = "メッセージを送信せずにチャットを開く";
 "ask.drafts.saved" = "保存した下書き";
 "ask.drafts.untitled" = "無題の下書き";
@@ -4821,7 +4834,7 @@
 "recording.from" = "開始";
 "recording.to" = "終了";
 "recording.cancelExport" = "書き出しをキャンセル";
-"recording.saveAs" = "別の場所に保存…";
+"recording.saveAs" = "別名で保存…";
 "recording.export" = "書き出す";
 "recording.discardQuestion" = "この収録を破棄しますか？";
 "recording.discardHint" = "未保存の収録は削除されます。";
@@ -4884,7 +4897,7 @@
 
 "recording.source.region" = "範囲";
 
-"recording.source.display" = "画面";
+"recording.source.display" = "全画面";
 
 "recording.source.window" = "ウインドウ";
 
@@ -4898,7 +4911,7 @@
 
 "recording.selectedDuration" = "選択範囲：%.2f 秒";
 
-"recording.resetTrim" = "録画全体を使用";
+"recording.resetTrim" = "全体に戻す";
 
 "recording.gifExportHint" = "GIF は無音です。30 秒以内を選択してください。10 FPS、最大 960 px で保存します。";
 
@@ -5005,11 +5018,76 @@
 "ask.context.selection.disableHint" = "アイコンをクリックして無効にしても、テキストは保持されます";
 "ask.context.selection.enableHint" = "アイコンをクリックすると、このテキストを再び使用できます";
 
-// Launcher primary action
-"ask.launcher.action.wait" = "最新の結果を待っています";
-"ask.launcher.action.input" = "内容を入力してください";
-"ask.launcher.action.unavailable" = "実行できる操作はありません";
-"ask.launcher.action.run" = "%@を実行";
-"ask.launcher.action.confirm" = "確認";
-"ask.launcher.action.open" = "%@を開く";
-"ask.launcher.action.copyResult" = "結果をコピー";
+"recording.copy" = "コピー";
+
+"recording.countdownKeys" = "スペース 今すぐ開始 · esc 戻る";
+
+"recording.countdownSummary" = "カウントダウン %d 秒";
+
+"recording.estimated" = "約 %@";
+
+"recording.fileName" = "ファイル名";
+
+"recording.gifSilent" = "GIF に音声は含まれません";
+
+"recording.gifSmall" = "小 · 640 px";
+
+"recording.gifStandard" = "標準 · 960 px";
+
+"recording.gifTooLong" = "GIF は最大30秒です";
+
+"recording.keep30" = "最初の30秒を保持";
+
+"recording.keepRange" = "保持";
+
+"recording.later" = "後で";
+
+"recording.liveCamera" = "ライブ";
+
+"recording.max30" = "最大30秒";
+
+"recording.microphoneLevel" = "マイク入力レベル";
+
+"recording.noAudioTrack" = "この録画に音声はありません";
+
+"recording.noUpscale" = "縮小のみ。拡大はしません。";
+
+"recording.openEditor" = "編集を開く";
+
+"recording.options" = "オプション";
+
+"recording.play" = "再生 / 一時停止";
+
+"recording.recoveryHint" = "未保存の録画を引き続き編集できます。";
+
+"recording.remaining" = "あと%d秒で自動停止";
+
+"recording.restart" = "やり直す";
+
+"recording.restartQuestion" = "この録画を破棄してやり直しますか？";
+
+"recording.selectionKeys" = "↩ 開始 · esc キャンセル · Tab 対象";
+
+"recording.selectionSeconds" = "· %.1f 秒";
+
+"recording.switchMP4" = "MP4 に変更";
+
+"recording.systemAudioScope" = "Typeflux の音声を除外。ウインドウ録画ではそのアプリの全音声を含みます。";
+
+"recording.timelineKeys" = "両端をドラッグしてトリム · I / O 開始・終了 · スペース 再生";
+
+"recording.unsaved" = "未保存の録画";
+
+"recording.microphonePermissionHint" = "システム設定 → プライバシーとセキュリティ → マイクで Typeflux を許可し、ここに戻ってください。";
+
+"recording.cameraPermissionHint" = "システム設定 → プライバシーとセキュリティ → カメラで Typeflux を許可し、ここに戻ってください。";
+
+"recording.skipMicrophone" = "マイクなしで録画";
+
+"recording.skipCamera" = "カメラなしで録画";
+
+"recording.optionsTitle" = "録画オプション";
+
+"recording.pickWindow" = "ウインドウにポインタを合わせ、クリックして選択。";
+
+"recording.pickDisplay" = "録画する画面をクリック。";

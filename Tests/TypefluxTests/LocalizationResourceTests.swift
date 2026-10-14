@@ -3,6 +3,25 @@ import Foundation
 import XCTest
 
 final class LocalizationResourceTests: XCTestCase {
+    func testLauncherGeneralAndInputSourceCopyExistsInEveryLanguage() throws {
+        for language in AppLanguage.allCases {
+            let bundle = try localizationBundle(for: language)
+            let tableURL = try XCTUnwrap(bundle.url(forResource: "Localizable", withExtension: "strings"))
+            let table = try XCTUnwrap(PropertyListSerialization.propertyList(from: Data(contentsOf: tableURL),
+                                                                             options: [],
+                                                                             format: nil) as? [String: String])
+            for key in ["launcher.pane.basics", "launcher.inputSource.title", "launcher.inputSource.detail",
+                        "launcher.inputSource.none", "launcher.inputSource.unavailable"] {
+                XCTAssertFalse(try XCTUnwrap(table[key], "Missing \(key) in \(language.rawValue)").isEmpty)
+            }
+            if language == .simplifiedChinese {
+                XCTAssertEqual(table["launcher.pane.basics"], "通用")
+            } else if language == .english {
+                XCTAssertEqual(table["launcher.pane.basics"], "General")
+            }
+        }
+    }
+
     func testKeywordShortcutGuidanceExistsInEveryLanguage() throws {
         let keys = ["hotkeys.keyword.add", "hotkeys.keyword.empty", "hotkeys.keyword.sheet.addTitle",
                     "hotkeys.keyword.sheet.editTitle", "hotkeys.keyword.sheet.hint",

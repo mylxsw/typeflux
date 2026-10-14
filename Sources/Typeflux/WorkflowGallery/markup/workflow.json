@@ -4,7 +4,7 @@
   "name": "@L:markup.name",
   "description": "@L:markup.summary",
   "icon": "sf:chevron.left.forwardslash.chevron.right",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "Typeflux",
   "keywords": [
     {
@@ -37,7 +37,7 @@
     }
   ],
   "input": {
-    "argument": "optional",
+    "argument": "required",
     "selection": "always"
   },
   "run": {

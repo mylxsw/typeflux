@@ -43,7 +43,8 @@ struct AskLauncherPrimaryAction: Equatable {
         return waiting
     }
 
-    static func plugin(_ display: AskPluginDisplay, current: Bool, canAskAI: Bool) -> Self {
+    static func plugin(_ display: AskPluginDisplay, current: Bool, canAskAI: Bool,
+                       canRunWithoutInput: Bool = false) -> Self {
         if display.asksAI { return Self(mode: .askAI, enabled: canAskAI) }
         if let hint = display.hint {
             return hint.pluginID == AskOpenChatPlugin.id
@@ -52,6 +53,7 @@ struct AskLauncherPrimaryAction: Equatable {
         let action: AskPluginAction?
         switch display.phase {
         case .waiting:
+            if canRunWithoutInput { return .confirm(L("ask.launcher.action.run", display.title)) }
             return .confirm(display.title, enabled: false, reason: L("ask.launcher.action.input"))
         case let .ready(plan):
             action = plan.action(for: .enter)

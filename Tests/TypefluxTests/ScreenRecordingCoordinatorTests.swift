@@ -8,6 +8,7 @@ import Testing
 struct ScreenRecordingCoordinatorTests {
     final class Engine: ScreenRecordingEngine {
         var onError: (@MainActor (Error) -> Void)?
+        var seconds: Double = 1
         var starts = 0
         var stops = 0
         var cancellations = 0
@@ -15,6 +16,7 @@ struct ScreenRecordingCoordinatorTests {
         var startError: Error?
         var startGate: CheckedContinuation<Void, Never>?
         var blocksStart = false
+        var movie: (URL) async throws -> Void = { try await ScreenRecordingMediaTests.makeMovie(at: $0) }
         var url: URL?
         func start(target _: ScreenRecordingTarget, options _: ScreenRecordingOptions, url: URL) async throws {
             starts += 1
@@ -32,13 +34,13 @@ struct ScreenRecordingCoordinatorTests {
         }
 
         func elapsed() async -> Double {
-            1
+            seconds
         }
 
         func stop() async throws -> URL {
             stops += 1
             let url = try #require(url)
-            try await ScreenRecordingMediaTests.makeMovie(at: url)
+            try await movie(url)
             return url
         }
 
@@ -106,12 +108,12 @@ struct ScreenRecordingCoordinatorTests {
                         ScreenRecordingChoice(
                             id: "display",
                             title: "Display",
-                            target: .display(1)
+                            target: .display(1), frame: CGRect(x: 0, y: 0, width: 1200, height: 720), scale: 2
                         ),
                         ScreenRecordingChoice(
                             id: "window",
                             title: "Window",
-                            target: .window(2)
+                            target: .window(2), frame: CGRect(x: 100, y: 100, width: 600, height: 400), scale: 2
                         )
                     ]
                 },
@@ -123,7 +125,7 @@ struct ScreenRecordingCoordinatorTests {
         }
 
         func setup() async {
-            model.show(); await model.pendingTask?.value
+            model.show(); await model.pendingTask?.value; model.selectSourceKind(.display)
         }
 
         func recording() async {

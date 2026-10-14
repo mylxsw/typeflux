@@ -190,5 +190,5 @@ private final class AskMotionActivationPolicy: ActivationPolicyControlling {
 
 @MainActor
 private struct AskMotionInputSource: AskLauncherInputSourceSelecting {
-    func selectEnglish() {}
+    func select(sourceID: String) {}
 }

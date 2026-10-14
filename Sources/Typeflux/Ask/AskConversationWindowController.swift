@@ -269,7 +269,9 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         panel.makeKeyAndOrderFront(nil)
         // Select after focus: AppKit may restore the editor's previous source
         // when it becomes first responder. Do this only on a fresh opening.
-        if focusEditor(in: panel) { launcherInputSource.selectEnglish() }
+        if focusEditor(in: panel), !settings.askLauncherInputSourceID.isEmpty {
+            launcherInputSource.select(sourceID: settings.askLauncherInputSourceID)
+        }
         installClickMonitors()
         launchTask = Task { [weak self] in
             guard let self else { return }

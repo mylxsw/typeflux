@@ -77,6 +77,8 @@ struct ScreenRecordingChoice: Identifiable, Equatable {
     var id: String
     var title: String
     var target: ScreenRecordingTarget
+    var frame: CGRect = .zero
+    var scale: CGFloat = 1
 }
 
 enum ScreenRecordingFailure: String, Error, LocalizedError {

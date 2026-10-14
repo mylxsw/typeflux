@@ -4,12 +4,12 @@
   "name": "@L:wc.name",
   "description": "@L:wc.summary",
   "icon": "sf:textformat.size",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "Typeflux",
   "keywords": [
     { "keyword": "wc", "title": "@L:wc.keyword.wc" }
   ],
-  "input": { "argument": "optional", "selection": "ifEmpty" },
+  "input": { "argument": "required", "selection": "ifEmpty" },
   "run": { "mode": "onSubmit", "timeoutSeconds": 10 },
   "command": { "runtime": "python3", "script": "main.py", "args": ["{query}"] },
   "output": "text"
