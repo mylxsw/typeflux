@@ -109,7 +109,7 @@ struct StatusBarWordBookMenuTests {
         #expect(!menu.items.contains { $0.title == L("menu.addVocabulary") })
         #expect(!menu.items.contains { $0.action.map(NSStringFromSelector) == "addVocabularyTerm" })
         #expect(menu.items.filter { !$0.isHidden }.map(\.title) == [
-            L("menu.screenshot"), L("menu.screenshotText"), L("menu.notes"), title
+            L("menu.screenshot"), L("menu.screenshotText"), L("recording.title"), L("menu.notes"), title
         ])
         let wordBookItem = try #require(menu.items.first { $0.title == title })
         #expect(wordBookItem.isEnabled && wordBookItem.submenu == nil)

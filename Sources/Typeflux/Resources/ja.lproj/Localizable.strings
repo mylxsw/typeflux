@@ -4775,6 +4775,141 @@
 "auth.web.serviceUnavailable" = "ログインサービスを利用できません。API とデータベースを確認して再試行してください。";
 "auth.web.rateLimited" = "ログイン試行が多すぎます。しばらく待ってから再試行してください。";
 
+/* Screen recording */
+"recording.title" = "画面収録";
+"recording.gif" = "GIF を収録";
+"recording.region" = "選択範囲";
+"recording.display" = "ディスプレイ %d";
+"recording.source" = "収録対象";
+"recording.selectSource" = "ディスプレイまたはウインドウを選択";
+"recording.chooseRegion" = "範囲を選択…";
+"recording.refresh" = "更新";
+"recording.format" = "形式";
+"recording.resolution" = "長辺";
+"recording.fps" = "フレームレート";
+"recording.systemAudio" = "システム音声";
+"recording.microphone" = "マイク";
+"recording.audioScope" = "システム音声には Typeflux の再生音は含まれません。ウインドウの録画時は、そのアプリ全体の音声が含まれます。";
+"recording.gifHint" = "GIF：音声なし、10 FPS、最大 960 px・30 秒。上限で自動停止します。";
+"recording.cursor" = "カーソルを表示";
+"recording.camera" = "カメラのピクチャ・イン・ピクチャ";
+"recording.cameraPosition" = "カメラの位置";
+"recording.cameraSize" = "カメラの大きさ";
+"recording.corner.topLeft" = "左上";
+"recording.corner.topRight" = "右上";
+"recording.corner.bottomLeft" = "左下";
+"recording.corner.bottomRight" = "右下";
+"recording.delay" = "カウントダウン";
+"recording.cancel" = "キャンセル";
+"recording.recover" = "収録を復元";
+"recording.start" = "収録を開始";
+"recording.countdown" = "カウントダウン後に収録を開始します。";
+"recording.starting" = "収録を開始中…";
+"recording.stopping" = "収録を終了中…";
+"recording.paused" = "収録を一時停止中";
+"recording.active" = "収録中 — 停止後にプレビューと保存ができます。";
+"recording.resume" = "再開";
+"recording.pause" = "一時停止";
+"recording.stop" = "収録を停止";
+"recording.discard" = "破棄";
+"recording.saved" = "収録を保存しました";
+"recording.open" = "開く";
+"recording.reveal" = "Finder に表示";
+"recording.done" = "完了";
+"recording.permissions" = "画面収録の設定を開く";
+"recording.trim" = "録画をトリミング";
+"recording.from" = "開始";
+"recording.to" = "終了";
+"recording.cancelExport" = "書き出しをキャンセル";
+"recording.saveAs" = "別の場所に保存…";
+"recording.export" = "書き出す";
+"recording.discardQuestion" = "この収録を破棄しますか？";
+"recording.discardHint" = "未保存の収録は削除されます。";
+"recording.keep" = "保持";
+"recording.showControls" = "収録コントロールを表示";
+"recording.error.permission" = "システム設定で Typeflux の画面収録を許可してから更新してください。";
+"recording.error.microphonePermission" = "システム設定でマイクを許可するか、マイク収録をオフにしてください。";
+"recording.error.cameraPermission" = "システム設定でカメラを許可するか、カメラをオフにしてください。";
+"recording.error.unavailable" = "収録対象またはデバイスを利用できません。更新して選び直してください。";
+"recording.error.noFrames" = "映像を取得できませんでした。収録対象と権限を確認してください。";
+"recording.error.encoding" = "収録をエンコードできません。空き容量を確認し、解像度を下げてください。";
+"recording.error.invalidRange" = "収録の範囲内で開始より後の終了時間を選択してください。GIF は最大 30 秒です。";
+"recording.error.interrupted" = "収録が中断されました。取得できた内容をプレビュー用に保持します。";
+
+"recording.previewTitle" = "プレビューと保存";
+
+"recording.setupHint" = "録画する内容を選んで開始します。";
+
+"recording.elapsed" = "録画時間";
+
+"recording.more" = "その他の録画操作";
+
+"recording.destination" = "保存先";
+
+"recording.saveFormat" = "%@ を保存";
+
+"recording.exporting" = "%@ を保存中…";
+
+"recording.output" = "ファイルと音声";
+
+"recording.mp4Choice" = "動画 · MP4";
+
+"recording.gifChoice" = "アニメ · GIF";
+
+"recording.audioHint" = "動画に音声を含めるには、音声ソースをオンにします。";
+
+"recording.cameraSection" = "カメラ映像";
+
+"recording.cameraHint" = "配置のプレビューです。開始時にカメラへのアクセスを求めます。";
+
+"recording.cameraLayout" = "カメラ配置プレビュー";
+
+"recording.moreOptions" = "その他の設定";
+
+"recording.noDelay" = "カウントダウンなし";
+
+"recording.seconds" = "%d 秒";
+
+"recording.secondsUnit" = "秒";
+
+"recording.quality" = "動画サイズ";
+
+"recording.quality.small" = "コンパクト · 最大 1280 px";
+
+"recording.quality.standard" = "標準 · 最大 1920 px";
+
+"recording.quality.high" = "大 · 最大 3840 px";
+
+"recording.qualityHint" = "サイズやフレームレートを上げると容量が増えます。小さい映像は拡大しません。";
+
+"recording.source.region" = "範囲";
+
+"recording.source.display" = "画面";
+
+"recording.source.window" = "ウインドウ";
+
+"recording.regionHint" = "録画したい範囲をドラッグして選択します。";
+
+"recording.loadingSources" = "画面とウインドウを検索中…";
+
+"recording.noWindows" = "ウインドウがありません。開いてから更新してください。";
+
+"recording.noDisplays" = "画面がありません。画面収録の権限を確認してください。";
+
+"recording.selectedDuration" = "選択範囲：%.2f 秒";
+
+"recording.resetTrim" = "録画全体を使用";
+
+"recording.gifExportHint" = "GIF は無音です。30 秒以内を選択してください。10 FPS、最大 960 px で保存します。";
+
+"recording.microphoneSettings" = "マイクの設定を開く";
+
+"recording.cameraSettings" = "カメラの設定を開く";
+
+"recording.silent" = "音声なし";
+
+"recording.continueEditing" = "編集を続ける";
+
 // Launcher calendar
 "calendar.title" = "カレンダー";
 "calendar.placeholder" = "日付、祝日、予定：12-25、next fri…";

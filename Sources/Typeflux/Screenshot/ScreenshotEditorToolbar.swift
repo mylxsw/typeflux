@@ -120,6 +120,7 @@ final class ScreenshotEditorToolbarModel {
         /// Keep the screenshot above other windows.
         case pin
         case copyAndSave
+        case record
         case toggleMoreMenu
         case toggleSensitivePanel
         case toggleToolbarPlacement
@@ -352,6 +353,9 @@ struct ScreenshotEditorToolbar: View {
             menuRow("square.and.arrow.down.on.square", L("screenshot.more.copyAndSave"), shortcut: "⌥↩") {
                 perform(.copyAndSave)
             }
+            if state.showsScrollCapture, state.canScrollCapture {
+                menuRow("record.circle", L("recording.title")) { perform(.record) }
+            }
             if state.canShowSensitivePanel {
                 menuRow("checkmark.shield", L("screenshot.more.sensitive"),
                         shortcut: state.showsSensitivePanel ? "✓" : "") { perform(.toggleSensitivePanel) }
@@ -387,7 +391,6 @@ struct ScreenshotEditorToolbar: View {
         .buttonStyle(.plain)
     }
 
-    @ViewBuilder
     var optionsBar: some View {
         HStack(spacing: 6) {
             if state.showsColor {
@@ -734,7 +737,7 @@ struct ScreenshotEditorToolbar: View {
         HStack(spacing: 5) {
             caption(text)
             Slider(value: Binding(get: { Double(value) }, set: { set(CGFloat($0)) }),
-                   in: Double(range.lowerBound)...Double(range.upperBound)) { editing in
+                   in: Double(range.lowerBound) ... Double(range.upperBound)) { editing in
                 perform(.styleChange(began: editing))
             }
             .controlSize(.mini)
@@ -746,7 +749,7 @@ struct ScreenshotEditorToolbar: View {
         }
     }
 
-    private func segment<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
+    private func segment(@ViewBuilder _ content: () -> some View) -> some View {
         HStack(spacing: 2) { content() }
             .padding(2)
             .background(RoundedRectangle(cornerRadius: 7).fill(AskTheme.pressFill.opacity(0.6)))

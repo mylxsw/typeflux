@@ -4824,6 +4824,141 @@
 "auth.web.serviceUnavailable" = "The login service is unavailable. Check the API and database, then try again.";
 "auth.web.rateLimited" = "Too many login attempts. Wait a moment and try again.";
 
+/* Screen recording */
+"recording.title" = "Screen recording";
+"recording.gif" = "Record GIF";
+"recording.region" = "Selected region";
+"recording.display" = "Display %d";
+"recording.source" = "Capture source";
+"recording.selectSource" = "Select a display or window";
+"recording.chooseRegion" = "Choose region…";
+"recording.refresh" = "Refresh";
+"recording.format" = "Format";
+"recording.resolution" = "Longest edge";
+"recording.fps" = "FPS";
+"recording.systemAudio" = "System audio";
+"recording.microphone" = "Microphone";
+"recording.audioScope" = "System audio excludes Typeflux playback. When recording a window, it includes sound from the whole app.";
+"recording.gifHint" = "GIF: silent, 10 FPS, up to 960 px and 30 seconds. Recording stops automatically at the limit.";
+"recording.cursor" = "Show cursor";
+"recording.camera" = "Camera picture-in-picture";
+"recording.cameraPosition" = "Camera position";
+"recording.cameraSize" = "Camera size";
+"recording.corner.topLeft" = "Top left";
+"recording.corner.topRight" = "Top right";
+"recording.corner.bottomLeft" = "Bottom left";
+"recording.corner.bottomRight" = "Bottom right";
+"recording.delay" = "Countdown";
+"recording.cancel" = "Cancel";
+"recording.recover" = "Recover recording";
+"recording.start" = "Start recording";
+"recording.countdown" = "Recording starts after the countdown.";
+"recording.starting" = "Starting recording…";
+"recording.stopping" = "Finishing recording…";
+"recording.paused" = "Recording paused";
+"recording.active" = "Recording — use Stop to preview and save.";
+"recording.resume" = "Resume";
+"recording.pause" = "Pause";
+"recording.stop" = "Stop recording";
+"recording.discard" = "Discard";
+"recording.saved" = "Recording saved";
+"recording.open" = "Open";
+"recording.reveal" = "Show in Finder";
+"recording.done" = "Done";
+"recording.permissions" = "Open screen recording settings";
+"recording.trim" = "Trim recording";
+"recording.from" = "From";
+"recording.to" = "To";
+"recording.cancelExport" = "Cancel export";
+"recording.saveAs" = "Save elsewhere…";
+"recording.export" = "Export";
+"recording.discardQuestion" = "Discard this recording?";
+"recording.discardHint" = "The unsaved recording will be deleted.";
+"recording.keep" = "Keep";
+"recording.showControls" = "Show recording controls";
+"recording.error.permission" = "Allow Screen Recording for Typeflux in System Settings, then refresh.";
+"recording.error.microphonePermission" = "Allow microphone access in System Settings, or turn off the microphone.";
+"recording.error.cameraPermission" = "Allow camera access in System Settings, or turn off the camera.";
+"recording.error.unavailable" = "The capture source or device is unavailable. Refresh and choose again.";
+"recording.error.noFrames" = "No video frames were captured. Check the source and permissions.";
+"recording.error.encoding" = "Could not encode the recording. Check available disk space and try a smaller resolution.";
+"recording.error.invalidRange" = "Choose an end after the start, within the recording. GIF segments can be at most 30 seconds.";
+"recording.error.interrupted" = "Recording was interrupted. Available captured content will be kept for preview.";
+
+"recording.previewTitle" = "Preview and save";
+
+"recording.setupHint" = "Choose what to record, then start.";
+
+"recording.elapsed" = "Recorded time";
+
+"recording.more" = "More recording actions";
+
+"recording.destination" = "Save location";
+
+"recording.saveFormat" = "Save %@";
+
+"recording.exporting" = "Saving %@…";
+
+"recording.output" = "File and sound";
+
+"recording.mp4Choice" = "Video · MP4";
+
+"recording.gifChoice" = "Animation · GIF";
+
+"recording.audioHint" = "Enable sound sources to include audio in your video.";
+
+"recording.cameraSection" = "Camera overlay";
+
+"recording.cameraHint" = "Position preview only. Camera access is requested when you start.";
+
+"recording.cameraLayout" = "Camera placement preview";
+
+"recording.moreOptions" = "More options";
+
+"recording.noDelay" = "No countdown";
+
+"recording.seconds" = "%d seconds";
+
+"recording.secondsUnit" = "s";
+
+"recording.quality" = "Video size";
+
+"recording.quality.small" = "Compact · up to 1280 px";
+
+"recording.quality.standard" = "Standard · up to 1920 px";
+
+"recording.quality.high" = "Large · up to 3840 px";
+
+"recording.qualityHint" = "Larger sizes and higher frame rates use more space. Small sources are never enlarged.";
+
+"recording.source.region" = "Region";
+
+"recording.source.display" = "Screen";
+
+"recording.source.window" = "Window";
+
+"recording.regionHint" = "Draw a rectangle around the area you want to record.";
+
+"recording.loadingSources" = "Finding screens and windows…";
+
+"recording.noWindows" = "No windows found. Open a window, then refresh.";
+
+"recording.noDisplays" = "No screens available. Check screen recording permission.";
+
+"recording.selectedDuration" = "Selected: %.2f seconds";
+
+"recording.resetTrim" = "Use full recording";
+
+"recording.gifExportHint" = "GIF has no sound. Select up to 30 seconds; output is 10 FPS and up to 960 px.";
+
+"recording.microphoneSettings" = "Open microphone settings";
+
+"recording.cameraSettings" = "Open camera settings";
+
+"recording.silent" = "No sound";
+
+"recording.continueEditing" = "Continue editing";
+
 // Launcher calendar
 "calendar.title" = "Calendar";
 "calendar.placeholder" = "Date, holiday or event: Dec 25, next Fri, review…";

@@ -4775,6 +4775,141 @@
 "auth.web.serviceUnavailable" = "로그인 서비스를 사용할 수 없습니다. API와 데이터베이스를 확인한 후 다시 시도하세요.";
 "auth.web.rateLimited" = "로그인 시도가 너무 많습니다. 잠시 후 다시 시도하세요.";
 
+/* Screen recording */
+"recording.title" = "화면 녹화";
+"recording.gif" = "GIF 녹화";
+"recording.region" = "선택한 영역";
+"recording.display" = "디스플레이 %d";
+"recording.source" = "녹화 대상";
+"recording.selectSource" = "디스플레이 또는 창 선택";
+"recording.chooseRegion" = "영역 선택…";
+"recording.refresh" = "새로고침";
+"recording.format" = "형식";
+"recording.resolution" = "긴 변";
+"recording.fps" = "프레임 속도";
+"recording.systemAudio" = "시스템 오디오";
+"recording.microphone" = "마이크";
+"recording.audioScope" = "시스템 오디오에서 Typeflux 재생 소리는 제외됩니다. 창을 녹화할 때는 해당 앱 전체의 소리가 포함됩니다.";
+"recording.gifHint" = "GIF: 무음, 10 FPS, 최대 960 px 및 30초. 제한에 도달하면 자동으로 중지합니다。";
+"recording.cursor" = "커서 표시";
+"recording.camera" = "카메라 화면 속 화면";
+"recording.cameraPosition" = "카메라 위치";
+"recording.cameraSize" = "카메라 크기";
+"recording.corner.topLeft" = "왼쪽 위";
+"recording.corner.topRight" = "오른쪽 위";
+"recording.corner.bottomLeft" = "왼쪽 아래";
+"recording.corner.bottomRight" = "오른쪽 아래";
+"recording.delay" = "카운트다운";
+"recording.cancel" = "취소";
+"recording.recover" = "녹화 복구";
+"recording.start" = "녹화 시작";
+"recording.countdown" = "카운트다운 후 녹화를 시작합니다。";
+"recording.starting" = "녹화 시작 중…";
+"recording.stopping" = "녹화 마무리 중…";
+"recording.paused" = "녹화 일시 정지됨";
+"recording.active" = "녹화 중 — 중지 후 미리 보고 저장할 수 있습니다。";
+"recording.resume" = "계속";
+"recording.pause" = "일시 정지";
+"recording.stop" = "녹화 중지";
+"recording.discard" = "삭제";
+"recording.saved" = "녹화를 저장했습니다";
+"recording.open" = "열기";
+"recording.reveal" = "Finder에서 보기";
+"recording.done" = "완료";
+"recording.permissions" = "화면 녹화 설정 열기";
+"recording.trim" = "녹화 자르기";
+"recording.from" = "시작";
+"recording.to" = "끝";
+"recording.cancelExport" = "내보내기 취소";
+"recording.saveAs" = "다른 위치에 저장…";
+"recording.export" = "내보내기";
+"recording.discardQuestion" = "이 녹화를 삭제할까요?";
+"recording.discardHint" = "저장하지 않은 녹화가 삭제됩니다。";
+"recording.keep" = "유지";
+"recording.showControls" = "녹화 컨트롤 표시";
+"recording.error.permission" = "시스템 설정에서 Typeflux 화면 녹화를 허용한 후 새로고침하세요。";
+"recording.error.microphonePermission" = "시스템 설정에서 마이크를 허용하거나 마이크 녹화를 끄세요。";
+"recording.error.cameraPermission" = "시스템 설정에서 카메라를 허용하거나 카메라를 끄세요。";
+"recording.error.unavailable" = "녹화 대상 또는 장치를 사용할 수 없습니다. 새로고침 후 다시 선택하세요。";
+"recording.error.noFrames" = "영상 프레임을 캡처하지 못했습니다. 대상과 권한을 확인하세요。";
+"recording.error.encoding" = "녹화를 인코딩할 수 없습니다. 디스크 공간을 확인하고 해상도를 낮추세요。";
+"recording.error.invalidRange" = "녹화 범위 내에서 시작보다 늦은 종료 시간을 선택하세요. GIF는 최대 30초입니다。";
+"recording.error.interrupted" = "녹화가 중단되었습니다. 캡처한 유효한 내용은 미리 보기를 위해 보관됩니다。";
+
+"recording.previewTitle" = "미리보기 및 저장";
+
+"recording.setupHint" = "녹화할 내용을 선택한 후 시작하세요.";
+
+"recording.elapsed" = "녹화 시간";
+
+"recording.more" = "녹화 작업 더 보기";
+
+"recording.destination" = "저장 위치";
+
+"recording.saveFormat" = "%@ 저장";
+
+"recording.exporting" = "%@ 저장 중…";
+
+"recording.output" = "파일 및 소리";
+
+"recording.mp4Choice" = "동영상 · MP4";
+
+"recording.gifChoice" = "움짤 · GIF";
+
+"recording.audioHint" = "동영상에 소리를 넣으려면 소리 입력을 켜세요.";
+
+"recording.cameraSection" = "카메라 화면";
+
+"recording.cameraHint" = "배치 미리보기입니다. 녹화 시작 시 카메라 권한을 요청합니다.";
+
+"recording.cameraLayout" = "카메라 위치 미리보기";
+
+"recording.moreOptions" = "추가 옵션";
+
+"recording.noDelay" = "카운트다운 없음";
+
+"recording.seconds" = "%d초";
+
+"recording.secondsUnit" = "초";
+
+"recording.quality" = "동영상 크기";
+
+"recording.quality.small" = "작게 · 최대 1280 px";
+
+"recording.quality.standard" = "표준 · 최대 1920 px";
+
+"recording.quality.high" = "크게 · 최대 3840 px";
+
+"recording.qualityHint" = "크기와 프레임 속도가 높을수록 용량이 커집니다. 작은 화면은 확대하지 않습니다.";
+
+"recording.source.region" = "영역";
+
+"recording.source.display" = "화면";
+
+"recording.source.window" = "창";
+
+"recording.regionHint" = "녹화할 영역을 드래그하여 선택하세요.";
+
+"recording.loadingSources" = "화면과 창을 찾는 중…";
+
+"recording.noWindows" = "창이 없습니다. 녹화할 창을 연 후 새로고침하세요.";
+
+"recording.noDisplays" = "사용 가능한 화면이 없습니다. 화면 녹화 권한을 확인하세요.";
+
+"recording.selectedDuration" = "선택한 길이: %.2f초";
+
+"recording.resetTrim" = "전체 녹화 사용";
+
+"recording.gifExportHint" = "GIF에는 소리가 없습니다. 최대 30초를 선택하세요. 10 FPS, 최대 960 px로 저장됩니다.";
+
+"recording.microphoneSettings" = "마이크 설정 열기";
+
+"recording.cameraSettings" = "카메라 설정 열기";
+
+"recording.silent" = "소리 없음";
+
+"recording.continueEditing" = "계속 편집";
+
 // Launcher calendar
 "calendar.title" = "캘린더";
 "calendar.placeholder" = "날짜, 공휴일 또는 일정: 12-25, next fri…";
