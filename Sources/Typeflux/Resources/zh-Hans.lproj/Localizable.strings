@@ -4838,7 +4838,7 @@
 "recording.fps" = "帧率";
 "recording.systemAudio" = "系统声音";
 "recording.microphone" = "麦克风";
-"recording.audioScope" = "窗口声音包含该应用的全部声音，不录制 Typeflux 自身播放的声音。";
+"recording.audioScope" = "系统声音不包含 Typeflux 自身播放的声音；录制窗口时，包含该应用的全部声音。";
 "recording.gifHint" = "GIF 无声，10 帧/秒，最长边 960 像素，最多 30 秒；到时自动停止录制。";
 "recording.cursor" = "显示鼠标";
 "recording.camera" = "摄像头画中画";
@@ -4866,15 +4866,15 @@
 "recording.reveal" = "在 Finder 中显示";
 "recording.done" = "完成";
 "recording.permissions" = "打开屏幕录制权限设置";
-"recording.trim" = "选择导出片段（秒）";
+"recording.trim" = "裁剪录制内容";
 "recording.from" = "开始";
 "recording.to" = "结束";
 "recording.cancelExport" = "取消导出";
-"recording.saveAs" = "另存到…";
+"recording.saveAs" = "保存到其他位置…";
 "recording.export" = "导出";
 "recording.discardQuestion" = "丢弃这次录制？";
 "recording.discardHint" = "尚未保存的录制内容将被删除。";
-"recording.keep" = "保留录制";
+"recording.keep" = "保留";
 "recording.showControls" = "显示录制控制";
 "recording.error.permission" = "请在系统设置中允许 Typeflux 屏幕录制权限，然后刷新。";
 "recording.error.microphonePermission" = "请在系统设置中允许麦克风权限，或关闭麦克风录制。";
@@ -4884,3 +4884,77 @@
 "recording.error.encoding" = "无法编码录制内容，请检查可用磁盘空间并尝试较低分辨率。";
 "recording.error.invalidRange" = "结束时间必须晚于开始时间且不超过录制时长；GIF 片段最多 30 秒。";
 "recording.error.interrupted" = "录制已中断，已采集的可用内容将保留供预览。";
+
+"recording.previewTitle" = "预览与保存";
+
+"recording.setupHint" = "选择录制内容，然后开始。";
+
+"recording.elapsed" = "已录制时长";
+
+"recording.more" = "更多录屏操作";
+
+"recording.destination" = "保存位置";
+
+"recording.saveFormat" = "保存 %@";
+
+"recording.exporting" = "正在保存 %@…";
+
+"recording.output" = "文件与声音";
+
+"recording.mp4Choice" = "视频 · MP4";
+
+"recording.gifChoice" = "动图 · GIF";
+
+"recording.audioHint" = "开启需要的声音来源；都关闭时录制无声视频。";
+
+"recording.cameraSection" = "摄像头画面";
+
+"recording.cameraHint" = "这里仅预览布局；开始录制时才请求摄像头权限。";
+
+"recording.cameraLayout" = "摄像头位置预览";
+
+"recording.moreOptions" = "更多选项";
+
+"recording.noDelay" = "无倒计时";
+
+"recording.seconds" = "%d 秒";
+
+"recording.secondsUnit" = "秒";
+
+"recording.quality" = "视频尺寸";
+
+"recording.quality.small" = "小巧 · 最长边 1280 像素";
+
+"recording.quality.standard" = "标准 · 最长边 1920 像素";
+
+"recording.quality.high" = "高清 · 最长边 3840 像素";
+
+"recording.qualityHint" = "尺寸和帧率越高，文件通常越大；不会放大小尺寸的录制内容。";
+
+"recording.source.region" = "区域";
+
+"recording.source.display" = "屏幕";
+
+"recording.source.window" = "窗口";
+
+"recording.regionHint" = "框选想要录制的区域。";
+
+"recording.loadingSources" = "正在查找屏幕和窗口…";
+
+"recording.noWindows" = "未找到窗口。请打开要录制的窗口后刷新。";
+
+"recording.noDisplays" = "没有可用屏幕，请检查屏幕录制权限。";
+
+"recording.selectedDuration" = "已选时长：%.2f 秒";
+
+"recording.resetTrim" = "使用完整录制";
+
+"recording.gifExportHint" = "GIF 不包含声音。请选择最多 30 秒；导出为 10 帧/秒，最长边 960 像素。";
+
+"recording.microphoneSettings" = "打开麦克风权限设置";
+
+"recording.cameraSettings" = "打开摄像头权限设置";
+
+"recording.silent" = "无声录制";
+
+"recording.continueEditing" = "继续编辑";

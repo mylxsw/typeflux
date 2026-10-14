@@ -4789,7 +4789,7 @@
 "recording.fps" = "フレームレート";
 "recording.systemAudio" = "システム音声";
 "recording.microphone" = "マイク";
-"recording.audioScope" = "ウインドウの音声はアプリ全体が対象です。Typeflux の再生音は除外されます。";
+"recording.audioScope" = "システム音声には Typeflux の再生音は含まれません。ウインドウの録画時は、そのアプリ全体の音声が含まれます。";
 "recording.gifHint" = "GIF：音声なし、10 FPS、最大 960 px・30 秒。上限で自動停止します。";
 "recording.cursor" = "カーソルを表示";
 "recording.camera" = "カメラのピクチャ・イン・ピクチャ";
@@ -4817,15 +4817,15 @@
 "recording.reveal" = "Finder に表示";
 "recording.done" = "完了";
 "recording.permissions" = "画面収録の設定を開く";
-"recording.trim" = "書き出す範囲を選択（秒）";
+"recording.trim" = "録画をトリミング";
 "recording.from" = "開始";
 "recording.to" = "終了";
 "recording.cancelExport" = "書き出しをキャンセル";
-"recording.saveAs" = "保存先を選択…";
+"recording.saveAs" = "別の場所に保存…";
 "recording.export" = "書き出す";
 "recording.discardQuestion" = "この収録を破棄しますか？";
 "recording.discardHint" = "未保存の収録は削除されます。";
-"recording.keep" = "収録を保持";
+"recording.keep" = "保持";
 "recording.showControls" = "収録コントロールを表示";
 "recording.error.permission" = "システム設定で Typeflux の画面収録を許可してから更新してください。";
 "recording.error.microphonePermission" = "システム設定でマイクを許可するか、マイク収録をオフにしてください。";
@@ -4835,3 +4835,77 @@
 "recording.error.encoding" = "収録をエンコードできません。空き容量を確認し、解像度を下げてください。";
 "recording.error.invalidRange" = "収録の範囲内で開始より後の終了時間を選択してください。GIF は最大 30 秒です。";
 "recording.error.interrupted" = "収録が中断されました。取得できた内容をプレビュー用に保持します。";
+
+"recording.previewTitle" = "プレビューと保存";
+
+"recording.setupHint" = "録画する内容を選んで開始します。";
+
+"recording.elapsed" = "録画時間";
+
+"recording.more" = "その他の録画操作";
+
+"recording.destination" = "保存先";
+
+"recording.saveFormat" = "%@ を保存";
+
+"recording.exporting" = "%@ を保存中…";
+
+"recording.output" = "ファイルと音声";
+
+"recording.mp4Choice" = "動画 · MP4";
+
+"recording.gifChoice" = "アニメ · GIF";
+
+"recording.audioHint" = "動画に音声を含めるには、音声ソースをオンにします。";
+
+"recording.cameraSection" = "カメラ映像";
+
+"recording.cameraHint" = "配置のプレビューです。開始時にカメラへのアクセスを求めます。";
+
+"recording.cameraLayout" = "カメラ配置プレビュー";
+
+"recording.moreOptions" = "その他の設定";
+
+"recording.noDelay" = "カウントダウンなし";
+
+"recording.seconds" = "%d 秒";
+
+"recording.secondsUnit" = "秒";
+
+"recording.quality" = "動画サイズ";
+
+"recording.quality.small" = "コンパクト · 最大 1280 px";
+
+"recording.quality.standard" = "標準 · 最大 1920 px";
+
+"recording.quality.high" = "大 · 最大 3840 px";
+
+"recording.qualityHint" = "サイズやフレームレートを上げると容量が増えます。小さい映像は拡大しません。";
+
+"recording.source.region" = "範囲";
+
+"recording.source.display" = "画面";
+
+"recording.source.window" = "ウインドウ";
+
+"recording.regionHint" = "録画したい範囲をドラッグして選択します。";
+
+"recording.loadingSources" = "画面とウインドウを検索中…";
+
+"recording.noWindows" = "ウインドウがありません。開いてから更新してください。";
+
+"recording.noDisplays" = "画面がありません。画面収録の権限を確認してください。";
+
+"recording.selectedDuration" = "選択範囲：%.2f 秒";
+
+"recording.resetTrim" = "録画全体を使用";
+
+"recording.gifExportHint" = "GIF は無音です。30 秒以内を選択してください。10 FPS、最大 960 px で保存します。";
+
+"recording.microphoneSettings" = "マイクの設定を開く";
+
+"recording.cameraSettings" = "カメラの設定を開く";
+
+"recording.silent" = "音声なし";
+
+"recording.continueEditing" = "編集を続ける";

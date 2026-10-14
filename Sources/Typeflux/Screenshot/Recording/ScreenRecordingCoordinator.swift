@@ -11,6 +11,9 @@ final class ScreenRecordingCoordinator: ObservableObject {
     @Published private(set) var state: State = .idle
     @Published var options: ScreenRecordingOptions
     @Published var selectedID = ""
+    @Published private(set) var sourceKind: ScreenRecordingSourceKind = .display
+    @Published private(set) var isLoadingSources = false
+    @Published private(set) var permissionFailure: ScreenRecordingFailure?
     @Published private(set) var choices: [ScreenRecordingChoice] = []
     @Published private(set) var countdown = 0
     @Published private(set) var elapsed: Double = 0
@@ -82,63 +85,20 @@ final class ScreenRecordingCoordinator: ObservableObject {
         }
     }
 
-    func show(format: ScreenRecordingFormat = .mp4, region: ScreenRecordingTarget? = nil) {
-        guard !isBusy else { present(self); return }
-        guard !isOtherCaptureActive() else { return }
-        generation += 1
-        state = .setup
-        options.format = format
-        error = nil
-        savedURL = nil
-        recovered = files.recoverableSources()
-        if let region {
-            choices = [ScreenRecordingChoice(id: "region", title: L("recording.region"), target: region)]
-            selectedID = "region"
-        } else {
-            choices = []; selectedID = ""
-        }
-        present(self)
-        reloadChoices()
-    }
-
-    func reloadChoices() {
-        guard state == .setup else { return }
+    func start() {
+        guard state == .setup, let target = choices.first(where: { $0.id == selectedID })?.target else { return }
         guard permission.isGranted else {
-            permission.requestOnce()
+            permissionFailure = .permission
             error = L("recording.error.permission")
             return
         }
-        error = nil
-        let token = generation
-        pendingTask?.cancel()
-        pendingTask = Task { [weak self, loadChoices] in
-            do {
-                let values = try await loadChoices()
-                try Task.checkCancellation()
-                guard let self, generation == token, state == .setup else { return }
-                choices = choices.filter { $0.id == "region" } + values
-                if !choices.contains(where: { $0.id == selectedID }) {
-                    selectedID = choices.first?.id ?? ""
-                }
-            } catch {
-                guard let self, generation == token, !(error is CancellationError) else { return }
-                self.error = error.localizedDescription
-            }
-        }
-    }
-
-    func openPermissions() {
-        permission.openSystemSettings()
-    }
-
-    func start() {
-        guard state == .setup, let target = choices.first(where: { $0.id == selectedID })?.target else { return }
-        guard permission.isGranted else { error = L("recording.error.permission"); return }
         options.save(to: defaults)
         pendingTask?.cancel()
+        isLoadingSources = false
         state = .countdown
         countdown = max(0, min(5, options.countdown))
         error = nil
+        permissionFailure = nil
         startingFailure = nil
         let token = generation
         let options = options
@@ -175,6 +135,9 @@ final class ScreenRecordingCoordinator: ObservableObject {
                 sessionDirectory = nil
                 state = .setup
                 self.error = error is CancellationError ? nil : error.localizedDescription
+                permissionFailure = (error as? ScreenRecordingFailure).flatMap {
+                    [.permission, .microphonePermission, .cameraPermission].contains($0) ? $0 : nil
+                }
                 showBorder(nil)
                 updateIndicator(nil)
             }
@@ -267,13 +230,16 @@ final class ScreenRecordingCoordinator: ObservableObject {
 
     func seek(_ seconds: Double) {
         player?.pause()
-        player?.seek(to: CMTime(seconds: max(0, min(duration, seconds)), preferredTimescale: 600))
+        player?.seek(to: CMTime(seconds: max(0, min(duration, seconds)), preferredTimescale: 600),
+                     toleranceBefore: .zero, toleranceAfter: .zero)
     }
 
     func export(directory: URL? = nil) {
         guard state == .preview, let sourceURL, let sessionDirectory else { return }
         let trim = ScreenRecordingTrim(start: trimStart, end: trimEnd)
-        do { _ = try trim.validated(duration: duration, format: options.format) } catch { self.error = error.localizedDescription; return }
+        do { _ = try trim.validated(duration: duration, format: options.format) } catch {
+            self.error = error.localizedDescription; return
+        }
         player?.pause()
         state = .exporting
         error = nil
@@ -321,6 +287,7 @@ final class ScreenRecordingCoordinator: ObservableObject {
         generation += 1
         let previous = pendingTask
         previous?.cancel()
+        isLoadingSources = false
         stopMonitoring()
         overlay.dismiss()
         state = .stopping
@@ -363,13 +330,88 @@ final class ScreenRecordingCoordinator: ObservableObject {
         sleepObserver = nil
         updateIndicator(nil)
     }
-
 }
 
 extension ScreenRecordingCoordinator {
+    func show(format: ScreenRecordingFormat = .mp4, region: ScreenRecordingTarget? = nil) {
+        guard !isBusy else { present(self); return }
+        guard !isOtherCaptureActive() else { return }
+        generation += 1
+        state = .setup
+        options.format = format
+        error = nil
+        permissionFailure = nil
+        savedURL = nil
+        recovered = files.recoverableSources()
+        if let region {
+            sourceKind = .region
+            choices = [ScreenRecordingChoice(id: "region", title: L("recording.region"), target: region)]
+            selectedID = "region"
+        } else {
+            sourceKind = .display
+            choices = []; selectedID = ""
+        }
+        present(self)
+        reloadChoices()
+    }
+
+    func reloadChoices() {
+        guard state == .setup else { return }
+        pendingTask?.cancel()
+        isLoadingSources = false
+        guard permission.isGranted else {
+            permission.requestOnce()
+            permissionFailure = .permission
+            error = L("recording.error.permission")
+            return
+        }
+        error = nil
+        permissionFailure = nil
+        isLoadingSources = true
+        let token = generation
+        pendingTask = Task { [weak self, loadChoices] in
+            defer {
+                if let self, self.generation == token, !Task.isCancelled {
+                    self.isLoadingSources = false
+                }
+            }
+            do {
+                let values = try await loadChoices()
+                try Task.checkCancellation()
+                guard let self, generation == token, state == .setup else { return }
+                choices = choices.filter { $0.id == "region" } + values
+                if !choices.contains(where: { $0.id == self.selectedID }) {
+                    selectedID = choices.first(where: { $0.target.kind == self.sourceKind })?.id ?? ""
+                }
+            } catch {
+                guard let self, generation == token, !(error is CancellationError) else { return }
+                self.error = error.localizedDescription
+            }
+        }
+    }
+
+    func openPermissions() {
+        if let url = devicePermissionURL {
+            NSWorkspace.shared.open(url)
+        } else {
+            permission.openSystemSettings()
+        }
+    }
+
+    var destinationDirectory: URL {
+        saveDirectory()
+    }
+
+    func selectSourceKind(_ kind: ScreenRecordingSourceKind) {
+        guard state == .setup else { return }
+        sourceKind = kind
+        selectedID = choices.first(where: { $0.target.kind == kind })?.id ?? ""
+    }
+
     func selectRegion() {
         guard state == .setup, permission.isGranted else { return }
         pendingTask?.cancel()
+        isLoadingSources = false
         state = .selecting
         dismiss()
         pendingTask = Task { [weak self, capture] in
@@ -387,6 +429,7 @@ extension ScreenRecordingCoordinator {
                         choices.insert(ScreenRecordingChoice(id: "region", title: L("recording.region"),
                                                              target: .region(displayID: displayID, rect: rect)), at: 0)
                         selectedID = "region"
+                        sourceKind = .region
                         state = .setup
                         present(self)
                     case .cancelled:
@@ -404,5 +447,4 @@ extension ScreenRecordingCoordinator {
             }
         }
     }
-
 }

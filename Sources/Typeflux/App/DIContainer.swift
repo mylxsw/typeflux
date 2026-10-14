@@ -43,7 +43,7 @@ final class DIContainer {
     lazy var sensitiveInfoScanner: any ScreenshotSensitiveInfoScanning = VisionSensitiveInfoScanner(
         recognizer: TiledImageTextRecognizer(base: imageTextRecognizer)
     )
-    lazy var screenRecordingWindow = ScreenRecordingWindowController()
+    lazy var screenRecordingWindow = ScreenRecordingWindowController(settings: settingsStore)
     lazy var screenRecordingCoordinator: ScreenRecordingCoordinator = {
         let coordinator = ScreenRecordingCoordinator(permission: screenCapturePermission, capture: screenCapture,
                                                      defaults: settingsStore.defaults,

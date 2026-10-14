@@ -23,9 +23,14 @@ extension ScreenRecordingCoordinator {
     static func catalog() async throws -> [ScreenRecordingChoice] {
         let content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
         let controls = Set(ScreenshotCaptureWindowPolicy.excludedWindowIDs())
-        let displays = content.displays.map {
-            ScreenRecordingChoice(id: "display-\($0.displayID)", title: L("recording.display", Int($0.displayID)),
-                                  target: .display($0.displayID))
+        let displays = content.displays.enumerated().map { index, display in
+            let name = NSScreen.screens.first {
+                ($0.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.uint32Value == display
+                    .displayID
+            }?.localizedName ?? L("recording.display", index + 1)
+            return ScreenRecordingChoice(id: "display-\(display.displayID)",
+                                         title: "\(name) · \(display.width) × \(display.height)",
+                                         target: .display(display.displayID))
         }
         let windows = content.windows.filter {
             $0.isOnScreen && $0.windowLayer == 0 && $0.frame.width > 50 && $0.frame.height > 50

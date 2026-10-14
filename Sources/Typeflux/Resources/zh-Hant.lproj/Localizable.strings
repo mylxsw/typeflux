@@ -4823,7 +4823,7 @@
 "recording.fps" = "影格率";
 "recording.systemAudio" = "系統聲音";
 "recording.microphone" = "麥克風";
-"recording.audioScope" = "視窗聲音包含該應用程式的全部聲音，不錄製 Typeflux 自身播放的聲音。";
+"recording.audioScope" = "系統聲音不包含 Typeflux 自身播放的聲音；錄製視窗時，包含該應用程式的全部聲音。";
 "recording.gifHint" = "GIF 無聲，10 影格/秒，最長邊 960 像素，最多 30 秒；到時自動停止錄製。";
 "recording.cursor" = "顯示游標";
 "recording.camera" = "攝影機子母畫面";
@@ -4851,15 +4851,15 @@
 "recording.reveal" = "在 Finder 中顯示";
 "recording.done" = "完成";
 "recording.permissions" = "開啟螢幕錄製權限設定";
-"recording.trim" = "選擇匯出片段（秒）";
+"recording.trim" = "裁剪錄製內容";
 "recording.from" = "開始";
 "recording.to" = "結束";
 "recording.cancelExport" = "取消匯出";
-"recording.saveAs" = "另存至…";
+"recording.saveAs" = "儲存到其他位置…";
 "recording.export" = "匯出";
 "recording.discardQuestion" = "捨棄這次錄製？";
 "recording.discardHint" = "尚未儲存的錄製內容將被刪除。";
-"recording.keep" = "保留錄製";
+"recording.keep" = "保留";
 "recording.showControls" = "顯示錄製控制";
 "recording.error.permission" = "請在系統設定中允許 Typeflux 螢幕錄製權限，然後重新整理。";
 "recording.error.microphonePermission" = "請在系統設定中允許麥克風權限，或關閉麥克風錄製。";
@@ -4869,3 +4869,77 @@
 "recording.error.encoding" = "無法編碼錄製內容，請檢查可用磁碟空間並嘗試較低解析度。";
 "recording.error.invalidRange" = "結束時間必須晚於開始時間且不超過錄製長度；GIF 片段最多 30 秒。";
 "recording.error.interrupted" = "錄製已中斷，已擷取的可用內容將保留供預覽。";
+
+"recording.previewTitle" = "預覽與儲存";
+
+"recording.setupHint" = "選擇錄製內容，然後開始。";
+
+"recording.elapsed" = "已錄製時間";
+
+"recording.more" = "更多錄影操作";
+
+"recording.destination" = "儲存位置";
+
+"recording.saveFormat" = "儲存 %@";
+
+"recording.exporting" = "正在儲存 %@…";
+
+"recording.output" = "檔案與聲音";
+
+"recording.mp4Choice" = "影片 · MP4";
+
+"recording.gifChoice" = "動圖 · GIF";
+
+"recording.audioHint" = "開啟需要的聲音來源；全部關閉時錄製無聲影片。";
+
+"recording.cameraSection" = "攝影機畫面";
+
+"recording.cameraHint" = "此處僅預覽配置；開始錄製時才要求攝影機權限。";
+
+"recording.cameraLayout" = "攝影機位置預覽";
+
+"recording.moreOptions" = "更多選項";
+
+"recording.noDelay" = "不倒數";
+
+"recording.seconds" = "%d 秒";
+
+"recording.secondsUnit" = "秒";
+
+"recording.quality" = "影片尺寸";
+
+"recording.quality.small" = "精簡 · 最長邊 1280 像素";
+
+"recording.quality.standard" = "標準 · 最長邊 1920 像素";
+
+"recording.quality.high" = "高畫質 · 最長邊 3840 像素";
+
+"recording.qualityHint" = "尺寸與影格率越高，檔案通常越大；不會放大小尺寸的錄製內容。";
+
+"recording.source.region" = "區域";
+
+"recording.source.display" = "螢幕";
+
+"recording.source.window" = "視窗";
+
+"recording.regionHint" = "框選想要錄製的區域。";
+
+"recording.loadingSources" = "正在尋找螢幕與視窗…";
+
+"recording.noWindows" = "找不到視窗。請開啟要錄製的視窗後重新整理。";
+
+"recording.noDisplays" = "沒有可用螢幕，請檢查螢幕錄製權限。";
+
+"recording.selectedDuration" = "已選時間：%.2f 秒";
+
+"recording.resetTrim" = "使用完整錄製";
+
+"recording.gifExportHint" = "GIF 不含聲音。請選擇最多 30 秒；匯出為每秒 10 格，最長邊 960 像素。";
+
+"recording.microphoneSettings" = "開啟麥克風權限設定";
+
+"recording.cameraSettings" = "開啟攝影機權限設定";
+
+"recording.silent" = "無聲錄製";
+
+"recording.continueEditing" = "繼續編輯";

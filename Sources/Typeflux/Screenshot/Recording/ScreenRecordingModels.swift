@@ -52,6 +52,25 @@ enum ScreenRecordingTarget: Equatable {
     case display(CGDirectDisplayID)
     case region(displayID: CGDirectDisplayID, rect: CGRect)
     case window(CGWindowID)
+
+    var kind: ScreenRecordingSourceKind {
+        switch self {
+        case .display: .display
+        case .region: .region
+        case .window: .window
+        }
+    }
+}
+
+enum ScreenRecordingSourceKind: String, CaseIterable {
+    case region, display, window
+    var symbol: String {
+        switch self {
+        case .region: "viewfinder"
+        case .display: "display"
+        case .window: "macwindow"
+        }
+    }
 }
 
 struct ScreenRecordingChoice: Identifiable, Equatable {
