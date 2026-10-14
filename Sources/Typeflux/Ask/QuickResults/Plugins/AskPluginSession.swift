@@ -543,9 +543,14 @@ extension AskPluginSession {
         guard plugin != nil, request != nil, isPlanCurrent else { return false }
         switch phase {
         case .done: return true
-        case let .running(plan): return plan.mode == .onSubmit && task != nil
+        case let .running(plan): return (plan.mode == .onSubmit || canHandOffTranslationPreview) && task != nil
         default: return false
         }
+    }
+
+    private var canHandOffTranslationPreview: Bool {
+        plugin?.id == AskTranslatePlugin.id && request?.text.isEmpty == false
+            && !AskTranslatePlugin.opensWordBook(request?.options ?? [:])
     }
 
     /// Hands the shown result to `sink`'s owner. A run still streaming keeps going and
@@ -559,7 +564,7 @@ extension AskPluginSession {
                                     cancel: {})
         case let .running(plan):
             // A live plan may still be waiting out its debounce, with nothing yet to hand over.
-            guard plan.mode == .onSubmit, let running = task else { return nil }
+            guard plan.mode == .onSubmit || canHandOffTranslationPreview, let running = task else { return nil }
             // Leaving the running phase clears `partial`, so take it first.
             let streamed = partial
             let handed = generation

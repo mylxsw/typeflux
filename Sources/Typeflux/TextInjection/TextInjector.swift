@@ -49,6 +49,8 @@ struct TextSelectionSnapshot {
     var replacementContextID: UUID?
     var replacementSafety: SelectionReplacementSafety?
     var nativeTarget: NativeTextSelectionTarget?
+    /// Selection geometry in AppKit screen coordinates; absent for opaque app bridges.
+    var selectionBounds: CGRect?
 
     var hasSelection: Bool {
         let trimmed = selectedText?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""

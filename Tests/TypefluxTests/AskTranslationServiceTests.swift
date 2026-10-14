@@ -174,6 +174,20 @@ struct AskTranslationSettingsTests {
         store.askTranslationSettings = AskTranslationSettings(modelReference: "custom:qwen")
         #expect(store.translationLLMConfiguration().baseURL == "http://127.0.0.1:11434/v1")
         #expect(store.translationLLMConfiguration().model == "qwen3")
+        store.askTranslationSettings = .init(services: [
+            .ai(modelReference: "custom:fast", enabled: false),
+            .ai(id: "second", modelReference: "custom:qwen")
+        ])
+        #expect(store.askTranslationSettings.firstAI?.id == "ai.primary")
+        #expect(store.askTranslationSettings.firstEnabledAI?.id == "second")
+        #expect(store.askTranslationSettings.modelReference == "custom:qwen")
+        #expect(store.translationLLMConfiguration().model == "qwen3")
+        var unchecked = store.askTranslationSettings
+        unchecked.services[1].enabled = false
+        store.askTranslationSettings = unchecked
+        #expect(store.askTranslationSettings.firstEnabledAI == nil)
+        #expect(store.askTranslationSettings.modelReference == "custom:fast")
+        #expect(store.translationLLMConfiguration().model == "fast-model")
         #expect(SettingsStore.ollamaOpenAIBaseURL("") == "http://127.0.0.1:11434/v1")
         #expect(SettingsStore.ollamaOpenAIBaseURL("http://host:1/v1/") == "http://host:1/v1")
         store.askTranslationSettings = AskTranslationSettings()

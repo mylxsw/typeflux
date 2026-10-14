@@ -147,18 +147,36 @@ struct AskTranslationService: Codable, Equatable, Identifiable, Sendable {
     }
 }
 
-/// Ordered services for both the launcher and the future translation panel.
+/// Ordered services and panel preferences shared with the launcher.
 struct AskTranslationSettings: Codable, Equatable, Sendable {
     var services: [AskTranslationService]
+    var panelPosition: AskTranslationPanelPosition = .center
+    var maxHeight: AskTranslationPanelHeight = .eighty
+    var autoCopy: AskTranslationAutoCopy = .none
+    var keepState: AskTranslationKeepState = .minute
 
     init(services: [AskTranslationService]? = nil, modelReference: String = "") {
         self.services = services ?? [.device, .ai(modelReference: modelReference)]
             + AskTranslationProvider.allCases.map { .provider($0) }
     }
 
+    private enum CodingKeys: String, CodingKey {
+        case services, panelPosition, maxHeight, autoCopy, keepState
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        services = try container.decode([AskTranslationService].self, forKey: .services)
+        panelPosition = try container.decodeIfPresent(AskTranslationPanelPosition.self, forKey: .panelPosition) ?? .center
+        maxHeight = try container.decodeIfPresent(AskTranslationPanelHeight.self, forKey: .maxHeight) ?? .eighty
+        autoCopy = try container.decodeIfPresent(AskTranslationAutoCopy.self, forKey: .autoCopy) ?? .none
+        keepState = try container.decodeIfPresent(AskTranslationKeepState.self, forKey: .keepState) ?? .minute
+    }
+
     var firstAI: AskTranslationService? { services.first(where: \.isAI) }
-    /// The word book follows the first AI service, including when it is disabled in the launcher.
-    var modelReference: String { firstAI?.modelReference ?? "" }
+    var firstEnabledAI: AskTranslationService? { services.first { $0.isAI && $0.enabled } }
+    /// Keep a model home even when the launcher has no checked AI services.
+    var modelReference: String { (firstEnabledAI ?? firstAI)?.modelReference ?? "" }
 
     /// Preserve all AI models (even removed ones), repairing duplicate IDs and singleton services.
     func normalized() -> Self {
@@ -181,7 +199,9 @@ struct AskTranslationSettings: Codable, Equatable, Sendable {
                 ids.insert(result[index].id)
             }
         }
-        return Self(services: result)
+        var normalized = self
+        normalized.services = result
+        return normalized
     }
 
     /// v1 remains on disk for rollback. The removed fallback flag has no effect.

@@ -355,7 +355,8 @@ final class AXTextInjector: TextInjector {
             role: "NSTextView",
             windowTitle: target.window?.title,
             isFocusedTarget: true,
-            nativeTarget: NativeTextSelectionTarget(textView: target.textView, window: target.window)
+            nativeTarget: NativeTextSelectionTarget(textView: target.textView, window: target.window),
+            selectionBounds: selectedText == nil ? nil : target.textView.firstRect(forCharacterRange: selectedRange, actualRange: nil)
         )
     }
 
@@ -658,7 +659,8 @@ final class AXTextInjector: TextInjector {
                     selectedText: result.text,
                     intent: intent,
                     capability: targetCapability(element: result.context.element)
-                )
+                ),
+                selectionBounds: selectionBounds(element: result.context.element, range: result.context.range)
             )
         }
 

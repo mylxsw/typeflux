@@ -18,14 +18,22 @@ extension AskQuickResultsInteractionTests {
             synonyms: ["luck", "chance", "fluke", "good fortune"]
         )))
         let store = makeTestWordBook()
+        var services: [AskTranslationService] = [.device, .ai(), .provider(.deepl, enabled: true)]
         var delivered: [String] = []
 
         func install(_ model: AskConversationModel) {
             deepl.response = "DeepL translation"
-            let settings = AskTranslationSettings(services: [.device, .ai(), .provider(.deepl, enabled: true)])
+            let settings = AskTranslationSettings(services: services)
             let plugin = AskTranslatePlugin(onDevice: device, ai: ai, dictionary: dictionary, wordBook: store,
                                             aiName: { "Typeflux Cloud" }, serviceSettings: { settings },
                                             service: { [deepl] _ in deepl }, fanout: AskTranslationFanout(),
+                                            serviceName: { service in
+                                                switch service.kind {
+                                                case .device: L("ask.translation.stack.deviceTitle")
+                                                case .ai: service.id == "second" ? "AI · Second model" : "AI · Typeflux Cloud"
+                                                case let .provider(provider): provider.title
+                                                }
+                                            },
                                             detector: AskTestLanguageDetector(language: "en"))
             model.translationSettingsModel = AskTranslationSettingsModel(store: model.modelLibrary.settings,
                                                                          credentials: AskTestTranslationCredentials())
@@ -105,6 +113,26 @@ extension AskQuickResultsInteractionTests {
             try await translationWait { !writeData.delivered.isEmpty }
             #expect(writeData.delivered == ["DeepL translation"] && writer.dismissed == 1)
         }
+    }
+
+    @Test func translationStackCheckedSecondAIOwnsTheCardAndRegeneration() async throws {
+        let data = TranslationStackFixture()
+        data.services = [.device, .ai(enabled: false), .ai(id: "second"), .provider(.deepl, enabled: true)]
+        let launcher = try await Launcher(text: "", prepare: data.install)
+        defer { launcher.close() }
+        try await translationInput("fy serendipity", into: launcher)
+        #expect(data.dictionary.requests.isEmpty && data.ai.requests.isEmpty)
+        try await launcher.press(Self.returnKey)
+        try await translationWait { launcher.fixture.model.plugins.output?.wordCard != nil }
+        let output = try #require(launcher.fixture.model.plugins.output)
+        #expect(output.translation?.results.first?.id == "second")
+        #expect(output.translation?.results.first?.name == "AI · Second model")
+        let deviceCalls = data.device.requests.count
+        let providerCalls = data.deepl.requests.count
+        try await launcher.press(15, .command)
+        try await translationWait { data.dictionary.requests.count == 2 && launcher.fixture.model.plugins.output != nil }
+        #expect(data.device.requests.count == deviceCalls && data.deepl.requests.count == providerCalls)
+        #expect(launcher.fixture.model.plugins.output?.translation?.results.first?.id == "second")
     }
 
     @Test func translationStackRegeneratesOnlyTheCardStarsAndCopiesIt() async throws {
@@ -275,18 +303,22 @@ extension AskQuickResultsInteractionTests {
         AppLocalization.shared.setLanguage(.simplifiedChinese)
         for (name, input) in [
             ("word", "serendipity"),
+            ("unchecked-first", "serendipity"),
             ("sentence", "The quick fix shipped yesterday, but the root cause is still unknown."),
             ("error", "The quick fix shipped yesterday, but the root cause is still unknown.")
         ] {
             let data = TranslationStackFixture()
+            if name == "unchecked-first" {
+                data.services = [.device, .ai(enabled: false), .ai(id: "second"), .provider(.deepl, enabled: true)]
+            }
             if name == "error" {
                 data.deepl.failure = AskTranslationServiceError.quota
             }
             let launcher = try await Launcher(text: "", prepare: data.install)
             defer { launcher.close() }
-            data.device.response = name == "word" ? "意外发现" : "快速修复昨天已经发布，但根本原因仍然未知。"
+            data.device.response = input == "serendipity" ? "意外发现" : "快速修复昨天已经发布，但根本原因仍然未知。"
             data.ai.response = "临时修复昨天已经上线，但根本原因还没有查明。"
-            data.deepl.response = name == "word" ? "偶然性" : "快速修复已于昨日发布，但根本原因仍然未知。"
+            data.deepl.response = input == "serendipity" ? "偶然性" : "快速修复已于昨日发布，但根本原因仍然未知。"
             try await translationInput("fy " + input, into: launcher)
             try await launcher.press(Self.returnKey)
             try await translationWait { launcher.fixture.model.plugins.output?.translation?.submitted == true }

@@ -156,6 +156,16 @@ struct AskTranslationStackViewTests {
                     .environment(\.colorScheme, theme == "dark" ? .dark : .light)
                 try await render(view, appearance: appearance, size: NSSize(width: 840, height: 760),
                                  name: "settings-\(language.rawValue)-\(theme)")
+                var checkedServices = services
+                checkedServices[1].enabled = false
+                checkedServices[checkedServices.count - 1].enabled = true
+                settings.askTranslationSettings = .init(services: checkedServices)
+                let checkedView = AskTranslationSettingsView(settings: settings, library: library, credentials: credentials)
+                    .padding(24).background(StudioTheme.background)
+                    .environment(\.colorScheme, theme == "dark" ? .dark : .light)
+                try await render(checkedView, appearance: appearance, size: NSSize(width: 840, height: 760),
+                                 name: "settings-unchecked-\(language.rawValue)-\(theme)")
+                settings.askTranslationSettings = .init(services: services)
             }
         }
     }

@@ -31,6 +31,9 @@ enum BuiltInHotkey: String, CaseIterable, Codable, Sendable {
 enum AppHotkeyAction: String, CaseIterable, Codable, Sendable {
     case openChat
     case screenshotText
+    case inputTranslation
+    case selectionTranslation
+    case screenshotTranslation
     case openNotes
     case openWordBook
     case openStudio
@@ -39,6 +42,8 @@ enum AppHotkeyAction: String, CaseIterable, Codable, Sendable {
     var title: String {
         L("hotkeys.action.\(rawValue).title")
     }
+
+    static let translation: [Self] = [.inputTranslation, .selectionTranslation, .screenshotTranslation]
 }
 
 /// Anything on the Shortcuts page that can own a key combination.

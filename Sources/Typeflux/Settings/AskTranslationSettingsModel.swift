@@ -81,6 +81,10 @@ final class AskTranslationSettingsModel: ObservableObject {
         store.askTranslationSecondLanguage = code
     }
 
+    func setPanelPreference<Value: Equatable>(_ value: Value, at keyPath: WritableKeyPath<AskTranslationSettings, Value>) {
+        update { $0[keyPath: keyPath] = value }
+    }
+
     private func update(_ change: (inout AskTranslationSettings) -> Void) {
         var next = settings
         change(&next)
@@ -99,7 +103,7 @@ final class AskTranslationSettingsModel: ObservableObject {
             }
         }
         if !selected.isEmpty, !options.contains(where: { $0.value == selected }) {
-            options.append((label: L("ask.models.unavailable"), value: selected))
+            options.append((label: L("ask.translation.model.pickAgain"), value: selected))
         }
         return options
     }

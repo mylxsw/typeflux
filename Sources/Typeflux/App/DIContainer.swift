@@ -74,6 +74,23 @@ final class DIContainer {
     }()
 
     lazy var translationEngines = AskTranslationEngineFactory(settings: settingsStore, textProcessing: llmService)
+    lazy var translationPanelModel: AskTranslationPanelModel = {
+        let settings = settingsStore
+        let factory = translationEngines
+        let plugin = AskTranslatePlugin(onDevice: factory.engine(for: .device), ai: nil,
+            wordBook: askConversationWindowController?.model.wordBook?.store,
+            serviceSettings: { settings.askTranslationSettings }, fanout: factory.makeSession(),
+            engines: { factory.engine(for: $0) }, serviceName: { factory.name(for: $0) },
+            secondLanguage: { settings.askTranslationSecondLanguage ?? AskTranslationLanguages.defaultSecond(for: $0) })
+        let model = AskTranslationPanelModel(settings: settings, plugin: plugin, copy: { [clipboard] in clipboard.write(text: $0) })
+        model.onSpeak = { AskSpeaker.shared.speak($0, language: $1) }
+        model.onWordBook = { AskWordBookWindowController.shared.show(selecting: $0) }
+        return model
+    }()
+    lazy var translationPanelController = AskTranslationPanelController(model: translationPanelModel)
+    lazy var translationPanel = AskTranslationPanelCoordinator(model: translationPanelModel,
+        controller: translationPanelController, injector: textInjector,
+        recognizer: TiledImageTextRecognizer(base: imageTextRecognizer))
 
     lazy var askConversationWindowController: AskConversationWindowController? = {
         do { return try AskConversationWindowController(
