@@ -24,9 +24,11 @@ struct AskKeywordDraft: Equatable {
     /// Web search: the built-in engine the URL came from.
     var engine: AskWebSearchPlugin.Engine?
     var systemCommand: AskSystemCommand = .toggleBluetooth
+    var calendarOptions: [String: String] = [:]
 
     init(editing keyword: AskKeyword) {
         original = keyword
+        calendarOptions = keyword.options
         systemCommand = AskSystemCommand(pluginID: keyword.pluginID) ?? .toggleBluetooth
         kind = AskKeywordKind(pluginID: keyword.pluginID) ?? .prompt
         self.keyword = keyword.keyword
@@ -81,8 +83,8 @@ struct AskKeywordDraft: Equatable {
                 AskWebSearchPlugin.host(of: url).flatMap { $0.isEmpty ? nil : $0 }
                     ?? L("ask.settings.keywords.sheet.webNamePlaceholder")
             }
-        case .translate, .files, .tabs, .bookmarks, .chat, .prefix, .setting, .history, .clip, .emoji, .kill, .system,
-             .workflow:
+        case .translate, .files, .tabs, .bookmarks, .chat, .prefix, .setting, .history, .clip, .emoji,
+             .calendar, .kill, .system, .workflow:
             ""
         }
     }
@@ -117,6 +119,7 @@ struct AskKeywordDraft: Equatable {
         case .bookmarks: L("ask.browser.bookmarks")
         case .kill: L("ask.plugin.kill.title")
         case .emoji: L("emoji.title")
+        case .calendar: L("calendar.title")
         case .system:
             systemCommand.title
         case .workflow:
@@ -166,8 +169,8 @@ struct AskKeywordDraft: Equatable {
                 ? L("ask.settings.keywords.sheet.promptRequired") : nil
         case .web:
             AskWebSearchPlugin.problem(with: url)
-        case .translate, .files, .tabs, .bookmarks, .chat, .prefix, .setting, .history, .clip, .emoji, .kill, .system,
-             .workflow:
+        case .translate, .files, .tabs, .bookmarks, .chat, .prefix, .setting, .history, .clip, .emoji,
+             .calendar, .kill, .system, .workflow:
             nil
         }
     }
@@ -201,6 +204,8 @@ struct AskKeywordDraft: Equatable {
             } else {
                 set(AskWebSearchPlugin.urlOption, template)
             }
+        case .calendar:
+            options = calendarOptions
         case .files, .tabs, .bookmarks, .chat, .prefix, .setting, .history, .clip, .emoji, .kill, .system, .workflow:
             break
         }

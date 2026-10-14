@@ -60,7 +60,9 @@ extension AskConversationModel {
                 of: keyword, interface: language,
                 secondLanguage: settings.askTranslationSecondLanguage ?? AskTranslationLanguages.defaultSecond(for: language)
             )
-            return AskPrefixPlugin.Entry(keyword: keyword, title: title, detail: summary, symbol: plugin.symbol)
+            let detail = keyword.pluginID == AskCalendarPlugin.id
+                ? AskCalendarPlugin.summary(language: language) : summary
+            return AskPrefixPlugin.Entry(keyword: keyword, title: title, detail: detail, symbol: plugin.symbol)
         }
         let available = plugins.availableKeywords
         for workflow in workflows?.workflows ?? [] {

@@ -129,6 +129,7 @@ enum AskKeywordAliases {
         case AskHistoryPlugin.id: return "chathistory"
         case AskNotesPlugin.id: return "notebook"
         case AskSystemMonitorPlugin.id: return "systemmonitor"
+        case AskCalendarPlugin.id: return "calendar"
         default: return AskSystemCommand(pluginID: keyword.pluginID)?.defaultKeyword
         }
     }

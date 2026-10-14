@@ -398,6 +398,8 @@ enum AskCommandKey: Equatable {
     case right, commandY, optionCommandC, shiftCommandEnter, commandDown
     /// ⌘⌫ and ⌥⌘⌫: end the chosen process in the system monitor; the editor's own delete otherwise.
     case commandDelete, optionCommandDelete
+    /// Calendar navigation; other features leave these to the editor.
+    case left, commandLeft, commandRight, commandT, commandN
 
     init?(_ event: NSEvent) {
         let modifiers = event.modifierFlags.intersection([.command, .option, .control, .shift])
@@ -421,6 +423,10 @@ enum AskCommandKey: Equatable {
         if modifiers == .command, event.keyCode == 1 { self = .commandS; return }
         if modifiers == .command, event.keyCode == 11 { self = .commandB; return }
         if modifiers == .command, event.keyCode == 31 { self = .commandO; return }
+        if modifiers == .command, event.keyCode == 123 { self = .commandLeft; return }
+        if modifiers == .command, event.keyCode == 124 { self = .commandRight; return }
+        if modifiers == .command, event.keyCode == 17 { self = .commandT; return }
+        if modifiers == .command, event.keyCode == 45 { self = .commandN; return }
         if modifiers == .command, event.keyCode == 8 { self = .commandC; return }
         if modifiers == [.command, .shift], event.keyCode == 8 { self = .shiftCommandC; return }
         if modifiers == .command, event.keyCode == 51 { self = .commandDelete; return }
@@ -433,6 +439,7 @@ enum AskCommandKey: Equatable {
         case 48: self = .tab
         case 53: self = .escape
         case 124: self = .right
+        case 123: self = .left
         default: return nil
         }
     }
