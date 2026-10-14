@@ -3426,7 +3426,7 @@
 "ask.workflow.gallery.codec.usage.2" = "Base64 編碼";
 "ask.workflow.gallery.codec.usage.3" = "-d 解碼，-e 編碼";
 "ask.workflow.gallery.uuid.name" = "產生 UUID / 密碼";
-"ask.workflow.gallery.uuid.summary" = "直接複製到剪貼簿，底欄提示「已複製」。";
+"ask.workflow.gallery.uuid.summary" = "直接複製到剪貼簿，並顯示成功提示。";
 "ask.workflow.gallery.uuid.demonstrates" = "「只做事」的工作流程：不顯示，複製 + 底欄提示";
 "ask.workflow.gallery.uuid.keyword.uuid" = "產生 UUID";
 "ask.workflow.gallery.uuid.keyword.pwd" = "產生密碼";

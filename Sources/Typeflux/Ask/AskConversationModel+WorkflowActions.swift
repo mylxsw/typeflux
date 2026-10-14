@@ -79,6 +79,8 @@ final class AskWorkflowLauncherActionHost: AskWorkflowActionHost {
     private(set) var handedOff = false
     /// The clipboard before this run's first copy.
     private(set) var clipboard: AskClipboardSnapshot?
+    /// The last bottom-bar note, replayed if these actions later close the launcher.
+    private var pendingNotice: String?
 
     init(model: AskConversationModel, workflowID: String? = nil, workflowName: String = "",
          dismiss: @escaping () -> Void) {
@@ -94,6 +96,7 @@ final class AskWorkflowLauncherActionHost: AskWorkflowActionHost {
         closed = true
         model?.finishPluginResult()
         dismiss()
+        showPendingNotice()
     }
 
     func copy(_ text: String) {
@@ -116,7 +119,15 @@ final class AskWorkflowLauncherActionHost: AskWorkflowActionHost {
     func hud(_ text: String) {
         if closed {
             model?.passiveNotice(text)
+        } else {
+            pendingNotice = text
         }
+    }
+
+    private func showPendingNotice() {
+        guard let text = pendingNotice else { return }
+        pendingNotice = nil
+        model?.passiveNotice(text)
     }
 
     func open(_ target: AskWorkflowOpenTarget) -> Bool {
@@ -146,6 +157,7 @@ final class AskWorkflowLauncherActionHost: AskWorkflowActionHost {
         closed = true
         model?.askAIFromPlugin(prompt)
         dismiss()
+        showPendingNotice()
     }
 
     func runKeyword(_ keyword: String, argument: String, chain: [String]) -> Bool {

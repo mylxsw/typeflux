@@ -342,6 +342,7 @@ extension AskConversationModel {
         case let .enterKeyword(id):
             guard let keyword = plugins.availableKeywords.first(where: { $0.id == id && $0.enabled })
             else { return .stay }
+            if enterLauncherWorkflow(keyword, run: true) { return .stay }
             let listsAtOnce = [
                 AskPrefixPlugin.id,
                 AskKillAppPlugin.id,

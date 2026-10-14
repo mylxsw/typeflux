@@ -3419,7 +3419,7 @@
 "ask.workflow.gallery.codec.usage.2" = "Base64 인코딩";
 "ask.workflow.gallery.codec.usage.3" = "-d는 디코딩, -e는 인코딩";
 "ask.workflow.gallery.uuid.name" = "UUID / 비밀번호 생성";
-"ask.workflow.gallery.uuid.summary" = "바로 클립보드에 복사하고 하단 바에 알려 줍니다.";
+"ask.workflow.gallery.uuid.summary" = "클립보드에 바로 복사하고 확인 메시지를 표시합니다.";
 "ask.workflow.gallery.uuid.demonstrates" = "보여 주지 않고 일만 하는 워크플로: 복사 + 하단 바";
 "ask.workflow.gallery.uuid.keyword.uuid" = "UUID 생성";
 "ask.workflow.gallery.uuid.keyword.pwd" = "비밀번호 생성";

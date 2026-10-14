@@ -3419,7 +3419,7 @@
 "ask.workflow.gallery.codec.usage.2" = "Base64 エンコード";
 "ask.workflow.gallery.codec.usage.3" = "-d でデコード、-e でエンコード";
 "ask.workflow.gallery.uuid.name" = "UUID / パスワード生成";
-"ask.workflow.gallery.uuid.summary" = "そのままクリップボードにコピーし、下部バーで知らせます。";
+"ask.workflow.gallery.uuid.summary" = "そのままクリップボードにコピーし、確認メッセージを表示します。";
 "ask.workflow.gallery.uuid.demonstrates" = "表示せずに処理だけするワークフロー：コピー + 下部バー";
 "ask.workflow.gallery.uuid.keyword.uuid" = "UUID を生成";
 "ask.workflow.gallery.uuid.keyword.pwd" = "パスワードを生成";

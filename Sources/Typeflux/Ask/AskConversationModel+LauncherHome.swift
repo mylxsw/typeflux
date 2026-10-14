@@ -49,8 +49,9 @@ extension AskConversationModel {
     }
 
     /// Enters a keyword from the home. `run` runs it on the selection at once, as
-    /// Return would; a chip only enters it, like typing the keyword and a space.
+    /// Return would; a workflow chip can also run when it needs no input.
     func enterLauncherKeyword(_ keyword: AskKeyword, run: Bool) {
+        if !run, enterLauncherWorkflow(keyword, run: true) { return }
         plugins.enter(keyword)
         plugins.update(text: launcherDraft.text, selection: launcherDraft.sentSelection,
                        language: AppLocalization.shared.language, runWhenPlanned: run)

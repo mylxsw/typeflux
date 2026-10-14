@@ -3429,7 +3429,7 @@
 "ask.workflow.gallery.codec.usage.2" = "Base64 编码";
 "ask.workflow.gallery.codec.usage.3" = "-d 解码，-e 编码";
 "ask.workflow.gallery.uuid.name" = "生成 UUID / 密码";
-"ask.workflow.gallery.uuid.summary" = "直接复制到剪切板，底栏提示「已复制」。";
+"ask.workflow.gallery.uuid.summary" = "直接复制到剪贴板，并显示成功提示。";
 "ask.workflow.gallery.uuid.demonstrates" = "「只做事」的工作流：不显示，复制 + 底栏提示";
 "ask.workflow.gallery.uuid.keyword.uuid" = "生成 UUID";
 "ask.workflow.gallery.uuid.keyword.pwd" = "生成密码";
