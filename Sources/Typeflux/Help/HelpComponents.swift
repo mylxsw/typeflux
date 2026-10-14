@@ -3,15 +3,14 @@ import SwiftUI
 
 /// Geometry that differs between Liquid Glass and classic, like `AskStyleMetrics`.
 struct HelpMetrics: Equatable {
-    var panelCorner: CGFloat
     var blockCorner: CGFloat
     var rowCorner: CGFloat
     var navRowHeight: CGFloat
     var keycapCorner: CGFloat
 
-    static let liquidGlass = HelpMetrics(panelCorner: 26, blockCorner: 14, rowCorner: 10, navRowHeight: 36,
+    static let liquidGlass = HelpMetrics(blockCorner: 14, rowCorner: 10, navRowHeight: 36,
                                          keycapCorner: 5)
-    static let classic = HelpMetrics(panelCorner: 12, blockCorner: 10, rowCorner: 6, navRowHeight: 30,
+    static let classic = HelpMetrics(blockCorner: 10, rowCorner: 6, navRowHeight: 30,
                                      keycapCorner: 4)
 }
 

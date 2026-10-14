@@ -4,7 +4,7 @@ import Foundation
 /// The usage guide's state. It rebuilds its catalog from the user's settings whenever a
 /// shortcut, keyword or workflow changes, so the guide never shows a stale or default key.
 @MainActor
-final class HelpOverlayModel: ObservableObject {
+final class HelpGuideModel: ObservableObject {
     /// Where the guide reads the user's setup from.
     struct Sources {
         var keywords: @MainActor (AppLanguage) -> [HelpKeywordSource]
@@ -211,8 +211,8 @@ final class HelpOverlayModel: ObservableObject {
         actions.askAI(question)
     }
 
+    /// Settings, System Settings and web pages open in their own windows; the guide stays.
     func openSettings(_ destination: HelpSettingsDestination) {
-        actions.close()
         actions.openSettings(destination)
     }
 
@@ -221,14 +221,11 @@ final class HelpOverlayModel: ObservableObject {
         actions.openLauncher()
     }
 
-    /// System Settings opens under the full-screen guide, so the guide steps aside first.
     func fix(_ permission: PrivacyGuard.PermissionID) {
-        actions.close()
         actions.fixPermission(permission)
     }
 
     func open(_ url: URL) {
-        actions.close()
         actions.openURL(url)
     }
 

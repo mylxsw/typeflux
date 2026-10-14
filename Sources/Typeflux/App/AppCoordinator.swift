@@ -14,7 +14,7 @@ final class AppCoordinator {
     private var authLogoutObserver: NSObjectProtocol?
     private var authSubscriptionObserver: NSObjectProtocol?
     private var permissionAnalyticsTimer: Timer?
-    private lazy var helpOverlayController = HelpOverlayController.app(
+    private lazy var helpWindowController = HelpWindowController.app(
         settings: di.settingsStore, ask: di.askConversationWindowController,
         openSettings: { [weak self] destination in self?.statusBarController?.showSettings(for: destination) }
     )
@@ -311,10 +311,10 @@ final class AppCoordinator {
         }
     }
 
-    /// Opens the usage guide over the screen, closing the launcher it may have come from.
+    /// Opens the usage guide window, closing the launcher it may have come from.
     func showHelp(query: String) {
         di.askConversationWindowController?.dismissLauncher()
-        helpOverlayController.show(query: query)
+        helpWindowController.show(query: query)
     }
 
     private func presentOnboarding() {

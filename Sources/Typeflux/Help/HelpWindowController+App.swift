@@ -1,13 +1,13 @@
 import AppKit
 import Combine
 
-extension HelpOverlayController {
+extension HelpWindowController {
     /// The guide as the app shows it: it reads the launcher's keywords, the settings and the
     /// permissions, and hands "try it", "ask AI" and settings links back to the app.
     static func app(settings: SettingsStore, ask: AskConversationWindowController?,
-                    openSettings: @escaping @MainActor (HelpSettingsDestination) -> Void) -> HelpOverlayController {
+                    openSettings: @escaping @MainActor (HelpSettingsDestination) -> Void) -> HelpWindowController {
         let workflowChanges = ask?.model.workflows?.$workflows.map { _ in () }.eraseToAnyPublisher()
-        let model = HelpOverlayModel(sources: HelpOverlayModel.Sources(
+        let model = HelpGuideModel(sources: HelpGuideModel.Sources(
             keywords: { [weak ask] language in ask?.model.helpKeywordSources(language: language) ?? [] },
             usage: { [weak ask] in ask?.model.helpKeywordUsage ?? [:] },
             settings: settings,
@@ -19,8 +19,8 @@ extension HelpOverlayController {
             refreshWorkflows: { [weak ask] in await ask?.model.refreshLauncherWorkflows() },
             workflowChanges: workflowChanges ?? Empty().eraseToAnyPublisher()
         ))
-        let controller = HelpOverlayController(settingsStore: settings, model: model)
-        model.actions = HelpOverlayModel.Actions(
+        let controller = HelpWindowController(settingsStore: settings, model: model)
+        model.actions = HelpGuideModel.Actions(
             close: { [weak controller] in controller?.dismiss() },
             tryKeyword: { [weak ask] keyword, argument in
                 ask?.model.tryKeywordFromHelp(keyword, argument: argument)

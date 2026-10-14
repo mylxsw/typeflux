@@ -3,7 +3,7 @@ import SwiftUI
 /// Every shortcut with the keys the user set: Typeflux's global ones (an unset one leads to
 /// the Shortcuts settings), keyword shortcuts, the fixed keys and the `/` commands.
 struct HelpShortcutsPage: View {
-    @ObservedObject var model: HelpOverlayModel
+    @ObservedObject var model: HelpGuideModel
 
     var body: some View {
         ScrollView {
@@ -75,7 +75,7 @@ struct HelpShortcutsPage: View {
 
 /// Permission checks first, then the questions; ones a missing permission explains come first.
 struct HelpQuestionsPage: View {
-    @ObservedObject var model: HelpOverlayModel
+    @ObservedObject var model: HelpGuideModel
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -153,7 +153,7 @@ struct HelpQuestionsPage: View {
 
 /// Results across keywords, shortcuts, commands and questions, or a way to ask the AI.
 struct HelpSearchView: View {
-    @ObservedObject var model: HelpOverlayModel
+    @ObservedObject var model: HelpGuideModel
 
     var body: some View {
         let items = model.searchItems
@@ -196,11 +196,11 @@ struct HelpSearchView: View {
 
     private struct Group {
         var title: String
-        var items: [(offset: Int, element: HelpOverlayModel.SearchItem)]
+        var items: [(offset: Int, element: HelpGuideModel.SearchItem)]
     }
 
     /// Splits the flat result list into its groups, keeping each item's index for the highlight.
-    private func grouped(_ items: [HelpOverlayModel.SearchItem]) -> [Group] {
+    private func grouped(_ items: [HelpGuideModel.SearchItem]) -> [Group] {
         var groups: [Group] = []
         for (offset, item) in items.enumerated() {
             let title = switch item {
@@ -219,7 +219,7 @@ struct HelpSearchView: View {
     }
 
     @ViewBuilder
-    private func row(_ item: HelpOverlayModel.SearchItem, index: Int, first: Bool) -> some View {
+    private func row(_ item: HelpGuideModel.SearchItem, index: Int, first: Bool) -> some View {
         let selected = model.searchFocus == index
         let open = { model.searchFocus = index; model.open(item) }
         switch item {

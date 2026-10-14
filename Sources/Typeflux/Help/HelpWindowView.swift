@@ -1,64 +1,19 @@
 import AppKit
 import SwiftUI
 
-/// The usage guide: a scrim over the whole screen and a centred panel with a sidebar and
-/// one page at a time. Liquid Glass blurs the desktop and draws the panel and sidebar as
-/// glass; classic dims the desktop and draws them opaque, the sidebar flush with a hairline.
-struct HelpOverlayView: View {
-    @ObservedObject var model: HelpOverlayModel
+/// The usage guide window, built like the notebook and conversation windows: one backdrop
+/// for the whole window, the sidebar as an inset glass column (flush in classic), and one
+/// page at a time beside it. It follows the interface style and the appearance.
+struct HelpWindowView: View {
+    @ObservedObject var model: HelpGuideModel
     @Environment(\.interfaceStyle) private var style
-    @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
-    @Environment(\.colorSchemeContrast) private var contrast
 
-    static let panelSize = CGSize(width: 1120, height: 728)
-    static let minimumPanelSize = CGSize(width: 900, height: 600)
+    static let defaultSize = CGSize(width: 1120, height: 740)
+    static let minimumSize = CGSize(width: 900, height: 600)
     static let sidebarWidth: CGFloat = 248
 
-    /// The panel shrinks with small screens but never below what its two columns need.
-    static func panelSize(in screen: CGSize) -> CGSize {
-        CGSize(width: max(minimumPanelSize.width, min(panelSize.width, screen.width * 0.9)),
-               height: max(minimumPanelSize.height, min(panelSize.height, screen.height * 0.86)))
-    }
-
     var body: some View {
-        GeometryReader { proxy in
-            let size = Self.panelSize(in: proxy.size)
-            let frame = CGRect(x: (proxy.size.width - size.width) / 2, y: (proxy.size.height - size.height) / 2,
-                               width: size.width, height: size.height)
-            ZStack {
-                scrim
-                    .contentShape(Rectangle())
-                    // A click on the dimmed desktop closes the guide; one on the panel never does.
-                    .gesture(SpatialTapGesture().onEnded { tap in
-                        if !frame.contains(tap.location) { model.actions.close() }
-                    })
-                    .accessibilityHidden(true)
-                panel.frame(width: size.width, height: size.height)
-            }
-            .frame(width: proxy.size.width, height: proxy.size.height)
-        }
-        .ignoresSafeArea()
-    }
-
-    private var material: AskGlassMaterial {
-        AskGlassMaterial.resolve(reduceTransparency: reduceTransparency, style: style)
-    }
-
-    @ViewBuilder private var scrim: some View {
-        if material == .opaque {
-            Color.black.opacity(colorScheme == .dark ? 0.55 : 0.28)
-        } else {
-            ZStack {
-                HelpBackdropBlur()
-                Color.black.opacity(colorScheme == .dark ? 0.55 : 0.10)
-            }
-        }
-    }
-
-    private var panel: some View {
-        let shape = RoundedRectangle(cornerRadius: style.help.panelCorner, style: .continuous)
-        return HStack(spacing: 0) {
+        HStack(spacing: 0) {
             HelpSidebar(model: model)
                 .frame(width: Self.sidebarWidth)
                 .askSidePanel(edge: .leading, glassFill: AskTheme.glassFill, glassInset: [.leading, .top, .bottom])
@@ -68,20 +23,17 @@ struct HelpOverlayView: View {
                 footer
             }
         }
+        .frame(minWidth: Self.minimumSize.width, minHeight: Self.minimumSize.height)
         .foregroundStyle(StudioTheme.textPrimary)
-        // On glass the panel is the launcher's own diffuse glass, so the two read as one family.
-        .background(AskGlassBackground(material: material, corner: style.help.panelCorner,
-                                       opaqueFill: style.usesGlass ? AskTheme.launcherSurface : AskClassic.canvas,
-                                       diffuseLauncher: style.usesGlass))
-        .clipShape(shape)
-        .overlay(shape.strokeBorder(style.usesGlass ? AskTheme.floatingBorder : AskClassic.launcherBorder,
-                                    lineWidth: contrast == .increased ? 1 : 0.5))
-        .shadow(color: .black.opacity(0.35), radius: 40, y: 20)
-        .contentShape(shape)
+        // One surface for the whole window, as in the notebook and conversation windows.
+        .background(AskWindowBackdrop())
+        .ignoresSafeArea(.container, edges: .top)
+        .tint(AskTheme.accent)
         .accessibilityElement(children: .contain)
         .accessibilityLabel(L("help.title"))
     }
 
+    /// The page title in the title bar row, level with the traffic lights.
     private var header: some View {
         HStack(alignment: .firstTextBaseline, spacing: 12) {
             Text(model.isSearching ? L("help.search.title") : model.page.title)
@@ -91,19 +43,9 @@ struct HelpOverlayView: View {
                 .foregroundStyle(StudioTheme.textTertiary)
                 .lineLimit(1)
             Spacer(minLength: 0)
-            Button { model.actions.close() } label: {
-                Image(systemName: "xmark").font(.system(size: 12, weight: .medium))
-                    .frame(width: 28, height: 28)
-                    .contentShape(style.controlShape(height: 28))
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(StudioTheme.textSecondary)
-            .help(L("help.close"))
-            .accessibilityLabel(L("help.close"))
         }
-        .padding(.leading, 28)
-        .padding(.trailing, 18)
-        .frame(height: 60)
+        .padding(.horizontal, 28)
+        .frame(height: AskMetrics.titleBarRowHeight + 8)
     }
 
     @ViewBuilder private var content: some View {
@@ -139,14 +81,14 @@ struct HelpOverlayView: View {
 
 /// The sidebar: the guide's name, its search field, the pages and outside links.
 struct HelpSidebar: View {
-    @ObservedObject var model: HelpOverlayModel
+    @ObservedObject var model: HelpGuideModel
     @Environment(\.interfaceStyle) private var style
     @FocusState private var searchFocused: Bool
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             HStack(spacing: 9) {
-                Image(nsImage: NSApplication.shared.applicationIconImage).resizable().frame(width: 22, height: 22)
+                Image(nsImage: HelpAppIcon.image).resizable().interpolation(.high).frame(width: 22, height: 22)
                 Text(L("help.title")).font(.system(size: 14, weight: .semibold))
             }
             .padding(.horizontal, 8)
@@ -159,14 +101,15 @@ struct HelpSidebar: View {
             Spacer(minLength: 0)
             Rectangle().fill(AskTheme.separator).frame(height: 1).padding(.bottom, 6)
             linkRow(L("help.link.website"), symbol: "arrow.up.right.square") {
-                model.open(HelpOverlayModel.documentationURL)
+                model.open(HelpGuideModel.documentationURL)
             }
-            linkRow(L("help.link.feedback"), symbol: "bubble.left") { model.open(HelpOverlayModel.feedbackURL) }
+            linkRow(L("help.link.feedback"), symbol: "bubble.left") { model.open(HelpGuideModel.feedbackURL) }
             Text(Self.version).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
                 .padding(.horizontal, 10).padding(.top, 6)
         }
         .padding(.horizontal, 10)
-        .padding(.top, 14)
+        // Below the traffic lights, which sit over the sidebar like in the notebook window.
+        .padding(.top, AskMetrics.sidebarTopInset - (style.usesGlass ? AskMetrics.sidebarPanelInset : 0))
         .padding(.bottom, 12)
         .onAppear { searchFocused = true }
         .onChange(of: model.focusRequest) { _ in searchFocused = true }
@@ -253,15 +196,18 @@ struct HelpSidebar: View {
     }
 }
 
-/// The desktop behind the guide, blurred, for Liquid Glass.
-struct HelpBackdropBlur: NSViewRepresentable {
-    func makeNSView(context: Context) -> NSVisualEffectView {
-        let view = NSVisualEffectView()
-        view.material = .fullScreenUI
-        view.blendingMode = .behindWindow
-        view.state = .active
-        return view
-    }
-
-    func updateNSView(_ view: NSVisualEffectView, context: Context) {}
+/// Typeflux's own icon, shipped as a resource so it shows even where the running process has
+/// no app icon (tests, previews); the app's icon is the fallback.
+enum HelpAppIcon {
+    @MainActor static let image: NSImage = {
+        for subdirectory in ["Resources", nil] as [String?] {
+            if let url = Bundle.appResources.url(forResource: "TypefluxIcon", withExtension: "png",
+                                                 subdirectory: subdirectory),
+               let image = NSImage(contentsOf: url) {
+                return image
+            }
+        }
+        return NSApplication.shared.applicationIconImage
+    }()
 }
+

@@ -5173,7 +5173,6 @@
 "ask.plugin.help.title" = "使い方ガイド";
 "ask.plugin.help.placeholder" = "ガイドを検索、または ↩ で開く";
 "help.title" = "Typeflux 使い方ガイド";
-"help.close" = "閉じる（esc）";
 "help.page.start" = "はじめに";
 "help.page.start.subtitle" = "すべての機能はここから";
 "help.page.keywords" = "キーワード";

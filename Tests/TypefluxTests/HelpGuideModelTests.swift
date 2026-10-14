@@ -15,7 +15,7 @@ final class HelpModelTestState {
 
 @Suite(.serialized, .exclusiveUIState)
 @MainActor
-struct HelpOverlayModelTests {
+struct HelpGuideModelTests {
     /// Records what the guide asked the app to do.
     final class Recorder {
         var closes = 0
@@ -28,7 +28,7 @@ struct HelpOverlayModelTests {
     }
 
     struct Harness {
-        let model: HelpOverlayModel
+        let model: HelpGuideModel
         let settings: SettingsStore
         let center: NotificationCenter
         let workflows: PassthroughSubject<Void, Never>
@@ -42,7 +42,7 @@ struct HelpOverlayModelTests {
         let center = NotificationCenter()
         let workflows = PassthroughSubject<Void, Never>()
         let state = HelpModelTestState()
-        let model = HelpOverlayModel(sources: .init(
+        let model = HelpGuideModel(sources: .init(
             keywords: { _ in state.keywords.map { HelpCatalogTests.source($0, selection: true) } },
             usage: { [:] },
             settings: settings,
@@ -200,7 +200,7 @@ struct HelpOverlayModelTests {
         kit.model.toggleQuestion("voiceNoResponse")
         #expect(kit.model.openQuestionID == nil)
         kit.model.fix(.accessibility)
-        #expect(kit.recorder.fixed == [.accessibility] && kit.recorder.closes == 1)
+        #expect(kit.recorder.fixed == [.accessibility] && kit.recorder.closes == 0)
         kit.state.permissions[1].granted = true
         kit.model.reloadPermissions()
         #expect(kit.model.missingPermissions.isEmpty && kit.model.relevantQuestions.isEmpty)
@@ -219,32 +219,32 @@ struct HelpOverlayModelTests {
         #expect(kit.model.page == .keywords && kit.model.selectedKeyword?.keyword == HelpCatalogTests.polish)
     }
 
-    @Test func `links close the guide before leaving it`() throws {
+    @Test func `links to other windows keep the guide open and the launcher closes it`() throws {
         let kit = try harness()
         kit.model.openSettings(.shortcuts)
+        kit.model.open(HelpGuideModel.feedbackURL)
+        #expect(kit.recorder.settings == [.shortcuts] && kit.recorder.urls == [HelpGuideModel.feedbackURL])
+        #expect(kit.recorder.closes == 0)
         kit.model.openLauncher()
-        kit.model.open(HelpOverlayModel.feedbackURL)
-        #expect(kit.recorder.settings == [.shortcuts] && kit.recorder.launcherOpens == 1)
-        #expect(kit.recorder.urls == [HelpOverlayModel.feedbackURL] && kit.recorder.closes == 3)
+        #expect(kit.recorder.launcherOpens == 1 && kit.recorder.closes == 1)
     }
 
     @Test func `keys map to the guide's actions`() {
-        #expect(HelpOverlayController.key(keyCode: 53, characters: "", command: false) == .escape)
-        #expect(HelpOverlayController.key(keyCode: 126, characters: "", command: false) == .up)
-        #expect(HelpOverlayController.key(keyCode: 125, characters: "", command: false) == .down)
-        #expect(HelpOverlayController.key(keyCode: 36, characters: "\r", command: false) == .enter)
-        #expect(HelpOverlayController.key(keyCode: 76, characters: "\r", command: true) == .commandEnter)
-        #expect(HelpOverlayController.key(keyCode: 3, characters: "f", command: true) == .find)
-        #expect(HelpOverlayController.key(keyCode: 19, characters: "2", command: true) == .page(2))
-        #expect(HelpOverlayController.key(keyCode: 23, characters: "5", command: true) == nil)
-        #expect(HelpOverlayController.key(keyCode: 3, characters: "f", command: false) == nil)
+        #expect(HelpWindowController.key(keyCode: 53, characters: "", command: false) == .escape)
+        #expect(HelpWindowController.key(keyCode: 126, characters: "", command: false) == .up)
+        #expect(HelpWindowController.key(keyCode: 125, characters: "", command: false) == .down)
+        #expect(HelpWindowController.key(keyCode: 36, characters: "\r", command: false) == .enter)
+        #expect(HelpWindowController.key(keyCode: 76, characters: "\r", command: true) == .commandEnter)
+        #expect(HelpWindowController.key(keyCode: 3, characters: "f", command: true) == .find)
+        #expect(HelpWindowController.key(keyCode: 19, characters: "2", command: true) == .page(2))
+        #expect(HelpWindowController.key(keyCode: 23, characters: "5", command: true) == nil)
+        #expect(HelpWindowController.key(keyCode: 3, characters: "f", command: false) == nil)
     }
 
-    @Test func `the panel shrinks with the screen within its bounds`() {
-        #expect(HelpOverlayView.panelSize(in: CGSize(width: 1920, height: 1080)) == HelpOverlayView.panelSize)
-        let scaled = HelpOverlayView.panelSize(in: CGSize(width: 1100, height: 760))
-        #expect(abs(scaled.width - 990) < 0.01 && abs(scaled.height - 653.6) < 0.01)
-        #expect(HelpOverlayView.panelSize(in: CGSize(width: 800, height: 500)) == HelpOverlayView.minimumPanelSize)
+    @Test func `the window has room for its two columns`() {
+        #expect(HelpWindowView.defaultSize.width >= HelpWindowView.minimumSize.width)
+        #expect(HelpWindowView.defaultSize.height >= HelpWindowView.minimumSize.height)
+        #expect(HelpWindowView.minimumSize.width > HelpWindowView.sidebarWidth + 600)
     }
 
     @Test func `examples suit what the keyword takes`() throws {
@@ -276,9 +276,9 @@ struct HelpOverlayModelTests {
         }
     }
 
-    @Test func `the panel covers the screen, takes keys and hides again`() throws {
+    @Test func `the guide is a normal window that takes keys and closes`() throws {
         let kit = try harness()
-        let controller = HelpOverlayController(settingsStore: kit.settings, model: kit.model)
+        let controller = HelpWindowController(settingsStore: kit.settings, model: kit.model)
         kit.model.actions.close = { [weak controller] in kit.recorder.closes += 1; controller?.dismiss() }
         #expect(!controller.isPresented && controller.presentedWindow == nil)
         controller.dismiss()
@@ -286,8 +286,9 @@ struct HelpOverlayModelTests {
         defer { controller.dismiss() }
         let panel = try #require(controller.presentedWindow)
         #expect(controller.isPresented && kit.model.isPresented)
-        #expect(panel.level == HelpOverlayController.level && !panel.hidesOnDeactivate)
-        #expect(panel.frame == HelpOverlayController.screenUnderPointer()?.frame)
+        #expect(panel.level == .normal && panel.styleMask.contains(.titled) && panel.styleMask.contains(.resizable))
+        #expect(panel.styleMask.contains(.closable) && panel.contentMinSize.width == HelpWindowView.minimumSize.width)
+        #expect(panel.frameAutosaveName == HelpWindowController.frameAutosaveName)
         func key(_ code: UInt16, _ characters: String, _ flags: NSEvent.ModifierFlags = []) throws -> NSEvent {
             try #require(NSEvent.keyEvent(with: .keyDown, location: .zero, modifierFlags: flags, timestamp: 0,
                                           windowNumber: panel.windowNumber, context: nil, characters: characters,
@@ -300,7 +301,8 @@ struct HelpOverlayModelTests {
         #expect(controller.handle(try key(53, "\u{1b}")))
         #expect(kit.recorder.closes == 1 && !controller.isPresented && !kit.model.isPresented)
         controller.show(query: "fy")
-        #expect(controller.isPresented && kit.model.query == "fy", "the same panel opens again")
+        #expect(controller.isPresented && kit.model.query == "fy", "the same window opens again")
+        #expect(controller.presentedWindow === panel)
     }
 
     /// When `TYPEFLUX_HELP_SNAPSHOT` names a folder, writes the real panel as shown on screen, with
@@ -317,7 +319,7 @@ struct HelpOverlayModelTests {
         settings.keywordHotkeys = [
             KeywordHotkey(binding: HelpCatalogTests.controlOptionR, keyword: "rw", pluginID: AskPromptPlugin.id)
         ]
-        let model = HelpOverlayModel(sources: .init(
+        let model = HelpGuideModel(sources: .init(
             keywords: { fixture.model.helpKeywordSources(language: $0) },
             usage: { ["fy": 42, "rw": 26, "f": 15, "g": 11, "jt": 9, "clip": 5] },
             settings: settings,
@@ -342,9 +344,9 @@ struct HelpOverlayModelTests {
         }
     }
 
-    private func capture(_ model: HelpOverlayModel, settings: SettingsStore, query: String, page: HelpPage,
+    private func capture(_ model: HelpGuideModel, settings: SettingsStore, query: String, page: HelpPage,
                          to url: URL) throws {
-        let controller = HelpOverlayController(settingsStore: settings, model: model)
+        let controller = HelpWindowController(settingsStore: settings, model: model)
         controller.show(query: query)
         defer { controller.dismiss() }
         if query.isEmpty { model.show(page) }
@@ -362,8 +364,8 @@ struct HelpOverlayModelTests {
         return URL(fileURLWithPath: directory).appendingPathComponent(file)
     }
 
-    private func render(_ model: HelpOverlayModel, style: InterfaceStyle) throws {
-        let view = HelpOverlayView(model: model).environment(\.interfaceStyle, style)
+    private func render(_ model: HelpGuideModel, style: InterfaceStyle) throws {
+        let view = HelpWindowView(model: model).environment(\.interfaceStyle, style)
         let host = NSHostingView(rootView: view)
         host.frame = NSRect(x: 0, y: 0, width: 1440, height: 900)
         host.layoutSubtreeIfNeeded()

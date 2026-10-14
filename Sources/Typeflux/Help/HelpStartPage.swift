@@ -4,7 +4,7 @@ import SwiftUI
 /// keywords the user has not tried, and what the launcher does without a keyword. The keys
 /// drawn are the user's own; Ask has no key of its own because it is the launcher.
 struct HelpStartPage: View {
-    @ObservedObject var model: HelpOverlayModel
+    @ObservedObject var model: HelpGuideModel
     @Environment(\.interfaceStyle) private var style
 
     var body: some View {
