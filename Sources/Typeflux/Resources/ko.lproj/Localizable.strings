@@ -1519,10 +1519,10 @@
 "ask.context.restore.selection" = "선택 텍스트 첨부(%d줄)";
 "ask.context.undo" = "실행 취소";
 "ask.context.removed.source" = "앱 정보를 제거했습니다";
-"ask.context.removed.selection" = "선택 텍스트를 제거했습니다";
+"ask.context.removed.selection" = "선택 텍스트 사용을 중지했습니다";
 "ask.context.removed.screenshot" = "스크린샷을 제거했습니다";
 "ask.context.restored.source" = "앱 정보를 다시 첨부했습니다";
-"ask.context.restored.selection" = "선택 텍스트를 다시 첨부했습니다";
+"ask.context.restored.selection" = "선택 텍스트 사용을 활성화했습니다";
 "ask.context.restored.screenshot" = "스크린샷을 다시 첨부했습니다";
 "ask.context.refresh.applied" = "앱 정보를 업데이트하고 이전 선택 텍스트를 지웠습니다";
 "ask.context.undo.applied" = "변경을 취소했습니다";
@@ -4997,3 +4997,10 @@
 "calendar.keys.agenda" = "↑↓ 일정 · ↩ 열기 / 참가 · ⌘O 캘린더 · ⌘C 복사 · ⇥ 날짜 · esc 뒤로";
 "calendar.settings.allCalendars" = "모든 캘린더";
 "calendar.settings.eventsDisabled" = "일정이 꺼져 있습니다. 캘린더 키워드 설정에서 켜면 검색할 수 있습니다.";
+
+// Launcher selected-text switch and preview.
+"ask.context.selection.enabled" = "사용 중";
+"ask.context.selection.disabled" = "사용 안 함";
+"ask.context.selection.characters" = "%d자";
+"ask.context.selection.disableHint" = "아이콘을 클릭하여 사용을 중지해도 텍스트는 유지됩니다";
+"ask.context.selection.enableHint" = "아이콘을 클릭하여 이 텍스트를 다시 사용할 수 있습니다";

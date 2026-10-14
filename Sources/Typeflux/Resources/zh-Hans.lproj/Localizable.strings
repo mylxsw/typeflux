@@ -1529,10 +1529,10 @@
 "ask.context.restore.selection" = "附带选中文字（%d 行）";
 "ask.context.undo" = "撤销";
 "ask.context.removed.source" = "已移除应用信息";
-"ask.context.removed.selection" = "已移除选中文字";
+"ask.context.removed.selection" = "已停用选中文本";
 "ask.context.removed.screenshot" = "已移除屏幕截图";
 "ask.context.restored.source" = "已重新附带应用信息";
-"ask.context.restored.selection" = "已重新附带选中文字";
+"ask.context.restored.selection" = "已启用选中文本";
 "ask.context.restored.screenshot" = "已重新附带屏幕截图";
 "ask.context.refresh.applied" = "已更新应用信息，旧选中文字已清除";
 "ask.context.undo.applied" = "已撤销";
@@ -5046,3 +5046,10 @@
 "calendar.keys.agenda" = "↑↓ 选择日程 · ↩ 打开或加入会议 · ⌘O 日历 · ⌘C 复制 · ⇥ 日期 · esc 返回";
 "calendar.settings.allCalendars" = "全部日历";
 "calendar.settings.eventsDisabled" = "日程已关闭。在日历关键词设置中开启后即可搜索。";
+
+// Launcher selected-text switch and preview.
+"ask.context.selection.enabled" = "已启用";
+"ask.context.selection.disabled" = "未启用";
+"ask.context.selection.characters" = "%d 个字符";
+"ask.context.selection.disableHint" = "点击图标可停用，文本会保留";
+"ask.context.selection.enableHint" = "点击图标可再次使用这段文本";

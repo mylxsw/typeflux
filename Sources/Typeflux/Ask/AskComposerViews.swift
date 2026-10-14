@@ -2074,13 +2074,19 @@ struct AskComposer: View {
     /// The footer holds switches; the launcher previews its screenshot on hover.
     private var contextChips: some View {
         HStack(spacing: AskContextChips.spacing) {
-            ForEach(contextItems.filter { $0.kind == .screenshot || $0.kind == .memory }) { item in
+            ForEach(launcher ? AskContextChips.launcherItems(contextItems)
+                : contextItems.filter { $0.kind == .screenshot || $0.kind == .memory }) { item in
                 if item.kind == .screenshot {
                     AskIconChip(item: screenshotSwitch(item), action: screenshotToggleAction,
                                 screenshot: screenshotHoverPreview)
                         .accessibilityIdentifier("ask.context.screenshot.toggle")
+                } else if item.kind == .selection {
+                    AskIconChip(item: item, action: selectionToggle, selection: draft.wrappedValue.selection)
+                        .disabled(model.capturing)
+                        .accessibilityIdentifier("ask.context.selection.toggle")
                 } else {
                     AskIconChip(item: item, action: memoryToggle)
+                        .accessibilityIdentifier("ask.context.memory.toggle")
                 }
             }
         }
@@ -2135,6 +2141,14 @@ struct AskComposer: View {
     /// Memory switches off and on without being discarded, for a new question
     /// and for a follow-up on the memory pinned to the conversation.
     private func memoryToggle() { model.toggleMemory(launcher: launcher) }
+
+    private func selectionToggle() {
+        if draft.wrappedValue.selectionOff == true {
+            model.restoreCapturedContent(.selection, launcher: launcher)
+        } else {
+            model.removeCapturedContent(.selection, launcher: launcher)
+        }
+    }
 
     private func remove(_ kind: AskContextItem.Kind) {
         switch kind {

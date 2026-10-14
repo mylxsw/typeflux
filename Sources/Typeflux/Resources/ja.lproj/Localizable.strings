@@ -1519,10 +1519,10 @@
 "ask.context.restore.selection" = "選択テキストを添付（%d 行）";
 "ask.context.undo" = "取り消す";
 "ask.context.removed.source" = "アプリ情報を削除しました";
-"ask.context.removed.selection" = "選択テキストを削除しました";
+"ask.context.removed.selection" = "選択テキストを無効にしました";
 "ask.context.removed.screenshot" = "スクリーンショットを削除しました";
 "ask.context.restored.source" = "アプリ情報を再添付しました";
-"ask.context.restored.selection" = "選択テキストを再添付しました";
+"ask.context.restored.selection" = "選択テキストを有効にしました";
 "ask.context.restored.screenshot" = "スクリーンショットを再添付しました";
 "ask.context.refresh.applied" = "アプリ情報を更新し、以前の選択テキストを消去しました";
 "ask.context.undo.applied" = "変更を取り消しました";
@@ -4997,3 +4997,10 @@
 "calendar.keys.agenda" = "↑↓ 予定 · ↩ 開く・参加 · ⌘O カレンダー · ⌘C コピー · ⇥ 日付 · esc 戻る";
 "calendar.settings.allCalendars" = "すべてのカレンダー";
 "calendar.settings.eventsDisabled" = "予定は非表示です。カレンダーのキーワード設定で有効にすると検索できます。";
+
+// Launcher selected-text switch and preview.
+"ask.context.selection.enabled" = "有効";
+"ask.context.selection.disabled" = "無効";
+"ask.context.selection.characters" = "%d 文字";
+"ask.context.selection.disableHint" = "アイコンをクリックして無効にしても、テキストは保持されます";
+"ask.context.selection.enableHint" = "アイコンをクリックすると、このテキストを再び使用できます";
