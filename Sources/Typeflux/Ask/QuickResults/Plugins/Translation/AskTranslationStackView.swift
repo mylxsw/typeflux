@@ -32,11 +32,12 @@ struct AskTranslationStackView: View {
     static let maximumHeight: CGFloat = 500
     static let languageBarHeight: CGFloat = 30
     static let compareLabelHeight: CGFloat = 24
+    static let resultSpacing: CGFloat = 8
 
     static func height(_ stack: AskTranslationStack, comparing: Bool = false) -> CGFloat {
         let rows = stack.results.enumerated().reduce(CGFloat.zero) { height, item in
             let (index, row) = item
-            let gap: CGFloat = index == 0 ? 0 : (showsCompareLabel(stack, before: index) ? compareLabelHeight : 1)
+            let gap: CGFloat = index == 0 ? 0 : (showsCompareLabel(stack, before: index) ? compareLabelHeight : resultSpacing)
             if let card = row.card {
                 return height + gap + 34 + AskWordCardView.height(card, stackStyle: true) + 14
             }
@@ -97,7 +98,7 @@ struct AskTranslationStackView: View {
         .accessibilityIdentifier("ask.translation.stack")
     }
 
-    /// A hairline between rows, hidden next to the selected row so it never crosses its fill.
+    /// A hairline centered in the gap, hidden next to the selected row so it never crosses its fill.
     @ViewBuilder private func divider(before index: Int) -> some View {
         if Self.showsCompareLabel(stack, before: index) {
             Text(L("ask.translation.stack.compare")).font(.system(size: 11, weight: .semibold))
@@ -106,6 +107,7 @@ struct AskTranslationStackView: View {
                 .padding(.leading, 12).padding(.bottom, 3)
         } else {
             Rectangle().fill(AskTheme.separator).frame(height: 1).padding(.horizontal, 12)
+                .frame(height: Self.resultSpacing)
                 .opacity(selected == index || selected == index - 1 ? 0 : 1)
         }
     }
