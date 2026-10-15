@@ -4,6 +4,7 @@ import Foundation
 enum AppSettingsPane: String, CaseIterable, SettingsPaneItem {
     case general
     case appearance
+    case permissions
     case hotkeys
     case advanced
 
@@ -16,6 +17,7 @@ enum AppSettingsPane: String, CaseIterable, SettingsPaneItem {
         case .general: L("settings.general")
         case .hotkeys: L("studio.section.hotkeys")
         case .appearance: L("settings.pane.appearance")
+        case .permissions: L("settings.permissions")
         case .advanced: L("settings.advanced.button")
         }
     }
@@ -25,6 +27,7 @@ enum AppSettingsPane: String, CaseIterable, SettingsPaneItem {
         case .general: "gearshape"
         case .hotkeys: "keyboard"
         case .appearance: "paintpalette"
+        case .permissions: "lock.shield"
         case .advanced: "slider.horizontal.3"
         }
     }

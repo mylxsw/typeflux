@@ -891,6 +891,8 @@ struct StudioView: View {
             HotkeySettingsView(viewModel: viewModel, settingsStore: viewModel.askToolSettings, compact: compact)
         case .appearance:
             AppearanceSettingsView(viewModel: viewModel)
+        case .permissions:
+            PermissionsSettingsView()
         case .advanced:
             advancedSettingsPage
         }
@@ -978,22 +980,6 @@ struct StudioView: View {
                 settingSwitch(L("settings.mute.title"), detail: L("settings.mute.subtitle"),
                               isOn: Binding(get: { viewModel.muteSystemOutputDuringRecording },
                                             set: viewModel.setMuteSystemOutputDuringRecording))
-            }
-
-            TFFormSection(title: L("settings.permissions")) {
-                TFFormRow(title: L("settings.permissionStatus.title"), detail: L("settings.permissionStatus.subtitle")) {
-                    TFButton(
-                        title: viewModel.isRefreshingPermissions ? L("common.refreshing") : L("common.refresh"),
-                        systemImage: "arrow.clockwise",
-                        isLoading: viewModel.isRefreshingPermissions
-                    ) {
-                        viewModel.refreshPermissionRowsWithFeedback()
-                    }
-                }
-                ForEach(viewModel.permissionRows) { permission in
-                    TFDivider.form
-                    permissionRow(permission)
-                }
             }
 
             TFFormSection(title: L("settings.other")) {
@@ -1580,27 +1566,6 @@ struct StudioView: View {
             )
         }
         .onAppear { viewModel.refreshAskLauncherPositions() }
-    }
-
-    private func permissionRow(_ permission: StudioPermissionRowModel) -> some View {
-        let tint = permission.isGranted ? TFColors.success : TFColors.warning
-        return TFFormRow(
-            title: permission.title,
-            detail: permission.summary,
-            valueText: permission.isGranted ? nil : permission.detail,
-            badge: permission.badgeText,
-            badgeTint: tint,
-            systemImage: permission.isGranted ? "checkmark.circle.fill" : "exclamationmark.circle",
-            imageTint: tint
-        ) {
-            TFButton(
-                title: permission.actionTitle,
-                systemImage: permission.isGranted ? "arrow.up.right.square" : "lock.open.display",
-                kind: permission.isGranted ? .secondary : .primary
-            ) {
-                viewModel.requestPermission(permission.id)
-            }
-        }
     }
 
     private var filteredVocabularyEntries: [VocabularyEntry] {

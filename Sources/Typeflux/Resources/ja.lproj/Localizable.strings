@@ -5391,3 +5391,23 @@
 "component.more" = "その他";
 "component.undo" = "取り消す";
 "component.required" = "必須";
+/* Central permission settings */
+"settings.permissions.required" = "必須の権限";
+"settings.permissions.requiredHint" = "音声入力とテキストの入力に必要な権限です。音声認識は Apple の音声認識とフォールバックで使用します。";
+"settings.permissions.optional" = "機能ごとの権限";
+"settings.permissions.optionalHint" = "対応する機能を使うときに許可してください。ブラウザの自動操作は対象アプリごとに許可します。";
+"settings.permissions.requestFailed" = "%@ のアクセスを要求できませんでした。システム設定で確認してください。";
+"permission.badge.notGranted" = "未許可";
+"permission.badge.systemManaged" = "システム設定";
+"permission.screenRecording.title" = "画面収録";
+"permission.screenRecording.summary" = "スクリーンショット、画面収録、OCR、Agent の画面操作に使用します。許可後に Typeflux の再起動が必要な場合があります。";
+"permission.camera.title" = "カメラ";
+"permission.camera.summary" = "画面収録にカメラ映像を含めるために使用します。";
+"permission.calendar.title" = "カレンダー";
+"permission.calendar.summary" = "ランチャーと Agent で予定を読み取るために使用します。";
+"permission.notifications.title" = "通知";
+"permission.notifications.summary" = "バックグラウンド処理の完了とワークフローの通知に使用します。";
+"permission.automation.title" = "オートメーション";
+"permission.automation.summary" = "ブラウザのタブの読み取りと他のアプリの操作に使用します。macOS は対象アプリごとに許可を求めます。";
+"permission.fullDiskAccess.title" = "フルディスクアクセス";
+"permission.fullDiskAccess.summary" = "保護されたファイルの検索と一部のブラウザのブックマークの読み取りに使用します。";

@@ -1,0 +1,59 @@
+{
+  "scope": "changed executable source lines (excluding tests, resources and documentation)",
+  "files": [
+    {
+      "file": "Sources/Typeflux/Settings/AppSettingsPane.swift",
+      "changed_executable_lines": 2,
+      "covered_lines": 2,
+      "line_coverage_percent": 100.0,
+      "uncovered_lines": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/SettingsView.swift",
+      "changed_executable_lines": 2,
+      "covered_lines": 2,
+      "line_coverage_percent": 100.0,
+      "uncovered_lines": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/SettingsPermission.swift",
+      "changed_executable_lines": 40,
+      "covered_lines": 40,
+      "line_coverage_percent": 100.0,
+      "uncovered_lines": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/SettingsPermissionService.swift",
+      "changed_executable_lines": 66,
+      "covered_lines": 62,
+      "line_coverage_percent": 93.94,
+      "uncovered_lines": [
+        33,
+        36,
+        37,
+        72
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Settings/PermissionsSettingsModel.swift",
+      "changed_executable_lines": 36,
+      "covered_lines": 36,
+      "line_coverage_percent": 100.0,
+      "uncovered_lines": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/PermissionsSettingsView.swift",
+      "changed_executable_lines": 60,
+      "covered_lines": 60,
+      "line_coverage_percent": 100.0,
+      "uncovered_lines": []
+    }
+  ],
+  "changed_executable_lines": 206,
+  "covered_lines": 202,
+  "line_coverage_percent": 98.06,
+  "test_count": 75,
+  "command_wall_seconds": 265.83,
+  "build_system": "native",
+  "real_system_permission_prompts": "not invoked; adapters tested with injected system operations"
+}

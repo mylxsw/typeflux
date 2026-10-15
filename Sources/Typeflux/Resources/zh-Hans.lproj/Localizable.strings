@@ -5506,3 +5506,23 @@
 "component.more" = "更多";
 "component.undo" = "撤销";
 "component.required" = "必填";
+/* Central permission settings */
+"settings.permissions.required" = "必需权限";
+"settings.permissions.requiredHint" = "这些权限用于语音输入和文本写入。语音识别用于 Apple 语音识别及其回退。";
+"settings.permissions.optional" = "按功能授权";
+"settings.permissions.optionalHint" = "使用对应功能时再授权。浏览器自动化按目标应用分别授权。";
+"settings.permissions.requestFailed" = "无法请求 %@ 权限，请在系统设置中检查。";
+"permission.badge.notGranted" = "未授权";
+"permission.badge.systemManaged" = "系统设置";
+"permission.screenRecording.title" = "录屏与系统录音";
+"permission.screenRecording.summary" = "用于截图、录屏、截图 OCR 和 Agent 屏幕操作。授权后可能需要重启 Typeflux。";
+"permission.camera.title" = "摄像头";
+"permission.camera.summary" = "用于在录屏时显示摄像头画面。";
+"permission.calendar.title" = "日历";
+"permission.calendar.summary" = "用于在启动器和 Agent 中读取日程。";
+"permission.notifications.title" = "通知";
+"permission.notifications.summary" = "用于后台任务完成提醒和工作流通知。";
+"permission.automation.title" = "自动化";
+"permission.automation.summary" = "用于读取浏览器标签页和控制其他应用。macOS 会按目标应用分别询问授权。";
+"permission.fullDiskAccess.title" = "完全磁盘访问权限";
+"permission.fullDiskAccess.summary" = "用于搜索受保护的文件和读取部分浏览器的书签。";
