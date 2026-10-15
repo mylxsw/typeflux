@@ -15,7 +15,70 @@ private struct FeatureEchoService: LLMService {
     }
 }
 
+private struct DictionaryEchoService: LLMService {
+    func streamRewrite(request: LLMRewriteRequest) -> AsyncThrowingStream<String, Error> {
+        AsyncThrowingStream { $0.finish() }
+    }
+    func complete(systemPrompt: String, userPrompt: String) async throws -> String {
+        await Task.yield()
+        let languages = LLMFeatureContext.dictionary
+        return "\(languages?.source ?? "und"):\(languages?.target ?? "unset"):\(LLMFeatureContext.feature?.rawValue ?? "unset")"
+    }
+    func completeJSON(systemPrompt: String, userPrompt: String, schema: LLMJSONSchema) async throws -> String {
+        let text = try await complete(systemPrompt: systemPrompt, userPrompt: userPrompt)
+        return #"{"kind":"text","translation":"\#(text)"}"#
+    }
+}
+
 final class TypefluxCloudFeatureTests: XCTestCase {
+    func testDictionaryHeadersAreOnlySentForCloudTranslationFeatures() {
+        LLMFeatureContext.$dictionary.withValue(.init(source: "en", target: "zh-Hans")) {
+            for feature in TypefluxCloudFeature.allCases {
+                let cloud = ResolvedLLMConnection(provider: .typefluxCloud, baseURL: URL(string: "https://example.invalid")!, model: "default", apiKey: "", additionalHeaders: [:])
+                let headers = cloud.headers(for: .automaticVocabulary, feature: feature)
+                if feature == .translation || feature == .wordCard {
+                    XCTAssertEqual(headers["X-Typeflux-Dictionary-Version"], "1")
+                    XCTAssertEqual(headers["X-Typeflux-Dictionary-Source-Language"], "en")
+                    XCTAssertEqual(headers["X-Typeflux-Dictionary-Target-Language"], "zh-Hans")
+                } else {
+                    XCTAssertNil(headers["X-Typeflux-Dictionary-Version"])
+                }
+            }
+            for provider in [LLMRemoteProvider.custom, .openAI, .freeModel] {
+                let connection = ResolvedLLMConnection(provider: provider, baseURL: URL(string: "http://localhost:11434/v1")!, model: "local", apiKey: "", additionalHeaders: [:])
+                XCTAssertNil(connection.headers(for: .askAnything, feature: .translation)["X-Typeflux-Dictionary-Version"])
+            }
+        }
+        LLMFeatureContext.$dictionary.withValue(.init(source: nil, target: "fr")) {
+            let cloud = ResolvedLLMConnection(provider: .typefluxCloud, baseURL: URL(string: "https://example.invalid")!, model: "default", apiKey: "", additionalHeaders: [:])
+            XCTAssertEqual(cloud.headers(for: .askAnything, feature: .translation)["X-Typeflux-Dictionary-Source-Language"], "und")
+        }
+        XCTAssertNil(LLMFeatureContext.dictionary)
+    }
+
+    func testDictionaryLanguagesSurviveTranslationWordCardAndStreamingCalls() async throws {
+        let engine = AskAITranslationEngine(service: DictionaryEchoService()) { "test" }
+        let text = try await engine.translate("hello", from: "en", to: "fr")
+        XCTAssertEqual(text, "en:fr:translation")
+        let card = try await engine.lookUp("hello", from: "en", to: "ja", generation: "0")
+        XCTAssertEqual(card, .translation("en:ja:word-card"))
+        var streamed = ""
+        for try await piece in engine.streamTranslation("hello", from: nil, to: "de") { streamed += piece }
+        XCTAssertEqual(streamed, "und:de:translation")
+        XCTAssertNil(LLMFeatureContext.dictionary)
+        XCTAssertNil(LLMFeatureContext.feature)
+    }
+
+    func testConcurrentDictionaryLookupsKeepLanguagePairsSeparate() async throws {
+        let engine = AskAITranslationEngine(service: DictionaryEchoService()) { "test" }
+        async let french = engine.translate("hello", from: "en", to: "fr")
+        async let japanese = engine.translate("hello", from: "en", to: "ja")
+        let results = try await (french, japanese)
+        XCTAssertEqual(results.0, "en:fr:translation")
+        XCTAssertEqual(results.1, "en:ja:translation")
+        XCTAssertNil(LLMFeatureContext.dictionary)
+    }
+
     func testFeatureScopeSurvivesSuspensionWithoutLeakingBetweenTasks() async throws {
         let service = FeatureEchoService()
         async let translation = service.complete(systemPrompt: "", userPrompt: "", feature: .translation)

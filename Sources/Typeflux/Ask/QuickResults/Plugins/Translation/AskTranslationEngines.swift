@@ -104,11 +104,13 @@ final class AskAITranslationEngine: AskTranslationStreaming, AskWordLookingUp, @
         let key = [word.lowercased(), source ?? "", target, modelName(), generation].joined(separator: "\u{1F}")
         if let cached = cached(key) { return cached }
         let english = Locale(identifier: "en")
-        let reply = try await service.completeJSON(
-            systemPrompt: Self.wordCardPrompt(sourceName: source.flatMap { english.localizedString(forIdentifier: $0) },
-                                              targetName: english.localizedString(forIdentifier: target) ?? target),
-            userPrompt: word, schema: AskWordCard.schema, feature: .wordCard
-        )
+        let reply = try await LLMFeatureContext.$dictionary.withValue(.init(source: source, target: target)) {
+            try await service.completeJSON(
+                systemPrompt: Self.wordCardPrompt(sourceName: source.flatMap { english.localizedString(forIdentifier: $0) },
+                                                  targetName: english.localizedString(forIdentifier: target) ?? target),
+                userPrompt: word, schema: AskWordCard.schema, feature: .wordCard
+            )
+        }
         let lookup = AskWordCard.parse(reply, word: word)
         if case let .unreadable(raw) = lookup, raw.isEmpty { throw AskPluginFailure(message: L("ask.plugin.translate.empty")) }
         // An unreadable reply may read next time; only keep what worked.
@@ -158,7 +160,9 @@ final class AskAITranslationEngine: AskTranslationStreaming, AskWordLookingUp, @
     func translate(_ text: String, from source: String?, to target: String) async throws -> String {
         let english = Locale(identifier: "en")
         let targetName = english.localizedString(forIdentifier: target) ?? target
-        let result = try await service.complete(systemPrompt: Self.systemPrompt(targetName: targetName), userPrompt: text, feature: .translation)
+        let result = try await LLMFeatureContext.$dictionary.withValue(.init(source: source, target: target)) {
+            try await service.complete(systemPrompt: Self.systemPrompt(targetName: targetName), userPrompt: text, feature: .translation)
+        }
         let trimmed = result.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { throw AskPluginFailure(message: L("ask.plugin.translate.empty")) }
         return trimmed
@@ -176,8 +180,10 @@ final class AskAITranslationEngine: AskTranslationStreaming, AskWordLookingUp, @
 
     func streamTranslation(_ text: String, from source: String?, to target: String) -> AsyncThrowingStream<String, Error> {
         let targetName = Locale(identifier: "en").localizedString(forIdentifier: target) ?? target
-        return LLMFeatureContext.$feature.withValue(.translation) {
-            service.streamComplete(systemPrompt: Self.systemPrompt(targetName: targetName), userPrompt: text)
+        return LLMFeatureContext.$dictionary.withValue(.init(source: source, target: target)) {
+            LLMFeatureContext.$feature.withValue(.translation) {
+                service.streamComplete(systemPrompt: Self.systemPrompt(targetName: targetName), userPrompt: text)
+            }
         }
     }
 }

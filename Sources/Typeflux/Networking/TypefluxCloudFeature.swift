@@ -15,6 +15,14 @@ enum TypefluxCloudFeature: String, CaseIterable, Sendable {
 /// state. Only the Cloud transport emits it; local and user-owned providers ignore it.
 enum LLMFeatureContext {
     @TaskLocal static var feature: TypefluxCloudFeature?
+    @TaskLocal static var dictionary: DictionaryLanguages?
+}
+
+/// Explicit language metadata lets Cloud build shared lexical entries from a
+/// server-owned prompt. It is never emitted to local or user-owned providers.
+struct DictionaryLanguages: Sendable {
+    let source: String?
+    let target: String
 }
 
 extension LLMService {

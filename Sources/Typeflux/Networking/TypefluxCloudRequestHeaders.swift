@@ -235,6 +235,11 @@ extension ResolvedLLMConnection {
         if provider == .typefluxCloud, let feature {
             scenarioHeaders[TypefluxCloudRequestHeaders.featureField] = feature.rawValue
             scenarioHeaders["X-Typeflux-Model-Catalog"] = "1"
+            if (feature == .translation || feature == .wordCard), let dictionary = LLMFeatureContext.dictionary {
+                scenarioHeaders["X-Typeflux-Dictionary-Version"] = "1"
+                scenarioHeaders["X-Typeflux-Dictionary-Source-Language"] = dictionary.source ?? "und"
+                scenarioHeaders["X-Typeflux-Dictionary-Target-Language"] = dictionary.target
+            }
         }
         return TypefluxCloudRequestHeaders.applyingPersonaID(
             personaID,
