@@ -1,20 +1,9 @@
+// swiftlint:disable file_length
 import AppKit
 import SwiftUI
 
+/// The translation surfaces are one glass layer: only the panel chrome varies by style.
 enum AskTranslationAppearance {
-    static let cardFill = StudioTheme.dynamic(
-        light: NSColor(calibratedWhite: 1, alpha: 0.8),
-        dark: NSColor(calibratedWhite: 1, alpha: 0.045)
-    )
-
-    static func cardFill(style: InterfaceStyle) -> Color {
-        style.usesGlass ? cardFill : AskClassic.card
-    }
-
-    static func border(style: InterfaceStyle) -> Color {
-        style.usesGlass ? AskTheme.border : AskClassic.cardBorder
-    }
-
     static func chrome(style: InterfaceStyle, increasedContrast: Bool) -> AskComposerChrome {
         var chrome = AskComposerChrome.launcher
         if !style.usesGlass, !increasedContrast {
@@ -26,7 +15,6 @@ enum AskTranslationAppearance {
 
 /// Shared translation content; window ownership and keyboard handling stay with its host.
 struct AskTranslationStackView: View {
-    @Environment(\.interfaceStyle) private var style
     var stack: AskTranslationStack
     var original: String
     var actions: [AskPluginAction]
@@ -35,29 +23,43 @@ struct AskTranslationStackView: View {
     var comparing = false
     var running = false
     var viewportHeight: CGFloat?
+    /// The panel shows the language pair in its title bar instead.
+    var showsLanguageBar = true
     var defaults: UserDefaults?
     var onAction: (AskPluginAction) -> Void
     var onSelect: (String) -> Bool = { _ in true }
 
     static let maximumHeight: CGFloat = 500
+    static let languageBarHeight: CGFloat = 30
+    static let compareLabelHeight: CGFloat = 24
+
     static func height(_ stack: AskTranslationStack, comparing: Bool = false) -> CGFloat {
-        let rows = stack.results.reduce(CGFloat.zero) { height, row in
+        let rows = stack.results.enumerated().reduce(CGFloat.zero) { height, item in
+            let (index, row) = item
+            let gap: CGFloat = index == 0 ? 0 : (showsCompareLabel(stack, before: index) ? compareLabelHeight : 1)
             if let card = row.card {
-                return height + 40 + AskWordCardView.height(card, stackStyle: true) + 38
+                return height + gap + 34 + AskWordCardView.height(card, stackStyle: true) + 14
             }
             if stack.isLookup {
-                return height + 40
+                return height + gap + 38
             }
             let content = row.text.map { AskPluginResultsView.bodyHeight($0) } ?? 22
-            return height + 38 + content + 14
+            return height + gap + 34 + content + 14
         }
-        return min(maximumHeight, 38 + (comparing ? 64 : 0) + max(44, rows) + CGFloat(stack.results.count * 5))
+        return min(maximumHeight, languageBarHeight + 8 + (comparing ? 64 : 0) + max(44, rows))
+    }
+
+    /// In a lookup the other services follow the word card under a "Compare" label.
+    static func showsCompareLabel(_ stack: AskTranslationStack, before index: Int) -> Bool {
+        stack.isLookup && index == 1 && stack.results.first?.card != nil
     }
 
     var body: some View {
         VStack(spacing: 8) {
-            languageBar
-                .translationContentHeight(.languages, enabled: viewportHeight != nil)
+            if showsLanguageBar {
+                languageBar
+                    .translationContentHeight(.languages, enabled: viewportHeight != nil)
+            }
             if comparing {
                 Text(original).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary)
                     .textSelection(.enabled).lineLimit(3).frame(maxWidth: .infinity, alignment: .leading)
@@ -65,7 +67,7 @@ struct AskTranslationStackView: View {
             }
             ScrollViewReader { proxy in
                 ScrollView(.vertical) {
-                    VStack(spacing: 5) {
+                    VStack(spacing: 0) {
                         if stack.results.isEmpty {
                             Text(L(stack.submitted ? "ask.translation.stack.empty" : "ask.translation.stack.ready"))
                                 .font(.system(size: 12))
@@ -73,6 +75,9 @@ struct AskTranslationStackView: View {
                                 .padding(14)
                         }
                         ForEach(Array(stack.results.enumerated()), id: \.element.id) { index, result in
+                            if index > 0 {
+                                divider(before: index)
+                            }
                             AskTranslationResultView(result: result, stack: stack, original: original,
                                                      number: index + 1, selected: selected == index,
                                                      actions: actions, starred: starred, running: running,
@@ -95,70 +100,86 @@ struct AskTranslationStackView: View {
         .accessibilityIdentifier("ask.translation.stack")
     }
 
+    /// A hairline between rows, hidden next to the selected row so it never crosses its fill.
+    @ViewBuilder private func divider(before index: Int) -> some View {
+        if Self.showsCompareLabel(stack, before: index) {
+            Text(L("ask.translation.stack.compare")).font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(StudioTheme.textTertiary)
+                .frame(maxWidth: .infinity, minHeight: Self.compareLabelHeight, alignment: .bottomLeading)
+                .padding(.leading, 12).padding(.bottom, 3)
+        } else {
+            Rectangle().fill(AskTheme.separator).frame(height: 1).padding(.horizontal, 12)
+                .opacity(selected == index || selected == index - 1 ? 0 : 1)
+        }
+    }
+
     var languageBar: some View {
-        HStack(spacing: 12) {
+        AskTranslationLanguagePair(stack: stack, onAction: onAction)
+            .frame(maxWidth: .infinity, minHeight: Self.languageBarHeight, alignment: .leading)
+    }
+}
+
+/// `Detected English ⌄  ⇄  Simplified Chinese ⌄`: borderless menus, the target in the accent colour.
+struct AskTranslationLanguagePair: View {
+    var stack: AskTranslationStack
+    var onAction: (AskPluginAction) -> Void
+
+    var body: some View {
+        HStack(spacing: 2) {
             Menu {
-                Button(L("ask.translation.stack.detect")) { onAction(.init(
-                    kind: .rerun(["source": ""]),
-                    title: "",
-                    symbol: ""
-                )) }
+                Button(L("ask.translation.stack.detect")) { rerun(["source": ""]) }
                 ForEach(AskTranslationLanguages.common, id: \.self) { code in
-                    Button(AskTranslationLanguages.name(code, in: stack.interface)) {
-                        onAction(.init(kind: .rerun(["source": code]), title: "", symbol: ""))
-                    }
+                    Button(AskTranslationLanguages.name(code, in: stack.interface)) { rerun(["source": code]) }
                 }
             } label: {
-                Text(sourceLabel)
-                    .foregroundStyle(StudioTheme.textPrimary)
+                Text(sourceLabel).foregroundStyle(StudioTheme.textPrimary)
             }
-            .menuStyle(.borderlessButton).tint(StudioTheme.textPrimary)
-            .frame(maxWidth: .infinity).padding(.horizontal, 10).frame(height: 30)
-            .background(AskTranslationAppearance.cardFill(style: style), in: RoundedRectangle(cornerRadius: 8))
-            .overlay { RoundedRectangle(cornerRadius: 8).strokeBorder(
-                AskTranslationAppearance.border(style: style),
-                lineWidth: 1
-            ) }
+            .menuStyle(.borderlessButton).tint(StudioTheme.textPrimary).fixedSize()
+            .padding(.horizontal, 6).frame(height: 28)
+            .accessibilityIdentifier("ask.translation.languages.source")
             Button {
                 if let text = stack.results.first?.completedText, let source = stack.source {
-                    onAction(.init(
-                        kind: .swapTranslation(text, source: stack.target, target: source),
-                        title: "",
-                        symbol: ""
-                    ))
+                    onAction(.init(kind: .swapTranslation(text, source: stack.target, target: source),
+                                   title: "", symbol: ""))
                 }
             } label: {
                 Image(systemName: "arrow.left.arrow.right").font(.system(size: 12))
                     .foregroundStyle(StudioTheme.textTertiary)
+                    .frame(width: 26, height: 26).contentShape(Rectangle())
             }
             .buttonStyle(.plain).disabled(stack.results.first?.completedText == nil || stack.source == nil)
-            .help(L("ask.translation.stack.swap"))
+            .help(L("ask.translation.stack.swap") + " · ⌘⇧S")
+            .accessibilityLabel(L("ask.translation.stack.swap"))
             Menu {
                 ForEach(AskTranslationLanguages.common, id: \.self) { code in
                     Button(AskTranslationLanguages.name(code, in: stack.interface)) {
-                        onAction(.init(kind: .rerun([AskTranslatePlugin.targetOption: code]), title: "", symbol: ""))
+                        rerun([AskTranslatePlugin.targetOption: code])
                     }
                 }
             } label: {
                 Text(AskTranslationLanguages.name(stack.target, in: stack.interface)).foregroundStyle(AskTheme.accent)
-                    .frame(maxWidth: .infinity)
             }
-            .menuStyle(.borderlessButton).tint(AskTheme.accent)
-            .frame(maxWidth: .infinity).padding(.horizontal, 10).frame(height: 30)
-            .background(AskTranslationAppearance.cardFill(style: style), in: RoundedRectangle(cornerRadius: 8))
-            .overlay { RoundedRectangle(cornerRadius: 8).strokeBorder(
-                AskTranslationAppearance.border(style: style),
-                lineWidth: 1
-            ) }
+            .menuStyle(.borderlessButton).tint(AskTheme.accent).fixedSize()
+            .padding(.horizontal, 6).frame(height: 28)
+            .accessibilityIdentifier("ask.translation.languages.target")
         }
-        .font(.system(size: 12))
+        .font(.system(size: 13, weight: .semibold))
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("ask.translation.languages")
     }
 
-    private var sourceLabel: String {
+    private func rerun(_ options: [String: String]) {
+        onAction(.init(kind: .rerun(options), title: "", symbol: ""))
+    }
+
+    var sourceLabel: String {
+        Self.sourceLabel(stack)
+    }
+
+    static func sourceLabel(_ stack: AskTranslationStack) -> String {
         let language = stack.source.map { AskTranslationLanguages.name($0, in: stack.interface) }
         guard stack.sourceIsAutomatic else { return language ?? L("ask.translation.stack.detect") }
-        return L("ask.translation.stack.detect") + (language.map { " · " + $0 } ?? "")
+        return language.map { L("ask.translation.stack.detected", $0) } ?? L("ask.translation.stack.detect")
     }
 }
 
@@ -196,7 +217,6 @@ struct AskTranslationServiceIcon: View {
 }
 
 private struct AskTranslationResultView: View {
-    @Environment(\.interfaceStyle) private var style
     var result: AskTranslationResult
     var stack: AskTranslationStack
     var original: String
@@ -229,23 +249,24 @@ private struct AskTranslationResultView: View {
         _collapsePreference = AppStorage(wrappedValue: 0, result.collapseKey, store: defaults)
     }
 
+    /// Selection is a soft accent fill and hover a neutral wash; rows have no borders.
+    private var fill: Color {
+        if selected {
+            return AskTheme.accent.opacity(0.14)
+        }
+        return hovering ? AskTheme.hoverFill : .clear
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 4) {
             header
             if !compact {
-                content.padding(.leading, result.card == nil ? 25 : 22)
-                if result.card != nil {
-                    wordActions.padding(.leading, 22).padding(.top, 2)
-                }
+                content.padding(.leading, 25)
             }
         }
-        .padding(.horizontal, 10).padding(.vertical, compact ? 8 : 10)
+        .padding(.horizontal, 10).padding(.top, compact ? 7 : 8).padding(.bottom, compact ? 7 : 10)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AskTranslationAppearance.cardFill(style: style), in: RoundedRectangle(cornerRadius: 11))
-        .overlay { RoundedRectangle(cornerRadius: 11).strokeBorder(
-            selected ? AskTheme.accent.opacity(0.8) : AskTranslationAppearance.border(style: style),
-            lineWidth: 1
-        ) }
+        .background(fill, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         .onHover { hovering = $0 }
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("ask.translation.result." + result.id)
@@ -253,55 +274,59 @@ private struct AskTranslationResultView: View {
 
     private var header: some View {
         HStack(spacing: 6) {
+            Button {
+                collapsePreference = compact ? 2 : 1
+            } label: {
+                Image(systemName: compact ? "chevron.right" : "chevron.down")
+                    .font(.system(size: 8.5, weight: .semibold))
+                    .frame(width: 12, height: 20).contentShape(Rectangle())
+            }
+            .buttonStyle(.plain).foregroundStyle(StudioTheme.textTertiary)
+            .accessibilityLabel(L(compact ? "ask.translation.stack.expand" : "ask.translation.stack.collapse"))
+            .accessibilityIdentifier("ask.translation.result." + result.id + ".collapse")
             AskTranslationServiceIcon(service: result.service)
-            Text(result.name).font(.system(size: 11.5, weight: .medium)).foregroundStyle(StudioTheme.textSecondary)
-                .lineLimit(1)
+            Text(result.name).font(.system(size: 12, weight: .semibold)).foregroundStyle(StudioTheme.textSecondary)
+                .lineLimit(1).layoutPriority(1)
             if result.card != nil || (!compact && result.service.kind == .device) {
                 Text(L(result.fromWordBook ? "ask.plugin.source.wordBook" : result
                         .card != nil ? "ask.translation.stack.card" : "ask.translation.stack.private"))
-                    .font(.system(size: 10))
-                    .foregroundStyle(result.card != nil ? AskTheme.accent : StudioTheme.textTertiary)
-                    .padding(.horizontal, 5).padding(.vertical, 2)
+                    .font(.system(size: 10.5, weight: .medium))
+                    .foregroundStyle(result.fromWordBook ? AskTheme.accent : StudioTheme.textTertiary)
+                    .padding(.horizontal, 6).padding(.vertical, 1.5)
                     .background(
-                        result.card != nil ? AskTheme.accent.opacity(0.13) : AskTheme.hoverFill,
-                        in: RoundedRectangle(cornerRadius: 4)
+                        result.fromWordBook ? AskTheme.accent.opacity(0.14) : AskTheme.hoverFill,
+                        in: RoundedRectangle(cornerRadius: 5, style: .continuous)
                     )
             }
             if compact {
-                switch result.state {
-                case let .failed(failure):
-                    Text(failure.message).foregroundStyle(StudioTheme.danger).lineLimit(1)
-                    if let action = failure
-                        .action(for: result.service) {
-                        if failure.recovery == .configure {
-                            Text("·").foregroundStyle(StudioTheme.textTertiary)
-                        }
-                        Button(action.title) { onAction(action) }.buttonStyle(.plain).foregroundStyle(AskTheme.accent)
-                            .disabled(running)
-                            .accessibilityIdentifier("ask.translation.result." + result.id + ".recovery")
-                    }
-                case .loading: ProgressView().controlSize(.mini)
-                default: Text(result.text ?? "").foregroundStyle(StudioTheme.textPrimary).lineLimit(1)
-                }
+                compactSummary
             }
             Spacer(minLength: 4)
-            if result
-                .completedText !=
-                nil {
+            if result.completedText != nil {
                 tools.opacity(hovering || selected ? 1 : 0).allowsHitTesting(hovering || selected)
             }
             if number <= 9 {
-                Text("⌘\(number)").font(.system(size: 10)).foregroundStyle(StudioTheme.textTertiary)
+                Text("⌘\(number)").font(.system(size: 10.5, weight: .medium)).foregroundStyle(StudioTheme.textTertiary)
+                    .frame(minWidth: 24, alignment: .trailing)
             }
-            Button {
-                collapsePreference = compact ? 2 : 1
-            } label: { Image(systemName: compact ? "chevron.right" : "chevron.down").font(.system(size: 9)) }
-                .buttonStyle(.plain).foregroundStyle(StudioTheme.textTertiary)
-                .accessibilityLabel(L(compact ? "ask.translation.stack.expand" : "ask.translation.stack.collapse"))
-                .accessibilityIdentifier("ask.translation.result." + result.id + ".collapse")
         }
         .font(.system(size: 11.5))
+        .frame(minHeight: 22)
         .contentShape(Rectangle()).onTapGesture(perform: onSelect)
+    }
+
+    @ViewBuilder private var compactSummary: some View {
+        switch result.state {
+        case let .failed(failure):
+            Text(failure.message).foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
+            if let action = failure.action(for: result.service) {
+                recoveryButton(action)
+            }
+        case .loading: ProgressView().controlSize(.mini)
+        default:
+            Text(result.text ?? "").font(.system(size: 13.5)).foregroundStyle(StudioTheme.textPrimary).lineLimit(1)
+                .padding(.leading, 4)
+        }
     }
 
     @ViewBuilder private var content: some View {
@@ -310,84 +335,85 @@ private struct AskTranslationResultView: View {
             HStack(spacing: 8) { ProgressView().controlSize(.small); Text(L("ask.translation.stack.loading")) }
                 .font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
         case let .failed(failure):
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                Text(failure.message).foregroundStyle(StudioTheme.danger).fixedSize(horizontal: false, vertical: true)
+            HStack(alignment: .center, spacing: 8) {
+                Image(systemName: "exclamationmark.triangle").font(.system(size: 11.5))
+                    .foregroundStyle(StudioTheme.warning)
+                Text(failure.message).foregroundStyle(StudioTheme.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 8)
                 if let action = failure.action(for: result.service) {
-                    if failure.recovery == .configure {
-                        Text("·").foregroundStyle(StudioTheme.textTertiary)
-                    }
-                    Button(action.title) { onAction(action) }.buttonStyle(.plain).foregroundStyle(AskTheme.accent)
-                        .disabled(running).accessibilityIdentifier("ask.translation.result." + result.id + ".recovery")
+                    recoveryButton(action)
                 }
             }
-            .font(.system(size: 12))
+            .font(.system(size: 12.5))
         case let .streaming(text):
-            Text(text + AskPluginResultsView.caret).font(.system(size: 14)).foregroundStyle(StudioTheme.textPrimary)
+            Text(text + AskPluginResultsView.caret).font(.system(size: 14.5)).lineSpacing(3)
+                .foregroundStyle(StudioTheme.textPrimary)
                 .frame(maxWidth: .infinity, alignment: .leading).textSelection(.enabled)
         case let .done(text, card):
             if let card {
                 AskWordCardView(card: card, language: stack.source ?? "en", stackStyle: true, onAction: onAction)
             } else {
-                Text(text).font(.system(size: 14)).foregroundStyle(StudioTheme.textPrimary)
+                Text(text).font(.system(size: 14.5)).lineSpacing(3).foregroundStyle(StudioTheme.textPrimary)
                     .frame(maxWidth: .infinity, alignment: .leading).fixedSize(horizontal: false, vertical: true)
                     .textSelection(.enabled)
             }
         }
     }
 
+    private func recoveryButton(_ action: AskPluginAction) -> some View {
+        Button(action.title) { onAction(action) }
+            .buttonStyle(.plain).font(.system(size: 12, weight: .semibold))
+            .foregroundStyle(StudioTheme.textPrimary)
+            .padding(.horizontal, 10).frame(height: 24)
+            .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+            .disabled(running)
+            .accessibilityIdentifier("ask.translation.result." + result.id + ".recovery")
+    }
+
+    /// Word card actions join the row's own tools; their shortcuts live in the help tags and footer.
+    private func cardAction(_ shortcut: AskPluginAction.Shortcut) -> AskPluginAction? {
+        guard result.card != nil else { return nil }
+        return actions.first { $0.shortcut == shortcut }
+    }
+
     private var tools: some View {
-        HStack(spacing: 7) {
-            Button {
+        HStack(spacing: 2) {
+            if let star = cardAction(.commandS) {
+                tool(starred ? "star.fill" : "star", help: star.title + " · ⌘S",
+                     id: "star", tint: starred ? AskTheme.accent : nil) { onAction(star) }
+            }
+            if let regenerate = cardAction(.commandR) {
+                tool("arrow.clockwise", help: regenerate.title + " · ⌘R", id: "regenerate") { onAction(regenerate) }
+                    .disabled(running)
+            }
+            tool("speaker.wave.2", help: L("ask.plugin.action.speak"), id: "speak") {
                 onAction(.init(kind: .speak(result.completedText ?? "", language: stack.target), title: "", symbol: ""))
-            } label: { Image(systemName: "speaker.wave.2") }.help(L("ask.plugin.action.speak"))
-                .accessibilityIdentifier("ask.translation.result." + result.id + ".speak")
-            Button { onAction(AskTranslatePlugin.insertAction(
-                result.completedText ?? "",
-                replaces: stack.replacesSelection
-            )) } label: { Image(systemName: "text.insert") }
-                .help(L("ask.plugin.action.insert"))
-                .disabled(result.card != nil && result.card?.translatedText == nil)
+            }
+            tool("arrow.turn.down.left", help: L("ask.plugin.action.insert") + " · ⌥↩", id: "insert") {
+                onAction(AskTranslatePlugin.insertAction(result.completedText ?? "", replaces: stack.replacesSelection))
+            }
+            .disabled(result.card != nil && result.card?.translatedText == nil)
             Menu {
                 AskTranslationCopyOptions(result: result, original: original,
                                           replacesSelection: stack.replacesSelection, onAction: onAction)
             } label: { Image(systemName: "doc.on.doc") }
-                .menuStyle(.borderlessButton).tint(StudioTheme.textTertiary).fixedSize()
+                .menuStyle(.borderlessButton).menuIndicator(.hidden).tint(StudioTheme.textTertiary).fixedSize()
+                .frame(width: 24, height: 22)
                 .help(L("ask.plugin.action.copy"))
                 .accessibilityIdentifier("ask.translation.result." + result.id + ".copyMenu")
         }
-        .font(.system(size: 10)).buttonStyle(.plain).foregroundStyle(StudioTheme.textTertiary)
+        .font(.system(size: 11.5))
     }
 
-    private var wordActions: some View {
-        HStack(spacing: 5) {
-            ForEach(
-                Array([AskPluginAction.Shortcut.commandS, .shiftCommandC, .commandR, .commandB]
-                    .compactMap { shortcut in actions.first { $0.shortcut == shortcut } }.enumerated()),
-                id: \.offset
-            ) { _, action in
-                Button { onAction(action) } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: action.shortcut == .commandS && starred ? "star.fill" : action.symbol)
-                        Text(action.shortcut == .shiftCommandC ? L("ask.plugin.action.copyCard") : action.title)
-                        Text(key(action.shortcut)).foregroundStyle(StudioTheme.textTertiary)
-                    }
-                    .font(.system(size: 10.5)).padding(.horizontal, 7).frame(height: 23)
-                    .background(AskTheme.hoverFill, in: RoundedRectangle(cornerRadius: 6))
-                }
-                .buttonStyle(.plain).foregroundStyle(StudioTheme.textSecondary)
-                .disabled(running && action.shortcut == .commandR)
-            }
+    private func tool(_ symbol: String, help: String, id: String, tint: Color? = nil,
+                      action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol).frame(width: 24, height: 22).contentShape(Rectangle())
         }
-    }
-
-    private func key(_ shortcut: AskPluginAction.Shortcut?) -> String {
-        switch shortcut {
-        case .commandS: "⌘S"
-        case .shiftCommandC: "⇧⌘C"
-        case .commandR: "⌘R"
-        case .commandB: "⌘B"
-        default: ""
-        }
+        .buttonStyle(.plain).foregroundStyle(tint ?? StudioTheme.textTertiary)
+        .help(help).accessibilityLabel(help)
+        .accessibilityIdentifier("ask.translation.result." + result.id + "." + id)
     }
 }
 

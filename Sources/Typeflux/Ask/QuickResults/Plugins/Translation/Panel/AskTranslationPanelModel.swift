@@ -27,6 +27,8 @@ final class AskTranslationPanelModel: ObservableObject {
     @Published private(set) var screenshot: NSImage?
     @Published private(set) var screenshotLines = 0
     @Published var notice: String?
+    /// A short confirmation shown in the footer after copying or inserting.
+    @Published private(set) var feedback: String?
     @Published var sourceLanguage: String?
     @Published var targetLanguage: String?
     let settings: SettingsStore
@@ -52,6 +54,8 @@ final class AskTranslationPanelModel: ObservableObject {
     private var autoCopied = false
     private var autoCopy: AskTranslationAutoCopy = .none
     private var cancelHandoff: (() -> Void)?
+    private var feedbackTask: Task<Void, Never>?
+    static let feedbackDuration: Duration = .milliseconds(1600)
 
     init(settings: SettingsStore, plugin: AskTranslatePlugin,
          configuration: AskTranslationSettingsModel? = nil,
@@ -65,7 +69,7 @@ final class AskTranslationPanelModel: ObservableObject {
         history = AskTranslationHistory(defaults: settings.defaults)
     }
 
-    deinit { translationTask?.cancel(); cancelHandoff?() }
+    deinit { translationTask?.cancel(); feedbackTask?.cancel(); cancelHandoff?() }
 
     var interface: AppLanguage {
         AppLocalization.shared.language
@@ -280,6 +284,16 @@ final class AskTranslationPanelModel: ObservableObject {
 }
 
 extension AskTranslationPanelModel {
+    func flash(_ message: String) {
+        feedback = message
+        feedbackTask?.cancel()
+        feedbackTask = Task { [weak self] in
+            try? await Task.sleep(for: Self.feedbackDuration)
+            guard !Task.isCancelled else { return }
+            self?.feedback = nil
+        }
+    }
+
     func lostFocus() {
         if !pinned, configuration.editing == nil, configuration.languageDownload == nil {
             dismiss()

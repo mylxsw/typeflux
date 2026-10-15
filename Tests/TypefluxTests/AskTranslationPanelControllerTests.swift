@@ -268,8 +268,9 @@ extension AskTranslationPanelControllerTests {
             })
             #expect(lastRow.frame.height > 0)
             let bottomInset = lastRow.frame.minY - window.frame.minY
-            #expect(bottomInset >= 28 && bottomInset <= 48,
-                    "Only the 28-point footer and normal spacing follow the last row")
+            // Borderless rows report their content frame, so the row's 10-point bottom padding is counted here.
+            #expect(bottomInset >= 28 && bottomInset <= AskTranslationPanelView.footerHeight + 26,
+                    "Only the footer and normal spacing follow the last row (\(bottomInset))")
             if count == 3 {
                 threeRowHeight = window.frame.height
             } else {
