@@ -667,6 +667,7 @@ struct StudioShell<Content: View>: View {
                 sidebar(compact: height < 600).frame(width: StudioTheme.sidebarWidth, height: min(600, max(240, height - 60)))
                     .background(AskWindowBackdrop())
             }
+            .askCollapsedSidebarTools()
             Text(currentSection.shellTitle).font(.system(size: 13, weight: .semibold)).lineLimit(1)
             Spacer(minLength: 0)
         }
@@ -798,7 +799,7 @@ extension StudioSidebar {
 
                 Spacer()
             }
-            .foregroundStyle(isSelected ? StudioTheme.accentText : StudioTheme.textSecondary)
+            .foregroundStyle(Self.navigationColor(selected: isSelected, glass: style.usesGlass))
             .padding(.horizontal, StudioTheme.Insets.sidebarItemHorizontal)
             .padding(.vertical, StudioTheme.Insets.sidebarItemVertical)
             .modifier(StudioSidebarRowBackground(selected: isSelected,
@@ -807,11 +808,18 @@ extension StudioSidebar {
         }
         .buttonStyle(StudioInteractiveButtonStyle())
     }
+
+    /// Glass marks the open page like the conversation sidebar, in the accent;
+    /// classic keeps its accent text.
+    static func navigationColor(selected: Bool, glass: Bool) -> Color {
+        guard selected else { return StudioTheme.textSecondary }
+        return glass ? AskTheme.accent : StudioTheme.accentText
+    }
 }
 
 /// The sidebar row's background. In light the selected row is a raised white
-/// block (hairline + 1pt shadow) on the grey sidebar; in dark it keeps the
-/// notes-row selection wash.
+/// block (hairline + 1pt shadow) on the grey sidebar; in dark it takes the
+/// library shelves' sidebar selection.
 struct StudioSidebarRowBackground: ViewModifier {
     var selected: Bool
     var corner: CGFloat
@@ -828,7 +836,7 @@ struct StudioSidebarRowBackground: ViewModifier {
                     .shadow(color: Color.black.opacity(0.06), radius: 0, x: 0, y: 1))
                 .overlay(shape.strokeBorder(StudioTheme.sidebarSelectionStroke, lineWidth: 1))
         } else {
-            content.askNotesRow(selected: selected, hovering: false, corner: corner)
+            content.askNotesRow(selected: selected, hovering: false, corner: corner, sidebar: true)
         }
     }
 }

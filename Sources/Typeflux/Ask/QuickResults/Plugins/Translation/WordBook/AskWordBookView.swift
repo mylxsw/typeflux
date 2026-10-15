@@ -242,19 +242,22 @@ struct AskWordBookView: View {
 
     // MARK: - Column headers
 
+    /// With the sidebar collapsed, its toggle sits right-aligned in a glass
+    /// pill, like the notebook's and the conversation sidebar's tools.
     private func navigationBar() -> some View {
         HStack(spacing: 6) {
             Color.clear.frame(width: AskResultWindowView.trafficLightClearance)
+            Spacer(minLength: 0)
             AskIconGhostButton(label: L("ask.sidebar.toggle"), systemImage: "sidebar.left") {
                 showsSidebar.toggle()
             }
             .accessibilityIdentifier("ask.wordBook.sidebarToggle")
-            .popover(isPresented: $showsSidebar, arrowEdge: .leading) {
+            .popover(isPresented: $showsSidebar, arrowEdge: .bottom) {
                 sidebar(clearsTitleBar: false)
                     .frame(width: Self.sidebarWidth, height: 480)
                     .background(AskTheme.glassFill)
             }
-            Spacer(minLength: 0)
+            .askCollapsedSidebarTools()
         }
         .padding(.trailing, 10)
         .frame(height: AskMetrics.titleBarRowHeight)
