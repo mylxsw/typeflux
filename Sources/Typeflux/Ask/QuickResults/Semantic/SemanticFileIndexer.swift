@@ -21,7 +21,7 @@ enum SemanticFileIndexer {
                                    store: SemanticFileStore, reader: AskFileReading, media: any SemanticMediaEmbedding,
                                    cancelled: () -> Bool, waitForIdle: () throws -> Void) throws -> Bool {
         try waitForIdle()
-        let scratch = FileManager.default.temporaryDirectory.resolvingSymlinksInPath()
+        let scratch = URL(fileURLWithPath: AskFileScope.canonical(FileManager.default.temporaryDirectory.path))
             .appendingPathComponent("typeflux-media-" + UUID().uuidString)
         try FileManager.default.createDirectory(at: scratch, withIntermediateDirectories: true,
                                                 attributes: [.posixPermissions: 0o700])

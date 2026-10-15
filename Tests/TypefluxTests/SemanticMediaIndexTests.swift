@@ -58,6 +58,25 @@ final class SemanticFixtureMediaEncoder: SemanticMediaEmbedding, @unchecked Send
 
 @Suite("Document-first idle media indexing", .serialized)
 struct SemanticMediaIndexTests {
+    @Test func realFileWorkerCommitsImageAudioAndVideo() async throws {
+        let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
+        let image = root.appendingPathComponent("image.png")
+        let audio = root.appendingPathComponent("tone.wav")
+        let movie = root.appendingPathComponent("movie.mov")
+        try semanticTestImage(image)
+        let samples = (0 ..< 16000).map { Float(sin(Double($0) * 0.17) * 0.2) }
+        try samples.withUnsafeBytes { try SemanticMediaExtractor.wave(Data($0), to: audio) }
+        try await semanticTestMovie(movie)
+        let store = try SemanticFileStore(url: root.appendingPathComponent("index.sqlite"))
+        let result = try SemanticFileIndexer.run(scope: semanticScope(root.path), store: store,
+            reader: AskFileReader(), encoder: SemanticFixtureEncoder(), media: SemanticFixtureMediaEncoder(),
+            cancelled: { false }, progress: { _ in })
+        let counts = try store.counts()
+        #expect(result.total == 3 && result.processed == 3 && result.skipped == 0)
+        #expect(counts.images == 1 && counts.audio == 1 && counts.videos == 1)
+        #expect(counts.chunks >= 3)
+    }
+
     @Test func documentsThenImagesAudioAndVideoWithIdleGatingAndTimeEvidence() throws {
         let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
         let store = try SemanticFileStore(url: root.appendingPathComponent("index.sqlite"))

@@ -113,4 +113,33 @@ struct SemanticMediaWorkerTests {
         print("Real cross-modal red query: red=\(score(redVector)), blue=\(score(blueVector))")
         #expect(score(redVector) > score(blueVector))
     }
+
+    @Test func realMediaFilesReachTheSemanticIndexWhenPinnedWeightsAreProvided() async throws {
+        guard let model = ProcessInfo.processInfo.environment["TYPEFLUX_SEMANTIC_TEST_MODEL"],
+              let projector = ProcessInfo.processInfo.environment["TYPEFLUX_SEMANTIC_TEST_PROJECTOR"] else { return }
+        let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
+        let image = root.appendingPathComponent("image.png")
+        let audio = root.appendingPathComponent("tone.wav")
+        let movie = root.appendingPathComponent("movie.mov")
+        try Data(String(repeating: "A red square appears in this document. ", count: 10).utf8)
+            .write(to: root.appendingPathComponent("note.txt"))
+        try semanticTestImage(image)
+        let samples = (0 ..< 16000).map { Float(sin(Double($0) * 0.17) * 0.2) }
+        try samples.withUnsafeBytes { try SemanticMediaExtractor.wave(Data($0), to: audio) }
+        try await semanticTestMovie(movie)
+
+        let helper = SemanticModel.helperURL, modelURL = URL(fileURLWithPath: model)
+        let store = try SemanticFileStore(url: root.appendingPathComponent("index.sqlite"))
+        let encoder = SemanticEmbeddingWorker(helper: helper, model: modelURL, indexing: true)
+        let media = SemanticMediaWorker(helper: helper, model: modelURL,
+            projector: URL(fileURLWithPath: projector))
+        defer { encoder.release() }
+        let reader = AskFileReader()
+        let result = try SemanticFileIndexer.run(scope: semanticScope(root.path), store: store,
+            reader: reader, encoder: encoder, media: media, idle: { true },
+            cancelled: { false }, progress: { _ in })
+        let counts = try store.counts()
+        #expect(result.total == 4 && result.processed == 4)
+        #expect(counts.documents == 1 && counts.images == 1 && counts.audio == 1 && counts.videos == 1)
+    }
 }
