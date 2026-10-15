@@ -12,8 +12,7 @@ struct HelpStartPage: View {
             VStack(alignment: .leading, spacing: 0) {
                 // Equal heights, so the two tiles line up whatever their text.
                 HStack(alignment: .top, spacing: 12) {
-                    HelpEntryTile(title: L("help.start.voice.title"), detail: L("help.start.voice.detail"),
-                                  action: L("help.start.try"), run: model.actions.close) {
+                    HelpEntryTile(title: L("help.start.voice.title"), detail: L("help.start.voice.detail")) {
                         HelpVoiceArt(keys: model.catalog.voiceKeys, openSettings: { model.openSettings(.shortcuts) })
                     }
                     HelpEntryTile(title: L("help.start.launcher.title"), detail: L("help.start.launcher.detail"),
@@ -78,48 +77,56 @@ struct HelpStartPage: View {
     }
 }
 
-/// A tile with an illustration on top and what it is below; the whole tile is the button.
+/// An illustrated tile. Only entries with an action behave as buttons.
 struct HelpEntryTile<Art: View>: View {
     var title: String
     var detail: String
-    var action: String
-    var run: () -> Void
+    var action: String?
+    var run: (() -> Void)?
     @ViewBuilder var art: Art
     @Environment(\.interfaceStyle) private var style
     @State private var hovering = false
 
     var body: some View {
+        if let run {
+            Button(action: run) { content }
+                .buttonStyle(.plain)
+                .onHover { hovering = $0 }
+                .accessibilityLabel(title)
+                .accessibilityHint(detail)
+        } else {
+            content
+        }
+    }
+
+    private var content: some View {
         let shape = RoundedRectangle(cornerRadius: style.help.blockCorner, style: .continuous)
-        Button(action: run) {
-            VStack(spacing: 0) {
-                art.frame(maxWidth: .infinity).frame(height: 118)
-                    .background(HelpTheme.well(style))
-                    .overlay(alignment: .bottom) { Rectangle().fill(HelpTheme.blockBorder(style)).frame(height: 1) }
-                HStack(alignment: .bottom, spacing: 12) {
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(title).font(.system(size: 15, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
-                        Text(detail).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary)
-                            .lineLimit(2).fixedSize(horizontal: false, vertical: true)
-                    }
-                    Spacer(minLength: 0)
+        return VStack(spacing: 0) {
+            art.frame(maxWidth: .infinity).frame(height: 118)
+                .background(HelpTheme.well(style))
+                .overlay(alignment: .bottom) { Rectangle().fill(HelpTheme.blockBorder(style)).frame(height: 1) }
+            HStack(alignment: .bottom, spacing: 12) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(title).font(.system(size: 15, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
+                    Text(detail).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary)
+                        .lineLimit(2).fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 0)
+                if let action {
                     Text(action + " →").font(.system(size: 12)).foregroundStyle(AskTheme.accentText)
                         .opacity(hovering ? 1 : 0)
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 12)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                Spacer(minLength: 0)
             }
-            .frame(maxHeight: .infinity)
-            .background(shape.fill(HelpTheme.blockFill(style)))
-            .clipShape(shape)
-            .overlay(shape.strokeBorder(hovering ? AskTheme.accent.opacity(0.5) : HelpTheme.blockBorder(style)))
-            .contentShape(shape)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            Spacer(minLength: 0)
         }
-        .buttonStyle(.plain)
-        .onHover { hovering = $0 }
-        .accessibilityLabel(title)
-        .accessibilityHint(detail)
+        .frame(maxHeight: .infinity)
+        .background(shape.fill(HelpTheme.blockFill(style)))
+        .clipShape(shape)
+        .overlay(shape.strokeBorder(hovering ? AskTheme.accent.opacity(0.5) : HelpTheme.blockBorder(style)))
+        .contentShape(shape)
     }
 }
 
@@ -262,7 +269,9 @@ struct HelpBigKeys: View {
         if let keys, !keys.isEmpty {
             HStack(spacing: 8) {
                 ForEach(Array(keys.enumerated()), id: \.offset) { index, key in
-                    if index > 0 { Text("+").font(.system(size: 13)).foregroundStyle(StudioTheme.textTertiary) }
+                    if index > 0 {
+                        Text("+").font(.system(size: 13)).foregroundStyle(StudioTheme.textTertiary)
+                    }
                     HelpKeycap(key: key, large: true, pressed: accent && pressed)
                 }
             }

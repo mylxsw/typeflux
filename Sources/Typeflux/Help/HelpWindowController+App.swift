@@ -5,7 +5,8 @@ extension HelpWindowController {
     /// The guide as the app shows it: it reads the launcher's keywords, the settings and the
     /// permissions, and hands "try it", "ask AI" and settings links back to the app.
     static func app(settings: SettingsStore, ask: AskConversationWindowController?,
-                    openSettings: @escaping @MainActor (HelpSettingsDestination) -> Void) -> HelpWindowController {
+                    openSettings: @escaping @MainActor (HelpSettingsDestination) -> Void,
+                    openFeedback: @escaping @MainActor (FeedbackDestination) -> Void) -> HelpWindowController {
         let workflowChanges = ask?.model.workflows?.$workflows.map { _ in () }.eraseToAnyPublisher()
         let model = HelpGuideModel(sources: HelpGuideModel.Sources(
             keywords: { [weak ask] language in ask?.model.helpKeywordSources(language: language) ?? [] },
@@ -29,6 +30,7 @@ extension HelpWindowController {
             openLauncher: { [weak ask] in ask?.showLauncher() },
             openSettings: openSettings,
             fixPermission: { id in Task { await PrivacyGuard.requestPermission(id) } },
+            openFeedback: openFeedback,
             openURL: { url in NSWorkspace.shared.open(url) }
         )
         return controller

@@ -24,6 +24,7 @@ struct HelpGuideModelTests {
         var launcherOpens = 0
         var settings: [HelpSettingsDestination] = []
         var fixed: [PrivacyGuard.PermissionID] = []
+        var feedback: [FeedbackDestination] = []
         var urls: [URL] = []
     }
 
@@ -58,6 +59,7 @@ struct HelpGuideModelTests {
             openLauncher: { recorder.launcherOpens += 1 },
             openSettings: { recorder.settings.append($0) },
             fixPermission: { recorder.fixed.append($0) },
+            openFeedback: { recorder.feedback.append($0) },
             openURL: { recorder.urls.append($0) }
         )
         return Harness(model: model, settings: settings, center: center, workflows: workflows,
@@ -136,7 +138,7 @@ struct HelpGuideModelTests {
         kit.model.handle(.up)
         #expect(kit.model.selectedKeyword?.keyword == HelpCatalogTests.translate)
         #expect(kit.model.handle(.enter))
-        #expect(kit.recorder.closes == 1 && kit.recorder.tried.map(\.0) == [HelpCatalogTests.translate])
+        #expect(kit.recorder.closes == 0 && kit.recorder.tried.map(\.0) == [HelpCatalogTests.translate])
         #expect(kit.recorder.tried.first?.1 == "")
         #expect(kit.model.handle(.commandEnter) && kit.recorder.tried.count == 2)
     }
@@ -179,7 +181,8 @@ struct HelpGuideModelTests {
         kit.model.prepare(query: "  sync to my phone ")
         #expect(kit.model.searchResults.isEmpty && !kit.model.handle(.enter))
         #expect(kit.model.handle(.commandEnter))
-        #expect(kit.recorder.asked == ["sync to my phone"] && kit.recorder.closes == 1)
+        #expect(kit.recorder.asked == ["sync to my phone"] && kit.recorder.closes == 0)
+        #expect(kit.model.query == "  sync to my phone " && kit.model.isPresented)
         kit.model.query = ""
         kit.model.askAI()
         #expect(kit.recorder.asked.count == 1)
@@ -219,14 +222,95 @@ struct HelpGuideModelTests {
         #expect(kit.model.page == .keywords && kit.model.selectedKeyword?.keyword == HelpCatalogTests.polish)
     }
 
-    @Test func `links to other windows keep the guide open and the launcher closes it`() throws {
+    @Test func `actions on every page keep the guide and its navigation state open`() throws {
         let kit = try harness()
-        kit.model.openSettings(.shortcuts)
-        kit.model.open(HelpGuideModel.feedbackURL)
-        #expect(kit.recorder.settings == [.shortcuts] && kit.recorder.urls == [HelpGuideModel.feedbackURL])
-        #expect(kit.recorder.closes == 0)
-        kit.model.openLauncher()
-        #expect(kit.recorder.launcherOpens == 1 && kit.recorder.closes == 1)
+        let controller = HelpWindowController(settingsStore: kit.settings, model: kit.model)
+        kit.model.actions.close = { [weak controller] in kit.recorder.closes += 1; controller?.dismiss() }
+        controller.show(query: "")
+        defer { controller.dismiss() }
+        let window = try #require(controller.presentedWindow)
+        let keyword = try #require(kit.model.selectedKeyword)
+        for page in HelpPage.allCases {
+            kit.model.show(page)
+            let selectedID = kit.model.selectedKeywordID
+            kit.model.openSettings(.shortcuts)
+            kit.model.open(HelpGuideModel.documentationURL)
+            kit.model.fix(.accessibility)
+            kit.model.openLauncher()
+            kit.model.tryKeyword(keyword, argument: "hello world")
+            for choice in FeedbackDestination.allCases { kit.model.openFeedback(choice) }
+            #expect(kit.model.page == page && kit.model.selectedKeywordID == selectedID)
+            kit.model.query = "  sync to my phone "
+            kit.model.askAI()
+            #expect(kit.model.query == "  sync to my phone ")
+            #expect(controller.presentedWindow === window && kit.model.isPresented)
+            #expect(kit.recorder.closes == 0)
+        }
+        #expect(kit.recorder.launcherOpens == HelpPage.allCases.count)
+        #expect(kit.recorder.tried.count == HelpPage.allCases.count)
+        #expect(kit.recorder.settings.count == HelpPage.allCases.count)
+        #expect(kit.recorder.feedback == HelpPage.allCases.flatMap { _ in FeedbackDestination.allCases })
+        #expect(kit.recorder.urls.allSatisfy { $0 == HelpGuideModel.documentationURL })
+        kit.model.query = ""
+        kit.model.handle(.escape)
+        #expect(kit.recorder.closes == 1 && !controller.isPresented && !kit.model.isPresented)
+    }
+
+    @Test(arguments: InterfaceStyle.allCases)
+    func `the start page has a static voice card and a working launcher card`(style: InterfaceStyle) async throws {
+        try await SettingsBehaviorTestSupport.withFixture { _ in
+            let kit = try harness()
+            kit.model.prepare(query: "")
+            try await SettingsBehaviorTestSupport.withWindow(
+                HelpWindowView(model: kit.model).environment(\.interfaceStyle, style), width: 1120, height: 740
+            ) { _, host in
+                let ui = SettingsBehaviorTestSupport.self
+                try await ui.wait { ui.contains(L("help.start.voice.title"), in: host) }
+                #expect(!ui.elements(in: host).contains {
+                    $0.role == NSAccessibility.Role.button.rawValue && $0.label == L("help.start.voice.title")
+                })
+                try ui.button(L("help.start.launcher.title"), in: host).press()
+                #expect(kit.recorder.launcherOpens == 1 && kit.recorder.closes == 0)
+                if let directory = ProcessInfo.processInfo.environment["TYPEFLUX_HELP_RENDER_SNAPSHOT"] {
+                    host.layoutSubtreeIfNeeded()
+                    let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
+                    host.cacheDisplay(in: host.bounds, to: bitmap)
+                    try #require(bitmap.representation(using: .png, properties: [:])).write(
+                        to: URL(fileURLWithPath: directory).appendingPathComponent(style.rawValue + "-start.png")
+                    )
+                }
+            }
+        }
+    }
+
+    @Test(arguments: InterfaceStyle.allCases)
+    func `the sidebar feedback menu offers and dispatches all three choices`(style: InterfaceStyle) async throws {
+        try await SettingsBehaviorTestSupport.withFixture { _ in
+            let kit = try harness()
+            kit.settings.interfaceStyle = style
+            let controller = HelpWindowController(settingsStore: kit.settings, model: kit.model)
+            kit.model.actions.close = { [weak controller] in kit.recorder.closes += 1; controller?.dismiss() }
+            controller.show(query: "")
+            defer { controller.dismiss() }
+            let window = try #require(controller.presentedWindow)
+            let host = try #require(window.contentView)
+            func descendants(_ view: NSView) -> [NSView] { [view] + view.subviews.flatMap(descendants) }
+            try await SettingsBehaviorTestSupport.wait {
+                descendants(host).contains { $0 is NSPopUpButton }
+            }
+            // Render the menu's actual content without AppKit's tracking loop, which
+            // can terminate the SwiftPM host before it reports test completion.
+            try await SettingsBehaviorTestSupport.withWindow(VStack {
+                HelpFeedbackOptions(model: kit.model)
+            }, width: 300, height: 180) { _, options in
+                for choice in FeedbackDestination.allCases {
+                    try SettingsBehaviorTestSupport.button(choice.title, in: options).press()
+                    #expect(kit.recorder.feedback.last == choice)
+                    #expect(controller.presentedWindow === window && kit.recorder.closes == 0)
+                }
+            }
+            #expect(kit.recorder.feedback == FeedbackDestination.allCases && kit.recorder.urls.isEmpty)
+        }
     }
 
     @Test func `keys map to the guide's actions`() {
@@ -245,6 +329,15 @@ struct HelpGuideModelTests {
         #expect(HelpWindowView.defaultSize.width >= HelpWindowView.minimumSize.width)
         #expect(HelpWindowView.defaultSize.height >= HelpWindowView.minimumSize.height)
         #expect(HelpWindowView.minimumSize.width > HelpWindowView.sidebarWidth + 600)
+    }
+
+    @Test func `the guide title uses the localized usage guide name without a brand`() {
+        for language in AppLanguage.allCases {
+            let title = AppLocalization.shared.string("help.title", in: language)
+            #expect(title == AppLocalization.shared.string("ask.plugin.help.title", in: language))
+            #expect(!title.localizedCaseInsensitiveContains("Typeflux"))
+        }
+        #expect(AppLocalization.shared.string("help.title", in: .simplifiedChinese) == "使用指南")
     }
 
     @Test func `examples suit what the keyword takes`() throws {

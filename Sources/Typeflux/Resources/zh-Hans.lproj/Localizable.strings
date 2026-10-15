@@ -5301,7 +5301,7 @@
 "hotkeys.action.openHelp.subtitle" = "查看关键词、快捷键和常见问题。";
 "ask.plugin.help.title" = "使用指南";
 "ask.plugin.help.placeholder" = "搜索指南，或按 ↩ 打开";
-"help.title" = "Typeflux 使用指南";
+"help.title" = "使用指南";
 "help.page.start" = "开始";
 "help.page.start.subtitle" = "所有功能都从这里开始";
 "help.page.keywords" = "关键词";

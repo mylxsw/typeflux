@@ -54,9 +54,17 @@ struct StatusBarFeedbackTests {
             let updateIndex = try #require(menu.items.firstIndex { $0.title == L("menu.checkForUpdates") })
             #expect(menu.items[updateIndex + 1].title == L("menu.feedback"))
             let feedbackMenu = try #require(menu.items[updateIndex + 1].submenu)
+            #expect(feedbackMenu.items.map(\.title) == FeedbackDestination.allCases.map(\.title))
+            let guide = HelpWindowController.app(
+                settings: settings, ask: nil, openSettings: { _ in },
+                openFeedback: { controller.showFeedback($0) }
+            )
+            guide.show(query: "")
+            defer { guide.dismiss() }
             // Exercise first presentation, the existing window, and a newly recreated window.
             for attempt in 0 ..< 3 {
-                feedbackMenu.performActionForItem(at: 0)
+                if attempt == 1 { guide.model.openFeedback(.direct) }
+                else { feedbackMenu.performActionForItem(at: 0) }
                 let window = try #require(windowController.window)
                 try await UI.wait { window.attachedSheet != nil }
                 let sheet = try #require(window.attachedSheet)
@@ -64,10 +72,66 @@ struct StatusBarFeedbackTests {
                 try await UI.wait { UI.contains(L("feedback.direct.title"), in: host) }
                 #expect(UI.contains(L("feedback.direct.contentLabel"), in: host))
                 #expect(UI.contains(L("feedback.direct.submit"), in: host))
+                #expect(guide.isPresented && guide.model.isPresented)
                 try UI.button(L("common.cancel"), in: host).press()
                 try await UI.wait { window.attachedSheet == nil }
                 if attempt == 1 { window.close() }
             }
+        }
+    }
+
+    @Test func `menu and guide share external feedback destinations without closing the guide`() async throws {
+        try await UI.withFixture { settings in
+            let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+            defer { try? FileManager.default.removeItem(at: directory) }
+            var urls: [URL] = []
+            let controller = StatusBarController(
+                appState: AppStateStore(), settingsStore: settings,
+                historyStore: FileHistoryStore(baseDir: directory), onOpenFeedbackURL: { urls.append($0) }
+            )
+            controller.start()
+            defer { controller.stop() }
+            let menu = try #require(controller.menu?.items.first { $0.title == L("menu.feedback") }?.submenu)
+            #expect(menu.items.compactMap { $0.representedObject as? String } == FeedbackDestination.allCases.map(\.rawValue))
+            let guide = HelpWindowController.app(
+                settings: settings, ask: nil, openSettings: { _ in },
+                openFeedback: { controller.showFeedback($0) }
+            )
+            guide.show(query: "feedback")
+            defer { guide.dismiss() }
+            for destination in [FeedbackDestination.email, .github] {
+                let index = try #require(menu.items.firstIndex { $0.representedObject as? String == destination.rawValue })
+                menu.performActionForItem(at: index)
+                guide.model.openFeedback(destination)
+                let url = try #require(destination.url)
+                #expect(urls.suffix(2) == [url, url])
+                #expect(guide.isPresented && guide.model.query == "feedback")
+            }
+            let count = urls.count
+            menu.items[1].representedObject = nil
+            menu.performActionForItem(at: 1)
+            menu.items[1].representedObject = "unknown"
+            menu.performActionForItem(at: 1)
+            #expect(urls.count == count && guide.isPresented)
+        }
+    }
+
+    @Test func `feedback choices preserve the existing email and GitHub links`() throws {
+        #expect(FeedbackDestination.direct.url == nil)
+        #expect(FeedbackDestination.allCases.map(\.id) == ["direct", "email", "github"])
+        #expect(FeedbackDestination.github.url?.absoluteString == "https://github.com/mylxsw/typeflux/issues/new")
+        let email = try #require(FeedbackDestination.email.url)
+        let components = try #require(URLComponents(url: email, resolvingAgainstBaseURL: false))
+        #expect(components.scheme == "mailto" && components.path == "mylxsw@aicode.cc")
+        #expect(components.queryItems == [
+            URLQueryItem(name: "subject", value: "Typeflux Feedback"),
+            URLQueryItem(name: "body", value: "Hi,\n\nI want to share some feedback about Typeflux:\n")
+        ])
+        for language in AppLanguage.allCases {
+            #expect(FeedbackDestination.allCases.allSatisfy {
+                AppLocalization.shared.string("sidebar.feedback.\($0.rawValue)Option", in: language)
+                    != "sidebar.feedback.\($0.rawValue)Option"
+            })
         }
     }
 }

@@ -5176,7 +5176,7 @@
 "hotkeys.action.openHelp.subtitle" = "키워드, 단축키와 자주 묻는 질문을 봅니다.";
 "ask.plugin.help.title" = "사용 가이드";
 "ask.plugin.help.placeholder" = "가이드 검색, 또는 ↩로 열기";
-"help.title" = "Typeflux 사용 가이드";
+"help.title" = "사용 가이드";
 "help.page.start" = "시작";
 "help.page.start.subtitle" = "모든 기능은 여기서 시작합니다";
 "help.page.keywords" = "키워드";
