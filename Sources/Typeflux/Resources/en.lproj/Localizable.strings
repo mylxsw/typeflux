@@ -902,6 +902,7 @@
 "settings.models.storagePathCopied" = "Storage path copied.";
 "settings.models.configurationSaved" = "Configuration saved.";
 "settings.models.connectionSuccess" = "Connected · First token: %dms · Total: %dms";
+"settings.models.connectionPreview" = "Response";
 "settings.models.useLocal" = "Use Local";
 "settings.models.useRemote" = "Use Remote";
 "settings.models.useMultimodal" = "Use Multimodal";
@@ -5502,5 +5503,6 @@
 "component.collapsed" = "Collapsed";
 "component.add" = "Add";
 "component.remove" = "Remove";
+"component.more" = "More";
 "component.undo" = "Undo";
 "component.required" = "Required";

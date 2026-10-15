@@ -893,6 +893,7 @@
 "settings.models.storagePathCopied" = "저장 경로가 복사되었습니다.";
 "settings.models.configurationSaved" = "구성이 저장되었습니다.";
 "settings.models.connectionSuccess" = "연결됨 · 첫 번째 토큰: %dms · 총계: %dms";
+"settings.models.connectionPreview" = "응답";
 "settings.models.useLocal" = "로컬 사용";
 "settings.models.useRemote" = "원격 사용";
 "settings.models.useMultimodal" = "다중 모드 사용";
@@ -5387,5 +5388,6 @@
 "component.collapsed" = "접힘";
 "component.add" = "추가";
 "component.remove" = "제거";
+"component.more" = "더 보기";
 "component.undo" = "실행 취소";
 "component.required" = "필수";

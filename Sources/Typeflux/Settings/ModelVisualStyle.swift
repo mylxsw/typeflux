@@ -112,19 +112,18 @@ struct ModelDetailHeader: View {
     var onBack: (() -> Void)?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 12) {
             if let onBack {
                 ModelProviderBackButton(title: backTitle ?? ModelPageTab.language.title, action: onBack)
             }
-            HStack(spacing: 12) {
-                ModelIconTile(size: 38) {
-                    ModelProviderIcon(provider: icon, size: 24)
-                }
-                Text(title).font(.studioDisplay(StudioTheme.Typography.sectionTitle, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textPrimary)
+            HStack(spacing: 14) {
+                TFLogoTile(size: 40) { ModelProviderIcon(provider: icon, size: 24) }
+                Text(title).font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(TFColors.textPrimary)
                     .accessibilityIdentifier("models.provider.title")
                 Spacer(minLength: 12)
-                ModelConnectionStatus(connected: connected)
+                TFStatusLabel(text: L(connected ? "models.configured" : "models.notConfigured"),
+                              level: connected ? .success : .neutral)
             }
         }
     }
@@ -208,13 +207,7 @@ struct ModelProviderBackButton: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            Label(title, systemImage: "chevron.left")
-                .font(.system(size: SettingsControlMetrics.fontSize, weight: .medium))
-                .foregroundStyle(StudioTheme.textSecondary)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("models.provider.back")
+        TFButton(title: title, systemImage: "chevron.left", kind: .plain, size: .small, action: action)
+            .accessibilityIdentifier("models.provider.back")
     }
 }

@@ -11,7 +11,6 @@ struct ProviderModelsView: View {
     @State private var savedKey = ""
     @State private var apiStyle = LLMRemoteAPIStyle.openAICompatible
     @State private var savedAPIStyle = LLMRemoteAPIStyle.openAICompatible
-    @State private var showsKey = false
     @State private var modelID = ""
     @State private var manual = false
     @State private var loading = false
@@ -36,7 +35,7 @@ struct ProviderModelsView: View {
     }
 
     private var editableBody: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: TFMetrics.sectionSpacing) {
             if let provider {
                 ModelDetailHeader(
                     title: provider.name,
@@ -44,29 +43,17 @@ struct ProviderModelsView: View {
                     connected: library.unavailableReason(provider, loggedIn: auth.isLoggedIn) == nil,
                     onBack: onBack
                 )
-                .padding(.bottom, 22)
                 if provider.remote == .freeModel {
-                    ModelSurface {
-                        Text(L("settings.models.freeModel.hint")).font(.system(size: 13))
-                            .foregroundStyle(StudioTheme.textSecondary).padding(18)
-                    }
+                    TFNotice(text: L("settings.models.freeModel.hint"))
                 } else {
-                    SettingsListSectionLabel(title: L("models.connection")).padding(.bottom, 8)
                     connectionCard(provider)
                 }
-                modelsHeader(provider).padding(.top, 26).padding(.bottom, 8)
-                modelsCard(provider)
-                if ModelSettingsPresentation.showsUsageHint(provider.models, rewriteReference: library.rewriteReference,
-                                                            defaultReference: library.defaultReference) {
-                    Text(L("models.usageHint")).font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
-                        .padding(.horizontal, 4).padding(.top, 10)
-                }
+                modelsSection(provider)
                 if provider.remote == .freeModel, let notice {
-                    noticeText(notice).padding(.horizontal, 4).padding(.top, 8)
+                    noticeView(notice)
                 }
             }
         }
-        .buttonStyle(ModelActionStyle())
         .onAppear {
             if let provider {
                 let value = library.connection(provider)
@@ -99,169 +86,126 @@ struct ProviderModelsView: View {
     }
 
     private func connectionCard(_ provider: RegisteredProvider) -> some View {
-        ModelSurface {
-            VStack(alignment: .leading, spacing: 0) {
-                if provider.supportsProtocolSelection {
-                    formRow(L("models.protocol")) {
-                        SettingsMenuPicker(title: L("models.protocol"),
-                                           options: LLMRemoteAPIStyle.customChoices.map { (
-                                               label: $0.displayName,
-                                               value: $0
-                                           ) },
-                                           selection: $apiStyle)
-                    }
-                    ModelRowDivider()
+        TFFormSection(title: L("models.connection")) {
+            if provider.supportsProtocolSelection {
+                TFFormRow(title: L("models.protocol"), icon: "arrow.left.arrow.right", controlWidth: .wide) {
+                    TFPopUpButton(title: L("models.protocol"),
+                                  options: LLMRemoteAPIStyle.customChoices.map { TFOption($0, $0.displayName) },
+                                  selection: $apiStyle, width: TFMetrics.formControlWideWidth)
                 }
-                formRow(L("settings.models.apiEndpoint")) {
-                    TextField("https://api.example.com/v1", text: $baseURL).textFieldStyle(ModelFieldStyle())
+                TFDivider.formWithIcon
+            }
+            TFFormRow(title: L("settings.models.apiEndpoint"), icon: "link", controlWidth: .wide) {
+                TextField("https://api.example.com/v1", text: $baseURL)
+                    .textFieldStyle(TFTextFieldStyle(monospaced: true))
+            }
+            if !provider.isOllama {
+                TFDivider.formWithIcon
+                TFFormRow(title: "API Key", icon: "key", controlWidth: .wide) {
+                    TFSecureField(placeholder: "API Key", text: $key)
                 }
-                if !provider.isOllama {
-                    ModelRowDivider()
-                    formRow("API Key") { keyField }
-                }
-                Rectangle().fill(ModelVisualStyle.divider).frame(height: 1)
-                HStack(spacing: 8) {
-                    if loading {
-                        ProgressView().controlSize(.small)
-                    } else if let notice {
-                        noticeText(notice)
-                    }
+            }
+            TFDivider.form
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: TFMetrics.toolbarSpacing) {
+                    if loading { TFSpinner() }
                     Spacer(minLength: 8)
-                    Button(L("ask.models.test")) { testConnection(provider) }.disabled(loading)
-                    Button(L("ask.models.save")) { save(provider) }
-                        .buttonStyle(ModelActionStyle(primary: true))
+                    TFButton(title: L("ask.models.test")) { testConnection(provider) }.disabled(loading)
+                    TFButton(title: L("ask.models.save"), kind: .primary) { save(provider) }
                         .disabled(loading || !ModelSettingsPresentation.connectionChanged(
                             savedBaseURL: savedBaseURL, savedKey: savedKey, baseURL: baseURL, key: key,
                             savedAPIStyle: savedAPIStyle, apiStyle: apiStyle
                         ))
                 }
-                .padding(.horizontal, 18).padding(.vertical, 12)
+                if !loading, let notice {
+                    noticeView(notice)
+                }
             }
+            .padding(.horizontal, 14).padding(.vertical, 12)
         }
     }
 
-    private var keyField: some View {
-        Group {
-            if showsKey {
-                TextField("API Key", text: $key)
-            } else {
-                SecureField("API Key", text: $key)
-            }
-        }
-        .textFieldStyle(ModelFieldStyle(trailingAccessoryWidth: 24))
-        .overlay(alignment: .trailing) {
-            Button { showsKey.toggle() } label: {
-                Image(systemName: showsKey ? "eye.slash" : "eye")
-                    .font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
-                    .frame(width: 26, height: 26).contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .padding(.trailing, 3)
-            .help(L(showsKey ? "models.hideKey" : "models.showKey"))
-            .accessibilityLabel(L(showsKey ? "models.hideKey" : "models.showKey"))
-        }
-    }
-
-    private func modelsHeader(_ provider: RegisteredProvider) -> some View {
-        HStack(spacing: 8) {
-            SettingsListSectionLabel(title: L("common.model"), count: provider.models.count)
-            Spacer()
-            Button { manual = true } label: { Label(L("models.manual"), systemImage: "plus") }
-            Button { load(provider) } label: { Label(L("models.load"), systemImage: "arrow.clockwise") }
-                .disabled(loading)
-        }
-    }
-
-    private func modelsCard(_ provider: RegisteredProvider) -> some View {
+    private func modelsSection(_ provider: RegisteredProvider) -> some View {
         let rewriteReferences = selectableReferences(scenario: "rewrite")
         let askReferences = selectableReferences(scenario: "ask")
-        return ModelSurface {
-            VStack(alignment: .leading, spacing: 0) {
-                if manual {
-                    HStack(spacing: 8) {
-                        TextField(L("ask.models.modelID"), text: $modelID).textFieldStyle(ModelFieldStyle())
-                            .onSubmit { addManualModel(provider) }
-                        Button(L("ask.models.cancel")) { manual = false; modelID = "" }
-                        Button(L("models.add")) { addManualModel(provider) }
-                            .buttonStyle(ModelActionStyle(primary: true))
-                            .disabled(modelID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                    }.padding(.horizontal, 18).padding(.vertical, 10)
-                    if !provider.models.isEmpty {
-                        ModelRowDivider()
-                    }
+        let showsHint = ModelSettingsPresentation.showsUsageHint(provider.models,
+                                                                 rewriteReference: library.rewriteReference,
+                                                                 defaultReference: library.defaultReference)
+        return TFFormSection(title: L("common.model"), count: provider.models.count,
+                             footnote: showsHint ? L("models.usageHint") : nil) {
+            TFButton(title: L("models.manual"), systemImage: "plus") { manual = true }
+            TFButton(title: L("models.load"), systemImage: "arrow.clockwise") { load(provider) }
+                .disabled(loading)
+        } content: {
+            if manual {
+                HStack(spacing: TFMetrics.toolbarSpacing) {
+                    TextField(L("ask.models.modelID"), text: $modelID)
+                        .textFieldStyle(TFTextFieldStyle(monospaced: true))
+                        .onSubmit { addManualModel(provider) }
+                    TFButton(title: L("ask.models.cancel")) { manual = false; modelID = "" }
+                    TFButton(title: L("models.add"), kind: .primary) { addManualModel(provider) }
+                        .disabled(modelID.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }
-                ForEach(Array(provider.models.enumerated()), id: \.element.id) { index, model in
-                    if index > 0 {
-                        ModelRowDivider()
-                    }
-                    modelRow(
-                        model,
-                        provider: provider,
-                        canRewrite: rewriteReferences.contains(model.reference),
-                        canAsk: askReferences.contains(model.reference)
-                    )
-                }
-                if provider.models.isEmpty, !manual {
-                    Text(L("models.noModels")).font(.system(size: 13)).foregroundStyle(StudioTheme.textTertiary)
-                        .frame(maxWidth: .infinity).padding(.vertical, 24)
-                }
+                .padding(.horizontal, 14).padding(.vertical, 10)
+                if !provider.models.isEmpty { TFDivider.form }
+            }
+            ForEach(Array(provider.models.enumerated()), id: \.element.id) { index, model in
+                if index > 0 { TFDivider.formWithIcon }
+                modelRow(model, provider: provider, canRewrite: rewriteReferences.contains(model.reference),
+                         canAsk: askReferences.contains(model.reference))
+            }
+            if provider.models.isEmpty, !manual {
+                TFCardNote(text: L("models.noModels"))
             }
         }
     }
-
 }
 
 extension ProviderModelsView {
     private func modelRow(_ model: RegisteredModel, provider: RegisteredProvider, canRewrite: Bool, canAsk: Bool) -> some View {
-        HStack(spacing: 10) {
-            ModelIcon(model: model, provider: provider)
-            VStack(alignment: .leading, spacing: 3) {
-                Text(model.id).font(.system(size: 13, design: .monospaced)).foregroundStyle(StudioTheme.textPrimary)
+        HStack(spacing: 12) {
+            TFLogoTile { ModelIcon(model: model, provider: provider) }
+            VStack(alignment: .leading, spacing: 2) {
+                Text(model.id).font(.system(size: 13, design: .monospaced)).foregroundStyle(TFColors.textPrimary)
                     .lineLimit(1).truncationMode(.middle)
                 if let reason = model.exclusionReason {
-                    Text(reason).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
+                    Text(reason).font(.system(size: 11.5)).foregroundStyle(TFColors.textTertiary)
                 }
             }
             Spacer(minLength: 8)
-            ForEach(ModelSettingsPresentation.usageKeys(
-                reference: model.reference,
-                rewriteReference: library.rewriteReference,
-                defaultReference: library.defaultReference
-            ), id: \.self) { key in
-                ModelUsageBadge(text: L(key), accent: true)
-            }
+            ModelUsageTags(reference: model.reference, library: library)
             visionIndicator(model)
-            Menu {
-                // Checked when already in use; greyed out only when the scene cannot take it, with the reason below.
-                Toggle(L("models.useForRewrite"), isOn: Binding(
-                    get: { library.rewriteReference == model.reference },
-                    set: { if $0 { library.rewriteReference = model.reference } }
-                )).disabled(!canRewrite)
-                Toggle(L("ask.models.makeDefault"), isOn: Binding(
-                    get: { library.defaultReference == model.reference },
-                    set: { if $0 { library.defaultReference = model.reference } }
-                )).disabled(!canAsk)
-                ForEach(sceneBlockedNotes(model, provider: provider, canRewrite: canRewrite, canAsk: canAsk),
-                        id: \.self) { Text($0) }
-                Divider()
-                Text(L("models.capabilityHint"))
-                Toggle(L("models.visionYes"), isOn: Binding(
-                    get: { model.effectiveVision == true },
-                    set: { setCapability(\.vision, $0, model: model) }
-                ))
-                // Unset reasoning still offers the effort menu (see `AskReasoningEffort`), so it reads as on.
-                Toggle(L("models.reasoningYes"), isOn: Binding(
-                    get: { model.reasoning != false },
-                    set: { setCapability(\.reasoning, $0, model: model) }
-                ))
-                Divider()
-                Button(L("ask.models.delete"), role: .destructive) { pendingDeletion = model }
-            } label: {
-                Image(systemName: "ellipsis")
-            }
-            .menuStyle(.borderlessButton).menuIndicator(.hidden).frame(width: 28)
+            TFMenuButton(title: L("component.more"), systemImage: "ellipsis", kind: .plain, size: .small,
+                         iconOnly: true, actions: modelActions(model, provider: provider, canRewrite: canRewrite,
+                                                               canAsk: canAsk))
         }
-        .padding(.leading, 18).padding(.trailing, 12).frame(minHeight: 46)
+        .padding(.leading, 14).padding(.trailing, 10).frame(minHeight: 46)
+    }
+
+    /// Checked when already in use; greyed out only when the scene cannot take it, with the reason below.
+    private func modelActions(_ model: RegisteredModel, provider: RegisteredProvider, canRewrite: Bool,
+                              canAsk: Bool) -> [TFMenuAction] {
+        var actions: [TFMenuAction] = [
+            .toggle(L("models.useForRewrite"), isOn: library.rewriteReference == model.reference,
+                    isEnabled: canRewrite) { if $0 { library.rewriteReference = model.reference } },
+            .toggle(L("ask.models.makeDefault"), isOn: library.defaultReference == model.reference,
+                    isEnabled: canAsk) { if $0 { library.defaultReference = model.reference } }
+        ]
+        actions += sceneBlockedNotes(model, provider: provider, canRewrite: canRewrite, canAsk: canAsk).map { .note($0) }
+        actions += [
+            .separator,
+            .note(L("models.capabilityHint")),
+            .toggle(L("models.visionYes"), isOn: model.effectiveVision == true) {
+                setCapability(\.vision, $0, model: model)
+            },
+            // Unset reasoning still offers the effort menu (see `AskReasoningEffort`), so it reads as on.
+            .toggle(L("models.reasoningYes"), isOn: model.reasoning != false) {
+                setCapability(\.reasoning, $0, model: model)
+            },
+            .separator,
+            .action(L("ask.models.delete"), destructive: true) { pendingDeletion = model }
+        ]
+        return actions
     }
 
     private func sceneBlockedNotes(_ model: RegisteredModel, provider: RegisteredProvider,
@@ -278,26 +222,18 @@ extension ProviderModelsView {
     private func visionIndicator(_ model: RegisteredModel) -> some View {
         switch model.effectiveVision {
         case true?:
-            Text(L("ask.models.badge.vision")).font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
-                .lineLimit(1).fixedSize()
+            TFTag(text: L("ask.models.badge.vision"))
                 .help(L(model.visionIsGuessed ? "models.visionGuessed" : "ask.models.supportsImages"))
         case nil:
-            Text(L("models.visionUnknownShort")).font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
-                .lineLimit(1).fixedSize()
+            TFTag(text: L("models.visionUnknownShort")).opacity(0.7)
                 .help(L("models.capabilityHint"))
         case false?:
             EmptyView()
         }
     }
 
-    private func noticeText(_ text: String) -> some View {
-        Text(text).font(.system(size: 12))
-            .foregroundStyle(noticeIsSuccess ? StudioTheme.success : StudioTheme.danger)
-            .lineLimit(2).textSelection(.enabled)
-    }
-
-    private func formRow(_ title: String, @ViewBuilder content: () -> some View) -> some View {
-        ModelFormRow(title: title, content: content)
+    private func noticeView(_ text: String) -> some View {
+        TFNotice(text: text, tone: noticeIsSuccess ? .success : .danger)
     }
 
     /// References the scene pickers would offer, so row shortcuts never assign an ineligible model.

@@ -111,6 +111,12 @@ struct TFPopUpButton<Value: Hashable>: View {
 /// One entry of an action menu.
 enum TFMenuAction {
     case action(String, systemImage: String? = nil, destructive: Bool = false, isEnabled: Bool = true, () -> Void)
+    /// An action with a picture, e.g. the logo of the app it imports from.
+    case imageAction(String, image: NSImage?, () -> Void)
+    /// A checkable option; the handler receives the new state.
+    case toggle(String, isOn: Bool, isEnabled: Bool = true, (Bool) -> Void)
+    /// A greyed-out line explaining the options around it.
+    case note(String)
     case separator
 
     /// Native entries and the closures they run, by tag.
@@ -125,6 +131,16 @@ enum TFMenuAction {
                 entries.append(TFNativeMenuEntry(kind: .item(tag: handlers.count), title: title, systemImage: symbol,
                                                  destructive: destructive, isEnabled: isEnabled))
                 handlers.append(handler)
+            case let .imageAction(title, image, handler):
+                entries.append(TFNativeMenuEntry(kind: .item(tag: handlers.count), title: title, image: image))
+                handlers.append(handler)
+            case let .toggle(title, isOn, isEnabled, handler):
+                entries.append(TFNativeMenuEntry(kind: .item(tag: handlers.count), title: title, isSelected: isOn,
+                                                 isEnabled: isEnabled))
+                handlers.append { handler(!isOn) }
+            case let .note(title):
+                entries.append(TFNativeMenuEntry(kind: .item(tag: handlers.count), title: title, isEnabled: false))
+                handlers.append {}
             }
         }
         return (entries, handlers)

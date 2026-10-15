@@ -6,13 +6,8 @@ struct ModelPageTabBar: View {
     let onSelect: (ModelPageTab) -> Void
 
     var body: some View {
-        HStack(spacing: StudioTheme.Spacing.xxLarge) {
-            ForEach(ModelPageTab.allCases) { tab in
-                StudioUnderlineTab(title: tab.title, count: nil, selected: tab == selection) {
-                    onSelect(tab)
-                }
-                .accessibilityIdentifier("studio.models.tab.\(tab.rawValue)")
-            }
-        }
+        TFTabBar(options: ModelPageTab.allCases.map { TFOption($0, $0.title) },
+                 selection: Binding(get: { selection }, set: onSelect),
+                 identifier: { "studio.models.tab.\($0.rawValue)" })
     }
 }

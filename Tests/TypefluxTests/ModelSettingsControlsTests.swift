@@ -58,7 +58,7 @@ struct ModelSettingsControlsTests {
             for disabled in [false, true] {
                 let host = NSHostingView(rootView: AskModelMenu(library: library, reference: .constant("missing"),
                                                                 disabled: disabled, fieldStyle: true))
-                #expect(abs(host.fittingSize.height - SettingsControlMetrics.menuHeight) < 0.5)
+                #expect(abs(host.fittingSize.height - TFControlSize.regular.height) < 0.5)
                 #expect(abs(host.fittingSize.width - 240) < 0.5)
             }
             for compact in [false, true] {
@@ -83,8 +83,9 @@ struct ModelSettingsControlsTests {
                 }) { _, host in
                     try await Task.sleep(for: .milliseconds(100))
                     host.layoutSubtreeIfNeeded()
-                    let menuButton = try #require(descendants(host).compactMap { $0 as? NSPopUpButton }.first)
-                    #expect(abs(menuButton.bounds.height - SettingsControlMetrics.menuHeight) < 1)
+                    let menuButton = try #require(descendants(host).compactMap { $0 as? NSPopUpButton }
+                        .first { !$0.isHiddenOrHasHiddenAncestor && $0.bounds.width > 0 }) // shown adaptive layout
+                    #expect(abs(menuButton.bounds.height - TFControlSize.regular.height) < 1)
                     #expect(abs(menuButton.bounds.width - 240) < 1)
                     // NSView.hitTest expects coordinates in its superview, which may have a
                     // different flipped coordinate system from this SwiftUI hosting view.
@@ -159,7 +160,7 @@ struct ModelSettingsControlsTests {
                 try #require(back).press()
                 try await UI.wait { model.selectedLanguageProviderID == nil }
                 model.modelSearchQuery = "fixture-no-match"
-                try await UI.wait { UI.contains(String(format: L("models.searchEmpty"), "fixture-no-match"), in: host) }
+                try await UI.wait { UI.contains(L("component.search.noResults", "fixture-no-match"), in: host) }
                 try UI.button(ModelPageTab.speech.title, in: host).press()
                 try await UI.wait { model.modelPageTab == .speech }
                 #expect(model.modelSearchQuery.isEmpty)
@@ -285,12 +286,11 @@ struct ModelSettingsControlsTests {
                 try await UI.wait { UI.contains(L("models.configured"), in: host) }
                 #expect(!UI.contains(L("common.test"), in: host))
                 model.sttConnectionTestState = .testing
-                try await UI.wait {
-                    UI.elements(in: host).contains { $0.label == L("ask.models.test") && $0.role == "AXBusyIndicator" }
+                let busy: (UI.Element) -> Bool = {
+                    $0.label == L("ask.models.test") && $0.value("accessibilityValue") as? String == L("component.loading")
                 }
-                let testing = try #require(UI.elements(in: host).first {
-                    $0.label == L("ask.models.test") && $0.role == "AXBusyIndicator"
-                })
+                try await UI.wait { UI.elements(in: host).contains(where: busy) }
+                let testing = try #require(UI.elements(in: host).first(where: busy))
                 #expect(testing.value("isAccessibilityEnabled") as? Bool == false)
                 model.sttConnectionTestState = .notice(message: "Fixture connection feedback")
                 try await UI.wait { UI.contains("Fixture connection feedback", in: host) }

@@ -57,8 +57,17 @@ struct AskModelMenu: View {
     var body: some View {
         Button { expanded.toggle() } label: {
             if fieldStyle {
-                SettingsMenuField { modelLabel }
-                    .frame(width: 240)
+                TFButtonChrome(kind: .secondary, destructive: false, size: .regular, iconOnly: false,
+                               isPressed: expanded, hoverOverride: hovering) {
+                    HStack(spacing: 6) {
+                        modelLabel
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.system(size: 9, weight: .semibold))
+                            .foregroundStyle(TFColors.textTertiary)
+                    }
+                    .font(.system(size: 13))
+                }
+                .frame(width: 240)
             } else {
                 modelLabel
                     .font(.system(size: compact ? 13.5 : 13, weight: compact ? .semibold : .medium))

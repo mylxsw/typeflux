@@ -6,18 +6,18 @@ struct PersonaDeletionConfirmationView: View {
     let persona: PersonaProfile
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 14) {
             Text(L("settings.personas.deleteDialog.title"))
-                .font(.system(size: 17, weight: .semibold))
+                .font(.system(size: 17, weight: .semibold)).foregroundStyle(TFColors.textPrimary)
             Text(viewModel.personaDeletionMessage(for: persona))
-                .font(.system(size: 13)).lineSpacing(5)
-                .foregroundStyle(StudioTheme.textSecondary)
+                .font(.system(size: 13)).lineSpacing(4)
+                .foregroundStyle(TFColors.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
-            HStack {
+            HStack(spacing: TFMetrics.toolbarSpacing) {
                 Spacer()
-                Button(L("common.cancel")) { viewModel.personaPendingDeletion = nil }
+                TFButton(title: L("common.cancel")) { viewModel.personaPendingDeletion = nil }
                     .keyboardShortcut(.cancelAction)
-                Button(L("common.delete"), role: .destructive) {
+                TFButton(title: L("common.delete"), kind: .primary, destructive: true) {
                     viewModel.deletePersona(id: persona.id)
                     viewModel.personaPendingDeletion = nil
                 }
@@ -25,8 +25,10 @@ struct PersonaDeletionConfirmationView: View {
             }
         }
         .padding(24)
-        .background(Color(nsColor: .windowBackgroundColor), in: RoundedRectangle(cornerRadius: 14))
-        .overlay(RoundedRectangle(cornerRadius: 14).stroke(StudioTheme.border))
+        .background(Color(nsColor: .windowBackgroundColor),
+                    in: RoundedRectangle(cornerRadius: TFMetrics.sheetCornerRadius, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: TFMetrics.sheetCornerRadius, style: .continuous)
+            .strokeBorder(TFColors.border, lineWidth: TFMetrics.borderWidth))
         .shadow(radius: 18)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("personas.deleteConfirmation")

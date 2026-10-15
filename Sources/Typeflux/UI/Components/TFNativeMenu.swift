@@ -13,6 +13,8 @@ struct TFNativeMenuEntry: Equatable {
     var kind: Kind
     var title: String = ""
     var systemImage: String?
+    /// A picture such as an app logo; used instead of `systemImage`.
+    var image: NSImage?
     var count: Int?
     var destructive = false
     var isSelected = false
@@ -76,7 +78,9 @@ struct TFNativeMenuEntry: Equatable {
                 if entry.count != nil || entry.destructive {
                     item.attributedTitle = entry.attributedTitle(countColumn: column)
                 }
-                if let symbol = entry.systemImage {
+                if let image = entry.image {
+                    item.image = image
+                } else if let symbol = entry.systemImage {
                     item.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)
                 }
                 item.state = entry.isSelected ? .on : .off
@@ -106,6 +110,8 @@ struct TFNativeMenuControl: NSViewRepresentable {
         override var intrinsicContentSize: NSSize {
             NSSize(width: NSView.noIntrinsicMetric, height: NSView.noIntrinsicMetric)
         }
+        /// No alignment insets, so the button covers exactly the capsule SwiftUI draws.
+        override var alignmentRectInsets: NSEdgeInsets { NSEdgeInsetsZero }
         override var focusRingMaskBounds: NSRect { bounds }
         override func drawFocusRingMask() {
             NSBezierPath(roundedRect: bounds, xRadius: bounds.height / 2, yRadius: bounds.height / 2).fill()
