@@ -243,7 +243,7 @@ struct HotkeySettingsViewTests {
                     $0.value("accessibilityIdentifier") as? String == "hotkeys.keyword.template.rw"
                 })
                 for item in templates {
-                    #expect(abs(item.frame.height - 32) < 1)
+                    #expect(abs(item.frame.height - TFControlSize.regular.height) < 1)
                 }
                 try template.press()
                 try await SettingsBehaviorTestSupport.wait { window.attachedSheet != nil }

@@ -64,6 +64,8 @@
 
 嵌套时内圆角 = 外圆角 − 内边距，保证同心。
 
+胶囊一律用 `Capsule(style: .circular)`：SwiftUI 默认的连续圆角胶囊在 macOS 上，两端外侧会多画出一条竖线（GUL-394 实测）。组件库已统一处理，页面不需要自己画胶囊。
+
 ### 2.3 颜色（全部取自 `StudioTheme`，不新增颜色）
 
 | 用途 | 令牌 |
@@ -282,6 +284,9 @@
 | `TFTextFieldStyle` / `TFFieldMessage` | `ModelFieldStyle` |
 | `TFCard` / `TFListGroup` / `TFListRow` / `TFSectionHeader` / `TFFormRow` | `ModelSurface`、`SettingsListSectionLabel`、`ModelProviderRow`、`AgentSettingsActionRow` 等 |
 | `TFEmptyState` / `TFSearchEmptyState` | 各页自绘的空状态 |
+| `TFFormSection` / `TFFormRow`（`badge` `systemImage` `footnote` `controlWidth`）/ `TFDivider.form` / `TFSwitch` | `StudioCard` + `StudioSectionTitle` + `StudioSettingRow` + `Toggle` |
+| `TFChoiceCard` | `LauncherWindowModeSetting` 里自绘的选项卡片 |
+| `TFKeyCap(style: .key)` | `HotkeyKeysView` 里自绘的键帽 |
 | `TFControlSize` / `TFMetrics` / `TFColors` | 一处定义 §2 的尺寸、圆角、颜色和状态 |
 
 Ask 窗口的控件（`AskSegmentedControl`、`AskIconGhostButton` 等）不在这次的范围内，但新组件的尺寸和状态与它们一致，后续可以直接替换。
@@ -323,3 +328,11 @@ Ask 窗口的控件（`AskSegmentedControl`、`AskIconGhostButton` 等）不在�
 - **页面**：Foundations（尺寸、形状、颜色、状态）、Buttons、Tabs、Menus、Search & Fields、Lists & Forms、Feedback、Compositions（列表页、主从布局、Sheet 底部与确认对话框）。
 - **顶部开关**：System / Light / Dark、Glass / Classic、Regular / Compact，可以组合查看每种外观和窄窗口下的折叠效果。
 - **截图**：`TYPEFLUX_COMPONENT_SNAPSHOTS=<目录> make test SUITE="TFComponentRenderTests"` 会把每页的浅色 / 深色渲染保存为 PNG。
+
+### 12.3 已迁移页面
+
+| 页面 | 状态 | 说明 |
+|---|---|---|
+| 设置 · 通用 / 外观 / 快捷键 / 高级设置 | 已迁移（GUL-394） | 页面里不再有自定义样式：卡片、分组标题、表单行、开关、选择器、分段、按钮、键帽、选项卡片、「⋯」菜单都来自组件库。表单行在文字较长时，控件仍留在右侧；只有整行宽度不够时，控件才移到文字下方。 |
+
+迁移时补充进组件库的能力：`TFFormRow` 的标签、状态图标、脚注和控件列宽度；`TFFormSection`；`TFChoiceCard`；`TFKeyCap(style: .key)`；`TFMenuAction` 的禁用项；`TFRichOption` 的彩色状态标签（服务器测速）。另外，`TFTabBar` 和 `TFSegmentedControl` 只给指示条和滑块加动画，不再给切换后的内容加动画。之前切换页面也带动画，旧页面淡出时还没被移除，很快切回来会被复用，导致快捷键录制状态残留。

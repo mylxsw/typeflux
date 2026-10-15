@@ -252,4 +252,32 @@ struct TFComponentLogicTests {
         #expect(Set(ComponentGallerySection.allCases.map(\.title)).count == ComponentGallerySection.allCases.count)
         #expect(ComponentGallerySection.allCases.allSatisfy { !$0.systemImage.isEmpty && $0.id == $0.rawValue })
     }
+
+    @Test func formRowsLineUpTheirControlColumn() {
+        #expect(TFFormControlWidth.fit.width == nil)
+        #expect(TFFormControlWidth.standard.width == TFMetrics.formControlWidth)
+        #expect(TFFormControlWidth.wide.width == TFMetrics.formControlWideWidth)
+        #expect(TFFormRow<EmptyView>.labelIdealWidth == 220)
+        #expect(TFDivider.form.inset == TFListGroupInset.form)
+    }
+
+    @Test func disabledMenuActionsStayVisibleButInactive() {
+        let menu = TFMenuAction.entries([
+            .action("Reset", isEnabled: false) {},
+            .action("Unset") {}
+        ])
+        #expect(menu.entries.map(\.isEnabled) == [false, true])
+        final class Target: NSObject {
+            @objc func choose(_: NSMenuItem) {}
+        }
+        let target = Target()
+        let native = TFNativeMenuEntry.makeMenu(menu.entries, target: target, action: #selector(Target.choose(_:)))
+        #expect(native.items.map(\.isEnabled) == [false, true])
+    }
+
+    @Test func richOptionsCanCarryAColoredTag() {
+        let option = TFRichOption("a", "api.example.com", trailing: "42 ms", trailingTint: TFColors.success)
+        #expect(option.trailing == "42 ms" && option.trailingTint == TFColors.success)
+        #expect(TFRichOption("b", "Plain").trailingTint == nil)
+    }
 }

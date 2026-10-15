@@ -85,18 +85,18 @@ struct TFSearchField: View {
         .frame(height: TFControlSize.regular.height)
         .frame(minWidth: placement == .toolbar ? TFMetrics.searchMinWidth : nil,
                maxWidth: placement == .toolbar ? TFMetrics.searchMaxWidth : .infinity)
-        .background(Capsule().fill(TFColors.control))
+        .background(Capsule(style: .circular).fill(TFColors.control))
         .overlay {
-            Capsule().strokeBorder(focused ? TFColors.accent : TFColors.border,
+            Capsule(style: .circular).strokeBorder(focused ? TFColors.accent : TFColors.border,
                                    lineWidth: focused ? 1 : TFMetrics.borderWidth)
         }
         .background {
             if focused {
-                Capsule().inset(by: -TFMetrics.focusRingWidth / 2)
+                Capsule(style: .circular).inset(by: -TFMetrics.focusRingWidth / 2)
                     .stroke(TFColors.focusRing, lineWidth: TFMetrics.focusRingWidth)
             }
         }
-        .contentShape(Capsule())
+        .contentShape(Capsule(style: .circular))
         .onTapGesture { focused = true }
         .background { if placement == .toolbar { commandF } }
         .onAppear {
@@ -165,20 +165,37 @@ struct TFSearchField: View {
     }
 }
 
-/// A keyboard shortcut drawn as a small key cap.
+/// A key drawn as a key cap. `.hint` is the quiet 17pt cap inside fields ("⌘F"); `.key` is the
+/// 24pt cap used to show a shortcut's keys, raised on a 1pt edge in light mode.
 struct TFKeyCap: View {
+    enum Style { case hint, key }
+
     let text: String
+    var style: Style = .hint
+    /// Accent outline and text, e.g. while recording a shortcut.
+    var highlighted = false
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
+        let shape = RoundedRectangle(cornerRadius: style == .key ? 6 : 5, style: .continuous)
         Text(verbatim: text)
-            .font(.system(size: 10.5, weight: .medium))
-            .foregroundStyle(TFColors.textTertiary)
-            .padding(.horizontal, 5)
-            .frame(height: 17)
-            .background(TFColors.hoverOverlay, in: RoundedRectangle(cornerRadius: 5, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 5, style: .continuous)
-                .strokeBorder(TFColors.border, lineWidth: TFMetrics.borderWidth))
-            .accessibilityHidden(true)
+            .font(.system(size: style == .key ? 12 : 10.5, weight: style == .key ? .semibold : .medium))
+            .foregroundStyle(highlighted ? TFColors.accent : (style == .key ? TFColors.textPrimary : TFColors.textTertiary))
+            .padding(.horizontal, style == .key ? 8 : 5)
+            .frame(minWidth: style == .key ? 26 : nil, minHeight: style == .key ? 24 : 17)
+            .frame(height: style == .key ? nil : 17)
+            .background(fill, in: shape)
+            .overlay(shape.strokeBorder(highlighted ? TFColors.accent.opacity(0.5) : TFColors.border,
+                                        lineWidth: style == .key ? 1 : TFMetrics.borderWidth))
+            .shadow(color: style == .key && colorScheme != .dark && !highlighted ? .black.opacity(0.10) : .clear,
+                    radius: 0, x: 0, y: 1)
+            .accessibilityHidden(style == .hint)
+    }
+
+    private var fill: Color {
+        if highlighted { return TFColors.accent.opacity(0.12) }
+        if style == .hint { return TFColors.hoverOverlay }
+        return colorScheme == .dark ? TFColors.control : StudioTheme.cardFill
     }
 }
 

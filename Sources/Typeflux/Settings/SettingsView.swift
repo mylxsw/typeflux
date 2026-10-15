@@ -180,105 +180,6 @@ private struct CloudServerPickerOption: Identifiable {
     }
 }
 
-private struct CloudServerStatusTag: View {
-    let text: String
-    let tone: CloudServerStatusTone
-
-    var body: some View {
-        Text(text)
-            .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
-            .foregroundStyle(tone.color)
-            .padding(.horizontal, StudioTheme.Spacing.small)
-            .padding(.vertical, StudioTheme.Spacing.xxSmall)
-            .background(Capsule().fill(tone.color.opacity(0.12)))
-            .overlay(Capsule().stroke(tone.color.opacity(0.28), lineWidth: StudioTheme.BorderWidth.thin))
-    }
-}
-
-private struct CloudServerMenuPicker: View {
-    let options: [CloudServerPickerOption]
-    @Binding var selection: String
-    var width: CGFloat
-    @State private var isPresented = false
-
-    private var selectedOption: CloudServerPickerOption? {
-        options.first(where: { $0.value == selection }) ?? options.first
-    }
-
-    var body: some View {
-        Button {
-            isPresented.toggle()
-        } label: {
-            SettingsMenuField {
-                HStack(spacing: StudioTheme.Spacing.small) {
-                    if let selectedOption {
-                        Text(selectedOption.domain)
-                            .lineLimit(1)
-                            .truncationMode(.middle)
-                        Spacer(minLength: 0)
-                        if let tagText = selectedOption.tagText {
-                            CloudServerStatusTag(text: tagText, tone: selectedOption.tone)
-                                .fixedSize()
-                        }
-                    }
-                }
-            }
-            .frame(width: width)
-        }
-        .buttonStyle(.plain)
-        .popover(isPresented: $isPresented, arrowEdge: .bottom) {
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
-                ForEach(options) { option in
-                    Button {
-                        selection = option.value
-                        isPresented = false
-                    } label: {
-                        HStack(spacing: StudioTheme.Spacing.small) {
-                            Group {
-                                if option.value == selection {
-                                    Image(systemName: "checkmark")
-                                        .font(.system(
-                                            size: StudioTheme.Typography.iconXSmall,
-                                            weight: .semibold
-                                        ))
-                                        .foregroundStyle(StudioTheme.accent)
-                                } else {
-                                    Color.clear
-                                }
-                            }
-                            .frame(width: StudioTheme.Typography.iconSmall)
-                            Text(option.domain)
-                                .font(.studioBody(StudioTheme.Typography.body, weight: .medium))
-                                .foregroundStyle(StudioTheme.textPrimary)
-                                .lineLimit(1)
-                            Spacer(minLength: StudioTheme.Spacing.large)
-                            if let tagText = option.tagText {
-                                CloudServerStatusTag(text: tagText, tone: option.tone)
-                            }
-                        }
-                        .padding(.horizontal, StudioTheme.Spacing.smallMedium)
-                        .padding(.vertical, StudioTheme.Spacing.small)
-                        .frame(width: max(width, 340), alignment: .leading)
-                        .background(
-                            RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.large, style: .continuous)
-                                .fill(
-                                    option.value == selection
-                                        ? StudioTheme.accent.opacity(0.08)
-                                        : Color.clear
-                                )
-                        )
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(StudioTheme.Spacing.small)
-            .background(StudioTheme.surface)
-        }
-        .fixedSize()
-    }
-}
-
 // swiftlint:disable:next type_body_length
 struct StudioView: View {
     @Environment(\.colorScheme) private var colorScheme
@@ -1112,20 +1013,8 @@ struct StudioView: View {
     }
 
     private var settingsHeader: some View {
-        VStack(spacing: StudioTheme.Spacing.none) {
-            HStack(spacing: StudioTheme.Spacing.xxLarge) {
-                ForEach(AppSettingsPane.allCases) { pane in
-                    StudioUnderlineTab(title: pane.title, count: nil, selected: pane == settingsPane) {
-                        settingsPane = pane
-                    }
-                    .accessibilityIdentifier("studio.settings.tab.\(pane.rawValue)")
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            Rectangle()
-                .fill(StudioTheme.border)
-                .frame(height: 1)
-        }
+        TFTabBar(options: AppSettingsPane.allCases.map { TFOption($0, $0.title) }, selection: $settingsPane,
+                 identifier: { "studio.settings.tab.\($0.rawValue)" })
     }
 
     @ViewBuilder
@@ -1143,554 +1032,339 @@ struct StudioView: View {
     }
 
     private var generalSettingsPage: some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
-            StudioCard {
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
-                    StudioSettingRow(
-                        title: L("settings.launchAtLogin.title"),
-                        subtitle: L("settings.launchAtLogin.subtitle")
-                    ) {
-                        Toggle(
-                            "",
-                            isOn: Binding(
-                                get: { viewModel.launchAtLogin },
-                                set: viewModel.setLaunchAtLogin
-                            )
-                        )
-                        .labelsHidden()
-                        .toggleStyle(.switch)
-                    }
-                }
+        VStack(alignment: .leading, spacing: TFMetrics.sectionSpacing) {
+            TFFormSection {
+                settingSwitch(L("settings.launchAtLogin.title"), detail: L("settings.launchAtLogin.subtitle"),
+                              isOn: Binding(get: { viewModel.launchAtLogin }, set: viewModel.setLaunchAtLogin))
             }
 
             if viewModel.isTextTransformationAvailable {
-                StudioSectionTitle(title: L("settings.output.title"))
-
-                StudioCard {
-                    VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
-                        StudioSettingRow(
-                            title: L("settings.output.opencc.title"),
-                            subtitle: L("settings.output.opencc.subtitle")
-                        ) {
-                            Toggle(
-                                "",
-                                isOn: Binding(
-                                    get: { viewModel.textTransformationEnabled },
-                                    set: { viewModel.setTextTransformationEnabled($0) }
-                                )
-                            )
-                            .labelsHidden()
-                            .toggleStyle(.switch)
-                        }
-
-                        if viewModel.textTransformationEnabled {
-                            Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-
-                            StudioSettingRow(
+                TFFormSection(title: L("settings.output.title")) {
+                    settingSwitch(L("settings.output.opencc.title"), detail: L("settings.output.opencc.subtitle"),
+                                  isOn: Binding(get: { viewModel.textTransformationEnabled },
+                                                set: { viewModel.setTextTransformationEnabled($0) }))
+                    if viewModel.textTransformationEnabled {
+                        TFDivider.form
+                        TFFormRow(title: L("settings.output.opencc.config.title")) {
+                            TFPopUpButton(
                                 title: L("settings.output.opencc.config.title"),
-                                subtitle: ""
-                            ) {
-                                StudioMenuPicker(
-                                    options: [
-                                        (label: L("settings.output.opencc.config.s2twp"), value: "s2twp"),
-                                        (label: L("settings.output.opencc.config.s2tw"), value: "s2tw"),
-                                        (label: L("settings.output.opencc.config.s2hk"), value: "s2hk"),
-                                        (label: L("settings.output.opencc.config.t2s"), value: "t2s")
-                                    ],
-                                    selection: Binding(
-                                        get: { viewModel.textTransformationRule },
-                                        set: { viewModel.setTextTransformationRule($0) }
-                                    ),
-                                    width: StudioTheme.Layout.appearancePickerWidth
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            StudioSectionTitle(title: L("settings.inputAndCapture.title"))
-
-            StudioCard {
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
-                    StudioSettingRow(
-                        title: L("settings.shortcuts.quickInput.title"),
-                        subtitle: L("settings.shortcuts.quickInput.subtitle"),
-                        badge: "Beta"
-                    ) {
-                        Toggle("", isOn: Binding(
-                            get: { viewModel.quickInputEnabled },
-                            set: viewModel.setQuickInputEnabled
-                        ))
-                        .labelsHidden()
-                        .toggleStyle(.switch)
-                        .accessibilityIdentifier("settings.quickInput")
-                    }
-
-                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-                    launcherPositionSetting
-                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-                    screenshotSaveLocationSetting
-                }
-            }
-
-            StudioSectionTitle(title: L("settings.audio"))
-
-            StudioCard {
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
-                    StudioSettingRow(
-                        title: L("settings.microphone.title"),
-                        subtitle: L("settings.microphone.subtitle")
-                    ) {
-                        HStack(spacing: StudioTheme.Spacing.small) {
-                            StudioMenuPicker(
-                                options: [
-                                    (
-                                        label: L("settings.microphone.automatic"),
-                                        value: AudioDeviceManager.automaticDeviceID
-                                    )
-                                ]
-                                    + viewModel.availableMicrophones.map {
-                                        (label: $0.name, value: $0.id)
-                                    },
-                                selection: Binding(
-                                    get: { viewModel.preferredMicrophoneID },
-                                    set: viewModel.setPreferredMicrophoneID
-                                ),
-                                width: 260
-                            )
-
-                            StudioButton(
-                                title: L("common.refresh"), systemImage: "arrow.clockwise",
-                                variant: .secondary
-                            ) {
-                                viewModel.refreshAvailableMicrophones()
-                            }
-                        }
-                        .fixedSize(horizontal: true, vertical: false)
-                    }
-
-                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-
-                    StudioSettingRow(
-                        title: L("settings.instantVoiceInput.title"),
-                        subtitle: L("settings.instantVoiceInput.subtitle"),
-                        badge: "Beta"
-                    ) {
-                        Toggle(
-                            "",
-                            isOn: Binding(
-                                get: { viewModel.instantVoiceInputEnabled },
-                                set: viewModel.setInstantVoiceInputEnabled
-                            )
-                        )
-                        .labelsHidden()
-                        .toggleStyle(.switch)
-                    }
-
-                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-
-                    StudioSettingRow(
-                        title: L("settings.mouseVoice.title"),
-                        subtitle: L("settings.mouseVoice.subtitle"),
-                        badge: "Beta"
-                    ) {
-                        Toggle(
-                            "",
-                            isOn: Binding(
-                                get: { viewModel.mouseVoiceInputEnabled },
-                                set: viewModel.setMouseVoiceInputEnabled
-                            )
-                        )
-                        .labelsHidden()
-                        .toggleStyle(.switch)
-                    }
-
-                    if viewModel.mouseVoiceInputEnabled {
-                        Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-
-                        StudioSettingRow(
-                            title: L("settings.mouseVoice.activation.title"),
-                            subtitle: L("settings.mouseVoice.activation.subtitle")
-                        ) {
-                            StudioMenuPicker(
-                                options: MouseVoiceActivationStyle.allCases.map {
-                                    (label: $0.displayName, value: $0)
+                                options: ["s2twp", "s2tw", "s2hk", "t2s"].map {
+                                    TFOption($0, L("settings.output.opencc.config.\($0)"))
                                 },
-                                selection: Binding(
-                                    get: { viewModel.mouseVoiceActivationStyle },
-                                    set: viewModel.setMouseVoiceActivationStyle
-                                ),
-                                width: 168
+                                selection: Binding(get: { viewModel.textTransformationRule },
+                                                   set: { viewModel.setTextTransformationRule($0) }),
+                                width: TFMetrics.formControlWidth
                             )
                         }
                     }
+                }
+            }
 
-                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+            TFFormSection(title: L("settings.inputAndCapture.title")) {
+                TFFormRow(title: L("settings.shortcuts.quickInput.title"),
+                          detail: L("settings.shortcuts.quickInput.subtitle"), badge: "Beta") {
+                    TFSwitch(title: L("settings.shortcuts.quickInput.title"),
+                             isOn: Binding(get: { viewModel.quickInputEnabled }, set: viewModel.setQuickInputEnabled))
+                        .accessibilityIdentifier("settings.quickInput")
+                }
+                TFDivider.form
+                launcherPositionSetting
+                TFDivider.form
+                screenshotSaveLocationSetting
+            }
 
-                    StudioSettingRow(
-                        title: L("settings.mute.title"),
-                        subtitle: L("settings.mute.subtitle")
-                    ) {
-                        Toggle(
-                            "",
-                            isOn: Binding(
-                                get: { viewModel.muteSystemOutputDuringRecording },
-                                set: viewModel.setMuteSystemOutputDuringRecording
-                            )
+            TFFormSection(title: L("settings.audio")) {
+                TFFormRow(title: L("settings.microphone.title"), detail: L("settings.microphone.subtitle")) {
+                    TFPopUpButton(
+                        title: L("settings.microphone.title"),
+                        options: [TFOption(AudioDeviceManager.automaticDeviceID, L("settings.microphone.automatic"))]
+                            + viewModel.availableMicrophones.map { TFOption($0.id, $0.name) },
+                        selection: Binding(get: { viewModel.preferredMicrophoneID },
+                                           set: viewModel.setPreferredMicrophoneID),
+                        width: TFMetrics.formControlWidth
+                    )
+                    TFButton(title: L("common.refresh"), systemImage: "arrow.clockwise", iconOnly: true) {
+                        viewModel.refreshAvailableMicrophones()
+                    }
+                }
+                TFDivider.form
+                settingSwitch(L("settings.instantVoiceInput.title"), detail: L("settings.instantVoiceInput.subtitle"),
+                              badge: "Beta",
+                              isOn: Binding(get: { viewModel.instantVoiceInputEnabled },
+                                            set: viewModel.setInstantVoiceInputEnabled))
+                TFDivider.form
+                settingSwitch(L("settings.mouseVoice.title"), detail: L("settings.mouseVoice.subtitle"), badge: "Beta",
+                              isOn: Binding(get: { viewModel.mouseVoiceInputEnabled },
+                                            set: viewModel.setMouseVoiceInputEnabled))
+                if viewModel.mouseVoiceInputEnabled {
+                    TFDivider.form
+                    TFFormRow(title: L("settings.mouseVoice.activation.title"),
+                              detail: L("settings.mouseVoice.activation.subtitle")) {
+                        TFPopUpButton(
+                            title: L("settings.mouseVoice.activation.title"),
+                            options: MouseVoiceActivationStyle.allCases.map { TFOption($0, $0.displayName) },
+                            selection: Binding(get: { viewModel.mouseVoiceActivationStyle },
+                                               set: viewModel.setMouseVoiceActivationStyle),
+                            width: TFMetrics.formControlWidth
                         )
-                        .labelsHidden()
-                        .toggleStyle(.switch)
                     }
                 }
+                TFDivider.form
+                settingSwitch(L("settings.mute.title"), detail: L("settings.mute.subtitle"),
+                              isOn: Binding(get: { viewModel.muteSystemOutputDuringRecording },
+                                            set: viewModel.setMuteSystemOutputDuringRecording))
             }
 
-            StudioSectionTitle(title: L("settings.permissions"))
-
-            StudioCard {
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
-                    StudioSettingRow(
-                        title: L("settings.permissionStatus.title"),
-                        subtitle: L("settings.permissionStatus.subtitle")
+            TFFormSection(title: L("settings.permissions")) {
+                TFFormRow(title: L("settings.permissionStatus.title"), detail: L("settings.permissionStatus.subtitle")) {
+                    TFButton(
+                        title: viewModel.isRefreshingPermissions ? L("common.refreshing") : L("common.refresh"),
+                        systemImage: "arrow.clockwise",
+                        isLoading: viewModel.isRefreshingPermissions
                     ) {
-                        StudioButton(
-                            title: viewModel.isRefreshingPermissions
-                                ? L("common.refreshing") : L("common.refresh"),
-                            systemImage: "arrow.clockwise",
-                            variant: .secondary,
-                            isLoading: viewModel.isRefreshingPermissions
-                        ) {
-                            viewModel.refreshPermissionRowsWithFeedback()
-                        }
+                        viewModel.refreshPermissionRowsWithFeedback()
                     }
-
-                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-
-                    VStack(alignment: .leading, spacing: StudioTheme.Spacing.smallMedium) {
-                        ForEach(viewModel.permissionRows) { permission in
-                            permissionRow(permission)
-
-                            if permission.id != viewModel.permissionRows.last?.id {
-                                Divider().overlay(
-                                    StudioTheme.border.opacity(StudioTheme.Opacity.divider)
-                                )
-                            }
-                        }
-                    }
+                }
+                ForEach(viewModel.permissionRows) { permission in
+                    TFDivider.form
+                    permissionRow(permission)
                 }
             }
 
-            StudioSectionTitle(title: L("settings.other"))
-
-            StudioCard {
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
-                    /*
-                      Sound effects are temporarily disabled until there is time to optimize them.
-                      Keep this setting UI for a future reintroduction.
-                     StudioSettingRow(
-                         title: L("settings.advanced.soundEffects.title"),
-                         subtitle: L("settings.advanced.soundEffects.subtitle")
-                     ) {
-                         Toggle(
-                             "",
-                             isOn: Binding(
-                                 get: { viewModel.soundEffectsEnabled },
-                                 set: viewModel.setSoundEffectsEnabled
-                             )
+            TFFormSection(title: L("settings.other")) {
+                /*
+                  Sound effects are temporarily disabled until there is time to optimize them.
+                  Keep this setting UI for a future reintroduction.
+                 StudioSettingRow(
+                     title: L("settings.advanced.soundEffects.title"),
+                     subtitle: L("settings.advanced.soundEffects.subtitle")
+                 ) {
+                     Toggle(
+                         "",
+                         isOn: Binding(
+                             get: { viewModel.soundEffectsEnabled },
+                             set: viewModel.setSoundEffectsEnabled
                          )
-                         .labelsHidden()
-                         .toggleStyle(.switch)
-                     }
+                     )
+                     .labelsHidden()
+                     .toggleStyle(.switch)
+                 }
 
-                     Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-                     */
+                 Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+                 */
 
-                    StudioSettingRow(
-                        title: L("settings.advanced.autoVocabulary.title"),
-                        subtitle: L("settings.advanced.autoVocabulary.subtitle")
-                    ) {
-                        Toggle(
-                            "",
-                            isOn: Binding(
-                                get: { viewModel.automaticVocabularyCollectionEnabled },
-                                set: viewModel.setAutomaticVocabularyCollectionEnabled
-                            )
-                        )
-                        .labelsHidden()
-                        .toggleStyle(.switch)
-                    }
-
-                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-
-                    StudioSettingRow(
-                        title: L("settings.advanced.recentInputMemory.title"),
-                        subtitle: L("settings.advanced.recentInputMemory.subtitle")
-                    ) {
-                        Toggle(
-                            "",
-                            isOn: Binding(
-                                get: { viewModel.recentInputMemoryEnabled },
-                                set: viewModel.setRecentInputMemoryEnabled
-                            )
-                        )
-                        .labelsHidden()
-                        .toggleStyle(.switch)
-                    }
-                    .onAppear { viewModel.refreshRecentInputMemoryApplications() }
-
-                    StudioSettingRow(
-                        title: L("settings.advanced.globalSoul.title"),
-                        subtitle: L("settings.advanced.globalSoul.subtitle")
-                    ) {
-                        Toggle(
-                            "",
-                            isOn: Binding(
-                                get: { viewModel.globalSoulMemoryEnabled },
-                                set: viewModel.setGlobalSoulMemoryEnabled
-                            )
-                        )
-                        .labelsHidden()
-                        .toggleStyle(.switch)
-                    }
-
-                    Button(L("settings.advanced.recentInputMemory.manage")) {
+                settingSwitch(L("settings.advanced.autoVocabulary.title"),
+                              detail: L("settings.advanced.autoVocabulary.subtitle"),
+                              isOn: Binding(get: { viewModel.automaticVocabularyCollectionEnabled },
+                                            set: viewModel.setAutomaticVocabularyCollectionEnabled))
+                TFDivider.form
+                TFFormRow(title: L("settings.advanced.recentInputMemory.title"),
+                          detail: L("settings.advanced.recentInputMemory.subtitle")) {
+                    TFButton(title: L("settings.advanced.recentInputMemory.manage"), kind: .link) {
                         isRecentInputMemoryManagerPresented = true
                     }
-
-                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-
-                    StudioSettingRow(
-                        title: L("settings.advanced.autoUpdate.title"),
-                        subtitle: L("settings.advanced.autoUpdate.subtitle")
-                    ) {
-                        Toggle(
-                            "",
-                            isOn: Binding(
-                                get: { viewModel.autoUpdateEnabled },
-                                set: viewModel.setAutoUpdateEnabled
-                            )
-                        )
-                        .labelsHidden()
-                        .toggleStyle(.switch)
-                    }
-
-                    Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-
-                    StudioSettingRow(
-                        title: L("settings.analyticsSharing.title"),
-                        subtitle: L("settings.analyticsSharing.subtitle")
-                    ) {
-                        Toggle(
-                            "",
-                            isOn: Binding(
-                                get: { viewModel.analyticsSharingEnabled },
-                                set: viewModel.setAnalyticsSharingEnabled
-                            )
-                        )
-                        .labelsHidden()
-                        .toggleStyle(.switch)
-                    }
+                    TFSwitch(title: L("settings.advanced.recentInputMemory.title"),
+                             isOn: Binding(get: { viewModel.recentInputMemoryEnabled },
+                                           set: viewModel.setRecentInputMemoryEnabled))
                 }
+                .onAppear { viewModel.refreshRecentInputMemoryApplications() }
+                TFDivider.form
+                settingSwitch(L("settings.advanced.globalSoul.title"), detail: L("settings.advanced.globalSoul.subtitle"),
+                              isOn: Binding(get: { viewModel.globalSoulMemoryEnabled },
+                                            set: viewModel.setGlobalSoulMemoryEnabled))
+                TFDivider.form
+                settingSwitch(L("settings.advanced.autoUpdate.title"), detail: L("settings.advanced.autoUpdate.subtitle"),
+                              isOn: Binding(get: { viewModel.autoUpdateEnabled }, set: viewModel.setAutoUpdateEnabled))
+                TFDivider.form
+                settingSwitch(L("settings.analyticsSharing.title"), detail: L("settings.analyticsSharing.subtitle"),
+                              isOn: Binding(get: { viewModel.analyticsSharingEnabled },
+                                            set: viewModel.setAnalyticsSharingEnabled))
             }
+        }
+    }
+
+    /// A form row whose only control is a switch.
+    private func settingSwitch(_ title: String, detail: String, badge: String? = nil,
+                               isOn: Binding<Bool>) -> some View {
+        TFFormRow(title: title, detail: detail, badge: badge) {
+            TFSwitch(title: title, isOn: isOn)
         }
     }
 
     private var advancedSettingsPage: some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.pageGroup) {
-            StudioCard {
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
-                    /*
-                      Local optimization is hidden because SenseVoice availability and the
-                      cloud-local race are system-managed fallback policies, not user choices.
-                      Keep this setting UI until the model lifecycle is fully unified.
-                     StudioSettingRow(
-                         title: L("settings.advanced.localOptimization.title"),
-                         subtitle: L("settings.advanced.localOptimization.subtitle")
-                     ) {
-                         Toggle(
-                             "",
-                             isOn: Binding(
-                                 get: { viewModel.localOptimizationEnabled },
-                                 set: viewModel.setLocalOptimizationEnabled
-                             )
+        VStack(alignment: .leading, spacing: TFMetrics.sectionSpacing) {
+            TFFormSection {
+                /*
+                  Local optimization is hidden because SenseVoice availability and the
+                  cloud-local race are system-managed fallback policies, not user choices.
+                  Keep this setting UI until the model lifecycle is fully unified.
+                 StudioSettingRow(
+                     title: L("settings.advanced.localOptimization.title"),
+                     subtitle: L("settings.advanced.localOptimization.subtitle")
+                 ) {
+                     Toggle(
+                         "",
+                         isOn: Binding(
+                             get: { viewModel.localOptimizationEnabled },
+                             set: viewModel.setLocalOptimizationEnabled
                          )
-                         .labelsHidden()
-                         .toggleStyle(.switch)
-                     }
+                     )
+                     .labelsHidden()
+                     .toggleStyle(.switch)
+                 }
 
-                     Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-                     */
+                 Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+                 */
 
-                    StudioSettingRow(
+                TFFormRow(title: L("settings.advanced.voiceProcessingTimeout.title"),
+                          detail: L("settings.advanced.voiceProcessingTimeout.subtitle")) {
+                    TFPopUpButton(
                         title: L("settings.advanced.voiceProcessingTimeout.title"),
-                        subtitle: L("settings.advanced.voiceProcessingTimeout.subtitle")
-                    ) {
-                        StudioMenuPicker(
-                            options: VoiceProcessingTimeout.allCases.map {
-                                (label: $0.displayName, value: $0)
-                            },
-                            selection: Binding(
-                                get: { viewModel.voiceProcessingTimeout },
-                                set: viewModel.setVoiceProcessingTimeout
-                            ),
-                            width: StudioTheme.Layout.appearancePickerWidth
-                        )
-                    }
-
-                    /*
-                      Memory optimization is temporarily hidden and forced off until it can be
-                      improved.
-                      Keep this setting UI for a future reintroduction.
-                     StudioSettingRow(
-                         title: L("settings.advanced.localSTTMemoryOptimization.title"),
-                         subtitle: L("settings.advanced.localSTTMemoryOptimization.subtitle")
-                     ) {
-                         Toggle(
-                             "",
-                             isOn: Binding(
-                                 get: { viewModel.localSTTMemoryOptimizationEnabled },
-                                 set: viewModel.setLocalSTTMemoryOptimizationEnabled
-                             )
-                         )
-                         .labelsHidden()
-                         .toggleStyle(.switch)
-                     }
-
-                     Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-                     */
-
-                    /*
-                      Applying personas to selected text now remains enabled without a user setting.
-                      Keep this beta setting UI in case configurability returns later.
-                     StudioSettingRow(
-                         title: L("settings.advanced.personaHotkeyApply.title"),
-                         subtitle: L("settings.advanced.personaHotkeyApply.subtitle"),
-                         badge: "Beta"
-                     ) {
-                         Toggle(
-                             "",
-                             isOn: Binding(
-                                 get: { viewModel.personaHotkeyAppliesToSelection },
-                                 set: viewModel.setPersonaHotkeyAppliesToSelection
-                             )
-                         )
-                         .labelsHidden()
-                         .toggleStyle(.switch)
-                     }
-
-                     Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-                     */
-
-                    /*
-                      Input-context optimization now remains enabled without a user setting.
-                      Keep this beta setting UI in case configurability returns later.
-                     StudioSettingRow(
-                         title: L("settings.advanced.inputContextOptimization.title"),
-                         subtitle: L("settings.advanced.inputContextOptimization.subtitle"),
-                         badge: "Beta"
-                     ) {
-                         Toggle(
-                             "",
-                             isOn: Binding(
-                                 get: { viewModel.inputContextOptimizationEnabled },
-                                 set: viewModel.setInputContextOptimizationEnabled
-                             )
-                         )
-                         .labelsHidden()
-                         .toggleStyle(.switch)
-                     }
-
-                     Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-                     */
-
-                    /*
-                      Apple Speech fallback is intentionally hidden from settings and should no longer
-                      be presented to users. Keep the entry code because the underlying fallback remains.
-                     Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-
-                     StudioSettingRow(
-                         title: L("settings.models.appleFallback"),
-                         subtitle: L("settings.models.appleFallback.detail")
-                     ) {
-                         Toggle(
-                             "",
-                             isOn: Binding(
-                                 get: { viewModel.appleSpeechFallback },
-                                 set: viewModel.setAppleSpeechFallback
-                             )
-                         )
-                         .labelsHidden()
-                         .toggleStyle(.switch)
-                     }
-                     */
+                        options: VoiceProcessingTimeout.allCases.map { TFOption($0, $0.displayName) },
+                        selection: Binding(get: { viewModel.voiceProcessingTimeout },
+                                           set: viewModel.setVoiceProcessingTimeout),
+                        width: TFMetrics.formControlWidth
+                    )
                 }
+
+                /*
+                  Memory optimization is temporarily hidden and forced off until it can be
+                  improved.
+                  Keep this setting UI for a future reintroduction.
+                 StudioSettingRow(
+                     title: L("settings.advanced.localSTTMemoryOptimization.title"),
+                     subtitle: L("settings.advanced.localSTTMemoryOptimization.subtitle")
+                 ) {
+                     Toggle(
+                         "",
+                         isOn: Binding(
+                             get: { viewModel.localSTTMemoryOptimizationEnabled },
+                             set: viewModel.setLocalSTTMemoryOptimizationEnabled
+                         )
+                     )
+                     .labelsHidden()
+                     .toggleStyle(.switch)
+                 }
+
+                 Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+                 */
+
+                /*
+                  Applying personas to selected text now remains enabled without a user setting.
+                  Keep this beta setting UI in case configurability returns later.
+                 StudioSettingRow(
+                     title: L("settings.advanced.personaHotkeyApply.title"),
+                     subtitle: L("settings.advanced.personaHotkeyApply.subtitle"),
+                     badge: "Beta"
+                 ) {
+                     Toggle(
+                         "",
+                         isOn: Binding(
+                             get: { viewModel.personaHotkeyAppliesToSelection },
+                             set: viewModel.setPersonaHotkeyAppliesToSelection
+                         )
+                     )
+                     .labelsHidden()
+                     .toggleStyle(.switch)
+                 }
+
+                 Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+                 */
+
+                /*
+                  Input-context optimization now remains enabled without a user setting.
+                  Keep this beta setting UI in case configurability returns later.
+                 StudioSettingRow(
+                     title: L("settings.advanced.inputContextOptimization.title"),
+                     subtitle: L("settings.advanced.inputContextOptimization.subtitle"),
+                     badge: "Beta"
+                 ) {
+                     Toggle(
+                         "",
+                         isOn: Binding(
+                             get: { viewModel.inputContextOptimizationEnabled },
+                             set: viewModel.setInputContextOptimizationEnabled
+                         )
+                     )
+                     .labelsHidden()
+                     .toggleStyle(.switch)
+                 }
+
+                 Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+                 */
+
+                /*
+                  Apple Speech fallback is intentionally hidden from settings and should no longer
+                  be presented to users. Keep the entry code because the underlying fallback remains.
+                 Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+
+                 StudioSettingRow(
+                     title: L("settings.models.appleFallback"),
+                     subtitle: L("settings.models.appleFallback.detail")
+                 ) {
+                     Toggle(
+                         "",
+                         isOn: Binding(
+                             get: { viewModel.appleSpeechFallback },
+                             set: viewModel.setAppleSpeechFallback
+                         )
+                     )
+                     .labelsHidden()
+                     .toggleStyle(.switch)
+                 }
+                 */
             }
 
-            StudioSectionTitle(title: L("settings.servers.title"))
-            cloudServerSettingsCard
+            cloudServerSettingsSection
         }
     }
 
-    private var cloudServerSettingsCard: some View {
-        StudioCard {
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
-                StudioSettingRow(
+    private var cloudServerSettingsSection: some View {
+        TFFormSection(title: L("settings.servers.title")) {
+            TFFormRow(title: L("settings.servers.api.title"), detail: L("settings.servers.api.subtitle")) {
+                cloudServerPicker(
                     title: L("settings.servers.api.title"),
-                    subtitle: L("settings.servers.api.subtitle")
-                ) {
-                    CloudServerMenuPicker(
-                        options: cloudServerOptions(
-                            servers: viewModel.availableAPIServers,
-                            statuses: viewModel.apiServerStatuses
-                        ),
-                        selection: Binding(
-                            get: { viewModel.preferredAPIServer },
-                            set: viewModel.setPreferredAPIServer
-                        ),
-                        width: StudioTheme.Layout.appearancePickerWidth
-                    )
-                }
-
-                Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-
-                StudioSettingRow(
+                    options: cloudServerOptions(servers: viewModel.availableAPIServers,
+                                                statuses: viewModel.apiServerStatuses),
+                    selection: Binding(get: { viewModel.preferredAPIServer }, set: viewModel.setPreferredAPIServer)
+                )
+            }
+            TFDivider.form
+            TFFormRow(title: L("settings.servers.asr.title"), detail: L("settings.servers.asr.subtitle")) {
+                cloudServerPicker(
                     title: L("settings.servers.asr.title"),
-                    subtitle: L("settings.servers.asr.subtitle")
+                    options: cloudServerOptions(servers: viewModel.availableASRServers,
+                                                statuses: viewModel.asrServerStatuses),
+                    selection: Binding(get: { viewModel.preferredASRServer }, set: viewModel.setPreferredASRServer)
+                )
+            }
+            TFDivider.form
+            TFFormRow(title: L("settings.servers.speedTest.title"),
+                      detail: viewModel.cloudServerTestSummary ?? L("settings.servers.speedTest.subtitle")) {
+                TFButton(
+                    title: viewModel.isTestingCloudServers
+                        ? L("settings.servers.speedTest.testing")
+                        : L("settings.servers.speedTest.action"),
+                    systemImage: "gauge.with.dots.needle.67percent",
+                    isLoading: viewModel.isTestingCloudServers
                 ) {
-                    CloudServerMenuPicker(
-                        options: cloudServerOptions(
-                            servers: viewModel.availableASRServers,
-                            statuses: viewModel.asrServerStatuses
-                        ),
-                        selection: Binding(
-                            get: { viewModel.preferredASRServer },
-                            set: viewModel.setPreferredASRServer
-                        ),
-                        width: StudioTheme.Layout.appearancePickerWidth
-                    )
-                }
-
-                Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-
-                StudioSettingRow(
-                    title: L("settings.servers.speedTest.title"),
-                    subtitle: viewModel.cloudServerTestSummary
-                        ?? L("settings.servers.speedTest.subtitle")
-                ) {
-                    StudioButton(
-                        title: viewModel.isTestingCloudServers
-                            ? L("settings.servers.speedTest.testing")
-                            : L("settings.servers.speedTest.action"),
-                        systemImage: "gauge.with.dots.needle.67percent",
-                        variant: .secondary,
-                        isDisabled: viewModel.isTestingCloudServers,
-                        isLoading: viewModel.isTestingCloudServers
-                    ) {
-                        viewModel.testCloudServerLatency()
-                    }
+                    viewModel.testCloudServerLatency()
                 }
             }
         }
+    }
+
+    /// Server domains with their latency grade as a colored tag.
+    private func cloudServerPicker(title: String, options: [CloudServerPickerOption],
+                                   selection: Binding<String>) -> some View {
+        TFRichPicker(
+            title: title,
+            sections: [TFRichSection(options: options.map {
+                TFRichOption($0.value, $0.domain, trailing: $0.tagText, trailingTint: $0.tone.color)
+            })],
+            selection: selection,
+            searchable: false
+        )
     }
 
     private func cloudServerOptions(
@@ -2011,104 +1685,62 @@ struct StudioView: View {
 
     /// The folder ⌘S saves screenshots into.
     private var screenshotSaveLocationSetting: some View {
-        StudioSettingRow(
-            title: L("settings.shortcuts.screenshot.saveLocation.title"),
-            subtitle: viewModel.screenshotSaveDirectory.path
-        ) {
-            HStack(spacing: StudioTheme.Spacing.medium) {
-                if viewModel.screenshotSaveDirectory.standardizedFileURL
-                    != SettingsStore.defaultScreenshotSaveDirectory.standardizedFileURL {
-                    Button(L("settings.shortcuts.screenshot.saveLocation.reset")) {
-                        viewModel.resetScreenshotSaveDirectory()
-                    }
-                    .buttonStyle(.link)
-                    .fixedSize()
+        TFFormRow(title: L("settings.shortcuts.screenshot.saveLocation.title"),
+                  detail: viewModel.screenshotSaveDirectory.path) {
+            if viewModel.screenshotSaveDirectory.standardizedFileURL
+                != SettingsStore.defaultScreenshotSaveDirectory.standardizedFileURL {
+                TFButton(title: L("settings.shortcuts.screenshot.saveLocation.reset"), kind: .link) {
+                    viewModel.resetScreenshotSaveDirectory()
                 }
-                Button(L("settings.shortcuts.screenshot.saveLocation.choose")) {
-                    viewModel.chooseScreenshotSaveDirectory()
-                }
-                .fixedSize()
+            }
+            TFButton(title: L("settings.shortcuts.screenshot.saveLocation.choose")) {
+                viewModel.chooseScreenshotSaveDirectory()
             }
         }
     }
 
     /// Where ⌥Space opens the launcher: always centred, or where it was last dragged.
     private var launcherPositionSetting: some View {
-        StudioSettingRow(
+        TFFormRow(
             title: L("settings.shortcuts.launcherPosition.title"),
-            subtitle: L(viewModel.askLauncherPosition == .center
+            detail: L(viewModel.askLauncherPosition == .center
                 ? "settings.shortcuts.launcherPosition.center.subtitle"
                 : "settings.shortcuts.launcherPosition.last.subtitle")
         ) {
-            HStack(spacing: StudioTheme.Spacing.medium) {
-                if viewModel.askLauncherPosition == .lastPosition {
-                    Button(L("settings.shortcuts.launcherPosition.reset")) {
-                        viewModel.resetAskLauncherPositions()
-                    }
-                    .buttonStyle(.link)
-                    .fixedSize()
-                    .disabled(!viewModel.hasRememberedLauncherPositions)
+            if viewModel.askLauncherPosition == .lastPosition {
+                TFButton(title: L("settings.shortcuts.launcherPosition.reset"), kind: .link) {
+                    viewModel.resetAskLauncherPositions()
                 }
-                StudioSegmentedPicker(
-                    options: [
-                        (label: L("settings.shortcuts.launcherPosition.center"), value: AskLauncherPosition.center),
-                        (label: L("settings.shortcuts.launcherPosition.last"), value: .lastPosition)
-                    ],
-                    selection: Binding(
-                        get: { viewModel.askLauncherPosition },
-                        set: viewModel.setAskLauncherPosition
-                    )
-                )
-                .fixedSize()
+                .disabled(!viewModel.hasRememberedLauncherPositions)
             }
+            TFSegmentedControl(
+                options: [TFOption(AskLauncherPosition.center, L("settings.shortcuts.launcherPosition.center")),
+                          TFOption(.lastPosition, L("settings.shortcuts.launcherPosition.last"))],
+                selection: Binding(get: { viewModel.askLauncherPosition }, set: viewModel.setAskLauncherPosition)
+            )
         }
         .onAppear { viewModel.refreshAskLauncherPositions() }
     }
 
     private func permissionRow(_ permission: StudioPermissionRowModel) -> some View {
-        HStack(alignment: .center, spacing: StudioTheme.Spacing.large) {
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.xSmall) {
-                HStack(spacing: StudioTheme.Spacing.small) {
-                    Image(
-                        systemName: permission.isGranted
-                            ? "checkmark.circle.fill" : "exclamationmark.circle"
-                    )
-                    .foregroundStyle(
-                        permission.isGranted ? StudioTheme.success : StudioTheme.warning
-                    )
-
-                    Text(permission.title)
-                        .font(.studioBody(StudioTheme.Typography.settingTitle, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textPrimary)
-
-                    StudioPill(
-                        title: permission.badgeText,
-                        tone: permission.isGranted ? StudioTheme.success : StudioTheme.warning,
-                        fill: (permission.isGranted ? StudioTheme.success : StudioTheme.warning)
-                            .opacity(0.12)
-                    )
-                }
-
-                Text(permission.summary)
-                    .font(.studioBody(StudioTheme.Typography.bodyLarge))
-                    .foregroundStyle(StudioTheme.textSecondary)
-
-                Text(permission.detail)
-                    .font(.studioBody(StudioTheme.Typography.caption))
-                    .foregroundStyle(StudioTheme.textTertiary)
-            }
-
-            Spacer(minLength: StudioTheme.Spacing.pageGroup)
-
-            StudioButton(
+        let tint = permission.isGranted ? TFColors.success : TFColors.warning
+        return TFFormRow(
+            title: permission.title,
+            detail: permission.summary,
+            footnote: permission.detail,
+            badge: permission.badgeText,
+            badgeTint: tint,
+            systemImage: permission.isGranted ? "checkmark.circle.fill" : "exclamationmark.circle",
+            imageTint: tint
+        ) {
+            TFButton(
                 title: permission.actionTitle,
                 systemImage: permission.isGranted ? "arrow.up.right.square" : "lock.open.display",
-                variant: permission.isGranted ? .secondary : .primary
+                kind: permission.isGranted ? .secondary : .primary
             ) {
                 viewModel.requestPermission(permission.id)
             }
         }
-        .padding(.vertical, StudioTheme.Spacing.xSmall)
     }
 
     private var filteredVocabularyEntries: [VocabularyEntry] {

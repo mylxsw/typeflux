@@ -42,9 +42,9 @@ struct TFTag: View {
             .lineLimit(1)
             .padding(.horizontal, 6)
             .frame(height: TFMetrics.tagHeight)
-            .background(Capsule().fill(tint?.opacity(0.14) ?? TFColors.hoverOverlay))
+            .background(Capsule(style: .circular).fill(tint?.opacity(0.14) ?? TFColors.hoverOverlay))
             .overlay {
-                if tint == nil { Capsule().strokeBorder(TFColors.border, lineWidth: TFMetrics.borderWidth) }
+                if tint == nil { Capsule(style: .circular).strokeBorder(TFColors.border, lineWidth: TFMetrics.borderWidth) }
             }
             .fixedSize()
     }
@@ -132,6 +132,9 @@ struct TFCard<Content: View>: View {
 struct TFDivider: View {
     /// Rows with a 28pt icon tile: 50pt. Rows without one and form rows: 12–14pt.
     var inset: CGFloat = TFListGroupInset.withIcon
+
+    /// Between `TFFormRow`s.
+    static var form: TFDivider { TFDivider(inset: TFListGroupInset.form) }
 
     var body: some View {
         Rectangle().fill(TFColors.border).frame(height: TFMetrics.borderWidth).padding(.leading, inset)
@@ -249,87 +252,6 @@ struct TFChevron: View {
     var body: some View {
         Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold))
             .foregroundStyle(TFColors.textTertiary).accessibilityHidden(true)
-    }
-}
-
-/// A form row: label and description on the left, a control in a 220pt (or 280pt) column.
-struct TFFormRow<Control: View>: View {
-    let title: String
-    var detail: String?
-    var wide = false
-    @ViewBuilder var control: Control
-
-    var body: some View {
-        HStack(spacing: 16) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title).font(.system(size: 13, weight: .medium)).foregroundStyle(TFColors.textPrimary)
-                if let detail {
-                    Text(detail).font(.system(size: 11.5)).foregroundStyle(TFColors.textSecondary)
-                }
-            }
-            Spacer(minLength: 12)
-            HStack { Spacer(minLength: 0); control }
-                .frame(width: wide ? TFMetrics.formControlWideWidth : TFMetrics.formControlWidth)
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
-        .frame(minHeight: TFMetrics.formRowMinHeight)
-        .tfControlSize(.regular)
-    }
-}
-
-/// A mini switch, the size used in rows and forms.
-struct TFSwitch: View {
-    let title: String
-    @Binding var isOn: Bool
-
-    var body: some View {
-        Toggle(title, isOn: $isOn)
-            .toggleStyle(.switch)
-            .controlSize(.mini)
-            .labelsHidden()
-    }
-}
-
-/// Spec §6: 30pt, 8pt corners, the shared fill and focus ring. Keys, URLs and model IDs
-/// are monospaced. An error outlines the field in red; pair it with `TFFieldMessage`.
-struct TFTextFieldStyle: TextFieldStyle {
-    var monospaced = false
-    var isError = false
-    @FocusState private var focused: Bool
-
-    // TextFieldStyle requires this underscored protocol method.
-    // swiftlint:disable:next identifier_name
-    func _body(configuration: TextField<Self._Label>) -> some View {
-        let shape = RoundedRectangle(cornerRadius: TFMetrics.fieldCornerRadius, style: .continuous)
-        return configuration
-            .textFieldStyle(.plain)
-            .font(.system(size: monospaced ? 12 : 13, design: monospaced ? .monospaced : .default))
-            .focused($focused)
-            .padding(.horizontal, 10)
-            .frame(height: TFControlSize.regular.height)
-            .background(shape.fill(TFColors.control))
-            .overlay {
-                shape.strokeBorder(isError ? TFColors.danger : (focused ? TFColors.accent : TFColors.border),
-                                   lineWidth: isError || focused ? 1 : TFMetrics.borderWidth)
-            }
-            .background {
-                if focused {
-                    shape.inset(by: -TFMetrics.focusRingWidth / 2)
-                        .stroke(isError ? TFColors.danger.opacity(0.25) : TFColors.focusRing,
-                                lineWidth: TFMetrics.focusRingWidth)
-                }
-            }
-    }
-}
-
-/// A one-line message under a field; red for errors.
-struct TFFieldMessage: View {
-    let text: String
-    var isError = true
-
-    var body: some View {
-        Text(text).font(.system(size: 11.5)).foregroundStyle(isError ? TFColors.danger : TFColors.textSecondary)
     }
 }
 

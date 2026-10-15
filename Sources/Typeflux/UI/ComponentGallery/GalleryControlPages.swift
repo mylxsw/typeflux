@@ -49,8 +49,8 @@ struct GalleryFoundationsPage: View {
                                     .overlay(RoundedRectangle(cornerRadius: radius, style: .continuous)
                                         .strokeBorder(TFColors.border, lineWidth: TFMetrics.borderWidth))
                             } else {
-                                Capsule().fill(TFColors.control)
-                                    .overlay(Capsule().strokeBorder(TFColors.border, lineWidth: TFMetrics.borderWidth))
+                                Capsule(style: .circular).fill(TFColors.control)
+                                    .overlay(Capsule(style: .circular).strokeBorder(TFColors.border, lineWidth: TFMetrics.borderWidth))
                             }
                         }
                         .frame(height: 44)

@@ -6,52 +6,23 @@ struct LauncherWindowModeSetting: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text(L("ask.settings.windowMode.title"))
-                .font(.system(size: StudioTheme.Typography.settingTitle, weight: .semibold))
-                .foregroundStyle(StudioTheme.textPrimary)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(TFColors.textPrimary)
             HStack(spacing: 12) {
                 ForEach(AskLauncherWindowMode.allCases, id: \.self) { mode in
-                    option(mode)
+                    TFChoiceCard(title: mode.title, isSelected: selection == mode) { selection = mode } preview: {
+                        preview(mode)
+                    }
+                    .accessibilityValue(selection == mode ? L("ask.settings.windowMode.selected") : "")
+                    .accessibilityIdentifier("launcher.settings.windowMode." + mode.rawValue)
                 }
             }
             Text(L("ask.settings.windowMode.detail"))
-                .font(.system(size: StudioTheme.Typography.body))
-                .foregroundStyle(StudioTheme.textSecondary)
+                .font(.system(size: 12))
+                .foregroundStyle(TFColors.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(18)
-    }
-
-    private func option(_ mode: AskLauncherWindowMode) -> some View {
-        let selected = selection == mode
-        return Button { selection = mode } label: {
-            VStack(spacing: 10) {
-                preview(mode)
-                HStack(spacing: 6) {
-                    Image(systemName: selected ? "checkmark.circle.fill" : "circle")
-                        .foregroundStyle(selected ? AskTheme.accent : StudioTheme.textTertiary)
-                    Text(mode.title).foregroundStyle(StudioTheme.textPrimary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .font(.system(size: 13, weight: .medium))
-            }
-            .padding(12)
-            .frame(maxWidth: .infinity)
-            .background(selected ? AskTheme.accent.opacity(0.08) : StudioTheme.cardSurface,
-                        in: RoundedRectangle(cornerRadius: 12))
-            .overlay {
-                RoundedRectangle(cornerRadius: 12)
-                    .strokeBorder(selected ? AskTheme.accent : StudioTheme.border, lineWidth: selected ? 2 : 1)
-            }
-            .contentShape(RoundedRectangle(cornerRadius: 12))
-        }
-        .buttonStyle(.plain)
-        .accessibilityElement(children: .ignore)
-        .accessibilityAddTraits(.isButton)
-        .accessibilityAddTraits(selected ? .isSelected : [])
-        .accessibilityLabel(mode.title)
-        .accessibilityValue(selected ? L("ask.settings.windowMode.selected") : "")
-        .accessibilityAction { selection = mode }
-        .accessibilityIdentifier("launcher.settings.windowMode." + mode.rawValue)
+        .padding(14)
     }
 
     /// A small schematic of Typeflux's header, results and bottom controls.

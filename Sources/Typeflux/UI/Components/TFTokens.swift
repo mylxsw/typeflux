@@ -112,6 +112,8 @@ enum TFMetrics {
     static let tagHeight: CGFloat = 16
 
     static let toolbarSpacing: CGFloat = 8
+    /// Between the sections (header + card) of a page.
+    static let sectionSpacing: CGFloat = 24
 }
 
 /// Colors come from `StudioTheme`; this maps component roles onto those tokens.

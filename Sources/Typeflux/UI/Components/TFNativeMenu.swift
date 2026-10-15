@@ -16,6 +16,7 @@ struct TFNativeMenuEntry: Equatable {
     var count: Int?
     var destructive = false
     var isSelected = false
+    var isEnabled = true
 
     static let separator = TFNativeMenuEntry(kind: .separator)
 
@@ -79,6 +80,7 @@ struct TFNativeMenuEntry: Equatable {
                     item.image = NSImage(systemSymbolName: symbol, accessibilityDescription: nil)
                 }
                 item.state = entry.isSelected ? .on : .off
+                item.isEnabled = entry.isEnabled
                 menu.addItem(item)
             }
         }

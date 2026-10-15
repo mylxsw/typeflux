@@ -121,13 +121,13 @@ struct TFButtonChrome<Label: View>: View {
             .frame(width: iconOnly ? size.height : nil, height: size.height)
             .frame(minWidth: iconOnly || kind == .link ? nil : size.minimumTextButtonWidth)
             .background { fill(appearance.fill, size: size) }
-            .overlay { Capsule().fill(appearance.overlayColor).allowsHitTesting(false) }
+            .overlay { Capsule(style: .circular).fill(appearance.overlayColor).allowsHitTesting(false) }
             .overlay {
                 if appearance.hasBorder {
-                    Capsule().strokeBorder(TFColors.border, lineWidth: TFMetrics.borderWidth).allowsHitTesting(false)
+                    Capsule(style: .circular).strokeBorder(TFColors.border, lineWidth: TFMetrics.borderWidth).allowsHitTesting(false)
                 }
             }
-            .contentShape(Capsule())
+            .contentShape(Capsule(style: .circular))
             .tfCapsuleFocusEffect()
             .scaleEffect(isPressed && !reduceMotion ? TFMetrics.pressedScale : 1)
             .animation(reduceMotion ? nil : .spring(response: 0.25, dampingFraction: 0.7), value: isPressed)
@@ -138,10 +138,10 @@ struct TFButtonChrome<Label: View>: View {
     @ViewBuilder private func fill(_ fill: TFButtonAppearance.Fill, size: TFControlSize) -> some View {
         switch fill {
         case .none: Color.clear
-        case .control: Capsule().fill(TFColors.control)
-        case .accent: Capsule().fill(TFColors.accent)
-        case .accentHover: Capsule().fill(TFColors.accentHover)
-        case .danger: Capsule().fill(TFColors.danger)
+        case .control: Capsule(style: .circular).fill(TFColors.control)
+        case .accent: Capsule(style: .circular).fill(TFColors.accent)
+        case .accentHover: Capsule(style: .circular).fill(TFColors.accentHover)
+        case .danger: Capsule(style: .circular).fill(TFColors.danger)
         case .glass:
             Color.clear.modifier(AskInWindowGlass(corner: size.height / 2, opaqueFill: AskTheme.glassFill,
                                                   cornerStyle: .circular, elevation: .control))
@@ -153,7 +153,7 @@ extension View {
     /// The system keyboard focus ring follows the capsule instead of the bounding box.
     @ViewBuilder func tfCapsuleFocusEffect() -> some View {
         if #available(macOS 14.0, *) {
-            contentShape(.focusEffect, Capsule())
+            contentShape(.focusEffect, Capsule(style: .circular))
         } else {
             self
         }
