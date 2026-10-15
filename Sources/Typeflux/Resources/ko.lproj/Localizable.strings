@@ -5501,3 +5501,10 @@
 "localSTT.error.inferenceUnavailable" = "로컬 받아쓰기를 사용할 수 없습니다. 요청을 다시 전송하지 않았습니다. 잠시 후 다시 시도해 주세요.";
 
 "ask.attach.busy" = "첨부 파일을 처리 중입니다. 잠시 후 다시 시도하세요.";
+
+// Private generation output recovery
+"imagegen.recovery.title" = "생성 결과 복구";
+"imagegen.recovery.detail" = "이 대화에 보관된 파일을 내보냅니다. 검증되지 않은 파일에는 프롬프트나 제공업체 URL이 포함될 수 있습니다. 재생성, URL 다운로드, 원래의 알 수 없는 실행 상태 변경은 하지 않습니다. 기록은 대화를 삭제할 때까지 보관됩니다.";
+"imagegen.recovery.empty" = "이 대화에 복구할 출력이 없습니다.";
+"imagegen.recovery.saved" = "파일을 저장했습니다. 비공개 원본과 실행 상태는 그대로입니다.";
+"imagegen.recovery.unavailable" = "복구할 수 없거나 접근 권한이 변경되었습니다. 비공개 원본은 삭제되지 않았습니다.";

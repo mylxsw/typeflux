@@ -4,6 +4,7 @@ import SwiftUI
 
 struct AskConversationView: View {
     @ObservedObject var model: AskConversationModel
+    @State private var showsGenerationRecovery = false
     @State private var showsUsage = false
     @State private var usageRunId: String?
     @State private var deleteId: String?
@@ -54,6 +55,7 @@ struct AskConversationView: View {
         // Measure the viewport, rather than the intrinsic width of its children.
         .ignoresSafeArea(.container, edges: .top)
         .onChange(of: model.selectedId) { _ in
+            showsGenerationRecovery = false
             usageRunId = nil
             showsUsage = false
             showsSidebarDrawer = false
@@ -86,6 +88,15 @@ struct AskConversationView: View {
                     }
                 }
                 previousResponder = nil
+            }
+        }
+        .onDisappear { showsGenerationRecovery = false }
+        .onChange(of: model.selectionGeneration) { _ in showsGenerationRecovery = false }
+        .onChange(of: auth.isLoggedIn) { _ in showsGenerationRecovery = false }
+        .onChange(of: auth.userProfile?.id) { _ in showsGenerationRecovery = false }
+        .sheet(isPresented: $showsGenerationRecovery) {
+            if let access = model.generationRecoveryAccess {
+                AskGenerationRecoveryView(access: access, close: { showsGenerationRecovery = false })
             }
         }
         .tint(AskTheme.accent)
@@ -301,6 +312,7 @@ struct AskConversationView: View {
 
     private var expandedTools: some View {
         HStack(spacing: 2) {
+            generationRecoveryButton
             savedDraftMenu
             composeButton
             sidebarToggle
@@ -315,9 +327,16 @@ struct AskConversationView: View {
                 titleBarButton("magnifyingglass", label: L("ask.search")) { openSearch() }
                     .keyboardShortcut("k", modifiers: .command)
             }
+            generationRecoveryButton
             savedDraftMenu
             composeButton
         }
+    }
+
+    private var generationRecoveryButton: some View {
+        titleBarButton("externaldrive.badge.exclamationmark", label: L("imagegen.recovery.title")) {
+            showsGenerationRecovery = true
+        }.disabled(model.generationRecoveryAccess == nil)
     }
 
     @ViewBuilder

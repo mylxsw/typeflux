@@ -5615,3 +5615,10 @@
 "localSTT.error.inferenceUnavailable" = "Local transcription is unavailable. Your request was not retried. Try again later.";
 
 "ask.attach.busy" = "Attachments are being processed. Please try again shortly.";
+
+// Private generation output recovery
+"imagegen.recovery.title" = "Recover generated output";
+"imagegen.recovery.detail" = "Export retained files from this conversation. Files are unvalidated and may contain prompts or provider URLs. This does not generate again, download URLs, or change the original unknown outcome. Records remain until you delete the conversation.";
+"imagegen.recovery.empty" = "No retained output is available for this conversation.";
+"imagegen.recovery.saved" = "File saved. The private original and execution status are unchanged.";
+"imagegen.recovery.unavailable" = "Recovery is unavailable or access changed. Private originals have not been removed.";

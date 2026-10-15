@@ -5501,3 +5501,10 @@
 "localSTT.error.inferenceUnavailable" = "ローカル文字起こしを利用できません。リクエストは再送信されていません。しばらくしてからお試しください。";
 
 "ask.attach.busy" = "添付ファイルを処理中です。しばらくしてから再試行してください。";
+
+// Private generation output recovery
+"imagegen.recovery.title" = "生成結果を復元";
+"imagegen.recovery.detail" = "この会話に保存されたファイルを書き出します。未検証のファイルにはプロンプトや提供元のURLが含まれる場合があります。再生成、URLのダウンロード、元の不明な実行状態の変更は行いません。記録は会話を削除するまで残ります。";
+"imagegen.recovery.empty" = "この会話に復元可能な出力はありません。";
+"imagegen.recovery.saved" = "保存しました。元のファイルと実行状態は変更されていません。";
+"imagegen.recovery.unavailable" = "復元できないか、アクセス権が変更されました。元のファイルは削除されていません。";
