@@ -1819,7 +1819,7 @@ final class AskConversationModel: ObservableObject {
                 snapshots[id] = value
                 if selectedId == id { selected = value }
                 updateSummary(value)
-                commandFeedback = L(temporary.cloud ? "ask.temporary.kept.cloud" : "ask.temporary.kept.local")
+                confirm(L(temporary.cloud ? "ask.temporary.kept.cloud" : "ask.temporary.kept.local"))
             } catch {
                 guard owner == account.account else { return }
                 self.error = L("ask.temporary.keepFailed")

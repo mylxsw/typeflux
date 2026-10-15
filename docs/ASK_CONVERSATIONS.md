@@ -454,6 +454,14 @@ leaves it, quits, signs out or switches accounts. The design board is
 - Requires typeflux-api with migration 00071. An older server ignores the flag and
   lists the conversation like any other.
 
+Production views rendered with synthetic data (`AskTemporaryVisualTests`, set
+`TYPEFLUX_TEMPORARY_SNAPSHOTS` to a directory):
+
+![Temporary chat](images/ask-temporary/workspace-chat-light.png)
+![New temporary chat, dark](images/ask-temporary/workspace-new-dark.png)
+![Compose menu and storage card](images/ask-temporary/menu-and-card-dark.png)
+![Temporary launcher question](images/ask-temporary/launcher-light.png)
+
 ## Liquid Glass workspace refresh (GUL-159, 2026-10-02)
 
 The workspace follows the interactive design board in

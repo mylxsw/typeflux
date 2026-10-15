@@ -43,6 +43,7 @@ struct AskTemporaryVisualTests {
                          file: root.appendingPathComponent("menu-and-card-dark.png"))
 
         fixture.model.endTemporaryConversation()
+        fixture.model.commandFeedback = nil
         fixture.model.toggleTemporary(launcher: true)
         fixture.model.launcherDraft.text = "帮我把选中的条款翻成英文"
         for dark in [false, true] {

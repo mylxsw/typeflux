@@ -124,6 +124,6 @@ extension AskConversationModel {
     /// "End temporary chat": nothing to confirm, the user asked for exactly this.
     func endTemporaryConversation() {
         discardTemporaryConversation()
-        commandFeedback = L("ask.temporary.ended")
+        confirm(L("ask.temporary.ended"))
     }
 }
