@@ -5499,3 +5499,10 @@
 "ask.translation.panel.shortcut.newline" = "換行";
 "ask.translation.panel.shortcut.select" = "切換選取的結果";
 "ask.translation.panel.shortcut.close" = "關閉（釘選時先清空原文）";
+
+/* Dedicated semantic search keyword. */
+"semantic.keyword.placeholder" = "描述要找的內容 · .pdf 限定類型 · in: 限定檔案夾";
+"semantic.keyword.unavailable" = "語意搜尋未開啟或尚未就緒，請在 設定 › 啟動器 中查看";
+"semantic.keyword.query" = "描述你想尋找的內容";
+"semantic.keyword.none" = "找不到符合的內容";
+"ask.settings.keywords.kind.semanticFiles.hint" = "根據內容含義搜尋本機檔案";

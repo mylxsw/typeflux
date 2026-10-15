@@ -10,6 +10,11 @@ struct AskFileSearchPlugin: AskLauncherPlugin {
     private let queue = DispatchQueue(label: "typeflux.ask.search.filePlugin", qos: .userInitiated)
     static let keywords = [AskKeyword(keyword: "f", pluginID: id)]
 
+    /// Both file search entries share preview, selection and open actions.
+    static func showsFileResults(for pluginID: String?) -> Bool {
+        pluginID == id || pluginID == AskSemanticFileSearchPlugin.id
+    }
+
     /// The index to search; read when a run starts, so tests can swap it.
     var index: @MainActor @Sendable () -> (any AskFileSearching)?
     var settings: @Sendable () -> AskLauncherSearchSettings

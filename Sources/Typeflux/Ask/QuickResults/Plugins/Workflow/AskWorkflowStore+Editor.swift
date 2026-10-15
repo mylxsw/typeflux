@@ -135,6 +135,7 @@ extension AskWorkflowStore {
         case AskPromptPlugin.id: return L("ask.plugin.prompt.title")
         case AskWebSearchPlugin.id: return L("ask.plugin.web.title")
         case AskFileSearchPlugin.id: return L("ask.plugin.files.title")
+        case AskSemanticFileSearchPlugin.id: return L("semantic.title")
         case AskPrefixPlugin.id: return L("ask.plugin.prefix.title")
         case AskSettingsPlugin.id: return L("ask.plugin.setting.title")
         case AskHistoryPlugin.id: return L("ask.plugin.history.title")

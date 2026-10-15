@@ -9,6 +9,7 @@ enum AskPluginRegistry {
         AskPromptPlugin.id,
         AskWebSearchPlugin.id,
         AskFileSearchPlugin.id,
+        AskSemanticFileSearchPlugin.id,
         AskOpenChatPlugin.id,
         AskPrefixPlugin.id,
         AskSettingsPlugin.id,
@@ -30,7 +31,8 @@ enum AskPluginRegistry {
         AskKeywordAliases
             .addingEnglishNames(AskKeywordAliases
                 .consolidate(AskTranslatePlugin.keywords + AskPromptPlugin.keywords + AskWebSearchPlugin
-                    .keywords + AskFileSearchPlugin.keywords + AskOpenChatPlugin.keywords + AskPrefixPlugin
+                    .keywords + AskFileSearchPlugin.keywords + AskSemanticFileSearchPlugin.keywords
+                    + AskOpenChatPlugin.keywords + AskPrefixPlugin
                     .keywords + AskSettingsPlugin.keywords + AskHelpPlugin.keywords + AskHistoryPlugin.keywords + AskClipboardPlugin
                     .keywords + AskNotesPlugin.keywords + AskScreenshotPlugin.keywords
                     + AskScreenshotTextPlugin.keywords
@@ -199,6 +201,10 @@ extension AskConversationModel {
                 index: { [weak self] in self.flatMap { $0.quickFilesEnabled ? $0.fileIndex : nil } },
                 settings: { [weak settings] in settings?.askLauncherSearchSettings ?? AskLauncherSearchSettings() },
                 semantic: { [weak self] in self?.semanticSearch }
+            ),
+            AskSemanticFileSearchPlugin(
+                semantic: { [weak self] in self?.semanticSearch },
+                settings: { [weak settings] in settings?.askLauncherSearchSettings ?? AskLauncherSearchSettings() }
             ),
             AskOpenChatPlugin(),
             AskPrefixPlugin(entries: { [weak self] language in

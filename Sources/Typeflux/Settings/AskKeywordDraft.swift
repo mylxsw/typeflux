@@ -83,7 +83,7 @@ struct AskKeywordDraft: Equatable {
                 AskWebSearchPlugin.host(of: url).flatMap { $0.isEmpty ? nil : $0 }
                     ?? L("ask.settings.keywords.sheet.webNamePlaceholder")
             }
-        case .translate, .files, .tabs, .bookmarks, .chat, .prefix, .setting, .history, .clip, .emoji,
+        case .translate, .files, .semanticFiles, .tabs, .bookmarks, .chat, .prefix, .setting, .history, .clip, .emoji,
              .calendar, .kill, .system, .workflow:
             ""
         }
@@ -115,6 +115,8 @@ struct AskKeywordDraft: Equatable {
             L("ask.plugin.clip.title")
         case .files:
             L("ask.plugin.files.title")
+        case .semanticFiles:
+            L("semantic.title")
         case .tabs: L("ask.browser.tabs")
         case .bookmarks: L("ask.browser.bookmarks")
         case .kill: L("ask.plugin.kill.title")
@@ -169,7 +171,7 @@ struct AskKeywordDraft: Equatable {
                 ? L("ask.settings.keywords.sheet.promptRequired") : nil
         case .web:
             AskWebSearchPlugin.problem(with: url)
-        case .translate, .files, .tabs, .bookmarks, .chat, .prefix, .setting, .history, .clip, .emoji,
+        case .translate, .files, .semanticFiles, .tabs, .bookmarks, .chat, .prefix, .setting, .history, .clip, .emoji,
              .calendar, .kill, .system, .workflow:
             nil
         }
@@ -206,7 +208,8 @@ struct AskKeywordDraft: Equatable {
             }
         case .calendar:
             options = calendarOptions
-        case .files, .tabs, .bookmarks, .chat, .prefix, .setting, .history, .clip, .emoji, .kill, .system, .workflow:
+        case .files, .semanticFiles, .tabs, .bookmarks, .chat, .prefix, .setting, .history, .clip, .emoji,
+             .kill, .system, .workflow:
             break
         }
         return AskKeyword(keyword: keyword.trimmingCharacters(in: .whitespaces),

@@ -1,0 +1,131 @@
+{
+  "issue": "GUL-400",
+  "measurement": "Unique LLVM LCOV DA lines intersected with added Swift source lines against base_commit. Tests, translations and screenshots excluded.",
+  "covered": 95,
+  "executable_added_lines": 103,
+  "percent": 92.23,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Ask/AskComposerViews.swift",
+      "covered": 2,
+      "executable_added_lines": 5,
+      "uncovered_lines": [
+        398,
+        399,
+        400
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskConversationModel+Plugins.swift",
+      "covered": 6,
+      "executable_added_lines": 6,
+      "uncovered_lines": []
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/AskPluginSession.swift",
+      "covered": 3,
+      "executable_added_lines": 4,
+      "uncovered_lines": [
+        397
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Files/AskFileSearchPlugin.swift",
+      "covered": 3,
+      "executable_added_lines": 3,
+      "uncovered_lines": []
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Files/AskSemanticFileSearchPlugin.swift",
+      "covered": 62,
+      "executable_added_lines": 62,
+      "uncovered_lines": []
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowStore+Editor.swift",
+      "covered": 1,
+      "executable_added_lines": 1,
+      "uncovered_lines": []
+    },
+    {
+      "file": "Sources/Typeflux/Help/HelpCatalog.swift",
+      "covered": 2,
+      "executable_added_lines": 2,
+      "uncovered_lines": []
+    },
+    {
+      "file": "Sources/Typeflux/Help/HelpKeywordsPage.swift",
+      "covered": 0,
+      "executable_added_lines": 2,
+      "uncovered_lines": [
+        206,
+        207
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Settings/AskKeywordDraft.swift",
+      "covered": 6,
+      "executable_added_lines": 6,
+      "uncovered_lines": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/AskKeywordEditorSheet.swift",
+      "covered": 0,
+      "executable_added_lines": 2,
+      "uncovered_lines": [
+        90,
+        226
+      ]
+    },
+    {
+      "file": "Sources/Typeflux/Settings/AskKeywordListComponents.swift",
+      "covered": 1,
+      "executable_added_lines": 1,
+      "uncovered_lines": []
+    },
+    {
+      "file": "Sources/Typeflux/Settings/AskKeywordListPresentation.swift",
+      "covered": 9,
+      "executable_added_lines": 9,
+      "uncovered_lines": []
+    }
+  ],
+  "validation": {
+    "tests": 91,
+    "suites": 12,
+    "native_wall_seconds": 644.73,
+    "initial_preparation_interrupted_seconds": 198.64,
+    "default_backend_attempt_seconds": 244.65,
+    "failed_method_retry_seconds": 64.95,
+    "notes": "Default swiftbuild backend did not emit code coverage. One keyword total assertion was corrected and retried before repeating the same focused scope with native coverage.",
+    "suites_selected": [
+      "AskSemanticFileSearchPluginTests",
+      "AskKeywordMatcherTests",
+      "AskKeywordAliasTests",
+      "AskKeywordListPresentationTests",
+      "AskKeywordDraftTests",
+      "AskPluginSessionTests",
+      "AskFileSearchPluginTests",
+      "SemanticHybridSearchTests",
+      "SemanticFileServiceTests",
+      "HelpCatalogTests",
+      "HelpSearchTests",
+      "ExclusiveUIStateLanguageTests"
+    ],
+    "lint": {
+      "new_plugin_strict_violations": 0,
+      "existing_touched_file_diagnostics_base": 72,
+      "existing_touched_file_diagnostics_current": 71,
+      "increased_rule_counts": 0
+    }
+  },
+  "new_plugin_llvm_summary": {
+    "line_percent": 100.0,
+    "lines": 66,
+    "functions_executed": 15,
+    "functions": 15,
+    "regions_covered": 27,
+    "regions": 27
+  },
+  "base_commit": "2ff45f77ec2e6a385f39543ef67e4c61c3b844ae"
+}
