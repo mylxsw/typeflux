@@ -45,6 +45,8 @@ final class AskPluginSession: ObservableObject {
     /// A directory choice waits for typed input or an explicit second Return.
     private var waitingForInput = false
     private var generation = 0
+    /// Async persistence may only update the result that admitted it.
+    var resultGeneration: Int { generation }
     private var task: Task<Void, Never>?
     /// The keywords that led here with `runKeyword`, and the text the last one put in.
     private var chained: (keywords: [String], text: String)?

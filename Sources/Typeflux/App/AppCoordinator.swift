@@ -289,6 +289,8 @@ final class AppCoordinator {
     }
 
     func stop() {
+        di.noteStore.preventNewWork()
+        Task { await di.noteStore.shutdown() }
         di.wordBookStore.preventNewWork()
         Task { await di.wordBookStore.shutdown() }
         di.conversationCache.preventNewWork()

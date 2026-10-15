@@ -48,7 +48,7 @@ struct AskLibraryVisualConsistencyTests {
                 body: "“地狱猫”（hell cat）通常指两种常见意思：\n\n1. **一种绰号**：形容凶猛、难以对付的人或动物。\n2. **一种战斗机**：二战美国海军的 **F6F Hellcat**。",
                 command: "解释", keyword: "ex", input: "hell cat", sourceApp: "Google Chrome",
                 createdAt: .now, updatedAt: .now)
-            notes.save(note)
+            try notes.save(note)
             let noteController = AskNotesWindowController()
             noteController.configure(store: notes, settings: settings, askAI: { _ in }) { NSAppearance(named: .darkAqua) }
             noteController.show(selecting: note.id)

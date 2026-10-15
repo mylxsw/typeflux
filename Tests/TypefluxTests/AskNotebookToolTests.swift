@@ -10,17 +10,17 @@ struct AskNotebookToolTests {
         AskNotebookTool(store: store, hiddenTags: hidden, clock: { Date(timeIntervalSince1970: 9000) })
     }
 
-    private func seeded() -> (SQLiteAskNoteStore, AskNote, AskNote, AskNote) {
+    private func seeded() throws -> (SQLiteAskNoteStore, AskNote, AskNote, AskNote) {
         let store = makeTestNotes()
         let index = makeTestNote("Postgres 向量索引", body: "## 结论\n选 HNSW。\n\n## 参数\nm = 16, ef_construction = 64\n",
                                  tags: ["数据库"], at: 300)
         let other = makeTestNote("pgvector notes", body: "IVFFlat needs data before indexing", at: 200)
         let secret = makeTestNote("Secret HNSW", body: "password hunter2", tags: ["私密"], at: 400)
-        [index, other, secret].forEach { store.save($0) }
+        try [index, other, secret].forEach { try store.save($0) }
         return (store, index, other, secret)
     }
 
-    @Test func describesItselfAndItsRisks() throws {
+    @Test func describesItselfAndItsRisks() async throws {
         let definition = AskNotebookTool.definition
         #expect(definition.name == "notebook")
         let schema = try #require(try JSONSerialization.jsonObject(with: definition.parameters.data) as? [String: Any])
@@ -34,87 +34,87 @@ struct AskNotebookToolTests {
         #expect(AskNotebookSkill.skill.displayDescription == L("ask.skill.notebook.description"))
     }
 
-    @Test func searchesReadsAndListsVisibleNotes() throws {
-        let (store, index, other, secret) = seeded()
+    @Test func searchesReadsAndListsVisibleNotes() async throws {
+        let (store, index, other, secret) = try seeded()
         let notebook = tool(store)
-        let found = notebook.searchNotes("HNSW ef_construction", limit: 8)
+        let found = try await notebook.searchNotes("HNSW ef_construction", limit: 8)
         #expect(found.map(\.note.id) == [index.id] && found.first?.hits == 2, "the hidden note is left out")
-        #expect(notebook.searchNotes("数据库", limit: 8).map(\.note.id) == [index.id], "tags match too")
-        #expect(notebook.searchNotes("", limit: 1).map(\.note.id) == [index.id])
-        let text = try notebook.execute(["action": "search", "query": "IVFFlat", "limit": 99])
+        #expect(try await notebook.searchNotes("数据库", limit: 8).map(\.note.id) == [index.id], "tags match too")
+        #expect(try await notebook.searchNotes("", limit: 1).map(\.note.id) == [index.id])
+        let text = try await notebook.execute(["action": "search", "query": "IVFFlat", "limit": 99])
         #expect(text.hasPrefix("1 note(s):") && text.contains(other.id.uuidString) && text.contains("IVFFlat needs"))
-        #expect(try notebook.execute(["action": "search", "query": "nothing-here"]).hasPrefix("No notes matched"))
+        #expect(try await notebook.execute(["action": "search", "query": "nothing-here"]).hasPrefix("No notes matched"))
 
-        let read = try notebook.execute(["action": "read", "id": index.id.uuidString])
+        let read = try await notebook.execute(["action": "read", "id": index.id.uuidString])
         #expect(read.contains("title: Postgres 向量索引") && read.contains("tags: 数据库") && read.contains("## 参数"))
-        let section = try notebook.execute(["action": "read", "id": index.id.uuidString, "heading": "参数"])
+        let section = try await notebook.execute(["action": "read", "id": index.id.uuidString, "heading": "参数"])
         #expect(section.contains("ef_construction") && !section.contains("选 HNSW"))
-        #expect(try notebook.execute(["action": "read", "id": index.id.uuidString, "heading": "x"]).contains("Headings: 结论 | 参数"))
+        #expect(try await notebook.execute(["action": "read", "id": index.id.uuidString, "heading": "x"]).contains("Headings: 结论 | 参数"))
         var long = makeTestNote("Long", body: String(repeating: "长", count: 9000))
         long.tags = []
-        store.save(long)
-        let page = try notebook.execute(["action": "read", "id": long.id.uuidString, "limit": 500])
+        try store.save(long)
+        let page = try await notebook.execute(["action": "read", "id": long.id.uuidString, "limit": 500])
         #expect(page.contains("read again with offset 500 of 9000"))
-        let last = try notebook.execute(["action": "read", "id": long.id.uuidString, "offset": 8800])
+        let last = try await notebook.execute(["action": "read", "id": long.id.uuidString, "offset": 8800])
         #expect(!last.contains("read again"))
-        #expect(throws: AskLocalError.self) { try notebook.execute(["action": "read", "id": secret.id.uuidString]) }
-        #expect(throws: AskLocalError.self) { try notebook.execute(["action": "read", "id": "nope"]) }
-        #expect(throws: AskLocalError.self) { try notebook.execute(["action": "fly"]) }
+        await #expect(throws: AskLocalError.self) { try await notebook.execute(["action": "read", "id": secret.id.uuidString]) }
+        await #expect(throws: AskLocalError.self) { try await notebook.execute(["action": "read", "id": "nope"]) }
+        await #expect(throws: AskLocalError.self) { try await notebook.execute(["action": "fly"]) }
 
-        let tags = try notebook.execute(["action": "list", "scope": "tags"])
+        let tags = try await notebook.execute(["action": "list", "scope": "tags"])
         #expect(tags == "#数据库 (1)", "hidden tags are not listed")
-        #expect(try notebook.execute(["action": "list", "scope": "pinned"]) == "No notes.")
-        #expect(try notebook.execute(["action": "list", "scope": "tag:数据库"]).contains(index.id.uuidString))
-        #expect(!(try notebook.execute(["action": "list"])).contains(secret.id.uuidString))
-        #expect(try tool(makeTestNotes()).execute(["action": "list", "scope": "tags"]) == "No tags yet.")
+        #expect(try await notebook.execute(["action": "list", "scope": "pinned"]) == "No notes.")
+        #expect(try await notebook.execute(["action": "list", "scope": "tag:数据库"]).contains(index.id.uuidString))
+        #expect(try !(await notebook.execute(["action": "list"])).contains(secret.id.uuidString))
+        #expect(try await tool(makeTestNotes()).execute(["action": "list", "scope": "tags"]) == "No tags yet.")
         #expect(AskNotebookTool.snippet(other, query: "before").hasPrefix("IVFFlat needs data before"))
     }
 
-    @Test func writesKeepRevisionsAndMarkTheAgent() throws {
-        let (store, index, _, secret) = seeded()
+    @Test func writesKeepRevisionsAndMarkTheAgent() async throws {
+        let (store, index, _, secret) = try seeded()
         let notebook = tool(store)
-        let created = try notebook.execute(["action": "create", "body": "## Plan\n- a", "tags": ["#x", "x", "y"]])
+        let created = try await notebook.execute(["action": "create", "body": "## Plan\n- a", "tags": ["#x", "x", "y"]])
         let id = try #require(UUID(uuidString: String(created.split(separator: " ")[2])))
-        let note = try #require(store.note(id: id))
+        let note = try #require(try store.note(id: id))
         #expect(note.title == "Plan" && note.tags == ["x", "y"] && note.author == .agent && note.source == .manual)
-        #expect(throws: AskLocalError.self) { try notebook.execute(["action": "create", "body": " "]) }
+        await #expect(throws: AskLocalError.self) { try await notebook.execute(["action": "create", "body": " "]) }
 
-        let appended = try notebook.execute(["action": "append", "id": index.id.uuidString, "body": "- 压测", "heading": "结论"])
+        let appended = try await notebook.execute(["action": "append", "id": index.id.uuidString, "body": "- 压测", "heading": "结论"])
         #expect(appended.contains("under \"结论\""))
-        let changed = try #require(store.note(id: index.id))
+        let changed = try #require(try store.note(id: index.id))
         #expect(changed.body.contains("选 HNSW。\n\n- 压测\n\n## 参数") && changed.author == .agent)
-        #expect(changed.originalBody == index.body && store.revisions(of: index.id).first?.body == index.body)
-        #expect(try notebook.execute(["action": "append", "id": index.id.uuidString, "body": "tail", "heading": "nope"])
+        #expect(try changed.originalBody == index.body && store.revisions(of: index.id).first?.body == index.body)
+        #expect(try await notebook.execute(["action": "append", "id": index.id.uuidString, "body": "tail", "heading": "nope"])
             .contains("no heading"))
-        #expect(throws: AskLocalError.self) { try notebook.execute(["action": "append", "id": index.id.uuidString, "body": ""]) }
+        await #expect(throws: AskLocalError.self) { try await notebook.execute(["action": "append", "id": index.id.uuidString, "body": ""]) }
 
-        _ = try notebook.execute(["action": "update", "id": index.id.uuidString, "find": "m = 16", "replace": "m = 24",
+        _ = try await notebook.execute(["action": "update", "id": index.id.uuidString, "find": "m = 16", "replace": "m = 24",
                                   "title": "Postgres HNSW"])
-        #expect(store.note(id: index.id)?.body.contains("m = 24") == true && store.note(id: index.id)?.title == "Postgres HNSW")
-        #expect(throws: AskLocalError.self) {
-            try notebook.execute(["action": "update", "id": index.id.uuidString, "find": "missing", "replace": "x"])
+        #expect(try store.note(id: index.id)?.body.contains("m = 24") == true && store.note(id: index.id)?.title == "Postgres HNSW")
+        await #expect(throws: AskLocalError.self) {
+            try await notebook.execute(["action": "update", "id": index.id.uuidString, "find": "missing", "replace": "x"])
         }
-        _ = try notebook.execute(["action": "update", "id": index.id.uuidString, "body": "a a"])
-        #expect(throws: AskLocalError.self) {
-            try notebook.execute(["action": "update", "id": index.id.uuidString, "find": "a", "replace": "b"])
+        _ = try await notebook.execute(["action": "update", "id": index.id.uuidString, "body": "a a"])
+        await #expect(throws: AskLocalError.self) {
+            try await notebook.execute(["action": "update", "id": index.id.uuidString, "find": "a", "replace": "b"])
         }
-        #expect(throws: AskLocalError.self) { try notebook.execute(["action": "update", "id": index.id.uuidString]) }
-        let revisions = store.revisions(of: index.id).count
-        _ = try notebook.execute(["action": "update", "id": index.id.uuidString, "body": "a a"])
-        #expect(store.revisions(of: index.id).count == revisions, "an unchanged note keeps no revision")
+        await #expect(throws: AskLocalError.self) { try await notebook.execute(["action": "update", "id": index.id.uuidString]) }
+        let revisions = try store.revisions(of: index.id).count
+        _ = try await notebook.execute(["action": "update", "id": index.id.uuidString, "body": "a a"])
+        #expect(try store.revisions(of: index.id).count == revisions, "an unchanged note keeps no revision")
 
-        let tagged = try notebook.execute(["action": "tag", "id": index.id.uuidString, "add": ["新"], "remove": ["数据库"], "pin": true])
-        #expect(tagged.contains("#新") && tagged.contains("pinned") && store.note(id: index.id)?.pinned == true)
-        #expect(throws: AskLocalError.self) { try notebook.execute(["action": "tag", "id": index.id.uuidString]) }
+        let tagged = try await notebook.execute(["action": "tag", "id": index.id.uuidString, "add": ["新"], "remove": ["数据库"], "pin": true])
+        #expect(try tagged.contains("#新") && tagged.contains("pinned") && store.note(id: index.id)?.pinned == true)
+        await #expect(throws: AskLocalError.self) { try await notebook.execute(["action": "tag", "id": index.id.uuidString]) }
 
-        let deleted = try notebook.execute(["action": "delete", "id": index.id.uuidString])
-        #expect(deleted.contains("Recently Deleted") && store.note(id: index.id)?.isDeleted == true)
-        #expect(throws: AskLocalError.self) { try notebook.execute(["action": "delete", "id": index.id.uuidString]) }
-        #expect(throws: AskLocalError.self) { try notebook.execute(["action": "update", "id": secret.id.uuidString, "body": "x"]) }
+        let deleted = try await notebook.execute(["action": "delete", "id": index.id.uuidString])
+        #expect(try deleted.contains("Recently Deleted") && store.note(id: index.id)?.isDeleted == true)
+        await #expect(throws: AskLocalError.self) { try await notebook.execute(["action": "delete", "id": index.id.uuidString]) }
+        await #expect(throws: AskLocalError.self) { try await notebook.execute(["action": "update", "id": secret.id.uuidString, "body": "x"]) }
         var huge = makeTestNote("Huge", body: String(repeating: "x", count: 20000))
         huge.tags = []
-        store.save(huge)
-        let clipped = try AskNotebookTool(store: store, hiddenTags: []).execute(["action": "read", "id": huge.id.uuidString])
+        try store.save(huge)
+        let clipped = try await AskNotebookTool(store: store, hiddenTags: []).execute(["action": "read", "id": huge.id.uuidString])
         #expect(clipped.count <= AskNotebookTool.outputLimit + 2)
     }
 
@@ -127,7 +127,7 @@ struct AskNotebookToolTests {
         tools.runningBundleIdentifiers = { [] }
         var names = await tools.definitions(conversationId: nil).map(\.name)
         #expect(!names.contains("notebook") && !tools.enabledSkills.contains { $0.name == "notebook" })
-        let (store, index, _, _) = seeded()
+        let (store, index, _, _) = try seeded()
         tools.notebook = store
         names = await tools.definitions(conversationId: nil).map(\.name)
         #expect(names.contains("notebook") && tools.enabledSkills.contains { $0.name == "notebook" })
@@ -159,7 +159,7 @@ struct AskNotebookToolTests {
         await #expect(throws: AskLocalError.self) { _ = try await tools.approvalBinding(for: search, conversationId: "c") }
         settings.askNotebookAgentEnabled = true
         settings.askNotebookHiddenTags = ["数据库"]
-        #expect(!(try await tools.execute(search, conversationId: "c")).content.contains(index.id.uuidString))
+        #expect(try !(await tools.execute(search, conversationId: "c")).content.contains(index.id.uuidString))
     }
 }
 
@@ -179,28 +179,28 @@ struct AskNotebookEntryTests {
         await model.select("conv")
         #expect(model.question(before: answer) == "HNSW 还是 IVFFlat？")
         #expect(model.question(before: AskMessage(id: "x", role: "assistant", text: "", createdAt: Date())).isEmpty)
-        model.toggleAnswerNote(answer)
-        let note = try #require(store.list(AskNoteQuery()).first)
+        await model.toggleAnswerNote(answer)
+        let note = try #require(try store.list(AskNoteQuery()).first)
         #expect(note.source == .chat && note.conversationID == "conv" && note.messageID == "a" && note.input == question.text)
         #expect(note.title == "HNSW 还是 IVFFlat？" && model.answerNoteIDs["a"] == note.id)
         #expect(model.commandFeedback == L("ask.notes.saved"))
-        model.toggleAnswerNote(answer, excerpt: "  HNSW ")
-        #expect(store.count(.all) == 2 && model.answerNoteIDs["a"] == note.id, "a selection is a note of its own")
-        model.toggleAnswerNote(answer)
-        #expect(store.note(id: note.id)?.isDeleted == true && model.answerNoteIDs["a"] == nil && model.commandFeedback == L("ask.notes.removed"))
-        model.toggleAnswerNote(answer)
-        var edited = try #require(store.list(AskNoteQuery(scope: .source(.chat))).first { $0.messageID == "a" })
+        await model.toggleAnswerNote(answer, excerpt: "  HNSW ")
+        #expect(try store.count(.all) == 2 && model.answerNoteIDs["a"] == note.id, "a selection is a note of its own")
+        await model.toggleAnswerNote(answer)
+        #expect(try store.note(id: note.id)?.isDeleted == true && model.answerNoteIDs["a"] == nil && model.commandFeedback == L("ask.notes.removed"))
+        await model.toggleAnswerNote(answer)
+        var edited = try #require(try store.list(AskNoteQuery(scope: .source(.chat))).first { $0.messageID == "a" })
         edited.editedAt = Date()
-        store.save(edited)
+        try store.save(edited)
         model.answerNoteIDs = [:]
-        model.refreshAnswerNotes()
+        await model.refreshAnswerNotes().value
         #expect(model.answerNoteIDs["a"] == edited.id)
-        model.toggleAnswerNote(answer)
-        #expect(store.note(id: edited.id) != nil && model.commandFeedback == L("ask.notes.editedKept"))
-        model.toggleAnswerNote(AskMessage(id: "e", role: "assistant", text: " ", createdAt: Date()))
-        #expect(store.count(.all) == 2)
+        await model.toggleAnswerNote(answer)
+        #expect(try store.note(id: edited.id) != nil && model.commandFeedback == L("ask.notes.editedKept"))
+        await model.toggleAnswerNote(AskMessage(id: "e", role: "assistant", text: " ", createdAt: Date()))
+        #expect(try store.count(.all) == 2)
         model.notes = nil
-        model.refreshAnswerNotes()
+        await model.refreshAnswerNotes().value
         #expect(model.answerNoteIDs.isEmpty)
     }
 

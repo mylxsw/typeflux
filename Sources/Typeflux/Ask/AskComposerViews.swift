@@ -801,6 +801,12 @@ struct AskComposer: View {
             }
             return
         }
+        if case let .openNote(id) = action.kind {
+            model.performNotebookAction {
+                if await model.openNoteInWindow(id) { onDismiss() }
+            }
+            return
+        }
         if model.performPluginAction(action) == .close { onDismiss() }
     }
 

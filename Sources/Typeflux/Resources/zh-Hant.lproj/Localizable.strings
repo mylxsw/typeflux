@@ -5503,3 +5503,5 @@
 // Word-book storage availability
 "ask.wordBook.storageUnavailable" = "單字本暫時無法使用，目前的結果仍然保留。";
 "ask.wordBook.saveFailed" = "無法儲存至單字本，目前的結果仍然保留。";
+
+"ask.notes.storageUnavailable" = "筆記儲存暫時無法使用，目前文字已保留。";

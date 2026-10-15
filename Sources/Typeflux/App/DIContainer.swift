@@ -18,6 +18,7 @@ final class DIContainer {
     let textInjector: AXTextInjector
     let historyStore: HistoryStore
     let clipboardHistoryStore: ClipboardHistoryStore
+    let noteStore: RecoveringAskNoteStore
     let wordBookStore: RecoveringAskWordBookStore
     let conversationCache: RecoveringAskConversationCache
     let clipboardMonitor: ClipboardMonitor
@@ -107,7 +108,7 @@ final class DIContainer {
             clipboardHistoryStore: clipboardHistoryStore,
             filePreviewLoader: AskFilePreviewLoader(),
             conversationCache: conversationCache,
-            wordBookStore: wordBookStore
+            wordBookStore: wordBookStore, noteStore: noteStore
         ) } catch {
             ErrorLogStore.shared
                 .log("Ask conversation storage could not be initialized: \(error.localizedDescription)"); return nil
@@ -119,7 +120,10 @@ final class DIContainer {
         try AskConversationCache(url: AskConversationCache.defaultURL())
     }, wordBookFactory: @escaping @Sendable () throws -> any AskWordBookStoring = {
         SQLiteAskWordBookStore(url: SQLiteAskWordBookStore.defaultURL())
+    }, noteFactory: @escaping @Sendable () throws -> any AskNoteStoring = {
+        SQLiteAskNoteStore(url: SQLiteAskNoteStore.defaultURL())
     }) {
+        noteStore = RecoveringAskNoteStore(factory: noteFactory)
         wordBookStore = RecoveringAskWordBookStore(factory: wordBookFactory)
         conversationCache = RecoveringAskConversationCache(factory: conversationCacheFactory)
         modelLibrary = AskModelLibrary(defaults: settingsStore.defaults)

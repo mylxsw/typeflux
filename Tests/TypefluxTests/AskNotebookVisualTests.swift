@@ -36,7 +36,7 @@ struct AskNotebookVisualTests {
     - [ ] 监控索引大小，预留 1.5 倍内存
     """
 
-    private func seed(_ store: SQLiteAskNoteStore) -> UUID {
+    private func seed(_ store: SQLiteAskNoteStore) throws -> UUID {
         let now = Date().timeIntervalSince1970
         var chat = AskNote(title: "Postgres 向量索引怎么选", body: Self.answer, command: "", keyword: "",
                            input: "我们有 800 万条 1536 维向量，召回要 p95 < 50ms，HNSW 和 IVFFlat 怎么选？",
@@ -45,24 +45,24 @@ struct AskNotebookVisualTests {
                            source: .chat, conversationID: "conv")
         chat.originalBody = Self.answer + "\n"
         chat.editedAt = Date(timeIntervalSince1970: now - 600)
-        store.save(chat)
-        store.save(AskNote(title: "解释 · hell cat", body: "“地狱猫”（hell cat）通常指两种常见意思：\n\n1. **一种绰号**：形容凶猛、难以对付的人或动物。\n2. **一种战斗机**：二战美国海军的 **F6F Hellcat**。",
+        try store.save(chat)
+        try store.save(AskNote(title: "解释 · hell cat", body: "“地狱猫”（hell cat）通常指两种常见意思：\n\n1. **一种绰号**：形容凶猛、难以对付的人或动物。\n2. **一种战斗机**：二战美国海军的 **F6F Hellcat**。",
                            command: "解释", keyword: "ex", input: "hell cat", model: "gpt-5-mini", sourceApp: "Google Chrome",
                            tags: ["英语"], createdAt: Date(timeIntervalSince1970: now - 3600),
                            updatedAt: Date(timeIntervalSince1970: now - 3600)))
-        store.save(AskNote(title: "下周发布清单", body: "- [x] 笔记本改版设计评审\n- [x] 截图 OCR 回归测试\n- [ ] 更新 App Store 截图\n- [ ] 写发布说明",
+        try store.save(AskNote(title: "下周发布清单", body: "- [x] 笔记本改版设计评审\n- [x] 截图 OCR 回归测试\n- [ ] 更新 App Store 截图\n- [ ] 写发布说明",
                            command: "", keyword: "", input: "", tags: ["工作"], pinned: true,
                            createdAt: Date(timeIntervalSince1970: now - 90000), updatedAt: Date(timeIntervalSince1970: now - 90000),
                            source: .manual))
-        store.save(AskNote(title: "截图取字 · 周会白板", body: "### Q4 目标\n\n1. 日活 +20%\n2. 付费转化 3.5% → 5%",
+        try store.save(AskNote(title: "截图取字 · 周会白板", body: "### Q4 目标\n\n1. 日活 +20%\n2. 付费转化 3.5% → 5%",
                            command: "截图取字", keyword: "ocr", input: "", tags: ["工作"],
                            createdAt: Date(timeIntervalSince1970: now - 92000), updatedAt: Date(timeIntervalSince1970: now - 92000),
                            source: .screenshot))
-        store.save(AskNote(title: "总结 · Swift 6 严格并发迁移", body: "## 要点\n\n- 先开 `-strict-concurrency=complete`，按警告逐个修。\n- `@MainActor` 标在 UI 类型上。",
+        try store.save(AskNote(title: "总结 · Swift 6 严格并发迁移", body: "## 要点\n\n- 先开 `-strict-concurrency=complete`，按警告逐个修。\n- `@MainActor` 标在 UI 类型上。",
                            command: "总结", keyword: "sum", input: "https://www.swift.org/migration", sourceApp: "Safari",
                            tags: ["Swift"], createdAt: Date(timeIntervalSince1970: now - 3 * 86400),
                            updatedAt: Date(timeIntervalSince1970: now - 3 * 86400)))
-        store.save(AskNote(title: "Vim 常用命令", body: "| 命令 | 作用 |\n|---|---|\n| `ciw` | 改写当前词 |",
+        try store.save(AskNote(title: "Vim 常用命令", body: "| 命令 | 作用 |\n|---|---|\n| `ciw` | 改写当前词 |",
                            command: "", keyword: "", input: "", createdAt: Date(timeIntervalSince1970: now - 20 * 86400),
                            updatedAt: Date(timeIntervalSince1970: now - 20 * 86400), source: .import))
         return chat.id
@@ -89,7 +89,7 @@ struct AskNotebookVisualTests {
         AppLocalization.shared.setLanguage(.simplifiedChinese)
         defer { AppLocalization.shared.setLanguage(previous) }
         let store = makeTestNotes()
-        let chat = seed(store)
+        let chat = try seed(store)
         let settings = SettingsStore(defaults: UserDefaults(suiteName: "notebook-visual-\(UUID().uuidString)")!)
         settings.interfaceStyle = style
         let controller = AskNotesWindowController()
@@ -98,6 +98,7 @@ struct AskNotebookVisualTests {
             NSAppearance(named: dark ? .darkAqua : .aqua)
         }
         controller.show(selecting: chat)
+        await controller.model?.waitForActions()
         let window = try #require(controller.window)
         let model = try #require(controller.model)
         defer { window.close() }
@@ -112,32 +113,36 @@ struct AskNotebookVisualTests {
         try await capture(window, "\(prefix)-2-read-light.png")
         window.appearance = NSAppearance(named: .darkAqua)
 
-        model.setMode(.edit)
+        await model.setMode(.edit)
         try await capture(window, "\(prefix)-3-edit.png")
-        model.setMode(.split)
+        await model.setMode(.split)
         try await capture(window, "\(prefix)-4-split.png")
-        model.setMode(.read)
+        await model.setMode(.read)
 
         model.searchText = "HNSW"
+        await model.waitForNavigation()
         try await capture(window, "\(prefix)-5-search.png")
         model.searchText = ""
+        await model.waitForNavigation()
 
-        model.setSelecting(true)
-        model.pickAll()
+        await model.setSelecting(true)
+        await model.pickAll()
         try await capture(window, "\(prefix)-6-select.png")
-        model.setSelecting(false)
+        await model.setSelecting(false)
 
-        model.deleteSelected()
+        await model.deleteSelected()
         try await capture(window, "\(prefix)-7-deleted.png")
         model.scope = .trash
+        await model.waitForNavigation()
         try await capture(window, "\(prefix)-8-trash.png")
         #expect(model.notes.count == 1)
         model.scope = .all
+        await model.waitForNavigation()
 
-        model.createNote(title: "读书笔记 · 设计数据密集型应用")
+        await model.createNote(title: "读书笔记 · 设计数据密集型应用")
         model.draftBody = "## 第 5 章 复制\n\n- **单主复制**：写入只走主库\n- [ ] 读己之写\n\n> 复制延迟不可避免。"
         try await capture(window, "\(prefix)-9-new.png")
-        model.setMode(.read)
+        await model.setMode(.read)
 
         let empty = AskNotesWindowController()
         empty.configure(store: makeTestNotes(), settings: settings, askAI: nil) { NSAppearance(named: .aqua) }
@@ -157,7 +162,7 @@ struct AskNotebookVisualTests {
         AppLocalization.shared.setLanguage(.english)
         defer { AppLocalization.shared.setLanguage(previous) }
         let store = makeTestNotes()
-        let chat = seed(store)
+        let chat = try seed(store)
         let settings = SettingsStore(defaults: UserDefaults(suiteName: "notebook-minimum-\(UUID().uuidString)")!)
         settings.interfaceStyle = style
         let controller = AskNotesWindowController()
@@ -168,6 +173,7 @@ struct AskNotebookVisualTests {
             NSAppearance(named: .darkAqua)
         }
         controller.show(selecting: chat)
+        await controller.model?.waitForActions()
         let window = try #require(controller.window)
         let model = try #require(controller.model)
         defer { window.close() }
@@ -205,7 +211,7 @@ struct AskNotebookVisualTests {
         AppLocalization.shared.setLanguage(.english)
         defer { AppLocalization.shared.setLanguage(previous) }
         let store = makeTestNotes()
-        let chat = seed(store)
+        let chat = try seed(store)
         let settings = SettingsStore(defaults: UserDefaults(suiteName: "notebook-resizing-\(UUID().uuidString)")!)
         settings.interfaceStyle = style
         let controller = AskNotesWindowController()
@@ -213,6 +219,7 @@ struct AskNotebookVisualTests {
             NSAppearance(named: .darkAqua)
         }
         controller.show(selecting: chat)
+        await controller.model?.waitForActions()
         let window = try #require(controller.window)
         let model = try #require(controller.model)
         defer { window.close() }
@@ -233,7 +240,7 @@ struct AskNotebookVisualTests {
                 #expect(accessibilityFrame(toggle).width >= 20, "collapsed navigation stays reachable")
             }
         }
-        model.setMode(.split)
+        await model.setMode(.split)
         let draft = "## Draft kept during resizing\n\n" + Self.answer
         model.draftBody = draft
         for width in [1320, 940, 680, 1320] {

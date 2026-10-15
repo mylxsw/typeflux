@@ -48,7 +48,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
          clipboardHistoryStore: (any ClipboardHistoryStore)? = nil,
          filePreviewLoader: (any AskFilePreviewLoading)? = nil,
          conversationCache: (any AskCaching)? = nil,
-         wordBookStore: (any AskWordBookStoring)? = nil) throws {
+         wordBookStore: (any AskWordBookStoring)? = nil, noteStore: (any AskNoteStoring)? = nil) throws {
         self.filePreview = AskFilePreviewController(loader: filePreviewLoader)
         self.dockVisibility = dockVisibility
         self.settings = settings
@@ -134,7 +134,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             if case .notApplied = result { throw TextDeliveryError.noInput }
         }
         // Saved AI prompt results, and the windows results and notes open in.
-        let notes = services?.notes ?? SQLiteAskNoteStore(url: SQLiteAskNoteStore.defaultURL())
+        let notes = services?.notes ?? noteStore ?? RecoveringAskNoteStore()
         model.notes = notes
         // The agent's `notebook` tool reads and writes the same notes.
         tools.notebook = notes
@@ -156,7 +156,8 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
                               })
         // Recently Deleted keeps notes for 30 days.
         maintenanceTasks.append(Task.detached(priority: .utility) {
-            notes.purgeTrash(before: Date().addingTimeInterval(-AskNoteQuery.trashRetention))
+            do { try await notes.purgeTrash(before: Date().addingTimeInterval(-AskNoteQuery.trashRetention)) }
+            catch { ErrorLogStore.shared.log("Notes retention cleanup unavailable") }
         })
         let resultWindow = services?.resultWindow ?? AskResultWindowController.shared
         resultWindow.interfaceStyle = interfaceStyle
@@ -166,15 +167,15 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         resultWindow.services = AskResultDocument.Services(
             saveNote: { draft in
                 let note = AskNote(draft: draft, at: Date())
-                return notes.save(note) ? note.id : nil
+                return try await notes.save(note) ? note.id : nil
             },
             removeNote: { id in
-                guard let note = notes.note(id: id), !note.isEdited, !note.isDeleted else { return false }
+                guard let note = try await notes.note(id: id), !note.isEdited, !note.isDeleted else { return false }
                 var removed = note
                 removed.deletedAt = Date()
-                return notes.save(removed, replacing: note, revisionAt: nil)
+                return try await notes.save(removed, replacing: note, revisionAt: nil)
             },
-            noteExists: { notes.note(id: $0).map { !$0.isDeleted } ?? false },
+            noteExists: { try await notes.note(id: $0).map { !$0.isDeleted } ?? false },
             openNotes: { notesWindow.show(selecting: $0) },
             insert: { text, bundleID in
                 guard let bundleID,

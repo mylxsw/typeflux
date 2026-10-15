@@ -409,7 +409,7 @@ extension AskConversationModel {
         case .openInWindow:
             return openLauncherResultInWindow()
         case let .toggleNote(draft):
-            toggleLauncherNote(draft)
+            performNotebookAction { [weak self] in await self?.toggleLauncherNote(draft) }
             return .stay
         case let .openNotes(id):
             let shown = id ?? launcherNoteID
@@ -417,7 +417,8 @@ extension AskConversationModel {
             openNotes(shown)
             return .close
         case let .openNote(id):
-            return openNoteInWindow(id) ? .close : .stay
+            performNotebookAction { [weak self] in _ = await self?.openNoteInWindow(id) }
+            return .stay
         case let .createNote(title):
             finishPluginResult()
             createNote(title)

@@ -17,6 +17,8 @@ struct AskNotebookTool {
     /// Tags whose notes the agent may not see, compared without case.
     var hiddenTags: [String] = []
     var clock: () -> Date = Date.init
+    /// Recheck the live privacy policy after storage suspensions, before returning content or dispatching writes.
+    var validateAccess: @MainActor () throws -> Void = {}
     /// Set only by approved dispatch. Every fetched note must still match this evidence.
     var approvedTarget: AskExecutionTarget?
 
@@ -56,20 +58,22 @@ struct AskNotebookTool {
         readActions.contains(action) ? .read : .write
     }
 
-    func execute(_ args: [String: Any]) throws -> String {
+    func execute(_ args: [String: Any]) async throws -> String {
+        try await validateAccess()
         let action = args["action"] as? String ?? ""
         let output: String
         switch action {
-        case "search": output = search(args)
-        case "read": output = try read(args)
-        case "list": output = list(args)
-        case "create": output = try create(args)
-        case "append": output = try append(args)
-        case "update": output = try update(args)
-        case "tag": output = try tag(args)
-        case "delete": output = try delete(args)
+        case "search": output = try await search(args)
+        case "read": output = try await read(args)
+        case "list": output = try await list(args)
+        case "create": output = try await create(args)
+        case "append": output = try await append(args)
+        case "update": output = try await update(args)
+        case "tag": output = try await tag(args)
+        case "delete": output = try await delete(args)
         default: throw AskLocalError.message(L("ask.tool.invalid"))
         }
+        try await validateAccess()
         return output.count > Self.outputLimit ? String(output.prefix(Self.outputLimit)) + "\n…" : output
     }
 }
@@ -89,7 +93,7 @@ extension AskNotebookTool {
 
     /// Binds approval to both the privacy policy and the note the user reviewed.
     /// Dates alone do not detect edits that reuse a timestamp.
-    func approvalTarget(_ args: [String: Any]) throws -> AskExecutionTarget {
+    func approvalTarget(_ args: [String: Any]) async throws -> AskExecutionTarget {
         let action = args["action"] as? String ?? ""
         guard Self.readActions.contains(action) || Self.writeActions.contains(action) else {
             throw AskLocalError.message(L("ask.tool.invalid"))
@@ -98,7 +102,7 @@ extension AskNotebookTool {
         if ["search", "list", "create"].contains(action) {
             note = nil
         } else {
-            note = try visibleNote(args)
+            note = try await visibleNote(args)
         }
         return try approvalTarget(note: note)
     }
@@ -120,12 +124,13 @@ extension AskNotebookTool {
     }
 
     /// Filter before applying result limits so hidden notes cannot crowd out visible ones.
-    private func visibleNotes(scope: AskNoteQuery.Scope = .all, text: String = "") -> [AskNote] {
+    private func visibleNotes(scope: AskNoteQuery.Scope = .all, text: String = "") async throws -> [AskNote] {
         var notes: [AskNote] = []
         let pageSize = 500
         var offset = 0
         while true {
-            let page = store.list(AskNoteQuery(scope: scope, text: text, limit: pageSize, offset: offset))
+            let page = try await store.list(AskNoteQuery(scope: scope, text: text, limit: pageSize, offset: offset))
+            try await validateAccess()
             notes += page.filter(isVisible)
             guard page.count == pageSize else { return notes }
             offset += page.count
@@ -133,10 +138,10 @@ extension AskNotebookTool {
     }
 
     /// Notes matching any term, the ones matching more terms first, then the newest.
-    func searchNotes(_ query: String, limit: Int) -> [(note: AskNote, hits: Int)] {
+    func searchNotes(_ query: String, limit: Int) async throws -> [(note: AskNote, hits: Int)] {
         let terms = Array(Set(query.split(whereSeparator: \.isWhitespace).map { $0.lowercased() }))
         var scored: [UUID: (note: AskNote, hits: Int)] = [:]
-        for note in visibleNotes() {
+        for note in try await visibleNotes() {
             let fields = [note.title, note.body, note.input] + note.tags
             let hits = terms.filter { term in fields.contains { $0.localizedCaseInsensitiveContains(term) } }.count
             if terms.isEmpty || hits > 0 { scored[note.id] = (note, hits) }
@@ -148,20 +153,20 @@ extension AskNotebookTool {
         }.prefix(max(0, limit)).map { $0 }
     }
 
-    private func search(_ args: [String: Any]) -> String {
+    private func search(_ args: [String: Any]) async throws -> String {
         let query = (args["query"] as? String ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         let limit = min(max(1, args["limit"] as? Int ?? Self.searchLimit), Self.maximumSearchLimit)
-        let found = searchNotes(query, limit: limit)
+        let found = try await searchNotes(query, limit: limit)
         guard !found.isEmpty else { return "No notes matched \"\(query)\". Try other or fewer keywords." }
         return "\(found.count) note(s):\n"
             + found.map { describe($0.note, snippetFor: query) }.joined(separator: "\n\n")
     }
 
-    private func list(_ args: [String: Any]) -> String {
+    private func list(_ args: [String: Any]) async throws -> String {
         let scope = (args["scope"] as? String ?? "recent").trimmingCharacters(in: .whitespaces)
         if scope == "tags" {
             var counts: [String: Int] = [:]
-            for note in visibleNotes() {
+            for note in try await visibleNotes() {
                 for tag in Set(note.tags) { counts[tag, default: 0] += 1 }
             }
             let tags = counts.map { AskNoteFacet(name: $0.key, count: $0.value) }.sorted {
@@ -177,12 +182,12 @@ extension AskNotebookTool {
         } else {
             .all
         }
-        let notes = visibleNotes(scope: query).prefix(20)
+        let notes = try await visibleNotes(scope: query).prefix(20)
         return notes.isEmpty ? "No notes." : notes.map { describe($0, snippetFor: nil) }.joined(separator: "\n\n")
     }
 
-    private func read(_ args: [String: Any]) throws -> String {
-        let note = try visibleNote(args)
+    private func read(_ args: [String: Any]) async throws -> String {
+        let note = try await visibleNote(args)
         var body = note.body
         if let heading = args["heading"] as? String, !heading.isEmpty {
             guard let section = AskNoteHeading.section(note.body, heading: heading) else {
@@ -229,11 +234,12 @@ extension AskNotebookTool {
         return (start > text.startIndex ? "…" : "") + String(text[start ..< end]) + (end < text.endIndex ? "…" : "")
     }
 
-    private func visibleNote(_ args: [String: Any]) throws -> AskNote {
+    private func visibleNote(_ args: [String: Any]) async throws -> AskNote {
         guard let raw = args["id"] as? String, let id = UUID(uuidString: raw.trimmingCharacters(in: .whitespaces)),
-              let note = store.note(id: id), isVisible(note) else {
+              let note = try await store.note(id: id), isVisible(note) else {
             throw AskLocalError.message(L("ask.notebook.missing"))
         }
+        try await validateAccess()
         if let approvedTarget, try approvalTarget(note: note) != approvedTarget {
             throw AskLocalError.message(L("ask.approval.changed"))
         }
@@ -244,7 +250,7 @@ extension AskNotebookTool {
 // MARK: - Writing
 
 extension AskNotebookTool {
-    private func create(_ args: [String: Any]) throws -> String {
+    private func create(_ args: [String: Any]) async throws -> String {
         let body = args["body"] as? String ?? ""
         let title = (args["title"] as? String ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         guard !body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !title.isEmpty else {
@@ -260,26 +266,28 @@ extension AskNotebookTool {
                 ?? String(AskNote.oneLine(AskNote.plainText(body)).prefix(AskNote.titleLength))) : title
         let note = AskNote(title: String(resolvedTitle.prefix(200)), body: body, command: "", keyword: "", input: "",
                            tags: tags, createdAt: now, updatedAt: now, source: .manual, author: .agent)
-        guard store.save(note) else { throw AskLocalError.message(L("ask.notes.saveFailed")) }
+        try Task.checkCancellation()
+        try await validateAccess()
+        guard try await store.save(note) else { throw AskLocalError.message(L("ask.notes.saveFailed")) }
         return "Created note \(note.id.uuidString) \"\(note.title)\"."
     }
 
-    private func append(_ args: [String: Any]) throws -> String {
-        var note = try visibleNote(args)
+    private func append(_ args: [String: Any]) async throws -> String {
+        var note = try await visibleNote(args)
         let addition = args["body"] as? String ?? ""
         guard !addition.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             throw AskLocalError.message(L("ask.tool.invalid"))
         }
         let heading = args["heading"] as? String
         let found = heading.map { AskNoteHeading.section(note.body, heading: $0) != nil } ?? true
-        try change(&note) { $0.body = AskNoteHeading.appending(addition, to: $0.body, under: heading) }
+        try await change(&note) { $0.body = AskNoteHeading.appending(addition, to: $0.body, under: heading) }
         let place = found ? (heading.map { "under \"\($0)\"" } ?? "at the end")
             : "at the end (no heading \"\(heading ?? "")\")"
         return "Appended to \"\(note.title)\" \(place). It now has \(note.body.count) characters."
     }
 
-    private func update(_ args: [String: Any]) throws -> String {
-        var note = try visibleNote(args)
+    private func update(_ args: [String: Any]) async throws -> String {
+        var note = try await visibleNote(args)
         let title = (args["title"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
         let body = args["body"] as? String
         let find = args["find"] as? String
@@ -295,7 +303,7 @@ extension AskNotebookTool {
                 throw AskLocalError.message(L(count == 0 ? "ask.notebook.findMissing" : "ask.notebook.findRepeated"))
             }
         }
-        try change(&note) { note in
+        try await change(&note) { note in
             if let title, !title.isEmpty { note.title = String(title.prefix(200)) }
             if let find {
                 note.body = note.body.replacingOccurrences(of: find, with: args["replace"] as? String ?? "")
@@ -306,8 +314,8 @@ extension AskNotebookTool {
         return "Updated \"\(note.title)\"."
     }
 
-    private func tag(_ args: [String: Any]) throws -> String {
-        var note = try visibleNote(args)
+    private func tag(_ args: [String: Any]) async throws -> String {
+        var note = try await visibleNote(args)
         let before = note
         let add = (args["add"] as? [String] ?? []).compactMap(AskNote.normalizedTag)
         let remove = Set((args["remove"] as? [String] ?? []).compactMap(AskNote.normalizedTag))
@@ -318,27 +326,31 @@ extension AskNotebookTool {
         if let pin { note.pinned = pin }
         guard note != before else { return "No changes to \"\(note.title)\"." }
         note.updatedAt = clock()
-        guard store.save(note, replacing: before, revisionAt: nil) else {
+        try Task.checkCancellation()
+        try await validateAccess()
+        guard try await store.save(note, replacing: before, revisionAt: nil) else {
             throw AskLocalError.message(L("ask.notes.saveFailed"))
         }
         let tags = note.tags.isEmpty ? "none" : note.tags.map { "#" + $0 }.joined(separator: " ")
         return "\"\(note.title)\": tags \(tags); \(note.pinned ? "pinned" : "not pinned")."
     }
 
-    private func delete(_ args: [String: Any]) throws -> String {
-        var note = try visibleNote(args)
+    private func delete(_ args: [String: Any]) async throws -> String {
+        var note = try await visibleNote(args)
         let before = note
         let now = clock()
         note.deletedAt = now
         note.updatedAt = now
-        guard store.save(note, replacing: before, revisionAt: nil) else {
+        try Task.checkCancellation()
+        try await validateAccess()
+        guard try await store.save(note, replacing: before, revisionAt: nil) else {
             throw AskLocalError.message(L("ask.notes.saveFailed"))
         }
         return "Moved \"\(note.title)\" to Recently Deleted; the user can restore it for 30 days."
     }
 
     /// Keeps the current text as a revision, then saves the change as the agent's.
-    private func change(_ note: inout AskNote, _ edit: (inout AskNote) -> Void) throws {
+    private func change(_ note: inout AskNote, _ edit: (inout AskNote) -> Void) async throws {
         let now = clock()
         let before = note
         edit(&note)
@@ -349,7 +361,9 @@ extension AskNotebookTool {
         note.updatedAt = now
         note.editedAt = note.body != before.body ? now : note.editedAt
         note.author = .agent
-        guard store.save(note, replacing: before, revisionAt: now) else {
+        try Task.checkCancellation()
+        try await validateAccess()
+        guard try await store.save(note, replacing: before, revisionAt: now) else {
             throw AskLocalError.message(L("ask.notes.saveFailed"))
         }
     }

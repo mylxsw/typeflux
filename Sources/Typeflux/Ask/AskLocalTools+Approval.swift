@@ -43,7 +43,7 @@ extension AskLocalTools {
             // Reads may repeat for the conversation; each change is approved on its own.
             let action = args["action"] as? String ?? ""
             let id = args["id"] as? String
-            target = try tool.approvalTarget(args)
+            target = try await tool.approvalTarget(args)
             summary = L("ask.tool.notebook") + " / " + action + (id.map { " / " + $0 } ?? "")
             reusable = AskNotebookTool.readActions.contains(action)
         case "skill":
@@ -136,11 +136,11 @@ extension AskLocalTools {
             }.value
         case AskNotebookTool.name:
             // Recheck after authorization too; a setting or note may have changed while consent was pending.
-            guard var tool = notebookTool, try tool.approvalTarget(args) == binding.target else {
+            guard var tool = notebookTool, try await tool.approvalTarget(args) == binding.target else {
                 throw AskLocalError.message(L("ask.approval.changed"))
             }
             tool.approvedTarget = binding.target
-            return .init(content: try tool.execute(args))
+            return .init(content: try await tool.execute(args))
         default: return try await execute(call, conversationId: conversationId)
         }
     }

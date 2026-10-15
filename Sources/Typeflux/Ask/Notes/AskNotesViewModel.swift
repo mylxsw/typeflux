@@ -30,21 +30,34 @@ final class AskNotesViewModel: ObservableObject {
     @Published var scope: AskNoteQuery.Scope = .all {
         didSet {
             guard scope != oldValue, !restoringFilter else { return }
-            guard finishEditing() else {
-                restoringFilter = true; scope = oldValue; restoringFilter = false
-                return
-            }
-            scopeChanged()
+            let requested = scope
+            restoringFilter = true; scope = oldValue; restoringFilter = false
+            transition { self.restoringFilter = true; self.scope = requested; self.restoringFilter = false }
         }
     }
     @Published var searchText = "" {
         didSet {
             guard searchText != oldValue, !restoringFilter else { return }
-            guard finishEditing() else {
-                restoringFilter = true; searchText = oldValue; restoringFilter = false
-                return
-            }
-            reload()
+            let requested = searchText
+            restoringFilter = true; searchText = oldValue; restoringFilter = false
+            transition { self.restoringFilter = true; self.searchText = requested; self.restoringFilter = false }
+        }
+    }
+    private var transitionTask: Task<Void, Never>?
+    private func setFilters(scope: AskNoteQuery.Scope? = nil, search: String? = nil) {
+        restoringFilter = true
+        if let scope { self.scope = scope }
+        if let search { searchText = search }
+        restoringFilter = false
+    }
+
+    private func transition(_ change: @escaping @MainActor () -> Void) {
+        transitionTask?.cancel()
+        transitionTask = Task { [weak self] in
+            guard let self, await self.finishEditing(), !Task.isCancelled else { return }
+            change()
+            if self.scope == .trash { self.selecting = false; self.picked = [] }
+            await self.reload().value
         }
     }
     @Published var sort: AskNoteQuery.Sort = .updated { didSet { if sort != oldValue { reload() } } }
@@ -119,6 +132,11 @@ final class AskNotesViewModel: ObservableObject {
     var clock: () -> Date = Date.init
     /// How long typing pauses before an edit is saved.
     var autosaveDelay: Duration = .milliseconds(600)
+    @Published private var revisions: [UUID: [AskNoteRevision]] = [:]
+    private var reloadTask: Task<Void, Never>?
+    private var reloadGeneration = UUID()
+    private var savingDraft = false
+    private var savingTitle = false
     private var autosaveTask: Task<Void, Never>?
     /// The last note picked by a plain or ⌘ click, where a ⇧ click range starts.
     private var pickAnchor: UUID?
@@ -130,7 +148,7 @@ final class AskNotesViewModel: ObservableObject {
         self.notificationCenter = notificationCenter
         observer = notificationCenter.addObserver(forName: .askNotesDidChange, object: nil,
                                                   queue: .main) { [weak self] _ in
-            MainActor.assumeIsolated { self?.reload() }
+            MainActor.assumeIsolated { _ = self?.reload() }
         }
         reload()
     }
@@ -138,6 +156,8 @@ final class AskNotesViewModel: ObservableObject {
     deinit {
         if let observer { notificationCenter.removeObserver(observer) }
         autosaveTask?.cancel()
+        reloadTask?.cancel()
+        transitionTask?.cancel()
     }
 
     var selected: AskNote? {
@@ -150,43 +170,102 @@ final class AskNotesViewModel: ObservableObject {
     var inTrash: Bool { scope == .trash }
 
     /// Reads the list and the sidebar again, keeping the chosen note when it is still listed.
-    func reload() {
-        let (text, tagFilters) = Self.parseSearch(searchText)
-        var listed = store.list(AskNoteQuery(scope: scope, text: text, sort: sort))
-        if !tagFilters.isEmpty {
-            listed = listed.filter { note in
-                tagFilters.allSatisfy { wanted in
+    @discardableResult
+    func reload() -> Task<Void, Never> {
+        reloadTask?.cancel()
+        let generation = UUID()
+        reloadGeneration = generation
+        let query = AskNoteQuery(scope: scope, text: Self.parseSearch(searchText).text, sort: sort)
+        let filters = Self.parseSearch(searchText).tags
+        let store = store
+        let task = Task { [weak self] in
+            do {
+                var listed = try await store.list(query)
+                listed = listed.filter { note in filters.allSatisfy { wanted in
                     note.tags.contains { $0.localizedCaseInsensitiveCompare(wanted) == .orderedSame }
+                } }
+                let commands = try await store.commands()
+                let tags = try await store.tags()
+                let sourceFacets = try await store.sources()
+                var counts: [AskNoteQuery.Scope: Int] = [:]
+                for scope: AskNoteQuery.Scope in [.all, .pinned, .recent, .trash] {
+                    counts[scope] = try await store.count(scope)
                 }
+                var revisions: [UUID: [AskNoteRevision]] = [:]
+                for note in listed where note.author == .agent {
+                    revisions[note.id] = try await store.revisions(of: note.id)
+                }
+                guard let self, !Task.isCancelled, self.reloadGeneration == generation else { return }
+                self.notes = listed
+                self.commands = commands
+                self.tags = tags
+                self.sources = Dictionary(sourceFacets.compactMap { facet in
+                    AskNoteSource(rawValue: facet.name).map { ($0, facet.count) }
+                }, uniquingKeysWith: { _, last in last })
+                self.counts = counts
+                self.revisions = revisions
+                let emptyShelf: Bool
+                switch self.scope {
+                case let .command(name): emptyShelf = !commands.contains { $0.name == name }
+                case let .tag(tag): emptyShelf = !tags.contains { $0.name == tag }
+                case let .source(source): emptyShelf = (self.sources[source] ?? 0) == 0
+                default: emptyShelf = false
+                }
+                if emptyShelf {
+                    self.setFilters(scope: .all)
+                    await self.reload().value
+                    return
+                }
+                self.picked = self.picked.filter { id in listed.contains { $0.id == id } }
+                if self.editing, !self.hasUnsavedDraft, let baseline = self.draftBaseline,
+                   let current = listed.first(where: { $0.id == baseline.id }), !current.isDeleted {
+                    self.draftBaseline = current
+                    self.setDraftBody(current.body)
+                }
+                if self.selected == nil { self.selectedID = listed.first?.id }
+            } catch {
+                guard let self, !Task.isCancelled, self.reloadGeneration == generation else { return }
+                self.notice = L("ask.notes.storageUnavailable")
             }
         }
-        // A note being edited keeps its draft on screen while the store catches up.
-        notes = listed
-        commands = store.commands()
-        tags = store.tags()
-        var bySource: [AskNoteSource: Int] = [:]
-        for facet in store.sources() {
-            if let source = AskNoteSource(rawValue: facet.name) { bySource[source] = facet.count }
+        reloadTask = task
+        return task
+    }
+
+    func waitForActions() async {
+        await actionTask?.value
+        await waitForNavigation()
+    }
+
+    func waitForNavigation() async {
+        await transitionTask?.value
+        await waitForReload()
+    }
+
+    func waitForReload() async {
+        while let task = reloadTask {
+            let generation = reloadGeneration
+            await task.value
+            if generation == reloadGeneration { return }
         }
-        sources = bySource
-        counts = [.all: store.count(.all), .pinned: store.count(.pinned), .recent: store.count(.recent),
-                  .trash: store.count(.trash)]
-        // A shelf whose last note went away falls back to all notes.
-        switch scope {
-        case let .command(name) where !commands.contains(where: { $0.name == name }): scope = .all
-        case let .tag(tag) where !tags.contains(where: { $0.name == tag }): scope = .all
-        case let .source(source) where (sources[source] ?? 0) == 0: scope = .all
-        default: break
+    }
+
+    private var actionTask: Task<Void, Never>?
+    /// Serialize UI gestures without queuing or replaying mutations.
+    func perform(_ operation: @escaping @MainActor () async -> Void) {
+        guard actionTask == nil else { return }
+        actionTask = Task { [weak self] in
+            defer { self?.actionTask = nil }
+            await operation()
         }
-        picked = picked.filter { id in notes.contains { $0.id == id } }
-        // Filtering or a change from the agent must not discard the active draft.
-        // A clean editor can follow external text; a dirty editor keeps its baseline.
-        if editing, let baseline = draftBaseline, !hasUnsavedDraft,
-           let current = store.note(id: baseline.id), !current.isDeleted {
-            draftBaseline = current
-            setDraftBody(current.body)
-        }
-        if selected == nil { selectedID = notes.first?.id }
+    }
+
+    func cancelPendingReads() {
+        autosaveTask?.cancel()
+        actionTask?.cancel()
+        reloadTask?.cancel()
+        transitionTask?.cancel()
+        reloadGeneration = UUID()
     }
 
     /// Search text without its `#tag` words, and those tags.
@@ -203,33 +282,32 @@ final class AskNotesViewModel: ObservableObject {
         return (words.joined(separator: " "), tags)
     }
 
-    private func scopeChanged() {
-        if scope == .trash { selecting = false; picked = [] }
-        reload()
-        selectedID = notes.first?.id
-    }
-
     /// Shows a note, leaving filters that would hide it.
-    func reveal(_ id: UUID?) {
-        guard let id, let note = store.note(id: id), finishEditing() else { return }
-        if !notes.contains(where: { $0.id == id }) {
-            searchText = ""
-            scope = note.isDeleted ? .trash : .all
+    func reveal(_ id: UUID?) async {
+        do {
+            guard let id, let note = try await store.note(id: id), await finishEditing() else { return }
+            if !notes.contains(where: { $0.id == id }) {
+                setFilters(scope: note.isDeleted ? .trash : .all, search: "")
+                await reload().value
+            }
+            await select(id)
+        } catch {
+            notice = L("ask.notes.storageUnavailable")
+
         }
-        select(id)
     }
 
-    func select(_ id: UUID?) {
+    func select(_ id: UUID?) async {
         guard id != selectedID else { return }
-        guard finishEditing() else { return }
+        guard await finishEditing() else { return }
         selectedID = id
     }
 
     /// The arrows in the list.
-    func moveSelection(_ delta: Int) {
+    func moveSelection(_ delta: Int) async {
         guard !notes.isEmpty else { return }
         let index = notes.firstIndex { $0.id == selectedID } ?? (delta > 0 ? -1 : notes.count)
-        select(notes[min(max(0, index + delta), notes.count - 1)].id)
+        await select(notes[min(max(0, index + delta), notes.count - 1)].id)
     }
 
     func title(of scope: AskNoteQuery.Scope) -> String {
@@ -311,30 +389,35 @@ final class AskNotesViewModel: ObservableObject {
 
     /// A new note written here, chosen and open for editing. On a tag shelf it carries that tag.
     @discardableResult
-    func createNote(title: String = "", body: String = "") -> UUID? {
-        guard finishEditing() else { return nil }
-        let now = clock()
-        var tags: [String] = []
-        if case let .tag(tag) = scope { tags = [tag] }
-        let note = AskNote(title: title.trimmingCharacters(in: .whitespacesAndNewlines), body: body, command: "",
-                           keyword: "", input: "", tags: tags, createdAt: now, updatedAt: now, source: .manual)
-        guard store.save(note) else { notice = L("ask.notes.saveFailed"); return nil }
-        selecting = false
-        picked = []
-        switch scope {
-        case .all, .recent, .tag, .source(.manual): break
-        default: scope = .all
+    func createNote(title: String = "", body: String = "") async -> UUID? {
+        do {
+            guard await finishEditing() else { return nil }
+            let now = clock()
+            var tags: [String] = []
+            if case let .tag(tag) = scope { tags = [tag] }
+            let note = AskNote(title: title.trimmingCharacters(in: .whitespacesAndNewlines), body: body, command: "",
+                               keyword: "", input: "", tags: tags, createdAt: now, updatedAt: now, source: .manual)
+            guard try await store.save(note) else { notice = L("ask.notes.saveFailed"); return nil }
+            selecting = false
+            picked = []
+            switch scope {
+            case .all, .recent, .tag, .source(.manual): break
+            default: setFilters(scope: .all)
+            }
+            setFilters(search: "")
+            await reload().value
+            selectedID = note.id
+            beginEditing()
+            return note.id
+        } catch {
+            notice = L("ask.notes.storageUnavailable")
+            return nil
         }
-        searchText = ""
-        reload()
-        selectedID = note.id
-        beginEditing()
-        return note.id
     }
 
     /// Holds title edits until they can be saved; navigation shares the body save barrier.
     func stageTitle(_ title: String, id: UUID) {
-        guard let note = store.note(id: id), !note.isDeleted else { return }
+        guard let note = notes.first(where: { $0.id == id }), !note.isDeleted else { return }
         if titleBaseline == nil { titleBaseline = note }
         guard titleBaseline?.id == id else { return }
         pendingTitle = title
@@ -347,45 +430,62 @@ final class AskNotesViewModel: ObservableObject {
     }
 
     @discardableResult
-    func savePendingTitle() -> Bool {
-        guard let title = pendingTitle, let baseline = titleBaseline else { return true }
-        guard let previous = store.note(id: baseline.id), !previous.isDeleted else {
-            draftConflict = true
-            notice = L("ask.notes.saveConflict")
+    func savePendingTitle() async -> Bool {
+        guard !savingTitle else { return pendingTitle == nil }
+        savingTitle = true
+        defer { savingTitle = false }
+        do {
+            guard let title = pendingTitle, let baseline = titleBaseline else { return true }
+            guard let previous = try await store.note(id: baseline.id), !previous.isDeleted else {
+                draftConflict = true
+                notice = L("ask.notes.saveConflict")
+                return false
+            }
+            let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+            let next = trimmed.isEmpty ? defaultTitle(previous) : trimmed
+            guard previous.title == baseline.title || previous.title == next else {
+                draftConflict = true
+                notice = L("ask.notes.saveConflict")
+                return false
+            }
+            var note = previous
+            note.title = next
+            note.updatedAt = clock()
+            note.author = .user
+            let saved = next == previous.title ? true : try await store.save(note, replacing: previous, revisionAt: nil)
+            guard saved else {
+                notice = L("ask.notes.saveFailed")
+                return false
+            }
+            let committed = next == previous.title ? previous : note
+            if let index = notes.firstIndex(where: { $0.id == committed.id }) { notes[index] = committed }
+            guard pendingTitle == title else { titleBaseline = committed; return false }
+            pendingTitle = nil
+            titleBaseline = nil
+            draftConflict = false
+            await reload().value
+            return true
+        } catch {
+            notice = L("ask.notes.storageUnavailable")
             return false
         }
-        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
-        let next = trimmed.isEmpty ? defaultTitle(previous) : trimmed
-        guard previous.title == baseline.title || previous.title == next else {
-            draftConflict = true
-            notice = L("ask.notes.saveConflict")
-            return false
-        }
-        var note = previous
-        note.title = next
-        note.updatedAt = clock()
-        note.author = .user
-        guard next == previous.title || store.save(note, replacing: previous, revisionAt: nil) else {
-            notice = L("ask.notes.saveFailed")
-            return false
-        }
-        pendingTitle = nil
-        titleBaseline = nil
-        draftConflict = false
-        reload()
-        return true
     }
 
     /// A new title; an empty one goes back to the default.
-    func rename(_ title: String, id: UUID? = nil) {
-        guard let id = id ?? selectedID, let previous = store.note(id: id), !previous.isDeleted else { return }
-        var note = previous
-        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
-        let next = trimmed.isEmpty ? defaultTitle(note) : trimmed
-        guard next != note.title else { return }
-        note.title = next
-        note.updatedAt = clock()
-        update(note, replacing: previous)
+    func rename(_ title: String, id: UUID? = nil) async {
+        do {
+            guard let id = id ?? selectedID, let previous = try await store.note(id: id), !previous.isDeleted else { return }
+            var note = previous
+            let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+            let next = trimmed.isEmpty ? defaultTitle(note) : trimmed
+            guard next != note.title else { return }
+            note.title = next
+            note.updatedAt = clock()
+            await update(note, replacing: previous)
+        } catch {
+            notice = L("ask.notes.storageUnavailable")
+
+        }
     }
 
     private func defaultTitle(_ note: AskNote) -> String {
@@ -410,25 +510,26 @@ final class AskNotesViewModel: ObservableObject {
     }
 
     /// Read, edit or split; leaving editing saves.
-    func setMode(_ mode: Mode) {
-        if mode == .read { finishEditing() } else { beginEditing(mode) }
+    func setMode(_ mode: Mode) async {
+        if mode == .read { await finishEditing() } else { beginEditing(mode) }
     }
 
     /// ⌘E: reading and editing.
-    func toggleEditing() { setMode(editing ? .read : .edit) }
+    func toggleEditing() async { await setMode(editing ? .read : .edit) }
 
     /// Returns false when leaving would lose a draft that could not be saved.
     @discardableResult
-    func finishEditing() -> Bool {
-        guard savePendingTitle() else { return false }
+    func finishEditing() async -> Bool {
+        guard await savePendingTitle() else { return false }
         guard editing else { return true }
-        guard saveDraft() else { return false }
+        guard await saveDraft() else { return false }
+        guard !hasUnsavedDraft, pendingTitle == nil else { return false }
         endEditing()
         return true
     }
 
     /// Leaves editing; whatever was typed is kept (edits save as they are made).
-    func cancelEditing() { finishEditing() }
+    func cancelEditing() async { await finishEditing() }
 
     private func endEditing() {
         autosaveTask?.cancel()
@@ -454,245 +555,316 @@ final class AskNotesViewModel: ObservableObject {
         autosaveTask = Task { [weak self] in
             try? await Task.sleep(for: delay)
             guard !Task.isCancelled else { return }
-            self?.saveDraft()
+            await self?.saveDraft()
         }
     }
 
     /// Writes only against the current version, preserving concurrent metadata edits.
     @discardableResult
-    func saveDraft() -> Bool {
-        guard savePendingTitle() else { return false }
-        guard editing, let baseline = draftBaseline else { return true }
-        guard hasUnsavedDraft else { return true }
-        guard let previous = store.note(id: baseline.id), !previous.isDeleted,
-              previous.body == baseline.body || previous.body == draftBody else {
-            draftConflict = true
-            notice = L("ask.notes.saveConflict")
-            return false
-        }
-        if draftBody == previous.body {
-            draftBaseline = previous
+    func saveDraft() async -> Bool {
+        guard !savingDraft else { return !hasUnsavedDraft && pendingTitle == nil }
+        savingDraft = true
+        defer { savingDraft = false }
+        do {
+            guard await savePendingTitle() else { return false }
+            guard editing, let baseline = draftBaseline else { return true }
+            guard hasUnsavedDraft else { return true }
+            let submittedBody = draftBody
+            guard let previous = try await store.note(id: baseline.id), !previous.isDeleted,
+                  previous.body == baseline.body || previous.body == submittedBody else {
+                draftConflict = true
+                notice = L("ask.notes.saveConflict")
+                return false
+            }
+            if submittedBody == previous.body {
+                draftBaseline = previous
+                guard draftBody == submittedBody else { return false }
+                hasUnsavedDraft = false
+                draftConflict = false
+                return true
+            }
+            var note = previous
+            let now = clock()
+            if note.originalBody == nil, note.source != .manual, note.source != .import { note.originalBody = note.body }
+            note.body = submittedBody
+            note.updatedAt = now
+            note.editedAt = now
+            note.author = .user
+            if note.title.isEmpty { note.title = defaultTitle(note) }
+            guard try await store.save(note, replacing: previous, revisionAt: nil) else {
+                notice = L("ask.notes.saveFailed")
+                return false
+            }
+            draftBaseline = note
+            guard draftBody == submittedBody else { return false }
             hasUnsavedDraft = false
             draftConflict = false
+            await reload().value
             return true
-        }
-        var note = previous
-        let now = clock()
-        if note.originalBody == nil, note.source != .manual, note.source != .import { note.originalBody = note.body }
-        note.body = draftBody
-        note.updatedAt = now
-        note.editedAt = now
-        note.author = .user
-        if note.title.isEmpty { note.title = defaultTitle(note) }
-        guard store.save(note, replacing: previous, revisionAt: nil) else {
-            notice = L("ask.notes.saveFailed")
+        } catch {
+            notice = L("ask.notes.storageUnavailable")
             return false
         }
-        draftBaseline = note
-        hasUnsavedDraft = false
-        draftConflict = false
-        reload()
-        return true
     }
 
     /// Keeps both versions when the agent changed or deleted the original note.
-    func saveDraftCopy() {
-        guard let baseline = draftBaseline ?? titleBaseline else { return }
-        let now = clock()
-        let metadata = store.note(id: baseline.id) ?? baseline
-        let title = pendingTitle ?? metadata.title
-        let body = editing ? draftBody : metadata.body
-        let note = AskNote(title: title, body: body, command: "", keyword: "", input: "",
-                           tags: metadata.tags, createdAt: now, updatedAt: now, source: .manual)
-        guard store.save(note) else { notice = L("ask.notes.saveFailed"); return }
-        pendingTitle = nil
-        titleBaseline = nil
-        endEditing()
-        searchText = ""
-        scope = .all
-        reload()
-        selectedID = note.id
-        notice = nil
+    func saveDraftCopy() async {
+        do {
+            guard let baseline = draftBaseline ?? titleBaseline else { return }
+            let now = clock()
+            let metadata = try await store.note(id: baseline.id) ?? baseline
+            let title = pendingTitle ?? metadata.title
+            let body = editing ? draftBody : metadata.body
+            let note = AskNote(title: title, body: body, command: "", keyword: "", input: "",
+                               tags: metadata.tags, createdAt: now, updatedAt: now, source: .manual)
+            guard try await store.save(note) else { notice = L("ask.notes.saveFailed"); return }
+            guard (pendingTitle ?? metadata.title) == title, !editing || draftBody == body else { return }
+            pendingTitle = nil
+            titleBaseline = nil
+            endEditing()
+            setFilters(scope: .all, search: "")
+            await reload().value
+            selectedID = note.id
+            notice = nil
+        } catch {
+            notice = L("ask.notes.storageUnavailable")
+
+        }
     }
 
-    func togglePin() {
-        guard let id = selectedID, let previous = store.note(id: id), !previous.isDeleted else { return }
-        var note = previous
-        note.pinned.toggle()
-        update(note, replacing: previous)
+    func togglePin() async {
+        do {
+            guard let id = selectedID, let previous = try await store.note(id: id), !previous.isDeleted else { return }
+            var note = previous
+            note.pinned.toggle()
+            await update(note, replacing: previous)
+        } catch {
+            notice = L("ask.notes.storageUnavailable")
+
+        }
     }
 
-    func addTag(_ text: String) {
-        guard let id = selectedID, let previous = store.note(id: id), !previous.isDeleted,
-              let tag = AskNote.normalizedTag(text),
-              !previous.tags.contains(where: { $0.localizedCaseInsensitiveCompare(tag) == .orderedSame })
-        else { return }
-        var note = previous
-        note.tags.append(tag)
-        note.updatedAt = clock()
-        update(note, replacing: previous)
+    func addTag(_ text: String) async {
+        do {
+            guard let id = selectedID, let previous = try await store.note(id: id), !previous.isDeleted,
+                  let tag = AskNote.normalizedTag(text),
+                  !previous.tags.contains(where: { $0.localizedCaseInsensitiveCompare(tag) == .orderedSame })
+            else { return }
+            var note = previous
+            note.tags.append(tag)
+            note.updatedAt = clock()
+            await update(note, replacing: previous)
+        } catch {
+            notice = L("ask.notes.storageUnavailable")
+
+        }
     }
 
-    func removeTag(_ tag: String) {
-        guard let id = selectedID, let previous = store.note(id: id), !previous.isDeleted,
-              previous.tags.contains(tag) else { return }
-        var note = previous
-        note.tags.removeAll { $0 == tag }
-        note.updatedAt = clock()
-        update(note, replacing: previous)
+    func removeTag(_ tag: String) async {
+        do {
+            guard let id = selectedID, let previous = try await store.note(id: id), !previous.isDeleted,
+                  previous.tags.contains(tag) else { return }
+            var note = previous
+            note.tags.removeAll { $0 == tag }
+            note.updatedAt = clock()
+            await update(note, replacing: previous)
+        } catch {
+            notice = L("ask.notes.storageUnavailable")
+
+        }
     }
 
     /// Ticks or clears the `index`th task while reading; only its box changes.
-    func toggleTask(_ index: Int) {
-        guard !editing, let id = selectedID, let previous = store.note(id: id), !previous.isDeleted,
-              let body = AskNoteTasks.toggling(previous.body, task: index) else { return }
-        var note = previous
-        if note.originalBody == nil, note.source != .manual, note.source != .import { note.originalBody = note.body }
-        note.body = body
-        note.updatedAt = clock()
-        note.editedAt = note.updatedAt
-        note.author = .user
-        update(note, replacing: previous)
+    func toggleTask(_ index: Int) async {
+        do {
+            guard !editing, let id = selectedID, let previous = try await store.note(id: id), !previous.isDeleted,
+                  let body = AskNoteTasks.toggling(previous.body, task: index) else { return }
+            var note = previous
+            if note.originalBody == nil, note.source != .manual, note.source != .import { note.originalBody = note.body }
+            note.body = body
+            note.updatedAt = clock()
+            note.editedAt = note.updatedAt
+            note.author = .user
+            await update(note, replacing: previous)
+        } catch {
+            notice = L("ask.notes.storageUnavailable")
+
+        }
     }
 
     /// The text the note had before the agent last changed it, when there is one.
     var agentRevision: AskNoteRevision? {
         guard let note = selected, note.author == .agent,
-              let revision = store.revisions(of: note.id).first,
+              let revision = revisions[note.id]?.first,
               revision.title != note.title || revision.body != note.body else { return nil }
         return revision
     }
 
     /// Puts back the text from before the agent's last change.
-    func revertAgentChange() {
-        guard finishEditing(), let id = selectedID, let previous = store.note(id: id), !previous.isDeleted,
-              previous.author == .agent, let revision = store.revisions(of: id).first,
-              revision.title != previous.title || revision.body != previous.body else { return }
-        var note = previous
-        note.title = revision.title
-        note.body = revision.body
-        note.author = .user
-        note.editedAt = clock()
-        note.updatedAt = clock()
-        guard update(note, replacing: previous) else { return }
-        store.deleteRevision(of: note.id, at: revision.createdAt)
-        notice = L("ask.notes.agentReverted")
+    func revertAgentChange() async {
+        do {
+            guard await finishEditing(), let id = selectedID, let previous = try await store.note(id: id), !previous.isDeleted,
+                  previous.author == .agent, let revision = try await store.revisions(of: id).first,
+                  revision.title != previous.title || revision.body != previous.body else { return }
+            var note = previous
+            note.title = revision.title
+            note.body = revision.body
+            note.author = .user
+            note.editedAt = clock()
+            note.updatedAt = clock()
+            guard await update(note, replacing: previous) else { return }
+            try await store.deleteRevision(of: note.id, at: revision.createdAt)
+            notice = L("ask.notes.agentReverted")
+        } catch {
+            notice = L("ask.notes.storageUnavailable")
+
+        }
     }
 
     @discardableResult
-    private func update(_ note: AskNote, replacing previous: AskNote) -> Bool {
-        guard store.save(note, replacing: previous, revisionAt: nil) else {
-            notice = L("ask.notes.saveFailed")
+    private func update(_ note: AskNote, replacing previous: AskNote) async -> Bool {
+        do {
+            guard try await store.save(note, replacing: previous, revisionAt: nil) else {
+                notice = L("ask.notes.saveFailed")
+                return false
+            }
+            await reload().value
+            return true
+        } catch {
+            notice = L("ask.notes.storageUnavailable")
             return false
         }
-        reload()
-        return true
     }
 
     // MARK: - Deleting
 
     /// Moves the chosen note to Recently Deleted; in Recently Deleted, removes it for good.
-    func deleteSelected() {
-        guard finishEditing(), let id = selectedID, let note = store.note(id: id) else { return }
-        if note.isDeleted { deleteForever(); return }
-        guard trash([note]) else { return }
-        notice = L("ask.notes.deleted", note.title.isEmpty ? L("ask.notes.untitled") : note.title)
-        noticeOffersUndo = true
+    func deleteSelected() async {
+        do {
+            guard await finishEditing(), let id = selectedID, let note = try await store.note(id: id) else { return }
+            if note.isDeleted { await deleteForever(); return }
+            guard await trash([note]) else { return }
+            notice = L("ask.notes.deleted", note.title.isEmpty ? L("ask.notes.untitled") : note.title)
+            noticeOffersUndo = true
+        } catch {
+            notice = L("ask.notes.storageUnavailable")
+
+        }
     }
 
     @discardableResult
-    private func trash(_ chosen: [AskNote]) -> Bool {
-        guard !chosen.isEmpty else { return false }
-        let now = clock()
-        let index = notes.firstIndex { $0.id == chosen.first?.id } ?? 0
-        store.trash(ids: chosen.map(\.id), at: now)
-        let removed = chosen.compactMap { store.note(id: $0.id) }.filter(\.isDeleted)
-        guard !removed.isEmpty else { notice = L("ask.notes.saveFailed"); return false }
-        deleted.append(contentsOf: removed)
-        deletedBatches.append(removed.count)
-        let gone = Set(removed.map(\.id))
-        notes.removeAll { gone.contains($0.id) }
-        selectedID = notes.isEmpty ? nil : notes[min(index, notes.count - 1)].id
-        reload()
-        return true
+    private func trash(_ chosen: [AskNote]) async -> Bool {
+        do {
+            guard !chosen.isEmpty else { return false }
+            let now = clock()
+            let index = notes.firstIndex { $0.id == chosen.first?.id } ?? 0
+            try await store.trash(ids: chosen.map(\.id), at: now)
+            let removed = chosen.map { note in var removed = note; removed.deletedAt = now; return removed }
+            guard !removed.isEmpty else { notice = L("ask.notes.saveFailed"); return false }
+            deleted.append(contentsOf: removed)
+            deletedBatches.append(removed.count)
+            let gone = Set(removed.map(\.id))
+            notes.removeAll { gone.contains($0.id) }
+            selectedID = notes.isEmpty ? nil : notes[min(index, notes.count - 1)].id
+            await reload().value
+            return true
+        } catch {
+            notice = L("ask.notes.storageUnavailable")
+            return false
+        }
     }
 
     /// Takes back the last deletion, whether of one note or of several.
-    func undoDelete() {
-        guard finishEditing(), !deleted.isEmpty else { return }
-        let size = min(deletedBatches.last ?? 1, deleted.count)
-        let batch = Array(deleted.suffix(size))
-        var restored: [UUID] = []
-        for removed in batch {
-            // A newer edit or permanent deletion must never be undone by an old snapshot.
-            guard let previous = store.note(id: removed.id), previous.isDeleted else { continue }
-            var note = previous
-            note.deletedAt = nil
-            guard update(note, replacing: previous) else { return }
-            restored.append(note.id)
+    func undoDelete() async {
+        do {
+            guard await finishEditing(), !deleted.isEmpty else { return }
+            let size = min(deletedBatches.last ?? 1, deleted.count)
+            let batch = Array(deleted.suffix(size))
+            var restored: [UUID] = []
+            for removed in batch {
+                // A newer edit or permanent deletion must never be undone by an old snapshot.
+                guard let previous = try await store.note(id: removed.id), previous.isDeleted else { continue }
+                var note = previous
+                note.deletedAt = nil
+                guard await update(note, replacing: previous) else { return }
+                restored.append(note.id)
+            }
+            deleted.removeLast(size)
+            _ = deletedBatches.popLast()
+            await reload().value
+            await reveal(restored.last)
+            notice = nil
+        } catch {
+            notice = L("ask.notes.storageUnavailable")
+
         }
-        deleted.removeLast(size)
-        _ = deletedBatches.popLast()
-        reload()
-        reveal(restored.last)
-        notice = nil
     }
 
     /// Recently Deleted: puts the chosen note back.
-    func restoreFromTrash() {
+    func restoreFromTrash() async {
         guard let previous = selected, previous.isDeleted else { return }
         var note = previous
         note.deletedAt = nil
-        guard update(note, replacing: previous) else { return }
+        guard await update(note, replacing: previous) else { return }
         notice = L("ask.notes.restoredFromTrash", note.title)
     }
 
     /// Recently Deleted: removes the chosen note for good.
-    func deleteForever() {
-        guard let note = selected, note.isDeleted else { return }
-        let index = notes.firstIndex { $0.id == note.id } ?? 0
-        store.delete(ids: [note.id])
-        notes.removeAll { $0.id == note.id }
-        selectedID = notes.isEmpty ? nil : notes[min(index, notes.count - 1)].id
-        reload()
+    func deleteForever() async {
+        do {
+            guard let note = selected, note.isDeleted else { return }
+            let index = notes.firstIndex { $0.id == note.id } ?? 0
+            try await store.delete(ids: [note.id])
+            notes.removeAll { $0.id == note.id }
+            selectedID = notes.isEmpty ? nil : notes[min(index, notes.count - 1)].id
+            await reload().value
+        } catch {
+            notice = L("ask.notes.storageUnavailable")
+
+        }
     }
 
-    func emptyTrash() {
-        let ids = store.list(AskNoteQuery(scope: .trash, limit: Int(Int32.max))).map(\.id)
-        store.delete(ids: ids)
-        reload()
+    func emptyTrash() async {
+        do {
+            let ids = try await store.list(AskNoteQuery(scope: .trash, limit: Int(Int32.max))).map(\.id)
+            try await store.delete(ids: ids)
+            await reload().value
+        } catch {
+            notice = L("ask.notes.storageUnavailable")
+
+        }
     }
 
     // MARK: - Picking several
 
-    func setSelecting(_ enabled: Bool) {
+    func setSelecting(_ enabled: Bool) async {
         guard !inTrash || !enabled else { return }
-        guard !enabled || finishEditing() else { return }
+        if enabled, !(await finishEditing()) { return }
         selecting = enabled
         picked = enabled ? Set(selectedID.map { [$0] } ?? []) : []
         pickAnchor = enabled ? selectedID : nil
     }
 
     /// ⌘ click: adds or removes one note.
-    func togglePick(_ id: UUID) {
-        if !selecting { setSelecting(true) }
+    func togglePick(_ id: UUID) async {
+        if !selecting { await setSelecting(true) }
         guard selecting else { return }
         if picked.contains(id) { picked.remove(id) } else { picked.insert(id) }
         pickAnchor = id
     }
 
     /// ⇧ click: every note between the last picked one and this one.
-    func pickRange(to id: UUID) {
-        if !selecting { setSelecting(true) }
+    func pickRange(to id: UUID) async {
+        if !selecting { await setSelecting(true) }
         guard selecting, let end = notes.firstIndex(where: { $0.id == id }) else { return }
         let start = pickAnchor.flatMap { anchor in notes.firstIndex { $0.id == anchor } } ?? end
         for note in notes[min(start, end) ... max(start, end)] { picked.insert(note.id) }
     }
 
     /// ⌘A
-    func pickAll() {
+    func pickAll() async {
         guard !inTrash else { return }
-        if !selecting { setSelecting(true) }
+        if !selecting { await setSelecting(true) }
         guard selecting else { return }
         picked = Set(notes.map(\.id))
     }
@@ -700,31 +872,41 @@ final class AskNotesViewModel: ObservableObject {
     /// Picked notes in list order.
     var pickedNotes: [AskNote] { notes.filter { picked.contains($0.id) } }
 
-    func pinPicked() {
-        let chosen = pickedNotes
-        let pin = !chosen.allSatisfy(\.pinned)
-        for chosenNote in chosen {
-            guard let previous = store.note(id: chosenNote.id), !previous.isDeleted else { continue }
-            var note = previous
-            note.pinned = pin
-            update(note, replacing: previous)
+    func pinPicked() async {
+        do {
+            let chosen = pickedNotes
+            let pin = !chosen.allSatisfy(\.pinned)
+            for chosenNote in chosen {
+                guard let previous = try await store.note(id: chosenNote.id), !previous.isDeleted else { continue }
+                var note = previous
+                note.pinned = pin
+                await update(note, replacing: previous)
+            }
+            await reload().value
+        } catch {
+            notice = L("ask.notes.storageUnavailable")
+
         }
-        reload()
     }
 
-    func tagPicked(_ text: String) {
-        guard let tag = AskNote.normalizedTag(text) else { return }
-        let now = clock()
-        for chosen in pickedNotes {
-            guard let previous = store.note(id: chosen.id), !previous.isDeleted,
-                  !previous.tags.contains(where: { $0.localizedCaseInsensitiveCompare(tag) == .orderedSame })
-            else { continue }
-            var note = previous
-            note.tags.append(tag)
-            note.updatedAt = now
-            update(note, replacing: previous)
+    func tagPicked(_ text: String) async {
+        do {
+            guard let tag = AskNote.normalizedTag(text) else { return }
+            let now = clock()
+            for chosen in pickedNotes {
+                guard let previous = try await store.note(id: chosen.id), !previous.isDeleted,
+                      !previous.tags.contains(where: { $0.localizedCaseInsensitiveCompare(tag) == .orderedSame })
+                else { continue }
+                var note = previous
+                note.tags.append(tag)
+                note.updatedAt = now
+                await update(note, replacing: previous)
+            }
+            await reload().value
+        } catch {
+            notice = L("ask.notes.storageUnavailable")
+
         }
-        reload()
     }
 
     func copyPicked() {
@@ -736,10 +918,10 @@ final class AskNotesViewModel: ObservableObject {
 
     func exportPicked() { exportFolder(pickedNotes) }
 
-    func trashPicked() {
+    func trashPicked() async {
         let chosen = pickedNotes
         guard !chosen.isEmpty else { return }
-        guard trash(chosen) else { return }
+        guard await trash(chosen) else { return }
         picked = []
         selecting = false
         notice = L("ask.notes.deletedSeveral", chosen.count)
@@ -802,9 +984,14 @@ final class AskNotesViewModel: ObservableObject {
     }
 
     /// Every note that is not deleted, as Markdown files in a new folder.
-    func exportAll() {
-        guard saveDraft() else { return }
-        exportFolder(store.list(AskNoteQuery(limit: Int(Int32.max))))
+    func exportAll() async {
+        do {
+            guard await saveDraft() else { return }
+            exportFolder(try await store.list(AskNoteQuery(limit: Int(Int32.max))))
+        } catch {
+            notice = L("ask.notes.storageUnavailable")
+
+        }
     }
 
     private func exportFolder(_ chosen: [AskNote]) {
@@ -826,24 +1013,32 @@ final class AskNotesViewModel: ObservableObject {
 
     // MARK: - Importing
 
-    func importFiles() { importFiles(chooseImportFiles()) }
+    func importFiles() async { await importFiles(chooseImportFiles()) }
 
     /// Markdown or text files as new notes; the first is chosen.
-    func importFiles(_ urls: [URL]) {
-        guard !urls.isEmpty, finishEditing() else { return }
-        let result = AskNoteImporter.notes(from: urls, now: clock())
-        let imported = result.notes.filter { store.save($0) }
-        let skipped = result.skipped.count + result.notes.count - imported.count
-        if !imported.isEmpty {
-            selecting = false
-            picked = []
-            searchText = ""
-            if scope != .all, scope != .source(.import) { scope = .all }
-            reload()
-            selectedID = imported.first?.id
+    func importFiles(_ urls: [URL]) async {
+        do {
+            guard !urls.isEmpty, await finishEditing() else { return }
+            let result = AskNoteImporter.notes(from: urls, now: clock())
+            var imported: [AskNote] = []
+            for note in result.notes {
+                if try await store.save(note) { imported.append(note) }
+            }
+            let skipped = result.skipped.count + result.notes.count - imported.count
+            if !imported.isEmpty {
+                selecting = false
+                picked = []
+                setFilters(search: "")
+                if scope != .all, scope != .source(.import) { setFilters(scope: .all) }
+                await reload().value
+                selectedID = imported.first?.id
+            }
+            notice = skipped == 0
+                ? L("ask.notes.imported", imported.count)
+                : L("ask.notes.importedSkipped", imported.count, skipped)
+        } catch {
+            notice = L("ask.notes.storageUnavailable")
+
         }
-        notice = skipped == 0
-            ? L("ask.notes.imported", imported.count)
-            : L("ask.notes.importedSkipped", imported.count, skipped)
     }
 }

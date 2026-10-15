@@ -5583,3 +5583,5 @@
 // Word-book storage availability
 "ask.wordBook.storageUnavailable" = "单词本暂不可用，当前结果仍然保留。";
 "ask.wordBook.saveFailed" = "未能保存到单词本，当前结果仍然保留。";
+
+"ask.notes.storageUnavailable" = "笔记存储暂时不可用，当前文字已保留。";

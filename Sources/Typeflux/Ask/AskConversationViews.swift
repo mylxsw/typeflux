@@ -1208,7 +1208,7 @@ struct AskConversationView: View {
                            onRegenerate: { model.regenerate(message.id) },
                            outputs: item.outputs,
                            onSaveNote: model.notes == nil || message.role != "assistant" ? nil
-                               : { excerpt in model.toggleAnswerNote(message, excerpt: excerpt) },
+                               : { excerpt in model.performNotebookAction { await model.toggleAnswerNote(message, excerpt: excerpt) } },
                            savedToNotes: model.answerNoteIDs[message.id] != nil)
         case let .activity(group):
             let results = model.selected?.messages.filter { $0.role == "tool" } ?? []

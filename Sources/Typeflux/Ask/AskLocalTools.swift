@@ -163,8 +163,13 @@ final class AskLocalTools: AskToolExecuting {
 
     var notebookTool: AskNotebookTool? {
         guard notebookAvailable, let notebook else { return nil }
-        return AskNotebookTool(store: notebook,
-                               hiddenTags: settings?.askNotebookHiddenTags ?? SettingsStore.defaultNotebookHiddenTags)
+        let hiddenTags = settings?.askNotebookHiddenTags ?? SettingsStore.defaultNotebookHiddenTags
+        return AskNotebookTool(store: notebook, hiddenTags: hiddenTags, validateAccess: { [weak self] in
+            guard let self, self.notebookAvailable, self.notebook === notebook,
+                  (self.settings?.askNotebookHiddenTags ?? SettingsStore.defaultNotebookHiddenTags) == hiddenTags else {
+                throw AskLocalError.message(L("ask.approval.changed"))
+            }
+        })
     }
 
     var workflowAuthoring: AskWorkflowAuthoringStore?
@@ -392,7 +397,7 @@ final class AskLocalTools: AskToolExecuting {
                 // Writes require the approved dispatch entry point.
                 throw AskLocalError.message(L("ask.tool.unavailable"))
             }
-            return .init(content: try tool.execute(args))
+            return .init(content: try await tool.execute(args))
         default: throw AskLocalError.message(L("ask.tool.unavailable"))
         }
     }

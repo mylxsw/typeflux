@@ -5469,3 +5469,5 @@
 // Word-book storage availability
 "ask.wordBook.storageUnavailable" = "단어장을 사용할 수 없습니다. 현재 결과는 유지됩니다.";
 "ask.wordBook.saveFailed" = "단어장에 저장하지 못했습니다. 현재 결과는 유지됩니다.";
+
+"ask.notes.storageUnavailable" = "노트 저장소를 일시적으로 사용할 수 없습니다. 현재 텍스트는 유지됩니다.";

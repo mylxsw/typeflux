@@ -141,7 +141,7 @@ struct AskNotesSidebar: View {
     }
 
     private var newNoteButton: some View {
-        Button { model.createNote() } label: {
+        Button { model.perform { await model.createNote()  } } label: {
             HStack(spacing: 8) {
                 Image(systemName: "square.and.pencil").font(.system(size: 13, weight: .semibold))
                 Text(L("ask.notes.new")).font(.system(size: 13, weight: .semibold))

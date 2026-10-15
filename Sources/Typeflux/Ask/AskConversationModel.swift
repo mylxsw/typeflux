@@ -93,6 +93,8 @@ final class AskConversationModel: ObservableObject {
         AskWordBookWindowController.shared.show(lookingUp: text)
     }
     /// Saved AI prompt results; the window controller supplies them (`AskConversationModel+Notes`).
+    var notebookTask: Task<Void, Never>?
+    var notebookReadTask: Task<Bool, Never>?
     var notes: (any AskNoteStoring)? { didSet { refreshAnswerNotes() } }
     /// The shown result's text and the note it was saved as, so ⌘S again takes it out.
     var launcherNote: (body: String, id: UUID)?
@@ -430,10 +432,14 @@ final class AskConversationModel: ObservableObject {
             Task { @MainActor in
                 guard let self else { return }
                 self.refreshAnswerNotes()
-                if let saved = self.launcherNote, self.notes?.note(id: saved.id).map({ !$0.isDeleted }) != true {
-                    self.launcherNote = nil
-                    self.plugins.showNoteSaved(false)
-                }
+                do {
+                    if let saved = self.launcherNote,
+                       try await self.notes?.note(id: saved.id).map({ !$0.isDeleted }) != true,
+                       self.launcherNote?.id == saved.id {
+                        self.launcherNote = nil
+                        self.plugins.showNoteSaved(false)
+                    }
+                } catch { self.confirm(L("ask.notes.storageUnavailable")) }
             }
         }
         memoryObserver = NotificationCenter.default.publisher(for: .askMemoryDidClear)
@@ -533,6 +539,8 @@ final class AskConversationModel: ObservableObject {
     }
 
     func resetSession() {
+        notebookTask?.cancel()
+        notebookReadTask?.cancel()
         wordBookTask?.cancel()
         wordBook?.beginSession()
         quickSearch.cancel()

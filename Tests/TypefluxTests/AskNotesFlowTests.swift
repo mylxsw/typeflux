@@ -158,32 +158,37 @@ struct AskPromptResultFlowTests {
         let output = try #require(model.plugins.output)
         let save = try #require(output.action(for: .commandS))
         #expect(model.performPluginAction(save) == .stay)
-        let note = try #require(store.list(AskNoteQuery()).first)
+        await model.notebookTask?.value
+        let note = try #require(try store.list(AskNoteQuery()).first)
         #expect(note.body == "Answer" && note.sourceApp == "Safari" && note.sourceBundleID == "com.apple.Safari")
         #expect(model.plugins.output?.starred == true && model.commandFeedback == L("ask.notes.saved"))
         #expect(model.launcherNoteID == note.id)
         // ⌘S again takes it out.
-        #expect(model.performPluginAction(try #require(model.plugins.output?.action(for: .commandS))) == .stay)
-        #expect(store.count(.all) == 0 && model.plugins.output?.starred == false)
+        #expect(try model.performPluginAction(#require(model.plugins.output?.action(for: .commandS))) == .stay)
+        await model.notebookTask?.value
+        #expect(try store.count(.all) == 0 && model.plugins.output?.starred == false)
         #expect(model.commandFeedback == L("ask.notes.removed"))
         // An edited note stays.
         _ = model.performPluginAction(save)
-        var edited = try #require(store.list(AskNoteQuery()).first)
+        await model.notebookTask?.value
+        var edited = try #require(try store.list(AskNoteQuery()).first)
         edited.editedAt = Date()
-        store.save(edited)
+        try store.save(edited)
         _ = model.performPluginAction(save)
-        #expect(store.count(.all) == 1 && model.commandFeedback == L("ask.notes.editedKept"))
+        await model.notebookTask?.value
+        #expect(try store.count(.all) == 1 && model.commandFeedback == L("ask.notes.editedKept"))
         #expect(model.performPluginAction(.init(kind: .copyRich("**x**"), title: "", symbol: "")) == .stay)
         #expect(model.commandFeedback == L("ask.plugin.copiedRich"))
         #expect(model.performPluginAction(.init(kind: .openNotes(id: nil), title: "", symbol: "")) == .close)
         #expect(opened == [edited.id], "⌘B opens the notes on the saved result")
-        #expect(model.performPluginAction(.init(kind: .openNote(edited.id), title: "", symbol: "")) == .close)
+        #expect(model.performPluginAction(.init(kind: .openNote(edited.id), title: "", symbol: "")) == .stay)
+        await model.notebookTask?.value
         #expect(windows.map(\.id) == [edited.id])
         #expect(model.performPluginAction(.init(kind: .openNote(UUID()), title: "", symbol: "")) == .stay)
-        #expect(model.saveLauncherNote(AskNoteDraft(command: "c", keyword: "k", input: "", body: " ", model: nil)) == nil)
+        #expect(await model.saveLauncherNote(AskNoteDraft(command: "c", keyword: "k", input: "", body: " ", model: nil)) == nil)
         model.notes = nil
-        model.toggleLauncherNote(AskNoteDraft(command: "c", keyword: "k", input: "", body: "b", model: nil))
-        #expect(store.count(.all) == 1, "without notes nothing is saved")
+        await model.toggleLauncherNote(AskNoteDraft(command: "c", keyword: "k", input: "", body: "b", model: nil))
+        #expect(try store.count(.all) == 1, "without notes nothing is saved")
     }
 
     @Test func commandOMovesAStreamingResultIntoAWindow() async throws {
@@ -210,8 +215,10 @@ struct AskPromptResultFlowTests {
         // ⌘S while streaming asks to save once done.
         let save = try #require(model.plugins.currentOutput?.action(for: .commandS))
         _ = model.performPluginAction(save)
+        await model.notebookTask?.value
         #expect(model.plugins.savesNoteWhenDone && model.commandFeedback == L("ask.notes.saveWhenDone"))
         _ = model.performPluginAction(save)
+        await model.notebookTask?.value
         #expect(!model.plugins.savesNoteWhenDone && model.commandFeedback == L("ask.notes.saveWhenDone.cancelled"))
         #expect(model.performPluginAction(.init(kind: .openInWindow, title: "", symbol: "")) == .close)
         let document = try #require(presented.first)
@@ -226,84 +233,89 @@ struct AskPromptResultFlowTests {
 @Suite("Ask notes window", .exclusiveUIState)
 @MainActor
 struct AskNotesViewModelTests {
-    private func model(_ store: SQLiteAskNoteStore) -> AskNotesViewModel {
+    private func model(_ store: SQLiteAskNoteStore) async -> AskNotesViewModel {
         let model = AskNotesViewModel(store: store, notificationCenter: NotificationCenter())
+        await model.waitForReload()
         model.clock = { Date(timeIntervalSince1970: 5000) }
         return model
     }
 
-    @Test func listsFiltersAndReveals() {
+    @Test func listsFiltersAndReveals() async throws {
         let store = makeTestNotes()
         let a = makeTestNote("A", command: "Explain", tags: ["x"], at: 10)
         let b = makeTestNote("B", body: "needle", command: "Sum", at: 20)
-        store.save(a)
-        store.save(b)
-        let notes = model(store)
+        try store.save(a)
+        try store.save(b)
+        let notes = await model(store)
         #expect(notes.notes.map(\.title) == ["B", "A"] && notes.selectedID == b.id)
         #expect(notes.counts[.all] == 2 && notes.counts[.pinned] == 0)
         #expect(notes.commands.map(\.name).sorted() == ["Explain", "Sum"] && notes.tags.map(\.name) == ["x"])
         notes.scope = .tag("x")
+        await notes.waitForNavigation()
         #expect(notes.notes.map(\.title) == ["A"] && notes.selectedID == a.id)
-        notes.reveal(b.id)
+        await notes.reveal(b.id)
         #expect(notes.scope == .all && notes.selectedID == b.id)
         notes.searchText = "needle"
+        await notes.waitForNavigation()
         #expect(notes.notes.map(\.title) == ["B"])
-        notes.reveal(a.id)
+        await notes.reveal(a.id)
         #expect(notes.searchText.isEmpty && notes.selectedID == a.id)
-        notes.reveal(UUID())
-        notes.reveal(nil)
+        await notes.reveal(UUID())
+        await notes.reveal(nil)
         #expect(notes.selectedID == a.id)
         notes.sort = .created
-        notes.moveSelection(-1)
+        await notes.waitForNavigation()
+        await notes.moveSelection(-1)
         #expect(notes.selectedID == b.id)
-        notes.moveSelection(5)
+        await notes.moveSelection(5)
         #expect(notes.selectedID == a.id)
         #expect(notes.title(of: .all) == L("ask.notes.shelf.all") && notes.title(of: .pinned) == L("ask.notes.shelf.pinned"))
         #expect(notes.title(of: .command("Sum")) == "Sum" && notes.title(of: .tag("x")) == "#x")
     }
 
-    @Test func editsTitlesTextPinsAndTags() throws {
+    @Test func editsTitlesTextPinsAndTags() async throws {
         let store = makeTestNotes()
         let note = makeTestNote("Old", body: "Body", tags: ["keep"])
-        store.save(note)
-        let notes = model(store)
-        notes.rename("  New  ")
-        #expect(store.note(id: note.id)?.title == "New")
-        notes.rename("")
-        #expect(store.note(id: note.id)?.title == AskNote.title(command: note.command, input: note.input))
+        try store.save(note)
+        let notes = await model(store)
+        await notes.rename("  New  ")
+        #expect(try store.note(id: note.id)?.title == "New")
+        await notes.rename("")
+        #expect(try store.note(id: note.id)?.title == AskNote.title(command: note.command, input: note.input))
         notes.beginEditing()
         #expect(notes.editing && notes.draftBody == "Body")
         notes.draftBody = "Changed"
-        notes.finishEditing()
-        let edited = try #require(store.note(id: note.id))
+        await notes.finishEditing()
+        let edited = try #require(try store.note(id: note.id))
         #expect(!notes.editing && edited.body == "Changed" && edited.editedAt == Date(timeIntervalSince1970: 5000))
         notes.beginEditing()
         notes.draftBody = "Kept"
-        notes.cancelEditing()
-        #expect(store.note(id: note.id)?.body == "Kept" && !notes.editing, "edits save as they are typed")
-        #expect(store.note(id: note.id)?.originalBody == "Body", "the AI text is kept as a source snapshot")
+        await notes.cancelEditing()
+        #expect(try store.note(id: note.id)?.body == "Kept" && !notes.editing, "edits save as they are typed")
+        #expect(try store.note(id: note.id)?.originalBody == "Body", "the AI text is kept as a source snapshot")
         notes.beginEditing()
-        notes.finishEditing()
-        #expect(store.note(id: note.id)?.updatedAt == Date(timeIntervalSince1970: 5000))
-        notes.togglePin()
-        #expect(store.note(id: note.id)?.pinned == true && notes.counts[.pinned] == 1)
-        notes.addTag("#new ")
-        notes.addTag("keep")
-        notes.addTag("  ")
-        #expect(store.note(id: note.id)?.tags == ["keep", "new"])
+        await notes.finishEditing()
+        #expect(try store.note(id: note.id)?.updatedAt == Date(timeIntervalSince1970: 5000))
+        await notes.togglePin()
+        #expect(try store.note(id: note.id)?.pinned == true && notes.counts[.pinned] == 1)
+        await notes.addTag("#new ")
+        await notes.addTag("keep")
+        await notes.addTag("  ")
+        #expect(try store.note(id: note.id)?.tags == ["keep", "new"])
         notes.scope = .tag("new")
-        notes.removeTag("new")
-        notes.removeTag("missing")
-        #expect(store.note(id: note.id)?.tags == ["keep"] && notes.scope == .all, "an emptied tag shelf falls back")
+        await notes.waitForNavigation()
+        await notes.removeTag("new")
+        await notes.removeTag("missing")
+        #expect(try store.note(id: note.id)?.tags == ["keep"] && notes.scope == .all, "an emptied tag shelf falls back")
     }
 
-    @Test func deletesWithUndoAndUsesNotes() throws {
+    @Test func deletesWithUndoAndUsesNotes() async throws {
         let store = makeTestNotes()
         let first = makeTestNote("First", body: "One", at: 20)
         let second = makeTestNote("Second", body: "Two", at: 10)
-        store.save(first)
-        store.save(second)
-        let notes = model(store)
+        try store.save(first)
+        try store.save(second)
+        let notes = await model(store)
         var copied: [String] = [], rich: [String] = [], asked: [AskNote] = [], windows: [UUID] = []
         notes.copy = { copied.append($0) }
         notes.copyRich = { rich.append($0) }
@@ -318,12 +330,12 @@ struct AskNotesViewModelTests {
         #expect(copied == ["One"] && rich == ["One"] && windows == [first.id])
         #expect(asked == [first])
         notes.beginEditing()
-        notes.deleteSelected()
-        #expect(store.count(.all) == 1 && notes.selectedID == second.id && !notes.editing)
+        await notes.deleteSelected()
+        #expect(try store.count(.all) == 1 && notes.selectedID == second.id && !notes.editing)
         #expect(notes.noticeOffersUndo && notes.notice == L("ask.notes.deleted", "First"))
-        notes.undoDelete()
-        #expect(store.note(id: first.id) == first && notes.selectedID == first.id && notes.notice == nil)
-        notes.undoDelete()
+        await notes.undoDelete()
+        #expect(try store.note(id: first.id) == first && notes.selectedID == first.id && notes.notice == nil)
+        await notes.undoDelete()
         let folder = FileManager.default.temporaryDirectory.appendingPathComponent("notes-export-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         var suggested: String?
@@ -340,12 +352,12 @@ struct AskNotesViewModelTests {
         #expect(notes.notice != L("ask.notes.exported", "x.md"), "a failed export says why")
         notes.chooseExportURL = { _ in nil }
         notes.exportSelected()
-        notes.deleteSelected()
-        notes.deleteSelected()
-        #expect(store.count(.all) == 0 && notes.selectedID == nil)
-        notes.deleteSelected()
+        await notes.deleteSelected()
+        await notes.deleteSelected()
+        #expect(try store.count(.all) == 0 && notes.selectedID == nil)
+        await notes.deleteSelected()
         notes.copySelected()
-        notes.rename("x")
+        await notes.rename("x")
         notes.beginEditing()
         #expect(!notes.editing)
     }
@@ -355,23 +367,27 @@ struct AskNotesViewModelTests {
         let center = NotificationCenter()
         store.notificationCenter = center
         let notes = AskNotesViewModel(store: store, notificationCenter: center)
+        await notes.waitForReload()
         #expect(notes.notes.isEmpty && notes.selectedID == nil)
-        store.save(makeTestNote())
+        try store.save(makeTestNote())
         for _ in 0 ..< 100 where notes.notes.isEmpty { try await Task.sleep(for: .milliseconds(5)) }
         #expect(notes.notes.count == 1 && notes.selectedID != nil)
     }
 
-    @Test func theWindowOpensOnANote() throws {
+    @Test func theWindowOpensOnANote() async throws {
         let store = makeTestNotes()
         let note = makeTestNote()
-        store.save(note)
+        try store.save(note)
         let controller = AskNotesWindowController()
         controller.show(selecting: note.id)
+        await controller.model?.waitForActions()
         #expect(controller.window == nil, "unconfigured, there is nothing to show")
         controller.configure(store: store, askAI: { _ in }, appearance: { nil })
         controller.show(selecting: note.id)
+        await controller.model?.waitForActions()
         #expect(controller.model?.selectedID == note.id && controller.window?.isVisible == true)
         controller.show()
+        await controller.model?.waitForActions()
         controller.window?.close()
         #expect(controller.window == nil && controller.model == nil)
     }

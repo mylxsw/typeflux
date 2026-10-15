@@ -5469,3 +5469,5 @@
 // Word-book storage availability
 "ask.wordBook.storageUnavailable" = "単語帳を利用できません。現在の結果は保持されています。";
 "ask.wordBook.saveFailed" = "単語帳に保存できませんでした。現在の結果は保持されています。";
+
+"ask.notes.storageUnavailable" = "ノートの保存先を現在利用できません。入力中のテキストは保持されています。";

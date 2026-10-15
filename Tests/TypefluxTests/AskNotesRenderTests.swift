@@ -91,13 +91,13 @@ struct AskNotesRenderTests {
                                          input: "比较优势（Comparative Advantage）", body: Self.markdown, state: .done,
                                          sourceApp: "备忘录", sourceBundleID: "com.apple.Notes",
                                          regenerate: { _ in "" }, services: recorder.services)
-            done.toggleNote()
+            await done.toggleNote()?.value
             done.pinned = true
             try await render(AskResultWindowView(document: done) {}, size: NSSize(width: 580, height: 620), dark: true,
                              name: "4-window.png")
             let streaming = AskResultDocument(title: "总结", keyword: "sum", model: nil, input: "", body: "## 会议要点\n\n1. **Q4",
                                               state: .streaming, services: recorder.services)
-            streaming.toggleNote()
+            await streaming.toggleNote()?.value
             try await render(AskResultWindowView(document: streaming) {}, size: NSSize(width: 580, height: 420),
                              dark: false, name: "5-window-streaming-light.png")
             let failed = AskResultDocument(title: "总结", keyword: "sum", model: nil, input: "x", body: "",
@@ -122,37 +122,39 @@ struct AskNotesRenderTests {
         try await withChinese {
             let store = makeTestNotes()
             let now = Date().timeIntervalSince1970
-            store.save(makeTestNote("解释 · 比较优势（Comparative Advantage）", body: Self.markdown, command: "解释",
+            try store.save(makeTestNote("解释 · 比较优势（Comparative Advantage）", body: Self.markdown, command: "解释",
                                     input: "比较优势（Comparative Advantage）", tags: ["读书"], at: now - 60))
-            store.save(makeTestNote("润色 · 产品发布邮件开头", body: "Hi all,\n\nWe are **excited** to announce …",
+            try store.save(makeTestNote("润色 · 产品发布邮件开头", body: "Hi all,\n\nWe are **excited** to announce …",
                                     command: "润色", input: "hi all we are exciting", tags: ["工作", "邮件"],
                                     pinned: true, at: now - 3600))
-            store.save(makeTestNote("总结 · 《思考，快与慢》第 3 章", body: "## 系统 1 与系统 2\n\n- **系统 1**：快速、自动",
+            try store.save(makeTestNote("总结 · 《思考，快与慢》第 3 章", body: "## 系统 1 与系统 2\n\n- **系统 1**：快速、自动",
                                     command: "总结", input: "（第 3 章正文）", tags: ["读书"], at: now - 86400 * 3))
             let model = AskNotesViewModel(store: store, notificationCenter: NotificationCenter())
+        await model.waitForReload()
             model.askAI = { _ in }
-            model.reveal(model.notes.first { $0.command == "解释" }?.id)
+            await model.reveal(model.notes.first { $0.command == "解释" }?.id)
             try await render(AskNotesView(model: model) {}, size: NSSize(width: 1080, height: 700), dark: true,
                              name: "8-notes.png")
             for width in [1320, 1100, 1090, 940, 780, 680] {
                 try await render(AskNotesView(model: model) {}, size: NSSize(width: width, height: 620), dark: true,
                                  name: "notes-read-\(width).png")
             }
-            model.setMode(.split)
+            await model.setMode(.split)
             for width in [1320, 940, 680] {
                 try await render(AskNotesView(model: model) {}, size: NSSize(width: width, height: 620), dark: true,
                                  name: "notes-split-\(width).png")
             }
-            model.setMode(.read)
+            await model.setMode(.read)
             model.beginEditing()
             model.draftBody = "## 编辑\n\n- **一** 二"
             try await render(AskNotesView(model: model) {}, size: NSSize(width: 1080, height: 700), dark: false,
                              name: "9-notes-edit-light.png")
-            model.cancelEditing()
-            model.deleteSelected()
+            await model.cancelEditing()
+            await model.deleteSelected()
             try await render(AskNotesView(model: model) {}, size: NSSize(width: 1080, height: 700), dark: true,
                              name: "10-notes-deleted.png")
             let empty = AskNotesViewModel(store: makeTestNotes(), notificationCenter: NotificationCenter())
+        await empty.waitForReload()
             try await render(AskNotesView(model: empty) {}, size: NSSize(width: 900, height: 560), dark: true,
                              name: "11-notes-empty.png")
             #expect(AskNotesListRow.shortDate(Date(timeIntervalSince1970: 0), now: Date(timeIntervalSince1970: 86400 * 40))
@@ -160,7 +162,7 @@ struct AskNotesRenderTests {
         }
     }
 
-    @Test func onlyMarkdownTasksReceiveInteractiveCheckboxLinks() throws {
+    @Test func onlyMarkdownTasksReceiveInteractiveCheckboxLinks() async throws {
         let markdown = "Literal ☐ glyph\n\n```\n☑ code\n```\n\n- [ ] first\n- [x] second"
         let rendered = AskNoteReaderText.attributed(markdown, highlight: "first")
         var links: [String] = []

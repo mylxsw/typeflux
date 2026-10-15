@@ -5583,3 +5583,5 @@
 // Word-book storage availability
 "ask.wordBook.storageUnavailable" = "The word book is unavailable. Your current result is still available.";
 "ask.wordBook.saveFailed" = "Could not save to the word book. Your current result is still available.";
+
+"ask.notes.storageUnavailable" = "Notebook storage is temporarily unavailable. Your current text has been kept.";

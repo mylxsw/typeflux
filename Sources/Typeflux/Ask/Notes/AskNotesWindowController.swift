@@ -38,16 +38,20 @@ final class AskNotesWindowController: NSObject, NSWindowDelegate {
     /// Opens the window, or brings it forward, showing `id` when it is a note.
     func show(selecting id: UUID? = nil) {
         guard let model = ensureModel() else { return }
-        model.reload()
-        model.reveal(id)
+        model.perform {
+            await model.reload().value
+            await model.reveal(id)
+        }
         present(model)
     }
 
     /// Opens the window on a new note with this title, ready to write.
     func showNewNote(title: String = "") {
         guard let model = ensureModel() else { return }
-        model.reload()
-        model.createNote(title: title)
+        model.perform {
+            await model.reload().value
+            await model.createNote(title: title)
+        }
         present(model)
     }
 
@@ -102,16 +106,24 @@ final class AskNotesWindowController: NSObject, NSWindowDelegate {
         NSApp.activate(ignoringOtherApps: true)
     }
 
-    func windowShouldClose(_: NSWindow) -> Bool {
-        model?.finishEditing() ?? true
+    private var closing = false
+    func windowShouldClose(_ sender: NSWindow) -> Bool {
+        if closing || model == nil { return true }
+        guard let model else { return true }
+        model.perform { [weak self, weak sender] in
+            guard await model.finishEditing(), let self, let sender, self.window === sender else { return }
+            self.closing = true
+            sender.performClose(nil)
+            self.closing = false
+        }
+        return false
     }
 
     func windowWillClose(_: Notification) {
-        let saved = model?.finishEditing() ?? true
+        model?.cancelPendingReads()
         if let window { DockVisibilityController.shared.windowDidHide(window) }
         window = nil
-        // A direct programmatic close bypasses windowShouldClose. Keep a failed
-        // draft in memory so showing the window again still recovers it.
-        if saved { model = nil }
+        // Direct close cannot await the save barrier. Retain the model and its draft for reopening.
+        if model?.hasUnsavedDraft == false, model?.pendingTitle == nil { model = nil }
     }
 }

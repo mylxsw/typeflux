@@ -70,9 +70,9 @@ struct AskConversationWindowServicesTests {
         let services = fixture.results.services
         let draft = AskNoteDraft(command: "Explain", keyword: "ex", input: "Fixture concept",
                                  body: "A controlled result", model: nil, sourceApp: nil, sourceBundleID: nil)
-        let id = try #require(services.saveNote(draft))
-        #expect(services.noteExists(id))
-        var note = try #require(fixture.notes.note(id: id))
+        let id = try #require((try await services.saveNote(draft)))
+        #expect((try await services.noteExists(id)))
+        var note = try #require(try fixture.notes.note(id: id))
         #expect(note.body == draft.body)
         let document = AskResultDocument(note: note, services: services)
         defer { document.close() }
@@ -89,15 +89,15 @@ struct AskConversationWindowServicesTests {
         #expect(await fixture.api.sends.isEmpty)
         #expect(controller.model.savedChatDrafts.contains { $0.draft.text == "Keep the workspace draft." })
         note.editedAt = Date()
-        #expect(fixture.notes.save(note))
-        #expect(!services.removeNote(id), "An edited note must survive unstar from its original result")
+        #expect(try fixture.notes.save(note))
+        #expect(!(try await services.removeNote(id)), "An edited note must survive unstar from its original result")
         note.editedAt = nil
-        #expect(fixture.notes.save(note))
-        #expect(services.removeNote(id))
-        #expect(!services.noteExists(id))
-        #expect(fixture.notes.note(id: id)?.isDeleted == true)
-        #expect(fixture.notes.count(.trash) == 1, "result-window unstar remains recoverable")
-        #expect(!services.removeNote(id))
+        #expect(try fixture.notes.save(note))
+        #expect((try await services.removeNote(id)))
+        #expect(!(try await services.noteExists(id)))
+        #expect(try fixture.notes.note(id: id)?.isDeleted == true)
+        #expect(try fixture.notes.count(.trash) == 1, "result-window unstar remains recoverable")
+        #expect(!(try await services.removeNote(id)))
     }
 
     private func checkWordBook(_ fixture: Fixture, _ settings: SettingsStore) async throws {
