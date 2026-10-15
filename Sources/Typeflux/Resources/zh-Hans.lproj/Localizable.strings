@@ -5604,3 +5604,10 @@
 "settings.services.requested" = "已请求恢复。服务就绪后，可用状态会自动更新。";
 "settings.services.wait" = "恢复正在冷却，请稍后再试。";
 "settings.services.busy" = "正在等待之前的工作结束，请稍后再试。";
+
+// Native system command isolation outcomes.
+"ask.system.notExecuted" = "命令未执行，系统服务不可用。";
+"ask.system.unknownOutcome" = "命令可能已经生效，但无法确认结果，不会自动再次执行。再次尝试前请检查系统状态。";
+"ask.system.busy" = "另一个系统命令仍在执行，本次命令未执行。";
+"ask.system.coolingDown" = "系统命令在故障后暂时暂停，本次命令未执行。";
+"ask.system.disabled" = "系统命令服务已停止，本次命令未执行。";

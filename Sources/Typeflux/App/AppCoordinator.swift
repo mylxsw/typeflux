@@ -296,6 +296,8 @@ final class AppCoordinator {
         moduleStartup?.cancel()
         moduleStartup = nil
         di.moduleRegistry.preventNewWork()
+        di.nativeSystemCommands.preventNewWork()
+        await di.nativeSystemCommands.shutdown()
         await di.moduleRegistry.shutdown()
     }
 
@@ -303,6 +305,7 @@ final class AppCoordinator {
         moduleStartup?.cancel()
         moduleStartup = nil
         di.moduleRegistry.preventNewWork()
+        di.nativeSystemCommands.preventNewWork()
         Task { [di] in await di.moduleRegistry.shutdown() }
         if let authAnalyticsObserver { NotificationCenter.default.removeObserver(authAnalyticsObserver) }
         if let authLogoutObserver { NotificationCenter.default.removeObserver(authLogoutObserver) }

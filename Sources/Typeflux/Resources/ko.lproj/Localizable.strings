@@ -5490,3 +5490,10 @@
 "settings.services.requested" = "복원을 요청했습니다. 서비스가 준비되면 사용 가능 상태가 업데이트됩니다.";
 "settings.services.wait" = "복원 대기 시간 중입니다. 잠시 후 다시 시도하세요.";
 "settings.services.busy" = "이전 작업이 끝나기를 기다리고 있습니다. 잠시 후 다시 시도하세요.";
+
+// Native system command isolation outcomes.
+"ask.system.notExecuted" = "시스템 서비스를 사용할 수 없어 명령이 실행되지 않았습니다.";
+"ask.system.unknownOutcome" = "명령이 이미 적용되었을 수 있지만 결과를 확인할 수 없습니다. 자동으로 다시 실행하지 않습니다. 다시 시도하기 전에 시스템 상태를 확인하세요.";
+"ask.system.busy" = "다른 시스템 명령이 실행 중입니다. 이번 명령은 실행되지 않았습니다.";
+"ask.system.coolingDown" = "오류 후 시스템 명령이 일시 중지되었습니다. 이번 명령은 실행되지 않았습니다.";
+"ask.system.disabled" = "시스템 명령 서비스가 중지되었습니다. 이번 명령은 실행되지 않았습니다.";

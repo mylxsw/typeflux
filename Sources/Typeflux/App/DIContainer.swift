@@ -19,6 +19,7 @@ final class DIContainer {
     let historyStore: HistoryStore
     let clipboardHistoryStore: ClipboardHistoryStore
     let moduleRegistry: ModuleRegistry
+    let nativeSystemCommands = NativeSystemWorker.shared
     let noteStore: RecoveringAskNoteStore
     let wordBookStore: RecoveringAskWordBookStore
     let conversationCache: RecoveringAskConversationCache
