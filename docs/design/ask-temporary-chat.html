@@ -202,27 +202,58 @@ table.dt td.y { color: var(--success); } table.dt td.n { color: var(--temp); fon
 .switch.on { background: var(--success); } .switch.on::after { transform: translateX(16px); }
 .new-tag { font-size: 10px; color: var(--temp); border: 1px solid rgba(var(--temp-rgb), .5); border-radius: 5px; padding: 0 5px; margin-left: 6px; font-weight: 500; }
 
-/* launcher scene */
+/* launcher scene: mirrors the shipped ⌥Space launcher (context chip + input header,
+   home suggestions, footer with attach / storage / model / permission | screenshot and key hints) */
 .desk { position: relative; width: 100%; min-width: 980px; height: 720px; border-radius: 22px; overflow: hidden; background: var(--desk); border: 1px solid var(--border); box-shadow: var(--shadow); }
 .menubar { height: 26px; display: flex; align-items: center; gap: 16px; padding: 0 14px; font-size: 12.5px; background: rgba(127,127,127,.12); backdrop-filter: blur(20px); }
 .menubar b { font-weight: 700; }
-.appwin { position: absolute; left: 70px; top: 70px; width: 560px; height: 360px; border-radius: 12px; background: var(--win-bg); border: 1px solid var(--border); box-shadow: var(--shadow); padding: 40px 26px 20px; color: var(--text-2); line-height: 1.8; opacity: .85; }
-.appwin .tb { position: absolute; left: 0; right: 0; top: 0; height: 30px; display: flex; align-items: center; padding: 0 12px; border-bottom: 1px solid var(--sep); }
+.appwin { position: absolute; left: 70px; top: 50px; width: 560px; height: 250px; border-radius: 12px; background: var(--win-bg); border: 1px solid var(--border); box-shadow: var(--shadow); padding: 40px 26px 20px; opacity: .8; }
+.appwin .tb { position: absolute; left: 0; right: 0; top: 0; height: 30px; display: flex; align-items: center; padding: 0 12px; border-bottom: 1px solid var(--sep); color: var(--text-2); }
 .appwin .ln { height: 9px; border-radius: 5px; background: var(--hover); margin: 10px 0; }
 .appwin .ln.sel { background: rgba(var(--accent-rgb), .35); }
-.launcher { position: absolute; left: 50%; bottom: 58px; transform: translateX(-50%); width: 640px; border-radius: 22px; background: var(--menu); border: 1px solid var(--border); box-shadow: var(--shadow); padding: 12px 12px 10px; backdrop-filter: blur(30px); transition: border-color .2s; }
-.launcher.t { border: 1.5px dashed rgba(var(--temp-rgb), .7); }
-.launcher .lhead { display: flex; align-items: center; gap: 6px; padding: 0 4px 6px; }
-.launcher .lhead .sp { flex: 1; }
-.ltoggle { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 9px; border-radius: 999px; color: var(--text-2); font-size: 12px; }
-.ltoggle:hover { background: var(--hover); color: var(--text); }
-.ltoggle.on { color: var(--temp); background: rgba(var(--temp-rgb), .14); border: 1px dashed rgba(var(--temp-rgb), .55); }
-.launcher textarea { width: 100%; border: 0; outline: 0; background: none; resize: none; height: 46px; padding: 4px 8px; line-height: 1.5; font-size: 14px; }
-.launcher textarea::placeholder { color: var(--text-3); }
-.launcher .send { background: var(--accent); }
-.launcher.t .send { background: var(--temp); }
-.lcaption { position: absolute; left: 50%; bottom: 28px; transform: translateX(-50%); font-size: 12px; color: var(--temp); display: flex; gap: 6px; align-items: center; white-space: nowrap; }
-.cmdmenu { position: absolute; left: 12px; bottom: calc(100% + 8px); width: 320px; padding: 6px; }
+.lc { position: absolute; left: 50%; bottom: 58px; transform: translateX(-50%); width: 680px; border-radius: 26px; background: var(--lc-bg); border: 1px solid var(--border); box-shadow: var(--shadow); backdrop-filter: blur(30px); }
+[data-theme="dark"] { --lc-bg: rgba(46,46,48,.94); }
+[data-theme="light"] { --lc-bg: rgba(250,250,252,.95); }
+.lc.t { border: 1.5px dashed rgba(var(--temp-rgb), .75); }
+.lc-head { display: flex; align-items: center; gap: 10px; padding: 12px 12px 12px; }
+.ctx { display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 8px 0 9px; border-radius: 12px; border: 1px solid var(--border); background: var(--hover); color: var(--text); white-space: nowrap; }
+.ctx .app { width: 20px; height: 20px; border-radius: 6px; background: linear-gradient(135deg, #5ac8fa, #0a84ff); display: grid; place-items: center; color: #fff; }
+.ctx .app svg { width: 12px; height: 12px; }
+.ctx .thumb { width: 28px; height: 20px; border-radius: 4px; background: linear-gradient(135deg, rgba(var(--accent-rgb), .8), rgba(var(--accent-rgb), .45)); border-left: 1px solid var(--sep); }
+.ctx .vr { width: 1px; height: 18px; background: var(--sep); }
+.lc-input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; font-size: 18px; padding: 0 2px; }
+.lc-input::placeholder { color: var(--text-3); }
+.lc-mic { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; color: var(--text-2); }
+.lc-mic svg { width: 18px; height: 18px; }
+.lc-send { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: var(--press); color: var(--text-2); }
+.lc-send svg { width: 20px; height: 20px; }
+.lc-send.on { background: var(--accent); color: #fff; box-shadow: 0 0 18px rgba(var(--accent-rgb), .45); }
+.lc.t .lc-send.on { background: var(--temp); box-shadow: 0 0 18px rgba(var(--temp-rgb), .45); }
+.lc-sep { height: 1px; background: var(--sep); margin: 0 12px; }
+.lc-list { padding: 6px; }
+.lc-grp { font-size: 11.5px; color: var(--text-3); padding: 6px 12px 4px; display: flex; gap: 6px; align-items: center; }
+.lc-row { display: flex; align-items: center; gap: 12px; padding: 0 12px; height: 46px; border-radius: 13px; width: 100%; text-align: left; }
+.lc-row.hl, .lc-row:hover { background: var(--hover); }
+.lc-row .ri { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; background: rgba(var(--accent-rgb), .14); color: var(--accent); flex: none; }
+.lc-row .ri.t { background: rgba(var(--temp-rgb), .16); color: var(--temp); }
+.lc-row .ri.g { background: var(--hover); color: var(--text-2); }
+.lc-row .rt { font-size: 14px; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lc-row .rt .q { color: var(--text-2); margin-left: 6px; }
+.lc-row .rc { color: var(--text-3); font-size: 12.5px; white-space: nowrap; }
+.lc-row .rc.t { color: var(--temp); }
+.lc-row kbd { font: 11.5px var(--font); color: var(--text-3); }
+.lc-foot { display: flex; align-items: center; gap: 2px; height: 48px; padding: 0 14px 0 10px; position: relative; }
+.lc-foot .fb { height: 30px; min-width: 30px; padding: 0 6px; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; color: var(--text-2); }
+.lc-foot .fb:hover, .lc-foot .fb.on { background: var(--hover); color: var(--text); }
+.lc-foot .fb.model { color: var(--text); font-weight: 600; font-size: 14px; }
+.lc-foot .fb.shot { color: var(--accent); }
+.lc-foot .fb.store.t { color: var(--temp); background: rgba(var(--temp-rgb), .14); }
+.lc-foot .fb.store.p { color: var(--private); }
+.lc-foot .rule { width: 1px; height: 18px; background: var(--sep); margin: 0 6px; }
+.lc-foot .keys { margin-left: auto; color: var(--text-3); font-size: 12px; white-space: nowrap; display: flex; align-items: center; gap: 10px; }
+.lc-foot .tnote { color: var(--temp); display: inline-flex; gap: 4px; align-items: center; }
+/* Opens from the footer's storage icon over the list, like the shipped storage card. */
+.lc .pop.lstore { left: 40px; bottom: 50px; width: 370px; }
 
 /* dock */
 .dock { display: inline-flex; flex-wrap: wrap; margin: 0 0 14px; align-items: center; gap: 12px; padding: 8px 12px; border-radius: 16px; background: var(--menu); border: 1px solid var(--border); box-shadow: var(--shadow); backdrop-filter: blur(20px); }
@@ -260,7 +291,7 @@ table.dt td.y { color: var(--success); } table.dt td.n { color: var(--temp); fon
   <div>
     <h1>随便问 · 临时对话（不进入对话历史）</h1>
     <p class="sub">临时对话是对话存储位置的<b>第三个选项</b>，和「云端同步」「仅存本机」并列。它<b>不进入任何历史列表</b>，<b>不读取也不更新记忆</b>，<b>离开这段对话或退出应用时丢弃</b>。临时对话可以使用全部模型。界面上用青色和虚线描边区分（虚线表示“不保存”）。<br>
-    下面的窗口<b>可以直接操作</b>：从 ✎ 旁的 ⌄ 菜单或输入框左下角的存储图标开始一段临时对话，发几条消息后切到别的对话看看会发生什么。工具条可以切换到 <b>⌥Space 启动器</b> 场景、切换登录状态和明暗主题。</p>
+    下面的窗口<b>可以直接操作</b>：点 ✎ 在下拉里选「新临时对话」，或点输入框左下角的存储图标，开始一段临时对话，发几条消息后切到别的对话看看会发生什么。工具条可以切换到 <b>⌥Space 启动器</b> 场景（按现有启动器还原：底栏的 ☁ 存储图标里选「临时」，或输入 <code>/temp</code>）、切换登录状态和明暗主题。</p>
     <div class="dock">
       <span class="lbl">场景</span>
       <div class="seg" id="dock-scene"><button data-v="workspace" class="on">对话窗口</button><button data-v="launcher">⌥Space 启动器</button></div>
@@ -333,25 +364,28 @@ function seed() {
   ];
 }
 
+// Each launcher opening starts with the default storage; temporary applies to one question.
+function freshLauncher() { return { storage: null, text: '', cmd: false, pop: null, hl: 0 }; }
+
 function initialState() {
   return {
     scene: 'workspace', signedIn: true, theme: 'dark',
     convs: seed(), sel: 'c1', draft: null, temp: null,
     pop: null, modal: null, pending: null, settings: false, confirmLeave: true, dontAsk: false,
     text: '', hint: '', fresh: null, done: new Set(),
-    launcher: { temp: false, text: '', cmd: false },
+    launcher: freshLauncher(),
   };
 }
 let S = initialState();
 let hintTimer = null;
 
 const TASKS = [
-  ['newt', '点顶部 ✎ 旁边的 ⌄，选「新临时对话」（或输入框左下角的存储图标）'],
+  ['newt', '点顶部的 ✎，在下拉里选「新临时对话」（或点输入框左下角的存储图标）'],
   ['sendt', '在临时对话里发两条消息，注意它不在历史分组里'],
   ['chip', '点标题栏右侧的 ⏳ 临时对话，查看说明'],
   ['leave', '点侧边栏里的另一段对话，看离开时的确认框'],
   ['keep', '在确认框里选「保留这段对话…」，看它变成普通对话'],
-  ['launcher', '切到「⌥Space 启动器」，点 ⏳ 或输入 /temp，然后发送'],
+  ['launcher', '切到「⌥Space 启动器」，点底栏的 ☁ 选「临时」或输入 /temp，然后提问'],
   ['settings', '点左下角 ⚙，查看「离开临时对话前确认」'],
 ];
 
@@ -429,8 +463,7 @@ function sidebar() {
     : `<div class="foot"><div class="avatar mac">${ic('mac')}</div><div style="flex:1;min-width:0"><div class="nm">未登录</div><div class="dt">对话仅存本机 · 使用你自己的模型</div></div><button class="icon-btn" data-act="settings" title="设置">${ic('gear')}</button></div>`;
   return `<div class="side">
     <div class="side-top"><div class="lights"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></div><span class="sp"></span>
-      <button class="icon-btn" title="新对话" data-act="new" data-v="cloud">${ic('pen')}</button>
-      <button class="icon-btn ${S.pop === 'newmenu' ? 'on' : ''}" data-act="newmenu" title="更多新建方式" style="width:18px;margin-left:-6px">${ic('chev', 'sm')}</button>
+      <button class="icon-btn ${S.pop === 'newmenu' ? 'on' : ''}" title="新建…" data-act="newmenu">${ic('pen')}</button>
       <button class="icon-btn" title="侧边栏">${ic('side')}</button></div>
     <div class="search">${ic('search', 'sm')}搜索对话<kbd>⌘K</kbd></div>
     <div class="list">${rows}</div>
@@ -441,7 +474,7 @@ function sidebar() {
 function newMenu() {
   if (S.pop !== 'newmenu') return '';
   const cloudDis = !S.signedIn;
-  return `<div class="pop" style="left:150px;top:46px;width:300px;padding:6px">
+  return `<div class="pop" style="left:112px;top:46px;width:300px;padding:6px">
     <button class="mi ${cloudDis ? 'dis' : ''}" data-act="${cloudDis ? 'noop' : 'new'}" data-v="cloud">${ic('cloud')}<span class="ml">新对话<div class="md">${cloudDis ? '登录 Typeflux Cloud 后可用' : '同步到 Typeflux Cloud'}</div></span><kbd>⌘N</kbd></button>
     <button class="mi" data-act="new" data-v="local"><span class="lock">${ic('lock')}</span><span class="ml">新私密对话<div class="md">只存在这台 Mac 上</div></span><kbd>⇧⌘N</kbd></button>
     <button class="mi" data-act="new" data-v="temporary"><span class="tcol">${ic('temp')}</span><span class="ml">新临时对话<span class="new-tag">新</span><div class="md">不保存，不使用记忆，离开后即删除</div></span><kbd>⌥⌘N</kbd></button>
@@ -475,14 +508,14 @@ function feed(c) {
   return html + '</div>';
 }
 
-function storeOption(v, on) {
+function storeOption(v, on, act = 'set-store') {
   const meta = {
     cloud: ['c', 'cloud', '云端同步', '在其他设备上继续，可用全部云端能力'],
     local: ['p', 'lock', '仅存本机', '不上传到 Typeflux Cloud，只用你自己的模型'],
     temporary: ['t', 'temp', '临时 · 不保存', '不进入历史，不使用记忆，离开后即删除'],
   }[v];
   const dis = v === 'cloud' && !S.signedIn;
-  return `<button class="opt ${meta[0]} ${on ? 'on' : ''} ${dis ? 'dis' : ''}" data-act="${dis ? 'noop' : 'set-store'}" data-v="${v}">
+  return `<button class="opt ${meta[0]} ${on ? 'on' : ''} ${dis ? 'dis' : ''}" data-act="${dis ? 'noop' : act}" data-v="${v}">
     <span class="oi ${meta[0]}">${ic(meta[1])}</span><span><div class="ot">${meta[2]}</div><div class="od">${dis ? '登录 Typeflux Cloud 后可用' : meta[3]}</div></span>${on ? `<span class="ck">${ic('ok')}</span>` : ''}</button>`;
 }
 
@@ -607,36 +640,85 @@ function workspace() {
     ${leaveModal()}${settingsSheet()}</div>`;
 }
 
+const L_ROWS = [
+  { icon: 'globe', title: '翻译', kw: 'fy' },
+  { icon: 'spark', title: '总结要点', kw: 'sum' },
+  { icon: 'pen', title: '润色改写', kw: 'rw' },
+  { icon: 'info', title: '解释一下', kw: 'ex' },
+];
+const L_COMMANDS = [
+  { name: 'temp', icon: 'temp', cls: 't', title: '临时提问', desc: '不保存，不使用记忆' },
+  { name: 'local', icon: 'lock', cls: '', title: '只存在本机', desc: '这次提问保存为私密对话' },
+  { name: 'screenshot', icon: 'shot', cls: '', title: '附上截图', desc: '当前屏幕' },
+];
+function lDefault() { return S.signedIn ? 'cloud' : 'local'; }
+function lStorage() { return S.launcher.storage || lDefault(); }
+function lTemp() { return lStorage() === 'temporary'; }
+function lCommands() {
+  const q = S.launcher.text.trim().slice(1).toLowerCase();
+  return L_COMMANDS.filter(c => c.name.startsWith(q));
+}
+// Rows the list shows right now, so ↑/↓ and Return act on what is visible.
+function lRows() {
+  const L = S.launcher, t = lTemp();
+  if (L.cmd) return lCommands().map(c => ({ kind: 'cmd', ...c }));
+  if (L.text.trim()) return [{ kind: 'ask' }];
+  const rows = L_ROWS.map(r => ({ kind: 'kw', ...r }));
+  // Continuing a conversation is not a new question, so a temporary question hides it.
+  if (!t) S.convs.filter(c => S.signedIn || c.storage === 'local').slice(0, 2).forEach(c => rows.push({ kind: 'conv', conv: c }));
+  return rows;
+}
+
 function launcher() {
-  const L = S.launcher;
-  const cmd = L.cmd ? `<div class="pop cmdmenu">
-      <div class="mh"><span>命令</span></div>
-      <button class="mi hl" data-act="l-cmd-temp"><span class="tcol">${ic('temp', 'sm')}</span><span class="ml">/temp<div class="md">${L.temp ? '关闭临时提问' : '这次提问以临时对话发出'}</div></span><kbd>↩</kbd></button>
-      <button class="mi" data-act="noop">${ic('lock', 'sm')}<span class="ml">/local<div class="md">这次提问存在本机</div></span></button>
-      <button class="mi" data-act="noop">${ic('shot', 'sm')}<span class="ml">/screenshot<div class="md">附上屏幕截图</div></span></button>
-    </div>` : '';
+  const L = S.launcher, t = lTemp(), st = lStorage();
+  const rows = lRows();
+  const hl = Math.min(L.hl, rows.length - 1);
+  let list = '', lastGroup = '';
+  rows.forEach((r, i) => {
+    const group = r.kind === 'cmd' ? '命令' : r.kind === 'kw' ? '针对选中的 2 段 “第 3 条 报销时限与凭证…”' : r.kind === 'conv' ? '继续对话' : '';
+    if (group && group !== lastGroup) { lastGroup = group; list += `<div class="lc-grp">${group}</div>`; }
+    const cls = `lc-row ${i === hl ? 'hl' : ''}`;
+    if (r.kind === 'cmd') {
+      list += `<button class="${cls}" data-act="l-cmd" data-v="${r.name}"><span class="ri ${r.cls}">${ic(r.icon)}</span><span class="rt">/${r.name}<span class="q">${r.title}</span></span><span class="rc">${r.name === 'temp' && t ? '再次输入可关闭' : r.desc}</span></button>`;
+    } else if (r.kind === 'ask') {
+      list += `<button class="${cls}" data-act="l-send"><span class="ri ${t ? 't' : ''}">${ic(t ? 'temp' : 'spark')}</span><span class="rt">${t ? '临时提问' : '问 AI'}<span class="q">“${esc(L.text.trim())}”</span></span><span class="rc ${t ? 't' : ''}">${t ? '不保存 · 不使用记忆' : ''}</span><kbd>⌘↩</kbd></button>`;
+    } else if (r.kind === 'kw') {
+      list += `<button class="${cls}" data-act="l-kw" data-v="${r.kw}"><span class="ri">${ic(r.icon)}</span><span class="rt">${r.title}</span><span class="rc">${r.kw}</span></button>`;
+    } else {
+      list += `<button class="${cls}" data-act="l-conv" data-id="${r.conv.id}"><span class="ri g">${ic(kind(r.conv) === 'p' ? 'lock' : 'up')}</span><span class="rt">${esc(r.conv.title)}</span><span class="rc">${r.conv.time}</span></button>`;
+    }
+  });
+  const storeIcon = t ? 'temp' : st === 'local' ? 'lock' : 'cloud';
+  const storeName = t ? '临时 · 不保存' : st === 'local' ? '仅存本机' : '云端同步';
+  const canSend = L.text.trim() && !L.cmd;
+  const pop = L.pop === 'store' ? `<div class="pop lstore"><h4>${ic(storeIcon)} ${storeName}</h4>
+      <p>这次提问保存在哪里？只影响这一次，下次呼出恢复默认。</p><div class="hr"></div>
+      ${storeOption('cloud', st === 'cloud', 'l-set-store')}${storeOption('local', st === 'local', 'l-set-store')}${storeOption('temporary', t, 'l-set-store')}
+      ${t ? `<div class="hr"></div>${tempFacts()}` : ''}</div>` : '';
   return `<div class="desk" id="win">
     <div class="menubar"><b></b><b>Safari</b><span>文件</span><span>编辑</span><span>显示</span><span style="margin-left:auto">10月15日 周四 14:20</span></div>
-    <div class="appwin"><div class="tb">Safari — 某公司内部报销制度.pdf</div>
-      <div class="ln" style="width:70%"></div><div class="ln sel" style="width:88%"></div><div class="ln sel" style="width:64%"></div><div class="ln" style="width:80%"></div><div class="ln" style="width:52%"></div><div class="ln" style="width:76%"></div></div>
-    <div class="launcher ${L.temp ? 't' : ''}">
-      ${cmd}
-      <div class="lhead">
-        <span class="chip">${ic('shot', 'sm')}Safari 截图</span><span class="chip">选中 2 段</span>
-        <span class="chip ${L.temp ? 'off' : ''}">${ic('brain', 'sm')}记忆</span>
-        <span class="sp"></span>
-        <button class="ltoggle ${L.temp ? 'on' : ''}" data-act="l-toggle" title="临时提问：不保存、不使用记忆（⌥⌘N 或 /temp）">${ic('temp', 'sm')}${L.temp ? '临时' : ''}</button>
+    <div class="appwin"><div class="tb">某公司内部报销制度.pdf</div>
+      <div class="ln" style="width:70%"></div><div class="ln sel" style="width:88%"></div><div class="ln sel" style="width:64%"></div><div class="ln" style="width:80%"></div><div class="ln" style="width:52%"></div></div>
+    <div class="lc ${t ? 't' : ''}">
+      ${pop}
+      <div class="lc-head">
+        <div class="ctx" title="⌘K 上下文"><span class="app">${ic('globe')}</span>报销制度.pdf<span class="vr"></span><span class="thumb"></span>${ic('chev', 'sm')}</div>
+        <input id="lta" class="lc-input" autocomplete="off" value="${esc(L.text)}" placeholder="${t ? '临时提问，不保存 · / 命令' : '搜索应用、计算，或直接提问 · / 命令'}">
+        <button class="lc-mic" title="按住说话">${ic('mic')}</button>
+        <button class="lc-send ${canSend ? 'on' : ''}" data-act="l-send" ${canSend ? '' : 'disabled'}>${ic('up')}</button>
       </div>
-      <textarea id="lta" placeholder="${L.temp ? '临时提问，不会保存…' : '有什么想问的？/ 调用命令'}">${esc(L.text)}</textarea>
-      <div class="bar">
-        <button class="pill">${ic('plus')}</button>
-        <button class="pill">${esc(S.signedIn ? 'coding/auto' : 'qwen3:8b')}${ic('chev', 'sm')}</button>
-        <span class="sp"></span>
-        <button class="pill">${ic('mic')}</button>
-        <button class="send" data-act="l-send" ${L.text.trim() && !L.text.trim().startsWith('/') ? '' : 'disabled'}>${ic('up')}</button>
+      ${rows.length ? `<div class="lc-sep"></div><div class="lc-list">${list}</div>` : ''}
+      <div class="lc-sep"></div>
+      <div class="lc-foot">
+        <button class="fb" title="附件">${ic('plus')}</button>
+        <button class="fb store ${t ? 't' : st === 'local' ? 'p' : ''} ${L.pop === 'store' ? 'on' : ''}" data-act="l-store" title="${storeName} · 点击更改">${ic(storeIcon)}</button>
+        <button class="fb model">${esc(S.signedIn ? 'Typeflux Cloud' : 'qwen3:8b')}${ic('chev', 'sm')}</button>
+        <button class="fb" title="权限模式">${ic('lock', 'sm')}</button>
+        <span class="rule"></span>
+        <button class="fb shot" title="附上截图">${ic('shot')}</button>
+        <span class="keys">${t ? `<span class="tnote">${ic('temp', 'sm')}临时 · 不进历史</span>` : ''}<span>${L.cmd ? '↩ 执行' : '↩ 发送'} · ⌘K 上下文 · esc 关闭</span></span>
       </div>
     </div>
-    ${L.temp ? `<div class="lcaption">${ic('temp', 'sm')}这次提问不会保存，也不会使用记忆 · 不记录到输入历史</div>` : ''}
   </div>`;
 }
 
@@ -685,12 +767,12 @@ function launcherSend() {
   const L = S.launcher;
   const text = L.text.trim();
   if (!text || text.startsWith('/')) return;
-  const storage = L.temp ? 'temporary' : (S.signedIn ? 'cloud' : 'local');
+  const storage = lStorage();
   const go = () => {
     S.draft = makeDraft(storage); S.sel = 'new'; S.text = text;
     S.scene = 'workspace';
-    if (L.temp) mark('launcher');
-    S.launcher = { temp: false, text: '', cmd: false };
+    if (storage === 'temporary') mark('launcher');
+    S.launcher = freshLauncher();
     send();
   };
   // The launcher always starts a new conversation, so it leaves an open temporary one.
@@ -703,7 +785,11 @@ document.getElementById('stage').addEventListener('click', e => {
   const el = e.target.closest('[data-act]');
   if (e.target.closest('[data-stop]') && !(el && el.closest('[data-stop]'))) return;
   if (e.target.id === 'dontask') { S.dontAsk = e.target.checked; return; }
-  if (!el) { if (S.pop && !e.target.closest('.pop')) { S.pop = null; render(); } return; }
+  if (!el) {
+    if (S.pop && !e.target.closest('.pop')) { S.pop = null; render(); }
+    else if (S.launcher.pop && !e.target.closest('.pop')) { S.launcher.pop = null; render(); }
+    return;
+  }
   e.preventDefault();
   const act = el.dataset.act, c = S.scene === 'workspace' ? conv() : null;
   switch (act) {
@@ -747,8 +833,11 @@ document.getElementById('stage').addEventListener('click', e => {
     case 'settings': S.settings = true; S.pop = null; mark('settings'); break;
     case 'close-settings': S.settings = false; break;
     case 'toggle-confirm': S.confirmLeave = !S.confirmLeave; break;
-    case 'l-toggle': S.launcher.temp = !S.launcher.temp; break;
-    case 'l-cmd-temp': S.launcher.temp = !S.launcher.temp; S.launcher.text = ''; S.launcher.cmd = false; break;
+    case 'l-store': S.launcher.pop = S.launcher.pop === 'store' ? null : 'store'; break;
+    case 'l-set-store': S.launcher.storage = el.dataset.v; S.launcher.pop = null; focusLauncher(); break;
+    case 'l-cmd': runLauncherCommand(el.dataset.v); break;
+    case 'l-kw': S.launcher.text = el.dataset.v + ' '; S.launcher.hl = 0; focusLauncher(); break;
+    case 'l-conv': { const id = el.dataset.id; S.launcher = freshLauncher(); S.scene = 'workspace'; select(id); break; }
     case 'l-send': launcherSend(); return;
     case 'noop': return;
   }
@@ -759,30 +848,42 @@ document.getElementById('stage').addEventListener('input', e => {
     S.text = e.target.value;
     const b = document.querySelector('.send'); if (b) b.disabled = !S.text.trim();
   } else if (e.target.id === 'lta') {
-    S.launcher.text = e.target.value;
-    const cmd = /^\/\w*$/.test(S.launcher.text);
-    if (cmd !== S.launcher.cmd) { S.launcher.cmd = cmd; render(); return; }
-    const b = document.querySelector('.launcher .send'); if (b) b.disabled = !S.launcher.text.trim() || S.launcher.text.trim().startsWith('/');
+    S.launcher.text = e.target.value; S.launcher.cmd = /^\/\w*$/.test(S.launcher.text); S.launcher.hl = 0;
+    render();
   }
 });
 document.getElementById('stage').addEventListener('keydown', e => {
+  if (e.target.id === 'lta' && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+    e.preventDefault();
+    const n = lRows().length; if (!n) return;
+    S.launcher.hl = (S.launcher.hl + (e.key === 'ArrowDown' ? 1 : n - 1)) % n; render(); return;
+  }
   if (e.key !== 'Enter' || e.shiftKey || e.isComposing) return;
   if (e.target.id === 'ta') { e.preventDefault(); send(); }
   if (e.target.id === 'lta') {
     e.preventDefault();
-    if (S.launcher.cmd) {
-      if ('/temp'.startsWith(S.launcher.text.trim())) { S.launcher.temp = !S.launcher.temp; S.launcher.text = ''; S.launcher.cmd = false; render(); }
-      return;
-    }
-    launcherSend();
+    const row = lRows()[S.launcher.hl];
+    if (S.launcher.cmd) { if (row) runLauncherCommand(row.name); render(); return; }
+    if (S.launcher.text.trim()) { launcherSend(); return; }
+    if (row && row.kind === 'kw') { S.launcher.text = row.kw + ' '; render(); }
+    else if (row && row.kind === 'conv') { S.launcher = freshLauncher(); S.scene = 'workspace'; select(row.conv.id); render(); }
   }
 });
+function focusLauncher() { setTimeout(() => { const t = document.getElementById('lta'); if (t) { t.focus(); t.setSelectionRange(t.value.length, t.value.length); } }); }
+// /temp and /local switch where this one question is kept, like the footer's storage icon.
+function runLauncherCommand(name) {
+  const L = S.launcher;
+  if (name === 'temp') L.storage = lTemp() ? null : 'temporary';
+  else if (name === 'local') L.storage = lStorage() === 'local' ? null : 'local';
+  L.text = ''; L.cmd = false; L.hl = 0; L.pop = null;
+  focusLauncher();
+}
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') { S.pop = null; S.settings = false; S.modal = null; S.pending = null; S.launcher.cmd = false; render(); return; }
+  if (e.key === 'Escape') { S.pop = null; S.settings = false; S.modal = null; S.pending = null; S.launcher.cmd = false; S.launcher.pop = null; render(); return; }
   // ⌥⌘N: new temporary conversation (workspace) or toggle temporary (launcher).
   if (e.altKey && e.metaKey && e.code === 'KeyN') {
     e.preventDefault();
-    if (S.scene === 'launcher') S.launcher.temp = !S.launcher.temp; else newConversation('temporary');
+    if (S.scene === 'launcher') runLauncherCommand('temp'); else newConversation('temporary');
     render();
   }
 });
@@ -796,7 +897,7 @@ function setAuth(v) {
 }
 document.getElementById('dock-scene').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
-  S.scene = b.dataset.v; S.pop = null; S.modal = null; S.pending = null; S.settings = false; render();
+  S.scene = b.dataset.v; S.pop = null; S.launcher = freshLauncher(); S.modal = null; S.pending = null; S.settings = false; render();
 });
 document.getElementById('dock-auth').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setAuth(b.dataset.v === 'in'); });
 document.getElementById('dock-theme').addEventListener('click', e => { const b = e.target.closest('button'); if (b) { S.theme = b.dataset.v; render(); } });
