@@ -5366,3 +5366,14 @@
 "ask.search.type.video" = "동영상";
 
 "semantic.atTime" = "일치 위치 %@";
+
+/* Shared components (UI/Components) */
+"component.loading" = "불러오는 중";
+"component.pane" = "섹션";
+"component.search.placeholder" = "검색";
+"component.search.clear" = "검색 지우기";
+"component.search.searchAll" = "전체에서 검색";
+"component.search.noResults" = "“%@”에 대한 결과 없음";
+"component.search.tryAnother" = "다른 검색어를 입력해 보세요.";
+"component.search.tryAll" = "다른 검색어를 입력하거나 전체 항목에서 검색해 보세요.";
+"appMenu.componentGallery" = "컴포넌트 갤러리";

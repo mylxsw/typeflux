@@ -33,6 +33,15 @@ enum AppMenuController {
         )
         aboutItem.target = AppMenuActionRouter.shared
         menu.addItem(aboutItem)
+        if ComponentGalleryAccess.isAvailable() {
+            let galleryItem = NSMenuItem(
+                title: L("appMenu.componentGallery"),
+                action: #selector(AppMenuActionRouter.openComponentGallery(_:)),
+                keyEquivalent: ""
+            )
+            galleryItem.target = AppMenuActionRouter.shared
+            menu.addItem(galleryItem)
+        }
         menu.addItem(NSMenuItem.separator())
         menu.addItem(
             withTitle: L("appMenu.hide", appName),
@@ -81,5 +90,9 @@ private final class AppMenuActionRouter: NSObject {
 
     @objc func openAbout(_: Any?) {
         AboutWindowController.shared.show()
+    }
+
+    @objc func openComponentGallery(_: Any?) {
+        ComponentGalleryWindowController.shared.show()
     }
 }

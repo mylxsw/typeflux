@@ -1,6 +1,6 @@
 # 设置界面控件统一规范 设计方案
 
-> 状态：设计稿，待确认（GUL-394）。可交互设计稿：`docs/design/settings-search-unification.html`，截图在 `docs/design/settings-search-unification/`。
+> 状态：规范已确认；公共组件库与组件库面板已实现（`Sources/Typeflux/UI/Components/`，§12），页面迁移待做（GUL-394）。可交互设计稿：`docs/design/settings-search-unification.html`，截图在 `docs/design/settings-search-unification/`。
 > 范围：设置窗口里的**按钮、Tab、下拉、搜索框**四类控件，以及与它们配套的输入框和列表行。外观沿用 Liquid Glass 的配方（`ask-workspace-liquid-glass.html`、`notebook-redesign.html`），颜色沿用 `StudioTheme`。
 > 第一版只统一了搜索框和列表行（§7、§8）。这一版按 issue 里的反馈，把四类控件放进同一套尺寸、形状和状态体系。
 
@@ -88,7 +88,7 @@
 | 加载 | 用 `ProgressView().controlSize(.small)` 替换前置图标，**宽度保持不变**，不可点击 |
 | 选中（分段、Tab、菜单项） | 见各控件 |
 
-## 3. 按钮 `SettingsButton`
+## 3. 按钮 `TFButton`
 
 ### 3.1 样式
 
@@ -117,9 +117,9 @@
 
 | 级别 | 组件 | 切换的是 | 选项数量 | 位置 |
 |---|---|---|---|---|
-| 1 页面 Tab | `SettingsTabBar`（下划线） | **不同的页面**：内容和工具条都会变 | 2–6 | 页面标题下方 |
-| 2 分段控件 | `SettingsSegmentedControl`（胶囊） | **同一份内容的视图或筛选**：工具条不变 | 2–4（工具条里）；2–5（表单里） | 工具条、表单、Sheet |
-| 3 分区列表 | `SettingsPaneList`（竖排） | 页面里的分区，分区多于 6 个或需要分组时 | 不限，可分组 | 内容区左侧 |
+| 1 页面 Tab | `TFTabBar`（下划线） | **不同的页面**：内容和工具条都会变 | 2–6 | 页面标题下方 |
+| 2 分段控件 | `TFSegmentedControl`（胶囊） | **同一份内容的视图或筛选**：工具条不变 | 2–4（工具条里）；2–5（表单里） | 工具条、表单、Sheet |
+| 3 分区列表 | `TFPaneList`（竖排） | 页面里的分区，分区多于 6 个或需要分组时 | 不限，可分组 | 内容区左侧 |
 
 ### 4.1 页面 Tab（下划线）
 
@@ -153,9 +153,9 @@
 
 | 类型 | 组件 | 触发器外观 | 用途 |
 |---|---|---|---|
-| 选择器 | `SettingsPopUpButton` | 胶囊 + 当前值 + ⌃⌄ 双箭头 | 从一组值里选一个：语言、模型、外观 |
-| 操作菜单 | `SettingsMenuButton` | 按钮（任意样式）+ ⌄ 单箭头；或「⋯」圆形按钮 | 一组相关的动作：更多、导入 / 导出 |
-| 筛选菜单 | `SettingsFilterMenu` | 胶囊 + 「当前选项 · 数量」+ ⌄ | 筛选选项多于 4 个，或分段控件放不下 |
+| 选择器 | `TFPopUpButton` | 胶囊 + 当前值 + ⌃⌄ 双箭头 | 从一组值里选一个：语言、模型、外观 |
+| 操作菜单 | `TFMenuButton` | 按钮（任意样式）+ ⌄ 单箭头；或「⋯」圆形按钮 | 一组相关的动作：更多、导入 / 导出 |
+| 筛选菜单 | `TFFilterMenu` | 胶囊 + 「当前选项 · 数量」+ ⌄ | 筛选选项多于 4 个，或分段控件放不下 |
 
 ### 5.1 选择器
 
@@ -198,7 +198,7 @@
 - 出错时：边框改为 `danger`，下方 11.5pt `danger` 文字说明原因。
 - 多行：圆角 10，最小高度 80pt。
 
-## 7. 搜索框 `SettingsSearchField`
+## 7. 搜索框 `TFSearchField`
 
 ### 7.1 现状
 
@@ -236,7 +236,7 @@
 
 输入时实时过滤，命中的文字用 `accent` 色加粗；分组保留标题并更新数量，空分组隐藏；筛选和搜索取交集；切换页面 Tab 时清空搜索、保留筛选。
 
-## 8. 列表行 `SettingsListRow` 与空状态
+## 8. 列表行 `TFListRow` 与空状态
 
 - 分组卡片：`cardSurface`，圆角 12，0.5pt 边框；分组标题用 `SettingsListSectionLabel`（12pt 半粗 +「N 项」）。
 - 行高：两行 52pt / 单行 36pt / 紧凑 30pt（词库）。左右内边距 12pt。
@@ -266,23 +266,60 @@
 
 ## 10. 组件与迁移
 
-| 新组件（`Settings/Controls/`） | 替换 |
+组件库已实现，见 §12。下表是旧组件与新组件的对应关系，页面迁移时逐个替换：
+
+| 新组件（`UI/Components/`） | 替换 |
 |---|---|
-| `SettingsButton(style:size:)` + `SettingsButtonStyle` | `ModelActionStyle`、`SettingsActionButton`、设置页里的 `StudioButton` / `StudioIconButton`、自绘的小按钮 |
-| `SettingsTabBar` | `StudioUnderlineTab`、`ModelPageTabBar`、`VoiceInputTabBar`（后两个改为调用它） |
-| `SettingsSegmentedControl(size:)` | `StudioSegmentedControl`（保留 typealias，调用方不用改名） |
-| `SettingsPaneList` / 分区选择器 | `SettingsPaneLayout` 的分区列表、`SettingsPaneMenu` |
-| `SettingsPopUpButton(size:)` | `SettingsMenuPicker`、`StudioMenuPicker`、`CloudServerMenuPicker` 的触发器 |
-| `SettingsMenuButton` | `SettingsActionMenu` |
-| `SettingsFilterMenu` | 关键词「全部 · 37」等 |
-| `SettingsMenuPanel` | `PersonaSelectionMenu` 等自绘弹出层的外壳 |
-| `SettingsSearchField` | `SettingsSearchBox` 和 §7.1 里的其他写法 |
-| `SettingsControlSize`、`SettingsControlMetrics` | 一处定义 §2 的尺寸、圆角和状态 |
+| `TFButton` / `TFButtonStyle`（`kind:` `size:` `destructive:` `iconOnly:` `isLoading:`） | `ModelActionStyle`、`SettingsActionButton`、设置页里的 `StudioButton` / `StudioIconButton`、自绘小按钮 |
+| `TFTabBar` | `StudioUnderlineTab`、`ModelPageTabBar`、`VoiceInputTabBar` |
+| `TFSegmentedControl` | `StudioSegmentedControl`（迁移完成后删除旧组件和 typealias） |
+| `TFPaneList` / `TFPanePicker` / `TFPaneLayout` | `SettingsPaneLayout` 的分区列表、`SettingsPaneMenu` |
+| `TFPopUpButton` | `SettingsMenuPicker`、`StudioMenuPicker`、`CloudServerMenuPicker` 的触发器 |
+| `TFMenuButton` | `SettingsActionMenu` |
+| `TFFilterMenu` / `TFFilterControl` | 关键词「全部 · 37」，以及各页的筛选分段 |
+| `TFRichPicker` / `TFMenuPanel` | `PersonaSelectionMenu` 等自绘弹出层 |
+| `TFSearchField` | `SettingsSearchBox` 和 §7.1 里的其他写法 |
+| `TFTextFieldStyle` / `TFFieldMessage` | `ModelFieldStyle` |
+| `TFCard` / `TFListGroup` / `TFListRow` / `TFSectionHeader` / `TFFormRow` | `ModelSurface`、`SettingsListSectionLabel`、`ModelProviderRow`、`AgentSettingsActionRow` 等 |
+| `TFEmptyState` / `TFSearchEmptyState` | 各页自绘的空状态 |
+| `TFControlSize` / `TFMetrics` / `TFColors` | 一处定义 §2 的尺寸、圆角、颜色和状态 |
 
 Ask 窗口的控件（`AskSegmentedControl`、`AskIconGhostButton` 等）不在这次的范围内，但新组件的尺寸和状态与它们一致，后续可以直接替换。
 
-## 11. 实现计划（确认后执行）
+## 11. 实现计划
 
-1. **PR 1 · 基础和组件**：`SettingsControlSize` 和 §2 的令牌；§3–§7 的组件；每个组件提供浅色 / 深色的预览。单测覆盖尺寸映射、筛选菜单的「已生效」判断、窄窗口下的折叠判断，以及搜索匹配函数 `SettingsSearchMatcher`（大小写、中英文、空白、多字段）。
+1. **PR 1 · 基础和组件（已完成，§12）**：`TFControlSize` 和 §2 的令牌；§3–§7 的组件；每个组件提供浅色 / 深色的预览。单测覆盖尺寸映射、筛选菜单的「已生效」判断、窄窗口下的折叠判断，以及搜索匹配函数 `TFSearchMatcher`（大小写、中英文、空白、多字段）。
 2. **PR 2 · 页面迁移**：按 §7.1 和 §10 逐页替换；选择器高度改为 30pt 后，逐页检查表单是否对齐。用现有截图流程（`docs/SCREENSHOTS.md`）出浅色 / 深色对比。
 3. 文案：「N 项」「没有找到」「清除搜索」「在全部中搜索」补齐中英文本地化。
+
+## 12. 组件库与组件库面板（已实现）
+
+### 12.1 组件库
+
+代码在 `Sources/Typeflux/UI/Components/`，所有组件以 `TF` 开头，任何页面都可以直接使用，不需要再写样式：
+
+| 文件 | 内容 |
+|---|---|
+| `TFTokens.swift` | `TFControlSize`（24 / 30 / 36）、`TFMetrics`（圆角、间距、宽度）、`TFColors`（映射到 `StudioTheme`）、`TFLayout`（窄窗口与筛选折叠判断）、环境值 `.tfControlSize(_:)` 和 `.tfCompactLayout(_:)` |
+| `TFButton.swift` | `TFButton`、`TFButtonStyle`、`TFButtonChrome`、`TFButtonAppearance`（纯函数，决定各状态的填充、文字和叠加层）、`TFSpinner` |
+| `TFTabs.swift` | `TFTabBar`、`TFSegmentedControl`、`TFPaneList`、`TFPanePicker`、`TFPaneLayout`、`TFOption` |
+| `TFNativeMenu.swift` | 原生 `NSPopUpButton` 封装：SwiftUI 画胶囊，AppKit 负责菜单、键盘和 VoiceOver |
+| `TFMenus.swift` | `TFPopUpButton`、`TFMenuButton`、`TFFilterMenu`、`TFFilterControl` |
+| `TFMenuPanel.swift` | `TFMenuPanel`、`TFRichPicker`（副标题、分组、菜单内搜索、↑↓ / Return） |
+| `TFSearch.swift` | `TFSearchField`（⌘F、Esc、↓、结果数）、`TFSearchMatcher`（忽略大小写、全半角和变音符号）、`TFHighlightedText`、`TFKeyCap` |
+| `TFList.swift` | `TFCard`、`TFDivider`、`TFListGroup`、`TFListRow`、`TFSectionHeader`、`TFFormRow`、`TFIconTile`、`TFTag`、`TFStatusLabel`、`TFSwitch`、`TFTextFieldStyle`、`TFFieldMessage`、`TFEmptyState`、`TFSearchEmptyState` |
+
+用法要点：
+
+- 尺寸只设一次：在一行或一个工具条外层写 `.tfControlSize(.small)`，里面的按钮、分段、下拉都会跟随；`TFListRow` 的尾部附件和 `TFSectionHeader` 的操作已经自动用小号。
+- 窄窗口：在内容区外层写 `.tfCompactLayout(TFLayout.isCompact(contentWidth: width))`，`TFFilterControl` 会从分段变成筛选菜单，`TFPaneLayout` 会从分区列表变成分区选择器。
+- 组件跟随 `\.interfaceStyle`：玻璃按钮在「经典」样式和「减少透明度」下自动改为不透明。
+
+### 12.2 组件库面板
+
+开发用的独立窗口，集中展示所有组件的样式、规格、状态和组合（源码在 `Sources/Typeflux/UI/ComponentGallery/`，面板文字为英文）：
+
+- **打开方式**：Debug 构建（`make run` / `make dev`）在应用菜单里有「组件库」；Release 构建设置 `TYPEFLUX_COMPONENT_GALLERY=1` 后出现；带 `--component-gallery` 启动时直接打开。
+- **页面**：Foundations（尺寸、形状、颜色、状态）、Buttons、Tabs、Menus、Search & Fields、Lists & Forms、Feedback、Compositions（列表页、主从布局、Sheet 底部与确认对话框）。
+- **顶部开关**：System / Light / Dark、Glass / Classic、Regular / Compact，可以组合查看每种外观和窄窗口下的折叠效果。
+- **截图**：`TYPEFLUX_COMPONENT_SNAPSHOTS=<目录> make test SUITE="TFComponentRenderTests"` 会把每页的浅色 / 深色渲染保存为 PNG。

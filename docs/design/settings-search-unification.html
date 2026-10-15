@@ -502,32 +502,32 @@ function menu(key, items, sel, o = {}) {
 function popup(key, opts, value, o = {}) {
   const cur = opts.find(x => x[0] === value) || opts[0];
   const lead = o.lead ? o.lead(cur) : '';
-  return `<div class="anchor" ${o.w ? `style="width:${o.w}px"` : ''}><button class="btn popup ${o.size === 's' ? 's' : ''}" data-pop="${key}" ${o.w ? 'style="width:100%"' : ''} data-spec="SettingsPopUpButton · ${o.size === 's' ? '24' : '30'}pt">
+  return `<div class="anchor" ${o.w ? `style="width:${o.w}px"` : ''}><button class="btn popup ${o.size === 's' ? 's' : ''}" data-pop="${key}" ${o.w ? 'style="width:100%"' : ''} data-spec="TFPopUpButton · ${o.size === 's' ? '24' : '30'}pt">
     <span class="v">${lead}${esc(cur[1])}</span>${I('updown')}</button>
     ${menu(key, opts.map(([v, l]) => ({ v, label: l })), value)}</div>`;
 }
 /** Filter menu: shows "option · count", accent tint when not on the default. */
 function filterMenu(key, opts, value, def = 'all') {
   const cur = opts.find(o => o[0] === value) || opts[0];
-  return `<div class="anchor"><button class="btn fmenu ${value !== def ? 'active' : ''}" data-pop="filter:${key}" data-spec="SettingsFilterMenu">${esc(cur[1])} <span class="n">· ${cur[2]}</span>${I('down', 'chev')}</button>
+  return `<div class="anchor"><button class="btn fmenu ${value !== def ? 'active' : ''}" data-pop="filter:${key}" data-spec="TFFilterMenu">${esc(cur[1])} <span class="n">· ${cur[2]}</span>${I('down', 'chev')}</button>
     ${menu('filter:' + key, opts.map(([v, l, n]) => ({ v, label: l, count: n })), value)}</div>`;
 }
 /** Segmented control with a sliding thumb. opts: [value, label, count, icon] */
 function segmented(key, opts, value, o = {}) {
-  return `<div class="seg ${o.size === 's' ? 's' : ''} ${o.fill ? 'fill' : ''}" data-slide="${o.id || key}" data-spec="SettingsSegmentedControl · ${o.size === 's' ? '24' : '30'}pt"><span class="thumb"></span>${opts.map(([v, l, n, ic]) =>
+  return `<div class="seg ${o.size === 's' ? 's' : ''} ${o.fill ? 'fill' : ''}" data-slide="${o.id || key}" data-spec="TFSegmentedControl · ${o.size === 's' ? '24' : '30'}pt"><span class="thumb"></span>${opts.map(([v, l, n, ic]) =>
     `<button data-seg="${key}" data-v="${v}" class="${value === v ? 'on' : ''}" ${ic && !l ? `title="${esc(n)}" aria-label="${esc(n)}"` : ''}>${ic ? I(ic) : ''}${l ? esc(l) : ''}${l && n != null ? ` <span class="n">${n}</span>` : ''}</button>`).join('')}</div>`;
 }
 /** Filter control: a segmented control, or a filter menu when there are >4 options or the window is narrow. */
 const filterCtl = (key, opts) => (!S.narrow && opts.length <= 4) ? segmented('filter:' + key, opts, S.filter[key]) : filterMenu(key, opts, S.filter[key]);
 /** Underline page tabs. */
 function utabs(id, tabs, value, attr) {
-  return `<div class="utabs" data-slide="${id}" data-spec="SettingsTabBar · 32pt"><span class="ind"></span>${tabs.map(([v, l, n]) => `<button class="utab ${value === v ? 'on' : ''}" ${attr}="${v}">${esc(l)}${n != null ? `<span class="ct">${n}</span>` : ''}</button>`).join('')}</div>`;
+  return `<div class="utabs" data-slide="${id}" data-spec="TFTabBar · 32pt"><span class="ind"></span>${tabs.map(([v, l, n]) => `<button class="utab ${value === v ? 'on' : ''}" ${attr}="${v}">${esc(l)}${n != null ? `<span class="ct">${n}</span>` : ''}</button>`).join('')}</div>`;
 }
 /** Search field: one 30pt capsule. */
 function searchField(key, placeholder, o = {}) {
   const v = S.q[key] || '';
   const cls = ['sf', o.fill ? 'fillw' : '', v ? 'has' : '', S.focusKey === key ? 'focus' : ''].join(' ');
-  return `<label class="${cls}" data-spec="SettingsSearchField · 30pt">${I('search', 'sm')}
+  return `<label class="${cls}" data-spec="TFSearchField · 30pt">${I('search', 'sm')}
     <input data-search="${key}" placeholder="${esc(placeholder)}" value="${esc(v)}" autocomplete="off" spellcheck="false">
     ${v ? `<span class="count">${o.count} 项</span>` : (o.kbd ? '<kbd class="kb">⌘F</kbd>' : '')}
     <button class="clr" data-clear="${key}" aria-label="清除搜索">${I('x')}</button></label>`;
@@ -538,7 +538,7 @@ function tile(label, color, icon) {
 }
 function row({ q, icon, title, sub, tags = [], acc = '', cls = '', data = '' }) {
   const t = tags.map(x => typeof x === 'string' ? `<span class="tag">${esc(x)}</span>` : `<span class="tag ${x.c || ''}">${hl(x.t, q)}</span>`).join('');
-  return `<div class="row ${sub ? '' : 'single'} ${icon ? '' : 'noicon'} ${cls}" ${data} data-spec="SettingsListRow · ${sub ? '52' : cls.includes('compact') ? '30' : '36'}pt">
+  return `<div class="row ${sub ? '' : 'single'} ${icon ? '' : 'noicon'} ${cls}" ${data} data-spec="TFListRow · ${sub ? '52' : cls.includes('compact') ? '30' : '36'}pt">
     ${icon || ''}<div class="rbody"><div class="rtitle"><span class="t">${hl(title, q)}</span>${t}</div>${sub ? `<div class="rsub">${hl(sub, q)}</div>` : ''}</div>
     <div class="acc">${acc}</div></div>`;
 }
@@ -552,7 +552,7 @@ function rowMore(id, items) {
   return `<div class="anchor hov ${S.pop === key ? 'open' : ''}">${btn('更多操作', { icon: 'dots', style: 'plain', size: 's', iconOnly: true, data: `data-pop="${esc(key)}"` })}${menu(key, items, null, { right: true, noCheck: true })}</div>`;
 }
 function emptySearch(key, hasFilter, def = 'all') {
-  return `<div class="empty" data-spec="SettingsSearchEmptyState"><div class="ic">${I('search')}</div><b>没有找到“${esc(S.q[key])}”</b><span>换个关键词试试${hasFilter ? '，或在全部内容中搜索' : ''}。</span>
+  return `<div class="empty" data-spec="TFSearchEmptyState"><div class="ic">${I('search')}</div><b>没有找到“${esc(S.q[key])}”</b><span>换个关键词试试${hasFilter ? '，或在全部内容中搜索' : ''}。</span>
     <div class="acts">${btn('清除搜索', { data: `data-clear="${key}"` })}${hasFilter ? btn('在全部中搜索', { data: `data-seg="filter:${key}" data-v="${def}"` }) : ''}</div></div>`;
 }
 function emptyList(icon, title, text, action) {
@@ -786,10 +786,10 @@ function lib() {
 
 <h3>3 · Tab</h3>
 <div class="lib-grid">
-  <div class="spec"><h5>① 页面 Tab · <code>SettingsTabBar</code></h5><p class="d">切换<b>不同的页面</b>：内容和工具条都会变。2–6 项，放在页面标题下面。选中线会滑到新位置。</p>
+  <div class="spec"><h5>① 页面 Tab · <code>TFTabBar</code></h5><p class="d">切换<b>不同的页面</b>：内容和工具条都会变。2–6 项，放在页面标题下面。选中线会滑到新位置。</p>
     ${utabs('lib-ut', [['a', '概览'], ['b', '词库', 129], ['c', '历史'], ['d', '人设', 9]], d.utab, 'data-demo-utab')}
     <p class="cap">13pt；选中项半粗 + 2pt accent 线；数量 11pt 灰色；项间距 22；行高 32。用 ←/→ 切换。</p></div>
-  <div class="spec"><h5>② 分段控件 · <code>SettingsSegmentedControl</code></h5><p class="d">切换<b>同一份内容的视图或筛选</b>：工具条不变。工具条里 2–4 项，表单里 2–5 项。</p>
+  <div class="spec"><h5>② 分段控件 · <code>TFSegmentedControl</code></h5><p class="d">切换<b>同一份内容的视图或筛选</b>：工具条不变。工具条里 2–4 项，表单里 2–5 项。</p>
     <div class="demo-col">
       ${segmented('demo:seg', [['all', '全部', 7], ['on', '已启用', 6], ['off', '已停用', 1]], d.seg, { id: 'lib-seg' })}
       <span class="cap">标准 30：筛选，带数量，宽度按内容</span>
@@ -798,7 +798,7 @@ function lib() {
       ${segmented('demo:segS', [['list', null, '列表', 'list'], ['grid', null, '网格', 'grid']], d.segS, { size: 's', id: 'lib-seg3' })}
       <span class="cap">小 24：只有图标的视图切换，每段带提示</span>
     </div></div>
-  <div class="spec"><h5>③ 分区列表 · <code>SettingsPaneList</code></h5><p class="d">分区多于 6 个、需要分组或带状态时使用。内容区窄于 720pt 时收成分区选择器。</p>
+  <div class="spec"><h5>③ 分区列表 · <code>TFPaneList</code></h5><p class="d">分区多于 6 个、需要分组或带状态时使用。内容区窄于 720pt 时收成分区选择器。</p>
     <div style="display:flex;gap:24px;align-items:flex-start">
       <div class="panes"><div class="phead">能力</div>
         <button class="pane">${I('globe')}联网搜索<span class="st ok"></span></button><button class="pane on">${I('spark')}技能</button><button class="pane">${I('server')}MCP 服务器</button>
@@ -817,19 +817,19 @@ function lib() {
 
 <h3>4 · 下拉</h3>
 <div class="lib-grid">
-  <div class="spec"><h5>选择器 · <code>SettingsPopUpButton</code></h5><p class="d">从一组值里选一个。显示当前值和 ⌃⌄ 双箭头。高度从 36pt 降到 30pt，和按钮对齐。</p>
+  <div class="spec"><h5>选择器 · <code>TFPopUpButton</code></h5><p class="d">从一组值里选一个。显示当前值和 ⌃⌄ 双箭头。高度从 36pt 降到 30pt，和按钮对齐。</p>
     <div class="demo-col">
       ${popup('demo:lang', OPT.language, d.lang, { w: 220 })}<span class="cap">标准 30：表单里固定 220pt</span>
       ${popup('demo:model', models.map(m => [m[0], m[1]]), d.model, { w: 220, lead: () => '<span class="dot"></span>' })}<span class="cap">当前值带前置状态点或图标</span>
       ${popup('demo:small', [['1', '第 1 段'], ['2', '第 2 段']], d.small, { size: 's' })}<span class="cap">小 24：列表行、卡片标题行里</span>
     </div></div>
-  <div class="spec"><h5>操作菜单 · <code>SettingsMenuButton</code></h5><p class="d">一组相关的动作。触发器是按钮 + ⌄，或「⋯」圆形按钮。危险项放在最后，用分隔线隔开。</p>
+  <div class="spec"><h5>操作菜单 · <code>TFMenuButton</code></h5><p class="d">一组相关的动作。触发器是按钮 + ⌄，或「⋯」圆形按钮。危险项放在最后，用分隔线隔开。</p>
     <div class="demo-row">${btn('更多', { icon: 'dots', chevron: true })}${btn('添加关键词', { icon: 'plus', style: 'primary', chevron: true })}${btn('更多操作', { icon: 'dots', style: 'plain', size: 's', iconOnly: true })}</div>
     ${staticMenu([{ label: '导入词条…', icon: 'download' }, { label: '导出全部', icon: 'upload' }, 'sep', { label: '清空自动添加的词条', icon: 'trash', danger: true }], null, { noCheck: true })}</div>
-  <div class="spec"><h5>筛选菜单 · <code>SettingsFilterMenu</code></h5><p class="d">筛选多于 4 项，或者分段控件放不下时使用。选的不是「全部」时用 accent 着色，表示筛选已生效。</p>
+  <div class="spec"><h5>筛选菜单 · <code>TFFilterMenu</code></h5><p class="d">筛选多于 4 项，或者分段控件放不下时使用。选的不是「全部」时用 accent 着色，表示筛选已生效。</p>
     <div class="demo-row">${inert(filterMenu('_f1', [['all', '全部', 37]], 'all'))}${inert(filterMenu('_f2', [['ai', 'AI 指令', 3]], 'ai'))}</div>
     ${staticMenu([{ v: 'all', label: '全部', count: 11 }, { v: 'tr', label: '翻译', count: 2 }, { v: 'ai', label: 'AI 指令', count: 3 }, { v: 'web', label: '网页搜索', count: 2 }, { v: 'sys', label: '系统', count: 2 }], 'ai')}</div>
-  <div class="spec"><h5>自绘菜单弹出层 · <code>SettingsMenuPanel</code></h5><p class="d">只在选项需要图标 + 副标题 + 状态，或超过 12 项需要搜索时使用；其他情况一律用原生菜单。</p>
+  <div class="spec"><h5>自绘菜单弹出层 · <code>TFMenuPanel</code></h5><p class="d">只在选项需要图标 + 副标题 + 状态，或超过 12 项需要搜索时使用；其他情况一律用原生菜单。</p>
     ${staticMenu([{ head: '已配置' }, { v: 'typeflux', label: 'Typeflux Cloud', sub: '默认 · 登录后可用', color: '#0a84ff' }, { v: 'claude', label: 'Claude Fable 5.1', sub: 'Anthropic · 已配置', color: '#ff9f0a' }, 'sep', { head: '未配置' }, { v: 'gpt', label: 'GPT-5.5', sub: 'OpenAI · 未配置 API Key', color: '#30d158' }], 'typeflux',
       { search: `<div class="msearch">${sfDemo('', false).replace('<kbd class="kb">⌘F</kbd>', '').replace('class="sf ', 'class="sf fillw ')}</div>` })}
     <p class="cap" style="margin-top:8px">玻璃 · 圆角 12 · 内边距 5 · 项 26 / 带副标题 44 · 圆角 7 · 悬停时 accent 填充；↑↓ / Return / Esc。</p></div>
@@ -837,7 +837,7 @@ function lib() {
 
 <h3>5 · 搜索框与输入框</h3>
 <div class="lib-grid">
-  <div class="spec"><h5>搜索框 · <code>SettingsSearchField</code></h5><p class="d">胶囊，30pt，只有一个尺寸。放在页面工具条（200–320pt）或列表栏顶部（与容器同宽）。</p>
+  <div class="spec"><h5>搜索框 · <code>TFSearchField</code></h5><p class="d">胶囊，30pt，只有一个尺寸。放在页面工具条（200–320pt）或列表栏顶部（与容器同宽）。</p>
     <div class="demo-col" style="width:320px">${sfDemo('', false)}<span class="cap">常态：⌘F 键帽</span>${sfDemo('', true)}<span class="cap">聚焦：焦点环</span>${sfDemo('cloud', true)}<span class="cap">有输入：「N 项」+ 清除按钮；Esc 先清空再失焦</span>${sfDemo('zzz', false)}<span class="cap">没有结果：列表区显示空状态</span></div></div>
   <div class="spec"><h5>输入框</h5><p class="d">30pt，圆角 8，和搜索框用同样的填充和焦点环。API Key、URL、模型 ID 用等宽字体。</p>
     <div class="demo-col" style="width:280px">
@@ -902,7 +902,7 @@ function paneNav(sec) {
     return `<div class="toolbar"><div class="anchor"><button class="btn popup" data-pop="pane:${sec}" style="min-width:180px" data-spec="分区选择器（窄窗口）"><span class="v">${I(c[2], 'sm')}${esc(c[1])}</span>${I('updown')}</button>
       ${menu('pane:' + sec, n.panes.flatMap(([h, ps], i) => [...(i ? ['sep'] : []), { head: h }, ...ps.map(p => ({ v: p[0], label: p[1], icon: p[2] }))]), cur)}</div></div>`;
   }
-  return `<div class="panes" data-spec="SettingsPaneList · 200pt">${n.panes.map(([h, ps]) => `<div class="phead">${h}</div>${ps.map(p => `<button class="pane ${cur === p[0] ? 'on' : ''}" data-pane="${sec}" data-v="${p[0]}">${I(p[2])}${p[1]}${p[3] ? `<span class="st ${p[3]}"></span>` : ''}</button>`).join('')}`).join('')}</div>`;
+  return `<div class="panes" data-spec="TFPaneList · 200pt">${n.panes.map(([h, ps]) => `<div class="phead">${h}</div>${ps.map(p => `<button class="pane ${cur === p[0] ? 'on' : ''}" data-pane="${sec}" data-v="${p[0]}">${I(p[2])}${p[1]}${p[3] ? `<span class="st ${p[3]}"></span>` : ''}</button>`).join('')}`).join('')}</div>`;
 }
 let libScroll = null;
 function render() {

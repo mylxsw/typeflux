@@ -5481,3 +5481,14 @@
 "ask.search.type.video" = "Videos";
 
 "semantic.atTime" = "At %@";
+
+/* Shared components (UI/Components) */
+"component.loading" = "Loading";
+"component.pane" = "Section";
+"component.search.placeholder" = "Search";
+"component.search.clear" = "Clear Search";
+"component.search.searchAll" = "Search All";
+"component.search.noResults" = "No Results for “%@”";
+"component.search.tryAnother" = "Try a different search.";
+"component.search.tryAll" = "Try a different search, or search all items.";
+"appMenu.componentGallery" = "Component Gallery";

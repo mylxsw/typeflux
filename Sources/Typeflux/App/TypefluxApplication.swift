@@ -44,6 +44,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         appCoordinator = AppCoordinator()
         appCoordinator?.start()
+        if ComponentGalleryAccess.opensAtLaunch() {
+            Task { @MainActor in ComponentGalleryWindowController.shared.show() }
+        }
     }
 
     func application(_: NSApplication, open urls: [URL]) {
