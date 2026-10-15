@@ -68,8 +68,9 @@ final class AskFilePreviewController {
 
     func request(_ hit: AskFileHit?, neighbours: [AskFileHit] = [], empty: Bool = false) {
         guard !empty else { dismissNow(); return }
-        if let hit, hit.path == selected?.path {
-            // Query-specific ranking and highlights do not change the previewed file.
+        if let hit, hit.path == selected?.path, hit.modified == selected?.modified,
+           hit.evidence == selected?.evidence {
+            // Rank changes can reuse the image; a different matched page or passage must render again.
             selected = hit; state.hit = hit
             grace?.cancel(); grace = nil; return
         }

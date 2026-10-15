@@ -30,7 +30,8 @@ enum SemanticFilePolicy {
         return false
     }
 
-    static let extensions: Set<String> = ["txt", "md", "markdown", "rst", "csv", "tsv", "pdf"]
+    static let documentExtensions: Set<String> = ["txt", "md", "markdown", "rst", "csv", "tsv", "pdf"]
+    static let extensions = documentExtensions.union(SemanticMediaPriority.extensions)
     static let maximumBytes = 16 * 1024 * 1024
     static let maximumChunks = 64
     static let dimension = 768
@@ -54,7 +55,8 @@ enum SemanticFilePolicy {
     }
 
     static func query(_ text: String, type: AskFileType = .all) -> String? {
-        guard [.all, .document, .pdf, .sheet].contains(type), text.count <= 512, text.utf8.count <= 1400,
+        guard [.all, .document, .pdf, .sheet, .image, .audio, .video].contains(type),
+              text.count <= 512, text.utf8.count <= 1400,
               !text.contains(where: \.isNewline) else { return nil }
         let words = text.split(whereSeparator: \.isWhitespace).filter { token in
             let value = token.lowercased()
@@ -63,6 +65,16 @@ enum SemanticFilePolicy {
         let query = words.joined(separator: " ")
         guard query.unicodeScalars.filter({ CharacterSet.alphanumerics.contains($0) }).count >= 2 else { return nil }
         return query
+    }
+
+    /// Prefer actual CJK words to single-character overlap when building the lexical query.
+    static func searchTerms(_ text: String) -> [String] {
+        let words = Set(terms(text).split(separator: " ").map(String.init))
+        let stop: Set<String> = ["the", "a", "an", "is", "are", "of", "to", "for", "in", "and", "how", "what"]
+        return words.filter { word in
+            !stop.contains(word) && !(word.unicodeScalars.count == 1
+                && word.unicodeScalars.first?.properties.isIdeographic == true)
+        }.sorted()
     }
 
     /// Same pretokenization for documents and queries, including CJK unigrams/bigrams.
@@ -101,6 +113,7 @@ struct SemanticPage: Codable, Equatable, Sendable { var text: String; var page: 
 struct SemanticChunk: Equatable, Sendable {
     var text: String
     var page: Int?
+    var time: TimeInterval?
     static func make(_ pages: [SemanticPage]) -> [SemanticChunk] {
         var result: [SemanticChunk] = []
         for page in pages {
@@ -143,7 +156,14 @@ extension SemanticFilePolicy {
         var seen = Set<String>()
         guard !content.isEmpty else { return Array(names.prefix(max(0, limit))) }
         let named = Dictionary(names.map { ($0.path, $0) }, uniquingKeysWith: { first, _ in first })
-        let content = content.map { named[$0.path] ?? $0 }
+        let passages = Dictionary(content.map { ($0.path, $0.evidence) }, uniquingKeysWith: { first, _ in first })
+        let names = names.map { hit in
+            var hit = hit
+            if let evidence = passages[hit.path] { hit.evidence = evidence }
+            return hit
+        }
+        let enriched = Dictionary(names.map { ($0.path, $0) }, uniquingKeysWith: { first, _ in first })
+        let content = content.map { enriched[$0.path] ?? named[$0.path] ?? $0 }
         let leading = Array(names.prefix(3))
         let tail = names.dropFirst(3)
         let strong = tail.filter { $0.match >= AskQuickResults.strongFileScore }

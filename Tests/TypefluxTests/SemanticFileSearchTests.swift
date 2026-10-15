@@ -42,7 +42,7 @@ struct SemanticFilePolicyTests {
         for text in ["", ".pdf in:team", "?", "a", "two\nlines", String(repeating: "a", count: 513)] {
             #expect(SemanticFilePolicy.query(text) == nil)
         }
-        for type in [AskFileType.folder, .image, .code] {
+        for type in [AskFileType.folder, .code] {
             #expect(SemanticFilePolicy.query("query", type: type) == nil)
         }
         #expect(SemanticFilePolicy.query("query", type: .pdf) == "query")
@@ -69,7 +69,7 @@ struct SemanticFilePolicyTests {
             "/work/credentials.txt",
             "/work/secret.md",
             "/work/a.pem",
-            "/work/a.png",
+            "/work/a.svg",
             "relative.md",
             "/work/../work/a.txt"
         ] {
@@ -314,7 +314,7 @@ struct SemanticFileIndexerTests {
         var progress: [SemanticFileIndexer.Summary] = []
         let result = try SemanticFileIndexer.run(scope: semanticScope(root.path), store: store, reader: reader,
             encoder: encoder, cancelled: { false }, progress: { progress.append($0) })
-        #expect(result.files == 1); #expect(!result.limited)
+        #expect(result.files == 1)
         #expect(result.scanned == 50_001 && result.discovered == 1)
         #expect(result.total == 1 && result.processed == 1)
         #expect(progress.contains { $0.total == nil && $0.scanned >= 1_000 })

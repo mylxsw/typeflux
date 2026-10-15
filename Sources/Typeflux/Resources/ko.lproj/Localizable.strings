@@ -5019,8 +5019,8 @@
 // Local semantic file search (experimental).
 "semantic.section" = "실험적 기능";
 "semantic.title" = "의미 기반 파일 검색";
-"semantic.subtitle" = "내용의 의미로 찾습니다. 로컬 텍스트와 텍스트 레이어가 있는 PDF만 처리합니다.";
-"semantic.offDetail" = "텍스트 및 PDF · 처음 약 310 MB 다운로드 · 이 Mac에서 실행";
+"semantic.subtitle" = "로컬 문서, 이미지, 오디오 및 동영상을 의미로 검색합니다.";
+"semantic.offDetail" = "로컬 처리 · 텍스트 모델 310 MB · 미디어 인코더 555 MB";
 "semantic.unsupported" = "Apple Silicon 및 macOS 14 이상이 필요합니다.";
 "semantic.experimental" = "실험적";
 "semantic.filesOff" = "파일 검색이 꺼져 있어 의미 검색이 일시 정지되었습니다";
@@ -5052,13 +5052,13 @@
 "semantic.model.downloaded" = "모델이 다운로드되어 바로 사용할 수 있습니다.";
 "semantic.model.badge" = "텍스트 모델";
 "semantic.model.downloadedBadge" = "다운로드됨";
-"semantic.model.help" = "이번 버전은 텍스트와 텍스트 레이어가 있는 PDF를 지원합니다. 다른 파일은 이름으로 찾을 수 있습니다.";
+"semantic.model.help" = "문서를 먼저 색인하고 유휴 시간에 이미지, 오디오, 동영상 순으로 처리합니다. 필요할 때 미디어 인코더(555 MB)를 한 번 다운로드합니다.";
 "semantic.priority" = "녹음, 전사, 저전력 모드 또는 과열 시 백그라운드 색인이 자동으로 일시 정지됩니다.";
 "semantic.cancel" = "취소";
 "semantic.enable.download" = "모델 다운로드 후 켜기";
 "semantic.enable" = "켜고 색인 생성";
 "semantic.manage.title" = "의미 기반 파일 검색 관리";
-"semantic.manage.subtitle" = "텍스트 및 PDF · 이 Mac에서 처리";
+"semantic.manage.subtitle" = "문서 및 미디어 · 이 Mac에서 처리";
 "semantic.progress.download" = "모델 다운로드";
 "semantic.progress.scanning" = "집계 중: 항목 %@개 스캔, 지원 파일 %@개 발견";
 "semantic.progress.indexing" = "파일 %@ / %@개 처리됨";
@@ -5073,7 +5073,6 @@
 "semantic.clear" = "내용 색인 지우기…";
 "semantic.remove" = "모델 삭제…";
 "semantic.storage.help" = "이 작업은 내용 색인에만 영향을 줍니다. 파일 이름 색인은 별도로 유지됩니다.";
-"semantic.limit" = "색인 한도에 도달했습니다. 파일 이름 검색 설정에서 범위를 줄이세요. 루트당 지원 파일 최대 50,000개 또는 스캔 항목 최대 1,000,000개, 총 100,000개 청크, 파일당 최대 64개 청크 및 16 MB입니다.";
 "semantic.close" = "완료";
 "semantic.clear.title" = "내용 색인을 지울까요?";
 "semantic.clear.message" = "생성된 본문 및 의미 색인을 제거하고 다운로드한 모델은 유지합니다. 의미 기반 파일 검색이 꺼지며 일반 파일 이름 검색은 계속 사용할 수 있습니다.";
@@ -5319,7 +5318,7 @@
 "launcher.search.files.scope.shared" = "이름 검색과 의미 검색이 이 범위를 공유합니다";
 "launcher.search.files.addFolder" = "폴더 추가";
 "launcher.search.files.exclusionsHint" = "제외 규칙은 제외 탭에서 설정";
-"launcher.search.files.scope.footnote" = "의미 검색은 이 범위의 로컬 텍스트와 텍스트 레이어가 있는 PDF만 읽습니다. 다운로드되지 않은 클라우드 파일도 이름으로 검색할 수 있습니다.";
+"launcher.search.files.scope.footnote" = "문서를 먼저 색인하고 유휴 시간에 이미지, 오디오, 동영상 순으로 처리합니다. 다운로드하지 않은 클라우드 파일은 파일 이름으로 검색할 수 있습니다.";
 "launcher.search.index.scope.shared" = "두 색인이 위의 범위를 공유합니다";
 "launcher.search.index.name.summary" = "파일 %@개 · 메모리 %@ · 최근 업데이트 %@";
 "semantic.index.badge" = "의미 검색";
@@ -5353,3 +5352,17 @@
 "ask.translation.panel.source.launcher" = "런처에서";
 
 "ask.translation.stack.ready" = "Return 키를 눌러 번역하세요";
+
+"semantic.searching" = "파일 내용 검색 중…";
+
+"semantic.media.downloading" = "미디어 인코더 다운로드 중…";
+
+"semantic.media.waiting" = "문서 검색 가능 · 유휴 시간에 미디어 색인";
+
+"semantic.media.failed" = "미디어 색인 실패. 문서는 계속 검색할 수 있습니다";
+
+"ask.search.type.audio" = "오디오";
+
+"ask.search.type.video" = "동영상";
+
+"semantic.atTime" = "일치 위치 %@";

@@ -7,11 +7,10 @@ private let semanticTransient = unsafeBitCast(-1, to: sqlite3_destructor_type.se
 /// A separate WAL database. A file, its chunks, lexical terms and vectors commit together.
 /// Serialized by the lock; no main-actor disk I/O and no shared filename-index state.
 final class SemanticFileStore: @unchecked Sendable {
-    enum Failure: Error { case database, invalidVector, limit }
+    enum Failure: Error { case database, invalidVector }
     private let lock = NSLock()
     private var database: OpaquePointer?
     let url: URL
-    static let maximumRows = 100_000
 
     init(url: URL, profile: String = SemanticFilePolicy.profile) throws {
         self.url = url
@@ -53,6 +52,7 @@ final class SemanticFileStore: @unchecked Sendable {
                 END;
                 """
             )
+            try self.prepareContentSchema()
             let existing = try statement("SELECT value FROM profile")
             let old = sqlite3_step(existing) == SQLITE_ROW ? self.string(existing, 0) : nil
             sqlite3_finalize(existing)
@@ -83,13 +83,12 @@ final class SemanticFileStore: @unchecked Sendable {
             try self.sql("BEGIN IMMEDIATE")
             do {
                 try self.execute("DELETE FROM files WHERE path=?", [path])
-                guard try self.count("chunks") + chunks.count <= Self.maximumRows else { throw Failure.limit }
                 try self.execute("INSERT INTO files VALUES(?,?,?)", [path, modified.timeIntervalSince1970, bytes])
                 for (chunk, vector) in zip(chunks, vectors) {
                     let data = vector.withUnsafeBytes { Data($0) }
                     try self.execute(
-                        "INSERT INTO chunks(path,text,page,vector) VALUES(?,?,?,?)",
-                        [path, chunk.text, chunk.page as Any, data]
+                        "INSERT INTO chunks(path,text,page,time,vector) VALUES(?,?,?,?,?)",
+                        [path, chunk.text, chunk.page as Any, chunk.time as Any, data]
                     )
                     let id = sqlite3_last_insert_rowid(database)
                     try execute(
@@ -148,7 +147,7 @@ final class SemanticFileStore: @unchecked Sendable {
                 scope: AskFileScope, limit: Int, cancelled: () -> Bool) throws -> [AskFileHit] {
         guard limit > 0, Self.valid(vector) else { return [] }
         return try self.lock.withLock {
-            let terms = Array(Set(SemanticFilePolicy.terms(text).split(separator: " ").map(String.init))).sorted()
+            let terms = SemanticFilePolicy.searchTerms(text)
                 .prefix(64)
             var lexical = Set<Int64>()
             if !terms.isEmpty {
@@ -162,61 +161,63 @@ final class SemanticFileStore: @unchecked Sendable {
                     lexical.insert(sqlite3_column_int64(stmt, 0))
                 }
             }
-            let stmt =
-                try statement(
-                    "SELECT c.id,c.path,c.text,c.page,c.vector,f.modified FROM chunks c JOIN files f ON f.path=c.path"
-                )
+            let stmt = try statement(
+                """
+                SELECT c.id,c.path,c.page,c.vector,f.modified,c.time
+                FROM chunks c JOIN files f ON f.path=c.path ORDER BY c.id
+                """
+            )
             defer { sqlite3_finalize(stmt) }
-            var best: [AskFileHit] = []
+            var best: [(id: Int64, hit: AskFileHit)] = []
+            var previousPath: String?, allowed = false
             while sqlite3_step(stmt) == SQLITE_ROW {
-                if cancelled() {
-                    throw CancellationError()
+                if cancelled() { throw CancellationError() }
+                let path = self.string(stmt, 1)
+                if previousPath != path {
+                    previousPath = path
+                    let ext = (path as NSString).pathExtension.lowercased()
+                    allowed = scope.includes(path, isDirectory: false) && SemanticFilePolicy.allows(path)
+                        && type.matches(kind: .file, extension: ext)
+                        && (query.fileExtension == nil || query.fileExtension == ext)
+                    if let folder = query.folder {
+                        let place = AskSearchText.normalize((path as NSString).deletingLastPathComponent)
+                        allowed = allowed && AskFileIndexState.contains(place, folder)
+                    }
                 }
-                let path = self.string(stmt, 1), ext = (path as NSString).pathExtension.lowercased()
-                guard scope.includes(path, isDirectory: false), SemanticFilePolicy.allows(path),
-                      type.matches(kind: .file, extension: ext),
-                      query.fileExtension == nil || query.fileExtension == ext else { continue }
-                if let folder = query.folder {
-                    let place = AskSearchText.normalize((path as NSString).deletingLastPathComponent)
-                    guard AskFileIndexState.contains(place, folder) else { continue }
+                guard allowed, sqlite3_column_bytes(stmt, 3) == SemanticFilePolicy.dimension * 4,
+                      let raw = sqlite3_column_blob(stmt, 3) else { continue }
+                // SQLite owns this blob until the next step; score it directly without allocating 768 Floats per row.
+                let cosine = vector.withUnsafeBufferPointer {
+                    Double(cblas_sdot(Int32($0.count), $0.baseAddress!, 1, raw.assumingMemoryBound(to: Float.self), 1))
                 }
-                guard sqlite3_column_bytes(stmt, 4) == SemanticFilePolicy.dimension * 4,
-                      let raw = sqlite3_column_blob(stmt, 4) else { continue }
-                let stored = Array(UnsafeBufferPointer(
-                    start: raw.assumingMemoryBound(to: Float.self),
-                    count: SemanticFilePolicy.dimension
-                ))
-                let cosine = vector
-                    .withUnsafeBufferPointer { queryValues in stored.withUnsafeBufferPointer { storedValues in
-                        Double(cblas_sdot(
-                            Int32(vector.count),
-                            queryValues.baseAddress!,
-                            1,
-                            storedValues.baseAddress!,
-                            1
-                        ))
-                    } }
-                let lexicalMatch = lexical.contains(sqlite3_column_int64(stmt, 0))
+                let id = sqlite3_column_int64(stmt, 0), lexicalMatch = lexical.contains(id)
                 guard cosine.isFinite, cosine >= 0.35 || lexicalMatch else { continue }
                 let score = max(0, cosine) * 0.7 + (lexicalMatch ? 0.18 : 0)
-                let page = sqlite3_column_type(stmt, 3) == SQLITE_NULL ? nil : Int(sqlite3_column_int(stmt, 3))
-                let hit = AskFileHit(path: path, name: (path as NSString).lastPathComponent, kind: .file,
-                                     modified: Date(timeIntervalSince1970: sqlite3_column_double(stmt, 5)),
-                                     score: score,
-                                     evidence: .init(text: String(self.string(stmt, 2).prefix(180)), page: page))
-                if let existing = best.firstIndex(where: { $0.path == path }) {
-                    if best[existing].score >= score {
-                        continue
-                    }
+                if let existing = best.firstIndex(where: { $0.hit.path == path }) {
+                    if best[existing].hit.score >= score { continue }
                     best.remove(at: existing)
                 }
-                best.append(hit)
-                best.sort { $0.score == $1.score ? $0.path < $1.path : $0.score > $1.score }
-                if best.count > min(100, limit) {
-                    best.removeLast()
-                }
+                let page = sqlite3_column_type(stmt, 2) == SQLITE_NULL ? nil : Int(sqlite3_column_int(stmt, 2))
+                let value = sqlite3_column_type(stmt, 5) == SQLITE_NULL ? nil : sqlite3_column_double(stmt, 5)
+                let time = value.flatMap { $0.isFinite && $0 >= 0 && $0 < Double(Int.max) ? $0 : nil }
+                let hit = AskFileHit(path: path, name: (path as NSString).lastPathComponent, kind: .file,
+                                     modified: Date(timeIntervalSince1970: sqlite3_column_double(stmt, 4)),
+                                     score: score, evidence: .init(text: "", page: page, time: time))
+                best.append((id, hit))
+                best.sort { $0.hit.score == $1.hit.score ? $0.hit.path < $1.hit.path : $0.hit.score > $1.hit.score }
+                if best.count > min(100, limit) { best.removeLast() }
             }
-            return best
+            // Materialize passages only for the winning files, not for every scanned chunk.
+            return try best.map { candidate in
+                let textRow = try statement("SELECT text FROM chunks WHERE id=?")
+                defer { sqlite3_finalize(textRow) }
+                self.bind(textRow, [candidate.id])
+                var hit = candidate.hit
+                if sqlite3_step(textRow) == SQLITE_ROW {
+                    hit.evidence?.text = String(self.string(textRow, 0).prefix(180))
+                }
+                return hit
+            }
         }
     }
 
@@ -277,6 +278,82 @@ final class SemanticFileStore: @unchecked Sendable {
 }
 
 extension SemanticFileStore {
+    private func prepareContentSchema() throws {
+        let columns = try statement("PRAGMA table_info(chunks)")
+        var hasTime = false
+        while sqlite3_step(columns) == SQLITE_ROW { hasTime = hasTime || self.string(columns, 1) == "time" }
+        sqlite3_finalize(columns)
+        if !hasTime { try self.sql("ALTER TABLE chunks ADD COLUMN time REAL") }
+        try self.sql("CREATE TEMP TABLE discovery(path TEXT PRIMARY KEY, priority INTEGER NOT NULL);")
+        try self.sql("CREATE INDEX discovery_priority ON discovery(priority,path);")
+        try self.sql("CREATE TEMP TABLE media_stage(time REAL,vector BLOB NOT NULL);")
+    }
+
+    func beginDiscovery() throws {
+        try lock.withLock { try sql("DELETE FROM discovery") }
+    }
+
+    func discover(_ entries: [(String, SemanticMediaPriority)]) throws -> Int {
+        try lock.withLock {
+            try sql("BEGIN IMMEDIATE")
+            do {
+                var inserted = 0
+                for (path, priority) in entries {
+                    try execute("INSERT OR IGNORE INTO discovery VALUES(?,?)", [path, priority.rawValue])
+                    inserted += Int(sqlite3_changes(database))
+                }
+                try sql("COMMIT"); return inserted
+            } catch { try? sql("ROLLBACK"); throw error }
+        }
+    }
+
+    func candidates(_ priority: SemanticMediaPriority, after: String) throws -> [String] {
+        try lock.withLock {
+            let row = try statement("SELECT path FROM discovery WHERE priority=? AND path>? ORDER BY path LIMIT 128")
+            defer { sqlite3_finalize(row) }
+            bind(row, [priority.rawValue, after])
+            var paths: [String] = []
+            while sqlite3_step(row) == SQLITE_ROW { paths.append(string(row, 0)) }
+            return paths
+        }
+    }
+
+    func pruneDiscovered(cancelled: () -> Bool) throws {
+        try lock.withLock {
+            while true {
+                if cancelled() { throw CancellationError() }
+                try sql("""
+                    DELETE FROM files WHERE path IN
+                    (SELECT path FROM files WHERE path NOT IN (SELECT path FROM discovery) LIMIT 128)
+                    """)
+                if sqlite3_changes(database) == 0 { return }
+            }
+        }
+    }
+
+    func beginMedia() throws { try lock.withLock { try sql("DELETE FROM media_stage") } }
+
+    func stageMedia(_ vector: [Float], time: TimeInterval?) throws {
+        guard Self.valid(vector), time.map({ $0.isFinite && $0 >= 0 }) ?? true else { throw Failure.invalidVector }
+        try lock.withLock {
+            try execute("INSERT INTO media_stage VALUES(?,?)", [time as Any, vector.withUnsafeBytes { Data($0) }])
+        }
+    }
+
+    func commitMedia(path: String, modified: Date, bytes: Int64) throws -> Bool {
+        try lock.withLock {
+            guard try count("media_stage") > 0 else { return false }
+            try sql("BEGIN IMMEDIATE")
+            do {
+                try execute("DELETE FROM files WHERE path=?", [path])
+                try execute("INSERT INTO files VALUES(?,?,?)", [path, modified.timeIntervalSince1970, bytes])
+                try execute("INSERT INTO chunks(path,text,time,vector) SELECT ?,'',time,vector FROM media_stage",
+                            [path])
+                try sql("DELETE FROM media_stage; COMMIT"); return true
+            } catch { try? sql("ROLLBACK"); throw error }
+        }
+    }
+
     func destroy() throws {
         try lock.withLock {
             guard sqlite3_close(database) == SQLITE_OK else { throw Failure.database }

@@ -63,7 +63,7 @@ struct AskFileSearchPlugin: AskLauncherPlugin {
         try Task.checkCancellation()
         var combined = hits
         if let service = await semantic(), await service.isEnabled, SemanticFilePolicy.query(text, type: type) != nil {
-            if !hits.isEmpty { await progress(output(hits.map(Self.item), note: nil)) }
+            await progress(pendingOutput(hits))
             let content = await service.search(text, type: type, limit: settings.limit)
             try Task.checkCancellation()
             combined = SemanticFilePolicy.merge(hits, content, limit: settings.limit)
@@ -96,6 +96,14 @@ struct AskFileSearchPlugin: AskLauncherPlugin {
         return [Self.typeOption: current.next(step).rawValue]
     }
 
+    private func pendingOutput(_ hits: [AskFileHit]) -> AskPluginOutput {
+        let pending = AskPluginItem(id: "semantic.searching", title: L("semantic.searching"),
+                                    valid: false, loading: true)
+        var initial = output([pending] + hits.map(Self.item), note: nil)
+        initial.selectedItem = hits.isEmpty ? -1 : 1
+        return initial
+    }
+
     private func output(_ items: [AskPluginItem], note: String?) -> AskPluginOutput {
         AskPluginOutput(body: items.map(\.title).joined(separator: "\n"), original: "", meta: [],
                         source: L("ask.plugin.files.source"), note: note, actions: [], items: items)
@@ -118,12 +126,17 @@ struct AskFileSearchPlugin: AskLauncherPlugin {
                                            shortcut: nil))
         }
         // A content match names the page it came from and shows the passage on its own line.
-        let subtitle = hit.evidence.map { place + ($0.page.map { " · " + L("semantic.page", $0) } ?? "") }
+        let subtitle = hit.evidence.map { evidence in
+            let page = evidence.page.map { " · " + L("semantic.page", $0) } ?? ""
+            let time = evidence.time.map { " · " + String(format: "%d:%02d", Int($0) / 60, Int($0) % 60) } ?? ""
+            return place + page + time
+        }
         return AskPluginItem(id: hit.path, title: hit.name,
                              subtitle: subtitle ?? (place + " · " + AskQuickResultsView.relative(hit.modified)),
                              icon: .fileIcon(url), actions: actions,
                              badge: hit.evidence == nil ? nil : L("semantic.result"),
-                             excerpt: hit.evidence.map { Self.passage($0.text) })
+                             excerpt: hit.evidence.flatMap { $0.text.isEmpty ? nil : Self.passage($0.text) },
+                             fileHit: hit)
     }
 
     /// A stored chunk on one line. Whitespace runs read as one space, except that a line

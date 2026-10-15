@@ -220,6 +220,9 @@ struct AskPluginItem: Equatable, Sendable, Identifiable {
     var badge: String?
     /// A matched passage on its own line below the subtitle; such rows are taller.
     var excerpt: String?
+    /// File-mode results retain their real selection and content-match location for the side preview.
+    var fileHit: AskFileHit?
+    var loading = false
 }
 
 /// An image to show as a result: a file on this Mac and its size in points.

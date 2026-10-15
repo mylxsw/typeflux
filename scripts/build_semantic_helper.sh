@@ -23,15 +23,18 @@ git -C "$root/llama.cpp" diff --cached --quiet
 "$cmake_bin" -S "$root/llama.cpp" -B "$root/native" \
     -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES=arm64 -DCMAKE_OSX_DEPLOYMENT_TARGET=14.0 \
     -DBUILD_SHARED_LIBS=OFF -DGGML_METAL=ON -DGGML_METAL_EMBED_LIBRARY=ON -DGGML_NATIVE=OFF \
-    -DLLAMA_BUILD_MTMD=OFF -DLLAMA_BUILD_COMMON=OFF -DLLAMA_BUILD_TOOLS=OFF -DLLAMA_BUILD_SERVER=OFF \
+    -DLLAMA_BUILD_MTMD=ON -DLLAMA_BUILD_COMMON=OFF -DLLAMA_BUILD_TOOLS=OFF -DLLAMA_BUILD_SERVER=OFF \
     -DLLAMA_BUILD_EXAMPLES=OFF -DLLAMA_BUILD_TESTS=OFF -DLLAMA_BUILD_APP=OFF -DLLAMA_BUILD_UI=OFF -DLLAMA_OPENSSL=OFF
-"$cmake_bin" --build "$root/native" --target llama -j 4
+"$cmake_bin" --build "$root/native" --target llama mtmd -j 4
 mkdir -p "$root/include" "$root/lib"
 cp "$root/llama.cpp/include/llama.h" "$root/include/"
+cp "$root/llama.cpp/tools/mtmd/mtmd.h" "$root/llama.cpp/tools/mtmd/mtmd-helper.h" "$root/include/"
 cp "$root/llama.cpp/ggml/include/"*.h "$root/include/"
 cat > "$root/include/module.modulemap" <<'MAP'
 module CLlama [system] {
     header "llama.h"
+    header "mtmd.h"
+    header "mtmd-helper.h"
     link "llamacpp"
     link "c++"
     link framework "Accelerate"
@@ -42,6 +45,8 @@ module CLlama [system] {
 }
 MAP
 libraries=(
+    "$root/native/vendor/hash/libvendor-hash.a"
+    "$root/native/tools/mtmd/libmtmd.a"
     "$root/native/src/libllama.a"
     "$root/native/ggml/src/libggml.a"
     "$root/native/ggml/src/libggml-base.a"

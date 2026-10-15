@@ -8,6 +8,48 @@ import Testing
 struct AskFilePreviewIntegrationTests {
     private struct PreviewInputSource: AskLauncherInputSourceSelecting { func select(sourceID: String) {} }
 
+    @Test func fileKeywordSelectionAndLateMatchedPageReachTheSidePanel() async throws {
+        let oldStore = KeychainTokenStore.useInMemoryStoreForTesting
+        KeychainTokenStore.useInMemoryStoreForTesting = true
+        _ = AuthState.shared
+        KeychainTokenStore.useInMemoryStoreForTesting = oldStore
+        let name = "preview-keyword-\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: name))
+        defer { defaults.removePersistentDomain(forName: name) }
+        let settings = SettingsStore(defaults: defaults)
+        let fixture = try AskTestFixture(modelLibrary: AskModelLibrary(
+            defaults: defaults, automaticallyLoadsCatalog: false
+        ))
+        fixture.model.fileIndex = AskTestFileIndex([
+            ("/work/preview-a.pdf", .file, 0), ("/work/preview-b.pdf", .file, 1)
+        ])
+        let hit = AskFileHit(path: "/work/preview-b.pdf", name: "preview-b.pdf", kind: .file,
+                             modified: Date(), score: 0.7, evidence: .init(text: "reimbursement policy", page: 4))
+        fixture.model.semanticSearch = SemanticGatedSearch(hits: [hit], delay: .seconds(1))
+        let loader = PreviewTestLoader()
+        let controller = AskConversationWindowController(settings: settings, model: fixture.model,
+            launcherInputSource: PreviewInputSource(), filePreviewLoader: loader)
+        defer { controller.dismissLauncher(); fixture.model.resetSession() }
+        controller.showLauncher()
+        let window = try #require(controller.launcherWindow)
+        let screen = try #require(window.screen).visibleFrame
+        window.setFrameOrigin(CGPoint(x: screen.minX + 30, y: window.frame.minY))
+        fixture.model.plugins.enter(AskFileSearchPlugin.keywords[0])
+        fixture.model.launcherDraft.text = "preview"
+        try await AskQuickSearchSessionTests.wait { fixture.model.plugins.partial?.items.first?.loading == true }
+        let row = try #require(fixture.model.plugins.partial?.items.firstIndex { $0.fileHit?.path == hit.path })
+        #expect(fixture.model.plugins.selectItem(row))
+        try await AskQuickSearchSessionTests.wait { loader.requests.last?.path == hit.path }
+        loader.completions.last?(.init(kind: .pdf, pageCount: 6, pageNumbers: [1, 2, 3]))
+        #expect(controller.filePreview.isVisible)
+        try await AskQuickSearchSessionTests.wait { loader.requests.last?.evidence?.page == 4 }
+        loader.completions.last?(.init(kind: .pdf, pageCount: 6, pageNumbers: [4]))
+        #expect(controller.filePreview.state.content?.pageNumbers == [4])
+        #expect(controller.filePreview.state.hit?.path == hit.path)
+        #expect(fixture.model.plugins.output?.selected?.id == hit.path)
+        #expect(controller.filePreview.panel?.isVisible == true)
+    }
+
     @Test func `typing preserves the preview while results are pending and after the same file settles`() async throws {
         let oldStore = KeychainTokenStore.useInMemoryStoreForTesting
         KeychainTokenStore.useInMemoryStoreForTesting = true

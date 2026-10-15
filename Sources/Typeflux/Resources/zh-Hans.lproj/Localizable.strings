@@ -5068,8 +5068,8 @@
 // Local semantic file search (experimental).
 "semantic.section" = "实验性功能";
 "semantic.title" = "语义文件搜索";
-"semantic.subtitle" = "按内容含义查找；仅处理本地文本和带文字层的 PDF。";
-"semantic.offDetail" = "文本与 PDF · 首次下载约 310 MB · 本机运行";
+"semantic.subtitle" = "按含义检索本机文档、图片、音频和视频。";
+"semantic.offDetail" = "本机处理 · 文本模型 310 MB · 媒体编码器 555 MB";
 "semantic.unsupported" = "需要 Apple Silicon 和 macOS 14 或更新版本。";
 "semantic.experimental" = "实验性";
 "semantic.filesOff" = "文件搜索已关闭，语义搜索已暂停";
@@ -5101,13 +5101,13 @@
 "semantic.model.downloaded" = "模型已下载，可直接使用。";
 "semantic.model.badge" = "文本模型";
 "semantic.model.downloadedBadge" = "已下载";
-"semantic.model.help" = "首版支持文本与带文字层的 PDF；其他文件仍可按名称查找。";
+"semantic.model.help" = "优先索引文档；空闲时依次处理图片、音频和视频。需要时会一次性下载媒体编码器（555 MB）。";
 "semantic.priority" = "后台索引会在录音、转写、低电量模式或设备过热时自动暂停。";
 "semantic.cancel" = "取消";
 "semantic.enable.download" = "下载模型并启用";
 "semantic.enable" = "启用并建立索引";
 "semantic.manage.title" = "管理语义文件搜索";
-"semantic.manage.subtitle" = "支持文本与 PDF · 本机处理";
+"semantic.manage.subtitle" = "文档与媒体 · 本机处理";
 "semantic.progress.download" = "模型下载";
 "semantic.progress.scanning" = "正在统计：已扫描 %@ 项，发现 %@ 个支持的文件";
 "semantic.progress.indexing" = "已处理 %@ / %@ 个文件";
@@ -5122,7 +5122,6 @@
 "semantic.clear" = "清空内容索引…";
 "semantic.remove" = "删除模型…";
 "semantic.storage.help" = "这里的操作只影响内容索引。原有文件名索引独立保留。";
-"semantic.limit" = "已达到索引上限，请在文件搜索设置中缩小范围。每个根目录最多索引 5 万个受支持文件、扫描 100 万项；总计 10 万个分块，每文件最多 64 个分块、16 MB。";
 "semantic.close" = "完成";
 "semantic.clear.title" = "清空内容索引？";
 "semantic.clear.message" = "移除已建立的正文和语义索引，保留下载的模型。语义文件搜索将关闭；普通文件搜索继续可用。";
@@ -5448,7 +5447,7 @@
 "launcher.search.files.scope.shared" = "文件名与语义搜索共用这份范围";
 "launcher.search.files.addFolder" = "添加文件夹";
 "launcher.search.files.exclusionsHint" = "排除规则在「排除」中设置";
-"launcher.search.files.scope.footnote" = "语义搜索仅读取范围内的本地文本和带文字层的 PDF。云端未下载的文件仍可按文件名搜索。";
+"launcher.search.files.scope.footnote" = "语义搜索优先索引本地文档，空闲时依次处理图片、音频和视频。未下载的云端文件仍可按文件名搜索。";
 "launcher.search.index.scope.shared" = "两种索引，共用上面的范围";
 "launcher.search.index.name.summary" = "%@ 个文件 · 占用内存 %@ · 最近更新 %@";
 "semantic.index.badge" = "语义搜索";
@@ -5468,3 +5467,17 @@
 "ask.translation.stack.download" = "下载";
 
 "ask.translation.stack.ready" = "按 Return 开始翻译";
+
+"semantic.searching" = "正在检索文件内容…";
+
+"semantic.media.downloading" = "正在下载媒体编码器…";
+
+"semantic.media.waiting" = "文档已可搜索 · 媒体索引等待空闲";
+
+"semantic.media.failed" = "媒体索引失败，文档仍可搜索";
+
+"ask.search.type.audio" = "音频";
+
+"ask.search.type.video" = "视频";
+
+"semantic.atTime" = "命中位置 %@";

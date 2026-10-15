@@ -405,6 +405,16 @@ struct AskComposer: View {
 
     private func updateFilePreview() {
         guard launcher else { return }
+        if plugins.keyword?.pluginID == AskFileSearchPlugin.id, let display = pluginDisplay {
+            let output = display.output ?? display.partial
+            let hit = output?.selected?.fileHit
+            let files = output?.items.compactMap(\.fileHit) ?? []
+            let neighbours = hit.flatMap { selected in files.firstIndex { $0.path == selected.path } }.map { index in
+                [index - 1, index + 1].compactMap { files.indices.contains($0) ? files[$0] : nil }
+            } ?? []
+            onFilePreview(hit, neighbours, files.isEmpty)
+            return
+        }
         // Pending rows preserve the previous selection while the new query runs.
         if showsQuickResults, quickResultsArePending { return }
         guard showsQuickResults, let results = quickResults else {
@@ -729,6 +739,10 @@ struct AskComposer: View {
     /// Return on the plugin's row: run it (or do what its plan offers, like opening
     /// a search), or use its result.
     private func runPluginMain() {
+        if plugins.keyword?.pluginID == AskFileSearchPlugin.id, plugins.isPlanCurrent,
+           let action = plugins.currentOutput?.action(for: .enter) {
+            performPluginAction(action); return
+        }
         if pluginDisplay?.hint?.pluginID == AskSettingsPlugin.id || plugins.keyword?.pluginID == AskSettingsPlugin.id {
             performPluginAction(.init(kind: .openSettings, title: "", symbol: ""))
             return
@@ -1165,6 +1179,7 @@ struct AskComposer: View {
             }
             .onChange(of: pluginDisplay) { display in
                 guard launcher else { return }
+                updateFilePreview()
                 if let followUp = display?.followUp {
                     // A workflow's actions run once per run; they close the launcher when they say so.
                     model.performWorkflowFollowUp(followUp, dismiss: onDismiss)

@@ -5019,8 +5019,8 @@
 // Local semantic file search (experimental).
 "semantic.section" = "試験的な機能";
 "semantic.title" = "セマンティックファイル検索";
-"semantic.subtitle" = "内容の意味から検索します。ローカルのテキストとテキストレイヤー付き PDF のみを処理します。";
-"semantic.offDetail" = "テキストと PDF · 初回ダウンロード約 310 MB · この Mac で実行";
+"semantic.subtitle" = "ローカルの文書、画像、音声、動画を意味で検索します。";
+"semantic.offDetail" = "ローカル処理 · テキストモデル 310 MB · メディア 555 MB";
 "semantic.unsupported" = "Apple Silicon と macOS 14 以降が必要です。";
 "semantic.experimental" = "試験的";
 "semantic.filesOff" = "ファイル検索がオフのため、セマンティック検索は一時停止中です";
@@ -5052,13 +5052,13 @@
 "semantic.model.downloaded" = "モデルはダウンロード済みで、すぐに使えます。";
 "semantic.model.badge" = "テキストモデル";
 "semantic.model.downloadedBadge" = "ダウンロード済み";
-"semantic.model.help" = "このバージョンはテキストとテキストレイヤー付き PDF に対応します。その他のファイルは名前で検索できます。";
+"semantic.model.help" = "文書を優先し、アイドル時に画像、音声、動画の順で索引します。必要に応じてメディアエンコーダー（555 MB）を一度ダウンロードします。";
 "semantic.priority" = "録音、文字起こし、低電力モード、高温時はバックグラウンド索引を自動的に一時停止します。";
 "semantic.cancel" = "キャンセル";
 "semantic.enable.download" = "モデルをダウンロードしてオン";
 "semantic.enable" = "オンにして索引を作成";
 "semantic.manage.title" = "セマンティックファイル検索を管理";
-"semantic.manage.subtitle" = "テキストと PDF · この Mac で処理";
+"semantic.manage.subtitle" = "文書とメディア · このMacで処理";
 "semantic.progress.download" = "モデルのダウンロード";
 "semantic.progress.scanning" = "集計中：%@ 件を走査、対応ファイル %@ 件を検出";
 "semantic.progress.indexing" = "%@ / %@ ファイルを処理済み";
@@ -5073,7 +5073,6 @@
 "semantic.clear" = "内容索引を消去…";
 "semantic.remove" = "モデルを削除…";
 "semantic.storage.help" = "ここでの操作は内容索引のみに影響します。ファイル名索引は別に保持されます。";
-"semantic.limit" = "索引の上限に達しました。ファイル名検索の設定で範囲を狭めてください。ルートごとに対応ファイル最大 50,000 件、走査項目最大 1,000,000 件、合計 100,000 チャンク、1 ファイルあたり最大 64 チャンク・16 MB です。";
 "semantic.close" = "完了";
 "semantic.clear.title" = "内容索引を消去しますか？";
 "semantic.clear.message" = "作成済みの本文とセマンティック索引を削除し、ダウンロード済みモデルは保持します。セマンティックファイル検索はオフになり、通常のファイル名検索は引き続き使えます。";
@@ -5319,7 +5318,7 @@
 "launcher.search.files.scope.shared" = "名前検索と意味検索はこの範囲を共有します";
 "launcher.search.files.addFolder" = "フォルダを追加";
 "launcher.search.files.exclusionsHint" = "除外ルールは「除外」で設定";
-"launcher.search.files.scope.footnote" = "意味検索は範囲内のローカルテキストと文字レイヤーのある PDF のみ読み取ります。未ダウンロードのクラウドファイルも名前で検索できます。";
+"launcher.search.files.scope.footnote" = "文書を優先し、アイドル時に画像、音声、動画の順で索引します。未ダウンロードのクラウドファイルは名前で検索できます。";
 "launcher.search.index.scope.shared" = "両方の索引は上の範囲を共有します";
 "launcher.search.index.name.summary" = "%@ ファイル · メモリ %@ · 最終更新 %@";
 "semantic.index.badge" = "意味検索";
@@ -5353,3 +5352,17 @@
 "ask.translation.panel.source.launcher" = "ランチャーから";
 
 "ask.translation.stack.ready" = "Returnキーを押して翻訳";
+
+"semantic.searching" = "ファイルの内容を検索中…";
+
+"semantic.media.downloading" = "メディアエンコーダーをダウンロード中…";
+
+"semantic.media.waiting" = "文書は検索可能 · アイドル時にメディアを索引";
+
+"semantic.media.failed" = "メディアの索引に失敗しました。文書は検索できます";
+
+"ask.search.type.audio" = "音声";
+
+"ask.search.type.video" = "動画";
+
+"semantic.atTime" = "一致位置 %@";

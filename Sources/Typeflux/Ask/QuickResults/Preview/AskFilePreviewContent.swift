@@ -7,7 +7,9 @@ struct AskFilePreviewContent {
     var text: String = ""
     var truncated = false
     var pageCount = 0
+    var pageNumbers: [Int] = []
     var duration: TimeInterval = 0
+    var startTime: TimeInterval = 0
     var waveform: [Float] = []
     var fileSize: Int64 = 0
     var imageSize: CGSize?
@@ -34,6 +36,7 @@ struct AskFilePreviewContent {
         }
         if kind == .audio || kind == .video {
             parts.append(Self.time(duration))
+            if startTime > 0 { parts.append(L("semantic.atTime", Self.time(startTime))) }
         }
         if kind == .image, let imageSize {
             parts.append("\(Int(imageSize.width)) × \(Int(imageSize.height))")

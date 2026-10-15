@@ -266,6 +266,8 @@ final class AskQuickSearchSession: ObservableObject {
             AskQuickResults.assemble(currentText, matches: appResults, hits: combined,
                 status: fileResults?.status, settings: currentSettings, entries: currentEntries))
         next = AskQuickResults.addingBrowsers(browserResults, to: next)
+        if next == nil, !semanticReady { next = AskQuickResults(apps: [], lead: false) }
+        next?.searchingContent = !semanticReady
         next?.keepChoice(from: results?.chosen == true ? results : previousChoice)
         results = next ?? (isSearching ? AskQuickResults(apps: [], lead: false) : nil)
         // An empty application batch is not the final answer while files are
@@ -292,6 +294,7 @@ final class AskQuickSearchSession: ObservableObject {
         apps.cancel()
         files.cancel()
         isSearching = false
+        results?.searchingContent = false
         pendingResults = nil
     }
 
