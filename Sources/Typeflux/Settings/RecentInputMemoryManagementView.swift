@@ -52,8 +52,8 @@ struct RecentInputMemoryManagementView: View {
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(StudioTheme.textPrimary)
                 Spacer()
-                AgentSettingsIconButton(systemImage: "xmark",
-                                        help: L("settings.advanced.recentInputMemory.close")) {
+                TFButton(title: L("settings.advanced.recentInputMemory.close"), systemImage: "xmark",
+                         iconOnly: true) {
                     dismiss()
                 }
                 .keyboardShortcut(.cancelAction)
@@ -259,9 +259,8 @@ struct RecentInputMemoryManagementView: View {
                                     .frame(maxWidth: .infinity, alignment: .leading)
                             }
                             Spacer(minLength: 4)
-                            AgentSettingsIconButton(systemImage: "trash",
-                                                    help: L("settings.advanced.recentInputMemory.deleteItem"),
-                                                    role: .destructive) {
+                            TFButton(title: L("settings.advanced.recentInputMemory.deleteItem"),
+                                     systemImage: "trash", destructive: true, iconOnly: true) {
                                 viewModel.deleteRecentInputMemory(id: memory.id)
                             }
                         }
