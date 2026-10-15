@@ -32,6 +32,12 @@ struct AskFileReadResponse: Codable {
     var pages: [SemanticPage]?
     var embeddings: [[Float]]?
     var media: SemanticMediaInput?
+    var semanticTiming: SemanticHelperTiming?
+}
+
+struct SemanticHelperTiming: Codable {
+    var modelLoadMilliseconds: Double?
+    var encodingMilliseconds: Double
 }
 
 /// Runs before AppKit startup. Only this child performs potentially stuck directory reads.

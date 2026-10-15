@@ -1,0 +1,17 @@
+{
+  "hardware": "Apple M4",
+  "memory_bytes": 17179869184,
+  "os": "macOS 26.6.2 (25G83)",
+  "baseline": "2ff45f77ec2e6a385f39543ef67e4c61c3b844ae",
+  "model_sha256": "2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135",
+  "plan": "Same isolated 100k chunk fixture, Release helper; before/after cold and warm noncached helper, FTS vs vector store, then both actual launcher providers. No personal documents.",
+  "integration_base": "fa9643cf42db201667c15169cb7a3c1527946acb",
+  "swift": "6.4 (swiftlang-6.4.0.34.1)",
+  "repository_swift_pin": "6.3.1",
+  "host_exclusive": false,
+  "chunks": 100000,
+  "indexed_text_files": 2,
+  "index_inference_concurrency": 0,
+  "index_writer_concurrency": 1,
+  "writer_additional_chunks": 1
+}

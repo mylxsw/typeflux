@@ -1,0 +1,38 @@
+{
+  "build" : "Release",
+  "change_to_publish_ms" : 5274.8497083666734,
+  "document_change_uptime" : 405252.41434266669,
+  "document_publish_uptime" : 405257.68919237505,
+  "fts_during_transcription_ms" : 219.00574996834621,
+  "model_sha256" : "2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135",
+  "new_document_before_media_resume" : true,
+  "projector_sha256" : "c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f",
+  "scope" : "Real 65-second synthetic speech WAV, production extraction\/helper\/SQLite\/FSEvents, pinned media projector, real SenseVoice CPU transcription. Foreground busy signal is driven at the service boundary; workflow callback wiring has a separate regression. First completed callback has an explicit test barrier; it is not a media latency benchmark.",
+  "segment_times" : [
+    0,
+    30,
+    60
+  ],
+  "segments" : [
+    {
+      "end_uptime" : 405252.41221883334,
+      "segment_time" : 0,
+      "start_uptime" : 405198.16059400002
+    },
+    {
+      "end_uptime" : 405258.38491820835,
+      "segment_time" : 30,
+      "start_uptime" : 405257.74768470833
+    },
+    {
+      "end_uptime" : 405258.90466645837,
+      "segment_time" : 60,
+      "start_uptime" : 405258.38596704172
+    }
+  ],
+  "transcript_nonempty" : true,
+  "transcription_audio_seconds" : 5.5693124999999997,
+  "transcription_end_uptime" : 405254.27748137503,
+  "transcription_start_uptime" : 405253.04372250004,
+  "voice_resume_to_publish_ms" : 3411.7110000224784
+}

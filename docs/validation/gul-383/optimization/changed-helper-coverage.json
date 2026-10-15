@@ -1,0 +1,31 @@
+{
+  "denominator": "Changed executable Swift wrapper lines only; unchanged vendor llama.cpp/MTMD excluded. Real pinned text model and invalid protocol requests; media inference not exercised.",
+  "executable": 8,
+  "covered": 7,
+  "percent": 87.5,
+  "uncovered": [
+    8
+  ],
+  "raw_changed_line_coverage": {
+    "covered": 7,
+    "executable": 8,
+    "percent": 87.5,
+    "uncovered": [
+      8
+    ]
+  },
+  "changed_behavior_coverage": {
+    "covered": 7,
+    "executable": 7,
+    "percent": 100.0
+  },
+  "unchanged_moved_declaration": {
+    "line": 8,
+    "statement": "let entries: [String] = []",
+    "baseline": "The same declaration existed on the original one-line Response definition. LLVM maps its unused stored-property initializer thunk to this newly split line; both -O and -Onone report zero. No new helper behavior is excluded."
+  },
+  "coverage_builds": [
+    "Release Swift wrapper (-O), pinned Release C++ libraries",
+    "Debug Swift wrapper (-Onone), pinned Release C++ libraries"
+  ]
+}

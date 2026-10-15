@@ -1,0 +1,2833 @@
+{
+  "version": 1,
+  "provenance": "Hand-authored synthetic topic facts in scripts/create_semantic_query_fixture.py; labels point to document IDs and exact anchors. No personal files. This is a regression oracle, not a representative relevance benchmark. baseline_supported describes the text-only evaluation harness: long-tail and OCR fixtures are known gaps; media fixtures are unmeasured here even though visual/audio/video embedding exists in the product. Missing groups count as failures in the full denominator.",
+  "documents": [
+    {
+      "id": "en-00",
+      "kind": "text",
+      "text": "Reimbursement instructions. Attach receipts and obtain manager approval. Reference TS-9000."
+    },
+    {
+      "id": "zh-00",
+      "kind": "text",
+      "text": "报销说明。附上发票并获得主管批准。"
+    },
+    {
+      "id": "tail-00",
+      "kind": "long_tail",
+      "text": "TAIL-0000 reimbursement Attach receipts and obtain manager approval."
+    },
+    {
+      "id": "scan-00",
+      "kind": "scan",
+      "text": "SCAN-0000 报销 附上发票并获得主管批准。",
+      "page": 2
+    },
+    {
+      "id": "media-00",
+      "kind": "video",
+      "text": "reimbursement Attach receipts and obtain manager approval.",
+      "time": 45
+    },
+    {
+      "id": "en-01",
+      "kind": "text",
+      "text": "Gardening instructions. Water tomato plants twice weekly. Reference TS-9001."
+    },
+    {
+      "id": "zh-01",
+      "kind": "text",
+      "text": "园艺说明。每周给番茄浇水两次。"
+    },
+    {
+      "id": "tail-01",
+      "kind": "long_tail",
+      "text": "TAIL-0001 gardening Water tomato plants twice weekly."
+    },
+    {
+      "id": "scan-01",
+      "kind": "scan",
+      "text": "SCAN-0001 园艺 每周给番茄浇水两次。",
+      "page": 2
+    },
+    {
+      "id": "media-01",
+      "kind": "audio",
+      "text": "gardening Water tomato plants twice weekly.",
+      "time": 46
+    },
+    {
+      "id": "en-02",
+      "kind": "text",
+      "text": "Railway instructions. Reserve a seat before boarding the overnight train. Reference TS-9002."
+    },
+    {
+      "id": "zh-02",
+      "kind": "text",
+      "text": "铁路说明。乘坐夜间列车前请预订座位。"
+    },
+    {
+      "id": "tail-02",
+      "kind": "long_tail",
+      "text": "TAIL-0002 railway Reserve a seat before boarding the overnight train."
+    },
+    {
+      "id": "scan-02",
+      "kind": "scan",
+      "text": "SCAN-0002 铁路 乘坐夜间列车前请预订座位。",
+      "page": 2
+    },
+    {
+      "id": "media-02",
+      "kind": "video",
+      "text": "railway Reserve a seat before boarding the overnight train.",
+      "time": 47
+    },
+    {
+      "id": "en-03",
+      "kind": "text",
+      "text": "Backup instructions. Keep encrypted copies on a separate disk. Reference TS-9003."
+    },
+    {
+      "id": "zh-03",
+      "kind": "text",
+      "text": "备份说明。在独立磁盘上保存加密副本。"
+    },
+    {
+      "id": "tail-03",
+      "kind": "long_tail",
+      "text": "TAIL-0003 backup Keep encrypted copies on a separate disk."
+    },
+    {
+      "id": "scan-03",
+      "kind": "scan",
+      "text": "SCAN-0003 备份 在独立磁盘上保存加密副本。",
+      "page": 2
+    },
+    {
+      "id": "media-03",
+      "kind": "audio",
+      "text": "backup Keep encrypted copies on a separate disk.",
+      "time": 48
+    },
+    {
+      "id": "en-04",
+      "kind": "text",
+      "text": "Onboarding instructions. Collect the laptop from the reception desk. Reference TS-9004."
+    },
+    {
+      "id": "zh-04",
+      "kind": "text",
+      "text": "入职说明。从前台领取笔记本电脑。"
+    },
+    {
+      "id": "tail-04",
+      "kind": "long_tail",
+      "text": "TAIL-0004 onboarding Collect the laptop from the reception desk."
+    },
+    {
+      "id": "scan-04",
+      "kind": "scan",
+      "text": "SCAN-0004 入职 从前台领取笔记本电脑。",
+      "page": 2
+    },
+    {
+      "id": "media-04",
+      "kind": "video",
+      "text": "onboarding Collect the laptop from the reception desk.",
+      "time": 49
+    },
+    {
+      "id": "en-05",
+      "kind": "text",
+      "text": "Cafeteria instructions. Lunch is served between noon and two. Reference TS-9005."
+    },
+    {
+      "id": "zh-05",
+      "kind": "text",
+      "text": "食堂说明。午餐供应时间为中午十二点到两点。"
+    },
+    {
+      "id": "tail-05",
+      "kind": "long_tail",
+      "text": "TAIL-0005 cafeteria Lunch is served between noon and two."
+    },
+    {
+      "id": "scan-05",
+      "kind": "scan",
+      "text": "SCAN-0005 食堂 午餐供应时间为中午十二点到两点。",
+      "page": 2
+    },
+    {
+      "id": "media-05",
+      "kind": "audio",
+      "text": "cafeteria Lunch is served between noon and two.",
+      "time": 50
+    },
+    {
+      "id": "en-06",
+      "kind": "text",
+      "text": "Travel instructions. Book economy tickets through the travel portal. Reference TS-9006."
+    },
+    {
+      "id": "zh-06",
+      "kind": "text",
+      "text": "差旅说明。通过差旅门户预订经济舱机票。"
+    },
+    {
+      "id": "tail-06",
+      "kind": "long_tail",
+      "text": "TAIL-0006 travel Book economy tickets through the travel portal."
+    },
+    {
+      "id": "scan-06",
+      "kind": "scan",
+      "text": "SCAN-0006 差旅 通过差旅门户预订经济舱机票。",
+      "page": 2
+    },
+    {
+      "id": "media-06",
+      "kind": "video",
+      "text": "travel Book economy tickets through the travel portal.",
+      "time": 51
+    },
+    {
+      "id": "en-07",
+      "kind": "text",
+      "text": "Fire instructions. Use the stairs and assemble outside the east gate. Reference TS-9007."
+    },
+    {
+      "id": "zh-07",
+      "kind": "text",
+      "text": "消防说明。走楼梯撤离并在东门外集合。"
+    },
+    {
+      "id": "tail-07",
+      "kind": "long_tail",
+      "text": "TAIL-0007 fire Use the stairs and assemble outside the east gate."
+    },
+    {
+      "id": "scan-07",
+      "kind": "scan",
+      "text": "SCAN-0007 消防 走楼梯撤离并在东门外集合。",
+      "page": 2
+    },
+    {
+      "id": "media-07",
+      "kind": "audio",
+      "text": "fire Use the stairs and assemble outside the east gate.",
+      "time": 52
+    },
+    {
+      "id": "en-08",
+      "kind": "text",
+      "text": "Recycling instructions. Put clean paper in the blue bin. Reference TS-9008."
+    },
+    {
+      "id": "zh-08",
+      "kind": "text",
+      "text": "回收说明。将干净纸张放入蓝色垃圾桶。"
+    },
+    {
+      "id": "tail-08",
+      "kind": "long_tail",
+      "text": "TAIL-0008 recycling Put clean paper in the blue bin."
+    },
+    {
+      "id": "scan-08",
+      "kind": "scan",
+      "text": "SCAN-0008 回收 将干净纸张放入蓝色垃圾桶。",
+      "page": 2
+    },
+    {
+      "id": "media-08",
+      "kind": "video",
+      "text": "recycling Put clean paper in the blue bin.",
+      "time": 53
+    },
+    {
+      "id": "en-09",
+      "kind": "text",
+      "text": "Bicycle instructions. Store bicycles in the basement parking area. Reference TS-9009."
+    },
+    {
+      "id": "zh-09",
+      "kind": "text",
+      "text": "自行车说明。将自行车停放在地下停车区。"
+    },
+    {
+      "id": "tail-09",
+      "kind": "long_tail",
+      "text": "TAIL-0009 bicycle Store bicycles in the basement parking area."
+    },
+    {
+      "id": "scan-09",
+      "kind": "scan",
+      "text": "SCAN-0009 自行车 将自行车停放在地下停车区。",
+      "page": 2
+    },
+    {
+      "id": "media-09",
+      "kind": "audio",
+      "text": "bicycle Store bicycles in the basement parking area.",
+      "time": 54
+    },
+    {
+      "id": "en-10",
+      "kind": "text",
+      "text": "Library instructions. Return borrowed books within twenty days. Reference TS-9010."
+    },
+    {
+      "id": "zh-10",
+      "kind": "text",
+      "text": "图书说明。请在二十天内归还借阅的图书。"
+    },
+    {
+      "id": "tail-10",
+      "kind": "long_tail",
+      "text": "TAIL-0010 library Return borrowed books within twenty days."
+    },
+    {
+      "id": "scan-10",
+      "kind": "scan",
+      "text": "SCAN-0010 图书 请在二十天内归还借阅的图书。",
+      "page": 2
+    },
+    {
+      "id": "media-10",
+      "kind": "video",
+      "text": "library Return borrowed books within twenty days.",
+      "time": 55
+    },
+    {
+      "id": "en-11",
+      "kind": "text",
+      "text": "Meeting instructions. Reserve the large room for group discussions. Reference TS-9011."
+    },
+    {
+      "id": "zh-11",
+      "kind": "text",
+      "text": "会议说明。集体讨论请预订大会议室。"
+    },
+    {
+      "id": "tail-11",
+      "kind": "long_tail",
+      "text": "TAIL-0011 meeting Reserve the large room for group discussions."
+    },
+    {
+      "id": "scan-11",
+      "kind": "scan",
+      "text": "SCAN-0011 会议 集体讨论请预订大会议室。",
+      "page": 2
+    },
+    {
+      "id": "media-11",
+      "kind": "audio",
+      "text": "meeting Reserve the large room for group discussions.",
+      "time": 56
+    },
+    {
+      "id": "en-12",
+      "kind": "text",
+      "text": "Payroll instructions. Salaries arrive on the last business day. Reference TS-9012."
+    },
+    {
+      "id": "zh-12",
+      "kind": "text",
+      "text": "工资说明。工资于最后一个工作日到账。"
+    },
+    {
+      "id": "tail-12",
+      "kind": "long_tail",
+      "text": "TAIL-0012 payroll Salaries arrive on the last business day."
+    },
+    {
+      "id": "scan-12",
+      "kind": "scan",
+      "text": "SCAN-0012 工资 工资于最后一个工作日到账。",
+      "page": 2
+    },
+    {
+      "id": "media-12",
+      "kind": "video",
+      "text": "payroll Salaries arrive on the last business day.",
+      "time": 57
+    },
+    {
+      "id": "en-13",
+      "kind": "text",
+      "text": "Vacation instructions. Request annual leave two weeks ahead. Reference TS-9013."
+    },
+    {
+      "id": "zh-13",
+      "kind": "text",
+      "text": "休假说明。请提前两周申请年假。"
+    },
+    {
+      "id": "tail-13",
+      "kind": "long_tail",
+      "text": "TAIL-0013 vacation Request annual leave two weeks ahead."
+    },
+    {
+      "id": "scan-13",
+      "kind": "scan",
+      "text": "SCAN-0013 休假 请提前两周申请年假。",
+      "page": 2
+    },
+    {
+      "id": "media-13",
+      "kind": "audio",
+      "text": "vacation Request annual leave two weeks ahead.",
+      "time": 58
+    },
+    {
+      "id": "en-14",
+      "kind": "text",
+      "text": "Shipping instructions. Leave outgoing parcels at the loading dock. Reference TS-9014."
+    },
+    {
+      "id": "zh-14",
+      "kind": "text",
+      "text": "快递说明。将待寄包裹放在装卸区。"
+    },
+    {
+      "id": "tail-14",
+      "kind": "long_tail",
+      "text": "TAIL-0014 shipping Leave outgoing parcels at the loading dock."
+    },
+    {
+      "id": "scan-14",
+      "kind": "scan",
+      "text": "SCAN-0014 快递 将待寄包裹放在装卸区。",
+      "page": 2
+    },
+    {
+      "id": "media-14",
+      "kind": "video",
+      "text": "shipping Leave outgoing parcels at the loading dock.",
+      "time": 59
+    },
+    {
+      "id": "en-15",
+      "kind": "text",
+      "text": "Printing instructions. Use double sided printing for draft documents. Reference TS-9015."
+    },
+    {
+      "id": "zh-15",
+      "kind": "text",
+      "text": "打印说明。草稿文件请使用双面打印。"
+    },
+    {
+      "id": "tail-15",
+      "kind": "long_tail",
+      "text": "TAIL-0015 printing Use double sided printing for draft documents."
+    },
+    {
+      "id": "scan-15",
+      "kind": "scan",
+      "text": "SCAN-0015 打印 草稿文件请使用双面打印。",
+      "page": 2
+    },
+    {
+      "id": "media-15",
+      "kind": "audio",
+      "text": "printing Use double sided printing for draft documents.",
+      "time": 60
+    },
+    {
+      "id": "en-16",
+      "kind": "text",
+      "text": "Wifi instructions. Visitors obtain a temporary network pass at reception. Reference TS-9016."
+    },
+    {
+      "id": "zh-16",
+      "kind": "text",
+      "text": "无线网络说明。访客可在前台领取临时上网凭证。"
+    },
+    {
+      "id": "tail-16",
+      "kind": "long_tail",
+      "text": "TAIL-0016 wifi Visitors obtain a temporary network pass at reception."
+    },
+    {
+      "id": "scan-16",
+      "kind": "scan",
+      "text": "SCAN-0016 无线网络 访客可在前台领取临时上网凭证。",
+      "page": 2
+    },
+    {
+      "id": "media-16",
+      "kind": "video",
+      "text": "wifi Visitors obtain a temporary network pass at reception.",
+      "time": 61
+    },
+    {
+      "id": "en-17",
+      "kind": "text",
+      "text": "Maintenance instructions. Report broken equipment to the facilities desk. Reference TS-9017."
+    },
+    {
+      "id": "zh-17",
+      "kind": "text",
+      "text": "维修说明。设备损坏请向后勤服务台报修。"
+    },
+    {
+      "id": "tail-17",
+      "kind": "long_tail",
+      "text": "TAIL-0017 maintenance Report broken equipment to the facilities desk."
+    },
+    {
+      "id": "scan-17",
+      "kind": "scan",
+      "text": "SCAN-0017 维修 设备损坏请向后勤服务台报修。",
+      "page": 2
+    },
+    {
+      "id": "media-17",
+      "kind": "audio",
+      "text": "maintenance Report broken equipment to the facilities desk.",
+      "time": 62
+    },
+    {
+      "id": "en-18",
+      "kind": "text",
+      "text": "Parking instructions. Register the vehicle plate before entering the garage. Reference TS-9018."
+    },
+    {
+      "id": "zh-18",
+      "kind": "text",
+      "text": "停车说明。进入车库前请登记车牌。"
+    },
+    {
+      "id": "tail-18",
+      "kind": "long_tail",
+      "text": "TAIL-0018 parking Register the vehicle plate before entering the garage."
+    },
+    {
+      "id": "scan-18",
+      "kind": "scan",
+      "text": "SCAN-0018 停车 进入车库前请登记车牌。",
+      "page": 2
+    },
+    {
+      "id": "media-18",
+      "kind": "video",
+      "text": "parking Register the vehicle plate before entering the garage.",
+      "time": 63
+    },
+    {
+      "id": "en-19",
+      "kind": "text",
+      "text": "Training instructions. Complete the safety course before laboratory access. Reference TS-9019."
+    },
+    {
+      "id": "zh-19",
+      "kind": "text",
+      "text": "培训说明。进入实验室前须完成安全课程。"
+    },
+    {
+      "id": "tail-19",
+      "kind": "long_tail",
+      "text": "TAIL-0019 training Complete the safety course before laboratory access."
+    },
+    {
+      "id": "scan-19",
+      "kind": "scan",
+      "text": "SCAN-0019 培训 进入实验室前须完成安全课程。",
+      "page": 2
+    },
+    {
+      "id": "media-19",
+      "kind": "audio",
+      "text": "training Complete the safety course before laboratory access.",
+      "time": 64
+    },
+    {
+      "id": "en-20",
+      "kind": "text",
+      "text": "Coffee instructions. Refill beans in the kitchen machine every morning. Reference TS-9020."
+    },
+    {
+      "id": "zh-20",
+      "kind": "text",
+      "text": "咖啡说明。每天早上为厨房咖啡机补充咖啡豆。"
+    },
+    {
+      "id": "tail-20",
+      "kind": "long_tail",
+      "text": "TAIL-0020 coffee Refill beans in the kitchen machine every morning."
+    },
+    {
+      "id": "scan-20",
+      "kind": "scan",
+      "text": "SCAN-0020 咖啡 每天早上为厨房咖啡机补充咖啡豆。",
+      "page": 2
+    },
+    {
+      "id": "media-20",
+      "kind": "video",
+      "text": "coffee Refill beans in the kitchen machine every morning.",
+      "time": 65
+    },
+    {
+      "id": "en-21",
+      "kind": "text",
+      "text": "Conference instructions. Show the badge at the exhibition entrance. Reference TS-9021."
+    },
+    {
+      "id": "zh-21",
+      "kind": "text",
+      "text": "会展说明。在展览入口出示参会证件。"
+    },
+    {
+      "id": "tail-21",
+      "kind": "long_tail",
+      "text": "TAIL-0021 conference Show the badge at the exhibition entrance."
+    },
+    {
+      "id": "scan-21",
+      "kind": "scan",
+      "text": "SCAN-0021 会展 在展览入口出示参会证件。",
+      "page": 2
+    },
+    {
+      "id": "media-21",
+      "kind": "audio",
+      "text": "conference Show the badge at the exhibition entrance.",
+      "time": 66
+    },
+    {
+      "id": "en-22",
+      "kind": "text",
+      "text": "Invoice instructions. Include the purchase order when requesting an invoice. Reference TS-9022."
+    },
+    {
+      "id": "zh-22",
+      "kind": "text",
+      "text": "开票说明。申请开票时请附上采购订单。"
+    },
+    {
+      "id": "tail-22",
+      "kind": "long_tail",
+      "text": "TAIL-0022 invoice Include the purchase order when requesting an invoice."
+    },
+    {
+      "id": "scan-22",
+      "kind": "scan",
+      "text": "SCAN-0022 开票 申请开票时请附上采购订单。",
+      "page": 2
+    },
+    {
+      "id": "media-22",
+      "kind": "video",
+      "text": "invoice Include the purchase order when requesting an invoice.",
+      "time": 67
+    },
+    {
+      "id": "en-23",
+      "kind": "text",
+      "text": "Warehouse instructions. Scan the barcode before moving inventory. Reference TS-9023."
+    },
+    {
+      "id": "zh-23",
+      "kind": "text",
+      "text": "仓库说明。移动库存前请扫描条码。"
+    },
+    {
+      "id": "tail-23",
+      "kind": "long_tail",
+      "text": "TAIL-0023 warehouse Scan the barcode before moving inventory."
+    },
+    {
+      "id": "scan-23",
+      "kind": "scan",
+      "text": "SCAN-0023 仓库 移动库存前请扫描条码。",
+      "page": 2
+    },
+    {
+      "id": "media-23",
+      "kind": "audio",
+      "text": "warehouse Scan the barcode before moving inventory.",
+      "time": 68
+    },
+    {
+      "id": "en-24",
+      "kind": "text",
+      "text": "Contract instructions. Legal counsel reviews every supplier agreement. Reference TS-9024."
+    },
+    {
+      "id": "zh-24",
+      "kind": "text",
+      "text": "合同说明。每份供应商协议均须经法务审核。"
+    },
+    {
+      "id": "tail-24",
+      "kind": "long_tail",
+      "text": "TAIL-0024 contract Legal counsel reviews every supplier agreement."
+    },
+    {
+      "id": "scan-24",
+      "kind": "scan",
+      "text": "SCAN-0024 合同 每份供应商协议均须经法务审核。",
+      "page": 2
+    },
+    {
+      "id": "media-24",
+      "kind": "video",
+      "text": "contract Legal counsel reviews every supplier agreement.",
+      "time": 69
+    }
+  ],
+  "queries": [
+    {
+      "id": "lexical-00",
+      "group": "lexical",
+      "query": "reimbursement instructions",
+      "expected": [
+        "en-00"
+      ],
+      "language": "en",
+      "anchor": "Attach receipts and obtain manager approval.",
+      "baseline_supported": true
+    },
+    {
+      "id": "identifier-00",
+      "group": "identifier",
+      "query": "TS-9000",
+      "expected": [
+        "en-00"
+      ],
+      "language": "en",
+      "anchor": "TS-9000",
+      "baseline_supported": true
+    },
+    {
+      "id": "chinese_short-00",
+      "group": "chinese_short",
+      "query": "报销",
+      "expected": [
+        "zh-00"
+      ],
+      "language": "zh",
+      "anchor": "附上发票并获得主管批准。",
+      "baseline_supported": true
+    },
+    {
+      "id": "cross_language-00",
+      "group": "cross_language",
+      "query": "报销",
+      "expected": [
+        "en-00"
+      ],
+      "language": "zh",
+      "anchor": "Attach receipts and obtain manager approval.",
+      "baseline_supported": true
+    },
+    {
+      "id": "long_tail-00",
+      "group": "long_tail",
+      "query": "TAIL-0000",
+      "expected": [
+        "tail-00"
+      ],
+      "language": "en",
+      "anchor": "TAIL-0000",
+      "baseline_supported": false
+    },
+    {
+      "id": "scanned-00",
+      "group": "scanned",
+      "query": "SCAN-0000",
+      "expected": [
+        "scan-00"
+      ],
+      "language": "zh",
+      "anchor": "SCAN-0000",
+      "baseline_supported": false
+    },
+    {
+      "id": "media_timestamp-00",
+      "group": "media_timestamp",
+      "query": "reimbursement",
+      "expected": [
+        "media-00"
+      ],
+      "language": "en",
+      "anchor": "Attach receipts and obtain manager approval.",
+      "baseline_supported": false
+    },
+    {
+      "id": "no_answer-00",
+      "group": "no_answer",
+      "query": "unobtainium quantum zeppelin 0",
+      "expected": [],
+      "language": "en",
+      "anchor": null,
+      "baseline_supported": true
+    },
+    {
+      "id": "lexical-01",
+      "group": "lexical",
+      "query": "gardening instructions",
+      "expected": [
+        "en-01"
+      ],
+      "language": "en",
+      "anchor": "Water tomato plants twice weekly.",
+      "baseline_supported": true
+    },
+    {
+      "id": "identifier-01",
+      "group": "identifier",
+      "query": "TS-9001",
+      "expected": [
+        "en-01"
+      ],
+      "language": "en",
+      "anchor": "TS-9001",
+      "baseline_supported": true
+    },
+    {
+      "id": "chinese_short-01",
+      "group": "chinese_short",
+      "query": "园艺",
+      "expected": [
+        "zh-01"
+      ],
+      "language": "zh",
+      "anchor": "每周给番茄浇水两次。",
+      "baseline_supported": true
+    },
+    {
+      "id": "cross_language-01",
+      "group": "cross_language",
+      "query": "gardening instructions",
+      "expected": [
+        "zh-01"
+      ],
+      "language": "en",
+      "anchor": "每周给番茄浇水两次。",
+      "baseline_supported": true
+    },
+    {
+      "id": "long_tail-01",
+      "group": "long_tail",
+      "query": "TAIL-0001",
+      "expected": [
+        "tail-01"
+      ],
+      "language": "en",
+      "anchor": "TAIL-0001",
+      "baseline_supported": false
+    },
+    {
+      "id": "scanned-01",
+      "group": "scanned",
+      "query": "SCAN-0001",
+      "expected": [
+        "scan-01"
+      ],
+      "language": "zh",
+      "anchor": "SCAN-0001",
+      "baseline_supported": false
+    },
+    {
+      "id": "media_timestamp-01",
+      "group": "media_timestamp",
+      "query": "gardening",
+      "expected": [
+        "media-01"
+      ],
+      "language": "en",
+      "anchor": "Water tomato plants twice weekly.",
+      "baseline_supported": false
+    },
+    {
+      "id": "no_answer-01",
+      "group": "no_answer",
+      "query": "unobtainium quantum zeppelin 1",
+      "expected": [],
+      "language": "en",
+      "anchor": null,
+      "baseline_supported": true
+    },
+    {
+      "id": "lexical-02",
+      "group": "lexical",
+      "query": "railway instructions",
+      "expected": [
+        "en-02"
+      ],
+      "language": "en",
+      "anchor": "Reserve a seat before boarding the overnight train.",
+      "baseline_supported": true
+    },
+    {
+      "id": "identifier-02",
+      "group": "identifier",
+      "query": "TS-9002",
+      "expected": [
+        "en-02"
+      ],
+      "language": "en",
+      "anchor": "TS-9002",
+      "baseline_supported": true
+    },
+    {
+      "id": "chinese_short-02",
+      "group": "chinese_short",
+      "query": "铁路",
+      "expected": [
+        "zh-02"
+      ],
+      "language": "zh",
+      "anchor": "乘坐夜间列车前请预订座位。",
+      "baseline_supported": true
+    },
+    {
+      "id": "cross_language-02",
+      "group": "cross_language",
+      "query": "铁路",
+      "expected": [
+        "en-02"
+      ],
+      "language": "zh",
+      "anchor": "Reserve a seat before boarding the overnight train.",
+      "baseline_supported": true
+    },
+    {
+      "id": "long_tail-02",
+      "group": "long_tail",
+      "query": "TAIL-0002",
+      "expected": [
+        "tail-02"
+      ],
+      "language": "en",
+      "anchor": "TAIL-0002",
+      "baseline_supported": false
+    },
+    {
+      "id": "scanned-02",
+      "group": "scanned",
+      "query": "SCAN-0002",
+      "expected": [
+        "scan-02"
+      ],
+      "language": "zh",
+      "anchor": "SCAN-0002",
+      "baseline_supported": false
+    },
+    {
+      "id": "media_timestamp-02",
+      "group": "media_timestamp",
+      "query": "railway",
+      "expected": [
+        "media-02"
+      ],
+      "language": "en",
+      "anchor": "Reserve a seat before boarding the overnight train.",
+      "baseline_supported": false
+    },
+    {
+      "id": "no_answer-02",
+      "group": "no_answer",
+      "query": "unobtainium quantum zeppelin 2",
+      "expected": [],
+      "language": "en",
+      "anchor": null,
+      "baseline_supported": true
+    },
+    {
+      "id": "lexical-03",
+      "group": "lexical",
+      "query": "backup instructions",
+      "expected": [
+        "en-03"
+      ],
+      "language": "en",
+      "anchor": "Keep encrypted copies on a separate disk.",
+      "baseline_supported": true
+    },
+    {
+      "id": "identifier-03",
+      "group": "identifier",
+      "query": "TS-9003",
+      "expected": [
+        "en-03"
+      ],
+      "language": "en",
+      "anchor": "TS-9003",
+      "baseline_supported": true
+    },
+    {
+      "id": "chinese_short-03",
+      "group": "chinese_short",
+      "query": "备份",
+      "expected": [
+        "zh-03"
+      ],
+      "language": "zh",
+      "anchor": "在独立磁盘上保存加密副本。",
+      "baseline_supported": true
+    },
+    {
+      "id": "cross_language-03",
+      "group": "cross_language",
+      "query": "backup instructions",
+      "expected": [
+        "zh-03"
+      ],
+      "language": "en",
+      "anchor": "在独立磁盘上保存加密副本。",
+      "baseline_supported": true
+    },
+    {
+      "id": "long_tail-03",
+      "group": "long_tail",
+      "query": "TAIL-0003",
+      "expected": [
+        "tail-03"
+      ],
+      "language": "en",
+      "anchor": "TAIL-0003",
+      "baseline_supported": false
+    },
+    {
+      "id": "scanned-03",
+      "group": "scanned",
+      "query": "SCAN-0003",
+      "expected": [
+        "scan-03"
+      ],
+      "language": "zh",
+      "anchor": "SCAN-0003",
+      "baseline_supported": false
+    },
+    {
+      "id": "media_timestamp-03",
+      "group": "media_timestamp",
+      "query": "backup",
+      "expected": [
+        "media-03"
+      ],
+      "language": "en",
+      "anchor": "Keep encrypted copies on a separate disk.",
+      "baseline_supported": false
+    },
+    {
+      "id": "no_answer-03",
+      "group": "no_answer",
+      "query": "unobtainium quantum zeppelin 3",
+      "expected": [],
+      "language": "en",
+      "anchor": null,
+      "baseline_supported": true
+    },
+    {
+      "id": "lexical-04",
+      "group": "lexical",
+      "query": "onboarding instructions",
+      "expected": [
+        "en-04"
+      ],
+      "language": "en",
+      "anchor": "Collect the laptop from the reception desk.",
+      "baseline_supported": true
+    },
+    {
+      "id": "identifier-04",
+      "group": "identifier",
+      "query": "TS-9004",
+      "expected": [
+        "en-04"
+      ],
+      "language": "en",
+      "anchor": "TS-9004",
+      "baseline_supported": true
+    },
+    {
+      "id": "chinese_short-04",
+      "group": "chinese_short",
+      "query": "入职",
+      "expected": [
+        "zh-04"
+      ],
+      "language": "zh",
+      "anchor": "从前台领取笔记本电脑。",
+      "baseline_supported": true
+    },
+    {
+      "id": "cross_language-04",
+      "group": "cross_language",
+      "query": "入职",
+      "expected": [
+        "en-04"
+      ],
+      "language": "zh",
+      "anchor": "Collect the laptop from the reception desk.",
+      "baseline_supported": true
+    },
+    {
+      "id": "long_tail-04",
+      "group": "long_tail",
+      "query": "TAIL-0004",
+      "expected": [
+        "tail-04"
+      ],
+      "language": "en",
+      "anchor": "TAIL-0004",
+      "baseline_supported": false
+    },
+    {
+      "id": "scanned-04",
+      "group": "scanned",
+      "query": "SCAN-0004",
+      "expected": [
+        "scan-04"
+      ],
+      "language": "zh",
+      "anchor": "SCAN-0004",
+      "baseline_supported": false
+    },
+    {
+      "id": "media_timestamp-04",
+      "group": "media_timestamp",
+      "query": "onboarding",
+      "expected": [
+        "media-04"
+      ],
+      "language": "en",
+      "anchor": "Collect the laptop from the reception desk.",
+      "baseline_supported": false
+    },
+    {
+      "id": "no_answer-04",
+      "group": "no_answer",
+      "query": "unobtainium quantum zeppelin 4",
+      "expected": [],
+      "language": "en",
+      "anchor": null,
+      "baseline_supported": true
+    },
+    {
+      "id": "lexical-05",
+      "group": "lexical",
+      "query": "cafeteria instructions",
+      "expected": [
+        "en-05"
+      ],
+      "language": "en",
+      "anchor": "Lunch is served between noon and two.",
+      "baseline_supported": true
+    },
+    {
+      "id": "identifier-05",
+      "group": "identifier",
+      "query": "TS-9005",
+      "expected": [
+        "en-05"
+      ],
+      "language": "en",
+      "anchor": "TS-9005",
+      "baseline_supported": true
+    },
+    {
+      "id": "chinese_short-05",
+      "group": "chinese_short",
+      "query": "食堂",
+      "expected": [
+        "zh-05"
+      ],
+      "language": "zh",
+      "anchor": "午餐供应时间为中午十二点到两点。",
+      "baseline_supported": true
+    },
+    {
+      "id": "cross_language-05",
+      "group": "cross_language",
+      "query": "cafeteria instructions",
+      "expected": [
+        "zh-05"
+      ],
+      "language": "en",
+      "anchor": "午餐供应时间为中午十二点到两点。",
+      "baseline_supported": true
+    },
+    {
+      "id": "long_tail-05",
+      "group": "long_tail",
+      "query": "TAIL-0005",
+      "expected": [
+        "tail-05"
+      ],
+      "language": "en",
+      "anchor": "TAIL-0005",
+      "baseline_supported": false
+    },
+    {
+      "id": "scanned-05",
+      "group": "scanned",
+      "query": "SCAN-0005",
+      "expected": [
+        "scan-05"
+      ],
+      "language": "zh",
+      "anchor": "SCAN-0005",
+      "baseline_supported": false
+    },
+    {
+      "id": "media_timestamp-05",
+      "group": "media_timestamp",
+      "query": "cafeteria",
+      "expected": [
+        "media-05"
+      ],
+      "language": "en",
+      "anchor": "Lunch is served between noon and two.",
+      "baseline_supported": false
+    },
+    {
+      "id": "no_answer-05",
+      "group": "no_answer",
+      "query": "unobtainium quantum zeppelin 5",
+      "expected": [],
+      "language": "en",
+      "anchor": null,
+      "baseline_supported": true
+    },
+    {
+      "id": "lexical-06",
+      "group": "lexical",
+      "query": "travel instructions",
+      "expected": [
+        "en-06"
+      ],
+      "language": "en",
+      "anchor": "Book economy tickets through the travel portal.",
+      "baseline_supported": true
+    },
+    {
+      "id": "identifier-06",
+      "group": "identifier",
+      "query": "TS-9006",
+      "expected": [
+        "en-06"
+      ],
+      "language": "en",
+      "anchor": "TS-9006",
+      "baseline_supported": true
+    },
+    {
+      "id": "chinese_short-06",
+      "group": "chinese_short",
+      "query": "差旅",
+      "expected": [
+        "zh-06"
+      ],
+      "language": "zh",
+      "anchor": "通过差旅门户预订经济舱机票。",
+      "baseline_supported": true
+    },
+    {
+      "id": "cross_language-06",
+      "group": "cross_language",
+      "query": "差旅",
+      "expected": [
+        "en-06"
+      ],
+      "language": "zh",
+      "anchor": "Book economy tickets through the travel portal.",
+      "baseline_supported": true
+    },
+    {
+      "id": "long_tail-06",
+      "group": "long_tail",
+      "query": "TAIL-0006",
+      "expected": [
+        "tail-06"
+      ],
+      "language": "en",
+      "anchor": "TAIL-0006",
+      "baseline_supported": false
+    },
+    {
+      "id": "scanned-06",
+      "group": "scanned",
+      "query": "SCAN-0006",
+      "expected": [
+        "scan-06"
+      ],
+      "language": "zh",
+      "anchor": "SCAN-0006",
+      "baseline_supported": false
+    },
+    {
+      "id": "media_timestamp-06",
+      "group": "media_timestamp",
+      "query": "travel",
+      "expected": [
+        "media-06"
+      ],
+      "language": "en",
+      "anchor": "Book economy tickets through the travel portal.",
+      "baseline_supported": false
+    },
+    {
+      "id": "no_answer-06",
+      "group": "no_answer",
+      "query": "unobtainium quantum zeppelin 6",
+      "expected": [],
+      "language": "en",
+      "anchor": null,
+      "baseline_supported": true
+    },
+    {
+      "id": "lexical-07",
+      "group": "lexical",
+      "query": "fire instructions",
+      "expected": [
+        "en-07"
+      ],
+      "language": "en",
+      "anchor": "Use the stairs and assemble outside the east gate.",
+      "baseline_supported": true
+    },
+    {
+      "id": "identifier-07",
+      "group": "identifier",
+      "query": "TS-9007",
+      "expected": [
+        "en-07"
+      ],
+      "language": "en",
+      "anchor": "TS-9007",
+      "baseline_supported": true
+    },
+    {
+      "id": "chinese_short-07",
+      "group": "chinese_short",
+      "query": "消防",
+      "expected": [
+        "zh-07"
+      ],
+      "language": "zh",
+      "anchor": "走楼梯撤离并在东门外集合。",
+      "baseline_supported": true
+    },
+    {
+      "id": "cross_language-07",
+      "group": "cross_language",
+      "query": "fire instructions",
+      "expected": [
+        "zh-07"
+      ],
+      "language": "en",
+      "anchor": "走楼梯撤离并在东门外集合。",
+      "baseline_supported": true
+    },
+    {
+      "id": "long_tail-07",
+      "group": "long_tail",
+      "query": "TAIL-0007",
+      "expected": [
+        "tail-07"
+      ],
+      "language": "en",
+      "anchor": "TAIL-0007",
+      "baseline_supported": false
+    },
+    {
+      "id": "scanned-07",
+      "group": "scanned",
+      "query": "SCAN-0007",
+      "expected": [
+        "scan-07"
+      ],
+      "language": "zh",
+      "anchor": "SCAN-0007",
+      "baseline_supported": false
+    },
+    {
+      "id": "media_timestamp-07",
+      "group": "media_timestamp",
+      "query": "fire",
+      "expected": [
+        "media-07"
+      ],
+      "language": "en",
+      "anchor": "Use the stairs and assemble outside the east gate.",
+      "baseline_supported": false
+    },
+    {
+      "id": "no_answer-07",
+      "group": "no_answer",
+      "query": "unobtainium quantum zeppelin 7",
+      "expected": [],
+      "language": "en",
+      "anchor": null,
+      "baseline_supported": true
+    },
+    {
+      "id": "lexical-08",
+      "group": "lexical",
+      "query": "recycling instructions",
+      "expected": [
+        "en-08"
+      ],
+      "language": "en",
+      "anchor": "Put clean paper in the blue bin.",
+      "baseline_supported": true
+    },
+    {
+      "id": "identifier-08",
+      "group": "identifier",
+      "query": "TS-9008",
+      "expected": [
+        "en-08"
+      ],
+      "language": "en",
+      "anchor": "TS-9008",
+      "baseline_supported": true
+    },
+    {
+      "id": "chinese_short-08",
+      "group": "chinese_short",
+      "query": "回收",
+      "expected": [
+        "zh-08"
+      ],
+      "language": "zh",
+      "anchor": "将干净纸张放入蓝色垃圾桶。",
+      "baseline_supported": true
+    },
+    {
+      "id": "cross_language-08",
+      "group": "cross_language",
+      "query": "回收",
+      "expected": [
+        "en-08"
+      ],
+      "language": "zh",
+      "anchor": "Put clean paper in the blue bin.",
+      "baseline_supported": true
+    },
+    {
+      "id": "long_tail-08",
+      "group": "long_tail",
+      "query": "TAIL-0008",
+      "expected": [
+        "tail-08"
+      ],
+      "language": "en",
+      "anchor": "TAIL-0008",
+      "baseline_supported": false
+    },
+    {
+      "id": "scanned-08",
+      "group": "scanned",
+      "query": "SCAN-0008",
+      "expected": [
+        "scan-08"
+      ],
+      "language": "zh",
+      "anchor": "SCAN-0008",
+      "baseline_supported": false
+    },
+    {
+      "id": "media_timestamp-08",
+      "group": "media_timestamp",
+      "query": "recycling",
+      "expected": [
+        "media-08"
+      ],
+      "language": "en",
+      "anchor": "Put clean paper in the blue bin.",
+      "baseline_supported": false
+    },
+    {
+      "id": "no_answer-08",
+      "group": "no_answer",
+      "query": "unobtainium quantum zeppelin 8",
+      "expected": [],
+      "language": "en",
+      "anchor": null,
+      "baseline_supported": true
+    },
+    {
+      "id": "lexical-09",
+      "group": "lexical",
+      "query": "bicycle instructions",
+      "expected": [
+        "en-09"
+      ],
+      "language": "en",
+      "anchor": "Store bicycles in the basement parking area.",
+      "baseline_supported": true
+    },
+    {
+      "id": "identifier-09",
+      "group": "identifier",
+      "query": "TS-9009",
+      "expected": [
+        "en-09"
+      ],
+      "language": "en",
+      "anchor": "TS-9009",
+      "baseline_supported": true
+    },
+    {
+      "id": "chinese_short-09",
+      "group": "chinese_short",
+      "query": "自行车",
+      "expected": [
+        "zh-09"
+      ],
+      "language": "zh",
+      "anchor": "将自行车停放在地下停车区。",
+      "baseline_supported": true
+    },
+    {
+      "id": "cross_language-09",
+      "group": "cross_language",
+      "query": "bicycle instructions",
+      "expected": [
+        "zh-09"
+      ],
+      "language": "en",
+      "anchor": "将自行车停放在地下停车区。",
+      "baseline_supported": true
+    },
+    {
+      "id": "long_tail-09",
+      "group": "long_tail",
+      "query": "TAIL-0009",
+      "expected": [
+        "tail-09"
+      ],
+      "language": "en",
+      "anchor": "TAIL-0009",
+      "baseline_supported": false
+    },
+    {
+      "id": "scanned-09",
+      "group": "scanned",
+      "query": "SCAN-0009",
+      "expected": [
+        "scan-09"
+      ],
+      "language": "zh",
+      "anchor": "SCAN-0009",
+      "baseline_supported": false
+    },
+    {
+      "id": "media_timestamp-09",
+      "group": "media_timestamp",
+      "query": "bicycle",
+      "expected": [
+        "media-09"
+      ],
+      "language": "en",
+      "anchor": "Store bicycles in the basement parking area.",
+      "baseline_supported": false
+    },
+    {
+      "id": "no_answer-09",
+      "group": "no_answer",
+      "query": "unobtainium quantum zeppelin 9",
+      "expected": [],
+      "language": "en",
+      "anchor": null,
+      "baseline_supported": true
+    },
+    {
+      "id": "lexical-10",
+      "group": "lexical",
+      "query": "library instructions",
+      "expected": [
+        "en-10"
+      ],
+      "language": "en",
+      "anchor": "Return borrowed books within twenty days.",
+      "baseline_supported": true
+    },
+    {
+      "id": "identifier-10",
+      "group": "identifier",
+      "query": "TS-9010",
+      "expected": [
+        "en-10"
+      ],
+      "language": "en",
+      "anchor": "TS-9010",
+      "baseline_supported": true
+    },
+    {
+      "id": "chinese_short-10",
+      "group": "chinese_short",
+      "query": "图书",
+      "expected": [
+        "zh-10"
+      ],
+      "language": "zh",
+      "anchor": "请在二十天内归还借阅的图书。",
+      "baseline_supported": true
+    },
+    {
+      "id": "cross_language-10",
+      "group": "cross_language",
+      "query": "图书",
+      "expected": [
+        "en-10"
+      ],
+      "language": "zh",
+      "anchor": "Return borrowed books within twenty days.",
+      "baseline_supported": true
+    },
+    {
+      "id": "long_tail-10",
+      "group": "long_tail",
+      "query": "TAIL-0010",
+      "expected": [
+        "tail-10"
+      ],
+      "language": "en",
+      "anchor": "TAIL-0010",
+      "baseline_supported": false
+    },
+    {
+      "id": "scanned-10",
+      "group": "scanned",
+      "query": "SCAN-0010",
+      "expected": [
+        "scan-10"
+      ],
+      "language": "zh",
+      "anchor": "SCAN-0010",
+      "baseline_supported": false
+    },
+    {
+      "id": "media_timestamp-10",
+      "group": "media_timestamp",
+      "query": "library",
+      "expected": [
+        "media-10"
+      ],
+      "language": "en",
+      "anchor": "Return borrowed books within twenty days.",
+      "baseline_supported": false
+    },
+    {
+      "id": "no_answer-10",
+      "group": "no_answer",
+      "query": "unobtainium quantum zeppelin 10",
+      "expected": [],
+      "language": "en",
+      "anchor": null,
+      "baseline_supported": true
+    },
+    {
+      "id": "lexical-11",
+      "group": "lexical",
+      "query": "meeting instructions",
+      "expected": [
+        "en-11"
+      ],
+      "language": "en",
+      "anchor": "Reserve the large room for group discussions.",
+      "baseline_supported": true
+    },
+    {
+      "id": "identifier-11",
+      "group": "identifier",
+      "query": "TS-9011",
+      "expected": [
+        "en-11"
+      ],
+      "language": "en",
+      "anchor": "TS-9011",
+      "baseline_supported": true
+    },
+    {
+      "id": "chinese_short-11",
+      "group": "chinese_short",
+      "query": "会议",
+      "expected": [
+        "zh-11"
+      ],
+      "language": "zh",
+      "anchor": "集体讨论请预订大会议室。",
+      "baseline_supported": true
+    },
+    {
+      "id": "cross_language-11",
+      "group": "cross_language",
+      "query": "meeting instructions",
+      "expected": [
+        "zh-11"
+      ],
+      "language": "en",
+      "anchor": "集体讨论请预订大会议室。",
+      "baseline_supported": true
+    },
+    {
+      "id": "long_tail-11",
+      "group": "long_tail",
+      "query": "TAIL-0011",
+      "expected": [
+        "tail-11"
+      ],
+      "language": "en",
+      "anchor": "TAIL-0011",
+      "baseline_supported": false
+    },
+    {
+      "id": "scanned-11",
+      "group": "scanned",
+      "query": "SCAN-0011",
+      "expected": [
+        "scan-11"
+      ],
+      "language": "zh",
+      "anchor": "SCAN-0011",
+      "baseline_supported": false
+    },
+    {
+      "id": "media_timestamp-11",
+      "group": "media_timestamp",
+      "query": "meeting",
+      "expected": [
+        "media-11"
+      ],
+      "language": "en",
+      "anchor": "Reserve the large room for group discussions.",
+      "baseline_supported": false
+    },
+    {
+      "id": "no_answer-11",
+      "group": "no_answer",
+      "query": "unobtainium quantum zeppelin 11",
+      "expected": [],
+      "language": "en",
+      "anchor": null,
+      "baseline_supported": true
+    },
+    {
+      "id": "lexical-12",
+      "group": "lexical",
+      "query": "payroll instructions",
+      "expected": [
+        "en-12"
+      ],
+      "language": "en",
+      "anchor": "Salaries arrive on the last business day.",
+      "baseline_supported": true
+    },
+    {
+      "id": "identifier-12",
+      "group": "identifier",
+      "query": "TS-9012",
+      "expected": [
+        "en-12"
+      ],
+      "language": "en",
+      "anchor": "TS-9012",
+      "baseline_supported": true
+    },
+    {
+      "id": "chinese_short-12",
+      "group": "chinese_short",
+      "query": "工资",
+      "expected": [
+        "zh-12"
+      ],
+      "language": "zh",
+      "anchor": "工资于最后一个工作日到账。",
+      "baseline_supported": true
+    },
+    {
+      "id": "cross_language-12",
+      "group": "cross_language",
+      "query": "工资",
+      "expected": [
+        "en-12"
+      ],
+      "language": "zh",
+      "anchor": "Salaries arrive on the last business day.",
+      "baseline_supported": true
+    },
+    {
+      "id": "long_tail-12",
+      "group": "long_tail",
+      "query": "TAIL-0012",
+      "expected": [
+        "tail-12"
+      ],
+      "language": "en",
+      "anchor": "TAIL-0012",
+      "baseline_supported": false
+    },
+    {
+      "id": "scanned-12",
+      "group": "scanned",
+      "query": "SCAN-0012",
+      "expected": [
+        "scan-12"
+      ],
+      "language": "zh",
+      "anchor": "SCAN-0012",
+      "baseline_supported": false
+    },
+    {
+      "id": "media_timestamp-12",
+      "group": "media_timestamp",
+      "query": "payroll",
+      "expected": [
+        "media-12"
+      ],
+      "language": "en",
+      "anchor": "Salaries arrive on the last business day.",
+      "baseline_supported": false
+    },
+    {
+      "id": "no_answer-12",
+      "group": "no_answer",
+      "query": "unobtainium quantum zeppelin 12",
+      "expected": [],
+      "language": "en",
+      "anchor": null,
+      "baseline_supported": true
+    },
+    {
+      "id": "lexical-13",
+      "group": "lexical",
+      "query": "vacation instructions",
+      "expected": [
+        "en-13"
+      ],
+      "language": "en",
+      "anchor": "Request annual leave two weeks ahead.",
+      "baseline_supported": true
+    },
+    {
+      "id": "identifier-13",
+      "group": "identifier",
+      "query": "TS-9013",
+      "expected": [
+        "en-13"
+      ],
+      "language": "en",
+      "anchor": "TS-9013",
+      "baseline_supported": true
+    },
+    {
+      "id": "chinese_short-13",
+      "group": "chinese_short",
+      "query": "休假",
+      "expected": [
+        "zh-13"
+      ],
+      "language": "zh",
+      "anchor": "请提前两周申请年假。",
+      "baseline_supported": true
+    },
+    {
+      "id": "cross_language-13",
+      "group": "cross_language",
+      "query": "vacation instructions",
+      "expected": [
+        "zh-13"
+      ],
+      "language": "en",
+      "anchor": "请提前两周申请年假。",
+      "baseline_supported": true
+    },
+    {
+      "id": "long_tail-13",
+      "group": "long_tail",
+      "query": "TAIL-0013",
+      "expected": [
+        "tail-13"
+      ],
+      "language": "en",
+      "anchor": "TAIL-0013",
+      "baseline_supported": false
+    },
+    {
+      "id": "scanned-13",
+      "group": "scanned",
+      "query": "SCAN-0013",
+      "expected": [
+        "scan-13"
+      ],
+      "language": "zh",
+      "anchor": "SCAN-0013",
+      "baseline_supported": false
+    },
+    {
+      "id": "media_timestamp-13",
+      "group": "media_timestamp",
+      "query": "vacation",
+      "expected": [
+        "media-13"
+      ],
+      "language": "en",
+      "anchor": "Request annual leave two weeks ahead.",
+      "baseline_supported": false
+    },
+    {
+      "id": "no_answer-13",
+      "group": "no_answer",
+      "query": "unobtainium quantum zeppelin 13",
+      "expected": [],
+      "language": "en",
+      "anchor": null,
+      "baseline_supported": true
+    },
+    {
+      "id": "lexical-14",
+      "group": "lexical",
+      "query": "shipping instructions",
+      "expected": [
+        "en-14"
+      ],
+      "language": "en",
+      "anchor": "Leave outgoing parcels at the loading dock.",
+      "baseline_supported": true
+    },
+    {
+      "id": "identifier-14",
+      "group": "identifier",
+      "query": "TS-9014",
+      "expected": [
+        "en-14"
+      ],
+      "language": "en",
+      "anchor": "TS-9014",
+      "baseline_supported": true
+    },
+    {
+      "id": "chinese_short-14",
+      "group": "chinese_short",
+      "query": "快递",
+      "expected": [
+        "zh-14"
+      ],
+      "language": "zh",
+      "anchor": "将待寄包裹放在装卸区。",
+      "baseline_supported": true
+    },
+    {
+      "id": "cross_language-14",
+      "group": "cross_language",
+      "query": "快递",
+      "expected": [
+        "en-14"
+      ],
+      "language": "zh",
+      "anchor": "Leave outgoing parcels at the loading dock.",
+      "baseline_supported": true
+    },
+    {
+      "id": "long_tail-14",
+      "group": "long_tail",
+      "query": "TAIL-0014",
+      "expected": [
+        "tail-14"
+      ],
+      "language": "en",
+      "anchor": "TAIL-0014",
+      "baseline_supported": false
+    },
+    {
+      "id": "scanned-14",
+      "group": "scanned",
+      "query": "SCAN-0014",
+      "expected": [
+        "scan-14"
+      ],
+      "language": "zh",
+      "anchor": "SCAN-0014",
+      "baseline_supported": false
+    },
+    {
+      "id": "media_timestamp-14",
+      "group": "media_timestamp",
+      "query": "shipping",
+      "expected": [
+        "media-14"
+      ],
+      "language": "en",
+      "anchor": "Leave outgoing parcels at the loading dock.",
+      "baseline_supported": false
+    },
+    {
+      "id": "no_answer-14",
+      "group": "no_answer",
+      "query": "unobtainium quantum zeppelin 14",
+      "expected": [],
+      "language": "en",
+      "anchor": null,
+      "baseline_supported": true
+    },
+    {
+      "id": "lexical-15",
+      "group": "lexical",
+      "query": "printing instructions",
+      "expected": [
+        "en-15"
+      ],
+      "language": "en",
+      "anchor": "Use double sided printing for draft documents.",
+      "baseline_supported": true
+    },
+    {
+      "id": "identifier-15",
+      "group": "identifier",
+      "query": "TS-9015",
+      "expected": [
+        "en-15"
+      ],
+      "language": "en",
+      "anchor": "TS-9015",
+      "baseline_supported": true
+    },
+    {
+      "id": "chinese_short-15",
+      "group": "chinese_short",
+      "query": "打印",
+      "expected": [
+        "zh-15"
+      ],
+      "language": "zh",
+      "anchor": "草稿文件请使用双面打印。",
+      "baseline_supported": true
+    },
+    {
+      "id": "cross_language-15",
+      "group": "cross_language",
+      "query": "printing instructions",
+      "expected": [
+        "zh-15"
+      ],
+      "language": "en",
+      "anchor": "草稿文件请使用双面打印。",
+      "baseline_supported": true
+    },
+    {
+      "id": "long_tail-15",
+      "group": "long_tail",
+      "query": "TAIL-0015",
+      "expected": [
+        "tail-15"
+      ],
+      "language": "en",
+      "anchor": "TAIL-0015",
+      "baseline_supported": false
+    },
+    {
+      "id": "scanned-15",
+      "group": "scanned",
+      "query": "SCAN-0015",
+      "expected": [
+        "scan-15"
+      ],
+      "language": "zh",
+      "anchor": "SCAN-0015",
+      "baseline_supported": false
+    },
+    {
+      "id": "media_timestamp-15",
+      "group": "media_timestamp",
+      "query": "printing",
+      "expected": [
+        "media-15"
+      ],
+      "language": "en",
+      "anchor": "Use double sided printing for draft documents.",
+      "baseline_supported": false
+    },
+    {
+      "id": "no_answer-15",
+      "group": "no_answer",
+      "query": "unobtainium quantum zeppelin 15",
+      "expected": [],
+      "language": "en",
+      "anchor": null,
+      "baseline_supported": true
+    },
+    {
+      "id": "lexical-16",
+      "group": "lexical",
+      "query": "wifi instructions",
+      "expected": [
+        "en-16"
+      ],
+      "language": "en",
+      "anchor": "Visitors obtain a temporary network pass at reception.",
+      "baseline_supported": true
+    },
+    {
+      "id": "identifier-16",
+      "group": "identifier",
+      "query": "TS-9016",
+      "expected": [
+        "en-16"
+      ],
+      "language": "en",
+      "anchor": "TS-9016",
+      "baseline_supported": true
+    },
+    {
+      "id": "chinese_short-16",
+      "group": "chinese_short",
+      "query": "无线网络",
+      "expected": [
+        "zh-16"
+      ],
+      "language": "zh",
+      "anchor": "访客可在前台领取临时上网凭证。",
+      "baseline_supported": true
+    },
+    {
+      "id": "cross_language-16",
+      "group": "cross_language",
+      "query": "无线网络",
+      "expected": [
+        "en-16"
+      ],
+      "language": "zh",
+      "anchor": "Visitors obtain a temporary network pass at reception.",
+      "baseline_supported": true
+    },
+    {
+      "id": "long_tail-16",
+      "group": "long_tail",
+      "query": "TAIL-0016",
+      "expected": [
+        "tail-16"
+      ],
+      "language": "en",
+      "anchor": "TAIL-0016",
+      "baseline_supported": false
+    },
+    {
+      "id": "scanned-16",
+      "group": "scanned",
+      "query": "SCAN-0016",
+      "expected": [
+        "scan-16"
+      ],
+      "language": "zh",
+      "anchor": "SCAN-0016",
+      "baseline_supported": false
+    },
+    {
+      "id": "media_timestamp-16",
+      "group": "media_timestamp",
+      "query": "wifi",
+      "expected": [
+        "media-16"
+      ],
+      "language": "en",
+      "anchor": "Visitors obtain a temporary network pass at reception.",
+      "baseline_supported": false
+    },
+    {
+      "id": "no_answer-16",
+      "group": "no_answer",
+      "query": "unobtainium quantum zeppelin 16",
+      "expected": [],
+      "language": "en",
+      "anchor": null,
+      "baseline_supported": true
+    },
+    {
+      "id": "lexical-17",
+      "group": "lexical",
+      "query": "maintenance instructions",
+      "expected": [
+        "en-17"
+      ],
+      "language": "en",
+      "anchor": "Report broken equipment to the facilities desk.",
+      "baseline_supported": true
+    },
+    {
+      "id": "identifier-17",
+      "group": "identifier",
+      "query": "TS-9017",
+      "expected": [
+        "en-17"
+      ],
+      "language": "en",
+      "anchor": "TS-9017",
+      "baseline_supported": true
+    },
+    {
+      "id": "chinese_short-17",
+      "group": "chinese_short",
+      "query": "维修",
+      "expected": [
+        "zh-17"
+      ],
+      "language": "zh",
+      "anchor": "设备损坏请向后勤服务台报修。",
+      "baseline_supported": true
+    },
+    {
+      "id": "cross_language-17",
+      "group": "cross_language",
+      "query": "maintenance instructions",
+      "expected": [
+        "zh-17"
+      ],
+      "language": "en",
+      "anchor": "设备损坏请向后勤服务台报修。",
+      "baseline_supported": true
+    },
+    {
+      "id": "long_tail-17",
+      "group": "long_tail",
+      "query": "TAIL-0017",
+      "expected": [
+        "tail-17"
+      ],
+      "language": "en",
+      "anchor": "TAIL-0017",
+      "baseline_supported": false
+    },
+    {
+      "id": "scanned-17",
+      "group": "scanned",
+      "query": "SCAN-0017",
+      "expected": [
+        "scan-17"
+      ],
+      "language": "zh",
+      "anchor": "SCAN-0017",
+      "baseline_supported": false
+    },
+    {
+      "id": "media_timestamp-17",
+      "group": "media_timestamp",
+      "query": "maintenance",
+      "expected": [
+        "media-17"
+      ],
+      "language": "en",
+      "anchor": "Report broken equipment to the facilities desk.",
+      "baseline_supported": false
+    },
+    {
+      "id": "no_answer-17",
+      "group": "no_answer",
+      "query": "unobtainium quantum zeppelin 17",
+      "expected": [],
+      "language": "en",
+      "anchor": null,
+      "baseline_supported": true
+    },
+    {
+      "id": "lexical-18",
+      "group": "lexical",
+      "query": "parking instructions",
+      "expected": [
+        "en-18"
+      ],
+      "language": "en",
+      "anchor": "Register the vehicle plate before entering the garage.",
+      "baseline_supported": true
+    },
+    {
+      "id": "identifier-18",
+      "group": "identifier",
+      "query": "TS-9018",
+      "expected": [
+        "en-18"
+      ],
+      "language": "en",
+      "anchor": "TS-9018",
+      "baseline_supported": true
+    },
+    {
+      "id": "chinese_short-18",
+      "group": "chinese_short",
+      "query": "停车",
+      "expected": [
+        "zh-18"
+      ],
+      "language": "zh",
+      "anchor": "进入车库前请登记车牌。",
+      "baseline_supported": true
+    },
+    {
+      "id": "cross_language-18",
+      "group": "cross_language",
+      "query": "停车",
+      "expected": [
+        "en-18"
+      ],
+      "language": "zh",
+      "anchor": "Register the vehicle plate before entering the garage.",
+      "baseline_supported": true
+    },
+    {
+      "id": "long_tail-18",
+      "group": "long_tail",
+      "query": "TAIL-0018",
+      "expected": [
+        "tail-18"
+      ],
+      "language": "en",
+      "anchor": "TAIL-0018",
+      "baseline_supported": false
+    },
+    {
+      "id": "scanned-18",
+      "group": "scanned",
+      "query": "SCAN-0018",
+      "expected": [
+        "scan-18"
+      ],
+      "language": "zh",
+      "anchor": "SCAN-0018",
+      "baseline_supported": false
+    },
+    {
+      "id": "media_timestamp-18",
+      "group": "media_timestamp",
+      "query": "parking",
+      "expected": [
+        "media-18"
+      ],
+      "language": "en",
+      "anchor": "Register the vehicle plate before entering the garage.",
+      "baseline_supported": false
+    },
+    {
+      "id": "no_answer-18",
+      "group": "no_answer",
+      "query": "unobtainium quantum zeppelin 18",
+      "expected": [],
+      "language": "en",
+      "anchor": null,
+      "baseline_supported": true
+    },
+    {
+      "id": "lexical-19",
+      "group": "lexical",
+      "query": "training instructions",
+      "expected": [
+        "en-19"
+      ],
+      "language": "en",
+      "anchor": "Complete the safety course before laboratory access.",
+      "baseline_supported": true
+    },
+    {
+      "id": "identifier-19",
+      "group": "identifier",
+      "query": "TS-9019",
+      "expected": [
+        "en-19"
+      ],
+      "language": "en",
+      "anchor": "TS-9019",
+      "baseline_supported": true
+    },
+    {
+      "id": "chinese_short-19",
+      "group": "chinese_short",
+      "query": "培训",
+      "expected": [
+        "zh-19"
+      ],
+      "language": "zh",
+      "anchor": "进入实验室前须完成安全课程。",
+      "baseline_supported": true
+    },
+    {
+      "id": "cross_language-19",
+      "group": "cross_language",
+      "query": "training instructions",
+      "expected": [
+        "zh-19"
+      ],
+      "language": "en",
+      "anchor": "进入实验室前须完成安全课程。",
+      "baseline_supported": true
+    },
+    {
+      "id": "long_tail-19",
+      "group": "long_tail",
+      "query": "TAIL-0019",
+      "expected": [
+        "tail-19"
+      ],
+      "language": "en",
+      "anchor": "TAIL-0019",
+      "baseline_supported": false
+    },
+    {
+      "id": "scanned-19",
+      "group": "scanned",
+      "query": "SCAN-0019",
+      "expected": [
+        "scan-19"
+      ],
+      "language": "zh",
+      "anchor": "SCAN-0019",
+      "baseline_supported": false
+    },
+    {
+      "id": "media_timestamp-19",
+      "group": "media_timestamp",
+      "query": "training",
+      "expected": [
+        "media-19"
+      ],
+      "language": "en",
+      "anchor": "Complete the safety course before laboratory access.",
+      "baseline_supported": false
+    },
+    {
+      "id": "no_answer-19",
+      "group": "no_answer",
+      "query": "unobtainium quantum zeppelin 19",
+      "expected": [],
+      "language": "en",
+      "anchor": null,
+      "baseline_supported": true
+    },
+    {
+      "id": "lexical-20",
+      "group": "lexical",
+      "query": "coffee instructions",
+      "expected": [
+        "en-20"
+      ],
+      "language": "en",
+      "anchor": "Refill beans in the kitchen machine every morning.",
+      "baseline_supported": true
+    },
+    {
+      "id": "identifier-20",
+      "group": "identifier",
+      "query": "TS-9020",
+      "expected": [
+        "en-20"
+      ],
+      "language": "en",
+      "anchor": "TS-9020",
+      "baseline_supported": true
+    },
+    {
+      "id": "chinese_short-20",
+      "group": "chinese_short",
+      "query": "咖啡",
+      "expected": [
+        "zh-20"
+      ],
+      "language": "zh",
+      "anchor": "每天早上为厨房咖啡机补充咖啡豆。",
+      "baseline_supported": true
+    },
+    {
+      "id": "cross_language-20",
+      "group": "cross_language",
+      "query": "咖啡",
+      "expected": [
+        "en-20"
+      ],
+      "language": "zh",
+      "anchor": "Refill beans in the kitchen machine every morning.",
+      "baseline_supported": true
+    },
+    {
+      "id": "long_tail-20",
+      "group": "long_tail",
+      "query": "TAIL-0020",
+      "expected": [
+        "tail-20"
+      ],
+      "language": "en",
+      "anchor": "TAIL-0020",
+      "baseline_supported": false
+    },
+    {
+      "id": "scanned-20",
+      "group": "scanned",
+      "query": "SCAN-0020",
+      "expected": [
+        "scan-20"
+      ],
+      "language": "zh",
+      "anchor": "SCAN-0020",
+      "baseline_supported": false
+    },
+    {
+      "id": "media_timestamp-20",
+      "group": "media_timestamp",
+      "query": "coffee",
+      "expected": [
+        "media-20"
+      ],
+      "language": "en",
+      "anchor": "Refill beans in the kitchen machine every morning.",
+      "baseline_supported": false
+    },
+    {
+      "id": "no_answer-20",
+      "group": "no_answer",
+      "query": "unobtainium quantum zeppelin 20",
+      "expected": [],
+      "language": "en",
+      "anchor": null,
+      "baseline_supported": true
+    },
+    {
+      "id": "lexical-21",
+      "group": "lexical",
+      "query": "conference instructions",
+      "expected": [
+        "en-21"
+      ],
+      "language": "en",
+      "anchor": "Show the badge at the exhibition entrance.",
+      "baseline_supported": true
+    },
+    {
+      "id": "identifier-21",
+      "group": "identifier",
+      "query": "TS-9021",
+      "expected": [
+        "en-21"
+      ],
+      "language": "en",
+      "anchor": "TS-9021",
+      "baseline_supported": true
+    },
+    {
+      "id": "chinese_short-21",
+      "group": "chinese_short",
+      "query": "会展",
+      "expected": [
+        "zh-21"
+      ],
+      "language": "zh",
+      "anchor": "在展览入口出示参会证件。",
+      "baseline_supported": true
+    },
+    {
+      "id": "cross_language-21",
+      "group": "cross_language",
+      "query": "conference instructions",
+      "expected": [
+        "zh-21"
+      ],
+      "language": "en",
+      "anchor": "在展览入口出示参会证件。",
+      "baseline_supported": true
+    },
+    {
+      "id": "long_tail-21",
+      "group": "long_tail",
+      "query": "TAIL-0021",
+      "expected": [
+        "tail-21"
+      ],
+      "language": "en",
+      "anchor": "TAIL-0021",
+      "baseline_supported": false
+    },
+    {
+      "id": "scanned-21",
+      "group": "scanned",
+      "query": "SCAN-0021",
+      "expected": [
+        "scan-21"
+      ],
+      "language": "zh",
+      "anchor": "SCAN-0021",
+      "baseline_supported": false
+    },
+    {
+      "id": "media_timestamp-21",
+      "group": "media_timestamp",
+      "query": "conference",
+      "expected": [
+        "media-21"
+      ],
+      "language": "en",
+      "anchor": "Show the badge at the exhibition entrance.",
+      "baseline_supported": false
+    },
+    {
+      "id": "no_answer-21",
+      "group": "no_answer",
+      "query": "unobtainium quantum zeppelin 21",
+      "expected": [],
+      "language": "en",
+      "anchor": null,
+      "baseline_supported": true
+    },
+    {
+      "id": "lexical-22",
+      "group": "lexical",
+      "query": "invoice instructions",
+      "expected": [
+        "en-22"
+      ],
+      "language": "en",
+      "anchor": "Include the purchase order when requesting an invoice.",
+      "baseline_supported": true
+    },
+    {
+      "id": "identifier-22",
+      "group": "identifier",
+      "query": "TS-9022",
+      "expected": [
+        "en-22"
+      ],
+      "language": "en",
+      "anchor": "TS-9022",
+      "baseline_supported": true
+    },
+    {
+      "id": "chinese_short-22",
+      "group": "chinese_short",
+      "query": "开票",
+      "expected": [
+        "zh-22"
+      ],
+      "language": "zh",
+      "anchor": "申请开票时请附上采购订单。",
+      "baseline_supported": true
+    },
+    {
+      "id": "cross_language-22",
+      "group": "cross_language",
+      "query": "开票",
+      "expected": [
+        "en-22"
+      ],
+      "language": "zh",
+      "anchor": "Include the purchase order when requesting an invoice.",
+      "baseline_supported": true
+    },
+    {
+      "id": "long_tail-22",
+      "group": "long_tail",
+      "query": "TAIL-0022",
+      "expected": [
+        "tail-22"
+      ],
+      "language": "en",
+      "anchor": "TAIL-0022",
+      "baseline_supported": false
+    },
+    {
+      "id": "scanned-22",
+      "group": "scanned",
+      "query": "SCAN-0022",
+      "expected": [
+        "scan-22"
+      ],
+      "language": "zh",
+      "anchor": "SCAN-0022",
+      "baseline_supported": false
+    },
+    {
+      "id": "media_timestamp-22",
+      "group": "media_timestamp",
+      "query": "invoice",
+      "expected": [
+        "media-22"
+      ],
+      "language": "en",
+      "anchor": "Include the purchase order when requesting an invoice.",
+      "baseline_supported": false
+    },
+    {
+      "id": "no_answer-22",
+      "group": "no_answer",
+      "query": "unobtainium quantum zeppelin 22",
+      "expected": [],
+      "language": "en",
+      "anchor": null,
+      "baseline_supported": true
+    },
+    {
+      "id": "lexical-23",
+      "group": "lexical",
+      "query": "warehouse instructions",
+      "expected": [
+        "en-23"
+      ],
+      "language": "en",
+      "anchor": "Scan the barcode before moving inventory.",
+      "baseline_supported": true
+    },
+    {
+      "id": "identifier-23",
+      "group": "identifier",
+      "query": "TS-9023",
+      "expected": [
+        "en-23"
+      ],
+      "language": "en",
+      "anchor": "TS-9023",
+      "baseline_supported": true
+    },
+    {
+      "id": "chinese_short-23",
+      "group": "chinese_short",
+      "query": "仓库",
+      "expected": [
+        "zh-23"
+      ],
+      "language": "zh",
+      "anchor": "移动库存前请扫描条码。",
+      "baseline_supported": true
+    },
+    {
+      "id": "cross_language-23",
+      "group": "cross_language",
+      "query": "warehouse instructions",
+      "expected": [
+        "zh-23"
+      ],
+      "language": "en",
+      "anchor": "移动库存前请扫描条码。",
+      "baseline_supported": true
+    },
+    {
+      "id": "long_tail-23",
+      "group": "long_tail",
+      "query": "TAIL-0023",
+      "expected": [
+        "tail-23"
+      ],
+      "language": "en",
+      "anchor": "TAIL-0023",
+      "baseline_supported": false
+    },
+    {
+      "id": "scanned-23",
+      "group": "scanned",
+      "query": "SCAN-0023",
+      "expected": [
+        "scan-23"
+      ],
+      "language": "zh",
+      "anchor": "SCAN-0023",
+      "baseline_supported": false
+    },
+    {
+      "id": "media_timestamp-23",
+      "group": "media_timestamp",
+      "query": "warehouse",
+      "expected": [
+        "media-23"
+      ],
+      "language": "en",
+      "anchor": "Scan the barcode before moving inventory.",
+      "baseline_supported": false
+    },
+    {
+      "id": "no_answer-23",
+      "group": "no_answer",
+      "query": "unobtainium quantum zeppelin 23",
+      "expected": [],
+      "language": "en",
+      "anchor": null,
+      "baseline_supported": true
+    },
+    {
+      "id": "lexical-24",
+      "group": "lexical",
+      "query": "contract instructions",
+      "expected": [
+        "en-24"
+      ],
+      "language": "en",
+      "anchor": "Legal counsel reviews every supplier agreement.",
+      "baseline_supported": true
+    },
+    {
+      "id": "identifier-24",
+      "group": "identifier",
+      "query": "TS-9024",
+      "expected": [
+        "en-24"
+      ],
+      "language": "en",
+      "anchor": "TS-9024",
+      "baseline_supported": true
+    },
+    {
+      "id": "chinese_short-24",
+      "group": "chinese_short",
+      "query": "合同",
+      "expected": [
+        "zh-24"
+      ],
+      "language": "zh",
+      "anchor": "每份供应商协议均须经法务审核。",
+      "baseline_supported": true
+    },
+    {
+      "id": "cross_language-24",
+      "group": "cross_language",
+      "query": "合同",
+      "expected": [
+        "en-24"
+      ],
+      "language": "zh",
+      "anchor": "Legal counsel reviews every supplier agreement.",
+      "baseline_supported": true
+    },
+    {
+      "id": "long_tail-24",
+      "group": "long_tail",
+      "query": "TAIL-0024",
+      "expected": [
+        "tail-24"
+      ],
+      "language": "en",
+      "anchor": "TAIL-0024",
+      "baseline_supported": false
+    },
+    {
+      "id": "scanned-24",
+      "group": "scanned",
+      "query": "SCAN-0024",
+      "expected": [
+        "scan-24"
+      ],
+      "language": "zh",
+      "anchor": "SCAN-0024",
+      "baseline_supported": false
+    },
+    {
+      "id": "media_timestamp-24",
+      "group": "media_timestamp",
+      "query": "contract",
+      "expected": [
+        "media-24"
+      ],
+      "language": "en",
+      "anchor": "Legal counsel reviews every supplier agreement.",
+      "baseline_supported": false
+    },
+    {
+      "id": "no_answer-24",
+      "group": "no_answer",
+      "query": "unobtainium quantum zeppelin 24",
+      "expected": [],
+      "language": "en",
+      "anchor": null,
+      "baseline_supported": true
+    }
+  ]
+}

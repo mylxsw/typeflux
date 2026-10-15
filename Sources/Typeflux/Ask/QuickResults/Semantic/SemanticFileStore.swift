@@ -21,8 +21,11 @@ final class SemanticFileStore: @unchecked Sendable {
 
     private let lock = NSLock()
     private var database: OpaquePointer?
+    private var lexicalReader: SemanticLexicalReader?
     let url: URL
 
+    // Keep schema migration and reader startup in one initialization failure boundary.
+    // swiftlint:disable:next function_body_length
     init(url: URL, profile: String = SemanticFilePolicy.profile) throws {
         self.url = url
         try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true,
@@ -73,6 +76,7 @@ final class SemanticFileStore: @unchecked Sendable {
                     try? self.sql("ROLLBACK"); throw error
                 }
             }
+            lexicalReader = try SemanticLexicalReader(url: url)
         } catch { sqlite3_close(self.database); self.database = nil; throw error }
     }
 
@@ -174,7 +178,10 @@ final class SemanticFileStore: @unchecked Sendable {
     func search(vector: [Float], text: String, query: AskSearchQuery, type: AskFileType,
                 scope: AskFileScope, limit: Int, cancelled: () -> Bool) throws -> [AskFileHit] {
         guard limit > 0, Self.valid(vector) else { return [] }
+        let waiting = ProcessInfo.processInfo.systemUptime
         return try self.lock.withLock {
+            SemanticSearchTrace.current?.measure("vector-lock-wait",
+                milliseconds: (ProcessInfo.processInfo.systemUptime - waiting) * 1000)
             let terms = SemanticFilePolicy.searchTerms(text)
                 .prefix(64)
             var lexical = Set<Int64>()
@@ -247,6 +254,14 @@ final class SemanticFileStore: @unchecked Sendable {
                 return hit
             }
         }
+    }
+
+    // swiftlint:disable:next function_parameter_count
+    func lexicalSearch(text: String, query: AskSearchQuery, type: AskFileType, scope: AskFileScope,
+                       limit: Int, cancelled: () -> Bool) throws -> [AskFileHit] {
+        guard let lexicalReader else { throw Failure.database }
+        return try lexicalReader.search(text: text, query: query, type: type, scope: scope,
+                                        limit: limit, cancelled: cancelled)
     }
 
     static func valid(_ vector: [Float]) -> Bool {
@@ -384,6 +399,7 @@ extension SemanticFileStore {
 
     func destroy() throws {
         try lock.withLock {
+            lexicalReader?.close()
             guard sqlite3_close(database) == SQLITE_OK else { throw Failure.database }
             database = nil
             try Self.removeFiles(at: url)

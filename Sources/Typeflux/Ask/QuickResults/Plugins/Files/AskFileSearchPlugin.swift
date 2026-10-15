@@ -3,7 +3,7 @@ import Foundation
 /// File mode: `f` and a name lists every matching file and folder, best first,
 /// with nothing typed the most recently changed ones. ⇥ narrows to a type
 /// (folders, documents, pictures, PDFs…). Return opens, ⌘R shows in Finder,
-/// ⇧⌘C copies the path, ⌘Y previews. Optional local content search publishes after names.
+/// ⇧⌘C copies the path, ⌘Y previews. Optional local content search publishes independently.
 struct AskFileSearchPlugin: AskLauncherPlugin {
     static let id = "files"
     static let typeOption = "type"
@@ -44,15 +44,25 @@ struct AskFileSearchPlugin: AskLauncherPlugin {
                              values: [Self.typeOption: type.rawValue], debounce: .milliseconds(16))
     }
 
+    // Keep provider cancellation and final action assembly in the same operation.
+    // swiftlint:disable:next function_body_length
     func run(_ request: AskPluginRequest, plan: AskPluginPlan,
              progress: @escaping AskPluginProgress) async throws -> AskPluginOutput {
         guard let index = await index() else {
             return output([Self.notice(L("ask.plugin.files.off"), symbol: "exclamationmark.circle")], note: nil)
         }
-        let settings = settings()
-        let type = Self.type(of: request.options) ?? .all
+        let settings = settings(), type = Self.type(of: request.options) ?? .all
         let text = request.origin == .selection ? request.text.replacingOccurrences(of: "\n", with: " ") : request.text
         let query = AskSearchQuery(text)
+        let candidate = await semantic()
+        let service: (any SemanticFileSearching)?
+        if let candidate, await candidate.isEnabled, SemanticFilePolicy.query(text, type: type) != nil {
+            service = candidate
+        } else { service = nil }
+        let publication = await ContentPublication(progress: progress, render: { pendingOutput($0) },
+                                                   limit: settings.limit)
+        async let content = searchContent(service, text: text, type: type, limit: settings.limit,
+                                          publication: publication)
         let token = AskSearchCancellation()
         let options = AskFileSearchOptions(limit: settings.limit, fuzzy: settings.fuzzy, type: type, cancellation: token)
         let hits: [AskFileHit] = try await withTaskCancellationHandler {
@@ -66,13 +76,10 @@ struct AskFileSearchPlugin: AskLauncherPlugin {
             }
         } onCancel: { token.cancel() }
         try Task.checkCancellation()
-        var combined = hits
-        if let service = await semantic(), await service.isEnabled, SemanticFilePolicy.query(text, type: type) != nil {
-            await progress(pendingOutput(hits))
-            let content = await service.search(text, type: type, limit: settings.limit)
-            try Task.checkCancellation()
-            combined = SemanticFilePolicy.merge(hits, content, limit: settings.limit)
-        }
+        if service != nil { await publication.updateNames(hits) }
+        let contentHits = await content
+        try Task.checkCancellation()
+        let combined = SemanticFilePolicy.merge(hits, contentHits, limit: settings.limit)
         var items = combined.map(Self.item)
         if items.isEmpty {
             items.append(Self.notice(L(query.isEmpty ? "ask.plugin.files.none.recent" : "ask.plugin.files.none"),
@@ -94,6 +101,32 @@ struct AskFileSearchPlugin: AskLauncherPlugin {
             note = [note, summary].compactMap { $0 }.joined(separator: " · ")
         }
         return output(items, note: note)
+    }
+
+    private func searchContent(_ service: (any SemanticFileSearching)?, text: String, type: AskFileType, limit: Int,
+                               publication: ContentPublication) async -> [AskFileHit] {
+        guard let service else { return [] }
+        let hits = await service.search(text, type: type, limit: limit) { hits in publication.updateContent(hits) }
+        guard !Task.isCancelled else { return [] }
+        await publication.updateContent(hits)
+        return hits
+    }
+
+    /// Both providers publish independently while all staging stays on the main actor.
+    @MainActor private final class ContentPublication {
+        private var names: [AskFileHit] = [], content: [AskFileHit] = []
+        private let progress: AskPluginProgress
+        private let render: @MainActor ([AskFileHit]) -> AskPluginOutput
+        private let limit: Int
+        init(progress: @escaping AskPluginProgress, render: @escaping @MainActor ([AskFileHit]) -> AskPluginOutput, limit: Int) {
+            self.progress = progress; self.render = render; self.limit = limit
+        }
+        func updateNames(_ hits: [AskFileHit]) { names = hits; publish() }
+        func updateContent(_ hits: [AskFileHit]) { content = hits; publish() }
+        private func publish() {
+            guard !Task.isCancelled else { return }
+            progress(render(SemanticFilePolicy.merge(names, content, limit: limit)))
+        }
     }
 
     func nextOptions(after plan: AskPluginPlan, request: AskPluginRequest, step: Int) -> [String: String]? {

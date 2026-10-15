@@ -1,0 +1,216 @@
+{
+  "definition": "Nearest-rank milliseconds. Timer gap percentiles are distributions of each query's largest polling/accessibility gap, not frame intervals.",
+  "groups": {
+    "file-mode/fts-real-index": {
+      "input_to_publish_ms": {
+        "n": 100,
+        "p50": 31.168125,
+        "p95": 33.447167,
+        "p99": 52.209792,
+        "max": 55.2105
+      },
+      "input_to_draw_ms": {
+        "n": 100,
+        "p50": 38.08975,
+        "p95": 42.069542,
+        "p99": 64.07125,
+        "max": 64.953792
+      },
+      "complete_ms": {
+        "n": 100,
+        "p50": 207.675875,
+        "p95": 222.977584,
+        "p99": 299.04025,
+        "max": 316.274834
+      },
+      "main_actor_max_timer_gap_ms": {
+        "n": 100,
+        "p50": 13.115375,
+        "p95": 17.062084,
+        "p99": 22.0465,
+        "max": 31.145708
+      },
+      "remaining_active_batch_ms": {
+        "n": 100,
+        "p50": 231.18624999187887,
+        "p95": 241.6223749751225,
+        "p99": 272.4335417151451,
+        "max": 280.4102916852571
+      }
+    },
+    "file-mode/semantic-real-index": {
+      "input_to_publish_ms": {
+        "n": 100,
+        "p50": 231.893,
+        "p95": 321.334209,
+        "p99": 342.535417,
+        "max": 414.067125
+      },
+      "input_to_draw_ms": {
+        "n": 100,
+        "p50": 256.635417,
+        "p95": 349.4145,
+        "p99": 378.510208,
+        "max": 435.423291
+      },
+      "complete_ms": {
+        "n": 100,
+        "p50": 262.273458,
+        "p95": 361.6055,
+        "p99": 403.427292,
+        "max": 447.168833
+      },
+      "main_actor_max_timer_gap_ms": {
+        "n": 100,
+        "p50": 17.577416,
+        "p95": 27.794709,
+        "p99": 37.423375,
+        "max": 42.043417
+      },
+      "remaining_active_batch_ms": {
+        "n": 100,
+        "p50": 235.9195000026375,
+        "p95": 293.53274998720735,
+        "p99": 299.35816663783044,
+        "max": 323.5222499934025
+      }
+    },
+    "mixed/fts-real-index": {
+      "input_to_publish_ms": {
+        "n": 100,
+        "p50": 75.238209,
+        "p95": 77.764291,
+        "p99": 81.095959,
+        "max": 88.013125
+      },
+      "input_to_draw_ms": {
+        "n": 100,
+        "p50": 90.608084,
+        "p95": 93.205875,
+        "p99": 96.237,
+        "max": 116.033167
+      },
+      "complete_ms": {
+        "n": 100,
+        "p50": 246.036042,
+        "p95": 254.618084,
+        "p99": 255.216666,
+        "max": 256.320625
+      },
+      "main_actor_max_timer_gap_ms": {
+        "n": 100,
+        "p50": 58.249834,
+        "p95": 60.682667,
+        "p99": 62.137792,
+        "max": 63.035417
+      },
+      "remaining_active_batch_ms": {
+        "n": 100,
+        "p50": 151.68875001836568,
+        "p95": 272.69275003345683,
+        "p99": 281.4705832861364,
+        "max": 282.1732083102688
+      }
+    },
+    "mixed/semantic-real-index": {
+      "input_to_publish_ms": {
+        "n": 100,
+        "p50": 257.049209,
+        "p95": 264.609583,
+        "p99": 266.595875,
+        "max": 267.793583
+      },
+      "input_to_draw_ms": {
+        "n": 100,
+        "p50": 281.465084,
+        "p95": 289.625375,
+        "p99": 293.29625,
+        "max": 300.465042
+      },
+      "complete_ms": {
+        "n": 100,
+        "p50": 281.482209,
+        "p95": 289.646666,
+        "p99": 293.318375,
+        "max": 300.486458
+      },
+      "main_actor_max_timer_gap_ms": {
+        "n": 100,
+        "p50": 59.15125,
+        "p95": 61.206042,
+        "p99": 62.028416,
+        "max": 62.159584
+      },
+      "remaining_active_batch_ms": {
+        "n": 100,
+        "p50": 143.09825003147125,
+        "p95": 259.22041665762663,
+        "p99": 262.29437498841435,
+        "max": 263.2869999506511
+      }
+    }
+  },
+  "resources": {
+    "wall_seconds": 837.2663450840046,
+    "peak_rss_by_name_bytes": {
+      "Typeflux": 85557248,
+      "TypefluxSemanticHelper": 1674117120,
+      "sherpa-onnx-offline": 798261248
+    },
+    "max_simultaneous_sampled_rss_bytes": 2024046592,
+    "app_getrusage_peak_bytes": 701693952,
+    "definition": "ps resident pages, bytes; descendant validation processes only. Shared pages are double counted in sums. Compiler/build processes excluded."
+  },
+  "media": {
+    "build": "Release",
+    "change_to_publish_ms": 5274.849708366673,
+    "document_change_uptime": 405252.4143426667,
+    "document_publish_uptime": 405257.68919237505,
+    "fts_during_transcription_ms": 219.0057499683462,
+    "model_sha256": "2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135",
+    "new_document_before_media_resume": true,
+    "projector_sha256": "c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f",
+    "scope": "Real 65-second synthetic speech WAV, production extraction/helper/SQLite/FSEvents, pinned media projector, real SenseVoice CPU transcription. Foreground busy signal is driven at the service boundary; workflow callback wiring has a separate regression. First completed callback has an explicit test barrier; it is not a media latency benchmark.",
+    "segment_times": [
+      0,
+      30,
+      60
+    ],
+    "segments": [
+      {
+        "end_uptime": 405252.41221883334,
+        "segment_time": 0,
+        "start_uptime": 405198.160594
+      },
+      {
+        "end_uptime": 405258.38491820835,
+        "segment_time": 30,
+        "start_uptime": 405257.74768470833
+      },
+      {
+        "end_uptime": 405258.9046664584,
+        "segment_time": 60,
+        "start_uptime": 405258.3859670417
+      }
+    ],
+    "transcript_nonempty": true,
+    "transcription_audio_seconds": 5.5693125,
+    "transcription_end_uptime": 405254.27748137503,
+    "transcription_start_uptime": 405253.04372250004,
+    "voice_resume_to_publish_ms": 3411.7110000224784
+  },
+  "entries": [
+    {
+      "chunks_at_end": 106016,
+      "completed_batches": 768,
+      "entry": "mixed",
+      "native_edit_and_close_cancellation": true
+    },
+    {
+      "chunks_at_end": 101598,
+      "completed_batches": 206,
+      "entry": "file-mode",
+      "native_edit_and_close_cancellation": true
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+{
+  "scope": "Final Release native synthetic two-file 100k base chunk fixture only. Not representative production scale or actual ASR/media throughput acceptance.",
+  "gates": [
+    {
+      "entry": "mixed",
+      "scenario": "fts-cache",
+      "n": 100,
+      "p95_ms": 75.581041,
+      "limit_ms": 100,
+      "fixture_pass": true
+    },
+    {
+      "entry": "mixed",
+      "scenario": "hot-new-semantic",
+      "n": 100,
+      "p95_ms": 228.249334,
+      "limit_ms": 300,
+      "fixture_pass": true
+    },
+    {
+      "entry": "mixed",
+      "scenario": "index-writer",
+      "n": 100,
+      "p95_ms": 74.186125,
+      "limit_ms": 100,
+      "fixture_pass": true
+    },
+    {
+      "entry": "file-mode",
+      "scenario": "fts-cache",
+      "n": 100,
+      "p95_ms": 30.369292,
+      "limit_ms": 100,
+      "fixture_pass": true
+    },
+    {
+      "entry": "file-mode",
+      "scenario": "hot-new-semantic",
+      "n": 100,
+      "p95_ms": 208.020875,
+      "limit_ms": 300,
+      "fixture_pass": true
+    },
+    {
+      "entry": "file-mode",
+      "scenario": "index-writer",
+      "n": 100,
+      "p95_ms": 30.179875,
+      "limit_ms": 100,
+      "fixture_pass": true
+    }
+  ]
+}

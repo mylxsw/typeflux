@@ -1,0 +1,38 @@
+{
+  "base": "69aa4446bfa705486965d8411fdb17b4cfe5d162",
+  "baseline": [
+    [
+      "AskFileReader.swift",
+      "cyclomatic_complexity",
+      "func stream(_ request: AskFileReadRequest, isCancelled: () -> Bool = { false },"
+    ],
+    [
+      "AskFileReader.swift",
+      "line_length",
+      "try read(AskFileReadRequest(operation: .resolve, path: path, blocked: blocked), isCancelled: { false }).path ?? path"
+    ],
+    [
+      "AskFileReader.swift",
+      "line_length",
+      "let count = Darwin.write(input.fileDescriptor, bytes.baseAddress!.advanced(by: offset), bytes.count - offset)"
+    ]
+  ],
+  "current": [
+    [
+      "AskFileReader.swift",
+      "cyclomatic_complexity",
+      "func stream(_ request: AskFileReadRequest, isCancelled: () -> Bool = { false },"
+    ],
+    [
+      "AskFileReader.swift",
+      "line_length",
+      "try read(AskFileReadRequest(operation: .resolve, path: path, blocked: blocked), isCancelled: { false }).path ?? path"
+    ],
+    [
+      "AskFileReader.swift",
+      "line_length",
+      "let count = Darwin.write(input.fileDescriptor, bytes.baseAddress!.advanced(by: offset), bytes.count - offset)"
+    ]
+  ],
+  "introduced": []
+}

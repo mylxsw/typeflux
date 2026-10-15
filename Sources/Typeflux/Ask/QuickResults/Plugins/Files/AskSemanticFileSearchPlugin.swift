@@ -38,7 +38,7 @@ struct AskSemanticFileSearchPlugin: AskLauncherPlugin {
 
     func plan(_ request: AskPluginRequest) async -> AskPluginPlan {
         AskPluginPlan(mode: request.origin == .selection ? .onSubmit : .live, title: title,
-                      debounce: .milliseconds(150))
+                      debounce: .milliseconds(16))
     }
 
     func run(_ request: AskPluginRequest, plan _: AskPluginPlan,
@@ -63,7 +63,10 @@ struct AskSemanticFileSearchPlugin: AskLauncherPlugin {
             loading: true
         )
         await progress(output([pending], request: request))
-        let hits = await service.search(text, type: .all, limit: settings().limit)
+        let hits = await service.search(text, type: .all, limit: settings().limit) { hits in
+            guard !Task.isCancelled, !hits.isEmpty else { return }
+            progress(output([pending] + hits.map(AskFileSearchPlugin.item), request: request))
+        }
         try Task.checkCancellation()
         let items = hits.isEmpty
             ? [AskFileSearchPlugin.notice(L("semantic.keyword.none"), symbol: "doc.questionmark")]

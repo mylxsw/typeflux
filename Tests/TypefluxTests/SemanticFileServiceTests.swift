@@ -152,8 +152,8 @@ struct SemanticFileServiceTests {
         service.pause(true)
         try await Self.wait { service.phase == .paused }
         #expect(service.files == 1)
-        #expect(!service.isEnabled)
-        #expect(await service.search("报销流程", type: .all, limit: 10).isEmpty)
+        #expect(service.isEnabled)
+        #expect(await service.search("报销流程", type: .all, limit: 10).map(\.path) == [reader.path])
         service.pause(false)
         try await Self.wait { service.phase == .ready }
         #expect(service.isEnabled)
@@ -224,7 +224,7 @@ struct SemanticFileServiceTests {
         overheated.cancel()
         NotificationCenter.default.post(name: ProcessInfo.thermalStateDidChangeNotification, object: ProcessInfo.processInfo)
         try await Self.wait { service.phase == .paused }
-        #expect(!service.isEnabled, "high thermal pressure still pauses content search")
+        #expect(service.isEnabled, "thermal pressure preserves lexical content search")
         fixture.settings.semanticFileSearch = .init(enabled: false)
         try await Self.wait { service.phase == .off }
         #expect(watcher.started.isEmpty)

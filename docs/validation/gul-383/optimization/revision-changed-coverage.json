@@ -1,0 +1,21 @@
+{
+  "baseline": "69aa4446bfa705486965d8411fdb17b4cfe5d162",
+  "denominator": "Added/modified executable Swift lines in Sources/Typeflux, including new files, intersected with final LLVM LCOV DA records. Tests, helper wrapper and unchanged vendor code excluded; helper reported separately.",
+  "executable": 15,
+  "covered": 15,
+  "percent": 100.0,
+  "files": {
+    "Sources/Typeflux/Ask/QuickResults/Files/AskFileReader.swift": {
+      "executable": 1,
+      "covered": 1,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticEmbeddingWorker.swift": {
+      "executable": 14,
+      "covered": 14,
+      "percent": 100.0,
+      "uncovered": []
+    }
+  }
+}

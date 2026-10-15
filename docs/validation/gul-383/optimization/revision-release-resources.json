@@ -1,0 +1,10157 @@
+{
+  "wall_seconds": 837.2663450840046,
+  "exit_code": 0,
+  "sample_period_seconds": 0.5,
+  "rss_definition": "ps resident pages, bytes; descendant validation processes only. Shared pages are double counted in sums. Compiler/build processes excluded.",
+  "samples": [
+    {
+      "seconds": 407.5829256249708,
+      "rss_bytes": {
+        "Typeflux": [
+          32768
+        ]
+      }
+    },
+    {
+      "seconds": 408.118953874975,
+      "rss_bytes": {
+        "Typeflux": [
+          32768
+        ]
+      }
+    },
+    {
+      "seconds": 408.6511089169653,
+      "rss_bytes": {
+        "Typeflux": [
+          20856832
+        ],
+        "TypefluxSemanticHelper": [
+          180224
+        ]
+      }
+    },
+    {
+      "seconds": 409.1694652920123,
+      "rss_bytes": {
+        "Typeflux": [
+          20856832
+        ],
+        "TypefluxSemanticHelper": [
+          5603328
+        ]
+      }
+    },
+    {
+      "seconds": 409.7069852919667,
+      "rss_bytes": {
+        "Typeflux": [
+          20856832
+        ],
+        "TypefluxSemanticHelper": [
+          6373376
+        ]
+      }
+    },
+    {
+      "seconds": 410.244387209008,
+      "rss_bytes": {
+        "Typeflux": [
+          20856832
+        ],
+        "TypefluxSemanticHelper": [
+          7077888
+        ]
+      }
+    },
+    {
+      "seconds": 410.7856046669767,
+      "rss_bytes": {
+        "Typeflux": [
+          20856832
+        ],
+        "TypefluxSemanticHelper": [
+          9814016
+        ]
+      }
+    },
+    {
+      "seconds": 411.3065367920208,
+      "rss_bytes": {
+        "Typeflux": [
+          20856832
+        ],
+        "TypefluxSemanticHelper": [
+          12058624
+        ]
+      }
+    },
+    {
+      "seconds": 411.85056833398994,
+      "rss_bytes": {
+        "Typeflux": [
+          20856832
+        ],
+        "TypefluxSemanticHelper": [
+          19038208
+        ]
+      }
+    },
+    {
+      "seconds": 412.3869875000091,
+      "rss_bytes": {
+        "Typeflux": [
+          20856832
+        ],
+        "TypefluxSemanticHelper": [
+          28803072
+        ]
+      }
+    },
+    {
+      "seconds": 412.9120447500027,
+      "rss_bytes": {
+        "Typeflux": [
+          20856832
+        ],
+        "TypefluxSemanticHelper": [
+          32489472
+        ]
+      }
+    },
+    {
+      "seconds": 413.4372625420219,
+      "rss_bytes": {
+        "Typeflux": [
+          20856832
+        ],
+        "TypefluxSemanticHelper": [
+          34979840
+        ]
+      }
+    },
+    {
+      "seconds": 413.97093712497735,
+      "rss_bytes": {
+        "Typeflux": [
+          20856832
+        ],
+        "TypefluxSemanticHelper": [
+          37273600
+        ]
+      }
+    },
+    {
+      "seconds": 414.50958454201464,
+      "rss_bytes": {
+        "Typeflux": [
+          20856832
+        ],
+        "TypefluxSemanticHelper": [
+          40976384
+        ]
+      }
+    },
+    {
+      "seconds": 415.0534976670169,
+      "rss_bytes": {
+        "Typeflux": [
+          20856832
+        ],
+        "TypefluxSemanticHelper": [
+          44744704
+        ]
+      }
+    },
+    {
+      "seconds": 415.5902369170217,
+      "rss_bytes": {
+        "Typeflux": [
+          20856832
+        ],
+        "TypefluxSemanticHelper": [
+          47284224
+        ]
+      }
+    },
+    {
+      "seconds": 416.13093783397926,
+      "rss_bytes": {
+        "Typeflux": [
+          20856832
+        ],
+        "TypefluxSemanticHelper": [
+          49004544
+        ]
+      }
+    },
+    {
+      "seconds": 416.6562539169681,
+      "rss_bytes": {
+        "Typeflux": [
+          20856832
+        ],
+        "TypefluxSemanticHelper": [
+          52674560
+        ]
+      }
+    },
+    {
+      "seconds": 417.1767974590184,
+      "rss_bytes": {
+        "Typeflux": [
+          20856832
+        ],
+        "TypefluxSemanticHelper": [
+          56475648
+        ]
+      }
+    },
+    {
+      "seconds": 417.7129994169809,
+      "rss_bytes": {
+        "Typeflux": [
+          20856832
+        ],
+        "TypefluxSemanticHelper": [
+          57950208
+        ]
+      }
+    },
+    {
+      "seconds": 418.25077370897634,
+      "rss_bytes": {
+        "Typeflux": [
+          20856832
+        ],
+        "TypefluxSemanticHelper": [
+          59129856
+        ]
+      }
+    },
+    {
+      "seconds": 418.7945157919894,
+      "rss_bytes": {
+        "Typeflux": [
+          20856832
+        ],
+        "TypefluxSemanticHelper": [
+          60768256
+        ]
+      }
+    },
+    {
+      "seconds": 419.3325023339712,
+      "rss_bytes": {
+        "Typeflux": [
+          20856832
+        ],
+        "TypefluxSemanticHelper": [
+          64847872
+        ]
+      }
+    },
+    {
+      "seconds": 420.26788320898777,
+      "rss_bytes": {
+        "Typeflux": [
+          20856832
+        ],
+        "TypefluxSemanticHelper": [
+          68419584
+        ]
+      }
+    },
+    {
+      "seconds": 420.7875964170089,
+      "rss_bytes": {
+        "Typeflux": [
+          20856832
+        ],
+        "TypefluxSemanticHelper": [
+          71942144
+        ]
+      }
+    },
+    {
+      "seconds": 421.3099693749682,
+      "rss_bytes": {
+        "Typeflux": [
+          20856832
+        ],
+        "TypefluxSemanticHelper": [
+          77070336
+        ]
+      }
+    },
+    {
+      "seconds": 421.833448334015,
+      "rss_bytes": {
+        "Typeflux": [
+          20856832
+        ],
+        "TypefluxSemanticHelper": [
+          126894080
+        ]
+      }
+    },
+    {
+      "seconds": 422.3515516250045,
+      "rss_bytes": {
+        "Typeflux": [
+          20856832
+        ],
+        "TypefluxSemanticHelper": [
+          501317632
+        ]
+      }
+    },
+    {
+      "seconds": 422.87094200000865,
+      "rss_bytes": {
+        "Typeflux": [
+          48185344
+        ]
+      }
+    },
+    {
+      "seconds": 423.3907553749741,
+      "rss_bytes": {
+        "Typeflux": [
+          48283648
+        ],
+        "TypefluxSemanticHelper": [
+          7913472
+        ]
+      }
+    },
+    {
+      "seconds": 423.9272482499946,
+      "rss_bytes": {
+        "Typeflux": [
+          48283648
+        ],
+        "TypefluxSemanticHelper": [
+          9814016
+        ]
+      }
+    },
+    {
+      "seconds": 424.4639747500187,
+      "rss_bytes": {
+        "Typeflux": [
+          48283648
+        ],
+        "TypefluxSemanticHelper": [
+          11976704
+        ]
+      }
+    },
+    {
+      "seconds": 424.98265533399535,
+      "rss_bytes": {
+        "Typeflux": [
+          48283648
+        ],
+        "TypefluxSemanticHelper": [
+          79462400
+        ]
+      }
+    },
+    {
+      "seconds": 425.5200587090221,
+      "rss_bytes": {
+        "Typeflux": [
+          48283648
+        ],
+        "TypefluxSemanticHelper": [
+          127352832
+        ]
+      }
+    },
+    {
+      "seconds": 426.0441104170168,
+      "rss_bytes": {
+        "Typeflux": [
+          48283648
+        ],
+        "TypefluxSemanticHelper": [
+          193626112
+        ]
+      }
+    },
+    {
+      "seconds": 426.5799591669929,
+      "rss_bytes": {
+        "Typeflux": [
+          48283648
+        ],
+        "TypefluxSemanticHelper": [
+          497795072
+        ]
+      }
+    },
+    {
+      "seconds": 427.1190554589848,
+      "rss_bytes": {
+        "Typeflux": [
+          48283648
+        ],
+        "TypefluxSemanticHelper": [
+          841170944
+        ]
+      }
+    },
+    {
+      "seconds": 427.6538170420099,
+      "rss_bytes": {
+        "Typeflux": [
+          48234496
+        ],
+        "TypefluxSemanticHelper": [
+          1128054784
+        ]
+      }
+    },
+    {
+      "seconds": 428.1918090839754,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138442240
+        ]
+      }
+    },
+    {
+      "seconds": 428.72826929198345,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138327552
+        ]
+      }
+    },
+    {
+      "seconds": 429.26442358398344,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138212864
+        ]
+      }
+    },
+    {
+      "seconds": 429.8004677090212,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138098176
+        ]
+      }
+    },
+    {
+      "seconds": 430.3381477500079,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 430.88361329201143,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 431.4200631249696,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 431.9579171250225,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 432.49471358401934,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 433.0309764589765,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 433.5701646669768,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 434.10826070897747,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 434.6442466250155,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 435.1803709999658,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 435.7179704589653,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 436.2524433750077,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 436.7874779590056,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 437.3257273340132,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 437.8631094999728,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 438.3960825839895,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 438.9326959999744,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 439.47121400001924,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 440.0102376670111,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 440.55513133399654,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 441.07468462496763,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 441.6108899170067,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 442.14567524997983,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 442.6828865840216,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 443.22055041696876,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 443.7569067499717,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 444.2935844589956,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 444.8339045419707,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 445.3758106249734,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 445.9125942920218,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 446.4486000419711,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 446.98730404197704,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 447.52480137499515,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 448.06323362496914,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 448.59995408396935,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 449.137239083997,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 449.6747139170184,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 450.21115133399144,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 450.74956987501355,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 451.2866897089989,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 451.8215321669704,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 452.35804083402036,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 452.89540124998894,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 453.43831875000615,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 453.9800551669905,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 454.51610195898684,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 455.05345995898824,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 455.5886831249809,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 456.12583804200403,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 456.66526525001973,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 457.20206729200436,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 457.73911475000205,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 458.28297220898094,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 458.8189560419996,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 459.3561347500072,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 459.899313833972,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 460.4353095419938,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 460.9711722090142,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 461.508810542,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 462.0464912090101,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 462.5846203339752,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 463.1214707089821,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 463.6571211249684,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 464.19368091697106,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 464.73176012496697,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 465.2680731249857,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 465.804143833986,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 466.3401298749959,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 466.881423541985,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 467.4186431670096,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 467.956080709002,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 468.4983232090017,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 469.0337946669897,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 469.5717234169715,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 470.1065420419909,
+      "rss_bytes": {
+        "Typeflux": [
+          48070656
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 470.6407403749763,
+      "rss_bytes": {
+        "Typeflux": [
+          43892736
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 471.1782596249832,
+      "rss_bytes": {
+        "Typeflux": [
+          43892736
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 471.715905375022,
+      "rss_bytes": {
+        "Typeflux": [
+          43892736
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 472.25406866701087,
+      "rss_bytes": {
+        "Typeflux": [
+          43892736
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 472.7884547919966,
+      "rss_bytes": {
+        "Typeflux": [
+          43892736
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 473.32686970900977,
+      "rss_bytes": {
+        "Typeflux": [
+          43892736
+        ],
+        "TypefluxSemanticHelper": [
+          1138032640
+        ]
+      }
+    },
+    {
+      "seconds": 473.8607464589877,
+      "rss_bytes": {
+        "Typeflux": [
+          43892736
+        ],
+        "TypefluxSemanticHelper": [
+          1138098176
+        ]
+      }
+    },
+    {
+      "seconds": 474.39504570898134,
+      "rss_bytes": {
+        "Typeflux": [
+          43892736
+        ],
+        "TypefluxSemanticHelper": [
+          1138163712
+        ]
+      }
+    },
+    {
+      "seconds": 474.931192249991,
+      "rss_bytes": {
+        "Typeflux": [
+          43892736
+        ],
+        "TypefluxSemanticHelper": [
+          1138327552
+        ]
+      }
+    },
+    {
+      "seconds": 475.4696150419768,
+      "rss_bytes": {
+        "Typeflux": [
+          43892736
+        ],
+        "TypefluxSemanticHelper": [
+          1138720768
+        ]
+      }
+    },
+    {
+      "seconds": 476.0063479170203,
+      "rss_bytes": {
+        "Typeflux": [
+          43892736
+        ],
+        "TypefluxSemanticHelper": [
+          1139523584
+        ]
+      }
+    },
+    {
+      "seconds": 476.54414758400526,
+      "rss_bytes": {
+        "Typeflux": [
+          43892736
+        ],
+        "TypefluxSemanticHelper": [
+          1139851264
+        ]
+      }
+    },
+    {
+      "seconds": 477.0851566250203,
+      "rss_bytes": {
+        "Typeflux": [
+          43892736
+        ],
+        "TypefluxSemanticHelper": [
+          1160773632
+        ]
+      }
+    },
+    {
+      "seconds": 477.62090762500884,
+      "rss_bytes": {
+        "Typeflux": [
+          43892736
+        ],
+        "TypefluxSemanticHelper": [
+          1161314304
+        ]
+      }
+    },
+    {
+      "seconds": 478.15192187501816,
+      "rss_bytes": {
+        "Typeflux": [
+          43892736,
+          163840
+        ],
+        "TypefluxSemanticHelper": [
+          1161314304
+        ]
+      }
+    },
+    {
+      "seconds": 478.68870354199316,
+      "rss_bytes": {
+        "Typeflux": [
+          43892736,
+          20578304
+        ],
+        "TypefluxSemanticHelper": [
+          1161314304
+        ],
+        "sherpa-onnx-offline": [
+          147456
+        ]
+      }
+    },
+    {
+      "seconds": 479.2093500419869,
+      "rss_bytes": {
+        "Typeflux": [
+          43892736,
+          20578304
+        ],
+        "TypefluxSemanticHelper": [
+          1161314304
+        ],
+        "sherpa-onnx-offline": [
+          798261248
+        ]
+      }
+    },
+    {
+      "seconds": 479.73712866700953,
+      "rss_bytes": {
+        "Typeflux": [
+          43892736,
+          20578304,
+          20742144
+        ],
+        "TypefluxSemanticHelper": [
+          1161314304,
+          10584064
+        ]
+      }
+    },
+    {
+      "seconds": 480.2709965420072,
+      "rss_bytes": {
+        "Typeflux": [
+          43892736,
+          20578304,
+          20742144
+        ],
+        "TypefluxSemanticHelper": [
+          1161314304,
+          21725184
+        ]
+      }
+    },
+    {
+      "seconds": 480.808692666993,
+      "rss_bytes": {
+        "Typeflux": [
+          43892736,
+          20578304,
+          20742144
+        ],
+        "TypefluxSemanticHelper": [
+          1161314304,
+          45514752
+        ]
+      }
+    },
+    {
+      "seconds": 481.34561829199083,
+      "rss_bytes": {
+        "Typeflux": [
+          43892736,
+          20578304,
+          20742144
+        ],
+        "TypefluxSemanticHelper": [
+          1161314304,
+          62128128
+        ]
+      }
+    },
+    {
+      "seconds": 481.88391174998833,
+      "rss_bytes": {
+        "Typeflux": [
+          43892736,
+          20578304,
+          20742144
+        ],
+        "TypefluxSemanticHelper": [
+          1161314304,
+          80527360
+        ]
+      }
+    },
+    {
+      "seconds": 482.40524762502173,
+      "rss_bytes": {
+        "Typeflux": [
+          43892736,
+          20791296,
+          20791296
+        ],
+        "TypefluxSemanticHelper": [
+          1161314304,
+          12402688
+        ]
+      }
+    },
+    {
+      "seconds": 482.9251698749722,
+      "rss_bytes": {
+        "Typeflux": [
+          43892736,
+          20873216,
+          20791296
+        ],
+        "TypefluxSemanticHelper": [
+          1161281536,
+          508755968
+        ]
+      }
+    },
+    {
+      "seconds": 483.4656294590095,
+      "rss_bytes": {
+        "Typeflux": [
+          43892736,
+          20873216,
+          20791296
+        ],
+        "TypefluxSemanticHelper": [
+          1165361152,
+          508755968
+        ]
+      }
+    },
+    {
+      "seconds": 484.5411120839999,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          189841408
+        ]
+      }
+    },
+    {
+      "seconds": 485.05865066702245,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          508280832
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 485.5780432919855,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          508280832
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 486.10033091699006,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          508280832
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 486.6246018749662,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          508280832
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 487.14769399998477,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          508280832
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 487.67094379197806,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          508280832
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 488.18957558396505,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          508280832
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 488.70822291699005,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          508280832
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 489.22849299997324,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          508280832
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 489.7526200839784,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 490.27504949999275,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 490.79378050001105,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 491.31252520898124,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 491.83053120900877,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 492.35084966698196,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 492.87319912499515,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 493.3929444170208,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 493.9971218340215,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 494.51551770902006,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 495.0331657920033,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 495.55157612496987,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 496.0724290839862,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 496.59081554197473,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 497.1187585419975,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 497.6394716670038,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 498.1625389169785,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 498.68040533398744,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 499.2079691669787,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 499.72842429199954,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 500.2463539589662,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 500.76395929197315,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 501.28691116697155,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 501.80711287498707,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 502.3275525000063,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 502.84984554199036,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 503.368360374996,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 503.8893250420224,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 504.4109504169901,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 504.9368472089991,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 505.45606037497055,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 505.97684091702104,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 506.4985368339694,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 507.01690812502056,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 507.5355809999746,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 508.0575572499656,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 508.57600745902164,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 509.0977362499689,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 509.6162623339915,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 510.13687124999706,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 510.65546670899494,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 511.1814369590138,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 511.7008482500096,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 512.2195833339938,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 512.7383221249911,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 513.256990749971,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 513.7754392920178,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 514.2962494589738,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 514.815044292016,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 515.3338339169859,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 515.8523001249996,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 516.3707315420033,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 516.8894138339674,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 517.4075449589873,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          507805696
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 518.9790707500069,
+      "rss_bytes": {
+        "Typeflux": [
+          21397504
+        ],
+        "TypefluxSemanticHelper": [
+          136626176
+        ]
+      }
+    },
+    {
+      "seconds": 519.5024141250178,
+      "rss_bytes": {
+        "Typeflux": [
+          21397504
+        ],
+        "TypefluxSemanticHelper": [
+          512933888
+        ]
+      }
+    },
+    {
+      "seconds": 520.0230897919973,
+      "rss_bytes": {
+        "Typeflux": [
+          21397504,
+          20250624
+        ],
+        "TypefluxSemanticHelper": [
+          513703936,
+          183910400
+        ]
+      }
+    },
+    {
+      "seconds": 520.5432027920033,
+      "rss_bytes": {
+        "Typeflux": [
+          21397504,
+          20250624
+        ],
+        "TypefluxSemanticHelper": [
+          513736704,
+          509263872
+        ]
+      }
+    },
+    {
+      "seconds": 521.0618805839913,
+      "rss_bytes": {
+        "Typeflux": [
+          21397504,
+          20250624
+        ],
+        "TypefluxSemanticHelper": [
+          513753088,
+          509263872
+        ]
+      }
+    },
+    {
+      "seconds": 521.5864772499772,
+      "rss_bytes": {
+        "Typeflux": [
+          21397504,
+          20758528
+        ],
+        "TypefluxSemanticHelper": [
+          513753088,
+          509460480
+        ]
+      }
+    },
+    {
+      "seconds": 522.1178918340011,
+      "rss_bytes": {
+        "Typeflux": [
+          21430272,
+          20758528
+        ],
+        "TypefluxSemanticHelper": [
+          513589248,
+          509460480
+        ]
+      }
+    },
+    {
+      "seconds": 522.6447844589711,
+      "rss_bytes": {
+        "Typeflux": [
+          21561344,
+          20824064
+        ],
+        "TypefluxSemanticHelper": [
+          513638400,
+          509460480
+        ]
+      }
+    },
+    {
+      "seconds": 523.1660585000063,
+      "rss_bytes": {
+        "Typeflux": [
+          21561344,
+          20856832
+        ],
+        "TypefluxSemanticHelper": [
+          513540096,
+          509394944
+        ]
+      }
+    },
+    {
+      "seconds": 523.6970057499711,
+      "rss_bytes": {
+        "Typeflux": [
+          21561344,
+          20856832
+        ],
+        "TypefluxSemanticHelper": [
+          513441792,
+          509394944
+        ]
+      }
+    },
+    {
+      "seconds": 524.2167517499765,
+      "rss_bytes": {
+        "Typeflux": [
+          21626880,
+          20922368
+        ],
+        "TypefluxSemanticHelper": [
+          513376256,
+          509181952
+        ]
+      }
+    },
+    {
+      "seconds": 524.7425343749928,
+      "rss_bytes": {
+        "Typeflux": [
+          21626880,
+          20938752
+        ],
+        "TypefluxSemanticHelper": [
+          513359872,
+          509181952
+        ]
+      }
+    },
+    {
+      "seconds": 525.2619529169751,
+      "rss_bytes": {
+        "Typeflux": [
+          21626880,
+          21037056
+        ],
+        "TypefluxSemanticHelper": [
+          513359872,
+          508952576
+        ]
+      }
+    },
+    {
+      "seconds": 525.781489334011,
+      "rss_bytes": {
+        "Typeflux": [
+          21626880,
+          21037056
+        ],
+        "TypefluxSemanticHelper": [
+          513359872,
+          508952576
+        ]
+      }
+    },
+    {
+      "seconds": 526.3007989589823,
+      "rss_bytes": {
+        "Typeflux": [
+          21708800,
+          21069824
+        ],
+        "TypefluxSemanticHelper": [
+          513376256,
+          508952576
+        ]
+      }
+    },
+    {
+      "seconds": 526.8253812500043,
+      "rss_bytes": {
+        "Typeflux": [
+          21708800,
+          21069824
+        ],
+        "TypefluxSemanticHelper": [
+          513376256,
+          508952576
+        ]
+      }
+    },
+    {
+      "seconds": 527.3476154999807,
+      "rss_bytes": {
+        "Typeflux": [
+          21708800,
+          21118976
+        ],
+        "TypefluxSemanticHelper": [
+          513376256,
+          508952576
+        ]
+      }
+    },
+    {
+      "seconds": 527.867460709007,
+      "rss_bytes": {
+        "Typeflux": [
+          21708800,
+          21118976
+        ],
+        "TypefluxSemanticHelper": [
+          513376256,
+          508952576
+        ]
+      }
+    },
+    {
+      "seconds": 528.3955141250044,
+      "rss_bytes": {
+        "Typeflux": [
+          21725184,
+          21118976
+        ],
+        "TypefluxSemanticHelper": [
+          513376256,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 528.9153542919667,
+      "rss_bytes": {
+        "Typeflux": [
+          21725184,
+          21168128
+        ],
+        "TypefluxSemanticHelper": [
+          513376256,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 529.4359670419944,
+      "rss_bytes": {
+        "Typeflux": [
+          21725184,
+          21168128
+        ],
+        "TypefluxSemanticHelper": [
+          513376256,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 529.9635379170068,
+      "rss_bytes": {
+        "Typeflux": [
+          21725184,
+          21168128
+        ],
+        "TypefluxSemanticHelper": [
+          513376256,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 530.4841894590063,
+      "rss_bytes": {
+        "Typeflux": [
+          21725184,
+          21168128
+        ],
+        "TypefluxSemanticHelper": [
+          513376256,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 531.0041377089801,
+      "rss_bytes": {
+        "Typeflux": [
+          21725184,
+          21184512
+        ],
+        "TypefluxSemanticHelper": [
+          513376256,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 531.5241802500095,
+      "rss_bytes": {
+        "Typeflux": [
+          21725184,
+          21184512
+        ],
+        "TypefluxSemanticHelper": [
+          513376256,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 532.0441586669767,
+      "rss_bytes": {
+        "Typeflux": [
+          21725184,
+          21184512
+        ],
+        "TypefluxSemanticHelper": [
+          513376256,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 532.5650189169683,
+      "rss_bytes": {
+        "Typeflux": [
+          21725184,
+          21184512
+        ],
+        "TypefluxSemanticHelper": [
+          513376256,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 533.0848533340031,
+      "rss_bytes": {
+        "Typeflux": [
+          21725184,
+          21200896
+        ],
+        "TypefluxSemanticHelper": [
+          513376256,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 533.6047091250075,
+      "rss_bytes": {
+        "Typeflux": [
+          21790720,
+          21200896
+        ],
+        "TypefluxSemanticHelper": [
+          513376256,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 534.1279778339667,
+      "rss_bytes": {
+        "Typeflux": [
+          21790720,
+          21200896
+        ],
+        "TypefluxSemanticHelper": [
+          513376256,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 534.6479168339865,
+      "rss_bytes": {
+        "Typeflux": [
+          21790720,
+          21200896
+        ],
+        "TypefluxSemanticHelper": [
+          513376256,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 535.1692843339988,
+      "rss_bytes": {
+        "Typeflux": [
+          21790720,
+          21200896
+        ],
+        "TypefluxSemanticHelper": [
+          513376256,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 535.6897694590152,
+      "rss_bytes": {
+        "Typeflux": [
+          21790720,
+          21217280
+        ],
+        "TypefluxSemanticHelper": [
+          513376256,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 536.2136504590162,
+      "rss_bytes": {
+        "Typeflux": [
+          21790720,
+          21217280
+        ],
+        "TypefluxSemanticHelper": [
+          513359872,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 536.7327832090086,
+      "rss_bytes": {
+        "Typeflux": [
+          21823488,
+          21217280
+        ],
+        "TypefluxSemanticHelper": [
+          513359872,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 537.2562789589865,
+      "rss_bytes": {
+        "Typeflux": [
+          21823488,
+          21217280
+        ],
+        "TypefluxSemanticHelper": [
+          513359872,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 537.7754867919721,
+      "rss_bytes": {
+        "Typeflux": [
+          21823488,
+          21217280
+        ],
+        "TypefluxSemanticHelper": [
+          513359872,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 538.3018738339888,
+      "rss_bytes": {
+        "Typeflux": [
+          21823488,
+          21217280
+        ],
+        "TypefluxSemanticHelper": [
+          513359872,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 538.828505292011,
+      "rss_bytes": {
+        "Typeflux": [
+          21839872,
+          21217280
+        ],
+        "TypefluxSemanticHelper": [
+          513359872,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 539.3494605839951,
+      "rss_bytes": {
+        "Typeflux": [
+          21839872,
+          21217280
+        ],
+        "TypefluxSemanticHelper": [
+          513359872,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 539.8685468750191,
+      "rss_bytes": {
+        "Typeflux": [
+          21839872,
+          21217280
+        ],
+        "TypefluxSemanticHelper": [
+          513359872,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 540.3921504169703,
+      "rss_bytes": {
+        "Typeflux": [
+          21839872,
+          21217280
+        ],
+        "TypefluxSemanticHelper": [
+          513359872,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 540.9183165840223,
+      "rss_bytes": {
+        "Typeflux": [
+          21839872,
+          21217280
+        ],
+        "TypefluxSemanticHelper": [
+          513359872,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 541.4409678339725,
+      "rss_bytes": {
+        "Typeflux": [
+          21839872,
+          21217280
+        ],
+        "TypefluxSemanticHelper": [
+          513359872,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 541.9587668339955,
+      "rss_bytes": {
+        "Typeflux": [
+          21839872,
+          21217280
+        ],
+        "TypefluxSemanticHelper": [
+          513359872,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 542.4798230419983,
+      "rss_bytes": {
+        "Typeflux": [
+          21839872,
+          21233664
+        ],
+        "TypefluxSemanticHelper": [
+          513359872,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 543.0036488749902,
+      "rss_bytes": {
+        "Typeflux": [
+          21839872,
+          21233664
+        ],
+        "TypefluxSemanticHelper": [
+          513359872,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 543.5225240419968,
+      "rss_bytes": {
+        "Typeflux": [
+          21839872,
+          21233664
+        ],
+        "TypefluxSemanticHelper": [
+          513359872,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 544.0499229999841,
+      "rss_bytes": {
+        "Typeflux": [
+          21839872,
+          21233664
+        ],
+        "TypefluxSemanticHelper": [
+          513359872,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 544.5711964590009,
+      "rss_bytes": {
+        "Typeflux": [
+          21856256,
+          21233664
+        ],
+        "TypefluxSemanticHelper": [
+          513359872,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 545.0939325420186,
+      "rss_bytes": {
+        "Typeflux": [
+          21856256,
+          21233664
+        ],
+        "TypefluxSemanticHelper": [
+          513359872,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 545.6130010000197,
+      "rss_bytes": {
+        "Typeflux": [
+          21856256,
+          21233664
+        ],
+        "TypefluxSemanticHelper": [
+          513359872,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 546.1340119590168,
+      "rss_bytes": {
+        "Typeflux": [
+          21856256,
+          21233664
+        ],
+        "TypefluxSemanticHelper": [
+          513359872,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 546.6529790839995,
+      "rss_bytes": {
+        "Typeflux": [
+          21856256,
+          21233664
+        ],
+        "TypefluxSemanticHelper": [
+          513359872,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 547.1740853749798,
+      "rss_bytes": {
+        "Typeflux": [
+          21856256,
+          21233664
+        ],
+        "TypefluxSemanticHelper": [
+          513359872,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 547.693731708976,
+      "rss_bytes": {
+        "Typeflux": [
+          21856256,
+          21250048
+        ],
+        "TypefluxSemanticHelper": [
+          513359872,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 548.2144690839923,
+      "rss_bytes": {
+        "Typeflux": [
+          21856256,
+          21250048
+        ],
+        "TypefluxSemanticHelper": [
+          513359872,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 548.73965266702,
+      "rss_bytes": {
+        "Typeflux": [
+          21856256,
+          21250048
+        ],
+        "TypefluxSemanticHelper": [
+          506527744,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 549.2596416249871,
+      "rss_bytes": {
+        "Typeflux": [
+          21856256,
+          21250048
+        ],
+        "TypefluxSemanticHelper": [
+          506527744,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 549.7831352920039,
+      "rss_bytes": {
+        "Typeflux": [
+          21856256,
+          21250048
+        ],
+        "TypefluxSemanticHelper": [
+          506527744,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 550.3025139999809,
+      "rss_bytes": {
+        "Typeflux": [
+          21856256,
+          21250048
+        ],
+        "TypefluxSemanticHelper": [
+          506527744,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 550.8218678749981,
+      "rss_bytes": {
+        "Typeflux": [
+          21856256,
+          21250048
+        ],
+        "TypefluxSemanticHelper": [
+          506527744,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 551.3414484169916,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          21250048
+        ],
+        "TypefluxSemanticHelper": [
+          506527744,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 551.8619701249991,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          21266432
+        ],
+        "TypefluxSemanticHelper": [
+          506527744,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 552.3852232089848,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          21266432
+        ],
+        "TypefluxSemanticHelper": [
+          506527744,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 552.9040457499796,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          21266432
+        ],
+        "TypefluxSemanticHelper": [
+          506527744,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 553.4273218339658,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          21299200
+        ],
+        "TypefluxSemanticHelper": [
+          506527744,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 553.9482367919991,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          21299200
+        ],
+        "TypefluxSemanticHelper": [
+          506527744,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 554.4673414999852,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          21299200
+        ],
+        "TypefluxSemanticHelper": [
+          506527744,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 554.9873961249832,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          21299200
+        ],
+        "TypefluxSemanticHelper": [
+          506527744,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 555.5050837500021,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          21299200
+        ],
+        "TypefluxSemanticHelper": [
+          506527744,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 556.031365584,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          21315584
+        ],
+        "TypefluxSemanticHelper": [
+          506527744,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 556.5529611249804,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          21315584
+        ],
+        "TypefluxSemanticHelper": [
+          506527744,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 557.0724418339669,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          21315584
+        ],
+        "TypefluxSemanticHelper": [
+          506527744,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 557.595273584011,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          21315584
+        ],
+        "TypefluxSemanticHelper": [
+          506527744,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 558.1261303750216,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          21315584
+        ],
+        "TypefluxSemanticHelper": [
+          506527744,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 558.6448610840016,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          21348352
+        ],
+        "TypefluxSemanticHelper": [
+          506527744,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 559.1636778750108,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          21348352
+        ],
+        "TypefluxSemanticHelper": [
+          506527744,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 559.6923774589668,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          21364736
+        ],
+        "TypefluxSemanticHelper": [
+          506527744,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 560.2117672089953,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          21364736
+        ],
+        "TypefluxSemanticHelper": [
+          506527744,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 560.7429271250148,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          21364736
+        ],
+        "TypefluxSemanticHelper": [
+          506527744,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 561.2654790839879,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          21364736
+        ],
+        "TypefluxSemanticHelper": [
+          506527744,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 561.784624708991,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          21364736
+        ],
+        "TypefluxSemanticHelper": [
+          506527744,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 562.3062700419687,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          21381120
+        ],
+        "TypefluxSemanticHelper": [
+          506527744,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 562.8260584999807,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          21381120
+        ],
+        "TypefluxSemanticHelper": [
+          506527744,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 563.3452459999826,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21381120
+        ],
+        "TypefluxSemanticHelper": [
+          506527744,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 563.8642699170159,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21381120
+        ],
+        "TypefluxSemanticHelper": [
+          506527744,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 564.3860844589653,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21397504
+        ],
+        "TypefluxSemanticHelper": [
+          506527744,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 564.9069609590224,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21397504
+        ],
+        "TypefluxSemanticHelper": [
+          506527744,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 565.4308717920212,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21397504
+        ],
+        "TypefluxSemanticHelper": [
+          506527744,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 565.9502555839717,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21413888
+        ],
+        "TypefluxSemanticHelper": [
+          506527744,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 566.4726233339752,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21413888
+        ],
+        "TypefluxSemanticHelper": [
+          506527744,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 566.9955782499746,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21430272
+        ],
+        "TypefluxSemanticHelper": [
+          506527744,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 567.5208105419879,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21430272
+        ],
+        "TypefluxSemanticHelper": [
+          506527744,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 568.0389029170037,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21430272
+        ],
+        "TypefluxSemanticHelper": [
+          506527744,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 568.5618090839707,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21430272
+        ],
+        "TypefluxSemanticHelper": [
+          506527744,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 569.0820700839977,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21446656
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 569.6027902920032,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21446656
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 570.125709792017,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21446656
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 570.6451856669737,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21446656
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 571.1653021249804,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21446656
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 571.6902265420067,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21463040
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 572.2130509999697,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21463040
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 572.7336057919892,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21463040
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 573.252691917005,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21463040
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 573.7772891669883,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21463040
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 574.2962817089865,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21463040
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 574.8210964999744,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21463040
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 575.3427611250081,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21495808
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 575.861875750008,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21495808
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 576.3898321670131,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21495808
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 576.9079918750213,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21495808
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 577.4298421670101,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21512192
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 577.9489412499825,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21512192
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 578.4700568339904,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21512192
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 578.9892929589842,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21528576
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 579.5082740419894,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21528576
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 580.0273049590178,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21528576
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 580.5529827499995,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21528576
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 581.0722515839734,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21643264
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 581.5912626250065,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21643264
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 582.1099488339969,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21643264
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 582.6286029170151,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21643264
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 583.1510667920229,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21643264
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 583.6704166670097,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21659648
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 584.1928252090001,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21659648
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 584.7143172500073,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21659648
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 585.2331141670002,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21659648
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 585.7564094999689,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21659648
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 586.2755820419989,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21659648
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 586.7961618339759,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21676032
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 587.3155665419763,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21676032
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 587.8379965419881,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21676032
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 588.3612468339852,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21676032
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 588.8871077920194,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21676032
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 589.4065785419662,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21692416
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 589.9256287089665,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21692416
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 590.4477787920041,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21741568
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 590.9667399589671,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21741568
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 591.4923226250103,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21741568
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 592.0112523339922,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21741568
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 592.5343842919683,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21741568
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 593.0589451669948,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21757952
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 593.5772862919839,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21757952
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 594.0966608339804,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21757952
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 594.6151447920129,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21757952
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 595.1375388340093,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21757952
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 595.6585693340166,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21757952
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 596.1775224999874,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21757952
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 596.6985652919975,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21774336
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 597.2251586670172,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21774336
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 597.7460334170028,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21774336
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 598.2645620420226,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21774336
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 598.7836329999845,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21790720
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 599.3040837500012,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21790720
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 599.828803625016,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21790720
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 600.3495788750006,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21790720
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 600.8697786669945,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21790720
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 601.3925883339834,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21790720
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 601.9112382089952,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21790720
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 602.4299971250002,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21807104
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 602.9532131250016,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21807104
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 603.4726807089755,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21823488
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 603.9949474589666,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21823488
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 604.5134005839936,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21839872
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 605.0322260839748,
+      "rss_bytes": {
+        "Typeflux": [
+          21889024,
+          21839872
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 605.5611863340018,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          21839872
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 606.0799225840019,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          21839872
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 606.5991108340095,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          21839872
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 607.118788999971,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          21856256
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 607.6374879169744,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          21856256
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 608.1559573750128,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          21856256
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 608.6768565839739,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          21872640
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 609.1957118340069,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          21872640
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 609.7141252090223,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          21872640
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 610.232783125015,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          21872640
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 610.7556356670102,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          21889024
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 611.2748884999892,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          21889024
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 611.7950291250017,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          21889024
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 612.3213040839764,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          21889024
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 612.8476822919911,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          21889024
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 613.3661219999776,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          21905408
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 613.8876815420226,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          21905408
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 614.4071598339942,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          21921792
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 614.9258127089706,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          21921792
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 615.4476987089729,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          21938176
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 615.9667618339881,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          21938176
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 616.4866278750123,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          21938176
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 617.0120638340013,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          21938176
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 617.5321986670024,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          21938176
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 618.0559457920026,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          21954560
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 618.5738788339659,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          21954560
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 619.0917395419674,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          21954560
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 619.6105235840078,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          21954560
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 620.1301520839916,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          21954560
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 620.6500527500175,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          21970944
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 621.1714395000017,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          21970944
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 621.6976072919788,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          21970944
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 622.2174694589921,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          21970944
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 622.7362034589751,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          21970944
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 623.2553282919689,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          21970944
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 623.7780702500022,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          21970944
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 624.2970483750105,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          22003712
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 624.8170539590064,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          22003712
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 625.3375859999796,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          22003712
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 625.8570884999936,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          22003712
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 626.3762024589814,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          22020096
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 626.8952532499679,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          22020096
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 627.416492083983,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          22020096
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 627.9356213749852,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          22036480
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 628.4547167919809,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          22036480
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 628.9739489170024,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          22036480
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 629.4930340839783,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          22036480
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 630.0118185839965,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          22052864
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 630.5305427919957,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          22052864
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 631.0486992499791,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          22052864
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 631.5674502499751,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          22052864
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 632.0916918750154,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          22052864
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 632.6106041250168,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          22069248
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 633.1304800839862,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          22069248
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 633.6531419170205,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          22069248
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 634.173585875018,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          22069248
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 634.693964459002,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          22069248
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 635.216855000006,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          22069248
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 635.7405981249758,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          22069248
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 636.259501292021,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          22085632
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 636.7807269589975,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          22085632
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 637.2997945839888,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          22102016
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 637.8190149170114,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          22102016
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 638.3389013750129,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          22118400
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 638.8580027919961,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          22118400
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 639.3771106249769,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          22151168
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 639.895848834014,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          22151168
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 640.4147752089775,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          22151168
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          509313024
+        ]
+      }
+    },
+    {
+      "seconds": 640.9335894589894,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          22151168
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          509313024
+        ]
+      }
+    },
+    {
+      "seconds": 641.4527159999707,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          22151168
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          509313024
+        ]
+      }
+    },
+    {
+      "seconds": 641.977698542003,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          22167552
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          509362176
+        ]
+      }
+    },
+    {
+      "seconds": 642.4966844589799,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          22167552
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          509362176
+        ]
+      }
+    },
+    {
+      "seconds": 643.0160072090221,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          22167552
+        ],
+        "TypefluxSemanticHelper": [
+          487882752,
+          509394944
+        ]
+      }
+    },
+    {
+      "seconds": 643.5358116669813,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          22167552
+        ],
+        "TypefluxSemanticHelper": [
+          487882752,
+          509394944
+        ]
+      }
+    },
+    {
+      "seconds": 644.0551560000167,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          22167552
+        ],
+        "TypefluxSemanticHelper": [
+          487882752,
+          509411328
+        ]
+      }
+    },
+    {
+      "seconds": 644.5747433339711,
+      "rss_bytes": {
+        "Typeflux": [
+          21905408,
+          22167552
+        ],
+        "TypefluxSemanticHelper": [
+          487882752,
+          509411328
+        ]
+      }
+    },
+    {
+      "seconds": 645.0936543749995,
+      "rss_bytes": {
+        "Typeflux": [
+          21921792,
+          22167552
+        ],
+        "TypefluxSemanticHelper": [
+          487882752,
+          509411328
+        ]
+      }
+    },
+    {
+      "seconds": 645.6122085839743,
+      "rss_bytes": {
+        "Typeflux": [
+          21921792,
+          22183936
+        ],
+        "TypefluxSemanticHelper": [
+          487882752,
+          509411328
+        ]
+      }
+    },
+    {
+      "seconds": 646.1347509169718,
+      "rss_bytes": {
+        "Typeflux": [
+          21921792,
+          22183936
+        ],
+        "TypefluxSemanticHelper": [
+          487882752,
+          509411328
+        ]
+      }
+    },
+    {
+      "seconds": 646.6522787089925,
+      "rss_bytes": {
+        "Typeflux": [
+          21921792,
+          22183936
+        ],
+        "TypefluxSemanticHelper": [
+          487882752,
+          509411328
+        ]
+      }
+    },
+    {
+      "seconds": 647.1715687090182,
+      "rss_bytes": {
+        "Typeflux": [
+          21921792,
+          22183936
+        ],
+        "TypefluxSemanticHelper": [
+          487882752,
+          509411328
+        ]
+      }
+    },
+    {
+      "seconds": 647.691781291971,
+      "rss_bytes": {
+        "Typeflux": [
+          21921792,
+          22183936
+        ],
+        "TypefluxSemanticHelper": [
+          487882752,
+          509427712
+        ]
+      }
+    },
+    {
+      "seconds": 648.2099640420056,
+      "rss_bytes": {
+        "Typeflux": [
+          21921792,
+          22200320
+        ],
+        "TypefluxSemanticHelper": [
+          487882752,
+          509427712
+        ]
+      }
+    },
+    {
+      "seconds": 648.7316518339794,
+      "rss_bytes": {
+        "Typeflux": [
+          21921792,
+          22200320
+        ],
+        "TypefluxSemanticHelper": [
+          487882752,
+          509427712
+        ]
+      }
+    },
+    {
+      "seconds": 649.2506225419929,
+      "rss_bytes": {
+        "Typeflux": [
+          21921792,
+          22200320
+        ],
+        "TypefluxSemanticHelper": [
+          487882752,
+          509444096
+        ]
+      }
+    },
+    {
+      "seconds": 649.769741584023,
+      "rss_bytes": {
+        "Typeflux": [
+          21921792,
+          22200320
+        ],
+        "TypefluxSemanticHelper": [
+          487882752,
+          509444096
+        ]
+      }
+    },
+    {
+      "seconds": 650.2873904589796,
+      "rss_bytes": {
+        "Typeflux": [
+          21921792,
+          22200320
+        ],
+        "TypefluxSemanticHelper": [
+          487882752,
+          509476864
+        ]
+      }
+    },
+    {
+      "seconds": 650.8067065840005,
+      "rss_bytes": {
+        "Typeflux": [
+          21921792,
+          22200320
+        ],
+        "TypefluxSemanticHelper": [
+          487882752,
+          509476864
+        ]
+      }
+    },
+    {
+      "seconds": 651.3356852500001,
+      "rss_bytes": {
+        "Typeflux": [
+          21921792,
+          22200320
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          509493248
+        ]
+      }
+    },
+    {
+      "seconds": 651.8544512090157,
+      "rss_bytes": {
+        "Typeflux": [
+          21921792,
+          22216704
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          509493248
+        ]
+      }
+    },
+    {
+      "seconds": 652.3742779169697,
+      "rss_bytes": {
+        "Typeflux": [
+          21921792,
+          22216704
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          509493248
+        ]
+      }
+    },
+    {
+      "seconds": 652.8969273749972,
+      "rss_bytes": {
+        "Typeflux": [
+          21921792,
+          22233088
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          509706240
+        ]
+      }
+    },
+    {
+      "seconds": 653.4155415840214,
+      "rss_bytes": {
+        "Typeflux": [
+          21921792,
+          22233088
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          509706240
+        ]
+      }
+    },
+    {
+      "seconds": 653.9343775839661,
+      "rss_bytes": {
+        "Typeflux": [
+          21921792,
+          22233088
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          509706240
+        ]
+      }
+    },
+    {
+      "seconds": 654.4563357919687,
+      "rss_bytes": {
+        "Typeflux": [
+          21954560,
+          22233088
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          509706240
+        ]
+      }
+    },
+    {
+      "seconds": 654.9845113750198,
+      "rss_bytes": {
+        "Typeflux": [
+          21954560,
+          22249472
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          509706240
+        ]
+      }
+    },
+    {
+      "seconds": 655.5033183749765,
+      "rss_bytes": {
+        "Typeflux": [
+          21954560,
+          22249472
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          509706240
+        ]
+      }
+    },
+    {
+      "seconds": 656.0239314169739,
+      "rss_bytes": {
+        "Typeflux": [
+          21954560,
+          22249472
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          509706240
+        ]
+      }
+    },
+    {
+      "seconds": 656.5496389589971,
+      "rss_bytes": {
+        "Typeflux": [
+          21954560,
+          22265856
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          509706240
+        ]
+      }
+    },
+    {
+      "seconds": 657.0681565419654,
+      "rss_bytes": {
+        "Typeflux": [
+          21954560,
+          22265856
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          509706240
+        ]
+      }
+    },
+    {
+      "seconds": 657.5872202499886,
+      "rss_bytes": {
+        "Typeflux": [
+          21954560,
+          22282240
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          509706240
+        ]
+      }
+    },
+    {
+      "seconds": 658.10571587499,
+      "rss_bytes": {
+        "Typeflux": [
+          21954560,
+          22282240
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          509706240
+        ]
+      }
+    },
+    {
+      "seconds": 658.6253573750146,
+      "rss_bytes": {
+        "Typeflux": [
+          21954560,
+          22282240
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          509706240
+        ]
+      }
+    },
+    {
+      "seconds": 659.1476116249687,
+      "rss_bytes": {
+        "Typeflux": [
+          21954560,
+          22282240
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          509706240
+        ]
+      }
+    },
+    {
+      "seconds": 659.6711346249795,
+      "rss_bytes": {
+        "Typeflux": [
+          21954560,
+          22282240
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          509706240
+        ]
+      }
+    },
+    {
+      "seconds": 660.18975816702,
+      "rss_bytes": {
+        "Typeflux": [
+          21954560,
+          22282240
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          509706240
+        ]
+      }
+    },
+    {
+      "seconds": 660.7085532919737,
+      "rss_bytes": {
+        "Typeflux": [
+          21954560,
+          22282240
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          509706240
+        ]
+      }
+    },
+    {
+      "seconds": 661.2319986249786,
+      "rss_bytes": {
+        "Typeflux": [
+          21954560,
+          22298624
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          509706240
+        ]
+      }
+    },
+    {
+      "seconds": 661.7504610000178,
+      "rss_bytes": {
+        "Typeflux": [
+          21954560,
+          22298624
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          509706240
+        ]
+      }
+    },
+    {
+      "seconds": 662.2695336670149,
+      "rss_bytes": {
+        "Typeflux": [
+          21954560,
+          22315008
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490504192
+        ]
+      }
+    },
+    {
+      "seconds": 662.7882209169911,
+      "rss_bytes": {
+        "Typeflux": [
+          21954560,
+          22315008
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490504192
+        ]
+      }
+    },
+    {
+      "seconds": 663.3069510000059,
+      "rss_bytes": {
+        "Typeflux": [
+          21954560,
+          22315008
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490504192
+        ]
+      }
+    },
+    {
+      "seconds": 663.8271148339845,
+      "rss_bytes": {
+        "Typeflux": [
+          21954560,
+          22315008
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 664.3506984169944,
+      "rss_bytes": {
+        "Typeflux": [
+          21954560,
+          22315008
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 664.8737437920063,
+      "rss_bytes": {
+        "Typeflux": [
+          21954560,
+          22331392
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 665.3923868749989,
+      "rss_bytes": {
+        "Typeflux": [
+          21954560,
+          22331392
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 665.9108650420094,
+      "rss_bytes": {
+        "Typeflux": [
+          21954560,
+          22347776
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 666.4369758749963,
+      "rss_bytes": {
+        "Typeflux": [
+          21954560,
+          22347776
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 666.9567288749968,
+      "rss_bytes": {
+        "Typeflux": [
+          21954560,
+          22347776
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 667.4753973339684,
+      "rss_bytes": {
+        "Typeflux": [
+          21954560,
+          22364160
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 667.9942984170048,
+      "rss_bytes": {
+        "Typeflux": [
+          21954560,
+          22364160
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 668.513266458991,
+      "rss_bytes": {
+        "Typeflux": [
+          21954560,
+          22364160
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 669.0322053749696,
+      "rss_bytes": {
+        "Typeflux": [
+          21954560,
+          22364160
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 669.55287420901,
+      "rss_bytes": {
+        "Typeflux": [
+          21954560,
+          22364160
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 670.0764497499913,
+      "rss_bytes": {
+        "Typeflux": [
+          21954560,
+          22364160
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 670.5987045840011,
+      "rss_bytes": {
+        "Typeflux": [
+          21954560,
+          22364160
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 671.1171937499894,
+      "rss_bytes": {
+        "Typeflux": [
+          22167552,
+          22380544
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 671.6437490420067,
+      "rss_bytes": {
+        "Typeflux": [
+          22167552,
+          22380544
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 672.16291795898,
+      "rss_bytes": {
+        "Typeflux": [
+          22167552,
+          22380544
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 672.6817075840081,
+      "rss_bytes": {
+        "Typeflux": [
+          22167552,
+          22380544
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 673.2009227090166,
+      "rss_bytes": {
+        "Typeflux": [
+          22167552,
+          22380544
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 673.7213801249745,
+      "rss_bytes": {
+        "Typeflux": [
+          22167552,
+          22380544
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 674.2410904589924,
+      "rss_bytes": {
+        "Typeflux": [
+          22167552,
+          22380544
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 674.7599005000084,
+      "rss_bytes": {
+        "Typeflux": [
+          22167552,
+          22413312
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 675.2884899170022,
+      "rss_bytes": {
+        "Typeflux": [
+          22167552,
+          22413312
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 675.8135370839736,
+      "rss_bytes": {
+        "Typeflux": [
+          22167552,
+          22413312
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 676.3357134999824,
+      "rss_bytes": {
+        "Typeflux": [
+          22167552,
+          22413312
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 676.859033500019,
+      "rss_bytes": {
+        "Typeflux": [
+          22167552,
+          22429696
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 677.3834725419874,
+      "rss_bytes": {
+        "Typeflux": [
+          22167552,
+          22429696
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 677.9023789999774,
+      "rss_bytes": {
+        "Typeflux": [
+          22167552,
+          22429696
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 678.4208969589672,
+      "rss_bytes": {
+        "Typeflux": [
+          22167552,
+          22446080
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 678.9393688749988,
+      "rss_bytes": {
+        "Typeflux": [
+          22167552,
+          22446080
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 679.458634916984,
+      "rss_bytes": {
+        "Typeflux": [
+          22167552,
+          22446080
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 679.9772122919676,
+      "rss_bytes": {
+        "Typeflux": [
+          22167552,
+          22446080
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 680.4948589169653,
+      "rss_bytes": {
+        "Typeflux": [
+          22167552,
+          22462464
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 681.013928417,
+      "rss_bytes": {
+        "Typeflux": [
+          22167552,
+          22462464
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 681.5441052499809,
+      "rss_bytes": {
+        "Typeflux": [
+          22167552,
+          22462464
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 682.0626290839864,
+      "rss_bytes": {
+        "Typeflux": [
+          22167552,
+          22462464
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 682.5814230419928,
+      "rss_bytes": {
+        "Typeflux": [
+          22167552,
+          22462464
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 683.1041477919789,
+      "rss_bytes": {
+        "Typeflux": [
+          22167552,
+          22462464
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 683.6239949589944,
+      "rss_bytes": {
+        "Typeflux": [
+          22167552,
+          22462464
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 684.142686792009,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22478848
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 684.6631940419902,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22478848
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 685.1834483339917,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22478848
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 685.7023077089689,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22478848
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 686.2214298339677,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22478848
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 686.7416457919753,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22495232
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 687.2606414589682,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22495232
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 687.7819468340022,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22511616
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 688.3029249999672,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22511616
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 688.8269671250018,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22511616
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 689.3533437500009,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22511616
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 689.8734420419787,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22511616
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 690.3968711670022,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22528000
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 690.9164570419816,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22528000
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 691.4352336250013,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22560768
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 691.9540381249972,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22560768
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 692.4731342499726,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22560768
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 692.9947547920165,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22560768
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 693.5151432919665,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22560768
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 694.0358952090028,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22577152
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 694.5547332499991,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22577152
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 695.0749992919737,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22577152
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 695.5937096250127,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22577152
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 696.1218422090169,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22593536
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 696.640726291982,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22593536
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 697.1606942089857,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22593536
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 697.679298708972,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22593536
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 698.198176542006,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22593536
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 698.7179875000147,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22593536
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 699.2369890839909,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22593536
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 699.7606314590084,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22609920
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 700.2986718749744,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22609920
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 700.8206183749717,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22609920
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 701.3392960840138,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22609920
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 701.861022541998,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22609920
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 702.3904158750083,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22609920
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 702.9104019589722,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22609920
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 703.4283792499918,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22626304
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 703.9492852920084,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22626304
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 704.4797022920102,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22626304
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 704.9985562919755,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22642688
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 705.5186256669695,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22642688
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 706.038114666997,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22659072
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 706.5571754999692,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22659072
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 707.0804186669993,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22659072
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 707.5995060839923,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22659072
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 708.1183276249794,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22659072
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 708.6396408340079,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22675456
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 709.1667628340074,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22675456
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 709.6863008340006,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22691840
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 710.2059329170152,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22691840
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 710.7290266249911,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22691840
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 711.2532529169694,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22691840
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 711.7721272920026,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22691840
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 712.293913499976,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22691840
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 712.8179682500195,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22691840
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 713.3427594999666,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22691840
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 713.861364374985,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22724608
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 714.3926852919976,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22724608
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 714.9148022499867,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22724608
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 715.4354285419686,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22724608
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 715.9588841670193,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22740992
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 716.4822023750166,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22740992
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 717.0099687500042,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22740992
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 717.5325863339822,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22757376
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 718.0512322090217,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22757376
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 718.5739549589925,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22757376
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 719.097304083989,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22757376
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 719.6154789589928,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22773760
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 720.1440937499865,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22773760
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 720.6648368749884,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22773760
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 721.1836662919959,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22773760
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 721.7036387089756,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22773760
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 722.2295617919881,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22773760
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 722.7558072920074,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22773760
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 723.2742015420226,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22790144
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 723.792949374998,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22790144
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 724.3126823750208,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22790144
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 724.8344450839795,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22790144
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 725.3562986250035,
+      "rss_bytes": {
+        "Typeflux": [
+          22183936,
+          22790144
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 725.8746255839942,
+      "rss_bytes": {
+        "Typeflux": [
+          22200320,
+          22822912
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 726.3992463750183,
+      "rss_bytes": {
+        "Typeflux": [
+          22200320,
+          22822912
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 726.9169231670094,
+      "rss_bytes": {
+        "Typeflux": [
+          22200320,
+          22822912
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 727.4385957089835,
+      "rss_bytes": {
+        "Typeflux": [
+          22200320,
+          22822912
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 727.9613803749671,
+      "rss_bytes": {
+        "Typeflux": [
+          22200320,
+          22822912
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 728.4803257500171,
+      "rss_bytes": {
+        "Typeflux": [
+          22200320,
+          22822912
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 728.9991652920144,
+      "rss_bytes": {
+        "Typeflux": [
+          22200320,
+          22822912
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 729.5183965420001,
+      "rss_bytes": {
+        "Typeflux": [
+          22200320,
+          22839296
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 730.0378826669767,
+      "rss_bytes": {
+        "Typeflux": [
+          22200320,
+          22839296
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 730.5555569999851,
+      "rss_bytes": {
+        "Typeflux": [
+          22200320,
+          22855680
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 731.0791480420157,
+      "rss_bytes": {
+        "Typeflux": [
+          22200320,
+          22855680
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 731.6033969169948,
+      "rss_bytes": {
+        "Typeflux": [
+          22200320,
+          22855680
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 732.1221722089685,
+      "rss_bytes": {
+        "Typeflux": [
+          22200320,
+          22855680
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 732.642182333977,
+      "rss_bytes": {
+        "Typeflux": [
+          22200320,
+          22855680
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 733.1636111669941,
+      "rss_bytes": {
+        "Typeflux": [
+          22200320,
+          22872064
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 733.6852537089726,
+      "rss_bytes": {
+        "Typeflux": [
+          22200320,
+          22872064
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 734.2031207089894,
+      "rss_bytes": {
+        "Typeflux": [
+          22200320,
+          22872064
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 734.727269584022,
+      "rss_bytes": {
+        "Typeflux": [
+          22200320,
+          22872064
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 735.2545834589982,
+      "rss_bytes": {
+        "Typeflux": [
+          22200320,
+          22872064
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 735.7769497919944,
+      "rss_bytes": {
+        "Typeflux": [
+          22200320,
+          22888448
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 736.2957312500221,
+      "rss_bytes": {
+        "Typeflux": [
+          22200320,
+          22888448
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 736.8153112090076,
+      "rss_bytes": {
+        "Typeflux": [
+          22200320,
+          22888448
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 737.3343512089923,
+      "rss_bytes": {
+        "Typeflux": [
+          22200320,
+          22888448
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 737.8520119169843,
+      "rss_bytes": {
+        "Typeflux": [
+          22200320,
+          22888448
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 738.3709870000021,
+      "rss_bytes": {
+        "Typeflux": [
+          22200320,
+          22888448
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 738.8930173339904,
+      "rss_bytes": {
+        "Typeflux": [
+          22200320,
+          22888448
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 739.411655917007,
+      "rss_bytes": {
+        "Typeflux": [
+          22200320,
+          22921216
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 739.9344092499814,
+      "rss_bytes": {
+        "Typeflux": [
+          22200320,
+          22921216
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 740.4527593749808,
+      "rss_bytes": {
+        "Typeflux": [
+          22200320,
+          22921216
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 740.9713110839948,
+      "rss_bytes": {
+        "Typeflux": [
+          22200320,
+          22921216
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 741.4907544999733,
+      "rss_bytes": {
+        "Typeflux": [
+          22200320,
+          22921216
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 742.014265374979,
+      "rss_bytes": {
+        "Typeflux": [
+          22200320,
+          22921216
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 742.5333007089794,
+      "rss_bytes": {
+        "Typeflux": [
+          22200320,
+          22921216
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 743.0563845419674,
+      "rss_bytes": {
+        "Typeflux": [
+          22200320,
+          22937600
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 743.5752029999858,
+      "rss_bytes": {
+        "Typeflux": [
+          22200320,
+          22937600
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 744.0970827919664,
+      "rss_bytes": {
+        "Typeflux": [
+          22200320,
+          22970368
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 744.6231977919815,
+      "rss_bytes": {
+        "Typeflux": [
+          22200320,
+          22970368
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 745.1461685000104,
+      "rss_bytes": {
+        "Typeflux": [
+          22200320,
+          22986752
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 745.6655054590083,
+      "rss_bytes": {
+        "Typeflux": [
+          22200320,
+          22986752
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 746.1842644999851,
+      "rss_bytes": {
+        "Typeflux": [
+          22200320,
+          22986752
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 746.7035650420003,
+      "rss_bytes": {
+        "Typeflux": [
+          22200320,
+          22986752
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 747.2224900000147,
+      "rss_bytes": {
+        "Typeflux": [
+          22200320,
+          22986752
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 747.7409719169955,
+      "rss_bytes": {
+        "Typeflux": [
+          22200320,
+          22986752
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 748.2616837919923,
+      "rss_bytes": {
+        "Typeflux": [
+          22200320,
+          22986752
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 748.7833093340159,
+      "rss_bytes": {
+        "Typeflux": [
+          22200320,
+          23003136
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 749.3038940419792,
+      "rss_bytes": {
+        "Typeflux": [
+          22200320,
+          23003136
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 749.8278544999775,
+      "rss_bytes": {
+        "Typeflux": [
+          22200320,
+          23003136
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 750.3471081670141,
+      "rss_bytes": {
+        "Typeflux": [
+          22200320,
+          23003136
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 750.8659984589904,
+      "rss_bytes": {
+        "Typeflux": [
+          22200320,
+          23003136
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 751.3846727919881,
+      "rss_bytes": {
+        "Typeflux": [
+          22200320,
+          23003136
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 751.9066583340173,
+      "rss_bytes": {
+        "Typeflux": [
+          22233088,
+          23003136
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 752.4243719999795,
+      "rss_bytes": {
+        "Typeflux": [
+          22233088,
+          23019520
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 752.9428079589852,
+      "rss_bytes": {
+        "Typeflux": [
+          22233088,
+          23019520
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 753.4632590839756,
+      "rss_bytes": {
+        "Typeflux": [
+          22233088,
+          23019520
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 753.9829237919766,
+      "rss_bytes": {
+        "Typeflux": [
+          22233088,
+          23019520
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 754.5056350840023,
+      "rss_bytes": {
+        "Typeflux": [
+          22233088,
+          23019520
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 755.0244720419869,
+      "rss_bytes": {
+        "Typeflux": [
+          22233088,
+          23035904
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 755.5436151250033,
+      "rss_bytes": {
+        "Typeflux": [
+          22233088,
+          23035904
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 756.0609286670224,
+      "rss_bytes": {
+        "Typeflux": [
+          22233088,
+          23052288
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 756.579585917003,
+      "rss_bytes": {
+        "Typeflux": [
+          22233088,
+          23052288
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 757.0995975839905,
+      "rss_bytes": {
+        "Typeflux": [
+          22233088,
+          23052288
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 757.6194022920099,
+      "rss_bytes": {
+        "Typeflux": [
+          22233088,
+          23052288
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 758.1382025839994,
+      "rss_bytes": {
+        "Typeflux": [
+          22233088,
+          23052288
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 758.6647677919827,
+      "rss_bytes": {
+        "Typeflux": [
+          22233088,
+          23068672
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 759.185890541994,
+      "rss_bytes": {
+        "Typeflux": [
+          22233088,
+          23068672
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 759.7037012089859,
+      "rss_bytes": {
+        "Typeflux": [
+          22233088,
+          23068672
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 760.2225402920158,
+      "rss_bytes": {
+        "Typeflux": [
+          22233088,
+          23068672
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 760.7430748749757,
+      "rss_bytes": {
+        "Typeflux": [
+          22233088,
+          23068672
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 761.2633906669798,
+      "rss_bytes": {
+        "Typeflux": [
+          22233088,
+          23101440
+        ],
+        "TypefluxSemanticHelper": [
+          487866368,
+          490487808
+        ]
+      }
+    },
+    {
+      "seconds": 761.7811142919818,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          490487808
+        ],
+        "Typeflux": [
+          23101440
+        ]
+      }
+    },
+    {
+      "seconds": 762.823261499987,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          506642432
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 763.3411332499818,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          506642432
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 763.8673021249706,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          506642432
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 764.3879407090135,
+      "rss_bytes": {
+        "TypefluxSemanticHelper": [
+          506642432
+        ],
+        "Typeflux": [
+          20676608
+        ]
+      }
+    },
+    {
+      "seconds": 765.943719583971,
+      "rss_bytes": {
+        "Typeflux": [
+          21397504
+        ],
+        "TypefluxSemanticHelper": [
+          512983040
+        ]
+      }
+    },
+    {
+      "seconds": 766.4633754999959,
+      "rss_bytes": {
+        "Typeflux": [
+          21397504,
+          20250624
+        ],
+        "TypefluxSemanticHelper": [
+          514031616,
+          206389248
+        ]
+      }
+    },
+    {
+      "seconds": 766.9933007920044,
+      "rss_bytes": {
+        "Typeflux": [
+          21397504,
+          20758528
+        ],
+        "TypefluxSemanticHelper": [
+          514064384,
+          508739584
+        ]
+      }
+    },
+    {
+      "seconds": 767.5196426669718,
+      "rss_bytes": {
+        "Typeflux": [
+          21397504,
+          20856832
+        ],
+        "TypefluxSemanticHelper": [
+          514080768,
+          508739584
+        ]
+      }
+    },
+    {
+      "seconds": 768.0445000419859,
+      "rss_bytes": {
+        "Typeflux": [
+          21446656,
+          21037056
+        ],
+        "TypefluxSemanticHelper": [
+          514080768,
+          508739584
+        ]
+      }
+    },
+    {
+      "seconds": 768.5637872919906,
+      "rss_bytes": {
+        "Typeflux": [
+          21446656,
+          21069824
+        ],
+        "TypefluxSemanticHelper": [
+          514048000,
+          508739584
+        ]
+      }
+    },
+    {
+      "seconds": 769.0831038340111,
+      "rss_bytes": {
+        "Typeflux": [
+          21446656,
+          21118976
+        ],
+        "TypefluxSemanticHelper": [
+          513916928,
+          508739584
+        ]
+      }
+    },
+    {
+      "seconds": 769.6045349169872,
+      "rss_bytes": {
+        "Typeflux": [
+          21512192,
+          21168128
+        ],
+        "TypefluxSemanticHelper": [
+          513818624,
+          508739584
+        ]
+      }
+    },
+    {
+      "seconds": 770.124136917002,
+      "rss_bytes": {
+        "Typeflux": [
+          21512192,
+          21168128
+        ],
+        "TypefluxSemanticHelper": [
+          513720320,
+          508739584
+        ]
+      }
+    },
+    {
+      "seconds": 770.6465011669789,
+      "rss_bytes": {
+        "Typeflux": [
+          21512192,
+          21184512
+        ],
+        "TypefluxSemanticHelper": [
+          513523712,
+          508739584
+        ]
+      }
+    },
+    {
+      "seconds": 771.1745033750194,
+      "rss_bytes": {
+        "Typeflux": [
+          21594112,
+          21200896
+        ],
+        "TypefluxSemanticHelper": [
+          513523712,
+          508739584
+        ]
+      }
+    },
+    {
+      "seconds": 771.6940455000149,
+      "rss_bytes": {
+        "Typeflux": [
+          21594112,
+          21200896
+        ],
+        "TypefluxSemanticHelper": [
+          513523712,
+          508248064
+        ]
+      }
+    },
+    {
+      "seconds": 772.2136967499973,
+      "rss_bytes": {
+        "Typeflux": [
+          21594112,
+          21217280
+        ],
+        "TypefluxSemanticHelper": [
+          513523712,
+          508248064
+        ]
+      }
+    },
+    {
+      "seconds": 772.7330297500012,
+      "rss_bytes": {
+        "Typeflux": [
+          21610496,
+          21217280
+        ],
+        "TypefluxSemanticHelper": [
+          513523712,
+          508248064
+        ]
+      }
+    },
+    {
+      "seconds": 773.2607366250013,
+      "rss_bytes": {
+        "Typeflux": [
+          21610496,
+          21217280
+        ],
+        "TypefluxSemanticHelper": [
+          513523712,
+          508248064
+        ]
+      }
+    },
+    {
+      "seconds": 773.780762334005,
+      "rss_bytes": {
+        "Typeflux": [
+          21610496,
+          21217280
+        ],
+        "TypefluxSemanticHelper": [
+          513523712,
+          508248064
+        ]
+      }
+    },
+    {
+      "seconds": 774.3023797500064,
+      "rss_bytes": {
+        "Typeflux": [
+          21610496,
+          21217280
+        ],
+        "TypefluxSemanticHelper": [
+          513523712,
+          508248064
+        ]
+      }
+    },
+    {
+      "seconds": 774.8232891670195,
+      "rss_bytes": {
+        "Typeflux": [
+          21610496,
+          21217280
+        ],
+        "TypefluxSemanticHelper": [
+          513523712,
+          508248064
+        ]
+      }
+    },
+    {
+      "seconds": 775.3435117920162,
+      "rss_bytes": {
+        "Typeflux": [
+          21610496,
+          21233664
+        ],
+        "TypefluxSemanticHelper": [
+          513523712,
+          508248064
+        ]
+      }
+    },
+    {
+      "seconds": 775.8663607920171,
+      "rss_bytes": {
+        "Typeflux": [
+          21610496,
+          21233664
+        ],
+        "TypefluxSemanticHelper": [
+          513540096,
+          508248064
+        ]
+      }
+    },
+    {
+      "seconds": 776.3905097499955,
+      "rss_bytes": {
+        "Typeflux": [
+          21610496,
+          21233664
+        ],
+        "TypefluxSemanticHelper": [
+          513540096,
+          508248064
+        ]
+      }
+    },
+    {
+      "seconds": 776.9102268340066,
+      "rss_bytes": {
+        "Typeflux": [
+          21610496,
+          21233664
+        ],
+        "TypefluxSemanticHelper": [
+          513540096,
+          508248064
+        ]
+      }
+    },
+    {
+      "seconds": 777.4373023749795,
+      "rss_bytes": {
+        "Typeflux": [
+          21676032,
+          21250048
+        ],
+        "TypefluxSemanticHelper": [
+          513540096,
+          508248064
+        ]
+      }
+    },
+    {
+      "seconds": 777.9631701249746,
+      "rss_bytes": {
+        "Typeflux": [
+          21676032,
+          21250048
+        ],
+        "TypefluxSemanticHelper": [
+          513540096,
+          508248064
+        ]
+      }
+    },
+    {
+      "seconds": 778.4908963749767,
+      "rss_bytes": {
+        "Typeflux": [
+          21676032,
+          21250048
+        ],
+        "TypefluxSemanticHelper": [
+          513540096,
+          508248064
+        ]
+      }
+    },
+    {
+      "seconds": 779.0105927499826,
+      "rss_bytes": {
+        "Typeflux": [
+          21676032,
+          21250048
+        ],
+        "TypefluxSemanticHelper": [
+          513540096,
+          508248064
+        ]
+      }
+    },
+    {
+      "seconds": 779.5300421669963,
+      "rss_bytes": {
+        "Typeflux": [
+          21676032,
+          21266432
+        ],
+        "TypefluxSemanticHelper": [
+          513540096,
+          508248064
+        ]
+      }
+    },
+    {
+      "seconds": 780.0493865419994,
+      "rss_bytes": {
+        "Typeflux": [
+          21676032,
+          21299200
+        ],
+        "TypefluxSemanticHelper": [
+          513540096,
+          508248064
+        ]
+      }
+    },
+    {
+      "seconds": 780.5681877919706,
+      "rss_bytes": {
+        "Typeflux": [
+          21708800,
+          21299200
+        ],
+        "TypefluxSemanticHelper": [
+          513540096,
+          508248064
+        ]
+      }
+    },
+    {
+      "seconds": 781.0872966669849,
+      "rss_bytes": {
+        "Typeflux": [
+          21708800,
+          21315584
+        ],
+        "TypefluxSemanticHelper": [
+          513540096,
+          508248064
+        ]
+      }
+    },
+    {
+      "seconds": 781.6079444169882,
+      "rss_bytes": {
+        "Typeflux": [
+          21708800,
+          21315584
+        ],
+        "TypefluxSemanticHelper": [
+          513540096,
+          508248064
+        ]
+      }
+    },
+    {
+      "seconds": 782.1285321249743,
+      "rss_bytes": {
+        "Typeflux": [
+          21708800,
+          21348352
+        ],
+        "TypefluxSemanticHelper": [
+          513540096,
+          508248064
+        ]
+      }
+    },
+    {
+      "seconds": 782.6506548339967,
+      "rss_bytes": {
+        "Typeflux": [
+          21725184,
+          21364736
+        ],
+        "TypefluxSemanticHelper": [
+          513540096,
+          508248064
+        ]
+      }
+    },
+    {
+      "seconds": 783.1802297499962,
+      "rss_bytes": {
+        "Typeflux": [
+          21725184,
+          21364736
+        ],
+        "TypefluxSemanticHelper": [
+          513540096,
+          508248064
+        ]
+      }
+    },
+    {
+      "seconds": 783.6998661669786,
+      "rss_bytes": {
+        "Typeflux": [
+          21725184,
+          21364736
+        ],
+        "TypefluxSemanticHelper": [
+          513540096,
+          508248064
+        ]
+      }
+    },
+    {
+      "seconds": 784.2205173749826,
+      "rss_bytes": {
+        "Typeflux": [
+          21725184,
+          21381120
+        ],
+        "TypefluxSemanticHelper": [
+          513540096,
+          508248064
+        ]
+      }
+    },
+    {
+      "seconds": 784.7412134169717,
+      "rss_bytes": {
+        "Typeflux": [
+          21725184,
+          21381120
+        ],
+        "TypefluxSemanticHelper": [
+          513540096,
+          508248064
+        ]
+      }
+    },
+    {
+      "seconds": 785.2655232920079,
+      "rss_bytes": {
+        "Typeflux": [
+          21725184,
+          21413888
+        ],
+        "TypefluxSemanticHelper": [
+          513540096,
+          508248064
+        ]
+      }
+    },
+    {
+      "seconds": 785.7906284999917,
+      "rss_bytes": {
+        "Typeflux": [
+          21725184,
+          21430272
+        ],
+        "TypefluxSemanticHelper": [
+          513540096,
+          508248064
+        ]
+      }
+    },
+    {
+      "seconds": 786.3117792499834,
+      "rss_bytes": {
+        "Typeflux": [
+          21725184,
+          21430272
+        ],
+        "TypefluxSemanticHelper": [
+          513540096,
+          508248064
+        ]
+      }
+    },
+    {
+      "seconds": 786.8315214170143,
+      "rss_bytes": {
+        "Typeflux": [
+          21725184,
+          21446656
+        ],
+        "TypefluxSemanticHelper": [
+          513540096,
+          508248064
+        ]
+      }
+    },
+    {
+      "seconds": 787.3518765839981,
+      "rss_bytes": {
+        "Typeflux": [
+          21741568,
+          21446656
+        ],
+        "TypefluxSemanticHelper": [
+          513540096,
+          508248064
+        ]
+      }
+    },
+    {
+      "seconds": 787.8746537499828,
+      "rss_bytes": {
+        "Typeflux": [
+          21741568,
+          21463040
+        ],
+        "TypefluxSemanticHelper": [
+          513540096,
+          508248064
+        ]
+      }
+    },
+    {
+      "seconds": 788.3948913749773,
+      "rss_bytes": {
+        "Typeflux": [
+          21741568,
+          21561344
+        ],
+        "TypefluxSemanticHelper": [
+          513540096,
+          508248064
+        ]
+      }
+    },
+    {
+      "seconds": 788.9153303750209,
+      "rss_bytes": {
+        "Typeflux": [
+          21741568,
+          21577728
+        ],
+        "TypefluxSemanticHelper": [
+          513540096,
+          508248064
+        ]
+      }
+    },
+    {
+      "seconds": 789.4362788340077,
+      "rss_bytes": {
+        "Typeflux": [
+          21741568,
+          21594112
+        ],
+        "TypefluxSemanticHelper": [
+          513523712,
+          508248064
+        ]
+      }
+    },
+    {
+      "seconds": 789.9715182089712,
+      "rss_bytes": {
+        "Typeflux": [
+          21741568,
+          21594112
+        ],
+        "TypefluxSemanticHelper": [
+          513703936,
+          508248064
+        ]
+      }
+    },
+    {
+      "seconds": 790.4990382919786,
+      "rss_bytes": {
+        "Typeflux": [
+          21741568,
+          21610496
+        ],
+        "TypefluxSemanticHelper": [
+          513703936,
+          508248064
+        ]
+      }
+    },
+    {
+      "seconds": 791.0204345000093,
+      "rss_bytes": {
+        "Typeflux": [
+          21741568,
+          21626880
+        ],
+        "TypefluxSemanticHelper": [
+          513703936,
+          508248064
+        ]
+      }
+    },
+    {
+      "seconds": 791.5403920420213,
+      "rss_bytes": {
+        "Typeflux": [
+          21741568,
+          21643264
+        ],
+        "TypefluxSemanticHelper": [
+          513703936,
+          508248064
+        ]
+      }
+    },
+    {
+      "seconds": 792.0602685839985,
+      "rss_bytes": {
+        "Typeflux": [
+          21741568,
+          21643264
+        ],
+        "TypefluxSemanticHelper": [
+          513703936,
+          508248064
+        ]
+      }
+    },
+    {
+      "seconds": 792.579827959009,
+      "rss_bytes": {
+        "Typeflux": [
+          21741568,
+          21659648
+        ],
+        "TypefluxSemanticHelper": [
+          513703936,
+          508248064
+        ]
+      }
+    },
+    {
+      "seconds": 793.114504333993,
+      "rss_bytes": {
+        "Typeflux": [
+          21741568,
+          21659648
+        ],
+        "TypefluxSemanticHelper": [
+          513703936,
+          508248064
+        ]
+      }
+    },
+    {
+      "seconds": 793.6338595839916,
+      "rss_bytes": {
+        "Typeflux": [
+          21741568,
+          21676032
+        ],
+        "TypefluxSemanticHelper": [
+          513703936,
+          508248064
+        ]
+      }
+    },
+    {
+      "seconds": 794.1579725840129,
+      "rss_bytes": {
+        "Typeflux": [
+          21741568,
+          21676032
+        ],
+        "TypefluxSemanticHelper": [
+          513703936,
+          508248064
+        ]
+      }
+    },
+    {
+      "seconds": 794.6810419589747,
+      "rss_bytes": {
+        "Typeflux": [
+          21757952,
+          21708800
+        ],
+        "TypefluxSemanticHelper": [
+          513703936,
+          508608512
+        ]
+      }
+    },
+    {
+      "seconds": 795.2012292500003,
+      "rss_bytes": {
+        "Typeflux": [
+          21757952,
+          21708800
+        ],
+        "TypefluxSemanticHelper": [
+          513703936,
+          508674048
+        ]
+      }
+    },
+    {
+      "seconds": 795.7219415419968,
+      "rss_bytes": {
+        "Typeflux": [
+          21757952,
+          21708800
+        ],
+        "TypefluxSemanticHelper": [
+          513703936,
+          508690432
+        ]
+      }
+    },
+    {
+      "seconds": 796.2409012090066,
+      "rss_bytes": {
+        "Typeflux": [
+          21757952,
+          21757952
+        ],
+        "TypefluxSemanticHelper": [
+          513703936,
+          508690432
+        ]
+      }
+    },
+    {
+      "seconds": 796.7647869589855,
+      "rss_bytes": {
+        "Typeflux": [
+          21757952,
+          21757952
+        ],
+        "TypefluxSemanticHelper": [
+          513703936,
+          508690432
+        ]
+      }
+    },
+    {
+      "seconds": 797.3145795839955,
+      "rss_bytes": {
+        "Typeflux": [
+          21757952,
+          21757952
+        ],
+        "TypefluxSemanticHelper": [
+          513703936,
+          508723200
+        ]
+      }
+    },
+    {
+      "seconds": 797.8349552919972,
+      "rss_bytes": {
+        "Typeflux": [
+          21757952,
+          21774336
+        ],
+        "TypefluxSemanticHelper": [
+          513703936,
+          508723200
+        ]
+      }
+    },
+    {
+      "seconds": 798.3620216249838,
+      "rss_bytes": {
+        "Typeflux": [
+          21757952,
+          21774336
+        ],
+        "TypefluxSemanticHelper": [
+          513703936,
+          508723200
+        ]
+      }
+    },
+    {
+      "seconds": 798.883246249985,
+      "rss_bytes": {
+        "Typeflux": [
+          21757952,
+          21774336
+        ],
+        "TypefluxSemanticHelper": [
+          513703936,
+          508919808
+        ]
+      }
+    },
+    {
+      "seconds": 799.4034433339839,
+      "rss_bytes": {
+        "Typeflux": [
+          21757952,
+          21790720
+        ],
+        "TypefluxSemanticHelper": [
+          513703936,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 799.923006041965,
+      "rss_bytes": {
+        "Typeflux": [
+          21757952,
+          21790720
+        ],
+        "TypefluxSemanticHelper": [
+          513720320,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 800.4417117919656,
+      "rss_bytes": {
+        "Typeflux": [
+          21757952,
+          21807104
+        ],
+        "TypefluxSemanticHelper": [
+          513720320,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 800.9618582089897,
+      "rss_bytes": {
+        "Typeflux": [
+          21757952,
+          21823488
+        ],
+        "TypefluxSemanticHelper": [
+          513720320,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 801.4833319169702,
+      "rss_bytes": {
+        "Typeflux": [
+          21757952,
+          21839872
+        ],
+        "TypefluxSemanticHelper": [
+          513720320,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 802.0069352919818,
+      "rss_bytes": {
+        "Typeflux": [
+          21757952,
+          21839872
+        ],
+        "TypefluxSemanticHelper": [
+          513720320,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 802.5278040840058,
+      "rss_bytes": {
+        "Typeflux": [
+          21757952,
+          21872640
+        ],
+        "TypefluxSemanticHelper": [
+          513720320,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 803.0495178750134,
+      "rss_bytes": {
+        "Typeflux": [
+          21757952,
+          21872640
+        ],
+        "TypefluxSemanticHelper": [
+          513720320,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 803.5857462919666,
+      "rss_bytes": {
+        "Typeflux": [
+          21757952,
+          21872640
+        ],
+        "TypefluxSemanticHelper": [
+          513720320,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 804.1036550839781,
+      "rss_bytes": {
+        "Typeflux": [
+          21856256,
+          21905408
+        ],
+        "TypefluxSemanticHelper": [
+          513720320,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 804.6243300840142,
+      "rss_bytes": {
+        "Typeflux": [
+          21856256,
+          21921792
+        ],
+        "TypefluxSemanticHelper": [
+          513703936,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 805.1606625840068,
+      "rss_bytes": {
+        "Typeflux": [
+          21856256,
+          21938176
+        ],
+        "TypefluxSemanticHelper": [
+          513703936,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 805.6796298340196,
+      "rss_bytes": {
+        "Typeflux": [
+          21856256,
+          21938176
+        ],
+        "TypefluxSemanticHelper": [
+          513703936,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 806.203087834001,
+      "rss_bytes": {
+        "Typeflux": [
+          21856256,
+          21970944
+        ],
+        "TypefluxSemanticHelper": [
+          513703936,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 806.7247045839904,
+      "rss_bytes": {
+        "Typeflux": [
+          21856256,
+          21970944
+        ],
+        "TypefluxSemanticHelper": [
+          513703936,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 807.2472957919817,
+      "rss_bytes": {
+        "Typeflux": [
+          21856256,
+          21987328
+        ],
+        "TypefluxSemanticHelper": [
+          513703936,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 807.767044749984,
+      "rss_bytes": {
+        "Typeflux": [
+          21856256,
+          21987328
+        ],
+        "TypefluxSemanticHelper": [
+          494501888,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 808.288501833973,
+      "rss_bytes": {
+        "Typeflux": [
+          21856256,
+          21987328
+        ],
+        "TypefluxSemanticHelper": [
+          494501888,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 808.8095324999886,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          22020096
+        ],
+        "TypefluxSemanticHelper": [
+          494501888,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 809.3302537499694,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          22036480
+        ],
+        "TypefluxSemanticHelper": [
+          494501888,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 809.8531122920103,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          22036480
+        ],
+        "TypefluxSemanticHelper": [
+          494501888,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 810.3714139999938,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          22069248
+        ],
+        "TypefluxSemanticHelper": [
+          494501888,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 810.8900569169782,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          22069248
+        ],
+        "TypefluxSemanticHelper": [
+          494501888,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 811.409472749976,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          22069248
+        ],
+        "TypefluxSemanticHelper": [
+          494501888,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 811.9366730839829,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          22085632
+        ],
+        "TypefluxSemanticHelper": [
+          494501888,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 812.4669705000124,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          22102016
+        ],
+        "TypefluxSemanticHelper": [
+          494501888,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 812.991135874996,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          22118400
+        ],
+        "TypefluxSemanticHelper": [
+          494501888,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 813.5202961249743,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          22134784
+        ],
+        "TypefluxSemanticHelper": [
+          494501888,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 814.0473761250032,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          22134784
+        ],
+        "TypefluxSemanticHelper": [
+          494501888,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 814.5697394169983,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          22183936
+        ],
+        "TypefluxSemanticHelper": [
+          494501888,
+          508936192
+        ]
+      }
+    },
+    {
+      "seconds": 815.0927646249766,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          22183936
+        ],
+        "TypefluxSemanticHelper": [
+          494501888,
+          489734144
+        ]
+      }
+    },
+    {
+      "seconds": 815.6173490419751,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          22200320
+        ],
+        "TypefluxSemanticHelper": [
+          494501888,
+          489734144
+        ]
+      }
+    },
+    {
+      "seconds": 816.143117833999,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          22200320
+        ],
+        "TypefluxSemanticHelper": [
+          494501888,
+          489734144
+        ]
+      }
+    },
+    {
+      "seconds": 816.6734315420035,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          22216704
+        ],
+        "TypefluxSemanticHelper": [
+          494501888,
+          489734144
+        ]
+      }
+    },
+    {
+      "seconds": 817.2022407919867,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          22233088
+        ],
+        "TypefluxSemanticHelper": [
+          494501888,
+          489734144
+        ]
+      }
+    },
+    {
+      "seconds": 817.720387208974,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          22233088
+        ],
+        "TypefluxSemanticHelper": [
+          494501888,
+          489734144
+        ]
+      }
+    },
+    {
+      "seconds": 818.2444276669994,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          22233088
+        ],
+        "TypefluxSemanticHelper": [
+          494501888,
+          489734144
+        ]
+      }
+    },
+    {
+      "seconds": 818.7690798749682,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          22265856
+        ],
+        "TypefluxSemanticHelper": [
+          494501888,
+          489734144
+        ]
+      }
+    },
+    {
+      "seconds": 819.2923029169906,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          22282240
+        ],
+        "TypefluxSemanticHelper": [
+          494501888,
+          489734144
+        ]
+      }
+    },
+    {
+      "seconds": 819.8156410420197,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          22298624
+        ],
+        "TypefluxSemanticHelper": [
+          494501888,
+          489734144
+        ]
+      }
+    },
+    {
+      "seconds": 820.3401017090073,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          22315008
+        ],
+        "TypefluxSemanticHelper": [
+          494501888,
+          489734144
+        ]
+      }
+    },
+    {
+      "seconds": 820.8602552089724,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          22331392
+        ],
+        "TypefluxSemanticHelper": [
+          494501888,
+          489734144
+        ]
+      }
+    },
+    {
+      "seconds": 821.383631374978,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          22347776
+        ],
+        "TypefluxSemanticHelper": [
+          494501888,
+          489734144
+        ]
+      }
+    },
+    {
+      "seconds": 821.905359583965,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          22347776
+        ],
+        "TypefluxSemanticHelper": [
+          494501888,
+          489734144
+        ]
+      }
+    },
+    {
+      "seconds": 822.4280488750082,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          22380544
+        ],
+        "TypefluxSemanticHelper": [
+          494501888,
+          489734144
+        ]
+      }
+    },
+    {
+      "seconds": 822.9481367499684,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          22396928
+        ],
+        "TypefluxSemanticHelper": [
+          494501888,
+          489734144
+        ]
+      }
+    },
+    {
+      "seconds": 823.4719307919731,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          22396928
+        ],
+        "TypefluxSemanticHelper": [
+          494501888,
+          489734144
+        ]
+      }
+    },
+    {
+      "seconds": 823.9914332089829,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          22413312
+        ],
+        "TypefluxSemanticHelper": [
+          494501888,
+          489734144
+        ]
+      }
+    },
+    {
+      "seconds": 824.5143892919878,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          22446080
+        ],
+        "TypefluxSemanticHelper": [
+          494501888,
+          489734144
+        ]
+      }
+    },
+    {
+      "seconds": 825.0359814169933,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          22446080
+        ],
+        "TypefluxSemanticHelper": [
+          494501888,
+          489734144
+        ]
+      }
+    },
+    {
+      "seconds": 825.5614491669694,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          22478848
+        ],
+        "TypefluxSemanticHelper": [
+          494501888,
+          489734144
+        ]
+      }
+    },
+    {
+      "seconds": 826.0830574589781,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          22478848
+        ],
+        "TypefluxSemanticHelper": [
+          494501888,
+          489734144
+        ]
+      }
+    },
+    {
+      "seconds": 826.606660792022,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          22495232
+        ],
+        "TypefluxSemanticHelper": [
+          494501888,
+          489734144
+        ]
+      }
+    },
+    {
+      "seconds": 827.1356990839704,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          22495232
+        ],
+        "TypefluxSemanticHelper": [
+          494501888,
+          489734144
+        ]
+      }
+    },
+    {
+      "seconds": 827.6591298750136,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          22528000
+        ],
+        "TypefluxSemanticHelper": [
+          494501888,
+          489734144
+        ]
+      }
+    },
+    {
+      "seconds": 828.1884084169869,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          22544384
+        ],
+        "TypefluxSemanticHelper": [
+          494501888,
+          489734144
+        ]
+      }
+    },
+    {
+      "seconds": 828.7210491250153,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          22544384
+        ],
+        "TypefluxSemanticHelper": [
+          494501888,
+          489717760
+        ]
+      }
+    },
+    {
+      "seconds": 829.2484831669717,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          22577152
+        ],
+        "TypefluxSemanticHelper": [
+          494501888,
+          489717760
+        ]
+      }
+    },
+    {
+      "seconds": 829.7736616249895,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          22609920
+        ],
+        "TypefluxSemanticHelper": [
+          494501888,
+          489717760
+        ]
+      }
+    },
+    {
+      "seconds": 830.3237594590173,
+      "rss_bytes": {
+        "Typeflux": [
+          21872640,
+          21413888
+        ],
+        "TypefluxSemanticHelper": [
+          459358208,
+          363462656
+        ]
+      }
+    },
+    {
+      "seconds": 830.8523839999689,
+      "rss_bytes": {
+        "Typeflux": [
+          20512768,
+          20955136
+        ],
+        "TypefluxSemanticHelper": [
+          365936640,
+          361791488
+        ]
+      }
+    },
+    {
+      "seconds": 831.3850007919827,
+      "rss_bytes": {
+        "Typeflux": [
+          20512768,
+          20955136
+        ],
+        "TypefluxSemanticHelper": [
+          365936640,
+          361791488
+        ]
+      }
+    },
+    {
+      "seconds": 831.9149896249874,
+      "rss_bytes": {
+        "Typeflux": [
+          20512768,
+          20971520
+        ],
+        "TypefluxSemanticHelper": [
+          365936640,
+          361857024
+        ]
+      }
+    },
+    {
+      "seconds": 832.4512982089655,
+      "rss_bytes": {
+        "Typeflux": [
+          20512768,
+          20955136
+        ],
+        "TypefluxSemanticHelper": [
+          365920256,
+          361857024
+        ]
+      }
+    },
+    {
+      "seconds": 832.9902076669969,
+      "rss_bytes": {
+        "Typeflux": [
+          20512768,
+          20971520
+        ],
+        "TypefluxSemanticHelper": [
+          365920256,
+          361857024
+        ]
+      }
+    },
+    {
+      "seconds": 833.5192555420217,
+      "rss_bytes": {
+        "Typeflux": [
+          20512768,
+          20971520
+        ],
+        "TypefluxSemanticHelper": [
+          365969408,
+          361906176
+        ]
+      }
+    },
+    {
+      "seconds": 834.0549606250133,
+      "rss_bytes": {
+        "Typeflux": [
+          20512768,
+          20971520
+        ],
+        "TypefluxSemanticHelper": [
+          365969408,
+          361906176
+        ]
+      }
+    },
+    {
+      "seconds": 834.5975325839827,
+      "rss_bytes": {
+        "Typeflux": [
+          20512768,
+          20987904
+        ],
+        "TypefluxSemanticHelper": [
+          365936640,
+          361889792
+        ]
+      }
+    },
+    {
+      "seconds": 835.1433468749747,
+      "rss_bytes": {
+        "Typeflux": [
+          20512768,
+          20987904
+        ],
+        "TypefluxSemanticHelper": [
+          365936640,
+          361938944
+        ]
+      }
+    },
+    {
+      "seconds": 835.6795756249921,
+      "rss_bytes": {
+        "Typeflux": [
+          20512768,
+          21053440
+        ],
+        "TypefluxSemanticHelper": [
+          365936640,
+          361938944
+        ]
+      }
+    },
+    {
+      "seconds": 836.2191954170121,
+      "rss_bytes": {
+        "Typeflux": [
+          20709376,
+          21053440
+        ],
+        "TypefluxSemanticHelper": [
+          365969408,
+          361938944
+        ]
+      }
+    }
+  ]
+}

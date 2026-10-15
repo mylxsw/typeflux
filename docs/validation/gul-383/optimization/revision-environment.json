@@ -1,0 +1,10 @@
+{
+  "hardware": "Apple M4",
+  "memory_bytes": 17179869184,
+  "os": "26.6.2",
+  "swift": "Apple Swift version 6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)\nTarget: arm64-apple-macosx26.0",
+  "model_sha256": "2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135",
+  "projector_sha256": "c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f",
+  "helper_sha256": "8387df2952b8f35569b1a46ba12920d844985caced14bdfb7a094739929910db",
+  "host_exclusive": false
+}
