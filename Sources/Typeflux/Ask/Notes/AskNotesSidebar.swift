@@ -27,8 +27,20 @@ enum AskNotesStyle {
     }
 }
 
+/// How every sidebar marks its selected row: the conversation history, the
+/// library shelves and Settings. Glass puts the accent on the title over a
+/// neutral pill; classic keeps the primary text on its source-list selection.
+enum AskSidebarSelection {
+    static func titleColor(selected: Bool, hovering: Bool, glass: Bool,
+                           accent: Color = AskTheme.accent) -> Color {
+        if selected, glass { return accent }
+        return selected || hovering ? StudioTheme.textPrimary : StudioTheme.textSecondary
+    }
+}
+
 /// Library selection uses the same light wash as floating lists. Dark keeps
-/// its accent glass pill or classic source-list grey.
+/// its accent glass pill or classic source-list grey; a dark glass sidebar row
+/// takes the conversation sidebar's neutral pill instead.
 struct AskNotesRowBackground: ViewModifier {
     var selected: Bool
     var hovering: Bool
@@ -50,6 +62,8 @@ struct AskNotesRowBackground: ViewModifier {
                     } else if colorScheme == .light {
                         shape.fill(AskTheme.launcherSelection)
                             .overlay(shape.strokeBorder(AskTheme.launcherSelectionEdge, lineWidth: 0.5))
+                    } else if style.usesGlass, sidebar {
+                        shape.fill(AskTheme.pressFill)
                     } else if style.usesGlass {
                         shape.fill(AskTheme.accent.opacity(0.18))
                             .overlay(shape.strokeBorder(AskTheme.accent.opacity(0.4), lineWidth: 0.5))
@@ -224,8 +238,8 @@ struct AskNotesShelfRow: View {
                         .frame(width: 18)
                 }
                 Text(title).font(.system(size: child ? 12.5 : 13, weight: active ? .semibold : .regular))
-                    .foregroundStyle(active && colorScheme == .light ? AskTheme.accentText
-                        : active || hovering ? StudioTheme.textPrimary : StudioTheme.textSecondary)
+                    .foregroundStyle(Self.titleColor(active: active, hovering: hovering, glass: style.usesGlass,
+                                                     light: colorScheme == .light))
                     .lineLimit(1)
                 if locked {
                     Image(systemName: "eye.slash").font(.system(size: 9.5)).foregroundStyle(StudioTheme.textTertiary)
@@ -246,5 +260,11 @@ struct AskNotesShelfRow: View {
         .accessibilityLabel(title)
         .accessibilityValue("\(count)")
         .accessibilityAddTraits(active ? .isSelected : [])
+    }
+
+    /// Glass follows the conversation sidebar; classic keeps its light accent text.
+    static func titleColor(active: Bool, hovering: Bool, glass: Bool, light: Bool) -> Color {
+        if active, !glass, light { return AskTheme.accentText }
+        return AskSidebarSelection.titleColor(selected: active, hovering: hovering, glass: glass)
     }
 }

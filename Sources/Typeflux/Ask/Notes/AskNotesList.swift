@@ -54,22 +54,27 @@ struct AskNotesList: View {
         .onChange(of: model.scope) { _ in showsSidebar = false }
     }
 
+    /// With the sidebar collapsed, "new note" and its toggle sit right-aligned
+    /// in one glass pill, like the conversation sidebar's tools.
     private var navigationBar: some View {
         HStack(spacing: 6) {
             Color.clear.frame(width: AskResultWindowView.trafficLightClearance)
-            AskIconGhostButton(label: L("ask.sidebar.toggle"), systemImage: "sidebar.left") {
-                showsSidebar.toggle()
-            }
-            .accessibilityIdentifier("ask.notes.sidebarToggle")
-            .popover(isPresented: $showsSidebar, arrowEdge: .leading) {
-                AskNotesSidebar(model: model, clearsTitleBar: false)
-                    .frame(width: AskNotesView.sidebarWidth, height: 480)
-                    .background(AskTheme.glassFill)
-            }
             Spacer(minLength: 0)
-            AskIconGhostButton(label: L("ask.notes.new") + " ⌘N", systemImage: "square.and.pencil") {
-                model.createNote()
+            HStack(spacing: 0) {
+                AskIconGhostButton(label: L("ask.notes.new") + " ⌘N", systemImage: "square.and.pencil") {
+                    model.createNote()
+                }
+                AskIconGhostButton(label: L("ask.sidebar.toggle"), systemImage: "sidebar.left") {
+                    showsSidebar.toggle()
+                }
+                .accessibilityIdentifier("ask.notes.sidebarToggle")
+                .popover(isPresented: $showsSidebar, arrowEdge: .bottom) {
+                    AskNotesSidebar(model: model, clearsTitleBar: false)
+                        .frame(width: AskNotesView.sidebarWidth, height: 480)
+                        .background(AskTheme.glassFill)
+                }
             }
+            .askCollapsedSidebarTools()
         }
         .padding(.trailing, 10)
         .frame(height: AskMetrics.titleBarRowHeight)

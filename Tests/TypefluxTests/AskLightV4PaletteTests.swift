@@ -144,7 +144,11 @@ struct AskLightV4PaletteTests {
         let lightShelf = try await render(shelf, style: style, dark: false)
         let darkShelf = try await render(shelf, style: style, dark: true)
         #expect(lightShelf.redComponent > 0.99 && lightShelf.blueComponent > 0.99)
-        #expect(abs(darkShelf.blueComponent - darkFill.blueComponent) < 0.002)
+        // A dark glass shelf takes the conversation sidebar's neutral pill.
+        let darkShelfFill = try await render((style.usesGlass ? AskTheme.pressFill : AskClassic.selection)
+            .frame(width: 160, height: 60), style: style, dark: true)
+        #expect(abs(darkShelf.redComponent - darkShelfFill.redComponent) < 0.002)
+        #expect(abs(darkShelf.blueComponent - darkShelfFill.blueComponent) < 0.002)
         let hover = try await render(Color.clear.frame(width: 160, height: 60)
             .askNotesRow(selected: false, hovering: true, corner: 12), style: style, dark: false)
         #expect(hover.redComponent < 0.97)

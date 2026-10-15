@@ -115,8 +115,8 @@ struct AskHistoryRow: View {
     /// Glass marks the open conversation by its title in the accent (the
     /// private tint for one kept on this Mac); classic keeps the primary text.
     static func titleColor(selected: Bool, hovering: Bool, stored: Bool, glass: Bool) -> Color {
-        if selected, glass { return stored ? AskTheme.privateTint : AskTheme.accent }
-        return selected || hovering ? StudioTheme.textPrimary : StudioTheme.textSecondary
+        AskSidebarSelection.titleColor(selected: selected, hovering: hovering, glass: glass,
+                                       accent: stored ? AskTheme.privateTint : AskTheme.accent)
     }
 
     private func beginRename() {

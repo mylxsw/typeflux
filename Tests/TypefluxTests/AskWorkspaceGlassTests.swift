@@ -141,6 +141,29 @@ struct AskWorkspaceGlassTests {
             == StudioTheme.textSecondary)
     }
 
+    @Test func libraryShelvesAndSettingsMarkTheirSelectionLikeTheConversationSidebar() {
+        // Glass: the accent title in every sidebar.
+        for light in [false, true] {
+            #expect(AskNotesShelfRow.titleColor(active: true, hovering: false, glass: true, light: light)
+                == AskTheme.accent)
+        }
+        #expect(StudioSidebar.navigationColor(selected: true, glass: true) == AskTheme.accent)
+        // Classic keeps its own selected text.
+        #expect(AskNotesShelfRow.titleColor(active: true, hovering: false, glass: false, light: true)
+            == AskTheme.accentText)
+        #expect(AskNotesShelfRow.titleColor(active: true, hovering: false, glass: false, light: false)
+            == StudioTheme.textPrimary)
+        #expect(StudioSidebar.navigationColor(selected: true, glass: false) == StudioTheme.accentText)
+        // Unselected rows are the same in both styles.
+        #expect(AskNotesShelfRow.titleColor(active: false, hovering: true, glass: true, light: true)
+            == StudioTheme.textPrimary)
+        #expect(AskNotesShelfRow.titleColor(active: false, hovering: false, glass: true, light: false)
+            == StudioTheme.textSecondary)
+        #expect(StudioSidebar.navigationColor(selected: false, glass: true) == StudioTheme.textSecondary)
+        #expect(AskSidebarSelection.titleColor(selected: true, hovering: false, glass: true,
+                                               accent: AskTheme.privateTint) == AskTheme.privateTint)
+    }
+
     @Test func headerCapsulesFitTheTitleBarRow() {
         #expect(AskMetrics.headerCapsuleHeight < AskMetrics.titleBarRowHeight)
         #expect(AskMetrics.headerCapsuleHeight >= AskMetrics.composerControlHeight)

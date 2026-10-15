@@ -252,10 +252,7 @@ struct AskConversationView: View {
         HStack(spacing: 2) {
             if !sidebarHidden { Spacer(minLength: 0) }
             if sidebarHidden {
-                collapsedTools
-                    .padding(.horizontal, 3)
-                    .frame(height: AskMetrics.headerCapsuleHeight)
-                    .askInWindowGlassPill(height: AskMetrics.headerCapsuleHeight)
+                collapsedTools.askCollapsedSidebarTools()
             } else {
                 expandedTools
                     .padding(.horizontal, style.usesGlass ? 3 : 0)
