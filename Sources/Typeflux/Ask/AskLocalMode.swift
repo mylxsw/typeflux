@@ -14,20 +14,32 @@ struct AskLocalModeStatus: Equatable {
     var changeable = false
     var modelAvailable = true
     var modelReason: String? = nil
+    /// The conversation is temporary: in no history list and gone once left.
+    var temporary = false
+    /// The kinds the card offers while `changeable`; Cloud needs a session.
+    var choices: [AskStorageKind] = []
 
+    var kind: AskStorageKind { temporary ? .temporary : local ? .local : .cloud }
+
+    /// `offersChoice` is false where the card only describes the session, as in the sidebar.
     @MainActor
-    static func make(model: AskConversationModel, signedIn: Bool, launcher: Bool = false) -> Self {
+    static func make(model: AskConversationModel, signedIn: Bool, launcher: Bool = false,
+                     offersChoice: Bool = true) -> Self {
         let library = model.modelLibrary
         let reference = model.modelReference(launcher: launcher)
         let provider = library.registry.resolve(reference)?.0
         let reason = model.modelSelectionIssue(reference, cloudAvailable: model.cloudAvailable(launcher: launcher),
                                                hasImage: model.requiresVision(launcher: launcher))?.text
+        let changeable = offersChoice && model.canChooseStorage(launcher: launcher)
+        let temporary = offersChoice && model.isTemporaryComposer(launcher: launcher)
         return .init(source: provider.map(sourceName) ?? L("ask.local.sourceNone"),
                      searchConfigured: AskSearchSettings(defaults: library.settings.defaults).provider != .none,
                      offersSignIn: !signedIn,
                      local: model.storesLocally(launcher: launcher),
-                     changeable: model.canChangeStorage(launcher: launcher),
-                     modelAvailable: reason == nil, modelReason: reason)
+                     changeable: changeable,
+                     modelAvailable: reason == nil, modelReason: reason,
+                     temporary: temporary,
+                     choices: changeable ? (signedIn ? [.cloud, .local, .temporary] : [.local, .temporary]) : [])
     }
 
     static func sourceName(_ provider: RegisteredProvider) -> String {
@@ -36,6 +48,7 @@ struct AskLocalModeStatus: Equatable {
 
     /// The card's lead sentence: why it is kept here, or what the choice means.
     var summaryKey: String {
+        if temporary, !changeable { return "ask.storage.card.lockedTemporary" }
         if offersSignIn { return "ask.local.card.body" }
         if changeable { return "ask.storage.card.choose" }
         return local ? "ask.storage.card.lockedLocal" : "ask.storage.card.lockedCloud"
@@ -116,16 +129,19 @@ struct AskLocalModeCard: View {
     var onOpenSearchSettings: () -> Void
     var onSignIn: () -> Void
     var onOpenModelSettings: () -> Void = {}
-    /// Picks where the new conversation is kept: true on this Mac.
-    var onChoose: (Bool) -> Void = { _ in }
+    /// Picks where the new conversation is kept.
+    var onChoose: (AskStorageKind) -> Void = { _ in }
     /// Starts a conversation of the other kind, for one that already started.
     var onStartOther: () -> Void = {}
+    /// Keeps the temporary conversation as an ordinary one.
+    var onKeep: () -> Void = {}
+    /// Ends the temporary conversation.
+    var onEnd: () -> Void = {}
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             VStack(alignment: .leading, spacing: 5) {
-                Label(L(status.local ? "ask.storage.local" : "ask.storage.cloud"),
-                      systemImage: status.local ? "lock" : "cloud")
+                Label(L(status.kind.titleKey), systemImage: status.kind.symbol)
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(StudioTheme.textPrimary)
                 Text(L(status.summaryKey))
@@ -135,12 +151,15 @@ struct AskLocalModeCard: View {
             }
             if status.changeable {
                 VStack(spacing: 4) {
-                    option(local: false)
-                    option(local: true)
+                    ForEach(status.choices, id: \.self) { option($0) }
                 }
             }
             Rectangle().fill(AskTheme.separator).frame(height: 0.5)
-            if status.local { localDetails } else { cloudDetails }
+            switch status.kind {
+            case .temporary: temporaryDetails
+            case .local: localDetails
+            case .cloud: cloudDetails
+            }
             if status.offersSignIn {
                 Rectangle().fill(AskTheme.separator).frame(height: 0.5)
                 HStack(spacing: 8) {
@@ -150,7 +169,16 @@ struct AskLocalModeCard: View {
                     Button(L("account.card.signIn"), action: onSignIn)
                         .buttonStyle(AskCapsuleButtonStyle(kind: .primary))
                 }
-            } else if !status.changeable {
+            }
+            if status.temporary, !status.changeable {
+                HStack(spacing: 8) {
+                    Spacer(minLength: 0)
+                    Button(L("ask.temporary.keep"), action: onKeep)
+                        .buttonStyle(AskCapsuleButtonStyle(kind: .secondary))
+                    Button(L("ask.temporary.end"), action: onEnd)
+                        .buttonStyle(AskCapsuleButtonStyle(kind: .secondary))
+                }
+            } else if !status.changeable, !status.offersSignIn {
                 HStack {
                     Spacer(minLength: 0)
                     Button(L(status.local ? "ask.storage.newCloud" : "ask.storage.newLocal"), action: onStartOther)
@@ -196,6 +224,26 @@ struct AskLocalModeCard: View {
         note(L("ask.storage.card.cloudNote"))
     }
 
+    /// What a temporary conversation leaves behind: nothing in history or memory,
+    /// and a Cloud model's run kept on the server for at most a day.
+    private var temporaryDetails: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            fact("clock.arrow.circlepath", L("ask.temporary.fact.history"))
+            fact("brain", L("ask.temporary.fact.memory"))
+            fact("xmark.bin", L("ask.temporary.fact.end"))
+            if !status.offersSignIn { note(L("ask.temporary.fact.cloud")) }
+        }
+    }
+
+    private func fact(_ symbol: String, _ text: String) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 7) {
+            Image(systemName: symbol).font(.system(size: 11)).foregroundStyle(AskTheme.temporaryTint)
+                .frame(width: 14)
+            Text(text).font(.system(size: 12)).foregroundStyle(StudioTheme.textPrimary)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+
     private func note(_ text: String) -> some View {
         Text(text)
             .font(.system(size: 11))
@@ -203,21 +251,29 @@ struct AskLocalModeCard: View {
             .fixedSize(horizontal: false, vertical: true)
     }
 
-    private func option(local: Bool) -> some View {
-        let chosen = status.local == local
-        let tint = local ? AskTheme.privateTint : AskTheme.accent
-        return Button { onChoose(local) } label: {
+    static func tint(_ kind: AskStorageKind) -> Color {
+        switch kind {
+        case .cloud: AskTheme.accent
+        case .local: AskTheme.privateTint
+        case .temporary: AskTheme.temporaryTint
+        }
+    }
+
+    private func option(_ kind: AskStorageKind) -> some View {
+        let chosen = status.kind == kind
+        let tint = Self.tint(kind)
+        return Button { onChoose(kind) } label: {
             HStack(spacing: 10) {
-                Image(systemName: local ? "lock" : "cloud")
+                Image(systemName: kind.symbol)
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(tint)
                     .frame(width: 26, height: 26)
                     .background(tint.opacity(0.14), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(L(local ? "ask.storage.local" : "ask.storage.cloud"))
+                    Text(L(kind.titleKey))
                         .font(.system(size: 12.5, weight: .semibold))
                         .foregroundStyle(StudioTheme.textPrimary)
-                    Text(L(local ? "ask.storage.local.detail" : "ask.storage.cloud.detail"))
+                    Text(L(kind.detailKey))
                         .font(.system(size: 11))
                         .foregroundStyle(StudioTheme.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -230,7 +286,8 @@ struct AskLocalModeCard: View {
             .padding(.horizontal, 8).padding(.vertical, 7)
             .background(chosen ? tint.opacity(0.08) : .clear, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .strokeBorder(chosen ? tint.opacity(0.5) : .clear, lineWidth: 1))
+                .strokeBorder(chosen ? tint.opacity(0.5) : .clear,
+                              style: StrokeStyle(lineWidth: 1, dash: kind == .temporary ? AskTheme.temporaryDash : [])))
             .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
         .buttonStyle(.plain)
@@ -267,12 +324,18 @@ private struct AskLocalModeMenu: ViewModifier {
             }, onOpenModelSettings: {
                 isPresented = false
                 model.onOpenSettings?(.models)
-            }, onChoose: { local in
+            }, onChoose: { kind in
                 isPresented = false
-                model.setStoresLocally(local, launcher: launcher)
+                model.chooseStorage(kind, launcher: launcher)
             }, onStartOther: {
                 isPresented = false
                 model.newConversation(storesLocally: !status.local)
+            }, onKeep: {
+                isPresented = false
+                model.keepTemporaryConversation()
+            }, onEnd: {
+                isPresented = false
+                model.endTemporaryConversation()
             })
         }
     }
@@ -290,15 +353,15 @@ struct AskStorageButton: View {
     static let size: CGFloat = 26
 
     var body: some View {
-        let local = model.storesLocally(launcher: launcher)
-        let name = L(local ? "ask.storage.local" : "ask.storage.cloud")
+        let kind = model.storageKind(launcher: launcher)
+        let name = L(kind.titleKey)
         let active = hovering || presented
         Button { presented.toggle() } label: {
-            Image(systemName: local ? "lock" : "cloud")
-                .font(.system(size: 12.5, weight: local || active ? .semibold : .medium))
-                .foregroundStyle(Self.iconColor(local: local, active: active))
+            Image(systemName: kind.symbol)
+                .font(.system(size: 12.5, weight: kind != .cloud || active ? .semibold : .medium))
+                .foregroundStyle(Self.iconColor(kind, active: active))
                 .frame(width: Self.size, height: Self.size)
-                .background(Self.wellFill(local: local, active: active),
+                .background(Self.wellFill(kind, active: active),
                             in: RoundedRectangle(cornerRadius: 8, style: .continuous))
                 .contentShape(Circle())
         }
@@ -312,18 +375,28 @@ struct AskStorageButton: View {
                                    model: model, launcher: launcher))
     }
 
-    /// The private tint marks this Mac, hover or an open menu brightens the cloud.
-    static func iconColor(local: Bool, active: Bool) -> Color {
-        if local { return AskTheme.privateTint }
-        return active ? StudioTheme.textPrimary : StudioTheme.textSecondary
+    /// The private tint marks this Mac and teal a temporary conversation; hover or an
+    /// open menu brightens the cloud.
+    static func iconColor(_ kind: AskStorageKind, active: Bool) -> Color {
+        switch kind {
+        case .local: AskTheme.privateTint
+        case .temporary: AskTheme.temporaryTint
+        case .cloud: active ? StudioTheme.textPrimary : StudioTheme.textSecondary
+        }
     }
 
-    /// Kept on this Mac is a state, so it sits in a private-tinted well like an
+    /// Kept on this Mac and temporary are states, so they sit in a tinted well like an
     /// on switch; the cloud only gets the hover wash.
-    static func wellFill(local: Bool, active: Bool) -> Color {
-        if local { return AskTheme.privateFill }
-        return active ? AskTheme.hoverFill : .clear
+    static func wellFill(_ kind: AskStorageKind, active: Bool) -> Color {
+        switch kind {
+        case .local: AskTheme.privateFill
+        case .temporary: AskTheme.temporaryFill
+        case .cloud: active ? AskTheme.hoverFill : .clear
+        }
     }
+
+    static func iconColor(local: Bool, active: Bool) -> Color { iconColor(local ? .local : .cloud, active: active) }
+    static func wellFill(local: Bool, active: Bool) -> Color { wellFill(local ? .local : .cloud, active: active) }
 }
 
 /// The sidebar footer while signed out: where Ask runs, instead of a lone sign-in link.
@@ -337,7 +410,7 @@ struct AskLocalModeIdentity: View {
     }
 
     var body: some View {
-        let status = AskLocalModeStatus.make(model: model, signedIn: false)
+        let status = AskLocalModeStatus.make(model: model, signedIn: false, offersChoice: false)
         AskSignedOutIdentity(active: presented, detail: Self.detail(source: status.source)) {
             presented.toggle()
         }

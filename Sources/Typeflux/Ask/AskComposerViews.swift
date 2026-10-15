@@ -608,7 +608,7 @@ struct AskComposer: View {
             case .commandEnter: model.submitLauncher(); return true
             case .escape, .commandO, .commandC, .commandZ, .shiftTab,
                  .commandD, .commandE, .commandS, .commandB, .commandDelete, .optionCommandDelete,
-                 .left, .commandLeft, .commandRight, .commandT, .commandN: return false
+                 .left, .commandLeft, .commandRight, .commandT, .commandN, .optionCommandN: return false
             default: return true
             }
         }
@@ -665,7 +665,7 @@ struct AskComposer: View {
             guard case let .browser(index) = results.highlightedRow, results.browserEntries.indices.contains(index) else { return false }
             AskQuickResults.copy(results.browserEntries[index].url)
         case .escape, .shiftTab, .commandD, .commandE, .commandZ, .commandS, .commandB, .commandO,
-             .commandDelete, .optionCommandDelete, .left, .commandLeft, .commandRight, .commandT, .commandN:
+             .commandDelete, .optionCommandDelete, .left, .commandLeft, .commandRight, .commandT, .commandN, .optionCommandN:
             return false
         }
         return true
@@ -910,7 +910,7 @@ struct AskComposer: View {
             // Ask the AI about the chosen file: it becomes an attachment of a new question.
             guard case let .fileIcon(url)? = plugins.output?.selected?.icon else { return false }
             model.attachFileToLauncher(url)
-        case .right, .left, .commandLeft, .commandRight, .commandT, .commandN,
+        case .right, .left, .commandLeft, .commandRight, .commandT, .commandN, .optionCommandN,
              .optionCommandC, .commandDown, .commandDelete, .optionCommandDelete: return false
         }
         return true
@@ -1289,6 +1289,12 @@ struct AskComposer: View {
                 RoundedRectangle(cornerRadius: chrome.corner, style: .continuous)
                     .strokeBorder(AskTheme.accent, lineWidth: dropTargeted ? 2 : 1.5)
                     .allowsHitTesting(false)
+            } else if temporaryTint {
+                // A temporary conversation's edge is dashed: nothing here is saved.
+                RoundedRectangle(cornerRadius: chrome.corner, style: .continuous)
+                    .strokeBorder(AskTheme.temporaryTint.opacity(0.7),
+                                  style: StrokeStyle(lineWidth: 1.2, dash: AskTheme.temporaryDash))
+                    .allowsHitTesting(false)
             } else if privateTint {
                 // Signed in, a conversation kept on this Mac keeps a quiet private edge.
                 RoundedRectangle(cornerRadius: chrome.corner, style: .continuous)
@@ -1635,6 +1641,12 @@ struct AskComposer: View {
     }
 
     private func routeCommandKey(_ key: AskCommandKey) -> Bool {
+        // ⌥⌘N makes the launcher's question temporary; the workspace starts one from its title bar.
+        if key == .optionCommandN {
+            guard launcher, !active else { return false }
+            model.toggleTemporary(launcher: true)
+            return true
+        }
         if launcher, !paletteOpen, model.launcherInputHistoryKey(key) { return true }
         if launcher, !active, !paletteOpen, !plugins.isActive, !draft.wrappedValue.hasText,
            key == .up, !showsLauncherSuggestions || suggestionIndex == 0 {
@@ -1738,7 +1750,7 @@ struct AskComposer: View {
             closePalette()
         case .commandEnter, .optionEnter, .shiftTab, .commandR, .commandD, .commandC, .shiftCommandC, .commandE,
              .commandZ, .commandS, .commandB, .commandO, .right, .commandY, .optionCommandC, .shiftCommandEnter, .commandDown,
-             .number, .commandDelete, .optionCommandDelete, .left, .commandLeft, .commandRight, .commandT, .commandN:
+             .number, .commandDelete, .optionCommandDelete, .left, .commandLeft, .commandRight, .commandT, .commandN, .optionCommandN:
             // ⌘Return sends as before, with the palette still open; the rest are the editor's.
             return false
         }
@@ -1806,7 +1818,9 @@ struct AskComposer: View {
             let lines = draft.wrappedValue.sentSelection.map { AskPresentation.lineCount($0) }
             return plugin.placeholder(selectionLines: lines)
         }
-        if launcher { return L("ask.launcher.placeholder") }
+        if launcher {
+            return L(model.isTemporaryComposer(launcher: true) ? "ask.launcher.placeholder.temporary" : "ask.launcher.placeholder")
+        }
         return AskReferenceStrip.placeholder(count: draft.wrappedValue.references?.count ?? 0)
             ?? L(model.selectedId == nil ? "ask.input.placeholder" : "ask.followup.placeholder")
     }
@@ -1937,8 +1951,7 @@ struct AskComposer: View {
                 }
                 AskLauncherOpenChatButton(mode: launcherPrimaryAction.mode, enabled: launcherPrimaryAction.enabled,
                                          disabledReason: launcherPrimaryAction.disabledReason,
-                                         tint: privateTint ? AskTheme.privateTint : AskTheme.accent,
-                                         action: runLauncherPrimaryAction)
+                                         tint: storageTint, action: runLauncherPrimaryAction)
             }
         }
         .padding(.horizontal, chrome.horizontalInset)
@@ -2102,7 +2115,16 @@ struct AskComposer: View {
 
     /// Signed in, a conversation kept on this Mac is marked in the private tint; signed
     /// out every conversation is, so nothing needs telling apart.
-    private var privateTint: Bool { model.isSignedIn && model.storesLocally(launcher: launcher) }
+    private var privateTint: Bool {
+        model.isSignedIn && model.storesLocally(launcher: launcher) && !temporaryTint
+    }
+
+    private var temporaryTint: Bool { model.isTemporaryComposer(launcher: launcher) }
+
+    /// The send button takes the colour of where the conversation is kept.
+    private var storageTint: Color {
+        temporaryTint ? AskTheme.temporaryTint : privateTint ? AskTheme.privateTint : AskTheme.accent
+    }
 
     private var footer: some View {
         HStack(spacing: 4) {
@@ -2162,7 +2184,7 @@ struct AskComposer: View {
                     switch sendControl {
                     case .stop: AskStopButton { model.stop() }
                     case let .send(enabled):
-                        AskSendButton(enabled: enabled, tint: privateTint ? AskTheme.privateTint : AskTheme.accent,
+                        AskSendButton(enabled: enabled, tint: storageTint,
                                       action: submit)
                     }
                 }
@@ -2262,7 +2284,8 @@ struct AskComposer: View {
             sourceBundleID: value.sourceBundleID,
             selection: value.selection,
             selectionOff: value.selectionOff == true,
-            memory: newConversation ? value.memory : nil,
+            // A temporary question carries no memory, so it offers none.
+            memory: newConversation && !model.isTemporaryComposer(launcher: launcher) ? value.memory : nil,
             memoryOff: model.memorySwitchedOff(launcher: launcher),
             memoryPinned: !newConversation && model.selected?.memory?.isEmpty == false,
             pinnedMemory: newConversation ? nil : model.selected?.memory

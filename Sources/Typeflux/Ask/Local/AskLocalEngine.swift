@@ -47,6 +47,8 @@ actor AskLocalEngine: AskAPI {
     let contextLimits: @Sendable (String) -> AskContextLimits
     let now: @Sendable () -> Date
     private var records: [String: AskLocalRecord] = [:]
+    /// Temporary conversations: kept in memory only and never listed.
+    private var temporaryIDs: Set<String> = []
     private var loaded = false
 
     init(directory: URL = AskLocalEngine.defaultDirectory, webTools: AskLocalWebTools = AskLocalWebTools(),
@@ -102,11 +104,16 @@ actor AskLocalEngine: AskAPI {
     }
 
     /// Metering can arrive after a run ends without changing content or activity dates.
+    /// A temporary conversation never reaches the disk.
     private func persist(_ record: AskLocalRecord) throws {
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        try AskCoding.encoder().encode(record).write(to: file(record.conversation.id), options: [.atomic, .completeFileProtection])
+        if !temporaryIDs.contains(record.conversation.id) {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            try AskCoding.encoder().encode(record).write(to: file(record.conversation.id), options: [.atomic, .completeFileProtection])
+        }
         records[record.conversation.id] = record
     }
+
+    func isTemporary(_ id: String) -> Bool { temporaryIDs.contains(AskConversationID.canonical(id)) }
 
     private func record(_ id: String) throws -> AskLocalRecord {
         loadAll()
@@ -136,9 +143,7 @@ actor AskLocalEngine: AskAPI {
         if changed {
             value.conversation.titleRevision = (value.conversation.titleRevision ?? 0) + 1
             value.conversation.revision += 1
-            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-            try AskCoding.encoder().encode(value).write(to: file(value.conversation.id), options: [.atomic, .completeFileProtection])
-            records[value.conversation.id] = value
+            try persist(value)
         }
         return value.conversation
     }
@@ -147,7 +152,8 @@ actor AskLocalEngine: AskAPI {
 
     func list(token _: String, offset: Int) async throws -> [AskConversationSummary] {
         loadAll()
-        return records.values.map(\.conversation).sorted { $0.updatedAt > $1.updatedAt }
+        return records.values.map(\.conversation).filter { !temporaryIDs.contains($0.id) }
+            .sorted { $0.updatedAt > $1.updatedAt }
             .dropFirst(max(0, offset)).prefix(50)
             .map { AskConversationSummary(id: $0.id, title: $0.title, updatedAt: $0.updatedAt) }
     }
@@ -168,7 +174,14 @@ actor AskLocalEngine: AskAPI {
         let id = AskConversationID.canonical(conversationId)
         guard Self.validID(id) else { return }
         records[id] = nil
-        try? FileManager.default.removeItem(at: file(id))
+        if temporaryIDs.remove(id) == nil { try? FileManager.default.removeItem(at: file(id)) }
+    }
+
+    /// Keeps a temporary conversation as an ordinary one stored on this Mac.
+    func keep(conversationId: String, token _: String) async throws -> AskConversation {
+        let value = try record(conversationId)
+        if temporaryIDs.remove(value.conversation.id) != nil { try persist(value) }
+        return value.conversation
     }
 
     func purgeMemory(token _: String) async throws { try clearMemorySnapshots(owner: nil) }
@@ -197,6 +210,7 @@ actor AskLocalEngine: AskAPI {
             || (request.references ?? []).contains { !$0.question.trimmingCharacters(in: .whitespaces).isEmpty }
             || !(request.attachments ?? []).isEmpty
         guard hasQuestion else { throw AskLocalError.message(L("ask.local.emptyQuestion")) }
+        if records[id] == nil, request.temporary == true { temporaryIDs.insert(id) }
         var record = records[id] ?? AskLocalRecord(conversation: AskConversation(
             id: id, title: String(Self.title(request).prefix(50)),
             revision: 0, updatedAt: now(), messages: []))
@@ -205,7 +219,8 @@ actor AskLocalEngine: AskAPI {
         guard record.conversation.messages.count < Self.maxMessages else { throw AskLocalError.message(L("ask.local.full")) }
         let modelRef = try Self.localModel(request.modelRef)
         var c = record.conversation
-        if c.messages.isEmpty { c.memory = request.memory?.usable(at: now()) }
+        // A temporary conversation neither reads nor keeps memory.
+        if c.messages.isEmpty { c.memory = temporaryIDs.contains(id) ? nil : request.memory?.usable(at: now()) }
         c.memoryOff = c.memory != nil && request.memoryOff == true ? true : nil
         if let zone = request.timeZone, TimeZone(identifier: zone) != nil { record.timeZone = zone }
         if let locale = request.locale, !locale.isEmpty, locale.count <= 35 { record.locale = locale }

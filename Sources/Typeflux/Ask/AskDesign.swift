@@ -46,6 +46,18 @@ enum AskTheme {
     static let privateTint = privateColor(lightAlpha: 1, darkAlpha: 1)
     static let privateFill = privateColor(lightAlpha: 0.10, darkAlpha: 0.13)
     static let privateHeaderFill = privateColor(lightAlpha: 0.10, darkAlpha: 0.12)
+    /// Marks the temporary conversation (the hourglass, its dashed edges): teal, so it
+    /// reads apart from both the accent and the private purple.
+    static let temporaryTint = StudioTheme.dynamic(
+        light: NSColor(srgbRed: 14 / 255, green: 143 / 255, blue: 166 / 255, alpha: 1),
+        dark: NSColor(srgbRed: 64 / 255, green: 200 / 255, blue: 224 / 255, alpha: 1)
+    )
+    static let temporaryFill = StudioTheme.dynamic(
+        light: NSColor(srgbRed: 14 / 255, green: 143 / 255, blue: 166 / 255, alpha: 0.10),
+        dark: NSColor(srgbRed: 64 / 255, green: 200 / 255, blue: 224 / 255, alpha: 0.14)
+    )
+    /// The dash of an edge that means "not saved".
+    static let temporaryDash: [CGFloat] = [5, 4]
 
     /// Resolve the system colour in the requested appearance before returning
     /// it from a dynamic provider; a nested semantic colour can retain Aqua.

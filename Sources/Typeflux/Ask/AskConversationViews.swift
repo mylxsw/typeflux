@@ -7,6 +7,7 @@ struct AskConversationView: View {
     @State private var showsUsage = false
     @State private var usageRunId: String?
     @State private var deleteId: String?
+    @State private var newMenuOpen = false
     @State private var pullDistance: CGFloat = 0
     @State private var restoredTranscript: String?
     @State private var isSearching = false
@@ -339,22 +340,31 @@ struct AskConversationView: View {
         }
     }
 
-    /// The window's one "new chat" entry.
+    /// The window's one "new chat" entry: a menu of the kinds of conversation.
+    /// The shortcuts still start each kind directly.
     private var composeButton: some View {
-        titleBarButton("square.and.pencil", label: L("ask.new"), shortcut: "⌘N") { model.newConversation() }
-            .keyboardShortcut("n", modifiers: .command)
+        titleBarButton("square.and.pencil", label: L("ask.new"), shortcut: nil) { newMenuOpen.toggle() }
             .accessibilityIdentifier("ask.workspace.new")
-            .background { newPrivateShortcut }
+            .askMenu(isPresented: $newMenuOpen, glass: true) {
+                AskNewConversationMenu(model: model) { newMenuOpen = false }
+            }
+            .background { newConversationShortcuts }
     }
 
-    /// ⇧⌘N without another visible control in the title bar.
-    private var newPrivateShortcut: some View {
-        Button(L("ask.storage.newLocal")) { model.newConversation(storesLocally: true) }
-            .keyboardShortcut("n", modifiers: [.command, .shift])
-            .disabled(!model.isSignedIn)
-            .opacity(0)
-            .allowsHitTesting(false)
-            .accessibilityHidden(true)
+    /// ⌘N, ⇧⌘N and ⌥⌘N without more visible controls in the title bar.
+    private var newConversationShortcuts: some View {
+        ZStack {
+            Button(L("ask.new")) { model.newConversation() }
+                .keyboardShortcut("n", modifiers: .command)
+            Button(L("ask.storage.newLocal")) { model.newConversation(storesLocally: true) }
+                .keyboardShortcut("n", modifiers: [.command, .shift])
+                .disabled(!model.isSignedIn)
+            Button(L("ask.temporary.new")) { model.newConversation(temporary: true) }
+                .keyboardShortcut("n", modifiers: [.command, .option])
+        }
+        .opacity(0)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
     }
 
     private func titleBarButton(_ symbol: String, label: String, shortcut: String? = nil,
@@ -478,6 +488,9 @@ struct AskConversationView: View {
         let items = visibleConversations
         return ScrollView {
             LazyVStack(spacing: 2) {
+                if model.isTemporaryComposer(launcher: false) {
+                    AskTemporaryHistoryRow().padding(.top, 4)
+                }
                 ForEach(Array(items.enumerated()), id: \.element.id) { index, item in
                     if index == 0 || historyGroup(items[index - 1].updatedAt) != historyGroup(item.updatedAt) {
                         groupHeader(historyGroup(item.updatedAt), first: index == 0)
@@ -493,7 +506,7 @@ struct AskConversationView: View {
                         .foregroundStyle(AskTheme.accentText)
                         .padding(.top, 8)
                 }
-                if items.isEmpty {
+                if items.isEmpty, !model.isTemporaryComposer(launcher: false) {
                     Text(L("ask.history.empty"))
                         .font(.system(size: 11.5))
                         .foregroundStyle(StudioTheme.textTertiary)
@@ -657,7 +670,7 @@ struct AskConversationView: View {
     /// Keep the essential actions in one row; the title yields before controls do.
     private var compactHeader: some View {
         HStack(spacing: 4) {
-            Text(model.selected?.title ?? L("ask.new"))
+            Text(headerTitle ?? model.selected?.title ?? L("ask.new"))
                 .font(.system(size: 12.5, weight: .semibold))
                 .foregroundStyle(StudioTheme.textSecondary)
                 .lineLimit(1)
@@ -666,7 +679,9 @@ struct AskConversationView: View {
                 .accessibilityIdentifier("ask.workspace.usage")
             Menu {
                 Button(L("ask.search"), action: openSearch).keyboardShortcut("k", modifiers: .command)
-                if model.isSignedIn, model.storesLocally(launcher: false) {
+                if model.isTemporaryComposer(launcher: false) {
+                    Label(L("ask.storage.temporary"), systemImage: AskStorageKind.temporary.symbol)
+                } else if model.isSignedIn, model.storesLocally(launcher: false) {
                     Label(L("ask.storage.local"), systemImage: "lock")
                 }
                 if let id = model.selectedId {
@@ -690,7 +705,7 @@ struct AskConversationView: View {
         HStack(spacing: 8) {
             if let id = model.selectedId {
                 HStack(spacing: 10) {
-                    Text(model.selected?.title
+                    Text(headerTitle ?? model.selected?.title
                         ?? model.conversations.first(where: { $0.id == model.selectedId })?.title
                         ?? L("ask.new"))
                         .font(.system(size: titleFontSize, weight: .semibold))
@@ -714,7 +729,7 @@ struct AskConversationView: View {
                 .frame(height: AskMetrics.headerCapsuleHeight)
                 .askInWindowGlassPill(height: AskMetrics.headerCapsuleHeight)
             } else {
-                Text(L("ask.new"))
+                Text(headerTitle ?? L("ask.new"))
                     .font(.system(size: titleFontSize, weight: .semibold))
                     .foregroundStyle(StudioTheme.textPrimary)
                     .padding(.horizontal, style.usesGlass ? 16 : 6)
@@ -722,7 +737,9 @@ struct AskConversationView: View {
                     .askInWindowGlassPill(height: AskMetrics.headerCapsuleHeight)
             }
             Spacer(minLength: 8)
-            if model.isSignedIn, model.storesLocally(launcher: false) {
+            if model.isTemporaryComposer(launcher: false) {
+                AskTemporaryChip(model: model, showsTitle: layout.mainWidth >= 760)
+            } else if model.isSignedIn, model.storesLocally(launcher: false) {
                 privateChip
             }
             if let id = model.selectedId {
@@ -793,8 +810,14 @@ struct AskConversationView: View {
         .accessibilityLabel(L("ask.storage.local"))
     }
 
+    /// A temporary conversation is never named, a new one is just "Temporary chat".
+    private var headerTitle: String? {
+        model.isTemporaryComposer(launcher: false) ? L("ask.temporary.title") : nil
+    }
+
     private var headerCredits: String? {
-        guard let id = model.selectedId, !model.isLocal(id), let usage = model.selected?.usage else { return nil }
+        guard let id = model.selectedId, !model.isLocal(id), !model.isTemporary(id),
+              let usage = model.selected?.usage else { return nil }
         return usage.total.creditsText
     }
 
@@ -833,6 +856,9 @@ struct AskConversationView: View {
                             .padding(.bottom, 9)
                     }
                     if !layout.isShort { emptyHint }
+                    if model.isTemporaryComposer(launcher: false) {
+                        AskTemporaryEmptyHint().padding(.top, layout.isShort ? 4 : 12)
+                    }
                     suggestions
                         .frame(maxWidth: AskMetrics.suggestionsMaxWidth)
                         .padding(.top, layout.isShort ? 4 : 26)

@@ -85,21 +85,23 @@ GUL-193 已经把“对话存在哪里”做成每个对话自己的属性：云
 
 ## 实现映射
 
+以下是实际实现的方式，和最初的方案略有不同。
+
 客户端（`typeflux`）：
 
-- `AskDraft.storesLocally: Bool?` → 新增 `AskDraft.storage: AskStorage?`（`.cloud / .local / .temporary`）。旧字段解码后迁移；`/local` 命令保持兼容，新增 `/temp`。
-- `AskRoute` 增加 `temporary` 标记：云端路由在首条 `send` 里带上 `temporary: true`；本机路由使用 `AskLocalEngine(store: .inMemory)`，这个实例在进程内单独存在，不调用 `persist`。
-- `AskConversationModel`：`temporaryConversationId` 记录当前的临时对话，并维护一个**不经过** `AskConversationCache` 的内存缓存。`refreshHistory` 合并列表时跳过它；`select` 和 `newConversation` 在离开前调用 `endTemporaryConversation(confirm:)`。
-- `AskStorageButton` / `AskLocalModeCard` 增加第三个选项，并新增 `AskTemporaryChip` 标签；`StudioTheme` 增加 `temporaryTint`。
-- 记忆：`AskMemoryProvider` 在临时路由下返回 nil；生成工具清单时移除 `memory` 工具。
-- `AskLauncherInputHistoryStore.record` 在临时路由下跳过记录。
-- 设置 → Agent → 通用：新增“离开临时对话前确认”（默认开）。
+- `AskDraft` 新增 `temporary: Bool?`，`AskStorageKind`（`.cloud / .local / .temporary`）负责描述存储卡片和图标。没有替换 `storesLocally`，所以旧草稿不需要迁移。新增 `/temp` 命令，`/local` 保持不变。
+- `AskConversationModel.temporaryConversation`（`AskTemporaryConversation(id, cloud)`）记录当前唯一的临时对话。路由用 `AskRoute.temporary(cloud:)`，缓存分区是 `AskRoutedAPI.temporaryOwner`。首条 `send` 带上 `temporary: true`。
+- 对话在哪里运行，由首条消息使用的模型决定：云端模型在服务端运行；用户自己的模型交给 `AskLocalEngine`，引擎把这个对话的 id 记入 `temporaryIDs`，只保存在内存里，不写 `AskLocal/*.json`，也不出现在列表里。
+- `AskTemporaryCache` 包装了原有缓存：`temporary` 分区的快照、草稿和工具日志都写入内存里的 SQLite，其他分区照常使用磁盘。
+- 不发送记忆，不提供 `memory` 工具（`offeredTools`），标题策略关闭，启动器输入历史不记录，`updateSummary` 和 `scheduleTitle` 都会跳过临时对话。
+- 离开前确认：`leaveTemporaryConversation(for:)`，对话框由 `AskTemporaryLeaveConfirmation` 弹出。结束对话：`discardTemporaryConversation()`，取消运行并删除服务端或引擎中的副本以及内存缓存。保留对话：`keepTemporaryConversation()`，正在保留的对话不会被下一段临时对话删除。
+- 界面：`AskNewConversationMenu`（点击 ✎ 弹出）、`AskTemporaryChip`、`AskTemporaryHistoryRow`、`AskTemporaryEmptyHint`；存储卡片和存储图标都增加第三种类型；`AskTheme.temporaryTint` 和 `temporaryDash` 用于青色虚线样式；设置页新增 `AskTemporarySettingsView`。
 
 服务端（`typeflux-api`）：
 
-- 迁移 `00071_add_ask_conversation_expiry.sql`：`ALTER TABLE ask_conversations ADD COLUMN expires_at timestamptz NULL`，并为 `expires_at IS NOT NULL` 建部分索引。
-- `send` 请求的 `temporary: true` 只在创建对话时生效，这时设置 `expires_at = now() + 24h`。`List` 只返回 `expires_at IS NULL` 的记录；`keep` 接口（`POST /ask/conversations/:id/keep`）把它置空。
-- 后台清理任务每小时删除过期的对话及其 steering 和 jobs，`ask_usage` 的计费行保留。临时对话不注入服务端 memory，也不运行 memory 写入。
+- 迁移 `00071_add_ask_conversation_expiry.sql`：新增 `expires_at` 列，并为非空值建部分索引。过期时间只保存在这一列里，不写进 JSON。快照保存时不会改动它，所以过时的副本无法让已保留的对话重新变回临时对话。
+- `temporary: true` 只在创建对话时生效，过期时间设为 24 小时后。`List` 过滤掉这些对话；`Get` 对已过期的对话返回 404；`POST /:id/keep` 把过期时间清空。临时对话不固定记忆，也不生成标题。
+- 调度任务 `ask-temporary-cleanup` 每小时按批次（每批 500 条）删除过期的对话，steering 和 usage 行跟随级联删除。
 
 iOS（`Apps/iOS`）：第一期只保证列表不显示临时对话（服务端已经过滤），入口留到第二期。
 
