@@ -16,7 +16,8 @@ final class AppCoordinator {
     private var permissionAnalyticsTimer: Timer?
     private lazy var helpWindowController = HelpWindowController.app(
         settings: di.settingsStore, ask: di.askConversationWindowController,
-        openSettings: { [weak self] destination in self?.statusBarController?.showSettings(for: destination) }
+        openSettings: { [weak self] destination in self?.statusBarController?.showSettings(for: destination) },
+        openFeedback: { [weak self] destination in self?.statusBarController?.showFeedback(destination) }
     )
 
     // swiftlint:disable:next function_body_length

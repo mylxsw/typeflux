@@ -103,7 +103,14 @@ struct HelpSidebar: View {
             linkRow(L("help.link.website"), symbol: "arrow.up.right.square") {
                 model.open(HelpGuideModel.documentationURL)
             }
-            linkRow(L("help.link.feedback"), symbol: "bubble.left") { model.open(HelpGuideModel.feedbackURL) }
+            Menu {
+                HelpFeedbackOptions(model: model)
+            } label: {
+                linkLabel(L("help.link.feedback"), symbol: "bubble.left")
+            }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .accessibilityLabel(L("help.link.feedback"))
             Text(Self.version).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
                 .padding(.horizontal, 10).padding(.top, 6)
         }
@@ -182,17 +189,32 @@ struct HelpSidebar: View {
 
     private func linkRow(_ title: String, symbol: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            HStack(spacing: 9) {
-                Image(systemName: symbol).font(.system(size: 12)).frame(width: 18)
-                Text(title).font(.system(size: 12.5))
-                Spacer(minLength: 0)
-            }
-            .foregroundStyle(StudioTheme.textSecondary)
-            .padding(.horizontal, 10)
-            .frame(height: 30)
-            .contentShape(Rectangle())
+            linkLabel(title, symbol: symbol)
         }
         .buttonStyle(.plain)
+    }
+
+    private func linkLabel(_ title: String, symbol: String) -> some View {
+        HStack(spacing: 9) {
+            Image(systemName: symbol).font(.system(size: 12)).frame(width: 18)
+            Text(title).font(.system(size: 12.5))
+            Spacer(minLength: 0)
+        }
+        .foregroundStyle(StudioTheme.textSecondary)
+        .padding(.horizontal, 10)
+        .frame(height: 30)
+        .contentShape(Rectangle())
+    }
+}
+
+/// Shared content for the feedback choice menu.
+struct HelpFeedbackOptions: View {
+    @ObservedObject var model: HelpGuideModel
+
+    var body: some View {
+        ForEach(FeedbackDestination.allCases) { destination in
+            Button(destination.title) { model.openFeedback(destination) }
+        }
     }
 }
 
@@ -210,4 +232,3 @@ enum HelpAppIcon {
         return NSApplication.shared.applicationIconImage
     }()
 }
-

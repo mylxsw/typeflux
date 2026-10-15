@@ -37,6 +37,7 @@ final class StatusBarController: NSObject {
     private let onRetryHistory: (HistoryRecord) -> Void
     private let onOpenOnboarding: () -> Void
     private let onOpenHelp: () -> Void
+    private let onOpenFeedbackURL: (URL) -> Void
     private let onOpenAskConversations: () -> Void
     private let onScreenshot: () -> Void
     private let onScreenshotText: () -> Void
@@ -66,6 +67,7 @@ final class StatusBarController: NSObject {
         onRetryHistory: @escaping (HistoryRecord) -> Void = { _ in },
         onOpenOnboarding: @escaping () -> Void = {},
         onOpenHelp: @escaping () -> Void = {},
+        onOpenFeedbackURL: @escaping (URL) -> Void = { NSWorkspace.shared.open($0) },
         onOpenAskConversations: @escaping () -> Void = {},
         onScreenshot: @escaping () -> Void = {},
         onScreenshotText: @escaping () -> Void = {},
@@ -84,6 +86,7 @@ final class StatusBarController: NSObject {
         self.onRetryHistory = onRetryHistory
         self.onOpenOnboarding = onOpenOnboarding
         self.onOpenHelp = onOpenHelp
+        self.onOpenFeedbackURL = onOpenFeedbackURL
         self.onOpenAskConversations = onOpenAskConversations
         self.onScreenshot = onScreenshot
         self.onScreenshotText = onScreenshotText
@@ -241,9 +244,11 @@ final class StatusBarController: NSObject {
     private func buildFeedbackMenu() -> NSMenu {
         let menu = NSMenu(title: L("menu.feedback"))
         menu.autoenablesItems = false
-        menu.addItem(makeItem(title: L("sidebar.feedback.directOption"), action: #selector(openDirectFeedback)))
-        menu.addItem(makeItem(title: L("sidebar.feedback.emailOption"), action: #selector(sendFeedbackEmail)))
-        menu.addItem(makeItem(title: L("sidebar.feedback.githubOption"), action: #selector(openGitHubIssue)))
+        for destination in FeedbackDestination.allCases {
+            let item = makeItem(title: destination.title, action: #selector(selectFeedback))
+            item.representedObject = destination.rawValue
+            menu.addItem(item)
+        }
         return menu
     }
 
@@ -601,7 +606,18 @@ final class StatusBarController: NSObject {
         rebuildMenu()
     }
 
-    @objc private func openDirectFeedback() {
+    @objc private func selectFeedback(_ sender: NSMenuItem) {
+        guard let value = sender.representedObject as? String,
+              let destination = FeedbackDestination(rawValue: value) else { return }
+        showFeedback(destination)
+    }
+
+    /// Both feedback menus use this route, including the existing direct feedback form.
+    func showFeedback(_ destination: FeedbackDestination) {
+        if destination != .direct {
+            if let url = destination.url { onOpenFeedbackURL(url) }
+            return
+        }
         SettingsWindowController.shared.show(
             settingsStore: settingsStore,
             historyStore: historyStore,
@@ -611,26 +627,6 @@ final class StatusBarController: NSObject {
             notificationService: notificationService,
             onRetryHistory: onRetryHistory
         )
-    }
-
-    @objc private func sendFeedbackEmail() {
-        var components = URLComponents()
-        components.scheme = "mailto"
-        components.path = "mylxsw@aicode.cc"
-        components.queryItems = [
-            URLQueryItem(name: "subject", value: "Typeflux Feedback"),
-            URLQueryItem(
-                name: "body", value: "Hi,\n\nI want to share some feedback about Typeflux:\n"
-            )
-        ]
-
-        guard let url = components.url else { return }
-        NSWorkspace.shared.open(url)
-    }
-
-    @objc private func openGitHubIssue() {
-        guard let url = URL(string: "https://github.com/mylxsw/typeflux/issues/new") else { return }
-        NSWorkspace.shared.open(url)
     }
 
     @objc private func checkUpdates() {

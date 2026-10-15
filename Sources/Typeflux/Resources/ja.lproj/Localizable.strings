@@ -5180,7 +5180,7 @@
 "hotkeys.action.openHelp.subtitle" = "キーワード、ショートカット、よくある質問を表示します。";
 "ask.plugin.help.title" = "使い方ガイド";
 "ask.plugin.help.placeholder" = "ガイドを検索、または ↩ で開く";
-"help.title" = "Typeflux 使い方ガイド";
+"help.title" = "使い方ガイド";
 "help.page.start" = "はじめに";
 "help.page.start.subtitle" = "すべての機能はここから";
 "help.page.keywords" = "キーワード";

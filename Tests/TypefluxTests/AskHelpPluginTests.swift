@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import Testing
 @testable import Typeflux
@@ -93,6 +94,49 @@ struct AskHelpPluginTests {
         fixture.model.enterKeywordFromHelp(gone, argument: "", refreshingWorkflows: false)
         #expect(fixture.model.plugins.keyword == nil)
         #expect(fixture.model.commandFeedback == L("hotkeys.keyword.unavailable", "gone"))
+    }
+
+    @Test func `the app guide stays visible when opening the launcher trying a sample and asking AI`() async throws {
+        try await SettingsBehaviorTestSupport.withFixture { settings in
+            let fixture = try AskTestFixture()
+            let ask = AskConversationWindowController(settings: settings, model: fixture.model)
+            var settingsLinks: [HelpSettingsDestination] = []
+            let guide = HelpWindowController.app(
+                settings: settings, ask: ask, openSettings: { settingsLinks.append($0) }, openFeedback: { _ in }
+            )
+            guide.show(query: "")
+            defer {
+                fixture.model.resetSession()
+                ask.dismissLauncher()
+                ask.conversationWindow?.performClose(nil)
+                guide.dismiss()
+                try? FileManager.default.removeItem(at: fixture.root)
+            }
+            let window = try #require(guide.presentedWindow)
+            guide.model.openSettings(.shortcuts)
+            #expect(settingsLinks == [.shortcuts])
+            guide.model.openLauncher()
+            try await SettingsBehaviorTestSupport.wait { ask.launcherWindow?.isVisible == true }
+            #expect(guide.presentedWindow === window && guide.model.isPresented)
+            let translate = try #require(guide.model.catalog.keywords.first {
+                $0.keyword.pluginID == AskTranslatePlugin.id
+            })
+            guide.model.showKeyword(translate.id)
+            guide.model.tryKeyword(translate, argument: "hello world")
+            try await SettingsBehaviorTestSupport.wait { fixture.model.plugins.keyword?.id == translate.keyword.id }
+            #expect(fixture.model.launcherDraft.text == "hello world")
+            #expect(await fixture.api.sends.isEmpty)
+            #expect(guide.presentedWindow === window && guide.model.selectedKeywordID == translate.id)
+            guide.model.query = "sync to my phone"
+            #expect(guide.model.handle(.commandEnter))
+            for _ in 0 ..< 1000 {
+                if await !fixture.api.sends.isEmpty { break }
+                try await Task.sleep(for: .milliseconds(2))
+            }
+            #expect(await fixture.api.sends.last?.text == L("help.askAI.prompt", "sync to my phone"))
+            ask.dismissLauncher()
+            #expect(guide.presentedWindow === window && guide.model.query == "sync to my phone")
+        }
     }
 
     @Test func `asking the AI from the guide sends the question from the launcher`() async throws {

@@ -5305,7 +5305,7 @@
 "hotkeys.action.openHelp.subtitle" = "Shows keywords, shortcuts and answers to common questions.";
 "ask.plugin.help.title" = "Usage guide";
 "ask.plugin.help.placeholder" = "Search the guide, or press ↩ to open it";
-"help.title" = "Typeflux Guide";
+"help.title" = "Usage guide";
 "help.page.start" = "Start";
 "help.page.start.subtitle" = "Every feature starts from one of these";
 "help.page.keywords" = "Keywords";

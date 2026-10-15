@@ -18,7 +18,7 @@ final class HelpGuideModel: ObservableObject {
         var language: @MainActor () -> AppLanguage = { AppLocalization.shared.language }
     }
 
-    /// What the guide asks the app to do; the guide closes itself first where it should.
+    /// What the guide asks the app to do. Only an explicit close dismisses the guide.
     struct Actions {
         var close: @MainActor () -> Void = {}
         var tryKeyword: @MainActor (AskKeyword, String) -> Void = { _, _ in }
@@ -26,6 +26,7 @@ final class HelpGuideModel: ObservableObject {
         var openLauncher: @MainActor () -> Void = {}
         var openSettings: @MainActor (HelpSettingsDestination) -> Void = { _ in }
         var fixPermission: @MainActor (PrivacyGuard.PermissionID) -> Void = { _ in }
+        var openFeedback: @MainActor (FeedbackDestination) -> Void = { _ in }
         var openURL: @MainActor (URL) -> Void = { _ in }
     }
 
@@ -35,7 +36,6 @@ final class HelpGuideModel: ObservableObject {
     }
 
     static let documentationURL = URL(string: "https://typeflux.app")!
-    static let feedbackURL = URL(string: "https://github.com/mylxsw/typeflux/issues/new")!
 
     @Published var page: HelpPage = .start
     @Published var query = "" { didSet { if query != oldValue { searchFocus = 0 } } }
@@ -200,14 +200,12 @@ final class HelpGuideModel: ObservableObject {
 
     func tryKeyword(_ keyword: HelpKeyword, argument: String = "") {
         guard keyword.isAvailable else { return }
-        actions.close()
         actions.tryKeyword(keyword.keyword, argument.isEmpty ? "" : argument)
     }
 
     func askAI() {
         let question = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !question.isEmpty else { return }
-        actions.close()
         actions.askAI(question)
     }
 
@@ -217,8 +215,11 @@ final class HelpGuideModel: ObservableObject {
     }
 
     func openLauncher() {
-        actions.close()
         actions.openLauncher()
+    }
+
+    func openFeedback(_ destination: FeedbackDestination) {
+        actions.openFeedback(destination)
     }
 
     func fix(_ permission: PrivacyGuard.PermissionID) {
