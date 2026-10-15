@@ -1,6 +1,6 @@
 {
   "base": "fa9643cf42db201667c15169cb7a3c1527946acb",
-  "meaning": "Delivered changed Swift source hashes. Production source was frozen before final native measurements; the final permission regression test was added independently. PR head SHA is supplied in the PR/issue handoff.",
+  "meaning": "Historical initial delivery at 69aa4446bfa705486965d8411fdb17b4cfe5d162. See revision-source-manifest.json for the current delivered Swift sources.",
   "sha256": {
     "Sources/Typeflux/Ask/AskComposerTextView.swift": "d5baebe1cc037237bf0a6069910efccaa09d473f52ad3c18aff1f8e727a1a818",
     "Sources/Typeflux/Ask/AskComposerViews.swift": "857ea288e505726af54307247e556e95e89a13e9c54590b01e37970212ad3903",

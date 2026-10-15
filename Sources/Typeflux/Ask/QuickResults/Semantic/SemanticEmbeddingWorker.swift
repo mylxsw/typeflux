@@ -119,6 +119,7 @@ final class SemanticEmbeddingWorker: SemanticEmbedding, SemanticQueryEmbedding, 
     @unchecked Sendable {
     private let queue: DispatchQueue
     private let reader: AskFileReader
+    private let idleTimeout: TimeInterval
     private let requestsLock = NSLock()
     private var pending: [Request] = []
     private var draining = false
@@ -134,6 +135,7 @@ final class SemanticEmbeddingWorker: SemanticEmbedding, SemanticQueryEmbedding, 
         var epoch: AskSearchCancellation
         var continuation: CheckedContinuation<[Float], Error>
         var trace: SemanticSearchTrace
+        var requiresReadyHelper: Bool
     }
 
     init(
@@ -142,12 +144,14 @@ final class SemanticEmbeddingWorker: SemanticEmbedding, SemanticQueryEmbedding, 
         indexing: Bool = false,
         projector: URL? = nil,
         timeout: TimeInterval = 3,
-        startupTimeout: TimeInterval = 15
+        startupTimeout: TimeInterval = 15,
+        idleTimeout: TimeInterval = 60
     ) {
         self.queue = DispatchQueue(
             label: "typeflux.semantic.\(indexing ? "index" : "query")",
             qos: indexing ? .utility : .userInitiated
         )
+        self.idleTimeout = idleTimeout
         self.reader = AskFileReader(
             executable: helper,
             arguments: [model.path] + (projector.map { [$0.path] } ?? []),
@@ -190,17 +194,23 @@ final class SemanticEmbeddingWorker: SemanticEmbedding, SemanticQueryEmbedding, 
     }
 
     func prepare(lifecycle: AskSearchCancellation) async throws {
-        _ = try await query("warmup", lifecycle: lifecycle)
+        _ = try await query("warmup", lifecycle: lifecycle, requiresReadyHelper: true)
     }
 
     func query(_ text: String, lifecycle: AskSearchCancellation) async throws -> [Float] {
+        try await query(text, lifecycle: lifecycle, requiresReadyHelper: false)
+    }
+
+    private func query(_ text: String, lifecycle: AskSearchCancellation,
+                       requiresReadyHelper: Bool) async throws -> [Float] {
         let token = AskSearchCancellation()
         return try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { continuation in
                 let trace = SemanticSearchTrace.current ?? .init()
                 let (discarded, start): ([Request], Bool) = requestsLock.withLock {
                     let request = Request(text: text, lifecycle: lifecycle, cancelled: token, epoch: shutdown,
-                                          continuation: continuation, trace: trace)
+                                          continuation: continuation, trace: trace,
+                                          requiresReadyHelper: requiresReadyHelper)
                     let discarded = pending
                         .filter { $0.text != text || $0.cancelled.isCancelled || $0.lifecycle.isCancelled }
                     pending.removeAll { $0.text != text || $0.cancelled.isCancelled || $0.lifecycle.isCancelled }
@@ -237,7 +247,9 @@ final class SemanticEmbeddingWorker: SemanticEmbedding, SemanticQueryEmbedding, 
             }
             let result: Result<[Float], Error>
             if let first = active.first {
-                result = Result { try queryVector(first) }
+                result = Result {
+                    try queryVector(first, requiresReadyHelper: active.contains { $0.requiresReadyHelper })
+                }
             } else {
                 result = .failure(CancellationError())
             }
@@ -249,20 +261,21 @@ final class SemanticEmbeddingWorker: SemanticEmbedding, SemanticQueryEmbedding, 
                 }
             }
             let ticket = idleGeneration
-            queue.asyncAfter(deadline: .now() + 60) { [weak self] in
+            queue.asyncAfter(deadline: .now() + idleTimeout) { [weak self] in
                 guard let self, idleGeneration == ticket else { return }
                 reader.stop()
             }
         }
     }
 
-    private func queryVector(_ first: Request) throws -> [Float] {
+    private func queryVector(_ first: Request, requiresReadyHelper: Bool) throws -> [Float] {
         let stop = first.epoch
         if activeEpoch !== stop {
             reader.stop(); queryCache.removeAll(); queryOrder.removeAll(); activeEpoch = stop
         }
         first.trace.mark("helper-queue-end")
-        if let vector = queryCache[first.text] {
+        // Cached query vectors survive idle release; preparation must actually reload the helper.
+        if let vector = queryCache[first.text], !requiresReadyHelper || reader.isRunning {
             first.trace.mark("cache-hit"); return vector
         }
         var vector: [Float] = []

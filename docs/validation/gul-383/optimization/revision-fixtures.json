@@ -1,0 +1,26 @@
+{
+  "generator": "macOS say -v Samantha; afconvert WAVE LEI16@16000 mono; repeat PCM to exactly 65 seconds",
+  "text": "Expense requests need receipts and manager approval. The volcano contains basalt crystals.",
+  "assets": {
+    "priority-speech.wav": {
+      "sha256": "eab3aa4cfc3e85f5b2fd7d9ba9bd4ba62bed09a5e0742bbcbe10baa3408294bf",
+      "duration_seconds": 5.5693125,
+      "sample_rate": 16000,
+      "channels": 1,
+      "sample_width": 2
+    },
+    "priority-media.wav": {
+      "sha256": "a88ea3647e948c1b76ee5eb065a7e55dfedf7fef79cd9b9958c4498644d92fa4",
+      "duration_seconds": 65.0,
+      "sample_rate": 16000,
+      "channels": 1,
+      "sample_width": 2
+    }
+  },
+  "asr": {
+    "model": "SenseVoice Small int8",
+    "model_sha256": "c71f0ce00bec95b07744e116345e33d8cbbe08cef896382cf907bf4b51a2cd51",
+    "runtime": "sherpa-onnx v1.12.35 / ONNX Runtime 1.23.2, CPU",
+    "source": "existing installed model/runtime, linked read-only into isolated test assets"
+  }
+}

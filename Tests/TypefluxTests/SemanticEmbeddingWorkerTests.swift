@@ -46,6 +46,42 @@ struct SemanticEmbeddingWorkerTests {
         worker.stop()
     }
 
+    @Test func idleReleaseRewarmsTheHelperWhileRetainingQueryVectors() async throws {
+        let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
+        let starts = root.appendingPathComponent("starts"), calls = root.appendingPathComponent("calls")
+        let vector = String(decoding: try JSONEncoder().encode([semanticVector()]), as: UTF8.self)
+        let source = try script("""
+        printf x >> '\(starts.path)'
+        while IFS= read -r line; do
+          printf x >> '\(calls.path)'
+          printf '%s\\n' '{"entries":[],"embeddings":\(vector)}'
+        done
+        """, in: root)
+        // Exercise the production DispatchQueue timer with a shorter idle period.
+        let worker = SemanticEmbeddingWorker(helper: URL(fileURLWithPath: "/bin/sh"), model: source,
+                                             idleTimeout: 0.1)
+        defer { worker.stop() }
+        let lifecycle = AskSearchCancellation()
+        func count(_ file: URL) -> Int { (try? Data(contentsOf: file).count) ?? 0 }
+        try await worker.prepare(lifecycle: lifecycle)
+        _ = try await worker.query("cached", lifecycle: lifecycle)
+        #expect(count(starts) == 1 && count(calls) == 2)
+        try await Task.sleep(for: .milliseconds(250))
+        _ = try await worker.query("cached", lifecycle: lifecycle)
+        #expect(count(starts) == 1 && count(calls) == 2, "idle release retains ordinary cached vectors")
+        try await worker.prepare(lifecycle: lifecycle)
+        #expect(count(starts) == 2 && count(calls) == 3, "preparation must reload after idle release")
+        _ = try await worker.query("uncached", lifecycle: lifecycle)
+        try await worker.prepare(lifecycle: lifecycle)
+        #expect(count(starts) == 2 && count(calls) == 4, "new queries and repeated preparation reuse the helper")
+        lifecycle.cancel()
+        await #expect(throws: CancellationError.self) { try await worker.prepare(lifecycle: lifecycle) }
+        #expect(count(calls) == 4)
+        worker.stop()
+        try await worker.prepare(lifecycle: AskSearchCancellation())
+        #expect(count(starts) == 3 && count(calls) == 5, "voice stop invalidates the epoch and warmup cache")
+    }
+
     @Test func `same query coalesces and cancelled typing keeps the warm helper`() async throws {
         let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
         let starts = root.appendingPathComponent("starts"), calls = root.appendingPathComponent("calls")

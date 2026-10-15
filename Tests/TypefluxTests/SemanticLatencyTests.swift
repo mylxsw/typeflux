@@ -296,7 +296,10 @@ struct SemanticNativeBenchmarkData {
     let defaults: UserDefaults
     let suite: String
 
-    static func make(model: URL) throws -> Self {
+    static func make(model: URL,
+                     makeEncoder: @escaping @Sendable (URL, URL) -> any SemanticEmbedding = {
+                         SemanticEmbeddingWorker(helper: $0, model: $1, indexing: true)
+                     }) throws -> Self {
         try SemanticModel.verify(model)
         let temporary = FileManager.default.temporaryDirectory
             .appendingPathComponent("semantic-native-latency-" + UUID().uuidString)
@@ -337,7 +340,7 @@ struct SemanticNativeBenchmarkData {
         """, nil, nil, nil) == SQLITE_OK)
         let service = SemanticFileSearchService(settings: settings, directory: root, supported: true,
             watcher: SemanticBenchmarkWatcher(), access: { true }, automaticStart: false,
-            lowPowerMode: { false }, thermalConstrained: { false })
+            lowPowerMode: { false }, thermalConstrained: { false }, makeEncoder: makeEncoder)
         service.pause(true)
         try #require(service.setEnabled(true))
         return Self(root: root, document: document, store: store, scope: scope, service: service,

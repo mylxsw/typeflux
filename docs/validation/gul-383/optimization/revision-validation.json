@@ -1,0 +1,28 @@
+{
+  "initial_coverage_failed_wall_seconds": 332.83,
+  "diagnostic_build_wall_seconds": 52.64,
+  "coverage_retry_wall_seconds": 120.72,
+  "coverage_runner_seconds": 115.14,
+  "coverage_discovery_build_seconds": 37.74,
+  "coverage_tests_seconds": 68.804,
+  "focused_tests": 64,
+  "release_selected_tests": 2,
+  "release_command_wall_seconds": 837.2663450840046,
+  "release_build_seconds": 400.97,
+  "release_test_seconds": 429.821,
+  "suites": [
+    "SemanticEmbeddingWorkerTests",
+    "SemanticRealtimeSearchTests",
+    "SemanticFileServiceTests",
+    "SemanticIndexPriorityTests",
+    "SemanticNativeInputTests",
+    "AskFileReliabilityTests",
+    "AskFileStreamingTests",
+    "SemanticMediaIndexTests",
+    "SemanticMediaServiceTests",
+    "SemanticHybridSearchTests"
+  ],
+  "source_manifest_verified": true,
+  "test_binary_sha256": "ef88ff578171e79a6ac20a748acf0eddb3fced6295f8c7381128eb9be515bc64",
+  "remaining_gate": "file-mode real-index pure-semantic p95 321.33ms >300ms; explicitly retained for GUL-404, no final semantic gate claim"
+}

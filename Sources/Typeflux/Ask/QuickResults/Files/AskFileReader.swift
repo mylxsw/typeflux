@@ -43,6 +43,9 @@ final class AskFileReader: AskFileReading {
 
     deinit { stop() }
 
+    /// Read on the reader's serial owner, like stream() and stop().
+    var isRunning: Bool { process?.isRunning == true }
+
     static var executableURL: URL {
         let bundle = Bundle(for: AskFileWorkerBundle.self)
         // Test code is loaded into xctest (argv[0] is the runner on newer toolchains).

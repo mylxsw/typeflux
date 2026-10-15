@@ -1,5 +1,7 @@
 # GUL-402: realtime body search and recoverable semantic queries
 
+The initial evidence below describes head `69aa4446`. Independent review returned that head for an idle-prewarm defect and missing real inference contention evidence. See [the revision record](revision-README.md) for the fix, current source hashes, fresh coverage, and real indexing/media/transcription measurements. Historical results below remain available for comparison.
+
 Indexed body FTS now publishes independently of the model, vector scan and filename provider. Mixed launcher, `f` and the newly merged `ss` entry use progressive publication. Manual indexing pause, missing weights, a failed query and voice/thermal pressure preserve FTS. Query/model/index state are separate. The helper stays warm across obsolete input; voice/scope shutdown cancels its epoch. Background document batches yield to queries, and media segment checkpoints drain changed documents without repeating completed segments.
 
 The experiment remains off by default. Device gating, shared scope, file permission checks, filename/pinyin search and safe default Return behavior remain covered. There is no schema/profile migration, new quota or dependency. Roll back the commit, or disable the content-search experiment; the existing database remains readable by the baseline.
