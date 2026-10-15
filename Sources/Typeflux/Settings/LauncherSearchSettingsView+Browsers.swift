@@ -29,7 +29,7 @@ extension LauncherSearchSettingsView {
                                     footnote: L(tabs ? "ask.browser.tabsHint" : "ask.browser.bookmarksHint")) {
             AgentSettingsRow(icon: tabs ? "rectangle.on.rectangle" : "bookmark",
                              title: L(tabs ? "ask.browser.tabs" : "ask.browser.bookmarks"),
-                             subtitle: tabs ? "tab" : "bmk") {
+                             valueText: tabs ? "tab" : "bmk") {
                 Toggle("", isOn: browserBinding(tabs ? \.tabsEnabled : \.bookmarksEnabled))
                     .labelsHidden().toggleStyle(.switch)
                     .accessibilityLabel(L(tabs ? "ask.browser.tabs" : "ask.browser.bookmarks"))

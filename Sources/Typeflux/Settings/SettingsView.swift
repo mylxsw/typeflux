@@ -1340,7 +1340,8 @@ struct StudioView: View {
             }
             TFDivider.form
             TFFormRow(title: L("settings.servers.speedTest.title"),
-                      detail: viewModel.cloudServerTestSummary ?? L("settings.servers.speedTest.subtitle")) {
+                      detail: L("settings.servers.speedTest.subtitle"),
+                      valueText: viewModel.cloudServerTestSummary) {
                 TFButton(
                     title: viewModel.isTestingCloudServers
                         ? L("settings.servers.speedTest.testing")
@@ -1538,7 +1539,7 @@ struct StudioView: View {
             AgentSettingsRow(
                 icon: "server.rack",
                 title: server.name.isEmpty ? L("agent.mcp.untitled") : server.name,
-                subtitle: mcpTransportDetail(for: server),
+                valueText: mcpTransportDetail(for: server),
                 badge: mcpTransportLabel(for: server),
                 subtitleLineLimit: 1
             ) {
@@ -1686,7 +1687,7 @@ struct StudioView: View {
     /// The folder ⌘S saves screenshots into.
     private var screenshotSaveLocationSetting: some View {
         TFFormRow(title: L("settings.shortcuts.screenshot.saveLocation.title"),
-                  detail: viewModel.screenshotSaveDirectory.path) {
+                  valueText: viewModel.screenshotSaveDirectory.path) {
             if viewModel.screenshotSaveDirectory.standardizedFileURL
                 != SettingsStore.defaultScreenshotSaveDirectory.standardizedFileURL {
                 TFButton(title: L("settings.shortcuts.screenshot.saveLocation.reset"), kind: .link) {
@@ -1727,7 +1728,7 @@ struct StudioView: View {
         return TFFormRow(
             title: permission.title,
             detail: permission.summary,
-            footnote: permission.detail,
+            valueText: permission.detail,
             badge: permission.badgeText,
             badgeTint: tint,
             systemImage: permission.isGranted ? "checkmark.circle.fill" : "exclamationmark.circle",

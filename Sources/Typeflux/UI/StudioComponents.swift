@@ -1252,6 +1252,7 @@ struct StudioSettingRow<Accessory: View>: View {
     let subtitle: String
     let badge: String?
     let accessory: Accessory
+    @State private var isHovering = false
 
     init(title: String, subtitle: String, badge: String? = nil, @ViewBuilder accessory: () -> Accessory) {
         self.title = title
@@ -1272,6 +1273,7 @@ struct StudioSettingRow<Accessory: View>: View {
             }
         }
         .padding(.vertical, StudioTheme.Spacing.xSmall)
+        .onHover { isHovering = $0 }
     }
 
     private var labels: some View {
@@ -1280,12 +1282,12 @@ struct StudioSettingRow<Accessory: View>: View {
                 Text(title)
                     .font(.studioBody(StudioTheme.Typography.settingTitle, weight: .semibold))
                     .foregroundStyle(StudioTheme.textPrimary)
+                    .accessibilityHint(subtitle)
+                if !subtitle.isEmpty {
+                    SettingsDescriptionHint(detail: subtitle, visible: isHovering)
+                }
                 if let badge { StudioPill(title: badge) }
             }
-            Text(subtitle)
-                .font(.studioBody(StudioTheme.Typography.bodyLarge))
-                .foregroundStyle(StudioTheme.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
         }
     }
 }

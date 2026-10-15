@@ -7,6 +7,7 @@ struct AskTranslationPanelSettingsView: View {
     @StateObject private var recorder = HotkeyRecorder()
     @State private var recording: AppHotkeyAction?
     @State private var notice: String?
+    @State private var hoveredShortcut: AppHotkeyAction?
 
     init(model: AskTranslationSettingsModel) {
         self.model = model
@@ -96,12 +97,11 @@ struct AskTranslationPanelSettingsView: View {
         HStack(spacing: 10) {
             Image(systemName: HotkeySettingsPresentation.icon(of: action))
                 .foregroundStyle(StudioTheme.textSecondary).frame(width: 18)
-            VStack(alignment: .leading, spacing: 3) {
+            HStack(spacing: 6) {
                 Text(action.title).font(.system(size: 13, weight: .medium)).foregroundStyle(StudioTheme.textPrimary)
-                Text(L("hotkeys.action." + action.rawValue + ".subtitle"))
-                    .font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityIdentifier("ask.translation.shortcut." + action.rawValue + ".subtitle")
+                    .accessibilityHint(L("hotkeys.action." + action.rawValue + ".subtitle"))
+                SettingsDescriptionHint(detail: L("hotkeys.action." + action.rawValue + ".subtitle"),
+                                        visible: hoveredShortcut == action)
             }
             Spacer()
             Button {
@@ -134,5 +134,6 @@ struct AskTranslationPanelSettingsView: View {
                 .help(L("settings.shortcuts.unset"))
         }
         .padding(.horizontal, 18).padding(.vertical, 12)
+        .onHover { hoveredShortcut = $0 ? action : nil }
     }
 }

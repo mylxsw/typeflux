@@ -6,6 +6,7 @@ struct SemanticFileSearchSettingsView: View {
     @ObservedObject var service: SemanticFileSearchService
     var filesEnabled: Bool
     @State private var confirmation: Deletion?
+    @State private var isHovering = false
 
     enum Deletion { case index, model }
 
@@ -28,6 +29,8 @@ struct SemanticFileSearchSettingsView: View {
                 Circle().fill(Self.statusColor(status.tone)).frame(width: 7, height: 7)
                 Text(L("semantic.metrics"))
                     .font(.system(size: 14, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
+                    .accessibilityHint(L("semantic.subtitle"))
+                SettingsDescriptionHint(detail: L("semantic.subtitle"), visible: isHovering)
                 Text(L("semantic.index.badge"))
                     .font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
                 Spacer(minLength: 8)
@@ -46,10 +49,10 @@ struct SemanticFileSearchSettingsView: View {
                 .disabled(!service.supported || !filesEnabled || (!enabled && !hasScope))
                 .accessibilityLabel(L("semantic.title")).accessibilityIdentifier("semantic.enabled")
             }
-            Self.caption(L("semantic.subtitle"))
             detail
         }
         .padding(.horizontal, 18).padding(.vertical, 16)
+        .onHover { isHovering = $0 }
     }
 
     @ViewBuilder private var detail: some View {

@@ -2,12 +2,17 @@ import SwiftUI
 
 struct LauncherWindowModeSetting: View {
     @Binding var selection: AskLauncherWindowMode
+    @State private var isHovering = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text(L("ask.settings.windowMode.title"))
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(TFColors.textPrimary)
+            HStack(spacing: 6) {
+                Text(L("ask.settings.windowMode.title"))
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(TFColors.textPrimary)
+                    .accessibilityHint(L("ask.settings.windowMode.detail"))
+                SettingsDescriptionHint(detail: L("ask.settings.windowMode.detail"), visible: isHovering)
+            }
             HStack(spacing: 12) {
                 ForEach(AskLauncherWindowMode.allCases, id: \.self) { mode in
                     TFChoiceCard(title: mode.title, isSelected: selection == mode) { selection = mode } preview: {
@@ -17,12 +22,9 @@ struct LauncherWindowModeSetting: View {
                     .accessibilityIdentifier("launcher.settings.windowMode." + mode.rawValue)
                 }
             }
-            Text(L("ask.settings.windowMode.detail"))
-                .font(.system(size: 12))
-                .foregroundStyle(TFColors.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
         }
         .padding(14)
+        .onHover { isHovering = $0 }
     }
 
     /// A small schematic of Typeflux's header, results and bottom controls.

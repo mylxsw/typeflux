@@ -372,7 +372,7 @@ extension LauncherSearchSettingsView {
 
     private func pathRow(_ path: String, icon: String, remove: @escaping () -> Void) -> some View {
         return AgentSettingsRow(icon: icon, title: AskFileLabels.folder(path),
-                                subtitle: path, subtitleLineLimit: 1) {
+                                valueText: path, subtitleLineLimit: 1) {
             AgentSettingsIconButton(systemImage: "minus", help: L("ask.remove"), action: remove)
         }
     }

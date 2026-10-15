@@ -71,6 +71,27 @@ final class SettingsPolishTests: XCTestCase {
         )
     }
 
+    func testSettingDescriptionsDoNotTakeAnInlineTextLine() {
+        let description = String(repeating: "A longer explanation of this setting. ", count: 8)
+        let formWithoutDescription = height(TFFormRow(title: "Microphone") {
+            Color.clear.frame(width: 36, height: 24)
+        })
+        let formWithDescription = height(TFFormRow(title: "Microphone", detail: description) {
+            Color.clear.frame(width: 36, height: 24)
+        })
+        XCTAssertEqual(formWithDescription, formWithoutDescription, accuracy: 0.5)
+
+        let agentWithoutDescription = height(AgentSettingsRow(icon: "mic", title: "Microphone") { EmptyView() })
+        let agentWithDescription = height(AgentSettingsRow(icon: "mic", title: "Microphone",
+                                                            subtitle: description) { EmptyView() })
+        XCTAssertEqual(agentWithDescription, agentWithoutDescription, accuracy: 0.5)
+
+        let formWithCurrentValue = height(TFFormRow(title: "Folder", valueText: description) {
+            Color.clear.frame(width: 36, height: 24)
+        })
+        XCTAssertGreaterThan(formWithCurrentValue, formWithoutDescription)
+    }
+
     func testClosingOrEditingMCPDraftCancelsItsTestAndClearsStaleResults() async {
         let model = viewModel()
         model.beginAddMCPServer()

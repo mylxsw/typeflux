@@ -34,7 +34,7 @@ extension AskToolsSettingsView {
             }
             ForEach(Array(attention.enumerated()), id: \.element.id) { index, status in
                 if index > 0 { ModelRowDivider(leading: 66) }
-                AgentSettingsRow(icon: status.capability.symbol, title: status.capability.title, subtitle: status.label) {
+                AgentSettingsRow(icon: status.capability.symbol, title: status.capability.title, valueText: status.label) {
                     Button {
                         navigate(to: status.capability)
                     } label: {
