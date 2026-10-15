@@ -1,6 +1,6 @@
 # 翻译面板 v2：视觉与交互改版（GUL-396）
 
-> 状态：设计稿，确认后开发。可交互设计稿：`docs/design/translation-panel-v2.html`（`?s=word|sentence|loading|error|shot|empty|compare` 打开某个画面；`?light=1` 浅色；`?classic=1` Classic 材质；`?wall=tahoe|doc|code` 背景；`?solo=1` 只显示桌面）。截图在 `docs/design/translation-panel-v2/`，`before.png` 是改版前的截图。
+> 状态：已确认并实现（GUL-396）。可交互设计稿：`docs/design/translation-panel-v2.html`（`?s=word|sentence|loading|error|shot|empty|compare` 打开某个画面；`?light=1` 浅色；`?classic=1` Classic 材质；`?wall=tahoe|doc|code` 背景；`?solo=1` 只显示桌面）。截图在 `docs/design/translation-panel-v2/`，`before.png` 是改版前的截图。
 >
 > 只改面板的外观和交互。服务并行、单词卡数据、隐私规则、快捷键语义都沿用 `translation-panel.md`（GUL-369）。
 
@@ -142,8 +142,23 @@
 - 新增快捷键面板视图；⋯ 菜单复用现有的 `Menu`。
 - 截图测试沿用 `AskTranslationPolishSnapshots` 的画面，补充空白和快捷键面板两种状态。
 
-## 6. 需要确认
+## 6. 已确认的决定
 
-1. 默认宽度从 700pt 改为 640pt，可以吗？（启动器 `fy` 不受影响）
-2. 「单词本」入口从单词卡底部移到 ⋯ 菜单（⌘B 不变），可以吗？
-3. 近义词点击后直接查这个词（原文会被替换，可以用 ↑ 翻历史回到上一个词），可以吗？
+1. 面板默认宽度改为 640pt（`AskTranslationPanelPlacement.width`）。启动器 `fy` 仍为 700pt。
+2. 「单词本」入口移到 ⋯ 菜单，⌘B 不变。
+3. 点击近义词会直接查这个词（`AskPluginAction.Kind.runWith`），按 ↑ 翻历史可以回到上一个词。
+
+## 7. 实现说明
+
+| 设计稿 | 实现 |
+|---|---|
+| 标题栏里的语言对 | `AskTranslationLanguagePair`，面板和启动器 `fy` 共用；面板里给 `AskTranslationStackView` 传 `showsLanguageBar: false` |
+| 无框结果行、发丝线、对照标签 | `AskTranslationResultView`：选中用 accent 14% 填充，悬停用 `hoverFill`；分隔线在选中行旁边隐藏 |
+| 单词卡排版 | `AskWordCardView` 的 stack 样式：`stackContents`、`stackContentHeight`、`emphasizedTarget`。启动器里的独立单词卡不变 |
+| 标题行操作 | 单词卡的收藏和重新生成改成图标，和朗读、插入、复制放在一起；不再显示底部的四个按钮 |
+| 底栏 | 显示 3 个上下文提示；复制或插入后，`AskTranslationPanelModel.flash` 在底栏显示 1.6 秒确认；⌨ 打开 `AskTranslationShortcutSheet` |
+| 空白状态 | 列出最近 5 条翻译历史，点击后直接翻译 |
+
+设计稿里有两点没有照搬：
+- 改了原文以后，旧结果会被清空，不会变淡后保留。这沿用现有的 `text` didSet 行为，避免把旧译文误当成新原文的结果。
+- 快捷键说明是 ⌨ 按钮打开的原生 popover，没有做成全屏遮罩。

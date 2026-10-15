@@ -35,8 +35,32 @@ extension AskTranslationPanelModel {
         guard number > 0, stack.results.indices.contains(number - 1),
               let text = stack.results[number - 1].completedText else { return }
         onCopy(text)
+        flash(L("ask.translation.panel.copied", stack.results[number - 1].name))
         if closes, !pinned {
             dismiss()
+        }
+    }
+
+    /// Names the result a copied or inserted text came from, for the footer confirmation.
+    func feedbackName(for text: String) -> String {
+        let results = stack.results
+        if let match = results.first(where: { $0.completedText == text || $0.card?.markdown == text }) {
+            return match.name
+        }
+        let selected = output?.selectedItem ?? 0
+        if results.indices.contains(selected) {
+            return results[selected].name
+        }
+        let preview = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        return preview.count > 24 ? String(preview.prefix(24)) + "…" : preview
+    }
+
+    /// Opens the word book at the current lookup when there is one.
+    func openWordBook() {
+        if let action = output?.action(for: .commandB) {
+            perform(action)
+        } else {
+            onWordBook(nil)
         }
     }
 
@@ -114,9 +138,18 @@ extension AskTranslationPanelModel {
 
     func perform(_ action: AskPluginAction) {
         switch action.kind {
-        case let .copy(text): onCopy(text)
+        case let .copy(text):
+            onCopy(text)
+            flash(L("ask.translation.panel.copied", feedbackName(for: text)))
         case let .speak(text, language): onSpeak(text, language)
-        case let .writeBack(text): onInsert(text)
+        case let .writeBack(text):
+            flash(L("ask.translation.panel.inserted", feedbackName(for: text)))
+            onInsert(text)
+        case let .runWith(text):
+            // A synonym on the word card: look it up in place; ↑ still recalls the previous word.
+            self.text = text
+            historyIndex = nil
+            translate()
         case let .rerun(options):
             rerun(options)
         case .swapTranslation: swapLanguages()

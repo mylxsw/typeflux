@@ -218,7 +218,7 @@ extension AskTranslationPanelPolicyTests {
     @Test func `resizing remembers a viewport limit while short content fits and screens cap it`() {
         let screen = CGRect(x: 0, y: 0, width: 1400, height: 1000)
         #expect(AskTranslationPanelPlacement.size(content: 400, screen: screen, preference: .eighty)
-            == CGSize(width: AskMetrics.launcherWidth, height: 400))
+            == CGSize(width: AskTranslationPanelPlacement.width, height: 400))
         #expect(AskTranslationPanelPlacement.size(content: 2000, screen: screen, preference: .eighty,
                                                   remembered: CGSize(width: 820, height: 600))
                 == CGSize(width: 820, height: 600))
@@ -231,7 +231,7 @@ extension AskTranslationPanelPolicyTests {
                 == CGSize(width: 1400, height: 600))
         #expect(AskTranslationPanelPlacement.size(content: 500, screen: screen, preference: .full,
                                                   remembered: CGSize(width: CGFloat.nan, height: CGFloat.infinity))
-                == CGSize(width: 700, height: 500))
+                == CGSize(width: AskTranslationPanelPlacement.width, height: 500))
         let small = CGRect(x: -600, y: -400, width: 400, height: 200)
         #expect(AskTranslationPanelPlacement.size(content: 900, screen: small, preference: .full) == small.size)
         for style in InterfaceStyle.allCases {
@@ -241,10 +241,6 @@ extension AskTranslationPanelPolicyTests {
                 #expect(chrome.editorFontSize == AskComposerChrome.launcher.editorFontSize)
                 #expect(chrome.idleBorder == (!style.usesGlass && !contrast
                         ? AskClassic.launcherBorder : AskComposerChrome.launcher.idleBorder))
-                #expect(AskTranslationAppearance.cardFill(style: style)
-                    == (style.usesGlass ? AskTranslationAppearance.cardFill : AskClassic.card))
-                #expect(AskTranslationAppearance.border(style: style)
-                    == (style.usesGlass ? AskTheme.border : AskClassic.cardBorder))
             }
         }
     }
