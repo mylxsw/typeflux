@@ -5502,3 +5502,5 @@
 "component.collapsed" = "Collapsed";
 "component.add" = "Add";
 "component.remove" = "Remove";
+"component.undo" = "Undo";
+"component.required" = "Required";

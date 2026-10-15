@@ -177,7 +177,7 @@ struct AskWorkflowKeywordsForm: View {
     /// Preset options as `name=value` tags with a remove button, then "+ Option".
     private func optionTags(_ index: Int) -> some View {
         let options = optionsOf(index)
-        return AgentFlowLayout(spacing: 5) {
+        return TFFlowLayout(spacing: 5) {
             ForEach(options.keys.sorted(), id: \.self) { key in
                 HStack(spacing: 3) {
                     Text("\(key)=\(options[key] ?? "")").font(.system(size: 11.5, design: .monospaced))
@@ -408,7 +408,7 @@ struct AskWorkflowInputForm: View {
     }
 
     private var argv: some View {
-        AgentFlowLayout(spacing: 6) {
+        TFFlowLayout(spacing: 6) {
             Text(program).font(.system(size: 12.5, design: .monospaced)).foregroundStyle(StudioTheme.textSecondary)
                 .frame(height: 26)
             ForEach(Array(template.enumerated()), id: \.offset) { index, _ in

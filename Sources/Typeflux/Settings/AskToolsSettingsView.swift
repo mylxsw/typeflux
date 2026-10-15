@@ -60,7 +60,7 @@ struct AskToolsSettingsView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 24) {
+        VStack(alignment: .leading, spacing: TFMetrics.sectionSpacing) {
             switch pane {
             case .overview:
                 overviewSections
@@ -78,7 +78,7 @@ struct AskToolsSettingsView: View {
             case .automation:
                 automationPane
             case .skills:
-                AgentPaneHeader(symbol: AgentCapability.skills.symbol, title: AgentCapability.skills.title) {
+                TFPaneHeader(systemImage: AgentCapability.skills.symbol, title: AgentCapability.skills.title) {
                     skillHeaderActions
                 }
                 skillSections
@@ -230,9 +230,9 @@ struct AskToolsSettingsView: View {
     }
 
     @ViewBuilder var memorySections: some View {
-        AgentPaneHeader(symbol: AgentSettingsPane.memory.symbol, title: AgentSettingsPane.memory.title) {
-            AgentStatusBadge(level: memoryNotes.notes.isEmpty ? .off : .ready,
-                             label: L("agent.memory.count", memoryNotes.notes.count))
+        TFPaneHeader(systemImage: AgentSettingsPane.memory.symbol, title: AgentSettingsPane.memory.title) {
+            TFStatusLabel(text: L("agent.memory.count", memoryNotes.notes.count),
+                          level: memoryNotes.notes.isEmpty ? .neutral : .success)
         }
         MemoryNotesEditorView(model: memoryNotes, store: notes, owner: owner(),
                               correctionsEnabled: MemoryRollout.enabled(settings.defaults))

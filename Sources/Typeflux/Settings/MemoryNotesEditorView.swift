@@ -16,47 +16,42 @@ struct MemoryNotesEditorView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 10) {
-                SettingsSearchBox(placeholder: L("agent.memory.search"), text: $query)
-                Spacer()
-                Button {
+            HStack(spacing: TFMetrics.toolbarSpacing) {
+                TFSearchField(placeholder: L("agent.memory.search"), text: $query, resultCount: visibleNotes.count)
+                Spacer(minLength: 0)
+                TFButton(title: L("agent.memory.add"), systemImage: "plus", kind: .primary) {
                     query = ""
                     model.beginAdding()
-                } label: {
-                    Label(L("agent.memory.add"), systemImage: "plus")
                 }
-                .buttonStyle(ModelActionStyle(primary: true))
                 .disabled(model.draft != nil)
             }
-            ModelSurface {
-                VStack(alignment: .leading, spacing: 0) {
-                    if let draft = model.draft, draft.note == nil {
+            TFCard {
+                if let draft = model.draft, draft.note == nil {
+                    editor
+                    if !visibleNotes.isEmpty { TFDivider.formWithIcon }
+                }
+                if model.notes.isEmpty, model.draft == nil {
+                    TFEmptyState(systemImage: "brain", title: L("agent.memory.emptyTitle"),
+                                 message: L("agent.memory.emptyMessage")) { EmptyView() }
+                } else if visibleNotes.isEmpty, model.draft == nil {
+                    TFCardNote(text: L("agent.memory.noMatch"))
+                }
+                ForEach(Array(visibleNotes.enumerated()), id: \.element.id) { index, note in
+                    if index > 0 { TFDivider.formWithIcon }
+                    if model.draft?.note?.id == note.id {
                         editor
-                        if !visibleNotes.isEmpty { ModelRowDivider(leading: 66) }
-                    }
-                    if model.notes.isEmpty, model.draft == nil {
-                        AgentEmptyState(symbol: "brain", title: L("agent.memory.emptyTitle"),
-                                        message: L("agent.memory.emptyMessage")) { EmptyView() }
-                    } else if visibleNotes.isEmpty, model.draft == nil {
-                        AgentSettingsEmptyRow(text: L("agent.memory.noMatch"))
-                    }
-                    ForEach(Array(visibleNotes.enumerated()), id: \.element.id) { index, note in
-                        if index > 0 { ModelRowDivider(leading: 66) }
-                        if model.draft?.note?.id == note.id {
-                            editor
-                        } else {
-                            row(note)
-                        }
+                    } else {
+                        row(note)
                     }
                 }
             }
             if let error = model.error {
-                Text(error).font(.system(size: 12)).foregroundStyle(StudioTheme.danger)
+                TFFieldMessage(text: error)
             }
             if let removed = model.recentlyRemoved {
-                AgentUndoBanner(message: L("agent.memory.removed"),
-                                onUndo: { model.undoRemove(to: store, owner: owner) },
-                                onDismiss: { model.dismissUndo() })
+                TFUndoBar(message: L("agent.memory.removed"),
+                          onUndo: { model.undoRemove(to: store, owner: owner) },
+                          onDismiss: { model.dismissUndo() })
                     .id(removed.id)
             }
         }
@@ -83,17 +78,16 @@ struct MemoryNotesEditorView: View {
     }
 
     private func row(_ note: AskMemoryNote) -> some View {
-        AgentSettingsRow(icon: "brain", title: note.text, valueText: Self.provenance(note), titleLineLimit: nil) {
-            HStack(spacing: 8) {
-                if correctionsEnabled {
-                    AgentSettingsIconButton(systemImage: "pencil", help: L("memory.correct")) {
-                        model.beginEditing(note)
-                    }
-                    .disabled(model.draft != nil)
+        TFFormRow(title: note.text, valueText: Self.provenance(note), icon: "brain") {
+            if correctionsEnabled {
+                TFButton(title: L("memory.correct"), systemImage: "pencil", size: .small, iconOnly: true) {
+                    model.beginEditing(note)
                 }
-                AgentSettingsIconButton(systemImage: "trash", help: L("memory.deleteSource"), role: .destructive) {
-                    model.remove(note, from: store, owner: owner)
-                }
+                .disabled(model.draft != nil)
+            }
+            TFButton(title: L("memory.deleteSource"), systemImage: "trash", destructive: true, size: .small,
+                     iconOnly: true) {
+                model.remove(note, from: store, owner: owner)
             }
         }
     }
@@ -101,44 +95,35 @@ struct MemoryNotesEditorView: View {
     private var editor: some View {
         let isNew = model.draft?.note == nil
         let currentExpiry = model.draft?.note?.provenance?.expiry
-        return HStack(alignment: .top, spacing: 14) {
-            ModelIconTile {
-                Image(systemName: isNew ? "plus" : "pencil").font(.system(size: 14)).foregroundStyle(ModelVisualStyle.accent)
-            }
+        return HStack(alignment: .top, spacing: 12) {
+            TFIconTile(systemImage: isNew ? "plus" : "pencil", style: .soft)
             VStack(alignment: .leading, spacing: 8) {
-                TextEditor(text: Binding(get: { model.draft?.text ?? "" }, set: { model.draft?.text = $0 }))
-                    .font(.system(size: 13))
-                    .scrollContentBackground(.hidden)
-                    .padding(6)
-                    .frame(height: 72)
-                    .background(ModelVisualStyle.control,
-                                in: RoundedRectangle(cornerRadius: ModelVisualStyle.controlCornerRadius, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: ModelVisualStyle.controlCornerRadius, style: .continuous)
-                        .strokeBorder(ModelVisualStyle.accent.opacity(0.6)))
-                    .accessibilityLabel(L(isNew ? "agent.memory.add" : "memory.correct"))
-                HStack(spacing: 8) {
-                    Text(L("memory.retention")).font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
-                    SettingsMenuPicker(
+                TFTextArea(label: L(isNew ? "agent.memory.add" : "memory.correct"),
+                           text: Binding(get: { model.draft?.text ?? "" }, set: { model.draft?.text = $0 }),
+                           isFocusedStyle: true)
+                HStack(spacing: TFMetrics.toolbarSpacing) {
+                    TFFootnote(text: L("memory.retention"))
+                    TFPopUpButton(
                         title: L("memory.retention"),
-                        options: retentionOptions(isNew: isNew, currentExpiry: currentExpiry),
+                        options: retentionOptions(isNew: isNew, currentExpiry: currentExpiry)
+                            .map { TFOption($0.value, $0.label) },
                         selection: Binding(
                             get: { model.draft?.retention ?? .keep },
                             set: { model.draft?.retention = $0 }
-                        )
+                        ),
+                        width: 150
                     )
-                    .frame(width: 150)
                     Spacer()
-                    Button(L("memory.cancel")) { model.cancelEditing() }.buttonStyle(ModelActionStyle())
+                    TFButton(title: L("memory.cancel")) { model.cancelEditing() }
                         .keyboardShortcut(.cancelAction)
-                    Button(L(isNew ? "agent.memory.save" : "memory.save")) {
+                    TFButton(title: L(isNew ? "agent.memory.save" : "memory.save"), kind: .primary) {
                         model.saveDraft(to: store, owner: owner)
                     }
-                    .buttonStyle(ModelActionStyle(primary: true))
                     .disabled(model.draft?.canSave != true)
                 }
             }
         }
-        .padding(.horizontal, 18).padding(.vertical, 14)
+        .padding(.horizontal, 14).padding(.vertical, 12)
     }
 
     static func provenance(_ note: AskMemoryNote) -> String {

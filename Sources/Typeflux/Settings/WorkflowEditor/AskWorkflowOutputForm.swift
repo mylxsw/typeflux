@@ -390,7 +390,7 @@ struct AskWorkflowPlaceholderText: View {
         if text.isEmpty {
             Text(placeholder).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
         } else {
-            AgentFlowLayout(spacing: 3) {
+            TFFlowLayout(spacing: 3) {
                 ForEach(Array(Self.segments(text).enumerated()), id: \.offset) { _, segment in
                     if segment.isToken {
                         AskWorkflowTokenChip(text: segment.text)

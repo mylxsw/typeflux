@@ -193,3 +193,29 @@ struct AgentCapabilityStatus: Equatable, Identifiable {
         return AgentCapabilityStatus(capability: capability, level: level, label: label)
     }
 }
+
+extension AgentCapabilityStatus.Level {
+    /// The shared status color for this level.
+    var statusDot: TFStatusDot.Level {
+        switch self {
+        case .ready: .success
+        case .attention: .warning
+        case .off: .neutral
+        }
+    }
+
+    var paneStatus: TFPaneItem<AgentSettingsPane>.Status {
+        switch self {
+        case .ready: .active
+        case .attention: .attention
+        case .off: .inactive
+        }
+    }
+}
+
+extension AgentCapabilityStatus {
+    /// "● Ready" for a pane header; problems are tinted so they stand out.
+    var statusLabel: TFStatusLabel {
+        TFStatusLabel(text: label, level: level.statusDot, tintsText: level == .attention)
+    }
+}

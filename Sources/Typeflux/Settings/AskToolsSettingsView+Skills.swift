@@ -4,44 +4,31 @@ import SwiftUI
 /// The Skills pane: list, search, details, install, rollback and removal.
 extension AskToolsSettingsView {
     @ViewBuilder var skillHeaderActions: some View {
-        Button {
-            openSkillsFolder()
-        } label: {
-            Label(L("ask.settings.skills.open"), systemImage: "folder")
-        }
-        .buttonStyle(ModelActionStyle())
-        Button {
+        TFButton(title: L("ask.settings.skills.open"), systemImage: "folder") { openSkillsFolder() }
+        TFButton(title: L("ask.settings.skills.install"), systemImage: "arrow.down.circle", kind: .primary) {
             installError = nil
             installURL = ""
             showingInstall = true
-        } label: {
-            Label(L("ask.settings.skills.install"), systemImage: "arrow.down.circle")
         }
-        .buttonStyle(ModelActionStyle(primary: true))
     }
 
     @ViewBuilder var skillSections: some View {
         let visible = Self.filteredSkills(skillList, disabled: disabledSkills, query: skillQuery, filter: skillFilter)
         VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 8) {
-                SettingsSearchBox(placeholder: L("agent.skills.search"), text: $skillQuery)
-                ModelSegmentedControl(
-                    options: [(label: L("agent.filter.all"), value: SkillFilter.all),
-                              (label: L("agent.filter.enabled"), value: SkillFilter.enabled),
-                              (label: L("agent.filter.disabled"), value: SkillFilter.disabled)],
+            HStack(spacing: TFMetrics.toolbarSpacing) {
+                TFSearchField(placeholder: L("agent.skills.search"), text: $skillQuery, resultCount: visible.count)
+                TFSegmentedControl(
+                    options: [TFOption(SkillFilter.all, L("agent.filter.all")),
+                              TFOption(SkillFilter.enabled, L("agent.filter.enabled")),
+                              TFOption(SkillFilter.disabled, L("agent.filter.disabled"))],
                     selection: $skillFilter
                 )
+                Spacer(minLength: 0)
             }
-            ModelSurface {
-                VStack(alignment: .leading, spacing: 0) {
-                    if visible.isEmpty {
-                        AgentSettingsEmptyRow(text: L("agent.skills.noMatch"))
-                    }
-                    ForEach(Array(visible.enumerated()), id: \.element.name) { index, skill in
-                        if index > 0 { ModelRowDivider(leading: 66) }
-                        skillRow(skill)
-                    }
-                }
+            if visible.isEmpty {
+                TFCard { TFCardNote(text: L("agent.skills.noMatch")) }
+            } else {
+                TFListGroup(visible, id: \.name) { skill in skillRow(skill) }
             }
         }
         .sheet(isPresented: $showingInstall) { installSheet }
@@ -88,36 +75,15 @@ extension AskToolsSettingsView {
 
     private func skillRow(_ skill: AskSkill) -> some View {
         let badge = skillBadge(skill)
-        return Button {
-            inspectedSkill = InspectedSkill(name: skill.name)
-        } label: {
-            HStack(spacing: 14) {
-                ModelIconTile {
-                    Image(systemName: "wand.and.stars").font(.system(size: 15))
-                        .foregroundStyle(disabledSkills.contains(skill.name) ? StudioTheme.textTertiary : ModelVisualStyle.accent)
-                }
-                VStack(alignment: .leading, spacing: 3) {
-                    HStack(spacing: 6) {
-                        Text(skill.name).font(.system(size: StudioTheme.Typography.settingTitle, weight: .semibold))
-                            .foregroundStyle(StudioTheme.textPrimary).lineLimit(1)
-                        ModelUsageBadge(text: badge.text, accent: badge.accent)
-                    }
-                    Text(skill.displayDescription).font(.system(size: StudioTheme.Typography.body))
-                        .foregroundStyle(StudioTheme.textSecondary).lineLimit(1)
-                }
-                Spacer(minLength: 16)
-                // A turned-off skill is neither offered to the model nor loaded.
-                Toggle("", isOn: Binding(get: { !disabledSkills.contains(skill.name) },
-                                         set: { setSkill(skill.name, enabled: $0) }))
-                    .labelsHidden().toggleStyle(.switch)
-                    .accessibilityLabel(skill.name)
-                Image(systemName: "chevron.right").font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textTertiary)
-            }
-            .padding(.horizontal, 18).padding(.vertical, 12).frame(minHeight: 60)
-            .contentShape(Rectangle())
+        let enabled = !disabledSkills.contains(skill.name)
+        return TFListRow(title: skill.name, subtitle: skill.displayDescription, tags: [badge.text], query: skillQuery,
+                         action: { inspectedSkill = InspectedSkill(name: skill.name) }) {
+            TFIconTile(systemImage: "wand.and.stars", style: enabled ? .soft : .neutral)
+        } accessory: {
+            // A turned-off skill is neither offered to the model nor loaded.
+            TFSwitch(title: skill.name, isOn: Binding(get: { enabled }, set: { setSkill(skill.name, enabled: $0) }))
+            TFChevron()
         }
-        .buttonStyle(.plain)
         .help(skills.source(of: skill).map(Self.skillSourceDescription) ?? "")
     }
 
@@ -302,7 +268,7 @@ struct AgentSkillDetailView: View {
             if let declared = source?.declaredPermissions, !declared.isEmpty {
                 VStack(alignment: .leading, spacing: 6) {
                     Text(L("agent.skills.declared")).font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
-                    AgentFlowLayout { ForEach(declared, id: \.self) { AgentFactChip(text: $0) } }
+                    TFFlowLayout { ForEach(declared, id: \.self) { TFTag(text: $0) } }
                     Text(L("agent.skills.declaredHint")).font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
                 }
             }

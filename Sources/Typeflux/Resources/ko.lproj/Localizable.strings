@@ -5387,3 +5387,5 @@
 "component.collapsed" = "접힘";
 "component.add" = "추가";
 "component.remove" = "제거";
+"component.undo" = "실행 취소";
+"component.required" = "필수";

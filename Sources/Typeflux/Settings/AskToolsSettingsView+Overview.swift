@@ -7,58 +7,45 @@ extension AskToolsSettingsView {
         AgentOverviewSummary(statuses: statuses, noteCount: memoryNotes.notes.count) { status in
             navigate(to: status.capability)
         }
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
-                ModelSectionLabel(title: L("ask.settings.local.title"))
-                Text(L("agent.overview.storage.hint")).font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
-            }
+        VStack(alignment: .leading, spacing: 6) {
+            TFSectionHeader(title: L("ask.settings.local.title"))
             HStack(alignment: .top, spacing: 12) {
-                AgentStorageOption(
-                    symbol: "cloud", title: Self.storageName(local: false), selected: !newConversationsStayLocal,
-                    points: [(true, L("agent.storage.cloud.models")), (true, L("agent.storage.cloud.sync")),
-                             (true, L("agent.storage.cloud.search")), (false, L("agent.storage.cloud.credits"))]
-                ) { setNewConversationsStayLocal(false) }
-                AgentStorageOption(
-                    symbol: "lock", title: Self.storageName(local: true), selected: newConversationsStayLocal,
-                    points: [(true, L("agent.storage.local.private")), (true, L("agent.storage.local.models")),
-                             (false, L("agent.storage.local.search")), (false, L("agent.storage.local.limits"))]
-                ) { setNewConversationsStayLocal(true) }
+                storageOption(local: false, symbol: "cloud",
+                              points: [(true, L("agent.storage.cloud.models")), (true, L("agent.storage.cloud.sync")),
+                                       (true, L("agent.storage.cloud.search")), (false, L("agent.storage.cloud.credits"))])
+                storageOption(local: true, symbol: "lock",
+                              points: [(true, L("agent.storage.local.private")), (true, L("agent.storage.local.models")),
+                                       (false, L("agent.storage.local.search")), (false, L("agent.storage.local.limits"))])
             }
+            TFFootnote(text: L("agent.overview.storage.hint")).padding(.horizontal, 4)
         }
         AskTitleSettingsView(settings: settings)
         let attention = statuses.filter { $0.level == .attention }
-        AgentSettingsSection(title: L("agent.overview.attention.title"),
-                             detail: attention.isEmpty ? nil : L("agent.overview.attention.count", attention.count)) {
+        TFFormSection(title: L("agent.overview.attention.title"), count: attention.isEmpty ? nil : attention.count) {
             if attention.isEmpty {
-                AgentSettingsEmptyRow(text: L("agent.overview.attention.none"))
+                TFCardNote(text: L("agent.overview.attention.none"))
             }
             ForEach(Array(attention.enumerated()), id: \.element.id) { index, status in
-                if index > 0 { ModelRowDivider(leading: 66) }
-                AgentSettingsRow(icon: status.capability.symbol, title: status.capability.title, valueText: status.label) {
-                    Button {
+                if index > 0 { TFDivider.formWithIcon }
+                TFFormRow(title: status.capability.title, valueText: status.label, icon: status.capability.symbol) {
+                    TFButton(title: L("agent.overview.attention.action"), systemImage: "chevron.right") {
                         navigate(to: status.capability)
-                    } label: {
-                        Label(L("agent.overview.attention.action"), systemImage: "chevron.right")
-                            .labelStyle(TrailingIconLabelStyle())
                     }
-                    .buttonStyle(ModelActionStyle())
                 }
             }
         }
     }
 
+    private func storageOption(local: Bool, symbol: String, points: [(included: Bool, text: String)]) -> some View {
+        TFChoiceCard(title: Self.storageName(local: local), isSelected: newConversationsStayLocal == local) {
+            setNewConversationsStayLocal(local)
+        } preview: {
+            TFChecklist(systemImage: symbol, items: points)
+        }
+    }
+
     func navigate(to capability: AgentCapability) {
         onNavigate(capability.pane)
-    }
-}
-
-/// Title first, icon after it, e.g. "Open ›".
-struct TrailingIconLabelStyle: LabelStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        HStack(spacing: 4) {
-            configuration.title
-            configuration.icon.font(.system(size: 10, weight: .semibold))
-        }
     }
 }
 
@@ -81,71 +68,13 @@ struct AgentOverviewSummary: View {
     }
 
     var body: some View {
-        HStack(spacing: 14) {
-            VStack(alignment: .leading, spacing: 3) {
-                Text(L("agent.overview.ready", statuses.filter { $0.level == .ready }.count))
-                    .font(.system(size: 15, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
-                Text(detail).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            Spacer(minLength: 12)
-            if let first = attention.first {
-                Button(L("agent.overview.fix")) { onFix(first) }.buttonStyle(ModelActionStyle(primary: true))
-            }
-        }
-        .padding(.horizontal, 16).padding(.vertical, 14)
-        .background(
-            LinearGradient(colors: [ModelVisualStyle.accent.opacity(0.14), ModelVisualStyle.surface],
-                           startPoint: .leading, endPoint: .trailing),
-            in: RoundedRectangle(cornerRadius: ModelVisualStyle.cornerRadius, style: .continuous)
-        )
-        .overlay(RoundedRectangle(cornerRadius: ModelVisualStyle.cornerRadius, style: .continuous)
-            .strokeBorder(ModelVisualStyle.border))
-    }
-}
-
-/// One choice of where new conversations are kept, listing what it allows and what it gives up.
-struct AgentStorageOption: View {
-    let symbol: String
-    let title: String
-    let selected: Bool
-    let points: [(included: Bool, text: String)]
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            VStack(alignment: .leading, spacing: 10) {
-                HStack(spacing: 8) {
-                    Image(systemName: symbol).font(.system(size: 14))
-                    Text(title).font(.system(size: 13.5, weight: .semibold))
-                    Spacer()
-                    Image(systemName: selected ? "largecircle.fill.circle" : "circle")
-                        .font(.system(size: 15))
-                        .foregroundStyle(selected ? ModelVisualStyle.accent : StudioTheme.textTertiary)
-                }
-                .foregroundStyle(StudioTheme.textPrimary)
-                VStack(alignment: .leading, spacing: 5) {
-                    ForEach(Array(points.enumerated()), id: \.offset) { _, point in
-                        HStack(alignment: .firstTextBaseline, spacing: 6) {
-                            Image(systemName: point.included ? "checkmark" : "minus")
-                                .font(.system(size: 10, weight: .bold))
-                                .foregroundStyle(point.included ? StudioTheme.success : StudioTheme.textTertiary)
-                                .frame(width: 12)
-                            Text(point.text).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
-                                .fixedSize(horizontal: false, vertical: true)
-                        }
-                    }
+        TFCard {
+            TFFormRow(title: L("agent.overview.ready", statuses.filter { $0.level == .ready }.count),
+                      valueText: detail, icon: attention.isEmpty ? "checkmark.seal" : "exclamationmark.circle") {
+                if let first = attention.first {
+                    TFButton(title: L("agent.overview.fix"), kind: .primary) { onFix(first) }
                 }
             }
-            .padding(14)
-            .frame(maxWidth: .infinity, alignment: .topLeading)
-            .background(ModelVisualStyle.surface,
-                        in: RoundedRectangle(cornerRadius: ModelVisualStyle.cornerRadius, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: ModelVisualStyle.cornerRadius, style: .continuous)
-                .strokeBorder(selected ? ModelVisualStyle.accent : ModelVisualStyle.border, lineWidth: selected ? 2 : 1))
-            .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }

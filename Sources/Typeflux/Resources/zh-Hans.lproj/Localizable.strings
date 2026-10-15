@@ -5502,3 +5502,5 @@
 "component.collapsed" = "已收起";
 "component.add" = "添加";
 "component.remove" = "移除";
+"component.undo" = "撤销";
+"component.required" = "必填";

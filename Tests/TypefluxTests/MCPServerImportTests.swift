@@ -78,7 +78,13 @@ final class MCPServerImportTests: XCTestCase {
             let status = MCPServerStatusPresentation(enabled: enabled, result: result)
             XCTAssertEqual(status.state, expected)
             XCTAssertFalse(status.label.isEmpty)
-            _ = status.color
+            let expectedLevel: TFStatusDot.Level = switch expected {
+            case .connected: .success
+            case .failed: .danger
+            case .testing: .warning
+            case .disabled, .untested: .neutral
+            }
+            XCTAssertEqual(status.level, expectedLevel)
         }
         XCTAssertTrue(MCPServerStatusPresentation(enabled: true, result: .testing).isTesting)
         XCTAssertEqual(MCPServerStatusPresentation(enabled: true, result: .success(tools: [tool])).label,

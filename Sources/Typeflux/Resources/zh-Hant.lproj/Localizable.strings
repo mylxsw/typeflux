@@ -5421,3 +5421,5 @@
 "component.collapsed" = "已收合";
 "component.add" = "新增";
 "component.remove" = "移除";
+"component.undo" = "復原";
+"component.required" = "必填";

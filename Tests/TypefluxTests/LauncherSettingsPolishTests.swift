@@ -171,7 +171,7 @@ struct LauncherSettingsPolishTests {
             try click(edit, in: window)
             #expect(edited, "clicking the workflow name reaches its editor action")
         }
-        try await render(AgentFlowLayout(spacing: 6) {
+        try await render(TFFlowLayout(spacing: 6) {
             ForEach(["url", "b64", "rate", "abcdefghijkl"], id: \.self) { word in
                 AskKeywordListChip(keyword: word).accessibilityIdentifier("chip." + word)
             }

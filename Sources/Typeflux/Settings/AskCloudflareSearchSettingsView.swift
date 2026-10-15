@@ -1,33 +1,35 @@
 import SwiftUI
 
-/// Cloudflare-specific search fields; the token and connection test live in the surrounding form.
+/// Cloudflare-specific search rows; the token and connection test live in the surrounding form.
 struct AskCloudflareSearchSettingsView: View {
     @Binding var configuration: AskCloudflareSearchConfiguration
     @State private var showsAdvanced = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            AgentFormRow(label: L("ask.settings.search.cloudflare.account"), required: true) {
-                TextField(L("agent.search.cloudflare.accountPlaceholder"), text: $configuration.accountID)
-                    .textFieldStyle(ModelFieldStyle())
-            }
-            AgentFormRow(label: L("ask.settings.search.cloudflare.gateway"), required: true) {
-                TextField("default", text: $configuration.gatewayID).textFieldStyle(ModelFieldStyle())
-            }
-            AgentFormRow(label: L("ask.settings.search.cloudflare.provider")) {
-                SettingsMenuPicker(title: L("ask.settings.search.cloudflare.provider"),
-                                   options: AskCloudflareSearchConfiguration.providers.map { (
-                                       label: Self.engineName($0),
-                                       value: $0
-                                   ) },
-                                   selection: $configuration.provider)
-            }
-            AgentDisclosureButton(title: L("agent.search.advanced"), expanded: $showsAdvanced)
-            if showsAdvanced || !configuration.byokAlias.isEmpty {
-                AgentFormRow(label: L("ask.settings.search.cloudflare.alias")) {
-                    TextField(L("agent.search.cloudflare.aliasPlaceholder"), text: $configuration.byokAlias)
-                        .textFieldStyle(ModelFieldStyle())
-                }
+        TFDivider.formWithIcon
+        TFFormRow(title: L("ask.settings.search.cloudflare.account"), icon: "person.crop.square", isRequired: true,
+                  controlWidth: .wide) {
+            TextField(L("agent.search.cloudflare.accountPlaceholder"), text: $configuration.accountID)
+                .textFieldStyle(TFTextFieldStyle(monospaced: true))
+        }
+        TFDivider.formWithIcon
+        TFFormRow(title: L("ask.settings.search.cloudflare.gateway"), icon: "point.3.connected.trianglepath.dotted",
+                  isRequired: true, controlWidth: .wide) {
+            TextField("default", text: $configuration.gatewayID).textFieldStyle(TFTextFieldStyle(monospaced: true))
+        }
+        TFDivider.formWithIcon
+        TFFormRow(title: L("ask.settings.search.cloudflare.provider"), icon: "magnifyingglass",
+                  controlWidth: .wide) {
+            TFPopUpButton(title: L("ask.settings.search.cloudflare.provider"),
+                          options: AskCloudflareSearchConfiguration.providers.map { TFOption($0, Self.engineName($0)) },
+                          selection: $configuration.provider, width: TFMetrics.formControlWideWidth)
+        }
+        TFDivider.form
+        TFDisclosureRow(title: L("agent.search.advanced"), isExpanded: $showsAdvanced)
+        if showsAdvanced || !configuration.byokAlias.isEmpty {
+            TFFormRow(title: L("ask.settings.search.cloudflare.alias"), icon: "key.horizontal", controlWidth: .wide) {
+                TextField(L("agent.search.cloudflare.aliasPlaceholder"), text: $configuration.byokAlias)
+                    .textFieldStyle(TFTextFieldStyle(monospaced: true))
             }
         }
     }
@@ -41,7 +43,7 @@ struct AskCloudflareSearchSettingsView: View {
     }
 }
 
-/// A label column followed by its control, as used by the search and MCP forms.
+/// A label column followed by its control, as used by the MCP and translation-provider sheets.
 struct AgentFormRow<Field: View>: View {
     let label: String
     var required = false
@@ -60,27 +62,5 @@ struct AgentFormRow<Field: View>: View {
             .frame(width: labelWidth, alignment: .leading)
             field.frame(maxWidth: 420, alignment: .leading)
         }
-    }
-}
-
-/// Small chevron toggle that reveals rarely needed fields.
-struct AgentDisclosureButton: View {
-    let title: String
-    @Binding var expanded: Bool
-
-    var body: some View {
-        Button {
-            withAnimation(.easeOut(duration: 0.15)) { expanded.toggle() }
-        } label: {
-            HStack(spacing: 4) {
-                Image(systemName: "chevron.right").font(.system(size: 9, weight: .bold))
-                    .rotationEffect(.degrees(expanded ? 90 : 0))
-                Text(title).font(.system(size: 12))
-            }
-            .foregroundStyle(StudioTheme.textSecondary)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(expanded ? .isSelected : [])
     }
 }
