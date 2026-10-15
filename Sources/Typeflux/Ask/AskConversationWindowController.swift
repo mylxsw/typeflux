@@ -58,7 +58,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         )
         let sandbox = tools.sandbox
         self.tools = tools
-        let cache = try services?.cache ?? AskConversationCache(url: AskConversationCache.defaultURL())
+        let cache: any AskCaching = services?.cache ?? RecoveringAskConversationCache()
         let deviceKey = "ask.deviceId"
         let deviceId = settings.defaults.string(forKey: deviceKey) ?? UUID().uuidString
         settings.defaults.set(deviceId, forKey: deviceKey)

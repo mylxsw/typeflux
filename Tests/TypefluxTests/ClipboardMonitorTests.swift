@@ -3,6 +3,111 @@ import AppKit
 import XCTest
 
 final class ClipboardMonitorTests: XCTestCase {
+    private final class CaptureWorker: ClipboardCaptureWorking {
+        var calls = 0
+        func capture(changeCount _: Int, plainTextOnly _: Bool,
+                     cancelled _: @escaping @Sendable () -> Bool) throws -> ClipboardCapture? {
+            calls += 1
+            if calls == 1 {
+                throw CocoaError(.coderReadCorrupt)
+            }
+            return .text("worker result")
+        }
+    }
+
+    func testWorkerFailuresOnlySkipOneCopyAndNeverReadPayloadsInTheHost() {
+        let worker = CaptureWorker()
+        let monitor = ClipboardMonitor(pasteboard: pasteboard, store: store, isEnabled: { true },
+                                       sourceProvider: { nil }, captureWorker: worker)
+        monitor.start()
+        defer { monitor.stop() }
+        pasteboard.copy(.init(string: "first"))
+        XCTAssertTrue(monitor.poll())
+        monitor.drain()
+        XCTAssertEqual(worker.calls, 1)
+        XCTAssertTrue(store.storedItems.isEmpty)
+        XCTAssertFalse(monitor.poll())
+        pasteboard.copy(.init(string: "second"))
+        XCTAssertTrue(monitor.poll())
+        monitor.drain()
+        XCTAssertEqual(worker.calls, 2)
+        XCTAssertEqual(pasteboard.readCount, 0)
+        XCTAssertEqual(store.storedItems.first?.text, "worker result")
+    }
+
+    func testDisabledCaptureInvalidatesQueuedWorkerEvenWhenClipboardDoesNotChange() {
+        let queue = DispatchQueue(label: "clipboard.test.worker.stop")
+        let worker = CaptureWorker()
+        let monitor = ClipboardMonitor(pasteboard: pasteboard, store: store, isEnabled: { [unowned self] in enabled },
+                                       sourceProvider: { nil }, workQueue: queue, captureWorker: worker)
+        monitor.start()
+        queue.suspend()
+        pasteboard.copy(.init(string: "queued"))
+        XCTAssertTrue(monitor.poll())
+        enabled = false
+        XCTAssertFalse(monitor.poll())
+        queue.resume()
+        monitor.drain()
+        monitor.stop()
+        XCTAssertEqual(worker.calls, 0)
+        XCTAssertTrue(store.storedItems.isEmpty)
+    }
+
+    func testOverloadIsDroppedBeforeReadingAndCapacityReturnsAfterDrain() {
+        let queue = DispatchQueue(label: "clipboard.test.backpressure")
+        let monitor = ClipboardMonitor(pasteboard: pasteboard, store: store, isEnabled: { true },
+                                       sourceProvider: { nil }, workQueue: queue)
+        monitor.start()
+        defer { monitor.stop() }
+        queue.suspend()
+        for index in 0 ..< 2 {
+            pasteboard.copy(.init(string: "item \(index)"))
+            XCTAssertTrue(monitor.poll())
+        }
+        pasteboard.copy(.init(string: "overload"))
+        XCTAssertFalse(monitor.poll())
+        XCTAssertEqual(pasteboard.readCount, 2)
+        queue.resume()
+        monitor.drain()
+        XCTAssertFalse(monitor.poll(), "A skipped copy must not be replayed")
+        pasteboard.copy(.init(string: "next"))
+        XCTAssertTrue(monitor.poll())
+        monitor.drain()
+        XCTAssertEqual(store.storedItems.count, 3)
+    }
+
+    func testStoppingInvalidatesQueuedCapturesAndRestartAcceptsNewCopies() {
+        let queue = DispatchQueue(label: "clipboard.test.stop")
+        let monitor = ClipboardMonitor(pasteboard: pasteboard, store: store, isEnabled: { true },
+                                       sourceProvider: { nil }, workQueue: queue)
+        monitor.start()
+        queue.suspend()
+        pasteboard.copy(.init(string: "stale"))
+        XCTAssertTrue(monitor.poll())
+        monitor.stop()
+        queue.resume()
+        monitor.drain()
+        XCTAssertTrue(store.storedItems.isEmpty)
+        monitor.start()
+        pasteboard.copy(.init(string: "fresh"))
+        XCTAssertTrue(monitor.poll())
+        monitor.drain()
+        monitor.stop()
+        XCTAssertEqual(store.storedItems.compactMap(\.text), ["fresh"])
+    }
+
+    func testRejectedPayloadReturnsAdmissionCapacity() {
+        monitor.start()
+        for _ in 0 ..< 4 {
+            pasteboard.copy(.init(string: String(repeating: "a", count: ClipboardCaptureRules.maximumTextBytes + 1)))
+            XCTAssertFalse(monitor.poll())
+        }
+        pasteboard.copy(.init(string: "valid"))
+        XCTAssertTrue(monitor.poll())
+        monitor.drain()
+        XCTAssertEqual(store.storedItems.first?.text, "valid")
+    }
+
     private final class FakePasteboard: PasteboardReading {
         var changeCount = 0
         var contents = PasteboardContents()
@@ -174,7 +279,7 @@ final class ClipboardMonitorTests: XCTestCase {
         }
     }
 
-    func testSystemPasteboardReaderReadsTextFilesAndImages() throws {
+    func testSystemPasteboardReaderReadsTextFilesAndImages() {
         let board = NSPasteboard(name: NSPasteboard.Name("ClipboardMonitorTests-\(UUID().uuidString)"))
         defer { board.releaseGlobally() }
         let reader = SystemPasteboardReader(pasteboard: board)

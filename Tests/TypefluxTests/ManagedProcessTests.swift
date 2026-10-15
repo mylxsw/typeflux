@@ -4,6 +4,52 @@ import Foundation
 import XCTest
 
 final class ManagedProcessTests: XCTestCase {
+    func testInputCanBeEchoedOrClosedWithoutTakingDownTheHost() async throws {
+        var echo = request("cat", limit: 100_000)
+        echo.stdin = Data(repeating: 65, count: 100_000)
+        echo.preserveWhitespace = true
+        let result = try await ManagedProcess().run(echo)
+        XCTAssertEqual(result.stdout.utf8.count, 100_000)
+        XCTAssertFalse(result.outputTruncated)
+        var ignored = request("exit 0")
+        ignored.stdin = Data(repeating: 65, count: 2_000_000)
+        let ignoredResult = try await ManagedProcess().run(ignored)
+        XCTAssertEqual(ignoredResult.exitCode, 0)
+        var empty = request("cat; echo done")
+        empty.stdin = Data()
+        let emptyResult = try await ManagedProcess().run(empty)
+        XCTAssertEqual(emptyResult.stdout, "done")
+    }
+
+    func testOutputLimitStopsWorkAndKeepsWhitespaceWithoutATruncationMarker() async throws {
+        var invocation = request("while :; do echo line; done", limit: 12)
+        invocation.stopOnOutputLimit = true
+        invocation.preserveWhitespace = true
+        let result = try await ManagedProcess().run(invocation)
+        XCTAssertEqual(result.termination, .outputLimit)
+        XCTAssertEqual(result.stdout, "line\nline\nli")
+        XCTAssertTrue(result.outputTruncated)
+    }
+
+    func testSeparateStderrLimitAndInvalidPipeBudgets() async throws {
+        var invocation = request("echo output; echo error >&2")
+        invocation.stderrLimit = 2
+        let result = try await ManagedProcess().run(invocation)
+        XCTAssertEqual(result.stdout, "output")
+        XCTAssertTrue(result.stderr.hasPrefix("er"))
+        XCTAssertTrue(result.outputTruncated)
+        for invalid in [-1, 32 * 1024 * 1024 + 1] {
+            invocation.stderrLimit = invalid
+            do { _ = try await ManagedProcess().run(invocation); XCTFail("Expected invalid limit") } catch {}
+        }
+        invocation = request("echo never")
+        invocation.killGrace = .infinity
+        do { _ = try await ManagedProcess().run(invocation); XCTFail() } catch {}
+        invocation.killGrace = 0
+        invocation.drainGrace = -1
+        do { _ = try await ManagedProcess().run(invocation); XCTFail() } catch {}
+    }
+
     private var root: URL!
     private var directory: AskSecureDirectory!
 

@@ -5,7 +5,7 @@ import Foundation
 @MainActor
 struct AskConversationWindowServices {
     let tools: AskLocalTools
-    let cache: AskConversationCache
+    let cache: any AskCaching
     let api: any AskAPI
     let capture: any AskContextCapturing
     let session: () -> (owner: String, token: String)?

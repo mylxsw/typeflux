@@ -2,7 +2,7 @@ import CryptoKit
 import Foundation
 
 /// A clipboard payload captured from the system pasteboard, before it is stored.
-enum ClipboardCapture: Equatable {
+enum ClipboardCapture: Codable, Equatable, Sendable {
     case text(String)
     /// PNG-encoded image data copied without a backing file (screenshots, web images).
     case image(png: Data, pixelWidth: Int, pixelHeight: Int)

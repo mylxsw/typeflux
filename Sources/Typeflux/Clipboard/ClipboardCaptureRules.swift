@@ -1,10 +1,29 @@
 import AppKit
 import Foundation
+import ImageIO
 
 /// Decides whether and how pasteboard contents become a clipboard history item.
 enum ClipboardCaptureRules {
-    static let maximumTextBytes = 1_024 * 1_024
-    static let maximumImageBytes = 10 * 1_024 * 1_024
+    static let maximumTextBytes = 1024 * 1024
+    static let maximumImageBytes = 10 * 1024 * 1024
+    static let maximumEncodedImageBytes = 32 * 1024 * 1024
+    static let maximumImagePixels = 16_000_000
+    static let maximumImageDimension = 16384
+    static let maximumFileCount = 1000
+
+    static func isWithinBudget(_ contents: PasteboardContents) -> Bool {
+        guard (contents.string?.utf8.count ?? 0) <= maximumTextBytes,
+              (contents.imageData?.count ?? 0) <= maximumEncodedImageBytes,
+              contents.fileURLs.count <= maximumFileCount else { return false }
+        // Bound URL payloads as well as their count before hashing or storing.
+        var remaining = maximumTextBytes
+        for url in contents.fileURLs {
+            let count = url.absoluteString.utf8.count
+            guard count <= remaining else { return false }
+            remaining -= count
+        }
+        return true
+    }
 
     /// Types that mark content as private or temporary (see nspasteboard.org), plus Typeflux's
     /// own selection probe. Typeflux's paste writes use the transient marker too.
@@ -23,7 +42,7 @@ enum ClipboardCaptureRules {
     /// `plainTextOnly` keeps only text: copied files and images are skipped, and an image that
     /// comes with its URL is recorded as the URL.
     static func capture(from contents: PasteboardContents, plainTextOnly: Bool = false) -> ClipboardCapture? {
-        guard !shouldIgnore(types: contents.types) else { return nil }
+        guard isWithinBudget(contents), !shouldIgnore(types: contents.types) else { return nil }
 
         let fileURLs = contents.fileURLs.filter(\.isFileURL)
         if !fileURLs.isEmpty {
@@ -41,10 +60,27 @@ enum ClipboardCaptureRules {
     }
 
     static func image(from data: Data) -> ClipboardCapture? {
+        // Encoded size alone does not bound decompression. Read metadata without
+        // caching pixels before handing the payload to the bitmap decoder.
+        guard data.count <= maximumEncodedImageBytes,
+              let source = CGImageSourceCreateWithData(
+                  data as CFData,
+                  [kCGImageSourceShouldCache: false] as CFDictionary
+              ),
+              let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+              let width = properties[kCGImagePropertyPixelWidth] as? NSNumber,
+              let height = properties[kCGImagePropertyPixelHeight] as? NSNumber,
+              acceptsDimensions(width: width.int64Value, height: height.int64Value) else { return nil }
         guard let rep = NSBitmapImageRep(data: data), rep.pixelsWide > 0, rep.pixelsHigh > 0 else { return nil }
+        guard acceptsDimensions(width: Int64(rep.pixelsWide), height: Int64(rep.pixelsHigh)) else { return nil }
         let png = isPNG(data) ? data : rep.representation(using: .png, properties: [:])
         guard let png, png.count <= maximumImageBytes else { return nil }
         return .image(png: png, pixelWidth: rep.pixelsWide, pixelHeight: rep.pixelsHigh)
+    }
+
+    static func acceptsDimensions(width: Int64, height: Int64) -> Bool {
+        width > 0 && height > 0 && width <= Int64(maximumImageDimension) && height <= Int64(maximumImageDimension)
+            && width <= Int64(maximumImagePixels) / height
     }
 
     private static func isPNG(_ data: Data) -> Bool {

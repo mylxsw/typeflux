@@ -5,7 +5,7 @@ import Darwin
 /// Only fixed, built-in operations reach the process runner. Search text is never a command.
 @MainActor
 struct AskSystemCommandRunner {
-    var process: any ProcessCommandRunning = ProcessCommandRunner()
+    var process: any ProcessCommandRunning = ProcessCommandRunner(timeout: 60, outputLimit: 200_000)
 
     struct Invocation: Equatable {
         var executable: String

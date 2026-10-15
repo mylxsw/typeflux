@@ -238,6 +238,64 @@ struct AskWorkflowRuntimeTests {
 
 @Suite("Ask workflow runner", .serialized)
 struct AskWorkflowRunnerTests {
+    @Test func `slow consumers keep bounded progress and the final result`() async throws {
+        let runner = AskWorkflowRunner()
+        runner.killGrace = 0
+        let stream = runner.run(invocation(
+            "/bin/sh",
+            ["-c", "i=0; while [ $i -lt 100 ]; do echo $i; i=$((i+1)); sleep 0.005; done"]
+        ))
+        // Let progress accumulate before creating a consumer.
+        try await Task.sleep(for: .seconds(2))
+        var count = 0
+        var final: AskWorkflowRunResult?
+        for try await event in stream {
+            count += 1
+            if case let .finished(result) = event {
+                final = result
+            }
+        }
+        #expect(count <= 2)
+        #expect(final?.stdout.hasSuffix("99\n") == true)
+        #expect(final?.exitCode == 0)
+    }
+
+    @Test func `flood and ignored termination cannot starve the deadline`() async throws {
+        let runner = AskWorkflowRunner()
+        runner.killGrace = 0.1
+        let (_, result) = try await collect(
+            invocation("/bin/sh", ["-c", "trap '' TERM; while :; do echo flood; echo error >&2; done"],
+                       timeout: 0.1, stdoutLimit: 32_000_000),
+            runner: runner
+        )
+        #expect(result?.timedOut == true || result?.truncated == true)
+        #expect((result?.duration ?? 99) < 2)
+    }
+
+    @Test func `invalid invocation is rejected without starting A process`() async throws {
+        var request = invocation("/bin/echo")
+        request.timeout = .nan
+        await #expect(throws: AskWorkflowRunError.spawnFailed(EINVAL)) { _ = try await collect(request) }
+        request = invocation("/bin/echo")
+        request.directory = URL(fileURLWithPath: "/nonexistent-typeflux-directory")
+        await #expect(throws: AskWorkflowRunError.spawnFailed(ENOENT)) { _ = try await collect(request) }
+    }
+
+    @Test func `repeated cancellation racing exit does not signal the host`() async throws {
+        let runner = AskWorkflowRunner()
+        runner.killGrace = 0.01
+        for _ in 0 ..< 20 {
+            let task = Task {
+                try await collect(invocation("/bin/sh", ["-c", "echo ready; sleep 0.01"]), runner: runner)
+            }
+            try await Task.sleep(for: .milliseconds(5))
+            task.cancel()
+            _ = try? await task.value
+        }
+        let (_, result) = try await collect(invocation("/bin/echo", ["alive"]), runner: runner)
+        #expect(result?.stdout == "alive\n")
+    }
+
     private func invocation(_ program: String, _ arguments: [String] = [], environment: [String: String] = ["PATH": "/usr/bin:/bin"],
                             stdin: String = "", timeout: Double = 10, stdoutLimit: Int = 1_000_000) -> AskWorkflowInvocation {
         AskWorkflowInvocation(launch: .init(executable: URL(fileURLWithPath: program), arguments: arguments),

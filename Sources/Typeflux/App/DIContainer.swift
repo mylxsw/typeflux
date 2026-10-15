@@ -141,7 +141,8 @@ final class DIContainer {
         clipboardMonitor = ClipboardMonitor(
             store: clipboardHistoryStore,
             isEnabled: { settingsForClipboard.clipboardHistoryEnabled },
-            policy: { settingsForClipboard.clipboardCapturePolicy() }
+            policy: { settingsForClipboard.clipboardCapturePolicy() },
+            captureWorker: ClipboardCaptureWorker()
         )
         clipboardPanelController = ClipboardPanelController(settingsStore: settingsStore)
         mcpRegistry = MCPRegistry()
