@@ -78,7 +78,7 @@ struct AskNotesSidebar: View {
         VStack(alignment: .leading, spacing: 0) {
             // The window has a full-size content view; this strip clears the traffic lights.
             Color.clear.frame(height: clearsTitleBar
-                ? AskMetrics.sidebarTopInset - (style.usesGlass ? AskMetrics.sidebarPanelInset : 0) : 12)
+                ? AskMetrics.sidebarTopInset : 12)
             newNoteButton.padding(.horizontal, 10).padding(.bottom, 10)
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 1) {

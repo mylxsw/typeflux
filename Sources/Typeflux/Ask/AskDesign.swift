@@ -328,8 +328,8 @@ enum AskMetrics {
     static let bannerHeight: CGFloat = 32
     static let bannerSpacing: CGFloat = 6
     static let sidebarWidth: CGFloat = 264
-    /// The usage panel's glass card; it floats inset like the sidebar.
-    static let usagePanelWidth: CGFloat = 330
+    /// The usage panel, a column flush against the trailing edge like the sidebar.
+    static let usagePanelWidth: CGFloat = 338
     /// Height of the title bar row; the unified toolbar centres the traffic lights in it.
     static let titleBarRowHeight: CGFloat = 52
     /// Space above the sidebar's first row, clearing the title bar tools.
@@ -355,14 +355,12 @@ enum AskMetrics {
     static let suggestionsMaxWidth: CGFloat = 680
     static let transcriptMaxWidth: CGFloat = columnWidth - columnInset * 2
     static let bubbleMaxWidth: CGFloat = 560
-    /// The sidebar floats as a glass panel inset from the window edges; its
-    /// corner is concentric with the 12pt rows inset 8pt inside it.
-    static let sidebarPanelInset: CGFloat = 8
-    static let sidebarPanelCorner: CGFloat = 20
     static let sidebarRowCorner: CGFloat = 12
-    /// Where text starts in the sidebar: the list's 8pt inset plus a row's 10pt
-    /// padding, so the account name lines up with the history titles.
-    static let sidebarTextLeading: CGFloat = sidebarPanelInset + 10
+    /// The sidebar's search field and list sit 10pt in from the column edge.
+    static let sidebarContentInset: CGFloat = 10
+    /// The expanded title bar tools' trailing gap inside the sidebar: the glass
+    /// pill lines up with the search field under it; classic buttons stand 8pt in.
+    static func sidebarToolsTrailing(glass: Bool) -> CGFloat { glass ? sidebarContentInset : 8 }
     /// Title and action capsules floating in the header over the transcript.
     static let headerCapsuleHeight: CGFloat = 38
     /// How far the transcript fades out where it meets the window's top and bottom edges.
@@ -1313,9 +1311,9 @@ enum AskPresentation {
     }
 }
 
-/// The conversation window's surface under both the floating sidebar and the
-/// transcript. It reuses the settings window's tokens and material stack, so
-/// both windows read as one app.
+/// The conversation window's surface under the transcript; the sidebar beside
+/// it lays `AskEdgeColumnBackdrop` over it. It reuses the settings window's
+/// tokens and material stack, so both windows read as one app.
 /// The workspace's canvas: frosted glass over the desktop. The window blurs
 /// whatever is behind it and lays the app's own tint over that, so a colourful
 /// wallpaper reads only as a soft cast, never as the window's colour. The
@@ -1351,6 +1349,54 @@ struct AskWindowBackdrop: View {
                 Self.base(dark: dark)
             } else {
                 AskClassic.canvas
+            }
+        }
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+}
+
+/// The surface of a column flush against the window edge: the sidebar, the
+/// usage panel and the drawers. It frosts the desktop like the window, under a
+/// lighter tint, so the column reads as clearer glass beside the denser
+/// reading canvas, the two parted by tone rather than by a floating card.
+/// Without transparency it is a solid step off the canvas.
+struct AskEdgeColumnBackdrop: View {
+    @Environment(\.liquidGlassIntensity) private var intensity
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorSchemeContrast) private var contrast
+    @Environment(\.askGlassMaterialOverride) private var materialOverride
+
+    /// Lighter than the canvas's tint, so more of the desktop shows through.
+    static func tintOpacity(dark: Bool) -> Double { dark ? 0.40 : 0.08 }
+
+    /// The opaque column's step off the canvas: lifted in dark, recessed in light.
+    static func opaqueShade(dark: Bool) -> Color {
+        dark ? Color.white.opacity(0.05) : Color.black.opacity(0.035)
+    }
+
+    /// Translucent unless the shared glass resolver falls back to opaque:
+    /// Reduce Transparency, Increase Contrast or a pinned `.opaque` material.
+    static func usesTransparency(materialOverride: AskGlassMaterial?, reduceTransparency: Bool,
+                                 increasedContrast: Bool) -> Bool {
+        let material = materialOverride ?? AskGlassMaterial.resolve(reduceTransparency: reduceTransparency)
+        return AskGlassBackground.effectiveMaterial(material, reduceTransparency: reduceTransparency,
+                                                    increasedContrast: increasedContrast) != .opaque
+    }
+
+    var body: some View {
+        let dark = colorScheme == .dark
+        ZStack {
+            if Self.usesTransparency(materialOverride: materialOverride, reduceTransparency: reduceTransparency,
+                                     increasedContrast: contrast == .increased) {
+                // Behind-window blending samples the desktop itself, so the
+                // canvas's heavier tint underneath does not show through.
+                StudioVisualEffectBlur(material: .sidebar, blendingMode: .behindWindow, cornerRadius: nil)
+                AskWindowBackdrop.base(dark: dark).opacity(intensity.backdropOpacity(Self.tintOpacity(dark: dark)))
+            } else {
+                AskWindowBackdrop.base(dark: dark)
+                Self.opaqueShade(dark: dark)
             }
         }
         .allowsHitTesting(false)

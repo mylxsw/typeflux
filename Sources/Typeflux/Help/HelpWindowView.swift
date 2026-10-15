@@ -2,7 +2,7 @@ import AppKit
 import SwiftUI
 
 /// The usage guide window, built like the notebook and conversation windows: one backdrop
-/// for the whole window, the sidebar as an inset glass column (flush in classic), and one
+/// for the whole window, the sidebar as a flush column of clearer glass (solid in classic), and one
 /// page at a time beside it. It follows the interface style and the appearance.
 struct HelpWindowView: View {
     @ObservedObject var model: HelpGuideModel
@@ -16,7 +16,7 @@ struct HelpWindowView: View {
         HStack(spacing: 0) {
             HelpSidebar(model: model)
                 .frame(width: Self.sidebarWidth)
-                .askSidePanel(edge: .leading, glassFill: AskTheme.glassFill, glassInset: [.leading, .top, .bottom])
+                .askSidePanel(edge: .leading)
             VStack(spacing: 0) {
                 header
                 content.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -103,7 +103,7 @@ struct HelpSidebar: View {
         }
         .padding(.horizontal, 10)
         // Below the traffic lights, which sit over the sidebar like in the notebook window.
-        .padding(.top, AskMetrics.sidebarTopInset - (style.usesGlass ? AskMetrics.sidebarPanelInset : 0))
+        .padding(.top, AskMetrics.sidebarTopInset)
         .padding(.bottom, 12)
         .onAppear { searchFocused = true }
         .onChange(of: model.focusRequest) { _ in searchFocused = true }

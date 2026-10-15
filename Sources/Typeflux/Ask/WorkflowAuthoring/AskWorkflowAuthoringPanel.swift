@@ -770,8 +770,7 @@ private struct AskWorkflowPanelChrome: ViewModifier {
                 .background(AskTheme.glassFill, in: RoundedRectangle(cornerRadius: 18))
                 .padding(8)
         } else {
-            content.askSidePanel(edge: .trailing, glassFill: AskTheme.glassFill, classicFill: AskClassic.canvas,
-                                 glassInset: [], floating: floating)
+            content.askSidePanel(edge: .trailing, classicFill: AskClassic.canvas, floating: floating)
         }
     }
 }

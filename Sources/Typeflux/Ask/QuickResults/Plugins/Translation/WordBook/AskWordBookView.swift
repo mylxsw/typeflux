@@ -28,8 +28,7 @@ struct AskWordBookView: View {
             HStack(spacing: 0) {
                 if layout.sidebarInline {
                     sidebar(clearsTitleBar: true)
-                        .askSidePanel(edge: .leading, glassFill: AskTheme.glassFill,
-                                      glassInset: [.leading, .top, .bottom])
+                        .askSidePanel(edge: .leading)
                         .frame(width: layout.sidebarWidth, height: proxy.size.height)
                         .clipped()
                 }
@@ -81,7 +80,7 @@ struct AskWordBookView: View {
     private func sidebar(clearsTitleBar: Bool) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             Color.clear.frame(height: clearsTitleBar
-                ? AskMetrics.sidebarTopInset - (style.usesGlass ? AskMetrics.sidebarPanelInset : 0) : 12)
+                ? AskMetrics.sidebarTopInset : 12)
             ScrollView(.vertical, showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 1) {
                     groupTitle("ask.wordBook.shelf.library")

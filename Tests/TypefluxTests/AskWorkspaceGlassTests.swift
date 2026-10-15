@@ -6,7 +6,7 @@ import Testing
 @Suite("Ask workspace glass")
 struct AskWorkspaceGlassTests {
     @Test(arguments: [false, true]) func nativeGlassKeepsItsOpticsAndMenuHierarchy(dark: Bool) {
-        for placement in [AskGlassPlacement.floating, .inWindow, .windowEdge, .menu] {
+        for placement in [AskGlassPlacement.floating, .inWindow, .menu] {
             let native = placement.frost(dark: dark, material: .liquidGlass)
             #expect(native > 0 && native < 0.35)
             #expect(native < placement.frost(dark: dark, material: .visualEffect))
@@ -66,9 +66,10 @@ struct AskWorkspaceGlassTests {
         #expect(launcher.idleBorder(on: nil, increasedContrast: false) == AskTheme.floatingBorder)
     }
 
-    @Test func composerAndSidebarBottomsLineUp() {
-        // Nothing sits under the composer card, which still clears the sidebar's bottom inset.
-        #expect(AskMetrics.composerBottomInset > AskMetrics.sidebarPanelInset)
+    @Test func sidebarToolsPillLinesUpWithTheSearchField() {
+        // The glass pill's trailing edge meets the search field's; classic buttons stand 8pt in.
+        #expect(AskMetrics.sidebarToolsTrailing(glass: true) == AskMetrics.sidebarContentInset)
+        #expect(AskMetrics.sidebarToolsTrailing(glass: false) == 8)
     }
 
     @Test func transcriptIsHiddenOutsideTheHeaderPills() {
@@ -98,16 +99,46 @@ struct AskWorkspaceGlassTests {
         }
     }
 
-    @Test func accountNameLinesUpWithTheHistoryTitles() {
-        // History rows: 8pt list inset + 10pt row padding.
-        #expect(AskMetrics.sidebarTextLeading == 18)
+    @Test(arguments: [false, true]) func edgeColumnIsClearerGlassThanTheCanvas(dark: Bool) {
+        let column = AskEdgeColumnBackdrop.tintOpacity(dark: dark)
+        #expect(column > 0)
+        #expect(column < AskWindowBackdrop.tintOpacity(dark: dark, reduceTransparency: false))
     }
 
-    @Test func sidebarPanelIsConcentricWithItsRows() {
-        // History rows, search and "new chat" are inset 8pt from the panel edge,
-        // so the panel corner wraps them at the same centre.
-        #expect(AskMetrics.sidebarPanelCorner == AskMetrics.sidebarRowCorner + AskMetrics.sidebarPanelInset)
-        #expect(AskMetrics.sidebarPanelInset > 0)
+    @Test func edgeColumnFollowsTheSharedOpaqueFallback() {
+        #expect(AskEdgeColumnBackdrop.usesTransparency(materialOverride: nil, reduceTransparency: false,
+                                                       increasedContrast: false))
+        #expect(!AskEdgeColumnBackdrop.usesTransparency(materialOverride: nil, reduceTransparency: true,
+                                                        increasedContrast: false))
+        #expect(!AskEdgeColumnBackdrop.usesTransparency(materialOverride: nil, reduceTransparency: false,
+                                                        increasedContrast: true))
+        #expect(!AskEdgeColumnBackdrop.usesTransparency(materialOverride: .opaque, reduceTransparency: false,
+                                                        increasedContrast: false))
+        #expect(AskEdgeColumnBackdrop.usesTransparency(materialOverride: .visualEffect, reduceTransparency: false,
+                                                       increasedContrast: false))
+        // The opaque column still steps off the canvas in both appearances.
+        #expect(AskEdgeColumnBackdrop.opaqueShade(dark: true) != AskEdgeColumnBackdrop.opaqueShade(dark: false))
+    }
+
+    @Test func usagePanelKeepsItsWidthAsAFlushColumn() {
+        // Formerly a 330pt card inset 8pt from the edge; the flush column takes both.
+        #expect(AskMetrics.usagePanelWidth == 338)
+        let layout = AskWorkspaceLayout(size: CGSize(width: 1400, height: 900), sidebarCollapsed: false,
+                                        showsUsage: true)
+        #expect(layout.usageWidth == AskMetrics.usagePanelWidth)
+    }
+
+    @Test func selectedHistoryTitleTakesTheAccentOnGlass() {
+        #expect(AskHistoryRow.titleColor(selected: true, hovering: false, stored: false, glass: true)
+            == AskTheme.accent)
+        #expect(AskHistoryRow.titleColor(selected: true, hovering: false, stored: true, glass: true)
+            == AskTheme.privateTint)
+        #expect(AskHistoryRow.titleColor(selected: true, hovering: false, stored: false, glass: false)
+            == StudioTheme.textPrimary)
+        #expect(AskHistoryRow.titleColor(selected: false, hovering: true, stored: false, glass: true)
+            == StudioTheme.textPrimary)
+        #expect(AskHistoryRow.titleColor(selected: false, hovering: false, stored: true, glass: true)
+            == StudioTheme.textSecondary)
     }
 
     @Test func headerCapsulesFitTheTitleBarRow() {

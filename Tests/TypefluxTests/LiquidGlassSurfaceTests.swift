@@ -67,7 +67,7 @@ struct LiquidGlassSurfaceTests {
             for mode in ["glass", "classic", "reduced", "contrast"] {
                 let view = VStack {
                     Text("Navigation").frame(width: 200, height: 80)
-                        .askSidePanel(edge: .leading, glassFill: AskTheme.glassFill, glassInset: [])
+                        .askSidePanel(edge: .leading)
                     Text("Title controls").frame(width: 180, height: 38)
                         .askInWindowGlassPill(height: 38)
                     AskComposer(model: fixture.model, launcher: false)
@@ -86,11 +86,11 @@ struct LiquidGlassSurfaceTests {
                 try await Task.sleep(for: .milliseconds(100))
                 let glass = descendants(window.contentView!).compactMap { $0 as? NSGlassEffectView }
                 let edgeBackdrops = descendants(window.contentView!).compactMap { $0 as? NSVisualEffectView }
-                    .filter { $0.material == .hudWindow }
+                    .filter { $0.material == .sidebar }
                 if mode == "glass" {
-                    #expect(glass.count == 4, "Navigation, composer and monitor must all use native glass")
+                    #expect(glass.count == 3, "Title controls, composer and monitor must all use native glass")
                     #expect(glass.allSatisfy { $0.style == .regular })
-                    #expect(edgeBackdrops.count == (dark ? 0 : 1), "Only light edge panels bypass the reading canvas")
+                    #expect(edgeBackdrops.count == 1, "The flush navigation column frosts the desktop itself")
                     #expect(edgeBackdrops.allSatisfy { $0.blendingMode == .behindWindow })
                 } else {
                     #expect(glass.isEmpty, "\(mode), dark=\(dark): must avoid translucent layers")
@@ -122,7 +122,7 @@ struct LiquidGlassSurfaceTests {
                     Spacer()
                 }
                 .padding(20).frame(width: 200, height: 420)
-                .askSidePanel(edge: .leading, glassFill: AskTheme.glassFill, glassInset: [])
+                .askSidePanel(edge: .leading)
                 VStack(spacing: 20) {
                     HStack {
                         Label("New conversation", systemImage: "square.and.pencil")
@@ -207,6 +207,8 @@ struct LiquidGlassSurfaceTests {
                                         updatedAt: Date().addingTimeInterval(Double(-index * 3600)), messages: []))
         }
         await fixture.model.refreshHistory()
+        // An open conversation shows the sidebar's selected row.
+        await fixture.model.select("glass-0")
         for dark in [false, true] {
             let source = HStack(spacing: 0) {
                 VStack(alignment: .leading, spacing: 26) {
