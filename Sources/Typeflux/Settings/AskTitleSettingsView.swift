@@ -1,5 +1,6 @@
 import SwiftUI
 
+/// Settings → Agent → Overview: automatic conversation titles and the model that writes them.
 struct AskTitleSettingsView: View {
     let settings: SettingsStore
     @ObservedObject private var library = AskModelLibrary.shared
@@ -21,17 +22,16 @@ struct AskTitleSettingsView: View {
     }
 
     var body: some View {
-        AgentSettingsSection(title: L("ask.title.section")) {
-            AgentSettingsRow(icon: "textformat", title: L("ask.title.enabled"), subtitle: L("ask.title.enabled.subtitle")) {
-                Toggle("", isOn: $enabled).labelsHidden().toggleStyle(.switch).accessibilityLabel(L("ask.title.enabled"))
+        TFFormSection(title: L("ask.title.section"), footnote: L("ask.title.cost")) {
+            TFFormRow(title: L("ask.title.enabled"), detail: L("ask.title.enabled.subtitle"), icon: "pencil.line") {
+                TFSwitch(title: L("ask.title.enabled"), isOn: $enabled)
             }
-            ModelRowDivider(leading: 66)
-            AgentSettingsRow(icon: "sparkles", title: L("ask.title.model"), subtitle: L("ask.title.model.subtitle"), subtitleLineLimit: nil) {
-                SettingsMenuPicker(title: L("ask.title.model"), options: options, selection: $reference)
-                    .frame(width: 200).disabled(!enabled)
+            TFDivider.formWithIcon
+            TFFormRow(title: L("ask.title.model"), detail: L("ask.title.model.subtitle"), icon: "sparkles") {
+                TFPopUpButton(title: L("ask.title.model"), options: options.map { TFOption($0.value, $0.label) },
+                              selection: $reference, width: TFMetrics.formControlWidth)
+                    .disabled(!enabled)
             }
-            Text(L("ask.title.cost")).font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
-                .fixedSize(horizontal: false, vertical: true).padding(18)
         }
         .onAppear { enabled = settings.askAutomaticTitles; reference = settings.askTitleModelReference }
         .onChange(of: enabled) { settings.askAutomaticTitles = $0 }

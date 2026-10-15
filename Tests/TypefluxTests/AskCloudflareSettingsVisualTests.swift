@@ -11,14 +11,14 @@ final class AskCloudflareSettingsVisualTests: XCTestCase {
         defer { AppLocalization.shared.setLanguage(language) }
         _ = NSApplication.shared
         for appearance in [NSAppearance.Name.aqua, .darkAqua] {
-            let view = AgentSettingsSection(title: L("agent.settings.web")) {
-                AgentSettingsRow(icon: "globe", title: L("ask.settings.search.title"), subtitle: L("ask.settings.search.subtitle"), subtitleLineLimit: nil) {
+            let view = TFFormSection(title: L("agent.settings.web")) {
+                TFFormRow(title: L("ask.settings.search.title"), detail: L("ask.settings.search.subtitle"), icon: "globe") {
                     Text("Cloudflare Web Search").font(.system(size: 13))
                 }
-                ModelRowDivider(leading: 66)
-                AgentSettingsRow(icon: "key", title: L("ask.settings.search.cloudflare.token")) {
-                    SecureField("Cloudflare API Token", text: .constant("fixture-token"))
-                        .textFieldStyle(.roundedBorder).frame(width: 240)
+                TFDivider.formWithIcon
+                TFFormRow(title: L("ask.settings.search.cloudflare.token"), icon: "key", isRequired: true,
+                          controlWidth: .wide) {
+                    TFSecureField(placeholder: "Cloudflare API Token", text: .constant("fixture-token"))
                 }
                 AskCloudflareSearchSettingsView(configuration: .constant(.init(accountID: "0123456789abcdef0123456789abcdef")))
             }.padding(24).frame(width: 760, height: 600, alignment: .top).background(StudioTheme.surface)

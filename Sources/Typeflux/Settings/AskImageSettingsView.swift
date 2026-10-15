@@ -1,9 +1,8 @@
 import SwiftUI
 
-/// Uses the same pane, connection card, field and action styles as Agent and Models settings.
+/// Settings → Agent → Image Generation: the switch, the provider connection and its models.
 struct AskImageSettingsView: View {
     @StateObject private var model: AskImageSettingsModel
-    @State private var showsKey = false
     @State private var showsAdvanced = false
     var onSaved: (Bool, Bool) -> Void
 
@@ -20,23 +19,21 @@ struct AskImageSettingsView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            AgentPaneHeader(symbol: "photo.badge.plus", title: L("imagegen.title")) {
-                AgentStatusBadge(level: model.status.level, label: model.status.label)
-                Toggle("", isOn: Binding(get: { model.enabled }, set: {
+        VStack(alignment: .leading, spacing: TFMetrics.sectionSpacing) {
+            TFPaneHeader(systemImage: "photo.badge.plus", title: L("imagegen.title")) {
+                model.status.statusLabel
+                TFSwitch(title: L("imagegen.title"), isOn: Binding(get: { model.enabled }, set: {
                     model.setEnabled($0)
                     onSaved(model.store.enabled, model.store.isReady)
                 }))
-                .labelsHidden().toggleStyle(.switch)
-                .accessibilityLabel(L("imagegen.title"))
             }
-            AgentSettingsSection(title: L("imagegen.connection")) {
+            TFFormSection(title: L("imagegen.connection")) {
                 connectionFields
-                ModelRowDivider(leading: 18)
+                TFDivider.formWithIcon
                 modelField
-                ModelRowDivider(leading: 18)
+                TFDivider.form
                 advancedOptions
-                Rectangle().fill(ModelVisualStyle.divider).frame(height: 1)
+                TFDivider.form
                 actions
             }
         }
@@ -49,152 +46,91 @@ struct AskImageSettingsView: View {
         model.configuration.baseURL
     }
 
-    private var connectionFields: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            formRow(L("imagegen.provider"), required: true) {
-                SettingsMenuPicker(title: L("imagegen.provider"),
-                                   options: AskImageProvider.allCases.map { (label: $0.title, value: $0) },
-                                   selection: Binding(get: { model.configuration.provider }, set: {
-                                       showsKey = false
-                                       model.select($0)
-                                   }))
-            }
-            ModelRowDivider(leading: 18)
-            formRow(L("imagegen.endpoint"), required: true) {
-                VStack(alignment: .leading, spacing: 8) {
-                    TextField("https://", text: Binding(get: { endpoint }, set: model.setEndpoint))
-                        .textFieldStyle(ModelFieldStyle())
-                    if model.configuration.provider == .bailian {
-                        HStack(spacing: 8) {
-                            regionButton("imagegen.beijing", endpoint: "https://dashscope.aliyuncs.com/api/v1")
-                            regionButton("imagegen.singapore", endpoint: "https://dashscope-intl.aliyuncs.com/api/v1")
-                        }
-                        hint("imagegen.bailian.help")
+    @ViewBuilder private var connectionFields: some View {
+        TFFormRow(title: L("imagegen.provider"), icon: "building.2", isRequired: true, controlWidth: .wide) {
+            TFPopUpButton(title: L("imagegen.provider"),
+                          options: AskImageProvider.allCases.map { TFOption($0, $0.title) },
+                          selection: Binding(get: { model.configuration.provider }, set: { model.select($0) }),
+                          width: TFMetrics.formControlWideWidth)
+        }
+        TFDivider.formWithIcon
+        TFFormRow(title: L("imagegen.endpoint"), icon: "link", isRequired: true, controlWidth: .wide) {
+            VStack(alignment: .leading, spacing: 8) {
+                TextField("https://", text: Binding(get: { endpoint }, set: model.setEndpoint))
+                    .textFieldStyle(TFTextFieldStyle(monospaced: true))
+                if model.configuration.provider == .bailian {
+                    HStack(spacing: TFMetrics.toolbarSpacing) {
+                        regionButton("imagegen.beijing", endpoint: "https://dashscope.aliyuncs.com/api/v1")
+                        regionButton("imagegen.singapore", endpoint: "https://dashscope-intl.aliyuncs.com/api/v1")
                     }
+                    TFFootnote(text: L("imagegen.bailian.help"))
                 }
             }
-            ModelRowDivider(leading: 18)
-            formRow("API Key", required: true) { keyField }
         }
-    }
-
-    private var keyField: some View {
-        Group {
-            if showsKey {
-                TextField("API Key", text: $model.key)
-            } else {
-                SecureField("API Key", text: $model.key)
-            }
-        }
-        .textFieldStyle(ModelFieldStyle(trailingAccessoryWidth: 24))
-        .overlay(alignment: .trailing) {
-            Button { showsKey.toggle() } label: {
-                Image(systemName: showsKey ? "eye.slash" : "eye")
-                    .font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
-                    .frame(width: 26, height: 26).contentShape(Rectangle())
-            }
-            .buttonStyle(.plain).padding(.trailing, 3)
-            .help(L(showsKey ? "models.hideKey" : "models.showKey"))
-            .accessibilityLabel(L(showsKey ? "models.hideKey" : "models.showKey"))
+        TFDivider.formWithIcon
+        TFFormRow(title: "API Key", icon: "key", isRequired: true, controlWidth: .wide) {
+            TFSecureField(placeholder: "API Key", text: $model.key)
         }
     }
 
     private var modelField: some View {
-        formRow(L("imagegen.model"), required: true) {
-            HStack(spacing: 8) {
-                TextField(L("imagegen.model.placeholder"), text: $model.configuration.model)
-                    .textFieldStyle(ModelFieldStyle()).accessibilityIdentifier("imagegen-model")
-                Menu {
-                    ForEach(model.models, id: \.self) { name in
-                        Button(name) { model.configuration.model = name }
-                    }
-                } label: {
-                    Image(systemName: "list.bullet").font(.system(size: SettingsControlMetrics.fontSize))
-                        .foregroundStyle(StudioTheme.textSecondary)
-                }
-                .menuStyle(.borderlessButton).menuIndicator(.hidden)
-                .frame(width: SettingsControlMetrics.height, height: SettingsControlMetrics.height)
-                .modifier(SettingsControlChrome())
-                .help(L("imagegen.models.suggestions"))
-                .accessibilityLabel(L("imagegen.models.suggestions"))
-            }
+        TFFormRow(title: L("imagegen.model"), icon: "cube", isRequired: true, controlWidth: .wide) {
+            TextField(L("imagegen.model.placeholder"), text: $model.configuration.model)
+                .textFieldStyle(TFTextFieldStyle(monospaced: true)).accessibilityIdentifier("imagegen-model")
+            TFMenuButton(title: L("imagegen.models.suggestions"), systemImage: "list.bullet", iconOnly: true,
+                         actions: model.models.map { name in .action(name) { model.configuration.model = name } })
+                .disabled(model.models.isEmpty)
         }
     }
 
-    private var advancedOptions: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            AgentDisclosureButton(title: L("imagegen.advanced"), expanded: $showsAdvanced)
-            if showsAdvanced {
-                AgentFormRow(label: L("imagegen.size")) {
-                    TextField(L("imagegen.providerDefault"), text: $model.configuration.size)
-                        .textFieldStyle(ModelFieldStyle())
-                }
-                if [.openAI, .openRouter].contains(model.configuration.provider) {
-                    AgentFormRow(label: L("imagegen.quality")) {
-                        TextField(L("imagegen.providerDefault"), text: $model.configuration.quality)
-                            .textFieldStyle(ModelFieldStyle())
-                    }
-                }
-                if model.configuration.provider == .openRouter {
-                    AgentFormRow(label: L("imagegen.routing")) {
-                        TextField(L("imagegen.routing.auto"), text: $model.configuration.routingProvider)
-                            .textFieldStyle(ModelFieldStyle())
-                    }
-                }
-                hint("imagegen.options.help")
+    @ViewBuilder private var advancedOptions: some View {
+        TFDisclosureRow(title: L("imagegen.advanced"), isExpanded: $showsAdvanced)
+        if showsAdvanced {
+            TFFormRow(title: L("imagegen.size"), controlWidth: .wide) {
+                TextField(L("imagegen.providerDefault"), text: $model.configuration.size)
+                    .textFieldStyle(TFTextFieldStyle())
             }
-        }.padding(.horizontal, 18).padding(.vertical, 12)
+            if [.openAI, .openRouter].contains(model.configuration.provider) {
+                TFFormRow(title: L("imagegen.quality"), controlWidth: .wide) {
+                    TextField(L("imagegen.providerDefault"), text: $model.configuration.quality)
+                        .textFieldStyle(TFTextFieldStyle())
+                }
+            }
+            if model.configuration.provider == .openRouter {
+                TFFormRow(title: L("imagegen.routing"), controlWidth: .wide) {
+                    TextField(L("imagegen.routing.auto"), text: $model.configuration.routingProvider)
+                        .textFieldStyle(TFTextFieldStyle())
+                }
+            }
+            TFFootnote(text: L("imagegen.options.help")).padding(.horizontal, 14).padding(.bottom, 12)
+        }
     }
 
     private var actions: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: TFMetrics.toolbarSpacing) {
                 if model.configuration.provider.supportsDiscovery {
-                    Button { model.refresh() } label: {
-                        HStack(spacing: 6) {
-                            if model.loading {
-                                ProgressView().controlSize(.small).accessibilityHidden(true)
-                            }
-                            Text(L("imagegen.models.refresh"))
-                        }
-                    }
-                    .buttonStyle(ModelActionStyle()).disabled(model.loading || model.key.isEmpty)
+                    TFButton(title: L("imagegen.models.refresh"), isLoading: model.loading) { model.refresh() }
+                        .disabled(model.loading || model.key.isEmpty)
                 }
                 Spacer(minLength: 8)
                 if model.hasChanges {
-                    Text(L("imagegen.unsaved")).font(.system(size: 12)).foregroundStyle(StudioTheme.warning)
+                    TFFieldMessage(text: L("imagegen.unsaved"), tone: .warning)
                 }
-                Button(L("ask.models.save")) {
+                TFButton(title: L("ask.models.save"), kind: .primary) {
                     model.save()
                     onSaved(model.store.enabled, model.store.isReady)
                 }
-                .buttonStyle(ModelActionStyle(primary: true))
                 .disabled(model.loading || !model.hasChanges)
             }
             if let notice = model.notice {
-                HStack(alignment: .top, spacing: 6) {
-                    Image(systemName: model.noticeIsError ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
-                    Text(notice).fixedSize(horizontal: false, vertical: true).textSelection(.enabled)
-                }
-                .font(.system(size: 12))
-                .foregroundStyle(model.noticeIsError ? StudioTheme.danger : StudioTheme.success)
+                TFNotice(text: notice, tone: model.noticeIsError ? .danger : .success)
             }
-        }.padding(.horizontal, 18).padding(.vertical, 12)
-    }
-
-    private func formRow(_ label: String, required: Bool = false, @ViewBuilder field: () -> some View) -> some View {
-        AgentFormRow(label: label, required: required, field: field)
-            .padding(.horizontal, 18).padding(.vertical, 12)
+        }
+        .padding(.horizontal, 14).padding(.vertical, 12)
     }
 
     private func regionButton(_ title: String, endpoint: String) -> some View {
-        Button(L(title)) {
-            model.setEndpoint(endpoint)
-        }.buttonStyle(ModelActionStyle())
-    }
-
-    private func hint(_ key: String) -> some View {
-        Text(L(key)).font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
-            .fixedSize(horizontal: false, vertical: true)
+        TFButton(title: L(title), size: .small) { model.setEndpoint(endpoint) }
     }
 }

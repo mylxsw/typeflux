@@ -5387,3 +5387,5 @@
 "component.collapsed" = "折りたたみ済み";
 "component.add" = "追加";
 "component.remove" = "削除";
+"component.undo" = "取り消す";
+"component.required" = "必須";

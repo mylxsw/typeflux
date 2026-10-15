@@ -8,6 +8,11 @@ struct GalleryRowsPage: View {
     @State private var extensions = ["swift", "md", "py"]
     @State private var checked = true
     @State private var confirming = true
+    @State private var advanced = false
+    @State private var key = "sk-fixture"
+    @State private var note = "Prefers concise answers"
+    @State private var undo = true
+    @State private var storage = "cloud"
 
     var body: some View {
         GalleryPage(title: "Rows & Panes",
@@ -82,6 +87,41 @@ struct GalleryRowsPage: View {
                     TFIconTile(systemImage: "sparkles", tint: .indigo, style: .soft)
                     TFIconTile(systemImage: "sparkles", style: .neutral)
                     TFStatusLabel(text: "Selected", level: .accent)
+                }
+            }
+            GallerySpecimen(title: "Fields in a card", component: "TFFormRow(isRequired:) · TFSecureField · TFTextArea · " +
+                                "TFDisclosureRow · TFFootnote",
+                            spec: "Credentials sit in a 280pt column with a red asterisk when required. Rarely " +
+                                "needed fields hide behind a disclosure row.") {
+                TFFormSection(title: "Connection") {
+                    TFFormRow(title: "API Key", icon: "key", isRequired: true, controlWidth: .wide) {
+                        TFSecureField(placeholder: "API Key", text: $key)
+                    }
+                    TFDivider.form
+                    TFDisclosureRow(title: "Advanced Options", isExpanded: $advanced)
+                    if advanced {
+                        TFFormRow(title: "Note", controlWidth: .wide) { TFTextArea(label: "Note", text: $note) }
+                    }
+                }
+                TFFootnote(text: "Keys are stored in the keychain.")
+            }
+            GallerySpecimen(title: "Notices and undo", component: "TFNotice · TFUndoBar · TFChecklist",
+                            spec: "A notice explains a state or a result in its tone. The undo bar dismisses itself " +
+                                "after five seconds.") {
+                ForEach(TFNotice.Tone.allCases, id: \.self) { tone in
+                    TFNotice(text: "Connection test: \(tone)", tone: tone)
+                }
+                if undo {
+                    TFUndoBar(message: "Removed “Documents”", onUndo: { undo = false }, onDismiss: { undo = false })
+                }
+                HStack(alignment: .top, spacing: 12) {
+                    ForEach(["cloud", "local"], id: \.self) { option in
+                        TFChoiceCard(title: option == "cloud" ? "Cloud Sync" : "Only This Mac",
+                                     isSelected: storage == option) { storage = option } preview: {
+                            TFChecklist(systemImage: option == "cloud" ? "cloud" : "lock",
+                                        items: [(true, "Private by default"), (option == "cloud", "Syncs devices")])
+                        }
+                    }
                 }
             }
         }

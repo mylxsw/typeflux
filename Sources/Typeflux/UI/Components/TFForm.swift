@@ -34,6 +34,8 @@ struct TFFormRow<Control: View>: View {
     var image: NSImage?
     /// Limits the value, truncating in the middle (paths); nil wraps freely.
     var valueLineLimit: Int?
+    /// Marks a field that must be filled in with a red asterisk after the title.
+    var isRequired = false
     var badge: String?
     /// Colors the badge (e.g. success / warning); nil is the neutral tag.
     var badgeTint: Color?
@@ -46,6 +48,12 @@ struct TFFormRow<Control: View>: View {
 
     /// The text column never asks for more than this before wrapping, so short controls stay beside it.
     static var labelIdealWidth: CGFloat { 220 }
+    /// Rows with an icon give that space back, so a 280pt control still fits beside the text.
+    static var labelIdealWidthWithIcon: CGFloat { labelIdealWidth - TFMetrics.iconTileSize - 12 }
+
+    private var labelIdealWidth: CGFloat {
+        icon == nil && image == nil ? Self.labelIdealWidth : Self.labelIdealWidthWithIcon
+    }
 
     var body: some View {
         HStack(alignment: .center, spacing: 12) {
@@ -69,7 +77,7 @@ struct TFFormRow<Control: View>: View {
     private var adaptive: some View {
         ViewThatFits(in: .horizontal) {
             HStack(alignment: .center, spacing: 16) {
-                labels.frame(minWidth: 180, idealWidth: Self.labelIdealWidth, maxWidth: .infinity, alignment: .leading)
+                labels.frame(minWidth: 180, idealWidth: labelIdealWidth, maxWidth: .infinity, alignment: .leading)
                 sizedControl.fixedSize()
             }
             VStack(alignment: .leading, spacing: 10) {
@@ -93,6 +101,11 @@ struct TFFormRow<Control: View>: View {
                 }
                 Text(title).font(.system(size: 13, weight: .semibold)).foregroundStyle(TFColors.textPrimary)
                     .accessibilityHint(detail ?? "")
+                if isRequired {
+                    Text(verbatim: "*").font(.system(size: 13, weight: .semibold)).foregroundStyle(TFColors.danger)
+                        .padding(.leading, -4)
+                        .accessibilityLabel(L("component.required"))
+                }
                 if let detail, !detail.isEmpty {
                     SettingsDescriptionHint(detail: detail, visible: isHovering)
                 }
@@ -149,9 +162,7 @@ struct TFFormSection<Actions: View, Content: View>: View {
             if isExpanded?.wrappedValue ?? true {
                 TFCard { content }
                 if let footnote {
-                    Text(footnote).font(.system(size: 12)).foregroundStyle(TFColors.textTertiary)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .padding(.horizontal, 4)
+                    TFFootnote(text: footnote).padding(.horizontal, 4)
                 }
             }
         }

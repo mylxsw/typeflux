@@ -311,13 +311,13 @@ extension AskWorkflowGallerySheet {
 
     private func facts(_ item: AskWorkflowGallery.Item) -> some View {
         let rows: [(String, AnyView)] = [
-            (L("ask.workflow.trust.keywords"), AnyView(AgentFlowLayout(spacing: 5) {
+            (L("ask.workflow.trust.keywords"), AnyView(TFFlowLayout(spacing: 5) {
                 ForEach(item.keywords, id: \.self) { AskWorkflowChip(text: $0) }
                 Text(L("ask.workflow.gallery.renameHint", (item.keywords.first ?? "fx") + "2"))
                     .foregroundStyle(StudioTheme.textSecondary)
             })),
             (L("ask.workflow.gallery.runtime"), AnyView(Text(runtimeText(item)))),
-            (L("ask.workflow.gallery.does"), AnyView(AgentFlowLayout(spacing: 5) {
+            (L("ask.workflow.gallery.does"), AnyView(TFFlowLayout(spacing: 5) {
                 ForEach(item.hosts, id: \.self) { host in
                     AskWorkflowGalleryTag(text: L("ask.workflow.gallery.visits", host), color: .orange)
                 }

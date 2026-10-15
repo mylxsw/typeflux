@@ -196,18 +196,36 @@ struct TFSegmentedControl<Value: Hashable>: View {
 
 /// An entry in a pane list.
 struct TFPaneItem<ID: Hashable>: Identifiable {
-    enum Status: Equatable { case active, inactive }
+    enum Status: Equatable {
+        case active, inactive, attention
+
+        var level: TFStatusDot.Level {
+            switch self {
+            case .active: .success
+            case .inactive: .neutral
+            case .attention: .warning
+            }
+        }
+    }
 
     var id: ID
     var title: String
     var systemImage: String
     var status: Status?
+    /// Spoken (and shown in the compact picker) after the title, e.g. "Needs setup".
+    var statusLabel: String?
 
-    init(_ id: ID, _ title: String, systemImage: String, status: Status? = nil) {
+    init(_ id: ID, _ title: String, systemImage: String, status: Status? = nil, statusLabel: String? = nil) {
         self.id = id
         self.title = title
         self.systemImage = systemImage
         self.status = status
+        self.statusLabel = statusLabel
+    }
+
+    /// The title with its state, for VoiceOver and the compact picker.
+    var accessibilityTitle: String {
+        statusLabel.map { title + ", " + $0 } ?? title
     }
 }
 
@@ -264,7 +282,7 @@ struct TFPaneList<ID: Hashable>: View {
                     .lineLimit(1)
                 Spacer(minLength: 4)
                 if let status = item.status {
-                    TFStatusDot(level: status == .active ? .success : .neutral)
+                    TFStatusDot(level: status.level)
                 }
             }
             .padding(.horizontal, 10)
@@ -274,6 +292,7 @@ struct TFPaneList<ID: Hashable>: View {
             .contentShape(RoundedRectangle(cornerRadius: TFMetrics.itemCornerRadius, style: .continuous))
         }
         .buttonStyle(TFRowHoverStyle(selected: selected))
+        .accessibilityLabel(item.accessibilityTitle)
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }
@@ -287,8 +306,9 @@ struct TFPanePicker<ID: Hashable>: View {
         TFPopUpButton(
             title: L("component.pane"),
             sections: sections.map { section in
-                TFPopUpSection(title: section.title, options: section.items.map {
-                    TFOption($0.id, $0.title, systemImage: $0.systemImage)
+                TFPopUpSection(title: section.title, options: section.items.map { item in
+                    TFOption(item.id, item.statusLabel.map { "\(item.title) · \($0)" } ?? item.title,
+                             systemImage: item.systemImage)
                 })
             },
             selection: $selection,

@@ -81,10 +81,11 @@ final class SettingsPolishTests: XCTestCase {
         })
         XCTAssertEqual(formWithDescription, formWithoutDescription, accuracy: 0.5)
 
-        let agentWithoutDescription = height(AgentSettingsRow(icon: "mic", title: "Microphone") { EmptyView() })
-        let agentWithDescription = height(AgentSettingsRow(icon: "mic", title: "Microphone",
-                                                            subtitle: description) { EmptyView() })
-        XCTAssertEqual(agentWithDescription, agentWithoutDescription, accuracy: 0.5)
+        let iconRowWithoutDescription = height(TFFormRow(title: "Microphone", icon: "mic") { EmptyView() })
+        let iconRowWithDescription = height(TFFormRow(title: "Microphone", detail: description, icon: "mic") {
+            EmptyView()
+        })
+        XCTAssertEqual(iconRowWithDescription, iconRowWithoutDescription, accuracy: 0.5)
 
         let formWithCurrentValue = height(TFFormRow(title: "Folder", valueText: description) {
             Color.clear.frame(width: 36, height: 24)

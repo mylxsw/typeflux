@@ -26,12 +26,13 @@ struct MCPServerStatusPresentation: Equatable {
         state == .testing
     }
 
-    var color: Color {
+    /// The shared status color for this state.
+    var level: TFStatusDot.Level {
         switch state {
-        case .connected: StudioTheme.success
-        case .failed: StudioTheme.danger
-        case .testing: StudioTheme.warning
-        case .disabled, .untested: StudioTheme.textTertiary
+        case .connected: .success
+        case .failed: .danger
+        case .testing: .warning
+        case .disabled, .untested: .neutral
         }
     }
 }
@@ -60,7 +61,7 @@ struct MCPKeyValueEditor: View {
                     }
                     .textFieldStyle(ModelFieldStyle())
                     .accessibilityLabel(valuePlaceholder)
-                    AgentSettingsIconButton(systemImage: "minus", help: L("ask.remove")) {
+                    TFButton(title: L("ask.remove"), systemImage: "minus", iconOnly: true) {
                         rows.removeAll { $0.id == row.id }
                         if rows.isEmpty { rows = [MCPKeyValueRow()] }
                     }

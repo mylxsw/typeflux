@@ -211,14 +211,14 @@ struct StudioView: View {
     @State private var feedbackImageUploadTasks: [FeedbackImageAttachment.ID: Task<Void, Never>] = [:]
     @State private var isSubmittingFeedback = false
     @State private var feedbackSubmissionError: String?
-    @State private var agentPane: AgentSettingsPane = .overview
+    @State private var agentPane: AgentSettingsPane
     @StateObject private var interfaceStyleObserver: InterfaceStyleObserver
     @State private var launcherPane: LauncherSettingsPane
     @State private var settingsPane: AppSettingsPane
 
     /// `launcherPane` opens the Launcher page at one of its panes, e.g. the keyword list.
     init(viewModel: StudioViewModel, launcherPane: LauncherSettingsPane = .basics,
-         settingsPane: AppSettingsPane = .general) {
+         settingsPane: AppSettingsPane = .general, agentPane: AgentSettingsPane = .overview) {
         self.viewModel = viewModel
         _interfaceStyleObserver = StateObject(wrappedValue: InterfaceStyleObserver(settings: viewModel.askToolSettings))
         _imageSettings = StateObject(wrappedValue: AskImageSettingsModel(
@@ -226,6 +226,7 @@ struct StudioView: View {
         ))
         _launcherPane = State(initialValue: launcherPane)
         _settingsPane = State(initialValue: settingsPane)
+        _agentPane = State(initialValue: agentPane)
     }
 
     @State private var agentStatuses: [AgentCapabilityStatus] = []
@@ -1442,37 +1443,42 @@ struct StudioView: View {
     // MARK: - Agent Page
 
     private func agentPage(compact: Bool) -> some View {
-        SettingsPaneLayout(sections: AgentSettingsPane.sections, selection: $agentPane, compact: compact,
-                           status: agentPaneStatus) {
-            if agentPane == .mcpServers {
-                AgentPaneHeader(symbol: AgentCapability.mcpServers.symbol, title: AgentCapability.mcpServers.title) {
-                    if !viewModel.mcpServers.isEmpty {
-                        Button { beginMCPImport() } label: {
-                            Label(L("agent.mcp.import.action"), systemImage: "square.and.arrow.down")
+        TFPaneLayout(sections: AgentSettingsPane.sections.map { section in
+            TFPaneSection(section.title, items: section.panes.map { pane in
+                let status = agentPaneStatus(pane)
+                return TFPaneItem(pane, pane.title, systemImage: pane.symbol, status: status?.level.paneStatus,
+                                  statusLabel: status?.label)
+            })
+        }, selection: $agentPane) {
+            VStack(alignment: .leading, spacing: TFMetrics.sectionSpacing) {
+                if agentPane == .mcpServers {
+                    TFPaneHeader(systemImage: AgentCapability.mcpServers.symbol,
+                                 title: AgentCapability.mcpServers.title) {
+                        if !viewModel.mcpServers.isEmpty {
+                            TFButton(title: L("agent.mcp.import.action"), systemImage: "square.and.arrow.down") {
+                                beginMCPImport()
+                            }
+                            TFButton(title: L("agent.mcp.addServer"), systemImage: "plus", kind: .primary) {
+                                viewModel.beginAddMCPServer()
+                                isMCPServerDialogPresented = true
+                            }
                         }
-                        .buttonStyle(ModelActionStyle())
-                        Button {
-                            viewModel.beginAddMCPServer()
-                            isMCPServerDialogPresented = true
-                        } label: {
-                            Label(L("agent.mcp.addServer"), systemImage: "plus")
-                        }
-                        .buttonStyle(ModelActionStyle(primary: true))
                     }
+                    agentMCPServersTabContent
+                } else {
+                    AskToolsSettingsView(
+                        settings: viewModel.askToolSettings,
+                        imageSettingsModel: imageSettings,
+                        pane: agentPane,
+                        onNavigate: { agentPane = $0 },
+                        onStatusesChange: { agentStatuses = $0 }
+                    )
+                    // Rebuild per pane so each pane reloads its values when shown.
+                    .id(agentPane)
                 }
-                agentMCPServersTabContent
-            } else {
-                AskToolsSettingsView(
-                    settings: viewModel.askToolSettings,
-                    imageSettingsModel: imageSettings,
-                    pane: agentPane,
-                    onNavigate: { agentPane = $0 },
-                    onStatusesChange: { agentStatuses = $0 }
-                )
-                // Rebuild per pane so each pane reloads its values when shown.
-                .id(agentPane)
             }
         }
+        .tfCompactLayout(compact)
         .sheet(isPresented: $isMCPImportPresented) { mcpImportSheet }
     }
 
@@ -1505,86 +1511,57 @@ struct StudioView: View {
 
     @ViewBuilder private var agentMCPServersTabContent: some View {
         if viewModel.mcpServers.isEmpty {
-            ModelSurface {
-                AgentEmptyState(symbol: "server.rack", title: L("agent.mcp.emptyTitle"), message: L("agent.mcp.emptyMessage")) {
-                    Button {
+            TFCard {
+                TFEmptyState(systemImage: "server.rack", title: L("agent.mcp.emptyTitle"),
+                             message: L("agent.mcp.emptyMessage")) {
+                    TFButton(title: L("agent.mcp.addServer"), systemImage: "plus", kind: .primary) {
                         viewModel.beginAddMCPServer()
                         isMCPServerDialogPresented = true
-                    } label: {
-                        Label(L("agent.mcp.addServer"), systemImage: "plus")
                     }
-                    .buttonStyle(ModelActionStyle(primary: true))
-                    Button { beginMCPImport() } label: {
-                        Label(L("agent.mcp.import.action"), systemImage: "square.and.arrow.down")
+                    TFButton(title: L("agent.mcp.import.action"), systemImage: "square.and.arrow.down") {
+                        beginMCPImport()
                     }
-                    .buttonStyle(ModelActionStyle())
                 }
             }
         } else {
-            VStack(alignment: .leading, spacing: 8) {
-                ModelSurface {
-                    VStack(alignment: .leading, spacing: 0) {
-                        ForEach(Array(viewModel.mcpServers.enumerated()), id: \.element.id) { index, server in
-                            if index > 0 { ModelRowDivider(leading: 66) }
-                            mcpServerRow(server)
-                        }
-                    }
+            TFFormSection(footnote: L("agent.mcp.listHint")) {
+                ForEach(Array(viewModel.mcpServers.enumerated()), id: \.element.id) { index, server in
+                    if index > 0 { TFDivider.formWithIcon }
+                    mcpServerRow(server)
                 }
-                Text(L("agent.mcp.listHint")).font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
-                    .fixedSize(horizontal: false, vertical: true).padding(.horizontal, 4)
             }
         }
     }
 
     private func mcpServerRow(_ server: MCPServerConfig) -> some View {
         let status = MCPServerStatusPresentation(enabled: server.enabled, result: viewModel.mcpServerTestResults[server.id])
+        let result = viewModel.mcpServerTestResults[server.id]
         return VStack(alignment: .leading, spacing: 0) {
-            AgentSettingsRow(
-                icon: "server.rack",
+            TFFormRow(
                 title: server.name.isEmpty ? L("agent.mcp.untitled") : server.name,
                 valueText: mcpTransportDetail(for: server),
-                badge: mcpTransportLabel(for: server),
-                subtitleLineLimit: 1
+                icon: "server.rack",
+                valueLineLimit: 1,
+                badge: mcpTransportLabel(for: server)
             ) {
-                HStack(spacing: 12) {
-                    HStack(spacing: 6) {
-                        if status.isTesting {
-                            ProgressView().controlSize(.small)
-                        } else {
-                            Circle().fill(status.color).frame(width: 7, height: 7)
-                        }
-                        Text(status.label).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary).lineLimit(1)
-                    }
-                    .fixedSize()
-
-                    Toggle("", isOn: Binding(
-                        get: { server.enabled },
-                        set: { viewModel.updateMCPServerEnabled(id: server.id, enabled: $0) }
-                    ))
-                    .labelsHidden()
-                    .toggleStyle(.switch)
-                    .accessibilityLabel(server.name)
-
-                    Menu {
-                        mcpServerMenuItems(server)
-                    } label: {
-                        Image(systemName: "ellipsis").font(.system(size: 13, weight: .semibold))
-                    }
-                    .menuStyle(.borderlessButton)
-                    .menuIndicator(.hidden)
-                    .frame(width: 28)
-                    .accessibilityLabel(L("agent.mcp.more"))
+                if status.isTesting {
+                    TFSpinner()
                 }
+                TFStatusLabel(text: status.label, level: status.level)
+                TFSwitch(title: server.name, isOn: Binding(
+                    get: { server.enabled },
+                    set: { viewModel.updateMCPServerEnabled(id: server.id, enabled: $0) }
+                ))
+                TFMenuButton(title: L("agent.mcp.more"), systemImage: "ellipsis", kind: .plain, size: .small,
+                             iconOnly: true, actions: mcpServerActions(server))
             }
-
-            if case let .failure(message)? = viewModel.mcpServerTestResults[server.id] {
-                Text(message).font(.system(size: 12)).foregroundStyle(StudioTheme.danger)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .padding(.leading, 66).padding(.trailing, 18).padding(.bottom, 12)
-            } else if case let .success(tools)? = viewModel.mcpServerTestResults[server.id], !tools.isEmpty {
-                Text(L("agent.mcp.toolList", tools.map(\.name).joined(separator: ", ")))
-                    .font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary).lineLimit(2)
-                    .padding(.leading, 66).padding(.trailing, 18).padding(.bottom, 12)
+            if case let .failure(message)? = result {
+                TFFieldMessage(text: message)
+                    .padding(.leading, TFListGroupInset.formWithIcon).padding(.trailing, 14).padding(.bottom, 12)
+            } else if case let .success(tools)? = result, !tools.isEmpty {
+                TFFieldMessage(text: L("agent.mcp.toolList", tools.map(\.name).joined(separator: ", ")), tone: .hint)
+                    .lineLimit(2)
+                    .padding(.leading, TFListGroupInset.formWithIcon).padding(.trailing, 14).padding(.bottom, 12)
             }
         }
         .contentShape(Rectangle())
@@ -1593,6 +1570,21 @@ struct StudioView: View {
             isMCPServerDialogPresented = true
         }
         .contextMenu { mcpServerMenuItems(server) }
+    }
+
+    private func mcpServerActions(_ server: MCPServerConfig) -> [TFMenuAction] {
+        [
+            .action(L("agent.mcp.testConnection"), isEnabled: !viewModel.isTestingMCPServer(server.id)) {
+                viewModel.testMCPConnection(for: server)
+            },
+            .action(L("agent.mcp.edit")) {
+                viewModel.beginEditMCPServer(server)
+                isMCPServerDialogPresented = true
+            },
+            .action(L("agent.mcp.duplicate")) { viewModel.duplicateMCPServer(id: server.id) },
+            .separator,
+            .action(L("common.delete"), destructive: true) { mcpServerPendingDeletion = server }
+        ]
     }
 
     @ViewBuilder

@@ -44,4 +44,35 @@ struct TFRowsLogicTests {
         #expect(TFListGroupInset.formWithIcon == 14 + TFMetrics.iconTileSize + 12)
         #expect(TFMetrics.paneSpacing > TFMetrics.toolbarSpacing)
     }
+
+    @Test func noticesUseTheirToneColorAndSymbol() {
+        let tones = TFNotice.Tone.allCases.map { TFNotice(text: "x", tone: $0) }
+        #expect(tones.map(\.color) == [TFColors.accent, TFColors.success, TFColors.warning, TFColors.danger])
+        #expect(Set(tones.map(\.systemImage)).count == TFNotice.Tone.allCases.count)
+        #expect(TFNotice(text: "x").tone == .info)
+    }
+
+    @Test func paneItemsCarryTheirStateForColorAndVoiceOver() {
+        typealias Status = TFPaneItem<String>.Status
+        #expect([Status.active, .inactive, .attention].map(\.level) == [.success, .neutral, .warning])
+        let item = TFPaneItem("files", "Files", systemImage: "folder", status: .attention, statusLabel: "No folders")
+        #expect(item.accessibilityTitle == "Files, No folders")
+        #expect(TFPaneItem("a", "Alpha", systemImage: "a.circle").accessibilityTitle == "Alpha")
+    }
+
+    @Test func agentCapabilityLevelsMapToSharedStates() {
+        let levels: [AgentCapabilityStatus.Level] = [.ready, .attention, .off]
+        #expect(levels.map(\.statusDot) == [.success, .warning, .neutral])
+        #expect(levels.map(\.paneStatus) == [.active, .attention, .inactive])
+        let attention = AgentCapabilityStatus(capability: .files, level: .attention, label: "No folders").statusLabel
+        #expect(attention.tintsText && attention.level == .warning && attention.text == "No folders")
+        #expect(!AgentCapabilityStatus(capability: .files, level: .ready, label: "Ready").statusLabel.tintsText)
+    }
+
+    @Test func iconRowsKeepAWideControlBesideTheirText() {
+        #expect(TFFormRow<EmptyView>.labelIdealWidthWithIcon == 180)
+        let row = 14 + TFMetrics.iconTileSize + 12 + TFFormRow<EmptyView>.labelIdealWidthWithIcon + 16
+            + TFMetrics.formControlWideWidth + 14
+        #expect(row == 14 + TFFormRow<EmptyView>.labelIdealWidth + 16 + TFMetrics.formControlWideWidth + 14)
+    }
 }

@@ -188,29 +188,16 @@ final class AgentSettingsRedesignTests: XCTestCase {
 
     func testComponentsRender() async throws {
         let view = VStack(alignment: .leading, spacing: 12) {
-            SettingsPaneLayout(sections: AgentSettingsPane.sections, selection: .constant(.webSearch),
-                               status: { pane in pane.capability.map { AgentCapabilityStatus(capability: $0, level: .attention, label: "Fix") } }) {
-                Text("Detail")
+            TFNotice(text: "Search is off")
+            ForEach(TFNotice.Tone.allCases, id: \.self) { TFNotice(text: "Result", tone: $0) }
+            HStack {
+                ForEach([AgentCapabilityStatus.Level.ready, .attention, .off], id: \.self) { level in
+                    AgentCapabilityStatus(capability: .webSearch, level: level, label: "State").statusLabel
+                }
             }
-            SettingsPaneLayout(sections: LauncherSettingsPane.sections, selection: .constant(.keywords), compact: true) {
-                Text("Detail")
-            }
-            AgentPaneHeader(symbol: "globe", title: "Search", subtitle: "Finds pages") { Toggle("", isOn: .constant(true)) }
-            AgentPaneHeader(symbol: "folder", title: "Files")
-            AgentRulesCard(rules: [(title: "No network", detail: nil), (title: "Asks first", detail: "Every time")])
-            AgentRulesCard(title: "Rules", rules: [(title: "Off", detail: nil)], dimmed: true)
-            AgentInfoNote(text: "Search is off")
-            HStack { ForEach([AgentCapabilityStatus.Level.ready, .attention, .off], id: \.self) { AgentStatusDot(level: $0) } }
-            AgentStatusBadge(level: .ready, label: "Ready")
-            AgentStatusBadge(level: .attention, label: "Fix")
-            AgentStatusBadge(level: .off, label: "Off")
-            AgentFlowLayout { ForEach(0 ..< 12) { AgentFactChip(text: "Rule \($0)", systemImage: $0 == 0 ? "lock" : nil) } }
-                .frame(width: 300)
-            SettingsSearchBox(placeholder: "Search", text: .constant("query"))
-            AgentEmptyState(symbol: "server.rack", title: "Empty", message: "Nothing yet") { Button("Add") {} }
-            AgentUndoBanner(message: "Removed", onUndo: {}, onDismiss: {})
+            TFUndoBar(message: "Removed", onUndo: {}, onDismiss: {})
+            TFDisclosureRow(title: "Advanced", isExpanded: .constant(true))
             AgentFormRow(label: "Token", required: true) { TextField("", text: .constant("")) }
-            AgentDisclosureButton(title: "Advanced", expanded: .constant(true))
             MCPKeyValueEditor(text: .constant("API_KEY=1\nNODE_ENV=production"), keyPlaceholder: "NAME", valuePlaceholder: "Value")
             AgentSearchForm(provider: .constant(.cloudflare), apiKey: .constant(""), cloudflare: .constant(.init()),
                             missing: [.apiKey, .accountID], configuration: .init(provider: .cloudflare))

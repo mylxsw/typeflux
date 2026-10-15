@@ -230,7 +230,9 @@ struct GalleryTabsPage: View {
 
     private let panes: [TFPaneSection<String>] = [
         TFPaneSection("Capabilities", items: [TFPaneItem("web", "Web Search", systemImage: "globe", status: .active),
-                                              TFPaneItem("image", "Image Generation", systemImage: "photo", status: .inactive)]),
+                                              TFPaneItem("image", "Image Generation", systemImage: "photo", status: .inactive),
+                                              TFPaneItem("files", "File Access", systemImage: "folder",
+                                                         status: .attention, statusLabel: "No folders")]),
         TFPaneSection("Extensions", items: [TFPaneItem("skills", "Skills", systemImage: "sparkles"),
                                             TFPaneItem("mcp", "MCP Servers", systemImage: "server.rack")]),
         TFPaneSection("Personal", items: [TFPaneItem("memory", "Memory", systemImage: "note.text")])
