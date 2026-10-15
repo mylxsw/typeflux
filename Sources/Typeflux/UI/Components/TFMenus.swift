@@ -109,7 +109,7 @@ struct TFPopUpButton<Value: Hashable>: View {
 
 /// One entry of an action menu.
 enum TFMenuAction {
-    case action(String, systemImage: String? = nil, destructive: Bool = false, () -> Void)
+    case action(String, systemImage: String? = nil, destructive: Bool = false, isEnabled: Bool = true, () -> Void)
     case separator
 
     /// Native entries and the closures they run, by tag.
@@ -120,9 +120,9 @@ enum TFMenuAction {
             switch action {
             case .separator:
                 entries.append(.separator)
-            case let .action(title, symbol, destructive, handler):
+            case let .action(title, symbol, destructive, isEnabled, handler):
                 entries.append(TFNativeMenuEntry(kind: .item(tag: handlers.count), title: title, systemImage: symbol,
-                                                 destructive: destructive))
+                                                 destructive: destructive, isEnabled: isEnabled))
                 handlers.append(handler)
             }
         }
@@ -206,10 +206,10 @@ struct TFFilterMenu<Value: Hashable>: View {
             .foregroundStyle(active ? TFColors.accent : TFColors.textPrimary)
             .padding(.horizontal, size.horizontalPadding)
             .frame(height: size.height)
-            .background(Capsule().fill(active ? TFColors.selection : TFColors.control))
-            .overlay { Capsule().fill(hovering ? TFColors.hoverOverlay : .clear) }
+            .background(Capsule(style: .circular).fill(active ? TFColors.selection : TFColors.control))
+            .overlay { Capsule(style: .circular).fill(hovering ? TFColors.hoverOverlay : .clear) }
             .overlay {
-                if !active { Capsule().strokeBorder(TFColors.border, lineWidth: TFMetrics.borderWidth) }
+                if !active { Capsule(style: .circular).strokeBorder(TFColors.border, lineWidth: TFMetrics.borderWidth) }
             }
             .opacity(isEnabled ? 1 : TFMetrics.disabledOpacity)
             .accessibilityHidden(true)

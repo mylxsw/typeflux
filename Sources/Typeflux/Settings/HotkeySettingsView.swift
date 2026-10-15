@@ -16,24 +16,22 @@ struct HotkeySettingsView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.cardGroup) {
+        VStack(alignment: .leading, spacing: TFMetrics.sectionSpacing) {
             ForEach(HotkeyGroup.allCases) { group in
                 let rows = model.rows.filter { $0.group == group }
                 if !rows.isEmpty || group == .keywords {
-                    VStack(alignment: .leading, spacing: 8) {
-                        sectionHeader(group, count: rows.count)
-                        ModelSurface {
-                            VStack(alignment: .leading, spacing: 0) {
-                                if rows.isEmpty {
-                                    keywordEmptyState
-                                }
-                                if !rows.isEmpty {
-                                    ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
-                                        if index > 0 { ModelRowDivider(leading: group == .keywords ? 14 : 40) }
-                                        rowView(row)
-                                    }
-                                }
-                            }
+                    TFFormSection(title: group.title, count: rows.count) {
+                        if group == .keywords {
+                            TFButton(title: L("hotkeys.keyword.add"), systemImage: "plus") { add(nil) }
+                                .accessibilityIdentifier("hotkeys.keyword.add")
+                        }
+                    } content: {
+                        if rows.isEmpty {
+                            keywordEmptyState
+                        }
+                        ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
+                            if index > 0 { TFDivider(inset: group == .keywords ? TFListGroupInset.form : 40) }
+                            rowView(row)
                         }
                     }
                 }
@@ -46,22 +44,7 @@ struct HotkeySettingsView: View {
         }
     }
 
-    // MARK: - Header and tables
-
-    private func sectionHeader(_ group: HotkeyGroup, count: Int) -> some View {
-        HStack(spacing: 8) {
-            SettingsListSectionLabel(title: group.title, count: count)
-            Spacer(minLength: 8)
-            if group == .keywords {
-                Button { add(nil) } label: {
-                    Label(L("hotkeys.keyword.add"), systemImage: "plus")
-                }
-                .buttonStyle(ModelActionStyle())
-                .fixedSize()
-                .accessibilityIdentifier("hotkeys.keyword.add")
-            }
-        }
-    }
+    // MARK: - Tables
 
     private var keyColumnWidth: CGFloat {
         compact ? 180 : 210
@@ -89,11 +72,10 @@ struct HotkeySettingsView: View {
             .accessibilityIdentifier("hotkeys.binding." + identifier(row.target))
             Group {
                 if case let .keyword(id) = row.target {
-                    Toggle("", isOn: Binding(
+                    TFSwitch(title: L("ask.settings.keywords.enabled") + " " + row.title, isOn: Binding(
                         get: { model.keywordHotkey(id)?.enabled ?? false },
                         set: { model.setEnabled($0, forKeywordHotkey: id) }
                     ))
-                    .labelsHidden().toggleStyle(.switch).controlSize(.small)
                     .accessibilityLabel(L("ask.settings.keywords.enabled") + " " + row.title)
                     .help(L("ask.settings.keywords.enabled"))
                     .accessibilityIdentifier("hotkeys.enabled." + id.uuidString)
@@ -102,7 +84,7 @@ struct HotkeySettingsView: View {
                 }
             }
             .frame(width: enabledColumnWidth)
-            menu(for: row).frame(width: 24)
+            menu(for: row)
         }
         .padding(.horizontal, 14).frame(minHeight: 44)
         .accessibilityElement(children: .contain)
@@ -123,62 +105,53 @@ struct HotkeySettingsView: View {
     }
 
     private func menu(for row: HotkeyRow) -> some View {
-        Menu {
-            Button(L("hotkeys.menu.record")) { startRecording(row) }
-            if case let .keyword(id) = row.target {
-                Button(L("hotkeys.menu.edit")) {
-                    edit(id)
-                }
-                Button(L("hotkeys.menu.duplicate")) {
+        TFMenuButton(title: L("hotkeys.menu.more"), systemImage: "ellipsis", kind: .plain, size: .small,
+                     iconOnly: true, actions: menuActions(for: row))
+    }
+
+    private func menuActions(for row: HotkeyRow) -> [TFMenuAction] {
+        var actions: [TFMenuAction] = [.action(L("hotkeys.menu.record")) { startRecording(row) }]
+        if case let .keyword(id) = row.target {
+            actions += [
+                .action(L("hotkeys.menu.edit")) { edit(id) },
+                .action(L("hotkeys.menu.duplicate")) {
                     stopRecording()
                     if let copy = model.duplicate(id) {
                         model.save(copy)
                         editing = KeywordHotkeyDraftItem(draft: KeywordHotkeyDraft(editing: copy))
                     }
-                }
-                Divider()
-            }
-            if let defaultBinding = row.defaultBinding {
-                Button(L("hotkeys.menu.reset")) { apply(defaultBinding, to: row.target) }
-                    .disabled(row.isDefault)
-            }
-            Button(L("settings.shortcuts.unset")) { unset(row.target) }
-                .disabled(row.binding == nil)
-            if case let .keyword(id) = row.target {
-                Button(L("hotkeys.keyword.delete"), role: .destructive) { model.delete(id) }
-            }
-        } label: {
-            Image(systemName: "ellipsis").font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(StudioTheme.textSecondary).frame(width: 24, height: 24)
+                },
+                .separator
+            ]
         }
-        .menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize()
-        .accessibilityLabel(L("hotkeys.menu.more"))
+        if let defaultBinding = row.defaultBinding {
+            actions.append(.action(L("hotkeys.menu.reset"), isEnabled: !row.isDefault) {
+                apply(defaultBinding, to: row.target)
+            })
+        }
+        actions.append(.action(L("settings.shortcuts.unset"), isEnabled: row.binding != nil) { unset(row.target) })
+        if case let .keyword(id) = row.target {
+            actions.append(.action(L("hotkeys.keyword.delete"), destructive: true) { model.delete(id) })
+        }
+        return actions
     }
 
     private var keywordEmptyState: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(L("hotkeys.keyword.empty")).font(.system(size: 13)).foregroundStyle(StudioTheme.textSecondary)
+            Text(L("hotkeys.keyword.empty")).font(.system(size: 13)).foregroundStyle(TFColors.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 140), spacing: 8)], spacing: 8) {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 160), spacing: 8)], spacing: 8) {
                 ForEach(HotkeySettingsPresentation.templates(in: model.options)) { option in
                     Button { add(option) } label: {
                         HStack(spacing: 8) {
                             KeywordHotkeyBadge(keyword: option.keyword.keyword)
-                            Text(option.name).font(.system(size: 13, weight: .medium))
-                                .lineLimit(1)
+                            Text(option.name).lineLimit(1).layoutPriority(1)
                             Spacer(minLength: 0)
-                            Image(systemName: "plus").font(.system(size: 12, weight: .medium))
-                                .foregroundStyle(StudioTheme.textSecondary)
+                            Image(systemName: "plus").foregroundStyle(TFColors.textSecondary)
                         }
-                        .foregroundStyle(StudioTheme.textPrimary)
-                        .padding(.horizontal, 10).frame(height: 32)
-                        .background(ModelVisualStyle.control,
-                                    in: RoundedRectangle(cornerRadius: ModelVisualStyle.controlCornerRadius))
-                        .overlay(RoundedRectangle(cornerRadius: ModelVisualStyle.controlCornerRadius)
-                            .strokeBorder(ModelVisualStyle.border))
-                        .contentShape(Rectangle())
+                        .frame(maxWidth: .infinity)
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(TFButtonStyle(kind: .secondary))
                     .help(L("hotkeys.recordAccessibility", option.name))
                     .accessibilityLabel(L("hotkeys.recordAccessibility", option.name))
                     .accessibilityIdentifier("hotkeys.keyword.template." + option.keyword.keyword)
@@ -280,38 +253,22 @@ struct KeywordHotkeyDraftItem: Identifiable {
 struct HotkeyKeysView: View {
     let binding: HotkeyBinding?
     var isRecording = false
-    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         HStack(spacing: 4) {
             if isRecording {
-                cap(L("hotkeys.recording"), highlighted: true)
+                TFKeyCap(text: L("hotkeys.recording"), style: .key, highlighted: true)
             } else if let binding {
                 ForEach(Array(HotkeyFormat.components(binding).enumerated()), id: \.offset) { _, key in
-                    cap(key)
+                    TFKeyCap(text: key, style: .key)
                 }
                 if let count = HotkeyFormat.pressCount(binding) {
                     Text("×\(count)").font(.system(size: 11.5, weight: .bold))
-                        .foregroundStyle(StudioTheme.textSecondary)
+                        .foregroundStyle(TFColors.textSecondary)
                 }
             } else {
-                cap(L("settings.shortcuts.none")).opacity(0.55)
+                TFKeyCap(text: L("settings.shortcuts.none"), style: .key).opacity(0.55)
             }
         }
-    }
-
-    private var capFill: Color { colorScheme == .dark ? ModelVisualStyle.control : StudioTheme.cardFill }
-
-    private func cap(_ text: String, highlighted: Bool = false) -> some View {
-        Text(text)
-            .font(.system(size: 12, weight: .semibold))
-            .foregroundStyle(highlighted ? ModelVisualStyle.accent : StudioTheme.textPrimary)
-            .padding(.horizontal, 8).frame(minWidth: 26, minHeight: 24)
-            .background(highlighted ? ModelVisualStyle.accent.opacity(0.12) : capFill,
-                        in: RoundedRectangle(cornerRadius: 6, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .strokeBorder(highlighted ? ModelVisualStyle.accent.opacity(0.5) : ModelVisualStyle.border))
-            // Light keycaps are white and stand on a 1pt bottom edge.
-            .shadow(color: colorScheme == .dark || highlighted ? .clear : Color.black.opacity(0.10), radius: 0, x: 0, y: 1)
     }
 }

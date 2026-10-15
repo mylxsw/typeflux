@@ -9,17 +9,20 @@ struct TFRichOption<Value: Hashable>: Identifiable {
     /// Tile color for the leading icon or initial.
     var tint: Color?
     var trailing: String?
+    /// Shows `trailing` as a colored status tag (e.g. a latency grade) instead of plain text.
+    var trailingTint: Color?
 
     var id: Value { value }
 
     init(_ value: Value, _ title: String, subtitle: String? = nil, systemImage: String? = nil, tint: Color? = nil,
-         trailing: String? = nil) {
+         trailing: String? = nil, trailingTint: Color? = nil) {
         self.value = value
         self.title = title
         self.subtitle = subtitle
         self.systemImage = systemImage
         self.tint = tint
         self.trailing = trailing
+        self.trailingTint = trailingTint
     }
 }
 
@@ -175,9 +178,13 @@ private struct TFMenuPanelRow<Value: Hashable>: View {
                 .lineLimit(1)
                 Spacer(minLength: 12)
                 if let trailing = option.trailing {
-                    Text(trailing)
-                        .font(.system(size: 11.5))
-                        .foregroundStyle(isHighlighted ? Color.white.opacity(0.8) : TFColors.textTertiary)
+                    if let tint = option.trailingTint {
+                        TFTag(text: trailing, tint: isHighlighted ? .white : tint)
+                    } else {
+                        Text(trailing)
+                            .font(.system(size: 11.5))
+                            .foregroundStyle(isHighlighted ? Color.white.opacity(0.8) : TFColors.textTertiary)
+                    }
                 }
             }
             .foregroundStyle(isHighlighted ? Color.white : TFColors.textPrimary)
@@ -215,8 +222,11 @@ struct TFRichPicker<Value: Hashable>: View {
                     TFIconTile(systemImage: current.systemImage, letter: current.title,
                                tint: current.tint ?? TFColors.accent, size: 18)
                 }
-                Text(current?.title ?? title).fontWeight(.regular)
+                Text(current?.title ?? title).fontWeight(.regular).truncationMode(.middle)
                 Spacer(minLength: 4)
+                if let trailing = current?.trailing, let tint = current?.trailingTint {
+                    TFTag(text: trailing, tint: tint)
+                }
                 Image(systemName: "chevron.up.chevron.down")
                     .font(.system(size: 9, weight: .semibold))
                     .foregroundStyle(TFColors.textTertiary)

@@ -21,7 +21,8 @@ enum GallerySamples {
 
     static let models: [TFRichSection<String>] = [
         TFRichSection("Configured", options: [
-            TFRichOption("cloud", "Typeflux Cloud", subtitle: "Default · available after signing in", tint: .blue),
+            TFRichOption("cloud", "Typeflux Cloud", subtitle: "Default · available after signing in", tint: .blue,
+                         trailing: "42 ms", trailingTint: TFColors.success),
             TFRichOption("fable", "Claude Fable 5.1", subtitle: "Anthropic · configured", tint: .orange),
             TFRichOption("qwen", "Qwen3 Local", subtitle: "Ollama · downloaded", tint: .purple)
         ]),
@@ -121,6 +122,7 @@ struct GalleryMenusPage: View {
     private var actions: [TFMenuAction] {
         [.action("Import…", systemImage: "square.and.arrow.down") { lastAction = "Import" },
          .action("Export All", systemImage: "square.and.arrow.up") { lastAction = "Export" },
+         .action("Reset to Default", isEnabled: false) {},
          .separator,
          .action("Clear Automatic Entries", systemImage: "trash", destructive: true) { lastAction = "Clear" }]
     }
@@ -226,24 +228,52 @@ struct GalleryListsPage: View {
                     }
                 }
             }
-            GallerySpecimen(title: "Form", component: "TFFormRow · TFCard · TFDivider",
-                            spec: "Rows at least 52pt; controls regular size in a 220pt (or 280pt) column; " +
-                                "switches are mini.") {
-                TFCard {
-                    TFFormRow(title: "Appearance") {
-                        TFSegmentedControl(options: [TFOption("light", "Light"), TFOption("dark", "Dark"), TFOption("auto", "Auto")],
+            GallerySpecimen(title: "Form", component: "TFFormSection · TFFormRow · TFDivider.form",
+                            spec: "Rows at least 52pt; label column wraps, the control stays on the right and only " +
+                                "drops below the text when the row is too narrow. Switches are mini; segmented " +
+                                "controls fill a 220pt column with controlWidth: .standard.") {
+                TFFormSection(title: "General") {
+                    TFFormRow(title: "Appearance", controlWidth: .standard) {
+                        TFSegmentedControl(options: [TFOption("light", "Light"), TFOption("dark", "Dark"),
+                                                     TFOption("auto", "Auto")],
                                            selection: $appearance, fillsWidth: true)
                     }
-                    TFDivider(inset: TFListGroupInset.form)
+                    TFDivider.form
                     TFFormRow(title: "Interface Language", detail: "Takes effect when windows reopen") {
                         TFPopUpButton(title: "Language", options: GallerySamples.languages, selection: $language,
                                       width: TFMetrics.formControlWidth)
                     }
-                    TFDivider(inset: TFListGroupInset.form)
-                    TFFormRow(title: "Open at Login") { TFSwitch(title: "Open at Login", isOn: $launch) }
-                    TFDivider(inset: TFListGroupInset.form)
+                    TFDivider.form
+                    TFFormRow(title: "Quick Input", detail: "Hold the shortcut, speak, and release to insert the " +
+                        "transcript directly without a persona. A long description wraps instead of pushing the " +
+                        "switch below it.", badge: "Beta") {
+                        TFSwitch(title: "Quick Input", isOn: $launch)
+                    }
+                    TFDivider.form
+                    TFFormRow(title: "Microphone", detail: "Permission needed to record.",
+                              footnote: "Grant access in System Settings › Privacy.", badge: "Required",
+                              badgeTint: TFColors.warning, systemImage: "exclamationmark.circle",
+                              imageTint: TFColors.warning) {
+                        TFButton(title: "Grant Access", systemImage: "lock.open.display", kind: .primary) {}
+                    }
+                    TFDivider.form
                     TFFormRow(title: "Reset All Settings", detail: "History and vocabulary are kept") {
                         TFButton(title: "Reset…", destructive: true) {}
+                    }
+                }
+            }
+            GallerySpecimen(title: "Choice cards", component: "TFChoiceCard",
+                            spec: "For options that are easier to show than to name. Selected: selection fill and " +
+                                "a 2pt accent outline.") {
+                HStack(spacing: 12) {
+                    ForEach(["Compact", "Complete"], id: \.self) { mode in
+                        TFChoiceCard(title: mode, isSelected: language == (mode == "Compact" ? "zh" : "en")) {
+                            language = mode == "Compact" ? "zh" : "en"
+                        } preview: {
+                            RoundedRectangle(cornerRadius: 8, style: .continuous).fill(TFColors.control)
+                                .frame(height: mode == "Compact" ? 40 : 90)
+                                .frame(maxHeight: 90, alignment: .top)
+                        }
                     }
                 }
             }
@@ -285,6 +315,9 @@ struct GalleryFeedbackPage: View {
                     TFIconTile(systemImage: "sparkles", tint: .indigo)
                     TFIconTile(letter: "Groq", tint: .orange)
                     TFKeyCap(text: "⌘F")
+                    TFKeyCap(text: "⌥", style: .key)
+                    TFKeyCap(text: "Space", style: .key)
+                    TFKeyCap(text: "Recording…", style: .key, highlighted: true)
                     TFSpinner()
                 }
             }

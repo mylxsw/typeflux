@@ -50,6 +50,7 @@ struct TFTabBar<Value: Hashable>: View {
             }
             Spacer(minLength: 0)
         }
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.2), value: selection)
         .frame(height: TFMetrics.tabHeight)
         .overlay(alignment: .bottom) {
             Rectangle().fill(TFColors.border).frame(height: TFMetrics.borderWidth)
@@ -82,7 +83,7 @@ struct TFTabBar<Value: Hashable>: View {
             .frame(maxHeight: .infinity)
             .overlay(alignment: .bottom) {
                 if selected {
-                    Capsule().fill(TFColors.accent).frame(height: TFMetrics.tabIndicatorHeight)
+                    Capsule(style: .circular).fill(TFColors.accent).frame(height: TFMetrics.tabIndicatorHeight)
                         .matchedGeometryEffect(id: "indicator", in: indicator)
                 }
             }
@@ -94,8 +95,10 @@ struct TFTabBar<Value: Hashable>: View {
         .accessibilityIdentifier(identifier?(option.value) ?? option.title)
     }
 
+    /// Only the indicator animates (see `.animation` on the bar): animating the binding itself
+    /// would animate the page swap, keeping the outgoing page alive and reusing it on a quick return.
     private func select(_ value: Value) {
-        withAnimation(reduceMotion ? nil : .easeOut(duration: 0.2)) { selection = value }
+        selection = value
     }
 }
 
@@ -137,10 +140,12 @@ struct TFSegmentedControl<Value: Hashable>: View {
                 segment(option, size: size)
             }
         }
+        // Animate the thumb only, not the content the selection drives.
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: selection)
         .padding(TFMetrics.segmentInset)
         .frame(height: size.height)
-        .background(Capsule().fill(TFColors.control))
-        .overlay(Capsule().strokeBorder(TFColors.border, lineWidth: TFMetrics.borderWidth))
+        .background(Capsule(style: .circular).fill(TFColors.control))
+        .overlay(Capsule(style: .circular).strokeBorder(TFColors.border, lineWidth: TFMetrics.borderWidth))
         .fixedSize(horizontal: !fillsWidth, vertical: true)
         .accessibilityElement(children: .contain)
     }
@@ -148,7 +153,7 @@ struct TFSegmentedControl<Value: Hashable>: View {
     private func segment(_ option: TFOption<Value>, size: TFControlSize) -> some View {
         let selected = option.value == selection
         return Button {
-            withAnimation(reduceMotion ? nil : .easeOut(duration: 0.18)) { selection = option.value }
+            selection = option.value
         } label: {
             HStack(spacing: 5) {
                 if let symbol = option.systemImage {
@@ -172,13 +177,13 @@ struct TFSegmentedControl<Value: Hashable>: View {
             .frame(height: size.segmentItemHeight)
             .background {
                 if selected {
-                    Capsule()
+                    Capsule(style: .circular)
                         .fill(TFColors.raised)
                         .shadow(color: .black.opacity(0.18), radius: 1, y: 1)
                         .matchedGeometryEffect(id: "thumb", in: thumb)
                 }
             }
-            .contentShape(Capsule())
+            .contentShape(Capsule(style: .circular))
         }
         .buttonStyle(.plain)
         .tfCapsuleFocusEffect()
