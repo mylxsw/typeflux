@@ -42,6 +42,7 @@ final class AskTranslationPanelCoordinator: ScreenshotFollowUpHandling {
     }
 
     func openInput() {
+        if selectionTask != nil { cancelEntry() }
         if controller.isPresented {
             controller.focus(); return
         }
@@ -56,10 +57,24 @@ final class AskTranslationPanelCoordinator: ScreenshotFollowUpHandling {
     func openSelection() {
         selectionTask?.cancel()
         let current = generation
+        let wasPresented = controller.isPresented
+        if !wasPresented {
+            processID = frontmost()
+            selection = nil
+            selectedText = nil
+            model.open(source: .input)
+            controller.present(focusEditor: false)
+        }
+        let initialText = model.text
         selectionTask = Task { [weak self, injector] in
             let snapshot = await injector.selectionSnapshot(for: .explicitSelectionAction)
             guard let self, generation == current, !Task.isCancelled else { return }
             selectionTask = nil
+            guard controller.isPresented else { return }
+            if !wasPresented, model.text != initialText {
+                controller.focus()
+                return
+            }
             guard snapshot.hasAskSelectionContext, let text = snapshot.selectedText else {
                 openInput()
                 return

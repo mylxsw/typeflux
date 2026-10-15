@@ -176,6 +176,10 @@ final class AppCoordinator {
             di.translationPanel.otherScreenshotHandler = model
         }
         screenshotCoordinator.followUpHandler = di.translationPanel
+        let translationPanelController = di.translationPanelController
+        DispatchQueue.main.async { [weak translationPanelController] in
+            translationPanelController?.prewarm()
+        }
         di.translationPanelModel.onSettings = { [weak self] in
             guard let self else { return }
             SettingsWindowController.shared.show(settingsStore: di.settingsStore, historyStore: di.historyStore,

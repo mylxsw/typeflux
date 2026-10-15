@@ -57,6 +57,12 @@ final class AskTranslationPanelController: NSObject, NSWindowDelegate {
         isPresented ? panel : nil
     }
 
+    func prewarm() {
+        let window = makePanel()
+        applyAppearance(window)
+        updateRoot()
+    }
+
     func focus() {
         panel?.makeKeyAndOrderFront(nil)
         if let content = panel?.contentView, let editor = editor(in: content) {
@@ -64,7 +70,7 @@ final class AskTranslationPanelController: NSObject, NSWindowDelegate {
         }
     }
 
-    func present(selection: CGRect? = nil) {
+    func present(selection: CGRect? = nil, focusEditor: Bool = true) {
         let window = makePanel()
         applyAppearance(window)
         let mouse = NSEvent.mouseLocation
@@ -85,9 +91,14 @@ final class AskTranslationPanelController: NSObject, NSWindowDelegate {
             layoutPosition = model.settings.askTranslationSettings.panelPosition
         }
         updateRoot()
-        window.makeKeyAndOrderFront(nil)
+        if focusEditor {
+            window.makeKeyAndOrderFront(nil)
+        } else {
+            // Keep the source application's selection focused while capture runs.
+            window.orderFrontRegardless()
+        }
         installMonitors()
-        focus()
+        if focusEditor { focus() }
     }
 
     func hide() {

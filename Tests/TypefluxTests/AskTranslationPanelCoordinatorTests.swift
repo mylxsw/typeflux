@@ -92,6 +92,40 @@ struct AskTranslationPanelCoordinatorTests {
         return coordinator
     }
 
+    @Test func `selection panel appears before capture finishes and keeps source focus`() async throws {
+        let fixture = TranslationPanelFixture()
+        defer { fixture.clean() }
+        let injector = TranslationPanelInjector()
+        injector.onCapture = { try? await Task.sleep(for: .milliseconds(200)) }
+        let entry = coordinator(fixture, injector: injector)
+        entry.controller.prewarm()
+        #expect(!entry.controller.isPresented)
+
+        entry.openSelection()
+        let window = try #require(entry.controller.presentedWindow)
+        #expect(window.isVisible && !window.isKeyWindow)
+        #expect(fixture.ai.requests.isEmpty)
+
+        await entry.waitForEntry()
+        await fixture.model.waitForTranslation()
+        #expect(fixture.model.source == .selection && fixture.model.text == "Selected sentence.")
+        #expect(window.isKeyWindow && fixture.ai.requests.count == 1)
+    }
+
+    @Test func `selection capture does not replace text typed while the panel is open`() async {
+        let fixture = TranslationPanelFixture()
+        defer { fixture.clean() }
+        let injector = TranslationPanelInjector()
+        injector.onCapture = { try? await Task.sleep(for: .milliseconds(100)) }
+        let entry = coordinator(fixture, injector: injector)
+        entry.openSelection()
+        fixture.model.text = "A new draft."
+
+        await entry.waitForEntry()
+        #expect(entry.controller.isPresented && fixture.model.text == "A new draft.")
+        #expect(fixture.ai.requests.isEmpty)
+    }
+
     @Test func `input waits for return and selection sends immediately on every shortcut`() async {
         let fixture = TranslationPanelFixture()
         defer { fixture.clean() }
