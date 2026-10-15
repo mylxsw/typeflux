@@ -2,8 +2,8 @@ import Foundation
 
 /// What a launcher keyword reaches: one of the built-in plugins or a workflow.
 enum AskKeywordKind: String, CaseIterable, Sendable {
-    case translate, prompt, web, files, tabs, bookmarks, chat, prefix, setting, history, clip, emoji, calendar,
-         kill, system, workflow
+    case translate, prompt, web, files, semanticFiles, tabs, bookmarks, chat, prefix, setting, history, clip,
+         emoji, calendar, kill, system, workflow
 
     init?(pluginID: String) {
         switch pluginID {
@@ -12,6 +12,7 @@ enum AskKeywordKind: String, CaseIterable, Sendable {
         case AskWebSearchPlugin.id: self = .web
         case AskKillAppPlugin.id: self = .kill
         case AskFileSearchPlugin.id: self = .files
+        case AskSemanticFileSearchPlugin.id: self = .semanticFiles
         case AskBrowserSearchPlugin.tabsID: self = .tabs
         case AskBrowserSearchPlugin.bookmarksID: self = .bookmarks
         case AskOpenChatPlugin.id: self = .chat
@@ -38,6 +39,7 @@ enum AskKeywordKind: String, CaseIterable, Sendable {
         case .prompt: AskPromptPlugin.id
         case .web: AskWebSearchPlugin.id
         case .files: AskFileSearchPlugin.id
+        case .semanticFiles: AskSemanticFileSearchPlugin.id
         case .tabs: AskBrowserSearchPlugin.tabsID
         case .bookmarks: AskBrowserSearchPlugin.bookmarksID
         case .chat: AskOpenChatPlugin.id
@@ -58,6 +60,7 @@ enum AskKeywordKind: String, CaseIterable, Sendable {
         case .prompt: L("ask.plugin.prompt.title")
         case .web: L("ask.plugin.web.title")
         case .files: L("ask.plugin.files.title")
+        case .semanticFiles: L("semantic.title")
         case .tabs: L("ask.browser.tabs")
         case .bookmarks: L("ask.browser.bookmarks")
         case .chat: L("ask.openChat")
@@ -84,6 +87,7 @@ enum AskKeywordKind: String, CaseIterable, Sendable {
         case .prompt: "wand.and.stars"
         case .web: "magnifyingglass"
         case .files: "doc.text.magnifyingglass"
+        case .semanticFiles: "sparkle.magnifyingglass"
         case .tabs: "rectangle.on.rectangle"
         case .bookmarks: "bookmark"
         case .chat: "macwindow"
@@ -157,6 +161,8 @@ enum AskKeywordListPresentation {
             AskWebSearchPlugin.engine(of: keyword.options).title
         case .files:
             L("ask.plugin.files.title")
+        case .semanticFiles:
+            L("semantic.title")
         case .tabs: L("ask.browser.tabs")
         case .bookmarks: L("ask.browser.bookmarks")
         case .chat:
@@ -212,6 +218,8 @@ enum AskKeywordListPresentation {
             return withoutScheme(AskWebSearchPlugin.engine(of: keyword.options).template)
         case .files:
             return L("ask.settings.keywords.kind.files.hint")
+        case .semanticFiles:
+            return L("ask.settings.keywords.kind.semanticFiles.hint")
         case .tabs, .bookmarks:
             return L(
                 "ask.settings.keywords.kind.\(keyword.pluginID == AskBrowserSearchPlugin.tabsID ? "tabs" : "bookmarks").hint"
@@ -284,7 +292,7 @@ enum AskKeywordSection: String, CaseIterable {
         switch self {
         case .translate: [.translate]
         case .prompt: [.prompt]
-        case .search: [.web, .files, .tabs, .bookmarks, .emoji]
+        case .search: [.web, .files, .semanticFiles, .tabs, .bookmarks, .emoji]
         case .typeflux: [.chat, .prefix, .setting, .history, .clip, .calendar]
         case .system: [.kill, .system]
         }

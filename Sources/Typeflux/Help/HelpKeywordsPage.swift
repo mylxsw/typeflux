@@ -203,7 +203,8 @@ struct HelpKeywordDetail: View {
         let kind: String? = switch keyword.keyword.pluginID {
         case AskTranslatePlugin.id: AskTranslatePlugin.opensWordBook(keyword.keyword.options) ? "word" : "translate"
         case AskPromptPlugin.id: "text"
-        case AskWebSearchPlugin.id, AskFileSearchPlugin.id, AskBrowserSearchPlugin.tabsID,
+        case AskWebSearchPlugin.id, AskFileSearchPlugin.id, AskSemanticFileSearchPlugin.id,
+             AskBrowserSearchPlugin.tabsID,
              AskBrowserSearchPlugin.bookmarksID, AskNotesPlugin.id, AskHistoryPlugin.id, AskClipboardPlugin.id:
             "search"
         case AskEmojiPlugin.id: "emoji"

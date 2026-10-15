@@ -319,7 +319,7 @@ final class AskPluginSession: ObservableObject {
                 guard current == self.generation, self.isRunning else { return }
                 var partial = incoming
                 if let shown = self.partial ?? self.previous,
-                   incoming.translation != nil || plugin.id == AskFileSearchPlugin.id,
+                   incoming.translation != nil || AskFileSearchPlugin.showsFileResults(for: plugin.id),
                    shown.original == incoming.original {
                     partial.selectedItem = Self.selection(keeping: shown, in: incoming)
                 }
@@ -334,7 +334,7 @@ final class AskPluginSession: ObservableObject {
                 // A timed rerun keeps the chosen row, and its actions already ran for the first result.
                 output.followUp = shown.followUp
                 output.selectedItem = Self.selection(keeping: shown, in: output)
-            } else if let partial, output.translation != nil || plugin.id == AskFileSearchPlugin.id {
+            } else if let partial, output.translation != nil || AskFileSearchPlugin.showsFileResults(for: plugin.id) {
                 output.selectedItem = Self.selection(keeping: partial, in: output)
             } else if !output.items.isEmpty, output.selected == nil {
                 output.selectedItem = output.selectableIndices.first ?? -1
@@ -370,7 +370,7 @@ final class AskPluginSession: ObservableObject {
     /// list, so the arrows can move on to "Ask AI".
     func moveSelection(_ delta: Int) -> Bool {
         guard delta != 0 else { return false }
-        if keyword?.pluginID == AskFileSearchPlugin.id, isRunning, let partial {
+        if AskFileSearchPlugin.showsFileResults(for: keyword?.pluginID), isRunning, let partial {
             let indices = partial.selectableIndices
             let position = indices.firstIndex(of: partial.selectedItem) ?? (delta > 0 ? -1 : indices.count)
             let next = position + delta
@@ -394,7 +394,7 @@ final class AskPluginSession: ObservableObject {
     /// Chooses a row (a click, or the arrows coming back from "Ask AI").
     @discardableResult
     func selectItem(_ index: Int) -> Bool {
-        if keyword?.pluginID == AskFileSearchPlugin.id, isRunning, var partial {
+        if AskFileSearchPlugin.showsFileResults(for: keyword?.pluginID), isRunning, var partial {
             guard partial.items.indices.contains(index), partial.items[index].valid else { return false }
             partial.selectedItem = index; set(\.partial, partial); return true
         }

@@ -5579,3 +5579,10 @@
 "ask.translation.panel.shortcut.newline" = "换行";
 "ask.translation.panel.shortcut.select" = "切换选中的结果";
 "ask.translation.panel.shortcut.close" = "关闭（钉住时先清空原文）";
+
+/* Dedicated semantic search keyword. */
+"semantic.keyword.placeholder" = "描述要找的内容 · .pdf 限定类型 · in: 限定文件夹";
+"semantic.keyword.unavailable" = "语义检索未开启或尚未就绪，请在 设置 › 启动器 中查看";
+"semantic.keyword.query" = "描述你想查找的内容";
+"semantic.keyword.none" = "没有找到匹配的内容";
+"ask.settings.keywords.kind.semanticFiles.hint" = "根据内容含义搜索本机文件";

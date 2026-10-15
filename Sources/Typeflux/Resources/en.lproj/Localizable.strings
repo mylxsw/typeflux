@@ -5579,3 +5579,10 @@
 "ask.translation.panel.shortcut.newline" = "New line";
 "ask.translation.panel.shortcut.select" = "Move between results";
 "ask.translation.panel.shortcut.close" = "Close (pinned: clear first)";
+
+/* Dedicated semantic search keyword. */
+"semantic.keyword.placeholder" = "Describe the content to find · .pdf for a type · in: for a folder";
+"semantic.keyword.unavailable" = "Semantic search is off or not ready. Check Settings › Launcher.";
+"semantic.keyword.query" = "Describe the content you want to find";
+"semantic.keyword.none" = "No matching content found";
+"ask.settings.keywords.kind.semanticFiles.hint" = "Find local files by the meaning of their content";

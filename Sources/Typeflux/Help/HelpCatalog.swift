@@ -40,7 +40,8 @@ enum HelpKeywordGroup: String, CaseIterable, Identifiable, Sendable {
         switch pluginID {
         case AskTranslatePlugin.id, AskPromptPlugin.id:
             return .text
-        case AskWebSearchPlugin.id, AskFileSearchPlugin.id, AskBrowserSearchPlugin.tabsID,
+        case AskWebSearchPlugin.id, AskFileSearchPlugin.id, AskSemanticFileSearchPlugin.id,
+             AskBrowserSearchPlugin.tabsID,
              AskBrowserSearchPlugin.bookmarksID:
             return .search
         case AskScreenshotPlugin.id, AskScreenshotTextPlugin.id:

@@ -395,7 +395,9 @@ struct AskComposer: View {
 
     private func refreshSearchIndex(resetActions: Bool = false) {
         guard launcher, searchVisible, quickSearch.isVisible else { return }
-        if [AskFileSearchPlugin.id, AskBrowserSearchPlugin.tabsID, AskBrowserSearchPlugin.bookmarksID].contains(plugins.keyword?.pluginID ?? "") {
+        if AskFileSearchPlugin.showsFileResults(for: plugins.keyword?.pluginID)
+            || [AskBrowserSearchPlugin.tabsID, AskBrowserSearchPlugin.bookmarksID]
+                .contains(plugins.keyword?.pluginID ?? "") {
             plugins.refreshLiveResults(text: draft.wrappedValue.text, selection: draft.wrappedValue.sentSelection,
                                        language: AppLocalization.shared.language)
         } else {
@@ -405,7 +407,7 @@ struct AskComposer: View {
 
     private func updateFilePreview() {
         guard launcher else { return }
-        if plugins.keyword?.pluginID == AskFileSearchPlugin.id, let display = pluginDisplay {
+        if AskFileSearchPlugin.showsFileResults(for: plugins.keyword?.pluginID), let display = pluginDisplay {
             let output = display.output ?? display.partial
             let hit = output?.selected?.fileHit
             let files = output?.items.compactMap(\.fileHit) ?? []
@@ -739,7 +741,7 @@ struct AskComposer: View {
     /// Return on the plugin's row: run it (or do what its plan offers, like opening
     /// a search), or use its result.
     private func runPluginMain() {
-        if plugins.keyword?.pluginID == AskFileSearchPlugin.id, plugins.isPlanCurrent,
+        if AskFileSearchPlugin.showsFileResults(for: plugins.keyword?.pluginID), plugins.isPlanCurrent,
            let action = plugins.currentOutput?.action(for: .enter) {
             performPluginAction(action); return
         }

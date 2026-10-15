@@ -5465,3 +5465,10 @@
 "ask.translation.panel.shortcut.newline" = "改行";
 "ask.translation.panel.shortcut.select" = "結果を移動";
 "ask.translation.panel.shortcut.close" = "閉じる（固定中は先に原文を消去）";
+
+/* Dedicated semantic search keyword. */
+"semantic.keyword.placeholder" = "探したい内容を入力 · .pdf で種類 · in: でフォルダ";
+"semantic.keyword.unavailable" = "セマンティック検索はオフか準備中です。設定 › ランチャーを確認してください。";
+"semantic.keyword.query" = "探したい内容を入力してください";
+"semantic.keyword.none" = "一致する内容が見つかりません";
+"ask.settings.keywords.kind.semanticFiles.hint" = "内容の意味からこの Mac のファイルを検索";
