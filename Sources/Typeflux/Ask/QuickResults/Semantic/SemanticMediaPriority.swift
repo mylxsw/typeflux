@@ -22,6 +22,7 @@ struct SemanticMediaInput: Codable, Equatable, Sendable {
     var kind: Kind
     var path: String
     var time: TimeInterval?
+    var endTime: TimeInterval?
 }
 
 enum SemanticMediaInputError: Error { case unreadable }

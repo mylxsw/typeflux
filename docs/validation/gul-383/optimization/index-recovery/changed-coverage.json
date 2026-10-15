@@ -1,0 +1,150 @@
+{
+  "baseline": "1e8cb5cf16ad7d474344094baf4f2f71a5a160b8",
+  "denominator": "Added/modified executable Swift lines in Sources/Typeflux, including new files, intersected with final LLVM LCOV DA records. Tests, helper wrapper and unchanged vendor code excluded; helper reported separately.",
+  "executable": 1031,
+  "covered": 1006,
+  "percent": 97.58,
+  "files": {
+    "Sources/Typeflux/Ask/QuickResults/Files/AskFileIndexState.swift": {
+      "executable": 0,
+      "covered": 0,
+      "percent": null,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Files/AskFileReader.swift": {
+      "executable": 2,
+      "covered": 2,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Files/AskFileWorkerCommand.swift": {
+      "executable": 2,
+      "covered": 2,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileContentWorker.swift": {
+      "executable": 75,
+      "covered": 72,
+      "percent": 96.0,
+      "uncovered": [
+        72,
+        100,
+        108
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer+Discovery.swift": {
+      "executable": 63,
+      "covered": 58,
+      "percent": 92.06,
+      "uncovered": [
+        22,
+        23,
+        26,
+        53,
+        62
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer+Document.swift": {
+      "executable": 84,
+      "covered": 82,
+      "percent": 97.62,
+      "uncovered": [
+        35,
+        43
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer+Media.swift": {
+      "executable": 76,
+      "covered": 73,
+      "percent": 96.05,
+      "uncovered": [
+        70,
+        71,
+        80
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer.swift": {
+      "executable": 106,
+      "covered": 104,
+      "percent": 98.11,
+      "uncovered": [
+        90,
+        127
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFilePolicy.swift": {
+      "executable": 22,
+      "covered": 22,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift": {
+      "executable": 2,
+      "covered": 2,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Discovery.swift": {
+      "executable": 116,
+      "covered": 115,
+      "percent": 99.14,
+      "uncovered": [
+        107
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Jobs.swift": {
+      "executable": 223,
+      "covered": 222,
+      "percent": 99.55,
+      "uncovered": [
+        15
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+MediaJobs.swift": {
+      "executable": 137,
+      "covered": 137,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore.swift": {
+      "executable": 111,
+      "covered": 103,
+      "percent": 92.79,
+      "uncovered": [
+        42,
+        84,
+        243,
+        270,
+        271,
+        272,
+        299,
+        300
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileValidator.swift": {
+      "executable": 2,
+      "covered": 2,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticLexicalReader.swift": {
+      "executable": 7,
+      "covered": 7,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticMediaExtractor.swift": {
+      "executable": 3,
+      "covered": 3,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticMediaPriority.swift": {
+      "executable": 0,
+      "covered": 0,
+      "percent": null,
+      "uncovered": []
+    }
+  }
+}

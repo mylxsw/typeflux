@@ -1,0 +1,37 @@
+{
+  "baseline": "8c18ab215cb9cedb99bed1fc82e1c1fe177a92c6",
+  "denominator": "Added/modified Sources/Typeflux Swift lines intersected with LLVM LCOV DA records from the final same-binary focused run; tests and vendor excluded",
+  "executable": 109,
+  "covered": 108,
+  "percent": 99.08,
+  "files": {
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer+Discovery.swift": {
+      "executable": 2,
+      "covered": 2,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer+Priority.swift": {
+      "executable": 46,
+      "covered": 45,
+      "uncovered": [
+        77
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer.swift": {
+      "executable": 29,
+      "covered": 29,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Discovery.swift": {
+      "executable": 25,
+      "covered": 25,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Jobs.swift": {
+      "executable": 7,
+      "covered": 7,
+      "uncovered": []
+    }
+  },
+  "native_cpp_helper_changed_lines": 0
+}

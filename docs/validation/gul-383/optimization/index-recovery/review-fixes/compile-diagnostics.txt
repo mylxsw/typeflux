@@ -1,0 +1,27 @@
+DIAG
+C8<
+<task-temp>/swift-generated-sources/@__swiftmacro_13TypefluxTests0037SemanticIndexFairnessTestsswift_emGFlfMX49_12_6expectfMf_.swift
+<workspace>/Tests/TypefluxTests/SemanticIndexFairnessTests.swift
+Testing.__checkValue(try store.job(first.path)?.state == .partial,expression: .__fromSyntaxNode("try store.job(first.path)?.state == .partial"),comments: [],isRequired: false,sourceLocation: Testing.SourceLocation.__here()).__expected()
+errors thrown from here are not handled
+in expansion of macro 'expect' here
+<task-temp>/swift-generated-sources/@__swiftmacro_13TypefluxTests0037SemanticIndexFairnessTestsswift_emGFlfMX50_12_6expectfMf0_.swift
+Testing.__checkValue(try store.job(second.path)?.state == .partial,expression: .__fromSyntaxNode("try store.job(second.path)?.state == .partial"),comments: [],isRequired: false,sourceLocation: Testing.SourceLocation.__here()).__expected()
+errors thrown from here are not handled
+in expansion of macro 'expect' here
+<task-temp>/swift-generated-sources/@__swiftmacro_13TypefluxTests0037SemanticIndexFairnessTestsswift_emGFlfMX52_12_6expectfMf2_.swift
+Testing.__checkValue(try store.lexicalSearch(text: "smallzebrabody", query: .init("smallzebrabody"), type: .all,
+                                            scope: semanticScope(root.path), limit: 5, cancelled: { false })
+                    .map(\.path) == [small.path],expression: .__fromSyntaxNode(#"try store.lexicalSearch(text: "smallzebrabody", query: .init("smallzebrabody"), type: .all,\#n                                            scope: semanticScope(root.path), limit: 5, cancelled: { false })\#n                    .map(\.path) == [small.path]"#),comments: [],isRequired: false,sourceLocation: Testing.SourceLocation.__here()).__expected()4
+errors thrown from here are not handled
+in expansion of macro 'expect' here
+<task-temp>/swift-generated-sources/@__swiftmacro_13TypefluxTests0037SemanticIndexFairnessTestsswift_emGFlfMX55_12_6expectfMf3_.swift
+Testing.__checkValue(try store.search(vector: semanticVector(), text: "unrelated", query: .init("unrelated"),
+                                     type: .all, scope: semanticScope(root.path), limit: 5, cancelled: { false })
+                    .contains { $0.path == small.path },expression: .__fromSyntaxNode(#"try store.search(vector: semanticVector(), text: "unrelated", query: .init("unrelated"),\#n                                     type: .all, scope: semanticScope(root.path), limit: 5, cancelled: { false })\#n                    .contains { $0.path == small.path }"#),comments: [],isRequired: false,sourceLocation: Testing.SourceLocation.__here()).__expected()
+errors thrown from here are not handled
+in expansion of macro 'expect' here
+<task-temp>/swift-generated-sources/@__swiftmacro_13TypefluxTests0037SemanticIndexFairnessTestsswift_emGFlfMX141_16_6expectfMf_.swift
+Testing.__checkValue(try store.job(long.path)?.state == .partial,expression: .__fromSyntaxNode("try store.job(long.path)?.state == .partial"),comments: [],isRequired: false,sourceLocation: Testing.SourceLocation.__here()).__expected()
+errors thrown from here are not handled
+in expansion of macro 'expect' here

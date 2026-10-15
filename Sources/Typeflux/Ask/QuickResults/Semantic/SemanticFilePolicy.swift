@@ -32,10 +32,10 @@ enum SemanticFilePolicy {
 
     static let documentExtensions: Set<String> = ["txt", "md", "markdown", "rst", "csv", "tsv", "pdf"]
     static let extensions = documentExtensions.union(SemanticMediaPriority.extensions)
-    static let maximumBytes = 16 * 1024 * 1024
-    static let maximumChunks = 64
+    /// Per-request extraction budget, never a file-size or total-chunk quota.
+    static let contentBatchBytes = 32 * 1024
     static let dimension = 768
-    /// Any vector-affecting change needs a new profile, forcing a coherent rebuild.
+    /// Model-space changes rebuild globally; extraction and sampling are versioned by each job recipe.
     static let profile = "embeddinggemma2-\(SemanticModel.sha256)-llama4d756bc-mean-l2-768-prompts1-utf8chunk1"
 
     static func allows(_ path: String) -> Bool {
@@ -45,7 +45,7 @@ enum SemanticFilePolicy {
               !parts.contains(where: { forbidden.contains($0) || $0.hasPrefix(".env") }),
               let name = parts.last, !name.contains("credential"), !name.contains("secret"),
               !name.hasPrefix("id_rsa"), !name.hasPrefix("id_ed25519") else { return false }
-        return self.extensions.contains((path as NSString).pathExtension.lowercased())
+        return extensions.contains((path as NSString).pathExtension.lowercased())
     }
 
     static func scope(names: AskLauncherSearchSettings, fullDiskAccess: Bool) -> AskFileScope {
@@ -70,7 +70,7 @@ enum SemanticFilePolicy {
     /// Prefer actual CJK words to single-character overlap when building the lexical query.
     static func searchTerms(_ text: String) -> [String] {
         let words = Set(terms(text).split(separator: " ").map(String.init))
-        let stop: Set<String> = ["the", "a", "an", "is", "are", "of", "to", "for", "in", "and", "how", "what"]
+        let stop: Set = ["the", "a", "an", "is", "are", "of", "to", "for", "in", "and", "how", "what"]
         return words.filter { word in
             !stop.contains(word) && !(word.unicodeScalars.count == 1
                 && word.unicodeScalars.first?.properties.isIdeographic == true)
@@ -109,33 +109,47 @@ enum SemanticFilePolicy {
     }
 }
 
-struct SemanticPage: Codable, Equatable, Sendable { var text: String; var page: Int? }
+/// UTF-8 offset in the file, or in a PDF page's extracted text. Page is zero based in cursors.
+struct SemanticContentCursor: Codable, Equatable, Sendable {
+    var page = 0
+    var offset: Int64 = 0
+}
+
+struct SemanticPage: Codable, Equatable, Sendable {
+    var text: String
+    var page: Int?
+    var offset: Int64 = 0
+}
+
 struct SemanticChunk: Equatable, Sendable {
     var text: String
     var page: Int?
     var time: TimeInterval?
+    var startOffset: Int64?
+    var endOffset: Int64?
+
     static func make(_ pages: [SemanticPage]) -> [SemanticChunk] {
         var result: [SemanticChunk] = []
         for page in pages {
-            let characters = Array(page.text)
-            var start = 0
-            while start < characters.count, result.count < SemanticFilePolicy.maximumChunks {
+            // Scalars keep even a pathological multi-megabyte grapheme bounded and searchable.
+            let scalars = Array(page.text.unicodeScalars)
+            var start = 0, offset = page.offset
+            while start < scalars.count {
                 var end = start, bytes = 0
-                while end < characters.count, bytes + characters[end].utf8.count <= 1200 {
-                    bytes += characters[end].utf8.count; end += 1
+                while end < scalars.count, bytes + scalars[end].utf8.count <= 1200 {
+                    bytes += scalars[end].utf8.count; end += 1
                 }
-                guard end > start else { break }
-                let text = String(characters[start ..< end]).trimmingCharacters(in: .whitespacesAndNewlines)
-                if !text.isEmpty {
-                    result.append(.init(text: text, page: page.page))
+                let text = String(String.UnicodeScalarView(scalars[start ..< end]))
+                if !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    result.append(.init(text: text, page: page.page,
+                                        startOffset: offset, endOffset: offset + Int64(bytes)))
                 }
-                if end == characters.count {
+                if end == scalars.count {
                     break
                 }
-                start = max(start + 1, end - min(40, end - start - 1))
-            }
-            if result.count == SemanticFilePolicy.maximumChunks {
-                break
+                let next = max(start + 1, end - 40)
+                offset += Int64(scalars[start ..< next].reduce(0) { $0 + $1.utf8.count })
+                start = next
             }
         }
         return result
@@ -172,7 +186,9 @@ extension SemanticFilePolicy {
         let passages = Dictionary(content.map { ($0.path, $0.evidence) }, uniquingKeysWith: { first, _ in first })
         let names = names.map { hit in
             var hit = hit
-            if let evidence = passages[hit.path] { hit.evidence = evidence }
+            if let evidence = passages[hit.path] {
+                hit.evidence = evidence
+            }
             return hit
         }
         let enriched = Dictionary(names.map { ($0.path, $0) }, uniquingKeysWith: { first, _ in first })

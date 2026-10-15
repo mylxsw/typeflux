@@ -125,7 +125,8 @@ enum SemanticMediaExtractor {
             let path = folder.appendingPathComponent("audio-\(offset).wav")
             try wave(Data(pending.prefix(count)), to: path)
             try emit(.init(more: true, media: .init(kind: .audio, path: path.path,
-                                                  time: Double(offset) / 64000)))
+                                                  time: Double(offset) / 64000,
+                                                  endTime: Double(offset + count) / 64000)))
             offset += count; pending.removeFirst(count)
         }
         while let sample = output.copyNextSampleBuffer() {
@@ -169,7 +170,7 @@ enum SemanticMediaExtractor {
             let frame = try generator.copyCGImage(at: CMTime(seconds: time, preferredTimescale: 600), actualTime: nil)
             let path = folder.appendingPathComponent("frame-\(Int(time)).jpg")
             try write(frame, to: path)
-            try emit(.init(more: true, media: .init(kind: .image, path: path.path, time: time)))
+            try emit(.init(more: true, media: .init(kind: .image, path: path.path, time: time, endTime: time)))
         }
     }
 }

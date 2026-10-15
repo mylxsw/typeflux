@@ -9,28 +9,9 @@ extension SemanticFileIndexer {
                              summary: inout Summary, progress: (Summary) -> Void) throws {
         repeat {
             try waitWhilePaused(paused, cancelled: cancelled)
-            let work = documents()
-            func update(_ paths: [String]) throws {
-                guard !paths.isEmpty else { return }
-                _ = try store.discover(paths.map { ($0, .document) })
-                let updates = try reconcile(paths: paths, scope: scope, store: store, reader: reader, encoder: encoder,
-                                            paused: paused, cancelled: cancelled, progress: { _ in })
-                summary.priorityUpdates += updates.processed
-                encoder.release()
-                progress(summary)
-            }
-            try update(work.paths)
-            if work.scan {
-                try discoverPriorityDocuments(scope: scope, store: store, reader: reader, paused: paused,
-                                              cancelled: cancelled, skipped: { summary.skipped += 1 })
-                var after = ""
-                while true {
-                    let paths = try store.candidates(.document, after: after)
-                    guard !paths.isEmpty else { break }
-                    try update(paths)
-                    after = paths.last!
-                }
-            }
+            try drainDocuments(scope: scope, store: store, reader: reader, encoder: encoder,
+                               paused: paused, documents: documents, cancelled: cancelled,
+                               updates: true, summary: &summary, progress: progress)
             if idle() {
                 if summary.waitingForIdle {
                     summary.waitingForIdle = false; progress(summary)
@@ -43,6 +24,56 @@ extension SemanticFileIndexer {
             Thread.sleep(forTimeInterval: 0.25)
         } while !cancelled()
         throw CancellationError()
+    }
+
+    // Consume events at every document batch boundary. Partial files rotate in the durable queue;
+    // never recursively reconcile a live event's whole file before checking the next event.
+    // swiftlint:disable:next function_parameter_count
+    static func drainDocuments(scope: AskFileScope, store: SemanticFileStore, reader: AskFileReading,
+                               encoder: SemanticEmbedding, paused: () -> Bool,
+                               documents: () -> SemanticIndexPauseGate.DocumentWork, cancelled: () -> Bool,
+                               updates: Bool, summary: inout Summary, progress: (Summary) -> Void) throws {
+        var processedWork = false
+        defer {
+            if updates, processedWork {
+                encoder.release()
+            }
+        }
+        while true {
+            try waitWhilePaused(paused, cancelled: cancelled)
+            let work = documents()
+            if !updates, work.scan || !work.paths.isEmpty {
+                // A live event invalidates the initial workload snapshot.
+                summary.total = nil
+            }
+            if !work.paths.isEmpty {
+                _ = try store.discover(work.paths.map { ($0, .document) })
+            }
+            if work.scan {
+                try discoverPriorityDocuments(scope: scope, store: store, reader: reader, paused: paused,
+                                              cancelled: cancelled, skipped: { summary.skipped += 1 })
+            }
+            guard let path = try store.nextWork(.document) else { return }
+            processedWork = true
+            let result = try process(path, scope: scope, store: store, reader: reader, encoder: encoder,
+                                     media: nil, cancelled: cancelled,
+                                     checkpoint: { try waitWhilePaused(paused, cancelled: cancelled) },
+                                     waitForIdle: {})
+            try store.completeWork(path, more: result == .partial)
+            if result != .partial {
+                if updates {
+                    summary.priorityUpdates += 1
+                } else {
+                    if result == .done {
+                        summary.files += 1
+                    } else {
+                        summary.skipped += 1
+                    }
+                    summary.processed += 1
+                }
+            }
+            progress(summary)
+        }
     }
 
     // Disk-backed discovery finishes its stream before any document reads begin.

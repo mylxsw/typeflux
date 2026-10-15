@@ -1,0 +1,149 @@
+{
+  "baseline": "1e8cb5cf16ad7d474344094baf4f2f71a5a160b8",
+  "denominator": "Added/modified Sources/Typeflux Swift lines intersected with LLVM LCOV DA records from the final same-binary focused run; tests and vendor excluded",
+  "executable": 1070,
+  "covered": 1035,
+  "percent": 96.73,
+  "files": {
+    "Sources/Typeflux/Ask/QuickResults/Files/AskFileIndexState.swift": {
+      "executable": 0,
+      "covered": 0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Files/AskFileReader.swift": {
+      "executable": 2,
+      "covered": 2,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Files/AskFileWorkerCommand.swift": {
+      "executable": 2,
+      "covered": 2,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileContentWorker.swift": {
+      "executable": 75,
+      "covered": 72,
+      "uncovered": [
+        72,
+        100,
+        108
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer+Discovery.swift": {
+      "executable": 63,
+      "covered": 60,
+      "uncovered": [
+        26,
+        53,
+        62
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer+Document.swift": {
+      "executable": 84,
+      "covered": 82,
+      "uncovered": [
+        35,
+        43
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer+Media.swift": {
+      "executable": 76,
+      "covered": 73,
+      "uncovered": [
+        70,
+        71,
+        80
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer+Priority.swift": {
+      "executable": 46,
+      "covered": 45,
+      "uncovered": [
+        77
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer.swift": {
+      "executable": 79,
+      "covered": 76,
+      "uncovered": [
+        86,
+        87,
+        88
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFilePolicy.swift": {
+      "executable": 22,
+      "covered": 22,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift": {
+      "executable": 2,
+      "covered": 2,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Discovery.swift": {
+      "executable": 130,
+      "covered": 116,
+      "uncovered": [
+        87,
+        88,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97,
+        98,
+        99,
+        100
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Jobs.swift": {
+      "executable": 229,
+      "covered": 228,
+      "uncovered": [
+        15
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+MediaJobs.swift": {
+      "executable": 137,
+      "covered": 137,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore.swift": {
+      "executable": 111,
+      "covered": 106,
+      "uncovered": [
+        42,
+        84,
+        243,
+        299,
+        300
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileValidator.swift": {
+      "executable": 2,
+      "covered": 2,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticLexicalReader.swift": {
+      "executable": 7,
+      "covered": 7,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticMediaExtractor.swift": {
+      "executable": 3,
+      "covered": 3,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticMediaPriority.swift": {
+      "executable": 0,
+      "covered": 0,
+      "uncovered": []
+    }
+  },
+  "native_cpp_helper_changed_lines": 0
+}

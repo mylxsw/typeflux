@@ -15,6 +15,7 @@ struct AskFileReadRequest: Codable {
     var texts: [String]?
     var scratch: String?
     var media: SemanticMediaInput?
+    var cursor: SemanticContentCursor?
 }
 
 struct AskFileReadResponse: Codable {
@@ -32,6 +33,8 @@ struct AskFileReadResponse: Codable {
     var pages: [SemanticPage]?
     var embeddings: [[Float]]?
     var media: SemanticMediaInput?
+    var version: String?
+    var nextCursor: SemanticContentCursor?
     var semanticTiming: SemanticHelperTiming?
 }
 
@@ -63,6 +66,8 @@ public enum AskFileWorkerCommand {
             result.path = frame.path ?? result.path
             result.text = frame.text ?? result.text
             result.pages = frame.pages ?? result.pages
+            result.version = frame.version ?? result.version
+            result.nextCursor = frame.nextCursor
             result.embeddings = frame.embeddings ?? result.embeddings
             result.truncated = frame.truncated ?? result.truncated
             result.fileSize = frame.fileSize ?? result.fileSize

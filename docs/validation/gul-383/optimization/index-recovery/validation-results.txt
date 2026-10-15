@@ -1,0 +1,949 @@
+coverage-retry
+
+Discovery/build: 134.90s; selected 92 test methods
+Running serial: 92 test methods
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite "File scan reliability" started.
+◇ Test protectedFoldersNeverReachTheReaderIncludingExplicitRoots() started.
+✔ Test protectedFoldersNeverReachTheReaderIncludingExplicitRoots() passed after 0.011 seconds.
+◇ Test workerFiltersMetadataAndDoesNotFollowAliases() started.
+✔ Test workerFiltersMetadataAndDoesNotFollowAliases() passed after 0.009 seconds.
+◇ Test timeoutAndFailureLeaveSiblingResultsSearchable() started.
+✔ Test timeoutAndFailureLeaveSiblingResultsSearchable() passed after 0.006 seconds.
+◇ Test actualWorkerReusesConnectionAndHandlesLargeResponse() started.
+✔ Test actualWorkerReusesConnectionAndHandlesLargeResponse() passed after 4.526 seconds.
+◇ Test actualHungChildIsKilledAndReaderCanRestart() started.
+✔ Test actualHungChildIsKilledAndReaderCanRestart() passed after 1.014 seconds.
+◇ Test actualCrawlerSurvivesABlockedDirectoryAndAnUnreadableSibling() started.
+✔ Test actualCrawlerSurvivesABlockedDirectoryAndAnUnreadableSibling() passed after 5.411 seconds.
+◇ Test brokenWorkersFailWithoutHanging() started.
+✔ Test brokenWorkersFailWithoutHanging() passed after 0.080 seconds.
+◇ Test indexPublishesPartialStateAndRebuildsPartialSnapshot() started.
+✔ Test indexPublishesPartialStateAndRebuildsPartialSnapshot() passed after 0.019 seconds.
+◇ Test startingAndClearingDoNotWaitForPermissionIO() started.
+✔ Test startingAndClearingDoNotWaitForPermissionIO() passed after 0.009 seconds.
+◇ Test publishesBeforeFinishingAndPreservesEntriesOnTransientMetadataFailure() started.
+✔ Test publishesBeforeFinishingAndPreservesEntriesOnTransientMetadataFailure() passed after 0.310 seconds.
+✔ Suite "File scan reliability" passed after 11.401 seconds.
+◇ Suite "Streaming file reads" started.
+◇ Test unlimitedDirectoryRequestSurvivesIPCAndKeepsExplicitLimits() started.
+✔ Test unlimitedDirectoryRequestSurvivesIPCAndKeepsExplicitLimits() passed after 0.107 seconds.
+◇ Test tenThousandSlowButAdvancingEntriesSurviveTheIdleDeadline() started.
+✔ Test tenThousandSlowButAdvancingEntriesSurviveTheIdleDeadline() passed after 5.467 seconds.
+◇ Test fourStalledDirectoriesDoNotConsumeTheirHealthySiblingsBudget() started.
+✔ Test fourStalledDirectoriesDoNotConsumeTheirHealthySiblingsBudget() passed after 4.020 seconds.
+◇ Test partialBatchesSurviveAStallAndEarlyStopResetsTheConnection() started.
+✔ Test partialBatchesSurviveAStallAndEarlyStopResetsTheConnection() passed after 1.019 seconds.
+◇ Test mountPolicyFiltersBeforeOpeningOrStattingTheTarget() started.
+✔ Test mountPolicyFiltersBeforeOpeningOrStattingTheTarget() passed after 0.001 seconds.
+◇ Test localizedFolderNamesAndSummariesHaveNoZeroOrPermissionNoise() started.
+✔ Test localizedFolderNamesAndSummariesHaveNoZeroOrPermissionNoise() passed after 0.070 seconds.
+✔ Suite "Streaming file reads" passed after 10.688 seconds.
+◇ Suite "Semantic indexing without directory or database quotas" started.
+◇ Test largeDirectoryContinuesIntoNestedFoldersAndLaterRoots() started.
+✔ Test largeDirectoryContinuesIntoNestedFoldersAndLaterRoots() passed after 2.328 seconds.
+◇ Test existingHundredThousandChunksAcceptMoreDocumentsAndRemainSearchable() started.
+✔ Test existingHundredThousandChunksAcceptMoreDocumentsAndRemainSearchable() passed after 3.935 seconds.
+◇ Test storageFailureIsReportedAndKeepsThePreviouslyCommittedFile() started.
+✔ Test storageFailureIsReportedAndKeepsThePreviouslyCommittedFile() passed after 0.041 seconds.
+✔ Suite "Semantic indexing without directory or database quotas" passed after 6.305 seconds.
+◇ Suite "Semantic file policy" started.
+◇ Test "settings default off and round trip" started.
+✔ Test "settings default off and round trip" passed after 0.007 seconds.
+◇ Test "queries preserve meaning without name length limit" started.
+✔ Test "queries preserve meaning without name length limit" passed after 0.001 seconds.
+◇ Test "explicit scope and credentials are conservative" started.
+✔ Test "explicit scope and credentials are conservative" passed after 0.001 seconds.
+◇ Test deniedPermissionRemainsVisibleWithoutReadingProtectedRoots() started.
+✔ Test deniedPermissionRemainsVisibleWithoutReadingProtectedRoots() passed after 0.001 seconds.
+◇ Test "multilingual terms and bounded chunks" started.
+✔ Test "multilingual terms and bounded chunks" passed after 0.030 seconds.
+✔ Suite "Semantic file policy" passed after 0.037 seconds.
+◇ Suite "Semantic SQLite index" started.
+◇ Test "indexed file counts use the same media categories as indexing" started.
+✔ Test "indexed file counts use the same media categories as indexing" passed after 0.061 seconds.
+◇ Test "atomic replace persistence invalidation and pruning" started.
+✔ Test "atomic replace persistence invalidation and pruning" passed after 0.056 seconds.
+◇ Test "filters before top K and chinese lexical recall" started.
+✔ Test "filters before top K and chinese lexical recall" passed after 0.045 seconds.
+✔ Suite "Semantic SQLite index" passed after 0.163 seconds.
+◇ Suite "Semantic content reader" started.
+◇ Test "bounded text metadata and safe paths" started.
+✔ Test "bounded text metadata and safe paths" passed after 0.003 seconds.
+◇ Test "pdf text layer and subprocess round trip" started.
+✔ Test "pdf text layer and subprocess round trip" passed after 0.142 seconds.
+✔ Suite "Semantic content reader" passed after 0.146 seconds.
+◇ Suite "Semantic incremental indexing" started.
+◇ Test changedFileReconcilesWithoutCrawlingOrReembeddingItsNeighbors() started.
+✔ Test changedFileReconcilesWithoutCrawlingOrReembeddingItsNeighbors() passed after 0.047 seconds.
+◇ Test unsupportedFilesDoNotConsumeTheSemanticFileLimit() started.
+✔ Test unsupportedFilesDoNotConsumeTheSemanticFileLimit() passed after 0.658 seconds.
+◇ Test emptyOrScannedContentIsSkippedWithoutLoadingModel() started.
+✔ Test emptyOrScannedContentIsSkippedWithoutLoadingModel() passed after 0.276 seconds.
+◇ Test "changes deletion failures and cancellation" started.
+✔ Test "changes deletion failures and cancellation" passed after 0.307 seconds.
+✔ Suite "Semantic incremental indexing" passed after 1.291 seconds.
+◇ Suite "Semantic service lifecycle" started.
+◇ Test "default off and unsupported cannot be enabled" started.
+✔ Test "default off and unsupported cannot be enabled" passed after 0.006 seconds.
+◇ Test "model download retry search rebuild and removal" started.
+✔ Test "model download retry search rebuild and removal" passed after 1.201 seconds.
+◇ Test "download cancellation corruption and disabling" started.
+✔ Test "download cancellation corruption and disabling" passed after 0.046 seconds.
+◇ Test automaticSettingsWatcherAndPowerChangesKeepLifecycleCoherent() started.
+✔ Test automaticSettingsWatcherAndPowerChangesKeepLifecycleCoherent() passed after 2.751 seconds.
+◇ Test irrelevantEventsDoNotRescanAndChangedFilesUseTargetedReconciliation() started.
+✔ Test irrelevantEventsDoNotRescanAndChangedFilesUseTargetedReconciliation() passed after 2.524 seconds.
+◇ Test corruptIndexCanBeClearedWithoutRemovingVerifiedModel() started.
+✔ Test corruptIndexCanBeClearedWithoutRemovingVerifiedModel() passed after 0.053 seconds.
+◇ Test downloadFailuresAndEarlyCancellationReleaseSession() started.
+✔ Test downloadFailuresAndEarlyCancellationReleaseSession() passed after 0.012 seconds.
+◇ Test liveModelDownloadWhenExplicitlyRequested() started.
+✔ Test liveModelDownloadWhenExplicitlyRequested() passed after 0.001 seconds.
+◇ Test "actual model checksum and atomic install when provided" started.
+✔ Test "actual model checksum and atomic install when provided" passed after 0.001 seconds.
+◇ Test nativeControlsUseInlineSetupAndManagement() started.
+✔ Test nativeControlsUseInlineSetupAndManagement() passed after 0.583 seconds.
+◇ Test foldersEditedDuringRebuildAreNotRestored() started.
+✔ Test foldersEditedDuringRebuildAreNotRestored() passed after 0.024 seconds.
+◇ Test nativeManagementConfirmsClearingAndModelRemovalInline() started.
+✔ Test nativeManagementConfirmsClearingAndModelRemovalInline() passed after 0.141 seconds.
+✔ Suite "Semantic service lifecycle" passed after 7.349 seconds.
+◇ Suite "Semantic launcher integration" started.
+◇ Test disabledFeatureKeepsLegacyLongQueryAndPluginBehavior() started.
+✔ Test disabledFeatureKeepsLegacyLongQueryAndPluginBehavior() passed after 0.001 seconds.
+◇ Test filenameResultsRemainAvailableBeforeAndDuringPausedIndexing() started.
+✔ Test filenameResultsRemainAvailableBeforeAndDuringPausedIndexing() passed after 0.235 seconds.
+◇ Test "long natural query and late cancellation" started.
+✔ Test "long natural query and late cancellation" passed after 0.359 seconds.
+◇ Test "names publish first and keep choice when content arrives" started.
+✔ Test "names publish first and keep choice when content arrives" passed after 0.166 seconds.
+◇ Test chosenFolderSurvivesTheSeparateFolderDisplayLimit() started.
+✔ Test chosenFolderSurvivesTheSeparateFolderDisplayLimit() passed after 0.164 seconds.
+◇ Test "fusion deduplicates and preserves original name score" started.
+✔ Test "fusion deduplicates and preserves original name score" passed after 0.001 seconds.
+◇ Test "file plugin publishes names then content with actions" started.
+✔ Test "file plugin publishes names then content with actions" passed after 0.163 seconds.
+◇ Test "content matches get a taller row with their passage" started.
+✔ Test "content matches get a taller row with their passage" passed after 0.001 seconds.
+✔ Suite "Semantic launcher integration" passed after 1.094 seconds.
+◇ Suite "Real FSEvents to persisted body and vectors" started.
+◇ Test "small documents use real events and real model when requested" started.
+✔ Test "small documents use real events and real model when requested" passed after 19.767 seconds.
+✔ Suite "Real FSEvents to persisted body and vectors" passed after 19.767 seconds.
+◇ Suite "Query priority at background batch boundaries" started.
+◇ Test documentEncodingYieldsAfterTheCurrentBatchAndResumesWithoutRestarting() started.
+✔ Test documentEncodingYieldsAfterTheCurrentBatchAndResumesWithoutRestarting() passed after 0.274 seconds.
+✔ Suite "Query priority at background batch boundaries" passed after 0.274 seconds.
+◇ Suite "Durable semantic checkpoints and failure recovery" started.
+◇ Test "tails beyond every old text limit finish without unbounded reads" started.
+◇ Test case passing 1 argument size → 90000 to "tails beyond every old text limit finish without unbounded reads" started.
+◇ Test case passing 1 argument size → 160000 to "tails beyond every old text limit finish without unbounded reads" started.
+◇ Test case passing 1 argument size → 16781312 to "tails beyond every old text limit finish without unbounded reads" started.
+✔ Test "tails beyond every old text limit finish without unbounded reads" with 3 test cases passed after 18.274 seconds.
+◇ Test "pdf beyond five hundred pages and page internal checkpoint" started.
+✔ Test "pdf beyond five hundred pages and page internal checkpoint" passed after 0.790 seconds.
+◇ Test "fts precedes vectors and cancellation resumes only missing batches" started.
+✔ Test "fts precedes vectors and cancellation resumes only missing batches" passed after 0.142 seconds.
+◇ Test "round robin lets small file finish before long file" started.
+✔ Test "round robin lets small file finish before long file" passed after 0.145 seconds.
+◇ Test "disk and transaction failure roll back checkpoint and retry without duplicates" started.
+◇ Test case passing 1 argument stage → "fts" to "disk and transaction failure roll back checkpoint and retry without duplicates" started.
+◇ Test case passing 1 argument stage → "vector" to "disk and transaction failure roll back checkpoint and retry without duplicates" started.
+✔ Test "disk and transaction failure roll back checkpoint and retry without duplicates" with 2 test cases passed after 0.017 seconds.
+◇ Test "timeout is durable retried and does not block other files or prune" started.
+✔ Test "timeout is durable retried and does not block other files or prune" passed after 0.008 seconds.
+◇ Test "mutation during inference cannot publish old content" started.
+◇ Test case passing 1 argument action → "rewrite" to "mutation during inference cannot publish old content" started.
+◇ Test case passing 1 argument action → "delete" to "mutation during inference cannot publish old content" started.
+◇ Test case passing 1 argument action → "permission" to "mutation during inference cannot publish old content" started.
+✔ Test "mutation during inference cannot publish old content" with 3 test cases passed after 0.083 seconds.
+◇ Test "generations reject stale responses and rename reencodes title" started.
+✔ Test "generations reject stale responses and rename reencodes title" passed after 0.006 seconds.
+◇ Test "failed directory protects only its subtree and empty files do not block prune" started.
+✔ Test "failed directory protects only its subtree and empty files do not block prune" passed after 0.008 seconds.
+◇ Test "compatible migration retains vectors and interrupted migration rolls back" started.
+✔ Test "compatible migration retains vectors and interrupted migration rolls back" passed after 0.010 seconds.
+◇ Test "invalid cursors UTF 8 and long combining characters cannot loop or lose tail" started.
+✔ Test "invalid cursors UTF 8 and long combining characters cannot loop or lose tail" passed after 0.031 seconds.
+◇ Test abruptProcessExitRecoversCommittedBatches() started.
+✔ Test abruptProcessExitRecoversCommittedBatches() passed after 0.237 seconds.
+◇ Test "sqlite full rolls back FTS and checkpoint and can resume" started.
+✔ Test "sqlite full rolls back FTS and checkpoint and can resume" passed after 0.021 seconds.
+◇ Test mediaMetadataAndRecipeInvalidateOnlyIncompatibleCheckpoints() started.
+✔ Test mediaMetadataAndRecipeInvalidateOnlyIncompatibleCheckpoints() passed after 0.008 seconds.
+✔ Suite "Durable semantic checkpoints and failure recovery" passed after 19.788 seconds.
+◇ Suite "Isolated native media extraction" started.
+◇ Test imagesAudioWindowsAndVideoFramesUsePrivateSnapshots() started.
+✔ Test imagesAudioWindowsAndVideoFramesUsePrivateSnapshots() passed after 0.670 seconds.
+◇ Test safePathsAndScratchPermissionsAreEnforcedBeforeDecoding() started.
+✔ Test safePathsAndScratchPermissionsAreEnforcedBeforeDecoding() passed after 0.007 seconds.
+◇ Test mediaMetadataDoesNotInheritTheDocumentSizeCap() started.
+✔ Test mediaMetadataDoesNotInheritTheDocumentSizeCap() passed after 0.001 seconds.
+✔ Suite "Isolated native media extraction" passed after 0.679 seconds.
+◇ Suite "Document-first idle media indexing" started.
+◇ Test "real file worker commits image audio and video" started.
+✔ Test "real file worker commits image audio and video" passed after 0.209 seconds.
+◇ Test "documents then images audio and video with idle gating and time evidence" started.
+✔ Test "documents then images audio and video with idle gating and time evidence" passed after 0.272 seconds.
+◇ Test "document events preempt at segment boundaries without repeating completed media" started.
+◇ Test case passing 2 arguments rescan → false, targeted → false to "document events preempt at segment boundaries without repeating completed media" started.
+◇ Test case passing 2 arguments rescan → false, targeted → true to "document events preempt at segment boundaries without repeating completed media" started.
+◇ Test case passing 2 arguments rescan → true, targeted → false to "document events preempt at segment boundaries without repeating completed media" started.
+◇ Test case passing 2 arguments rescan → true, targeted → true to "document events preempt at segment boundaries without repeating completed media" started.
+✔ Test "document events preempt at segment boundaries without repeating completed media" with 4 test cases passed after 0.031 swarning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+◇ Test "cancellation during media never publishes partial vectors and cleans scratch" started.
+✔ Test "cancellation during media never publishes partial vectors and cleans scratch" passed after 0.016 seconds.
+◇ Test "unreadable media skips one file and model failure remains an error" started.
+✔ Test "unreadable media skips one file and model failure remains an error" passed after 0.010 seconds.
+◇ Test "invalid worker paths changed files and invalid vectors never commit" started.
+✔ Test "invalid worker paths changed files and invalid vectors never commit" passed after 0.008 seconds.
+◇ Test "idle wait can be cancelled before opening media" started.
+✔ Test "idle wait can be cancelled before opening media" passed after 0.260 seconds.
+✔ Suite "Document-first idle media indexing" passed after 0.809 seconds.
+◇ Suite "Media service scheduling and recovery" started.
+◇ Test documentsStaySearchableWhileMediaWaitsForIdle() started.
+✔ Test documentsStaySearchableWhileMediaWaitsForIdle() passed after 0.278 seconds.
+◇ Test mediaFailureDoesNotInvalidateTheTextModelOrDocumentIndex() started.
+✔ Test mediaFailureDoesNotInvalidateTheTextModelOrDocumentIndex() passed after 0.243 seconds.
+◇ Test idleWaitingDoesNotRetainADiscardedService() started.
+✔ Test idleWaitingDoesNotRetainADiscardedService() passed after 0.324 seconds.
+◇ Test "changed document preempts media without restarting the home scan" started.
+✔ Test "changed document preempts media without restarting the home scan" passed after 2.776 seconds.
+✔ Suite "Media service scheduling and recovery" passed after 3.623 seconds.
+◇ Suite "Realtime content search and recovery" started.
+◇ Test "lexical publishes before slow model and timeout does not disable next query" started.
+✔ Test "lexical publishes before slow model and timeout does not disable next query" passed after 0.530 seconds.
+◇ Test "pause keeps searching and voice or thermal pressure keeps only lexical" started.
+✔ Test "pause keeps searching and voice or thermal pressure keeps only lexical" passed after 0.100 seconds.
+◇ Test "both entrypoints publish lexical while semantic is pending and keep selection" started.
+✔ Test "both entrypoints publish lexical while semantic is pending and keep selection" passed after 0.958 seconds.
+◇ Test "semantic keyword publishes lexical while encoding is pending and keeps safe file selection" started.
+✔ Test "semantic keyword publishes lexical while encoding is pending and keeps safe file selection" passed after 0.672 seconds.
+◇ Test "permission withdrawal revalidates early hits and preserves permitted files" started.
+✔ Test "permission withdrawal revalidates early hits and preserves permitted files" passed after 0.331 seconds.
+◇ Test "scope change clear and cancellation reject late results" started.
+✔ Test "scope change clear and cancellation reject late results" passed after 0.087 seconds.
+◇ Test "existing lexical index works without model or helper" started.
+✔ Test "existing lexical index works without model or helper" passed after 0.051 seconds.
+◇ Test "real file change indexes and publishes with real model when provided" started.
+◇ Test case passing 1 argument observed → false to "real file change indexes and publishes with real model when provided" started.
+◇ Test case passing 1 argument observed → true to "real file change indexes and publishes with real model when provided" started.
+✔ Test "real file change indexes and publishes with real model when provided" with 2 test cases passed after 0.001 seconds.
+◇ Test fileModeLexicalDoesNotWaitForASlowFilenameProvider() started.
+✔ Test fileModeLexicalDoesNotWaitForASlowFilenameProvider() passed after 0.327 seconds.
+✔ Suite "Realtime content search and recovery" passed after 3.060 seconds.
+✔ Test run with 92 tests in 16 suites passed after 86.483 seconds.
+Test execution (serial): 93.30s
+Total wall time: 228.23s
+
+fault-coverage
+
+Discovery/build: 75.55s; selected 1 test methods
+Running serial: 1 test methods
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite "Durable semantic checkpoints and failure recovery" started.
+◇ Test corruptFilesAndMalformedWorkerCheckpointsDoNotBlockPruneOrRecovery(code:) started.
+◇ Test case passing 1 argument code → 92 to corruptFilesAndMalformedWorkerCheckpointsDoNotBlockPruneOrRecovery(code:) started.
+◇ Test case passing 1 argument code → 13 to corruptFilesAndMalformedWorkerCheckpointsDoNotBlockPruneOrRecovery(code:) started.
+◇ Test case passing 1 argument code → 2 to corruptFilesAndMalformedWorkerCheckpointsDoNotBlockPruneOrRecovery(code:) started.
+◇ Test case passing 1 argument code → 35 to corruptFilesAndMalformedWorkerCheckpointsDoNotBlockPruneOrRecovery(code:) started.
+◇ Test case passing 1 argument code → -1 to corruptFilesAndMalformedWorkerCheckpointsDoNotBlockPruneOrRecovery(code:) started.
+✔ Test corruptFilesAndMalformedWorkerCheckpointsDoNotBlockPruneOrRecovery(code:) with 5 test cases passed after 0.779 seconds.
+✔ Suite "Durable semantic checkpoints and failure recovery" passed after 0.780 seconds.
+✔ Test run with 1 test in 1 suite passed after 0.780 seconds.
+Test execution (serial): 5.48s
+Total wall time: 81.04s
+
+migration-coverage
+
+Discovery/build: 45.29s; selected 1 test methods
+Running serial: 1 test methods
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite "Durable semantic checkpoints and failure recovery" started.
+◇ Test "compatible migration retains vectors and interrupted migration rolls back" started.
+✔ Test "compatible migration retains vectors and interrupted migration rolls back" passed after 0.113 seconds.
+✔ Suite "Durable semantic checkpoints and failure recovery" passed after 0.113 seconds.
+✔ Test run with 1 test in 1 suite passed after 0.113 seconds.
+Test execution (serial): 6.44s
+Total wall time: 51.74s
+
+pdf-checkpoint-coverage
+
+Discovery/build: 103.08s; selected 1 test methods
+Running serial: 1 test methods
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite "Durable semantic checkpoints and failure recovery" started.
+◇ Test pdfSinglePageTextCanContinueWithStablePageOffsets() started.
+✔ Test pdfSinglePageTextCanContinueWithStablePageOffsets() passed after 0.272 seconds.
+✔ Suite "Durable semantic checkpoints and failure recovery" passed after 0.272 seconds.
+✔ Test run with 1 test in 1 suite passed after 0.272 seconds.
+Test execution (serial): 7.52s
+Total wall time: 110.61s
+
+final-coverage
+
+Discovery/build: 58.97s; selected 95 test methods
+Running serial: 95 test methods
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite "File scan reliability" started.
+◇ Test protectedFoldersNeverReachTheReaderIncludingExplicitRoots() started.
+✔ Test protectedFoldersNeverReachTheReaderIncludingExplicitRoots() passed after 0.008 seconds.
+◇ Test workerFiltersMetadataAndDoesNotFollowAliases() started.
+✔ Test workerFiltersMetadataAndDoesNotFollowAliases() passed after 0.008 seconds.
+◇ Test timeoutAndFailureLeaveSiblingResultsSearchable() started.
+✔ Test timeoutAndFailureLeaveSiblingResultsSearchable() passed after 0.006 seconds.
+◇ Test actualWorkerReusesConnectionAndHandlesLargeResponse() started.
+✔ Test actualWorkerReusesConnectionAndHandlesLargeResponse() passed after 5.150 seconds.
+◇ Test actualHungChildIsKilledAndReaderCanRestart() started.
+✔ Test actualHungChildIsKilledAndReaderCanRestart() passed after 1.024 seconds.
+◇ Test actualCrawlerSurvivesABlockedDirectoryAndAnUnreadableSibling() started.
+✔ Test actualCrawlerSurvivesABlockedDirectoryAndAnUnreadableSibling() passed after 5.284 seconds.
+◇ Test brokenWorkersFailWithoutHanging() started.
+✔ Test brokenWorkersFailWithoutHanging() passed after 0.079 seconds.
+◇ Test indexPublishesPartialStateAndRebuildsPartialSnapshot() started.
+✔ Test indexPublishesPartialStateAndRebuildsPartialSnapshot() passed after 0.021 seconds.
+◇ Test startingAndClearingDoNotWaitForPermissionIO() started.
+✔ Test startingAndClearingDoNotWaitForPermissionIO() passed after 0.006 seconds.
+◇ Test publishesBeforeFinishingAndPreservesEntriesOnTransientMetadataFailure() started.
+✔ Test publishesBeforeFinishingAndPreservesEntriesOnTransientMetadataFailure() passed after 0.316 seconds.
+✔ Suite "File scan reliability" passed after 11.908 seconds.
+◇ Suite "Streaming file reads" started.
+◇ Test unlimitedDirectoryRequestSurvivesIPCAndKeepsExplicitLimits() started.
+✔ Test unlimitedDirectoryRequestSurvivesIPCAndKeepsExplicitLimits() passed after 0.062 seconds.
+◇ Test tenThousandSlowButAdvancingEntriesSurviveTheIdleDeadline() started.
+✔ Test tenThousandSlowButAdvancingEntriesSurviveTheIdleDeadline() passed after 5.728 seconds.
+◇ Test fourStalledDirectoriesDoNotConsumeTheirHealthySiblingsBudget() started.
+✔ Test fourStalledDirectoriesDoNotConsumeTheirHealthySiblingsBudget() passed after 4.026 seconds.
+◇ Test partialBatchesSurviveAStallAndEarlyStopResetsTheConnection() started.
+✔ Test partialBatchesSurviveAStallAndEarlyStopResetsTheConnection() passed after 1.033 seconds.
+◇ Test mountPolicyFiltersBeforeOpeningOrStattingTheTarget() started.
+✔ Test mountPolicyFiltersBeforeOpeningOrStattingTheTarget() passed after 0.003 seconds.
+◇ Test localizedFolderNamesAndSummariesHaveNoZeroOrPermissionNoise() started.
+✔ Test localizedFolderNamesAndSummariesHaveNoZeroOrPermissionNoise() passed after 0.065 seconds.
+✔ Suite "Streaming file reads" passed after 10.921 seconds.
+◇ Suite "Semantic indexing without directory or database quotas" started.
+◇ Test largeDirectoryContinuesIntoNestedFoldersAndLaterRoots() started.
+✔ Test largeDirectoryContinuesIntoNestedFoldersAndLaterRoots() passed after 2.058 seconds.
+◇ Test existingHundredThousandChunksAcceptMoreDocumentsAndRemainSearchable() started.
+✔ Test existingHundredThousandChunksAcceptMoreDocumentsAndRemainSearchable() passed after 3.274 seconds.
+◇ Test storageFailureIsReportedAndKeepsThePreviouslyCommittedFile() started.
+✔ Test storageFailureIsReportedAndKeepsThePreviouslyCommittedFile() passed after 0.017 seconds.
+✔ Suite "Semantic indexing without directory or database quotas" passed after 5.350 seconds.
+◇ Suite "Semantic file policy" started.
+◇ Test "settings default off and round trip" started.
+✔ Test "settings default off and round trip" passed after 0.007 seconds.
+◇ Test "queries preserve meaning without name length limit" started.
+✔ Test "queries preserve meaning without name length limit" passed after 0.001 seconds.
+◇ Test "explicit scope and credentials are conservative" started.
+✔ Test "explicit scope and credentials are conservative" passed after 0.001 seconds.
+◇ Test deniedPermissionRemainsVisibleWithoutReadingProtectedRoots() started.
+✔ Test deniedPermissionRemainsVisibleWithoutReadingProtectedRoots() passed after 0.001 seconds.
+◇ Test "multilingual terms and bounded chunks" started.
+✔ Test "multilingual terms and bounded chunks" passed after 0.030 seconds.
+✔ Suite "Semantic file policy" passed after 0.038 seconds.
+◇ Suite "Semantic SQLite index" started.
+◇ Test "indexed file counts use the same media categories as indexing" started.
+✔ Test "indexed file counts use the same media categories as indexing" passed after 0.061 seconds.
+◇ Test "atomic replace persistence invalidation and pruning" started.
+✔ Test "atomic replace persistence invalidation and pruning" passed after 0.041 seconds.
+◇ Test "filters before top K and chinese lexical recall" started.
+✔ Test "filters before top K and chinese lexical recall" passed after 0.012 seconds.
+✔ Suite "Semantic SQLite index" passed after 0.115 seconds.
+◇ Suite "Semantic content reader" started.
+◇ Test "bounded text metadata and safe paths" started.
+✔ Test "bounded text metadata and safe paths" passed after 0.003 seconds.
+◇ Test "pdf text layer and subprocess round trip" started.
+✔ Test "pdf text layer and subprocess round trip" passed after 0.091 seconds.
+✔ Suite "Semantic content reader" passed after 0.094 seconds.
+◇ Suite "Semantic incremental indexing" started.
+◇ Test changedFileReconcilesWithoutCrawlingOrReembeddingItsNeighbors() started.
+✔ Test changedFileReconcilesWithoutCrawlingOrReembeddingItsNeighbors() passed after 0.015 seconds.
+◇ Test unsupportedFilesDoNotConsumeTheSemanticFileLimit() started.
+✔ Test unsupportedFilesDoNotConsumeTheSemanticFileLimit() passed after 0.691 seconds.
+◇ Test emptyOrScannedContentIsSkippedWithoutLoadingModel() started.
+✔ Test emptyOrScannedContentIsSkippedWithoutLoadingModel() passed after 0.130 seconds.
+◇ Test "changes deletion failures and cancellation" started.
+✔ Test "changes deletion failures and cancellation" passed after 0.293 seconds.
+✔ Suite "Semantic incremental indexing" passed after 1.131 seconds.
+◇ Suite "Semantic service lifecycle" started.
+◇ Test "default off and unsupported cannot be enabled" started.
+✔ Test "default off and unsupported cannot be enabled" passed after 0.215 seconds.
+◇ Test "model download retry search rebuild and removal" started.
+✔ Test "model download retry search rebuild and removal" passed after 0.219 seconds.
+◇ Test "download cancellation corruption and disabling" started.
+✔ Test "download cancellation corruption and disabling" passed after 0.054 seconds.
+◇ Test automaticSettingsWatcherAndPowerChangesKeepLifecycleCoherent() started.
+✔ Test automaticSettingsWatcherAndPowerChangesKeepLifecycleCoherent() passed after 2.774 seconds.
+◇ Test irrelevantEventsDoNotRescanAndChangedFilesUseTargetedReconciliation() started.
+✔ Test irrelevantEventsDoNotRescanAndChangedFilesUseTargetedReconciliation() passed after 2.570 seconds.
+◇ Test corruptIndexCanBeClearedWithoutRemovingVerifiedModel() started.
+✔ Test corruptIndexCanBeClearedWithoutRemovingVerifiedModel() passed after 0.047 seconds.
+◇ Test downloadFailuresAndEarlyCancellationReleaseSession() started.
+✔ Test downloadFailuresAndEarlyCancellationReleaseSession() passed after 0.006 seconds.
+◇ Test liveModelDownloadWhenExplicitlyRequested() started.
+✔ Test liveModelDownloadWhenExplicitlyRequested() passed after 0.001 seconds.
+◇ Test "actual model checksum and atomic install when provided" started.
+✔ Test "actual model checksum and atomic install when provided" passed after 0.001 seconds.
+◇ Test nativeControlsUseInlineSetupAndManagement() started.
+✔ Test nativeControlsUseInlineSetupAndManagement() passed after 0.302 seconds.
+◇ Test foldersEditedDuringRebuildAreNotRestored() started.
+✔ Test foldersEditedDuringRebuildAreNotRestored() passed after 0.023 seconds.
+◇ Test nativeManagementConfirmsClearingAndModelRemovalInline() started.
+✔ Test nativeManagementConfirmsClearingAndModelRemovalInline() passed after 0.142 seconds.
+✔ Suite "Semantic service lifecycle" passed after 6.358 seconds.
+◇ Suite "Semantic launcher integration" started.
+◇ Test disabledFeatureKeepsLegacyLongQueryAndPluginBehavior() started.
+✔ Test disabledFeatureKeepsLegacyLongQueryAndPluginBehavior() passed after 0.001 seconds.
+◇ Test filenameResultsRemainAvailableBeforeAndDuringPausedIndexing() started.
+✔ Test filenameResultsRemainAvailableBeforeAndDuringPausedIndexing() passed after 0.153 seconds.
+◇ Test "long natural query and late cancellation" started.
+✔ Test "long natural query and late cancellation" passed after 0.355 seconds.
+◇ Test "names publish first and keep choice when content arrives" started.
+✔ Test "names publish first and keep choice when content arrives" passed after 0.164 seconds.
+◇ Test chosenFolderSurvivesTheSeparateFolderDisplayLimit() started.
+✔ Test chosenFolderSurvivesTheSeparateFolderDisplayLimit() passed after 0.158 seconds.
+◇ Test "fusion deduplicates and preserves original name score" started.
+✔ Test "fusion deduplicates and preserves original name score" passed after 0.001 seconds.
+◇ Test "file plugin publishes names then content with actions" started.
+✔ Test "file plugin publishes names then content with actions" passed after 0.162 seconds.
+◇ Test "content matches get a taller row with their passage" started.
+✔ Test "content matches get a taller row with their passage" passed after 0.001 seconds.
+✔ Suite "Semantic launcher integration" passed after 0.998 seconds.
+◇ Suite "Real FSEvents to persisted body and vectors" started.
+◇ Test "small documents use real events and real model when requested" started.
+✔ Test "small documents use real events and real model when requested" passed after 18.856 seconds.
+✔ Suite "Real FSEvents to persisted body and vectors" passed after 18.856 seconds.
+◇ Suite "Query priority at background batch boundaries" started.
+◇ Test documentEncodingYieldsAfterTheCurrentBatchAndResumesWithoutRestarting() started.
+✔ Test documentEncodingYieldsAfterTheCurrentBatchAndResumesWithoutRestarting() passed after 0.267 seconds.
+✔ Suite "Query priority at background batch boundaries" passed after 0.268 seconds.
+◇ Suite "Durable semantic checkpoints and failure recovery" started.
+◇ Test "tails beyond every old text limit finish without unbounded reads" started.
+◇ Test case passing 1 argument size → 90000 to "tails beyond every old text limit finish without unbounded reads" started.
+◇ Test case passing 1 argument size → 160000 to "tails beyond every old text limit finish without unbounded reads" started.
+◇ Test case passing 1 argument size → 16781312 to "tails beyond every old text limit finish without unbounded reads" started.
+✔ Test "tails beyond every old text limit finish without unbounded reads" with 3 test cases passed after 18.344 seconds.
+◇ Test "pdf beyond five hundred pages and page internal checkpoint" started.
+✔ Test "pdf beyond five hundred pages and page internal checkpoint" passed after 0.778 seconds.
+◇ Test "fts precedes vectors and cancellation resumes only missing batches" started.
+✔ Test "fts precedes vectors and cancellation resumes only missing batches" passed after 0.138 seconds.
+◇ Test "round robin lets small file finish before long file" started.
+✔ Test "round robin lets small file finish before long file" passed after 0.146 seconds.
+◇ Test "disk and transaction failure roll back checkpoint and retry without duplicates" started.
+◇ Test case passing 1 argument stage → "fts" to "disk and transaction failure roll back checkpoint and retry without duplicates" started.
+◇ Test case passing 1 argument stage → "vector" to "disk and transaction failure roll back checkpoint and retry without duplicates" started.
+✔ Test "disk and transaction failure roll back checkpoint and retry without duplicates" with 2 test cases passed after 0.477 seconds.
+◇ Test "timeout is durable retried and does not block other files or prune" started.
+✔ Test "timeout is durable retried and does not block other files or prune" passed after 0.009 seconds.
+◇ Test "mutation during inference cannot publish old content" started.
+◇ Test case passing 1 argument action → "rewrite" to "mutation during inference cannot publish old content" started.
+◇ Test case passing 1 argument action → "delete" to "mutation during inference cannot publish old content" started.
+◇ Test case passing 1 argument action → "permission" to "mutation during inference cannot publish old content" started.
+✔ Test "mutation during inference cannot publish old content" with 3 test cases passed after 0.213 seconds.
+◇ Test "generations reject stale responses and rename reencodes title" started.
+✔ Test "generations reject stale responses and rename reencodes title" passed after 0.139 seconds.
+◇ Test "failed directory protects only its subtree and empty files do not block prune" started.
+✔ Test "failed directory protects only its subtree and empty files do not block prune" passed after 0.008 seconds.
+◇ Test "compatible migration retains vectors and interrupted migration rolls back" started.
+✔ Test "compatible migration retains vectors and interrupted migration rolls back" passed after 0.036 seconds.
+◇ Test "invalid cursors UTF 8 and long combining characters cannot loop or lose tail" started.
+✔ Test "invalid cursors UTF 8 and long combining characters cannot loop or lose tail" passed after 0.030 seconds.
+◇ Test abruptProcessExitRecoversCommittedBatches() started.
+✔ Test abruptProcessExitRecoversCommittedBatches() passed after 0.230 seconds.
+◇ Test "sqlite full rolls back FTS and checkpoint and can resume" started.
+✔ Test "sqlite full rolls back FTS and checkpoint and can resume" passed after 0.021 seconds.
+◇ Test mediaMetadataAndRecipeInvalidateOnlyIncompatibleCheckpoints() started.
+✔ Test mediaMetadataAndRecipeInvalidateOnlyIncompatibleCheckpoints() passed after 0.009 seconds.
+◇ Test corruptFilesAndMalformedWorkerCheckpointsDoNotBlockPruneOrRecovery(code:) started.
+◇ Test case passing 1 argument code → 92 to corruptFilesAndMalformedWorkerCheckpointsDoNotBlockPruneOrRecovery(code:) started.
+◇ Test case passing 1 argument code → 13 to corruptFilesAndMalformedWorkerCheckpointsDoNotBlockPruneOrRecovery(code:) started.
+◇ Test case passing 1 argument code → 2 to corruptFilesAndMalformedWorkerCheckpointsDoNotBlockPruneOrRecovery(code:) started.
+◇ Test case passing 1 argument code → 35 to corruptFilesAndMalformedWorkerCheckpointsDoNotBlockPruneOrRecovery(code:) started.
+◇ Test case passing 1 argument code → -1 to corruptFilesAndMalformedWorkerCheckpointsDoNotBlockPruneOrRecovery(code:) started.
+✔ Test corruptFilesAndMalformedWorkerCheckpointsDoNotBlockPruneOrRecovery(code:) with 5 test cases passed after 0.043 seconds.
+◇ Test pdfSinglePageTextCanContinueWithStablePageOffsets() started.
+✔ Test pdfSinglePageTextCanContinueWithStablePageOffsets() passed after 0.233 seconds.
+◇ Test pendingAndFailedJobsCountOnlyPublishedFiles() started.
+✔ Test pendingAndFailedJobsCountOnlyPublishedFiles() passed after 0.015 seconds.
+✔ Suite "Durable semantic checkpoints and failure recovery" passed after 20.876 seconds.
+◇ Suite "Isolated native media extraction" started.
+◇ Test imagesAudioWindowsAndVideoFramesUsePrivateSnapshots() started.
+✔ Test imagesAudioWindowsAndVideoFramesUsePrivateSnapshots() passed after 0.490 seconds.
+◇ Test safePathsAndScratchPermissionsAreEnforcedBeforeDecoding() started.
+✔ Test safePathsAndScratchPermissionsAreEnforcedBeforeDecoding() passed after 0.007 seconds.
+◇ Test mediaMetadataDoesNotInheritTheDocumentSizeCap() started.
+✔ Test mediaMetadataDoesNotInheritTheDocumentSizeCap() passed after 0.001 seconds.
+✔ Suite "Isolated native media extraction" passed after 0.499 seconds.
+◇ Suite "Document-first idle media indexing" started.
+◇ Test "real file worker commits image audio and video" started.
+✔ Test "real file worker commits image audio and video" passed after 0.192 seconds.
+◇ Test "documents then images audio and video with idle gating and time evidence" started.
+✔ Test "documents then images audio and video with idle gating and time evidence" passed after 0.283 seconds.
+◇ Test "document events preempt at segment boundaries without repeating completed media" started.
+◇ Test case passing 2 arguments rescan → false, targeted → false to "document events preempt at segment boundaries without repeating completed media" started.
+◇ Test case passing 2 arguments rescan → false, targeted → true to "document events preempt at segment boundaries without repeating completed media" started.
+◇ Test case passing 2 arguments rescan → true, targeted → false to "document events preempt at segment boundaries without repeating completed media" started.
+◇ Test case passing 2 arguments rescan → true, targeted → true to "document events preempt at segment boundaries without repeating completed media" started.
+✔ Test "document events preempt at segment boundaries without repeating completed media" with 4 test cases passed after 0.037 seconds.
+◇ Test "cancellation during media never publishes partial vectors and cleans scratch" started.
+✔ Test "cancellation during media never publishes partial vectors and cleans scratch" passed after 0.016 seconds.
+◇ Test "unreadable media skips one file and model failure remains an error" started.
+✔ Test "unreadable media skips one file and model failure remains an error" passed after 0.010 seconds.
+◇ Test "invalid worker paths changed files and invalid vectors never commit" started.
+✔ Test "invalid worker paths changed files and invalid vectors never commit" passed after 0.009 seconds.
+◇ Test "idle wait can be cancelled before opening media" started.
+✔ Test "idle wait can be cancelled before opening media" passed after 0.262 seconds.
+✔ Suite "Document-first idle media indexing" passed after 0.812 seconds.
+◇ Suite "Media service scheduling and recovery" started.
+◇ Test documentsStaySearchableWhileMediaWaitsForIdle() started.
+✔ Test documentsStaySearchableWhileMediaWaitsForIdle() passed after 0.290 seconds.
+◇ Test mediaFailureDoesNotInvalidateTheTextModelOrDocumentIndex() started.
+✔ Test mediaFailureDoesNotInvalidateTheTextModelOrDocumentIndex() passed after 0.251 seconds.
+◇ Test idleWaitingDoesNotRetainADiscardedService() started.
+✔ Test idleWaitingDoesNotRetainADiscardedService() passed after 0.339 seconds.
+◇ Test "changed document preempts media without restarting the home scan" started.
+✔ Test "changed document preempts media without restarting the home scan" passed after 2.759 seconds.
+✔ Suite "Media service scheduling and recovery" passed after 3.641 seconds.
+◇ Suite "Realtime content search and recovery" started.
+◇ Test "lexical publishes before slow model and timeout does not disable next query" started.
+✔ Test "lexical publishes before slow model and timeout does not disable next query" passed after 0.507 seconds.
+◇ Test "pause keeps searching and voice or thermal pressure keeps only lexical" started.
+✔ Test "pause keeps searching and voice or thermal pressure keeps only lexical" passed after 0.096 seconds.
+◇ Test "both entrypoints publish lexical while semantic is pending and keep selection" started.
+✔ Test "both entrypoints publish lexical while semantic is pending and keep selection" passed after 0.959 seconds.
+◇ Test "semantic keyword publishes lexical while encoding is pending and keeps safe file selection" started.
+✔ Test "semantic keyword publishes lexical while encoding is pending and keeps safe file selection" passed after 0.678 seconds.
+◇ Test "permission withdrawal revalidates early hits and preserves permitted files" started.
+✔ Test "permission withdrawal revalidates early hits and preserves permitted files" passed after 0.341 seconds.
+◇ Test "scope change clear and cancellation reject late results" started.
+✔ Test "scope change clear and cancellation reject late results" passewarning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+◇ Test "existing lexical index works without model or helper" started.
+✔ Test "existing lexical index works without model or helper" passed after 0.042 seconds.
+◇ Test "real file change indexes and publishes with real model when provided" started.
+◇ Test case passing 1 argument observed → false to "real file change indexes and publishes with real model when provided" started.
+◇ Test case passing 1 argument observed → true to "real file change indexes and publishes with real model when provided" started.
+✔ Test "real file change indexes and publishes with real model when provided" with 2 test cases passed after 0.001 seconds.
+◇ Test fileModeLexicalDoesNotWaitForASlowFilenameProvider() started.
+✔ Test fileModeLexicalDoesNotWaitForASlowFilenameProvider() passed after 0.319 seconds.
+✔ Suite "Realtime content search and recovery" passed after 3.029 seconds.
+✔ Test run with 95 tests in 16 suites passed after 84.901 seconds.
+Test execution (serial): 89.99s
+Total wall time: 148.99s
+
+recovery-retry-coverage
+
+Discovery/build: 113.66s; selected 30 test methods
+Running serial: 30 test methods
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite "Semantic incremental indexing" started.
+◇ Test changedFileReconcilesWithoutCrawlingOrReembeddingItsNeighbors() started.
+✔ Test changedFileReconcilesWithoutCrawlingOrReembeddingItsNeighbors() passed after 0.657 seconds.
+◇ Test unsupportedFilesDoNotConsumeTheSemanticFileLimit() started.
+✔ Test unsupportedFilesDoNotConsumeTheSemanticFileLimit() passed after 1.213 seconds.
+◇ Test emptyOrScannedContentIsSkippedWithoutLoadingModel() started.
+✔ Test emptyOrScannedContentIsSkippedWithoutLoadingModel() passed after 0.523 seconds.
+◇ Test "changes deletion failures and cancellation" started.
+✔ Test "changes deletion failures and cancellation" passed after 0.031 seconds.
+✔ Suite "Semantic incremental indexing" passed after 2.425 seconds.
+◇ Suite "Real FSEvents to persisted body and vectors" started.
+◇ Test "small documents use real events and real model when requested" started.
+✔ Test "small documents use real events and real model when requested" passed after 37.639 seconds.
+✔ Suite "Real FSEvents to persisted body and vectors" passed after 37.639 seconds.
+◇ Suite "Durable semantic checkpoints and failure recovery" started.
+◇ Test "tails beyond every old text limit finish without unbounded reads" started.
+◇ Test case passing 1 argument size → 90000 to "tails beyond every old text limit finish without unbounded reads" started.
+◇ Test case passing 1 argument size → 160000 to "tails beyond every old text limit finish without unbounded reads" started.
+◇ Test case passing 1 argument size → 16781312 to "tails beyond every old text limit finish without unbounded reads" started.
+✔ Test "tails beyond every old text limit finish without unbounded reads" with 3 test cases passed after 19.589 seconds.
+◇ Test "pdf beyond five hundred pages and page internal checkpoint" started.
+✔ Test "pdf beyond five hundred pages and page internal checkpoint" passed after 0.871 seconds.
+◇ Test "fts precedes vectors and cancellation resumes only missing batches" started.
+✔ Test "fts precedes vectors and cancellation resumes only missing batches" passed after 0.129 seconds.
+◇ Test "round robin lets small file finish before long file" started.
+✔ Test "round robin lets small file finish before long file" passed after 0.143 seconds.
+◇ Test "disk and transaction failure roll back checkpoint and retry without duplicates" started.
+◇ Test case passing 1 argument stage → "fts" to "disk and transaction failure roll back checkpoint and retry without duplicates" started.
+◇ Test case passing 1 argument stage → "vector" to "disk and transaction failure roll back checkpoint and retry without duplicates" started.
+✔ Test "disk and transaction failure roll back checkpoint and retry without duplicates" with 2 test cases passed after 0.023 seconds.
+◇ Test "timeout is durable retried and does not block other files or prune" started.
+✔ Test "timeout is durable retried and does not block other files or prune" passed after 0.007 seconds.
+◇ Test "mutation during inference cannot publish old content" started.
+◇ Test case passing 1 argument action → "rewrite" to "mutation during inference cannot publish old content" started.
+◇ Test case passing 1 argument action → "delete" to "mutation during inference cannot publish old content" started.
+◇ Test case passing 1 argument action → "permission" to "mutation during inference cannot publish old content" started.
+✔ Test "mutation during inference cannot publish old content" with 3 test cases passed after 0.101 seconds.
+◇ Test "generations reject stale responses and rename reencodes title" started.
+✔ Test "generations reject stale responses and rename reencodes title" passed after 0.006 seconds.
+◇ Test "failed directory protects only its subtree and empty files do not block prune" started.
+✔ Test "failed directory protects only its subtree and empty files do not block prune" passed after 0.006 seconds.
+◇ Test "compatible migration retains vectors and interrupted migration rolls back" started.
+✔ Test "compatible migration retains vectors and interrupted migration rolls back" passed after 0.034 seconds.
+◇ Test "invalid cursors UTF 8 and long combining characters cannot loop or lose tail" started.
+✔ Test "invalid cursors UTF 8 and long combining characters cannot loop or lose tail" passed after 0.030 seconds.
+◇ Test abruptProcessExitRecoversCommittedBatches() started.
+✔ Test abruptProcessExitRecoversCommittedBatches() passed after 0.231 seconds.
+◇ Test "sqlite full rolls back FTS and checkpoint and can resume" started.
+✔ Test "sqlite full rolls back FTS and checkpoint and can resume" passed after 0.024 seconds.
+◇ Test mediaMetadataAndRecipeInvalidateOnlyIncompatibleCheckpoints() started.
+✔ Test mediaMetadataAndRecipeInvalidateOnlyIncompatibleCheckpoints() passed after 0.009 seconds.
+◇ Test corruptFilesAndMalformedWorkerCheckpointsDoNotBlockPruneOrRecovery(code:) started.
+◇ Test case passing 1 argument code → 92 to corruptFilesAndMalformedWorkerCheckpointsDoNotBlockPruneOrRecovery(code:) started.
+◇ Test case passing 1 argument code → 13 to corruptFilesAndMalformedWorkerCheckpointsDoNotBlockPruneOrRecovery(code:) started.
+◇ Test case passing 1 argument code → 2 to corruptFilesAndMalformedWorkerCheckpointsDoNotBlockPruneOrRecovery(code:) started.
+◇ Test case passing 1 argument code → 35 to corruptFilesAndMalformedWorkerCheckpointsDoNotBlockPruneOrRecovery(code:) started.
+◇ Test case passing 1 argument code → -1 to corruptFilesAndMalformedWorkerCheckpointsDoNotBlockPruneOrRecovery(code:) started.
+✔ Test corruptFilesAndMalformedWorkerCheckpointsDoNotBlockPruneOrRecovery(code:) with 5 test cases passed after 0.050 seconds.
+◇ Test pdfSinglePageTextCanContinueWithStablePageOffsets() started.
+✔ Test pdfSinglePageTextCanContinueWithStablePageOffsets() passed after 0.231 seconds.
+◇ Test pendingAndFailedJobsCountOnlyPublishedFiles() started.
+✔ Test pendingAndFailedJobsCountOnlyPublishedFiles() passed after 0.011 seconds.
+✔ Suite "Durable semantic checkpoints and failure recovery" passed after 21.506 seconds.
+◇ Suite "Document-first idle media indexing" started.
+◇ Test "real file worker commits image audio and video" started.
+✔ Test "real file worker commits image audio and video" passed after 0.302 seconds.
+◇ Test "documents then images audio and video with idle gating and time evidence" started.
+✔ Test "documents then images audio and video with idle gating and time evidence" passed after 0.266 seconds.
+◇ Test "document events preempt at segment boundaries without repeating completed media" started.
+◇ Test case passing 2 arguments rescan → false, targeted → false to "document events preempt at segment boundaries without repeating completed media" started.
+◇ Test case passing 2 arguments rescan → false, targeted → true to "document events preempt at segment boundaries without repeating completed media" started.
+◇ Test case passing 2 arguments rescan → true, targeted → false to "document events preempt at segment boundaries without repeating completed media" started.
+◇ Test case passing 2 arguments rescan → true, targeted → true to "document events preempt at segment boundaries without repeating completed media" started.
+✔ Test "document events preempt at segment boundaries without repeating completed media" with 4 test cases passed after 0.024 seconds.
+◇ Test "cancellation during media never publishes partial vectors and cleans scratch" started.
+✔ Test "cancellation during media never publishes partial vectors and cleans scratch" passed after 0.010 seconds.
+◇ Test "unreadable media skips one file and model failure remains an error" started.
+✔ Test "unreadable media skips one file and model failure remains an error" passed after 0.013 seconds.
+◇ Test "invalid worker paths changed files and invalid vectors never commit" started.
+✔ Test "invalid worker paths changed files and invalid vectors never commit" passed after 0.009 seconds.
+◇ Test "idle wait can be cancelled befwarning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+✔ Test "idle wait can be cancelled before opening media" passed after 0.275 seconds.
+◇ Test decoderFailureRetainsCompletedSegmentsAcrossRestart() started.
+✔ Test decoderFailureRetainsCompletedSegmentsAcrossRestart() passed after 0.009 seconds.
+✔ Suite "Document-first idle media indexing" passed after 0.912 seconds.
+✔ Test run with 30 tests in 4 suites passed after 62.485 seconds.
+Test execution (serial): 71.61s
+Total wall time: 185.28s
+
+compatibility-coverage
+
+Discovery/build: 123.51s; selected 16 test methods
+Running serial: 16 test methods
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite "Semantic indexing without directory or database quotas" started.
+◇ Test largeDirectoryContinuesIntoNestedFoldersAndLaterRoots() started.
+✔ Test largeDirectoryContinuesIntoNestedFoldersAndLaterRoots() passed after 2.402 seconds.
+◇ Test existingHundredThousandChunksAcceptMoreDocumentsAndRemainSearchable() started.
+✔ Test existingHundredThousandChunksAcceptMoreDocumentsAndRemainSearchable() passed after 27.716 seconds.
+◇ Test storageFailureIsReportedAndKeepsThePreviouslyCommittedFile() started.
+✔ Test storageFailureIsReportedAndKeepsThePreviouslyCommittedFile() passed after 0.014 seconds.
+✔ Suite "Semantic indexing without directory or database quotas" passed after 30.134 seconds.
+◇ Suite "Semantic SQLite index" started.
+◇ Test "indexed file counts use the same media categories as indexing" started.
+✔ Test "indexed file counts use the same media categories as indexing" passed after 0.017 seconds.
+◇ Test "atomic replace persistence invalidation and pruning" started.
+✔ Test "atomic replace persistence invalidation and pruning" passed after 0.096 seconds.
+◇ Test "filters before top K and chinese lexical recall" started.
+✔ Test "filters before top K and chinese lexical recall" passed after 0.009 seconds.
+✔ Suite "Semantic SQLite index" passed after 0.124 seconds.
+◇ Suite "Real FSEvents to persisted body and vectors" started.
+◇ Test "small documents use real events and real model when requested" started.
+✔ Test "small documents use real events and real model when requested" passed after 22.503 seconds.
+✔ Suite "Real FSEvents to persisted body and vectors" passed after 22.503 seconds.
+◇ Suite "Durable semantic checkpoints and failure recovery" started.
+◇ Test mediaMetadataAndRecipeInvalidateOnlyIncompatibleCheckpoints() started.
+✔ Test mediaMetadataAndRecipeInvalidateOnlyIncompatibleCheckpoints() passed after 0.014 seconds.
+✔ Suite "Durable semantic checkpoints and failure recovery" passed after 0.014 seconds.
+◇ Suite "Document-first idle media indexing" started.
+◇ Test "real file worker commits image audio and video" started.
+✔ Test "real file worker commits image audio and video" passed after 0.287 seconds.
+◇ Test "documents then images audio and video with idle gating and time evidence" started.
+✔ Test "documents then images audio and video with idle gating and time evidence" passed after 0.294 seconds.
+◇ Test "document events preempt at segment boundaries without repeating completed media" started.
+◇ Test case passing 2 arguments rescan → false, targeted → false to "document events preempt at segment boundaries without repeating completed media" started.
+◇ Test case passing 2 arguments rescan → false, targeted → true to "document events preempt at segment boundaries without repeating completed media" started.
+◇ Test case passing 2 arguments rescan → true, targeted → false to "document events preempt at segment boundaries without repeating completed media" started.
+◇ Test case passing 2 arguments rescan → true, targeted → true to "document events preempt at segment boundaries without repeating completed media" started.
+✔ Test "document events preempt at segment boundaries without repeating completed media" with 4 test cases passed after 0.128 seconds.
+◇ Test "cancellation during media never publishes partial vectors and cleans scratch" started.
+✔ Test "cancellation during media never publishes partial vectors and cleans scratch" passed after 0.091 seconds.
+◇ Test "unreadable media skips one file and model failure remains an error" started.
+✔ Test "unreadable media skips one file and model failure remains an error" passed after 0.279 seconds.
+◇ Test "invalid worker paths changed files and invalid vectors never commit" started.
+✔ Test "invalid worker paths changed files and invalid vectors never commit" passed after 0.257 seconds.
+◇ Test "idle wait can warning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+✔ Test "idle wait can be cancelled before opening media" passed after 0.315 seconds.
+◇ Test decoderFailureRetainsCompletedSegmentsAcrossRestart() started.
+✔ Test decoderFailureRetainsCompletedSegmentsAcrossRestart() passed after 0.274 seconds.
+✔ Suite "Document-first idle media indexing" passed after 1.930 seconds.
+✔ Test run with 16 tests in 5 suites passed after 54.707 seconds.
+Test execution (serial): 61.67s
+Total wall time: 185.19s
+
+verified-coverage
+
+Discovery/build: 27.99s; selected 96 test methods
+Running serial: 96 test methods
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite "File scan reliability" started.
+◇ Test protectedFoldersNeverReachTheReaderIncludingExplicitRoots() started.
+✔ Test protectedFoldersNeverReachTheReaderIncludingExplicitRoots() passed after 0.005 seconds.
+◇ Test workerFiltersMetadataAndDoesNotFollowAliases() started.
+✔ Test workerFiltersMetadataAndDoesNotFollowAliases() passed after 0.006 seconds.
+◇ Test timeoutAndFailureLeaveSiblingResultsSearchable() started.
+✔ Test timeoutAndFailureLeaveSiblingResultsSearchable() passed after 0.004 seconds.
+◇ Test actualWorkerReusesConnectionAndHandlesLargeResponse() started.
+✔ Test actualWorkerReusesConnectionAndHandlesLargeResponse() passed after 0.115 seconds.
+◇ Test actualHungChildIsKilledAndReaderCanRestart() started.
+✔ Test actualHungChildIsKilledAndReaderCanRestart() passed after 1.018 seconds.
+◇ Test actualCrawlerSurvivesABlockedDirectoryAndAnUnreadableSibling() started.
+✔ Test actualCrawlerSurvivesABlockedDirectoryAndAnUnreadableSibling() passed after 5.294 seconds.
+◇ Test brokenWorkersFailWithoutHanging() started.
+✔ Test brokenWorkersFailWithoutHanging() passed after 0.075 seconds.
+◇ Test indexPublishesPartialStateAndRebuildsPartialSnapshot() started.
+✔ Test indexPublishesPartialStateAndRebuildsPartialSnapshot() passed after 0.018 seconds.
+◇ Test startingAndClearingDoNotWaitForPermissionIO() started.
+✔ Test startingAndClearingDoNotWaitForPermissionIO() passed after 0.008 seconds.
+◇ Test publishesBeforeFinishingAndPreservesEntriesOnTransientMetadataFailure() started.
+✔ Test publishesBeforeFinishingAndPreservesEntriesOnTransientMetadataFailure() passed after 0.308 seconds.
+✔ Suite "File scan reliability" passed after 6.857 seconds.
+◇ Suite "Streaming file reads" started.
+◇ Test unlimitedDirectoryRequestSurvivesIPCAndKeepsExplicitLimits() started.
+✔ Test unlimitedDirectoryRequestSurvivesIPCAndKeepsExplicitLimits() passed after 0.056 seconds.
+◇ Test tenThousandSlowButAdvancingEntriesSurviveTheIdleDeadline() started.
+✔ Test tenThousandSlowButAdvancingEntriesSurviveTheIdleDeadline() passed after 5.643 seconds.
+◇ Test fourStalledDirectoriesDoNotConsumeTheirHealthySiblingsBudget() started.
+✔ Test fourStalledDirectoriesDoNotConsumeTheirHealthySiblingsBudget() passed after 4.032 seconds.
+◇ Test partialBatchesSurviveAStallAndEarlyStopResetsTheConnection() started.
+✔ Test partialBatchesSurviveAStallAndEarlyStopResetsTheConnection() passed after 1.019 seconds.
+◇ Test mountPolicyFiltersBeforeOpeningOrStattingTheTarget() started.
+✔ Test mountPolicyFiltersBeforeOpeningOrStattingTheTarget() passed after 0.001 seconds.
+◇ Test localizedFolderNamesAndSummariesHaveNoZeroOrPermissionNoise() started.
+✔ Test localizedFolderNamesAndSummariesHaveNoZeroOrPermissionNoise() passed after 0.066 seconds.
+✔ Suite "Streaming file reads" passed after 10.820 seconds.
+◇ Suite "Semantic indexing without directory or database quotas" started.
+◇ Test largeDirectoryContinuesIntoNestedFoldersAndLaterRoots() started.
+✔ Test largeDirectoryContinuesIntoNestedFoldersAndLaterRoots() passed after 2.218 seconds.
+◇ Test existingHundredThousandChunksAcceptMoreDocumentsAndRemainSearchable() started.
+✔ Test existingHundredThousandChunksAcceptMoreDocumentsAndRemainSearchable() passed after 2.166 seconds.
+◇ Test storageFailureIsReportedAndKeepsThePreviouslyCommittedFile() started.
+✔ Test storageFailureIsReportedAndKeepsThePreviouslyCommittedFile() passed after 0.010 seconds.
+✔ Suite "Semantic indexing without directory or database quotas" passed after 4.395 seconds.
+◇ Suite "Semantic file policy" started.
+◇ Test "settings default off and round trip" started.
+✔ Test "settings default off and round trip" passed after 0.004 seconds.
+◇ Test "queries preserve meaning without name length limit" started.
+✔ Test "queries preserve meaning without name length limit" passed after 0.001 seconds.
+◇ Test "explicit scope and credentials are conservative" started.
+✔ Test "explicit scope and credentials are conservative" passed after 0.001 seconds.
+◇ Test deniedPermissionRemainsVisibleWithoutReadingProtectedRoots() started.
+✔ Test deniedPermissionRemainsVisibleWithoutReadingProtectedRoots() passed after 0.001 seconds.
+◇ Test "multilingual terms and bounded chunks" started.
+✔ Test "multilingual terms and bounded chunks" passed after 0.031 seconds.
+✔ Suite "Semantic file policy" passed after 0.036 seconds.
+◇ Suite "Semantic SQLite index" started.
+◇ Test "indexed file counts use the same media categories as indexing" started.
+✔ Test "indexed file counts use the same media categories as indexing" passed after 0.017 seconds.
+◇ Test "atomic replace persistence invalidation and pruning" started.
+✔ Test "atomic replace persistence invalidation and pruning" passed after 0.821 seconds.
+◇ Test "filters before top K and chinese lexical recall" started.
+✔ Test "filters before top K and chinese lexical recall" passed after 0.021 seconds.
+✔ Suite "Semantic SQLite index" passed after 0.860 seconds.
+◇ Suite "Semantic content reader" started.
+◇ Test "bounded text metadata and safe paths" started.
+✔ Test "bounded text metadata and safe paths" passed after 0.005 seconds.
+◇ Test "pdf text layer and subprocess round trip" started.
+✔ Test "pdf text layer and subprocess round trip" passed after 0.094 seconds.
+✔ Suite "Semantic content reader" passed after 0.100 seconds.
+◇ Suite "Semantic incremental indexing" started.
+◇ Test changedFileReconcilesWithoutCrawlingOrReembeddingItsNeighbors() started.
+✔ Test changedFileReconcilesWithoutCrawlingOrReembeddingItsNeighbors() passed after 0.009 seconds.
+◇ Test unsupportedFilesDoNotConsumeTheSemanticFileLimit() started.
+✔ Test unsupportedFilesDoNotConsumeTheSemanticFileLimit() passed after 0.689 seconds.
+◇ Test emptyOrScannedContentIsSkippedWithoutLoadingModel() started.
+✔ Test emptyOrScannedContentIsSkippedWithoutLoadingModel() passed after 0.123 seconds.
+◇ Test "changes deletion failures and cancellation" started.
+✔ Test "changes deletion failures and cancellation" passed after 0.112 seconds.
+✔ Suite "Semantic incremental indexing" passed after 0.935 seconds.
+◇ Suite "Semantic service lifecycle" started.
+◇ Test "default off and unsupported cannot be enabled" started.
+✔ Test "default off and unsupported cannot be enabled" passed after 0.006 seconds.
+◇ Test "model download retry search rebuild and removal" started.
+✔ Test "model download retry search rebuild and removal" passed after 0.356 seconds.
+◇ Test "download cancellation corruption and disabling" started.
+✔ Test "download cancellation corruption and disabling" passed after 0.051 seconds.
+◇ Test automaticSettingsWatcherAndPowerChangesKeepLifecycleCoherent() started.
+✔ Test automaticSettingsWatcherAndPowerChangesKeepLifecycleCoherent() passed after 2.781 seconds.
+◇ Test irrelevantEventsDoNotRescanAndChangedFilesUseTargetedReconciliation() started.
+✔ Test irrelevantEventsDoNotRescanAndChangedFilesUseTargetedReconciliation() passed after 2.575 seconds.
+◇ Test corruptIndexCanBeClearedWithoutRemovingVerifiedModel() started.
+✔ Test corruptIndexCanBeClearedWithoutRemovingVerifiedModel() passed after 0.054 seconds.
+◇ Test downloadFailuresAndEarlyCancellationReleaseSession() started.
+✔ Test downloadFailuresAndEarlyCancellationReleaseSession() passed after 0.009 seconds.
+◇ Test liveModelDownloadWhenExplicitlyRequested() started.
+✔ Test liveModelDownloadWhenExplicitlyRequested() passed after 0.001 seconds.
+◇ Test "actual model checksum and atomic install when provided" started.
+✔ Test "actual model checksum and atomic install when provided" passed after 0.001 seconds.
+◇ Test nativeControlsUseInlineSetupAndManagement() started.
+✔ Test nativeControlsUseInlineSetupAndManagement() passed after 0.276 seconds.
+◇ Test foldersEditedDuringRebuildAreNotRestored() started.
+✔ Test foldersEditedDuringRebuildAreNotRestored() passed after 0.023 seconds.
+◇ Test nativeManagementConfirmsClearingAndModelRemovalInline() started.
+✔ Test nativeManagementConfirmsClearingAndModelRemovalInline() passed after 0.159 seconds.
+✔ Suite "Semantic service lifecycle" passed after 6.296 seconds.
+◇ Suite "Semantic launcher integration" started.
+◇ Test disabledFeatureKeepsLegacyLongQueryAndPluginBehavior() started.
+✔ Test disabledFeatureKeepsLegacyLongQueryAndPluginBehavior() passed after 0.002 seconds.
+◇ Test filenameResultsRemainAvailableBeforeAndDuringPausedIndexing() started.
+✔ Test filenameResultsRemainAvailableBeforeAndDuringPausedIndexing() passed after 0.147 seconds.
+◇ Test "long natural query and late cancellation" started.
+✔ Test "long natural query and late cancellation" passed after 0.356 seconds.
+◇ Test "names publish first and keep choice when content arrives" started.
+✔ Test "names publish first and keep choice when content arrives" passed after 0.166 seconds.
+◇ Test chosenFolderSurvivesTheSeparateFolderDisplayLimit() started.
+✔ Test chosenFolderSurvivesTheSeparateFolderDisplayLimit() passed after 0.166 seconds.
+◇ Test "fusion deduplicates and preserves original name score" started.
+✔ Test "fusion deduplicates and preserves original name score" passed after 0.001 seconds.
+◇ Test "file plugin publishes names then content with actions" started.
+✔ Test "file plugin publishes names then content with actions" passed after 0.160 seconds.
+◇ Test "content matches get a taller row with their passage" started.
+✔ Test "content matches get a taller row with their passage" passed after 0.001 seconds.
+✔ Suite "Semantic launcher integration" passed after 1.001 seconds.
+◇ Suite "Real FSEvents to persisted body and vectors" started.
+◇ Test "small documents use real events and real model when requested" started.
+✔ Test "small documents use real events and real model when requested" passed after 18.842 seconds.
+✔ Suite "Real FSEvents to persisted body and vectors" passed after 18.842 seconds.
+◇ Suite "Query priority at background batch boundaries" started.
+◇ Test documentEncodingYieldsAfterTheCurrentBatchAndResumesWithoutRestarting() started.
+✔ Test documentEncodingYieldsAfterTheCurrentBatchAndResumesWithoutRestarting() passed after 0.272 seconds.
+✔ Suite "Query priority at background batch boundaries" passed after 0.273 seconds.
+◇ Suite "Durable semantic checkpoints and failure recovery" started.
+◇ Test "tails beyond every old text limit finish without unbounded reads" started.
+◇ Test case passing 1 argument size → 90000 to "tails beyond every old text limit finish without unbounded reads" started.
+◇ Test case passing 1 argument size → 160000 to "tails beyond every old text limit finish without unbounded reads" started.
+◇ Test case passing 1 argument size → 16781312 to "tails beyond every old text limit finish without unbounded reads" started.
+✔ Test "tails beyond every old text limit finish without unbounded reads" with 3 test cases passed after 18.747 seconds.
+◇ Test "pdf beyond five hundred pages and page internal checkpoint" started.
+✔ Test "pdf beyond five hundred pages and page internal checkpoint" passed after 1.551 seconds.
+◇ Test "fts precedes vectors and cancellation resumes only missing batches" started.
+✔ Test "fts precedes vectors and cancellation resumes only missing batches" passed after 0.141 seconds.
+◇ Test "round robin lets small file finish before long file" started.
+✔ Test "round robin lets small file finish before long file" passed after 0.149 seconds.
+◇ Test "disk and transaction failure roll back checkpoint and retry without duplicates" started.
+◇ Test case passing 1 argument stage → "fts" to "disk and transaction failure roll back checkpoint and retry without duplicates" started.
+◇ Test case passing 1 argument stage → "vector" to "disk and transaction failure roll back checkpoint and retry without duplicates" started.
+✔ Test "disk and transaction failure roll back checkpoint and retry without duplicates" with 2 test cases passed after 0.023 seconds.
+◇ Test "timeout is durable retried and does not block other files or prune" started.
+✔ Test "timeout is durable retried and does not block other files or prune" passed after 0.011 seconds.
+◇ Test "mutation during inference cannot publish old content" started.
+◇ Test case passing 1 argument action → "rewrite" to "mutation during inference cannot publish old content" started.
+◇ Test case passing 1 argument action → "delete" to "mutation during inference cannot publish old content" started.
+◇ Test case passing 1 argument action → "permission" to "mutation during inference cannot publish old content" started.
+✔ Test "mutation during inference cannot publish old content" with 3 test cases passed after 0.119 seconds.
+◇ Test "generations reject stale responses and rename reencodes title" started.
+✔ Test "generations reject stale responses and rename reencodes title" passed after 0.009 seconds.
+◇ Test "failed directory protects only its subtree and empty files do not block prune" started.
+✔ Test "failed directory protects only its subtree and empty files do not block prune" passed after 0.009 seconds.
+◇ Test "compatible migration retains vectors and interrupted migration rolls back" started.
+✔ Test "compatible migration retains vectors and interrupted migration rolls back" passed after 0.050 seconds.
+◇ Test "invalid cursors UTF 8 and long combining characters cannot loop or lose tail" started.
+✔ Test "invalid cursors UTF 8 and long combining characters cannot loop or lose tail" passed after 0.030 seconds.
+◇ Test abruptProcessExitRecoversCommittedBatches() started.
+✔ Test abruptProcessExitRecoversCommittedBatches() passed after 0.230 seconds.
+◇ Test "sqlite full rolls back FTS and checkpoint and can resume" started.
+✔ Test "sqlite full rolls back FTS and checkpoint and can resume" passed after 0.026 seconds.
+◇ Test mediaMetadataAndRecipeInvalidateOnlyIncompatibleCheckpoints() started.
+✔ Test mediaMetadataAndRecipeInvalidateOnlyIncompatibleCheckpoints() passed after 0.021 seconds.
+◇ Test corruptFilesAndMalformedWorkerCheckpointsDoNotBlockPruneOrRecovery(code:) started.
+◇ Test case passing 1 argument code → 92 to corruptFilesAndMalformedWorkerCheckpointsDoNotBlockPruneOrRecovery(code:) started.
+◇ Test case passing 1 argument code → 13 to corruptFilesAndMalformedWorkerCheckpointsDoNotBlockPruneOrRecovery(code:) started.
+◇ Test case passing 1 argument code → 2 to corruptFilesAndMalformedWorkerCheckpointsDoNotBlockPruneOrRecovery(code:) started.
+◇ Test case passing 1 argument code → 35 to corruptFilesAndMalformedWorkerCheckpointsDoNotBlockPruneOrRecovery(code:) started.
+◇ Test case passing 1 argument code → -1 to corruptFilesAndMalformedWorkerCheckpointsDoNotBlockPruneOrRecovery(code:) started.
+✔ Test corruptFilesAndMalformedWorkerCheckpointsDoNotBlockPruneOrRecovery(code:) with 5 test cases passed after 0.058 seconds.
+◇ Test pdfSinglePageTextCanContinueWithStablePageOffsets() started.
+✔ Test pdfSinglePageTextCanContinueWithStablePageOffsets() passed after 0.224 seconds.
+◇ Test pendingAndFailedJobsCountOnlyPublishedFiles() started.
+✔ Test pendingAndFailedJobsCountOnlyPublishedFiles() passed after 0.017 seconds.
+✔ Suite "Durable semantic checkpoints and failure recovery" passed after 21.422 seconds.
+◇ Suite "Isolated native media extraction" started.
+◇ Test imagesAudioWindowsAndVideoFramesUsePrivateSnapshots() started.
+✔ Test imagesAudioWindowsAndVideoFramesUsePrivateSnapshots() passed after 0.468 seconds.
+◇ Test safePathsAndScratchPermissionsAreEnforcedBeforeDecoding() started.
+✔ Test safePathsAndScratchPermissionsAreEnforcedBeforeDecoding() passed after 0.007 seconds.
+◇ Test mediaMetadataDoesNotInheritTheDocumentSizeCap() started.
+✔ Test mediaMetadataDoesNotInheritTheDocumentSizeCap() passed after 0.001 seconds.
+✔ Suite "Isolated native media extraction" passed after 0.477 seconds.
+◇ Suite "Document-first idle media indexing" started.
+◇ Test "real file worker commits image audio and video" started.
+✔ Test "real file worker commits image audio and video" passed after 0.201 seconds.
+◇ Test "documents then images audio and video with idle gating and time evidence" started.
+✔ Test "documents then images audio and video with idle gating and time evidence" passed after 0.287 seconds.
+◇ Test "document events preempt at segment boundaries without repeating completed media" started.
+◇ Test case passing 2 arguments rescan → false, targeted → false to "document events preempt at segment boundaries without repeating completed media" started.
+◇ Test case passing 2 arguments rescan → false, targeted → true to "document events preempt at segment boundaries without repeating completed media" started.
+◇ Test case passing 2 arguments rescan → true, targeted → false to "document events preempt at segment boundaries without repeating completed media" started.
+◇ Test case passing 2 arguments rescan → true, targeted → true to "document events preempt at segment boundaries without repeating completed media" started.
+✔ Test "document events preempt at segment boundaries without repeating completed media" with 4 test cases passed after 0.036 seconds.
+◇ Test "cancellation during media never publishes partial vectors and cleans scratch" started.
+✔ Test "cancellation during media never publishes partial vectors and cleans scratch" passed after 0.015 seconds.
+◇ Test "unreadable media skips one file and model failure remains an error" started.
+✔ Test "unreadable media skips one file and model failure remains an error" passed after 0.016 seconds.
+◇ Test "invalid worker paths changed files and invalid vectors never commit" started.
+✔ Test "invalid worker paths changed files and invalid vectors never commit" passed after 0.014 seconds.
+◇ Test "idle wait can be cancelled before opening media" started.
+✔ Test "idle wait can be cancelled before opening media" passed after 0.262 seconds.
+◇ Test decoderFailureRetainsCompletedSegmentsAcrossRestart() started.
+✔ Test decoderFailureRetainsCompletedSegmentsAcrossRestart() passed after 0.034 seconds.
+✔ Suite "Document-first idle media indexing" passed after 0.869 seconds.
+◇ Suite "Media service scheduling and recovery" started.
+◇ Test documentsStaySearchableWhileMediaWaitsForIdle() started.
+✔ Test documentsStaySearchableWhileMediaWaitsForIdle() passed after 0.275 seconds.
+◇ Test mediaFailureDoesNotInvalidateTheTextModelOrDocumentIndex() started.
+✔ Test mediaFailureDoesNotInvalidateTheTextModelOrDocumentIndex() passed after 0.244 seconds.
+◇ Test idleWaitingDoesNotRetainADiscardedService() started.
+✔ Test idleWaitingDoesNotRetainADiscardedService() passed after 0.347 seconds.
+◇ Test "changed document preempts media without restarting the home scan" started.
+✔ Test "changed document preempts media without restarting the home scan" passed after 2.753 seconds.
+✔ Suite "Media service scheduling and recovery" passed after 3.621 seconds.
+◇ Suite "Realtime content search and recovery" started.
+◇ Test "lexical publishes before slow model and timeout does not disable next query" started.
+✔ Test "lexical publishes before slow model and timeout does not disable next query" passed after 0.506 seconds.
+◇ Test "pause keeps searching and voice or thermal pressure keeps only lexical" started.
+✔ Test "pause keeps searching and voice or thermal pressure keeps only lexical" passed after 0.089 seconds.
+◇ Test "both entrypoints publish lexical while semantic is pending and keep selection" started.
+✔ Test "both entrypoints publish lexical while semantic is pending and keep selection" passed after 0.950 seconds.
+◇ Test "semantic keyword publishes lexical while encoding is pending and keeps safe file selection" started.
+✔ Test "semantic keyword publishes lexical while encoding is pending and keeps safe file selection" passed after 0.663 seconds.
+◇ Test "permission withdrawal revalidates early hits and preserves permitted files" started.
+✔ Test "permission withdrawal revalidates early hits and preserves permitted files" passed after 0warning: '--build-system native' has been deprecated and will be removed in a future release; please report an issue at https://github.com/swiftlang/swift-package-manager/issues if you are unable to adopt the default build system.
+◇ Test "scope change clear and cancellation reject late results" started.
+✔ Test "scope change clear and cancellation reject late results" passed after 0.073 seconds.
+◇ Test "existing lexical index works without model or helper" started.
+✔ Test "existing lexical index works without model or helper" passed after 0.034 seconds.
+◇ Test "real file change indexes and publishes with real model when provided" started.
+◇ Test case passing 1 argument observed → false to "real file change indexes and publishes with real model when provided" started.
+◇ Test case passing 1 argument observed → true to "real file change indexes and publishes with real model when provided" started.
+✔ Test "real file change indexes and publishes with real model when provided" with 2 test cases passed after 0.001 seconds.
+◇ Test fileModeLexicalDoesNotWaitForASlowFilenameProvider() started.
+✔ Test fileModeLexicalDoesNotWaitForASlowFilenameProvider() passed after 0.329 seconds.
+✔ Suite "Realtime content search and recovery" passed after 3.001 seconds.
+✔ Test run with 96 tests in 16 suites passed after 79.813 seconds.
+Test execution (serial): 84.77s
+Total wall time: 112.79s

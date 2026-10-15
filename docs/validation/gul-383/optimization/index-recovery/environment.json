@@ -1,0 +1,13 @@
+{
+  "os": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "machine": "arm64",
+  "compiler": "Apple Swift version 6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)\nTarget: arm64-apple-macosx26.0",
+  "hardware": "Apple M4",
+  "memory_bytes": 17179869184,
+  "base": "1e8cb5cf16ad7d474344094baf4f2f71a5a160b8",
+  "model_sha256": "2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135",
+  "helper_sha256": "8387df2952b8f35569b1a46ba12920d844985caced14bdfb7a094739929910db",
+  "configuration": "Debug application with coverage; reused Release helper from GUL-402, no helper source changes; deterministic fault fixtures separately identified",
+  "sdk_version": "27.0",
+  "xcode": "Xcode 27.0\nBuild version 27A266a"
+}

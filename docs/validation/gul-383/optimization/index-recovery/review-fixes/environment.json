@@ -1,0 +1,9 @@
+{
+  "os": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "hardware": "Apple M4",
+  "memory_bytes": 17179869184,
+  "swift": "Apple Swift version 6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)\nTarget: arm64-apple-macosx26.0",
+  "configuration": "Debug coverage app and file worker; reused Release C++ helper, unchanged; serial indexing with one writer; synthetic small documents, actual pinned model; no interactive queries during event samples",
+  "cache": "First event arrival reported separately from following 29; OS page cache uncontrolled; model/worker recreated per reconciliation",
+  "sample_resolution": "2 ms visibility polling; RSS 200 ms descendant sampling; no native UI measurement"
+}

@@ -1,0 +1,57 @@
+{
+  "samples": 30,
+  "percentile": "nearest rank",
+  "latency_ms": {
+    "event_to_fts_ms": {
+      "p50": 179.02,
+      "p95": 184.74,
+      "p99": 187.07
+    },
+    "event_to_vectors_ms": {
+      "p50": 554.8,
+      "p95": 644.03,
+      "p99": 3347.88
+    },
+    "write_to_fts_ms": {
+      "p50": 190.0,
+      "p95": 195.51,
+      "p99": 199.39
+    },
+    "write_to_vectors_ms": {
+      "p50": 565.59,
+      "p95": 656.34,
+      "p99": 3358.01
+    }
+  },
+  "rss_sample_count": 491,
+  "rss_peak_by_role_bytes": {
+    "swiftpm-testing-helper": 561676288,
+    "Typeflux": 81838080,
+    "TypefluxSemanticHelper": 515031040
+  },
+  "rss_definition": "per-process sampled peaks across the focused test window, excluding compilers; not a full application high-water mark or baseline comparison",
+  "first_arrival_ms": {
+    "event_to_fts_ms": 178.1911666621454,
+    "event_to_vectors_ms": 3347.8784166509286,
+    "sample": 0,
+    "write_to_event_ms": 10.134708369150758,
+    "write_to_fts_ms": 188.32587503129616,
+    "write_to_vectors_ms": 3358.0131250200793
+  },
+  "following_arrivals": {
+    "samples": 29,
+    "cache": "OS page cache not controlled; each reconciliation creates new file/embedding workers",
+    "latency_ms": {
+      "event_to_fts_ms": {
+        "p50": 179.06,
+        "p95": 184.74,
+        "p99": 187.07
+      },
+      "event_to_vectors_ms": {
+        "p50": 554.8,
+        "p95": 605.51,
+        "p99": 644.03
+      }
+    }
+  }
+}
