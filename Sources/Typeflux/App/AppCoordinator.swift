@@ -316,7 +316,7 @@ final class AppCoordinator {
         case .action(.screenshotText):
             screenshotCoordinator?.start(mode: .region, followUp: .recognizeText)
         case .action(.translate):
-            di.translationPanel.openSelection()
+            di.translationPanel.toggleSelection()
         case .action(.screenshotTranslation):
             screenshotCoordinator?.start(mode: .region, followUp: .translate)
         case .action(.openNotes):

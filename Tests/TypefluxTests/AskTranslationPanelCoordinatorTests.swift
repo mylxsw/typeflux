@@ -126,6 +126,29 @@ struct AskTranslationPanelCoordinatorTests {
         #expect(fixture.ai.requests.isEmpty)
     }
 
+    @Test func `translation shortcut toggles the panel and cancels pending capture`() async {
+        let fixture = TranslationPanelFixture()
+        defer { fixture.clean() }
+        let injector = TranslationPanelInjector()
+        injector.onCapture = { try? await Task.sleep(for: .milliseconds(80)) }
+        let entry = coordinator(fixture, injector: injector)
+
+        entry.toggleSelection()
+        #expect(entry.controller.isPresented)
+        entry.toggleSelection()
+        #expect(!entry.controller.isPresented)
+        try? await Task.sleep(for: .milliseconds(100))
+        #expect(fixture.ai.requests.isEmpty)
+
+        entry.toggleSelection()
+        await entry.waitForEntry()
+        await fixture.model.waitForTranslation()
+        #expect(entry.controller.isPresented && fixture.ai.requests.count == 1)
+        fixture.model.pinned = true
+        entry.toggleSelection()
+        #expect(!entry.controller.isPresented && !fixture.model.running)
+    }
+
     @Test func `input waits for return and selection sends immediately on every shortcut`() async {
         let fixture = TranslationPanelFixture()
         defer { fixture.clean() }

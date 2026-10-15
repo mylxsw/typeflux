@@ -54,6 +54,14 @@ final class AskTranslationPanelCoordinator: ScreenshotFollowUpHandling {
         controller.present()
     }
 
+    func toggleSelection() {
+        if controller.isPresented {
+            model.dismiss()
+        } else {
+            openSelection()
+        }
+    }
+
     func openSelection() {
         selectionTask?.cancel()
         let current = generation
