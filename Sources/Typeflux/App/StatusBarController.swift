@@ -234,6 +234,10 @@ final class StatusBarController: NSObject {
         feedbackItem.submenu = buildFeedbackMenu()
         menu.addItem(feedbackItem)
         menu.addItem(makeItem(title: L("menu.about"), action: #selector(openAbout)))
+        // Developer builds expose the shared component gallery next to About.
+        if ComponentGalleryAccess.isAvailable() {
+            menu.addItem(makeItem(title: L("appMenu.componentGallery"), action: #selector(openComponentGallery)))
+        }
         menu.addItem(NSMenuItem.separator())
         menu.addItem(makeItem(title: L("menu.quit"), action: #selector(quit), keyEquivalent: "q"))
 
@@ -655,6 +659,10 @@ final class StatusBarController: NSObject {
 
     @objc private func openAbout() {
         AboutWindowController.shared.show()
+    }
+
+    @objc private func openComponentGallery() {
+        ComponentGalleryWindowController.shared.show()
     }
 
     @objc private func quit() {

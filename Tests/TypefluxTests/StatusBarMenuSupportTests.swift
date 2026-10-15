@@ -213,7 +213,11 @@ final class StatusBarMenuSupportTests: XCTestCase {
         XCTAssertEqual(Array(titles.prefix(4)), [
             L("menu.openVoiceStudio"), L("menu.toolbox"), L("menu.voiceInput"), L("menu.settings")
         ])
-        let items = try XCTUnwrap(controller.menu?.items)
+        // Developer builds add "Component Gallery" right after About; compare the shipping layout.
+        let galleryTitle = L("appMenu.componentGallery")
+        let allItems = try XCTUnwrap(controller.menu?.items)
+        XCTAssertEqual(allItems.contains { $0.title == galleryTitle }, ComponentGalleryAccess.isAvailable())
+        let items = allItems.filter { $0.title != galleryTitle }
         XCTAssertEqual(items.count, 12)
         XCTAssertTrue(items[4].isSeparatorItem)
         XCTAssertEqual(items[5].title, L("menu.help"))
