@@ -3,7 +3,7 @@ import AppKit
 /// What a slash command does once it is chosen.
 enum AskCommandAction: Equatable, Hashable, Sendable {
     case newConversation, search, regenerate, copyAnswer
-    case model, reasoning, localMode, permissionMode
+    case model, reasoning, localMode, temporaryMode, permissionMode
     case attachFiles, attachFolder, screenshot, selection, memory, remember
     /// One of the launcher's starting points, by `AskSuggestion.key`.
     case suggestion(String)
@@ -84,6 +84,10 @@ struct AskCommandContext: Equatable, Sendable {
     var localMode = false
     /// Why the conversation's storage cannot change, e.g. it has already started.
     var storageLocked: String?
+    /// The question starts, or the conversation is, a temporary conversation.
+    var temporaryMode = false
+    /// Why it cannot switch to or from temporary: the conversation has started.
+    var temporaryLocked: String?
     var screenshotOn = false
     /// Why a screenshot cannot be attached, e.g. the model cannot read images.
     var screenshotUnavailable: String?
@@ -150,6 +154,9 @@ enum AskCommandCatalog {
             AskCommand(action: .localMode, name: "local", title: L("ask.command.local"), symbol: "lock",
                        group: .model, kind: .toggle(on: context.localMode), disabledReason: context.storageLocked,
                        aliases: ["offline", "private"]),
+            AskCommand(action: .temporaryMode, name: "temp", title: L("ask.command.temporary"), symbol: "hourglass",
+                       group: .model, kind: .toggle(on: context.temporaryMode), disabledReason: context.temporaryLocked,
+                       aliases: ["temporary", "incognito", "linshi"]),
             AskCommand(action: .attachFiles, name: "file", title: L("ask.command.file"), symbol: "paperclip",
                        group: .context, trailing: "⌘U", aliases: ["upload", "image", "attach"]),
             AskCommand(action: .attachFolder, name: "folder", title: L("ask.command.folder"), symbol: "folder",
@@ -161,7 +168,8 @@ enum AskCommandCatalog {
                        group: .context, kind: .toggle(on: context.selectionOn),
                        disabledReason: context.selectionAvailable ? nil : L("ask.command.disabled.noSelection")),
             AskCommand(action: .memory, name: "memory", title: L("ask.command.memory"), symbol: "brain",
-                       group: .context, kind: .toggle(on: context.memoryOn)),
+                       group: .context, kind: .toggle(on: context.memoryOn && !context.temporaryMode),
+                       disabledReason: context.temporaryMode ? L("ask.temporary.noMemory") : nil),
             AskCommand(action: .remember, name: "remember", title: L("ask.command.remember"), symbol: "pin",
                        group: .context, kind: .argument, trailing: L("ask.command.remember.hint"), aliases: ["note"])
         ]
@@ -400,6 +408,8 @@ enum AskCommandKey: Equatable {
     case commandDelete, optionCommandDelete
     /// Calendar navigation; other features leave these to the editor.
     case left, commandLeft, commandRight, commandT, commandN
+    /// ⌥⌘N: the launcher's question becomes temporary, or ordinary again.
+    case optionCommandN
 
     init?(_ event: NSEvent) {
         let modifiers = event.modifierFlags.intersection([.command, .option, .control, .shift])
@@ -427,6 +437,7 @@ enum AskCommandKey: Equatable {
         if modifiers == .command, event.keyCode == 124 { self = .commandRight; return }
         if modifiers == .command, event.keyCode == 17 { self = .commandT; return }
         if modifiers == .command, event.keyCode == 45 { self = .commandN; return }
+        if modifiers == [.command, .option], event.keyCode == 45 { self = .optionCommandN; return }
         if modifiers == .command, event.keyCode == 8 { self = .commandC; return }
         if modifiers == [.command, .shift], event.keyCode == 8 { self = .shiftCommandC; return }
         if modifiers == .command, event.keyCode == 51 { self = .commandDelete; return }

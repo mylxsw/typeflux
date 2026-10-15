@@ -199,7 +199,10 @@ final class AskConversationModel: ObservableObject {
     func storesLocally(launcher: Bool) -> Bool {
         guard isSignedIn else { return true }
         if !launcher, let id = selectedId { return isLocal(id) }
-        return (launcher ? launcherDraft : draft).storesLocally ?? commandSources.privateByDefault()
+        let current = launcher ? launcherDraft : draft
+        // A temporary question may use Cloud models; its own model decides where it runs.
+        if current.temporary == true { return false }
+        return current.storesLocally ?? commandSources.privateByDefault()
     }
 
     /// Only a conversation that has not started can still choose where it is stored,
@@ -210,12 +213,21 @@ final class AskConversationModel: ObservableObject {
 
     func setStoresLocally(_ value: Bool, launcher: Bool) {
         guard canChangeStorage(launcher: launcher) else { return }
-        if launcher { launcherDraft.storesLocally = value } else { draft.storesLocally = value }
+        if launcher {
+            launcherDraft.storesLocally = value; launcherDraft.temporary = nil
+        } else {
+            draft.storesLocally = value
+            if draft.temporary == true { draft.temporary = nil; draft.memory = capture.globalMemory() ?? AskMemory() }
+        }
         persistDrafts()
     }
 
     /// The conversation is kept on this Mac rather than in the Typeflux Cloud account.
-    func isLocal(_ id: String) -> Bool { !isSignedIn || localConversationIds.contains(id) }
+    /// A temporary conversation counts as local while it runs on the user's own model.
+    func isLocal(_ id: String) -> Bool {
+        if let temporary = temporaryConversation, temporary.id == id { return !isSignedIn || !temporary.cloud }
+        return !isSignedIn || localConversationIds.contains(id)
+    }
 
     func registerLocalHistory(_ items: [AskConversationSummary]) {
         localConversationIds.formUnion(items.map(\.id))
@@ -225,7 +237,8 @@ final class AskConversationModel: ObservableObject {
 
     /// The cache partition of a conversation's copies and drafts.
     func cacheOwner(_ id: String) -> String {
-        localConversationIds.contains(id) ? AskRoutedAPI.localOwner : owner
+        if isTemporary(id) { return AskRoutedAPI.temporaryOwner }
+        return localConversationIds.contains(id) ? AskRoutedAPI.localOwner : owner
     }
     func requiresVision(launcher: Bool) -> Bool {
         let current = launcher ? launcherDraft : draft
@@ -283,6 +296,10 @@ final class AskConversationModel: ObservableObject {
     @Published private(set) var conversations: [AskConversationSummary] = []
     /// Conversations stored on this Mac. Signed in, they are listed beside the Cloud ones.
     @Published private(set) var localConversationIds: Set<String> = []
+    /// The one temporary conversation, while it lasts; see `AskConversationModel+Temporary`.
+    @Published private(set) var temporaryConversation: AskTemporaryConversation?
+    /// Asks before a temporary conversation with messages is left; tests answer instead.
+    var confirmTemporaryLeave: @MainActor () -> AskTemporaryLeaveDecision = AskTemporaryLeaveConfirmation.confirm
     @Published private(set) var selected: AskConversation?
     @Published private(set) var selectedId: String? { didSet { if selectedId != oldValue { refreshAnswerNotes() } } }
     /// Answers of the shown conversation that are in the notebook, by message id.
@@ -372,6 +389,8 @@ final class AskConversationModel: ObservableObject {
     private var draftSave: Task<Void, Never>?
     private var draftSaveConversationID: String?
     private var deletedConversationIDs: Set<String> = []
+    /// Temporary conversations being kept; ending them meanwhile would delete what the user saved.
+    private var keepingTemporaryIDs: Set<String> = []
     private var authObserver: AnyCancellable?
     private var modelObserver: AnyCancellable?
     private var memoryObserver: AnyCancellable?
@@ -388,7 +407,7 @@ final class AskConversationModel: ObservableObject {
          trustedApprovalPeer: AskHarnessContract? = nil, scopedApprovalEnabled: Bool = false,
          session: @escaping () -> (owner: String, token: String)?) {
         self.modelLibrary = modelLibrary ?? .shared
-        self.api = api; self.cache = cache; self.tools = tools; self.capture = capture
+        self.api = api; self.cache = AskTemporaryCache(base: cache); self.tools = tools; self.capture = capture
         self.deviceId = deviceId; self.session = session; self.defaults = defaults
         memoryInvalidations = MemoryInvalidationStore(defaults: defaults)
         // Only DI-supplied, trusted advertisements may enable reuse. Conversation metadata is inert.
@@ -507,6 +526,7 @@ final class AskConversationModel: ObservableObject {
     /// this Mac, otherwise the Cloud account. A new conversation (nil) follows the draft.
     func credentials(for id: String?) -> AskRoute? {
         guard let account = credentials() else { return nil }
+        if let id, let temporary = temporaryConversation, temporary.id == id { return account.temporary(cloud: temporary.cloud) }
         let local = id.map(isLocal) ?? storesLocally(launcher: false)
         return local ? account.local : account
     }
@@ -540,6 +560,8 @@ final class AskConversationModel: ObservableObject {
         selected = nil; selectedId = nil; isLoadingSelection = false; selectionLoadFailed = false
         snapshots = [:]; drafts = [:]; transcriptPositions = [:]; savedChatDrafts = []
         historyGeneration = UUID(); historyOffset = 0; conversations = []; localConversationIds = []
+        // In memory only, so a new session never sees it; the server expires its copy.
+        temporaryConversation = nil; keepingTemporaryIDs = []
         launcherScreenshotNotice = nil; screenshotNotice = nil; recoveringImages = [:]
         attachmentNotice = nil; launcherAttachmentNotice = nil
         attachmentLoads[visionDraftKey(launcher: true)] = nil
@@ -792,6 +814,7 @@ final class AskConversationModel: ObservableObject {
 
     func select(_ rawId: String, reload: Bool = false) async {
         let id = AskConversationID.canonical(rawId)
+        guard leaveTemporaryConversation(for: id) else { return }
         guard let current = credentials(for: id) else { return }
         if selectedId == id, isLoadingSelection || (!reload && selected != nil && !selectionLoadFailed) { return }
         clearCapturedContentFeedback(launcher: false)
@@ -853,7 +876,9 @@ final class AskConversationModel: ObservableObject {
 
     /// `storesLocally` starts a conversation kept on this Mac (true) or in Typeflux Cloud
     /// (false); nil follows the default from settings.
-    func newConversation(storesLocally: Bool? = nil) {
+    /// `temporary` starts a temporary conversation instead, which never enters history.
+    func newConversation(storesLocally: Bool? = nil, temporary: Bool = false) {
+        guard leaveTemporaryConversation(for: nil) else { return }
         draftPermissionMode = .standard
         clearCapturedContentFeedback(launcher: false)
         selectionObservation?.cancel(); selectionObservation = nil
@@ -867,14 +892,19 @@ final class AskConversationModel: ObservableObject {
         attachmentNotice = nil
         if isSignedIn { draft.storesLocally = storesLocally }
         // No source app is trustworthy here, so only global memory applies.
-        draft.memory = capture.globalMemory() ?? AskMemory()
+        // A temporary conversation uses none.
+        draft.temporary = temporary ? true : nil
+        draft.memory = temporary ? AskMemory() : capture.globalMemory() ?? AskMemory()
     }
 
     func submitLauncher(recordInput: Bool = true) {
         if consumeModeCommand(launcher: true) { return }
         normalizeScreenshotChoices()
         guard canSendLauncher else { return }
-        if recordInput { recordLauncherInput(destination: .askAI) }
+        // The launcher always starts a new conversation, so it leaves a temporary one.
+        guard leaveTemporaryConversation(for: nil) else { return }
+        // A temporary question leaves no trace in the launcher's input history either.
+        if recordInput, launcherDraft.temporary != true { recordLauncherInput(destination: .askAI) }
         submit(launcherDraft, newConversation: true, launcher: true)
     }
     func addReference(_ reference: AskReference) {
@@ -926,12 +956,18 @@ final class AskConversationModel: ObservableObject {
             return
         }
         guard newConversation || selected != nil else { return }
-        let local = newConversation
-            ? account.token.isEmpty || (submitted.storesLocally ?? commandSources.privateByDefault())
-            : selectedId.map(isLocal) == true
+        let temporary = newConversation && submitted.temporary == true
+        let requested = submitted.modelRef ?? (newConversation ? modelLibrary.defaultReference
+                                               : selected?.modelRef ?? "cloud:default")
+        // A temporary conversation runs where its model does: Cloud models in Typeflux Cloud,
+        // the user's own models on this Mac, so they never pass through the server.
+        let local = temporary
+            ? account.token.isEmpty || !requested.hasPrefix("cloud:")
+            : newConversation
+                ? account.token.isEmpty || (submitted.storesLocally ?? commandSources.privateByDefault())
+                : selectedId.map(isLocal) == true
         let hasImage = submitted.sendsImage || (!newConversation && selected?.messages.contains { $0.hasImage } == true)
-        let reference = localFallback(submitted.modelRef ?? (newConversation ? modelLibrary.defaultReference
-                                      : selected?.modelRef ?? "cloud:default"), hasImage: hasImage, local: local)
+        let reference = localFallback(requested, hasImage: hasImage, local: local)
         let token = local ? "" : account.token
         // Catalog refresh and Ollama probing may suspend. Reserve the submission only;
         // history, cache, tool grants and window changes happen after they succeed.
@@ -944,7 +980,7 @@ final class AskConversationModel: ObservableObject {
             }
             submissionIssues[launcher] = nil
             submitValidated(submitted, modelRef: reference, local: local, newConversation: newConversation, messageId: queuedId,
-                            clearsDraft: clearsDraft, launcher: launcher)
+                            clearsDraft: clearsDraft, launcher: launcher, temporary: temporary)
             return
         }
         let id = newConversation ? UUID().uuidString.lowercased() : selected!.id
@@ -974,7 +1010,7 @@ final class AskConversationModel: ObservableObject {
                 submissionIssues[launcher] = nil
                 busyIds.remove(id)
                 submitValidated(submitted, modelRef: reference, local: local, newConversation: newConversation, messageId: queuedId,
-                                clearsDraft: clearsDraft, launcher: launcher)
+                                clearsDraft: clearsDraft, launcher: launcher, temporary: temporary)
             } catch is CancellationError {} catch {
                 guard owner == account.account, session()?.owner == account.account, selectionGeneration == generation else { return }
                 let issue = modelSelectionIssue(reference, cloudAvailable: !token.isEmpty, hasImage: hasImage)
@@ -1007,13 +1043,18 @@ final class AskConversationModel: ObservableObject {
     }
 
     private func submitValidated(_ submitted: AskDraft, modelRef: String, local: Bool, newConversation: Bool, messageId queuedId: String? = nil,
-                                 clearsDraft: Bool = true, launcher: Bool = false) {
+                                 clearsDraft: Bool = true, launcher: Bool = false, temporary: Bool = false) {
         guard let account = credentials() else { return }
         guard newConversation || selected != nil else { return }
         let id = newConversation ? UUID().uuidString.lowercased() : selected!.id
         guard !busyIds.contains(id) else { return }
-        if newConversation, local { localConversationIds.insert(id) }
-        let current = local ? account.local : account
+        if temporary {
+            // Only one temporary conversation exists; the UI asked before leaving the last one.
+            discardTemporaryConversation()
+            temporaryConversation = AskTemporaryConversation(id: id, cloud: !local)
+        } else if newConversation, local { localConversationIds.insert(id) }
+        let temporaryRun = isTemporary(id)
+        let current = temporaryRun ? account.temporary(cloud: !local) : local ? account.local : account
         error = nil; operationErrors[id] = nil; busyIds.insert(id)
         if newConversation {
             permissionModes[id] = permissionMode(launcher: launcher)
@@ -1025,12 +1066,15 @@ final class AskConversationModel: ObservableObject {
         var value = newConversation ? AskConversation(id: id, title: String(submitted.title.prefix(50)), revision: 0, updatedAt: Date(), messages: []) : selected!
         let messageId = queuedId ?? UUID().uuidString
         var request = submitted.request(deviceId: deviceId, tools: [], id: messageId)
-        request.titlePolicy = .init(enabled: modelLibrary.settings.askAutomaticTitles, modelRef: modelLibrary.settings.askTitleModelReference)
+        // A temporary conversation is never named: it has no place in history to be found by.
+        request.titlePolicy = .init(enabled: modelLibrary.settings.askAutomaticTitles && !temporaryRun,
+                                    modelRef: modelLibrary.settings.askTitleModelReference)
+        request.temporary = temporary ? true : nil
         request.clientToolApproval = true
         request.skills = skillUses(submitted.skills)
         request.modelRef = modelRef
         request.reasoningEffort = reasoningEffort.requestValue(for: request.modelRef.flatMap { modelLibrary.registry.resolve($0)?.1 })
-        request.memory = newConversation && submitted.memoryOff != true
+        request.memory = newConversation && !temporaryRun && submitted.memoryOff != true
             ? (submitted.memory ?? capture.globalMemory())?.usable(owner: current.account,
                                                                   invalidations: memoryInvalidations) : nil
         value.modelRef = request.modelRef
@@ -1060,7 +1104,7 @@ final class AskConversationModel: ObservableObject {
             do {
                 try await cache.save(value, owner: current.owner)
                 var request = request
-                request.tools = await tools.definitions(conversationId: id)
+                request.tools = Self.offeredTools(await tools.definitions(conversationId: id), temporary: temporaryRun)
                 try Task.checkCancellation()
                 request.memory = request.memory?.usable(owner: current.account, invalidations: memoryInvalidations)
                 pendingSends[id] = request
@@ -1284,6 +1328,8 @@ final class AskConversationModel: ObservableObject {
     }
 
     private func updateSummary(_ value: AskConversation) {
+        // A temporary conversation never appears in the history list.
+        guard !isTemporary(value.id) else { return }
         let summary = AskConversationSummary(id: value.id, title: value.title, updatedAt: value.updatedAt)
         if let index = conversations.firstIndex(where: { $0.id == value.id }) {
             if conversations[index] != summary, conversations[index].updatedAt <= summary.updatedAt {
@@ -1674,12 +1720,116 @@ final class AskConversationModel: ObservableObject {
             try await cache.delete(id: id, owner: current.owner)
             guard owner == current.account else { return }
             conversations.removeAll { $0.id == id }; localConversationIds.remove(id)
+            if temporaryConversation?.id == id { temporaryConversation = nil }
             drafts[id] = nil; snapshots[id] = nil; operationErrors[id] = nil; transcriptPositions[id] = nil
             sendQueue.clear(id)
             screenshotConsent[id] = nil; permissionModes[id] = nil; approvalStore.revoke(conversation: id)
             if selectedId == id { selectedId = nil; newConversation() }
             else { persistDrafts() }
         } catch { self.error = error.localizedDescription }
+    }
+
+    // MARK: - Temporary conversation
+
+    func isTemporary(_ id: String?) -> Bool { id != nil && temporaryConversation?.id == id }
+
+    /// What a new conversation's draft offers as memory: only global memory, since no
+    /// source app is trustworthy there.
+    func globalMemoryForNewDraft() -> AskMemory { capture.globalMemory() ?? AskMemory() }
+
+    /// Whether moving to `target` (nil for a new conversation) may go ahead. Leaving the
+    /// selected temporary conversation ends it; with messages in it the user is asked
+    /// first, unless they turned that off, and may keep it instead.
+    func leaveTemporaryConversation(for target: String?) -> Bool {
+        guard let temporary = temporaryConversation, temporary.id != target else { return true }
+        let hasContent = !(snapshots[temporary.id]?.messages.isEmpty ?? true)
+        if hasContent, selectedId == temporary.id, modelLibrary.settings.askConfirmLeavingTemporary {
+            let decision = confirmTemporaryLeave()
+            if decision.suppress { modelLibrary.settings.askConfirmLeavingTemporary = false }
+            switch decision.choice {
+            case .cancel: return false
+            case .keep: keepTemporaryConversation(); return true
+            case .end: break
+            }
+        }
+        discardTemporaryConversation()
+        return true
+    }
+
+    /// Ends the temporary conversation: stops its run and removes every copy, here and
+    /// in Typeflux Cloud. Nothing of it can be found afterwards.
+    func discardTemporaryConversation() {
+        guard let temporary = temporaryConversation, let account = credentials() else { return }
+        guard !keepingTemporaryIDs.contains(temporary.id) else {
+            // Being kept: it is no longer this session's temporary conversation.
+            temporaryConversation = nil
+            return
+        }
+        let id = temporary.id, route = account.temporary(cloud: temporary.cloud)
+        let activeRun = snapshots[id]?.run.flatMap { $0.isActive ? $0.id : nil }
+        temporaryConversation = nil
+        operations[id]?.cancel(); operations[id] = nil; operationIds[id] = nil
+        approvals[id]?.resume(returning: nil); approvals[id] = nil; approvalRequests[id] = nil
+        approvalStore.revoke(conversation: id)
+        busyIds.remove(id); pendingSends[id] = nil; pendingApprovals[id] = nil; operationErrors[id] = nil
+        inferenceProgress[id] = nil; progressInferenceIDs[id] = nil; recoveryEntries[id] = nil
+        drafts[id] = nil; snapshots[id] = nil; transcriptPositions[id] = nil; sendQueue.clear(id)
+        screenshotConsent[id] = nil; permissionModes[id] = nil; cloudApprovals[id] = nil
+        titleTasks[id]?.cancel(); titleTasks[id] = nil; titleRetryAfter[id] = nil
+        deletedConversationIDs.insert(id)
+        if controllingConversationId == id { controllingConversationId = nil; onControlChanged?(false) }
+        if selectedId == id {
+            selectionObservation?.cancel(); selectionObservation = nil
+            selectionGeneration = UUID(); selected = nil; selectedId = nil
+            isLoadingSelection = false; selectionLoadFailed = false; error = nil
+            draft = newQuestionDraft()
+            draft.memory = capture.globalMemory() ?? AskMemory()
+        }
+        tools.cancelProjects(conversationId: id)
+        Task { [api, cache, tools] in
+            if let activeRun { _ = try? await api.cancel(conversationId: id, runId: activeRun, token: route.token) }
+            try? await api.delete(conversationId: id, token: route.token)
+            try? await cache.delete(id: id, owner: route.owner)
+            try? tools.deleteArtifacts(ownerId: route.account, conversationId: id)
+        }
+    }
+
+    /// Turns the temporary conversation into an ordinary one kept where it ran:
+    /// Typeflux Cloud for a Cloud model, otherwise this Mac. It then shows in history.
+    func keepTemporaryConversation() {
+        guard let temporary = temporaryConversation, let account = credentials(),
+              !keepingTemporaryIDs.contains(temporary.id) else { return }
+        let id = temporary.id
+        let from = account.temporary(cloud: temporary.cloud), to = temporary.cloud ? account : account.local
+        keepingTemporaryIDs.insert(id)
+        Task { [weak self] in
+            guard let self else { return }
+            defer { keepingTemporaryIDs.remove(id) }
+            do {
+                let kept = try await api.keep(conversationId: id, token: from.token)
+                guard owner == account.account else { return }
+                let value = snapshots[id].map { $0.reconciling(kept) } ?? kept
+                // Copy it to its lasting partition before the route switches there.
+                try await cache.save(value, owner: to.owner)
+                if let saved = drafts[id] { try? await cache.saveDraft(saved, key: id, owner: to.owner) }
+                try? await cache.delete(id: id, owner: from.owner)
+                guard owner == account.account else { return }
+                if temporaryConversation?.id == id { temporaryConversation = nil }
+                if !temporary.cloud { localConversationIds.insert(id) }
+                snapshots[id] = value
+                if selectedId == id { selected = value }
+                updateSummary(value)
+                commandFeedback = L(temporary.cloud ? "ask.temporary.kept.cloud" : "ask.temporary.kept.local")
+            } catch {
+                guard owner == account.account else { return }
+                self.error = L("ask.temporary.keepFailed")
+            }
+        }
+    }
+
+    /// The memory tool would write what a temporary conversation must forget.
+    static func offeredTools(_ tools: [AskToolDefinition], temporary: Bool) -> [AskToolDefinition] {
+        temporary ? tools.filter { $0.name != "memory" } : tools
     }
 
     /// Callers await this before their operation finishes, so a conversation never looks idle
@@ -1755,6 +1905,11 @@ struct AskRoute: Equatable, Sendable {
 
     /// The same session, sent to the engine on this Mac.
     var local: AskRoute { .init(account: account, owner: AskRoutedAPI.localOwner, token: "") }
+    /// The temporary conversation's route: cached in memory only, and run in Typeflux
+    /// Cloud or on this Mac depending on its model.
+    func temporary(cloud: Bool) -> AskRoute {
+        .init(account: account, owner: AskRoutedAPI.temporaryOwner, token: cloud ? token : "")
+    }
 }
 
 // MARK: - Send queue

@@ -22,6 +22,8 @@ protocol AskAPI: Sendable {
     /// `CloudCreditsExhaustedError`; repeated calls never start a second runner.
     func resume(conversationId: String, runId: String, token: String) async throws -> AskConversation
     func delete(conversationId: String, token: String) async throws
+    /// Turns a temporary conversation into an ordinary one kept where it ran.
+    func keep(conversationId: String, token: String) async throws -> AskConversation
     /// Removes device memory pinned to every conversation of the signed-in user.
     func purgeMemory(token: String) async throws
     func purgeMemory(owner: String, token: String) async throws
@@ -58,6 +60,10 @@ extension AskAPI {
     func inferenceResult(conversationId: String, request: AskInferenceResult, token: String) async throws -> AskConversation { throw AskLocalError.message(L("ask.models.requestError")) }
     func purgeMemory(token: String) async throws {}
     func purgeMemory(owner: String, token: String) async throws { try await purgeMemory(token: token) }
+    /// Services without temporary conversations have nothing to keep.
+    func keep(conversationId: String, token: String) async throws -> AskConversation {
+        throw AskLocalError.message(L("ask.temporary.keepFailed"))
+    }
 }
 
 struct AskAPIClient: AskAPI {
@@ -149,6 +155,9 @@ struct AskAPIClient: AskAPI {
     func delete(conversationId: String, token: String) async throws {
         struct Deleted: Decodable { let deleted: Bool }
         let _: Deleted = try await execute(path: "/\(conversationId)", method: "DELETE", token: token)
+    }
+    func keep(conversationId: String, token: String) async throws -> AskConversation {
+        try await execute(path: "/\(conversationId)/keep", method: "POST", token: token)
     }
     func purgeMemory(token: String) async throws {
         struct Purged: Decodable { let purged: Int }

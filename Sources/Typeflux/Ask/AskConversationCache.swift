@@ -28,7 +28,14 @@ actor AskConversationCache: AskCaching {
 
     init(url: URL) throws {
         try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
-        guard sqlite3_open(url.path, &db) == SQLITE_OK else {
+        try self.init(path: url.path)
+    }
+
+    /// A cache that never touches the disk, for the temporary conversation.
+    static func inMemory() throws -> AskConversationCache { try AskConversationCache(path: ":memory:") }
+
+    private init(path: String) throws {
+        guard sqlite3_open(path, &db) == SQLITE_OK else {
             if let db { sqlite3_close(db) }
             throw CocoaError(.fileWriteUnknown)
         }

@@ -5,6 +5,8 @@ import Foundation
 /// state; the conversation model picks the token per conversation.
 struct AskRoutedAPI: AskAPI {
     static let localOwner = "local"
+    /// The cache partition of the temporary conversation; it lives in memory only.
+    static let temporaryOwner = "temporary"
 
     let cloud: any AskAPI
     let local: any AskAPI
@@ -56,6 +58,9 @@ struct AskRoutedAPI: AskAPI {
         try await api(token).resume(conversationId: conversationId, runId: runId, token: token)
     }
     func delete(conversationId: String, token: String) async throws { try await api(token).delete(conversationId: conversationId, token: token) }
+    func keep(conversationId: String, token: String) async throws -> AskConversation {
+        try await api(token).keep(conversationId: conversationId, token: token)
+    }
 
     /// Local copies are always cleared; Cloud copies only with a Cloud session.
     func purgeMemory(token: String) async throws {

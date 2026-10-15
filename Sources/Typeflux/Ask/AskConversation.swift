@@ -158,6 +158,9 @@ struct AskSendRequest: Codable, Equatable, Sendable {
     /// Device context for the server's environment prompt (IANA zone, BCP 47 locale).
     var timeZone: String? = TimeZone.current.identifier
     var locale: String? = Locale.current.identifier(.bcp47)
+    /// Creates a temporary conversation: kept out of every history list and
+    /// deleted when it ends or expires. Only the opening message sets it.
+    var temporary: Bool? = nil
 }
 
 /// A skill the user chose for one question, with the instructions it carries,
@@ -249,10 +252,13 @@ struct AskDraft: Codable, Equatable, Sendable {
     /// Where a new conversation is kept: true on this Mac, false in Typeflux Cloud,
     /// nil for the default from settings. Ignored once the conversation exists.
     var storesLocally: Bool? = nil
+    /// Starts a temporary conversation that never enters history or memory;
+    /// nil or false for an ordinary one. Ignored once the conversation exists.
+    var temporary: Bool? = nil
 
     private enum CodingKeys: String, CodingKey {
         case text, includeScreenshot, screenshot, selection, source, sourceOff, capturedAt, modelRef
-        case references, memory, memoryOff, selectionOff, attachments, skills, mcpServers, storesLocally
+        case references, memory, memoryOff, selectionOff, attachments, skills, mcpServers, storesLocally, temporary
         // convertFromSnakeCase maps source_bundle_id to sourceBundleId.
         case sourceBundleID = "sourceBundleId"
     }

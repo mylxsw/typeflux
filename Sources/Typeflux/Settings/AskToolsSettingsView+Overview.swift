@@ -20,6 +20,7 @@ extension AskToolsSettingsView {
             TFFootnote(text: L("agent.overview.storage.hint")).padding(.horizontal, 4)
         }
         AskTitleSettingsView(settings: settings)
+        AskTemporarySettingsView(settings: settings)
         let attention = statuses.filter { $0.level == .attention }
         TFFormSection(title: L("agent.overview.attention.title"), count: attention.isEmpty ? nil : attention.count) {
             if attention.isEmpty {

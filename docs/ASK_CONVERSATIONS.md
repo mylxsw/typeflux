@@ -415,6 +415,45 @@ this Mac; signing in is optional. The design board is
   server-side background runs (a local run pauses while the app is closed and
   resumes from the workspace), run traces, Cloud usage metering and sync.
 
+## Temporary conversations (GUL-370)
+
+A temporary conversation is the third place a conversation can be kept, beside
+Typeflux Cloud and this Mac. It is never listed in history (sidebar, ⌘K, iOS or
+the web), never reads or writes memory, is never named, and ends when the user
+leaves it, quits, signs out or switches accounts. The design board is
+`docs/design/ask-temporary-chat.html`; the plan is `docs/design/ask-temporary-chat.md`.
+
+- Starting one: the title bar's compose button opens a menu of the three kinds
+  (⌘N follows the default, ⇧⌘N private, ⌥⌘N temporary); the storage card behind the
+  composer's storage icon offers "Temporary · not saved" for a conversation that has
+  not started, signed in or out; `/temp` toggles it; ⌥⌘N toggles the launcher's
+  question. The launcher's choice applies to that question only.
+- Where it runs is fixed by its first model: a Cloud model runs it in Typeflux Cloud
+  (the first send carries `temporary: true`, the server keeps it out of the list and
+  expires it after at most 24 hours); the user's own models run it in `AskLocalEngine`,
+  which keeps it in memory and never writes `AskLocal/*.json`. `AskTemporaryConversation`
+  records the one temporary conversation and its route
+  (`AskRoute.temporary(cloud:)`, owner `AskRoutedAPI.temporaryOwner`).
+- `AskTemporaryCache` sends that owner's snapshots, drafts and tool journal to an
+  in-memory SQLite database, so nothing reaches `ask_conversations.sqlite`. Launcher
+  input history is not recorded, no memory is sent, the `memory` tool is not offered,
+  and automatic titles are off (the title policy is disabled on the wire too).
+- Leaving it (new conversation, another conversation, a launcher question) asks
+  first when it has messages: End, Keep, or Cancel, with "Don't ask again", which maps
+  to Settings → Agent → "Confirm before leaving a temporary chat". Ending it cancels
+  its run and deletes it on the server or in the engine, and from the in-memory cache.
+- Keep (from the dialog, the header chip or the storage card) calls `POST
+  …/:id/keep` or `AskLocalEngine.keep`, copies the snapshot to the account or `local`
+  partition and lists it as a Cloud or private conversation. A keep in flight is
+  never deleted by the next temporary conversation.
+- UI: teal with dashed edges (`AskTheme.temporaryTint`, `temporaryDash`): the
+  composer's edge, the send button, the hourglass storage icon, the header chip
+  (replacing credits), a pinned "Temporary chat · In progress" row above history,
+  and a line on the new-conversation page. The launcher's home hides "Continue
+  conversation" while its question is temporary.
+- Requires typeflux-api with migration 00071. An older server ignores the flag and
+  lists the conversation like any other.
+
 ## Liquid Glass workspace refresh (GUL-159, 2026-10-02)
 
 The workspace follows the interactive design board in

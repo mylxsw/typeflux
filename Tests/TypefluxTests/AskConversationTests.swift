@@ -55,10 +55,24 @@ actor AskTestAPI: AskAPI {
     func setFailSend(_ flag: Bool) { failSend = flag }
     func setFailList(_ flag: Bool) { failList = flag }
     func seed(_ value: AskConversation) { values[value.id] = value }
+    /// Temporary conversations, which the service never lists, and what was kept or deleted.
+    var temporaryIDs: Set<String> = []
+    var keeps: [String] = []
+    var deletes: [String] = []
+    var failKeep = false
+    func setFailKeep(_ value: Bool) { failKeep = value }
+    func keep(conversationId: String, token: String) async throws -> AskConversation {
+        if failKeep { throw AskLocalError.message("Offline") }
+        guard let value = values[conversationId] else { throw AskLocalError.message("Not found") }
+        keeps.append(conversationId)
+        temporaryIDs.remove(conversationId)
+        return value
+    }
     func list(token: String, offset: Int) async throws -> [AskConversationSummary] {
         if failList { throw AskLocalError.message("Network unavailable") }
         if let listed { return Array(listed.dropFirst(offset).prefix(50)) }
-        return values.values.sorted { $0.updatedAt > $1.updatedAt }.dropFirst(offset).map { .init(id: $0.id, title: $0.title, updatedAt: $0.updatedAt) }
+        return values.values.filter { !temporaryIDs.contains($0.id) }.sorted { $0.updatedAt > $1.updatedAt }
+            .dropFirst(offset).map { .init(id: $0.id, title: $0.title, updatedAt: $0.updatedAt) }
     }
     func conversation(id: String, token: String) async throws -> AskConversation {
         if failGets.contains(id) { throw AskLocalError.message("Offline") }
@@ -69,6 +83,7 @@ actor AskTestAPI: AskAPI {
     func send(conversationId: String, request: AskSendRequest, token: String) async throws -> AskConversation {
         if failSend { throw AskLocalError.message("Network unavailable") }
         sends.append(request)
+        if values[conversationId] == nil, request.temporary == true { temporaryIDs.insert(conversationId) }
         var value = values[conversationId] ?? AskConversation(id: conversationId, title: request.text, revision: 0, updatedAt: Date(), messages: [])
         if value.messages.contains(where: { $0.id == request.id }) { return value }
         value.messages.append(.init(id: request.id, role: "user", text: request.text, selection: request.selection, source: request.source, image: request.image, createdAt: Date(), references: request.references,
@@ -180,7 +195,11 @@ actor AskTestAPI: AskAPI {
         }
         return value
     }
-    func delete(conversationId: String, token: String) async throws { values[conversationId] = nil }
+    func delete(conversationId: String, token: String) async throws {
+        deletes.append(conversationId)
+        values[conversationId] = nil
+        temporaryIDs.remove(conversationId)
+    }
     var purgeTokens: [String] = []
     var failPurge = false
     func setFailPurge(_ flag: Bool) { failPurge = flag }

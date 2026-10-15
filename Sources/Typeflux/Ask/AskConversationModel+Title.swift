@@ -3,7 +3,7 @@ import Foundation
 extension AskConversationModel {
     func scheduleTitle(_ value: AskConversation, route: AskRoute) {
         let settings = modelLibrary.settings
-        guard settings.askAutomaticTitles, value.titleSource != "auto", value.titleSource != "manual",
+        guard settings.askAutomaticTitles, !isTemporary(value.id), value.titleSource != "auto", value.titleSource != "manual",
               value.run?.status == "completed", AskConversationTitle.transcript(value) != nil,
               titleTasks[value.id] == nil, (titleRetryAfter[value.id] ?? .distantPast) < Date(),
               (value.titleGeneration?.attempts ?? 0) < 3 else { return }
