@@ -5423,3 +5423,23 @@
 "component.remove" = "移除";
 "component.undo" = "復原";
 "component.required" = "必填";
+/* Central permission settings */
+"settings.permissions.required" = "必要權限";
+"settings.permissions.requiredHint" = "這些權限用於語音輸入和文字寫入。語音辨識用於 Apple 語音辨識及其備援。";
+"settings.permissions.optional" = "依功能授權";
+"settings.permissions.optionalHint" = "使用對應功能時再授權。瀏覽器自動化依目標應用程式分別授權。";
+"settings.permissions.requestFailed" = "無法請求 %@ 權限，請在系統設定中檢查。";
+"permission.badge.notGranted" = "未授權";
+"permission.badge.systemManaged" = "系統設定";
+"permission.screenRecording.title" = "螢幕錄製與系統錄音";
+"permission.screenRecording.summary" = "用於截圖、螢幕錄製、截圖 OCR 和 Agent 螢幕操作。授權後可能需要重新啟動 Typeflux。";
+"permission.camera.title" = "攝影機";
+"permission.camera.summary" = "用於在螢幕錄製時顯示攝影機畫面。";
+"permission.calendar.title" = "行事曆";
+"permission.calendar.summary" = "用於在啟動器和 Agent 中讀取行程。";
+"permission.notifications.title" = "通知";
+"permission.notifications.summary" = "用於背景工作完成提醒和工作流程通知。";
+"permission.automation.title" = "自動化";
+"permission.automation.summary" = "用於讀取瀏覽器分頁和控制其他應用程式。macOS 會依目標應用程式分別詢問授權。";
+"permission.fullDiskAccess.title" = "完整磁碟取用權限";
+"permission.fullDiskAccess.summary" = "用於搜尋受保護的檔案和讀取部分瀏覽器的書籤。";

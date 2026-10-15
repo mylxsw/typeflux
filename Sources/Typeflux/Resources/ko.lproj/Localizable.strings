@@ -5389,3 +5389,23 @@
 "component.remove" = "제거";
 "component.undo" = "실행 취소";
 "component.required" = "필수";
+/* Central permission settings */
+"settings.permissions.required" = "필수 권한";
+"settings.permissions.requiredHint" = "음성 입력과 텍스트 입력에 사용하는 권한입니다. 음성 인식은 Apple 음성 인식과 대체 기능에 사용합니다.";
+"settings.permissions.optional" = "기능별 권한";
+"settings.permissions.optionalHint" = "해당 기능을 사용할 때 허용하세요. 브라우저 자동화는 대상 앱마다 따로 허용합니다.";
+"settings.permissions.requestFailed" = "%@ 접근 권한을 요청하지 못했습니다. 시스템 설정에서 확인하세요.";
+"permission.badge.notGranted" = "허용 안 됨";
+"permission.badge.systemManaged" = "시스템 설정";
+"permission.screenRecording.title" = "화면 기록";
+"permission.screenRecording.summary" = "스크린샷, 화면 기록, OCR, Agent 화면 조작에 사용합니다. 허용 후 Typeflux를 다시 시작해야 할 수 있습니다.";
+"permission.camera.title" = "카메라";
+"permission.camera.summary" = "화면 기록에 카메라 영상을 포함하는 데 사용합니다.";
+"permission.calendar.title" = "캘린더";
+"permission.calendar.summary" = "런처와 Agent에서 일정을 읽는 데 사용합니다.";
+"permission.notifications.title" = "알림";
+"permission.notifications.summary" = "백그라운드 작업 완료와 워크플로 알림에 사용합니다.";
+"permission.automation.title" = "자동화";
+"permission.automation.summary" = "브라우저 탭을 읽고 다른 앱을 조작하는 데 사용합니다. macOS는 대상 앱마다 권한을 요청합니다.";
+"permission.fullDiskAccess.title" = "전체 디스크 접근";
+"permission.fullDiskAccess.summary" = "보호된 파일을 검색하고 일부 브라우저의 북마크를 읽는 데 사용합니다.";

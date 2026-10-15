@@ -3,7 +3,7 @@ import SwiftUI
 import Testing
 @testable import Typeflux
 
-/// Renders every Settings pane (General, Appearance, Shortcuts, Advanced) with the production
+/// Renders every Settings pane with the production
 /// `StudioView` in light and dark. Set `TYPEFLUX_SETTINGS_SNAPSHOTS=<dir>` to keep the PNGs.
 @Suite("App settings pages rendering", .serialized, .exclusiveUIState)
 @MainActor

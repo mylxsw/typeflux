@@ -5504,3 +5504,23 @@
 "component.remove" = "Remove";
 "component.undo" = "Undo";
 "component.required" = "Required";
+/* Central permission settings */
+"settings.permissions.required" = "Required permissions";
+"settings.permissions.requiredHint" = "These permissions support voice input and text delivery. Speech Recognition is used by Apple Speech and its fallback.";
+"settings.permissions.optional" = "Feature permissions";
+"settings.permissions.optionalHint" = "Grant access when you use the corresponding feature. Browser automation is authorized separately for each target app.";
+"settings.permissions.requestFailed" = "Could not request %@ access. Review it in System Settings.";
+"permission.badge.notGranted" = "Not authorized";
+"permission.badge.systemManaged" = "System Settings";
+"permission.screenRecording.title" = "Screen Recording";
+"permission.screenRecording.summary" = "Used for screenshots, recording, screenshot OCR, and Agent screen control. You may need to restart Typeflux after granting access.";
+"permission.camera.title" = "Camera";
+"permission.camera.summary" = "Used to include your camera in screen recordings.";
+"permission.calendar.title" = "Calendar";
+"permission.calendar.summary" = "Used to read events in the Launcher and Agent.";
+"permission.notifications.title" = "Notifications";
+"permission.notifications.summary" = "Used for background task completion and workflow notifications.";
+"permission.automation.title" = "Automation";
+"permission.automation.summary" = "Used to read browser tabs and control other apps. macOS asks for access separately for each target app.";
+"permission.fullDiskAccess.title" = "Full Disk Access";
+"permission.fullDiskAccess.summary" = "Used to search protected files and read bookmarks from some browsers.";
