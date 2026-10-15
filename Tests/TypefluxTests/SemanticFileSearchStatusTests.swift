@@ -11,7 +11,7 @@ struct SemanticFileSearchStatusTests {
                 modelReady: Bool = true, blocked: [String] = [],
                 indexProgress: SemanticFileIndexer.Summary? = nil) -> Status {
         .of(.init(phase: phase, enabled: enabled, filesEnabled: filesEnabled, modelReady: modelReady,
-                  files: 1248, chunks: 2816, blocked: blocked, indexProgress: indexProgress))
+                  files: 1248, blocked: blocked, indexProgress: indexProgress))
     }
 
     @Test func `off and suspended states explain themselves without actions`() {
@@ -39,8 +39,7 @@ struct SemanticFileSearchStatusTests {
     }
 
     @Test func `finished and failed states offer the matching recovery`() {
-        #expect(status(.ready) == .init(tone: .ready,
-                                        text: L("semantic.ready", 1248.formatted(), 2816.formatted())))
+        #expect(status(.ready) == .init(tone: .ready, text: L("semantic.ready")))
         #expect(status(.ready, blocked: ["/Users/me/Documents"]).action == .permission)
         #expect(status(.modelRequired, modelReady: false).action == .download)
         #expect(status(.failed, modelReady: false) == .init(tone: .warning, text: L("semantic.failed.download"),

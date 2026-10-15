@@ -8,6 +8,17 @@ private let semanticTransient = unsafeBitCast(-1, to: sqlite3_destructor_type.se
 /// Serialized by the lock; no main-actor disk I/O and no shared filename-index state.
 final class SemanticFileStore: @unchecked Sendable {
     enum Failure: Error { case database, invalidVector }
+    /// Committed files only; discovered candidates and embedding chunks are separate.
+    struct Counts: Equatable, Sendable {
+        var documents = 0
+        var images = 0
+        var audio = 0
+        var videos = 0
+        var chunks = 0
+
+        var files: Int { documents + images + audio + videos }
+    }
+
     private let lock = NSLock()
     private var database: OpaquePointer?
     let url: URL
@@ -136,8 +147,25 @@ final class SemanticFileStore: @unchecked Sendable {
         }
     }
 
-    func counts() throws -> (files: Int, chunks: Int) {
-        try self.lock.withLock { try (self.count("files"), self.count("chunks")) }
+    func counts() throws -> Counts {
+        try self.lock.withLock {
+            let stmt = try statement("SELECT path FROM files")
+            defer { sqlite3_finalize(stmt) }
+            var result = Counts()
+            var step = sqlite3_step(stmt)
+            while step == SQLITE_ROW {
+                switch SemanticMediaPriority.of(self.string(stmt, 0)) {
+                case .document: result.documents += 1
+                case .image: result.images += 1
+                case .audio: result.audio += 1
+                case .video: result.videos += 1
+                }
+                step = sqlite3_step(stmt)
+            }
+            guard step == SQLITE_DONE else { throw Failure.database }
+            result.chunks = try self.count("chunks")
+            return result
+        }
     }
 
     // Scope/type/filter checks precede ranking; forbidden rows cannot consume TopK slots.

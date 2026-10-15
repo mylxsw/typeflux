@@ -5034,7 +5034,7 @@
 "semantic.downloading" = "모델 다운로드 중";
 "semantic.downloadBytes" = "%@ / %@";
 "semantic.indexing" = "내용 색인 생성 중 · 파일 %@개";
-"semantic.ready" = "준비됨 · 파일 %@개 · 구절 %@개";
+"semantic.ready" = "준비됨";
 "semantic.paused" = "색인 일시 정지됨 · 파일 %@개";
 "semantic.failed.download" = "모델 다운로드 실패";
 "semantic.failed.index" = "내용 색인 실패";
@@ -5064,6 +5064,10 @@
 "semantic.progress.indexing" = "파일 %@ / %@개 처리됨";
 "semantic.metrics" = "내용 색인";
 "semantic.metric.files" = "색인된 파일";
+"semantic.metric.documents" = "문서";
+"semantic.metric.images" = "이미지";
+"semantic.metric.audio" = "오디오";
+"semantic.metric.videos" = "동영상";
 "semantic.metric.index" = "색인 크기";
 "semantic.metric.model" = "모델 크기";
 "semantic.pause" = "일시 정지";

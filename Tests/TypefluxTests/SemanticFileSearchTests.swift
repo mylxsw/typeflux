@@ -107,6 +107,23 @@ struct SemanticFilePolicyTests {
 
 @Suite("Semantic SQLite index")
 struct SemanticFileStoreTests {
+    @Test func `indexed file counts use the same media categories as indexing`() throws {
+        let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
+        let url = root.appendingPathComponent("index.sqlite")
+        let store = try SemanticFileStore(url: url)
+        for name in ["report.MD", "scan.pdf", "cover.PNG", "meeting.m4a", "demo.MOV"] {
+            try store.replace(path: root.appendingPathComponent(name).path, modified: Date(), bytes: 10,
+                              chunks: [.init(text: name, page: nil)], vectors: [semanticVector()])
+        }
+        let counts = try store.counts()
+        #expect(counts.files == 5 && counts.chunks == 5)
+        #expect(counts.documents == 2 && counts.images == 1 && counts.audio == 1 && counts.videos == 1)
+        try store.remove(root.appendingPathComponent("cover.PNG").path)
+        #expect(try SemanticFileStore(url: url).counts() == .init(documents: 2, audio: 1, videos: 1, chunks: 4))
+        try store.clear()
+        #expect(try store.counts() == .init())
+    }
+
     @Test func `atomic replace persistence invalidation and pruning`() throws {
         let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
         let url = root.appendingPathComponent("index.sqlite"), path = root.appendingPathComponent("note.md").path

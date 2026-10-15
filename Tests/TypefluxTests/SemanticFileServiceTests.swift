@@ -137,6 +137,7 @@ struct SemanticFileServiceTests {
         service.downloadModel()
         try await Self.wait { service.phase == .ready }
         #expect(service.files == 1); #expect(service.chunks == 1); #expect(service.modelReady)
+        #expect(service.indexedCounts.files == 1 && service.indexedCounts.documents == 1)
         let hits = await service.search("报销流程", type: .all, limit: 10)
         #expect(hits.map(\.path) == [reader.path]); #expect(hits.first?.evidence != nil)
         reader.failed = true
@@ -163,6 +164,7 @@ struct SemanticFileServiceTests {
         try await Self.wait { service.phase == .ready }
         await service.clear()
         #expect(service.phase == .off); #expect(service.files == 0)
+        #expect(service.indexedCounts == .init())
         #expect(FileManager.default.fileExists(atPath: service.modelURL.path))
         await service.clear(removeModel: true)
         #expect(!FileManager.default.fileExists(atPath: service.modelURL.path)); #expect(!service.modelReady)
@@ -312,6 +314,10 @@ struct SemanticFileServiceTests {
                 #expect(window.attachedSheet == nil)
                 #expect(service.settings.askLauncherSearchSettings.fileRoots == [root.path])
                 #expect(Support.contains(L("semantic.metric.index"), in: host))
+                for key in ["semantic.metric.files", "semantic.metric.documents", "semantic.metric.images",
+                            "semantic.metric.audio", "semantic.metric.videos"] {
+                    #expect(Support.contains(L(key), in: host))
+                }
 
                 service.pause(true)
                 try await Self.ready { service.phase == .paused }

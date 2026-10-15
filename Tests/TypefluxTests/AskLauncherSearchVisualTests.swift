@@ -154,6 +154,13 @@ struct AskLauncherSearchVisualTests {
             try await render(view, size: NSSize(width: 760, height: 900), appearance: appearance,
                              file: output.appendingPathComponent("settings-files-content-ready-\(theme).png"),
                              wait: .milliseconds(300))
+            let compact = LauncherSearchSettingsView(settings: settings, index: index, fullDiskAccess: { false },
+                                                     semanticService: semantic, tab: .files)
+                .padding(16).frame(width: 520, alignment: .top)
+                .background(StudioTheme.surface)
+            try await render(compact, size: NSSize(width: 520, height: 1150), appearance: appearance,
+                             file: output.appendingPathComponent("settings-files-content-ready-compact-\(theme).png"),
+                             wait: .milliseconds(300))
         }
     }
 }

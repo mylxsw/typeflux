@@ -12,6 +12,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
     @Published private(set) var phase: Phase = .off
     @Published private(set) var files = 0
     @Published private(set) var chunks = 0
+    @Published private(set) var indexedCounts = SemanticFileStore.Counts()
     @Published private(set) var skipped = 0
     @Published private(set) var mediaDownload: Double?
     @Published private(set) var mediaFailed = false
@@ -42,6 +43,8 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
     private var work: Task<Void, Never>?
     private var download: Task<Void, Never>?
     private var rescan: Task<Void, Never>?
+    private var countRefresh: Task<Void, Never>?
+    private var lastCountRefresh = Date.distantPast
     private var token = AskSearchCancellation()
     private var store: SemanticFileStore?
     private var scope: AskFileScope?
@@ -212,7 +215,10 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
 
     private func updateCounts(_ database: SemanticFileStore) async {
         if let counts = try? await Task.detached(priority: .utility, operation: { try database.counts() }).value {
-            self.files = counts.files; self.chunks = counts.chunks
+            guard !self.removing, self.store === database else { return }
+            if self.files != counts.files { self.files = counts.files }
+            if self.chunks != counts.chunks { self.chunks = counts.chunks }
+            if self.indexedCounts != counts { self.indexedCounts = counts }
         }
     }
 
@@ -247,6 +253,14 @@ extension SemanticFileSearchService {
                 guard let self, !token.isCancelled else { return }
                 self.indexProgress = summary
                 self.files = max(self.files, summary.files); self.skipped = summary.skipped
+                if self.countRefresh == nil, Date().timeIntervalSince(self.lastCountRefresh) >= 3 {
+                    self.lastCountRefresh = Date()
+                    self.countRefresh = Task { [weak self] in
+                        guard let self else { return }
+                        await self.updateCounts(database)
+                        self.countRefresh = nil
+                    }
+                }
             }
         }
         self.work = Task { [weak self] in
@@ -266,6 +280,7 @@ extension SemanticFileSearchService {
                 }.value
                 guard let self, !token.isCancelled, !Task.isCancelled else { return }
                 self.skipped = result.skipped
+                await self.countRefresh?.value
                 await self.updateCounts(database)
                 guard !token.isCancelled, !Task.isCancelled else { return }
                 self.indexProgress = nil
@@ -392,7 +407,8 @@ extension SemanticFileSearchService {
                     }
                 }
             }.value
-            self.files = 0; self.chunks = 0; self.skipped = 0; self.mediaDownload = nil; self.mediaFailed = false
+            self.files = 0; self.chunks = 0; self.indexedCounts = .init()
+            self.skipped = 0; self.mediaDownload = nil; self.mediaFailed = false
             self.indexProgress = nil; self.phase = .off
             if removeModel {
                 self.modelReady = false

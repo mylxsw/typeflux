@@ -5034,7 +5034,7 @@
 "semantic.downloading" = "モデルをダウンロード中";
 "semantic.downloadBytes" = "%@ / %@";
 "semantic.indexing" = "内容索引を作成中 · %@ 件";
-"semantic.ready" = "準備完了 · %@ 件 · %@ 個のパッセージ";
+"semantic.ready" = "準備完了";
 "semantic.paused" = "索引を一時停止中 · %@ 件";
 "semantic.failed.download" = "モデルのダウンロードに失敗しました";
 "semantic.failed.index" = "内容の索引に失敗しました";
@@ -5064,6 +5064,10 @@
 "semantic.progress.indexing" = "%@ / %@ ファイルを処理済み";
 "semantic.metrics" = "内容索引";
 "semantic.metric.files" = "索引済みファイル";
+"semantic.metric.documents" = "文書";
+"semantic.metric.images" = "画像";
+"semantic.metric.audio" = "音声";
+"semantic.metric.videos" = "動画";
 "semantic.metric.index" = "索引サイズ";
 "semantic.metric.model" = "モデルサイズ";
 "semantic.pause" = "一時停止";

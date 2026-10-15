@@ -92,6 +92,7 @@ struct SemanticFileSearchSettingsView: View {
                 SemanticProgressView(progress: progress, detailed: true)
             }
             HStack(spacing: 20) {
+                Self.metric(L("semantic.metric.files"), service.indexedCounts.files.formatted())
                 Self.metric(L("semantic.metric.index"),
                             storage.index > 0 ? SemanticFileSearchStatus.size(storage.index) : "—")
                 Self.metric(L("semantic.metric.model"),
@@ -99,6 +100,13 @@ struct SemanticFileSearchSettingsView: View {
                 Self.metric(L("semantic.metric.location"), L("semantic.metric.local"))
             }
             .accessibilityIdentifier("semantic.metrics")
+            HStack(spacing: 20) {
+                Self.metric(L("semantic.metric.documents"), service.indexedCounts.documents.formatted())
+                Self.metric(L("semantic.metric.images"), service.indexedCounts.images.formatted())
+                Self.metric(L("semantic.metric.audio"), service.indexedCounts.audio.formatted())
+                Self.metric(L("semantic.metric.videos"), service.indexedCounts.videos.formatted())
+            }
+            .accessibilityIdentifier("semantic.fileTypes")
             HStack(spacing: 14) {
                 lifecycleButton
                 Self.destructiveLink(L("semantic.clear")) { confirmation = .index }

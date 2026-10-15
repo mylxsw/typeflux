@@ -5068,7 +5068,7 @@
 "semantic.downloading" = "正在下載模型";
 "semantic.downloadBytes" = "%@ / %@";
 "semantic.indexing" = "正在建立內容索引 · %@ 個檔案";
-"semantic.ready" = "已就緒 · %@ 個檔案 · %@ 個片段";
+"semantic.ready" = "已就緒";
 "semantic.paused" = "索引已暫停 · %@ 個檔案";
 "semantic.failed.download" = "模型下載失敗";
 "semantic.failed.index" = "內容索引失敗";
@@ -5098,6 +5098,10 @@
 "semantic.progress.indexing" = "已處理 %@ / %@ 個檔案";
 "semantic.metrics" = "內容索引";
 "semantic.metric.files" = "已索引檔案";
+"semantic.metric.documents" = "文件";
+"semantic.metric.images" = "圖片";
+"semantic.metric.audio" = "音訊";
+"semantic.metric.videos" = "影片";
 "semantic.metric.index" = "索引佔用";
 "semantic.metric.model" = "模型佔用";
 "semantic.pause" = "暫停";

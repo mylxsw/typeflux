@@ -5083,7 +5083,7 @@
 "semantic.downloading" = "Downloading model";
 "semantic.downloadBytes" = "%@ / %@";
 "semantic.indexing" = "Building content index · %@ files";
-"semantic.ready" = "Ready · %@ files · %@ passages";
+"semantic.ready" = "Ready";
 "semantic.paused" = "Indexing paused · %@ files";
 "semantic.failed.download" = "Model download failed";
 "semantic.failed.index" = "Content indexing failed";
@@ -5113,6 +5113,10 @@
 "semantic.progress.indexing" = "%@ of %@ files processed";
 "semantic.metrics" = "Content index";
 "semantic.metric.files" = "Indexed files";
+"semantic.metric.documents" = "Documents";
+"semantic.metric.images" = "Images";
+"semantic.metric.audio" = "Audio";
+"semantic.metric.videos" = "Videos";
 "semantic.metric.index" = "Index size";
 "semantic.metric.model" = "Model size";
 "semantic.pause" = "Pause";

@@ -18,7 +18,6 @@ struct SemanticFileSearchStatus: Equatable {
         var filesEnabled: Bool
         var modelReady: Bool
         var files = 0
-        var chunks = 0
         var blocked: [String] = []
         var indexProgress: SemanticFileIndexer.Summary?
         var mediaDownload: Double?
@@ -52,7 +51,7 @@ struct SemanticFileSearchStatus: Equatable {
         case .ready where !input.blocked.isEmpty:
             return .init(tone: .warning, text: L("semantic.permissionNeeded"), action: .permission)
         case .ready:
-            return .init(tone: .ready, text: L("semantic.ready", files, input.chunks.formatted()))
+            return .init(tone: .ready, text: L("semantic.ready"))
         case .failed where input.modelReady:
             return .init(tone: .warning, text: L(input.mediaFailed ? "semantic.media.failed" : "semantic.failed.index"),
                          action: .retry)
@@ -83,7 +82,7 @@ extension SemanticFileSearchService {
     func status(filesEnabled: Bool? = nil) -> SemanticFileSearchStatus {
         .of(.init(phase: phase, enabled: supported && preferences.enabled,
                   filesEnabled: filesEnabled ?? settings.askQuickFileSearchEnabled, modelReady: modelReady,
-                  files: files, chunks: chunks, blocked: blocked, indexProgress: indexProgress,
+                  files: files, blocked: blocked, indexProgress: indexProgress,
                   mediaDownload: mediaDownload, mediaFailed: mediaFailed))
     }
 }
