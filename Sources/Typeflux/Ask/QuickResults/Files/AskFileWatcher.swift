@@ -6,6 +6,10 @@ struct AskFileChange: Equatable, Sendable {
     var path: String
     /// Events were dropped or merged: everything below `path` must be read again.
     var rescan: Bool
+    /// FSEvents reports the entry kind even when the entry has already been removed.
+    var isDirectory: Bool? = nil
+    /// A directory was created, removed, or renamed, so its children may have changed.
+    var structureChanged = false
 }
 
 /// Watches folders for changes. The real one is FSEvents; tests drive the index directly.
@@ -45,7 +49,17 @@ final class AskFSEventsWatcher: AskFileWatching {
                 let rescan = flag & (kFSEventStreamEventFlagMustScanSubDirs | kFSEventStreamEventFlagUserDropped
                     | kFSEventStreamEventFlagKernelDropped | kFSEventStreamEventFlagRootChanged) != 0
                 if flag & kFSEventStreamEventFlagHistoryDone == 0 {
-                    changes.append(AskFileChange(path: list[index], rescan: rescan))
+                    let directory: Bool? = if flag & kFSEventStreamEventFlagItemIsDir != 0 {
+                        true
+                    } else if flag & kFSEventStreamEventFlagItemIsFile != 0 {
+                        false
+                    } else {
+                        nil
+                    }
+                    let structureChanged = flag & (kFSEventStreamEventFlagItemCreated
+                        | kFSEventStreamEventFlagItemRemoved | kFSEventStreamEventFlagItemRenamed) != 0
+                    changes.append(AskFileChange(path: list[index], rescan: rescan,
+                                                 isDirectory: directory, structureChanged: structureChanged))
                 }
                 last = max(last, ids[index])
             }

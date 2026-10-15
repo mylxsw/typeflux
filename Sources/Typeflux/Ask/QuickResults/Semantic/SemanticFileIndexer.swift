@@ -66,7 +66,7 @@ enum SemanticFileIndexer {
     // swiftlint:disable:next function_parameter_count function_body_length cyclomatic_complexity
     static func run(scope: AskFileScope, store: SemanticFileStore, reader: AskFileReading,
                     encoder: SemanticEmbedding, media: (any SemanticMediaEmbedding)? = nil,
-                    idle: () -> Bool = { true }, cancelled: () -> Bool,
+                    idle: () -> Bool = { true }, paused: () -> Bool = { false }, cancelled: () -> Bool,
                     progress: (Summary) -> Void) throws -> Summary {
         var summary = Summary(), failure: Error?
         try store.beginDiscovery()
@@ -76,6 +76,7 @@ enum SemanticFileIndexer {
         }
         for root in scope.roots {
             AskFileCrawler.crawl(root, scope: scope, limit: nil, reader: reader, isCancelled: cancelled,
+                isPaused: paused,
                 skipped: { _, _ in summary.skipped += 1 }, visit: { entry in
                     summary.scanned += 1
                     if entry.kind == .file, SemanticFilePolicy.allows(entry.path) {
@@ -100,7 +101,7 @@ enum SemanticFileIndexer {
                 let paths = try store.candidates(priority, after: after)
                 if paths.isEmpty { break }
                 for path in paths {
-                    if cancelled() { throw CancellationError() }
+                    try waitWhilePaused(paused, cancelled: cancelled)
                     do {
                         let indexed = try index(path, scope: scope, store: store, reader: reader, encoder: encoder,
                             media: media, cancelled: cancelled, waitForIdle: {
@@ -127,9 +128,61 @@ enum SemanticFileIndexer {
                 after = paths.last!
             }
         }
+        try waitWhilePaused(paused, cancelled: cancelled)
         if summary.skipped == 0 { try store.pruneDiscovered(cancelled: cancelled) }
         progress(summary)
         return summary
+    }
+
+    /// Reconcile changed files without walking the search roots again.
+    // swiftlint:disable:next function_parameter_count cyclomatic_complexity
+    static func reconcile(paths: [String], scope: AskFileScope, store: SemanticFileStore, reader: AskFileReading,
+                          encoder: SemanticEmbedding, media: (any SemanticMediaEmbedding)? = nil,
+                          idle: () -> Bool = { true }, paused: () -> Bool = { false }, cancelled: () -> Bool,
+                          progress: (Summary) -> Void) throws -> Summary {
+        let paths = Array(Set(paths)).sorted()
+        var summary = Summary()
+        summary.total = paths.count
+        progress(summary)
+        for priority in SemanticMediaPriority.allCases {
+            summary.priority = priority
+            if priority == .image { encoder.release() }
+            for path in paths where SemanticMediaPriority.of(path) == priority {
+                try waitWhilePaused(paused, cancelled: cancelled)
+                do {
+                    let indexed = try index(path, scope: scope, store: store, reader: reader, encoder: encoder,
+                                            media: media, cancelled: cancelled, waitForIdle: {
+                                                if !idle() {
+                                                    summary.waitingForIdle = true; progress(summary)
+                                                    while !idle() {
+                                                        if cancelled() { throw CancellationError() }
+                                                        Thread.sleep(forTimeInterval: 0.25)
+                                                    }
+                                                    summary.waitingForIdle = false; progress(summary)
+                                                }
+                                                if cancelled() { throw CancellationError() }
+                                            })
+                    if indexed { summary.files += 1 } else { summary.skipped += 1 }
+                } catch let error as SemanticFileStore.Failure { throw error } catch let Failure.inference(error) {
+                    throw error
+                } catch let error as SemanticMediaFailure { throw error } catch {
+                    if cancelled() { throw CancellationError() }
+                    try? store.remove(path); summary.skipped += 1
+                }
+                summary.processed += 1
+                progress(summary)
+            }
+        }
+        try waitWhilePaused(paused, cancelled: cancelled)
+        return summary
+    }
+
+    private static func waitWhilePaused(_ paused: () -> Bool, cancelled: () -> Bool) throws {
+        while paused() {
+            if cancelled() { throw CancellationError() }
+            Thread.sleep(forTimeInterval: 0.25)
+        }
+        if cancelled() { throw CancellationError() }
     }
 
     // swiftlint:disable:next function_parameter_count cyclomatic_complexity

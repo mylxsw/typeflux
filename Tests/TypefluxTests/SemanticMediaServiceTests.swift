@@ -5,25 +5,28 @@ import Testing
 @Suite("Media service scheduling and recovery", .serialized, .exclusiveUIState)
 @MainActor
 struct SemanticMediaServiceTests {
-    private func fixture(idle: Bool, mediaFailure: Bool = false) throws
-        -> (SemanticFileSearchService, URL) {
+    private func fixture(idle: Bool, mediaFailure: Bool = false,
+                         idleCheck: (@Sendable () -> Bool)? = nil) throws
+        -> (SemanticFileSearchService, URL, SemanticFixtureWatcher, SemanticMediaFixtureReader,
+            SemanticFixtureEncoder) {
         let (original, root, _, models) = try SemanticFileServiceTests().fixture()
         try FileManager.default.copyItem(at: models.source, to: original.modelURL)
         let reader = SemanticMediaFixtureReader(root: root.path)
         reader.names = ["image.png", "document.md"]
-        let media = SemanticFixtureMediaEncoder()
+        let media = SemanticFixtureMediaEncoder(), watcher = SemanticFixtureWatcher()
+        let encoder = SemanticFixtureEncoder()
         if mediaFailure { media.before = { _ in throw URLError(.badServerResponse) } }
         let service = SemanticFileSearchService(settings: original.settings, directory: root,
-            helper: URL(fileURLWithPath: "/usr/bin/true"), supported: true, watcher: SemanticFixtureWatcher(),
+            helper: URL(fileURLWithPath: "/usr/bin/true"), supported: true, watcher: watcher,
             access: { true }, automaticStart: false, resourceConstrained: { false }, models: models,
-            mediaModels: SemanticMediaFixtureModels(source: models.source), idle: { idle },
+            mediaModels: SemanticMediaFixtureModels(source: models.source), idle: idleCheck ?? { idle },
             makeMediaEncoder: { _, _, _ in media }, makeReader: { reader },
-            makeEncoder: { _, _ in SemanticFixtureEncoder() }, makeQuery: { _, _ in SemanticFixtureQuery() })
-        return (service, root)
+            makeEncoder: { _, _ in encoder }, makeQuery: { _, _ in SemanticFixtureQuery() })
+        return (service, root, watcher, reader, encoder)
     }
 
     @Test func documentsStaySearchableWhileMediaWaitsForIdle() async throws {
-        let (service, root) = try fixture(idle: false)
+        let (service, root, _, _, _) = try fixture(idle: false)
         defer { try? FileManager.default.removeItem(at: root) }
         #expect(service.setEnabled(true))
         try await SemanticFileServiceTests.wait { service.indexProgress?.waitingForIdle == true }
@@ -37,7 +40,7 @@ struct SemanticMediaServiceTests {
     }
 
     @Test func mediaFailureDoesNotInvalidateTheTextModelOrDocumentIndex() async throws {
-        let (service, root) = try fixture(idle: true, mediaFailure: true)
+        let (service, root, _, _, _) = try fixture(idle: true, mediaFailure: true)
         defer { try? FileManager.default.removeItem(at: root) }
         #expect(service.setEnabled(true))
         try await SemanticFileServiceTests.wait { service.phase == .failed }
@@ -51,7 +54,8 @@ struct SemanticMediaServiceTests {
     }
 
     @Test func idleWaitingDoesNotRetainADiscardedService() async throws {
-        var context: (SemanticFileSearchService, URL)? = try fixture(idle: false)
+        var context: (SemanticFileSearchService, URL, SemanticFixtureWatcher,
+                      SemanticMediaFixtureReader, SemanticFixtureEncoder)? = try fixture(idle: false)
         let root = try #require(context?.1)
         defer { try? FileManager.default.removeItem(at: root) }
         var service = context?.0
@@ -63,5 +67,30 @@ struct SemanticMediaServiceTests {
         service = nil
         try await SemanticFileServiceTests.wait { reference == nil }
         try await Task.sleep(for: .milliseconds(300))
+    }
+
+    @Test func changedDocumentWaitsForMediaWithoutRestartingTheHomeScan() async throws {
+        let gate = AskSearchCancellation()
+        let (service, root, watcher, reader, encoder) = try fixture(idle: false,
+            idleCheck: { gate.isCancelled })
+        defer { try? FileManager.default.removeItem(at: root) }
+        #expect(service.setEnabled(true))
+        try await SemanticFileServiceTests.wait { service.indexProgress?.waitingForIdle == true }
+        let crawls = reader.directoryReads
+        #expect(encoder.calls == 1)
+        service.setForegroundBusy(true)
+        #expect(service.phase == .paused)
+        service.setForegroundBusy(false)
+        #expect(service.phase == .indexing && reader.directoryReads == crawls)
+        reader.modifiedByName["document.md"] = reader.modified.addingTimeInterval(1)
+        watcher.change?([.init(path: root.path + "/document.md", rescan: false, isDirectory: false)], 1)
+        try await Task.sleep(for: .milliseconds(2_250))
+        #expect(service.indexProgress?.waitingForIdle == true)
+        #expect(reader.directoryReads == crawls && encoder.calls == 1)
+        gate.cancel()
+        try await SemanticFileServiceTests.wait { encoder.calls == 2 && service.phase == .ready }
+        #expect(reader.directoryReads == crawls)
+        #expect(service.indexedCounts.images == 1)
+        await service.clear(removeModel: true)
     }
 }

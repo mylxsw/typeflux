@@ -220,6 +220,40 @@ struct SemanticFileServiceTests {
         await service.clear(removeModel: true)
     }
 
+    @Test func irrelevantEventsDoNotRescanAndChangedFilesUseTargetedReconciliation() async throws {
+        let (original, root, reader, models) = try fixture()
+        defer { try? FileManager.default.removeItem(at: root) }
+        try FileManager.default.copyItem(at: models.source, to: original.modelURL)
+        var names = original.settings.askLauncherSearchSettings
+        names.excludedPaths = [root.path + "/Library"]
+        original.settings.askLauncherSearchSettings = names
+        let watcher = SemanticFixtureWatcher(), encoder = SemanticFixtureEncoder()
+        let service = SemanticFileSearchService(settings: original.settings, directory: root,
+            helper: URL(fileURLWithPath: "/usr/bin/true"), supported: true, watcher: watcher,
+            access: { true }, resourceConstrained: { false }, models: models,
+            makeReader: { reader }, makeEncoder: { _, _ in encoder }, makeQuery: { _, _ in SemanticFixtureQuery() })
+        #expect(service.setEnabled(true))
+        try await Self.wait { service.phase == .ready }
+        let initialCrawls = reader.directoryReads
+        #expect(encoder.calls == 1)
+        service.setForegroundBusy(true)
+        #expect(service.phase == .paused)
+        service.setForegroundBusy(false)
+        #expect(service.phase == .ready && reader.directoryReads == initialCrawls)
+        watcher.change?([
+            .init(path: root.path + "/semantic-files.sqlite-wal", rescan: false, isDirectory: false),
+            .init(path: root.path + "/Library/ignored.md", rescan: false, isDirectory: false),
+            .init(path: root.path + "/unrelated.json", rescan: false, isDirectory: false)
+        ], 1)
+        try await Task.sleep(for: .milliseconds(2_250))
+        #expect(service.phase == .ready && reader.directoryReads == initialCrawls)
+        reader.modified = reader.modified.addingTimeInterval(1)
+        watcher.change?([.init(path: reader.path, rescan: false, isDirectory: false)], 2)
+        try await Self.wait { encoder.calls == 2 && service.phase == .ready }
+        #expect(reader.directoryReads == initialCrawls)
+        await service.clear(removeModel: true)
+    }
+
     @Test func corruptIndexCanBeClearedWithoutRemovingVerifiedModel() async throws {
         let (service, root, _, models) = try fixture()
         defer { try? FileManager.default.removeItem(at: root) }
@@ -321,6 +355,7 @@ struct SemanticFileServiceTests {
 
                 service.pause(true)
                 try await Self.ready { service.phase == .paused }
+                try await Self.ready { Support.contains(L("semantic.resume"), in: host) }
                 try Support.button(L("semantic.resume"), in: host).press()
                 try await Self.ready { service.phase == .ready }
 

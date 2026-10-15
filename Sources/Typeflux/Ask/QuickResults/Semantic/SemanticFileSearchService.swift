@@ -52,7 +52,11 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
     private var fingerprint: String?
     private var busy = false
     private var manuallyPaused = false
+    private let pauseGate = SemanticIndexPauseGate()
+    private var pausedIndexing = false
+    private var pausedReady = false
     private var dirty = false
+    private var pendingPaths = Set<String>()
     private var removing = false
     var modelURL: URL {
         self.directory.appendingPathComponent("embeddinggemma-2-Q8_0.gguf")
@@ -97,12 +101,12 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
                 })
         self.observers
             .append(NotificationCenter.default.publisher(for: .NSProcessInfoPowerStateDidChange).sink { [weak self] _ in
-                Task { @MainActor in self?.start(force: true) }
+                Task { @MainActor in self?.refreshPause() }
             })
         self.observers
             .append(NotificationCenter.default.publisher(for: ProcessInfo.thermalStateDidChangeNotification)
                 .sink { [weak self] _ in
-                    Task { @MainActor in self?.start(force: true) }
+                    Task { @MainActor in self?.refreshPause() }
                 })
         self.start()
     }
@@ -114,7 +118,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
     func setForegroundBusy(_ busy: Bool) {
         guard self.busy != busy else { return }
         self.busy = busy
-        self.start(force: true)
+        self.refreshPause()
     }
 
     @discardableResult func setEnabled(_ enabled: Bool) -> Bool {
@@ -132,7 +136,25 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
     }
 
     func pause(_ paused: Bool) {
-        self.manuallyPaused = paused; self.start(force: true)
+        self.manuallyPaused = paused; self.refreshPause()
+    }
+
+    private func refreshPause() {
+        let paused = self.backgroundPaused
+        self.pauseGate.setPaused(paused)
+        if paused {
+            if self.phase == .indexing { self.pausedIndexing = true; self.phase = .paused }
+            else if self.phase == .ready { self.pausedReady = true; self.phase = .paused }
+            return
+        }
+        guard self.phase == .paused else { return }
+        if self.pausedIndexing {
+            self.pausedIndexing = false; self.phase = .indexing
+        } else if self.pausedReady {
+            self.pausedReady = false; self.phase = .ready; self.scheduleReconcile()
+        } else {
+            self.start(force: true)
+        }
     }
 
     // Keep generation checks beside every suspension in this lifecycle transition.
@@ -141,9 +163,11 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
         guard !self.removing else { return }
         preferences = self.settings.semanticFileSearch
         let names = self.settings.askLauncherSearchSettings
-        let key = String(describing: preferences) + String(describing: names) +
-            String(self.settings.askQuickFileSearchEnabled)
+        let key = "\(preferences.enabled)\u{3}\(names.fileIndexFingerprint)\u{3}\(self.settings.askQuickFileSearchEnabled)"
         guard force || self.fingerprint != key else { return }
+        self.dirty = false; self.pendingPaths.removeAll()
+        self.pausedIndexing = false; self.pausedReady = false
+        self.pauseGate.setPaused(self.backgroundPaused)
         if self.fingerprint != key || !self.backgroundPaused { self.indexProgress = nil }
         self.fingerprint = key
         token.cancel(); token = AskSearchCancellation()
@@ -161,7 +185,6 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
         self.phase = .preparing
         let directory = directory, model = self.modelURL, helper = helper, access = access
         let models = models
-        let paused = self.backgroundPaused
         self.work = Task { [weak self] in
             await previous?.value
             guard !Task.isCancelled, !token.isCancelled else { return }
@@ -190,10 +213,13 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
                 await self.updateCounts(database)
                 guard !token.isCancelled, !Task.isCancelled else { return }
                 self.queryWorker = self.makeQuery(helper, model)
-                self.watcher.start(paths: prepared.0.roots, since: nil) { [weak self] _, _ in
-                    Task { @MainActor in self?.scheduleReconcile() }
+                self.watcher.start(paths: prepared.0.roots, since: nil) { [weak self] changes, _ in
+                    Task { @MainActor in
+                        guard !token.isCancelled else { return }
+                        self?.receiveChanges(changes)
+                    }
                 }
-                if paused {
+                if self.backgroundPaused {
                     guard !token.isCancelled, !Task.isCancelled else { return }
                     self.phase = .paused
                     return
@@ -222,15 +248,41 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
         }
     }
 
-    private func scheduleReconcile() {
-        if self.phase == .indexing, self.indexProgress?.priority == .document {
-            self.dirty = true; return
+    private func receiveChanges(_ changes: [AskFileChange]) {
+        guard let scope else { return }
+        let plan = SemanticFileChangePlan.make(changes, scope: scope, indexDirectory: directory.path)
+        if plan.fullScan {
+            self.dirty = true; self.pendingPaths.removeAll()
+        } else if !self.dirty {
+            self.pendingPaths.formUnion(plan.files)
         }
+        guard plan.fullScan || !plan.files.isEmpty else { return }
+        self.scheduleReconcile()
+    }
+
+    private func scheduleReconcile() {
+        guard self.phase != .indexing, !self.backgroundPaused,
+              self.dirty || !self.pendingPaths.isEmpty else { return }
         self.rescan?.cancel()
         self.rescan = Task { [weak self] in
             do { try await Task.sleep(for: .seconds(2)) } catch { return }
-            self?.start(force: true)
+            self?.reconcilePending()
         }
+    }
+
+    private func reconcilePending() {
+        guard !self.backgroundPaused, self.phase == .ready || (self.phase == .failed && self.mediaFailed),
+              let database = self.store, let scope = self.scope else { return }
+        if self.dirty {
+            self.start(force: true)
+            return
+        }
+        let paths = self.pendingPaths.sorted()
+        guard !paths.isEmpty else { return }
+        self.pendingPaths.removeAll()
+        self.indexProgress = nil
+        self.phase = .indexing
+        self.beginIndexing(database, scope: scope, token: token, paths: paths)
     }
 
     deinit { token.cancel(); work?.cancel(); download?.cancel(); rescan?.cancel() }
@@ -238,10 +290,11 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
 
 extension SemanticFileSearchService {
     /// Do not retain the service while media waits for user idle time.
-    private func beginIndexing(_ database: SemanticFileStore, scope: AskFileScope, token: AskSearchCancellation) {
+    private func beginIndexing(_ database: SemanticFileStore, scope: AskFileScope, token: AskSearchCancellation,
+                               paths: [String]? = nil) {
         let makeReader = makeReader, makeEncoder = makeEncoder, mediaModels = mediaModels
         let makeMediaEncoder = makeMediaEncoder, helper = helper, model = modelURL
-        let projector = mediaModelURL, idle = idle
+        let projector = mediaModelURL, idle = idle, pauseGate = pauseGate
         let reportDownload: @Sendable (Double?) -> Void = { [weak self] fraction in
             Task { @MainActor [weak self] in
                 guard let self, !token.isCancelled else { return }
@@ -270,13 +323,19 @@ extension SemanticFileSearchService {
                     let encoder = makeEncoder(helper, model)
                     let media = SemanticMediaWorker(helper: helper, model: model, projector: projector,
                         models: mediaModels, makeEncoder: makeMediaEncoder, progress: reportDownload)
-                    return try SemanticFileIndexer.run(
-                        scope: scope,
-                        store: database,
-                        reader: reader,
-                        encoder: encoder, media: media, idle: idle,
-                        cancelled: { token.isCancelled }, progress: reportProgress
-                    )
+                    if let paths {
+                        return try SemanticFileIndexer.reconcile(
+                            paths: paths, scope: scope, store: database, reader: reader,
+                            encoder: encoder, media: media, idle: { idle() && !pauseGate.isPaused },
+                            paused: { pauseGate.isPaused },
+                            cancelled: { token.isCancelled }, progress: reportProgress
+                        )
+                    }
+                    return try SemanticFileIndexer.run(scope: scope, store: database, reader: reader,
+                                                       encoder: encoder, media: media,
+                                                       idle: { idle() && !pauseGate.isPaused },
+                                                       paused: { pauseGate.isPaused },
+                                                       cancelled: { token.isCancelled }, progress: reportProgress)
                 }.value
                 guard let self, !token.isCancelled, !Task.isCancelled else { return }
                 self.skipped = result.skipped
@@ -284,10 +343,14 @@ extension SemanticFileSearchService {
                 await self.updateCounts(database)
                 guard !token.isCancelled, !Task.isCancelled else { return }
                 self.indexProgress = nil
-                self.phase = .ready
-                if self.dirty {
-                    self.dirty = false; self.scheduleReconcile()
+                if self.backgroundPaused {
+                    self.pausedIndexing = false
+                    self.pausedReady = true
+                    self.phase = .paused
+                } else {
+                    self.phase = .ready
                 }
+                self.scheduleReconcile()
             } catch {
                 guard let self, !token.isCancelled, !Task.isCancelled else { return }
                 if case SemanticMediaFailure.unavailable = error { self.mediaFailed = true }

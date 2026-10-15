@@ -10,16 +10,21 @@ final class SemanticMediaFixtureReader: AskFileReading, @unchecked Sendable {
     var pieces = 1
     var badPath = false
     var changeAfter = false
+    var directoryReads = 0
     var modified = Date(timeIntervalSince1970: 100)
+    var modifiedByName: [String: Date] = [:]
     init(root: String) { self.root = root }
 
     func read(_ request: AskFileReadRequest, isCancelled: () -> Bool) throws -> AskFileReadResponse {
         if isCancelled() { throw CancellationError() }
         if request.operation == .directory {
-            return .init(entries: names.map { .init(path: root + "/" + $0, kind: .file, modified: modified) })
+            directoryReads += 1
+            return .init(entries: names.map {
+                .init(path: root + "/" + $0, kind: .file, modified: modifiedByName[$0] ?? modified)
+            })
         }
         current = (request.path as NSString).lastPathComponent
-        return .init(fileSize: 20, modified: modified,
+        return .init(fileSize: 20, modified: modifiedByName[current] ?? modified,
                      pages: request.readText ? [.init(text: "reimbursement")] : nil)
     }
 
@@ -37,7 +42,7 @@ final class SemanticMediaFixtureReader: AskFileReading, @unchecked Sendable {
             if !receive(.init(more: true, media: input)) { return }
         }
         if changeAfter { modified = modified.addingTimeInterval(1) }
-        _ = receive(.init(fileSize: 20, modified: modified))
+        _ = receive(.init(fileSize: 20, modified: modifiedByName[current] ?? modified))
     }
 }
 

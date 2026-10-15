@@ -17,11 +17,16 @@ enum AskFileCrawler {
     @discardableResult
     static func crawl(_ root: String, scope: AskFileScope, limit: Int? = maximumEntries,
                       reader: AskFileReading = AskFileReader(), isCancelled: () -> Bool = { false },
+                      isPaused: () -> Bool = { false },
                       skipped: (String, SkipReason) -> Void = { _, _ in }, visit: (Entry) -> Bool) -> Int {
         guard limit.map({ $0 > 0 }) ?? true, scope.includes(root, isDirectory: true) else { return 0 }
         var pending = [root]
         var visited = 0
         while let path = pending.popLast() {
+            while isPaused() {
+                if isCancelled() { return visited }
+                Thread.sleep(forTimeInterval: 0.25)
+            }
             if isCancelled() { break }
             do {
                 var stopped = false

@@ -286,6 +286,7 @@ final class SemanticFixtureReader: AskFileReading, @unchecked Sendable {
     var modified = Date(timeIntervalSince1970: 100)
     var removed = false
     var failed = false
+    var directoryReads = 0
     init(path: String) {
         self.path = path
     }
@@ -295,6 +296,7 @@ final class SemanticFixtureReader: AskFileReading, @unchecked Sendable {
             throw CancellationError()
         }
         if request.operation == .directory {
+            directoryReads += 1
             return .init(entries: removed ? [] : directoryEntries ?? [.init(path: path, kind: .file, modified: modified)])
         }
         if failed {
@@ -320,6 +322,33 @@ final class SemanticFixtureEncoder: SemanticEmbedding, @unchecked Sendable {
 
 @Suite("Semantic incremental indexing")
 struct SemanticFileIndexerTests {
+    @Test func changedFileReconcilesWithoutCrawlingOrReembeddingItsNeighbors() throws {
+        let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
+        let first = root.path + "/first.md", second = root.path + "/second.md"
+        let reader = SemanticFixtureReader(path: first), encoder = SemanticFixtureEncoder()
+        reader.directoryEntries = [first, second].map { .init(path: $0, kind: .file, modified: reader.modified) }
+        let store = try SemanticFileStore(url: root.appendingPathComponent("index.sqlite"))
+        _ = try SemanticFileIndexer.run(scope: semanticScope(root.path), store: store, reader: reader,
+                                        encoder: encoder, cancelled: { false }, progress: { _ in })
+        #expect(encoder.calls == 2)
+        let crawls = reader.directoryReads
+        let original = reader.modified
+        reader.modified = reader.modified.addingTimeInterval(1)
+        let result = try SemanticFileIndexer.reconcile(paths: [second, second], scope: semanticScope(root.path),
+            store: store, reader: reader, encoder: encoder, cancelled: { false }, progress: { _ in })
+        #expect(result.total == 1 && result.processed == 1 && result.files == 1)
+        #expect(encoder.calls == 3)
+        #expect(reader.directoryReads == crawls)
+        #expect(try store.unchanged(path: first, modified: original, bytes: 20))
+        #expect(try store.unchanged(path: second, modified: reader.modified, bytes: 20))
+        reader.failed = true
+        let removed = try SemanticFileIndexer.reconcile(paths: [first], scope: semanticScope(root.path),
+            store: store, reader: reader, encoder: encoder, cancelled: { false }, progress: { _ in })
+        #expect(removed.skipped == 1)
+        #expect(try store.counts().files == 1)
+        #expect(reader.directoryReads == crawls)
+    }
+
     @Test func unsupportedFilesDoNotConsumeTheSemanticFileLimit() throws {
         let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
         let path = root.path + "/notes.md"
