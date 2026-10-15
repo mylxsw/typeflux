@@ -28,6 +28,7 @@ public struct MediaRequest: Codable, Sendable {
         if operation == .previewImage || operation == .previewPDF || operation.isAV {
             guard let preview else { throw MediaFailure.invalidProtocol }
             try preview.validate()
+            if preview.imageType != nil, operation != .previewImage { throw MediaFailure.invalidProtocol }
             if operation.isAV, preview.page != nil || preview.passage != nil { throw MediaFailure.invalidProtocol }
         } else if preview != nil { throw MediaFailure.invalidProtocol }
     }

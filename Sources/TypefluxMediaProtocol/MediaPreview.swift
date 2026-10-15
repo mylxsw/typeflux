@@ -11,8 +11,9 @@ public struct MediaPreviewOptions: Codable, Sendable {
     public var passage: String?
     public var start: Double?
     public var container: MediaAVContainer?
-    public init(width: Int, height: Int, page: Int? = nil, passage: String? = nil, start: Double? = nil, container: MediaAVContainer? = nil) {
-        self.width = width; self.height = height; self.page = page; self.passage = passage; self.start = start; self.container = container
+    public var imageType: MediaImageType?
+    public init(width: Int, height: Int, page: Int? = nil, passage: String? = nil, start: Double? = nil, container: MediaAVContainer? = nil, imageType: MediaImageType? = nil) {
+        self.width = width; self.height = height; self.page = page; self.passage = passage; self.start = start; self.container = container; self.imageType = imageType
     }
     public func validate() throws {
         guard width > 0, height > 0, width <= Self.maxEdge, height <= Self.maxEdge,
@@ -46,11 +47,13 @@ public struct MediaPreviewResult: Codable, Sendable {
     public var duration: Double?
     public var start: Double?
     public var waveform: [Float]?
+    public var imageType: MediaImageType?
     public init(rasters: [MediaRaster], pages: Int = 0) { self.rasters = rasters; self.pages = pages }
     public func validate(for request: MediaRequest) throws {
         guard let options = request.preview, rasters.count <= 3
         else { throw MediaFailure.invalidProtocol }
         try options.validate()
+        guard imageType == options.imageType else { throw MediaFailure.invalidProtocol }
         for raster in rasters { try raster.validate(for: options) }
         if request.operation.isAV {
             guard pages == 0, let duration, let start, duration.isFinite, duration >= 0,
@@ -92,4 +95,12 @@ public enum MediaAVLimits {
 /// A format hint only, never an arbitrary child-selected path or URL.
 public enum MediaAVContainer: String, Codable, Sendable {
     case mp4, mov, m4v, avi, mkv, webm, mp3, m4a, aac, wav, aiff, aif, flac, ogg, caf
+}
+
+/// Declared type checked against the native decoder inside the child.
+public enum MediaImageType: String, Codable, Sendable {
+    case png = "image/png", jpeg = "image/jpeg", gif = "image/gif"
+    public var identifier: String {
+        switch self { case .png: "public.png"; case .jpeg: "public.jpeg"; case .gif: "com.compuserve.gif" }
+    }
 }

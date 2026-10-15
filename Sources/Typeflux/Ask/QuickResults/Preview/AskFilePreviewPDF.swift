@@ -47,7 +47,18 @@ enum MediaPreviewDisplay {
                                           passage: operation == .previewPDF ? evidence?.text : nil,
                                           start: operation.isAV ? (start.isFinite ? max(0, start) : 0) : nil,
                                           container: operation.isAV ? MediaAVContainer(rawValue: url.pathExtension.lowercased()) : nil)
-        return try worker.perform(operation, input: .file(url), preview: options,
+        return try decode(.file(url), operation: operation, options: options, cancellation: cancellation, worker: worker)
+    }
+
+    static func renderImage(_ data: Data, type: MediaImageType, cancellation: AskSearchCancellation,
+                            worker: MediaWorker = .previews) throws -> AskFilePreviewPDF.Result {
+        let options = MediaPreviewOptions(width: 1600, height: 1600, imageType: type)
+        return try decode(.data(data), operation: .previewImage, options: options, cancellation: cancellation, worker: worker)
+    }
+
+    private static func decode(_ input: MediaWorker.Input, operation: MediaRequest.Operation, options: MediaPreviewOptions,
+                               cancellation: AskSearchCancellation, worker: MediaWorker) throws -> AskFilePreviewPDF.Result {
+        return try worker.perform(operation, input: input, preview: options,
                                   isCancelled: { cancellation.isCancelled }) { response, directory in
             guard let result = response.preview else { throw MediaFailure.invalidProtocol }
             let images = try result.rasters.enumerated().map { index, raster in
