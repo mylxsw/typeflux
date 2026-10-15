@@ -47,8 +47,10 @@ final class AskTranslationPanelModel: ObservableObject {
     var onOpenURL: (URL) -> Void = { NSWorkspace.shared.open($0) }
     private(set) var dismissedAt: Date?
     private var submittedText: String?
+    private(set) var wordBookTask: Task<Void, Never>?
     private var translationTask: Task<Void, Never>?
     private var generation = UUID()
+    private var confirmedStar: (generation: UUID, key: String, starred: Bool)?
     var historyIndex: Int?
     var historyDraft = ""
     private var autoCopied = false
@@ -69,7 +71,7 @@ final class AskTranslationPanelModel: ObservableObject {
         history = AskTranslationHistory(defaults: settings.defaults)
     }
 
-    deinit { translationTask?.cancel(); feedbackTask?.cancel(); cancelHandoff?() }
+    deinit { wordBookTask?.cancel(); translationTask?.cancel(); feedbackTask?.cancel(); cancelHandoff?() }
 
     var interface: AppLanguage {
         AppLocalization.shared.language
@@ -158,7 +160,7 @@ final class AskTranslationPanelModel: ObservableObject {
             running = false
             cancelHandoff = nil
             if let lookup = result.wordBook, settings.askWordBookRecordsHistory {
-                plugin.wordBook?.record(lookup, at: now(), counts: true)
+                recordWordBook(lookup)
             }
         case .failed, .cancelled:
             running = false
@@ -167,6 +169,36 @@ final class AskTranslationPanelModel: ObservableObject {
             notice = L("ask.translation.stack.failed")
         }
     }
+
+    func saveWordBook(_ lookup: AskWordBookLookup, toggle: Bool) {
+        guard let store = plugin.wordBook else { return }
+        guard wordBookTask == nil else { notice = L("ask.wordBook.saveFailed"); return }
+        let current = generation, date = now()
+        wordBookTask = Task { [weak self] in
+            guard let self else { return }
+            defer { wordBookTask = nil }
+            do {
+                if toggle {
+                    let starred = try await store.entry(forKey: lookup.key)?.isStarred != true
+                    try Task.checkCancellation()
+                    guard let saved = try await store.setStarred(starred, lookup: lookup, at: date) else {
+                        throw LocalStoreFailure.unavailable
+                    }
+                    guard generation == current, !Task.isCancelled else { return }
+                    confirmedStar = (current, lookup.key, saved.isStarred)
+                    output = output?.starring(saved.isStarred)
+                } else {
+                    guard try await store.record(lookup, at: date, counts: true) != nil else {
+                        throw LocalStoreFailure.unavailable
+                    }
+                }
+            } catch {
+                if generation == current, !Task.isCancelled { notice = L("ask.wordBook.saveFailed") }
+            }
+        }
+    }
+
+    private func recordWordBook(_ lookup: AskWordBookLookup) { saveWordBook(lookup, toggle: false) }
 
     func dismiss() {
         cancelTranslation()
@@ -244,7 +276,7 @@ final class AskTranslationPanelModel: ObservableObject {
                 guard generation == current, !Task.isCancelled else { return }
                 receive(result)
                 if let lookup = result.wordBook, settings.askWordBookRecordsHistory {
-                    plugin.wordBook?.record(lookup, at: now(), counts: true)
+                    recordWordBook(lookup)
                 }
             } catch {
                 guard generation == current, !Task.isCancelled else { return }
@@ -257,6 +289,9 @@ final class AskTranslationPanelModel: ObservableObject {
 
     private func receive(_ next: AskPluginOutput) {
         var next = next
+        if let confirmedStar, confirmedStar.generation == generation, confirmedStar.key == next.wordBook?.key {
+            next = next.starring(confirmedStar.starred)
+        }
         next.selectedItem = min(output?.selectedItem ?? 0, max(0, (next.translation?.results.count ?? 1) - 1))
         output = next
         if !autoCopied, let results = next.translation?.results,

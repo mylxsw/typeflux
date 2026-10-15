@@ -53,7 +53,7 @@ struct AskConversationWindowServicesTests {
                 #expect(controller.conversationWindow === conversation)
                 #expect(controller.model.draft.text == "Keep the workspace draft.")
                 try await checkNotes(fixture)
-                try checkWordBook(fixture, settings)
+                try await checkWordBook(fixture, settings)
                 #expect(!fixture.results.services.isRunning("invalid.fixture.application"))
                 #expect(await fixture.results.services.insert("fixture text", nil) == false)
                 #expect(await fixture.results.services.insert("fixture text", "invalid.fixture.application") == false)
@@ -100,16 +100,16 @@ struct AskConversationWindowServicesTests {
         #expect(!services.removeNote(id))
     }
 
-    private func checkWordBook(_ fixture: Fixture, _ settings: SettingsStore) throws {
+    private func checkWordBook(_ fixture: Fixture, _ settings: SettingsStore) async throws {
         let recorder = try #require(fixture.controller?.model.wordBook)
         let lookup = AskWordBookLookup(headword: "fixture", source: "en", target: "zh", card: nil,
                                        translation: "controlled translation", model: nil)
         settings.askWordBookRecordsHistory = false
-        recorder.record(lookup)
-        #expect(fixture.wordBook.entry(forKey: lookup.key) == nil)
+        try await recorder.record(lookup)
+        #expect(try fixture.wordBook.entry(forKey: lookup.key) == nil)
         settings.askWordBookRecordsHistory = true
-        recorder.record(lookup)
-        #expect(fixture.wordBook.entry(forKey: lookup.key)?.headword == "fixture")
+        try await recorder.record(lookup)
+        #expect(try fixture.wordBook.entry(forKey: lookup.key)?.headword == "fixture")
     }
 
     @MainActor

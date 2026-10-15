@@ -2,7 +2,7 @@ import Foundation
 
 extension AskTranslatePlugin {
     func stackOutput(_ results: [AskTranslationResult], request: AskPluginRequest, plan: AskPluginPlan,
-                     target: String, submitted: Bool) -> AskPluginOutput {
+                     target: String, submitted: Bool, entry: AskWordBookEntry? = nil) -> AskPluginOutput {
         let first = results.first
         let card = results.compactMap(\.card).first
         var output = card.map { wordCardOutput(
@@ -10,9 +10,9 @@ extension AskTranslatePlugin {
             request: request,
             plan: plan,
             target: target,
-            kept: first?.fromWordBook == true
+            kept: first?.fromWordBook == true, entry: entry
         ) }
-            ?? plainOutput(first, request: request, plan: plan, target: target)
+            ?? plainOutput(first, request: request, plan: plan, target: target, entry: entry)
         output.actions += firstActions(first, request: request, target: target)
         let services = selectedServices(request)
         if let firstAI = services.first(where: { $0.isAI && $0.enabled }) ?? services.first(where: \.isAI) {
@@ -32,14 +32,14 @@ extension AskTranslatePlugin {
     }
 
     private func plainOutput(_ first: AskTranslationResult?, request: AskPluginRequest, plan: AskPluginPlan,
-                             target: String) -> AskPluginOutput {
+                             target: String, entry: AskWordBookEntry?) -> AskPluginOutput {
         let text = first?.completedText ?? ""
         var output = AskPluginOutput(body: text, original: request.text, meta: plan.meta, source: first?.name ?? "",
                                      sourceIsAI: first?.service.isAI == true, actions: [])
         if !text.isEmpty, first?.usedDictionary != true, AskWordCard.isLookup(request.text) {
             keep(AskWordBookLookup(headword: Self.headword(request.text), source: plan.values["source"], target: target,
                                    translation: text, model: first?.service.isAI == true ? aiName() : nil),
-                 in: &output, plan: plan)
+                 in: &output, plan: plan, entry: entry)
         }
         return output
     }
@@ -91,11 +91,11 @@ extension AskTranslatePlugin {
 
     /// Lets the result go into the word book and be starred (⌘S). A word shown while
     /// typing counts once it settles; one the user pressed Return for, at once.
-    private func keep(_ lookup: AskWordBookLookup, in output: inout AskPluginOutput, plan: AskPluginPlan) {
-        guard let wordBook else { return }
+    private func keep(_ lookup: AskWordBookLookup, in output: inout AskPluginOutput, plan: AskPluginPlan,
+                      entry: AskWordBookEntry?) {
+        guard wordBook != nil else { return }
         output.wordBook = lookup
         output.recordsAtOnce = plan.mode == .onSubmit
-        let entry = wordBook.entry(forKey: lookup.key)
         output.detail = entry.map { L("ask.wordBook.seen", $0.lookupCount) }
         output.actions.append(Self.starAction(lookup, starred: entry?.isStarred == true))
         output.starred = entry?.isStarred == true
@@ -107,7 +107,7 @@ extension AskTranslatePlugin {
     }
 
     private func wordCardOutput(_ card: AskWordCard, request: AskPluginRequest, plan: AskPluginPlan,
-                                target: String, kept: Bool) -> AskPluginOutput {
+                                target: String, kept: Bool, entry: AskWordBookEntry?) -> AskPluginOutput {
         let text = card.translatedText ?? card.summary
         let source = kept ? L("ask.plugin.source.wordBook") : AskPluginRegistry.sourceLabel(aiName())
         let actions = [
@@ -122,7 +122,7 @@ extension AskTranslatePlugin {
         var output = AskPluginOutput(body: text, original: request.text, meta: plan.meta, source: source,
                                      sourceIsAI: !kept, actions: actions, wordCard: card)
         keep(AskWordBookLookup(headword: Self.headword(request.text), source: plan.values["source"], target: target,
-                               card: card, model: kept ? nil : aiName()), in: &output, plan: plan)
+                               card: card, model: kept ? nil : aiName()), in: &output, plan: plan, entry: entry)
         return output
     }
 }

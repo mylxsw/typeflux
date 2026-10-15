@@ -38,11 +38,16 @@ final class AskWordBookWindowController: NSObject, NSWindowDelegate {
         model?.askAI = askAI
     }
 
+    private(set) var presentationTask: Task<Void, Never>?
+
+    deinit { presentationTask?.cancel() }
+
     /// Opens the window, or brings it forward, showing `key` when it is a word in the book.
     func show(selecting key: String? = nil) {
         guard let model = ensureModel() else { return }
         model.reload()
-        model.reveal(key)
+        presentationTask?.cancel()
+        presentationTask = Task { await model.reveal(key) }
         present(model)
     }
 
@@ -52,7 +57,8 @@ final class AskWordBookWindowController: NSObject, NSWindowDelegate {
         model.reload()
         model.lookupText = text
         present(model)
-        Task { await model.lookUp(text) }
+        presentationTask?.cancel()
+        presentationTask = Task { await model.lookUp(text) }
     }
 
     private func ensureModel() -> AskWordBookViewModel? {
@@ -107,6 +113,9 @@ final class AskWordBookWindowController: NSObject, NSWindowDelegate {
     }
 
     func windowWillClose(_: Notification) {
+        presentationTask?.cancel()
+        presentationTask = nil
+        model?.reloadTask?.cancel()
         if let window { DockVisibilityController.shared.windowDidHide(window) }
         window = nil
         model = nil

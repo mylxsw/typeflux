@@ -5465,3 +5465,7 @@
 "ask.translation.panel.shortcut.newline" = "줄바꿈";
 "ask.translation.panel.shortcut.select" = "결과 간 이동";
 "ask.translation.panel.shortcut.close" = "닫기(고정 시 먼저 원문 지우기)";
+
+// Word-book storage availability
+"ask.wordBook.storageUnavailable" = "단어장을 사용할 수 없습니다. 현재 결과는 유지됩니다.";
+"ask.wordBook.saveFailed" = "단어장에 저장하지 못했습니다. 현재 결과는 유지됩니다.";

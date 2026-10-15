@@ -85,6 +85,7 @@ final class AskConversationModel: ObservableObject {
     }
     /// Keeps what the translation plugin looked up; the window controller supplies it.
     var wordBook: AskWordBookRecorder?
+    var wordBookTask: Task<Void, Never>?
     /// Opens the word book dialog on a word; tests record it instead.
     var openWordBook: @MainActor (String?) -> Void = { key in AskWordBookWindowController.shared.show(selecting: key) }
     /// Opens the word book and looks a word up there; tests record it instead.
@@ -532,6 +533,8 @@ final class AskConversationModel: ObservableObject {
     }
 
     func resetSession() {
+        wordBookTask?.cancel()
+        wordBook?.beginSession()
         quickSearch.cancel()
         quickSearch.results = nil
         recoveryGeneration = UUID(); recoveryWorking = false; inspectingRecovery = false

@@ -5499,3 +5499,7 @@
 "ask.translation.panel.shortcut.newline" = "換行";
 "ask.translation.panel.shortcut.select" = "切換選取的結果";
 "ask.translation.panel.shortcut.close" = "關閉（釘選時先清空原文）";
+
+// Word-book storage availability
+"ask.wordBook.storageUnavailable" = "單字本暫時無法使用，目前的結果仍然保留。";
+"ask.wordBook.saveFailed" = "無法儲存至單字本，目前的結果仍然保留。";

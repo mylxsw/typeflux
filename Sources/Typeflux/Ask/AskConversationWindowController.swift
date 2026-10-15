@@ -47,7 +47,8 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
          services: AskConversationWindowServices? = nil,
          clipboardHistoryStore: (any ClipboardHistoryStore)? = nil,
          filePreviewLoader: (any AskFilePreviewLoading)? = nil,
-         conversationCache: (any AskCaching)? = nil) throws {
+         conversationCache: (any AskCaching)? = nil,
+         wordBookStore: (any AskWordBookStoring)? = nil) throws {
         self.filePreview = AskFilePreviewController(loader: filePreviewLoader)
         self.dockVisibility = dockVisibility
         self.settings = settings
@@ -104,10 +105,14 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         model.workflowAuthoring = authoring
         authoring.onChange = { [weak model] in model?.objectWillChange.send() }
         // The word book: words the translation plugin looked up, and the ones starred.
-        let wordBook = services?.wordBook ?? SQLiteAskWordBookStore(url: SQLiteAskWordBookStore.defaultURL())
+        let wordBook = services?.wordBook ?? wordBookStore ?? RecoveringAskWordBookStore()
         // Forever keeps everything; `purgeHistory(before: nil)` would clear it instead.
         if let cutoff = settings.askWordBookRetention.cutoff(now: Date()) {
-            maintenanceTasks.append(Task.detached(priority: .utility) { wordBook.purgeHistory(before: cutoff) })
+            maintenanceTasks.append(Task.detached(priority: .utility) {
+                do { try await wordBook.purgeHistory(before: cutoff) } catch {
+                    ErrorLogStore.shared.log("Word book retention cleanup failed")
+                }
+            })
         }
         model.wordBook = AskWordBookRecorder(store: wordBook) { [weak settings] in
             settings?.askWordBookRecordsHistory ?? true

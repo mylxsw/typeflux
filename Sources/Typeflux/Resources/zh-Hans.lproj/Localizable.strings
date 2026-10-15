@@ -5579,3 +5579,7 @@
 "ask.translation.panel.shortcut.newline" = "换行";
 "ask.translation.panel.shortcut.select" = "切换选中的结果";
 "ask.translation.panel.shortcut.close" = "关闭（钉住时先清空原文）";
+
+// Word-book storage availability
+"ask.wordBook.storageUnavailable" = "单词本暂不可用，当前结果仍然保留。";
+"ask.wordBook.saveFailed" = "未能保存到单词本，当前结果仍然保留。";

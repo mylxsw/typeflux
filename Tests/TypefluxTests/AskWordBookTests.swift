@@ -81,42 +81,42 @@ struct AskWordBookStoreTests {
 
     @Test func recordingAddsThenCounts() throws {
         let store = makeTestWordBook()
-        let first = try #require(store.record(english, at: day(0), counts: true))
+        let first = try #require(try store.record(english, at: day(0), counts: true))
         #expect(first.lookupCount == 1 && first.firstLookedUpAt == day(0) && !first.isStarred)
-        store.record(english, at: day(2), counts: true)
-        let again = try #require(store.record(english, at: day(3), counts: false))
+        try store.record(english, at: day(2), counts: true)
+        let again = try #require(try store.record(english, at: day(3), counts: false))
         #expect(again.lookupCount == 2, "an update without counting keeps the count")
         #expect(again.lastLookedUpAt == day(2) && again.firstLookedUpAt == day(0))
         #expect(again.id == first.id)
-        #expect(store.entry(forKey: english.key) == again)
-        #expect(store.entry(forKey: "missing") == nil)
+        #expect(try store.entry(forKey: english.key) == again)
+        #expect(try store.entry(forKey: "missing") == nil)
     }
 
     @Test func aCardIsKeptWholeAndNeverReplacedByATranslation() throws {
         let store = makeTestWordBook()
-        store.record(cardLookup, at: day(0), counts: true)
-        #expect(store.entry(forKey: cardLookup.key)?.lookup.card == wordBookCard)
+        try store.record(cardLookup, at: day(0), counts: true)
+        #expect(try store.entry(forKey: cardLookup.key)?.lookup.card == wordBookCard)
         var plain = cardLookup
         plain.card = nil
         plain.translation = "机缘"
         plain.model = nil
-        let kept = try #require(store.record(plain, at: day(1), counts: true))
+        let kept = try #require(try store.record(plain, at: day(1), counts: true))
         #expect(kept.lookup.card == wordBookCard && kept.lookup.translation == nil)
         #expect(kept.lookup.model == "gpt-test", "a lookup without a model keeps the one that wrote the card")
         var newer = cardLookup
         newer.card = AskWordCard(headword: "serendipity", senses: [.init(pos: "n.", meanings: ["新释义"])])
         newer.model = "other"
-        let replaced = try #require(store.record(newer, at: day(2), counts: false))
+        let replaced = try #require(try store.record(newer, at: day(2), counts: false))
         #expect(replaced.lookup.card == newer.card && replaced.lookup.model == "other")
     }
 
     @Test func aTranslationUpgradesToACardAndTheHeadwordStaysAsTyped() throws {
         let store = makeTestWordBook()
         let typed = AskWordBookLookup(headword: "Serendipity", source: nil, target: "zh-Hans", translation: "机缘")
-        store.record(typed, at: day(0), counts: true)
+        try store.record(typed, at: day(0), counts: true)
         var upgrade = typed
         upgrade.card = AskWordCard(headword: "serendipity", senses: [.init(pos: "n.", meanings: ["机缘巧合"])])
-        let entry = try #require(store.record(upgrade, at: day(1), counts: true))
+        let entry = try #require(try store.record(upgrade, at: day(1), counts: true))
         #expect(entry.lookup.headword == "Serendipity")
         #expect(entry.lookup.card != nil && entry.lookup.translation == "机缘")
         #expect(entry.lookupCount == 2)
@@ -124,16 +124,16 @@ struct AskWordBookStoreTests {
 
     @Test func starringAddsUnknownWordsAndKeepsTheFirstStarDate() throws {
         let store = makeTestWordBook()
-        #expect(store.setStarred(false, lookup: english, at: day(0)) == nil, "unstarring an unknown word adds nothing")
-        #expect(store.count(.all) == 0)
-        let starred = try #require(store.setStarred(true, lookup: english, at: day(1)))
+        #expect(try store.setStarred(false, lookup: english, at: day(0)) == nil, "unstarring an unknown word adds nothing")
+        #expect(try store.count(.all) == 0)
+        let starred = try #require(try store.setStarred(true, lookup: english, at: day(1)))
         #expect(starred.isStarred && starred.starredAt == day(1) && starred.lookupCount == 1)
-        #expect(store.setStarred(true, lookup: english, at: day(5))?.starredAt == day(1))
-        #expect(store.setStarred(false, lookup: english, at: day(6))?.isStarred == false)
-        #expect(store.count(.starred) == 0 && store.count(.all) == 1)
+        #expect(try store.setStarred(true, lookup: english, at: day(5))?.starredAt == day(1))
+        #expect(try store.setStarred(false, lookup: english, at: day(6))?.isStarred == false)
+        #expect(try store.count(.starred) == 0 && store.count(.all) == 1)
     }
 
-    @Test func listingFiltersSearchesSortsAndPages() {
+    @Test func listingFiltersSearchesSortsAndPages() throws {
         let store = makeTestWordBook()
         let words: [(String, String?, String, Double, Int)] = [
             ("apple", "en", "zh-Hans", 3, 1), ("Banana", "en", "zh-Hans", 1, 3), ("cherry", "en", "ja", 2, 2),
@@ -141,48 +141,48 @@ struct AskWordBookStoreTests {
         ]
         for (word, source, target, when, times) in words {
             let lookup = AskWordBookLookup(headword: word, source: source, target: target, translation: word + " 释义")
-            for index in 0 ..< times { store.record(lookup, at: day(when + Double(index) / 10), counts: true) }
+            for index in 0 ..< times { try store.record(lookup, at: day(when + Double(index) / 10), counts: true) }
         }
-        store.setStarred(true, lookup: AskWordBookLookup(headword: "cherry", source: "en", target: "ja"), at: day(9))
-        store.setStarred(true, lookup: AskWordBookLookup(headword: "apple", source: "en", target: "zh-Hans"), at: day(8))
-        func heads(_ query: AskWordBookQuery) -> [String] { store.list(query).map(\.headword) }
-        #expect(heads(AskWordBookQuery()) == ["机缘", "apple", "cherry", "Banana", "100%_sure"])
-        #expect(heads(AskWordBookQuery(sort: .count)) == ["Banana", "cherry", "机缘", "apple", "100%_sure"])
-        #expect(heads(AskWordBookQuery(sort: .alphabetical)) == ["100%_sure", "apple", "Banana", "cherry", "机缘"])
-        #expect(heads(AskWordBookQuery(sort: .starred)).prefix(2) == ["cherry", "apple"])
-        #expect(heads(AskWordBookQuery(scope: .starred)) == ["apple", "cherry"])
-        #expect(heads(AskWordBookQuery(text: "an")) == ["Banana"])
-        #expect(heads(AskWordBookQuery(text: "释义")).count == 5, "meanings match too")
-        #expect(heads(AskWordBookQuery(text: "%_")) == ["100%_sure"], "LIKE wildcards are literal")
-        #expect(heads(AskWordBookQuery(text: "  ")).count == 5)
-        #expect(heads(AskWordBookQuery(pair: AskWordBookLanguagePair(source: "en", target: "ja"))) == ["cherry"])
-        #expect(heads(AskWordBookQuery(pair: AskWordBookLanguagePair(source: nil, target: "zh-Hans"))) == ["100%_sure"])
-        #expect(heads(AskWordBookQuery(limit: 2, offset: 1)) == ["apple", "cherry"])
-        #expect(store.languagePairs().first == AskWordBookLanguagePair(source: "en", target: "zh-Hans"))
-        #expect(store.languagePairs().count == 4)
-        #expect(store.lookups(since: day(2)) == 3)
+        try store.setStarred(true, lookup: AskWordBookLookup(headword: "cherry", source: "en", target: "ja"), at: day(9))
+        try store.setStarred(true, lookup: AskWordBookLookup(headword: "apple", source: "en", target: "zh-Hans"), at: day(8))
+        func heads(_ query: AskWordBookQuery) throws -> [String] { try store.list(query).map(\.headword) }
+        #expect(try heads(AskWordBookQuery()) == ["机缘", "apple", "cherry", "Banana", "100%_sure"])
+        #expect(try heads(AskWordBookQuery(sort: .count)) == ["Banana", "cherry", "机缘", "apple", "100%_sure"])
+        #expect(try heads(AskWordBookQuery(sort: .alphabetical)) == ["100%_sure", "apple", "Banana", "cherry", "机缘"])
+        #expect(try heads(AskWordBookQuery(sort: .starred)).prefix(2) == ["cherry", "apple"])
+        #expect(try heads(AskWordBookQuery(scope: .starred)) == ["apple", "cherry"])
+        #expect(try heads(AskWordBookQuery(text: "an")) == ["Banana"])
+        #expect(try heads(AskWordBookQuery(text: "释义")).count == 5, "meanings match too")
+        #expect(try heads(AskWordBookQuery(text: "%_")) == ["100%_sure"], "LIKE wildcards are literal")
+        #expect(try heads(AskWordBookQuery(text: "  ")).count == 5)
+        #expect(try heads(AskWordBookQuery(pair: AskWordBookLanguagePair(source: "en", target: "ja"))) == ["cherry"])
+        #expect(try heads(AskWordBookQuery(pair: AskWordBookLanguagePair(source: nil, target: "zh-Hans"))) == ["100%_sure"])
+        #expect(try heads(AskWordBookQuery(limit: 2, offset: 1)) == ["apple", "cherry"])
+        #expect(try store.languagePairs().first == AskWordBookLanguagePair(source: "en", target: "zh-Hans"))
+        #expect(try store.languagePairs().count == 4)
+        #expect(try store.lookups(since: day(2)) == 3)
     }
 
     @Test func deletingRestoringAndPurging() throws {
         let store = makeTestWordBook()
         let old = AskWordBookLookup(headword: "old", source: "en", target: "zh-Hans", translation: "旧")
         let fresh = AskWordBookLookup(headword: "fresh", source: "en", target: "zh-Hans", translation: "新")
-        store.record(old, at: day(0), counts: true)
-        store.record(fresh, at: day(10), counts: true)
-        store.setStarred(true, lookup: cardLookup, at: day(0))
-        let removed = try #require(store.entry(forKey: old.key))
-        store.delete(keys: [old.key])
-        store.delete(keys: [])
-        #expect(store.entry(forKey: old.key) == nil)
-        store.restore([removed])
-        store.restore([])
-        #expect(store.entry(forKey: old.key) == removed)
-        store.purgeHistory(before: day(5))
-        #expect(store.entry(forKey: old.key) == nil)
-        #expect(store.entry(forKey: fresh.key) != nil)
-        #expect(store.entry(forKey: cardLookup.key) != nil, "starred words stay however old")
-        store.purgeHistory(before: nil)
-        #expect(store.list(AskWordBookQuery()).map(\.headword) == ["serendipity"])
+        try store.record(old, at: day(0), counts: true)
+        try store.record(fresh, at: day(10), counts: true)
+        try store.setStarred(true, lookup: cardLookup, at: day(0))
+        let removed = try #require(try store.entry(forKey: old.key))
+        try store.delete(keys: [old.key])
+        try store.delete(keys: [])
+        #expect(try store.entry(forKey: old.key) == nil)
+        try store.restore([removed])
+        try store.restore([])
+        #expect(try store.entry(forKey: old.key) == removed)
+        try store.purgeHistory(before: day(5))
+        #expect(try store.entry(forKey: old.key) == nil)
+        #expect(try store.entry(forKey: fresh.key) != nil)
+        #expect(try store.entry(forKey: cardLookup.key) != nil, "starred words stay however old")
+        try store.purgeHistory(before: nil)
+        #expect(try store.list(AskWordBookQuery()).map(\.headword) == ["serendipity"])
     }
 
     @Test func changesAreAnnounced() async throws {
@@ -192,35 +192,36 @@ struct AskWordBookStoreTests {
         let counter = Counter()
         let token = center.addObserver(forName: .askWordBookDidChange, object: nil, queue: .main) { _ in counter.add() }
         defer { center.removeObserver(token) }
-        store.record(english, at: day(0), counts: true)
+        try store.record(english, at: day(0), counts: true)
         for _ in 0 ..< 1000 where counter.value == 0 { try await Task.sleep(for: .milliseconds(5)) }
         #expect(counter.value == 1)
     }
 
-    @Test func aStoreThatCannotOpenAnswersEmpty() {
+    @Test func aStoreThatCannotOpenReportsUnavailable() {
         let store = SQLiteAskWordBookStore(url: URL(fileURLWithPath: "/dev/null/nowhere/word-book.sqlite"))
-        store.notificationCenter = NotificationCenter()
-        #expect(store.entry(forKey: "x") == nil)
-        #expect(store.record(english, at: day(0), counts: true) == nil)
-        #expect(store.list(AskWordBookQuery()).isEmpty)
-        #expect(store.count(.all) == 0 && store.lookups(since: day(0)) == 0 && store.languagePairs().isEmpty)
+        #expect(throws: LocalStoreFailure.unavailable) { try store.entry(forKey: "x") }
+        #expect(throws: LocalStoreFailure.unavailable) { try store.record(english, at: day(0), counts: true) }
+        #expect(throws: LocalStoreFailure.unavailable) { try store.list(AskWordBookQuery()) }
+        #expect(throws: LocalStoreFailure.unavailable) { try store.count(.all) }
+        #expect(throws: LocalStoreFailure.unavailable) { try store.lookups(since: day(0)) }
+        #expect(throws: LocalStoreFailure.unavailable) { try store.languagePairs() }
     }
 
-    @Test func datesLimitListsAndCountsFollowQueries() {
+    @Test func datesLimitListsAndCountsFollowQueries() throws {
         let store = makeTestWordBook()
         for (word, when) in [("old", 0.0), ("mid", 5.0), ("new", 9.0)] {
-            store.record(AskWordBookLookup(headword: word, source: "en", target: "zh-Hans", translation: word),
+            try store.record(AskWordBookLookup(headword: word, source: "en", target: "zh-Hans", translation: word),
                          at: day(when), counts: true)
         }
-        store.record(AskWordBookLookup(headword: "mid", source: "en", target: "zh-Hans", translation: "mid"),
+        try store.record(AskWordBookLookup(headword: "mid", source: "en", target: "zh-Hans", translation: "mid"),
                      at: day(8), counts: true)
-        #expect(store.list(AskWordBookQuery(since: day(6))).map(\.headword) == ["new", "mid"])
-        #expect(store.count(matching: AskWordBookQuery(since: day(6))) == 2)
-        #expect(store.count(matching: AskWordBookQuery(text: "ol")) == 1)
-        #expect(store.count(matching: AskWordBookQuery(scope: .starred)) == 0)
-        #expect(store.activity(since: day(6)).count == 3, "first and last lookups of recent words, from the date on")
-        #expect(Set(store.activity(since: day(6))) == [day(8), day(9)])
-        #expect(Set(store.activity(since: day(0))) == [day(0), day(5), day(8), day(9)])
+        #expect(try store.list(AskWordBookQuery(since: day(6))).map(\.headword) == ["new", "mid"])
+        #expect(try store.count(matching: AskWordBookQuery(since: day(6))) == 2)
+        #expect(try store.count(matching: AskWordBookQuery(text: "ol")) == 1)
+        #expect(try store.count(matching: AskWordBookQuery(scope: .starred)) == 0)
+        #expect(try store.activity(since: day(6)).count == 3, "first and last lookups of recent words, from the date on")
+        #expect(Set(try store.activity(since: day(6))) == [day(8), day(9)])
+        #expect(Set(try store.activity(since: day(0))) == [day(0), day(5), day(8), day(9)])
     }
 
     @Test func likePatternsAreEscaped() {
@@ -247,33 +248,33 @@ struct AskWordBookStoreTests {
 struct AskWordBookRecorderTests {
     private let lookup = AskWordBookLookup(headword: "resilient", source: "en", target: "zh-Hans", translation: "有弹性的")
 
-    @Test func countsEachWordOncePerSessionAndHonoursTheSwitch() {
+    @Test func countsEachWordOncePerSessionAndHonoursTheSwitch() async throws {
         let store = makeTestWordBook()
         var enabled = true
         let recorder = AskWordBookRecorder(store: store) { enabled }
         recorder.now = { day(0) }
-        recorder.record(lookup)
-        recorder.record(lookup)
-        #expect(store.entry(forKey: lookup.key)?.lookupCount == 1)
+        try await recorder.record(lookup)
+        try await recorder.record(lookup)
+        #expect(try store.entry(forKey: lookup.key)?.lookupCount == 1)
         recorder.beginSession()
-        recorder.record(lookup)
-        #expect(store.entry(forKey: lookup.key)?.lookupCount == 2)
+        try await recorder.record(lookup)
+        #expect(try store.entry(forKey: lookup.key)?.lookupCount == 2)
         enabled = false
         recorder.beginSession()
-        recorder.record(lookup)
-        #expect(store.entry(forKey: lookup.key)?.lookupCount == 2)
-        recorder.record(AskWordBookLookup(headword: "", source: nil, target: "en"))
-        #expect(store.count(.all) == 1)
+        try await recorder.record(lookup)
+        #expect(try store.entry(forKey: lookup.key)?.lookupCount == 2)
+        try await recorder.record(AskWordBookLookup(headword: "", source: nil, target: "en"))
+        #expect(try store.count(.all) == 1)
     }
 
-    @Test func starringTogglesAndWorksWithRecordingOff() {
+    @Test func starringTogglesAndWorksWithRecordingOff() async throws {
         let store = makeTestWordBook()
         let recorder = AskWordBookRecorder(store: store) { false }
-        #expect(!recorder.isStarred(lookup.key))
-        #expect(recorder.toggleStar(lookup))
-        #expect(recorder.isStarred(lookup.key))
-        #expect(!recorder.toggleStar(lookup))
-        #expect(store.count(.all) == 1)
+        #expect(try await !recorder.isStarred(lookup.key))
+        #expect(try await recorder.toggleStar(lookup))
+        #expect(try await recorder.isStarred(lookup.key))
+        #expect(try await !recorder.toggleStar(lookup))
+        #expect(try store.count(.all) == 1)
     }
 }
 
@@ -322,8 +323,8 @@ struct AskTranslateWordBookTests {
     @Test func anAICardIsKeptAtOnceAndShowsHowOftenItWasSeen() async throws {
         let store = makeTestWordBook()
         let earlier = AskWordBookLookup(headword: "serendipity", source: "en", target: "zh-Hans", translation: "机缘")
-        store.record(earlier, at: day(0), counts: true)
-        store.setStarred(true, lookup: earlier, at: day(0))
+        try store.record(earlier, at: day(0), counts: true)
+        try store.setStarred(true, lookup: earlier, at: day(0))
         let dictionary = AskTestWordLookup(answer: .card(wordBookCard))
         let translate = plugin(store, local: false, dictionary: dictionary)
         let word = request("serendipity")
@@ -352,7 +353,7 @@ struct AskTranslateWordBookTests {
         let store = makeTestWordBook()
         let saved = AskWordBookLookup(headword: "serendipity", source: "en", target: "zh-Hans", card: wordBookCard,
                                       model: "gpt-test")
-        store.record(saved, at: day(0), counts: true)
+        try store.record(saved, at: day(0), counts: true)
         let dictionary = AskTestWordLookup(answer: .translation("unused"))
         let translate = plugin(store, local: true, dictionary: dictionary)
         let word = request("Serendipity")

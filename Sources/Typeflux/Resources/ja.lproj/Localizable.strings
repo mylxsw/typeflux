@@ -5465,3 +5465,7 @@
 "ask.translation.panel.shortcut.newline" = "改行";
 "ask.translation.panel.shortcut.select" = "結果を移動";
 "ask.translation.panel.shortcut.close" = "閉じる（固定中は先に原文を消去）";
+
+// Word-book storage availability
+"ask.wordBook.storageUnavailable" = "単語帳を利用できません。現在の結果は保持されています。";
+"ask.wordBook.saveFailed" = "単語帳に保存できませんでした。現在の結果は保持されています。";

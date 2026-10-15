@@ -153,9 +153,10 @@ extension AskQuickResultsInteractionTests {
                 "regenerating a card does not call other services again"
             )
             try await launcher.press(1, .command) // ⌘S
+            await launcher.fixture.model.wordBookTask?.value
             #expect(launcher.fixture.model.plugins.output?.starred == true)
             let lookup = try #require(launcher.fixture.model.plugins.output?.wordBook)
-            #expect(data.store.entry(forKey: lookup.key)?.isStarred == true)
+            #expect(try data.store.entry(forKey: lookup.key)?.isStarred == true)
             try await launcher.press(8, [.command, .shift])
             #expect(pasteboard.string(forType: .string) == launcher.fixture.model.plugins.output?.wordCard?.markdown)
             #expect(launcher.dismissed == 0)
@@ -230,7 +231,7 @@ extension AskQuickResultsInteractionTests {
             }
             #expect(pasteboard.string(forType: .string) == "机缘巧合；意外之喜")
             #expect(launcher.dismissed == 1)
-            #expect(data.store.count(.all) == 1, "using a partial card keeps it in the word book")
+            #expect(try data.store.count(.all) == 1, "using a partial card keeps it in the word book")
         }
     }
 
@@ -246,6 +247,7 @@ extension AskQuickResultsInteractionTests {
         try await launcher.press(Self.down)
         #expect(launcher.fixture.model.plugins.partial?.selectedItem == 1)
         try await launcher.press(1, .command)
+        await launcher.fixture.model.wordBookTask?.value
         #expect(launcher.fixture.model.plugins.partial?.starred == true)
         try await translationWait { launcher.fixture.model.plugins.output != nil }
         #expect(launcher.fixture.model.plugins.output?.starred == true)

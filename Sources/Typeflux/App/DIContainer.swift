@@ -18,6 +18,7 @@ final class DIContainer {
     let textInjector: AXTextInjector
     let historyStore: HistoryStore
     let clipboardHistoryStore: ClipboardHistoryStore
+    let wordBookStore: RecoveringAskWordBookStore
     let conversationCache: RecoveringAskConversationCache
     let clipboardMonitor: ClipboardMonitor
     let clipboardPanelController: ClipboardPanelController
@@ -105,7 +106,8 @@ final class DIContainer {
             screenCapturePermission: screenCapturePermission,
             clipboardHistoryStore: clipboardHistoryStore,
             filePreviewLoader: AskFilePreviewLoader(),
-            conversationCache: conversationCache
+            conversationCache: conversationCache,
+            wordBookStore: wordBookStore
         ) } catch {
             ErrorLogStore.shared
                 .log("Ask conversation storage could not be initialized: \(error.localizedDescription)"); return nil
@@ -115,7 +117,10 @@ final class DIContainer {
     // swiftlint:disable:next function_body_length
     init(conversationCacheFactory: @escaping @Sendable () throws -> any AskCaching = {
         try AskConversationCache(url: AskConversationCache.defaultURL())
+    }, wordBookFactory: @escaping @Sendable () throws -> any AskWordBookStoring = {
+        SQLiteAskWordBookStore(url: SQLiteAskWordBookStore.defaultURL())
     }) {
+        wordBookStore = RecoveringAskWordBookStore(factory: wordBookFactory)
         conversationCache = RecoveringAskConversationCache(factory: conversationCacheFactory)
         modelLibrary = AskModelLibrary(defaults: settingsStore.defaults)
         let screenCapturePermission = ScreenCapturePermission.live
