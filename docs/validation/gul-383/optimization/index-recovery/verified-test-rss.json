@@ -1,0 +1,864 @@
+{
+  "definition": "ps RSS bytes; final same-binary test host and descendants. Window begins after runner startup and ends on host exit; sampled peaks, not full-run high-water marks. Shared pages double counted in sums; build processes excluded.",
+  "host_elapsed_at_sampling_start": "00:38",
+  "period_seconds": 0.5,
+  "elapsed_seconds": 41.813321791996714,
+  "samples": [
+    {
+      "seconds": 0.018663000024389476,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 561709056
+        },
+        {
+          "name": "Typeflux",
+          "rss_bytes": 57278464
+        },
+        {
+          "name": "TypefluxSemanticHelper",
+          "rss_bytes": 86212608
+        }
+      ]
+    },
+    {
+      "seconds": 0.5376035420340486,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 561725440
+        },
+        {
+          "name": "Typeflux",
+          "rss_bytes": 57262080
+        }
+      ]
+    },
+    {
+      "seconds": 1.0574008750263602,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 561725440
+        }
+      ]
+    },
+    {
+      "seconds": 1.575329125043936,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 561725440
+        }
+      ]
+    },
+    {
+      "seconds": 2.092991500045173,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 561725440
+        }
+      ]
+    },
+    {
+      "seconds": 2.6110513330204412,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 561725440
+        },
+        {
+          "name": "Typeflux",
+          "rss_bytes": 57278464
+        },
+        {
+          "name": "TypefluxSemanticHelper",
+          "rss_bytes": 498745344
+        }
+      ]
+    },
+    {
+      "seconds": 3.1301286250236444,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 561725440
+        },
+        {
+          "name": "Typeflux",
+          "rss_bytes": 57278464
+        },
+        {
+          "name": "TypefluxSemanticHelper",
+          "rss_bytes": 205963264
+        }
+      ]
+    },
+    {
+      "seconds": 3.648556375002954,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 561741824
+        },
+        {
+          "name": "Typeflux",
+          "rss_bytes": 57278464
+        },
+        {
+          "name": "TypefluxSemanticHelper",
+          "rss_bytes": 185188352
+        }
+      ]
+    },
+    {
+      "seconds": 4.16631216701353,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 561774592
+        },
+        {
+          "name": "Typeflux",
+          "rss_bytes": 57278464
+        },
+        {
+          "name": "TypefluxSemanticHelper",
+          "rss_bytes": 146391040
+        }
+      ]
+    },
+    {
+      "seconds": 4.683572750014719,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 561774592
+        },
+        {
+          "name": "Typeflux",
+          "rss_bytes": 57262080
+        },
+        {
+          "name": "TypefluxSemanticHelper",
+          "rss_bytes": 131907584
+        }
+      ]
+    },
+    {
+      "seconds": 5.202292500005569,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 561790976
+        },
+        {
+          "name": "Typeflux",
+          "rss_bytes": 57262080
+        },
+        {
+          "name": "TypefluxSemanticHelper",
+          "rss_bytes": 106971136
+        }
+      ]
+    },
+    {
+      "seconds": 5.720536083041225,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 519847936
+        },
+        {
+          "name": "Typeflux",
+          "rss_bytes": 57278464
+        },
+        {
+          "name": "TypefluxSemanticHelper",
+          "rss_bytes": 49512448
+        }
+      ]
+    },
+    {
+      "seconds": 6.237157125025988,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 519847936
+        },
+        {
+          "name": "Typeflux",
+          "rss_bytes": 163840
+        }
+      ]
+    },
+    {
+      "seconds": 6.755331291991752,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 519847936
+        }
+      ]
+    },
+    {
+      "seconds": 7.278213792014867,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 519389184
+        }
+      ]
+    },
+    {
+      "seconds": 7.797376333037391,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 519389184
+        },
+        {
+          "name": "(TypefluxSemantic)",
+          "rss_bytes": 0
+        }
+      ]
+    },
+    {
+      "seconds": 8.321434292010963,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 519389184
+        },
+        {
+          "name": "Typeflux",
+          "rss_bytes": 57278464
+        },
+        {
+          "name": "TypefluxSemanticHelper",
+          "rss_bytes": 205684736
+        }
+      ]
+    },
+    {
+      "seconds": 8.839506875025108,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 519405568
+        },
+        {
+          "name": "Typeflux",
+          "rss_bytes": 57278464
+        },
+        {
+          "name": "TypefluxSemanticHelper",
+          "rss_bytes": 193740800
+        }
+      ]
+    },
+    {
+      "seconds": 9.357021125033498,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 519405568
+        },
+        {
+          "name": "Typeflux",
+          "rss_bytes": 57278464
+        },
+        {
+          "name": "TypefluxSemanticHelper",
+          "rss_bytes": 168869888
+        }
+      ]
+    },
+    {
+      "seconds": 9.873976167000365,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 519421952
+        },
+        {
+          "name": "Typeflux",
+          "rss_bytes": 57278464
+        },
+        {
+          "name": "TypefluxSemanticHelper",
+          "rss_bytes": 135593984
+        }
+      ]
+    },
+    {
+      "seconds": 10.391270124993753,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 519421952
+        },
+        {
+          "name": "Typeflux",
+          "rss_bytes": 57262080
+        },
+        {
+          "name": "TypefluxSemanticHelper",
+          "rss_bytes": 117227520
+        }
+      ]
+    },
+    {
+      "seconds": 10.90827504202025,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 519438336
+        },
+        {
+          "name": "Typeflux",
+          "rss_bytes": 57278464
+        },
+        {
+          "name": "TypefluxSemanticHelper",
+          "rss_bytes": 86425600
+        }
+      ]
+    },
+    {
+      "seconds": 11.42666012502741,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 519438336
+        },
+        {
+          "name": "Typeflux",
+          "rss_bytes": 57294848
+        },
+        {
+          "name": "TypefluxSemanticHelper",
+          "rss_bytes": 7716864
+        }
+      ]
+    },
+    {
+      "seconds": 11.946228542015888,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 519438336
+        }
+      ]
+    },
+    {
+      "seconds": 12.465691166988108,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 552910848
+        }
+      ]
+    },
+    {
+      "seconds": 12.98224816704169,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 560775168
+        }
+      ]
+    },
+    {
+      "seconds": 13.498852125019766,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 561872896
+        }
+      ]
+    },
+    {
+      "seconds": 14.023663417028729,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 561954816
+        }
+      ]
+    },
+    {
+      "seconds": 14.550721250008792,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 562020352
+        }
+      ]
+    },
+    {
+      "seconds": 15.068060874997173,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 562069504
+        }
+      ]
+    },
+    {
+      "seconds": 15.585571333009284,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 562118656
+        }
+      ]
+    },
+    {
+      "seconds": 16.113988250028342,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 448905216
+        }
+      ]
+    },
+    {
+      "seconds": 16.64223758300068,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 448872448
+        }
+      ]
+    },
+    {
+      "seconds": 17.160948000033386,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 448905216
+        }
+      ]
+    },
+    {
+      "seconds": 17.682124999992084,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 448937984
+        }
+      ]
+    },
+    {
+      "seconds": 18.20084158302052,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 448970752
+        }
+      ]
+    },
+    {
+      "seconds": 18.71913762501208,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 449003520
+        }
+      ]
+    },
+    {
+      "seconds": 19.238146624993533,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 449036288
+        }
+      ]
+    },
+    {
+      "seconds": 19.756653417018242,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 449052672
+        }
+      ]
+    },
+    {
+      "seconds": 20.275136000011116,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 449085440
+        }
+      ]
+    },
+    {
+      "seconds": 20.801699750008993,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 449118208
+        }
+      ]
+    },
+    {
+      "seconds": 21.320544207992498,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 449134592
+        }
+      ]
+    },
+    {
+      "seconds": 21.838974707992747,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 449167360
+        }
+      ]
+    },
+    {
+      "seconds": 22.35917954199249,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 449200128
+        }
+      ]
+    },
+    {
+      "seconds": 22.888029417023063,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 449216512
+        }
+      ]
+    },
+    {
+      "seconds": 23.40656879200833,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 449249280
+        }
+      ]
+    },
+    {
+      "seconds": 23.925614625040907,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 449265664
+        }
+      ]
+    },
+    {
+      "seconds": 24.454326458042488,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 449298432
+        }
+      ]
+    },
+    {
+      "seconds": 24.974264624994248,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 449314816
+        }
+      ]
+    },
+    {
+      "seconds": 25.49209479201818,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 449347584
+        }
+      ]
+    },
+    {
+      "seconds": 26.01105029199971,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 319324160
+        }
+      ]
+    },
+    {
+      "seconds": 26.53018233302282,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 319356928
+        }
+      ]
+    },
+    {
+      "seconds": 27.049268417002168,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 319373312
+        }
+      ]
+    },
+    {
+      "seconds": 27.568298667029012,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 319389696
+        }
+      ]
+    },
+    {
+      "seconds": 28.095420167024713,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 319422464
+        }
+      ]
+    },
+    {
+      "seconds": 28.614310042001307,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 319438848
+        }
+      ]
+    },
+    {
+      "seconds": 29.134974292013794,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 319455232
+        }
+      ]
+    },
+    {
+      "seconds": 29.660563083016314,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 319471616
+        }
+      ]
+    },
+    {
+      "seconds": 30.179330624989234,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 319504384
+        }
+      ]
+    },
+    {
+      "seconds": 30.6982753330376,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 319520768
+        }
+      ]
+    },
+    {
+      "seconds": 31.216240042005666,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 311558144
+        }
+      ]
+    },
+    {
+      "seconds": 31.734531875001267,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 313098240
+        }
+      ]
+    },
+    {
+      "seconds": 32.253090624988545,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 313393152
+        }
+      ]
+    },
+    {
+      "seconds": 32.77618212503148,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 312098816
+        }
+      ]
+    },
+    {
+      "seconds": 33.29380204202607,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 312000512
+        }
+      ]
+    },
+    {
+      "seconds": 33.813276542001404,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 339001344
+        }
+      ]
+    },
+    {
+      "seconds": 34.337559542036615,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 346570752
+        },
+        {
+          "name": "Typeflux",
+          "rss_bytes": 75022336
+        }
+      ]
+    },
+    {
+      "seconds": 34.85518066701479,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 347717632
+        }
+      ]
+    },
+    {
+      "seconds": 35.3863344170386,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 347783168
+        }
+      ]
+    },
+    {
+      "seconds": 35.921537499991246,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 347619328
+        }
+      ]
+    },
+    {
+      "seconds": 36.43891133303987,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 347799552
+        }
+      ]
+    },
+    {
+      "seconds": 36.97772783302935,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 347799552
+        }
+      ]
+    },
+    {
+      "seconds": 37.515205958043225,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 347799552
+        }
+      ]
+    },
+    {
+      "seconds": 38.05094058299437,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 347799552
+        }
+      ]
+    },
+    {
+      "seconds": 38.58947812503902,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 347848704
+        }
+      ]
+    },
+    {
+      "seconds": 39.12709587503923,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 347799552
+        }
+      ]
+    },
+    {
+      "seconds": 39.67178800003603,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 347717632
+        }
+      ]
+    },
+    {
+      "seconds": 40.209313125000335,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 347717632
+        }
+      ]
+    },
+    {
+      "seconds": 40.753025167039596,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 348160000
+        }
+      ]
+    },
+    {
+      "seconds": 41.281857207999565,
+      "processes": [
+        {
+          "name": "swiftpm-testing-helper",
+          "rss_bytes": 348209152
+        }
+      ]
+    }
+  ]
+}

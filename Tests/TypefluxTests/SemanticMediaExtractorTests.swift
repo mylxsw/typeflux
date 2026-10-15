@@ -124,10 +124,10 @@ struct SemanticMediaExtractorTests {
         let file = root.appendingPathComponent("large.mov")
         try Data().write(to: file)
         let handle = try FileHandle(forWritingTo: file)
-        try handle.truncate(atOffset: UInt64(SemanticFilePolicy.maximumBytes + 1)); try handle.close()
+        try handle.truncate(atOffset: UInt64(16 * 1024 * 1024 + 1)); try handle.close()
         let info = AskFileWorkerCommand.handle(.init(operation: .content, path: file.path,
                                                      scope: semanticScope(root.path), readText: false))
-        #expect(info.error == nil && info.fileSize == Int64(SemanticFilePolicy.maximumBytes + 1))
+        #expect(info.error == nil && info.fileSize == Int64(16 * 1024 * 1024 + 1))
         #expect(AskFileWorkerCommand.handle(.init(operation: .content, path: file.path,
                                                   scope: semanticScope(root.path))).error == EINVAL)
     }

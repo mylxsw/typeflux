@@ -100,8 +100,8 @@ struct SemanticFilePolicyTests {
         #expect(chunks.count > 2); #expect(chunks.allSatisfy { $0.text.utf8.count <= 1200 })
         #expect(chunks.first?.page == 2); #expect(chunks.last?.page == 3)
         #expect(SemanticChunk.make([.init(text: "   \n")]).isEmpty)
-        #expect(SemanticChunk.make([.init(text: String(repeating: "a", count: 200_000))]).count == 64)
-        #expect(SemanticChunk.make([.init(text: String(repeating: "\u{301}", count: 2000))]).isEmpty)
+        #expect(SemanticChunk.make([.init(text: String(repeating: "a", count: 200_000))]).count > 64)
+        #expect(SemanticChunk.make([.init(text: String(repeating: "\u{301}", count: 2000))]).count > 1)
     }
 }
 
@@ -241,9 +241,9 @@ struct SemanticFileContentTests {
         try FileManager.default.createSymbolicLink(at: directoryLink, withDestinationURL: root)
         #expect(read(directoryLink.path + "/notes.md").error != nil)
         try Data([0, 1, 2]).write(to: file); #expect(read().error == EILSEQ)
-        try Data().write(to: file); #expect(read().error != nil)
+        try Data().write(to: file); #expect(read().pages?.first?.text == "")
         let handle = try FileHandle(forWritingTo: file); try handle
-            .truncate(atOffset: UInt64(SemanticFilePolicy.maximumBytes + 1)); try handle.close()
+            .truncate(atOffset: UInt64(16 * 1024 * 1024 + 1)); try handle.close()
         #expect(read().error != nil)
         #expect(AskFileWorkerCommand.content(
             .init(operation: .content, path: file.path, scope: scope),

@@ -1,0 +1,168 @@
+{
+  "generated_at": "2026-10-15T20:22:06.587478+00:00",
+  "authoritative_validation": {
+    "tests": 96,
+    "suites": 16,
+    "command_wall_seconds": 115.3633707089466,
+    "test_runtime_seconds": 79.813,
+    "same_binary_single_run": true,
+    "no_cross_binary_profile_merge": true
+  },
+  "coverage": {
+    "baseline": "1e8cb5cf16ad7d474344094baf4f2f71a5a160b8",
+    "executable": 1031,
+    "covered": 1006,
+    "percent": 97.58,
+    "denominator": "Added/modified executable Swift lines in Sources/Typeflux, including new files, intersected with final LLVM LCOV DA records. Tests, helper wrapper and unchanged vendor code excluded; helper reported separately."
+  },
+  "project_wide_focused_line_coverage": {
+    "covered": 8552,
+    "executable": 241495,
+    "percent": 3.54,
+    "note": "This is the project-wide report from a focused run, not full-project test execution."
+  },
+  "native_cpp_helper": {
+    "changed_executable_lines": 0,
+    "coverage_percent": null,
+    "note": "C++ helper unchanged; Swift filesystem worker coverage belongs to the app."
+  },
+  "benchmark": {
+    "n": 30,
+    "quantiles": "nearest rank, 2ms visibility polling; all 30 samples retained",
+    "metrics_ms": {
+      "event_to_fts_ms": {
+        "p50": 179.796,
+        "p95": 184.858,
+        "p99": 192.507
+      },
+      "event_to_vectors_ms": {
+        "p50": 562.09,
+        "p95": 580.071,
+        "p99": 638.661
+      },
+      "write_to_event_ms": {
+        "p50": 11.298,
+        "p95": 12.574,
+        "p99": 12.647
+      },
+      "write_to_fts_ms": {
+        "p50": 191.595,
+        "p95": 197.432,
+        "p99": 204.338
+      },
+      "write_to_vectors_ms": {
+        "p50": 572.699,
+        "p95": 591.902,
+        "p99": 649.109
+      }
+    },
+    "first_arrival": {
+      "event_to_fts_ms": 179.66691666515544,
+      "event_to_vectors_ms": 638.6612083297223,
+      "sample": 0,
+      "write_to_event_ms": 10.447666689287871,
+      "write_to_fts_ms": 190.1145833544433,
+      "write_to_vectors_ms": 649.1088750190102
+    },
+    "concurrency": "one index writer, no interactive queries, no backlog; one small file/one chunk per arrival",
+    "cache": "New indexing/file worker instances per reconciliation; OS page cache not controlled. First arrival reported separately; no reused warm-model process claim.",
+    "measurement": "file write/FSEvent to committed FTS or complete vectors; not query latency or UI rendering"
+  },
+  "rss": {
+    "verified-coverage.json": {
+      "observed_peak_bytes_by_name": {
+        "Typeflux": 57278464,
+        "TypefluxSemanticHelper": 369770496
+      },
+      "maximum_sampled_sum_bytes": 427032576,
+      "samples": 24,
+      "definition": "ps resident pages, bytes; descendant validation processes only. Shared pages are double counted in sums. Compiler/build processes excluded."
+    },
+    "verified-test-rss.json": {
+      "observed_peak_bytes_by_name": {
+        "swiftpm-testing-helper": 562118656,
+        "Typeflux": 75022336,
+        "TypefluxSemanticHelper": 498745344,
+        "(TypefluxSemantic)": 0
+      },
+      "maximum_sampled_sum_bytes": 1117749248,
+      "samples": 80,
+      "definition": "ps RSS bytes; final same-binary test host and descendants. Window begins after runner startup and ends on host exit; sampled peaks, not full-run high-water marks. Shared pages double counted in sums; build processes excluded."
+    }
+  },
+  "optional_branches_not_activated": [
+    "SemanticFileServiceTests/liveModelDownloadWhenExplicitlyRequested",
+    "SemanticFileServiceTests/actual model checksum and atomic install when provided",
+    "SemanticRealtimeSearchTests/real file change indexes and publishes with real model when provided (both arguments)"
+  ],
+  "real_model_event_test_activated": true,
+  "history": [
+    {
+      "phase": "initial app build",
+      "report": "build.json",
+      "wall_seconds": 231.02816441701725,
+      "exit_code": 0
+    },
+    {
+      "phase": "test build failed: nested macro",
+      "report": "coverage-run.json",
+      "wall_seconds": 229.21757350000553,
+      "exit_code": 2
+    },
+    {
+      "phase": "initial 92-method scope",
+      "report": "coverage-retry.json",
+      "wall_seconds": 232.68214058299782,
+      "exit_code": 0
+    },
+    {
+      "phase": "new fault method, five cases",
+      "report": "fault-coverage.json",
+      "wall_seconds": 84.07329841703176,
+      "exit_code": 0
+    },
+    {
+      "phase": "strengthened migration crash",
+      "report": "migration-coverage.json",
+      "wall_seconds": 55.431732124998234,
+      "exit_code": 0
+    },
+    {
+      "phase": "single-page PDF continuation",
+      "report": "pdf-checkpoint-coverage.json",
+      "wall_seconds": 114.17703004198847,
+      "exit_code": 0
+    },
+    {
+      "phase": "95-method scope after counts fix",
+      "report": "final-coverage.json",
+      "wall_seconds": 151.25169604097027,
+      "exit_code": 0
+    },
+    {
+      "phase": "native build exited without fatal diagnostic",
+      "report": "recovery-final-coverage.json",
+      "wall_seconds": 57.8658832910005,
+      "exit_code": 2
+    },
+    {
+      "phase": "30 recovery methods, jobs=4",
+      "report": "recovery-retry-coverage.json",
+      "wall_seconds": 190.0596259169979,
+      "exit_code": 0
+    },
+    {
+      "phase": "16 compatibility methods",
+      "report": "compatibility-coverage.json",
+      "wall_seconds": 188.14308850001544,
+      "exit_code": 0
+    },
+    {
+      "phase": "authoritative final 96-method scope",
+      "report": "verified-coverage.json",
+      "wall_seconds": 115.3633707089466,
+      "exit_code": 0
+    }
+  ],
+  "discarded_measurement": "The cross-binary 98.18% profile merge emitted counter mismatches and was discarded. Only the final same-binary 97.58% result is reported."
+}

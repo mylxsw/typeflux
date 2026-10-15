@@ -1,0 +1,7 @@
+{
+  "command": "same focused make coverage command as coverage-retry.log",
+  "wall_seconds": 229.21757350000553,
+  "stage": "test build; zero tests executed",
+  "cause": "SwiftFormat rewrote an optional unwrap into nested #require macros; one throwing job() call also appeared directly in #require without an inner try. Serialized .dia diagnostics were inspected because the native backend emitted no detailed stderr.",
+  "fix": "Read throwing values into locals before #require; retain the explicitly addressed crash-test method name."
+}

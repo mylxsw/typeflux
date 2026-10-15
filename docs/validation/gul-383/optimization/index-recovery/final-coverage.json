@@ -1,0 +1,349 @@
+{
+  "wall_seconds": 151.25169604097027,
+  "exit_code": 0,
+  "sample_period_seconds": 0.5,
+  "rss_definition": "ps resident pages, bytes; descendant validation processes only. Shared pages are double counted in sums. Compiler/build processes excluded.",
+  "samples": [
+    {
+      "seconds": 63.41008141596103,
+      "rss_bytes": {
+        "Typeflux": [
+          32768
+        ]
+      }
+    },
+    {
+      "seconds": 63.94556720799301,
+      "rss_bytes": {
+        "Typeflux": [
+          32768
+        ]
+      }
+    },
+    {
+      "seconds": 64.48078275000444,
+      "rss_bytes": {
+        "Typeflux": [
+          32768
+        ]
+      }
+    },
+    {
+      "seconds": 65.01704941596836,
+      "rss_bytes": {
+        "Typeflux": [
+          32768
+        ]
+      }
+    },
+    {
+      "seconds": 65.55473820801126,
+      "rss_bytes": {
+        "Typeflux": [
+          32768
+        ]
+      }
+    },
+    {
+      "seconds": 66.09259174996987,
+      "rss_bytes": {
+        "Typeflux": [
+          32768
+        ]
+      }
+    },
+    {
+      "seconds": 66.62695937498938,
+      "rss_bytes": {
+        "Typeflux": [
+          32768
+        ]
+      }
+    },
+    {
+      "seconds": 67.1615279999678,
+      "rss_bytes": {
+        "Typeflux": [
+          32768
+        ]
+      }
+    },
+    {
+      "seconds": 67.69653379096417,
+      "rss_bytes": {
+        "Typeflux": [
+          32768
+        ]
+      }
+    },
+    {
+      "seconds": 100.58063458296238,
+      "rss_bytes": {
+        "Typeflux": [
+          57180160
+        ],
+        "TypefluxSemanticHelper": [
+          53444608
+        ]
+      }
+    },
+    {
+      "seconds": 103.19471349997912,
+      "rss_bytes": {
+        "Typeflux": [
+          57180160
+        ],
+        "TypefluxSemanticHelper": [
+          204079104
+        ]
+      }
+    },
+    {
+      "seconds": 103.71797262498876,
+      "rss_bytes": {
+        "Typeflux": [
+          57180160
+        ],
+        "TypefluxSemanticHelper": [
+          194150400
+        ]
+      }
+    },
+    {
+      "seconds": 104.2427877910086,
+      "rss_bytes": {
+        "Typeflux": [
+          57180160
+        ],
+        "TypefluxSemanticHelper": [
+          178323456
+        ]
+      }
+    },
+    {
+      "seconds": 104.76176679099444,
+      "rss_bytes": {
+        "Typeflux": [
+          57180160
+        ],
+        "TypefluxSemanticHelper": [
+          136019968
+        ]
+      }
+    },
+    {
+      "seconds": 105.28030820796266,
+      "rss_bytes": {
+        "Typeflux": [
+          57180160
+        ],
+        "TypefluxSemanticHelper": [
+          128270336
+        ]
+      }
+    },
+    {
+      "seconds": 105.79926004097797,
+      "rss_bytes": {
+        "Typeflux": [
+          57180160
+        ],
+        "TypefluxSemanticHelper": [
+          93241344
+        ]
+      }
+    },
+    {
+      "seconds": 106.31783999997424,
+      "rss_bytes": {
+        "Typeflux": [
+          57180160
+        ],
+        "TypefluxSemanticHelper": [
+          12304384
+        ]
+      }
+    },
+    {
+      "seconds": 106.83707999996841,
+      "rss_bytes": {
+        "Typeflux": [
+          32768
+        ]
+      }
+    },
+    {
+      "seconds": 108.91277299996,
+      "rss_bytes": {
+        "Typeflux": [
+          57180160
+        ],
+        "TypefluxSemanticHelper": [
+          334675968
+        ]
+      }
+    },
+    {
+      "seconds": 109.43369674996939,
+      "rss_bytes": {
+        "Typeflux": [
+          57180160
+        ],
+        "TypefluxSemanticHelper": [
+          192806912
+        ]
+      }
+    },
+    {
+      "seconds": 109.960179332993,
+      "rss_bytes": {
+        "Typeflux": [
+          57180160
+        ],
+        "TypefluxSemanticHelper": [
+          181239808
+        ]
+      }
+    },
+    {
+      "seconds": 110.47880483296467,
+      "rss_bytes": {
+        "Typeflux": [
+          57180160
+        ],
+        "TypefluxSemanticHelper": [
+          149012480
+        ]
+      }
+    },
+    {
+      "seconds": 110.99674504098948,
+      "rss_bytes": {
+        "Typeflux": [
+          57180160
+        ],
+        "TypefluxSemanticHelper": [
+          130465792
+        ]
+      }
+    },
+    {
+      "seconds": 111.5159509999794,
+      "rss_bytes": {
+        "Typeflux": [
+          57180160
+        ],
+        "TypefluxSemanticHelper": [
+          107790336
+        ]
+      }
+    },
+    {
+      "seconds": 112.03432499995688,
+      "rss_bytes": {
+        "Typeflux": [
+          57180160
+        ],
+        "TypefluxSemanticHelper": [
+          12386304
+        ]
+      }
+    },
+    {
+      "seconds": 114.63380429096287,
+      "rss_bytes": {
+        "Typeflux": [
+          57180160
+        ],
+        "TypefluxSemanticHelper": [
+          499761152
+        ]
+      }
+    },
+    {
+      "seconds": 115.1526288749883,
+      "rss_bytes": {
+        "Typeflux": [
+          57180160
+        ],
+        "TypefluxSemanticHelper": [
+          201539584
+        ]
+      }
+    },
+    {
+      "seconds": 115.680523582967,
+      "rss_bytes": {
+        "Typeflux": [
+          57180160
+        ],
+        "TypefluxSemanticHelper": [
+          182829056
+        ]
+      }
+    },
+    {
+      "seconds": 116.20008375000907,
+      "rss_bytes": {
+        "Typeflux": [
+          57180160
+        ],
+        "TypefluxSemanticHelper": [
+          155287552
+        ]
+      }
+    },
+    {
+      "seconds": 116.71813220798504,
+      "rss_bytes": {
+        "Typeflux": [
+          57180160
+        ],
+        "TypefluxSemanticHelper": [
+          130990080
+        ]
+      }
+    },
+    {
+      "seconds": 117.23637216596399,
+      "rss_bytes": {
+        "Typeflux": [
+          57180160
+        ],
+        "TypefluxSemanticHelper": [
+          107233280
+        ]
+      }
+    },
+    {
+      "seconds": 117.76010433299234,
+      "rss_bytes": {
+        "Typeflux": [
+          57180160
+        ],
+        "TypefluxSemanticHelper": [
+          86949888
+        ]
+      }
+    },
+    {
+      "seconds": 118.27785037498688,
+      "rss_bytes": {
+        "Typeflux": [
+          57212928
+        ],
+        "TypefluxSemanticHelper": [
+          12337152
+        ]
+      }
+    },
+    {
+      "seconds": 140.65203649998875,
+      "rss_bytes": {
+        "Typeflux": [
+          74891264
+        ]
+      }
+    }
+  ]
+}

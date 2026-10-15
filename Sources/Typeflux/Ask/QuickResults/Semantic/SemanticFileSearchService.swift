@@ -290,13 +290,13 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
               self.dirty || !self.pendingPaths.isEmpty else { return }
         self.rescan?.cancel()
         self.rescan = Task { [weak self] in
-            do { try await Task.sleep(for: .seconds(2)) } catch { return }
+            do { try await Task.sleep(for: .milliseconds(150)) } catch { return }
             self?.reconcilePending()
         }
     }
 
     private func reconcilePending() {
-        guard !self.backgroundPaused, self.phase == .ready || (self.phase == .failed && self.mediaFailed),
+        guard !self.backgroundPaused, self.phase == .ready || self.phase == .failed,
               let database = self.store, let scope = self.scope else { return }
         if self.dirty {
             self.start(force: true)

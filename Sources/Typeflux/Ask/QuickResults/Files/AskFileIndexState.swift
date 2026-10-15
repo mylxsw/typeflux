@@ -58,6 +58,9 @@ struct AskFileHit: Equatable, Sendable, Identifiable {
         var text: String
         var page: Int?
         var time: TimeInterval?
+        var version: String?
+        var startOffset: Int64?
+        var endOffset: Int64?
     }
     var path: String
     var name: String

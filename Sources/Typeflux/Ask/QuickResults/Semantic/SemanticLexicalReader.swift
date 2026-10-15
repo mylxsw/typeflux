@@ -33,7 +33,7 @@ final class SemanticLexicalReader: @unchecked Sendable {
             guard let database else { throw SemanticFileStore.Failure.database }
             var statement: OpaquePointer?
             let sql = """
-            SELECT c.path,c.text,c.page,f.modified
+            SELECT c.path,c.text,c.page,f.modified,f.version,c.start_offset,c.end_offset
             FROM lexical JOIN chunks c ON c.id=lexical.rowid JOIN files f ON f.path=c.path
             WHERE lexical MATCH ? ORDER BY rank
             """
@@ -73,7 +73,12 @@ final class SemanticLexicalReader: @unchecked Sendable {
                 ))
                 hits.append(.init(path: path, name: (path as NSString).lastPathComponent, kind: .file,
                                   modified: Date(timeIntervalSince1970: sqlite3_column_double(statement, 3)),
-                                  score: 0.18, evidence: .init(text: String(string(1).prefix(180)), page: page)))
+                                  score: 0.18, evidence: .init(text: String(string(1).prefix(180)), page: page,
+                                    version: string(4).isEmpty ? nil : string(4),
+                                    startOffset: sqlite3_column_type(statement, 5) == SQLITE_NULL
+                                        ? nil : sqlite3_column_int64(statement, 5),
+                                    endOffset: sqlite3_column_type(statement, 6) == SQLITE_NULL
+                                        ? nil : sqlite3_column_int64(statement, 6))))
                 if hits.count == min(100, limit) {
                     return hits
                 }

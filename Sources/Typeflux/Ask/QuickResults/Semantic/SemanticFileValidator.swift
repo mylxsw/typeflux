@@ -24,7 +24,8 @@ final class SemanticFileValidator: @unchecked Sendable {
                 guard !cancelled() else { break }
                 guard let response = try? reader.read(.init(operation: .content, path: hit.path,
                                                            scope: scope, readText: false), isCancelled: cancelled),
-                      response.error == nil, response.modified == hit.modified else { continue }
+                      response.error == nil, response.modified == hit.modified,
+                      hit.evidence?.version == nil || hit.evidence?.version == response.version else { continue }
                 valid.append(hit)
                 if valid.count >= limit { break }
             }
