@@ -76,7 +76,7 @@ struct AskStyleMetrics: Equatable {
 
     static let liquidGlass = AskStyleMetrics(
         sidebarRowHeight: 38, sidebarRowCorner: AskMetrics.sidebarRowCorner,
-        searchFieldHeight: 34, searchFieldCorner: 12, filterCorner: 9,
+        searchFieldHeight: 34, searchFieldCorner: 17, filterCorner: 9,
         suggestionCorner: 18, composerCorner: 28, paletteCorner: AskMetrics.paletteCorner,
         menuCorner: 18, hoverCardCorner: 14, menuRowCorner: 10,
         headerChipHeight: AskMetrics.headerCapsuleHeight
@@ -102,12 +102,13 @@ extension InterfaceStyle {
     }
 }
 
-/// A hairline dividing two flush classic surfaces, e.g. the sidebar from the conversation.
+/// A hairline dividing two flush surfaces, e.g. the sidebar from the conversation.
 struct AskClassicDivider: View {
     var axis: Axis = .vertical
+    var color: Color = AskClassic.divider
 
     var body: some View {
-        Rectangle().fill(AskClassic.divider)
+        Rectangle().fill(color)
             .frame(width: axis == .vertical ? 1 : nil, height: axis == .horizontal ? 1 : nil)
             .allowsHitTesting(false)
             .accessibilityHidden(true)
@@ -115,44 +116,36 @@ struct AskClassicDivider: View {
 }
 
 /// The chrome of a column at a window edge: the sidebar, the usage panel and
-/// the drawers. Liquid Glass floats it as an inset glass panel; classic lays
-/// it flush against the edge, solid, with a hairline on its inner side. A
-/// classic drawer over the conversation also casts a shadow along that side.
+/// the drawers. Both styles lay it flush against the edge, full height, with a
+/// hairline on its inner side. Liquid Glass makes it clearer glass than the
+/// reading canvas beside it; classic makes it solid. A drawer over the
+/// conversation also casts a shadow along its inner side.
 struct AskSidePanelChrome: ViewModifier {
     /// The window edge the column sits against.
     var edge: HorizontalEdge
-    var glassFill: Color
     var classicFill: Color = AskClassic.sidebar
-    /// Where the glass panel is inset from the window.
-    var glassInset: Edge.Set
     /// Over the conversation, as a drawer, rather than beside it.
     var floating = false
     @Environment(\.interfaceStyle) private var style
-    @Environment(\.colorScheme) private var colorScheme
 
-    @ViewBuilder
     func body(content: Content) -> some View {
-        if style.usesGlass {
-            content
-                .askInWindowGlass(corner: AskMetrics.sidebarPanelCorner, opaqueFill: glassFill,
-                                  placement: colorScheme == .light ? .windowEdge : .inWindow)
-                .padding(glassInset, AskMetrics.sidebarPanelInset)
-        } else {
-            content
-                .frame(maxHeight: .infinity, alignment: .top)
-                .background(classicFill)
-                .overlay(alignment: edge == .leading ? .trailing : .leading) { AskClassicDivider() }
-                .background {
-                    if floating { AskOuterShadow(shape: Rectangle(), elevation: .popover) }
-                }
-        }
+        content
+            .frame(maxHeight: .infinity, alignment: .top)
+            .background {
+                if style.usesGlass { AskEdgeColumnBackdrop() } else { classicFill }
+            }
+            .overlay(alignment: edge == .leading ? .trailing : .leading) {
+                AskClassicDivider(color: style.usesGlass ? AskTheme.separator : AskClassic.divider)
+            }
+            .background {
+                if floating { AskOuterShadow(shape: Rectangle(), elevation: .popover) }
+            }
     }
 }
 
 extension View {
-    func askSidePanel(edge: HorizontalEdge, glassFill: Color, classicFill: Color = AskClassic.sidebar,
-                      glassInset: Edge.Set, floating: Bool = false) -> some View {
-        modifier(AskSidePanelChrome(edge: edge, glassFill: glassFill, classicFill: classicFill,
-                                    glassInset: glassInset, floating: floating))
+    func askSidePanel(edge: HorizontalEdge, classicFill: Color = AskClassic.sidebar,
+                      floating: Bool = false) -> some View {
+        modifier(AskSidePanelChrome(edge: edge, classicFill: classicFill, floating: floating))
     }
 }

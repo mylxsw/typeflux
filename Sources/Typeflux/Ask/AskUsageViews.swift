@@ -58,7 +58,6 @@ struct AskUsagePanel: View {
     /// Shown as a drawer over the conversation rather than beside it.
     var floating = false
     @ObservedObject private var auth = AuthState.shared
-    @Environment(\.interfaceStyle) private var style
     @Binding var runId: String?
     var close: () -> Void
     @StateObject private var details = AskUsageDetails()
@@ -94,11 +93,9 @@ struct AskUsagePanel: View {
                 .accessibilityIdentifier("ask.workspace.drawer.close")
             }
             .padding(.leading, 16).padding(.trailing, 10)
-            // Centred on the header pills' row, below the panel's own inset. A
-            // flush classic panel spans the whole title row, so its rule lines
-            // up with the one under the conversation's title.
-            .frame(height: AskMetrics.titleBarRowHeight
-                - (style.usesGlass ? AskMetrics.sidebarPanelInset * 2 : 1))
+            // The flush panel spans the whole title row, so its rule lines up
+            // with the one under the conversation's title.
+            .frame(height: AskMetrics.titleBarRowHeight - 1)
             Rectangle().fill(AskTheme.separator).frame(height: 1)
             ScrollView {
                 // Two questions, two cards: "does the next message still fit?"
@@ -149,14 +146,10 @@ struct AskUsagePanel: View {
                 // Account-wide data is independently refreshed by AuthState.
             }
         }
-        // A glass panel floating inset from the window edges, the sidebar's twin
-        // on the trailing side, instead of a full-height column split off by a
-        // rule. Classic is that column, as wide as the glass panel and its inset.
-        .clipShape(RoundedRectangle(cornerRadius: style.usesGlass ? AskMetrics.sidebarPanelCorner : 0,
-                                    style: .continuous))
-        .frame(width: AskMetrics.usagePanelWidth + (style.usesGlass ? 0 : AskMetrics.sidebarPanelInset))
-        .askSidePanel(edge: .trailing, glassFill: AskTheme.raisedSurface, glassInset: [.trailing, .top, .bottom],
-                      floating: floating)
+        // The sidebar's twin on the trailing side: a full-height column flush
+        // with the window edge.
+        .frame(width: AskMetrics.usagePanelWidth)
+        .askSidePanel(edge: .trailing, floating: floating)
         .task(id: loadKey) { await load(reset: true) }
         .onExitCommand(perform: close)
         .onAppear { if focusCloseOnAppear { closeFocused = true } }

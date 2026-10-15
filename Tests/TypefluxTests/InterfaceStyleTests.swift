@@ -181,12 +181,11 @@ struct InterfaceStyleTests {
 
     // MARK: - Side panels
 
-    /// The classic sidebar is flush with the window edge; the glass panel is inset.
-    @Test func classicSidePanelsSitFlushWithTheWindowEdge() throws {
+    /// Both styles lay the sidebar flush with the window edge, filled to its first pixel.
+    @Test func sidePanelsSitFlushWithTheWindowEdge() throws {
         func leadingPixel(_ style: InterfaceStyle) throws -> NSColor {
             let view = Color.clear.frame(width: 120, height: 80)
-                .askSidePanel(edge: .leading, glassFill: .white, classicFill: Color(red: 1, green: 0, blue: 0),
-                              glassInset: [.leading, .top, .bottom])
+                .askSidePanel(edge: .leading, classicFill: Color(red: 1, green: 0, blue: 0))
                 .environment(\.interfaceStyle, style)
                 .environment(\.askGlassMaterialOverride, .opaque)
                 .frame(width: 140, height: 100, alignment: .leading)
@@ -200,9 +199,10 @@ struct InterfaceStyleTests {
         let classic = try leadingPixel(.classic)
         #expect(classic.alphaComponent > 0.99)
         #expect(classic.redComponent > 0.9 && classic.greenComponent < 0.1)
-        // Only the glass panel's soft shadow reaches into its inset, never its fill.
+        // The opaque glass column fills the edge too, with its own surface, not the classic fill.
         let glass = try leadingPixel(.liquidGlass)
-        #expect(glass.alphaComponent < 0.5)
+        #expect(glass.alphaComponent > 0.99)
+        #expect(abs(glass.redComponent - glass.greenComponent) < 0.05)
     }
 
     // MARK: - Settings copy

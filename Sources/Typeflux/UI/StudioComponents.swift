@@ -624,8 +624,7 @@ struct StudioShell<Content: View>: View {
             HStack(spacing: 0) {
                 if layout.sidebarInline {
                     sidebar(compact: geometry.size.height < 500)
-                        .askSidePanel(edge: .leading, glassFill: AskTheme.glassFill,
-                                      glassInset: [.leading, .top, .bottom])
+                        .askSidePanel(edge: .leading)
                         .frame(width: layout.sidebarWidth, height: geometry.size.height)
                 }
                 VStack(spacing: 0) {

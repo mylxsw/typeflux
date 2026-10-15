@@ -147,8 +147,8 @@ struct AskConversationView: View {
                             .transition(AskMotion.panel(edge: .trailing, reduceMotion: reduceMotion))
                     }
                 }
-                // One surface for the whole window: the sidebar floats on it as a
-                // glass panel instead of being a differently tinted column.
+                // One canvas for the whole window; the sidebar column lays its
+                // clearer glass over it, flush with the window edge.
                 .background(AskWindowBackdrop())
                 titleBarTools
             }
@@ -188,23 +188,23 @@ struct AskConversationView: View {
                             .accessibilityIdentifier("ask.workspace.drawer.close")
                             .focused($drawerCloseFocused)
                     }
-                    // Beside the traffic lights: the glass panel is inset 8pt from
-                    // the window's top-leading corner, the flush classic one is not.
-                    .padding(.leading, AskMetrics.trafficLightInset - (style.usesGlass ? 8 : 0))
+                    // Beside the traffic lights, in the title bar row.
+                    .padding(.leading, AskMetrics.trafficLightInset)
                     .padding(.trailing, 12)
-                    .frame(height: style.usesGlass ? 40 : AskMetrics.titleBarRowHeight)
-                    sidebarSearchField.padding(.horizontal, 10).padding(.bottom, 8)
-                    if showsHistoryFilter { historyFilterPicker.padding(.horizontal, 10).padding(.bottom, 8) }
+                    .frame(height: AskMetrics.titleBarRowHeight)
+                    sidebarSearchField.padding(.horizontal, AskMetrics.sidebarContentInset).padding(.bottom, 8)
+                    if showsHistoryFilter {
+                        historyFilterPicker.padding(.horizontal, AskMetrics.sidebarContentInset).padding(.bottom, 8)
+                    }
                     historyList
                     accountFooter
                 }
                 .frame(width: min(AskMetrics.sidebarWidth, layout.drawerWidth))
-                .askSidePanel(edge: .leading, glassFill: AskTheme.glassFill, glassInset: .all, floating: true)
+                .askSidePanel(edge: .leading, floating: true)
                 .transition(AskMotion.panel(edge: .leading, reduceMotion: reduceMotion))
             } else {
                 rightPanel
                     .frame(width: layout.drawerWidth)
-                    .padding(.leading, style.usesGlass ? 8 : 0)
                     .padding(.top, layout.usageOverlayTopInset)
                     .transition(AskMotion.panel(edge: .trailing, reduceMotion: reduceMotion))
             }
@@ -224,45 +224,47 @@ struct AskConversationView: View {
         }
     }
 
-    /// A glass panel floating inset from the window edges, with the traffic
-    /// lights inside its top strip, instead of a full-height column split off by
-    /// a rule. Classic is that full-height column, flush with the window edge.
+    /// A full-height column flush with the window edge, with the traffic lights
+    /// in its top strip: clearer glass than the canvas in Liquid Glass, solid
+    /// in classic.
     private var sidebar: some View {
         VStack(alignment: .leading, spacing: 0) {
             // The window uses a full-size content view; this strip clears the
             // traffic lights. The compose and toggle buttons float above it.
-            Color.clear.frame(height: AskMetrics.sidebarTopInset - (style.usesGlass ? AskMetrics.sidebarPanelInset : 0))
-            sidebarSearchField.padding(.horizontal, 10).padding(.top, 4).padding(.bottom, 8)
+            Color.clear.frame(height: AskMetrics.sidebarTopInset)
+            sidebarSearchField.padding(.horizontal, AskMetrics.sidebarContentInset)
+                .padding(.top, 4).padding(.bottom, 8)
             if showsHistoryFilter {
-                historyFilterPicker.padding(.horizontal, 10).padding(.bottom, 8)
+                historyFilterPicker.padding(.horizontal, AskMetrics.sidebarContentInset).padding(.bottom, 8)
             }
             historyList
             accountFooter
         }
-        .askSidePanel(edge: .leading, glassFill: AskTheme.glassFill, glassInset: [.leading, .top, .bottom])
+        .askSidePanel(edge: .leading)
     }
 
     /// New chat and the sidebar toggle live in the title bar row, like Notes and
     /// Mail. Expanded, they are right-aligned inside the sidebar; collapsed, they
-    /// follow the traffic lights in one pill with search, so "new chat" never moves
-    /// out of reach.
+    /// follow the traffic lights with search, so "new chat" never moves out of
+    /// reach. Either way they share one glass pill like the header's.
     private var titleBarTools: some View {
         HStack(spacing: 2) {
             if !sidebarHidden { Spacer(minLength: 0) }
             if sidebarHidden {
-                // Without the panel behind them the tools float like the header's pills.
                 collapsedTools
                     .padding(.horizontal, 3)
                     .frame(height: AskMetrics.headerCapsuleHeight)
                     .askInWindowGlassPill(height: AskMetrics.headerCapsuleHeight)
             } else {
-                savedDraftMenu
-                composeButton
-                sidebarToggle
+                expandedTools
+                    .padding(.horizontal, style.usesGlass ? 3 : 0)
+                    .frame(height: AskMetrics.headerCapsuleHeight)
+                    .askInWindowGlassPill(height: AskMetrics.headerCapsuleHeight)
             }
         }
         .padding(.leading, sidebarHidden ? AskMetrics.trafficLightInset : 0)
-        .padding(.trailing, sidebarHidden ? 0 : (style.usesGlass ? 6 + AskMetrics.sidebarPanelInset : 8))
+        // The glass pill's trailing edge lines up with the search field below it.
+        .padding(.trailing, sidebarHidden ? 0 : AskMetrics.sidebarToolsTrailing(glass: style.usesGlass))
         .frame(width: sidebarHidden ? nil : AskMetrics.sidebarWidth, alignment: .leading)
         .frame(height: AskMetrics.titleBarRowHeight)
         .background {
@@ -296,6 +298,14 @@ struct AskConversationView: View {
                 sidebarChoice = !sidebarCollapsed
                 storedSidebarCollapsed = sidebarChoice ?? false
             }
+        }
+    }
+
+    private var expandedTools: some View {
+        HStack(spacing: 2) {
+            savedDraftMenu
+            composeButton
+            sidebarToggle
         }
     }
 

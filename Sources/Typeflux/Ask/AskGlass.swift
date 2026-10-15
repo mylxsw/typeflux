@@ -39,18 +39,15 @@ enum AskGlassMaterial: Equatable {
     }
 }
 
-/// Where a glass surface sits. The edge columns keep their own desktop backdrop;
-/// other in-window controls sample the content underneath them.
+/// Where a glass surface sits. In-window controls sample the content
+/// underneath them; panels of their own blur what is behind the window.
 enum AskGlassPlacement: Equatable {
     /// A panel of its own over other apps (the launcher, menus, hover cards):
     /// it blurs the desktop and windows behind it.
     case floating
     /// Chrome floating over the conversation window's own content (the
-    /// workspace composer, sidebar, header and palette): it blurs the transcript.
+    /// workspace composer, header and palette): it blurs the transcript.
     case inWindow
-    /// An inset column at the window edge. In light mode it samples the desktop
-    /// directly instead of inheriting the reading canvas's white backplate.
-    case windowEdge
     /// The composer's menus and hover cards: a panel over the window, frosted
     /// enough that the rows stay legible over a busy transcript.
     case menu
@@ -71,13 +68,13 @@ enum AskGlassPlacement: Equatable {
         if material == .liquidGlass {
             switch self {
             case .floating: return dark ? 0.14 : 0.06
-            case .inWindow, .windowEdge: return dark ? 0.18 : 0.08
+            case .inWindow: return dark ? 0.18 : 0.08
             case .menu: return dark ? 0.32 : 0.28
             }
         }
         switch self {
         case .floating: return dark ? 0.78 : 0.92
-        case .inWindow, .windowEdge: return 0.45
+        case .inWindow: return 0.45
         case .menu: return dark ? 0.90 : 0.92
         }
     }
@@ -86,7 +83,6 @@ enum AskGlassPlacement: Equatable {
         switch self {
         case .floating: return .popover
         case .inWindow: return .popover
-        case .windowEdge: return .sidebar
         case .menu: return .menu
         }
     }
@@ -142,12 +138,6 @@ struct AskGlassBackground: View {
                     liquidGlass.opacity(0.16)
                     shape.fill(launcherTint.opacity(launcherTintOpacity))
                 } else {
-                    if placement == .windowEdge, colorScheme == .light {
-                        // Keep the edge column's backdrop independent of the canvas.
-                        // The native glass above supplies adaptive contrast and optics.
-                        StudioVisualEffectBlur(material: .hudWindow, blendingMode: .behindWindow,
-                                               cornerRadius: corner)
-                    }
                     frosting
                     liquidGlass
                     shape.fill(opaqueFill.opacity(intensity.extraTintOpacity))

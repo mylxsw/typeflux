@@ -23,8 +23,7 @@ struct AskNotesView: View {
             HStack(spacing: 0) {
                 if layout.sidebarInline {
                     AskNotesSidebar(model: model)
-                        .askSidePanel(edge: .leading, glassFill: AskTheme.glassFill,
-                                      glassInset: [.leading, .top, .bottom])
+                        .askSidePanel(edge: .leading)
                         .frame(width: layout.sidebarWidth, height: geometry.size.height)
                         .clipped()
                 }
