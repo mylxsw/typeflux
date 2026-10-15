@@ -40,9 +40,6 @@ struct AskTranslationStackView: View {
             if let card = row.card {
                 return height + gap + 34 + AskWordCardView.height(card, stackStyle: true) + 14
             }
-            if stack.isLookup {
-                return height + gap + 38
-            }
             let content = row.text.map { AskPluginResultsView.bodyHeight($0) } ?? 22
             return height + gap + 34 + content + 14
         }

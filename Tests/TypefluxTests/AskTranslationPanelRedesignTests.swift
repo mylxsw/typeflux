@@ -168,6 +168,9 @@ struct AskTranslationPanelRedesignTests {
                 try #require(element("ask.translation.result.ai.primary.star", in: window)).press()
                 try #require(element("ask.translation.result.ai.primary.regenerate", in: window)).press()
                 #expect(element("ask.translation.result.device.star", in: window) == nil)
+                // Compared services in a lookup start expanded like any other enabled service.
+                #expect(element("ask.translation.result.device.collapse", in: window)?.label
+                    == L("ask.translation.stack.collapse"))
                 #expect(SettingsBehaviorTestSupport.contains(L("ask.translation.stack.compare"), in: window))
                 #expect(actions == [.runWith("excellent"), .copy("star"), .copy("regenerate")])
             }

@@ -23,11 +23,11 @@ struct AskTranslationPolishTests {
                                                     .done("机缘巧合", card), .failed(.init(message: "", recovery: .none))]
         for state in states {
             let result = AskTranslationResult(service: .ai(), name: "AI", state: state)
-            #expect(result.isCollapsed(preference: 0, lookup: true) == (result.card == nil))
+            #expect(!result.isCollapsed(preference: 0, lookup: true))
             #expect(!result.isCollapsed(preference: 0, lookup: false))
             #expect(result.isCollapsed(preference: 1, lookup: false))
             #expect(!result.isCollapsed(preference: 2, lookup: true))
-            #expect(result.isCollapsed(preference: -1, lookup: true) == (result.card == nil))
+            #expect(!result.isCollapsed(preference: -1, lookup: true))
             #expect(result.copyBoth(original: "原文")?.kind == result.completedText.map { .copy("原文\n\n" + $0) })
         }
         #expect(AskWordCardView.visibleExamples(card, expanded: false).count == 2)
@@ -105,7 +105,8 @@ struct AskTranslationPolishTests {
                 let device = try element("ask.translation.result.device.collapse", in: window)
                 let ai = try element("ask.translation.result.ai.primary.collapse", in: window)
                 #expect(device.label == L("ask.translation.stack.collapse"))
-                #expect(ai.label == L("ask.translation.stack.expand"))
+                // Lookups no longer fold the other services: untouched rows start expanded too.
+                #expect(ai.label == L("ask.translation.stack.collapse"))
             }
         }
     }

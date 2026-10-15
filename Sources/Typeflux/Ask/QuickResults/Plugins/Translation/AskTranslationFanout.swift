@@ -44,13 +44,10 @@ struct AskTranslationResult: Equatable, Identifiable, Sendable {
         "ask.translation.collapsed." + id
     }
 
-    /// Zero follows the lookup layout; explicit choices survive new inputs and window hosts.
-    func isCollapsed(preference: Int, lookup: Bool) -> Bool {
-        switch preference {
-        case 1: true
-        case 2: false
-        default: lookup && card == nil
-        }
+    /// Every enabled service starts expanded, lookups included; an explicit collapse (1) survives
+    /// new inputs and window hosts. `lookup` is kept for callers that lay rows out per mode.
+    func isCollapsed(preference: Int, lookup _: Bool) -> Bool {
+        preference == 1
     }
 
     func copyBoth(original: String) -> AskPluginAction? {
