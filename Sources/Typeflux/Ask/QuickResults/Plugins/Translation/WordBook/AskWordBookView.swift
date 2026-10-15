@@ -254,6 +254,7 @@ struct AskWordBookView: View {
                     .frame(width: Self.sidebarWidth, height: 480)
                     .background(AskTheme.glassFill)
             }
+            .askCollapsedSidebarTools()
             Spacer(minLength: 0)
         }
         .padding(.trailing, 10)

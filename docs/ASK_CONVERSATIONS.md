@@ -629,7 +629,11 @@ clearer glass beside the reading area. Reduce Transparency, Increase Contrast or
 a pinned `.opaque` material turn it into a solid step off the canvas. New chat
 and the sidebar toggle share one glass pill aligned with the capsule search
 field, and the open conversation is a neutral pill with its title in the accent
-(the private tint for one kept on this Mac).
+(the private tint for one kept on this Mac). The Notes and WordBook shelves and
+the Settings navigation mark their selection the same way
+(`AskSidebarSelection`), and while any of these windows has its sidebar
+collapsed, the toggle (with "new note" in Notes) sits in the same glass pill
+beside the traffic lights (`askCollapsedSidebarTools`).
 
 ## Model and reasoning-effort chip (GUL-193)
 

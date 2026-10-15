@@ -371,6 +371,16 @@ extension View {
     func askInWindowGlassPill(height: CGFloat) -> some View {
         modifier(AskInWindowGlassPill(height: height))
     }
+
+    /// The title-row tools beside the traffic lights while a window's sidebar
+    /// is collapsed: one glass pill as tall as the header's, a circle around a
+    /// lone button.
+    func askCollapsedSidebarTools() -> some View {
+        padding(.horizontal, 3)
+            .frame(minWidth: AskMetrics.headerCapsuleHeight, minHeight: AskMetrics.headerCapsuleHeight,
+                   maxHeight: AskMetrics.headerCapsuleHeight)
+            .askInWindowGlassPill(height: AskMetrics.headerCapsuleHeight)
+    }
 }
 
 struct AskInWindowGlassPill: ViewModifier {
