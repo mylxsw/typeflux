@@ -179,9 +179,8 @@ struct AskLightV4PaletteTests {
         let light = try await render(HistorySelection(), style: style, dark: false)
         #expect(light.redComponent > 0.99 && light.blueComponent > 0.99)
         let dark = try await render(HistorySelection(), style: style, dark: true)
-        let expected = try await render((style.usesGlass ? AskTheme.accent.opacity(0.18) : AskClassic.selection)
+        let expected = try await render((style.usesGlass ? AskTheme.pressFill : AskClassic.selection)
             .frame(width: 160, height: 60), style: style, dark: true)
-        // The existing dark glass row also has a faint tint shadow.
         #expect(abs(dark.redComponent - expected.redComponent) < 0.01)
         #expect(abs(dark.blueComponent - expected.blueComponent) < 0.01)
     }

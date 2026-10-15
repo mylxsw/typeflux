@@ -2,7 +2,8 @@ import AppKit
 
 /// All coordinates are AppKit screen points. Visible frames exclude the menu bar and Dock.
 enum AskTranslationPanelPlacement {
-    static let width: CGFloat = AskMetrics.launcherWidth
+    /// Narrower than the launcher: about forty CJK characters per line reads comfortably.
+    static let width: CGFloat = 640
     static let minimumSize = CGSize(width: 520, height: 300)
 
     /// A remembered height is the user's viewport limit; short content still fits naturally.
@@ -34,6 +35,7 @@ enum AskTranslationPanelPlacement {
     }
 
     static func height(content: CGFloat, screen: CGRect, preference: AskTranslationPanelHeight) -> CGFloat {
-        min(max(1, content), screen.height * preference.fraction)
+        // Whole points: AppKit rounds a fractional window height up, past the limit.
+        floor(min(max(1, content), screen.height * preference.fraction))
     }
 }

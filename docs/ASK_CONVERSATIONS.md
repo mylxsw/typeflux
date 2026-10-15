@@ -602,9 +602,9 @@ design's; only the material changes (`AskClassicStyle.swift`):
 - Every surface is opaque: `AskGlassMaterial.resolve(…, style: .classic)` is
   always `.opaque`, the window canvas is `AskClassic.canvas` with no desktop blur,
   and there is no rim light, frost or press/lift spring.
-- The sidebar, usage and workflow panels are flush, full-height columns divided by
-  a hairline instead of inset glass panels (`askSidePanel`). As drawers over the
-  conversation they keep a shadow.
+- The sidebar, usage and workflow panels are solid, full-height columns divided
+  by a hairline (`askSidePanel`). As drawers over the conversation they keep a
+  shadow.
 - The title row is an opaque bar ruled off from the transcript; title and
   actions stand on it without glass pills, with square hover washes.
 - Cards, the composer, menus and the ⌘K palette are solid with a hairline
@@ -615,6 +615,21 @@ design's; only the material changes (`AskClassicStyle.swift`):
 `AskClassicStyleVisualTests` renders both styles in both appearances (opt-in with
 `TYPEFLUX_CLASSIC_SCREENSHOTS=<dir>`); `InterfaceStyleTests` covers the mapping,
 the observer and the settings copy.
+
+### Flush glass sidebar (GUL-397)
+
+Liquid Glass no longer floats the sidebar as a card inset 8pt from the window.
+Like the classic style, every edge column (the conversation sidebar and drawer,
+the usage panel, Notes, WordBook, the usage guide and Settings) is a full-height
+column flush with the window edge, with the traffic lights in its top strip and a
+hairline on its inner side (`AskSidePanelChrome`). Its surface is
+`AskEdgeColumnBackdrop`: a behind-window `.sidebar` blur under a lighter tint
+than the canvas (40% dark / 8% light against 68% / 22%), so the column reads as
+clearer glass beside the reading area. Reduce Transparency, Increase Contrast or
+a pinned `.opaque` material turn it into a solid step off the canvas. New chat
+and the sidebar toggle share one glass pill aligned with the capsule search
+field, and the open conversation is a neutral pill with its title in the accent
+(the private tint for one kept on this Mac).
 
 ## Model and reasoning-effort chip (GUL-193)
 

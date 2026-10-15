@@ -96,7 +96,8 @@ struct AskTranslationAcceptanceTests {
         panel.present()
         let window = try #require(panel.presentedWindow)
         #expect(window.styleMask.contains(.resizable))
-        #expect(try window.frame.width == min(AskMetrics.launcherWidth, #require(window.screen?.visibleFrame.width)))
+        #expect(try window.frame.width
+            == min(AskTranslationPanelPlacement.width, #require(window.screen?.visibleFrame.width)))
         let requested = panel.windowWillResize(window, to: CGSize(width: 810, height: 460))
         window.setFrame(CGRect(origin: window.frame.origin, size: requested), display: true)
         panel.windowDidEndLiveResize(Notification(name: NSWindow.didEndLiveResizeNotification, object: window))

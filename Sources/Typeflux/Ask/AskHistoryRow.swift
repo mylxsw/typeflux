@@ -67,7 +67,8 @@ struct AskHistoryRow: View {
             } else {
                 Text(savingTitle ?? title)
                     .font(.system(size: 13, weight: selected ? .semibold : .regular))
-                    .foregroundStyle(selected || hovering ? StudioTheme.textPrimary : StudioTheme.textSecondary)
+                    .foregroundStyle(Self.titleColor(selected: selected, hovering: hovering, stored: stored,
+                                                     glass: style.usesGlass))
                     .lineLimit(1)
                 Spacer(minLength: 4)
             }
@@ -85,7 +86,8 @@ struct AskHistoryRow: View {
         .frame(height: style.ask.sidebarRowHeight)
         .frame(maxWidth: .infinity, alignment: .leading)
         // White selection rises gently above the quiet light sidebar. Dark
-        // retains its glass tint or classic source-list selection.
+        // glass lifts it with a neutral wash, leaving the accent to the title;
+        // classic keeps its source-list selection.
         .background {
             let shape = RoundedRectangle(cornerRadius: style.ask.sidebarRowCorner, style: .continuous)
             ZStack {
@@ -97,10 +99,7 @@ struct AskHistoryRow: View {
                             .shadow(color: .black.opacity(0.08), radius: 1, y: 1)
                             .matchedGeometryEffect(id: "ask.history.selection", in: selectionSpace)
                     } else if style.usesGlass {
-                        let tint = stored ? AskTheme.privateTint : AskTheme.accent
-                        shape.fill(tint.opacity(0.18))
-                            .overlay(shape.strokeBorder(tint.opacity(0.4), lineWidth: 0.5))
-                            .shadow(color: tint.opacity(0.18), radius: 6, y: 2)
+                        shape.fill(AskTheme.pressFill)
                             .matchedGeometryEffect(id: "ask.history.selection", in: selectionSpace)
                     } else {
                         shape.fill(AskClassic.selection)
@@ -111,6 +110,13 @@ struct AskHistoryRow: View {
             .animation(.easeOut(duration: 0.15), value: hovering)
         }
         .contentShape(RoundedRectangle(cornerRadius: style.ask.sidebarRowCorner, style: .continuous))
+    }
+
+    /// Glass marks the open conversation by its title in the accent (the
+    /// private tint for one kept on this Mac); classic keeps the primary text.
+    static func titleColor(selected: Bool, hovering: Bool, stored: Bool, glass: Bool) -> Color {
+        if selected, glass { return stored ? AskTheme.privateTint : AskTheme.accent }
+        return selected || hovering ? StudioTheme.textPrimary : StudioTheme.textSecondary
     }
 
     private func beginRename() {

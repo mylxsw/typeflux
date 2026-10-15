@@ -131,12 +131,9 @@ final class AskTranslationPanelController: NSObject, NSWindowDelegate {
     }
 
     private func desiredSize(on screen: NSScreen) -> CGSize {
-        let editor = min(
-            96,
-            max(48, CGFloat(model.text.split(separator: "\n", omittingEmptySubsequences: false).count) * 24)
+        let chrome = AskTranslationPanelView.estimatedChromeHeight(
+            text: model.text, screenshot: model.screenshot != nil, notice: model.notice != nil
         )
-        let chrome = AskTranslationPanelView.chromeHeight(screenshot: model.screenshot != nil) + editor - 48
-            + (model.notice == nil ? 0 : 24)
         let stored = model.settings.defaults.dictionary(forKey: "ask.translation.panel.size")
         let remembered: CGSize? = (stored?["width"] as? Double).flatMap { width in
             (stored?["height"] as? Double).map { CGSize(width: width, height: $0) }
