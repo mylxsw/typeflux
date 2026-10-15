@@ -1,6 +1,4 @@
 import Foundation
-import ImageIO
-import UniformTypeIdentifiers
 
 /// Validated local image bytes, distinct from the server-backed AskGeneratedImage record.
 struct AskGeneratedImageData: Sendable {
@@ -11,29 +9,6 @@ struct AskGeneratedImageData: Sendable {
     var fileExtension: String {
         mediaType == "image/jpeg" ? "jpg" : "png"
     }
-
-    init(data: Data) throws {
-        guard !data.isEmpty, data.count <= AskArtifactStore.maximumFileBytes else { throw AskImageError.tooLarge }
-        guard let source = CGImageSourceCreateWithData(
-            data as CFData,
-            [kCGImageSourceShouldCache: false] as CFDictionary
-        ),
-            CGImageSourceGetCount(source) == 1,
-            let type = CGImageSourceGetType(source) as String?,
-            [UTType.png.identifier, UTType.jpeg.identifier].contains(type),
-            let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
-            let width = properties[kCGImagePropertyPixelWidth] as? Int,
-            let height = properties[kCGImagePropertyPixelHeight] as? Int,
-            width > 0, height > 0, width <= 8192, height <= 8192,
-            width * height <= 16_777_216,
-            CGImageSourceCreateThumbnailAtIndex(source, 0, [kCGImageSourceCreateThumbnailFromImageAlways: true,
-                                                            kCGImageSourceThumbnailMaxPixelSize: 64] as CFDictionary) !=
-            nil else {
-            throw AskImageError.invalidResponse
-        }
-        self.data = data; self.width = width; self.height = height
-        mediaType = type == UTType.jpeg.identifier ? "image/jpeg" : "image/png"
-    }
 }
 
 struct AskImageGenerationResult: Sendable {
@@ -42,45 +17,69 @@ struct AskImageGenerationResult: Sendable {
     var usage: JSONValue?
     var responseModel: String?
     var responseProvider: String?
+    var incomplete = false
+    var unvalidatedImages: [Data] = []
 }
 
 protocol AskImageGenerating: Sendable {
-    func generate(_ input: AskImageRequest, configuration: AskImageConfiguration, key: String) async throws
+    func generate(_ input: AskImageRequest, configuration: AskImageConfiguration, key: String, retention: AskImageGenerationRetention) async throws
         -> AskImageGenerationResult
 }
 
 struct AskImageGenerationService: AskImageGenerating {
     var transport: any AskImageTransport = AskImageHTTP()
+    var validate: @Sendable (Data) async throws -> AskGeneratedImageData = { try await AskGeneratedImageValidator.shared.validate($0) }
     static let maximumResponseBytes = 46 * 1024 * 1024
 
     func generate(_ input: AskImageRequest, configuration: AskImageConfiguration,
-                  key: String) async throws -> AskImageGenerationResult {
+                  key: String, retention: AskImageGenerationRetention) async throws -> AskImageGenerationResult {
         let request = try Self.request(input, configuration: configuration, key: key)
         let data = try await transport.send(request, limit: Self.maximumResponseBytes)
+        // The HTTP response (including inline originals and usage) is retained
+        // before cancellation, parsing, downloads or any native decoder can fail.
+        try retention.response(data)
         let body = try Self.object(data)
         let sources = try Self.sources(body, provider: configuration.provider)
         guard !sources.isEmpty else { throw AskImageError.noImage }
         guard sources.count <= 8 else { throw AskImageError.tooLarge }
         var images: [AskGeneratedImageData] = [], total = 0
+        var incomplete = false
+        var unvalidated: [Data] = []
         for source in sources {
-            try Task.checkCancellation()
-            let bytes: Data
-            switch source {
-            case let .base64(encoded):
-                guard encoded.utf8.count <= 23 * 1024 * 1024,
-                      let decoded = Data(base64Encoded: encoded) else { throw AskImageError.invalidResponse }
-                bytes = decoded
-            case let .url(raw):
-                let url = try Self.downloadURL(raw, provider: configuration.provider)
-                bytes = try await download(url, input: input)
+            do {
+                try Task.checkCancellation()
+                let bytes: Data
+                var downloaded = false
+                switch source {
+                case let .base64(encoded):
+                    guard encoded.utf8.count <= 23 * 1024 * 1024,
+                          let decoded = Data(base64Encoded: encoded) else { throw AskImageError.invalidResponse }
+                    bytes = decoded
+                case let .url(raw):
+                    let url = try Self.downloadURL(raw, provider: configuration.provider)
+                    bytes = try await download(url, input: input)
+                    downloaded = true
+                }
+                guard !bytes.isEmpty, bytes.count <= AskArtifactStore.maximumFileBytes,
+                      bytes.count <= AskArtifactStore.maximumBundleBytes - 64 * 1024 - total else { throw AskImageError.tooLarge }
+                total += bytes.count
+                if downloaded {
+                    do { try retention.downloaded(bytes) }
+                    catch { unvalidated.append(bytes); incomplete = true; continue }
+                }
+                do { images.append(try await validate(bytes)) }
+                catch { unvalidated.append(bytes); incomplete = true }
+            } catch {
+                incomplete = true
+                // No producer replay. Preserve already validated partial output and
+                // the raw journal even if the next download or decoder is unavailable.
+                if Task.isCancelled { break }
             }
-            total += bytes.count
-            guard total <= AskArtifactStore.maximumBundleBytes - 64 * 1024 else { throw AskImageError.tooLarge }
-            try images.append(AskGeneratedImageData(data: bytes))
         }
         return .init(images: images, requestID: (body["request_id"] ?? body["id"]) as? String,
                      usage: (body["usage"] as? [String: Any]).map(AskTypedContent.json),
-                     responseModel: body["model"] as? String, responseProvider: body["provider"] as? String)
+                     responseModel: body["model"] as? String, responseProvider: body["provider"] as? String,
+                     incomplete: incomplete, unvalidatedImages: unvalidated)
     }
 
     private func download(_ url: URL, input: AskImageRequest) async throws -> Data {

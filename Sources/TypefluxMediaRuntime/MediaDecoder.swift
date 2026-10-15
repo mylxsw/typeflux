@@ -14,6 +14,11 @@ public enum MediaDecoder {
         guard data.count <= MediaLimits.inputBytes else { throw MediaFailure.tooLarge }
         let items: [MediaItem]
         switch request.operation {
+        case .validateGeneratedImage:
+            var response = MediaResponse(id: request.id)
+            response.generatedImage = try generatedImage(data)
+            try response.validate(for: request)
+            return response
         case .normalizeImage:
             items = [try image(data, type: request.normalization)]
         case .image:
@@ -27,6 +32,24 @@ public enum MediaDecoder {
         response.normalization = request.normalization
         try response.validate(for: request)
         return response
+    }
+
+    public static func generatedImage(_ data: Data) throws -> MediaGeneratedImage {
+        guard !data.isEmpty, data.count <= 16 * 1024 * 1024 else { throw MediaFailure.tooLarge }
+        guard let source = CGImageSourceCreateWithData(data as CFData, [kCGImageSourceShouldCache: false] as CFDictionary),
+              CGImageSourceGetCount(source) == 1, CGImageSourceGetStatus(source) == .statusComplete,
+              CGImageSourceGetStatusAtIndex(source, 0) == .statusComplete,
+              let type = CGImageSourceGetType(source) as String?,
+              [UTType.png.identifier, UTType.jpeg.identifier].contains(type),
+              let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+              let width = properties[kCGImagePropertyPixelWidth] as? Int,
+              let height = properties[kCGImagePropertyPixelHeight] as? Int else { throw MediaFailure.unreadable }
+        let metadata = MediaGeneratedImage(mediaType: type == UTType.jpeg.identifier ? "image/jpeg" : "image/png",
+                                           width: width, height: height)
+        do { try metadata.validate() } catch { throw MediaFailure.unreadable }
+        guard CGImageSourceCreateThumbnailAtIndex(source, 0, [kCGImageSourceCreateThumbnailFromImageAlways: true,
+                  kCGImageSourceThumbnailMaxPixelSize: 64] as CFDictionary) != nil else { throw MediaFailure.unreadable }
+        return metadata
     }
 
     public static func image(_ data: Data, type: MediaImageType? = nil) throws -> MediaItem {
