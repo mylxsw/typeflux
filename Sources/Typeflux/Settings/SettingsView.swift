@@ -683,15 +683,6 @@ struct StudioView: View {
                     }
                 ])
                 .disabled(viewModel.isSynchronizingVocabulary)
-            } else if viewModel.currentSection == .history {
-                Spacer()
-                TFButton(title: L("history.action.exportMarkdown"), systemImage: "square.and.arrow.up", kind: .plain,
-                         iconOnly: true) {
-                    viewModel.exportHistory()
-                }
-                TFButton(title: L("common.clear"), systemImage: "trash", kind: .plain, iconOnly: true) {
-                    showingClearHistoryConfirmation = true
-                }
             } else if viewModel.currentSection == .models {
                 Spacer()
 
@@ -727,7 +718,7 @@ struct StudioView: View {
         case .vocabulary:
             vocabularyPage
         case .history:
-            historyPage
+            homePage(viewportWidth: viewportWidth)
         case .settings:
             settingsPage(compact: SettingsPaneMetrics.isCompact(contentWidth: viewportWidth))
         case .agent:
@@ -745,7 +736,6 @@ struct StudioView: View {
         VStack(alignment: .leading, spacing: TFMetrics.sectionSpacing) {
             StudioOverviewPanel(
                 width: viewportWidth,
-                completionRate: viewModel.statsCompletionRate,
                 transcriptionMinutesText: viewModel.transcriptionMinutesText,
                 totalCharacters: viewModel.statsTotalCharacters,
                 savedMinutes: viewModel.statsSavedMinutes,
@@ -753,13 +743,18 @@ struct StudioView: View {
             )
 
             VStack(alignment: .leading, spacing: 6) {
-                TFSectionHeader(title: L("home.recentTranscriptions")) {
-                    TFButton(title: L("home.openHistory"), systemImage: "clock.arrow.circlepath", kind: .plain,
-                             iconOnly: true) {
-                        viewModel.navigate(to: .history)
+                TFSectionHeader(title: L("home.transcriptionHistory")) {
+                    HStack(spacing: TFMetrics.toolbarSpacing) {
+                        TFButton(title: L("history.action.exportMarkdown"), systemImage: "square.and.arrow.up",
+                                 kind: .plain, iconOnly: true) {
+                            viewModel.exportHistory()
+                        }
+                        TFButton(title: L("common.clear"), systemImage: "trash", kind: .plain, iconOnly: true) {
+                            showingClearHistoryConfirmation = true
+                        }
                     }
                 }
-                sessionStream(records: Array(viewModel.displayedHistory.prefix(StudioTheme.Count.homeRecentRecords)))
+                historyContent
             }
         }
     }
@@ -785,7 +780,7 @@ struct StudioView: View {
         }
     }
 
-    private var historyPage: some View {
+    private var historyContent: some View {
         VStack(alignment: .leading, spacing: TFMetrics.sectionSpacing) {
             TFFormSection(footnote: L("history.privacy.subtitle")) {
                 TFFormRow(title: L("history.keep.title"), detail: L("history.keep.subtitle"), icon: "clock") {
@@ -1813,16 +1808,6 @@ struct StudioView: View {
                         .font(.studioBody(StudioTheme.Typography.caption))
                         .foregroundStyle(StudioTheme.textSecondary)
                 }
-            }
-        }
-    }
-
-    private func sessionStream(records: [HistoryPresentationRecord]) -> some View {
-        Group {
-            if records.isEmpty {
-                TFCard { TFCardNote(text: L("history.empty")) }
-            } else {
-                historyCard(records)
             }
         }
     }

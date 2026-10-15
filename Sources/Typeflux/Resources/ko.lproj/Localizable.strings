@@ -17,6 +17,7 @@
 "common.refreshing" = "새로고침 중...";
 
 "home.recentTranscriptions" = "최근 기록";
+"home.transcriptionHistory" = "받아쓰기 기록";
 "home.exportAll" = "모두 내보내기";
 "home.openHistory" = "기록 열기";
 

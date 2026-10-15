@@ -17,6 +17,7 @@
 "common.refreshing" = "刷新中...";
 
 "home.recentTranscriptions" = "最近转写";
+"home.transcriptionHistory" = "转写历史";
 "home.exportAll" = "导出全部";
 "home.openHistory" = "打开历史";
 

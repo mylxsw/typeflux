@@ -54,12 +54,13 @@ final class StudioModelsTests: XCTestCase {
     }
 
     func testVoiceInputCasesAreTheTabsInOrder() {
-        XCTAssertEqual(StudioSection.voiceInputCases, [.home, .vocabulary, .history, .personas])
+        XCTAssertEqual(StudioSection.voiceInputCases, [.home, .vocabulary, .personas])
     }
 
     func testIsVoiceInputOnlyForVoiceInputPages() {
         for section in StudioSection.allCases {
-            XCTAssertEqual(section.isVoiceInput, StudioSection.voiceInputCases.contains(section), "\(section)")
+            XCTAssertEqual(section.isVoiceInput,
+                           StudioSection.voiceInputCases.contains(section) || section == .history, "\(section)")
         }
     }
 

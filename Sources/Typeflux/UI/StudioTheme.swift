@@ -38,11 +38,8 @@ enum StudioTheme {
         static let personasListWidth: CGFloat = 240
         static let debugActionsCardWidth: CGFloat = 320
         static let appearancePickerWidth: CGFloat = 280
-        static let overviewSideMetricsWidth: CGFloat = 432
-        static let overviewDonutSize: CGFloat = 178
-        static let overviewActivityMinHeight: CGFloat = 178
+        static let overviewMetricHeight: CGFloat = 150
         static let promoCardMinHeight: CGFloat = 154
-        static let overviewPrimaryMinHeight: CGFloat = 260
         static let historyTimestampColumnWidth: CGFloat = 170
         static let historySourceColumnWidth: CGFloat = 280
         static let modelTabsMinHeight: CGFloat = 44
@@ -169,17 +166,12 @@ enum StudioTheme {
         static let overlayDismissDelay: TimeInterval = 0.4
     }
 
-    enum Angles {
-        static let overviewProgressStart: Double = -90
-    }
-
     enum LineLimit {
         static let detail: Int = 2
         static let personaPrompt: Int = 1
     }
 
     enum Count {
-        static let homeRecentRecords: Int = 10
         static let personaInitials: Int = 2
     }
 

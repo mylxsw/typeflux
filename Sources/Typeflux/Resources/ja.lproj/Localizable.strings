@@ -17,6 +17,7 @@
 "common.refreshing" = "更新中...";
 
 "home.recentTranscriptions" = "最近の転写";
+"home.transcriptionHistory" = "転写履歴";
 "home.exportAll" = "すべてエクスポート";
 "home.openHistory" = "履歴を開く";
 

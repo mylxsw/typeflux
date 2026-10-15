@@ -22,13 +22,16 @@ final class VoiceInputNavigationTests: XCTestCase {
         XCTAssertEqual(viewModel.currentSection, .home)
     }
 
-    func testSidebarVoiceInputReturnsToTheInitialVoiceInputTab() throws {
+    func testLegacyHistoryRouteOpensOverview() throws {
         let viewModel = try makeViewModel(initialSection: .history)
+        XCTAssertEqual(viewModel.currentSection, .home)
         viewModel.navigateFromSidebar(to: .models)
 
         viewModel.navigateFromSidebar(to: .home)
 
-        XCTAssertEqual(viewModel.currentSection, .history)
+        XCTAssertEqual(viewModel.currentSection, .home)
+        viewModel.navigate(to: .history)
+        XCTAssertEqual(viewModel.currentSection, .home)
     }
 
     func testSidebarVoiceInputReturnsToTheLastShownTab() throws {

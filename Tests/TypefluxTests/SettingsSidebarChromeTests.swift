@@ -188,6 +188,11 @@ struct SettingsSidebarChromeTests {
                 window.setFrameOrigin(NSPoint(x: 80, y: 80))
                 let host = try #require(window.contentView)
                 try await UI.wait { UI.contains(L("history.keep.title"), in: host) }
+                #expect(UI.contains(L("home.transcriptionHistory"), in: host))
+                #expect(!UI.elements(in: host).contains {
+                    $0.value("accessibilityIdentifier") as? String == "studio.voiceInput.tab.history"
+                })
+                #expect(!UI.contains(L("home.activity.title"), in: host))
                 // The toolbar can appear before the asynchronous history rows are loaded.
                 try await UI.wait {
                     UI.elements(in: host).contains {

@@ -331,9 +331,10 @@ final class StudioViewModel: ObservableObject {
 
         let currentPersonas = settingsStore.personas
 
-        currentSection = initialSection
-        if initialSection.isVoiceInput {
-            lastVoiceInputSection = initialSection
+        let visibleInitialSection: StudioSection = initialSection == .history ? .home : initialSection
+        currentSection = visibleInitialSection
+        if visibleInitialSection.isVoiceInput {
+            lastVoiceInputSection = visibleInitialSection
         }
         let initialSTTProvider = Self.visibleSTTProvider(from: settingsStore.sttProvider)
         let initialLLMRemoteProvider = settingsStore.llmRemoteProvider
@@ -765,10 +766,6 @@ final class StudioViewModel: ObservableObject {
         NumberFormatter.localizedString(from: NSNumber(value: statsStore.totalSessions), number: .decimal)
     }
 
-    var statsCompletionRate: Int {
-        statsStore.completionRate
-    }
-
     var statsTotalCharacters: Int {
         statsStore.totalCharacterCount
     }
@@ -946,17 +943,18 @@ final class StudioViewModel: ObservableObject {
     }
 
     func navigate(to section: StudioSection) {
-        currentSection = section
-        if section.isVoiceInput {
-            lastVoiceInputSection = section
+        let visibleSection: StudioSection = section == .history ? .home : section
+        currentSection = visibleSection
+        if visibleSection.isVoiceInput {
+            lastVoiceInputSection = visibleSection
         }
         searchQuery = ""
-        if section == .models {
+        if visibleSection == .models {
             // The Models page reopens on its last tab, at the list rather than a speech provider's form.
             modelSearchQuery = ""
             isShowingSpeechProviderDetail = false
         }
-        if section == .home || section == .history {
+        if visibleSection == .home {
             applyHistoryRetentionPolicy()
             refreshHistory(reset: true)
         }

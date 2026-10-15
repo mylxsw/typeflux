@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// The Voice Input pages' tabs (overview, vocabulary, history, personas), with item counts.
+/// The Voice Input pages' tabs (overview, vocabulary, personas), with item counts.
 struct VoiceInputTabBar: View {
     let selection: StudioSection
     /// The count shown beside a tab, if it has one.

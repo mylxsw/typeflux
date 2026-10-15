@@ -17,6 +17,7 @@
 "common.refreshing" = "Refreshing...";
 
 "home.recentTranscriptions" = "Recent Transcriptions";
+"home.transcriptionHistory" = "Transcription History";
 "home.exportAll" = "Export All";
 "home.openHistory" = "Open History";
 

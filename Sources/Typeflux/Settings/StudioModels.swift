@@ -22,11 +22,11 @@ enum StudioSection: String, CaseIterable, Identifiable {
 
     /// Voice Input pages, in tab order. They share one sidebar entry and switch through tabs.
     static var voiceInputCases: [StudioSection] {
-        [.home, .vocabulary, .history, .personas]
+        [.home, .vocabulary, .personas]
     }
 
     var isVoiceInput: Bool {
-        Self.voiceInputCases.contains(self)
+        Self.voiceInputCases.contains(self) || self == .history
     }
 
     /// The sidebar entry that is selected while this section is shown.
@@ -133,7 +133,7 @@ enum StudioSection: String, CaseIterable, Identifiable {
 
     var searchPlaceholder: String {
         switch self {
-        case .home: L("studio.search.home")
+        case .home: L("studio.search.history")
         case .models: L("studio.search.models")
         case .personas: L("studio.search.personas")
         case .vocabulary: L("studio.search.vocabulary")

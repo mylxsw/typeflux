@@ -65,15 +65,13 @@ final class StudioThemeTests: XCTestCase {
 
     // MARK: - Overview Layout
 
-    func testOverviewLayoutKeepsStatisticsBesideActivityAtSupportedWindowSizes() {
+    func testOverviewLayoutFillsWidthWithFourMetrics() {
         for windowWidth: CGFloat in [720, 900, 1039, 1040, 1100, 1160, 1200, 1440] {
             let width = StudioShellLayout(width: windowWidth).contentWidth
             let layout = StudioOverviewPanelLayoutCalculator.layout(for: width)
-            XCTAssertEqual(layout.height, 260)
-            XCTAssertEqual(layout.activityWidth + layout.metricsWidth + StudioTheme.Spacing.large, width, accuracy: 0.01)
-            XCTAssertGreaterThan(layout.activityWidth, layout.metricsWidth)
-            XCTAssertGreaterThanOrEqual(layout.donutSize, 104)
-            XCTAssertLessThanOrEqual(layout.donutSize, 154)
+            XCTAssertEqual(layout.height, 150)
+            XCTAssertEqual(layout.cardWidth * 4 + StudioTheme.Spacing.large * 3, width, accuracy: 0.01)
+            XCTAssertGreaterThan(layout.cardWidth, 0)
         }
     }
 
@@ -81,8 +79,6 @@ final class StudioThemeTests: XCTestCase {
         let before = StudioOverviewPanelLayoutCalculator.layout(for: 839)
         let after = StudioOverviewPanelLayoutCalculator.layout(for: 840)
         XCTAssertEqual(before.height, after.height)
-        XCTAssertLessThan(abs(before.activityWidth - after.activityWidth), 1)
-        XCTAssertLessThan(abs(before.metricsWidth - after.metricsWidth), 1)
-        XCTAssertLessThan(abs(before.donutSize - after.donutSize), 1)
+        XCTAssertLessThan(abs(before.cardWidth - after.cardWidth), 1)
     }
 }
