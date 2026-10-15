@@ -5585,3 +5585,22 @@
 "ask.wordBook.saveFailed" = "未能保存到单词本，当前结果仍然保留。";
 
 "ask.notes.storageUnavailable" = "笔记存储暂时不可用，当前文字已保留。";
+
+// Independently recoverable storage services.
+"settings.services.title" = "服务状态";
+"settings.services.conversations" = "对话历史";
+"settings.services.wordBook" = "单词本";
+"settings.services.notebook" = "笔记本";
+"settings.services.recover" = "恢复访问";
+"settings.services.hint" = "恢复此服务的访问，保留已保存的数据和未保存的编辑。之前的操作不会再次执行。";
+"settings.services.stopped" = "尚未启动";
+"settings.services.recovering" = "正在恢复访问";
+"settings.services.ready" = "可用";
+"settings.services.coolingDown" = "暂时暂停";
+"settings.services.unavailable" = "不可用";
+"settings.services.disabled" = "已禁用";
+"settings.services.quarantined" = "多次中断后已暂停";
+"settings.services.observationFailed" = "无法获取状态。请重新打开此页面以刷新。";
+"settings.services.requested" = "已请求恢复。服务就绪后，可用状态会自动更新。";
+"settings.services.wait" = "恢复正在冷却，请稍后再试。";
+"settings.services.busy" = "正在等待之前的工作结束，请稍后再试。";

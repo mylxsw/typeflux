@@ -5471,3 +5471,22 @@
 "ask.wordBook.saveFailed" = "単語帳に保存できませんでした。現在の結果は保持されています。";
 
 "ask.notes.storageUnavailable" = "ノートの保存先を現在利用できません。入力中のテキストは保持されています。";
+
+// Independently recoverable storage services.
+"settings.services.title" = "サービスの状態";
+"settings.services.conversations" = "会話履歴";
+"settings.services.wordBook" = "単語帳";
+"settings.services.notebook" = "ノート";
+"settings.services.recover" = "アクセスを復元";
+"settings.services.hint" = "保存済みのデータと未保存の編集を保持して、このサービスへのアクセスを復元します。以前の操作は再実行されません。";
+"settings.services.stopped" = "未起動";
+"settings.services.recovering" = "アクセスを復元中";
+"settings.services.ready" = "利用可能";
+"settings.services.coolingDown" = "一時停止中";
+"settings.services.unavailable" = "利用できません";
+"settings.services.disabled" = "無効";
+"settings.services.quarantined" = "繰り返し中断したため停止中";
+"settings.services.observationFailed" = "状態を取得できません。このページを開き直して更新してください。";
+"settings.services.requested" = "復元を要求しました。準備ができると利用状態が更新されます。";
+"settings.services.wait" = "復元の待機期間中です。しばらくしてから再試行してください。";
+"settings.services.busy" = "以前の処理の終了を待っています。しばらくしてから再試行してください。";

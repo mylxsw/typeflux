@@ -13,6 +13,7 @@ struct ModuleRegistration: Sendable {
     let admission: ModuleAdmission
     let start: @Sendable () async throws -> Void
     let stop: @Sendable (Bool) async -> Bool
+    let recover: @Sendable (Bool) async -> ModuleRecoveryResponse
 
     init<Service>(_ id: ModuleID, handle: ModuleHandle<Service>, dependencies: [ModuleID] = []) {
         self.id = id
@@ -20,6 +21,7 @@ struct ModuleRegistration: Sendable {
         health = handle.health
         admission = handle.supervisor.admission
         start = { try await handle.supervisor.startManaged() }
+        recover = { reset in await handle.supervisor.requestRecovery(resetPersistentBudget: reset) }
         stop = { permanent in
             if permanent { await handle.shutdown() } else { await handle.setEnabled(false) }
             return await handle.supervisor.waitForRetirement()

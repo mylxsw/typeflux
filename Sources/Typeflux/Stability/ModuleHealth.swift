@@ -23,6 +23,10 @@ enum ModuleFailureDisposition: Sendable {
     case operationOnly, recover, waitForExplicitRetry
 }
 
+enum ModuleRecoveryResponse: Sendable, Equatable {
+    case ready, started, coolingDown, busy, disabled, cancelled, unavailable
+}
+
 struct ModulePolicy: Sendable {
     var startupTimeout: TimeInterval = 5
     var operationTimeout: TimeInterval = 15

@@ -161,6 +161,22 @@ actor ModuleSupervisor<Service: Sendable> {
         if !needsRecovery, state != .ready, startup == nil, cleaning == nil { scheduleRecovery() }
     }
 
+    /// A user request receives an admission outcome, not a claim that recovery
+    /// succeeded. Actual readiness is delivered through the health channel.
+    func requestRecovery(resetPersistentBudget: Bool) -> ModuleRecoveryResponse {
+        defer { publishHealth() }
+        guard !Task.isCancelled else { return .cancelled }
+        guard admission.permitsWork else { return .disabled }
+        guard policy.isValid else { return .unavailable }
+        if state == .ready { return .ready }
+        guard startup == nil, cleaning == nil, operations.isEmpty, !needsRecovery else { return .busy }
+        guard budget.permitsAttempt(at: uptime()) else { return .coolingDown }
+        resetHealthOnNextStart = resetPersistentBudget
+        automaticRetryAllowed = true
+        launchFactory()
+        return .started
+    }
+
     private func stop() {
         invalidate(with: ModuleFailure.disabled)
         state = .disabled

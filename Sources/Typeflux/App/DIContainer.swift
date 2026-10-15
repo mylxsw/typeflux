@@ -134,6 +134,7 @@ final class DIContainer {
         let screenCapturePermission = ScreenCapturePermission.live
         self.screenCapturePermission = screenCapturePermission
         screenCapture = ScreenCaptureService(permission: screenCapturePermission)
+        SettingsWindowController.shared.moduleRegistry = moduleRegistry
         SettingsWindowController.shared.modelLibrary = modelLibrary
         hotkeyService = EventTapHotkeyService(settingsStore: settingsStore)
         audioRecorder = SwitchableAudioRecorder(

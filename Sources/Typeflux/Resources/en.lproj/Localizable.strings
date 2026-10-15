@@ -5585,3 +5585,22 @@
 "ask.wordBook.saveFailed" = "Could not save to the word book. Your current result is still available.";
 
 "ask.notes.storageUnavailable" = "Notebook storage is temporarily unavailable. Your current text has been kept.";
+
+// Independently recoverable storage services.
+"settings.services.title" = "Service status";
+"settings.services.conversations" = "Conversation history";
+"settings.services.wordBook" = "Word book";
+"settings.services.notebook" = "Notebook";
+"settings.services.recover" = "Restore access";
+"settings.services.hint" = "Restores access to this service while keeping saved data and unsaved edits. Previous actions will not run again.";
+"settings.services.stopped" = "Not started";
+"settings.services.recovering" = "Restoring access";
+"settings.services.ready" = "Available";
+"settings.services.coolingDown" = "Temporarily paused";
+"settings.services.unavailable" = "Unavailable";
+"settings.services.disabled" = "Disabled";
+"settings.services.quarantined" = "Paused after interruptions";
+"settings.services.observationFailed" = "Status is unavailable. Reopen this page to refresh it.";
+"settings.services.requested" = "Recovery requested. Availability will update when the service is ready.";
+"settings.services.wait" = "Please wait before trying again. Recovery is cooling down.";
+"settings.services.busy" = "Waiting for earlier work to finish. Try again shortly.";

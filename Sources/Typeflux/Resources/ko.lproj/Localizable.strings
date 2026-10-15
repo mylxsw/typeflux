@@ -5471,3 +5471,22 @@
 "ask.wordBook.saveFailed" = "단어장에 저장하지 못했습니다. 현재 결과는 유지됩니다.";
 
 "ask.notes.storageUnavailable" = "노트 저장소를 일시적으로 사용할 수 없습니다. 현재 텍스트는 유지됩니다.";
+
+// Independently recoverable storage services.
+"settings.services.title" = "서비스 상태";
+"settings.services.conversations" = "대화 기록";
+"settings.services.wordBook" = "단어장";
+"settings.services.notebook" = "노트";
+"settings.services.recover" = "접근 복원";
+"settings.services.hint" = "저장된 데이터와 저장하지 않은 편집 내용을 유지하며 이 서비스에 대한 접근을 복원합니다. 이전 작업은 다시 실행되지 않습니다.";
+"settings.services.stopped" = "시작하지 않음";
+"settings.services.recovering" = "접근 복원 중";
+"settings.services.ready" = "사용 가능";
+"settings.services.coolingDown" = "일시 중지됨";
+"settings.services.unavailable" = "사용할 수 없음";
+"settings.services.disabled" = "비활성화됨";
+"settings.services.quarantined" = "반복된 중단으로 일시 중지됨";
+"settings.services.observationFailed" = "상태를 확인할 수 없습니다. 이 페이지를 다시 열어 새로 고치세요.";
+"settings.services.requested" = "복원을 요청했습니다. 서비스가 준비되면 사용 가능 상태가 업데이트됩니다.";
+"settings.services.wait" = "복원 대기 시간 중입니다. 잠시 후 다시 시도하세요.";
+"settings.services.busy" = "이전 작업이 끝나기를 기다리고 있습니다. 잠시 후 다시 시도하세요.";

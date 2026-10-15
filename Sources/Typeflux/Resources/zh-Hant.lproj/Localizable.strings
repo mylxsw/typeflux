@@ -5505,3 +5505,22 @@
 "ask.wordBook.saveFailed" = "無法儲存至單字本，目前的結果仍然保留。";
 
 "ask.notes.storageUnavailable" = "筆記儲存暫時無法使用，目前文字已保留。";
+
+// Independently recoverable storage services.
+"settings.services.title" = "服務狀態";
+"settings.services.conversations" = "對話歷史";
+"settings.services.wordBook" = "單詞本";
+"settings.services.notebook" = "筆記本";
+"settings.services.recover" = "恢復存取";
+"settings.services.hint" = "恢復此服務的存取，保留已儲存的資料和未儲存的編輯。先前的操作不會再次執行。";
+"settings.services.stopped" = "尚未啟動";
+"settings.services.recovering" = "正在恢復存取";
+"settings.services.ready" = "可用";
+"settings.services.coolingDown" = "暫時暫停";
+"settings.services.unavailable" = "無法使用";
+"settings.services.disabled" = "已停用";
+"settings.services.quarantined" = "多次中斷後已暫停";
+"settings.services.observationFailed" = "無法取得狀態。請重新開啟此頁面以重新整理。";
+"settings.services.requested" = "已要求恢復。服務就緒後，可用狀態會自動更新。";
+"settings.services.wait" = "恢復正在冷卻，請稍後再試。";
+"settings.services.busy" = "正在等待先前的工作結束，請稍後再試。";
