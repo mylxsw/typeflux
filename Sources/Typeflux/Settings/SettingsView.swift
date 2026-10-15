@@ -1723,7 +1723,7 @@ struct StudioView: View {
         return TFFormRow(
             title: permission.title,
             detail: permission.summary,
-            valueText: permission.detail,
+            valueText: permission.isGranted ? nil : permission.detail,
             badge: permission.badgeText,
             badgeTint: tint,
             systemImage: permission.isGranted ? "checkmark.circle.fill" : "exclamationmark.circle",

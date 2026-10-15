@@ -125,20 +125,80 @@ struct TFFormRow<Control: View>: View {
     }
 }
 
-/// A native tooltip target that only appears while its settings row is hovered.
+/// A settings description popover that opens on hover or click.
 struct SettingsDescriptionHint: View {
     let detail: String
     let visible: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var isHoveringIcon = false
+    @State private var isHoveringPopover = false
+    @State private var isPinned = false
+    @State private var showsPopover = false
+    @State private var dismissTask: Task<Void, Never>?
 
     var body: some View {
-        Image(systemName: "questionmark.circle")
-            .font(.system(size: 12, weight: .medium))
-            .foregroundStyle(TFColors.textSecondary)
-            .frame(width: 16, height: 16)
+        Button {
+            dismissTask?.cancel()
+            if isPinned {
+                isPinned = false
+                showsPopover = false
+            } else {
+                isPinned = true
+                showsPopover = true
+            }
+        } label: {
+            Image(systemName: "questionmark.circle")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(TFColors.textSecondary)
+                .frame(width: 16, height: 16)
+        }
+            .buttonStyle(.plain)
             .contentShape(Rectangle())
-            .opacity(visible ? 1 : 0)
-            .help(detail)
-            .accessibilityHidden(true)
+            .opacity(visible || showsPopover ? 1 : 0)
+            .scaleEffect(visible || showsPopover || reduceMotion ? 1 : 0.85)
+            .animation(.easeOut(duration: reduceMotion ? 0.1 : 0.18), value: visible || showsPopover)
+            .accessibilityLabel(detail)
+            .onHover { hovering in
+                isHoveringIcon = hovering
+                if hovering {
+                    dismissTask?.cancel()
+                    showsPopover = true
+                } else {
+                    scheduleDismiss()
+                }
+            }
+            .popover(isPresented: $showsPopover, arrowEdge: .bottom) {
+                Text(detail)
+                    .font(.system(size: 13))
+                    .foregroundStyle(TFColors.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(width: 300, alignment: .leading)
+                    .padding(14)
+                    .onHover { hovering in
+                        isHoveringPopover = hovering
+                        if hovering {
+                            dismissTask?.cancel()
+                        } else {
+                            scheduleDismiss()
+                        }
+                    }
+            }
+            .onChange(of: showsPopover) { presented in
+                if !presented {
+                    isPinned = false
+                    isHoveringPopover = false
+                }
+            }
+            .onDisappear { dismissTask?.cancel() }
+    }
+
+    private func scheduleDismiss() {
+        dismissTask?.cancel()
+        dismissTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(220))
+            guard !Task.isCancelled, !isPinned, !isHoveringIcon, !isHoveringPopover else { return }
+            showsPopover = false
+        }
     }
 }
 

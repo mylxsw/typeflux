@@ -6,6 +6,7 @@ struct RecentInputMemoryManagementView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var selectedAppIdentifier: String?
     @State private var isGlobalSoulSelected = false
+    @State private var hoveredFilter: String?
     @State private var query = ""
 
     private var applications: [String] {
@@ -22,83 +23,16 @@ struct RecentInputMemoryManagementView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack {
-                Text(L("settings.advanced.recentInputMemory.manage"))
-                    .font(.studioDisplay(StudioTheme.Typography.subsectionTitle, weight: .semibold))
-                Spacer()
-                Button {
-                    dismiss()
-                } label: {
-                    Image(systemName: "xmark")
-                }
-                .accessibilityLabel(L("settings.advanced.recentInputMemory.close"))
-            }
-            .padding(StudioTheme.Spacing.large)
-
-            Text(L("memory.recentScope")).font(.caption).foregroundStyle(.secondary).padding(.horizontal)
-            Text(L("memory.boundaries")).font(.caption).foregroundStyle(.secondary).padding(.horizontal)
-            TextField(L("memory.search"), text: $query).padding()
-            if let error = viewModel.memoryOperationError {
-                Text(error).font(.caption).foregroundStyle(StudioTheme.danger).padding(.horizontal)
-            }
-            Divider()
-
+            header
+            Rectangle().fill(ModelVisualStyle.border).frame(height: 1)
             HStack(spacing: 0) {
-                ScrollView {
-                    VStack(spacing: StudioTheme.Spacing.small) {
-                        appFilterRow(
-                            title: L("settings.advanced.globalSoul.manage"),
-                            icon: "sparkles.rectangle.stack",
-                            count: viewModel.globalSoulMemory == nil ? 0 : 1,
-                            appIdentifier: nil,
-                            selectsGlobalSoul: true
-                        )
-                        appFilterRow(
-                            title: L("settings.advanced.recentInputMemory.allApps"),
-                            icon: "square.grid.2x2",
-                            count: viewModel.recentInputMemoryItems.count,
-                            appIdentifier: nil
-                        )
-                        ForEach(applications, id: \.self) { appIdentifier in
-                            appFilterRow(
-                                title: displayName(for: appIdentifier),
-                                icon: nil,
-                                count: viewModel.recentInputMemoryItems.filter {
-                                    $0.appIdentifier == appIdentifier
-                                }.count,
-                                appIdentifier: appIdentifier
-                            )
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(StudioTheme.Spacing.large)
-                }
-                .frame(width: 210)
-                .background(StudioTheme.shellSurface)
-
-                Divider()
-
-                ScrollView {
-                    if isGlobalSoulSelected {
-                        globalSoulCard
-                            .padding(StudioTheme.Spacing.large)
-                    } else if displayedApplications.isEmpty {
-                        Text(L("settings.advanced.recentInputMemory.empty"))
-                            .foregroundStyle(StudioTheme.textSecondary)
-                            .frame(maxWidth: .infinity, minHeight: 280)
-                    } else {
-                        LazyVStack(alignment: .leading, spacing: StudioTheme.Spacing.medium) {
-                            ForEach(displayedApplications, id: \.self) { appIdentifier in
-                                appCard(for: appIdentifier)
-                            }
-                        }
-                        .padding(StudioTheme.Spacing.large)
-                    }
-                }
+                sidebar.frame(width: 210)
+                Rectangle().fill(ModelVisualStyle.border).frame(width: 1)
+                content.frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .frame(width: 820, height: 680)
-        .background(StudioTheme.modalSurface)
+        .frame(width: 900, height: min(680, max(480, (NSScreen.main?.visibleFrame.height ?? 800) - 100)))
+        .background(ModelVisualStyle.canvas)
         .onAppear { viewModel.refreshRecentInputMemoryApplications() }
         .onReceive(NotificationCenter.default.publisher(for: .globalSoulDidChange)) { _ in
             viewModel.refreshRecentInputMemoryApplications()
@@ -111,68 +45,159 @@ struct RecentInputMemoryManagementView: View {
         }
     }
 
+    private var header: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 12) {
+                Text(L("settings.advanced.recentInputMemory.manage"))
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(StudioTheme.textPrimary)
+                Spacer()
+                AgentSettingsIconButton(systemImage: "xmark",
+                                        help: L("settings.advanced.recentInputMemory.close")) {
+                    dismiss()
+                }
+                .keyboardShortcut(.cancelAction)
+            }
+            VStack(alignment: .leading, spacing: 4) {
+                Text(L("memory.recentScope"))
+                Text(L("memory.boundaries"))
+            }
+            .font(.system(size: 12))
+            .foregroundStyle(StudioTheme.textSecondary)
+            .multilineTextAlignment(.leading)
+            .fixedSize(horizontal: false, vertical: true)
+            SettingsSearchBox(placeholder: L("memory.search"), text: $query, width: nil,
+                              fieldIdentifier: "settings.memory.search")
+            if let error = viewModel.memoryOperationError {
+                Text(error).font(.system(size: 12)).foregroundStyle(StudioTheme.danger)
+            }
+        }
+        .padding(.horizontal, 24)
+        .padding(.top, 20)
+        .padding(.bottom, 18)
+    }
+
+    private var sidebar: some View {
+        ScrollView {
+            VStack(spacing: 4) {
+                appFilterRow(
+                    title: L("settings.advanced.globalSoul.manage"),
+                    icon: "sparkles.rectangle.stack",
+                    count: viewModel.globalSoulMemory == nil ? 0 : 1,
+                    appIdentifier: nil,
+                    selectsGlobalSoul: true
+                )
+                appFilterRow(
+                    title: L("settings.advanced.recentInputMemory.allApps"),
+                    icon: "square.grid.2x2",
+                    count: viewModel.recentInputMemoryItems.count,
+                    appIdentifier: nil
+                )
+                ForEach(applications, id: \.self) { appIdentifier in
+                    appFilterRow(
+                        title: displayName(for: appIdentifier),
+                        icon: nil,
+                        count: viewModel.recentInputMemoryItems.filter {
+                            $0.appIdentifier == appIdentifier
+                        }.count,
+                        appIdentifier: appIdentifier
+                    )
+                }
+            }
+            .padding(12)
+        }
+        .background(StudioTheme.surfaceMuted)
+    }
+
+    private var content: some View {
+        ScrollView {
+            if isGlobalSoulSelected {
+                globalSoulCard.padding(20)
+            } else if displayedApplications.isEmpty {
+                emptyState(L("settings.advanced.recentInputMemory.empty"))
+                    .frame(maxWidth: .infinity, minHeight: 300)
+            } else {
+                LazyVStack(alignment: .leading, spacing: 14) {
+                    ForEach(displayedApplications, id: \.self) { appIdentifier in
+                        appCard(for: appIdentifier)
+                    }
+                }
+                .padding(20)
+            }
+        }
+    }
+
     private func appFilterRow(
         title: String, icon: String?, count: Int, appIdentifier: String?, selectsGlobalSoul: Bool = false
     ) -> some View {
         let isSelected = selectsGlobalSoul ? isGlobalSoulSelected
             : (!isGlobalSoulSelected && selectedAppIdentifier == appIdentifier)
+        let key = selectsGlobalSoul ? "soul" : (appIdentifier ?? "all")
         return Button {
             isGlobalSoulSelected = selectsGlobalSoul
             selectedAppIdentifier = appIdentifier
         } label: {
-            HStack(spacing: StudioTheme.Spacing.small) {
+            HStack(spacing: 10) {
                 if let icon {
-                    Image(systemName: icon)
-                        .frame(width: 22)
-                } else if let appIdentifier,
-                          let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: appIdentifier) {
-                    Image(nsImage: NSWorkspace.shared.icon(forFile: appURL.path))
-                        .resizable()
-                        .frame(width: 22, height: 22)
-                } else {
-                    Image(systemName: "app")
-                        .frame(width: 22)
+                    Image(systemName: icon).font(.system(size: 14)).frame(width: 22)
+                } else if let appIdentifier {
+                    appIcon(for: appIdentifier, size: 22)
                 }
-                Text(title)
+                Text(title).font(.system(size: 12.5, weight: isSelected ? .semibold : .medium))
                     .lineLimit(1)
                 Spacer(minLength: 4)
-                Text("\(count)")
-                    .foregroundStyle(StudioTheme.textSecondary)
+                Text("\(count)").font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
             }
+            .foregroundStyle(isSelected ? ModelVisualStyle.accent : StudioTheme.textPrimary)
+            .padding(.horizontal, 11)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, StudioTheme.Spacing.medium)
-            .padding(.vertical, StudioTheme.Spacing.small)
-            .background(isSelected ? StudioTheme.selectionSurface : Color.clear)
-            .clipShape(RoundedRectangle(cornerRadius: 8))
-            .contentShape(RoundedRectangle(cornerRadius: 8))
+            .frame(height: 38)
+            .background(
+                isSelected ? ModelVisualStyle.accent.opacity(0.14)
+                    : (hoveredFilter == key ? ModelVisualStyle.control : Color.clear),
+                in: RoundedRectangle(cornerRadius: 9, style: .continuous)
+            )
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(title)
+        .onHover { hoveredFilter = $0 ? key : nil }
         .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     private var globalSoulCard: some View {
-        StudioCard {
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.medium) {
+        ModelSurface {
+            VStack(alignment: .leading, spacing: 0) {
                 HStack {
                     Text(L("settings.advanced.globalSoul.manage"))
-                        .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(StudioTheme.textPrimary)
                     Spacer()
-                    Button(L("settings.advanced.globalSoul.delete"), role: .destructive) {
+                    TFButton(title: L("settings.advanced.globalSoul.delete"), kind: .secondary,
+                             destructive: true, size: .small) {
                         viewModel.deleteGlobalSoulMemory()
                     }
                     .disabled(viewModel.globalSoulMemory == nil)
                 }
-                Divider()
+                .padding(18)
+                ModelRowDivider(leading: 18)
                 if let soul = viewModel.globalSoulMemory {
-                    Text(soul.text)
-                        .textSelection(.enabled)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    Text(soul.updatedAt.formatted(date: .abbreviated, time: .shortened))
-                        .font(.studioBody(StudioTheme.Typography.caption))
-                        .foregroundStyle(StudioTheme.textSecondary)
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text(soul.text)
+                            .font(.system(size: 13))
+                            .foregroundStyle(StudioTheme.textPrimary)
+                            .textSelection(.enabled)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        Text(soul.updatedAt.formatted(date: .abbreviated, time: .shortened))
+                            .font(.system(size: 11.5))
+                            .foregroundStyle(StudioTheme.textTertiary)
+                    }
+                    .padding(18)
                 } else {
                     Text(L("settings.advanced.globalSoul.empty"))
+                        .font(.system(size: 12.5))
                         .foregroundStyle(StudioTheme.textSecondary)
+                        .padding(18)
                 }
             }
         }
@@ -182,26 +207,20 @@ struct RecentInputMemoryManagementView: View {
         let memories = viewModel.recentInputMemoryItems.filter {
             $0.appIdentifier == appIdentifier && (query.isEmpty || $0.text.localizedCaseInsensitiveContains(query))
         }
-        return StudioCard {
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.medium) {
-                HStack(spacing: StudioTheme.Spacing.medium) {
-                    if let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: appIdentifier) {
-                        Image(nsImage: NSWorkspace.shared.icon(forFile: appURL.path))
-                            .resizable()
-                            .frame(width: 30, height: 30)
-                    }
+        return ModelSurface {
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(spacing: 12) {
+                    appIcon(for: appIdentifier, size: 32)
                     VStack(alignment: .leading, spacing: 2) {
                         Text(displayName(for: appIdentifier))
-                            .font(.studioBody(StudioTheme.Typography.body, weight: .semibold))
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(StudioTheme.textPrimary)
                         Text(appIdentifier)
-                            .font(.studioBody(StudioTheme.Typography.caption))
-                            .foregroundStyle(StudioTheme.textSecondary)
+                            .font(.system(size: 11))
+                            .foregroundStyle(StudioTheme.textTertiary)
+                            .lineLimit(1)
                     }
-                    Spacer()
-                }
-
-                HStack {
-                    Spacer()
+                    Spacer(minLength: 8)
                     Toggle(
                         L("settings.advanced.recentInputMemory.appEnabled"),
                         isOn: Binding(
@@ -209,44 +228,74 @@ struct RecentInputMemoryManagementView: View {
                             set: { viewModel.setRecentInputMemoryAllowed($0, appIdentifier: appIdentifier) }
                         )
                     )
+                    .toggleStyle(.switch)
+                    .controlSize(.small)
                     .disabled(!viewModel.recentInputMemoryEnabled)
-                    Button(L("settings.advanced.recentInputMemory.clearApp"), role: .destructive) {
+                    TFButton(title: L("settings.advanced.recentInputMemory.clearApp"),
+                             kind: .secondary, destructive: true, size: .small) {
                         viewModel.clearRecentInputMemory(appIdentifier: appIdentifier)
                     }
                     .disabled(memories.isEmpty)
                 }
-
-                Divider()
-
+                .padding(18)
+                ModelRowDivider(leading: 18)
                 if memories.isEmpty {
                     Text(L("settings.advanced.recentInputMemory.emptyApp"))
+                        .font(.system(size: 12.5))
                         .foregroundStyle(StudioTheme.textSecondary)
+                        .padding(18)
                 } else {
-                    ForEach(memories) { memory in
-                        HStack(alignment: .top, spacing: StudioTheme.Spacing.medium) {
-                            VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+                    ForEach(Array(memories.enumerated()), id: \.element.id) { index, memory in
+                        if index > 0 { ModelRowDivider(leading: 18) }
+                        HStack(alignment: .top, spacing: 12) {
+                            VStack(alignment: .leading, spacing: 6) {
                                 Text(memory.recordedAt.formatted(date: .abbreviated, time: .shortened))
-                                    .font(.studioBody(StudioTheme.Typography.caption))
-                                    .foregroundStyle(StudioTheme.textSecondary)
+                                    .font(.system(size: 11.5))
+                                    .foregroundStyle(StudioTheme.textTertiary)
                                 Text(memory.text)
+                                    .font(.system(size: 13))
+                                    .foregroundStyle(StudioTheme.textPrimary)
                                     .textSelection(.enabled)
                                     .frame(maxWidth: .infinity, alignment: .leading)
                             }
-                            Button(role: .destructive) {
+                            Spacer(minLength: 4)
+                            AgentSettingsIconButton(systemImage: "trash",
+                                                    help: L("settings.advanced.recentInputMemory.deleteItem"),
+                                                    role: .destructive) {
                                 viewModel.deleteRecentInputMemory(id: memory.id)
-                            } label: {
-                                Image(systemName: "trash")
                             }
-                            .buttonStyle(.borderless)
-                            .accessibilityLabel(L("settings.advanced.recentInputMemory.deleteItem"))
                         }
-                        if memory.id != memories.last?.id {
-                            Divider()
-                        }
+                        .padding(.horizontal, 18)
+                        .padding(.vertical, 12)
                     }
                 }
             }
         }
+    }
+
+    private func emptyState(_ title: String) -> some View {
+        VStack(spacing: 10) {
+            Image(systemName: "tray")
+                .font(.system(size: 28, weight: .light))
+                .foregroundStyle(StudioTheme.textTertiary)
+            Text(title).font(.system(size: 13)).foregroundStyle(StudioTheme.textSecondary)
+        }
+    }
+
+    private func appIcon(for appIdentifier: String, size: CGFloat) -> some View {
+        Group {
+            if let appURL = NSWorkspace.shared.urlForApplication(withBundleIdentifier: appIdentifier) {
+                Image(nsImage: NSWorkspace.shared.icon(forFile: appURL.path))
+                    .resizable()
+            } else {
+                Image(systemName: "app")
+                    .resizable()
+                    .foregroundStyle(StudioTheme.textSecondary)
+            }
+        }
+        .frame(width: size, height: size)
+        .clipShape(RoundedRectangle(cornerRadius: size * 0.2, style: .continuous))
+        .accessibilityHidden(true)
     }
 
     private func displayName(for appIdentifier: String) -> String {

@@ -8,6 +8,57 @@ import Testing
 struct SettingsBehaviorTests {
     private typealias RenderedUI = SettingsBehaviorTestSupport
 
+    @Test func `memory management sheet renders its settings controls and navigation`() async throws {
+        try await RenderedUI.withFixture { settings in
+            let model = makeModel(settings)
+            for language in [AppLanguage.simplifiedChinese, .english] {
+                AppLocalization.shared.setLanguage(language)
+                for appearance in [NSAppearance.Name.darkAqua, .aqua] {
+                    try await RenderedUI.withWindow(RecentInputMemoryManagementView(viewModel: model),
+                                                    width: 900, height: 680) { window, host in
+                        window.appearance = NSAppearance(named: appearance)
+                        try await RenderedUI.wait {
+                            RenderedUI.contains(L("settings.advanced.recentInputMemory.manage"), in: host)
+                        }
+                        _ = try RenderedUI.button(L("settings.advanced.recentInputMemory.close"), in: host)
+                        let search = try #require(RenderedUI.elements(in: host).first {
+                            $0.value("accessibilityIdentifier") as? String == "settings.memory.search"
+                        })
+                        #expect(search.frame.width > 200)
+                        try RenderedUI.button(L("settings.advanced.globalSoul.manage"), in: host).press()
+                        try await RenderedUI.wait {
+                            RenderedUI.contains(L("settings.advanced.globalSoul.empty"), in: host)
+                                || model.globalSoulMemory != nil
+                        }
+                        try RenderedUI.button(L("settings.advanced.recentInputMemory.allApps"), in: host).press()
+                    }
+                }
+            }
+        }
+    }
+
+    @Test func `description hint opens and closes on click`() async throws {
+        let detail = "This setting controls the fixture behavior."
+        try await RenderedUI.withFixture { _ in
+            try await RenderedUI.withWindow(
+                SettingsDescriptionHint(detail: detail, visible: true)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center),
+                width: 500, height: 300
+            ) { window, host in
+                window.setFrameOrigin(NSPoint(x: 80, y: 80))
+                let hint = try RenderedUI.button(detail, in: host)
+                try hint.press()
+                try await RenderedUI.wait {
+                    NSApp.windows.contains { $0.isVisible && $0.parent === window && RenderedUI.contains(detail, in: $0) }
+                }
+                try hint.press()
+                try await RenderedUI.wait {
+                    !NSApp.windows.contains { $0.isVisible && $0.parent === window && RenderedUI.contains(detail, in: $0) }
+                }
+            }
+        }
+    }
+
     @Test func `appearance and interface buttons persist only the fixture preferences`() async throws {
         try await RenderedUI.withFixture { settings in
             let model = makeModel(settings)
