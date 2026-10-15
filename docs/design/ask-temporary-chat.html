@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="zh-Hans" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Typeflux · 随便问 — 临时对话（不进入对话历史）交互设计稿</title>
+<style>
+:root {
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Helvetica Neue", sans-serif;
+  --ease: cubic-bezier(.22, .9, .3, 1);
+  --accent: #0a84ff; --accent-rgb: 10,132,255;
+  --private: #bf5af2; --private-rgb: 191,90,242;
+}
+[data-theme="dark"] {
+  color-scheme: dark;
+  --temp: #40c8e0; --temp-rgb: 64,200,224;
+  --page: #0e0e13; --win-bg: #1b1b20; --side-bg: #222228; --panel: #2a2a31; --menu: rgba(44,44,52,.96);
+  --text: rgba(255,255,255,.92); --text-2: rgba(235,235,245,.62); --text-3: rgba(235,235,245,.38);
+  --sep: rgba(255,255,255,.08); --hover: rgba(255,255,255,.07); --press: rgba(255,255,255,.12);
+  --border: rgba(255,255,255,.12); --shadow: 0 18px 50px rgba(0,0,0,.5), 0 1px 2px rgba(0,0,0,.4);
+  --success: #32d74b; --warn: #ffd60a; --danger: #ff453a;
+  --desk: radial-gradient(1200px 600px at 20% 10%, #2b3550, transparent), radial-gradient(900px 500px at 90% 90%, #3a2547, transparent), #12121a;
+}
+[data-theme="light"] {
+  color-scheme: light;
+  --temp: #0e8fa6; --temp-rgb: 14,143,166;
+  --page: #e9e9ef; --win-bg: #fbfbfd; --side-bg: #f1f1f5; --panel: #ffffff; --menu: rgba(255,255,255,.97);
+  --text: rgba(0,0,0,.86); --text-2: rgba(60,60,67,.68); --text-3: rgba(60,60,67,.42);
+  --sep: rgba(0,0,0,.07); --hover: rgba(0,0,0,.05); --press: rgba(0,0,0,.09);
+  --border: rgba(0,0,0,.10); --shadow: 0 16px 44px rgba(30,30,60,.16), 0 1px 2px rgba(30,30,60,.12);
+  --success: #28a745; --warn: #b58300; --danger: #ff3b30;
+  --desk: radial-gradient(1200px 600px at 20% 10%, #c9d6f2, transparent), radial-gradient(900px 500px at 90% 90%, #ead7f3, transparent), #dfe2ea;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { font-family: var(--font); font-size: 13px; color: var(--text); background: var(--page); -webkit-font-smoothing: antialiased; }
+button { font: inherit; color: inherit; border: 0; background: none; padding: 0; cursor: pointer; }
+textarea, input { font: inherit; color: inherit; }
+svg.i { width: 15px; height: 15px; flex: none; stroke: currentColor; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+svg.i.sm { width: 12px; height: 12px; }
+.hidden { display: none !important; }
+
+/* ---------- page layout ---------- */
+.page { display: grid; grid-template-columns: 1fr 340px; gap: 28px; max-width: 1560px; margin: 0 auto; padding: 24px 28px 48px; }
+h1 { font-size: 20px; margin: 0 0 6px; }
+.sub { color: var(--text-2); line-height: 1.6; margin: 0 0 18px; max-width: 980px; }
+.sub b { color: var(--text); }
+.notes { position: sticky; top: 20px; align-self: start; display: flex; flex-direction: column; gap: 14px; }
+.note { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 14px 16px; line-height: 1.6; color: var(--text-2); }
+.note h3 { margin: 0 0 6px; font-size: 13px; color: var(--text); }
+.note ul { margin: 0; padding-left: 18px; }
+.note b { color: var(--text); }
+.note code { font-size: 11.5px; background: var(--hover); padding: 1px 5px; border-radius: 5px; }
+.tasks { display: flex; flex-direction: column; gap: 6px; }
+.task { display: flex; gap: 8px; align-items: flex-start; text-align: left; padding: 7px 9px; border-radius: 9px; background: var(--hover); color: var(--text); line-height: 1.45; }
+.task .n { flex: none; width: 18px; height: 18px; border-radius: 50%; background: rgba(var(--temp-rgb), .18); color: var(--temp); font-size: 11px; font-weight: 700; display: grid; place-items: center; margin-top: 1px; }
+table.dt { width: 100%; border-collapse: collapse; font-size: 12px; }
+table.dt th, table.dt td { text-align: left; padding: 5px 4px; border-top: 1px solid var(--sep); vertical-align: top; }
+table.dt th { color: var(--text-3); font-weight: 500; }
+table.dt td.y { color: var(--success); } table.dt td.n { color: var(--temp); font-weight: 600; }
+
+/* ---------- window ---------- */
+.stage { position: relative; }
+.win { position: relative; width: 100%; min-width: 980px; height: 720px; display: flex; border-radius: 22px; overflow: hidden; background: var(--win-bg); border: 1px solid var(--border); box-shadow: var(--shadow); }
+.side { width: 262px; flex: none; background: var(--side-bg); border-right: 1px solid var(--sep); display: flex; flex-direction: column; padding: 12px 10px; }
+.side-top { display: flex; align-items: center; gap: 7px; padding: 2px 4px 10px; }
+.lights { display: flex; gap: 7px; } .lights i { width: 12px; height: 12px; border-radius: 50%; display: block; }
+.side-top .sp { flex: 1; }
+.icon-btn { width: 28px; height: 28px; display: grid; place-items: center; border-radius: 8px; color: var(--text-2); position: relative; }
+.icon-btn:hover, .icon-btn.on { background: var(--hover); color: var(--text); }
+.search { display: flex; align-items: center; gap: 7px; padding: 7px 10px; background: var(--hover); border-radius: 10px; color: var(--text-3); margin-bottom: 8px; }
+.search kbd { margin-left: auto; font: 11px var(--font); padding: 1px 6px; border-radius: 5px; background: var(--hover); }
+.seg { display: flex; padding: 2px; border-radius: 9px; background: var(--hover); }
+.seg button { flex: 1; padding: 4px 0; border-radius: 7px; font-size: 12px; color: var(--text-2); display: flex; align-items: center; justify-content: center; gap: 4px; }
+.seg button.on { background: var(--panel); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.18); }
+.list { flex: 1; overflow-y: auto; margin: 0 -4px; padding: 0 4px; }
+.grp { font-size: 11.5px; color: var(--text-3); padding: 10px 8px 4px; }
+.row { display: flex; align-items: center; gap: 7px; padding: 8px 9px; border-radius: 9px; cursor: pointer; color: var(--text); }
+.row:hover { background: var(--hover); }
+.row.sel { background: rgba(var(--accent-rgb), .22); }
+.row.sel.p { background: rgba(var(--private-rgb), .2); }
+.row .t { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row .tm { color: var(--text-3); font-size: 11.5px; }
+.row.tmp { border: 1px dashed rgba(var(--temp-rgb), .6); background: rgba(var(--temp-rgb), .12); color: var(--temp); cursor: default; margin-bottom: 4px; animation: popin .25s var(--ease); }
+.row.tmp .t { color: var(--text); }
+.row.tmp .tm { color: var(--temp); }
+.row.fresh { animation: flashrow 1.4s var(--ease); }
+@keyframes flashrow { 0% { background: rgba(var(--temp-rgb), .35); } 100% { background: transparent; } }
+.lock { color: var(--private); } .tcol { color: var(--temp); }
+.foot { display: flex; align-items: center; gap: 9px; padding: 8px 4px 2px; border-top: 1px solid var(--sep); margin-top: 6px; }
+.avatar { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 700; color: #fff; background: linear-gradient(135deg, #bf5af2, #5e5ce6); flex: none; }
+.avatar.mac { border-radius: 9px; background: var(--hover); color: var(--text); }
+.foot .nm { font-weight: 600; } .foot .dt { font-size: 11px; color: var(--text-3); }
+
+.main { flex: 1; display: flex; flex-direction: column; position: relative; min-width: 0; }
+.head { height: 56px; display: flex; align-items: center; gap: 10px; padding: 0 18px; }
+.cap { display: flex; align-items: center; gap: 8px; padding: 6px 13px; border-radius: 999px; background: var(--hover); border: 1px solid var(--sep); max-width: 60%; }
+.cap .t { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.main.t .cap { border-style: dashed; border-color: rgba(var(--temp-rgb), .45); }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--success); flex: none; }
+.head .sp { flex: 1; }
+.credits { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; background: var(--hover); border: 1px solid var(--sep); font-size: 12.5px; }
+.credits b { font-weight: 600; } .credits span { color: var(--text-2); }
+.pchip { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; font-size: 12.5px; background: rgba(var(--private-rgb), .14); color: var(--private); border: 1px solid rgba(var(--private-rgb), .28); }
+.tchip { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 999px; font-size: 12.5px; background: rgba(var(--temp-rgb), .14); color: var(--temp); border: 1px dashed rgba(var(--temp-rgb), .55); }
+.tchip:hover, .tchip.on { background: rgba(var(--temp-rgb), .22); }
+.feed { flex: 1; overflow-y: auto; padding: 8px 64px 20px; }
+.msg-u { display: flex; justify-content: flex-end; margin: 14px 0; }
+.msg-u div { background: rgba(var(--accent-rgb), .22); padding: 9px 14px; border-radius: 16px; max-width: 70%; line-height: 1.55; }
+.main.t .msg-u div { background: rgba(var(--temp-rgb), .2); }
+.msg-a { line-height: 1.7; color: var(--text); margin: 10px 0 18px; max-width: 760px; }
+.msg-a .meta { font-size: 11.5px; color: var(--text-3); margin-top: 4px; }
+.sysline { display: flex; align-items: center; gap: 8px; color: var(--text-3); font-size: 11.5px; margin: 12px 0; }
+.sysline::before, .sysline::after { content: ""; flex: 1; height: 1px; background: var(--sep); }
+.sysline.t { color: var(--temp); }
+.sysline.t::before, .sysline.t::after { background: none; border-top: 1px dashed rgba(var(--temp-rgb), .4); }
+.welcome { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 10px; color: var(--text-2); }
+.welcome .big { font-size: 22px; font-weight: 600; color: var(--text); }
+.welcome .lines { line-height: 1.7; max-width: 460px; }
+.welcome kbd { font: 12px var(--font); padding: 1px 6px; border-radius: 5px; background: var(--hover); color: var(--text); }
+.welcome .tline { display: inline-flex; gap: 6px; align-items: center; color: var(--temp); padding: 5px 12px; border-radius: 999px; border: 1px dashed rgba(var(--temp-rgb), .5); background: rgba(var(--temp-rgb), .08); font-size: 12.5px; }
+
+/* composer */
+.composer { margin: 0 20px 18px; border-radius: 20px; background: var(--panel); border: 1px solid var(--border); box-shadow: 0 6px 20px rgba(0,0,0,.18); padding: 10px 10px 8px; position: relative; }
+.main.p .composer { border-color: rgba(var(--private-rgb), .32); }
+.main.t .composer { border: 1.5px dashed rgba(var(--temp-rgb), .6); }
+.composer textarea { width: 100%; border: 0; outline: 0; background: none; resize: none; height: 44px; padding: 4px 8px; line-height: 1.5; }
+.composer textarea::placeholder { color: var(--text-3); }
+.chips { display: flex; gap: 6px; padding: 0 6px 6px; }
+.chip { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px; font-size: 11.5px; background: var(--hover); color: var(--text-2); }
+.chip.off { text-decoration: line-through; color: var(--text-3); }
+.bar { display: flex; align-items: center; gap: 4px; }
+.bar .sp { flex: 1; }
+.pill { display: flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 999px; font-size: 12.5px; color: var(--text); white-space: nowrap; }
+.pill:hover, .pill.on { background: var(--hover); }
+.pill.dis { opacity: .4; cursor: not-allowed; }
+.store { width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; color: var(--text-2); position: relative; }
+.store:hover, .store.on { background: var(--hover); color: var(--text); }
+.store.p { color: var(--private); }
+.store.t { color: var(--temp); }
+.store.t:hover, .store.t.on { background: rgba(var(--temp-rgb), .14); }
+.send { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: #fff; }
+.main.p .send { background: var(--private); }
+.main.t .send { background: var(--temp); }
+.send:disabled { opacity: .35; cursor: default; }
+.hint { position: absolute; left: 50%; bottom: calc(100% + 10px); transform: translateX(-50%); font-size: 12px; color: var(--text-2); background: var(--menu); border: 1px solid var(--border); padding: 5px 12px; border-radius: 999px; box-shadow: var(--shadow); opacity: 0; transition: opacity .25s; pointer-events: none; white-space: nowrap; z-index: 5; }
+.hint.show { opacity: 1; }
+
+/* popovers */
+.pop { position: absolute; z-index: 20; background: var(--menu); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); padding: 12px; backdrop-filter: blur(20px); animation: popin .18s var(--ease); }
+@keyframes popin { from { opacity: 0; transform: translateY(6px) scale(.98); } to { opacity: 1; transform: none; } }
+.pop h4 { margin: 0 0 4px; font-size: 13px; display: flex; align-items: center; gap: 7px; }
+.pop p { margin: 0; color: var(--text-2); font-size: 12px; line-height: 1.55; }
+.pop .hr { height: 1px; background: var(--sep); margin: 10px 0; }
+.opt { display: flex; gap: 10px; align-items: flex-start; padding: 9px 10px; border-radius: 10px; width: 100%; text-align: left; border: 1px solid transparent; }
+.opt:hover { background: var(--hover); }
+.opt.on { border-color: rgba(var(--accent-rgb), .55); background: rgba(var(--accent-rgb), .08); }
+.opt.on.p { border-color: rgba(var(--private-rgb), .55); background: rgba(var(--private-rgb), .08); }
+.opt.on.t { border-color: rgba(var(--temp-rgb), .65); border-style: dashed; background: rgba(var(--temp-rgb), .08); }
+.opt.dis { opacity: .45; cursor: not-allowed; }
+.opt .oi { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; flex: none; background: var(--hover); }
+.opt .oi.c { color: var(--accent); background: rgba(var(--accent-rgb), .14); }
+.opt .oi.p { color: var(--private); background: rgba(var(--private-rgb), .14); }
+.opt .oi.t { color: var(--temp); background: rgba(var(--temp-rgb), .14); }
+.opt .ot { font-weight: 600; font-size: 12.5px; color: var(--text); }
+.opt .od { font-size: 11.5px; color: var(--text-2); line-height: 1.5; margin-top: 2px; }
+.opt .ck { margin-left: auto; color: var(--accent); align-self: center; }
+.opt.p .ck { color: var(--private); } .opt.t .ck { color: var(--temp); }
+.kv { display: grid; grid-template-columns: 74px 1fr; gap: 5px 8px; font-size: 12px; }
+.kv .k { color: var(--text-3); } .kv .v { color: var(--text); }
+.btn { padding: 5px 12px; border-radius: 999px; font-size: 12px; background: var(--hover); color: var(--text); border: 1px solid var(--sep); display: inline-flex; align-items: center; gap: 5px; }
+.btn:hover { background: var(--press); }
+.btn.pri { background: var(--accent); color: #fff; border-color: transparent; }
+.btn.tp { background: var(--temp); color: #fff; border-color: transparent; }
+.btn.danger { background: var(--danger); color: #fff; border-color: transparent; }
+.btns { display: flex; gap: 8px; justify-content: flex-end; margin-top: 12px; align-items: center; }
+.btns .sp { flex: 1; }
+.mi { display: flex; align-items: center; gap: 9px; padding: 7px 9px; border-radius: 8px; width: 100%; text-align: left; }
+.mi:hover:not(.dis), .mi.hl { background: var(--hover); }
+.mi.dis { opacity: .42; cursor: not-allowed; }
+.mi .ml { flex: 1; } .mi .md { font-size: 11px; color: var(--text-3); }
+.mi kbd { font: 11px var(--font); color: var(--text-3); }
+.mh { font-size: 11px; color: var(--text-3); padding: 6px 9px 3px; display: flex; justify-content: space-between; }
+.tag { font-size: 10.5px; padding: 1px 6px; border-radius: 5px; background: var(--hover); color: var(--text-2); }
+.tag.tt { color: var(--temp); background: rgba(var(--temp-rgb), .12); }
+.callout { display: flex; gap: 8px; align-items: flex-start; font-size: 11.5px; color: var(--text-2); padding: 8px 10px; border-radius: 9px; background: rgba(var(--temp-rgb), .08); margin-top: 8px; line-height: 1.5; }
+
+/* modal / sheet */
+.scrim { position: absolute; inset: 0; background: rgba(0,0,0,.35); z-index: 30; display: grid; place-items: center; animation: popin .2s var(--ease); }
+.sheet { width: 520px; background: var(--panel); border: 1px solid var(--border); border-radius: 16px; box-shadow: var(--shadow); padding: 18px 20px; }
+.sheet.sm { width: 420px; }
+.sheet h3 { margin: 0 0 6px; font-size: 15px; display: flex; gap: 8px; align-items: center; }
+.sheet .body { color: var(--text-2); line-height: 1.6; font-size: 12.5px; }
+.sheet .crumb { color: var(--text-3); font-size: 12px; margin-bottom: 14px; }
+.srow { display: flex; gap: 12px; padding: 12px 0; border-top: 1px solid var(--sep); }
+.srow .st { font-weight: 600; } .srow .sd { color: var(--text-2); font-size: 12px; line-height: 1.55; margin-top: 3px; }
+.srow .sc { margin-left: auto; flex: none; }
+.check { display: inline-flex; gap: 6px; align-items: center; font-size: 12px; color: var(--text-2); cursor: pointer; }
+.check input { accent-color: var(--temp); }
+.switch { width: 38px; height: 22px; border-radius: 999px; background: var(--press); position: relative; transition: background .2s; }
+.switch::after { content: ""; position: absolute; left: 2px; top: 2px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.3); transition: transform .2s var(--ease); }
+.switch.on { background: var(--success); } .switch.on::after { transform: translateX(16px); }
+.new-tag { font-size: 10px; color: var(--temp); border: 1px solid rgba(var(--temp-rgb), .5); border-radius: 5px; padding: 0 5px; margin-left: 6px; font-weight: 500; }
+
+/* launcher scene: mirrors the shipped ⌥Space launcher (context chip + input header,
+   home suggestions, footer with attach / storage / model / permission | screenshot and key hints) */
+.desk { position: relative; width: 100%; min-width: 980px; height: 720px; border-radius: 22px; overflow: hidden; background: var(--desk); border: 1px solid var(--border); box-shadow: var(--shadow); }
+.menubar { height: 26px; display: flex; align-items: center; gap: 16px; padding: 0 14px; font-size: 12.5px; background: rgba(127,127,127,.12); backdrop-filter: blur(20px); }
+.menubar b { font-weight: 700; }
+.appwin { position: absolute; left: 70px; top: 50px; width: 560px; height: 250px; border-radius: 12px; background: var(--win-bg); border: 1px solid var(--border); box-shadow: var(--shadow); padding: 40px 26px 20px; opacity: .8; }
+.appwin .tb { position: absolute; left: 0; right: 0; top: 0; height: 30px; display: flex; align-items: center; padding: 0 12px; border-bottom: 1px solid var(--sep); color: var(--text-2); }
+.appwin .ln { height: 9px; border-radius: 5px; background: var(--hover); margin: 10px 0; }
+.appwin .ln.sel { background: rgba(var(--accent-rgb), .35); }
+.lc { position: absolute; left: 50%; bottom: 58px; transform: translateX(-50%); width: 680px; border-radius: 26px; background: var(--lc-bg); border: 1px solid var(--border); box-shadow: var(--shadow); backdrop-filter: blur(30px); }
+[data-theme="dark"] { --lc-bg: rgba(46,46,48,.94); }
+[data-theme="light"] { --lc-bg: rgba(250,250,252,.95); }
+.lc.t { border: 1.5px dashed rgba(var(--temp-rgb), .75); }
+.lc-head { display: flex; align-items: center; gap: 10px; padding: 12px 12px 12px; }
+.ctx { display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 8px 0 9px; border-radius: 12px; border: 1px solid var(--border); background: var(--hover); color: var(--text); white-space: nowrap; }
+.ctx .app { width: 20px; height: 20px; border-radius: 6px; background: linear-gradient(135deg, #5ac8fa, #0a84ff); display: grid; place-items: center; color: #fff; }
+.ctx .app svg { width: 12px; height: 12px; }
+.ctx .thumb { width: 28px; height: 20px; border-radius: 4px; background: linear-gradient(135deg, rgba(var(--accent-rgb), .8), rgba(var(--accent-rgb), .45)); border-left: 1px solid var(--sep); }
+.ctx .vr { width: 1px; height: 18px; background: var(--sep); }
+.lc-input { flex: 1; min-width: 0; border: 0; outline: 0; background: none; font-size: 18px; padding: 0 2px; }
+.lc-input::placeholder { color: var(--text-3); }
+.lc-mic { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; color: var(--text-2); }
+.lc-mic svg { width: 18px; height: 18px; }
+.lc-send { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: var(--press); color: var(--text-2); }
+.lc-send svg { width: 20px; height: 20px; }
+.lc-send.on { background: var(--accent); color: #fff; box-shadow: 0 0 18px rgba(var(--accent-rgb), .45); }
+.lc.t .lc-send.on { background: var(--temp); box-shadow: 0 0 18px rgba(var(--temp-rgb), .45); }
+.lc-sep { height: 1px; background: var(--sep); margin: 0 12px; }
+.lc-list { padding: 6px; }
+.lc-grp { font-size: 11.5px; color: var(--text-3); padding: 6px 12px 4px; display: flex; gap: 6px; align-items: center; }
+.lc-row { display: flex; align-items: center; gap: 12px; padding: 0 12px; height: 46px; border-radius: 13px; width: 100%; text-align: left; }
+.lc-row.hl, .lc-row:hover { background: var(--hover); }
+.lc-row .ri { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; background: rgba(var(--accent-rgb), .14); color: var(--accent); flex: none; }
+.lc-row .ri.t { background: rgba(var(--temp-rgb), .16); color: var(--temp); }
+.lc-row .ri.g { background: var(--hover); color: var(--text-2); }
+.lc-row .rt { font-size: 14px; flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lc-row .rt .q { color: var(--text-2); margin-left: 6px; }
+.lc-row .rc { color: var(--text-3); font-size: 12.5px; white-space: nowrap; }
+.lc-row .rc.t { color: var(--temp); }
+.lc-row kbd { font: 11.5px var(--font); color: var(--text-3); }
+.lc-foot { display: flex; align-items: center; gap: 2px; height: 48px; padding: 0 14px 0 10px; position: relative; }
+.lc-foot .fb { height: 30px; min-width: 30px; padding: 0 6px; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; color: var(--text-2); }
+.lc-foot .fb:hover, .lc-foot .fb.on { background: var(--hover); color: var(--text); }
+.lc-foot .fb.model { color: var(--text); font-weight: 600; font-size: 14px; }
+.lc-foot .fb.shot { color: var(--accent); }
+.lc-foot .fb.store.t { color: var(--temp); background: rgba(var(--temp-rgb), .14); }
+.lc-foot .fb.store.p { color: var(--private); }
+.lc-foot .rule { width: 1px; height: 18px; background: var(--sep); margin: 0 6px; }
+.lc-foot .keys { margin-left: auto; color: var(--text-3); font-size: 12px; white-space: nowrap; display: flex; align-items: center; gap: 10px; }
+.lc-foot .tnote { color: var(--temp); display: inline-flex; gap: 4px; align-items: center; }
+/* Opens from the footer's storage icon over the list, like the shipped storage card. */
+.lc .pop.lstore { left: 40px; bottom: 50px; width: 370px; }
+
+/* dock */
+.dock { display: inline-flex; flex-wrap: wrap; margin: 0 0 14px; align-items: center; gap: 12px; padding: 8px 12px; border-radius: 16px; background: var(--menu); border: 1px solid var(--border); box-shadow: var(--shadow); backdrop-filter: blur(20px); }
+.dock .lbl { font-size: 11.5px; color: var(--text-3); }
+.dock .seg button { padding: 4px 10px; white-space: nowrap; }
+.dock .reset { font-size: 12px; color: var(--text-2); padding: 4px 8px; border-radius: 7px; }
+.dock .reset:hover { background: var(--hover); }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute"><defs>
+  <symbol id="cloud" viewBox="0 0 16 16"><path d="M4.5 12.5h7.2a3 3 0 0 0 .3-6 4 4 0 0 0-7.7.9 2.6 2.6 0 0 0 .2 5.1z"/></symbol>
+  <symbol id="lock" viewBox="0 0 16 16"><rect x="3.5" y="7" width="9" height="6.5" rx="1.5"/><path d="M5.5 7V5.2a2.5 2.5 0 0 1 5 0V7"/></symbol>
+  <symbol id="temp" viewBox="0 0 16 16"><path d="M4.5 2h7M4.5 14h7M5 2.2c0 3 3 3.8 3 5.8s-3 2.8-3 5.8M11 2.2c0 3-3 3.8-3 5.8s3 2.8 3 5.8"/></symbol>
+  <symbol id="mac" viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="8" rx="1.3"/><path d="M6 13.5h4"/></symbol>
+  <symbol id="pen" viewBox="0 0 16 16"><path d="M10.5 2.5l3 3L6 13H3v-3z"/></symbol>
+  <symbol id="side" viewBox="0 0 16 16"><rect x="2" y="3" width="12" height="10" rx="2"/><path d="M6 3v10"/></symbol>
+  <symbol id="search" viewBox="0 0 16 16"><circle cx="7" cy="7" r="4.5"/><path d="M10.5 10.5 14 14"/></symbol>
+  <symbol id="chev" viewBox="0 0 16 16"><path d="M4.5 6.5 8 10l3.5-3.5"/></symbol>
+  <symbol id="up" viewBox="0 0 16 16"><path d="M8 13V3.5M3.8 7.5 8 3.3l4.2 4.2"/></symbol>
+  <symbol id="plus" viewBox="0 0 16 16"><path d="M8 3v10M3 8h10"/></symbol>
+  <symbol id="spark" viewBox="0 0 16 16"><path d="M8 1.5 9.3 6.7 14.5 8 9.3 9.3 8 14.5 6.7 9.3 1.5 8l5.2-1.3z"/></symbol>
+  <symbol id="gear" viewBox="0 0 16 16"><circle cx="8" cy="8" r="2.2"/><path d="M8 1.8v1.6M8 12.6v1.6M1.8 8h1.6M12.6 8h1.6M3.6 3.6l1.1 1.1M11.3 11.3l1.1 1.1M3.6 12.4l1.1-1.1M11.3 4.7l1.1-1.1"/></symbol>
+  <symbol id="ok" viewBox="0 0 16 16"><path d="M3.5 8.3 6.5 11l6-6.5"/></symbol>
+  <symbol id="info" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.2"/><path d="M8 7.3v3.6M8 5.2v.1"/></symbol>
+  <symbol id="globe" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.2"/><path d="M1.8 8h12.4M8 1.8c2 2 2 10.4 0 12.4M8 1.8c-2 2-2 10.4 0 12.4"/></symbol>
+  <symbol id="mic" viewBox="0 0 16 16"><rect x="5.5" y="1.5" width="5" height="8.5" rx="2.5"/><path d="M3 7.5a5 5 0 0 0 10 0M8 12.5v2"/></symbol>
+  <symbol id="brain" viewBox="0 0 16 16"><path d="M6 2.5a2 2 0 0 0-2 2 2 2 0 0 0-1.5 3 2 2 0 0 0 1.5 3.2A2 2 0 0 0 8 12V3.5a1.6 1.6 0 0 0-2-1zM10 2.5a2 2 0 0 1 2 2 2 2 0 0 1 1.5 3 2 2 0 0 1-1.5 3.2A2 2 0 0 1 8 12"/></symbol>
+  <symbol id="shot" viewBox="0 0 16 16"><rect x="2" y="3.5" width="12" height="9" rx="1.5"/><circle cx="8" cy="8" r="2.2"/></symbol>
+  <symbol id="save" viewBox="0 0 16 16"><path d="M3 2.5h8l2 2v9H3z"/><path d="M5.5 2.5v3h5v-3M5.5 13.5v-4h5v4"/></symbol>
+  <symbol id="x" viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8"/></symbol>
+</defs></svg>
+
+<div class="page">
+  <div>
+    <h1>随便问 · 临时对话（不进入对话历史）</h1>
+    <p class="sub">临时对话是对话存储位置的<b>第三个选项</b>，和「云端同步」「仅存本机」并列。它<b>不进入任何历史列表</b>，<b>不读取也不更新记忆</b>，<b>离开这段对话或退出应用时丢弃</b>。临时对话可以使用全部模型。界面上用青色和虚线描边区分（虚线表示“不保存”）。<br>
+    下面的窗口<b>可以直接操作</b>：点 ✎ 在下拉里选「新临时对话」，或点输入框左下角的存储图标，开始一段临时对话，发几条消息后切到别的对话看看会发生什么。工具条可以切换到 <b>⌥Space 启动器</b> 场景（按现有启动器还原：底栏的 ☁ 存储图标里选「临时」，或输入 <code>/temp</code>）、切换登录状态和明暗主题。</p>
+    <div class="dock">
+      <span class="lbl">场景</span>
+      <div class="seg" id="dock-scene"><button data-v="workspace" class="on">对话窗口</button><button data-v="launcher">⌥Space 启动器</button></div>
+      <span class="lbl">账号</span>
+      <div class="seg" id="dock-auth"><button data-v="in" class="on">已登录</button><button data-v="out">未登录</button></div>
+      <span class="lbl">主题</span>
+      <div class="seg" id="dock-theme"><button data-v="dark" class="on">深色</button><button data-v="light">浅色</button></div>
+      <button class="reset" id="dock-reset">重置</button>
+    </div>
+    <div class="stage" id="stage"></div>
+  </div>
+
+  <aside class="notes">
+    <div class="note">
+      <h3>试试这些操作</h3>
+      <div class="tasks" id="tasks"></div>
+    </div>
+    <div class="note">
+      <h3>临时对话写入了什么</h3>
+      <table class="dt">
+        <tr><th>写入点</th><th>普通</th><th>临时</th></tr>
+        <tr><td>侧边栏 / ⌘K / iOS / Web 列表</td><td class="y">✓</td><td class="n">✗</td></tr>
+        <tr><td>本机缓存、草稿、工具日志</td><td class="y">✓</td><td class="n">内存</td></tr>
+        <tr><td>启动器输入历史</td><td class="y">✓</td><td class="n">✗</td></tr>
+        <tr><td>读取记忆</td><td class="y">✓</td><td class="n">✗</td></tr>
+        <tr><td>memory 工具写入</td><td class="y">✓</td><td class="n">✗</td></tr>
+        <tr><td>自动生成标题</td><td class="y">✓</td><td class="n">✗</td></tr>
+        <tr><td>服务端（云端模型）</td><td class="y">永久</td><td class="n">≤24 小时</td></tr>
+        <tr><td>credits 计费</td><td class="y">✓</td><td class="y">✓</td></tr>
+      </table>
+    </div>
+    <div class="note">
+      <h3>实现映射</h3>
+      <ul>
+        <li><code>AskDraft.storesLocally</code> 改为 <code>storage: .cloud / .local / .temporary</code>，复用 <code>AskStorageButton</code> 和 <code>AskLocalModeCard</code>。</li>
+        <li>用自己的模型：使用 <code>AskLocalEngine(store: .inMemory)</code>，不写 <code>AskLocal/*.json</code>。</li>
+        <li>用云端模型：首条 <code>send</code> 带上 <code>temporary: true</code>；服务端为 <code>ask_conversations</code> 增加 <code>expires_at</code>，<code>List</code> 时过滤，结束时 DELETE。</li>
+        <li>不走 <code>AskConversationCache</code>、<code>AskLauncherInputHistoryStore</code> 和 <code>AskMemoryProvider</code>。</li>
+      </ul>
+    </div>
+  </aside>
+</div>
+
+<script>
+const CLOUD_MODELS = [
+  { id: 'cloud:auto', name: 'coding/auto', desc: 'Typeflux Cloud · 自动选择' },
+  { id: 'cloud:sonnet', name: 'Claude Sonnet 5.5', desc: 'Typeflux Cloud' },
+];
+const OWN_MODELS = [
+  { id: 'own:openai', name: 'gpt-4.1（我的 OpenAI）', desc: 'OpenAI 兼容 API', where: 'net' },
+  { id: 'own:ollama', name: 'qwen3:8b', desc: 'Ollama · 在本机运行', where: 'dev' },
+];
+const ALL_MODELS = [...CLOUD_MODELS, ...OWN_MODELS];
+const ANSWERS = [
+  '（示例回答）好的。这段对话不会出现在历史里，也没有用到你的记忆。',
+  '（示例回答）可以继续追问，离开这段对话之前内容都还在。',
+  '（示例回答）明白了，我来换个角度说明。',
+];
+
+function seed() {
+  return [
+    { id: 'c1', title: '讲讲这一屏在做什么', time: '11:57', group: '今天', storage: 'cloud', model: 'cloud:auto', credits: '160.79',
+      messages: [['u', '讲讲这一屏在做什么'], ['a', '这一屏是 Grok 网页版，你在和它讨论哈佛幸福课的英文原稿……']] },
+    { id: 'p1', title: '帮我整理体检报告要点', time: '09:49', group: '今天', storage: 'local', model: 'own:ollama',
+      messages: [['u', '帮我整理体检报告要点'], ['a', '已按指标分组整理，异常项 3 个：……']] },
+    { id: 'c2', title: '早上好呀。', time: '10:45', group: '昨天', storage: 'cloud', model: 'cloud:sonnet', credits: '2.14',
+      messages: [['u', '早上好呀。'], ['a', '早上好！今天想做点什么？']] },
+    { id: 'c3', title: '帮我优化一下这个帖子…', time: '10月1日', group: '更早', storage: 'cloud', model: 'cloud:auto', credits: '5.02',
+      messages: [['u', '帮我优化一下这个帖子'], ['a', '调整了开头钩子和结尾行动号召……']] },
+  ];
+}
+
+// Each launcher opening starts with the default storage; temporary applies to one question.
+function freshLauncher() { return { storage: null, text: '', cmd: false, pop: null, hl: 0 }; }
+
+function initialState() {
+  return {
+    scene: 'workspace', signedIn: true, theme: 'dark',
+    convs: seed(), sel: 'c1', draft: null, temp: null,
+    pop: null, modal: null, pending: null, settings: false, confirmLeave: true, dontAsk: false,
+    text: '', hint: '', fresh: null, done: new Set(),
+    launcher: freshLauncher(),
+  };
+}
+let S = initialState();
+let hintTimer = null;
+
+const TASKS = [
+  ['newt', '点顶部的 ✎，在下拉里选「新临时对话」（或点输入框左下角的存储图标）'],
+  ['sendt', '在临时对话里发两条消息，注意它不在历史分组里'],
+  ['chip', '点标题栏右侧的 ⏳ 临时对话，查看说明'],
+  ['leave', '点侧边栏里的另一段对话，看离开时的确认框'],
+  ['keep', '在确认框里选「保留这段对话…」，看它变成普通对话'],
+  ['launcher', '切到「⌥Space 启动器」，点底栏的 ☁ 选「临时」或输入 /temp，然后提问'],
+  ['settings', '点左下角 ⚙，查看「离开临时对话前确认」'],
+];
+
+function mark(k) { S.done.add(k); }
+function flash(t) { S.hint = t; clearTimeout(hintTimer); hintTimer = setTimeout(() => { S.hint = ''; render(); }, 2000); }
+const ic = (id, cls = '') => `<svg class="i ${cls}"><use href="#${id}"/></svg>`;
+const esc = s => String(s).replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+const modelOf = id => ALL_MODELS.find(m => m.id === id);
+const isCloudModel = id => id.startsWith('cloud:');
+
+function conv() {
+  if (S.sel === 'new') return S.draft;
+  if (S.sel === 'temp') return S.temp;
+  return S.convs.find(c => c.id === S.sel);
+}
+// Signed out, every conversation that is not temporary stays on this Mac.
+function kind(c) { return c.storage === 'temporary' ? 't' : (!S.signedIn || c.storage === 'local') ? 'p' : 'c'; }
+function defaultModel(storage) { return storage === 'local' || !S.signedIn ? 'own:ollama' : 'cloud:auto'; }
+
+function makeDraft(storage) {
+  const st = !S.signedIn && storage === 'cloud' ? 'local' : storage;
+  return { id: 'new', title: st === 'temporary' ? '临时对话' : '新对话', storage: st, model: defaultModel(st), messages: [] };
+}
+
+/* ---------- leaving a temporary conversation ---------- */
+function tempHasContent() { return S.temp && S.temp.messages.length > 0; }
+// Run `action` once the current temporary conversation may be left; asks first when it has content.
+function leaveTemp(action) {
+  if (S.sel !== 'temp' || !tempHasContent()) { if (S.sel === 'temp') discardTemp(false); action(); return; }
+  if (!S.confirmLeave) { discardTemp(true); action(); return; }
+  S.pending = action; S.modal = 'leave'; S.pop = null; S.dontAsk = false;
+}
+function discardTemp(announce) {
+  S.temp = null;
+  if (announce) flash('临时对话已结束，内容已删除');
+}
+function keepTemp() {
+  const t = S.temp; if (!t) return;
+  const storage = isCloudModel(t.model) && S.signedIn ? 'cloud' : 'local';
+  const first = t.messages.find(m => m[0] === 'u');
+  const kept = { ...t, id: 'k' + Date.now(), storage, title: first ? first[1].slice(0, 16) : '新对话', time: '刚刚', group: '今天' };
+  if (storage === 'cloud') kept.credits = '0.84';
+  S.convs.unshift(kept); S.temp = null; S.fresh = kept.id;
+  mark('keep');
+  return kept;
+}
+
+function newConversation(storage) {
+  leaveTemp(() => {
+    S.draft = makeDraft(storage); S.sel = 'new'; S.text = '';
+    if (storage === 'temporary') { mark('newt'); flash('新的临时对话 · 不会保存'); }
+  });
+}
+function select(id) {
+  if (id === S.sel) return;
+  leaveTemp(() => { S.sel = id; S.text = ''; });
+}
+
+/* ---------- views ---------- */
+function sidebar() {
+  let rows = '';
+  if (S.sel === 'temp' || (S.sel === 'new' && S.draft.storage === 'temporary')) {
+    rows += `<div class="row tmp" title="临时对话不会出现在历史记录里">${ic('temp', 'sm')}<span class="t">临时对话</span><span class="tm">进行中</span></div>`;
+  }
+  let group = '';
+  for (const c of S.convs) {
+    if (!S.signedIn && c.storage !== 'local') continue;
+    if (c.group !== group) { group = c.group; rows += `<div class="grp">${group}</div>`; }
+    const k = kind(c);
+    rows += `<div class="row ${S.sel === c.id ? 'sel' : ''} ${k === 'p' ? 'p' : ''} ${S.fresh === c.id ? 'fresh' : ''}" data-act="select" data-id="${c.id}">
+      ${k === 'p' ? `<span class="lock">${ic('lock', 'sm')}</span>` : ''}<span class="t">${esc(c.title)}</span><span class="tm">${c.time}</span></div>`;
+  }
+  const foot = S.signedIn
+    ? `<div class="foot"><div class="avatar">DV</div><div style="flex:1;min-width:0"><div class="nm">Demir Von</div><div class="dt">Pro · 云端额度 82%</div></div><button class="icon-btn" data-act="settings" title="设置">${ic('gear')}</button></div>`
+    : `<div class="foot"><div class="avatar mac">${ic('mac')}</div><div style="flex:1;min-width:0"><div class="nm">未登录</div><div class="dt">对话仅存本机 · 使用你自己的模型</div></div><button class="icon-btn" data-act="settings" title="设置">${ic('gear')}</button></div>`;
+  return `<div class="side">
+    <div class="side-top"><div class="lights"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i></div><span class="sp"></span>
+      <button class="icon-btn ${S.pop === 'newmenu' ? 'on' : ''}" title="新建…" data-act="newmenu">${ic('pen')}</button>
+      <button class="icon-btn" title="侧边栏">${ic('side')}</button></div>
+    <div class="search">${ic('search', 'sm')}搜索对话<kbd>⌘K</kbd></div>
+    <div class="list">${rows}</div>
+    ${foot}
+  </div>`;
+}
+
+function newMenu() {
+  if (S.pop !== 'newmenu') return '';
+  const cloudDis = !S.signedIn;
+  return `<div class="pop" style="left:112px;top:46px;width:300px;padding:6px">
+    <button class="mi ${cloudDis ? 'dis' : ''}" data-act="${cloudDis ? 'noop' : 'new'}" data-v="cloud">${ic('cloud')}<span class="ml">新对话<div class="md">${cloudDis ? '登录 Typeflux Cloud 后可用' : '同步到 Typeflux Cloud'}</div></span><kbd>⌘N</kbd></button>
+    <button class="mi" data-act="new" data-v="local"><span class="lock">${ic('lock')}</span><span class="ml">新私密对话<div class="md">只存在这台 Mac 上</div></span><kbd>⇧⌘N</kbd></button>
+    <button class="mi" data-act="new" data-v="temporary"><span class="tcol">${ic('temp')}</span><span class="ml">新临时对话<span class="new-tag">新</span><div class="md">不保存，不使用记忆，离开后即删除</div></span><kbd>⌥⌘N</kbd></button>
+  </div>`;
+}
+
+function header(c) {
+  const k = kind(c);
+  let right = '';
+  if (k === 't') right = `<button class="tchip ${S.pop === 'tempinfo' ? 'on' : ''}" data-act="tempinfo">${ic('temp', 'sm')}临时对话</button>`;
+  else if (k === 'p') right = `<div class="pchip">${ic('lock', 'sm')}仅存本机</div>`;
+  else if (c.credits) right = `<div class="credits">${ic('spark', 'sm')}<b>${c.credits}</b><span>credits</span></div>`;
+  return `<div class="head"><div class="cap">${c.messages.length ? '<span class="dot"></span>' : ''}<span class="t">${esc(c.title)}</span></div><span class="sp"></span>${right}</div>`;
+}
+
+function feed(c) {
+  const t = kind(c) === 't';
+  if (!c.messages.length) {
+    return `<div class="feed"><div class="welcome">
+      <div class="big">有什么想问的？</div>
+      <div class="lines">随时按 <kbd>⌥ Space</kbd> 唤起 · 按住 <kbd>⌥(R)</kbd> 语音输入</div>
+      ${t ? `<div class="tline">${ic('temp', 'sm')}临时对话不会出现在历史记录里，也不会使用或更新记忆</div>` : ''}
+    </div></div>`;
+  }
+  let html = '<div class="feed">';
+  if (t) html += `<div class="sysline t">${ic('temp', 'sm')}临时对话 · 离开后即删除</div>`;
+  for (const [r, txt] of c.messages) {
+    html += r === 'u' ? `<div class="msg-u"><div>${esc(txt)}</div></div>`
+      : `<div class="msg-a">${esc(txt)}<div class="meta">${esc(modelOf(c.model).name)}</div></div>`;
+  }
+  return html + '</div>';
+}
+
+function storeOption(v, on, act = 'set-store') {
+  const meta = {
+    cloud: ['c', 'cloud', '云端同步', '在其他设备上继续，可用全部云端能力'],
+    local: ['p', 'lock', '仅存本机', '不上传到 Typeflux Cloud，只用你自己的模型'],
+    temporary: ['t', 'temp', '临时 · 不保存', '不进入历史，不使用记忆，离开后即删除'],
+  }[v];
+  const dis = v === 'cloud' && !S.signedIn;
+  return `<button class="opt ${meta[0]} ${on ? 'on' : ''} ${dis ? 'dis' : ''}" data-act="${dis ? 'noop' : act}" data-v="${v}">
+    <span class="oi ${meta[0]}">${ic(meta[1])}</span><span><div class="ot">${meta[2]}</div><div class="od">${dis ? '登录 Typeflux Cloud 后可用' : meta[3]}</div></span>${on ? `<span class="ck">${ic('ok')}</span>` : ''}</button>`;
+}
+
+// Popovers open above the composer, which is taller while context chips are shown.
+function popBottom(c) { return c.messages.length ? 126 : 156; }
+
+function tempFacts() {
+  return `<div class="kv">
+    <span class="k">历史</span><span class="v">不出现在任何列表，也无法搜索</span>
+    <span class="k">记忆</span><span class="v">不读取，也不写入</span>
+    <span class="k">模型</span><span class="v">${S.signedIn ? '云端模型和你自己的模型都可以用' : '你自己的模型'}</span>
+    <span class="k">何时删除</span><span class="v">离开这段对话、退出应用或退出登录时</span>
+  </div>
+  ${S.signedIn ? `<div class="callout">${ic('info', 'sm')}<span>使用云端模型时，内容会在服务端临时保留，用于完成运行，<b>最长 24 小时</b>后删除。credits 照常计费。</span></div>` : ''}`;
+}
+
+function storePop(c) {
+  if (S.pop !== 'store') return '';
+  const k = kind(c);
+  const editable = c.messages.length === 0;
+  let body;
+  if (editable) {
+    const cur = c.storage === 'temporary' ? 'temporary' : k === 'p' ? 'local' : 'cloud';
+    body = `<p>这段对话保存在哪里？发出第一条消息后就不能再改。</p><div class="hr"></div>
+      ${storeOption('cloud', cur === 'cloud')}${storeOption('local', cur === 'local')}${storeOption('temporary', cur === 'temporary')}`;
+  } else if (k === 't') {
+    body = `<p>这是一段临时对话。已经开始的对话不能更改存储位置，但你可以把它保留下来。</p><div class="hr"></div>${tempFacts()}
+      <div class="btns"><button class="btn" data-act="keep">${ic('save', 'sm')} 保留这段对话</button></div>`;
+  } else {
+    body = `<p>${k === 'p' ? '这段对话只保存在这台 Mac 上。' : '这段对话已经同步到 Typeflux Cloud。'}已有消息的对话不能更改存储位置。</p>
+      <div class="btns"><button class="btn tp" data-act="new" data-v="temporary">${ic('temp', 'sm')} 新建临时对话</button></div>`;
+  }
+  const title = k === 't' ? [ic('temp'), '临时 · 不保存'] : k === 'p' ? [ic('lock'), '仅存本机'] : [ic('cloud'), '云端同步'];
+  return `<div class="pop" style="left:20px;bottom:${popBottom(c)}px;width:370px"><h4>${title.join(' ')}</h4>${body}</div>`;
+}
+
+function tempInfoPop(c) {
+  if (S.pop !== 'tempinfo') return '';
+  return `<div class="pop" style="right:18px;top:52px;width:360px">
+    <h4><span class="tcol">${ic('temp')}</span> 临时对话</h4>
+    <p>这段对话只保存在内存里。</p><div class="hr"></div>${tempFacts()}
+    <div class="btns"><button class="btn" data-act="keep">${ic('save', 'sm')} 保留这段对话</button><button class="btn danger" data-act="end">${ic('x', 'sm')} 结束临时对话</button></div>
+  </div>`;
+}
+
+function modelPop(c) {
+  if (S.pop !== 'model') return '';
+  const k = kind(c);
+  const cloudDis = k === 'p' || !S.signedIn;
+  let h = `<div class="mh"><span>Typeflux Cloud</span>${cloudDis ? `<span>${S.signedIn ? '私密对话不可用' : '登录后可用'}</span>` : ''}</div>`;
+  for (const m of CLOUD_MODELS) {
+    h += `<button class="mi ${cloudDis ? 'dis' : ''}" data-act="${cloudDis ? 'noop' : 'pick'}" data-id="${m.id}">${ic('cloud', 'sm')}<span class="ml">${m.name}<div class="md">${m.desc}${k === 't' && !cloudDis ? ' <span class="tag tt">服务端最长保留 24 小时</span>' : ''}</div></span>${c.model === m.id ? ic('ok', 'sm') : ''}</button>`;
+  }
+  h += `<div class="mh"><span>我的模型</span></div>`;
+  for (const m of OWN_MODELS) {
+    h += `<button class="mi" data-act="pick" data-id="${m.id}">${ic(m.where === 'dev' ? 'mac' : 'globe', 'sm')}<span class="ml">${m.name}<div class="md">${m.desc}${k === 't' ? ' <span class="tag tt">只在内存中</span>' : ''}</div></span>${c.model === m.id ? ic('ok', 'sm') : ''}</button>`;
+  }
+  return `<div class="pop" style="left:76px;bottom:${popBottom(c)}px;width:340px;padding:6px">${h}</div>`;
+}
+
+function composer(c) {
+  const k = kind(c);
+  const m = modelOf(c.model);
+  const storeIcon = k === 't' ? 'temp' : k === 'p' ? 'lock' : 'cloud';
+  const storeName = k === 't' ? '临时 · 不保存' : k === 'p' ? '仅存本机' : '云端同步';
+  const chips = c.messages.length ? '' : k === 't'
+    ? `<div class="chips"><span class="chip off" title="临时对话不使用记忆">${ic('brain', 'sm')}记忆</span><span class="chip">${ic('shot', 'sm')}截图 · Safari</span></div>`
+    : `<div class="chips"><span class="chip">${ic('brain', 'sm')}记忆</span><span class="chip">${ic('shot', 'sm')}截图 · Safari</span></div>`;
+  const ph = k === 't' ? (c.messages.length ? '继续追问（不会保存）' : '临时提问，不会保存…') : (c.messages.length ? '继续追问，/ 调用命令' : '输入问题，/ 调用命令');
+  return `<div class="composer">
+    ${chips}
+    <textarea id="ta" placeholder="${ph}">${esc(S.text)}</textarea>
+    <div class="bar">
+      <button class="pill" title="附件">${ic('plus')}</button>
+      <button class="store ${k} ${S.pop === 'store' ? 'on' : ''}" data-act="store" title="${storeName} · 点击查看详情">${ic(storeIcon)}</button>
+      <button class="pill ${S.pop === 'model' ? 'on' : ''}" data-act="model">${esc(m.name)}${ic('chev', 'sm')}</button>
+      <button class="pill ${k === 't' ? 'dis' : ''}" title="${k === 't' ? '临时对话不使用记忆' : '记忆'}">${ic('brain', 'sm')}</button>
+      <span class="sp"></span>
+      <button class="pill" title="按住 ⌥(R) 语音输入">${ic('mic')}</button>
+      <button class="send" data-act="send" ${S.text.trim() ? '' : 'disabled'}>${ic('up')}</button>
+    </div>
+    <div class="hint ${S.hint ? 'show' : ''}">${esc(S.hint)}</div>
+  </div>`;
+}
+
+function leaveModal() {
+  if (S.modal !== 'leave') return '';
+  return `<div class="scrim" data-act="modal-cancel"><div class="sheet sm" data-stop="1">
+    <h3><span class="tcol">${ic('temp')}</span>结束这段临时对话？</h3>
+    <div class="body">内容不会被保存，结束后无法找回。想留着的话，可以先把它保留为普通对话（${S.temp && isCloudModel(S.temp.model) && S.signedIn ? '云端同步' : '仅存本机'}）。</div>
+    <div class="btns">
+      <label class="check"><input type="checkbox" id="dontask" ${S.dontAsk ? 'checked' : ''}>不再询问</label><span class="sp"></span>
+      <button class="btn" data-act="modal-keep">${ic('save', 'sm')} 保留这段对话…</button>
+      <button class="btn" data-act="modal-cancel">取消</button>
+      <button class="btn danger" data-act="modal-end">结束</button>
+    </div>
+  </div></div>`;
+}
+
+function settingsSheet() {
+  if (!S.settings) return '';
+  return `<div class="scrim" data-act="close-settings"><div class="sheet" data-stop="1">
+    <h3>随便问</h3><div class="crumb">设置 → Agent → 通用</div>
+    <div class="srow"><div><div class="st">新对话默认保存在</div>
+      <div class="sd">不变：云端同步 / 仅存本机。临时对话<b>不提供“默认”选项</b>，只能每次主动开启，避免用户以为对话已保存。</div></div>
+      <div class="sc"><div class="seg" style="width:190px"><button class="${S.signedIn ? 'on' : ''}">${ic('cloud', 'sm')}云端同步</button><button class="${S.signedIn ? '' : 'on'}">${ic('lock', 'sm')}仅存本机</button></div></div></div>
+    <div class="srow"><div><div class="st">离开临时对话前确认<span class="new-tag">新</span></div>
+      <div class="sd">临时对话里有内容时，新建或切换对话前先确认。关闭后直接丢弃，并显示一条“已删除”的提示。</div></div>
+      <div class="sc"><button class="switch ${S.confirmLeave ? 'on' : ''}" data-act="toggle-confirm" aria-label="离开临时对话前确认"></button></div></div>
+    <div class="btns"><button class="btn pri" data-act="close-settings">完成</button></div>
+  </div></div>`;
+}
+
+function workspace() {
+  let c = conv();
+  if (!c || (!S.signedIn && c.storage === 'cloud')) { S.draft = makeDraft('local'); S.sel = 'new'; c = S.draft; }
+  if (kind(c) === 'p' && isCloudModel(c.model)) c.model = 'own:ollama';
+  if (!S.signedIn && isCloudModel(c.model)) c.model = 'own:ollama';
+  const k = kind(c);
+  return `<div class="win" id="win">${sidebar()}${newMenu()}
+    <div class="main ${k}">${header(c)}${feed(c)}${composer(c)}${storePop(c)}${modelPop(c)}${tempInfoPop(c)}</div>
+    ${leaveModal()}${settingsSheet()}</div>`;
+}
+
+const L_ROWS = [
+  { icon: 'globe', title: '翻译', kw: 'fy' },
+  { icon: 'spark', title: '总结要点', kw: 'sum' },
+  { icon: 'pen', title: '润色改写', kw: 'rw' },
+  { icon: 'info', title: '解释一下', kw: 'ex' },
+];
+const L_COMMANDS = [
+  { name: 'temp', icon: 'temp', cls: 't', title: '临时提问', desc: '不保存，不使用记忆' },
+  { name: 'local', icon: 'lock', cls: '', title: '只存在本机', desc: '这次提问保存为私密对话' },
+  { name: 'screenshot', icon: 'shot', cls: '', title: '附上截图', desc: '当前屏幕' },
+];
+function lDefault() { return S.signedIn ? 'cloud' : 'local'; }
+function lStorage() { return S.launcher.storage || lDefault(); }
+function lTemp() { return lStorage() === 'temporary'; }
+function lCommands() {
+  const q = S.launcher.text.trim().slice(1).toLowerCase();
+  return L_COMMANDS.filter(c => c.name.startsWith(q));
+}
+// Rows the list shows right now, so ↑/↓ and Return act on what is visible.
+function lRows() {
+  const L = S.launcher, t = lTemp();
+  if (L.cmd) return lCommands().map(c => ({ kind: 'cmd', ...c }));
+  if (L.text.trim()) return [{ kind: 'ask' }];
+  const rows = L_ROWS.map(r => ({ kind: 'kw', ...r }));
+  // Continuing a conversation is not a new question, so a temporary question hides it.
+  if (!t) S.convs.filter(c => S.signedIn || c.storage === 'local').slice(0, 2).forEach(c => rows.push({ kind: 'conv', conv: c }));
+  return rows;
+}
+
+function launcher() {
+  const L = S.launcher, t = lTemp(), st = lStorage();
+  const rows = lRows();
+  const hl = Math.min(L.hl, rows.length - 1);
+  let list = '', lastGroup = '';
+  rows.forEach((r, i) => {
+    const group = r.kind === 'cmd' ? '命令' : r.kind === 'kw' ? '针对选中的 2 段 “第 3 条 报销时限与凭证…”' : r.kind === 'conv' ? '继续对话' : '';
+    if (group && group !== lastGroup) { lastGroup = group; list += `<div class="lc-grp">${group}</div>`; }
+    const cls = `lc-row ${i === hl ? 'hl' : ''}`;
+    if (r.kind === 'cmd') {
+      list += `<button class="${cls}" data-act="l-cmd" data-v="${r.name}"><span class="ri ${r.cls}">${ic(r.icon)}</span><span class="rt">/${r.name}<span class="q">${r.title}</span></span><span class="rc">${r.name === 'temp' && t ? '再次输入可关闭' : r.desc}</span></button>`;
+    } else if (r.kind === 'ask') {
+      list += `<button class="${cls}" data-act="l-send"><span class="ri ${t ? 't' : ''}">${ic(t ? 'temp' : 'spark')}</span><span class="rt">${t ? '临时提问' : '问 AI'}<span class="q">“${esc(L.text.trim())}”</span></span><span class="rc ${t ? 't' : ''}">${t ? '不保存 · 不使用记忆' : ''}</span><kbd>⌘↩</kbd></button>`;
+    } else if (r.kind === 'kw') {
+      list += `<button class="${cls}" data-act="l-kw" data-v="${r.kw}"><span class="ri">${ic(r.icon)}</span><span class="rt">${r.title}</span><span class="rc">${r.kw}</span></button>`;
+    } else {
+      list += `<button class="${cls}" data-act="l-conv" data-id="${r.conv.id}"><span class="ri g">${ic(kind(r.conv) === 'p' ? 'lock' : 'up')}</span><span class="rt">${esc(r.conv.title)}</span><span class="rc">${r.conv.time}</span></button>`;
+    }
+  });
+  const storeIcon = t ? 'temp' : st === 'local' ? 'lock' : 'cloud';
+  const storeName = t ? '临时 · 不保存' : st === 'local' ? '仅存本机' : '云端同步';
+  const canSend = L.text.trim() && !L.cmd;
+  const pop = L.pop === 'store' ? `<div class="pop lstore"><h4>${ic(storeIcon)} ${storeName}</h4>
+      <p>这次提问保存在哪里？只影响这一次，下次呼出恢复默认。</p><div class="hr"></div>
+      ${storeOption('cloud', st === 'cloud', 'l-set-store')}${storeOption('local', st === 'local', 'l-set-store')}${storeOption('temporary', t, 'l-set-store')}
+      ${t ? `<div class="hr"></div>${tempFacts()}` : ''}</div>` : '';
+  return `<div class="desk" id="win">
+    <div class="menubar"><b></b><b>Safari</b><span>文件</span><span>编辑</span><span>显示</span><span style="margin-left:auto">10月15日 周四 14:20</span></div>
+    <div class="appwin"><div class="tb">某公司内部报销制度.pdf</div>
+      <div class="ln" style="width:70%"></div><div class="ln sel" style="width:88%"></div><div class="ln sel" style="width:64%"></div><div class="ln" style="width:80%"></div><div class="ln" style="width:52%"></div></div>
+    <div class="lc ${t ? 't' : ''}">
+      ${pop}
+      <div class="lc-head">
+        <div class="ctx" title="⌘K 上下文"><span class="app">${ic('globe')}</span>报销制度.pdf<span class="vr"></span><span class="thumb"></span>${ic('chev', 'sm')}</div>
+        <input id="lta" class="lc-input" autocomplete="off" value="${esc(L.text)}" placeholder="${t ? '临时提问，不保存 · / 命令' : '搜索应用、计算，或直接提问 · / 命令'}">
+        <button class="lc-mic" title="按住说话">${ic('mic')}</button>
+        <button class="lc-send ${canSend ? 'on' : ''}" data-act="l-send" ${canSend ? '' : 'disabled'}>${ic('up')}</button>
+      </div>
+      ${rows.length ? `<div class="lc-sep"></div><div class="lc-list">${list}</div>` : ''}
+      <div class="lc-sep"></div>
+      <div class="lc-foot">
+        <button class="fb" title="附件">${ic('plus')}</button>
+        <button class="fb store ${t ? 't' : st === 'local' ? 'p' : ''} ${L.pop === 'store' ? 'on' : ''}" data-act="l-store" title="${storeName} · 点击更改">${ic(storeIcon)}</button>
+        <button class="fb model">${esc(S.signedIn ? 'Typeflux Cloud' : 'qwen3:8b')}${ic('chev', 'sm')}</button>
+        <button class="fb" title="权限模式">${ic('lock', 'sm')}</button>
+        <span class="rule"></span>
+        <button class="fb shot" title="附上截图">${ic('shot')}</button>
+        <span class="keys">${t ? `<span class="tnote">${ic('temp', 'sm')}临时 · 不进历史</span>` : ''}<span>${L.cmd ? '↩ 执行' : '↩ 发送'} · ⌘K 上下文 · esc 关闭</span></span>
+      </div>
+    </div>
+  </div>`;
+}
+
+function render() {
+  document.documentElement.dataset.theme = S.theme;
+  const active = document.activeElement && document.activeElement.id;
+  document.getElementById('stage').innerHTML = S.scene === 'workspace' ? workspace() : launcher();
+  const feedEl = document.querySelector('.feed'); if (feedEl) feedEl.scrollTop = feedEl.scrollHeight;
+  if (S.fresh) { const id = S.fresh; setTimeout(() => { if (S.fresh === id) S.fresh = null; }, 1400); }
+  if (active === 'ta' || active === 'lta') {
+    const t = document.getElementById(active);
+    if (t) { t.focus(); t.setSelectionRange(t.value.length, t.value.length); }
+  }
+  document.getElementById('tasks').innerHTML = TASKS.map(([k, t], i) =>
+    `<div class="task" style="${S.done.has(k) ? 'opacity:.5' : ''}"><span class="n">${S.done.has(k) ? '✓' : i + 1}</span><span>${t}</span></div>`).join('');
+  const sync = (id, pred) => document.querySelectorAll(id + ' button').forEach(b => b.classList.toggle('on', pred(b.dataset.v)));
+  sync('#dock-scene', v => v === S.scene);
+  sync('#dock-auth', v => (v === 'in') === S.signedIn);
+  sync('#dock-theme', v => v === S.theme);
+}
+
+function answer(c) { return ANSWERS[Math.min(c.messages.length / 2, ANSWERS.length - 1) | 0]; }
+
+function send() {
+  const text = S.text.trim(); if (!text) return;
+  let c = conv();
+  if (S.sel === 'new') {
+    if (c.storage === 'temporary') {
+      S.temp = c; c.id = 'temp'; S.sel = 'temp';
+    } else {
+      Object.assign(c, { id: 'n' + Date.now(), title: text.slice(0, 16), time: '刚刚', group: '今天' });
+      if (kind(c) === 'c') c.credits = '0.42';
+      S.convs.unshift(c); S.sel = c.id; S.fresh = c.id;
+    }
+    S.draft = null;
+  }
+  c.messages.push(['u', text]);
+  c.messages.push(['a', answer(c)]);
+  S.text = '';
+  if (kind(c) === 't') { if (c.messages.length >= 4) mark('sendt'); flash('没有写入历史记录'); }
+  else flash(kind(c) === 'p' ? '已保存在这台 Mac 上' : '已同步到 Typeflux Cloud');
+  render();
+}
+
+function launcherSend() {
+  const L = S.launcher;
+  const text = L.text.trim();
+  if (!text || text.startsWith('/')) return;
+  const storage = lStorage();
+  const go = () => {
+    S.draft = makeDraft(storage); S.sel = 'new'; S.text = text;
+    S.scene = 'workspace';
+    if (storage === 'temporary') mark('launcher');
+    S.launcher = freshLauncher();
+    send();
+  };
+  // The launcher always starts a new conversation, so it leaves an open temporary one.
+  S.scene = 'workspace';
+  leaveTemp(go);
+  render();
+}
+
+document.getElementById('stage').addEventListener('click', e => {
+  const el = e.target.closest('[data-act]');
+  if (e.target.closest('[data-stop]') && !(el && el.closest('[data-stop]'))) return;
+  if (e.target.id === 'dontask') { S.dontAsk = e.target.checked; return; }
+  if (!el) {
+    if (S.pop && !e.target.closest('.pop')) { S.pop = null; render(); }
+    else if (S.launcher.pop && !e.target.closest('.pop')) { S.launcher.pop = null; render(); }
+    return;
+  }
+  e.preventDefault();
+  const act = el.dataset.act, c = S.scene === 'workspace' ? conv() : null;
+  switch (act) {
+    case 'select': S.pop = null; select(el.dataset.id); if (S.modal) mark('leave'); break;
+    case 'newmenu': S.pop = S.pop === 'newmenu' ? null : 'newmenu'; break;
+    case 'new': S.pop = null; newConversation(el.dataset.v); if (S.modal) mark('leave'); break;
+    case 'store': S.pop = S.pop === 'store' ? null : 'store'; break;
+    case 'set-store': {
+      c.storage = el.dataset.v; c.title = c.storage === 'temporary' ? '临时对话' : '新对话';
+      c.model = c.storage === 'temporary' ? c.model : defaultModel(c.storage);
+      S.pop = null;
+      flash({ cloud: '这段对话将同步到 Typeflux Cloud', local: '这段对话将只保存在这台 Mac 上', temporary: '这段对话不会被保存' }[c.storage]);
+      if (c.storage === 'temporary') mark('newt');
+      break;
+    }
+    case 'tempinfo': S.pop = S.pop === 'tempinfo' ? null : 'tempinfo'; mark('chip'); break;
+    case 'keep': {
+      const kept = keepTemp(); S.pop = null;
+      if (kept) { S.sel = kept.id; flash(kept.storage === 'cloud' ? '已保留为云端对话' : '已保留为私密对话 · 仅存本机'); }
+      break;
+    }
+    case 'end': S.pop = null; discardTemp(true); S.draft = makeDraft(S.signedIn ? 'cloud' : 'local'); S.sel = 'new'; break;
+    case 'model': S.pop = S.pop === 'model' ? null : 'model'; break;
+    case 'pick': c.model = el.dataset.id; S.pop = null; flash('已切换到 ' + modelOf(c.model).name); break;
+    case 'send': send(); return;
+    case 'modal-cancel': S.modal = null; S.pending = null; break;
+    case 'modal-end': {
+      if (S.dontAsk) S.confirmLeave = false;
+      const next = S.pending; S.modal = null; S.pending = null;
+      discardTemp(true); if (next) next();
+      break;
+    }
+    case 'modal-keep': {
+      if (S.dontAsk) S.confirmLeave = false;
+      const next = S.pending; S.modal = null; S.pending = null;
+      const kept = keepTemp();
+      if (next) next();
+      if (kept) flash(kept.storage === 'cloud' ? '已保留为云端对话，出现在历史里' : '已保留为私密对话，出现在历史里');
+      break;
+    }
+    case 'settings': S.settings = true; S.pop = null; mark('settings'); break;
+    case 'close-settings': S.settings = false; break;
+    case 'toggle-confirm': S.confirmLeave = !S.confirmLeave; break;
+    case 'l-store': S.launcher.pop = S.launcher.pop === 'store' ? null : 'store'; break;
+    case 'l-set-store': S.launcher.storage = el.dataset.v; S.launcher.pop = null; focusLauncher(); break;
+    case 'l-cmd': runLauncherCommand(el.dataset.v); break;
+    case 'l-kw': S.launcher.text = el.dataset.v + ' '; S.launcher.hl = 0; focusLauncher(); break;
+    case 'l-conv': { const id = el.dataset.id; S.launcher = freshLauncher(); S.scene = 'workspace'; select(id); break; }
+    case 'l-send': launcherSend(); return;
+    case 'noop': return;
+  }
+  render();
+});
+document.getElementById('stage').addEventListener('input', e => {
+  if (e.target.id === 'ta') {
+    S.text = e.target.value;
+    const b = document.querySelector('.send'); if (b) b.disabled = !S.text.trim();
+  } else if (e.target.id === 'lta') {
+    S.launcher.text = e.target.value; S.launcher.cmd = /^\/\w*$/.test(S.launcher.text); S.launcher.hl = 0;
+    render();
+  }
+});
+document.getElementById('stage').addEventListener('keydown', e => {
+  if (e.target.id === 'lta' && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+    e.preventDefault();
+    const n = lRows().length; if (!n) return;
+    S.launcher.hl = (S.launcher.hl + (e.key === 'ArrowDown' ? 1 : n - 1)) % n; render(); return;
+  }
+  if (e.key !== 'Enter' || e.shiftKey || e.isComposing) return;
+  if (e.target.id === 'ta') { e.preventDefault(); send(); }
+  if (e.target.id === 'lta') {
+    e.preventDefault();
+    const row = lRows()[S.launcher.hl];
+    if (S.launcher.cmd) { if (row) runLauncherCommand(row.name); render(); return; }
+    if (S.launcher.text.trim()) { launcherSend(); return; }
+    if (row && row.kind === 'kw') { S.launcher.text = row.kw + ' '; render(); }
+    else if (row && row.kind === 'conv') { S.launcher = freshLauncher(); S.scene = 'workspace'; select(row.conv.id); render(); }
+  }
+});
+function focusLauncher() { setTimeout(() => { const t = document.getElementById('lta'); if (t) { t.focus(); t.setSelectionRange(t.value.length, t.value.length); } }); }
+// /temp and /local switch where this one question is kept, like the footer's storage icon.
+function runLauncherCommand(name) {
+  const L = S.launcher;
+  if (name === 'temp') L.storage = lTemp() ? null : 'temporary';
+  else if (name === 'local') L.storage = lStorage() === 'local' ? null : 'local';
+  L.text = ''; L.cmd = false; L.hl = 0; L.pop = null;
+  focusLauncher();
+}
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { S.pop = null; S.settings = false; S.modal = null; S.pending = null; S.launcher.cmd = false; S.launcher.pop = null; render(); return; }
+  // ⌥⌘N: new temporary conversation (workspace) or toggle temporary (launcher).
+  if (e.altKey && e.metaKey && e.code === 'KeyN') {
+    e.preventDefault();
+    if (S.scene === 'launcher') runLauncherCommand('temp'); else newConversation('temporary');
+    render();
+  }
+});
+
+function setAuth(v) {
+  // Signing out ends a temporary conversation without asking, like quitting.
+  if (!v && S.temp) discardTemp(true);
+  S.signedIn = v; S.pop = null; S.settings = false; S.modal = null;
+  if (S.sel === 'temp' && !S.temp) { S.draft = makeDraft(v ? 'cloud' : 'local'); S.sel = 'new'; }
+  render();
+}
+document.getElementById('dock-scene').addEventListener('click', e => {
+  const b = e.target.closest('button'); if (!b) return;
+  S.scene = b.dataset.v; S.pop = null; S.launcher = freshLauncher(); S.modal = null; S.pending = null; S.settings = false; render();
+});
+document.getElementById('dock-auth').addEventListener('click', e => { const b = e.target.closest('button'); if (b) setAuth(b.dataset.v === 'in'); });
+document.getElementById('dock-theme').addEventListener('click', e => { const b = e.target.closest('button'); if (b) { S.theme = b.dataset.v; render(); } });
+document.getElementById('dock-reset').addEventListener('click', () => { const theme = S.theme; S = initialState(); S.theme = theme; render(); });
+render();
+</script>
+</body>
+</html>
