@@ -18,7 +18,8 @@ struct SemanticMediaServiceTests {
         if mediaFailure { media.before = { _ in throw URLError(.badServerResponse) } }
         let service = SemanticFileSearchService(settings: original.settings, directory: root,
             helper: URL(fileURLWithPath: "/usr/bin/true"), supported: true, watcher: watcher,
-            access: { true }, automaticStart: false, resourceConstrained: { false }, models: models,
+            access: { true }, automaticStart: false, lowPowerMode: { false },
+            thermalConstrained: { false }, models: models,
             mediaModels: SemanticMediaFixtureModels(source: models.source), idle: idleCheck ?? { idle },
             makeMediaEncoder: { _, _, _ in media }, makeReader: { reader },
             makeEncoder: { _, _ in encoder }, makeQuery: { _, _ in SemanticFixtureQuery() })

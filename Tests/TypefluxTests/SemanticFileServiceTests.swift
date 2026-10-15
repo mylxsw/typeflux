@@ -85,7 +85,8 @@ struct SemanticFileServiceTests {
             watcher: SemanticFixtureWatcher(),
             access: { true },
             automaticStart: false,
-            resourceConstrained: { false },
+            lowPowerMode: { false },
+            thermalConstrained: { false },
             models: models,
             makeReader: { reader },
             makeEncoder: { _, _ in SemanticFixtureEncoder() },
@@ -195,10 +196,12 @@ struct SemanticFileServiceTests {
         defer { try? FileManager.default.removeItem(at: root) }
         try FileManager.default.copyItem(at: models.source, to: fixture.modelURL)
         let watcher = SemanticFixtureWatcher(), encoder = SemanticFixtureEncoder()
-        let constrained = AskSearchCancellation(), updated = AskSearchCancellation()
+        let constrained = AskSearchCancellation(), overheated = AskSearchCancellation()
+        let updated = AskSearchCancellation()
         let service = SemanticFileSearchService(settings: fixture.settings, directory: root,
             helper: URL(fileURLWithPath: "/usr/bin/true"), supported: true, watcher: watcher,
-            access: { true }, resourceConstrained: { constrained.isCancelled }, models: models,
+            access: { true }, lowPowerMode: { constrained.isCancelled },
+            thermalConstrained: { overheated.isCancelled }, models: models,
             makeReader: { reader }, makeEncoder: { _, _ in encoder }, makeQuery: { _, _ in SemanticFixtureQuery() })
         fixture.settings.semanticFileSearch = .init(enabled: true)
         try await Self.wait { service.phase == .ready }
@@ -211,9 +214,17 @@ struct SemanticFileServiceTests {
         constrained.cancel()
         NotificationCenter.default.post(name: .NSProcessInfoPowerStateDidChange, object: ProcessInfo.processInfo)
         try await Self.wait { service.phase == .paused }
+        #expect(service.isEnabled)
+        #expect(await service.search("报销流程", type: .all, limit: 10).map(\.path) == [reader.path])
+        let calls = encoder.calls
+        reader.modified = reader.modified.addingTimeInterval(1)
+        watcher.change?([.init(path: reader.path, rescan: false)], 2)
+        try await Task.sleep(for: .milliseconds(2_250))
+        #expect(encoder.calls == calls, "Low Power Mode must not resume background indexing")
+        overheated.cancel()
         NotificationCenter.default.post(name: ProcessInfo.thermalStateDidChangeNotification, object: ProcessInfo.processInfo)
-        try await Task.sleep(for: .milliseconds(30))
         try await Self.wait { service.phase == .paused }
+        #expect(!service.isEnabled, "high thermal pressure still pauses content search")
         fixture.settings.semanticFileSearch = .init(enabled: false)
         try await Self.wait { service.phase == .off }
         #expect(watcher.started.isEmpty)
@@ -230,7 +241,7 @@ struct SemanticFileServiceTests {
         let watcher = SemanticFixtureWatcher(), encoder = SemanticFixtureEncoder()
         let service = SemanticFileSearchService(settings: original.settings, directory: root,
             helper: URL(fileURLWithPath: "/usr/bin/true"), supported: true, watcher: watcher,
-            access: { true }, resourceConstrained: { false }, models: models,
+            access: { true }, lowPowerMode: { false }, thermalConstrained: { false }, models: models,
             makeReader: { reader }, makeEncoder: { _, _ in encoder }, makeQuery: { _, _ in SemanticFixtureQuery() })
         #expect(service.setEnabled(true))
         try await Self.wait { service.phase == .ready }

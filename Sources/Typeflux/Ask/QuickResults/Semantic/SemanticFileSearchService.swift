@@ -22,16 +22,19 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
     @Published private(set) var preferences: SemanticFileSettings
     let supported: Bool
     var isEnabled: Bool {
-        supported && preferences.enabled && settings.askQuickFileSearchEnabled && modelReady
+        let searchablePhase = [Phase.ready, .indexing].contains(phase) || (phase == .failed && mediaFailed)
+            || (phase == .paused && lowPowerMode() && !thermalConstrained() && !busy && !manuallyPaused)
+        return supported && preferences.enabled && settings.askQuickFileSearchEnabled && modelReady
             && store != nil && queryWorker != nil && !removing
-            && ([Phase.ready, .indexing].contains(phase) || (phase == .failed && mediaFailed))
+            && searchablePhase
     }
     let settings: SettingsStore
     private let directory: URL
     private let helper: URL
     private let watcher: AskFileWatching
     private let access: @Sendable () -> Bool
-    private let resourceConstrained: @Sendable () -> Bool
+    private let lowPowerMode: @Sendable () -> Bool
+    private let thermalConstrained: @Sendable () -> Bool
     private let mediaModels: any SemanticModelHandling
     private let idle: @Sendable () -> Bool
     private let makeMediaEncoder: @Sendable (URL, URL, URL) -> any SemanticMediaEmbedding
@@ -67,9 +70,8 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
     init(settings: SettingsStore, directory: URL = SemanticModel.directory, helper: URL = SemanticModel.helperURL,
          supported: Bool = SemanticFilePolicy.supported, watcher: AskFileWatching = AskFSEventsWatcher(),
          access: @escaping @Sendable () -> Bool = { AskFullDiskAccess.isGranted() }, automaticStart: Bool = true,
-         resourceConstrained: @escaping @Sendable () -> Bool = {
-             ProcessInfo.processInfo.isLowPowerModeEnabled || ProcessInfo.processInfo.thermalState.rawValue >= 2
-         },
+         lowPowerMode: @escaping @Sendable () -> Bool = { ProcessInfo.processInfo.isLowPowerModeEnabled },
+         thermalConstrained: @escaping @Sendable () -> Bool = { ProcessInfo.processInfo.thermalState.rawValue >= 2 },
          models: any SemanticModelHandling = SemanticModelFiles(),
          mediaModels: any SemanticModelHandling = SemanticMediaModelFiles(),
          idle: @escaping @Sendable () -> Bool = { SemanticMediaIdle.isIdle() },
@@ -89,7 +91,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
          ) }) {
         self.settings = settings; self.directory = directory; self.helper = helper
         self.supported = supported; self.watcher = watcher; self.access = access
-        self.resourceConstrained = resourceConstrained
+        self.lowPowerMode = lowPowerMode; self.thermalConstrained = thermalConstrained
         self.mediaModels = mediaModels; self.idle = idle; self.makeMediaEncoder = makeMediaEncoder
         self.models = models; self.makeReader = makeReader; self.makeEncoder = makeEncoder; self.makeQuery = makeQuery
         self.preferences = settings.semanticFileSearch
@@ -112,7 +114,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
     }
 
     private var backgroundPaused: Bool {
-        self.busy || self.manuallyPaused || self.resourceConstrained()
+        self.busy || self.manuallyPaused || self.lowPowerMode() || self.thermalConstrained()
     }
 
     func setForegroundBusy(_ busy: Bool) {
@@ -367,7 +369,7 @@ extension SemanticFileSearchService {
               let queryWorker else { return [] }
         let lifecycle = self.token, access = access, makeReader = makeReader
         do {
-            try await Task.sleep(for: .milliseconds(160))
+            try await Task.sleep(for: .milliseconds(lowPowerMode() ? 400 : 160))
             let vector = try await queryWorker.query(query, lifecycle: lifecycle)
             try Task.checkCancellation()
             let cancellation = AskSearchCancellation()
