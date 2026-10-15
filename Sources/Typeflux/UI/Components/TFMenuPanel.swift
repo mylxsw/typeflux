@@ -11,11 +11,13 @@ struct TFRichOption<Value: Hashable>: Identifiable {
     var trailing: String?
     /// Shows `trailing` as a colored status tag (e.g. a latency grade) instead of plain text.
     var trailingTint: Color?
+    /// Accessibility identifier of the option's row in the panel.
+    var identifier: String?
 
     var id: Value { value }
 
     init(_ value: Value, _ title: String, subtitle: String? = nil, systemImage: String? = nil, tint: Color? = nil,
-         trailing: String? = nil, trailingTint: Color? = nil) {
+         trailing: String? = nil, trailingTint: Color? = nil, identifier: String? = nil) {
         self.value = value
         self.title = title
         self.subtitle = subtitle
@@ -23,6 +25,7 @@ struct TFRichOption<Value: Hashable>: Identifiable {
         self.tint = tint
         self.trailing = trailing
         self.trailingTint = trailingTint
+        self.identifier = identifier
     }
 }
 
@@ -198,6 +201,7 @@ private struct TFMenuPanelRow<Value: Hashable>: View {
         .onHover(perform: onHover)
         .accessibilityLabel([option.title, option.subtitle].compactMap { $0 }.joined(separator: ", "))
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .accessibilityIdentifier(option.identifier ?? "")
     }
 }
 
@@ -209,6 +213,7 @@ struct TFRichPicker<Value: Hashable>: View {
     @Binding var selection: Value
     var width: CGFloat? = TFMetrics.formControlWideWidth
     var searchable: Bool?
+    var identifier: String?
     @State private var isPresented = false
 
     private var current: TFRichOption<Value>? {
@@ -237,6 +242,7 @@ struct TFRichPicker<Value: Hashable>: View {
         .frame(width: width)
         .accessibilityLabel(title)
         .accessibilityValue(current?.title ?? "")
+        .accessibilityIdentifier(identifier ?? "")
         .popover(isPresented: $isPresented, arrowEdge: .bottom) {
             TFMenuPanel(sections: sections, selection: selection, searchable: searchable) { value in
                 selection = value

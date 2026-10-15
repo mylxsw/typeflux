@@ -185,3 +185,138 @@ struct TFChecklist: View {
         .frame(maxWidth: .infinity, alignment: .topLeading)
     }
 }
+
+/// A labelled block of read-only text on the control fill, e.g. a transcript in an expanded row.
+/// The accessory (copy, play) sits on the right of the label.
+struct TFDetailBlock<Accessory: View>: View {
+    let title: String
+    let content: String
+    var emphasize = false
+    @ViewBuilder var accessory: Accessory
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: TFMetrics.toolbarSpacing) {
+                Text(title).font(.system(size: 11.5, weight: .semibold)).foregroundStyle(TFColors.textTertiary)
+                Spacer(minLength: 0)
+                accessory.tfControlSize(.small)
+            }
+            Text(content).font(.system(size: 12.5))
+                .foregroundStyle(emphasize ? TFColors.danger : TFColors.textPrimary)
+                .textSelection(.enabled)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(10)
+        .background(TFColors.control, in: RoundedRectangle(cornerRadius: TFMetrics.fieldCornerRadius,
+                                                            style: .continuous))
+    }
+}
+
+extension TFDetailBlock where Accessory == EmptyView {
+    init(title: String, content: String, emphasize: Bool = false) {
+        self.init(title: title, content: content, emphasize: emphasize) { EmptyView() }
+    }
+}
+
+/// A small card holding one short value, e.g. a vocabulary term, with a remove button on hover.
+struct TFTermTile: View {
+    let title: String
+    var systemImage: String?
+    var image: NSImage?
+    var removeTitle: String = L("component.remove")
+    var onRemove: (() -> Void)?
+    @State private var hovering = false
+
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: TFMetrics.cardCornerRadius, style: .continuous)
+        HStack(spacing: 8) {
+            Group {
+                if let image {
+                    Image(nsImage: image).resizable().interpolation(.high).scaledToFit()
+                } else if let systemImage {
+                    Image(systemName: systemImage).font(.system(size: 12)).foregroundStyle(TFColors.textTertiary)
+                }
+            }
+            .frame(width: 16, height: 16)
+            .accessibilityHidden(true)
+            Text(title).font(.system(size: 13, weight: .semibold)).foregroundStyle(TFColors.textPrimary).lineLimit(1)
+            Spacer(minLength: 6)
+            if let onRemove {
+                TFButton(title: removeTitle, systemImage: "xmark", kind: .plain, size: .small, iconOnly: true,
+                         action: onRemove)
+                    .opacity(hovering ? 1 : 0)
+                    .allowsHitTesting(hovering)
+            }
+        }
+        .padding(.horizontal, 12)
+        .frame(minHeight: 44)
+        .background(TFColors.card, in: shape)
+        .overlay(shape.strokeBorder(TFColors.border, lineWidth: TFMetrics.borderWidth))
+        .contentShape(shape)
+        .onHover { hovering = $0 }
+    }
+}
+
+/// A form line with a fixed label column and a field filling the rest, for connection forms
+/// with many text fields (endpoint, key, model). Use `TFFormRow` for settings with a control.
+struct TFLabeledField<Field: View>: View {
+    let label: String
+    var isRequired = false
+    var labelWidth: CGFloat = 112
+    /// Accessibility identifier of the label column.
+    var labelIdentifier: String?
+    @ViewBuilder var field: Field
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 14) {
+            HStack(spacing: 2) {
+                Text(label).font(.system(size: 13)).foregroundStyle(TFColors.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                if isRequired {
+                    Text(verbatim: "*").font(.system(size: 13)).foregroundStyle(TFColors.danger)
+                        .accessibilityLabel(L("component.required"))
+                }
+            }
+            .frame(width: labelWidth, alignment: .leading)
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier(labelIdentifier ?? "")
+            field.frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(.horizontal, 14).padding(.vertical, 10)
+    }
+}
+
+/// A text field with a menu of suggested values (endpoints, model names); typing any value still works.
+struct TFComboField: View {
+    let placeholder: String
+    @Binding var text: String
+    let suggestions: [String]
+    var monospaced = true
+    var accessibilityLabel: String?
+    var menuTitle: String = L("common.selectSuggestedValue")
+
+    /// Trimmed, non-empty suggestions without case-insensitive duplicates, in their original order.
+    static func normalized(_ values: [String]) -> [String] {
+        var seen = Set<String>()
+        return values.compactMap { raw in
+            let value = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !value.isEmpty, seen.insert(value.lowercased()).inserted else { return nil }
+            return value
+        }
+    }
+
+    var body: some View {
+        let options = Self.normalized(suggestions)
+        TextField(placeholder, text: $text)
+            .textFieldStyle(TFTextFieldStyle(monospaced: monospaced))
+            .accessibilityLabel(accessibilityLabel ?? placeholder)
+            .overlay(alignment: .trailing) {
+                if !options.isEmpty {
+                    TFMenuButton(title: menuTitle, systemImage: "chevron.up.chevron.down", kind: .plain, size: .small,
+                                 iconOnly: true, actions: options.map { value in .action(value) { text = value } })
+                        .padding(.trailing, 3)
+                }
+            }
+    }
+}

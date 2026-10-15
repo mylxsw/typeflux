@@ -75,4 +75,25 @@ struct TFRowsLogicTests {
             + TFMetrics.formControlWideWidth + 14
         #expect(row == 14 + TFFormRow<EmptyView>.labelIdealWidth + 16 + TFMetrics.formControlWideWidth + 14)
     }
+
+    @Test func comboFieldSuggestionsAreTrimmedAndUnique() {
+        #expect(TFComboField.normalized([" a ", "A", "", "b", "  "]) == ["a", "b"])
+        #expect(TFComboField.normalized([]).isEmpty)
+    }
+
+    @Test func menuTogglesAndNotesBecomeNativeEntries() {
+        var received: [Bool] = []
+        var ran = 0
+        let menu = TFMenuAction.entries([
+            .toggle("Rewrite", isOn: true) { received.append($0) },
+            .toggle("Default", isOn: false, isEnabled: false) { received.append($0) },
+            .note("Needs text"),
+            .imageAction("Import", image: nil) { ran += 1 }
+        ])
+        #expect(menu.entries.map(\.isSelected) == [true, false, false, false])
+        #expect(menu.entries.map(\.isEnabled) == [true, false, false, true])
+        menu.handlers.forEach { $0() }
+        #expect(received == [false, true], "a toggle reports the state it switches to")
+        #expect(ran == 1)
+    }
 }

@@ -13,6 +13,8 @@ struct GalleryRowsPage: View {
     @State private var note = "Prefers concise answers"
     @State private var undo = true
     @State private var storage = "cloud"
+    @State private var endpoint = "https://api.openai.com/v1"
+    @State private var persona = "Typeflux"
 
     var body: some View {
         GalleryPage(title: "Rows & Panes",
@@ -121,6 +123,50 @@ struct GalleryRowsPage: View {
                             TFChecklist(systemImage: option == "cloud" ? "cloud" : "lock",
                                         items: [(true, "Private by default"), (option == "cloud", "Syncs devices")])
                         }
+                    }
+                }
+            }
+            GallerySpecimen(title: "Source lists and detail blocks",
+                            component: "TFSourceRow · TFTermTile · TFLogoTile · TFDetailBlock",
+                            spec: "A source list selects one item for the detail beside it; a dot marks unsaved " +
+                                "edits. Term tiles hold one short value and reveal remove on hover.") {
+                HStack(alignment: .top, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        ForEach(["Candidate: Structured", "Typeflux", "English Translator"], id: \.self) { name in
+                            TFSourceRow(title: name, dimmedPrefix: "Candidate:", isSelected: persona == name,
+                                        showsChangeDot: name == "Typeflux") { persona = name }
+                        }
+                    }
+                    .padding(8).frame(width: 220).tfCardSurface()
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(spacing: 8) {
+                            TFTermTile(title: "PGVector", systemImage: "sparkles", onRemove: {})
+                            TFTermTile(title: "Liquid Glass", systemImage: "sparkles", onRemove: {})
+                        }
+                        HStack(spacing: 8) {
+                            TFLogoTile { Image(systemName: "cpu").foregroundStyle(TFColors.textSecondary) }
+                            TFDetailBlock(title: "Raw transcript", content: "Ship the release notes on Thursday.") {
+                                TFButton(title: "Copy", systemImage: "doc.on.doc", kind: .plain, iconOnly: true) {}
+                            }
+                        }
+                    }
+                }
+            }
+            GallerySpecimen(title: "Connection forms", component: "TFLabeledField · TFComboField · TFMenuAction",
+                            spec: "Forms with several text fields use a 112pt label column. A combo field accepts " +
+                                "any value and offers suggestions; menus can show checkmarks and notes.") {
+                TFCard {
+                    TFLabeledField(label: "Endpoint", isRequired: true) {
+                        TFComboField(placeholder: "https://", text: $endpoint,
+                                     suggestions: ["https://api.openai.com/v1", "https://api.groq.com/openai/v1"])
+                    }
+                    TFDivider.form
+                    TFLabeledField(label: "Model") {
+                        TFMenuButton(title: "Model actions", systemImage: "ellipsis", kind: .plain, iconOnly: true,
+                                     actions: [.toggle("Use for Rewrite", isOn: true) { _ in },
+                                               .toggle("Make Default", isOn: false, isEnabled: false) { _ in },
+                                               .note("Needs a model that accepts text"),
+                                               .separator, .action("Delete", destructive: true) {}])
                     }
                 }
             }

@@ -902,6 +902,7 @@
 "settings.models.storagePathCopied" = "存储路径已复制。";
 "settings.models.configurationSaved" = "配置已保存。";
 "settings.models.connectionSuccess" = "连接成功 · 首 Token：%dms · 总耗时：%dms";
+"settings.models.connectionPreview" = "返回内容";
 "settings.models.useLocal" = "使用本地";
 "settings.models.useRemote" = "使用远程";
 "settings.models.useMultimodal" = "使用多模态";
@@ -5502,5 +5503,6 @@
 "component.collapsed" = "已收起";
 "component.add" = "添加";
 "component.remove" = "移除";
+"component.more" = "更多";
 "component.undo" = "撤销";
 "component.required" = "必填";

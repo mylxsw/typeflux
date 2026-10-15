@@ -21,22 +21,18 @@ struct StudioPersonaUsageStrip: View {
     }
 
     private func selectionCard(auxiliary: Bool) -> some View {
-        VStack(alignment: .leading, spacing: 9) {
+        VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
-                Image(systemName: auxiliary ? "person.wave.2" : "waveform")
-                    .foregroundStyle(auxiliary ? Color.purple : StudioTheme.success)
+                TFIconTile(systemImage: auxiliary ? "person.wave.2" : "waveform",
+                           tint: auxiliary ? .purple : TFColors.success, size: 22, style: .soft)
                 Text(L(auxiliary ? "personas.redesign.auxiliary" : "personas.redesign.dictation"))
-                    .foregroundStyle(StudioTheme.textSecondary)
+                    .font(.system(size: 12, weight: .semibold)).foregroundStyle(TFColors.textSecondary)
                 Spacer(minLength: 0)
                 Button {
                     viewModel.openPersonaShortcutSettings()
                 } label: {
-                    Text((auxiliary ? viewModel.auxiliaryHotkey : viewModel.activationHotkey)
+                    TFKeyCap(text: (auxiliary ? viewModel.auxiliaryHotkey : viewModel.activationHotkey)
                         .map(HotkeyFormat.display) ?? L("personas.redesign.unset"))
-                        .font(.system(size: 10, weight: .semibold))
-                        .padding(.horizontal, 5).padding(.vertical, 2)
-                        .background(StudioTheme.controlSurface, in: RoundedRectangle(cornerRadius: 4))
-                        .overlay(RoundedRectangle(cornerRadius: 4).stroke(StudioTheme.border))
                 }
                 .buttonStyle(.plain)
                 .help(L("personas.redesign.shortcutsHelp"))
@@ -44,27 +40,26 @@ struct StudioPersonaUsageStrip: View {
             PersonaSelectionMenu(viewModel: viewModel,
                                  selection: auxiliary ? UUID(uuidString: viewModel.auxiliaryPersonaID) : viewModel
                                      .defaultPersonaSelectionID,
-                                 allowsNone: !auxiliary, showsSummaries: true) { id in
+                                 allowsNone: !auxiliary, showsSummaries: true,
+                                 identifier: auxiliary ? "personas.auxiliarySelection" : "personas.defaultSelection") { id in
                 if auxiliary, let id {
                     viewModel.setAuxiliaryPersona(id.uuidString)
                 } else {
                     viewModel.setDefaultPersonaSelection(id)
                 }
             }
-            .accessibilityIdentifier(auxiliary ? "personas.auxiliarySelection" : "personas.defaultSelection")
         }
-        .font(.system(size: 12, weight: .medium))
-        .padding(13)
+        .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .modifier(PersonaPanelModifier())
+        .tfCardSurface()
     }
 
     private var appsCard: some View {
-        VStack(alignment: .leading, spacing: narrow ? 0 : 12) {
+        VStack(alignment: .leading, spacing: narrow ? 0 : 10) {
             if !narrow {
                 appTitle
             }
-            HStack(spacing: 8) {
+            HStack(spacing: TFMetrics.toolbarSpacing) {
                 if narrow {
                     appTitle
                 }
@@ -77,120 +72,67 @@ struct StudioPersonaUsageStrip: View {
                 Text(viewModel.personaAppBindingsEnabled
                     ? L("personas.redesign.appCount", viewModel.personaAppBindings.count)
                     : L("personas.redesign.allPaused"))
+                    .font(.system(size: 12)).foregroundStyle(TFColors.textPrimary)
                     .lineLimit(1)
                 if viewModel.personaAppBindingsEnabled, viewModel.pausedPersonaAppRuleCount > 0 {
-                    Text(L("personas.redesign.pausedCount", viewModel.pausedPersonaAppRuleCount))
-                        .foregroundStyle(StudioTheme.textSecondary).lineLimit(1)
+                    TFFootnote(text: L("personas.redesign.pausedCount", viewModel.pausedPersonaAppRuleCount))
+                        .lineLimit(1)
                 }
                 Spacer(minLength: 0)
-                Button { viewModel.openPersonaAppRules() } label: {
-                    HStack(spacing: 4) { Text(L("personas.redesign.manage")); Image(systemName: "chevron.right") }
+                TFButton(title: L("personas.redesign.manage"), systemImage: "chevron.right", size: .small) {
+                    viewModel.openPersonaAppRules()
                 }
-                .buttonStyle(.plain)
-                .padding(.horizontal, 8).padding(.vertical, 4)
-                .background(StudioTheme.controlSurface, in: RoundedRectangle(cornerRadius: 6))
-                .overlay(RoundedRectangle(cornerRadius: 6).stroke(StudioTheme.border))
                 .accessibilityIdentifier("personas.appRules")
             }
         }
-        .font(.system(size: 11))
-        .padding(13)
+        .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .modifier(PersonaPanelModifier())
+        .tfCardSurface()
     }
 
     private var appTitle: some View {
-        Label(L("personas.redesign.apps"), systemImage: "square.grid.2x2")
-            .font(.system(size: 12, weight: .medium))
-            .foregroundStyle(StudioTheme.textSecondary)
+        HStack(spacing: 6) {
+            TFIconTile(systemImage: "square.grid.2x2", size: 22, style: .neutral)
+            Text(L("personas.redesign.apps")).font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(TFColors.textSecondary)
+        }
     }
 }
 
+/// Picks a persona (or none) from a panel listing custom and built-in personas with their summaries.
 struct PersonaSelectionMenu: View {
     @ObservedObject var viewModel: StudioViewModel
     let selection: UUID?
     var allowsNone = true
     var showsSummaries = false
+    var identifier: String?
     let onSelect: (UUID?) -> Void
-    @State private var presented = false
 
     private var noneTitle: String {
         L(showsSummaries ? "personas.redesign.none" : "personas.redesign.noneShort")
     }
 
     var body: some View {
-        Button { presented.toggle() } label: {
-            HStack {
-                Text(selection == nil ? noneTitle : viewModel.personaTitle(selection)).lineLimit(1)
-                    .foregroundStyle(isMissing ? Color.red : StudioTheme.textPrimary)
-                Spacer(minLength: 4)
-                Image(systemName: "chevron.up.chevron.down").font(.system(size: 9))
-            }
-            .font(.system(size: 12, weight: .medium))
-            .padding(.horizontal, 10).padding(.vertical, 7)
-            .background(StudioTheme.controlSurface, in: RoundedRectangle(cornerRadius: 7))
-            .overlay(RoundedRectangle(cornerRadius: 7).stroke(StudioTheme.border))
-        }
-        .buttonStyle(.plain)
-        .popover(isPresented: $presented, arrowEdge: .bottom) {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 4) {
-                    if allowsNone {
-                        option(id: nil, title: noneTitle)
-                        Divider()
-                    }
-                    group(title: L("settings.personas.custom"), personas: viewModel.personas.filter { !$0.isSystem })
-                    group(title: L("personas.redesign.builtIn"), personas: viewModel.personas.filter(\.isSystem))
-                }
-                .padding(8)
-            }
-            .frame(width: 300, height: min(CGFloat(viewModel.personas.count) * (showsSummaries ? 50 : 34) + 100, 460))
-            .background(StudioTheme.surface)
-            .onExitCommand { presented = false }
-        }
+        TFRichPicker(title: selection == nil ? noneTitle : viewModel.personaTitle(selection), sections: sections,
+                     selection: Binding(get: { selection }, set: onSelect), width: nil, identifier: identifier)
+            .frame(maxWidth: .infinity)
     }
 
-    private var isMissing: Bool {
-        selection.map { id in !viewModel.personas.contains { $0.id == id } } ?? false
-    }
-
-    @ViewBuilder private func group(title: String, personas: [PersonaProfile]) -> some View {
-        if !personas.isEmpty {
-            Text(title).font(.system(size: 10)).foregroundStyle(StudioTheme.textSecondary).padding(.horizontal, 8)
-            ForEach(personas) { persona in
-                option(id: persona.id, title: persona.name,
-                       summary: showsSummaries ? viewModel.personaListSubtitle(for: persona) : nil)
-            }
+    private var sections: [TFRichSection<UUID?>] {
+        var result: [TFRichSection<UUID?>] = []
+        if allowsNone {
+            result.append(TFRichSection(options: [TFRichOption(nil, noneTitle, identifier: "personas.pick.none")]))
         }
-    }
-
-    private func option(id: UUID?, title: String, summary: String? = nil) -> some View {
-        Button {
-            onSelect(id)
-            presented = false
-        } label: {
-            HStack {
-                if selection == id {
-                    Image(systemName: "checkmark")
-                }
-                VStack(alignment: .leading) {
-                    Text(title).lineLimit(1)
-                    if let summary {
-                        Text(summary).font(.caption).foregroundStyle(.secondary).lineLimit(1)
-                    }
-                }
-                Spacer(minLength: 0)
-            }
-            .font(.system(size: 12)).padding(8)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                selection == id ? StudioTheme.accent.opacity(0.12) : .clear,
-                in: RoundedRectangle(cornerRadius: 6)
-            )
-            .contentShape(Rectangle())
+        for (title, personas) in [(L("settings.personas.custom"), viewModel.personas.filter { !$0.isSystem }),
+                                  (L("personas.redesign.builtIn"), viewModel.personas.filter(\.isSystem))]
+            where !personas.isEmpty {
+            result.append(TFRichSection(title, options: personas.map { persona in
+                TFRichOption(persona.id, persona.name,
+                             subtitle: showsSummaries ? viewModel.personaListSubtitle(for: persona) : nil,
+                             identifier: "personas.pick." + persona.id.uuidString)
+            }))
         }
-        .buttonStyle(.plain)
-        .accessibilityIdentifier("personas.pick." + (id?.uuidString ?? "none"))
+        return result
     }
 }
 
@@ -204,7 +146,7 @@ struct PersonaAppIcon: View {
             if let appURL = url ?? NSWorkspace.shared.urlForApplication(withBundleIdentifier: identifier) {
                 Image(nsImage: NSWorkspace.shared.icon(forFile: appURL.path)).resizable()
             } else {
-                Image(systemName: "app.fill").resizable().foregroundStyle(StudioTheme.textSecondary)
+                Image(systemName: "app.fill").resizable().foregroundStyle(TFColors.textSecondary)
             }
         }
         .scaledToFit().frame(width: size, height: size)

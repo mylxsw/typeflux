@@ -44,93 +44,48 @@ struct StudioOverviewPanel: View {
     private func activityCard(donutSize: CGFloat) -> some View {
         let donutLineWidth = donutSize * 0.12
 
-        return StudioCard(padding: StudioTheme.Insets.cardDense) {
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-                HStack(
-                    alignment: .center,
-                    spacing: StudioTheme.Spacing.smallMedium
-                ) {
-                    VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
-                        HStack(spacing: StudioTheme.Spacing.small) {
-                            RoundedRectangle(
-                                cornerRadius: StudioTheme.CornerRadius.medium, style: .continuous
-                            )
-                            .fill(StudioTheme.iconTileSurface)
-                            .frame(
-                                width: StudioTheme.ControlSize.overviewBadge,
-                                height: StudioTheme.ControlSize.overviewBadge
-                            )
-                            .overlay(
-                                Image(systemName: "waveform.and.magnifyingglass")
-                                    .font(
-                                        .system(
-                                            size: StudioTheme.Typography.iconSmall,
-                                            weight: .semibold
-                                        )
-                                    )
-                                    .foregroundStyle(StudioTheme.accent)
-                            )
-
+        return TFCard {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(alignment: .center, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack(spacing: 8) {
+                            TFIconTile(systemImage: "waveform.and.magnifyingglass", style: .soft)
                             Text(L("home.activity.title"))
-                                .font(
-                                    .studioBody(StudioTheme.Typography.bodySmall, weight: .semibold)
-                                )
-                                .foregroundStyle(StudioTheme.textSecondary)
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(TFColors.textSecondary)
                                 .lineLimit(1)
                                 .minimumScaleFactor(0.85)
                         }
-
                         Text("\(completionRate)%")
-                            .font(.studioDisplay(StudioTheme.Typography.displayLarge, weight: .bold))
-                            .foregroundStyle(StudioTheme.textPrimary)
+                            .font(.system(size: 32, weight: .bold).monospacedDigit())
+                            .foregroundStyle(TFColors.textPrimary)
                             .minimumScaleFactor(0.72)
                             .lineLimit(1)
-
                         Text(L("home.activity.completionRate"))
-                            .font(.studioBody(StudioTheme.Typography.body))
-                            .foregroundStyle(StudioTheme.textSecondary)
+                            .font(.system(size: 13))
+                            .foregroundStyle(TFColors.textSecondary)
                             .lineLimit(2)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
 
                     Circle()
-                        .stroke(
-                            StudioTheme.controlSurface,
-                            lineWidth: donutLineWidth
-                        )
-                        .frame(
-                            width: donutSize,
-                            height: donutSize
-                        )
+                        .stroke(TFColors.control, lineWidth: donutLineWidth)
+                        .frame(width: donutSize, height: donutSize)
                         .overlay(
                             Circle()
                                 .trim(from: 0, to: CGFloat(completionRate) / 100)
-                                .stroke(
-                                    LinearGradient(
-                                        colors: [
-                                            StudioTheme.accent.opacity(0.52),
-                                            StudioTheme.accent.opacity(StudioTheme.Opacity.overviewProgress)
-                                        ],
-                                        startPoint: .bottomLeading,
-                                        endPoint: .topTrailing
-                                    ),
-                                    style: StrokeStyle(
-                                        lineWidth: donutLineWidth,
-                                        lineCap: .round
-                                    )
-                                )
+                                .stroke(TFColors.accent,
+                                        style: StrokeStyle(lineWidth: donutLineWidth, lineCap: .round))
                                 .rotationEffect(.degrees(StudioTheme.Angles.overviewProgressStart))
                         )
+                        .accessibilityHidden(true)
                 }
-
-                Spacer(minLength: StudioTheme.Spacing.smallMedium)
-
-                Text(L("home.activity.privacy"))
-                    .font(.studioBody(StudioTheme.Typography.caption))
-                    .foregroundStyle(StudioTheme.textTertiary)
+                Spacer(minLength: 12)
+                TFFootnote(text: L("home.activity.privacy"))
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .fixedSize(horizontal: false, vertical: true)
             }
+            .padding(18)
+            .frame(maxHeight: .infinity, alignment: .top)
         }
     }
 
@@ -138,79 +93,44 @@ struct StudioOverviewPanel: View {
         let spacing = StudioTheme.Spacing.large
         let cardWidth = max((width - spacing) / 2, 0)
         let cardHeight = max((StudioTheme.Layout.overviewPrimaryMinHeight - spacing) / 2, 0)
+        let size = CGSize(width: cardWidth, height: cardHeight)
 
         return VStack(spacing: spacing) {
             HStack(spacing: spacing) {
-                metricCard(
-                    icon: "clock",
-                    value: "\(transcriptionMinutesText) min",
-                    title: L("home.metric.totalDictation"),
-                    size: CGSize(width: cardWidth, height: cardHeight)
-                )
-                metricCard(
-                    icon: "mic",
-                    value: "\(totalCharacters)",
-                    title: L("home.metric.charactersDictated"),
-                    size: CGSize(width: cardWidth, height: cardHeight)
-                )
+                metricCard(icon: "clock", value: "\(transcriptionMinutesText) min",
+                           title: L("home.metric.totalDictation"), size: size)
+                metricCard(icon: "mic", value: "\(totalCharacters)",
+                           title: L("home.metric.charactersDictated"), size: size)
             }
-
             HStack(spacing: spacing) {
-                metricCard(
-                    icon: "hourglass",
-                    value: "\(savedMinutes) min",
-                    title: L("home.metric.timeSaved"),
-                    size: CGSize(width: cardWidth, height: cardHeight)
-                )
-                metricCard(
-                    icon: "bolt",
-                    value: averagePaceWPM > 0
-                        ? "\(averagePaceWPM) wpm" : "--",
-                    title: L("home.metric.averagePace"),
-                    size: CGSize(width: cardWidth, height: cardHeight)
-                )
+                metricCard(icon: "hourglass", value: "\(savedMinutes) min",
+                           title: L("home.metric.timeSaved"), size: size)
+                metricCard(icon: "bolt", value: averagePaceWPM > 0 ? "\(averagePaceWPM) wpm" : "--",
+                           title: L("home.metric.averagePace"), size: size)
             }
         }
-        .frame(
-            width: width,
-            height: StudioTheme.Layout.overviewPrimaryMinHeight,
-            alignment: .top
-        )
+        .frame(width: width, height: StudioTheme.Layout.overviewPrimaryMinHeight, alignment: .top)
     }
 
-    private func metricCard(icon: String, value: String, title: String, size: CGSize)
-        -> some View {
-        StudioCard(padding: StudioTheme.Spacing.smallMedium) {
-            VStack(alignment: .center, spacing: StudioTheme.Spacing.xxSmall) {
-                RoundedRectangle(
-                    cornerRadius: StudioTheme.CornerRadius.miniMetricIcon, style: .continuous
-                )
-                .fill(StudioTheme.iconTileSurface)
-                .frame(
-                    width: StudioTheme.ControlSize.overviewMiniIcon,
-                    height: StudioTheme.ControlSize.overviewMiniIcon
-                )
-                .overlay(
-                    Image(systemName: icon)
-                        .font(.system(size: StudioTheme.Typography.iconXSmall, weight: .semibold))
-                        .foregroundStyle(StudioTheme.accent)
-                )
-
+    private func metricCard(icon: String, value: String, title: String, size: CGSize) -> some View {
+        TFCard {
+            VStack(alignment: .center, spacing: 4) {
+                TFIconTile(systemImage: icon, style: .soft)
                 Text(value)
-                    .font(.studioDisplay(StudioTheme.Typography.sectionTitle, weight: .bold))
-                    .foregroundStyle(StudioTheme.textPrimary)
+                    .font(.system(size: 18, weight: .bold).monospacedDigit())
+                    .foregroundStyle(TFColors.textPrimary)
                     .multilineTextAlignment(.center)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
-
                 Text(title)
-                    .font(.studioBody(StudioTheme.Typography.bodySmall))
-                    .foregroundStyle(StudioTheme.textSecondary)
+                    .font(.system(size: 12))
+                    .foregroundStyle(TFColors.textSecondary)
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
                     .minimumScaleFactor(0.85)
                     .frame(height: 30, alignment: .top)
             }
+            .padding(12)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         }
         .frame(width: size.width, height: size.height, alignment: .center)

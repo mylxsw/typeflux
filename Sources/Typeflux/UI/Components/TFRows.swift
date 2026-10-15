@@ -277,3 +277,58 @@ struct TFMeter: View {
         .accessibilityValue("\(Int((Self.fraction(value, of: total) * 100).rounded()))%")
     }
 }
+
+/// A selectable row in a source list (a list column beside its detail), e.g. a persona.
+/// `dimmedPrefix` greys a leading label such as "Candidate:"; `showsChangeDot` marks unsaved edits.
+struct TFSourceRow: View {
+    let title: String
+    var dimmedPrefix: String?
+    var query = ""
+    let isSelected: Bool
+    var showsChangeDot = false
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                label.lineLimit(1)
+                if showsChangeDot { TFStatusDot(level: .warning) }
+                Spacer(minLength: 0)
+            }
+            .font(.system(size: 13, weight: isSelected ? .semibold : .regular))
+            .padding(.horizontal, 10)
+            .frame(height: TFMetrics.paneRowHeight + 2)
+            .background(isSelected ? TFColors.selection : Color.clear,
+                        in: RoundedRectangle(cornerRadius: TFMetrics.itemCornerRadius, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: TFMetrics.itemCornerRadius, style: .continuous))
+        }
+        .buttonStyle(TFRowHoverStyle(selected: isSelected))
+        .help(title)
+        .accessibilityLabel(title)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    private var label: Text {
+        let tint = isSelected ? TFColors.accent : TFColors.textPrimary
+        if let dimmedPrefix, title.hasPrefix(dimmedPrefix) {
+            return Text(dimmedPrefix).foregroundColor(TFColors.textSecondary)
+                + Text(TFSearchMatcher.highlighted(String(title.dropFirst(dimmedPrefix.count)), query: query))
+                .foregroundColor(tint)
+        }
+        return Text(TFSearchMatcher.highlighted(title, query: query)).foregroundColor(tint)
+    }
+}
+
+/// A neutral icon tile holding a logo or other custom artwork (provider and app logos).
+struct TFLogoTile<Content: View>: View {
+    var size: CGFloat = TFMetrics.iconTileSize
+    @ViewBuilder var content: Content
+
+    var body: some View {
+        content
+            .frame(width: size, height: size)
+            .background(TFColors.control, in: RoundedRectangle(
+                cornerRadius: size * TFMetrics.iconTileCornerRadius / TFMetrics.iconTileSize, style: .continuous))
+            .accessibilityHidden(true)
+    }
+}

@@ -11,61 +11,34 @@ struct CloudProviderModelsView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: TFMetrics.sectionSpacing) {
             ModelDetailHeader(
                 title: "Typeflux Cloud",
                 icon: .typefluxCloud,
                 connected: auth.isLoggedIn,
                 onBack: onBack
             )
-            .padding(.bottom, 22)
-            ModelSurface {
-                HStack(alignment: .top, spacing: 14) {
-                    ModelIconTile {
-                        Image(systemName: "cloud").font(.system(size: 15)).foregroundStyle(StudioTheme.textSecondary)
-                    }
-                    Text(L(auth.isLoggedIn ? "models.cloud.managed" : "models.login"))
-                        .font(.system(size: 13)).foregroundStyle(StudioTheme.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.top, 8)
-                }
-                .padding(.horizontal, 18).padding(.vertical, 14)
-            }
-            HStack(spacing: 8) {
-                SettingsListSectionLabel(title: L("models.cloud.available"), count: models.count)
-                Spacer()
-                if library.loading { ProgressView().controlSize(.small) }
-                Button {
+            TFNotice(text: L(auth.isLoggedIn ? "models.cloud.managed" : "models.login"))
+            TFFormSection(title: L("models.cloud.available"), count: models.count,
+                          footnote: L("models.cloud.priceExplanation")) {
+                if library.loading { TFSpinner() }
+                TFButton(title: L("models.cloud.refresh"), systemImage: "arrow.clockwise") {
                     Task { await library.refresh(token: auth.accessToken) }
-                } label: {
-                    Label(L("models.cloud.refresh"), systemImage: "arrow.clockwise")
-                }.disabled(library.loading || auth.accessToken == nil)
-            }
-            .padding(.top, 26).padding(.bottom, 8)
-            ModelSurface {
-                VStack(alignment: .leading, spacing: 0) {
-                    ForEach(Array(models.enumerated()), id: \.element.id) { index, model in
-                        if index > 0 {
-                            ModelRowDivider()
-                        }
-                        modelRow(model)
-                    }
-                    if models.isEmpty, !library.loading {
-                        Text(L("models.cloud.empty")).font(.system(size: 13))
-                            .foregroundStyle(StudioTheme.textTertiary)
-                            .frame(maxWidth: .infinity).padding(.vertical, 24)
-                    }
+                }
+                .disabled(library.loading || auth.accessToken == nil)
+            } content: {
+                ForEach(Array(models.enumerated()), id: \.element.id) { index, model in
+                    if index > 0 { TFDivider.formWithIcon }
+                    modelRow(model)
+                }
+                if models.isEmpty, !library.loading {
+                    TFCardNote(text: L("models.cloud.empty"))
                 }
             }
-            Text(L("models.cloud.priceExplanation")).font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.horizontal, 4).padding(.top, 10)
             if let error = library.catalogError {
-                Text(error).foregroundStyle(StudioTheme.danger).font(.system(size: 12)).padding(.top, 8)
+                TFNotice(text: error, tone: .danger)
             }
         }
-        .buttonStyle(ModelActionStyle())
         .task(id: auth.accessToken) {
             if library.automaticallyLoadsCatalog { await library.refresh(token: auth.accessToken) }
         }
@@ -77,35 +50,40 @@ struct CloudProviderModelsView: View {
     }
 
     private func modelRow(_ model: RegisteredModel) -> some View {
-        HStack(spacing: 10) {
-            ModelIcon(model: model, provider: library.providers.first(where: \.isCloud))
-            VStack(alignment: .leading, spacing: 4) {
+        HStack(spacing: 12) {
+            TFLogoTile { ModelIcon(model: model, provider: library.providers.first(where: \.isCloud)) }
+            VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
-                    Text(model.name).font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textPrimary)
+                    Text(model.name).font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(TFColors.textPrimary)
                     if let label = model.pricing?.label {
-                        ModelUsageBadge(text: label)
+                        TFTag(text: label)
                     }
                 }
                 if let context = model.contextWindowTokens, let output = model.maxOutputTokens {
                     Text(String(format: L("models.cloud.parameters"), context, output))
-                        .font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
+                        .font(.system(size: 11.5)).foregroundStyle(TFColors.textTertiary)
                 }
             }
             Spacer(minLength: 8)
-            ForEach(ModelSettingsPresentation.usageKeys(
-                reference: model.reference,
-                rewriteReference: library.rewriteReference,
-                defaultReference: library.defaultReference
-            ), id: \.self) { key in
-                ModelUsageBadge(text: L(key), accent: true)
-            }
+            ModelUsageTags(reference: model.reference, library: library)
             if model.vision == true {
-                Text(L("ask.models.badge.vision")).font(.system(size: 11)).foregroundStyle(StudioTheme.textSecondary)
-                    .lineLimit(1).fixedSize()
-                    .help(L("ask.models.supportsImages"))
+                TFTag(text: L("ask.models.badge.vision")).help(L("ask.models.supportsImages"))
             }
         }
-        .padding(.horizontal, 18).padding(.vertical, 12)
+        .padding(.horizontal, 14).padding(.vertical, 10)
+    }
+}
+
+/// The scenes a model is chosen for ("Rewrite", "Default"), as accent tags.
+struct ModelUsageTags: View {
+    let reference: String
+    @ObservedObject var library: AskModelLibrary
+
+    var body: some View {
+        ForEach(ModelSettingsPresentation.usageKeys(reference: reference, rewriteReference: library.rewriteReference,
+                                                    defaultReference: library.defaultReference), id: \.self) { key in
+            TFTag(text: L(key), tint: TFColors.accent)
+        }
     }
 }

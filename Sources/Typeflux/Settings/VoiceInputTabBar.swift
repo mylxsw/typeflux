@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Tabs that switch between the Voice Input pages; the selected tab is underlined.
+/// The Voice Input pages' tabs (overview, vocabulary, history, personas), with item counts.
 struct VoiceInputTabBar: View {
     let selection: StudioSection
     /// The count shown beside a tab, if it has one.
@@ -8,13 +8,8 @@ struct VoiceInputTabBar: View {
     let onSelect: (StudioSection) -> Void
 
     var body: some View {
-        HStack(spacing: StudioTheme.Spacing.xxLarge) {
-            ForEach(StudioSection.voiceInputCases) { section in
-                StudioUnderlineTab(title: section.title, count: count(section), selected: section == selection) {
-                    onSelect(section)
-                }
-                .accessibilityIdentifier("studio.voiceInput.tab.\(section.rawValue)")
-            }
-        }
+        TFTabBar(options: StudioSection.voiceInputCases.map { TFOption($0, $0.title, count: count($0)) },
+                 selection: Binding(get: { selection }, set: onSelect),
+                 identifier: { "studio.voiceInput.tab.\($0.rawValue)" })
     }
 }

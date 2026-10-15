@@ -1318,16 +1318,13 @@ struct StudioTextInputCard<LabelTrailing: View>: View {
 
     var body: some View {
         StudioInputLayout(label: label, horizontal: horizontal, labelTrailing: labelTrailing) {
-            Group {
-                if secure {
-                    SecureField(placeholder, text: $text)
-                } else {
-                    TextField(placeholder, text: $text)
-                }
+            if secure {
+                TFSecureField(placeholder: placeholder, text: $text).accessibilityLabel(label)
+            } else {
+                TextField(placeholder, text: $text)
+                    .textFieldStyle(TFTextFieldStyle())
+                    .accessibilityLabel(label)
             }
-            .textFieldStyle(ModelFieldStyle(monospaced: secure))
-            .foregroundStyle(StudioTheme.textPrimary)
-            .accessibilityLabel(label)
         }
     }
 }
@@ -1356,55 +1353,15 @@ struct StudioSuggestedTextInputCard<LabelTrailing: View>: View {
         self.labelTrailing = labelTrailing
     }
 
-    private var normalizedSuggestions: [String] {
-        var seen = Set<String>()
-        return suggestions.compactMap { raw in
-            let value = raw.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !value.isEmpty else { return nil }
-            let key = value.lowercased()
-            guard seen.insert(key).inserted else { return nil }
-            return value
-        }
-    }
-
     var body: some View {
         StudioInputLayout(label: label, horizontal: horizontal, labelTrailing: labelTrailing) {
-            ZStack(alignment: .trailing) {
-                TextField(placeholder, text: $text)
-                    .textFieldStyle(ModelFieldStyle(trailingAccessoryWidth: normalizedSuggestions.isEmpty ? 0 : 24))
-                    .foregroundStyle(StudioTheme.textPrimary)
-                    .accessibilityLabel(label)
-
-                if !normalizedSuggestions.isEmpty {
-                    HStack(spacing: StudioTheme.Spacing.xSmall) {
-                        ZStack {
-                            Menu {
-                                ForEach(normalizedSuggestions, id: \.self) { suggestion in
-                                    Button(suggestion) {
-                                        text = suggestion
-                                    }
-                                }
-                            } label: {
-                                Image(systemName: "chevron.up.chevron.down")
-                                    .font(.system(size: 10, weight: .medium))
-                                    .foregroundStyle(StudioTheme.textSecondary)
-                                    .frame(width: 24, height: SettingsControlMetrics.height)
-                            }
-                            .menuStyle(.borderlessButton).menuIndicator(.hidden)
-                            .accessibilityLabel(L("common.selectSuggestedValue"))
-                        }
-                        .frame(width: 24, height: SettingsControlMetrics.height)
-                        .studioTooltip(L("common.selectSuggestedValue"), yOffset: 28)
-                    }
-                    .padding(.trailing, 3)
-                }
-            }
-            .frame(height: SettingsControlMetrics.height)
+            TFComboField(placeholder: placeholder, text: $text, suggestions: suggestions, accessibilityLabel: label)
         }
     }
 }
 
-/// Keep legacy stacked forms unchanged while provider connections share a horizontal row.
+/// Provider connections put the label in a column beside the field; stacked forms (onboarding)
+/// put a caption above it.
 private struct StudioInputLayout<Field: View, LabelTrailing: View>: View {
     let label: String
     let horizontal: Bool
@@ -1415,19 +1372,17 @@ private struct StudioInputLayout<Field: View, LabelTrailing: View>: View {
         if horizontal {
             VStack(spacing: 0) {
                 ModelFormRow(title: label) {
-                    HStack(spacing: 8) {
+                    HStack(spacing: TFMetrics.toolbarSpacing) {
                         field()
                         labelTrailing()
                     }
                 }
-                ModelRowDivider()
+                TFDivider.form
             }
         } else {
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+            VStack(alignment: .leading, spacing: 6) {
                 HStack {
-                    Text(label)
-                        .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textSecondary)
+                    Text(label).font(.system(size: 11.5, weight: .semibold)).foregroundStyle(TFColors.textSecondary)
                     Spacer()
                     labelTrailing()
                 }
@@ -1448,10 +1403,9 @@ struct StudioHistoryRow: View {
     let onRetry: (() -> Void)?
 
     @State private var isExpanded = false
-    @State private var isAudioPathHovered = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: StudioTheme.Spacing.small) {
+        VStack(alignment: .leading, spacing: 10) {
             ViewThatFits(in: .horizontal) {
                 HStack(alignment: .top, spacing: 12) {
                     timestamp.frame(width: 48, alignment: .leading)
@@ -1469,77 +1423,85 @@ struct StudioHistoryRow: View {
             }
 
             if isExpanded {
-                VStack(alignment: .leading, spacing: StudioTheme.Spacing.smallMedium) {
-                    historyAudioPathSection(
-                        title: L("history.detail.audioPath"),
-                        content: record.audioFilePath ?? L("history.detail.noAudioFile"),
-                        canPlay: record.audioFilePath != nil,
-                        isPlaying: isAudioPlaying,
-                        playAction: onPlayAudio
-                    )
-                    historyDetailSection(
-                        title: L("history.detail.rawTranscript"),
-                        content: record.transcriptText,
-                        copyAction: (record.transcriptText?.isEmpty ?? true) ? nil : onCopyTranscript
-                    )
-                    historyDetailSection(title: L("history.detail.personaResult"), content: record.personaResultText)
-
-                    if let openCCResult = record.openCCResultText {
-                        let configName = switch record.openCCConfig {
-                        case "s2twp": L("settings.output.opencc.config.s2twp")
-                        case "s2tw": L("settings.output.opencc.config.s2tw")
-                        case "s2hk": L("settings.output.opencc.config.s2hk")
-                        case "t2s": L("settings.output.opencc.config.t2s")
-                        default: ""
-                        }
-                        let title = configName.isEmpty ? L("history.detail.openCCResult") : "\(L("history.detail.openCCResult")) (\(configName))"
-                        historyDetailSection(title: title, content: openCCResult)
-                    }
-
-                    let anyProcessingHappened = (record.personaResultText != nil)
-                        || (record.openCCResultText != nil)
-                        || (record.selectionEditedText != nil)
-
-                    let sourceForFinalCompare = record.openCCResultText ?? record.personaResultText ?? record
-                        .transcriptText
-                    if let postProcessedText = record.postProcessedText,
-                       anyProcessingHappened || postProcessedText != sourceForFinalCompare {
-                        historyDetailSection(title: L("history.detail.postProcessedResult"), content: postProcessedText)
-                    }
-                    historyDetailSection(
-                        title: L("history.detail.selectionOriginal"),
-                        content: record.selectionOriginalText
-                    )
-                    historyDetailSection(
-                        title: L("history.detail.selectionEdited"),
-                        content: record.selectionEditedText
-                    )
-                    historyPipelineTimelineSection(
-                        title: L("history.detail.pipelineStats"),
-                        timeline: record.pipelineTimeline
-                    )
-                    historyDetailSection(
-                        title: L("history.detail.error"),
-                        content: record.errorMessage,
-                        emphasize: true
-                    )
-                }
-                .padding(.top, StudioTheme.Spacing.xSmall)
+                details
             }
         }
-        .padding(.horizontal, StudioTheme.Insets.historyRowHorizontal)
-        .padding(.vertical, StudioTheme.Insets.historyRowVertical)
-        .background(Color.clear)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
         .contentShape(Rectangle())
         .contextMenu {
             historyActionsMenuContent
         }
     }
 
+    @ViewBuilder private var details: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if let path = record.audioFilePath, !path.isEmpty {
+                TFDetailBlock(title: L("history.detail.audioPath"), content: path) {
+                    if let onPlayAudio {
+                        TFButton(title: L(isAudioPlaying ? "history.action.stopAudio" : "history.action.playAudio"),
+                                 systemImage: isAudioPlaying ? "stop.circle" : "play.circle", kind: .plain,
+                                 iconOnly: true, action: onPlayAudio)
+                    }
+                }
+            } else {
+                TFDetailBlock(title: L("history.detail.audioPath"), content: L("history.detail.noAudioFile"))
+            }
+            detail(L("history.detail.rawTranscript"), record.transcriptText,
+                   copyAction: (record.transcriptText?.isEmpty ?? true) ? nil : onCopyTranscript)
+            detail(L("history.detail.personaResult"), record.personaResultText)
+            if let openCCResult = record.openCCResultText {
+                detail(openCCTitle, openCCResult)
+            }
+            if let postProcessedText = record.postProcessedText, showsPostProcessed(postProcessedText) {
+                detail(L("history.detail.postProcessedResult"), postProcessedText)
+            }
+            detail(L("history.detail.selectionOriginal"), record.selectionOriginalText)
+            detail(L("history.detail.selectionEdited"), record.selectionEditedText)
+            if let timeline = record.pipelineTimeline {
+                HistoryPipelineTimelineView(title: L("history.detail.pipelineStats"), timeline: timeline)
+            }
+            detail(L("history.detail.error"), record.errorMessage, emphasize: true)
+        }
+        .padding(.top, 2)
+    }
+
+    private var openCCTitle: String {
+        let configName = switch record.openCCConfig {
+        case "s2twp": L("settings.output.opencc.config.s2twp")
+        case "s2tw": L("settings.output.opencc.config.s2tw")
+        case "s2hk": L("settings.output.opencc.config.s2hk")
+        case "t2s": L("settings.output.opencc.config.t2s")
+        default: ""
+        }
+        return configName.isEmpty ? L("history.detail.openCCResult") : "\(L("history.detail.openCCResult")) (\(configName))"
+    }
+
+    /// The final text is shown when a step changed the transcript, or when it differs from the last step.
+    private func showsPostProcessed(_ text: String) -> Bool {
+        let anyProcessingHappened = record.personaResultText != nil || record.openCCResultText != nil
+            || record.selectionEditedText != nil
+        let source = record.openCCResultText ?? record.personaResultText ?? record.transcriptText
+        return anyProcessingHappened || text != source
+    }
+
+    @ViewBuilder
+    private func detail(_ title: String, _ content: String?, emphasize: Bool = false,
+                        copyAction: (() -> Void)? = nil) -> some View {
+        if let content, !content.isEmpty {
+            TFDetailBlock(title: title, content: content, emphasize: emphasize) {
+                if let copyAction {
+                    TFButton(title: L("history.action.copyTranscript"), systemImage: "doc.on.doc", kind: .plain,
+                             iconOnly: true, action: copyAction)
+                }
+            }
+        }
+    }
+
     private var timestamp: some View {
         Text(record.timestampText)
-            .font(.studioBody(StudioTheme.Typography.bodySmall))
-            .foregroundStyle(StudioTheme.textTertiary)
+            .font(.system(size: 12).monospacedDigit())
+            .foregroundStyle(TFColors.textTertiary)
             .fixedSize()
             .padding(.top, 6)
     }
@@ -1547,16 +1509,16 @@ struct StudioHistoryRow: View {
     private var preview: some View {
         HStack(alignment: .top, spacing: 6) {
             Text(record.previewText)
-                .font(.studioBody(StudioTheme.Typography.bodyLarge))
-                .foregroundStyle(StudioTheme.textPrimary)
+                .font(.system(size: 13))
+                .foregroundStyle(TFColors.textPrimary)
                 .lineLimit(isExpanded ? nil : 2)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
             if record.hasFailure {
                 Image(systemName: "exclamationmark.circle.fill")
-                    .font(.system(size: StudioTheme.Typography.iconSmall, weight: .semibold))
-                    .foregroundStyle(StudioTheme.danger)
-                    .padding(.top, 3)
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(TFColors.danger)
+                    .padding(.top, 2)
                     .help(record.failureMessage ?? L("workflow.processing.failed"))
                     .accessibilityLabel(record.failureMessage ?? L("workflow.processing.failed"))
             }
@@ -1566,30 +1528,44 @@ struct StudioHistoryRow: View {
 
     private var rowActions: some View {
         HStack(spacing: 2) {
-            historyActionsMenuButton
-            historyIconButton(systemImage: isExpanded ? "chevron.up" : "chevron.down",
-                              helpText: isExpanded ? L("common.collapse") : L("common.expand")) {
+            TFMenuButton(title: L("history.action.more"), systemImage: "ellipsis", kind: .plain, iconOnly: true,
+                         actions: menuActions)
+            TFButton(title: isExpanded ? L("common.collapse") : L("common.expand"),
+                     systemImage: isExpanded ? "chevron.up" : "chevron.down", kind: .plain, iconOnly: true) {
                 withAnimation(.easeInOut(duration: 0.2)) { isExpanded.toggle() }
             }
             .accessibilityIdentifier("history.expand.\(record.id)")
         }
+        .tfControlSize(.small)
         .fixedSize(horizontal: true, vertical: false)
     }
 
-    private var historyActionsMenuButton: some View {
-        Menu {
-            historyActionsMenuContent
-        } label: {
-            Image(systemName: "ellipsis")
-                .font(.system(size: StudioTheme.Typography.iconRegular, weight: .medium))
-                .frame(width: 32, height: 32)
-                .contentShape(RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.xLarge, style: .continuous))
+    /// The row's actions, shared by the "⋯" button and the context menu.
+    private var menuActions: [TFMenuAction] {
+        var actions: [TFMenuAction] = []
+        let canCopyResult = onCopyResult != nil && record.hasTranscriptToCopy
+        let canCopyTranscript = onCopyTranscript != nil && !(record.transcriptText?.isEmpty ?? true)
+        if canCopyResult, let onCopyResult {
+            actions.append(.action(L("history.action.copyResult"), systemImage: "doc.on.doc", onCopyResult))
         }
-        .menuStyle(.borderlessButton)
-        .menuIndicator(.hidden)
-        .fixedSize(horizontal: true, vertical: false)
-        .studioTooltip(L("history.action.more"), yOffset: 42)
-        .accessibilityLabel(L("history.action.more"))
+        if canCopyTranscript, let onCopyTranscript {
+            actions.append(.action(L("history.action.copyTranscript"), systemImage: "doc.on.doc", onCopyTranscript))
+        }
+        if canCopyResult || canCopyTranscript { actions.append(.separator) }
+        if let onRetry {
+            actions.append(.action(L("common.retry"), systemImage: "arrow.clockwise", isEnabled: record.canRetry,
+                                   onRetry))
+        }
+        if let onDownloadAudio {
+            actions.append(.action(L("history.action.downloadAudio"), systemImage: "arrow.down.circle",
+                                   isEnabled: record.audioFilePath != nil, onDownloadAudio))
+        }
+        if let onDelete {
+            actions.append(.separator)
+            actions.append(.action(L("history.action.deleteTranscript"), systemImage: "trash", destructive: true,
+                                   onDelete))
+        }
+        return actions
     }
 
     @ViewBuilder
@@ -1614,107 +1590,6 @@ struct StudioHistoryRow: View {
         Divider()
         if let onDelete {
             Button(L("history.action.deleteTranscript"), systemImage: "trash", role: .destructive, action: onDelete)
-        }
-    }
-
-    private func historyIconButton(systemImage: String, helpText: String, action: @escaping () -> Void) -> some View {
-        AskIconGhostButton(label: helpText, systemImage: systemImage, action: action)
-    }
-
-    @ViewBuilder
-    private func historyAudioPathSection(
-        title: String,
-        content: String?,
-        canPlay: Bool,
-        isPlaying: Bool,
-        playAction: (() -> Void)?
-    ) -> some View {
-        if let content, !content.isEmpty {
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
-                Text(title)
-                    .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
-                    .foregroundStyle(StudioTheme.textTertiary)
-
-                HStack(alignment: .top, spacing: StudioTheme.Spacing.small) {
-                    Text(content)
-                        .font(.studioBody(StudioTheme.Typography.bodySmall))
-                        .foregroundStyle(StudioTheme.textPrimary)
-                        .textSelection(.enabled)
-                        .fixedSize(horizontal: false, vertical: true)
-
-                    Spacer(minLength: StudioTheme.Spacing.small)
-
-                    if canPlay, let playAction {
-                        StudioIconButton(
-                            systemImage: isPlaying ? "stop.circle" : "play.circle",
-                            frame: 24,
-                            action: playAction
-                        )
-                        .opacity(isAudioPathHovered ? 0.78 : 0)
-                        .allowsHitTesting(isAudioPathHovered)
-                        .animation(.easeOut(duration: 0.12), value: isAudioPathHovered)
-                        .studioTooltip(
-                            isPlaying ? L("history.action.stopAudio") : L("history.action.playAudio"),
-                            yOffset: 34
-                        )
-                    }
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(StudioTheme.Insets.cardDense)
-            .background(
-                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.large, style: .continuous)
-                    .fill(StudioTheme.controlSurface)
-            )
-            .onHover { isAudioPathHovered = $0 }
-        }
-    }
-
-    @ViewBuilder
-    private func historyPipelineTimelineSection(
-        title: String,
-        timeline: HistoryPipelineTimelinePresentation?
-    ) -> some View {
-        if let timeline {
-            HistoryPipelineTimelineView(title: title, timeline: timeline)
-        }
-    }
-
-    @ViewBuilder
-    private func historyDetailSection(
-        title: String,
-        content: String?,
-        emphasize: Bool = false,
-        copyAction: (() -> Void)? = nil
-    ) -> some View {
-        if let content, !content.isEmpty {
-            VStack(alignment: .leading, spacing: StudioTheme.Spacing.xxSmall) {
-                HStack(alignment: .center, spacing: StudioTheme.Spacing.small) {
-                    Text(title)
-                        .font(.studioBody(StudioTheme.Typography.caption, weight: .semibold))
-                        .foregroundStyle(StudioTheme.textTertiary)
-
-                    Spacer()
-
-                    if let copyAction {
-                        StudioIconButton(systemImage: "doc.on.doc", frame: 24, action: copyAction)
-                            .studioTooltip(L("history.action.copyTranscript"), yOffset: 34)
-                            .accessibilityLabel(L("history.action.copyTranscript"))
-                    }
-                }
-
-                Text(content)
-                    .font(.studioBody(StudioTheme.Typography.bodySmall))
-                    .foregroundStyle(emphasize ? StudioTheme.danger : StudioTheme.textPrimary)
-                    .textSelection(.enabled)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(StudioTheme.Insets.cardDense)
-            .background(
-                RoundedRectangle(cornerRadius: StudioTheme.CornerRadius.large, style: .continuous)
-                    .fill(StudioTheme.controlSurface)
-            )
         }
     }
 }

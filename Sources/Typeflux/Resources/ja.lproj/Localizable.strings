@@ -893,6 +893,7 @@
 "settings.models.storagePathCopied" = "ストレージパスがコピーされました。";
 "settings.models.configurationSaved" = "設定が保存されました。";
 "settings.models.connectionSuccess" = "接続済み · 最初のトークン: %dms · 合計: %dms";
+"settings.models.connectionPreview" = "応答";
 "settings.models.useLocal" = "ローカルを使用する";
 "settings.models.useRemote" = "リモートを使用する";
 "settings.models.useMultimodal" = "マルチモーダルを使用する";
@@ -5387,5 +5388,6 @@
 "component.collapsed" = "折りたたみ済み";
 "component.add" = "追加";
 "component.remove" = "削除";
+"component.more" = "その他";
 "component.undo" = "取り消す";
 "component.required" = "必須";

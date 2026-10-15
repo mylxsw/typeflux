@@ -43,20 +43,18 @@ struct StudioPersonaLibraryView: View {
             }
             .overlay(alignment: .bottom) {
                 if let message = viewModel.personaUndoMessage, viewModel.personaPendingDeletion == nil {
-                    HStack(spacing: 14) {
-                        Text(message).lineLimit(2)
-                        Button(L("personas.redesign.undo")) { viewModel.undoPersonaChange() }
+                    HStack(spacing: TFMetrics.toolbarSpacing) {
+                        Text(message).font(.system(size: 12.5)).foregroundStyle(TFColors.textPrimary).lineLimit(2)
+                        Spacer(minLength: 8)
+                        TFButton(title: L("personas.redesign.undo"), size: .small) { viewModel.undoPersonaChange() }
                             .accessibilityIdentifier("personas.undoAction")
-                            .foregroundStyle(StudioTheme.accent)
-                        Button { viewModel.dismissPersonaUndo() } label: { Image(systemName: "xmark") }
-                            .accessibilityLabel(L("personas.redesign.close"))
+                        TFButton(title: L("personas.redesign.close"), systemImage: "xmark", kind: .plain, size: .small,
+                                 iconOnly: true) { viewModel.dismissPersonaUndo() }
                     }
-                    .buttonStyle(.plain)
-                    .font(.system(size: 12))
-                    .padding(12)
-                    .background(StudioTheme.surface, in: RoundedRectangle(cornerRadius: 10))
-                    .overlay(RoundedRectangle(cornerRadius: 10).stroke(StudioTheme.border))
-                    .shadow(radius: 8, y: 3)
+                    .padding(.horizontal, 12).frame(minHeight: 40)
+                    .frame(maxWidth: 520)
+                    .tfCardSurface()
+                    .shadow(color: .black.opacity(0.12), radius: 8, y: 3)
                     .padding(12)
                     .accessibilityElement(children: .contain)
                     .accessibilityIdentifier("personas.undo")
@@ -93,14 +91,6 @@ struct StudioPersonaLibraryView: View {
         } message: {
             Text(L("personas.redesign.guardMessage"))
         }
-    }
-}
-
-struct PersonaPanelModifier: ViewModifier {
-    func body(content: Content) -> some View {
-        content
-            .background(StudioTheme.cardSurface, in: RoundedRectangle(cornerRadius: 14))
-            .overlay(RoundedRectangle(cornerRadius: 14).stroke(StudioTheme.border.opacity(0.65)))
     }
 }
 

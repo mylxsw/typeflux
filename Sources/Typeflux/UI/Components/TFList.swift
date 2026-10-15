@@ -177,9 +177,15 @@ struct TFCard<Content: View>: View {
     @ViewBuilder var content: Content
 
     var body: some View {
+        VStack(spacing: 0) { content }.tfCardSurface()
+    }
+}
+
+extension View {
+    /// The card fill, corner radius and hairline, for panels laid out by their own stacks.
+    func tfCardSurface() -> some View {
         let shape = RoundedRectangle(cornerRadius: TFMetrics.cardCornerRadius, style: .continuous)
-        VStack(spacing: 0) { content }
-            .background(TFColors.card, in: shape)
+        return background(TFColors.card, in: shape)
             .clipShape(shape)
             .overlay(shape.strokeBorder(TFColors.border, lineWidth: TFMetrics.borderWidth))
     }

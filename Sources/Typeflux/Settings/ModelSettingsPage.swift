@@ -57,52 +57,41 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
 
     @ViewBuilder private var catalogError: some View {
         if let error = library.catalogError {
-            Text(error).font(.caption).foregroundStyle(StudioTheme.danger).padding(.top, 10)
+            TFNotice(text: error, tone: .danger).padding(.top, 10)
         }
     }
 
     private var scenes: some View {
-        ModelSurface {
-            VStack(alignment: .leading, spacing: 0) {
-                sceneRow("ask.models.speech", icon: "mic") {
-                    speechSceneMenu
-                }
-                ModelRowDivider(leading: 66)
-                sceneRow("ask.models.rewrite", icon: "pencil") {
-                    AskModelMenu(
-                        library: library,
-                        reference: $library.rewriteReference,
-                        scenario: "rewrite",
-                        showsDefaultAction: false,
-                        fieldStyle: true
-                    )
-                }
-                ModelRowDivider(leading: 66)
-                sceneRow("models.askDefault", icon: "sparkles") {
-                    AskModelMenu(
-                        library: library,
-                        reference: $library.defaultReference,
-                        showsDefaultAction: false,
-                        fieldStyle: true
-                    )
-                }
+        TFFormSection {
+            sceneRow("ask.models.speech", icon: "mic") {
+                speechSceneMenu
+            }
+            TFDivider.formWithIcon
+            sceneRow("ask.models.rewrite", icon: "pencil") {
+                AskModelMenu(library: library, reference: $library.rewriteReference, scenario: "rewrite",
+                             showsDefaultAction: false, fieldStyle: true)
+            }
+            TFDivider.formWithIcon
+            sceneRow("models.askDefault", icon: "sparkles") {
+                AskModelMenu(library: library, reference: $library.defaultReference, showsDefaultAction: false,
+                             fieldStyle: true)
             }
         }
     }
 
     private var speechSceneMenu: some View {
-        SettingsMenuPicker(
+        TFPopUpButton(
             title: speechModelName(viewModel.sttProvider)
                 + (speechReason(viewModel.sttProvider).map { " — " + $0 } ?? ""),
-            options: speechProviders.flatMap { provider -> [(label: String, value: SpeechModelSelection)] in
+            options: speechProviders.flatMap { provider -> [TFOption<SpeechModelSelection>] in
                 if provider == .localModel {
                     return LocalSTTModel.displayOrder.filter { viewModel.isModelAvailable($0) }.map {
-                        (label: $0.displayName, value: SpeechModelSelection(provider: provider, localModel: $0))
+                        TFOption(SpeechModelSelection(provider: provider, localModel: $0), $0.displayName)
                     }
                 }
                 let name = speechModelName(provider)
-                return [(label: name == provider.displayName ? name : provider.displayName + " · " + name,
-                         value: SpeechModelSelection(provider: provider))]
+                return [TFOption(SpeechModelSelection(provider: provider),
+                                 name == provider.displayName ? name : provider.displayName + " · " + name)]
             },
             selection: Binding(
                 get: { SpeechModelSelection(
@@ -115,23 +104,15 @@ struct ModelSettingsPage<SpeechDetail: View>: View {
                     }
                     viewModel.setSTTProvider(selection.provider)
                 }
-            )
+            ),
+            width: 240,
+            identifier: "models.scene.speech"
         )
-        .frame(width: 240)
-        .accessibilityIdentifier("models.scene.speech")
     }
 
     private func sceneRow(_ title: String, icon: String,
                           @ViewBuilder content: () -> some View) -> some View {
-        HStack(spacing: 14) {
-            ModelIconTile {
-                Image(systemName: icon).font(.system(size: 15)).foregroundStyle(StudioTheme.textSecondary)
-            }
-            Text(L(title)).font(.system(size: StudioTheme.Typography.settingTitle, weight: .semibold))
-                .foregroundStyle(StudioTheme.textPrimary)
-            Spacer(minLength: 16)
-            content()
-        }.padding(.horizontal, 18).padding(.vertical, 14).frame(minHeight: 68)
+        TFFormRow(title: L(title), icon: icon, control: content)
     }
 
     private var languageList: some View {
@@ -234,39 +215,25 @@ extension ModelSettingsPage {
         unconfigured: [ModelProviderRowData],
         onSelect: @escaping (String) -> Void
     ) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: TFMetrics.sectionSpacing) {
             if !connected.isEmpty {
-                SettingsListSectionLabel(title: L("models.configured"), count: connected.count)
-                    .padding(.bottom, 8)
-                providerSurface(connected, onSelect: onSelect)
+                providerGroup(L("models.configured"), connected, onSelect: onSelect)
             }
             if !unconfigured.isEmpty {
-                SettingsListSectionLabel(title: L("models.notConfigured"), count: unconfigured.count)
-                    .padding(.top, connected.isEmpty ? 0 : 22).padding(.bottom, 8)
-                providerSurface(unconfigured, onSelect: onSelect)
+                providerGroup(L("models.notConfigured"), unconfigured, onSelect: onSelect)
             }
             if connected.isEmpty, unconfigured.isEmpty, !search.trimmingCharacters(in: .whitespaces).isEmpty {
-                ModelSurface {
-                    Text(String(format: L("models.searchEmpty"), search))
-                        .font(.system(size: 13)).foregroundStyle(StudioTheme.textTertiary)
-                        .frame(maxWidth: .infinity).padding(.vertical, 26)
-                }
+                TFSearchEmptyState(query: search, onClear: { viewModel.modelSearchQuery = "" })
             }
         }
     }
 
-    private func providerSurface(
-        _ rows: [ModelProviderRowData],
-        onSelect: @escaping (String) -> Void
-    ) -> some View {
-        ModelSurface {
-            VStack(spacing: 0) {
-                ForEach(Array(rows.enumerated()), id: \.element.id) { index, row in
-                    if index > 0 {
-                        ModelRowDivider(leading: 66)
-                    }
-                    ModelProviderRow(row: row) { onSelect(row.id) }
-                }
+    private func providerGroup(_ title: String, _ rows: [ModelProviderRowData],
+                               onSelect: @escaping (String) -> Void) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            TFSectionHeader(title: title, count: rows.count)
+            TFListGroup(rows) { row in
+                ModelProviderRow(row: row) { onSelect(row.id) }
             }
         }
     }
