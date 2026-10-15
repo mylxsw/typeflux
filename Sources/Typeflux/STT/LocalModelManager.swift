@@ -314,17 +314,18 @@ final class LocalModelManager: LocalSTTModelManaging {
                     eventName: cancelled ? "model_download_cancelled" : "model_download_failed",
                     properties: properties
                 )
-                NetworkDebugLogger.logError(
-                    context: "[Local Model Download] source failed: \(source.displayName)",
-                    error: error
+                NetworkDebugLogger.logMessage(
+                    "[Local Model Download] source failed: \(source.rawValue) category=\(Self.errorCategory(error))"
                 )
+                if error is LocalInferenceUnavailable { break }
                 let attemptedPath = storagePath(for: LocalSTTConfiguration(
                     model: configuration.model,
                     modelIdentifier: configuration.modelIdentifier,
                     downloadSource: source,
                     autoSetup: configuration.autoSetup
                 ))
-                if !isPreparedStoragePathValid(attemptedPath, for: configuration.model) {
+                if !isPreparedStoragePathValid(attemptedPath, for: configuration.model),
+                   (try? WhisperWorkerPool.shared.checkUnused(URL(fileURLWithPath: attemptedPath))) != nil {
                     try? fileManager.removeItem(at: URL(fileURLWithPath: attemptedPath, isDirectory: true))
                 }
                 if cancelled { break }
@@ -508,7 +509,7 @@ final class LocalModelManager: LocalSTTModelManaging {
                 URL(fileURLWithPath: downloadBasePath, isDirectory: true)
             )
             NetworkDebugLogger.logMessage(
-                "[Local Model Download] model=\(configuration.model.displayName) source=\(configuration.downloadSource.displayName) kind=whisperkit-local modelFolder=\(localModelFolderPath)"
+                "[Local Model Download] model=\(configuration.model.displayName) source=\(configuration.downloadSource.displayName) kind=whisperkit-local"
             )
             try await transcriber.prepare { progress, message in
                 let mapped = 0.2 + progress * 0.75
@@ -611,6 +612,7 @@ final class LocalModelManager: LocalSTTModelManaging {
 
     func deleteModelFiles(_ model: LocalSTTModel) throws {
         let resourceURL = resourceDirectoryURL(for: model)
+        try WhisperWorkerPool.shared.checkUnused(resourceURL)
         if fileManager.fileExists(atPath: resourceURL.path) {
             try fileManager.removeItem(at: resourceURL)
         }

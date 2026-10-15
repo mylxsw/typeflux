@@ -25,6 +25,9 @@ struct ManagedProcess: Sendable { // swiftlint:disable:this type_body_length
         var immediateCleanupOnExit = false
         /// Called only after the direct child has been reaped (possibly later).
         var onReaped: (@Sendable () -> Void)?
+        /// A borrowed socket, kept open until onStarted or a launch error. Only
+        /// fd 100 is inherited; the caller owns its protocol and lifetime.
+        var ipcDescriptor: Int32?
     }
 
     enum Termination: Equatable, Sendable {
@@ -90,6 +93,7 @@ struct ManagedProcess: Sendable { // swiftlint:disable:this type_body_length
               (request.stdin?.count ?? 0) <= 32 * 1024 * 1024,
               request.killGrace.isFinite, (0 ... 5).contains(request.killGrace),
               request.drainGrace.isFinite, (0 ... 5).contains(request.drainGrace),
+              request.ipcDescriptor.map({ $0 >= 3 }) ?? true,
               strings.allSatisfy({ !$0.contains("\0") }),
               request.environment.keys.allSatisfy({ !$0.isEmpty && !$0.contains("=") }) else {
             throw NSError(domain: NSPOSIXErrorDomain, code: Int(EINVAL))
@@ -311,6 +315,9 @@ struct ManagedProcess: Sendable { // swiftlint:disable:this type_body_length
             try check(posix_spawn_file_actions_addfchdir(&actions, request.directoryDescriptor))
         } else {
             try check(posix_spawn_file_actions_addfchdir_np(&actions, request.directoryDescriptor))
+        }
+        if let descriptor = request.ipcDescriptor {
+            try check(posix_spawn_file_actions_adddup2(&actions, descriptor, 100))
         }
         var attributes: posix_spawnattr_t?
         try check(posix_spawnattr_init(&attributes))

@@ -9,7 +9,10 @@ protocol LocalWhisperKitTranscribing: AnyObject {
     ) async throws -> String
 
     func prepare(onProgress: ((Double, String) -> Void)?) async throws
+    func stop()
 }
+
+extension LocalWhisperKitTranscribing { func stop() {} }
 
 final class LocalModelTranscriber: TranscriptionProfileAwareTranscriber {
     static let defaultWhisperKitKeepAliveDuration: TimeInterval = 30 * 60
@@ -63,20 +66,6 @@ final class LocalModelTranscriber: TranscriptionProfileAwareTranscriber {
         onUpdate: @escaping @Sendable (TranscriptionSnapshot) async -> Void
     ) async throws -> String {
         let model = selectedModelIdentifier()
-        NetworkDebugLogger.logRequest(
-            URLRequest(url: audioFile.fileURL),
-            bodyDescription: """
-            {
-              "provider": "\(settingsStore.localSTTModel.rawValue)",
-              "model": "\(model)",
-              "mode": "native",
-              "prompt": "\(vocabularyPromptText() ?? "")",
-              "file": {
-                "path": "\(audioFile.fileURL.path)"
-              }
-            }
-            """
-        )
 
         switch settingsStore.localSTTModel {
         case .whisperLocal, .whisperLocalLarge:
@@ -118,6 +107,11 @@ final class LocalModelTranscriber: TranscriptionProfileAwareTranscriber {
         }
     }
 
+    deinit {
+        whisperKitCacheExpirationTask?.cancel()
+        whisperKitCache.values.forEach { $0.stop() }
+    }
+
     // MARK: - Private
 
     private func preparedModelInfo() async throws -> LocalSTTPreparedModelInfo {
@@ -148,6 +142,7 @@ final class LocalModelTranscriber: TranscriptionProfileAwareTranscriber {
             return cached
         }
 
+        whisperKitCache.values.forEach { $0.stop() }
         whisperKitCache.removeAll(keepingCapacity: true)
         let transcriber = whisperKitTranscriberFactory(modelName, modelFolder)
         whisperKitCache[cacheKey] = transcriber
@@ -160,6 +155,7 @@ final class LocalModelTranscriber: TranscriptionProfileAwareTranscriber {
         whisperKitCacheLock.lock()
         whisperKitCacheExpirationTask?.cancel()
         whisperKitCacheExpirationTask = nil
+        whisperKitCache.values.forEach { $0.stop() }
         whisperKitCache.removeAll(keepingCapacity: keepingCapacity)
         whisperKitCacheLock.unlock()
     }
@@ -182,7 +178,7 @@ final class LocalModelTranscriber: TranscriptionProfileAwareTranscriber {
 
     private func expireWhisperKitCache(cacheKey: String) {
         whisperKitCacheLock.lock()
-        whisperKitCache.removeValue(forKey: cacheKey)
+        whisperKitCache.removeValue(forKey: cacheKey)?.stop()
         if whisperKitCache.isEmpty {
             whisperKitCacheExpirationTask = nil
         }

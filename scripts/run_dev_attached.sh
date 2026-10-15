@@ -148,6 +148,7 @@ mkdir -p "$APP_DIR/Contents/Resources"
 cp "$ROOT_DIR/app/Info.plist" "$APP_DIR/Contents/Info.plist"
 bash "$ROOT_DIR/scripts/configure_dev_web_auth.sh" "$APP_DIR/Contents/Info.plist"
 cp "$BIN" "$APP_DIR/Contents/MacOS/Typeflux"
+bash "$ROOT_DIR/scripts/copy_inference_helper.sh" "$BIN_DIR" "$APP_DIR"
 cp "$ROOT_DIR/app/Typeflux.icns" "$APP_DIR/Contents/Resources/Typeflux.icns"
 bash "$ROOT_DIR/scripts/copy_resource_bundles.sh" "$BIN_DIR" "$APP_DIR/Contents/Resources"
 install_bundled_models
@@ -261,6 +262,8 @@ fi
 #   TYPEFLUX_DEV_PROVISIONING_PROFILE="/path/to/profile.provisionprofile" \
 #   TYPEFLUX_DEV_CODESIGN_IDENTITY="Apple Development: Your Name (...)" ./scripts/run_dev_attached.sh
 if command -v codesign >/dev/null 2>&1; then
+  codesign --force --sign "$TYPEFLUX_DEV_CODESIGN_IDENTITY" --options runtime \
+    "$APP_DIR/Contents/Helpers/TypefluxInferenceHelper"
   semantic_helper="$APP_DIR/Contents/Resources/LocalRuntimes/SemanticSearch/TypefluxSemanticHelper"
   if [[ -f "$semantic_helper" ]]; then
     codesign --force --sign "$TYPEFLUX_DEV_CODESIGN_IDENTITY" --options runtime "$semantic_helper"

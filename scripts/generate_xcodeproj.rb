@@ -3,6 +3,7 @@
 
 require 'fileutils'
 require 'xcodeproj'
+require_relative 'xcode_inference_helper'
 
 ROOT = File.expand_path('..', __dir__)
 PROJECT_PATH = File.join(ROOT, 'TypefluxApp.xcodeproj')
@@ -60,6 +61,8 @@ app_target.build_configurations.each do |config|
     settings['ENABLE_HARDENED_RUNTIME'] = 'NO'
     settings['ASSETCATALOG_COMPILER_APPICON_NAME'] = ''
 end
+
+add_inference_helper(project, app_target, TEAM_ID)
 
 scheme = Xcodeproj::XCScheme.new
 scheme.configure_with_targets(app_target, nil, launch_target: true)

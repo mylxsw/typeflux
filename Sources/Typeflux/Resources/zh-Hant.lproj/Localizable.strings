@@ -5531,3 +5531,5 @@
 "ask.system.busy" = "另一個系統命令仍在執行，本次命令未執行。";
 "ask.system.coolingDown" = "系統命令在故障後暫時暫停，本次命令未執行。";
 "ask.system.disabled" = "系統命令服務已停止，本次命令未執行。";
+
+"localSTT.error.inferenceUnavailable" = "本機轉寫暫時無法使用，未重複提交本次請求。請稍後再試。";

@@ -1,14 +1,68 @@
 @testable import Typeflux
-import WhisperKit
+import TypefluxInferenceRuntime
 import XCTest
 
 final class LocalModelTranscriberTests: XCTestCase {
+    func testLocalInferenceFailureDoesNotRetryAnotherDownloadSource() async throws {
+        let root = makeTemporaryApplicationSupportURL()
+        let counter = WhisperPreparationFailures()
+        let manager = LocalModelManager(applicationSupportURL: root,
+            whisperKitPreparerFactory: { _, _, _, _ in counter },
+            remoteFileLoader: { _ in XCTFail("Unexpected source fallback"); throw URLError(.cancelled) },
+            downloadSourceResolver: FixedLocalModelDownloadSourceResolver(sources: [.huggingFace, .modelScope]))
+        do {
+            _ = try await manager.downloadModelFilesOnly(configuration: LocalSTTConfiguration(
+                model: .whisperLocal, modelIdentifier: "whisperkit-base", downloadSource: .huggingFace, autoSetup: true))
+            XCTFail()
+        } catch { XCTAssertTrue(error is LocalInferenceUnavailable) }
+        XCTAssertEqual(counter.attempts, 1)
+    }
+
+    func testWhisperModelDeletionWaitsForItsWorkerLease() throws {
+        let root = makeTemporaryApplicationSupportURL()
+        let manager = LocalModelManager(applicationSupportURL: root)
+        let directory = root.appendingPathComponent("Typeflux/LocalModels/whisperLocal")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let sentinel = directory.appendingPathComponent("keep")
+        try Data("model".utf8).write(to: sentinel)
+        let pool = WhisperWorkerPool.shared
+        let lease = try pool.reserve(paths: [directory.appendingPathComponent("models/base").path], stop: {})
+        XCTAssertThrowsError(try manager.deleteModelFiles(.whisperLocal))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: sentinel.path))
+        pool.release(lease, failed: false)
+        try manager.deleteModelFiles(.whisperLocal)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: sentinel.path))
+    }
+
+    func testWhisperModelSwitchStopsPreviousCachedWorker() async throws {
+        let suite = "WhisperSwitch-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let settings = SettingsStore(defaults: defaults)
+        settings.localSTTModel = .whisperLocal
+        settings.localSTTModelIdentifier = "whisperkit-base"
+        settings.localSTTAutoSetup = false
+        let manager = FakeLocalSTTModelManager(preparedInfo: .init(storagePath: "/fixture", sourceDisplayName: "fixture"))
+        let factory = FakeWhisperKitTranscriberFactory()
+        let transcriber = LocalModelTranscriber(settingsStore: settings, modelManager: manager,
+            whisperKitTranscriberFactory: factory.makeTranscriber(modelName:modelFolder:))
+        let audio = try makeTestWAVFile()
+        _ = try await transcriber.transcribe(audioFile: audio)
+        settings.localSTTModelIdentifier = "whisperkit-small"
+        _ = try await transcriber.transcribe(audioFile: audio)
+        XCTAssertTrue(factory.createdTranscribers[0].stopped)
+        XCTAssertFalse(factory.createdTranscribers[1].stopped)
+        settings.localSTTModel = .senseVoiceSmall
+        await transcriber.prepareForRecording()
+        XCTAssertTrue(factory.createdTranscribers[1].stopped)
+    }
+
     func testWhisperKitTranscriberUsesAutomaticLanguageDetection() {
         let originalLanguage = AppLocalization.shared.language
         AppLocalization.shared.setLanguage(.english)
         defer { AppLocalization.shared.setLanguage(originalLanguage) }
 
-        let options = WhisperKitTranscriber.decodingOptions()
+        let options = WhisperInferenceEngine.options(lowEnergy: false, language: nil)
 
         XCTAssertEqual(options.task, .transcribe)
         XCTAssertNil(options.language)
@@ -19,18 +73,12 @@ final class LocalModelTranscriberTests: XCTestCase {
     }
 
     func testWhisperKitLowEnergyRetryUsesLanguageHintAndRelaxedNoSpeechThreshold() {
-        let chineseOptions = WhisperKitTranscriber.decodingOptions(
-            profile: .lowEnergyRetry,
-            preferredLanguages: ["zh-CN"]
-        )
+        let chineseOptions = WhisperInferenceEngine.options(lowEnergy: true, language: TranscriptionLanguageHints.preferredWhisperLanguageCode(preferredLanguages: ["zh-CN"]))
         XCTAssertEqual(chineseOptions.language, "zh")
         XCTAssertFalse(chineseOptions.detectLanguage)
         XCTAssertEqual(chineseOptions.noSpeechThreshold, 0.8)
 
-        let unsupportedLanguageOptions = WhisperKitTranscriber.decodingOptions(
-            profile: .lowEnergyRetry,
-            preferredLanguages: ["ja-JP"]
-        )
+        let unsupportedLanguageOptions = WhisperInferenceEngine.options(lowEnergy: true, language: TranscriptionLanguageHints.preferredWhisperLanguageCode(preferredLanguages: ["ja-JP"]))
         XCTAssertNil(unsupportedLanguageOptions.language)
         XCTAssertTrue(unsupportedLanguageOptions.detectLanguage)
         XCTAssertEqual(unsupportedLanguageOptions.noSpeechThreshold, 0.8)
@@ -901,6 +949,7 @@ final class LocalModelTranscriberTests: XCTestCase {
         _ = try await transcriber.transcribe(audioFile: audioFile)
 
         XCTAssertEqual(factory.createdTranscribers.count, 2)
+        XCTAssertTrue(factory.createdTranscribers[0].stopped)
         XCTAssertEqual(factory.createdTranscribers.map(\.modelName), ["base", "base"])
     }
 
@@ -1767,6 +1816,8 @@ private final class FakeWhisperKitTranscriber: LocalWhisperKitTranscribing {
     let modelName: String
     let modelFolder: String
     private(set) var profiles: [TranscriptionProfile] = []
+    private(set) var stopped = false
+    func stop() { stopped = true }
 
     init(modelName: String, modelFolder: String) {
         self.modelName = modelName
@@ -1791,6 +1842,17 @@ private struct FakeWhisperKitPreparer: WhisperKitPreparing {
     let resolvedModelFolderPath: String?
 
     func prepare(onProgress _: ((Double, String) -> Void)?) async throws {}
+}
+
+private final class WhisperPreparationFailures: WhisperKitPreparing, @unchecked Sendable {
+    private let lock = NSLock()
+    private var count = 0
+    var attempts: Int { lock.withLock { count } }
+    var resolvedModelFolderPath: String? { nil }
+    func prepare(onProgress: ((Double, String) -> Void)?) async throws {
+        lock.withLock { count += 1 }
+        throw LocalInferenceUnavailable()
+    }
 }
 
 private actor CapturingRemoteFileLoader {

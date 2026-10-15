@@ -5611,3 +5611,5 @@
 "ask.system.busy" = "Another system command is still running. This command was not executed.";
 "ask.system.coolingDown" = "System commands are temporarily paused after a failure. This command was not executed.";
 "ask.system.disabled" = "System commands are stopped. This command was not executed.";
+
+"localSTT.error.inferenceUnavailable" = "Local transcription is unavailable. Your request was not retried. Try again later.";
