@@ -22,10 +22,11 @@ struct MCPToolAdapter: AgentTool {
 
     func execute(arguments: String) async throws -> String {
         let result = try await call(arguments: arguments)
-        let output = AskTypedContent.output(from: result)
-        let content = output.content
+        let output = await AskTypedContent.output(from: result)
+        let hasImages = result.content.contains { $0.type == "image" }
+        let content = output.content.replacingOccurrences(of: "[Tool image attached]", with: "[Tool image omitted from text-only response]") + (hasImages ? "\n[Unsupported image in this text-only channel. Do not repeat the executed tool to recover its image.]" : "")
 
-        let dict: [String: Any] = if output.isError {
+        let dict: [String: Any] = if output.isError || hasImages {
             ["error": content]
         } else {
             ["result": content]

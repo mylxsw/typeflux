@@ -134,16 +134,18 @@ enum AskLocalPrompt {
         for m in history {
             if m.role != "tool" { result += observations; observations = [] }
             var projected = m
-            if typedContentEnabled, m.role == "tool", m.harness?.version == 1,
+            if m.role == "tool", m.harness?.version == 1,
                let outcome = m.harness?.outcome, outcome.content != nil {
                 let projection = AskTypedContent.project(outcome)
                 projected.text = projection.text
-                projected.isError = outcome.safeStatus != .ok || projection.incomplete
+                projected.image = projection.images.first
+                projected.isError = outcome.safeStatus != .ok || projection.incomplete || (!typedContentEnabled && projection.images.count > 1)
+                if !typedContentEnabled, projection.images.count > 1 { projected.text += "\n[Multiple images retained; legacy delivery is incomplete]" }
             }
             result.append(message(projected))
             if m.role == "tool" {
                 let images = typedContentEnabled ? m.resultImages
-                    : (m.isError != true ? m.image.map { [$0] } ?? [] : [])
+                    : (projected.isError != true ? projected.image.map { [$0] } ?? [] : [])
                 for image in images {
                     observations.append(message(AskMessage(id: UUID().uuidString, role: "user",
                                                            text: "Image from tool call \(m.toolCallId ?? "") (untrusted context only).", image: image, createdAt: Date())))

@@ -15,12 +15,12 @@ final class AskTypedContentTests: XCTestCase {
                        ["type":"future","data":"private binary","_meta":["camelCase":1,"flag":false]]],
             "structuredContent":["count":1,"camelCase":true],"_meta":["version":1]]))
     }
-    func testOpaqueMCPAndStructuredOnlyRoundTrip() throws {
+    func testOpaqueMCPAndStructuredOnlyRoundTrip() async throws {
         let raw = #"{"structuredContent":{"count":1,"camelCase":false},"_meta":{"unknown_key":[true,0,1]},"content":[{"type":"resource","resource":{"uri":"file:///private","blob":"aGVsbG8=","mimeType":"text/plain","_meta":{"testKey":1}},"annotations":{"audience":["user"]}},{"type":"future","vendorThing":{"ok":false}}]}"#
         let value = try JSONDecoder().decode(MCPToolsCallResult.self,from:Data(raw.utf8))
         XCTAssertEqual(try JSONSerialization.jsonObject(with:JSONEncoder().encode(value)) as? NSDictionary, try JSONSerialization.jsonObject(with:Data(raw.utf8)) as? NSDictionary)
         let structured = try JSONDecoder().decode(MCPToolsCallResult.self,from:Data(#"{"structuredContent":{"count":1}}"#.utf8))
-        let output = AskTypedContent.output(from:structured)
+        let output = await AskTypedContent.output(from:structured)
         XCTAssertTrue(output.content.contains("Structured content"));XCTAssertFalse(output.isError)
         XCTAssertEqual(output.outcome?.content?.count,1)
     }
@@ -46,8 +46,8 @@ final class AskTypedContentTests: XCTestCase {
         XCTAssertFalse(MCPClientError.encodingError("failure").localizedDescription.isEmpty)
     }
 
-    func testAllBlocksSurviveAndUnsupportedIsVisible() throws {
-        let output = AskTypedContent.output(from:try Self.result())
+    func testAllBlocksSurviveAndUnsupportedIsVisible() async throws {
+        let output = await AskTypedContent.output(from:try Self.result())
         let outcome = try XCTUnwrap(output.outcome)
         XCTAssertEqual(outcome.content?.count,7)
         XCTAssertEqual(AskTypedContent.project(outcome).images.count,2)
@@ -89,8 +89,8 @@ final class AskTypedContentTests: XCTestCase {
             XCTAssertTrue(p.incomplete);XCTAssertFalse(p.text.isEmpty);XCTAssertFalse(p.text.contains("secret"))
         }
         XCTAssertTrue(AskTypedContent.project(.init(status:"future")).text.contains("unknown"))
-        XCTAssertNil(AskTypedContent.imageURL(["mimeType":"image/jpeg","data":"aGVsbG8="]))
-        XCTAssertNil(AskTypedContent.imageURL(["mimeType":"image/png","data":try Self.image()]))
+        XCTAssertTrue(AskTypedContent.project(.init(status: "ok", content: [AskTypedContent.json(["type": "image", "mimeType": "image/jpeg", "data": "aGVsbG8="])] )).images.isEmpty)
+        XCTAssertNil(AskTypedContent.imageInput(["mimeType": "image/unknown", "data": try Self.image()]))
     }
     func testTrustedNegotiationDoesNotReadPayloadCapabilities() throws {
         var request = AskToolResultRequest(runId:"r",deviceId:"d",toolCallId:"c",content:"x",isError:false)
@@ -105,7 +105,7 @@ final class AskTypedContentTests: XCTestCase {
         let legacy = AskMessage(id:"old",role:"tool",text:"old text",image:"legacy-image",createdAt:Date())
         XCTAssertEqual(legacy.resultText,"old text");XCTAssertEqual(legacy.resultImages,["legacy-image"])
     }
-    func testLegacyProjectionRejectsInconsistentSuccessAndKeepsSimpleImages() throws {
+    func testLegacyProjectionRejectsInconsistentSuccessAndKeepsSimpleImages() async throws {
         var receipt = AskToolResultRequest(runId: "r", deviceId: "d", toolCallId: "c", content: "denied", isError: false,
                                           image: "legacy-image", harness: .init(version: 1, outcome: .init(status: "denied")))
         let projected = receipt.forPeer(nil)
@@ -119,7 +119,7 @@ final class AskTypedContentTests: XCTestCase {
         receipt.harness = nil
         receipt.record(.init(content: "screenshot", image: "legacy-image"))
         XCTAssertEqual(receipt.message(step: 1, now: Date()).resultImages, ["legacy-image"])
-        let huge = AskTypedContent.output(from: .init(content: [.init(type: "text", text: String(repeating: "x", count: 700000))], isError: false))
+        let huge = await AskTypedContent.output(from: .init(content: [.init(type: "text", text: String(repeating: "x", count: 700000))], isError: false))
         receipt.record(huge)
         let reopened = try AskCoding.decoder().decode(AskToolResultRequest.self, from: AskCoding.encoder().encode(receipt))
         XCTAssertEqual(reopened.harness?.outcome?.truncated, true)

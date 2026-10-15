@@ -1,3 +1,4 @@
+import TypefluxMediaProtocol
 import Foundation
 
 /// Analysis execution is gated off in production until hostile process/session
@@ -169,6 +170,7 @@ struct AskCodeSandbox: Sendable {
         var stderr: String
         var changedFiles: [(name: String, size: Int)]
         var image: String?
+        var imageIncomplete = false
     }
 
     func run(_ language: Language, code: String, conversationId: String,
@@ -222,9 +224,10 @@ struct AskCodeSandbox: Sendable {
         }
         try Task.checkCancellation()
         let changed = Self.changes(before: before, after: workspace.snapshot())
+        let image = await Self.firstImage(changed, workspace: workspace)
         return Execution(exitCode: result.exitCode, timedOut: result.termination == .timedOut,
                          stdout: result.stdout, stderr: result.stderr, changedFiles: changed,
-                         image: Self.firstImage(changed, workspace: workspace))
+                         image: image.url, imageIncomplete: image.incomplete)
     }
 
     private func readableRoots(control: AskSecureDirectory, root: AskSecureDirectory,
@@ -247,14 +250,19 @@ struct AskCodeSandbox: Sendable {
         return readable
     }
 
-    private static func firstImage(_ changed: [(name: String, size: Int)], workspace: AskSecureDirectory) -> String? {
-        for file in changed where ["png", "jpg", "jpeg"].contains((file.name as NSString).pathExtension.lowercased()) {
+    static func firstImage(_ changed: [(name: String, size: Int)], workspace: AskSecureDirectory,
+                           normalize: @Sendable (Data, MediaImageType) async throws -> String = {
+                               try await AskToolImageNormalizer.image($0, type: $1)
+                           }) async -> (url: String?, incomplete: Bool) {
+        // The program has finished. Decode at most four candidates, never rerun it.
+        let images = changed.filter { ["png", "jpg", "jpeg"].contains(($0.name as NSString).pathExtension.lowercased()) }
+        for file in images.prefix(4) {
+            guard !Task.isCancelled else { break }
             if let data = try? workspace.readFile(file.name, limit: 10 * 1024 * 1024),
-               let url = AskLocalTools.jpegDataURL(base64: data.base64EncodedString()) {
-                return url
-            }
+               let url = try? await normalize(data, (file.name as NSString).pathExtension.lowercased() == "png" ? .png : .jpeg),
+               !Task.isCancelled, AskToolImageNormalizer.valid(url) { return (url, false) }
         }
-        return nil
+        return (nil, !images.isEmpty)
     }
 
     static func changes(before: [String: (Date, Int)], after: [String: (Date, Int)]) -> [(name: String, size: Int)] {
@@ -278,6 +286,7 @@ struct AskCodeSandbox: Sendable {
             lines.append("Files written in the workspace \(workspace):")
             lines += execution.changedFiles.prefix(50).map { "- \($0.name) (\($0.size) bytes)" }
         }
+        if execution.imageIncomplete { lines.append("Image projection unavailable; program output and workspace files retained. Do not rerun the program to recover this image.") }
         if execution.image != nil {
             lines.append("The first new image is attached.")
         }

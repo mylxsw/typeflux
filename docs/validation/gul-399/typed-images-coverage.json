@@ -1,0 +1,182 @@
+{
+  "covered": 291,
+  "executable_added": 307,
+  "percent": 94.79,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Ask/AskAPIClient.swift",
+      "covered": 3,
+      "executable_added": 3,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "attribution": "initial-unchanged-production"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskActivity.swift",
+      "covered": 1,
+      "executable_added": 1,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "attribution": "initial-unchanged-production"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskActivityViews.swift",
+      "covered": 10,
+      "executable_added": 13,
+      "percent": 76.92,
+      "uncovered": [
+        320,
+        321,
+        422
+      ],
+      "instrumented": true,
+      "attribution": "final-correction"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskCodeSandbox.swift",
+      "covered": 9,
+      "executable_added": 14,
+      "percent": 64.29,
+      "uncovered": [
+        173,
+        227,
+        230,
+        254,
+        255
+      ],
+      "instrumented": true,
+      "attribution": "final-correction"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskDesign.swift",
+      "covered": 1,
+      "executable_added": 1,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "attribution": "initial-unchanged-production"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskHarnessContract.swift",
+      "covered": 7,
+      "executable_added": 7,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "attribution": "initial-unchanged-production"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskLocalTools+Approval.swift",
+      "covered": 5,
+      "executable_added": 10,
+      "percent": 50.0,
+      "uncovered": [
+        148,
+        149,
+        150,
+        151,
+        152
+      ],
+      "instrumented": true,
+      "attribution": "initial-unchanged-production"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskLocalTools.swift",
+      "covered": 3,
+      "executable_added": 5,
+      "percent": 60.0,
+      "uncovered": [
+        384,
+        385
+      ],
+      "instrumented": true,
+      "attribution": "initial-unchanged-production"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskToolImageNormalizer.swift",
+      "covered": 31,
+      "executable_added": 31,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "attribution": "initial-unchanged-production"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskToolImageView.swift",
+      "covered": 59,
+      "executable_added": 59,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "attribution": "final-correction"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskTypedContent.swift",
+      "covered": 121,
+      "executable_added": 121,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "attribution": "final-correction"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/Local/AskLocalEngine.swift",
+      "covered": 18,
+      "executable_added": 19,
+      "percent": 94.74,
+      "uncovered": [
+        58
+      ],
+      "instrumented": true,
+      "attribution": "initial-unchanged-production"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/Local/AskLocalPrompt.swift",
+      "covered": 5,
+      "executable_added": 5,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "attribution": "initial-unchanged-production"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "covered": 2,
+      "executable_added": 2,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "attribution": "initial-unchanged-production"
+    },
+    {
+      "file": "Sources/Typeflux/LLM/MCP/MCPToolAdapter.swift",
+      "covered": 4,
+      "executable_added": 4,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "attribution": "initial-unchanged-production"
+    },
+    {
+      "file": "Sources/TypefluxMediaProtocol/MediaProtocol.swift",
+      "covered": 4,
+      "executable_added": 4,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "attribution": "initial-unchanged-production"
+    },
+    {
+      "file": "Sources/TypefluxMediaRuntime/MediaDecoder.swift",
+      "covered": 8,
+      "executable_added": 8,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "attribution": "final-correction"
+    }
+  ],
+  "note": "Per-file attribution from matching saved initial and final binaries; profiles across changed counter layouts were not merged."
+}

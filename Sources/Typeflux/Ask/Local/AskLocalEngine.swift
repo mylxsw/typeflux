@@ -40,6 +40,7 @@ actor AskLocalEngine: AskAPI {
     static let staleAfter: TimeInterval = 10 * 60
 
     let directory: URL
+    private let prepareImages: @Sendable ([AskMessage]) async -> [AskMessage]
     private let typedContentEnabled: Bool
     private let webTools: AskLocalWebTools
     let budgetEnabled: Bool
@@ -54,7 +55,9 @@ actor AskLocalEngine: AskAPI {
     init(directory: URL = AskLocalEngine.defaultDirectory, webTools: AskLocalWebTools = AskLocalWebTools(),
          now: @escaping @Sendable () -> Date = { Date() }, typedContentEnabled: Bool = false,
          budgetEnabled: Bool = false, budgetLimits: AskBudgetResources = .standard,
-         contextLimits: @escaping @Sendable (String) -> AskContextLimits = { _ in .init() }) {
+         contextLimits: @escaping @Sendable (String) -> AskContextLimits = { _ in .init() },
+         prepareImages: @escaping @Sendable ([AskMessage]) async -> [AskMessage] = { await AskTypedContent.prepareHistory($0) }) {
+        self.prepareImages = prepareImages
         self.budgetEnabled = budgetEnabled
         self.budgetLimits = budgetLimits
         self.contextLimits = contextLimits
@@ -110,7 +113,9 @@ actor AskLocalEngine: AskAPI {
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             try AskCoding.encoder().encode(record).write(to: file(record.conversation.id), options: [.atomic, .completeFileProtection])
         }
-        records[record.conversation.id] = record
+        var retained = record
+        for index in retained.conversation.messages.indices { retained.conversation.messages[index].harness?.outcome?.preparedImages = [:] }
+        records[record.conversation.id] = retained
     }
 
     func isTemporary(_ id: String) -> Bool { temporaryIDs.contains(AskConversationID.canonical(id)) }
@@ -475,7 +480,19 @@ actor AskLocalEngine: AskAPI {
         record.conversation.run?.preview = nil
         record.conversation.run?.reasoning = nil
         record.conversation.run?.reasoningMilliseconds = nil
-        return try queue(&record, payload: AskLocalPrompt.payload(conversation: record.conversation, record: record, tools: allTools(record)),
+        var promptConversation = record.conversation
+        if promptConversation.messages.suffix(12).contains(where: { !$0.retainedResultImages.isEmpty && $0.harness?.outcome?.content != nil }) {
+            // Persist the completed tool receipt before awaiting read-only image work.
+            record.conversation.run?.status = "running"
+            try save(&record)
+            let revision = record.conversation.revision
+            promptConversation = record.conversation
+            promptConversation.messages = await prepareImages(promptConversation.messages)
+            try Task.checkCancellation()
+            // Cancellation, deletion, steering and privacy changes may have advanced the record.
+            guard records[record.conversation.id]?.conversation.revision == revision else { throw conflict() }
+        }
+        return try queue(&record, payload: AskLocalPrompt.payload(conversation: promptConversation, record: record, tools: allTools(record)),
                          summaryThrough: nil)
     }
 

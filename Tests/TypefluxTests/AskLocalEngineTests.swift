@@ -125,12 +125,49 @@ final class AskLocalEngineTests: XCTestCase {
         XCTAssertTrue(empty.isEmpty)
     }
 
+    func testLegacyReopenedTypedReceiptPreparesWithoutRepeatingTool() async throws {
+        let engine = engine()
+        var c = try await engine.send(conversationId: "image-legacy", request: request(), token: "")
+        c = try await answer(engine, c, calls: [call("browser", #"{"action":"read"}"#, id: "typed")])
+        let raw = AskTypedContent.json(["type": "image", "mimeType": "image/jpeg", "data": try AskTypedContentTests.image()])
+        let receipt = AskToolResultRequest(runId: c.run!.id, deviceId: device, toolCallId: "typed", content: "ran", isError: false,
+                                          harness: .init(version: 1, outcome: .init(status: "ok", content: [raw])))
+        let finished = try await engine.result(conversationId: c.id, request: receipt, token: "")
+        let messages = try XCTUnwrap(try payload(finished)["messages"] as? [[String: Any]])
+        let urls = messages.flatMap { $0["content"] as? [[String: Any]] ?? [] }.compactMap { ($0["image_url"] as? [String: Any])?["url"] as? String }
+        XCTAssertTrue(urls.contains { $0.hasPrefix("data:image/jpeg;base64,") })
+        let repeated = try await engine.result(conversationId: c.id, request: receipt, token: "")
+        XCTAssertEqual(repeated.revision, finished.revision)
+        XCTAssertEqual(repeated.messages.filter { $0.toolCallId == "typed" }.count, 1)
+    }
+
+    func testCancellationDuringImagePreparationKeepsReceiptAndCannotQueueInference() async throws {
+        let gate = TypedEngineGate()
+        let engine = AskLocalEngine(directory: directory, typedContentEnabled: true, prepareImages: { messages in
+            await gate.wait(); return messages
+        })
+        var c = try await engine.send(conversationId: "image-cancel", request: request(), token: "")
+        c = try await answer(engine, c, calls: [call("browser", #"{"action":"read"}"#, id: "typed")])
+        let raw = AskTypedContent.json(["type": "image", "mimeType": "image/jpeg", "data": try AskTypedContentTests.image()])
+        let receipt = AskToolResultRequest(runId: c.run!.id, deviceId: device, toolCallId: "typed", content: "ran", isError: false,
+                                          harness: .init(version: 1, outcome: .init(status: "ok", content: [raw])))
+        let task = Task { try await engine.result(conversationId: "image-cancel", request: receipt, token: "") }
+        while !(await gate.started) { await Task.yield() }
+        let cancelled = try await engine.cancel(conversationId: c.id, runId: c.run!.id, token: "")
+        await gate.release()
+        do { _ = try await task.value; XCTFail("Stale preparation must not advance the cancelled run") } catch { }
+        let current = try await engine.conversation(id: c.id, token: "")
+        XCTAssertEqual(current.revision, cancelled.revision)
+        XCTAssertEqual(current.messages.last?.harness?.outcome?.content, [raw])
+        XCTAssertNil(current.run?.inference)
+    }
+
     func testTypedResultThroughLocalRunAndReopen() async throws {
         let engine = AskLocalEngine(directory: directory, webTools: AskLocalWebTools(resolve: { _ in [] }), typedContentEnabled: true)
         let id = UUID().uuidString.lowercased()
         var c = try await engine.send(conversationId: id, request: request(), token: "")
         c = try await answer(engine, c, calls: [call("browser", #"{"action":"read"}"#, id: "typed")])
-        let output = AskTypedContent.output(from: try AskTypedContentTests.result())
+        let output = await AskTypedContent.output(from: try AskTypedContentTests.result())
         var receipt = AskToolResultRequest(runId: c.run!.id, deviceId: device, toolCallId: "typed", content: "", isError: false)
         receipt.record(output)
         c = try await engine.result(conversationId: id, request: receipt, token: "")
@@ -141,7 +178,8 @@ final class AskLocalEngineTests: XCTestCase {
         XCTAssertTrue(c.run!.inference!.payload.contains("Structured content"))
         let reopened = try await self.engine().conversation(id: id, token: "")
         let saved = try XCTUnwrap(reopened.messages.first { $0.toolCallId == "typed" })
-        XCTAssertEqual(saved.resultImages.count, 2)
+        XCTAssertEqual(saved.resultImages.count, 0)
+        XCTAssertEqual(saved.retainedResultImages.count, 2)
         XCTAssertEqual(saved.harness?.outcome?.content?.count, 7)
         XCTAssertEqual(saved.diagnostic?.runId, receipt.runId)
         let again = try await engine.result(conversationId: id, request: receipt, token: "")
@@ -325,4 +363,11 @@ final class AskLocalEngineTests: XCTestCase {
 
 private final class Clock: @unchecked Sendable {
     var now = Date()
+}
+
+private actor TypedEngineGate {
+    var started = false
+    private var continuation: CheckedContinuation<Void, Never>?
+    func wait() async { started = true; await withCheckedContinuation { continuation = $0 } }
+    func release() { continuation?.resume(); continuation = nil }
 }
