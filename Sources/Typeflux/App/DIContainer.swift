@@ -21,6 +21,7 @@ final class DIContainer {
     let moduleRegistry: ModuleRegistry
     let nativeSystemCommands = NativeSystemWorker.shared
     let mediaWorkers = MediaWorker.shared
+    let mediaPreviewWorkers = MediaWorker.previews
     let localInferenceWorkers = WhisperWorkerPool.shared
     let noteStore: RecoveringAskNoteStore
     let wordBookStore: RecoveringAskWordBookStore
