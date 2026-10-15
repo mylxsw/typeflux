@@ -99,20 +99,7 @@ struct HelpSidebar: View {
                 navRow(page)
             }
             Spacer(minLength: 0)
-            Rectangle().fill(AskTheme.separator).frame(height: 1).padding(.bottom, 6)
-            linkRow(L("help.link.website"), symbol: "arrow.up.right.square") {
-                model.open(HelpGuideModel.documentationURL)
-            }
-            Menu {
-                HelpFeedbackOptions(model: model)
-            } label: {
-                linkLabel(L("help.link.feedback"), symbol: "bubble.left")
-            }
-            .menuStyle(.borderlessButton)
-            .menuIndicator(.hidden)
-            .accessibilityLabel(L("help.link.feedback"))
-            Text(Self.version).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
-                .padding(.horizontal, 10).padding(.top, 6)
+            supportFooter
         }
         .padding(.horizontal, 10)
         // Below the traffic lights, which sit over the sidebar like in the notebook window.
@@ -125,6 +112,37 @@ struct HelpSidebar: View {
     static var version: String {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String
         return version.map { "Typeflux \($0)" } ?? "Typeflux"
+    }
+
+    private var supportFooter: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Rectangle().fill(AskTheme.separator).frame(height: 1)
+            HStack(spacing: 8) {
+                Button {
+                    model.open(HelpGuideModel.documentationURL)
+                } label: {
+                    footerLinkLabel(L("help.link.website.short"), symbol: "arrow.up.right.square")
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(L("help.link.website"))
+                .help(L("help.link.website"))
+
+                Menu {
+                    HelpFeedbackOptions(model: model)
+                } label: {
+                    footerLinkLabel(L("help.link.feedback.short"), symbol: "bubble.left")
+                }
+                .menuStyle(.borderlessButton)
+                .menuIndicator(.hidden)
+                .tint(StudioTheme.textSecondary)
+                .accessibilityLabel(L("help.link.feedback"))
+                .help(L("help.link.feedback"))
+            }
+            Text(Self.version)
+                .font(.system(size: 11.5))
+                .foregroundStyle(StudioTheme.textTertiary)
+                .padding(.horizontal, 4)
+        }
     }
 
     private var searchField: some View {
@@ -187,23 +205,14 @@ struct HelpSidebar: View {
         }
     }
 
-    private func linkRow(_ title: String, symbol: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            linkLabel(title, symbol: symbol)
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func linkLabel(_ title: String, symbol: String) -> some View {
-        HStack(spacing: 9) {
-            Image(systemName: symbol).font(.system(size: 12)).frame(width: 18)
-            Text(title).font(.system(size: 12.5))
-            Spacer(minLength: 0)
+    private func footerLinkLabel(_ title: String, symbol: String) -> some View {
+        return HStack(spacing: 6) {
+            Image(systemName: symbol).font(.system(size: 11))
+            Text(title).font(.system(size: 12)).lineLimit(1).minimumScaleFactor(0.85)
         }
         .foregroundStyle(StudioTheme.textSecondary)
-        .padding(.horizontal, 10)
-        .frame(height: 30)
-        .contentShape(Rectangle())
+        .frame(width: (HelpWindowView.sidebarWidth - 28) / 2, height: 32)
+        .contentShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 }
 

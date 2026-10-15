@@ -5299,6 +5299,8 @@
 "help.hint.searchEmpty" = "⌘↩ AI에게 묻기 · esc 검색 지우기";
 "help.link.website" = "Typeflux 웹사이트";
 "help.link.feedback" = "문제 신고";
+"help.link.website.short" = "웹사이트";
+"help.link.feedback.short" = "피드백";
 "help.start.try" = "시도";
 "help.start.voice.title" = "음성 입력";
 "help.start.voice.detail" = "키를 누른 채 말하고 떼면 커서 위치에 글자가 입력됩니다.";

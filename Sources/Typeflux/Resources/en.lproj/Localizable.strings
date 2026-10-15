@@ -5424,6 +5424,8 @@
 "help.hint.searchEmpty" = "⌘↩ ask AI · esc clear search";
 "help.link.website" = "Typeflux website";
 "help.link.feedback" = "Report a problem";
+"help.link.website.short" = "Website";
+"help.link.feedback.short" = "Feedback";
 "help.start.try" = "Try it";
 "help.start.voice.title" = "Voice input";
 "help.start.voice.detail" = "Hold the key and speak; release it and the words appear where you are typing.";

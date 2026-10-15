@@ -5299,6 +5299,8 @@
 "help.hint.searchEmpty" = "⌘↩ AI に聞く · esc 検索をクリア";
 "help.link.website" = "Typeflux 公式サイト";
 "help.link.feedback" = "問題を報告";
+"help.link.website.short" = "サイト";
+"help.link.feedback.short" = "報告";
 "help.start.try" = "試す";
 "help.start.voice.title" = "音声入力";
 "help.start.voice.detail" = "キーを押したまま話し、離すとカーソル位置に文字が入ります。";

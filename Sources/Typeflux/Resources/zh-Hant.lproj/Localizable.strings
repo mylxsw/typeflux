@@ -5333,6 +5333,8 @@
 "help.hint.searchEmpty" = "⌘↩ 問 AI · esc 清除搜尋";
 "help.link.website" = "Typeflux 官網";
 "help.link.feedback" = "回報問題";
+"help.link.website.short" = "官網";
+"help.link.feedback.short" = "回報";
 "help.start.try" = "試試看";
 "help.start.voice.title" = "語音輸入";
 "help.start.voice.detail" = "按住快捷鍵說話，放開後文字寫進游標所在的位置。";

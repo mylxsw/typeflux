@@ -5424,6 +5424,8 @@
 "help.hint.searchEmpty" = "⌘↩ 问 AI · esc 清空搜索";
 "help.link.website" = "Typeflux 官网";
 "help.link.feedback" = "反馈问题";
+"help.link.website.short" = "官网";
+"help.link.feedback.short" = "反馈";
 "help.start.try" = "试一试";
 "help.start.voice.title" = "语音输入";
 "help.start.voice.detail" = "按住快捷键说话，松开后文字写进光标所在的位置。";
