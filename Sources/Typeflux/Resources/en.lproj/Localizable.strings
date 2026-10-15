@@ -5613,3 +5613,5 @@
 "ask.system.disabled" = "System commands are stopped. This command was not executed.";
 
 "localSTT.error.inferenceUnavailable" = "Local transcription is unavailable. Your request was not retried. Try again later.";
+
+"ask.attach.busy" = "Attachments are being processed. Please try again shortly.";

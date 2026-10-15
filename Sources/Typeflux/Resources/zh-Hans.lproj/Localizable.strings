@@ -5613,3 +5613,5 @@
 "ask.system.disabled" = "系统命令服务已停止，本次命令未执行。";
 
 "localSTT.error.inferenceUnavailable" = "本地转写暂不可用，未重复提交本次请求。请稍后重试。";
+
+"ask.attach.busy" = "附件处理中，请稍后重试。";

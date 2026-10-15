@@ -5499,3 +5499,5 @@
 "ask.system.disabled" = "시스템 명령 서비스가 중지되었습니다. 이번 명령은 실행되지 않았습니다.";
 
 "localSTT.error.inferenceUnavailable" = "로컬 받아쓰기를 사용할 수 없습니다. 요청을 다시 전송하지 않았습니다. 잠시 후 다시 시도해 주세요.";
+
+"ask.attach.busy" = "첨부 파일을 처리 중입니다. 잠시 후 다시 시도하세요.";

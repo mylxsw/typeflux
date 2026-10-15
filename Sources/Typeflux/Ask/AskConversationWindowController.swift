@@ -507,6 +507,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
 
     func windowWillClose(_ notification: Notification) {
         guard let window = notification.object as? NSWindow else { return }
+        if window === conversationWindow { model.cancelAttachmentWork(launcher: false) }
         dockVisibility.windowDidHide(window)
     }
 

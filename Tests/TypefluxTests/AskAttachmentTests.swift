@@ -183,7 +183,7 @@ struct AskAttachmentLoaderTests {
         #expect(AskAttachmentError.unsupported("a.docx").message.contains("a.docx"))
         #expect(AskAttachmentError.tooLarge("b.log").message.contains("b.log"))
         #expect(AskAttachmentError.unreadable("c.txt").message.contains("c.txt"))
-        for error in [AskAttachmentError.tooMany, .tooManyImages, .tooManyFolders, .payload] {
+        for error in [AskAttachmentError.tooMany, .tooManyImages, .tooManyFolders, .payload, .busy] {
             #expect(!error.message.isEmpty)
         }
     }
@@ -409,6 +409,52 @@ struct AskFolderGrantTests {
 @Suite("Ask attachment composer model", .exclusiveUIState)
 @MainActor
 struct AskAttachmentModelTests {
+    @Test func resetCancelsBothComposersAndLateWorkCannotApply() async throws {
+        let f = try AskTestFixture()
+        let gate = DispatchSemaphore(value: 0)
+        for launcher in [false, true] {
+            f.model.addAttachments([.image(Data(), name: "pending")], launcher: launcher) { _ in
+                gate.wait()
+                return AskAttachmentBatch(items: [AskAttachment(kind: .file, name: "late", text: "private")])
+            }
+        }
+        f.model.addAttachments([.image(Data(), name: "refused")], launcher: true)
+        #expect(f.model.launcherAttachmentNotice == AskAttachmentError.busy.message)
+        f.model.addAttachments([.image(Data(), name: "refused")], launcher: false)
+        #expect(f.model.attachmentNotice == AskAttachmentError.busy.message)
+        f.model.resetSession()
+        #expect(f.model.attachmentLoads.isEmpty)
+        #expect(f.model.attachmentWork.count == 2)
+        gate.signal(); gate.signal()
+        try await f.wait { f.model.attachmentWork.count == 0 }
+        #expect(f.model.draft.attachments == nil)
+        #expect(f.model.launcherDraft.attachments == nil)
+    }
+
+    @Test func batchAdmissionCapsSourcesAndPreservesPartialResults() async throws {
+        let f = try AskTestFixture()
+        f.model.addAttachments(Array(repeating: .image(Data(), name: "x"), count: 20), launcher: false) { sources in
+            #expect(sources.count == 15)
+            return AskAttachmentBatch(items: [AskAttachment(kind: .file, name: "kept", text: "ok")])
+        }
+        try await f.wait { f.model.attachmentWork.count == 0 }
+        #expect(f.model.draft.attachments?.first?.name == "kept")
+        #expect(f.model.attachmentNotice == AskAttachmentError.tooMany.message)
+    }
+
+    @Test func ownerReleaseCancelsAndCancelledBatchDoesNotReadSources() {
+        var calls = 0
+        var owner: AskAttachmentWork? = AskAttachmentWork()
+        let id = UUID()
+        owner?.insert(id, launcher: false, cancel: { calls += 1 })
+        owner = nil
+        #expect(calls == 1)
+        #expect(AskAttachmentBatch.load([.file(URL(fileURLWithPath: "/missing"))], isCancelled: { true }).items.isEmpty)
+        let clean = AskAttachmentWork()
+        #expect(!clean.remove(UUID()))
+    }
+
+
     @Test func loadedAttachmentsJoinTheDraftOnScreen() async throws {
         let f = try AskTestFixture()
         let item = AskAttachment(kind: .file, name: "a.txt", text: "x")

@@ -1,7 +1,7 @@
 import AppKit
 import Foundation
 import ImageIO
-import PDFKit
+import TypefluxMediaProtocol
 import UniformTypeIdentifiers
 
 /// A file, image or folder the user added to a question. Images and text are
@@ -39,14 +39,14 @@ enum AskAttachmentLimits {
     /// Image data URLs and extracted text together, per message. The server
     /// accepts the same amount; it keeps a request well under its body limit.
     static let maximumPayloadBytes = 4_000_000
-    static let maximumImageDataURLBytes = 1_500_000
+    static let maximumImageDataURLBytes = MediaLimits.imageBytes
     static let maximumTextFileBytes = 5_000_000
-    static let maximumPDFBytes = 50_000_000
-    static let maximumImageFileBytes = 50_000_000
-    static let maximumTextCharacters = 200_000
-    static let imageLongEdge = 2048
+    static let maximumPDFBytes = MediaLimits.inputBytes
+    static let maximumImageFileBytes = MediaLimits.inputBytes
+    static let maximumTextCharacters = MediaLimits.textCharacters
+    static let imageLongEdge = MediaLimits.imageLongEdge
     /// Pages of a PDF without a text layer sent as images.
-    static let maximumScannedPages = 8
+    static let maximumScannedPages = MediaLimits.scannedPages
 }
 
 /// Why an attachment was not added. The message names the file.
@@ -58,6 +58,7 @@ enum AskAttachmentError: Error, Equatable, Sendable {
     case tooManyImages
     case tooManyFolders
     case payload
+    case busy
 
     var message: String {
         switch self {
@@ -68,6 +69,7 @@ enum AskAttachmentError: Error, Equatable, Sendable {
         case .tooManyImages: return L("ask.attach.tooManyImages", AskAttachmentLimits.maximumImages)
         case .tooManyFolders: return L("ask.attach.tooManyFolders", AskAttachmentLimits.maximumFolders)
         case .payload: return L("ask.attach.payload")
+        case .busy: return L("ask.attach.busy")
         }
     }
 }
@@ -119,16 +121,16 @@ enum AskAttachmentLoader {
     ]
 
     /// Loads one source. A PDF without text becomes one image per page.
-    static func load(_ source: AskAttachmentSource) throws -> [AskAttachment] {
+    static func load(_ source: AskAttachmentSource, isCancelled: @escaping @Sendable () -> Bool = { false }) throws -> [AskAttachment] {
         switch source {
         case let .image(data, name):
-            return [try image(data: data, name: name, byteSize: data.count)]
+            return [try image(data: data, name: name, byteSize: data.count, isCancelled: isCancelled)]
         case let .file(url):
-            return try file(url)
+            return try file(url, isCancelled: isCancelled)
         }
     }
 
-    static func file(_ url: URL) throws -> [AskAttachment] {
+    static func file(_ url: URL, isCancelled: @escaping @Sendable () -> Bool = { false }) throws -> [AskAttachment] {
         let name = url.lastPathComponent
         let values = try? url.resourceValues(forKeys: [.isDirectoryKey, .fileSizeKey, .contentTypeKey])
         if values?.isDirectory == true {
@@ -139,12 +141,11 @@ enum AskAttachmentLoader {
         let ext = url.pathExtension.lowercased()
         if type?.conforms(to: .pdf) == true || ext == "pdf" {
             guard size <= AskAttachmentLimits.maximumPDFBytes else { throw AskAttachmentError.tooLarge(name) }
-            return try pdf(url, name: name, byteSize: size)
+            return try pdf(url, name: name, byteSize: size, isCancelled: isCancelled)
         }
         if type?.conforms(to: .image) == true {
             guard size <= AskAttachmentLimits.maximumImageFileBytes else { throw AskAttachmentError.tooLarge(name) }
-            guard let data = try? Data(contentsOf: url) else { throw AskAttachmentError.unreadable(name) }
-            return [try image(data: data, name: name, byteSize: size)]
+            return try media(.image, source: .file(url), name: name, byteSize: size, isCancelled: isCancelled)
         }
         if textExtensions.contains(ext) || type?.conforms(to: .text) == true || type?.conforms(to: .sourceCode) == true {
             guard size <= AskAttachmentLimits.maximumTextFileBytes else { throw AskAttachmentError.tooLarge(name) }
@@ -174,42 +175,27 @@ enum AskAttachmentLoader {
         return nil
     }
 
-    static func pdf(_ url: URL, name: String, byteSize: Int) throws -> [AskAttachment] {
-        guard let document = PDFDocument(url: url) else { throw AskAttachmentError.unreadable(name) }
-        if document.isLocked { throw AskAttachmentError.unreadable(name) }
-        let text = document.string ?? ""
-        if !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            return [textAttachment(text, name: name, byteSize: byteSize, pages: document.pageCount)]
-        }
-        // A scan has no text layer: its first pages go as images instead.
-        var pages: [AskAttachment] = []
-        for index in 0 ..< min(document.pageCount, AskAttachmentLimits.maximumScannedPages) {
-            guard let page = document.page(at: index), let cgImage = render(page) else { continue }
-            guard let dataURL = jpegDataURL(cgImage) else { continue }
-            pages.append(AskAttachment(kind: .image, name: L("ask.attach.pdfPage", name, index + 1), byteSize: byteSize, image: dataURL))
-        }
-        guard !pages.isEmpty else { throw AskAttachmentError.unreadable(name) }
-        return pages
+    static func pdf(_ url: URL, name: String, byteSize: Int,
+                    isCancelled: @escaping @Sendable () -> Bool = { false }) throws -> [AskAttachment] {
+        try media(.pdf, source: .file(url), name: name, byteSize: byteSize, isCancelled: isCancelled)
     }
 
-    private static func render(_ page: PDFPage) -> CGImage? {
-        let bounds = page.bounds(for: .mediaBox)
-        guard bounds.width > 0, bounds.height > 0 else { return nil }
-        let scale = CGFloat(AskAttachmentLimits.imageLongEdge) / max(bounds.width, bounds.height)
-        let size = NSSize(width: bounds.width * scale, height: bounds.height * scale)
-        return page.thumbnail(of: size, for: .mediaBox).cgImage(forProposedRect: nil, context: nil, hints: nil)
+    static func image(data: Data, name: String, byteSize: Int,
+                      isCancelled: @escaping @Sendable () -> Bool = { false }) throws -> AskAttachment {
+        try media(.image, source: .data(data), name: name, byteSize: byteSize, isCancelled: isCancelled)[0]
     }
 
-    static func image(data: Data, name: String, byteSize: Int) throws -> AskAttachment {
-        guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { throw AskAttachmentError.unreadable(name) }
-        let options: [CFString: Any] = [
-            kCGImageSourceCreateThumbnailFromImageAlways: true,
-            kCGImageSourceCreateThumbnailWithTransform: true,
-            kCGImageSourceThumbnailMaxPixelSize: AskAttachmentLimits.imageLongEdge
-        ]
-        guard let image = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary),
-              let dataURL = jpegDataURL(image) else { throw AskAttachmentError.unreadable(name) }
-        return AskAttachment(kind: .image, name: name, byteSize: byteSize, image: dataURL)
+    private static func media(_ operation: MediaRequest.Operation, source: MediaWorker.Input,
+                              name: String, byteSize: Int, isCancelled: @escaping @Sendable () -> Bool) throws -> [AskAttachment] {
+        do {
+            return try MediaWorker.shared.decode(operation, input: source, isCancelled: isCancelled).items.map { item in
+                AskAttachment(kind: item.image == nil ? .file : .image,
+                              name: item.page.map { L("ask.attach.pdfPage", name, $0) } ?? name,
+                              byteSize: byteSize, image: item.image, text: item.text,
+                              truncated: item.truncated == true ? true : nil, pages: item.pages)
+            }
+        } catch MediaFailure.tooLarge { throw AskAttachmentError.tooLarge(name) }
+        catch { throw AskAttachmentError.unreadable(name) }
     }
 
     /// Flattens transparency onto white and encodes JPEG without metadata,
