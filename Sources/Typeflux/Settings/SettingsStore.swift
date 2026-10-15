@@ -130,6 +130,7 @@ final class SettingsStore {
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
+        migrateTranslationHotkeys()
     }
 
     var appLanguage: AppLanguage {

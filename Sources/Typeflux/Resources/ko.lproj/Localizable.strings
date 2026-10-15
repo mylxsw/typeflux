@@ -5329,6 +5329,30 @@
 "semantic.metric.location" = "처리 위치";
 "semantic.metric.local" = "이 Mac";
 
+"hotkeys.action.translate.title" = "번역";
+
+"hotkeys.action.translate.subtitle" = "선택한 텍스트를 즉시 번역하거나 패널을 열어 입력합니다";
+
+"ask.translation.panel.position.subtitle" = "모든 진입점에 적용됩니다. 고정된 패널은 이동하지 않습니다";
+
+"ask.translation.stack.downloadRequired" = "기기 내 번역 언어 팩 다운로드 (%@ → %@)";
+
+"ask.translation.stack.download" = "다운로드";
+
+"hotkeys.action.screenshotTranslation.title" = "스크린샷 번역";
+
+"hotkeys.action.screenshotTranslation.subtitle" = "화면 영역을 선택하면 이 Mac에서 텍스트를 인식한 후 번역합니다";
+
+"ask.translation.panel.source.input" = "입력 번역";
+
+"ask.translation.panel.source.selection" = "선택 번역";
+
+"ask.translation.panel.source.screenshot" = "스크린샷 번역";
+
+"ask.translation.panel.source.launcher" = "런처에서";
+
+"ask.translation.stack.ready" = "Return 키를 눌러 번역하세요";
+
 "semantic.searching" = "파일 내용 검색 중…";
 
 "semantic.media.downloading" = "미디어 인코더 다운로드 중…";

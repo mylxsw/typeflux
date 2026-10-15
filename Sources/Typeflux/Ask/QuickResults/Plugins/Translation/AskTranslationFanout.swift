@@ -61,14 +61,17 @@ struct AskTranslationResult: Equatable, Identifiable, Sendable {
 
 /// A failure belongs to one service, with an actionable and credential-safe message.
 struct AskTranslationFailure: Equatable, Sendable {
-    enum Recovery: Equatable, Sendable { case configure, skip, retry, languages, none }
+    enum Recovery: Equatable, Sendable {
+        case configure, skip, retry, languages, none
+        case download(source: String, target: String)
+    }
     var message: String
     var recovery: Recovery
 
     static func presenting(_ error: Error, service: AskTranslationService, source: String?, target: String,
                            interface: AppLanguage) -> Self {
         if service.kind == .device {
-            return Self(message: L("ask.plugin.translate.unavailable"), recovery: .languages)
+            return onDeviceFailure(error, source: source, target: target, interface: interface)
         }
         switch error {
         case AskTranslationServiceError.notConfigured: return Self(
@@ -103,6 +106,17 @@ struct AskTranslationFailure: Equatable, Sendable {
         }
     }
 
+    private static func onDeviceFailure(_ error: Error, source: String?, target: String,
+                                        interface: AppLanguage) -> Self {
+        guard error is AskOnDeviceTranslationError, let source else {
+            return Self(message: L("ask.plugin.translate.unavailable"), recovery: .languages)
+        }
+        return Self(message: L("ask.translation.stack.downloadRequired",
+                               AskTranslationLanguages.name(source, in: interface),
+                               AskTranslationLanguages.name(target, in: interface)),
+                    recovery: .download(source: source, target: target))
+    }
+
     func action(for service: AskTranslationService) -> AskPluginAction? {
         switch recovery {
         case .configure:
@@ -122,6 +136,10 @@ struct AskTranslationFailure: Equatable, Sendable {
                 kind: .manageTranslationLanguages,
                 title: L("ask.translation.stack.languages"),
                 symbol: "globe"
+            )
+        case let .download(source, target): .init(
+                kind: .downloadTranslationLanguages(source: source, target: target),
+                title: L("ask.translation.stack.download"), symbol: "arrow.down.circle"
             )
         case .none: nil
         }
@@ -343,8 +361,12 @@ final class AskTranslationFanout {
             }
             return try Translation(state: completed(translated.trimmingCharacters(in: .whitespacesAndNewlines)))
         }
-        if service.kind == .device, await !(translator.canTranslate(from: source, to: target)) {
-            throw AskPluginFailure(message: L("ask.plugin.translate.unavailable"), retry: false)
+        if service.kind == .device {
+            switch await translator.availability(from: source, to: target) {
+            case .installed: break
+            case .supported: throw AskOnDeviceTranslationError.downloadRequired
+            case .unsupported: throw AskPluginFailure(message: L("ask.plugin.translate.unavailable"), retry: false)
+            }
         }
         return try await Translation(state: completed(translator.translate(text, from: source, to: target)))
     }

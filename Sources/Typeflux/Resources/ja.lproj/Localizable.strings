@@ -5329,6 +5329,30 @@
 "semantic.metric.location" = "処理場所";
 "semantic.metric.local" = "この Mac";
 
+"hotkeys.action.translate.title" = "翻訳";
+
+"hotkeys.action.translate.subtitle" = "選択したテキストをすぐに翻訳。未選択の場合は入力パネルを開きます";
+
+"ask.translation.panel.position.subtitle" = "すべての起動方法に適用。固定したパネルは移動しません";
+
+"ask.translation.stack.downloadRequired" = "オンデバイスの言語パックをダウンロード（%@ → %@）";
+
+"ask.translation.stack.download" = "ダウンロード";
+
+"hotkeys.action.screenshotTranslation.title" = "スクリーンショット翻訳";
+
+"hotkeys.action.screenshotTranslation.subtitle" = "画面の範囲を選び、このMacで文字を認識して翻訳します";
+
+"ask.translation.panel.source.input" = "入力翻訳";
+
+"ask.translation.panel.source.selection" = "選択範囲の翻訳";
+
+"ask.translation.panel.source.screenshot" = "スクリーンショット翻訳";
+
+"ask.translation.panel.source.launcher" = "ランチャーから";
+
+"ask.translation.stack.ready" = "Returnキーを押して翻訳";
+
 "semantic.searching" = "ファイルの内容を検索中…";
 
 "semantic.media.downloading" = "メディアエンコーダーをダウンロード中…";

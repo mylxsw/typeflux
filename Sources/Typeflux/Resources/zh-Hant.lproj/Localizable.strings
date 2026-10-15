@@ -5363,6 +5363,30 @@
 "semantic.metric.location" = "處理位置";
 "semantic.metric.local" = "本機";
 
+"hotkeys.action.translate.title" = "翻譯";
+
+"hotkeys.action.translate.subtitle" = "翻譯選取的文字；未選取文字時開啟面板輸入";
+
+"ask.translation.panel.position.subtitle" = "所有入口均使用此位置；釘選的面板保持原位";
+
+"ask.translation.stack.downloadRequired" = "下載本機翻譯語言套件（%@ → %@）";
+
+"ask.translation.stack.download" = "下載";
+
+"hotkeys.action.screenshotTranslation.title" = "截圖翻譯";
+
+"hotkeys.action.screenshotTranslation.subtitle" = "選取螢幕區域，在本機辨識文字後翻譯";
+
+"ask.translation.panel.source.input" = "輸入翻譯";
+
+"ask.translation.panel.source.selection" = "選取翻譯";
+
+"ask.translation.panel.source.screenshot" = "截圖翻譯";
+
+"ask.translation.panel.source.launcher" = "來自啟動器";
+
+"ask.translation.stack.ready" = "按 Return 開始翻譯";
+
 "semantic.searching" = "正在搜尋檔案內容…";
 
 "semantic.media.downloading" = "正在下載媒體編碼器…";

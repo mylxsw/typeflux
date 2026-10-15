@@ -499,6 +499,8 @@ struct AskPluginResultsView: View {
                             if let id = translation.results.first(where: { $0.service.provider == provider })?.id {
                                 onAction(.init(kind: .rerun(["retryService": id]), title: "", symbol: ""))
                             }
+                        }, onLanguagesReady: {
+                            onAction(.init(kind: .rerun(["retryService": "device"]), title: "", symbol: ""))
                         })
                     }
                 }

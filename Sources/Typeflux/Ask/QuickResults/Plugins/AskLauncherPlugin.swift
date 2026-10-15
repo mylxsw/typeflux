@@ -114,6 +114,7 @@ struct AskPluginAction: Equatable, Sendable {
         case openHelp(query: String)
         case configureTranslation(AskTranslationProvider)
         case manageTranslationLanguages
+        case downloadTranslationLanguages(source: String, target: String)
         case swapTranslation(String, source: String, target: String)
         case signIn
         case openConversation(String, account: String)

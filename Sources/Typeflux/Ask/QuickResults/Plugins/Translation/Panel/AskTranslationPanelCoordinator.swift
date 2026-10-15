@@ -74,9 +74,7 @@ final class AskTranslationPanelCoordinator: ScreenshotFollowUpHandling {
             if keepsPosition {
                 controller.focus()
             } else {
-                // Opaque accessibility bridges have no range bounds; open beside the pointer then.
-                let mouse = NSEvent.mouseLocation
-                controller.present(selection: snapshot.selectionBounds ?? CGRect(origin: mouse, size: .zero))
+                controller.present(selection: snapshot.selectionBounds)
             }
             model.translate()
         }

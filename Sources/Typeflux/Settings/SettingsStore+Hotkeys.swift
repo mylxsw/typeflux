@@ -3,6 +3,21 @@ import Foundation
 /// Every global shortcut through one door, for the Shortcuts page and its conflict check.
 /// The built-in shortcuts keep their own keys; feature and keyword shortcuts are new.
 extension SettingsStore {
+    /// Preserve the selection shortcut first, then the input shortcut. Remove both
+    /// retired owners before registration/conflict checks can see their bindings.
+    func migrateTranslationHotkeys() {
+        let key = "hotkey.actions.json"
+        guard let data = defaults.data(forKey: key),
+              var stored = try? JSONDecoder().decode([String: HotkeyBinding].self, from: data),
+              stored["selectionTranslation"] != nil || stored["inputTranslation"] != nil else { return }
+        stored["translate"] = stored["translate"] ?? stored["selectionTranslation"] ?? stored["inputTranslation"]
+        stored.removeValue(forKey: "selectionTranslation")
+        stored.removeValue(forKey: "inputTranslation")
+        if let migrated = try? JSONEncoder().encode(stored) {
+            defaults.set(migrated, forKey: key)
+        }
+    }
+
     func hotkey(_ builtIn: BuiltInHotkey) -> HotkeyBinding? {
         switch builtIn {
         case .activation: activationHotkey

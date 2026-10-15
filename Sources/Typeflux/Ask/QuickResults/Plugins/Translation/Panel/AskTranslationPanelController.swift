@@ -11,7 +11,10 @@ final class AskTranslationPanelController: NSObject, NSWindowDelegate {
     private var clickMonitor: Any?
     private var activationObserver: NSObjectProtocol?
     private var observation: AnyCancellable?
+    private var appearanceObservation: NSObjectProtocol?
     private var measuredContentHeight: CGFloat?
+    private var layoutPosition: AskTranslationPanelPosition = .lastPosition
+    private var updatingFrame = false
     private lazy var style = InterfaceStyleObserver(settings: model.settings)
 
     init(model: AskTranslationPanelModel) {
@@ -21,9 +24,20 @@ final class AskTranslationPanelController: NSObject, NSWindowDelegate {
         observation = model.objectWillChange.sink { [weak self] in
             DispatchQueue.main.async { [weak self] in self?.refreshLayout() }
         }
+        appearanceObservation = NotificationCenter.default.addObserver(
+            forName: .appearanceModeDidChange, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self, let panel = self.panel else { return }
+                self.applyAppearance(panel)
+            }
+        }
     }
 
     deinit {
+        if let appearanceObservation {
+            NotificationCenter.default.removeObserver(appearanceObservation)
+        }
         if let keyMonitor {
             NSEvent.removeMonitor(keyMonitor)
         }
@@ -57,6 +71,7 @@ final class AskTranslationPanelController: NSObject, NSWindowDelegate {
         let screen = selection.flatMap { bounds in NSScreen.screens.first { $0.frame.intersects(bounds) } }
             ?? NSScreen.screens.first { $0.frame.contains(mouse) } ?? NSScreen.main
         if let screen {
+            updateResizeLimits(window, on: screen)
             let last = model.settings.defaults.dictionary(forKey: "ask.translation.panel.origin")
             let origin: CGPoint? = (last?["x"] as? Double).flatMap { horizontal in
                 (last?["y"] as? Double).map { CGPoint(x: horizontal, y: $0) }
@@ -65,9 +80,9 @@ final class AskTranslationPanelController: NSObject, NSWindowDelegate {
                                                            screen: screen.visibleFrame,
                                                            position: model.settings.askTranslationSettings
                                                                .panelPosition,
-                                                           mouse: mouse, last: origin,
-                                                           selection: selection)
-            window.setFrame(frame, display: false)
+                                                           mouse: mouse, last: origin)
+            setFrame(frame, on: window, display: false)
+            layoutPosition = model.settings.askTranslationSettings.panelPosition
         }
         updateRoot()
         window.makeKeyAndOrderFront(nil)
@@ -80,52 +95,58 @@ final class AskTranslationPanelController: NSObject, NSWindowDelegate {
         panel?.orderOut(nil)
     }
 
-    func windowDidResignKey(_ notification: Notification) {
-        guard notification.object as? NSWindow === panel, panel?.attachedSheet == nil else { return }
-        model.lostFocus()
-    }
-
-    func windowDidMove(_ notification: Notification) {
-        guard notification.object as? NSWindow === panel, let panel else { return }
-        model.settings.defaults.set(["x": Double(panel.frame.minX), "y": Double(panel.frame.minY)],
-                                    forKey: "ask.translation.panel.origin")
-    }
-
     func refreshLayout() {
-        guard let panel, panel.isVisible, let screen = panel.screen ?? NSScreen.main else { return }
+        guard let panel, panel.isVisible, !panel.inLiveResize,
+              let screen = panel.screen ?? NSScreen.main else { return }
+        updateResizeLimits(panel, on: screen)
         let size = desiredSize(on: screen)
         let frame = AskTranslationPanelPlacement.frame(size: size, screen: screen.visibleFrame,
-                                                       position: .lastPosition, mouse: NSEvent.mouseLocation,
+                                                       position: !model
+                                                           .pinned && layoutPosition == .center ? .center :
+                                                           .lastPosition,
+                                                       mouse: NSEvent.mouseLocation,
                                                        last: CGPoint(
                                                            x: panel.frame.minX,
                                                            y: panel.frame.maxY - size.height
                                                        ))
-        panel.setFrame(frame, display: true)
+        setFrame(frame, on: panel, display: true)
         updateRoot()
+    }
+
+    private func setFrame(_ frame: CGRect, on window: NSWindow, display: Bool) {
+        updatingFrame = true
+        defer { updatingFrame = false }
+        window.setFrame(frame, display: display)
     }
 
     private func desiredSize(on screen: NSScreen) -> CGSize {
         let editor = min(
             96,
-            max(48, CGFloat(model.text.split(separator: "\n", omittingEmptySubsequences: false).count) * 21)
+            max(48, CGFloat(model.text.split(separator: "\n", omittingEmptySubsequences: false).count) * 24)
         )
         let chrome = AskTranslationPanelView.chromeHeight(screenshot: model.screenshot != nil) + editor - 48
             + (model.notice == nil ? 0 : 24)
-        return CGSize(width: min(AskTranslationPanelPlacement.width, screen.visibleFrame.width),
-                      height: AskTranslationPanelPlacement.height(
-                          content: measuredContentHeight ?? (chrome + AskTranslationStackView.height(model.stack)),
-                          screen: screen.visibleFrame,
-                          preference: model.settings.askTranslationSettings.maxHeight
-                      ))
+        let stored = model.settings.defaults.dictionary(forKey: "ask.translation.panel.size")
+        let remembered: CGSize? = (stored?["width"] as? Double).flatMap { width in
+            (stored?["height"] as? Double).map { CGSize(width: width, height: $0) }
+        }
+        return AskTranslationPanelPlacement.size(
+            content: measuredContentHeight ?? (chrome + AskTranslationStackView.height(model.stack)),
+            screen: screen.visibleFrame, preference: model.settings.askTranslationSettings.maxHeight,
+            remembered: remembered
+        )
     }
 
     private func makePanel() -> AskTranslationPanelWindow {
         if let panel {
             return panel
         }
-        let window = AskTranslationPanelWindow(contentRect: CGRect(x: 0, y: 0, width: 452, height: 400),
-                                               styleMask: [.borderless, .nonactivatingPanel], backing: .buffered,
-                                               defer: false)
+        let window = AskTranslationPanelWindow(
+            contentRect: CGRect(x: 0, y: 0, width: AskTranslationPanelPlacement.width, height: 400),
+            styleMask: [.borderless, .nonactivatingPanel, .resizable],
+            backing: .buffered,
+            defer: false
+        )
         window.delegate = self
         window.level = .floating
         window.isOpaque = false
@@ -249,6 +270,54 @@ final class AskTranslationPanelController: NSObject, NSWindowDelegate {
         clickMonitor = nil
         activationObserver = nil
     }
+}
+
+extension AskTranslationPanelController {
+    func windowDidResignKey(_ notification: Notification) {
+        guard notification.object as? NSWindow === panel, panel?.attachedSheet == nil else { return }
+        model.lostFocus()
+    }
+
+    func windowDidMove(_ notification: Notification) {
+        guard notification.object as? NSWindow === panel, let panel else { return }
+        if !updatingFrame {
+            layoutPosition = .lastPosition
+        }
+        model.settings.defaults.set(["x": Double(panel.frame.minX), "y": Double(panel.frame.minY)],
+                                    forKey: "ask.translation.panel.origin")
+    }
+
+    func windowWillResize(_ sender: NSWindow, to frameSize: NSSize) -> NSSize {
+        guard sender === panel, let screen = sender.screen ?? NSScreen.main else { return frameSize }
+        let limit = screen.visibleFrame
+        return CGSize(width: min(limit.width, max(AskTranslationPanelPlacement.minimumSize.width, frameSize.width)),
+                      height: min(limit.height * model.settings.askTranslationSettings.maxHeight.fraction,
+                                  max(AskTranslationPanelPlacement.minimumSize.height, frameSize.height)))
+    }
+
+    func windowDidResize(_ notification: Notification) {
+        guard notification.object as? NSWindow === panel, panel?.inLiveResize == true else { return }
+        updateRoot()
+    }
+
+    func windowDidEndLiveResize(_ notification: Notification) {
+        guard notification.object as? NSWindow === panel, let panel else { return }
+        model.settings.defaults.set(["width": Double(panel.frame.width), "height": Double(panel.frame.height)],
+                                    forKey: "ask.translation.panel.size")
+        layoutPosition = .lastPosition
+        measuredContentHeight = nil
+        refreshLayout()
+    }
+
+    private func updateResizeLimits(_ window: NSWindow, on screen: NSScreen) {
+        let maximum = CGSize(width: screen.visibleFrame.width,
+                             height: screen.visibleFrame.height * model.settings.askTranslationSettings.maxHeight
+                                 .fraction)
+        window.minSize = CGSize(width: min(AskTranslationPanelPlacement.minimumSize.width, maximum.width),
+                                height: min(AskTranslationPanelPlacement.minimumSize.height, maximum.height))
+        window.maxSize = maximum
+    }
+
 }
 
 final class AskTranslationPanelWindow: NSPanel {

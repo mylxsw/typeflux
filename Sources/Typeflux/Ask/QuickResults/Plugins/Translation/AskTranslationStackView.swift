@@ -6,10 +6,27 @@ enum AskTranslationAppearance {
         light: NSColor(calibratedWhite: 1, alpha: 0.8),
         dark: NSColor(calibratedWhite: 1, alpha: 0.045)
     )
+
+    static func cardFill(style: InterfaceStyle) -> Color {
+        style.usesGlass ? cardFill : AskClassic.card
+    }
+
+    static func border(style: InterfaceStyle) -> Color {
+        style.usesGlass ? AskTheme.border : AskClassic.cardBorder
+    }
+
+    static func chrome(style: InterfaceStyle, increasedContrast: Bool) -> AskComposerChrome {
+        var chrome = AskComposerChrome.launcher
+        if !style.usesGlass, !increasedContrast {
+            chrome.idleBorder = AskClassic.launcherBorder
+        }
+        return chrome
+    }
 }
 
 /// Shared translation content; window ownership and keyboard handling stay with its host.
 struct AskTranslationStackView: View {
+    @Environment(\.interfaceStyle) private var style
     var stack: AskTranslationStack
     var original: String
     var actions: [AskPluginAction]
@@ -50,7 +67,8 @@ struct AskTranslationStackView: View {
                 ScrollView(.vertical) {
                     VStack(spacing: 5) {
                         if stack.results.isEmpty {
-                            Text(L("ask.translation.stack.empty")).font(.system(size: 12))
+                            Text(L(stack.submitted ? "ask.translation.stack.empty" : "ask.translation.stack.ready"))
+                                .font(.system(size: 12))
                                 .foregroundStyle(StudioTheme.textTertiary)
                                 .padding(14)
                         }
@@ -96,8 +114,11 @@ struct AskTranslationStackView: View {
             }
             .menuStyle(.borderlessButton).tint(StudioTheme.textPrimary)
             .frame(maxWidth: .infinity).padding(.horizontal, 10).frame(height: 30)
-            .background(AskTranslationAppearance.cardFill, in: RoundedRectangle(cornerRadius: 8))
-            .overlay { RoundedRectangle(cornerRadius: 8).strokeBorder(AskTheme.border, lineWidth: 1) }
+            .background(AskTranslationAppearance.cardFill(style: style), in: RoundedRectangle(cornerRadius: 8))
+            .overlay { RoundedRectangle(cornerRadius: 8).strokeBorder(
+                AskTranslationAppearance.border(style: style),
+                lineWidth: 1
+            ) }
             Button {
                 if let text = stack.results.first?.completedText, let source = stack.source {
                     onAction(.init(
@@ -124,8 +145,11 @@ struct AskTranslationStackView: View {
             }
             .menuStyle(.borderlessButton).tint(AskTheme.accent)
             .frame(maxWidth: .infinity).padding(.horizontal, 10).frame(height: 30)
-            .background(AskTranslationAppearance.cardFill, in: RoundedRectangle(cornerRadius: 8))
-            .overlay { RoundedRectangle(cornerRadius: 8).strokeBorder(AskTheme.border, lineWidth: 1) }
+            .background(AskTranslationAppearance.cardFill(style: style), in: RoundedRectangle(cornerRadius: 8))
+            .overlay { RoundedRectangle(cornerRadius: 8).strokeBorder(
+                AskTranslationAppearance.border(style: style),
+                lineWidth: 1
+            ) }
         }
         .font(.system(size: 12))
         .accessibilityIdentifier("ask.translation.languages")
@@ -172,6 +196,7 @@ struct AskTranslationServiceIcon: View {
 }
 
 private struct AskTranslationResultView: View {
+    @Environment(\.interfaceStyle) private var style
     var result: AskTranslationResult
     var stack: AskTranslationStack
     var original: String
@@ -216,9 +241,9 @@ private struct AskTranslationResultView: View {
         }
         .padding(.horizontal, 10).padding(.vertical, compact ? 8 : 10)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(AskTranslationAppearance.cardFill, in: RoundedRectangle(cornerRadius: 11))
+        .background(AskTranslationAppearance.cardFill(style: style), in: RoundedRectangle(cornerRadius: 11))
         .overlay { RoundedRectangle(cornerRadius: 11).strokeBorder(
-            selected ? AskTheme.accent.opacity(0.8) : .clear,
+            selected ? AskTheme.accent.opacity(0.8) : AskTranslationAppearance.border(style: style),
             lineWidth: 1
         ) }
         .onHover { hovering = $0 }
@@ -391,22 +416,5 @@ struct AskTranslationCopyOptions: View {
             onAction(AskTranslatePlugin.insertAction(result.completedText ?? "", replaces: replacesSelection))
         }
         .disabled(result.card != nil && result.card?.translatedText == nil)
-    }
-}
-
-struct AskTranslationConfigurationPresenter: View {
-    @ObservedObject var model: AskTranslationSettingsModel
-    var onConfigured: (AskTranslationProvider) -> Void = { _ in }
-    var body: some View {
-        Color.clear.frame(width: 0, height: 0)
-            .sheet(isPresented: Binding(get: { model.editing != nil }, set: {
-                if !$0 {
-                    model.cancelEdit()
-                }
-            })) {
-                if let provider = model.editing {
-                    AskTranslationProviderSheet(model: model, provider: provider, onSaved: { onConfigured(provider) })
-                }
-            }
     }
 }

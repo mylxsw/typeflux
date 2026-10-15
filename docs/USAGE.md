@@ -104,11 +104,15 @@ If you use longer recordings often, verify the selected speech backend can handl
 
 ## Translation Panel
 
-Open the panel from **Settings → Launcher → Translation** by recording an Input Translation, Selection Translation, or Screenshot Translation shortcut. All three shortcuts are unset by default. The launcher also accepts `fy`, `tr`, or `翻译`; press **⌘P** there to move the current text and results into a pinned panel.
+Open the panel from **Settings → Launcher → Translation** by recording a Translate or Screenshot Translation shortcut. Both shortcuts are unset by default. The launcher also accepts `fy`, `tr`, or `翻译`; press **⌘P** there to move the current text and results into a pinned panel.
 
-Enter text and press **Return** to translate with all checked services. Selection Translation immediately translates the current selection. Screenshot Translation recognizes text on this Mac and opens an editable original; correct recognition errors and press Return to translate again. Only the on-device translator and saved word cards run while typing in `fy`; AI and providers wait for explicit submission.
+Enter text and press **Return** to translate with all checked services. **Translate** immediately translates selected text. With nothing selected, it opens the input panel, restoring content according to “Keep last content”; when already open, it focuses the panel. Existing selection shortcuts take precedence during migration, followed by input shortcuts. The discarded binding is released. Screenshot Translation recognizes text on this Mac and opens an editable original; correct recognition errors and press Return to translate again. Only the on-device translator and saved word cards run while typing in `fy`; AI and providers wait for explicit submission.
 
 The default services are **On-device Translation + the first AI service**. Enable providers, add AI services, choose models and reorder results in Settings → Launcher → Translation. Each result offers speech, insertion, and a copy menu containing **translation**, **original + translation**, and, for a word card, **the whole card**. Collapse choices are remembered per service across the panel and launcher. Word cards appear first, show two examples initially, and offer “More examples”; UK and US pronunciation buttons read the word in their respective accents.
+
+All entry points follow **Open position**: center of the screen containing the selection or pointer, near the pointer, or the last position. Pinned panels keep their position. The default width matches the launcher; drag the edges to resize (minimum 520 × 300 points). Width and viewport height are remembered, short content fits naturally, and long results scroll within **Maximum height**. The panel follows **Appearance → Interface style**, glass intensity and light/dark appearance immediately, using the launcher’s materials, corners, borders and typography.
+
+If on-device languages are supported but missing, **Download** opens the system language-pack download flow and retries that result after installation. If unavailable, it opens **System Settings → General → Language & Region → Translation Languages**. Unsupported pairs keep a separate message.
 
 A failed service leaves the other results available. **Retry** only retries that result; **Use another service** skips an exhausted service until a new session; **Configure** opens that provider's key form. Credentials stay in the macOS Keychain. The panel's history menu can clear locally saved inputs.
 

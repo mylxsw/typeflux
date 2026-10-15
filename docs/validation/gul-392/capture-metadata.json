@@ -1,0 +1,44 @@
+[
+  {
+    "file": "native/center-selected.png",
+    "width": 700,
+    "height": 350,
+    "sha256": "90b58efe701038c4e1204a016a44e56886fe6404f04c7bc3c314ff849a138159"
+  },
+  {
+    "file": "native/classic-dark.png",
+    "width": 1424,
+    "height": 351,
+    "sha256": "449bdcbc77b605384709f11987a165d0f0edcb36b4d147ce84eb9ffb60bfda9c"
+  },
+  {
+    "file": "native/classic-light.png",
+    "width": 1424,
+    "height": 351,
+    "sha256": "dbcc6cec78e14af396cc8866fe88366fd2588269dadf60f710c1e28962102c33"
+  },
+  {
+    "file": "native/download-language-pack.png",
+    "width": 700,
+    "height": 300,
+    "sha256": "f311d3acded54ddfc583563e721ebc36997276b522a77cadae5373253e0b0d63"
+  },
+  {
+    "file": "native/liquidGlass-dark.png",
+    "width": 1424,
+    "height": 365,
+    "sha256": "2406a948ebd5b3702bf15d650061263b35097ff9c88f80a3735a303f42b136f4"
+  },
+  {
+    "file": "native/liquidGlass-light.png",
+    "width": 1424,
+    "height": 351,
+    "sha256": "cd5cbd6baa8f38d4d42e09e0e9d6bc9d221dc463c7762f00eb0743bd1e1ab10b"
+  },
+  {
+    "file": "native/translate-no-selection.png",
+    "width": 700,
+    "height": 300,
+    "sha256": "ce7a91d3b4fa35d7c202a9c848e1b6cfe12b1e02548a24ffc9a47f6ee3ccbacb"
+  }
+]

@@ -310,9 +310,7 @@ final class AppCoordinator {
             di.askConversationWindowController?.showConversation()
         case .action(.screenshotText):
             screenshotCoordinator?.start(mode: .region, followUp: .recognizeText)
-        case .action(.inputTranslation):
-            di.translationPanel.openInput()
-        case .action(.selectionTranslation):
+        case .action(.translate):
             di.translationPanel.openSelection()
         case .action(.screenshotTranslation):
             screenshotCoordinator?.start(mode: .region, followUp: .translate)

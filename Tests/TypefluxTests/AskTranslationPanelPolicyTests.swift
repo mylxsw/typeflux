@@ -36,32 +36,25 @@ struct AskTranslationPanelPolicyTests {
         }
     }
 
-    @Test func `placement clamps to every screen and selection overrides preferences`() {
+    @Test func `placement clamps and every entry follows the selected position`() {
         let screen = CGRect(x: -1200, y: -500, width: 1000, height: 800)
-        let size = CGSize(width: 452, height: 500)
+        let size = CGSize(width: 700, height: 500)
+        let mouse = CGPoint(x: -1000, y: 200)
+        let last = CGPoint(x: -1150, y: -450)
+        let center = AskTranslationPanelPlacement.frame(size: size, screen: screen, position: .center, mouse: mouse)
+        #expect(center.midX == screen.midX && center.midY == screen.midY)
+        let near = AskTranslationPanelPlacement.frame(size: size, screen: screen, position: .mouse, mouse: mouse)
+        #expect(near.origin == CGPoint(x: mouse.x + 12, y: mouse.y - size.height - 12))
+        let previous = AskTranslationPanelPlacement.frame(size: size, screen: screen, position: .lastPosition,
+                                                          mouse: mouse, last: last)
+        #expect(previous.origin == last)
         for position in AskTranslationPanelPosition.allCases {
-            for mouse in [CGPoint(x: -99999, y: -99999), CGPoint(x: 99999, y: 99999)] {
+            for point in [CGPoint(x: -99999, y: -99999), CGPoint(x: 99999, y: 99999)] {
                 let frame = AskTranslationPanelPlacement.frame(size: size, screen: screen, position: position,
-                                                               mouse: mouse, last: CGPoint(x: 99999, y: 99999))
+                                                               mouse: point, last: point)
                 #expect(screen.contains(frame))
-                let near = AskTranslationPanelPlacement.frame(size: size, screen: screen, position: position,
-                                                              mouse: mouse, selection: CGRect(
-                                                                  x: -1150,
-                                                                  y: 250,
-                                                                  width: 100,
-                                                                  height: 20
-                                                              ))
-                #expect(near.minX == -1150 && near.maxY == 242)
             }
         }
-        let above = AskTranslationPanelPlacement.frame(size: size, screen: screen, position: .center,
-                                                       mouse: .zero, selection: CGRect(
-                                                           x: -1150,
-                                                           y: -450,
-                                                           width: 30,
-                                                           height: 20
-                                                       ))
-        #expect(above.minY == -422)
         let centered = AskTranslationPanelPlacement.frame(
             size: size,
             screen: screen,
@@ -159,5 +152,100 @@ struct AskTranslationPanelPolicyTests {
             shortcuts.unsetHotkey(for: action)
         }
         #expect(fixture.settings.actionHotkeys.isEmpty)
+    }
+}
+
+extension AskTranslationPanelPolicyTests {
+    @Test(arguments: 0 ..< 8)
+    func `translation shortcut migration preserves one owner and releases discarded keys`(
+        combination: Int
+    ) throws {
+        let input = combination & 1 != 0
+        let selection = combination & 2 != 0
+        let current = combination & 4 != 0
+        let fixture = TranslationPanelFixture()
+        defer { fixture.clean() }
+        let inputBinding = HotkeyBinding(
+            keyCode: 0,
+            modifierFlags: NSEvent.ModifierFlags.control.union(.option).rawValue
+        )
+        let selectionBinding = HotkeyBinding(
+            keyCode: 1,
+            modifierFlags: NSEvent.ModifierFlags.control.union(.option).rawValue
+        )
+        let currentBinding = HotkeyBinding(
+            keyCode: 2,
+            modifierFlags: NSEvent.ModifierFlags.control.union(.option).rawValue
+        )
+        let screenshotBinding = HotkeyBinding(
+            keyCode: 3,
+            modifierFlags: NSEvent.ModifierFlags.control.union(.option).rawValue
+        )
+        var stored = ["screenshotTranslation": screenshotBinding]
+        if input {
+            stored["inputTranslation"] = inputBinding
+        }
+        if selection {
+            stored["selectionTranslation"] = selectionBinding
+        }
+        if current {
+            stored["translate"] = currentBinding
+        }
+        try fixture.defaults.set(JSONEncoder().encode(stored), forKey: "hotkey.actions.json")
+        let migrated = SettingsStore(defaults: fixture.defaults)
+        let expected = current ? currentBinding : selection ? selectionBinding : input ? inputBinding : nil
+        #expect(migrated.actionHotkeys[.translate]?.signature == expected?.signature)
+        #expect(migrated.actionHotkeys[.screenshotTranslation]?.signature == screenshotBinding.signature)
+        let raw = try JSONDecoder().decode([String: HotkeyBinding].self,
+                                           from: #require(fixture.defaults.data(forKey: "hotkey.actions.json")))
+        #expect(raw["inputTranslation"] == nil && raw["selectionTranslation"] == nil)
+        #expect(migrated.hotkeyAssignments[.action(.translate)]?.signature == expected?.signature)
+        let rows = HotkeySettingsPresentation.rows(settingsStore: migrated, keywords: [])
+        #expect(rows.filter { $0.target == .action(.translate) }.count == 1)
+        if let expected {
+            #expect(HotkeyConflictChecker.check(expected, for: .action(.openChat),
+                                                among: migrated.hotkeyAssignments)
+                    .problem == .taken(.action(.translate)))
+            for discarded in [inputBinding, selectionBinding] where discarded.signature != expected.signature {
+                #expect(HotkeyConflictChecker.check(discarded, for: .action(.openChat),
+                                                    among: migrated.hotkeyAssignments).canSave)
+            }
+        }
+        migrated.setHotkey(nil, for: .translate)
+        #expect(SettingsStore(defaults: fixture.defaults).actionHotkeys[.translate] == nil)
+    }
+
+    @Test func `resizing remembers a viewport limit while short content fits and screens cap it`() {
+        let screen = CGRect(x: 0, y: 0, width: 1400, height: 1000)
+        #expect(AskTranslationPanelPlacement.size(content: 400, screen: screen, preference: .eighty)
+            == CGSize(width: AskMetrics.launcherWidth, height: 400))
+        #expect(AskTranslationPanelPlacement.size(content: 2000, screen: screen, preference: .eighty,
+                                                  remembered: CGSize(width: 820, height: 600))
+                == CGSize(width: 820, height: 600))
+        #expect(AskTranslationPanelPlacement.size(content: 350, screen: screen, preference: .eighty,
+                                                  remembered: CGSize(width: 820, height: 600)).height == 350)
+        #expect(AskTranslationPanelPlacement.size(content: 0, screen: screen, preference: .eighty,
+                                                  remembered: .zero) == AskTranslationPanelPlacement.minimumSize)
+        #expect(AskTranslationPanelPlacement.size(content: 2000, screen: screen, preference: .sixty,
+                                                  remembered: CGSize(width: 2000, height: 2000))
+                == CGSize(width: 1400, height: 600))
+        #expect(AskTranslationPanelPlacement.size(content: 500, screen: screen, preference: .full,
+                                                  remembered: CGSize(width: CGFloat.nan, height: CGFloat.infinity))
+                == CGSize(width: 700, height: 500))
+        let small = CGRect(x: -600, y: -400, width: 400, height: 200)
+        #expect(AskTranslationPanelPlacement.size(content: 900, screen: small, preference: .full) == small.size)
+        for style in InterfaceStyle.allCases {
+            for contrast in [false, true] {
+                let chrome = AskTranslationAppearance.chrome(style: style, increasedContrast: contrast)
+                #expect(chrome.corner == AskComposerChrome.launcher.corner)
+                #expect(chrome.editorFontSize == AskComposerChrome.launcher.editorFontSize)
+                #expect(chrome.idleBorder == (!style.usesGlass && !contrast
+                        ? AskClassic.launcherBorder : AskComposerChrome.launcher.idleBorder))
+                #expect(AskTranslationAppearance.cardFill(style: style)
+                    == (style.usesGlass ? AskTranslationAppearance.cardFill : AskClassic.card))
+                #expect(AskTranslationAppearance.border(style: style)
+                    == (style.usesGlass ? AskTheme.border : AskClassic.cardBorder))
+            }
+        }
     }
 }
