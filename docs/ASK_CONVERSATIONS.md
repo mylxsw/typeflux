@@ -632,8 +632,10 @@ field, and the open conversation is a neutral pill with its title in the accent
 (the private tint for one kept on this Mac). The Notes and WordBook shelves and
 the Settings navigation mark their selection the same way
 (`AskSidebarSelection`), and while any of these windows has its sidebar
-collapsed, the toggle (with "new note" in Notes) sits in the same glass pill
-beside the traffic lights (`askCollapsedSidebarTools`).
+collapsed, the toggle sits in the same glass pill (`askCollapsedSidebarTools`):
+right-aligned atop the Notes and WordBook list column (with "new note" in
+Notes), as in the conversation sidebar, and beside the traffic lights in
+Settings.
 
 ## Model and reasoning-effort chip (GUL-193)
 
