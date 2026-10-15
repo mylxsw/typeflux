@@ -86,7 +86,7 @@ struct ClipboardUsageSection: View {
 
     private func row(_ app: ClipboardUsage.App, largest: Int64) -> some View {
         TFFormRow(title: appName(app),
-                  detail: L("clipboard.settings.usage.row",
+                  valueText: L("clipboard.settings.usage.row",
                             ByteCountFormatter.string(fromByteCount: app.bytes, countStyle: .file), app.itemCount),
                   icon: "app.dashed", image: appIcon(app.bundleID)) {
             TFMeter(value: Double(app.bytes), total: Double(max(largest, 1)))

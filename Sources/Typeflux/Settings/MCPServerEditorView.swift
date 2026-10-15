@@ -4,6 +4,7 @@ import SwiftUI
 struct MCPServerEditorView: View {
     @ObservedObject var viewModel: StudioViewModel
     let onClose: () -> Void
+    @State private var hoveredSetting: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
@@ -105,14 +106,16 @@ struct MCPServerEditorView: View {
 
     private func settingRow(_ title: String, subtitle: String, selection: Binding<Bool>) -> some View {
         HStack(spacing: 14) {
-            VStack(alignment: .leading, spacing: 3) {
+            HStack(spacing: 6) {
                 Text(L(title)).font(.system(size: 13, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
-                Text(L(subtitle)).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityHint(L(subtitle))
+                SettingsDescriptionHint(detail: L(subtitle), visible: hoveredSetting == title)
             }
             Spacer(minLength: 12)
             Toggle(L(title), isOn: selection).labelsHidden().toggleStyle(.switch).accessibilityLabel(L(title))
-        }.padding(18)
+        }
+        .padding(18)
+        .onHover { hoveredSetting = $0 ? title : nil }
     }
 
     private var actions: some View {

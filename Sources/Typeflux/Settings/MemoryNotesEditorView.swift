@@ -83,7 +83,7 @@ struct MemoryNotesEditorView: View {
     }
 
     private func row(_ note: AskMemoryNote) -> some View {
-        AgentSettingsRow(icon: "brain", title: note.text, subtitle: Self.provenance(note), titleLineLimit: nil) {
+        AgentSettingsRow(icon: "brain", title: note.text, valueText: Self.provenance(note), titleLineLimit: nil) {
             HStack(spacing: 8) {
                 if correctionsEnabled {
                     AgentSettingsIconButton(systemImage: "pencil", help: L("memory.correct")) {

@@ -19,21 +19,21 @@ enum TFFormControlWidth: Equatable {
     }
 }
 
-/// A form row: title, optional badge and status symbol, a description and a footnote on the
-/// left; the control on the right. When the row is too narrow the control moves below the text.
+/// A form row with a description hint beside its title and a control on the right.
+/// When the row is too narrow the control moves below the text.
 struct TFFormRow<Control: View>: View {
     let title: String
     var detail: String?
+    /// Current values and status remain visible instead of moving into the description hint.
+    var valueText: String?
     /// A third, quieter line for technical detail.
     var footnote: String?
     /// A neutral 28pt icon tile at the start of the row.
     var icon: String?
     /// A picture (e.g. an app icon) in place of the icon tile, same size.
     var image: NSImage?
-    /// Limits the description, truncating in the middle (paths); nil wraps freely.
-    var detailLineLimit: Int?
-    /// Accessibility identifier of the description text.
-    var detailIdentifier: String?
+    /// Limits the value, truncating in the middle (paths); nil wraps freely.
+    var valueLineLimit: Int?
     var badge: String?
     /// Colors the badge (e.g. success / warning); nil is the neutral tag.
     var badgeTint: Color?
@@ -42,6 +42,7 @@ struct TFFormRow<Control: View>: View {
     var imageTint: Color = TFColors.textSecondary
     var controlWidth: TFFormControlWidth = .fit
     @ViewBuilder var control: Control
+    @State private var isHovering = false
 
     /// The text column never asks for more than this before wrapping, so short controls stay beside it.
     static var labelIdealWidth: CGFloat { 220 }
@@ -62,6 +63,7 @@ struct TFFormRow<Control: View>: View {
         .frame(minHeight: TFMetrics.formRowMinHeight)
         .tfControlSize(.regular)
         .accessibilityElement(children: .contain)
+        .onHover { isHovering = $0 }
     }
 
     private var adaptive: some View {
@@ -90,20 +92,40 @@ struct TFFormRow<Control: View>: View {
                         .accessibilityHidden(true)
                 }
                 Text(title).font(.system(size: 13, weight: .semibold)).foregroundStyle(TFColors.textPrimary)
+                    .accessibilityHint(detail ?? "")
+                if let detail, !detail.isEmpty {
+                    SettingsDescriptionHint(detail: detail, visible: isHovering)
+                }
                 if let badge { TFTag(text: badge, tint: badgeTint) }
             }
-            if let detail, !detail.isEmpty {
-                Text(detail).font(.system(size: 12)).foregroundStyle(TFColors.textSecondary)
-                    .lineLimit(detailLineLimit)
+            if let valueText, !valueText.isEmpty {
+                Text(valueText).font(.system(size: 12)).foregroundStyle(TFColors.textSecondary)
+                    .lineLimit(valueLineLimit)
                     .truncationMode(.middle)
-                    .fixedSize(horizontal: false, vertical: detailLineLimit == nil)
-                    .accessibilityIdentifier(detailIdentifier ?? "")
+                    .fixedSize(horizontal: false, vertical: valueLineLimit == nil)
             }
             if let footnote, !footnote.isEmpty {
                 Text(footnote).font(.system(size: 11)).foregroundStyle(TFColors.textTertiary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
+    }
+}
+
+/// A native tooltip target that only appears while its settings row is hovered.
+struct SettingsDescriptionHint: View {
+    let detail: String
+    let visible: Bool
+
+    var body: some View {
+        Image(systemName: "questionmark.circle")
+            .font(.system(size: 12, weight: .medium))
+            .foregroundStyle(TFColors.textSecondary)
+            .frame(width: 16, height: 16)
+            .contentShape(Rectangle())
+            .opacity(visible ? 1 : 0)
+            .help(detail)
+            .accessibilityHidden(true)
     }
 }
 

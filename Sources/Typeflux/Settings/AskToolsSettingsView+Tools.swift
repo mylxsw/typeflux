@@ -54,7 +54,7 @@ extension AskToolsSettingsView {
                 }
                 ForEach(folders, id: \.self) { folder in
                     AgentSettingsRow(icon: "folder", title: (folder as NSString).lastPathComponent,
-                                     subtitle: folder, subtitleLineLimit: 1) {
+                                     valueText: folder, subtitleLineLimit: 1) {
                         AgentSettingsIconButton(systemImage: "minus", help: L("ask.remove")) { removeFolder(folder) }
                     }
                     ModelRowDivider(leading: 66)

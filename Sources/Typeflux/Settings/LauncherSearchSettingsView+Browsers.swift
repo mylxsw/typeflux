@@ -27,7 +27,7 @@ extension LauncherSearchSettingsView {
         let enabled = tabs ? browserPreferences.tabsEnabled : browserPreferences.bookmarksEnabled
         return TFFormSection(title: L(tabs ? "ask.browser.tabs" : "ask.browser.bookmarks"),
                              footnote: L(tabs ? "ask.browser.tabsHint" : "ask.browser.bookmarksHint")) {
-            TFFormRow(title: L(tabs ? "ask.browser.tabs" : "ask.browser.bookmarks"), detail: tabs ? "tab" : "bmk",
+            TFFormRow(title: L(tabs ? "ask.browser.tabs" : "ask.browser.bookmarks"), valueText: tabs ? "tab" : "bmk",
                       icon: tabs ? "rectangle.on.rectangle" : "bookmark") {
                 TFSwitch(title: L(tabs ? "ask.browser.tabs" : "ask.browser.bookmarks"),
                          isOn: browserBinding(tabs ? \.tabsEnabled : \.bookmarksEnabled))

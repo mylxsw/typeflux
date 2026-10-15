@@ -80,8 +80,7 @@ struct AskTranslationPanelSettingsView: View {
 
     private func shortcut(_ action: AppHotkeyAction) -> some View {
         TFFormRow(title: action.title, detail: L("hotkeys.action." + action.rawValue + ".subtitle"),
-                  icon: HotkeySettingsPresentation.icon(of: action),
-                  detailIdentifier: "ask.translation.shortcut." + action.rawValue + ".subtitle") {
+                  icon: HotkeySettingsPresentation.icon(of: action)) {
             Button {
                 if recording == action {
                     recorder.stop(); recording = nil; return

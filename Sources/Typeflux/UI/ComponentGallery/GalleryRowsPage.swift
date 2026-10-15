@@ -23,8 +23,9 @@ struct GalleryRowsPage: View {
                 }
             }
             GallerySpecimen(title: "Icon rows", component: "TFFormRow(icon:) · TFDivider.formWithIcon · TFActionRow",
-                            spec: "28pt neutral tile, 12pt gap; an app icon can take its place (image:). An action " +
-                                "row in accent ends a list it adds to.") {
+                            spec: "28pt neutral tile, 12pt gap; an app icon can take its place (image:). Descriptions " +
+                                "show as a hover hint; current values (paths, sizes) use valueText. An action row " +
+                                "in accent ends a list it adds to.") {
                 TFFormSection(title: "Panel", footnote: "A footnote sits under the card.") {
                     TFFormRow(title: "Show Preview", detail: "Shows the selected item on the right", icon: "sidebar.right") {
                         TFSwitch(title: "Show Preview", isOn: $enabled)
@@ -35,8 +36,8 @@ struct GalleryRowsPage: View {
                                            selection: $position)
                     }
                     TFDivider.formWithIcon
-                    TFFormRow(title: "Projects", detail: "/Users/me/Documents/Projects/typeflux/Sources",
-                              icon: "folder", detailLineLimit: 1) {
+                    TFFormRow(title: "Projects", valueText: "/Users/me/Documents/Projects/typeflux/Sources",
+                              icon: "folder", valueLineLimit: 1) {
                         TFButton(title: "Remove", systemImage: "minus", size: .small, iconOnly: true) {}
                     }
                     TFDivider.formWithIcon

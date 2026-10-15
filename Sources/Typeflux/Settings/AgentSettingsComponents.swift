@@ -25,16 +25,18 @@ struct AgentSettingsSection<Content: View>: View {
     }
 }
 
-/// Icon tile, title, optional detail and a trailing control, matching the Models scene rows.
+/// Icon tile, title, optional description hint or visible value, and a trailing control.
 struct AgentSettingsRow<Trailing: View>: View {
     let icon: String
     let title: String
     var subtitle: String?
+    var valueText: String?
     var badge: String?
     var badgeAccent = false
     var subtitleLineLimit: Int? = 2
     var titleLineLimit: Int? = 1
     @ViewBuilder var trailing: Trailing
+    @State private var isHovering = false
 
     var body: some View {
         HStack(spacing: 14) {
@@ -49,10 +51,14 @@ struct AgentSettingsRow<Trailing: View>: View {
                         .lineLimit(titleLineLimit)
                         .truncationMode(.middle)
                         .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityHint(subtitle ?? "")
+                    if let subtitle, !subtitle.isEmpty {
+                        SettingsDescriptionHint(detail: subtitle, visible: isHovering)
+                    }
                     if let badge { ModelUsageBadge(text: badge, accent: badgeAccent) }
                 }
-                if let subtitle, !subtitle.isEmpty {
-                    Text(subtitle)
+                if let valueText, !valueText.isEmpty {
+                    Text(valueText)
                         .font(.system(size: StudioTheme.Typography.body))
                         .foregroundStyle(StudioTheme.textSecondary)
                         .lineLimit(subtitleLineLimit)
@@ -63,6 +69,7 @@ struct AgentSettingsRow<Trailing: View>: View {
             trailing
         }
         .padding(.horizontal, 18).padding(.vertical, 14).frame(minHeight: 68)
+        .onHover { isHovering = $0 }
     }
 }
 

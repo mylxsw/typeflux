@@ -271,7 +271,7 @@ extension LauncherSearchSettingsView {
     // MARK: - Pieces
 
     private func pathRow(_ path: String, icon: String, remove: @escaping () -> Void) -> some View {
-        TFFormRow(title: AskFileLabels.folder(path), detail: path, icon: icon, detailLineLimit: 1) {
+        TFFormRow(title: AskFileLabels.folder(path), valueText: path, icon: icon, valueLineLimit: 1) {
             TFButton(title: L("ask.remove"), systemImage: "minus", size: .small, iconOnly: true, action: remove)
         }
     }
