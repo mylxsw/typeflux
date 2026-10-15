@@ -8,6 +8,28 @@ import Testing
 struct SettingsBehaviorTests {
     private typealias RenderedUI = SettingsBehaviorTestSupport
 
+    @Test func `description hint opens and closes on click`() async throws {
+        let detail = "This setting controls the fixture behavior."
+        try await RenderedUI.withFixture { _ in
+            try await RenderedUI.withWindow(
+                SettingsDescriptionHint(detail: detail, visible: true)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center),
+                width: 500, height: 300
+            ) { window, host in
+                window.setFrameOrigin(NSPoint(x: 80, y: 80))
+                let hint = try RenderedUI.button(detail, in: host)
+                try hint.press()
+                try await RenderedUI.wait {
+                    NSApp.windows.contains { $0.isVisible && $0.parent === window && RenderedUI.contains(detail, in: $0) }
+                }
+                try hint.press()
+                try await RenderedUI.wait {
+                    !NSApp.windows.contains { $0.isVisible && $0.parent === window && RenderedUI.contains(detail, in: $0) }
+                }
+            }
+        }
+    }
+
     @Test func `appearance and interface buttons persist only the fixture preferences`() async throws {
         try await RenderedUI.withFixture { settings in
             let model = makeModel(settings)
