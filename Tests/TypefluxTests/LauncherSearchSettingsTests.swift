@@ -134,11 +134,25 @@ struct LauncherSearchSettingsViewTests {
         let (settings, defaults, suite) = try store()
         defer { defaults.removePersistentDomain(forName: suite) }
         let index = AskTestFileIndex()
-        index.status = AskFileIndexStatus(phase: .ready, count: 42)
+        index.status = AskFileIndexStatus(phase: .ready, count: 42, bytes: 1_024, updatedAt: Date())
         try await Support.withFixture { _ in
             let view = LauncherSearchSettingsView(settings: settings, index: index, tab: .files)
             try await Support.withWindow(view, width: 760, height: 1100) { window, host in
                 try await Support.wait { Support.contains(L("launcher.search.index.name"), in: host) }
+                for key in ["launcher.search.files.master.subtitle", "launcher.search.files.scope.shared",
+                            "launcher.search.files.scope.footnote", "launcher.search.index.scope.shared",
+                            "launcher.search.index.shared"] {
+                    #expect(!Support.contains(L(key), in: host))
+                }
+                for key in ["launcher.search.index.count", "launcher.search.index.memory",
+                            "launcher.search.index.updated"] {
+                    #expect(Support.contains(L(key), in: host))
+                }
+                #expect(Support.contains("42", in: host))
+                let oldSummary = L("launcher.search.index.name.summary", index.status.count.formatted(),
+                                   ByteCountFormatter.string(fromByteCount: Int64(index.status.bytes), countStyle: .memory),
+                                   index.status.updatedAt.map { AskQuickResultsView.relative($0) } ?? "—")
+                #expect(!Support.contains(oldSummary, in: host))
                 try Support.button(L("launcher.search.index.clear"), in: host).press()
                 try await Support.wait { Support.contains(L("launcher.search.index.clear.message"), in: host) }
                 #expect(index.clears == 0 && window.attachedSheet == nil)

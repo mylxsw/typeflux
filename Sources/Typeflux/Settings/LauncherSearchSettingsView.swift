@@ -147,13 +147,8 @@ struct LauncherSearchSettingsView: View {
     @ViewBuilder private var filesTab: some View {
         ModelSurface {
             HStack(spacing: 16) {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(L("ask.settings.quick.files.title"))
-                        .font(.system(size: 15, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
-                    Text(L("launcher.search.files.master.subtitle"))
-                        .font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
+                Text(L("ask.settings.quick.files.title"))
+                    .font(.system(size: 15, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
                 Spacer(minLength: 8)
                 Toggle("", isOn: Binding(get: { filesEnabled }, set: setFilesEnabled))
                     .labelsHidden().toggleStyle(.switch)
@@ -163,7 +158,7 @@ struct LauncherSearchSettingsView: View {
             .padding(.horizontal, 20).padding(.vertical, 19)
         }
         VStack(alignment: .leading, spacing: 8) {
-            sectionHeader(L("launcher.search.files.roots"), detail: L("launcher.search.files.scope.shared"))
+            ModelSectionLabel(title: L("launcher.search.files.roots"))
             ModelSurface {
                 VStack(alignment: .leading, spacing: 0) {
                     if search.fileRoots.isEmpty {
@@ -190,12 +185,9 @@ struct LauncherSearchSettingsView: View {
                     .padding(.horizontal, 18).padding(.vertical, 12)
                 }
             }
-            Text(L("launcher.search.files.scope.footnote"))
-                .font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
-                .fixedSize(horizontal: false, vertical: true).padding(.horizontal, 4)
         }
         VStack(alignment: .leading, spacing: 8) {
-            sectionHeader(L("launcher.search.index"), detail: L("launcher.search.index.scope.shared"))
+            ModelSectionLabel(title: L("launcher.search.index"))
             ModelSurface {
                 VStack(alignment: .leading, spacing: 0) {
                     nameIndexRow
@@ -203,20 +195,7 @@ struct LauncherSearchSettingsView: View {
                     SemanticFileSearchSettingsView(service: semanticService, filesEnabled: filesEnabled)
                 }
             }
-            Text(L("launcher.search.index.shared"))
-                .font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
-                .fixedSize(horizontal: false, vertical: true).padding(.horizontal, 4)
         }
-    }
-
-    private func sectionHeader(_ title: String, detail: String) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 12) {
-            ModelSectionLabel(title: title)
-            Spacer(minLength: 8)
-            Text(detail).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
-                .multilineTextAlignment(.trailing)
-        }
-        .padding(.trailing, 4)
     }
 
     private func compactFileRoot(_ root: String) -> some View {
@@ -251,11 +230,18 @@ struct LauncherSearchSettingsView: View {
                     .font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
             }
             SemanticFileSearchSettingsView.caption(L("launcher.search.index.name.subtitle"))
-            Text(L("launcher.search.index.name.summary", status.count.formatted(),
-                   ByteCountFormatter.string(fromByteCount: Int64(status.bytes), countStyle: .memory),
-                   status.updatedAt.map { AskQuickResultsView.relative($0) } ?? "—"))
-                .font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
+            HStack(spacing: 20) {
+                SemanticFileSearchSettingsView.metric(L("launcher.search.index.count"), status.count.formatted())
+                SemanticFileSearchSettingsView.metric(
+                    L("launcher.search.index.memory"),
+                    ByteCountFormatter.string(fromByteCount: Int64(status.bytes), countStyle: .memory)
+                )
+                SemanticFileSearchSettingsView.metric(
+                    L("launcher.search.index.updated"),
+                    status.updatedAt.map { AskQuickResultsView.relative($0) } ?? "—"
+                )
+            }
+            .accessibilityIdentifier("launcher.search.index.metrics")
             if let progress = status.progress {
                 ProgressView(value: progress).progressViewStyle(.linear).controlSize(.small)
             }

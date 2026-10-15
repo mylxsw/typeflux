@@ -84,17 +84,19 @@ struct SemanticFileSearchSettingsView: View {
         let status = service.status(filesEnabled: filesEnabled)
         let storage = service.storage()
         return VStack(alignment: .leading, spacing: 12) {
-            SemanticStatusLine(status: status)
-            Rectangle().fill(ModelVisualStyle.divider).frame(height: 1)
+            if !status.isPassiveWaiting {
+                SemanticStatusLine(status: status)
+                Rectangle().fill(ModelVisualStyle.divider).frame(height: 1)
+            }
             if let progress = status.progress {
                 SemanticProgressView(progress: progress, detailed: true)
             }
             HStack(spacing: 20) {
-                metric(L("semantic.metric.index"),
-                       storage.index > 0 ? SemanticFileSearchStatus.size(storage.index) : "—")
-                metric(L("semantic.metric.model"),
-                       service.modelReady && storage.model > 0 ? SemanticFileSearchStatus.size(storage.model) : "—")
-                metric(L("semantic.metric.location"), L("semantic.metric.local"))
+                Self.metric(L("semantic.metric.index"),
+                            storage.index > 0 ? SemanticFileSearchStatus.size(storage.index) : "—")
+                Self.metric(L("semantic.metric.model"),
+                            service.modelReady && storage.model > 0 ? SemanticFileSearchStatus.size(storage.model) : "—")
+                Self.metric(L("semantic.metric.location"), L("semantic.metric.local"))
             }
             .accessibilityIdentifier("semantic.metrics")
             HStack(spacing: 14) {
@@ -156,7 +158,7 @@ struct SemanticFileSearchSettingsView: View {
         Task { await service.prepareModelIfNeeded() }
     }
 
-    private func metric(_ title: String, _ value: String) -> some View {
+    static func metric(_ title: String, _ value: String) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(title).font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
             Text(value).font(.system(size: 14, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)

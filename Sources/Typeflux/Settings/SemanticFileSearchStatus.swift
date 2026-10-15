@@ -10,6 +10,7 @@ struct SemanticFileSearchStatus: Equatable {
     var text: String
     var progress: Progress?
     var action: Action = .none
+    var isPassiveWaiting = false
 
     struct Input: Equatable {
         var phase: SemanticFileSearchService.Phase
@@ -41,7 +42,7 @@ struct SemanticFileSearchStatus: Equatable {
             return .init(tone: .busy, text: L("semantic.media.downloading"),
                          progress: .mediaDownload(input.mediaDownload ?? 0))
         case .indexing where input.indexProgress?.waitingForIdle == true:
-            return .init(tone: .ready, text: L("semantic.media.waiting"))
+            return .init(tone: .ready, text: L("semantic.media.waiting"), isPassiveWaiting: true)
         case .indexing:
             return .init(tone: .busy, text: L("semantic.indexing", files),
                          progress: indexProgress(input.indexProgress))
