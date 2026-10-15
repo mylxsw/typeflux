@@ -5370,3 +5370,14 @@
 "ask.search.type.video" = "動画";
 
 "semantic.atTime" = "一致位置 %@";
+
+/* Shared components (UI/Components) */
+"component.loading" = "読み込み中";
+"component.pane" = "セクション";
+"component.search.placeholder" = "検索";
+"component.search.clear" = "検索をクリア";
+"component.search.searchAll" = "すべてから検索";
+"component.search.noResults" = "「%@」は見つかりません";
+"component.search.tryAnother" = "別のキーワードで検索してください。";
+"component.search.tryAll" = "別のキーワードで検索するか、すべての項目から検索してください。";
+"appMenu.componentGallery" = "コンポーネントギャラリー";

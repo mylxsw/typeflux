@@ -5485,3 +5485,14 @@
 "ask.search.type.video" = "视频";
 
 "semantic.atTime" = "命中位置 %@";
+
+/* Shared components (UI/Components) */
+"component.loading" = "正在加载";
+"component.pane" = "分区";
+"component.search.placeholder" = "搜索";
+"component.search.clear" = "清除搜索";
+"component.search.searchAll" = "在全部中搜索";
+"component.search.noResults" = "没有找到“%@”";
+"component.search.tryAnother" = "换个关键词试试。";
+"component.search.tryAll" = "换个关键词试试，或在全部内容中搜索。";
+"appMenu.componentGallery" = "组件库";

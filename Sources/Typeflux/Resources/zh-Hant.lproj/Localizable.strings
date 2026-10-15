@@ -5404,3 +5404,14 @@
 "ask.search.type.video" = "影片";
 
 "semantic.atTime" = "符合位置 %@";
+
+/* Shared components (UI/Components) */
+"component.loading" = "正在載入";
+"component.pane" = "分區";
+"component.search.placeholder" = "搜尋";
+"component.search.clear" = "清除搜尋";
+"component.search.searchAll" = "在全部中搜尋";
+"component.search.noResults" = "找不到「%@」";
+"component.search.tryAnother" = "換個關鍵詞試試。";
+"component.search.tryAll" = "換個關鍵詞試試，或在全部內容中搜尋。";
+"appMenu.componentGallery" = "元件庫";

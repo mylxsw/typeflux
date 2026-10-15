@@ -1,0 +1,325 @@
+# 设置界面控件统一规范 设计方案
+
+> 状态：规范已确认；公共组件库与组件库面板已实现（`Sources/Typeflux/UI/Components/`，§12），页面迁移待做（GUL-394）。可交互设计稿：`docs/design/settings-search-unification.html`，截图在 `docs/design/settings-search-unification/`。
+> 范围：设置窗口里的**按钮、Tab、下拉、搜索框**四类控件，以及与它们配套的输入框和列表行。外观沿用 Liquid Glass 的配方（`ask-workspace-liquid-glass.html`、`notebook-redesign.html`），颜色沿用 `StudioTheme`。
+> 第一版只统一了搜索框和列表行（§7、§8）。这一版按 issue 里的反馈，把四类控件放进同一套尺寸、形状和状态体系。
+
+## 0. 一页结论
+
+1. **一套尺寸**：所有可交互控件只有 3 种高度：**大 36pt、标准 30pt、小 24pt**。标准是默认值；小号只用在列表行和卡片标题行里；大号只用在引导页和整页空状态的主操作。现在混用的 22 / 26 / 28 / 32 / 34 / 36pt 全部归到这三档。
+2. **一个形状规则**：**能点的都是胶囊**（按钮、Tab 分段、下拉、搜索框）；**能打字的是圆角矩形**（输入框 8pt）；**装东西的容器按「外圆角 − 内边距 = 内圆角」嵌套**（卡片 12、菜单 12 → 菜单项 7、Sheet 18）。与 macOS 26 的控件形状一致。
+3. **一套状态**：常态 / 悬停 / 按下 / 键盘焦点 / 禁用 / 加载，每种状态的样式对所有控件都一样（§2.4）。焦点统一为系统焦点环：1pt accent 描边 + 3.5pt accent 30% 外圈。
+4. **按钮**：5 种样式（主要 / 次要 / 无边框 / 链接 / 玻璃），外加「危险」修饰。一个区域最多一个主要按钮，放在最右边。
+5. **Tab 分 3 级**：页面 Tab（下划线，切换页面）、分段控件（胶囊，切换同一份内容的视图或筛选）、分区列表（左侧竖排，分区多或需要分组时用）。窗口变窄时，分段控件变为下拉，分区列表变为下拉。
+6. **下拉分 3 种**：选择器（选一个值，显示当前值和 ⌃⌄ 双箭头）、操作菜单（按钮 + ⌄，或「⋯」圆形按钮）、筛选菜单（显示当前选项和数量，不是默认值时用 accent 着色）。菜单优先用原生 `NSMenu`；只有选项需要图标 + 副标题 + 状态，或者需要在菜单里搜索时，才用自绘的玻璃弹出层。
+7. **搜索框**：胶囊、30pt，只有一个尺寸，放在页面工具条或列表栏顶部（§7）。
+
+## 1. 现状
+
+截图见 issue。同一类控件有多种实现，尺寸和圆角各不相同：
+
+| 类别 | 现有实现 | 高度 | 圆角 | 用量 |
+|---|---|---|---|---|
+| 按钮 | `ModelActionStyle` / `SettingsActionButton`（`ModelVisualStyle.swift:134`） | 30 | 7 | 设置页主力 |
+| | `StudioButton`（`StudioComponents.swift:1093`） | 34 | 16 | 32 处 |
+| | `StudioIconButton` | 32 | 16 | 2 处 |
+| | `AskIconGhostButton`（`AskWorkspaceChrome.swift:124`） | 28 | 胶囊 | 18 处 |
+| | 人设「新建」等自绘按钮（`StudioPersonaRosterView.swift`） | ≈22 | 6 | 若干 |
+| Tab | `StudioUnderlineTab`（语音输入、模型） | ≈30 | — | 3 处 |
+| | `StudioSegmentedControl`（`StudioSegmentedControl.swift`） | 30（项 26 / 22） | 外 8 / 内 6 | 3 处 |
+| | `AskSegmentedControl`（`AskDesign.swift:1561`） | — | — | Ask 窗口 |
+| | 分区列表 `SettingsPaneLayout`（Agent、启动器） | 30 | 8 | 2 处 |
+| 下拉 | `SettingsMenuPicker` / `StudioMenuPicker` | **36** | 7 | 30+ 处 |
+| | `SettingsActionMenu`（下拉操作） | 30 | 7 | 3 处 |
+| | `SettingsPaneMenu`（窄窗口分区菜单） | 系统无边框 | — | 1 处 |
+| | `CloudServerMenuPicker`、`PersonaSelectionMenu`、关键词「全部 · 37」 | 各不相同 | | |
+| 搜索 | 8 种写法（见 §7.1） | 28–34 | 7 / 胶囊 | |
+
+问题集中在三点：**同一行里的控件高度不齐**（30pt 的按钮旁边是 36pt 的选择器），**圆角有 6 / 7 / 8 / 16 / 胶囊 5 种**，**同一种意图用了不同控件**（筛选有时用分段、有时用下拉，而且下拉放在搜索框左边）。
+
+## 2. 基础规格
+
+### 2.1 尺寸
+
+| 尺寸 | 高度 | 文字 | 左右内边距 | 图标 | 图标与文字间距 | 用在哪里 |
+|---|---|---|---|---|---|---|
+| 大 `.large` | 36 | 14 半粗 | 18 | 14 | 7 | 引导页、整页空状态的主操作 |
+| 标准 `.regular` | 30 | 13 中等 | 14 | 12 | 6 | **默认**：页面工具条、表单、Sheet 底部、搜索框 |
+| 小 `.small` | 24 | 12 中等 | 10 | 11 | 5 | 列表行尾部、卡片和分组标题行、菜单弹出层里 |
+
+- 只有图标的按钮是**圆形**，直径等于高度（36 / 30 / 24）。
+- 同一行的控件**必须同一尺寸**，这样上下边缘才对齐。
+- 文字标签只有 13pt 和 12pt 两档；数量和次要信息用 11pt `textTertiary`，数字用等宽数字（`monospacedDigit`）。
+
+### 2.2 形状
+
+| 元素 | 形状 |
+|---|---|
+| 按钮、分段控件（外框和选中块）、选择器、下拉、搜索框、标签 | 胶囊 |
+| 单行输入框 | 圆角 8 |
+| 多行输入框 | 圆角 10 |
+| 卡片、分组列表、菜单弹出层 | 圆角 12 |
+| 菜单项、分区列表的选中行、列表栏的选中行 | 圆角 7（= 12 − 5pt 内边距） |
+| Sheet、对话框 | 圆角 18 |
+
+嵌套时内圆角 = 外圆角 − 内边距，保证同心。
+
+### 2.3 颜色（全部取自 `StudioTheme`，不新增颜色）
+
+| 用途 | 令牌 |
+|---|---|
+| 主要按钮填充、焦点、选中强调 | `accent`（悬停时 `accentHover`） |
+| 选中但不强调（分区列表、列表栏） | `accentSoft` |
+| 次要控件填充 | `controlSurface`，加 0.5pt `border` |
+| 分段控件的选中块 | `selectionSurfaceRaised`，加 1pt 下投影 |
+| 悬停 / 按下叠加层 | 文字色 6% / 11% |
+| 危险 | `danger` |
+| 浮在内容上的工具条、菜单、弹出层 | 玻璃（macOS 26 用 `glassEffect`，更早的系统用 `.regularMaterial`；开启「减少透明度」时用不透明的 `ModelVisualStyle.canvas`） |
+
+### 2.4 状态（所有控件通用）
+
+| 状态 | 样式 |
+|---|---|
+| 常态 | 见各控件 |
+| 悬停 | 叠加 6% 文字色；主要按钮改用 `accentHover`；无边框按钮出现填充 |
+| 按下 | 叠加 11%，缩放到 0.97（弹簧动画 0.25s）；「减弱动态效果」时不缩放 |
+| 键盘焦点 | 系统焦点环：1pt `accent` 描边 + 3.5pt `accent` 30% 外圈，形状与控件相同。原生 `NSPopUpButton` 用 AppKit 自己画的焦点环，样式一致 |
+| 禁用 | 整体不透明度 0.45，没有悬停和按下效果；需要说明原因时用 `.help()` |
+| 加载 | 用 `ProgressView().controlSize(.small)` 替换前置图标，**宽度保持不变**，不可点击 |
+| 选中（分段、Tab、菜单项） | 见各控件 |
+
+## 3. 按钮 `TFButton`
+
+### 3.1 样式
+
+| 样式 | 外观 | 用途 |
+|---|---|---|
+| **主要** `.primary` | `accent` 填充，白字，半粗 | 当前区域最重要的一个动作：添加、保存、安装、登录 |
+| **次要** `.secondary`（默认） | `controlSurface` + 0.5pt 边框 | 其他动作：取消、打开文件夹、导入、更多 |
+| **无边框** `.plain` | 没有填充，悬停时出现填充 | 列表行和卡片里的小动作；只有图标的按钮（关闭、⋯、刷新） |
+| **链接** `.link` | `accent` 文字，没有填充 | 句子里或空状态里的轻量入口：「添加应用」「了解更多」 |
+| **玻璃** `.glass` | 玻璃材质 + 高光边 | 只用在浮在内容上的层：底部操作条、悬浮工具条 |
+| 修饰：**危险** `.destructive` | 次要 / 无边框时文字变 `danger`；只有在确认对话框里才用 `danger` 填充 | 删除、重置、退出登录 |
+
+### 3.2 规则
+
+- **一个区域最多一个主要按钮**，放在最右边。区域指一条工具条、一张卡片的标题行、一个 Sheet 的底部。
+- **顺序**：从左到右是「次要 → 主要」。Sheet 和对话框的底部右对齐：`[取消] [主要]`。Return 触发主要按钮，Esc 触发取消。
+- **危险操作**：先弹确认对话框。对话框里的危险按钮是 `danger` 填充，**默认焦点放在「取消」上**。危险按钮不当作主要按钮放在工具条里。
+- **文字**：动词开头，不超过 6 个汉字（「添加关键词」「打开技能文件夹」→「打开文件夹」）。不加句号，也不加「…」，除非点了之后还要继续输入。
+- **只有图标的按钮**只用于大家都认识的动作（关闭、更多、刷新、删除、复制），必须带 `.help()` 提示和 `accessibilityLabel`。
+- **最小宽度**：带文字的标准按钮至少 64pt，这样「取消」「保存」等短词不会显得局促。
+- 按钮里的图标统一用 SF Symbols，半粗。
+
+## 4. Tab
+
+三种 Tab 各管一件事，不混用：
+
+| 级别 | 组件 | 切换的是 | 选项数量 | 位置 |
+|---|---|---|---|---|
+| 1 页面 Tab | `TFTabBar`（下划线） | **不同的页面**：内容和工具条都会变 | 2–6 | 页面标题下方 |
+| 2 分段控件 | `TFSegmentedControl`（胶囊） | **同一份内容的视图或筛选**：工具条不变 | 2–4（工具条里）；2–5（表单里） | 工具条、表单、Sheet |
+| 3 分区列表 | `TFPaneList`（竖排） | 页面里的分区，分区多于 6 个或需要分组时 | 不限，可分组 | 内容区左侧 |
+
+### 4.1 页面 Tab（下划线）
+
+- 每项：13pt，选中时半粗、`textPrimary`，未选中时中等粗细、`textSecondary`，悬停时 `textPrimary`。
+- 数量写在名称右边（11pt `textTertiary`，等宽数字），例如「词库 129」。只在数量对用户有意义时显示。
+- 选中项下方是 2pt 的 `accent` 胶囊线，宽度等于文字宽度；切换时这条线滑到新位置（0.2s，「减弱动态效果」时直接跳过去）。
+- 项与项间距 22pt；整排下方有一条贯通的 0.5pt 分隔线；行高 32pt。
+- 键盘：Tab 栏获得焦点后用 ←/→ 切换；⌃Tab / ⌃⇧Tab 在页面之间循环。
+- 选项超过 6 个时改用分区列表。
+
+### 4.2 分段控件（胶囊）
+
+- 外框：胶囊，`controlSurface` + 0.5pt 边框，内边距 2pt。
+- 选中块：胶囊，`selectionSurfaceRaised` + 1pt 下投影，切换时滑动（`matchedGeometryEffect`，0.18s）。
+- 尺寸：标准 30pt（选中块 26pt，12.5pt 字）；小 24pt（选中块 20pt，12pt 字）。
+- 文字：选中时半粗、`textPrimary`；未选中时中等粗细、`textSecondary`。
+- **带数量**：作为筛选使用时，每段写「名称 + 数量」，数量随搜索词更新。
+- 宽度：在工具条里按内容自适应；在表单里各段等宽，铺满控件列。
+- 也可以只有图标（例如「列表 / 网格」视图切换），这时每段必须带提示。
+- **超过 4 个选项，或窗口宽度放不下时，自动变为筛选菜单**（§5.3）。
+
+### 4.3 分区列表
+
+- 列宽 200pt；每行 30pt，圆角 7，左边是 16pt 的 SF Symbol，文字 13pt。
+- 选中行：`accentSoft` 填充，文字半粗，图标用 `accent`。
+- 分组标题：11pt 半粗，`textTertiary`，上方留 14pt。
+- 行尾可以放状态点（例如 Agent 的能力状态）或数量。
+- 内容区宽度小于 720pt 时，收成列表上方的**分区选择器**（§5.1 的样式，前面带当前分区的图标）。
+
+## 5. 下拉
+
+| 类型 | 组件 | 触发器外观 | 用途 |
+|---|---|---|---|
+| 选择器 | `TFPopUpButton` | 胶囊 + 当前值 + ⌃⌄ 双箭头 | 从一组值里选一个：语言、模型、外观 |
+| 操作菜单 | `TFMenuButton` | 按钮（任意样式）+ ⌄ 单箭头；或「⋯」圆形按钮 | 一组相关的动作：更多、导入 / 导出 |
+| 筛选菜单 | `TFFilterMenu` | 胶囊 + 「当前选项 · 数量」+ ⌄ | 筛选选项多于 4 个，或分段控件放不下 |
+
+### 5.1 选择器
+
+- 标准 30pt（**从现在的 36pt 降到 30pt**，和旁边的按钮、输入框对齐）；列表行里用小号 24pt。
+- 外观：`controlSurface` 胶囊 + 0.5pt 边框；左边是当前值（13pt，过长时中间截断），右边是 `chevron.up.chevron.down`（9pt 半粗，`textTertiary`）。
+- 当前值可以带前置图标或颜色点（例如服务商图标、状态点）。
+- 宽度：表单里固定 220pt（长内容可放宽到 280pt）；工具条里按内容自适应，最窄 100pt。
+- 打开后用原生 `NSMenu`，当前值打勾；菜单从当前值的位置弹出（macOS 选择器的标准行为）。
+
+### 5.2 操作菜单
+
+- 触发器就是一个按钮，后面加 `chevron.down`（9pt 半粗）；也可以是只有图标「⋯」的无边框圆形按钮。
+- 菜单项用动词；危险项放在最后，前面加分隔线，文字用红色。
+- 菜单从触发器的下边缘弹出，左边对齐。
+
+### 5.3 筛选菜单
+
+- 触发器：「当前选项 · 数量 ⌄」。
+- **选中的不是默认值（「全部」）时**，触发器改用 `accentSoft` 填充 + `accent` 文字，提醒「筛选已生效」。
+- 菜单项：前面是打勾位，后面是数量。
+- 位置：紧跟在搜索框右边。
+
+### 5.4 菜单弹出层（自绘时）
+
+只有下面两种情况才自绘，其他一律用原生 `NSMenu`：选项需要图标 + 副标题 + 状态（例如模型选择器、服务器选择器）；或者选项超过 12 个，需要在菜单里搜索。
+
+- 材质：玻璃（强），圆角 12，内边距 5pt，阴影同系统菜单。
+- 宽度：至少等于触发器宽度，最多 360pt；高度最多 360pt，超出后滚动。
+- 菜单项：26pt，圆角 7；带副标题的菜单项 44pt。前面是 12pt 打勾位，后面放数量、快捷键或状态。
+- 悬停 / 键盘选中：`accent` 填充 + 白字（与系统菜单一致）。
+- 分组标题 11pt 半粗 `textTertiary`；分组之间是 0.5pt 分隔线。
+- 超过 12 个选项时，顶部放搜索框（标准 30pt），打开后自动聚焦。
+- 键盘：↑/↓ 移动，Return 选中，Esc 关闭；直接输入字母时跳到匹配项。
+
+## 6. 输入框
+
+不是这次的重点，但要与上面的控件对齐：
+
+- 单行：30pt，圆角 8，`controlSurface` + 0.5pt 边框，焦点环同 §2.4。API Key、URL、模型 ID 用等宽字体（沿用 `ModelFieldStyle(monospaced:)`）。
+- 出错时：边框改为 `danger`，下方 11.5pt `danger` 文字说明原因。
+- 多行：圆角 10，最小高度 80pt。
+
+## 7. 搜索框 `TFSearchField`
+
+### 7.1 现状
+
+| 页面 | 代码 | 现状 |
+|---|---|---|
+| 模型 · 语音识别 / 大语言模型 | `SettingsView.swift:851`（`SettingsSearchBox`，宽 220） | 放在标题栏右上角，和 Tab 挤在同一行 |
+| 语音输入 · 人设 | `StudioPersonaRosterView.swift:24` | 自绘，圆角 7，比其他页面高 |
+| 语音输入 · 词库 | `SettingsView.swift:2128` | 平时只显示一个放大镜按钮，点开后展开，失焦又收起 |
+| 应用专属人设 · 选择应用 | `StudioPersonaAppRulesDrawer.swift:133` | 自绘，2pt 蓝色实线 |
+| Agent · 技能 | `AskToolsSettingsView+Skills.swift:27` | 筛选不带数量 |
+| Agent · 记忆 | `MemoryNotesEditorView.swift:20` | 基本可用 |
+| 启动器 · 关键词 | `AskLauncherPluginSettingsView.swift:180` | 筛选下拉放在搜索框左边 |
+| 启动器 · 示例库 | `AskWorkflowGallerySheet.swift:79` | 自绘 |
+| 其他 | `RecentInputMemoryManagementView.swift:40`、`AskWorkflowEditorView.swift:382` | 原生 `TextField` 加内边距，没有图标和清除按钮 |
+
+### 7.2 规格
+
+| 属性 | 规格 |
+|---|---|
+| 形状 / 高度 | 胶囊，**30pt，只有这一个尺寸**（上一版列表栏用 28pt，这一版统一成 30pt） |
+| 宽度 | 页面工具条里 200–320pt，随窗口伸缩；列表栏和菜单弹出层里与容器同宽 |
+| 填充 | `controlSurface` + 0.5pt 边框。搜索框在内容区，不用玻璃 |
+| 图标 | `magnifyingglass` 12pt，`textTertiary`；聚焦时变为 `textSecondary` |
+| 占位文字 | 「搜索{对象}」，例如「搜索模型或服务商」「搜索词条」 |
+| 右侧 | 没有输入时，页面工具条里的搜索框显示 `⌘F` 键帽；有输入时显示「N 项」和清除按钮 |
+| 快捷键 | ⌘F 聚焦；Esc 有内容时清空，没内容时失焦；↓ 把焦点移到第一条结果 |
+| 首次出现 | 页面打开时不自动聚焦；菜单弹出层里的搜索框例外 |
+
+### 7.3 摆放位置
+
+- **A. 页面工具条**：在页面 Tab 下面单独占一行。从左到右是：搜索框 → 筛选（分段或筛选菜单）→ 弹性空白 → 次要按钮 → 主要按钮。用于模型、词库、技能、记忆、关键词。
+- **B. 列表栏顶部**：在左右分栏里左侧列表的标题行下面，与列表同宽。用于人设库、应用选择器、示例库。
+
+### 7.4 搜索行为
+
+输入时实时过滤，命中的文字用 `accent` 色加粗；分组保留标题并更新数量，空分组隐藏；筛选和搜索取交集；切换页面 Tab 时清空搜索、保留筛选。
+
+## 8. 列表行 `TFListRow` 与空状态
+
+- 分组卡片：`cardSurface`，圆角 12，0.5pt 边框；分组标题用 `SettingsListSectionLabel`（12pt 半粗 +「N 项」）。
+- 行高：两行 52pt / 单行 36pt / 紧凑 30pt（词库）。左右内边距 12pt。
+- 前置图标 28×28，圆角 7；标题 13pt 半粗；标签是 16pt 高的小胶囊；副标题 11.5pt `textSecondary`，只显示 1 行。
+- 尾部附件只有 5 种，最多放 2 个：**状态**（圆点 + 文字）、**开关**（迷你尺寸）、**箭头**、**小号按钮**、**「⋯」操作菜单**（悬停时出现）。
+- 分隔线 0.5pt，从标题左侧开始。
+- 词库的词条用紧凑行；内容区宽于 760pt 时分两列。网格只用在示例库这类「发现」页面。
+- 空状态：列表本身为空时，显示说明 + 主要按钮；搜索没有结果时，显示「没有找到 "xxx"」+「清除搜索」，当前有筛选时再加「在全部中搜索」。
+
+## 9. 场景
+
+| 场景 | 控件尺寸 | 规则 |
+|---|---|---|
+| 页面工具条 | 标准 | 搜索 → 筛选 → 空白 → 次要 → 主要；同一行同一尺寸 |
+| 卡片 / 分组标题行 | 小 | 标题在左，右边最多两个小按钮（如「+ 新建」「管理」） |
+| 列表行尾部 | 小 | 见 §8；按钮用无边框或次要样式，不用主要样式 |
+| 表单行 | 标准 | 左边是标签（13pt）和说明（11.5pt `textSecondary`），右边是控件，列宽 220pt，右对齐；开关用迷你尺寸 |
+| Sheet / 对话框底部 | 标准 | 右对齐 `[取消] [主要]`；左边可以放一个链接或「帮助」圆形按钮 |
+| 确认对话框 | 标准 | 危险按钮用 `danger` 填充，默认焦点在「取消」 |
+| 整页空状态 | 大 | 一个主要按钮，可加一个链接 |
+| 引导页 | 大 | 主要 + 次要，水平居中 |
+| 浮层（底部操作条、悬浮工具条） | 标准 | 玻璃按钮；只有图标的按钮用圆形 |
+| 窄窗口（内容区 < 720pt） | — | 分段控件变为筛选菜单；分区列表变为分区选择器；工具条里的次要按钮只显示图标（带提示）；词库变为一列 |
+| 深色 / 浅色 | — | 只换颜色令牌，尺寸和形状不变 |
+| 减少透明度 | — | 玻璃改为不透明的 `canvas`，保留高光边 |
+| 增强对比度 | — | 边框从 0.5pt 改为 1pt，焦点环不透明度从 30% 提高到 50% |
+
+## 10. 组件与迁移
+
+组件库已实现，见 §12。下表是旧组件与新组件的对应关系，页面迁移时逐个替换：
+
+| 新组件（`UI/Components/`） | 替换 |
+|---|---|
+| `TFButton` / `TFButtonStyle`（`kind:` `size:` `destructive:` `iconOnly:` `isLoading:`） | `ModelActionStyle`、`SettingsActionButton`、设置页里的 `StudioButton` / `StudioIconButton`、自绘小按钮 |
+| `TFTabBar` | `StudioUnderlineTab`、`ModelPageTabBar`、`VoiceInputTabBar` |
+| `TFSegmentedControl` | `StudioSegmentedControl`（迁移完成后删除旧组件和 typealias） |
+| `TFPaneList` / `TFPanePicker` / `TFPaneLayout` | `SettingsPaneLayout` 的分区列表、`SettingsPaneMenu` |
+| `TFPopUpButton` | `SettingsMenuPicker`、`StudioMenuPicker`、`CloudServerMenuPicker` 的触发器 |
+| `TFMenuButton` | `SettingsActionMenu` |
+| `TFFilterMenu` / `TFFilterControl` | 关键词「全部 · 37」，以及各页的筛选分段 |
+| `TFRichPicker` / `TFMenuPanel` | `PersonaSelectionMenu` 等自绘弹出层 |
+| `TFSearchField` | `SettingsSearchBox` 和 §7.1 里的其他写法 |
+| `TFTextFieldStyle` / `TFFieldMessage` | `ModelFieldStyle` |
+| `TFCard` / `TFListGroup` / `TFListRow` / `TFSectionHeader` / `TFFormRow` | `ModelSurface`、`SettingsListSectionLabel`、`ModelProviderRow`、`AgentSettingsActionRow` 等 |
+| `TFEmptyState` / `TFSearchEmptyState` | 各页自绘的空状态 |
+| `TFControlSize` / `TFMetrics` / `TFColors` | 一处定义 §2 的尺寸、圆角、颜色和状态 |
+
+Ask 窗口的控件（`AskSegmentedControl`、`AskIconGhostButton` 等）不在这次的范围内，但新组件的尺寸和状态与它们一致，后续可以直接替换。
+
+## 11. 实现计划
+
+1. **PR 1 · 基础和组件（已完成，§12）**：`TFControlSize` 和 §2 的令牌；§3–§7 的组件；每个组件提供浅色 / 深色的预览。单测覆盖尺寸映射、筛选菜单的「已生效」判断、窄窗口下的折叠判断，以及搜索匹配函数 `TFSearchMatcher`（大小写、中英文、空白、多字段）。
+2. **PR 2 · 页面迁移**：按 §7.1 和 §10 逐页替换；选择器高度改为 30pt 后，逐页检查表单是否对齐。用现有截图流程（`docs/SCREENSHOTS.md`）出浅色 / 深色对比。
+3. 文案：「N 项」「没有找到」「清除搜索」「在全部中搜索」补齐中英文本地化。
+
+## 12. 组件库与组件库面板（已实现）
+
+### 12.1 组件库
+
+代码在 `Sources/Typeflux/UI/Components/`，所有组件以 `TF` 开头，任何页面都可以直接使用，不需要再写样式：
+
+| 文件 | 内容 |
+|---|---|
+| `TFTokens.swift` | `TFControlSize`（24 / 30 / 36）、`TFMetrics`（圆角、间距、宽度）、`TFColors`（映射到 `StudioTheme`）、`TFLayout`（窄窗口与筛选折叠判断）、环境值 `.tfControlSize(_:)` 和 `.tfCompactLayout(_:)` |
+| `TFButton.swift` | `TFButton`、`TFButtonStyle`、`TFButtonChrome`、`TFButtonAppearance`（纯函数，决定各状态的填充、文字和叠加层）、`TFSpinner` |
+| `TFTabs.swift` | `TFTabBar`、`TFSegmentedControl`、`TFPaneList`、`TFPanePicker`、`TFPaneLayout`、`TFOption` |
+| `TFNativeMenu.swift` | 原生 `NSPopUpButton` 封装：SwiftUI 画胶囊，AppKit 负责菜单、键盘和 VoiceOver |
+| `TFMenus.swift` | `TFPopUpButton`、`TFMenuButton`、`TFFilterMenu`、`TFFilterControl` |
+| `TFMenuPanel.swift` | `TFMenuPanel`、`TFRichPicker`（副标题、分组、菜单内搜索、↑↓ / Return） |
+| `TFSearch.swift` | `TFSearchField`（⌘F、Esc、↓、结果数）、`TFSearchMatcher`（忽略大小写、全半角和变音符号）、`TFHighlightedText`、`TFKeyCap` |
+| `TFList.swift` | `TFCard`、`TFDivider`、`TFListGroup`、`TFListRow`、`TFSectionHeader`、`TFFormRow`、`TFIconTile`、`TFTag`、`TFStatusLabel`、`TFSwitch`、`TFTextFieldStyle`、`TFFieldMessage`、`TFEmptyState`、`TFSearchEmptyState` |
+
+用法要点：
+
+- 尺寸只设一次：在一行或一个工具条外层写 `.tfControlSize(.small)`，里面的按钮、分段、下拉都会跟随；`TFListRow` 的尾部附件和 `TFSectionHeader` 的操作已经自动用小号。
+- 窄窗口：在内容区外层写 `.tfCompactLayout(TFLayout.isCompact(contentWidth: width))`，`TFFilterControl` 会从分段变成筛选菜单，`TFPaneLayout` 会从分区列表变成分区选择器。
+- 组件跟随 `\.interfaceStyle`：玻璃按钮在「经典」样式和「减少透明度」下自动改为不透明。
+
+### 12.2 组件库面板
+
+开发用的独立窗口，集中展示所有组件的样式、规格、状态和组合（源码在 `Sources/Typeflux/UI/ComponentGallery/`，面板文字为英文）：
+
+- **打开方式**：Debug 构建（`make run` / `make dev`）在应用菜单里有「组件库」；Release 构建设置 `TYPEFLUX_COMPONENT_GALLERY=1` 后出现；带 `--component-gallery` 启动时直接打开。
+- **页面**：Foundations（尺寸、形状、颜色、状态）、Buttons、Tabs、Menus、Search & Fields、Lists & Forms、Feedback、Compositions（列表页、主从布局、Sheet 底部与确认对话框）。
+- **顶部开关**：System / Light / Dark、Glass / Classic、Regular / Compact，可以组合查看每种外观和窄窗口下的折叠效果。
+- **截图**：`TYPEFLUX_COMPONENT_SNAPSHOTS=<目录> make test SUITE="TFComponentRenderTests"` 会把每页的浅色 / 深色渲染保存为 PNG。
