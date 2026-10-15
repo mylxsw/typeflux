@@ -18,6 +18,7 @@ struct AskConversationWindowServicesTests {
                 #expect(controller.model.launcherDraft.text == "search remains usable")
                 await #expect(throws: (any Error).self) { _ = try await unavailable.list(owner: "owner") }
                 #expect(controller.launcherWindow?.isVisible == true)
+                await unavailable.shutdown()
             } catch {
                 await fixture.close()
                 throw error

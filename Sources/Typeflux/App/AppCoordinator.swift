@@ -289,6 +289,8 @@ final class AppCoordinator {
     }
 
     func stop() {
+        di.conversationCache.preventNewWork()
+        Task { await di.conversationCache.shutdown() }
         if let authAnalyticsObserver { NotificationCenter.default.removeObserver(authAnalyticsObserver) }
         if let authLogoutObserver { NotificationCenter.default.removeObserver(authLogoutObserver) }
         if let authSubscriptionObserver { NotificationCenter.default.removeObserver(authSubscriptionObserver) }

@@ -130,3 +130,11 @@ deadline can bound child execution and pipe cleanup, but cannot forcibly unwind
 an uninterruptible syscall in the host. Clipboard change-count polling, history
 preview rendering and SQLite also retain host-native boundaries. The later
 supervisor/helper work must account for these remaining failure domains.
+
+
+## Stage 2: module supervision
+
+The subsequent stacked change and its independent focused validation are
+recorded in [module-supervisor.md](module-supervisor.md). The first-batch results
+above remain evidence for that batch only; they are not reused as validation of
+the supervisor integration.

@@ -46,7 +46,8 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
          screenCapturePermission: any ScreenCapturePermissionProviding = ScreenCapturePermission.live,
          services: AskConversationWindowServices? = nil,
          clipboardHistoryStore: (any ClipboardHistoryStore)? = nil,
-         filePreviewLoader: (any AskFilePreviewLoading)? = nil) throws {
+         filePreviewLoader: (any AskFilePreviewLoading)? = nil,
+         conversationCache: (any AskCaching)? = nil) throws {
         self.filePreview = AskFilePreviewController(loader: filePreviewLoader)
         self.dockVisibility = dockVisibility
         self.settings = settings
@@ -58,7 +59,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         )
         let sandbox = tools.sandbox
         self.tools = tools
-        let cache: any AskCaching = services?.cache ?? RecoveringAskConversationCache()
+        let cache: any AskCaching = services?.cache ?? conversationCache ?? RecoveringAskConversationCache()
         let deviceKey = "ask.deviceId"
         let deviceId = settings.defaults.string(forKey: deviceKey) ?? UUID().uuidString
         settings.defaults.set(deviceId, forKey: deviceKey)
