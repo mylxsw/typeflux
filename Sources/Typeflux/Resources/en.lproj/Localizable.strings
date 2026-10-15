@@ -5498,3 +5498,7 @@
 "component.search.tryAnother" = "Try a different search.";
 "component.search.tryAll" = "Try a different search, or search all items.";
 "appMenu.componentGallery" = "Component Gallery";
+"component.expanded" = "Expanded";
+"component.collapsed" = "Collapsed";
+"component.add" = "Add";
+"component.remove" = "Remove";

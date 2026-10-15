@@ -100,6 +100,8 @@ enum TFMetrics {
     static let tabIndicatorHeight: CGFloat = 2
 
     static let paneListWidth: CGFloat = 200
+    /// Between a pane list and its pane.
+    static let paneSpacing: CGFloat = 28
     static let paneRowHeight: CGFloat = 30
     /// Below this content width, pane lists fold into a picker and segmented filters into menus.
     static let compactContentWidth: CGFloat = 720

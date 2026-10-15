@@ -25,13 +25,12 @@ struct SemanticFileSearchSettingsView: View {
         let status = service.status(filesEnabled: filesEnabled)
         return VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
-                Circle().fill(Self.statusColor(status.tone)).frame(width: 7, height: 7)
+                TFStatusDot(level: Self.statusLevel(status.tone))
                 Text(L("semantic.metrics"))
-                    .font(.system(size: 14, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
-                Text(L("semantic.index.badge"))
-                    .font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
+                    .font(.system(size: 13, weight: .semibold)).foregroundStyle(TFColors.textPrimary)
+                TFTag(text: L("semantic.index.badge"))
                 Spacer(minLength: 8)
-                Toggle("", isOn: Binding(
+                TFSwitch(title: L("semantic.title"), isOn: Binding(
                     get: { enabled },
                     set: { value in
                         if value {
@@ -42,14 +41,13 @@ struct SemanticFileSearchSettingsView: View {
                         }
                     }
                 ))
-                .labelsHidden().toggleStyle(.switch)
                 .disabled(!service.supported || !filesEnabled || (!enabled && !hasScope))
-                .accessibilityLabel(L("semantic.title")).accessibilityIdentifier("semantic.enabled")
+                .accessibilityIdentifier("semantic.enabled")
             }
             Self.caption(L("semantic.subtitle"))
             detail
         }
-        .padding(.horizontal, 18).padding(.vertical, 16)
+        .padding(.horizontal, 14).padding(.vertical, 14)
     }
 
     @ViewBuilder private var detail: some View {
@@ -65,16 +63,19 @@ struct SemanticFileSearchSettingsView: View {
     private var setup: some View {
         VStack(alignment: .leading, spacing: 10) {
             Self.caption(L("semantic.index.off"))
-            Rectangle().fill(ModelVisualStyle.divider).frame(height: 1)
+            TFDivider(inset: 0)
             Text(L("semantic.index.setup"))
-                .font(.system(size: 12.5, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
+                .font(.system(size: 12.5, weight: .semibold)).foregroundStyle(TFColors.textPrimary)
             Self.caption(L(modelAvailable ? "semantic.index.setup.ready" : "semantic.index.setup.download"))
-            Button(L(modelAvailable ? "semantic.enable" : "semantic.enable.download"), action: enable)
-                .buttonStyle(ModelActionStyle(primary: true))
-                .disabled(!filesEnabled || !hasScope)
-                .accessibilityIdentifier("semantic.setup.enable")
-            Link(L("semantic.about"), destination: URL(string: "https://huggingface.co/google/embeddinggemma-2")!)
-                .font(.system(size: 12))
+            HStack(spacing: TFMetrics.toolbarSpacing) {
+                TFButton(title: L(modelAvailable ? "semantic.enable" : "semantic.enable.download"), kind: .primary,
+                         action: enable)
+                    .disabled(!filesEnabled || !hasScope)
+                    .accessibilityIdentifier("semantic.setup.enable")
+                TFButton(title: L("semantic.about"), kind: .link) {
+                    NSWorkspace.shared.open(URL(string: "https://huggingface.co/google/embeddinggemma-2")!)
+                }
+            }
             if !hasScope { Self.caption(L("semantic.folders.empty")) }
             if !filesEnabled { Self.caption(L("semantic.filesOff")) }
         }
@@ -86,7 +87,7 @@ struct SemanticFileSearchSettingsView: View {
         return VStack(alignment: .leading, spacing: 12) {
             if !status.isPassiveWaiting {
                 SemanticStatusLine(status: status)
-                Rectangle().fill(ModelVisualStyle.divider).frame(height: 1)
+                TFDivider(inset: 0)
             }
             if let progress = status.progress {
                 SemanticProgressView(progress: progress, detailed: true)
@@ -107,24 +108,27 @@ struct SemanticFileSearchSettingsView: View {
                 Self.metric(L("semantic.metric.videos"), service.indexedCounts.videos.formatted())
             }
             .accessibilityIdentifier("semantic.fileTypes")
-            HStack(spacing: 14) {
+            HStack(spacing: TFMetrics.toolbarSpacing) {
                 lifecycleButton
                 Self.destructiveLink(L("semantic.clear")) { confirmation = .index }
                 Self.destructiveLink(L("semantic.remove")) { confirmation = .model }
                     .disabled(!service.modelReady)
             }
+            .tfControlSize(.small)
             if status.action == .permission { permissionHelp }
             if let confirmation {
-                FileIndexInlineConfirmation(
+                TFInlineConfirmation(
                     title: L(confirmation == .model ? "semantic.remove.title" : "semantic.clear.title"),
                     message: L(confirmation == .model ? "semantic.remove.message" : "semantic.clear.message"),
-                    confirm: L(confirmation == .model ? "semantic.remove.confirm" : "semantic.clear.confirm")
+                    confirmTitle: L(confirmation == .model ? "semantic.remove.confirm" : "semantic.clear.confirm"),
+                    cancelTitle: L("semantic.cancel")
                 ) {
                     Task { await service.clear(removeModel: confirmation == .model) }
                     self.confirmation = nil
                 } onCancel: {
                     self.confirmation = nil
                 }
+                .accessibilityIdentifier("file.index.confirmation")
             }
         }
     }
@@ -133,10 +137,11 @@ struct SemanticFileSearchSettingsView: View {
         let folders = service.blocked.map { AskLauncherSearchSettings.abbreviate($0) }.joined(separator: ", ")
         return VStack(alignment: .leading, spacing: 8) {
             Self.caption(L("semantic.permission.message", folders))
-            HStack(spacing: 12) {
+            HStack(spacing: TFMetrics.toolbarSpacing) {
                 Self.link(L("semantic.permission.open")) { NSWorkspace.shared.open(AskFullDiskAccess.settingsURL) }
                 Self.link(L("semantic.permission.recheck")) { service.start(force: true) }
             }
+            .tfControlSize(.small)
         }
     }
 
@@ -167,61 +172,30 @@ struct SemanticFileSearchSettingsView: View {
     }
 
     static func metric(_ title: String, _ value: String) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
-            Text(title).font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
-            Text(value).font(.system(size: 14, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
-                .lineLimit(1).minimumScaleFactor(0.7)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        TFMetric(title: title, value: value)
     }
 
-    private static func statusColor(_ tone: SemanticFileSearchStatus.Tone) -> Color {
+    private static func statusLevel(_ tone: SemanticFileSearchStatus.Tone) -> TFStatusDot.Level {
         switch tone {
-        case .off: StudioTheme.textTertiary
-        case .busy: ModelVisualStyle.accent
-        case .ready: StudioTheme.success
-        case .warning: StudioTheme.warning
+        case .off: .neutral
+        case .busy: .accent
+        case .ready: .success
+        case .warning: .warning
         }
     }
 
     static func caption(_ text: String) -> some View {
-        Text(text).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary)
+        Text(text).font(.system(size: 12)).foregroundStyle(TFColors.textSecondary)
             .fixedSize(horizontal: false, vertical: true)
     }
 
+    /// A small secondary action in the index rows.
     static func link(_ title: String, action: @escaping () -> Void) -> some View {
-        Button(title, action: action).buttonStyle(.plain)
-            .font(.system(size: 12.5, weight: .medium)).foregroundStyle(ModelVisualStyle.accent)
+        TFButton(title: title, action: action)
     }
 
     static func destructiveLink(_ title: String, action: @escaping () -> Void) -> some View {
-        Button(title, role: .destructive, action: action).buttonStyle(.plain)
-            .font(.system(size: 12.5, weight: .medium)).foregroundStyle(StudioTheme.danger)
-    }
-}
-
-/// Confirms an index action in its row, without interrupting the settings page.
-struct FileIndexInlineConfirmation: View {
-    let title: String
-    let message: String
-    let confirm: String
-    let onConfirm: () -> Void
-    let onCancel: () -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title).font(.system(size: 12.5, weight: .semibold)).foregroundStyle(StudioTheme.textPrimary)
-            Text(message).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
-            HStack(spacing: 10) {
-                Button(confirm, role: .destructive, action: onConfirm).buttonStyle(ModelActionStyle())
-                Button(L("semantic.cancel"), action: onCancel).buttonStyle(ModelActionStyle())
-            }
-        }
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(ModelVisualStyle.control, in: RoundedRectangle(cornerRadius: 8))
-        .accessibilityIdentifier("file.index.confirmation")
+        TFButton(title: title, destructive: true, action: action)
     }
 }
 
@@ -230,7 +204,7 @@ struct SemanticStatusLine: View {
     let status: SemanticFileSearchStatus
 
     var body: some View {
-        Text(status.text).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textSecondary)
+        Text(status.text).font(.system(size: 12)).foregroundStyle(TFColors.textSecondary)
             .fixedSize(horizontal: false, vertical: true)
         .accessibilityElement(children: .combine)
         .accessibilityIdentifier("semantic.status")
@@ -256,11 +230,11 @@ struct SemanticProgressView: View {
                     Spacer()
                     Text(verbatim: "\(Int((fraction * 100).rounded()))%").monospacedDigit()
                 }
-                .font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
+                .font(.system(size: 11.5)).foregroundStyle(TFColors.textTertiary)
             case let .scanning(scanned, discovered):
                 ProgressView().progressViewStyle(.linear)
                 Text(L("semantic.progress.scanning", scanned.formatted(), discovered.formatted()))
-                    .font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
+                    .font(.system(size: 11.5)).foregroundStyle(TFColors.textTertiary)
             case let .indexing(processed, total):
                 let fraction = total > 0 ? min(1, Double(processed) / Double(total)) : 1
                 ProgressView(value: fraction).progressViewStyle(.linear)
@@ -269,7 +243,7 @@ struct SemanticProgressView: View {
                     Spacer()
                     Text(verbatim: "\(Int((fraction * 100).rounded()))%").monospacedDigit()
                 }
-                .font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
+                .font(.system(size: 11.5)).foregroundStyle(TFColors.textTertiary)
             }
         }
         .controlSize(.small)

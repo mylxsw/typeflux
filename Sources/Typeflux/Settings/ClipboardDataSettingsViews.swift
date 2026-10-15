@@ -6,36 +6,15 @@ struct ClipboardIgnoredAppsSection: View {
     @ObservedObject var model: ClipboardSettingsModel
 
     var body: some View {
-        ModelSurface {
-            VStack(alignment: .leading, spacing: 0) {
-                ForEach(Array(model.ignoredApps.enumerated()), id: \.element.id) { index, app in
-                    if index > 0 { ModelRowDivider(leading: 54) }
-                    HStack(spacing: 12) {
-                        ClipboardAppIcon(bundleID: app.bundleID)
-                        Text(app.name)
-                            .font(.system(size: StudioTheme.Typography.settingTitle, weight: .medium))
-                            .foregroundStyle(StudioTheme.textPrimary)
-                        Spacer()
-                        Button {
-                            model.removeIgnoredApp(app.bundleID)
-                        } label: {
-                            Image(systemName: "minus.circle")
-                        }
-                        .buttonStyle(.plain)
-                        .foregroundStyle(StudioTheme.textSecondary)
-                        .help(L("clipboard.settings.ignored.remove"))
-                        .accessibilityLabel(L("clipboard.settings.ignored.remove"))
-                    }
-                    .padding(.horizontal, 18)
-                    .padding(.vertical, 10)
+        TFFormSection(title: L("clipboard.settings.section.ignored")) {
+            ForEach(model.ignoredApps, id: \.id) { app in
+                TFFormRow(title: app.name, icon: "app.dashed", image: appIcon(app.bundleID)) {
+                    TFButton(title: L("clipboard.settings.ignored.remove"), systemImage: "minus", kind: .plain,
+                             size: .small, iconOnly: true) { model.removeIgnoredApp(app.bundleID) }
                 }
-                if !model.ignoredApps.isEmpty { ModelRowDivider() }
-                HStack(spacing: 10) {
-                    Button(L("clipboard.settings.ignored.add"), action: chooseApp)
-                }
-                .padding(.horizontal, 18)
-                .padding(.vertical, 12)
+                TFDivider.formWithIcon
             }
+            TFActionRow(systemImage: "plus", title: L("clipboard.settings.ignored.add"), action: chooseApp)
         }
     }
 
@@ -57,25 +36,23 @@ struct ClipboardUsageSection: View {
     @State private var confirmingClearAll = false
 
     var body: some View {
-        ModelSurface {
-            VStack(alignment: .leading, spacing: 0) {
-                summary
-                if let usage = model.usage, !usage.apps.isEmpty {
-                    ModelRowDivider()
-                    ForEach(Array(usage.apps.enumerated()), id: \.element.id) { index, app in
-                        if index > 0 { ModelRowDivider(leading: 54) }
-                        row(app, largest: usage.apps.first?.bytes ?? 1)
-                    }
+        TFFormSection(title: L("clipboard.settings.section.usage")) {
+            summary
+            if let usage = model.usage, !usage.apps.isEmpty {
+                ForEach(usage.apps, id: \.id) { app in
+                    TFDivider.formWithIcon
+                    row(app, largest: usage.apps.first?.bytes ?? 1)
                 }
-                ModelRowDivider()
-                HStack(spacing: 10) {
-                    Button(L("clipboard.settings.usage.reveal"), action: revealData)
-                    Button(L("clipboard.menu.clearUnpinned"), role: .destructive) { confirmingClearAll = true }
-                        .disabled((model.usage?.totalCount ?? 0) == 0)
-                }
-                .padding(.horizontal, 18)
-                .padding(.vertical, 12)
             }
+            TFDivider.form
+            HStack(spacing: TFMetrics.toolbarSpacing) {
+                TFButton(title: L("clipboard.settings.usage.reveal"), action: revealData)
+                TFButton(title: L("clipboard.menu.clearUnpinned"), destructive: true) { confirmingClearAll = true }
+                    .disabled((model.usage?.totalCount ?? 0) == 0)
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
         }
         .confirmationDialog(
             L("clipboard.settings.usage.clearAll.title"), isPresented: $confirmingClearAll, titleVisibility: .visible
@@ -99,48 +76,23 @@ struct ClipboardUsageSection: View {
     }
 
     private var summary: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 10) {
-            Text(ByteCountFormatter.string(fromByteCount: model.usage?.totalBytes ?? 0, countStyle: .file))
-                .font(.system(size: 22, weight: .semibold))
-                .foregroundStyle(StudioTheme.textPrimary)
-            Text(L("clipboard.settings.usage.items", model.usage?.totalCount ?? 0))
-                .font(.system(size: 12))
-                .foregroundStyle(StudioTheme.textSecondary)
+        HStack(spacing: 12) {
+            TFMetric(title: L("clipboard.settings.usage.items", model.usage?.totalCount ?? 0),
+                     value: ByteCountFormatter.string(fromByteCount: model.usage?.totalBytes ?? 0, countStyle: .file))
         }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 14)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
     }
 
     private func row(_ app: ClipboardUsage.App, largest: Int64) -> some View {
-        HStack(spacing: 12) {
-            ClipboardAppIcon(bundleID: app.bundleID)
-            Text(appName(app))
-                .font(.system(size: StudioTheme.Typography.settingTitle, weight: .medium))
-                .foregroundStyle(StudioTheme.textPrimary)
-                .lineLimit(1)
-            Spacer(minLength: 12)
-            ProgressView(value: Double(app.bytes), total: Double(max(largest, 1)))
-                .progressViewStyle(.linear)
-                .frame(width: 120)
-            Text(L(
-                "clipboard.settings.usage.row",
-                ByteCountFormatter.string(fromByteCount: app.bytes, countStyle: .file), app.itemCount
-            ))
-            .font(.system(size: 12).monospacedDigit())
-            .foregroundStyle(StudioTheme.textSecondary)
-            .frame(width: 130, alignment: .trailing)
-            Button {
-                pendingDelete = app
-            } label: {
-                Image(systemName: "trash")
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(StudioTheme.textSecondary)
-            .help(L("clipboard.settings.usage.deleteApp.help"))
-            .accessibilityLabel(L("clipboard.settings.usage.deleteApp.help"))
+        TFFormRow(title: appName(app),
+                  detail: L("clipboard.settings.usage.row",
+                            ByteCountFormatter.string(fromByteCount: app.bytes, countStyle: .file), app.itemCount),
+                  icon: "app.dashed", image: appIcon(app.bundleID)) {
+            TFMeter(value: Double(app.bytes), total: Double(max(largest, 1)))
+            TFButton(title: L("clipboard.settings.usage.deleteApp.help"), systemImage: "trash", kind: .plain,
+                     size: .small, iconOnly: true) { pendingDelete = app }
         }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 9)
     }
 
     private func appName(_ app: ClipboardUsage.App) -> String {
@@ -155,20 +107,7 @@ struct ClipboardUsageSection: View {
     }
 }
 
-/// The icon of an installed app, or a generic one.
-private struct ClipboardAppIcon: View {
-    let bundleID: String?
-
-    var body: some View {
-        Group {
-            if let icon = ClipboardAppIconProvider.shared.icon(forBundleID: bundleID) {
-                Image(nsImage: icon).resizable().interpolation(.high).scaledToFit()
-            } else {
-                Image(systemName: "app.dashed")
-                    .font(.system(size: 15))
-                    .foregroundStyle(StudioTheme.textSecondary)
-            }
-        }
-        .frame(width: 24, height: 24)
-    }
+/// The icon of an installed app; rows fall back to a generic tile without one.
+private func appIcon(_ bundleID: String?) -> NSImage? {
+    ClipboardAppIconProvider.shared.icon(forBundleID: bundleID)
 }

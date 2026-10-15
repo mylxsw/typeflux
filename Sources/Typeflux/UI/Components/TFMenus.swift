@@ -104,6 +104,7 @@ struct TFPopUpButton<Value: Hashable>: View {
         .frame(width: width, height: size.height)
         .fixedSize(horizontal: width == nil, vertical: true)
         .onHover { hovering = $0 }
+        .tfMenuContainer(identifier)
     }
 }
 
@@ -171,6 +172,7 @@ struct TFMenuButton: View {
         .fixedSize()
         .help(iconOnly ? title : "")
         .onHover { hovering = $0 }
+        .tfMenuContainer(identifier)
     }
 }
 
@@ -225,6 +227,7 @@ struct TFFilterMenu<Value: Hashable>: View {
         }
         .fixedSize()
         .onHover { hovering = $0 }
+        .tfMenuContainer(identifier)
     }
 }
 

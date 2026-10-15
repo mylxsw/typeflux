@@ -161,13 +161,6 @@ struct LauncherRedesignVisualTests {
             let sheet = AskKeywordEditorSheet(draft: clash, keywords: defaults, workflows: workflows,
                                               onSave: { _ in }, onCancel: {})
             try await render(sheet, size: NSSize(width: 560, height: 420), name: "gul229-kw-add-problems.png")
-            let menu = VStack(alignment: .leading, spacing: 2) {
-                ForEach(AskKeywordKind.allCases, id: \.self) { kind in
-                    AskKeywordMenuItem(kind: kind, title: kind.title) {}
-                }
-            }
-            .padding(6)
-            try await render(menu, size: NSSize(width: 300, height: 200), name: "gul229-kw-add-menu.png")
         }
     }
 

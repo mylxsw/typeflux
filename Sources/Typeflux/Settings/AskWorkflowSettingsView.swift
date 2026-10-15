@@ -134,9 +134,9 @@ struct AskWorkflowSettingsView: View {
     @State private var runDetails: AskWorkflowRunDetails?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: TFMetrics.sectionSpacing) {
             header
-            ModelSurface { list }
+            TFCard { list }
         }
         .onAppear { store.reload() }
         .sheet(isPresented: $showingGallery) {
@@ -168,88 +168,58 @@ struct AskWorkflowSettingsView: View {
         }
     }
 
-    private var list: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            if store.workflows.isEmpty {
-                AskWorkflowGalleryStarter(store: store, gallery: .bundled,
-                                          builtIn: settings.effectiveAskLauncherKeywords(reserving: store.workflows),
-                                          browse: { showingGallery = true },
-                                          open: { AskWorkflowEditorWindowController.shared.show(workflowID: $0) })
-                ModelRowDivider(leading: 18)
-            }
-            let builtIn = settings.effectiveAskLauncherKeywords(reserving: store.workflows)
-            let conflicts = AskWorkflowStore.keywords(of: store.plugins { (nil, nil) }, excluding: builtIn).conflicts
-            ForEach(Array(store.workflows.enumerated()), id: \.element.id) { index, workflow in
-                if index > 0 { ModelRowDivider(leading: 66) }
-                row(
-                    workflow,
-                    summary: AskWorkflowSummary(workflow, conflicts: conflicts, lastRun: log.last(for: workflow.id))
-                )
-            }
-            if let failure {
-                Text(failure).font(.system(size: 11.5)).foregroundStyle(StudioTheme.warning)
-                    .padding(.horizontal, 18).padding(.vertical, 6)
-            }
+    @ViewBuilder private var list: some View {
+        if store.workflows.isEmpty {
+            AskWorkflowGalleryStarter(store: store, gallery: .bundled,
+                                      builtIn: settings.effectiveAskLauncherKeywords(reserving: store.workflows),
+                                      browse: { showingGallery = true },
+                                      open: { AskWorkflowEditorWindowController.shared.show(workflowID: $0) })
+            TFDivider.form
+        }
+        let builtIn = settings.effectiveAskLauncherKeywords(reserving: store.workflows)
+        let conflicts = AskWorkflowStore.keywords(of: store.plugins { (nil, nil) }, excluding: builtIn).conflicts
+        ForEach(Array(store.workflows.enumerated()), id: \.element.id) { index, workflow in
+            if index > 0 { TFDivider.formWithIcon }
+            row(
+                workflow,
+                summary: AskWorkflowSummary(workflow, conflicts: conflicts, lastRun: log.last(for: workflow.id))
+            )
+        }
+        if let failure {
+            TFFieldMessage(text: failure, tone: .warning)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 14).padding(.vertical, 8)
         }
     }
 
     /// The pane title and its actions share a header, with a two-line fallback for narrow panes.
     private var header: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: 0) {
-                paneTitle.fixedSize(horizontal: true, vertical: false)
-                Spacer(minLength: 12)
-                actions
-            }
-            VStack(alignment: .leading, spacing: 10) {
-                paneTitle
-                HStack { Spacer(minLength: 0); actions }
-            }
-        }
-    }
-
-    private var paneTitle: some View {
-        AgentPaneHeader(symbol: LauncherSettingsPane.workflows.symbol, title: LauncherSettingsPane.workflows.title)
-    }
-
-    private var actions: some View {
-        HStack(spacing: 8) {
-            galleryButton
+        TFPaneHeader(systemImage: LauncherSettingsPane.workflows.symbol, title: LauncherSettingsPane.workflows.title) {
+            TFButton(title: L("ask.workflow.gallery.title"), systemImage: "square.grid.2x2") { showingGallery = true }
+                .accessibilityIdentifier("ask.workflow.gallery")
             maintenanceMenu
             creationMenu
         }
-        .fixedSize()
-    }
-
-    private var galleryButton: some View {
-        Button { showingGallery = true } label: {
-            Label(L("ask.workflow.gallery.title"), systemImage: "square.grid.2x2")
-        }
-        .buttonStyle(ModelActionStyle())
-        .accessibilityIdentifier("ask.workflow.gallery")
     }
 
     private var creationMenu: some View {
-        SettingsActionMenu(title: L("ask.workflow.new"), symbol: "plus", primary: true,
-                           identifier: "ask.workflow.new", items: [
-                            .action(L("ask.workflow.editor.new.ai"), symbol: "sparkles", {
-                                AskWorkflowEditorWindowController.shared.showNew(.assistant)
-                            }),
-                            .separator
-                           ] + AskWorkflowTemplate.allCases.map { template in
-                            .action(template.title, { create(template) })
-                           })
-        .fixedSize()
+        TFMenuButton(title: L("ask.workflow.new"), systemImage: "plus", kind: .primary, actions: [
+            .action(L("ask.workflow.editor.new.ai"), systemImage: "sparkles") {
+                AskWorkflowEditorWindowController.shared.showNew(.assistant)
+            },
+            .separator
+        ] + AskWorkflowTemplate.allCases.map { template in
+            .action(template.title) { create(template) }
+        }, identifier: "ask.workflow.new")
     }
 
     private var maintenanceMenu: some View {
-        SettingsActionMenu(title: L("ask.workflow.manage"), identifier: "ask.workflow.manage", items: [
-            .action(L("ask.workflow.editor.openWindow"), { AskWorkflowEditorWindowController.shared.show() }),
+        TFMenuButton(title: L("ask.workflow.manage"), actions: [
+            .action(L("ask.workflow.editor.openWindow")) { AskWorkflowEditorWindowController.shared.show() },
             .separator,
-            .action(L("ask.workflow.revealFolder"), { store.revealRoot() }),
-            .action(L("ask.workflow.reload"), { store.reload() })
-        ])
-        .fixedSize()
+            .action(L("ask.workflow.revealFolder")) { store.revealRoot() },
+            .action(L("ask.workflow.reload")) { store.reload() }
+        ], identifier: "ask.workflow.manage")
     }
 
     private func row(_ workflow: AskWorkflow, summary: AskWorkflowSummary) -> some View {
@@ -261,12 +231,11 @@ struct AskWorkflowSettingsView: View {
                                        runDetails = AskWorkflowRunDetails(title: summary.title, entry: entry)
                                    }
                                }, controls: {
-                                   Toggle("", isOn: Binding(get: { workflow.status == .ready },
-                                                            set: { store.setEnabled(workflow.id, $0) }))
-                                       .labelsHidden().toggleStyle(.switch).controlSize(.small)
+                                   TFSwitch(title: L("ask.settings.keywords.enabled"),
+                                            isOn: Binding(get: { workflow.status == .ready },
+                                                          set: { store.setEnabled(workflow.id, $0) }))
                                        .disabled(summary.showsStatus)
                                        .help(summary.needsTrust ? L("ask.workflow.review") : summary.status)
-                                       .accessibilityLabel(L("ask.settings.keywords.enabled"))
                                        .accessibilityIdentifier("ask.workflow.enabled." + workflow.id)
                                })
                                .contextMenu {

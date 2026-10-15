@@ -5498,3 +5498,7 @@
 "component.search.tryAnother" = "换个关键词试试。";
 "component.search.tryAll" = "换个关键词试试，或在全部内容中搜索。";
 "appMenu.componentGallery" = "组件库";
+"component.expanded" = "已展开";
+"component.collapsed" = "已收起";
+"component.add" = "添加";
+"component.remove" = "移除";

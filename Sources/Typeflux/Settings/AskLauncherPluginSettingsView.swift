@@ -84,7 +84,6 @@ struct AskLauncherPluginSettingsView: View {
     @State private var filter: AskKeywordKind?
     @State private var query: String
     @State private var editing: AskKeywordSheetItem?
-    @State private var adding = false
     @State private var confirmingRestore = false
     @State private var collapsedSections: Set<AskKeywordSection> = [.system]
 
@@ -112,14 +111,12 @@ struct AskLauncherPluginSettingsView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 12) {
             toolbar
             listCard
             Text(L("ask.settings.keywords.listFootnote"))
-                .font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary).padding(.horizontal, 4)
-            Button(L("ask.settings.keywords.restore")) { confirmingRestore = true }
-                .buttonStyle(.plain).font(.system(size: 12)).foregroundStyle(ModelVisualStyle.accent)
-                .padding(.horizontal, 4)
+                .font(.system(size: 12)).foregroundStyle(TFColors.textTertiary).padding(.horizontal, 4)
+            TFButton(title: L("ask.settings.keywords.restore"), kind: .link, destructive: true) { confirmingRestore = true }
                 .accessibilityIdentifier("ask.settings.keywords.restore")
         }
         .onAppear(perform: reload)
@@ -141,25 +138,33 @@ struct AskLauncherPluginSettingsView: View {
 
     // MARK: - Toolbar
 
-    /// Keep the category menu compact and the add action at the trailing edge.
-    /// Narrow panes place the category above the expanding search field.
+    /// Search first, then the type filter, then the add action at the trailing edge (spec §7.3).
+    /// Narrow panes move the filter to its own line below the search field.
     private var toolbar: some View {
         ViewThatFits(in: .horizontal) {
-            HStack(spacing: 8) {
-                filterBar
-                searchBox.frame(minWidth: 160)
+            HStack(spacing: TFMetrics.toolbarSpacing) {
+                searchBox
+                filterMenu
+                Spacer(minLength: 0)
                 addButton
             }
-            VStack(alignment: .leading, spacing: 8) {
-                filterBar
-                searchAndAdd
+            VStack(alignment: .leading, spacing: TFMetrics.toolbarSpacing) {
+                HStack(spacing: TFMetrics.toolbarSpacing) {
+                    searchBox
+                    Spacer(minLength: 0)
+                    addButton
+                }
+                filterMenu
             }
         }
     }
 
-    private var filterBar: some View {
-        AskKeywordFilterBar(selection: $filter, counts: filterCounts)
-            .frame(width: 156)
+    private var filterMenu: some View {
+        let counts = filterCounts
+        let options: [TFOption<AskKeywordKind?>] = [TFOption(nil, L("ask.settings.keywords.filter.all"), count: counts[nil] ?? 0)]
+            + AskKeywordKind.editableKinds.map { TFOption($0, $0.title, count: counts[$0] ?? 0) }
+        return TFFilterMenu(title: L("ask.settings.keywords.filter.all"), options: options, selection: $filter,
+                            defaultValue: nil, identifier: "ask.settings.keywords.filter")
     }
 
     private var filterCounts: [AskKeywordKind?: Int] {
@@ -169,70 +174,41 @@ struct AskLauncherPluginSettingsView: View {
         return counts
     }
 
-    private var searchAndAdd: some View {
-        HStack(spacing: 8) {
-            searchBox
-            addButton
-        }
-    }
-
     private var searchBox: some View {
-        SettingsSearchBox(placeholder: L("ask.settings.keywords.search"), text: $query, width: nil)
-            .frame(maxWidth: .infinity)
-            .accessibilityIdentifier("ask.settings.keywords.search")
+        TFSearchField(placeholder: L("ask.settings.keywords.search"), text: $query,
+                      resultCount: AskKeywordListPresentation.filter(rows, kind: filter, query: query).count,
+                      identifier: "ask.settings.keywords.search")
     }
 
     private var addButton: some View {
-        Button { adding = true } label: {
-            Label(L("ask.settings.keywords.add"), systemImage: "plus")
-        }
-        .buttonStyle(ModelActionStyle(primary: true))
-        .fixedSize()
-        .accessibilityIdentifier("ask.settings.keywords.add")
-        .popover(isPresented: $adding, arrowEdge: .bottom) { addMenu }
-    }
-
-    private var addMenu: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            ForEach([AskKeywordKind.translate, .prompt, .web, .system], id: \.self) { kind in
-                addItem(kind, title: kind.title) {
-                    adding = false
-                    editing = AskKeywordSheetItem(draft: AskKeywordDraft(adding: kind))
-                }
-            }
-        }
-        .padding(6).frame(width: 300)
-    }
-
-    private func addItem(_ kind: AskKeywordKind, title: String, action: @escaping () -> Void) -> some View {
-        AskKeywordMenuItem(kind: kind, title: title, action: action)
+        TFMenuButton(title: L("ask.settings.keywords.add"), systemImage: "plus", kind: .primary,
+                     actions: [AskKeywordKind.translate, .prompt, .web, .system].map { kind in
+                         .action(kind.title, systemImage: kind.symbol) {
+                             editing = AskKeywordSheetItem(draft: AskKeywordDraft(adding: kind))
+                         }
+                     },
+                     identifier: "ask.settings.keywords.add")
     }
 
     // MARK: - List
 
     private var listCard: some View {
         let shown = AskKeywordListPresentation.filter(rows, kind: filter, query: query)
-        return VStack(alignment: .leading, spacing: 12) {
+        return VStack(alignment: .leading, spacing: TFMetrics.sectionSpacing) {
             if shown.isEmpty {
-                ModelSurface { AgentSettingsEmptyRow(text: L("ask.settings.keywords.noMatch", query)) }
+                TFSearchEmptyState(query: query, onClear: { query = "" },
+                                   onSearchAll: filter == nil ? nil : { filter = nil })
             }
             ForEach(AskKeywordSection.allCases, id: \.self) { section in
                 let group = shown.filter { section.kinds.contains($0.kind) }
                 if !group.isEmpty {
-                    VStack(alignment: .leading, spacing: 6) {
-                        AskKeywordSectionHeader(section: section, count: group.count,
-                                                expanded: !collapsedSections.contains(section)) {
-                            toggleSection(section)
-                        }
-                        if !collapsedSections.contains(section) {
-                            ModelSurface {
-                                VStack(alignment: .leading, spacing: 0) {
-                                    ForEach(Array(group.enumerated()), id: \.element.id) { index, row in
-                                        if index > 0 { ModelRowDivider(leading: 56) }
-                                        AskKeywordRowView(row: row, toggle: { toggle(row) }, open: { open(row) })
-                                    }
-                                }
-                            }
+                    TFFormSection(title: section.title, count: group.count,
+                                  isExpanded: Binding(get: { !collapsedSections.contains(section) },
+                                                      set: { _ in toggleSection(section) }),
+                                  identifier: "ask.settings.keywords.section." + section.rawValue) {
+                        ForEach(Array(group.enumerated()), id: \.element.id) { index, row in
+                            if index > 0 { TFDivider.formWithIcon }
+                            AskKeywordRowView(row: row, query: query, toggle: { toggle(row) }, open: { open(row) })
                         }
                     }
                 }

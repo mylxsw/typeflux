@@ -2,7 +2,7 @@ import SwiftUI
 
 /// Gallery pages. The gallery is a developer tool, so its own copy is English.
 enum ComponentGallerySection: String, CaseIterable, Identifiable {
-    case foundations, buttons, tabs, menus, inputs, lists, feedback, compositions
+    case foundations, buttons, tabs, menus, inputs, lists, rows, feedback, compositions
 
     var id: String { rawValue }
 
@@ -14,6 +14,7 @@ enum ComponentGallerySection: String, CaseIterable, Identifiable {
         case .menus: "Menus"
         case .inputs: "Search & Fields"
         case .lists: "Lists & Forms"
+        case .rows: "Rows & Panes"
         case .feedback: "Feedback"
         case .compositions: "Compositions"
         }
@@ -27,6 +28,7 @@ enum ComponentGallerySection: String, CaseIterable, Identifiable {
         case .menus: "filemenu.and.selection"
         case .inputs: "magnifyingglass"
         case .lists: "list.bullet.rectangle"
+        case .rows: "rectangle.grid.1x2"
         case .feedback: "bubble.left.and.exclamationmark.bubble.right"
         case .compositions: "square.grid.2x2"
         }
@@ -35,7 +37,7 @@ enum ComponentGallerySection: String, CaseIterable, Identifiable {
     static let paneSections: [TFPaneSection<ComponentGallerySection>] = [
         TFPaneSection("Basics", items: items([.foundations])),
         TFPaneSection("Controls", items: items([.buttons, .tabs, .menus, .inputs])),
-        TFPaneSection("Content", items: items([.lists, .feedback])),
+        TFPaneSection("Content", items: items([.lists, .rows, .feedback])),
         TFPaneSection("Patterns", items: items([.compositions]))
     ]
 
@@ -112,6 +114,7 @@ struct ComponentGalleryPage: View {
         case .menus: GalleryMenusPage()
         case .inputs: GalleryInputsPage()
         case .lists: GalleryListsPage()
+        case .rows: GalleryRowsPage()
         case .feedback: GalleryFeedbackPage()
         case .compositions: GalleryCompositionsPage()
         }

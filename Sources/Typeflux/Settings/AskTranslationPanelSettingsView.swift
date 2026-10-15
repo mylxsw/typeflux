@@ -14,58 +14,46 @@ struct AskTranslationPanelSettingsView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            ModelSectionLabel(title: L("ask.translation.panel.shortcuts"))
-            ModelSurface {
-                VStack(spacing: 0) {
-                    ForEach(Array(AppHotkeyAction.translation.enumerated()), id: \.element) { index, action in
-                        if index > 0 {
-                            ModelRowDivider(leading: 18)
-                        }
-                        shortcut(action)
-                    }
+        VStack(alignment: .leading, spacing: TFMetrics.sectionSpacing) {
+            TFFormSection(title: L("ask.translation.panel.shortcuts")) {
+                ForEach(Array(AppHotkeyAction.translation.enumerated()), id: \.element) { index, action in
+                    if index > 0 { TFDivider.formWithIcon }
+                    shortcut(action)
                 }
             }
             if let notice {
-                Text(notice).font(.system(size: 12)).foregroundStyle(StudioTheme.warning)
+                TFFieldMessage(text: notice, tone: .warning).padding(.horizontal, 4).padding(.top, -16)
             }
-            ModelSectionLabel(title: L("ask.translation.panel.preferences")).padding(.top, 14)
-            ModelSurface {
-                VStack(spacing: 0) {
-                    AgentSettingsRow(icon: "macwindow", title: L("ask.translation.panel.position"),
-                                     subtitle: L("ask.translation.panel.position.subtitle"), subtitleLineLimit: nil) {
-                        StudioSegmentedPicker(
-                            options: AskTranslationPanelPosition.allCases.map { (label: $0.title, value: $0) },
-                            selection: Binding(get: { model.settings.panelPosition },
-                                               set: {
-                                                   model.setPanelPreference($0, at: \.panelPosition)
-                                               }),
-                            size: .compact,
-                            optionIdentifier: { "ask.translation.panel.position." + $0.rawValue }
-                        )
-                    }
-                    ModelRowDivider(leading: 18)
-                    preference("height", icon: "arrow.up.and.down", keyPath: \.maxHeight,
-                               values: AskTranslationPanelHeight.allCases, title: { $0.title })
-                    ModelRowDivider(leading: 18)
-                    preference("autoCopy", icon: "doc.on.doc", keyPath: \.autoCopy,
-                               values: AskTranslationAutoCopy.allCases, title: { $0.title })
-                    ModelRowDivider(leading: 18)
-                    preference("keep", icon: "clock", keyPath: \.keepState,
-                               values: AskTranslationKeepState.allCases, title: { $0.title })
-                    ModelRowDivider(leading: 18)
-                    AgentSettingsRow(icon: "globe", title: L("ask.settings.plugins.translate.second"),
-                                     subtitle: L("ask.settings.plugins.translate.secondSubtitle"),
-                                     subtitleLineLimit: nil) {
-                        SettingsMenuPicker(
-                            title: L("ask.settings.plugins.translate.second"),
-                            options: AskTranslationLanguages.common.map { (
-                                label: AskTranslationLanguages.name($0, in: AppLocalization.shared.language),
-                                value: $0
-                            ) },
-                            selection: Binding(get: { model.secondLanguage }, set: model.setSecondLanguage)
-                        ).frame(width: 180)
-                    }
+            TFFormSection(title: L("ask.translation.panel.preferences")) {
+                TFFormRow(title: L("ask.translation.panel.position"), detail: L("ask.translation.panel.position.subtitle"),
+                          icon: "macwindow") {
+                    TFSegmentedControl(
+                        options: AskTranslationPanelPosition.allCases.map { TFOption($0, $0.title) },
+                        selection: Binding(get: { model.settings.panelPosition },
+                                           set: { model.setPanelPreference($0, at: \.panelPosition) }),
+                        identifier: { "ask.translation.panel.position." + $0.rawValue }
+                    )
+                }
+                TFDivider.formWithIcon
+                preference("height", icon: "arrow.up.and.down", keyPath: \.maxHeight,
+                           values: AskTranslationPanelHeight.allCases, title: { $0.title })
+                TFDivider.formWithIcon
+                preference("autoCopy", icon: "doc.on.doc", keyPath: \.autoCopy,
+                           values: AskTranslationAutoCopy.allCases, title: { $0.title })
+                TFDivider.formWithIcon
+                preference("keep", icon: "clock", keyPath: \.keepState,
+                           values: AskTranslationKeepState.allCases, title: { $0.title })
+                TFDivider.formWithIcon
+                TFFormRow(title: L("ask.settings.plugins.translate.second"),
+                          detail: L("ask.settings.plugins.translate.secondSubtitle"), icon: "globe") {
+                    TFPopUpButton(
+                        title: L("ask.settings.plugins.translate.second"),
+                        options: AskTranslationLanguages.common.map {
+                            TFOption($0, AskTranslationLanguages.name($0, in: AppLocalization.shared.language))
+                        },
+                        selection: Binding(get: { model.secondLanguage }, set: model.setSecondLanguage),
+                        width: TFMetrics.formControlWidth
+                    )
                 }
             }
         }
@@ -79,31 +67,21 @@ struct AskTranslationPanelSettingsView: View {
         values: [Value],
         title: (Value) -> String
     ) -> some View {
-        AgentSettingsRow(icon: icon, title: L("ask.translation.panel." + key),
-                         subtitle: L("ask.translation.panel." + key + ".subtitle"), subtitleLineLimit: nil) {
-            SettingsMenuPicker(title: L("ask.translation.panel." + key),
-                               options: values.map { (label: title($0), value: $0) },
-                               selection: Binding(
-                                   get: { model.settings[keyPath: keyPath] },
-                                   set: { model.setPanelPreference($0, at: keyPath) }
-                               ))
-                               .frame(width: 180)
-                               .accessibilityIdentifier("ask.translation.panel.setting." + key)
+        TFFormRow(title: L("ask.translation.panel." + key), detail: L("ask.translation.panel." + key + ".subtitle"),
+                  icon: icon) {
+            TFPopUpButton(title: L("ask.translation.panel." + key),
+                          options: values.map { TFOption($0, title($0)) },
+                          selection: Binding(get: { model.settings[keyPath: keyPath] },
+                                             set: { model.setPanelPreference($0, at: keyPath) }),
+                          width: TFMetrics.formControlWidth,
+                          identifier: "ask.translation.panel.setting." + key)
         }
     }
 
     private func shortcut(_ action: AppHotkeyAction) -> some View {
-        HStack(spacing: 10) {
-            Image(systemName: HotkeySettingsPresentation.icon(of: action))
-                .foregroundStyle(StudioTheme.textSecondary).frame(width: 18)
-            VStack(alignment: .leading, spacing: 3) {
-                Text(action.title).font(.system(size: 13, weight: .medium)).foregroundStyle(StudioTheme.textPrimary)
-                Text(L("hotkeys.action." + action.rawValue + ".subtitle"))
-                    .font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityIdentifier("ask.translation.shortcut." + action.rawValue + ".subtitle")
-            }
-            Spacer()
+        TFFormRow(title: action.title, detail: L("hotkeys.action." + action.rawValue + ".subtitle"),
+                  icon: HotkeySettingsPresentation.icon(of: action),
+                  detailIdentifier: "ask.translation.shortcut." + action.rawValue + ".subtitle") {
             Button {
                 if recording == action {
                     recorder.stop(); recording = nil; return
@@ -120,19 +98,18 @@ struct AskTranslationPanelSettingsView: View {
             } label: {
                 HotkeyKeysView(binding: shortcuts.row(for: .action(action))?.binding, isRecording: recording == action)
                     .frame(width: 170, alignment: .trailing)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain).accessibilityLabel(L("hotkeys.recordAccessibility", action.title))
             .accessibilityIdentifier("ask.translation.shortcut." + action.rawValue)
-            Button {
+            TFButton(title: L("settings.shortcuts.unset"), systemImage: "xmark", kind: .plain, size: .small,
+                     iconOnly: true) {
                 if recording == action {
                     recorder.stop(); recording = nil
                 }
                 shortcuts.unsetHotkey(for: action)
-            } label: { Image(systemName: "xmark.circle") }
-                .buttonStyle(.plain).foregroundStyle(StudioTheme.textTertiary)
-                .disabled(shortcuts.row(for: .action(action))?.binding == nil)
-                .help(L("settings.shortcuts.unset"))
+            }
+            .disabled(shortcuts.row(for: .action(action))?.binding == nil)
         }
-        .padding(.horizontal, 18).padding(.vertical, 12)
     }
 }

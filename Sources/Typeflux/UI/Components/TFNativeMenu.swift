@@ -153,3 +153,15 @@ struct TFNativeMenuControl: NSViewRepresentable {
         if let identifier { button.setAccessibilityIdentifier(identifier) }
     }
 }
+
+extension View {
+    /// Tags the SwiftUI container of a native menu control too: the SwiftUI accessibility tree
+    /// does not always surface the identifier of the AppKit button inside it.
+    @ViewBuilder func tfMenuContainer(_ identifier: String?) -> some View {
+        if let identifier {
+            accessibilityElement(children: .contain).accessibilityIdentifier(identifier)
+        } else {
+            self
+        }
+    }
+}
