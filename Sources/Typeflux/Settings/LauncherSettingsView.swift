@@ -23,20 +23,20 @@ struct LauncherSettingsView: View {
     @State private var confirmingClearInputHistory = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 24) {
+        VStack(alignment: .leading, spacing: TFMetrics.sectionSpacing) {
             switch pane {
             case .basics:
                 basicsPane
             case .search:
                 LauncherSearchSettingsView(settings: settings)
             case .keywords:
-                AgentPaneHeader(symbol: pane.symbol, title: pane.title)
+                TFPaneHeader(systemImage: pane.symbol, title: pane.title)
                 AskLauncherPluginSettingsView(settings: settings, workflows: workflows)
             case .translation:
-                AgentPaneHeader(symbol: pane.symbol, title: pane.title)
+                TFPaneHeader(systemImage: pane.symbol, title: pane.title)
                 AskTranslationSettingsView(settings: settings)
             case .clipboard:
-                AgentPaneHeader(symbol: pane.symbol, title: pane.title)
+                TFPaneHeader(systemImage: pane.symbol, title: pane.title)
                 ClipboardSettingsView(settings: settings, history: clipboardHistory, onEditShortcut: onEditShortcut)
             case .workflows:
                 AskWorkflowSettingsView(store: workflows, settings: settings)
@@ -53,55 +53,44 @@ struct LauncherSettingsView: View {
     }
 
     @ViewBuilder private var basicsPane: some View {
-        AgentPaneHeader(symbol: pane.symbol, title: pane.title)
-        ModelSurface {
-            AgentSettingsRow(icon: "keyboard", title: L("launcher.inputSource.title"),
-                             subtitle: L("launcher.inputSource.detail"), subtitleLineLimit: nil) {
-                SettingsMenuPicker(title: L("launcher.inputSource.title"), options: inputSourceOptions,
-                                   selection: Binding(get: { inputSourceID }, set: setInputSource))
-                    .frame(width: 200)
-                    .accessibilityIdentifier("launcher.settings.inputSource")
+        TFPaneHeader(systemImage: pane.symbol, title: pane.title)
+        TFFormSection {
+            TFFormRow(title: L("launcher.inputSource.title"), detail: L("launcher.inputSource.detail"), icon: "keyboard") {
+                TFPopUpButton(title: L("launcher.inputSource.title"),
+                              options: inputSourceOptions.map { TFOption($0.value, $0.label) },
+                              selection: Binding(get: { inputSourceID }, set: setInputSource),
+                              width: TFMetrics.formControlWidth, identifier: "launcher.settings.inputSource")
             }
         }
-        ModelSurface {
-            VStack(alignment: .leading, spacing: 0) {
-                AgentSettingsRow(icon: "plus.forwardslash.minus", title: L("ask.settings.quick.calculator.title")) {
-                    Toggle("", isOn: Binding(get: { quickCalculatorEnabled }, set: setQuickCalculator))
-                        .labelsHidden().toggleStyle(.switch)
-                        .accessibilityLabel(L("ask.settings.quick.calculator.title"))
-                }
-                ModelRowDivider(leading: 56)
-                AgentSettingsRow(icon: "number", title: L("ask.settings.quick.numberConversions.title")) {
-                    Toggle("", isOn: Binding(get: { quickNumberConversionsEnabled }, set: setQuickNumberConversions))
-                        .labelsHidden().toggleStyle(.switch)
-                        .accessibilityLabel(L("ask.settings.quick.numberConversions.title"))
-                        .accessibilityIdentifier("launcher.settings.numberConversions")
-                }
+        TFFormSection {
+            TFFormRow(title: L("ask.settings.quick.calculator.title"), icon: "plus.forwardslash.minus") {
+                TFSwitch(title: L("ask.settings.quick.calculator.title"),
+                         isOn: Binding(get: { quickCalculatorEnabled }, set: setQuickCalculator))
+            }
+            TFDivider.formWithIcon
+            TFFormRow(title: L("ask.settings.quick.numberConversions.title"), icon: "number") {
+                TFSwitch(title: L("ask.settings.quick.numberConversions.title"),
+                         isOn: Binding(get: { quickNumberConversionsEnabled }, set: setQuickNumberConversions))
+                    .accessibilityIdentifier("launcher.settings.numberConversions")
             }
         }
-        StudioCard(padding: 0) {
-            VStack(alignment: .leading, spacing: 0) {
-                AgentSettingsRow(icon: "clock.arrow.circlepath", title: L("ask.inputHistory.remember")) {
-                    Toggle("", isOn: Binding(get: { inputHistoryEnabled }, set: setInputHistoryEnabled))
-                        .labelsHidden().toggleStyle(.switch)
-                        .accessibilityLabel(L("ask.inputHistory.remember"))
-                        .accessibilityIdentifier("launcher.settings.inputHistory")
-                }
-                ModelRowDivider(leading: 56)
-                AgentSettingsRow(icon: "list.number", title: L("ask.inputHistory.limit")) {
-                    Picker("", selection: Binding(get: { inputHistoryLimit }, set: setInputHistoryLimit)) {
-                        ForEach([50, 100, 200], id: \.self) { Text(String($0)).tag($0) }
-                    }
-                    .labelsHidden().frame(width: 100)
-                    .accessibilityLabel(L("ask.inputHistory.limit"))
-                }
-                ModelRowDivider(leading: 56)
-                AgentSettingsRow(icon: "trash", title: L("ask.inputHistory.clear")) {
-                    Button(L("common.clear")) { confirmingClearInputHistory = true }
-                }
+        TFFormSection(footnote: L("ask.inputHistory.privacy")) {
+            TFFormRow(title: L("ask.inputHistory.remember"), icon: "clock.arrow.circlepath") {
+                TFSwitch(title: L("ask.inputHistory.remember"),
+                         isOn: Binding(get: { inputHistoryEnabled }, set: setInputHistoryEnabled))
+                    .accessibilityIdentifier("launcher.settings.inputHistory")
+            }
+            TFDivider.formWithIcon
+            TFFormRow(title: L("ask.inputHistory.limit"), icon: "list.number") {
+                TFPopUpButton(title: L("ask.inputHistory.limit"),
+                              options: [50, 100, 200].map { TFOption($0, String($0)) },
+                              selection: Binding(get: { inputHistoryLimit }, set: setInputHistoryLimit))
+            }
+            TFDivider.formWithIcon
+            TFFormRow(title: L("ask.inputHistory.clear"), icon: "trash") {
+                TFButton(title: L("common.clear"), destructive: true) { confirmingClearInputHistory = true }
             }
         }
-        Text(L("ask.inputHistory.privacy")).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
     }
 
     func reload() {

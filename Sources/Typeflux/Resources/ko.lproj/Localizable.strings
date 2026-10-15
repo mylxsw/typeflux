@@ -5383,3 +5383,7 @@
 "component.search.tryAnother" = "다른 검색어를 입력해 보세요.";
 "component.search.tryAll" = "다른 검색어를 입력하거나 전체 항목에서 검색해 보세요.";
 "appMenu.componentGallery" = "컴포넌트 갤러리";
+"component.expanded" = "펼침";
+"component.collapsed" = "접힘";
+"component.add" = "추가";
+"component.remove" = "제거";

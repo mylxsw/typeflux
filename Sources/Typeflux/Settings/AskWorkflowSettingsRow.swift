@@ -13,15 +13,12 @@ struct AskWorkflowSettingsRow<Controls: View>: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
-            Image(systemName: symbol).font(.system(size: 17))
-                .foregroundStyle(StudioTheme.textSecondary)
-                .frame(width: 36, height: 36)
-                .background(ModelVisualStyle.control, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+            TFIconTile(systemImage: symbol, style: .neutral).padding(.top, 1)
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 12) {
                     Button(action: edit) {
-                        Text(summary.title).font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(titleHovered ? ModelVisualStyle.accent : StudioTheme.textPrimary)
+                        Text(summary.title).font(.system(size: 13, weight: .semibold))
+                            .foregroundStyle(titleHovered ? TFColors.accent : TFColors.textPrimary)
                             .underline(titleHovered)
                             .lineLimit(1).truncationMode(.tail)
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -32,61 +29,52 @@ struct AskWorkflowSettingsRow<Controls: View>: View {
                     .help(L("ask.workflow.editor.edit") + " " + summary.title)
                     .accessibilityLabel(L("ask.workflow.editor.edit") + " " + summary.title)
                     .accessibilityIdentifier("ask.workflow.edit")
-                    HStack(spacing: 10) { controls }.fixedSize()
+                    HStack(spacing: TFMetrics.toolbarSpacing) { controls }.fixedSize()
                 }
                 if !summary.description.isEmpty {
-                    Text(summary.description).font(.system(size: 12.5))
-                        .foregroundStyle(StudioTheme.textSecondary)
+                    Text(summary.description).font(.system(size: 12))
+                        .foregroundStyle(TFColors.textSecondary)
                         .lineLimit(1).truncationMode(.tail)
                         .help(summary.description)
                 }
-                AgentFlowLayout(spacing: 6) {
+                TFFlowLayout(spacing: 6) {
                     if let runtime = summary.runtime {
-                        Text(runtime).font(.system(size: 11.5)).foregroundStyle(StudioTheme.textSecondary)
+                        TFTag(text: runtime)
                     }
                     ForEach(Array(summary.keywords.enumerated()), id: \.offset) { _, keyword in
                         AskKeywordListChip(keyword: keyword)
                     }
                     if summary.showsStatus {
-                        AgentStatusBadge(level: summary.level, label: summary.status)
+                        TFStatusLabel(text: summary.status, level: .warning, tintsText: true)
                             .accessibilityIdentifier("ask.workflow.status")
                     }
                     if let review {
-                        Button(L("ask.workflow.review"), action: review)
-                            .buttonStyle(.plain).font(.system(size: 11.5, weight: .medium))
-                            .foregroundStyle(StudioTheme.warning)
+                        TFButton(title: L("ask.workflow.review"), kind: .link, size: .small, action: review)
                             .accessibilityIdentifier("ask.workflow.review")
                     }
                     if let fix {
-                        Button(L("ask.workflow.editor.fixButton"), action: fix)
-                            .buttonStyle(.plain).font(.system(size: 11.5, weight: .medium))
-                            .foregroundStyle(StudioTheme.warning)
+                        TFButton(title: L("ask.workflow.editor.fixButton"), kind: .link, size: .small, action: fix)
                             .accessibilityIdentifier("ask.workflow.fix")
                     }
                 }
-                .controlSize(.small)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 ForEach(Array(summary.notices.enumerated()), id: \.offset) { _, notice in
-                    Text(notice).font(.system(size: 11.5))
-                        .foregroundStyle(StudioTheme.warning)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .textSelection(.enabled)
+                    TFFieldMessage(text: notice, tone: .warning).textSelection(.enabled)
                 }
                 if let notice = summary.runNotice {
                     HStack(spacing: 8) {
-                        Label(notice, systemImage: "exclamationmark.circle")
+                        TFStatusLabel(text: notice, level: .warning, tintsText: true)
                             .accessibilityIdentifier("ask.workflow.runNotice")
                         if let viewLastRun {
-                            Button(L("ask.workflow.lastRun.details"), action: viewLastRun)
-                                .buttonStyle(.plain).underline()
+                            TFButton(title: L("ask.workflow.lastRun.details"), kind: .link, size: .small,
+                                     action: viewLastRun)
                                 .accessibilityIdentifier("ask.workflow.runDetails")
                         }
                     }
-                    .font(.system(size: 11.5)).foregroundStyle(StudioTheme.warning)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(.horizontal, 18).padding(.vertical, 16)
+        .padding(.horizontal, 14).padding(.vertical, 12)
     }
 }

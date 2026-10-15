@@ -230,25 +230,24 @@ struct TFPaneList<ID: Hashable>: View {
     let sections: [TFPaneSection<ID>]
     @Binding var selection: ID
 
+    /// No scroll view of its own: pane lists are short and sit inside the page's scroll view.
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 2) {
-                ForEach(Array(sections.enumerated()), id: \.offset) { index, section in
-                    if let title = section.title {
-                        Text(title)
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundStyle(TFColors.textTertiary)
-                            .padding(.horizontal, 10)
-                            .padding(.top, index == 0 ? 0 : 14)
-                            .padding(.bottom, 4)
-                    }
-                    ForEach(section.items) { item in
-                        row(item)
-                    }
+        VStack(alignment: .leading, spacing: 2) {
+            ForEach(Array(sections.enumerated()), id: \.offset) { index, section in
+                if let title = section.title {
+                    Text(title)
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(TFColors.textTertiary)
+                        .padding(.horizontal, 10)
+                        .padding(.top, index == 0 ? 0 : 14)
+                        .padding(.bottom, 4)
+                }
+                ForEach(section.items) { item in
+                    row(item)
                 }
             }
         }
-        .frame(width: TFMetrics.paneListWidth)
+        .frame(width: TFMetrics.paneListWidth, alignment: .topLeading)
     }
 
     private func row(_ item: TFPaneItem<ID>) -> some View {
@@ -307,14 +306,14 @@ struct TFPaneLayout<ID: Hashable, Content: View>: View {
 
     var body: some View {
         if compact {
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 20) {
                 TFPanePicker(sections: sections, selection: $selection)
-                content.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                content.frame(maxWidth: .infinity, alignment: .topLeading)
             }
         } else {
-            HStack(alignment: .top, spacing: 18) {
+            HStack(alignment: .top, spacing: TFMetrics.paneSpacing) {
                 TFPaneList(sections: sections, selection: $selection)
-                content.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                content.frame(maxWidth: .infinity, alignment: .topLeading)
             }
         }
     }

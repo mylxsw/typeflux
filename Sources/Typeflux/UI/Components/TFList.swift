@@ -2,10 +2,20 @@ import SwiftUI
 
 /// A 28pt rounded tile with an SF Symbol or the first letter of a name.
 struct TFIconTile: View {
+    enum Style {
+        /// White glyph on the tint (app and provider icons).
+        case filled
+        /// Tinted glyph on a 15% tint (categories such as keyword kinds).
+        case soft
+        /// Secondary glyph on the control fill (setting rows).
+        case neutral
+    }
+
     var systemImage: String?
     var letter: String = ""
     var tint: Color = TFColors.accent
     var size: CGFloat = TFMetrics.iconTileSize
+    var style: Style = .filled
 
     static func initial(of text: String) -> String {
         text.first { $0.isLetter || $0.isNumber }.map { String($0).uppercased() } ?? ""
@@ -14,7 +24,7 @@ struct TFIconTile: View {
     var body: some View {
         let corner = size * TFMetrics.iconTileCornerRadius / TFMetrics.iconTileSize
         return RoundedRectangle(cornerRadius: corner, style: .continuous)
-            .fill(tint)
+            .fill(fill)
             .frame(width: size, height: size)
             .overlay {
                 if let systemImage {
@@ -23,8 +33,24 @@ struct TFIconTile: View {
                     Text(verbatim: Self.initial(of: letter)).font(.system(size: size * 0.43, weight: .bold))
                 }
             }
-            .foregroundStyle(.white)
+            .foregroundStyle(glyph)
             .accessibilityHidden(true)
+    }
+
+    private var fill: Color {
+        switch style {
+        case .filled: tint
+        case .soft: tint.opacity(0.15)
+        case .neutral: TFColors.control
+        }
+    }
+
+    private var glyph: Color {
+        switch style {
+        case .filled: .white
+        case .soft: tint
+        case .neutral: TFColors.textSecondary
+        }
     }
 }
 
@@ -44,15 +70,19 @@ struct TFTag: View {
             .frame(height: TFMetrics.tagHeight)
             .background(Capsule(style: .circular).fill(tint?.opacity(0.14) ?? TFColors.hoverOverlay))
             .overlay {
-                if tint == nil { Capsule(style: .circular).strokeBorder(TFColors.border, lineWidth: TFMetrics.borderWidth) }
+                if tint == nil {
+                    Capsule(style: .circular).strokeBorder(TFColors.border, lineWidth: TFMetrics.borderWidth)
+                }
             }
-            .fixedSize()
+            // Keeps its ideal width beside other content; only a line narrower than the tag truncates it.
+            .fixedSize(horizontal: false, vertical: true)
+            .layoutPriority(1)
     }
 }
 
 /// A 6pt status dot.
 struct TFStatusDot: View {
-    enum Level: Equatable { case success, warning, danger, neutral }
+    enum Level: Equatable { case success, warning, danger, neutral, accent }
 
     var level: Level
 
@@ -62,6 +92,7 @@ struct TFStatusDot: View {
         case .warning: TFColors.warning
         case .danger: TFColors.danger
         case .neutral: TFColors.textTertiary
+        case .accent: TFColors.accent
         }
     }
 
@@ -92,13 +123,30 @@ struct TFStatusLabel: View {
 struct TFSectionHeader<Actions: View>: View {
     let title: String
     var count: Int?
+    /// Makes the title a disclosure button that collapses the section.
+    var isExpanded: Binding<Bool>?
+    var identifier: String?
     @ViewBuilder var actions: Actions
 
     var body: some View {
         HStack(spacing: 7) {
-            Text(title).font(.system(size: 12, weight: .semibold)).foregroundStyle(TFColors.textSecondary)
-            if let count {
-                Text(L("settings.list.itemCount", count)).font(.system(size: 11)).foregroundStyle(TFColors.textTertiary)
+            if let isExpanded {
+                Button { isExpanded.wrappedValue.toggle() } label: {
+                    HStack(spacing: 7) {
+                        Image(systemName: isExpanded.wrappedValue ? "chevron.down" : "chevron.right")
+                            .font(.system(size: 10, weight: .semibold)).foregroundStyle(TFColors.textTertiary)
+                            .frame(width: 12)
+                        label
+                        Spacer(minLength: 0)
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(count.map { "\(title), \(L("settings.list.itemCount", $0))" } ?? title)
+                .accessibilityValue(L(isExpanded.wrappedValue ? "component.expanded" : "component.collapsed"))
+                .accessibilityIdentifier(identifier ?? title)
+            } else {
+                label
             }
             Spacer(minLength: 8)
             HStack(spacing: 6) { actions }.tfControlSize(.small)
@@ -107,11 +155,20 @@ struct TFSectionHeader<Actions: View>: View {
         .frame(minHeight: TFControlSize.small.height)
         .accessibilityElement(children: .contain)
     }
+
+    private var label: some View {
+        HStack(spacing: 7) {
+            Text(title).font(.system(size: 12, weight: .semibold)).foregroundStyle(TFColors.textSecondary)
+            if let count {
+                Text(L("settings.list.itemCount", count)).font(.system(size: 11)).foregroundStyle(TFColors.textTertiary)
+            }
+        }
+    }
 }
 
 extension TFSectionHeader where Actions == EmptyView {
-    init(title: String, count: Int? = nil) {
-        self.init(title: title, count: count) { EmptyView() }
+    init(title: String, count: Int? = nil, isExpanded: Binding<Bool>? = nil, identifier: String? = nil) {
+        self.init(title: title, count: count, isExpanded: isExpanded, identifier: identifier) { EmptyView() }
     }
 }
 
@@ -136,6 +193,9 @@ struct TFDivider: View {
     /// Between `TFFormRow`s.
     static var form: TFDivider { TFDivider(inset: TFListGroupInset.form) }
 
+    /// Between `TFFormRow`s that have an `icon`.
+    static var formWithIcon: TFDivider { TFDivider(inset: TFListGroupInset.formWithIcon) }
+
     var body: some View {
         Rectangle().fill(TFColors.border).frame(height: TFMetrics.borderWidth).padding(.leading, inset)
     }
@@ -145,6 +205,8 @@ enum TFListGroupInset {
     static let withIcon = TFMetrics.rowHorizontalPadding + TFMetrics.iconTileSize + 10
     static let plain = TFMetrics.rowHorizontalPadding
     static let form: CGFloat = 14
+    /// Form rows with a leading icon tile: padding 14 + tile 28 + spacing 12.
+    static let formWithIcon: CGFloat = 54
 }
 
 /// A card of rows built from data, with hairlines between rows (macOS System Settings style).

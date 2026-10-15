@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 /// How wide a form row's control column is.
@@ -27,6 +28,12 @@ struct TFFormRow<Control: View>: View {
     var valueText: String?
     /// A third, quieter line for technical detail.
     var footnote: String?
+    /// A neutral 28pt icon tile at the start of the row.
+    var icon: String?
+    /// A picture (e.g. an app icon) in place of the icon tile, same size.
+    var image: NSImage?
+    /// Limits the value, truncating in the middle (paths); nil wraps freely.
+    var valueLineLimit: Int?
     var badge: String?
     /// Colors the badge (e.g. success / warning); nil is the neutral tag.
     var badgeTint: Color?
@@ -41,6 +48,25 @@ struct TFFormRow<Control: View>: View {
     static var labelIdealWidth: CGFloat { 220 }
 
     var body: some View {
+        HStack(alignment: .center, spacing: 12) {
+            if let image {
+                Image(nsImage: image).resizable().interpolation(.high).scaledToFit()
+                    .frame(width: TFMetrics.iconTileSize, height: TFMetrics.iconTileSize)
+                    .accessibilityHidden(true)
+            } else if let icon {
+                TFIconTile(systemImage: icon, style: .neutral)
+            }
+            adaptive
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .frame(minHeight: TFMetrics.formRowMinHeight)
+        .tfControlSize(.regular)
+        .accessibilityElement(children: .contain)
+        .onHover { isHovering = $0 }
+    }
+
+    private var adaptive: some View {
         ViewThatFits(in: .horizontal) {
             HStack(alignment: .center, spacing: 16) {
                 labels.frame(minWidth: 180, idealWidth: Self.labelIdealWidth, maxWidth: .infinity, alignment: .leading)
@@ -51,12 +77,6 @@ struct TFFormRow<Control: View>: View {
                 sizedControl
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
-        .frame(minHeight: TFMetrics.formRowMinHeight)
-        .tfControlSize(.regular)
-        .accessibilityElement(children: .contain)
-        .onHover { isHovering = $0 }
     }
 
     private var sizedControl: some View {
@@ -80,7 +100,9 @@ struct TFFormRow<Control: View>: View {
             }
             if let valueText, !valueText.isEmpty {
                 Text(valueText).font(.system(size: 12)).foregroundStyle(TFColors.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .lineLimit(valueLineLimit)
+                    .truncationMode(.middle)
+                    .fixedSize(horizontal: false, vertical: valueLineLimit == nil)
             }
             if let footnote, !footnote.isEmpty {
                 Text(footnote).font(.system(size: 11)).foregroundStyle(TFColors.textTertiary)
@@ -171,22 +193,36 @@ struct SettingsDescriptionHint: View {
 struct TFFormSection<Actions: View, Content: View>: View {
     var title: String?
     var count: Int?
+    /// A quiet note under the card.
+    var footnote: String?
+    /// Lets the header collapse the card.
+    var isExpanded: Binding<Bool>?
+    var identifier: String?
     @ViewBuilder var actions: Actions
     @ViewBuilder var content: Content
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             if let title {
-                TFSectionHeader(title: title, count: count) { actions }
+                TFSectionHeader(title: title, count: count, isExpanded: isExpanded, identifier: identifier) { actions }
             }
-            TFCard { content }
+            if isExpanded?.wrappedValue ?? true {
+                TFCard { content }
+                if let footnote {
+                    Text(footnote).font(.system(size: 12)).foregroundStyle(TFColors.textTertiary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .padding(.horizontal, 4)
+                }
+            }
         }
     }
 }
 
 extension TFFormSection where Actions == EmptyView {
-    init(title: String? = nil, count: Int? = nil, @ViewBuilder content: () -> Content) {
-        self.init(title: title, count: count, actions: { EmptyView() }, content: content)
+    init(title: String? = nil, count: Int? = nil, footnote: String? = nil, isExpanded: Binding<Bool>? = nil,
+         identifier: String? = nil, @ViewBuilder content: () -> Content) {
+        self.init(title: title, count: count, footnote: footnote, isExpanded: isExpanded, identifier: identifier,
+                  actions: { EmptyView() }, content: content)
     }
 }
 
@@ -272,10 +308,21 @@ struct TFTextFieldStyle: TextFieldStyle {
 
 /// A one-line message under a field; red for errors.
 struct TFFieldMessage: View {
+    enum Tone: CaseIterable { case error, warning, hint }
+
     let text: String
-    var isError = true
+    var tone: Tone = .error
+
+    var color: Color {
+        switch tone {
+        case .error: TFColors.danger
+        case .warning: TFColors.warning
+        case .hint: TFColors.textSecondary
+        }
+    }
 
     var body: some View {
-        Text(text).font(.system(size: 11.5)).foregroundStyle(isError ? TFColors.danger : TFColors.textSecondary)
+        Text(text).font(.system(size: 11.5)).foregroundStyle(color)
+            .fixedSize(horizontal: false, vertical: true)
     }
 }

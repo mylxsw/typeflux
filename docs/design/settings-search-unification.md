@@ -312,7 +312,8 @@ Ask 窗口的控件（`AskSegmentedControl`、`AskIconGhostButton` 等）不在�
 | `TFMenus.swift` | `TFPopUpButton`、`TFMenuButton`、`TFFilterMenu`、`TFFilterControl` |
 | `TFMenuPanel.swift` | `TFMenuPanel`、`TFRichPicker`（副标题、分组、菜单内搜索、↑↓ / Return） |
 | `TFSearch.swift` | `TFSearchField`（⌘F、Esc、↓、结果数）、`TFSearchMatcher`（忽略大小写、全半角和变音符号）、`TFHighlightedText`、`TFKeyCap` |
-| `TFList.swift` | `TFCard`、`TFDivider`、`TFListGroup`、`TFListRow`、`TFSectionHeader`、`TFFormRow`、`TFIconTile`、`TFTag`、`TFStatusLabel`、`TFSwitch`、`TFTextFieldStyle`、`TFFieldMessage`、`TFEmptyState`、`TFSearchEmptyState` |
+| `TFList.swift` / `TFForm.swift` | `TFCard`、`TFDivider`、`TFListGroup`、`TFListRow`、`TFSectionHeader`（可折叠）、`TFFormSection`、`TFFormRow`、`TFIconTile`（filled / soft / neutral）、`TFTag`、`TFStatusLabel`、`TFSwitch`、`TFTextFieldStyle`、`TFFieldMessage`（error / warning / hint）、`TFEmptyState`、`TFSearchEmptyState` |
+| `TFRows.swift` | `TFPaneHeader`、`TFActionRow`、`TFCardNote`、`TFMetric`、`TFMeter`、`TFInlineConfirmation`、`TFFlowLayout`、`TFTokenInput`、`TFCheckbox` |
 
 用法要点：
 
@@ -325,7 +326,7 @@ Ask 窗口的控件（`AskSegmentedControl`、`AskIconGhostButton` 等）不在�
 开发用的独立窗口，集中展示所有组件的样式、规格、状态和组合（源码在 `Sources/Typeflux/UI/ComponentGallery/`，面板文字为英文）：
 
 - **打开方式**：Debug 构建（`make run` / `make dev`）在应用菜单里有「组件库」；Release 构建设置 `TYPEFLUX_COMPONENT_GALLERY=1` 后出现；带 `--component-gallery` 启动时直接打开。
-- **页面**：Foundations（尺寸、形状、颜色、状态）、Buttons、Tabs、Menus、Search & Fields、Lists & Forms、Feedback、Compositions（列表页、主从布局、Sheet 底部与确认对话框）。
+- **页面**：Foundations（尺寸、形状、颜色、状态）、Buttons、Tabs、Menus、Search & Fields、Lists & Forms、Rows & Panes、Feedback、Compositions（列表页、主从布局、Sheet 底部与确认对话框）。
 - **顶部开关**：System / Light / Dark、Glass / Classic、Regular / Compact，可以组合查看每种外观和窄窗口下的折叠效果。
 - **截图**：`TYPEFLUX_COMPONENT_SNAPSHOTS=<目录> make test SUITE="TFComponentRenderTests"` 会把每页的浅色 / 深色渲染保存为 PNG。
 
@@ -334,5 +335,8 @@ Ask 窗口的控件（`AskSegmentedControl`、`AskIconGhostButton` 等）不在�
 | 页面 | 状态 | 说明 |
 |---|---|---|
 | 设置 · 通用 / 外观 / 快捷键 / 高级设置 | 已迁移（GUL-394） | 页面里不再有自定义样式：卡片、分组标题、表单行、开关、选择器、分段、按钮、键帽、选项卡片、「⋯」菜单都来自组件库。表单行在文字较长时，控件仍留在右侧；只有整行宽度不够时，控件才移到文字下方。 |
+| 启动器 · 通用 / 内容检索 / 关键词 / 翻译 / 剪贴板 / 工作流 | 已迁移（GUL-394） | 分区列表换成 `TFPaneLayout`；每页用 `TFPaneHeader` 开头，设置项统一为带中性图标块的 `TFFormRow` 和 `TFDivider.formWithIcon`；「添加文件夹 / 添加应用」用 `TFActionRow`；关键词分组可折叠；清除索引在页内用 `TFInlineConfirmation` 确认。编辑弹窗（关键词编辑、翻译服务密钥、工作流信任 / 示例库）不在本轮范围。 |
 
-迁移时补充进组件库的能力：`TFFormRow` 的标签、状态图标、脚注和控件列宽度；`TFFormSection`；`TFChoiceCard`；`TFKeyCap(style: .key)`；`TFMenuAction` 的禁用项；`TFRichOption` 的彩色状态标签（服务器测速）。另外，`TFTabBar` 和 `TFSegmentedControl` 只给指示条和滑块加动画，不再给切换后的内容加动画。之前切换页面也带动画，旧页面淡出时还没被移除，很快切回来会被复用，导致快捷键录制状态残留。
+启动器迁移补充进组件库的能力：`TFFormRow` 的 `icon` / `image`（应用图标）/ `valueLineLimit`（说明文字改为悬停提示后，路径、用量等当前值用 `valueText` 显示）；`TFFormSection` 的 `footnote` 和折叠；`TFIconTile` 的三种样式；`TFStatusDot.Level.accent`；`TFFieldMessage` 的语气；`TFRows.swift` 的全部组件；原生菜单控件的 SwiftUI 容器也带上标识符，方便 VoiceOver 和 UI 测试定位。`TFTag` 在宽度不够的行里会截断，而不是撑出边界。
+
+设置页迁移时补充进组件库的能力：`TFFormRow` 的标签、状态图标、脚注和控件列宽度；`TFFormSection`；`TFChoiceCard`；`TFKeyCap(style: .key)`；`TFMenuAction` 的禁用项；`TFRichOption` 的彩色状态标签（服务器测速）。另外，`TFTabBar` 和 `TFSegmentedControl` 只给指示条和滑块加动画，不再给切换后的内容加动画。之前切换页面也带动画，旧页面淡出时还没被移除，很快切回来会被复用，导致快捷键录制状态残留。

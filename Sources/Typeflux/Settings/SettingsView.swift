@@ -1487,7 +1487,9 @@ struct StudioView: View {
     }
 
     private func launcherPage(compact: Bool) -> some View {
-        SettingsPaneLayout(sections: LauncherSettingsPane.sections, selection: $launcherPane, compact: compact) {
+        TFPaneLayout(sections: [TFPaneSection(items: LauncherSettingsPane.allCases.map {
+            TFPaneItem($0, $0.title, systemImage: $0.symbol)
+        })], selection: $launcherPane) {
             LauncherSettingsView(
                 settings: viewModel.askToolSettings, pane: launcherPane,
                 clipboardHistory: SettingsWindowController.shared.clipboardHistoryStore,
@@ -1498,6 +1500,7 @@ struct StudioView: View {
             )
             .id(launcherPane)
         }
+        .tfCompactLayout(compact)
     }
 
     @ViewBuilder private var agentMCPServersTabContent: some View {

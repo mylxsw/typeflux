@@ -20,29 +20,19 @@ struct AskTranslationSettingsView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: TFMetrics.sectionSpacing) {
             AskTranslationPanelSettingsView(model: model)
-            HStack {
-                ModelSectionLabel(title: L("ask.translation.section.services"))
-                Spacer()
-                Button { model.addAI() } label: { Label(L("ask.translation.stack.addAI"), systemImage: "plus") }
-                    .buttonStyle(ModelActionStyle())
-            }
-            .padding(.top, 14)
-            ModelSurface {
-                VStack(spacing: 0) {
-                    ForEach(Array(model.settings.services.enumerated()), id: \.element.id) { index, service in
-                        if index > 0 { ModelRowDivider(leading: 18) }
-                        serviceRow(service)
-                            .onDrop(of: [UTType.text], delegate: AskTranslationServiceDropDelegate(
-                                id: service.id, services: model.settings.services, move: model.move, dragging: $dragging
-                            ))
-                    }
+            TFFormSection(title: L("ask.translation.section.services"), footnote: L("ask.translation.stack.footnote")) {
+                TFButton(title: L("ask.translation.stack.addAI"), systemImage: "plus") { model.addAI() }
+            } content: {
+                ForEach(Array(model.settings.services.enumerated()), id: \.element.id) { index, service in
+                    if index > 0 { TFDivider.form }
+                    serviceRow(service)
+                        .onDrop(of: [UTType.text], delegate: AskTranslationServiceDropDelegate(
+                            id: service.id, services: model.settings.services, move: model.move, dragging: $dragging
+                        ))
                 }
             }
-            Text(L("ask.translation.stack.footnote"))
-                .font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary)
-                .fixedSize(horizontal: false, vertical: true).padding(.horizontal, 4)
         }
         .onAppear(perform: model.reloadConfigured)
         .sheet(isPresented: Binding(get: { model.editing != nil }, set: { if !$0 { model.cancelEdit() } })) {
@@ -70,46 +60,54 @@ struct AskTranslationSettingsView: View {
 
     private func serviceRow(_ service: AskTranslationService) -> some View {
         HStack(spacing: 10) {
-            Text("⋮⋮").font(.system(size: 13))
-                .foregroundStyle(StudioTheme.textTertiary).frame(width: 12, height: 28).contentShape(Rectangle())
+            Image(systemName: "line.3.horizontal").font(.system(size: 12, weight: .medium))
+                .foregroundStyle(TFColors.textTertiary).frame(width: 14, height: 28).contentShape(Rectangle())
                 .onDrag { dragging = service.id; return NSItemProvider(object: service.id as NSString) }
                 .accessibilityLabel(L("ask.translation.stack.reorder"))
-            Toggle("", isOn: Binding(get: { service.enabled }, set: { model.setEnabled(service.id, $0) }))
-                .labelsHidden().toggleStyle(.checkbox).accessibilityLabel(title(service))
+            TFCheckbox(title: title(service),
+                       isOn: Binding(get: { service.enabled }, set: { model.setEnabled(service.id, $0) }))
             AskTranslationServiceIcon(service: service)
             Text(title(service)).font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(StudioTheme.textPrimary).opacity(service.enabled ? 1 : 0.55)
+                .foregroundStyle(TFColors.textPrimary).opacity(service.enabled ? 1 : 0.55)
                 .lineLimit(1)
-            HStack(spacing: 4) {
-                Circle().fill(service.provider.map(configured) == false ? StudioTheme.textTertiary : StudioTheme.success)
-                    .frame(width: 5, height: 5)
-                Text(status(service)).font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary).lineLimit(1)
-            }
-            .opacity(service.enabled ? 1 : 0.55)
+            TFStatusLabel(text: status(service),
+                          level: service.provider.map(configured) == false ? .neutral : .success)
+                .opacity(service.enabled ? 1 : 0.55)
+                .lineLimit(1)
             Spacer(minLength: 8)
-            switch service.kind {
-            case .device:
-                Button(L("ask.translation.stack.languages")) { NSWorkspace.shared.open(AskTranslationSettingsModel.languagePackagesURL) }
-                    .buttonStyle(ModelActionStyle())
-            case let .ai(reference):
-                Text(L("ask.translation.model"))
-                    .font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
-                SettingsMenuPicker(title: L("ask.translation.model"), options: AskTranslationSettingsModel.modelOptions(
-                    providers: library.selectableProviders(loggedIn: auth.isLoggedIn, hasImage: false, scenario: "rewrite"), selected: reference
-                ), selection: Binding(get: { reference }, set: { model.setModel($0, for: service.id) }))
-                    .frame(width: 165)
-                if service.id != model.settings.firstAI?.id {
-                    Button { model.removeAI(service.id) } label: { Image(systemName: "xmark") }
-                        .buttonStyle(.plain).foregroundStyle(StudioTheme.textTertiary)
-                        .accessibilityLabel(L("ask.translation.stack.removeAI"))
+            HStack(spacing: TFMetrics.toolbarSpacing) { serviceControls(service) }
+                .tfControlSize(.small)
+        }
+        .padding(.horizontal, 14).frame(minHeight: TFMetrics.formRowMinHeight)
+        .accessibilityIdentifier("ask.translation.service." + service.id)
+    }
+
+    @ViewBuilder private func serviceControls(_ service: AskTranslationService) -> some View {
+        switch service.kind {
+        case .device:
+            TFButton(title: L("ask.translation.stack.languages")) {
+                NSWorkspace.shared.open(AskTranslationSettingsModel.languagePackagesURL)
+            }
+        case let .ai(reference):
+            TFPopUpButton(
+                title: L("ask.translation.model"),
+                options: AskTranslationSettingsModel.modelOptions(
+                    providers: library.selectableProviders(loggedIn: auth.isLoggedIn, hasImage: false, scenario: "rewrite"),
+                    selected: reference
+                ).map { TFOption($0.value, $0.label) },
+                selection: Binding(get: { reference }, set: { model.setModel($0, for: service.id) }),
+                width: 200
+            )
+            if service.id != model.settings.firstAI?.id {
+                TFButton(title: L("ask.translation.stack.removeAI"), systemImage: "xmark", kind: .plain, iconOnly: true) {
+                    model.removeAI(service.id)
                 }
-            case let .provider(provider):
-                Button(L(configured(provider) ? "ask.translation.service.edit" : "ask.translation.service.configure")) { model.edit(provider) }
-                    .buttonStyle(ModelActionStyle())
+            }
+        case let .provider(provider):
+            TFButton(title: L(configured(provider) ? "ask.translation.service.edit" : "ask.translation.service.configure")) {
+                model.edit(provider)
             }
         }
-        .padding(.horizontal, 14).frame(height: 50)
-        .accessibilityIdentifier("ask.translation.service." + service.id)
     }
 }
 

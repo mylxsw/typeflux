@@ -126,7 +126,8 @@ struct TFComponentRenderTests {
             TFSearchField(placeholder: "Search", text: Box("").binding, placement: .container)
             TextField("URL", text: text.binding).textFieldStyle(TFTextFieldStyle(monospaced: true, isError: true))
             TFFieldMessage(text: "Error")
-            TFFieldMessage(text: "Hint", isError: false)
+            TFFieldMessage(text: "Hint", tone: .hint)
+            TFFieldMessage(text: "Warning", tone: .warning)
             TFSwitch(title: "On", isOn: toggle.binding)
             TFSectionHeader(title: "Header", count: 2) { TFButton(title: "New") {} }
             TFListGroup([1, 2], id: \.self) { value in

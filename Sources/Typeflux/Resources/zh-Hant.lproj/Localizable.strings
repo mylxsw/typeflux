@@ -5417,3 +5417,7 @@
 "component.search.tryAnother" = "換個關鍵詞試試。";
 "component.search.tryAll" = "換個關鍵詞試試，或在全部內容中搜尋。";
 "appMenu.componentGallery" = "元件庫";
+"component.expanded" = "已展開";
+"component.collapsed" = "已收合";
+"component.add" = "新增";
+"component.remove" = "移除";
