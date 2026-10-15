@@ -3749,6 +3749,7 @@
 "ask.mode.changed" = "權限模式：%@";
 "ask.mode.usage" = "用法：/mode yolo、/mode strict 或 /mode standard";
 "ask.mode.serverUpgrade" = "請升級 Typeflux 雲端服務以使用工具權限模式。";
+"ask.mode.current" = "目前";
 
 // Settings draft state and MCP row fields.
 "imagegen.unsaved" = "未儲存";

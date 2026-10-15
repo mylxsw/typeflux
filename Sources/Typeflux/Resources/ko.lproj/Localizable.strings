@@ -3742,6 +3742,7 @@
 "ask.mode.changed" = "권한 모드: %@";
 "ask.mode.usage" = "사용법: /mode yolo, /mode strict 또는 /mode standard";
 "ask.mode.serverUpgrade" = "도구 권한 모드를 사용하려면 클라우드 서비스를 업데이트하세요.";
+"ask.mode.current" = "현재";
 
 // Settings draft state and MCP row fields.
 "imagegen.unsaved" = "저장되지 않음";

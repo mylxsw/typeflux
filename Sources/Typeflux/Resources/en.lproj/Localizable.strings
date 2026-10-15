@@ -3752,6 +3752,7 @@
 "ask.mode.changed" = "Permission mode: %@";
 "ask.mode.usage" = "Use /mode yolo, /mode strict or /mode standard";
 "ask.mode.serverUpgrade" = "Update Typeflux Cloud to use tool permission modes.";
+"ask.mode.current" = "Current";
 
 // Settings draft state and MCP row fields.
 "imagegen.unsaved" = "Unsaved";

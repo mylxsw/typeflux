@@ -3742,6 +3742,7 @@
 "ask.mode.changed" = "権限モード：%@";
 "ask.mode.usage" = "使い方：/mode yolo、/mode strict、/mode standard";
 "ask.mode.serverUpgrade" = "ツール権限モードを使用するにはクラウドサービスを更新してください。";
+"ask.mode.current" = "現在";
 
 // Settings draft state and MCP row fields.
 "imagegen.unsaved" = "未保存";

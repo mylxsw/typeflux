@@ -130,14 +130,30 @@ private struct AskCommandRow: View {
         return colorScheme == .light ? AskTheme.launcherSelection : AskTheme.accent.opacity(0.14)
     }
 
+    /// A permission mode row is coloured by its mode when it is the current one,
+    /// and stays neutral otherwise, highlighted or not, matching the composer's menu.
+    private var modeTint: Color? {
+        guard case let .pickPermissionMode(mode) = command.action else { return nil }
+        return AskPermissionModeMenu.tint(mode)
+    }
+
+    private var iconColor: Color {
+        if let tint = modeTint { return command.selected ? tint : StudioTheme.textSecondary }
+        return highlighted ? AskTheme.accent : StudioTheme.textSecondary
+    }
+
+    private var iconWell: Color {
+        if let tint = modeTint { return command.selected ? tint.opacity(0.16) : AskTheme.hoverFill }
+        return highlighted ? AskTheme.accent.opacity(0.16) : AskTheme.hoverFill
+    }
+
     var body: some View {
         HStack(spacing: 10) {
             Image(systemName: command.symbol)
                 .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(highlighted ? AskTheme.accent : StudioTheme.textSecondary)
+                .foregroundStyle(iconColor)
                 .frame(width: 28, height: 28)
-                .background(highlighted ? AskTheme.accent.opacity(0.16) : AskTheme.hoverFill,
-                            in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                .background(iconWell, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
             VStack(alignment: .leading, spacing: 1) {
                 HStack(spacing: 6) {
                     name
@@ -171,6 +187,8 @@ private struct AskCommandRow: View {
         .opacity(command.enabled ? 1 : 0.45)
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(highlighted ? [.isSelected, .isButton] : .isButton)
+        // Without a checkmark the current permission mode is otherwise only a colour.
+        .accessibilityValue(modeTint != nil && command.selected ? L("ask.mode.current") : "")
     }
 
     /// The name with the typed letters underlined; submenu rows have no slash.
@@ -193,7 +211,7 @@ private struct AskCommandRow: View {
     @ViewBuilder private var trailing: some View {
         if let reason = command.disabledReason {
             Text(reason).lineLimit(1)
-        } else if command.selected {
+        } else if command.selected, modeTint == nil {
             Image(systemName: "checkmark").foregroundStyle(AskTheme.accent)
         } else {
             switch command.kind {
