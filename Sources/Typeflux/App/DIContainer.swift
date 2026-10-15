@@ -18,6 +18,7 @@ final class DIContainer {
     let textInjector: AXTextInjector
     let historyStore: HistoryStore
     let clipboardHistoryStore: ClipboardHistoryStore
+    let moduleRegistry: ModuleRegistry
     let noteStore: RecoveringAskNoteStore
     let wordBookStore: RecoveringAskWordBookStore
     let conversationCache: RecoveringAskConversationCache
@@ -122,10 +123,13 @@ final class DIContainer {
         SQLiteAskWordBookStore(url: SQLiteAskWordBookStore.defaultURL())
     }, noteFactory: @escaping @Sendable () throws -> any AskNoteStoring = {
         SQLiteAskNoteStore(url: SQLiteAskNoteStore.defaultURL())
-    }) {
-        noteStore = RecoveringAskNoteStore(factory: noteFactory)
-        wordBookStore = RecoveringAskWordBookStore(factory: wordBookFactory)
-        conversationCache = RecoveringAskConversationCache(factory: conversationCacheFactory)
+    }, moduleHealthDirectory: URL = ModuleHealthStore.directory()) {
+        let storage = StorageModules(healthDirectory: moduleHealthDirectory,
+            conversationFactory: conversationCacheFactory, wordBookFactory: wordBookFactory, noteFactory: noteFactory)
+        noteStore = storage.notes
+        wordBookStore = storage.words
+        conversationCache = storage.conversations
+        moduleRegistry = storage.registry
         modelLibrary = AskModelLibrary(defaults: settingsStore.defaults)
         let screenCapturePermission = ScreenCapturePermission.live
         self.screenCapturePermission = screenCapturePermission

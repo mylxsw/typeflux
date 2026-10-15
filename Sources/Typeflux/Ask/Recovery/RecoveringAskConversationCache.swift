@@ -12,9 +12,9 @@ actor RecoveringAskConversationCache: AskCaching {
             try AskConversationCache(url: AskConversationCache.defaultURL())
         },
         uptime: @escaping @Sendable () -> TimeInterval = { ProcessInfo.processInfo.systemUptime },
-        policy: ModulePolicy = .init()
+        policy: ModulePolicy = .init(), healthStore: ModuleHealthStore? = nil
     ) {
-        module = ModuleHandle(policy: policy, factory: { try factory() }, classify: { error in
+        module = ModuleHandle(policy: policy, healthStore: healthStore, factory: { try factory() }, classify: { error in
             // Binding/approval errors do not invalidate the durable journal.
             let storage = (error as NSError).domain == NSCocoaErrorDomain
                 || (error as? AskRecoveryError) == .storage
