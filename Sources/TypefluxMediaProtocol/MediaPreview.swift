@@ -9,12 +9,14 @@ public struct MediaPreviewOptions: Codable, Sendable {
     public var height: Int
     public var page: Int?
     public var passage: String?
-    public init(width: Int, height: Int, page: Int? = nil, passage: String? = nil) {
-        self.width = width; self.height = height; self.page = page; self.passage = passage
+    public var start: Double?
+    public var container: MediaAVContainer?
+    public init(width: Int, height: Int, page: Int? = nil, passage: String? = nil, start: Double? = nil, container: MediaAVContainer? = nil) {
+        self.width = width; self.height = height; self.page = page; self.passage = passage; self.start = start; self.container = container
     }
     public func validate() throws {
         guard width > 0, height > 0, width <= Self.maxEdge, height <= Self.maxEdge,
-              width * height <= Self.maxPixels, (passage?.utf8.count ?? 0) <= 16 * 1024
+              width * height <= Self.maxPixels, (passage?.utf8.count ?? 0) <= 16 * 1024, start?.isFinite != false
         else { throw MediaFailure.tooLarge }
     }
 }
@@ -41,11 +43,30 @@ public struct MediaRaster: Codable, Sendable {
 public struct MediaPreviewResult: Codable, Sendable {
     public var rasters: [MediaRaster]
     public var pages: Int
+    public var duration: Double?
+    public var start: Double?
+    public var waveform: [Float]?
     public init(rasters: [MediaRaster], pages: Int = 0) { self.rasters = rasters; self.pages = pages }
     public func validate(for request: MediaRequest) throws {
-        guard let options = request.preview, !rasters.isEmpty, rasters.count <= 3
+        guard let options = request.preview, rasters.count <= 3
         else { throw MediaFailure.invalidProtocol }
+        try options.validate()
         for raster in rasters { try raster.validate(for: options) }
+        if request.operation.isAV {
+            guard pages == 0, let duration, let start, duration.isFinite, duration >= 0,
+                  duration <= MediaAVLimits.maximumDuration, start == MediaAVLimits.start(options.start ?? 0, duration: duration)
+            else { throw MediaFailure.invalidProtocol }
+            if request.operation == .previewAudio {
+                guard rasters.isEmpty, let waveform, waveform.count == 80,
+                      waveform.allSatisfy({ $0.isFinite && $0 >= 0 && $0 <= 1 })
+                else { throw MediaFailure.invalidProtocol }
+            } else {
+                guard rasters.count == 1, rasters[0].page == nil, waveform == nil
+                else { throw MediaFailure.invalidProtocol }
+            }
+            return
+        }
+        guard !rasters.isEmpty, duration == nil, start == nil, waveform == nil else { throw MediaFailure.invalidProtocol }
         if request.operation == .previewImage {
             guard rasters.count == 1, pages == 0, rasters[0].page == nil
             else { throw MediaFailure.invalidProtocol }
@@ -56,4 +77,19 @@ public struct MediaPreviewResult: Codable, Sendable {
             guard rasters.map(\.page) == expected.map(Optional.some) else { throw MediaFailure.invalidProtocol }
         }
     }
+}
+
+public enum MediaAVLimits {
+    public static let inputBytes = 512 * 1024 * 1024
+    public static let maximumDuration = Double(Int32.max)
+    public static let chunkBytes = 4 * 1024 * 1024
+    public static let decodedBytes = 128 * 1024 * 1024
+    public static func start(_ requested: Double, duration: Double) -> Double {
+        requested.isFinite ? max(0, min(max(0, duration - 0.001), requested)) : 0
+    }
+}
+
+/// A format hint only, never an arbitrary child-selected path or URL.
+public enum MediaAVContainer: String, Codable, Sendable {
+    case mp4, mov, m4v, avi, mkv, webm, mp3, m4a, aac, wav, aiff, aif, flac, ogg, caf
 }

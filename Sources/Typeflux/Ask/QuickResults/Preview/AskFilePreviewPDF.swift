@@ -8,6 +8,9 @@ enum AskFilePreviewPDF {
         var images: [CGImage]
         var numbers: [Int]
         var pages: Int
+        var duration: Double = 0
+        var start: Double = 0
+        var waveform: [Float] = []
     }
     static func render(_ url: URL, pixels: CGSize, evidence: AskFileHit.Evidence?,
                        cancellation: AskSearchCancellation) throws -> Result {
@@ -23,12 +26,28 @@ enum MediaPreviewDisplay {
     /// Runs on an owned background task; original bytes never enter a host decoder.
     static func render(_ url: URL, pixels: CGSize, pdf: Bool, evidence: AskFileHit.Evidence?,
                        cancellation: AskSearchCancellation, worker: MediaWorker = .previews) throws -> AskFilePreviewPDF.Result {
+        try renderRequest(url, pixels: pixels, operation: pdf ? .previewPDF : .previewImage,
+                          evidence: evidence, start: 0, cancellation: cancellation, worker: worker)
+    }
+
+    static func renderAV(_ url: URL, pixels: CGSize, video: Bool, start: Double,
+                         cancellation: AskSearchCancellation, worker: MediaWorker = .previews) throws -> AskFilePreviewPDF.Result {
+        try renderRequest(url, pixels: pixels, operation: video ? .previewVideo : .previewAudio,
+                          evidence: nil, start: start, cancellation: cancellation, worker: worker)
+    }
+
+    private static func renderRequest(_ url: URL, pixels: CGSize, operation: MediaRequest.Operation,
+                                      evidence: AskFileHit.Evidence?, start: Double,
+                                      cancellation: AskSearchCancellation, worker: MediaWorker) throws -> AskFilePreviewPDF.Result {
         guard pixels.width.isFinite, pixels.height.isFinite, pixels.width >= 1, pixels.height >= 1,
               pixels.width <= Double(MediaPreviewOptions.maxEdge), pixels.height <= Double(MediaPreviewOptions.maxEdge)
         else { throw MediaFailure.tooLarge }
         let options = MediaPreviewOptions(width: Int(pixels.width), height: Int(pixels.height),
-                                          page: pdf ? evidence?.page : nil, passage: pdf ? evidence?.text : nil)
-        return try worker.perform(pdf ? .previewPDF : .previewImage, input: .file(url), preview: options,
+                                          page: operation == .previewPDF ? evidence?.page : nil,
+                                          passage: operation == .previewPDF ? evidence?.text : nil,
+                                          start: operation.isAV ? (start.isFinite ? max(0, start) : 0) : nil,
+                                          container: operation.isAV ? MediaAVContainer(rawValue: url.pathExtension.lowercased()) : nil)
+        return try worker.perform(operation, input: .file(url), preview: options,
                                   isCancelled: { cancellation.isCancelled }) { response, directory in
             guard let result = response.preview else { throw MediaFailure.invalidProtocol }
             let images = try result.rasters.enumerated().map { index, raster in
@@ -44,7 +63,8 @@ enum MediaPreviewDisplay {
                 else { throw MediaFailure.unavailable }
                 return image
             }
-            return .init(images: images, numbers: result.rasters.compactMap(\.page), pages: result.pages)
+            return .init(images: images, numbers: result.rasters.compactMap(\.page), pages: result.pages,
+                         duration: result.duration ?? 0, start: result.start ?? 0, waveform: result.waveform ?? [])
         }
     }
 

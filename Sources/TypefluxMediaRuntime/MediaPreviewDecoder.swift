@@ -6,7 +6,7 @@ import TypefluxMediaProtocol
 public enum MediaPreviewDecoder {
     public static func decode(_ request: MediaRequest, directory: URL) throws -> MediaResponse {
         try request.validate()
-        guard let options = request.preview else { throw MediaFailure.invalidProtocol }
+        guard let options = request.preview, !request.operation.isAV else { throw MediaFailure.invalidProtocol }
         let input = directory.appendingPathComponent("input")
         let handle = try FileHandle(forReadingFrom: input)
         defer { try? handle.close() }
@@ -92,7 +92,7 @@ public enum MediaPreviewDecoder {
         return context
     }
 
-    private static func write(_ image: CGImage, index: Int, page: Int?, directory: URL) throws -> MediaRaster {
+    static func write(_ image: CGImage, index: Int, page: Int?, directory: URL) throws -> MediaRaster {
         let context = try context(width: image.width, height: image.height)
         context.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
         return try write(context, index: index, page: page, directory: directory)

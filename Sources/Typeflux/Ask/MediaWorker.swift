@@ -64,7 +64,8 @@ final class MediaWorker: @unchecked Sendable {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false,
                                                attributes: [.posixPermissions: 0o700])
         lease.directory = directory
-        try copy(input, to: directory.appendingPathComponent("input"), cancelled: cancelled)
+        try copy(input, to: directory.appendingPathComponent("input"),
+                 limit: operation.isAV ? MediaAVLimits.inputBytes : MediaLimits.inputBytes, cancelled: cancelled)
         try check(cancelled)
         let fd = open(directory.path, O_RDONLY | O_DIRECTORY | O_CLOEXEC)
         guard fd >= 0 else { throw MediaFailure.unavailable }
@@ -98,10 +99,10 @@ final class MediaWorker: @unchecked Sendable {
         if cancelled() { throw CancellationError() }
     }
 
-    private func copy(_ input: Input, to target: URL, cancelled: () -> Bool) throws {
+    private func copy(_ input: Input, to target: URL, limit: Int, cancelled: () -> Bool) throws {
         switch input {
         case let .data(data):
-            guard data.count <= MediaLimits.inputBytes else { throw MediaFailure.tooLarge }
+            guard data.count <= limit else { throw MediaFailure.tooLarge }
             try data.write(to: target, options: .withoutOverwriting)
         case let .file(url):
             // Reject FIFOs/devices without blocking open, and bound reads even if
@@ -111,7 +112,7 @@ final class MediaWorker: @unchecked Sendable {
             defer { close(fd) }
             var info = stat()
             guard fstat(fd, &info) == 0, info.st_mode & S_IFMT == S_IFREG else { throw MediaFailure.unreadable }
-            guard info.st_size <= MediaLimits.inputBytes else { throw MediaFailure.tooLarge }
+            guard info.st_size <= limit else { throw MediaFailure.tooLarge }
             let output = open(target.path, O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0o600)
             guard output >= 0 else { throw MediaFailure.unavailable }
             defer { close(output) }
@@ -122,7 +123,7 @@ final class MediaWorker: @unchecked Sendable {
                 if count == 0 { break }
                 if count < 0 { if errno == EINTR { continue }; throw MediaFailure.unreadable }
                 total += count
-                guard total <= MediaLimits.inputBytes else { throw MediaFailure.tooLarge }
+                guard total <= limit else { throw MediaFailure.tooLarge }
                 try buffer.withUnsafeBytes { bytes in
                     var offset = 0
                     while offset < count {

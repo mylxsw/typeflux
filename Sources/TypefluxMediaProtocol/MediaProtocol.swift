@@ -15,7 +15,9 @@ public enum MediaFailure: String, Error, Codable, Sendable {
 }
 
 public struct MediaRequest: Codable, Sendable {
-    public enum Operation: String, Codable, Sendable { case image, pdf, previewImage, previewPDF }
+    public enum Operation: String, Codable, Sendable { case image, pdf, previewImage, previewPDF, previewVideo, previewAudio
+        public var isAV: Bool { self == .previewVideo || self == .previewAudio }
+    }
     public var version = 1
     public var id: UUID
     public var operation: Operation
@@ -23,9 +25,10 @@ public struct MediaRequest: Codable, Sendable {
     public init(id: UUID = UUID(), operation: Operation) { self.id = id; self.operation = operation }
     public func validate() throws {
         guard version == 1 else { throw MediaFailure.invalidProtocol }
-        if operation == .previewImage || operation == .previewPDF {
+        if operation == .previewImage || operation == .previewPDF || operation.isAV {
             guard let preview else { throw MediaFailure.invalidProtocol }
             try preview.validate()
+            if operation.isAV, preview.page != nil || preview.passage != nil { throw MediaFailure.invalidProtocol }
         } else if preview != nil { throw MediaFailure.invalidProtocol }
     }
 }
