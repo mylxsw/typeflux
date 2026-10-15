@@ -318,7 +318,9 @@ final class AskPluginSession: ObservableObject {
                 if let sink = self.handoffSinks[current] { sink(.progress(incoming)); return }
                 guard current == self.generation, self.isRunning else { return }
                 var partial = incoming
-                if let shown = self.partial ?? self.previous, incoming.translation != nil, shown.original == incoming.original {
+                if let shown = self.partial ?? self.previous,
+                   incoming.translation != nil || plugin.id == AskFileSearchPlugin.id,
+                   shown.original == incoming.original {
                     partial.selectedItem = Self.selection(keeping: shown, in: incoming)
                 }
                 self.set(\.partial, partial)
@@ -332,7 +334,7 @@ final class AskPluginSession: ObservableObject {
                 // A timed rerun keeps the chosen row, and its actions already ran for the first result.
                 output.followUp = shown.followUp
                 output.selectedItem = Self.selection(keeping: shown, in: output)
-            } else if let partial, output.translation != nil {
+            } else if let partial, output.translation != nil || plugin.id == AskFileSearchPlugin.id {
                 output.selectedItem = Self.selection(keeping: partial, in: output)
             } else if !output.items.isEmpty, output.selected == nil {
                 output.selectedItem = output.selectableIndices.first ?? -1
@@ -368,6 +370,12 @@ final class AskPluginSession: ObservableObject {
     /// list, so the arrows can move on to "Ask AI".
     func moveSelection(_ delta: Int) -> Bool {
         guard delta != 0 else { return false }
+        if keyword?.pluginID == AskFileSearchPlugin.id, isRunning, let partial {
+            let indices = partial.selectableIndices
+            let position = indices.firstIndex(of: partial.selectedItem) ?? (delta > 0 ? -1 : indices.count)
+            let next = position + delta
+            return indices.indices.contains(next) && selectItem(indices[next])
+        }
         if let output = currentOutput, let translation = output.translation {
             return selectTranslation(output.selectedItem + delta, count: translation.results.count)
         }
@@ -386,6 +394,10 @@ final class AskPluginSession: ObservableObject {
     /// Chooses a row (a click, or the arrows coming back from "Ask AI").
     @discardableResult
     func selectItem(_ index: Int) -> Bool {
+        if keyword?.pluginID == AskFileSearchPlugin.id, isRunning, var partial {
+            guard partial.items.indices.contains(index), partial.items[index].valid else { return false }
+            partial.selectedItem = index; set(\.partial, partial); return true
+        }
         if let output = currentOutput, let translation = output.translation { return selectTranslation(index, count: translation.results.count) }
         guard case let .done(plan, output) = phase, !output.items.isEmpty else { return false }
         let index = min(max(0, index), output.items.count - 1)

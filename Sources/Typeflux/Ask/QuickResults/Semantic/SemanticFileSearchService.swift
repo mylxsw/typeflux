@@ -13,14 +13,17 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
     @Published private(set) var files = 0
     @Published private(set) var chunks = 0
     @Published private(set) var skipped = 0
-    @Published private(set) var limited = false
+    @Published private(set) var mediaDownload: Double?
+    @Published private(set) var mediaFailed = false
     @Published private(set) var indexProgress: SemanticFileIndexer.Summary?
     @Published private(set) var blocked: [String] = []
     @Published private(set) var modelReady = false
     @Published private(set) var preferences: SemanticFileSettings
     let supported: Bool
     var isEnabled: Bool {
-        supported && preferences.enabled && settings.askQuickFileSearchEnabled && phase == .ready
+        supported && preferences.enabled && settings.askQuickFileSearchEnabled && modelReady
+            && store != nil && queryWorker != nil && !removing
+            && ([Phase.ready, .indexing].contains(phase) || (phase == .failed && mediaFailed))
     }
     let settings: SettingsStore
     private let directory: URL
@@ -28,6 +31,9 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
     private let watcher: AskFileWatching
     private let access: @Sendable () -> Bool
     private let resourceConstrained: @Sendable () -> Bool
+    private let mediaModels: any SemanticModelHandling
+    private let idle: @Sendable () -> Bool
+    private let makeMediaEncoder: @Sendable (URL, URL, URL) -> any SemanticMediaEmbedding
     private let models: any SemanticModelHandling
     private let makeReader: @Sendable () -> any AskFileReading
     private let makeEncoder: @Sendable (URL, URL) -> any SemanticEmbedding
@@ -49,6 +55,8 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
         self.directory.appendingPathComponent("embeddinggemma-2-Q8_0.gguf")
     }
 
+    var mediaModelURL: URL { directory.appendingPathComponent(SemanticMediaModel.name) }
+
     init(settings: SettingsStore, directory: URL = SemanticModel.directory, helper: URL = SemanticModel.helperURL,
          supported: Bool = SemanticFilePolicy.supported, watcher: AskFileWatching = AskFSEventsWatcher(),
          access: @escaping @Sendable () -> Bool = { AskFullDiskAccess.isGranted() }, automaticStart: Bool = true,
@@ -56,6 +64,12 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
              ProcessInfo.processInfo.isLowPowerModeEnabled || ProcessInfo.processInfo.thermalState.rawValue >= 2
          },
          models: any SemanticModelHandling = SemanticModelFiles(),
+         mediaModels: any SemanticModelHandling = SemanticMediaModelFiles(),
+         idle: @escaping @Sendable () -> Bool = { SemanticMediaIdle.isIdle() },
+         makeMediaEncoder: @escaping @Sendable (URL, URL, URL) -> any SemanticMediaEmbedding = {
+             SemanticEmbeddingWorker(helper: $0, model: $1, indexing: true, projector: $2,
+                                     timeout: 90, startupTimeout: 180)
+         },
          makeReader: @escaping @Sendable () -> any AskFileReading = { AskFileReader() },
          makeEncoder: @escaping @Sendable (URL, URL) -> any SemanticEmbedding = { SemanticEmbeddingWorker(
              helper: $0,
@@ -69,6 +83,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
         self.settings = settings; self.directory = directory; self.helper = helper
         self.supported = supported; self.watcher = watcher; self.access = access
         self.resourceConstrained = resourceConstrained
+        self.mediaModels = mediaModels; self.idle = idle; self.makeMediaEncoder = makeMediaEncoder
         self.models = models; self.makeReader = makeReader; self.makeEncoder = makeEncoder; self.makeQuery = makeQuery
         self.preferences = settings.semanticFileSearch
         guard automaticStart else { return }
@@ -139,9 +154,10 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
         if self.download != nil {
             return
         }
+        self.mediaDownload = nil; self.mediaFailed = false
         self.phase = .preparing
         let directory = directory, model = self.modelURL, helper = helper, access = access
-        let models = models, makeReader = makeReader, makeEncoder = makeEncoder
+        let models = models
         let paused = self.backgroundPaused
         self.work = Task { [weak self] in
             await previous?.value
@@ -169,6 +185,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
                 self.store = database
                 guard FileManager.default.isExecutableFile(atPath: helper.path) else { self.phase = .failed; return }
                 await self.updateCounts(database)
+                guard !token.isCancelled, !Task.isCancelled else { return }
                 self.queryWorker = self.makeQuery(helper, model)
                 self.watcher.start(paths: prepared.0.roots, since: nil) { [weak self] _, _ in
                     Task { @MainActor in self?.scheduleReconcile() }
@@ -178,36 +195,13 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
                     self.phase = .paused
                     return
                 }
-                self.limited = false; self.skipped = 0
+                self.skipped = 0
                 self.phase = .indexing
-                let result = try await Task.detached(priority: .utility) { [weak self] in
-                    let reader = makeReader()
-                    let encoder = makeEncoder(helper, model)
-                    return try SemanticFileIndexer.run(
-                        scope: prepared.0,
-                        store: database,
-                        reader: reader,
-                        encoder: encoder,
-                        cancelled: { token.isCancelled }, progress: { summary in
-                            Task { @MainActor [weak self] in
-                                guard let self, !token.isCancelled else { return }
-                                self.indexProgress = summary
-                                self.files = max(self.files, summary.files); self.skipped = summary.skipped
-                            }
-                        }
-                    )
-                }.value
-                guard !token.isCancelled, !Task.isCancelled else { return }
-                self.skipped = result.skipped; self.limited = result.limited
-                await self.updateCounts(database)
-                guard !token.isCancelled, !Task.isCancelled else { return }
-                self.indexProgress = nil
-                self.phase = .ready
-                if self.dirty {
-                    self.dirty = false; self.scheduleReconcile()
-                }
+                self.beginIndexing(database, scope: prepared.0, token: token)
+
             } catch {
                 guard let self, !token.isCancelled, !Task.isCancelled else { return }
+                if case SemanticMediaFailure.unavailable = error { self.mediaFailed = true }
                 if case SemanticFileStore.Failure.invalidVector = error {
                     self.modelReady = false
                 }
@@ -223,7 +217,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
     }
 
     private func scheduleReconcile() {
-        if self.phase == .indexing {
+        if self.phase == .indexing, self.indexProgress?.priority == .document {
             self.dirty = true; return
         }
         self.rescan?.cancel()
@@ -237,6 +231,57 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
 }
 
 extension SemanticFileSearchService {
+    /// Do not retain the service while media waits for user idle time.
+    private func beginIndexing(_ database: SemanticFileStore, scope: AskFileScope, token: AskSearchCancellation) {
+        let makeReader = makeReader, makeEncoder = makeEncoder, mediaModels = mediaModels
+        let makeMediaEncoder = makeMediaEncoder, helper = helper, model = modelURL
+        let projector = mediaModelURL, idle = idle
+        let reportDownload: @Sendable (Double?) -> Void = { [weak self] fraction in
+            Task { @MainActor [weak self] in
+                guard let self, !token.isCancelled else { return }
+                self.mediaDownload = fraction
+            }
+        }
+        let reportProgress: @Sendable (SemanticFileIndexer.Summary) -> Void = { [weak self] summary in
+            Task { @MainActor [weak self] in
+                guard let self, !token.isCancelled else { return }
+                self.indexProgress = summary
+                self.files = max(self.files, summary.files); self.skipped = summary.skipped
+            }
+        }
+        self.work = Task { [weak self] in
+            do {
+                let result = try await Task.detached(priority: .utility) {
+                    let reader = makeReader()
+                    let encoder = makeEncoder(helper, model)
+                    let media = SemanticMediaWorker(helper: helper, model: model, projector: projector,
+                        models: mediaModels, makeEncoder: makeMediaEncoder, progress: reportDownload)
+                    return try SemanticFileIndexer.run(
+                        scope: scope,
+                        store: database,
+                        reader: reader,
+                        encoder: encoder, media: media, idle: idle,
+                        cancelled: { token.isCancelled }, progress: reportProgress
+                    )
+                }.value
+                guard let self, !token.isCancelled, !Task.isCancelled else { return }
+                self.skipped = result.skipped
+                await self.updateCounts(database)
+                guard !token.isCancelled, !Task.isCancelled else { return }
+                self.indexProgress = nil
+                self.phase = .ready
+                if self.dirty {
+                    self.dirty = false; self.scheduleReconcile()
+                }
+            } catch {
+                guard let self, !token.isCancelled, !Task.isCancelled else { return }
+                if case SemanticMediaFailure.unavailable = error { self.mediaFailed = true }
+                if case SemanticFileStore.Failure.invalidVector = error { self.modelReady = false }
+                self.phase = .failed
+            }
+        }
+    }
+
     func search(_ text: String, type: AskFileType = .all, limit: Int = 24) async -> [AskFileHit] {
         guard limit > 0, self.isEnabled,
               !self.removing,
@@ -333,7 +378,7 @@ extension SemanticFileSearchService {
         self.token.cancel(); self.work?.cancel(); self.rescan?.cancel(); self.download?.cancel(); self.watcher.stop()
         self.queryWorker?.stop(); self.queryWorker = nil
         await self.work?.value; await self.download?.value
-        let database = self.store, directory = directory, model = self.modelURL
+        let database = self.store, directory = directory, model = self.modelURL, projector = self.mediaModelURL
         do {
             try await Task.detached(priority: .utility) {
                 if let database {
@@ -341,12 +386,13 @@ extension SemanticFileSearchService {
                 } else {
                     try SemanticFileStore.removeFiles(at: directory.appendingPathComponent("semantic-files.sqlite"))
                 }
-                if removeModel,
-                   FileManager.default.fileExists(atPath: model.path) {
-                    try FileManager.default.removeItem(at: model)
+                if removeModel {
+                    for artifact in [model, projector] where FileManager.default.fileExists(atPath: artifact.path) {
+                        try FileManager.default.removeItem(at: artifact)
+                    }
                 }
             }.value
-            self.files = 0; self.chunks = 0; self.skipped = 0; self.limited = false
+            self.files = 0; self.chunks = 0; self.skipped = 0; self.mediaDownload = nil; self.mediaFailed = false
             self.indexProgress = nil; self.phase = .off
             if removeModel {
                 self.modelReady = false
@@ -364,7 +410,7 @@ extension SemanticFileSearchService {
         let index = ["", "-wal", "-shm"].reduce(Int64(0)) {
             $0 + size(URL(fileURLWithPath: database.path + $1))
         }
-        return (index, size(self.modelURL))
+        return (index, size(self.modelURL) + size(self.mediaModelURL))
     }
 
     func rebuild() async {

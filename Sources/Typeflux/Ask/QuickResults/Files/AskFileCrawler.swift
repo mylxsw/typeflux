@@ -2,7 +2,7 @@ import Foundation
 
 /// Walks search folders through an isolated reader. Guarded paths are filtered before I/O.
 enum AskFileCrawler {
-    /// No index holds more than this; past it the settings ask for smaller folders.
+    /// Filename-index capacity. Content indexing passes nil to traverse the complete scope.
     static let maximumEntries = 1_000_000
 
     struct Entry: Equatable, Codable {
@@ -15,17 +15,18 @@ enum AskFileCrawler {
 
     /// Each directory is a separate deadline-bound request, so siblings survive a blocked read.
     @discardableResult
-    static func crawl(_ root: String, scope: AskFileScope, limit: Int = maximumEntries,
+    static func crawl(_ root: String, scope: AskFileScope, limit: Int? = maximumEntries,
                       reader: AskFileReading = AskFileReader(), isCancelled: () -> Bool = { false },
                       skipped: (String, SkipReason) -> Void = { _, _ in }, visit: (Entry) -> Bool) -> Int {
-        guard limit > 0, scope.includes(root, isDirectory: true) else { return 0 }
+        guard limit.map({ $0 > 0 }) ?? true, scope.includes(root, isDirectory: true) else { return 0 }
         var pending = [root]
         var visited = 0
         while let path = pending.popLast() {
             if isCancelled() { break }
             do {
                 var stopped = false
-                try reader.stream(.init(operation: .directory, path: path, scope: scope, limit: limit - visited),
+                try reader.stream(.init(operation: .directory, path: path, scope: scope,
+                                        limit: limit.map { $0 - visited }),
                                   isCancelled: isCancelled) { response in
                     if response.error != nil { skipped(path, .failed) }
                     for mount in response.skippedMounts ?? [] { skipped(mount, .nonLocalMount) }
@@ -33,7 +34,7 @@ enum AskFileCrawler {
                         if isCancelled() { stopped = true; return false }
                         guard scope.includes(entry.path, isDirectory: entry.kind != .file) else { continue }
                         visited += 1
-                        if !visit(entry) || visited >= limit { stopped = true; return false }
+                        if !visit(entry) || limit.map({ visited >= $0 }) == true { stopped = true; return false }
                         if entry.kind == .folder, !scope.roots.contains(entry.path) { pending.append(entry.path) }
                     }
                     return true

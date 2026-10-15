@@ -143,7 +143,7 @@ struct SemanticHybridSearchTests {
     @Test func `fusion deduplicates and preserves original name score`() {
         var name = hit; name.evidence = nil; name.score = 1.08; name.match = 0.99
         let merged = SemanticFilePolicy.merge([name], [hit], limit: 10)
-        #expect(merged == [name]); #expect(merged.first?.score == 1.08)
+        #expect(merged.count == 1 && merged.first?.evidence == hit.evidence); #expect(merged.first?.score == 1.08)
         #expect(SemanticFilePolicy.merge([name], [hit], limit: 0).isEmpty)
         #expect(AskQuickResults.bestRow("guide", apps: [], panes: [], files: [hit]) == nil)
         #expect(AskQuickResults.bestRow("guide", apps: [], panes: [], files: [name, hit]) == .file(0))
@@ -153,7 +153,7 @@ struct SemanticHybridSearchTests {
             AskFileHit(path: "/work/\(index).txt", name: "\(index).txt", kind: .file, modified: Date(), score: 0.6)
         }
         let promoted = SemanticFilePolicy.merge(others + [weak], [hit], limit: 10)
-        #expect(promoted.first { $0.path == weak.path } == weak,
+        #expect(promoted.first { $0.path == weak.path }?.score == weak.score,
                 "a semantic duplicate must preserve even a weak filename hit beyond the initial three rows")
         let folders = (0..<6).map { index in
             AskFileHit(path: "/work/folder\(index)", name: "folder\(index)", kind: .folder, modified: Date(),
@@ -177,7 +177,7 @@ struct SemanticHybridSearchTests {
         )
         var partials: [AskPluginOutput] = []
         let output = try await plugin.run(request, plan: plugin.plan(request), progress: { partials.append($0) })
-        #expect(partials.first?.items.first?.title == "reimbursement.md")
+        #expect(partials.first?.items.first(where: \.valid)?.title == "reimbursement.md")
         #expect(output.items.map(\.title) == ["reimbursement.md", "guide.pdf"])
         #expect(output.items[1].subtitle.contains("3"))
         #expect(output.items[1].badge == L("semantic.result"))

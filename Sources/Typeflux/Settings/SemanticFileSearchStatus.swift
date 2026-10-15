@@ -3,7 +3,7 @@ import Foundation
 /// What the inline content-index row says about content search right now.
 struct SemanticFileSearchStatus: Equatable {
     enum Tone: Equatable { case off, busy, ready, warning }
-    enum Progress: Equatable { case download(Double), scanning(Int, Int), indexing(Int, Int) }
+    enum Progress: Equatable { case download(Double), mediaDownload(Double), scanning(Int, Int), indexing(Int, Int) }
     enum Action: Equatable { case none, download, retryDownload, retry, permission }
 
     var tone: Tone
@@ -20,6 +20,8 @@ struct SemanticFileSearchStatus: Equatable {
         var chunks = 0
         var blocked: [String] = []
         var indexProgress: SemanticFileIndexer.Summary?
+        var mediaDownload: Double?
+        var mediaFailed = false
     }
 
     // One branch per lifecycle phase keeps the copy beside the state it describes.
@@ -35,6 +37,11 @@ struct SemanticFileSearchStatus: Equatable {
             return .init(tone: .warning, text: L("semantic.modelRequired"), action: .download)
         case let .downloading(fraction):
             return .init(tone: .busy, text: L("semantic.downloading"), progress: .download(fraction))
+        case .indexing where input.mediaDownload != nil:
+            return .init(tone: .busy, text: L("semantic.media.downloading"),
+                         progress: .mediaDownload(input.mediaDownload ?? 0))
+        case .indexing where input.indexProgress?.waitingForIdle == true:
+            return .init(tone: .ready, text: L("semantic.media.waiting"))
         case .indexing:
             return .init(tone: .busy, text: L("semantic.indexing", files),
                          progress: indexProgress(input.indexProgress))
@@ -46,7 +53,8 @@ struct SemanticFileSearchStatus: Equatable {
         case .ready:
             return .init(tone: .ready, text: L("semantic.ready", files, input.chunks.formatted()))
         case .failed where input.modelReady:
-            return .init(tone: .warning, text: L("semantic.failed.index"), action: .retry)
+            return .init(tone: .warning, text: L(input.mediaFailed ? "semantic.media.failed" : "semantic.failed.index"),
+                         action: .retry)
         case .failed:
             return .init(tone: .warning, text: L("semantic.failed.download"), action: .retryDownload)
         }
@@ -74,6 +82,7 @@ extension SemanticFileSearchService {
     func status(filesEnabled: Bool? = nil) -> SemanticFileSearchStatus {
         .of(.init(phase: phase, enabled: supported && preferences.enabled,
                   filesEnabled: filesEnabled ?? settings.askQuickFileSearchEnabled, modelReady: modelReady,
-                  files: files, chunks: chunks, blocked: blocked, indexProgress: indexProgress))
+                  files: files, chunks: chunks, blocked: blocked, indexProgress: indexProgress,
+                  mediaDownload: mediaDownload, mediaFailed: mediaFailed))
     }
 }

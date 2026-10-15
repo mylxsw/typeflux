@@ -60,17 +60,17 @@ enum AskFilePreviewRenderer {
         if kind == .pdf {
             let cancellation = AskSearchCancellation()
             let rendered = try await withTaskCancellationHandler {
-                try await Task.detached(priority: .utility) { try pdf(
+                try await Task.detached(priority: .utility) { try AskFilePreviewPDF.render(
                     hit.url,
                     pixels: pixels,
-                    cancellation: cancellation
+                    evidence: hit.evidence, cancellation: cancellation
                 ) }.value
             } onCancel: { cancellation.cancel() }
             return AskFilePreviewContent(kind: kind, images: rendered.images.map { NSImage(cgImage: $0, size: .zero) },
-                                         pageCount: rendered.pages)
+                                         pageCount: rendered.pages, pageNumbers: rendered.numbers)
         }
         if kind == .video || kind == .audio {
-            return try await media(hit.url, kind: kind, pixels: pixels)
+            return try await media(hit.url, kind: kind, pixels: pixels, start: hit.evidence?.time ?? 0)
         }
         let request = QLThumbnailGenerator.Request(
             fileAt: hit.url,
@@ -107,50 +107,31 @@ enum AskFilePreviewRenderer {
         ] as CFDictionary)
     }
 
-    private struct PDFImages: @unchecked Sendable { var images: [CGImage]; var pages: Int }
-
-    private nonisolated static func pdf(_ url: URL, pixels: CGSize,
-                                        cancellation: AskSearchCancellation) throws -> PDFImages {
-        guard !cancellation.isCancelled, let document = PDFDocument(url: url), !document.isLocked,
-              document.pageCount > 0 else {
-            throw AskFileReadError.unavailable
-        }
-        var images: [CGImage] = []
-        for index in 0 ..< min(3, document.pageCount) {
-            guard !cancellation.isCancelled,
-                  let page = document.page(at: index) else { throw AskFileReadError.cancelled }
-            let thumbnail = page.thumbnail(of: pixels, for: .mediaBox)
-            guard let image = thumbnail.cgImage(forProposedRect: nil, context: nil, hints: nil)
-            else { throw AskFileReadError.unavailable }
-            images.append(image)
-        }
-        return PDFImages(images: images, pages: document.pageCount)
-    }
-
     private static func media(_ url: URL, kind: AskFilePreviewKind,
-                              pixels: CGSize) async throws -> AskFilePreviewContent {
+                              pixels: CGSize, start: TimeInterval) async throws -> AskFilePreviewContent {
         let asset = AVURLAsset(url: url)
         return try await withTaskCancellationHandler {
-            try await mediaContent(asset, kind: kind, pixels: pixels)
+            try await mediaContent(asset, kind: kind, pixels: pixels, start: start)
         } onCancel: { asset.cancelLoading() }
     }
 
     private static func mediaContent(_ asset: AVAsset, kind: AskFilePreviewKind,
-                                     pixels: CGSize) async throws -> AskFilePreviewContent {
+                                     pixels: CGSize, start requestedStart: TimeInterval) async throws -> AskFilePreviewContent {
         try Task.checkCancellation()
         let duration = try await asset.load(.duration).seconds
         guard duration.isFinite, duration >= 0 else { throw AskFileReadError.unavailable }
+        let start = requestedStart.isFinite ? max(0, min(max(0, duration - 0.001), requestedStart)) : 0
         if kind == .video {
             let generator = AVAssetImageGenerator(asset: asset)
             generator.appliesPreferredTrackTransform = true
             generator.maximumSize = pixels
             return try await withTaskCancellationHandler {
-                let frame = try await generator.image(at: .zero).image
+                let frame = try await generator.image(at: CMTime(seconds: start, preferredTimescale: 600)).image
                 try Task.checkCancellation()
                 return AskFilePreviewContent(
                     kind: kind,
                     images: [NSImage(cgImage: frame, size: .zero)],
-                    duration: duration
+                    duration: duration, startTime: start
                 )
             } onCancel: { generator.cancelAllCGImageGeneration(); asset.cancelLoading() }
         }
@@ -161,20 +142,20 @@ enum AskFilePreviewRenderer {
             try await Task.detached(priority: .utility) { try waveform(
                 asset,
                 track: track,
-                duration: duration,
+                duration: duration, start: start,
                 cancellation: cancellation
             ) }.value
         } onCancel: { cancellation.cancel(); asset.cancelLoading() }
         try Task.checkCancellation()
-        return AskFilePreviewContent(kind: kind, duration: duration, waveform: samples)
+        return AskFilePreviewContent(kind: kind, duration: duration, startTime: start, waveform: samples)
     }
 
     private nonisolated static func waveform(_ asset: AVAsset, track: AVAssetTrack, duration: Double,
-                                             cancellation: AskSearchCancellation) throws -> [Float] {
+                                             start: TimeInterval, cancellation: AskSearchCancellation) throws -> [Float] {
         let reader = try AVAssetReader(asset: asset)
         reader.timeRange = CMTimeRange(
-            start: .zero,
-            duration: CMTime(seconds: min(30, duration), preferredTimescale: 600)
+            start: CMTime(seconds: start, preferredTimescale: 600),
+            duration: CMTime(seconds: min(30, duration - start), preferredTimescale: 600)
         )
         let output = AVAssetReaderTrackOutput(track: track, outputSettings: [
             AVFormatIDKey: kAudioFormatLinearPCM, AVLinearPCMIsFloatKey: true,
@@ -188,7 +169,7 @@ enum AskFilePreviewRenderer {
         while !cancellation.isCancelled, let sample = output.copyNextSampleBuffer() {
             guard let buffer = CMSampleBufferGetDataBuffer(sample) else { continue }
             let time = CMSampleBufferGetPresentationTimeStamp(sample).seconds
-            let index = max(0, min(79, Int(time / max(0.001, min(30, duration)) * 80)))
+            let index = max(0, min(79, Int((time - start) / max(0.001, min(30, duration - start)) * 80)))
             let length = CMBlockBufferGetDataLength(buffer)
             guard length >= MemoryLayout<Float>.size else { continue }
             var values = [Float](repeating: 0, count: length / MemoryLayout<Float>.size)

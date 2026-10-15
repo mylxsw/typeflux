@@ -12,6 +12,7 @@ final class AskFilePreviewLoader: AskFilePreviewLoading {
         var size: Int64
         var width: Int
         var height: Int
+        var evidence: AskFileHit.Evidence?
     }
 
     private let metadata: Metadata
@@ -113,7 +114,8 @@ final class AskFilePreviewLoader: AskFilePreviewLoading {
             modified: modified,
             size: size,
             width: Int(pixels.width),
-            height: Int(pixels.height)
+            height: Int(pixels.height),
+            evidence: hit.evidence
         )
         if let cached = cache[key] {
             touch(key); return cached

@@ -22,7 +22,9 @@ extension AskFileWorkerCommand {
         var info = stat()
         guard fstatat(parent, name, &info, AT_SYMLINK_NOFOLLOW) == 0,
               AskFilePreviewPolicy.isResidentRegularFile(mode: info.st_mode, flags: info.st_flags),
-              info.st_size > 0, info.st_size <= SemanticFilePolicy.maximumBytes else { return .init(error: EINVAL) }
+              info.st_size > 0,
+              SemanticMediaPriority.of(request.path) != .document || info.st_size <= SemanticFilePolicy.maximumBytes
+        else { return .init(error: EINVAL) }
         let descriptor = openat(parent, name, O_RDONLY | O_NOFOLLOW | O_NONBLOCK | O_CLOEXEC)
         guard descriptor >= 0 else { return .init(error: errno) }
         defer { close(descriptor) }
@@ -35,6 +37,7 @@ extension AskFileWorkerCommand {
         if !request.readText {
             return .init(fileSize: Int64(opened.st_size), modified: modified)
         }
+        guard SemanticMediaPriority.of(request.path) == .document else { return .init(error: EINVAL) }
         var data = Data(), buffer = [UInt8](repeating: 0, count: 65536)
         while data.count <= SemanticFilePolicy.maximumBytes {
             let count = Darwin.read(descriptor, &buffer, buffer.count)
