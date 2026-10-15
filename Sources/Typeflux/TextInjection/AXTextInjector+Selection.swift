@@ -244,16 +244,33 @@ extension AXTextInjector {
     }
 
     func resolvedFocusedElement(application: AXUIElement) -> AXUIElement? {
+        let focusedControl = copyElementAttributeResult(kAXFocusedUIElementAttribute as String, from: application)
+        let focusedWindow = focusedControl.value == nil
+            ? copyElementAttributeResult(kAXFocusedWindowAttribute as String, from: application)
+            : nil
         guard let root = FocusedTextTargetResolver.applicationRoot(
-            focusedElement: { copyElementAttribute(kAXFocusedUIElementAttribute as String, from: application) },
-            focusedWindow: { copyElementAttribute(kAXFocusedWindowAttribute as String, from: application) }
+            focusedElement: { focusedControl.value },
+            focusedWindow: { focusedWindow?.value },
+            focusedWindowInWindowList: { focusedWindowInWindowList(application: application) }
         ) else {
-            NetworkDebugLogger.logMessage("[Focus Resolution] application exposes neither focused control nor focused window")
+            NetworkDebugLogger.logMessage(
+                "[Focus Resolution] no focused target; controlError=\(focusedControl.error.rawValue) "
+                    + "windowError=\(focusedWindow?.error.rawValue ?? -1)"
+            )
             return nil
         }
         let resolved = resolveFocusedElement(root)
         logFocusResolution(context: "application-focus", rootElement: root, resolvedElement: resolved)
         return resolved
+    }
+
+    func focusedWindowInWindowList(application: AXUIElement) -> AXUIElement? {
+        let windows = copyElementArrayAttribute(kAXWindowsAttribute as String, from: application)
+        guard let focused = FocusedTextTargetResolver.uniquelyFocusedWindow(
+            windows, isFocused: { copyBooleanAttribute(kAXFocusedAttribute as String, from: $0) == true }
+        ) else { return nil }
+        NetworkDebugLogger.logMessage("[Focus Resolution] recovered focused window from AXWindows")
+        return focused
     }
 
     func focusedWindowElement(for processID: pid_t) -> AXUIElement? {

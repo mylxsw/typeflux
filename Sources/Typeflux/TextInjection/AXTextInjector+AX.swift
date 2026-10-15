@@ -21,14 +21,20 @@ extension AXTextInjector {
     }
 
     func copyElementAttribute(_ attribute: String, from element: AXUIElement) -> AXUIElement? {
+        copyElementAttributeResult(attribute, from: element).value
+    }
+
+    func copyElementAttributeResult(_ attribute: String, from element: AXUIElement) -> (
+        error: AXError, value: AXUIElement?
+    ) {
         AXUIElementSetMessagingTimeout(element, Self.replacementAXMessagingTimeout)
         var value: AnyObject?
         let result = AXUIElementCopyAttributeValue(element, attribute as CFString, &value)
-        guard result == .success, let value else { return nil }
-        guard CFGetTypeID(value) == AXUIElementGetTypeID() else { return nil }
+        guard result == .success, let value else { return (result, nil) }
+        guard CFGetTypeID(value) == AXUIElementGetTypeID() else { return (result, nil) }
         let child = unsafeBitCast(value, to: AXUIElement.self)
         AXUIElementSetMessagingTimeout(child, Self.replacementAXMessagingTimeout)
-        return child
+        return (result, child)
     }
 
     func copyElementArrayAttribute(_ attribute: String, from element: AXUIElement) -> [AXUIElement] {

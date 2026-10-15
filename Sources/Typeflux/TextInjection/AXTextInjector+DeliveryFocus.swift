@@ -23,10 +23,21 @@ struct TextFocusSearchBudget {
 }
 
 enum FocusedTextTargetResolver {
-    static func applicationRoot<Node>(focusedElement: () -> Node?, focusedWindow: () -> Node?) -> Node? {
+    static func uniquelyFocusedWindow<Node>(
+        _ windows: [Node], isFocused: (Node) -> Bool
+    ) -> Node? {
+        let focused = windows.filter(isFocused)
+        return focused.count == 1 ? focused[0] : nil
+    }
+
+    static func applicationRoot<Node>(
+        focusedElement: () -> Node?,
+        focusedWindow: () -> Node?,
+        focusedWindowInWindowList: () -> Node? = { nil }
+    ) -> Node? {
         // A known focused control always wins, including a read-only control.
         // The window is a fallback only when the app exposes no focused control.
-        focusedElement() ?? focusedWindow()
+        focusedElement() ?? focusedWindow() ?? focusedWindowInWindowList()
     }
 
     static func resolve<Node>(
@@ -79,8 +90,16 @@ enum FocusedTextTargetResolver {
 extension AXTextInjector {
     /// Never promote an unfocused editable sibling merely because it has a caret.
     func deliveryFocusedElement(for processID: pid_t) -> AXUIElement? {
-        // Capture and delivery must agree, including applications that expose
-        // AXFocusedWindow but omit AXFocusedUIElement.
-        focusedElement(for: processID)
+        // Chrome can briefly expose neither application focus attribute while
+        // its editor still owns keyboard focus. Retry only while the same app
+        // remains frontmost, and never infer a target from an unfocused sibling.
+        for attempt in 0 ..< 3 {
+            guard frontmostProcessID() == processID else { return nil }
+            if let focused = focusedElement(for: processID) { return focused }
+            if let systemFocused = systemFocusedElement(),
+               self.processID(of: systemFocused) == processID { return systemFocused }
+            if attempt < 2 { usleep(50_000) }
+        }
+        return nil
     }
 }

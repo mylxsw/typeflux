@@ -138,6 +138,16 @@ struct TextDeliveryPlatformTests {
         #expect(FocusedTextTargetResolver.applicationRoot(
             focusedElement: { Optional<Int>.none }, focusedWindow: { Optional<Int>.none }
         ) == nil)
+        #expect(FocusedTextTargetResolver.applicationRoot(
+            focusedElement: { Optional<Int>.none }, focusedWindow: { Optional<Int>.none },
+            focusedWindowInWindowList: { 9 }
+        ) == 9)
+    }
+
+    @Test func windowListRecoveryRequiresExactlyOneFocusedWindow() {
+        #expect(FocusedTextTargetResolver.uniquelyFocusedWindow([1, 2, 3], isFocused: { $0 == 2 }) == 2)
+        #expect(FocusedTextTargetResolver.uniquelyFocusedWindow([1, 2, 3], isFocused: { _ in false }) == nil)
+        #expect(FocusedTextTargetResolver.uniquelyFocusedWindow([1, 2, 3], isFocused: { $0 > 1 }) == nil)
     }
 
     @Test func slowFocusAttributesRetainTheExplicitTarget() {
