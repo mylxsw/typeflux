@@ -50,7 +50,7 @@ enum MediaPreviewDisplay {
         return try decode(.file(url), operation: operation, options: options, cancellation: cancellation, worker: worker)
     }
 
-    static func renderImage(_ data: Data, type: MediaImageType, cancellation: AskSearchCancellation,
+    static func renderImage(_ data: Data, type: MediaImageType?, cancellation: AskSearchCancellation,
                             worker: MediaWorker = .previews) throws -> AskFilePreviewPDF.Result {
         let options = MediaPreviewOptions(width: 1600, height: 1600, imageType: type)
         return try decode(.data(data), operation: .previewImage, options: options, cancellation: cancellation, worker: worker)

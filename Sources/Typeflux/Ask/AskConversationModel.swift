@@ -388,7 +388,8 @@ final class AskConversationModel: ObservableObject {
     // Local consent for the latest submission, retained for retries but never restored from history.
     private var screenshotConsent: [String: String] = [:]
     var captureGeneration = UUID()
-    var selectionGeneration = UUID() { didSet { cancelAttachmentWork(launcher: false) } }
+    let remoteImageScope = AskRemoteImageScope()
+    var selectionGeneration = UUID() { didSet { cancelAttachmentWork(launcher: false); remoteImageScope.invalidate() } }
     private var selectionObservation: Task<Void, Never>?
     private var draftSave: Task<Void, Never>?
     private var draftSaveConversationID: String?
@@ -1722,6 +1723,7 @@ final class AskConversationModel: ObservableObject {
             try tools.deleteArtifacts(ownerId: current.account, conversationId: id)
             try workflowAuthoring?.remove(id)
             deletedConversationIDs.insert(id)
+            if selectedId == id { remoteImageScope.invalidate() }
             titleTasks[id]?.cancel(); titleTasks[id] = nil; titleRetryAfter[id] = nil
             // Drain a writer already inside the cache before deleting its draft.
             // New writers check the tombstone immediately before saving.
@@ -1790,6 +1792,7 @@ final class AskConversationModel: ObservableObject {
         screenshotConsent[id] = nil; permissionModes[id] = nil; cloudApprovals[id] = nil
         titleTasks[id]?.cancel(); titleTasks[id] = nil; titleRetryAfter[id] = nil
         deletedConversationIDs.insert(id)
+        if selectedId == id { remoteImageScope.invalidate() }
         if controllingConversationId == id { controllingConversationId = nil; onControlChanged?(false) }
         if selectedId == id {
             selectionObservation?.cancel(); selectionObservation = nil
