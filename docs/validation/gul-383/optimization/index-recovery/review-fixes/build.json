@@ -1,0 +1,14 @@
+{
+  "command": [
+    "swift",
+    "build",
+    "--build-system",
+    "native",
+    "--jobs",
+    "4",
+    "--enable-code-coverage"
+  ],
+  "exit_code": 0,
+  "wall_seconds": 133.94,
+  "cache": "Dependency/model downloads retained; relocated architecture products removed after module-cache path failure; full compilation"
+}

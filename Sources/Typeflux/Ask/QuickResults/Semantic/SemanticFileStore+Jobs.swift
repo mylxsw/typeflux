@@ -243,7 +243,13 @@ extension SemanticFileStore {
 
     func nextWork(_ priority: SemanticMediaPriority) throws -> String? {
         try lock.withLock {
-            let row = try statement("SELECT path FROM work_queue WHERE priority=? ORDER BY turn LIMIT 1")
+            let row = try statement("""
+            SELECT w.path FROM work_queue w WHERE priority=?
+            AND (w.path IN (SELECT path FROM discovery) OR NOT EXISTS(
+                SELECT 1 FROM scan_directories d WHERE d.state<>'done'
+                AND (d.path='/' OR w.path=d.path OR substr(w.path,1,length(d.path)+1)=d.path||'/')))
+            ORDER BY turn LIMIT 1
+            """)
             defer { sqlite3_finalize(row) }
             bind(row, [priority.rawValue])
             let step = sqlite3_step(row)

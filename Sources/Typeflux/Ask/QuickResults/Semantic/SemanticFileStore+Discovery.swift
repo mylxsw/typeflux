@@ -107,18 +107,32 @@ extension SemanticFileStore {
                     throw CancellationError()
                 }
                 let removed = try transaction {
-                    try sql("""
-                    DELETE FROM files WHERE path IN (
-                        SELECT f.path FROM files f WHERE f.path NOT IN (SELECT path FROM discovery)
-                        AND NOT EXISTS(SELECT 1 FROM scan_directories d WHERE d.state='failed'
-                            AND (d.path='/' OR f.path=d.path OR substr(f.path,1,length(d.path)+1)=d.path||'/')) LIMIT 128);
+                    let row = try statement("""
+                    SELECT path FROM (
+                        SELECT path FROM files UNION SELECT path FROM jobs
+                        UNION SELECT path FROM media_jobs UNION SELECT path FROM work_queue
+                    ) AS candidate WHERE path NOT IN (SELECT path FROM discovery)
+                    AND NOT EXISTS(SELECT 1 FROM scan_directories d WHERE d.state<>'done'
+                        AND (d.path='/' OR candidate.path=d.path
+                            OR substr(candidate.path,1,length(d.path)+1)=d.path||'/')) LIMIT 128
                     """)
-                    let count = sqlite3_changes(database)
-                    try sql("""
-                    DELETE FROM jobs WHERE path NOT IN (SELECT path FROM files) AND path NOT IN (SELECT path FROM discovery)
-                    """
-                    )
-                    return count
+                    var paths: [String] = []
+                    do {
+                        defer { sqlite3_finalize(row) }
+                        var step = sqlite3_step(row)
+                        while step == SQLITE_ROW {
+                            paths.append(string(row, 0)); step = sqlite3_step(row)
+                        }
+                        guard step == SQLITE_DONE else { throw Failure.database }
+                    }
+                    for path in paths {
+                        // Both committed content and unfinished private checkpoints follow the same scope.
+                        // Foreign keys/triggers remove chunks, lexical terms and staged media segments.
+                        for table in ["files", "jobs", "media_jobs", "work_queue"] {
+                            try execute("DELETE FROM \(table) WHERE path=?", [path])
+                        }
+                    }
+                    return paths.count
                 }
                 if removed == 0 {
                     break

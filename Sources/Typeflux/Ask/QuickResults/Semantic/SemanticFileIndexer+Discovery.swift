@@ -10,8 +10,8 @@ extension SemanticFileIndexer {
         try store.beginDiscovery(scope: scope)
         while let path = try store.nextDirectory() {
             try waitWhilePaused(paused, cancelled: cancelled)
-            var failed = !scope.includes(path, isDirectory: true), writeFailure: Error?
-            if !failed {
+            var failed = false, writeFailure: Error?
+            if scope.includes(path, isDirectory: true) {
                 do {
                     try reader.stream(.init(operation: .directory, path: path, scope: scope, limit: nil),
                                       isCancelled: cancelled) { response in

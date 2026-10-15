@@ -1,0 +1,5765 @@
+{
+  "definition": "200 ms samples of only this foreground command descendants; file worker/embedding helper/test host identified by executable name; compiler excluded; shared pages can be double-counted; samples miss short-lived peaks",
+  "samples": [
+    {
+      "elapsed_seconds": 91.178,
+      "processes": [
+        {
+          "pid": 58654,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 32866304
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 91.406,
+      "processes": [
+        {
+          "pid": 58654,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 188022784
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 96.941,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 181223424
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 97.159,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 182190080
+        },
+        {
+          "pid": 58727,
+          "role": "Typeflux",
+          "rss_bytes": 32768
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 97.402,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 182190080
+        },
+        {
+          "pid": 58727,
+          "role": "Typeflux",
+          "rss_bytes": 32768
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 97.64,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 182190080
+        },
+        {
+          "pid": 58727,
+          "role": "Typeflux",
+          "rss_bytes": 32768
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 97.877,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 182190080
+        },
+        {
+          "pid": 58727,
+          "role": "Typeflux",
+          "rss_bytes": 32768
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 98.114,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 182190080
+        },
+        {
+          "pid": 58727,
+          "role": "Typeflux",
+          "rss_bytes": 32768
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 98.351,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 182190080
+        },
+        {
+          "pid": 58727,
+          "role": "Typeflux",
+          "rss_bytes": 32768
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 98.587,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 182190080
+        },
+        {
+          "pid": 58727,
+          "role": "Typeflux",
+          "rss_bytes": 32768
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 98.83,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 182190080
+        },
+        {
+          "pid": 58727,
+          "role": "Typeflux",
+          "rss_bytes": 32768
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 99.067,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 182190080
+        },
+        {
+          "pid": 58727,
+          "role": "Typeflux",
+          "rss_bytes": 32768
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 99.313,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 182190080
+        },
+        {
+          "pid": 58727,
+          "role": "Typeflux",
+          "rss_bytes": 32768
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 99.557,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 182190080
+        },
+        {
+          "pid": 58727,
+          "role": "Typeflux",
+          "rss_bytes": 32768
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 99.79,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 182190080
+        },
+        {
+          "pid": 58727,
+          "role": "Typeflux",
+          "rss_bytes": 32768
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 100.026,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 182190080
+        },
+        {
+          "pid": 58727,
+          "role": "Typeflux",
+          "rss_bytes": 32768
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 100.263,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 182190080
+        },
+        {
+          "pid": 58727,
+          "role": "Typeflux",
+          "rss_bytes": 32768
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 100.5,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 182190080
+        },
+        {
+          "pid": 58727,
+          "role": "Typeflux",
+          "rss_bytes": 32768
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 100.735,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 182190080
+        },
+        {
+          "pid": 58727,
+          "role": "Typeflux",
+          "rss_bytes": 32768
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 100.977,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 182190080
+        },
+        {
+          "pid": 58727,
+          "role": "Typeflux",
+          "rss_bytes": 32768
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 101.213,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 182190080
+        },
+        {
+          "pid": 58727,
+          "role": "Typeflux",
+          "rss_bytes": 32768
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 101.45,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 182190080
+        },
+        {
+          "pid": 58727,
+          "role": "Typeflux",
+          "rss_bytes": 163840
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 101.668,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 182910976
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 101.907,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 182910976
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 102.146,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 182910976
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 102.384,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 182747136
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 102.605,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 183058432
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 102.825,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 183058432
+        },
+        {
+          "pid": 58802,
+          "role": "Typeflux",
+          "rss_bytes": 62652416
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 103.045,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 183058432
+        },
+        {
+          "pid": 58805,
+          "role": "Typeflux",
+          "rss_bytes": 62652416
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 103.269,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 183058432
+        },
+        {
+          "pid": 58808,
+          "role": "Typeflux",
+          "rss_bytes": 62521344
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 103.492,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 183058432
+        },
+        {
+          "pid": 58811,
+          "role": "Typeflux",
+          "rss_bytes": 62619648
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 103.711,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 183058432
+        },
+        {
+          "pid": 58814,
+          "role": "Typeflux",
+          "rss_bytes": 62668800
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 103.93,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 183058432
+        },
+        {
+          "pid": 58817,
+          "role": "Typeflux",
+          "rss_bytes": 62652416
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 104.151,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 183058432
+        },
+        {
+          "pid": 58823,
+          "role": "Typeflux",
+          "rss_bytes": 278528
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 104.372,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 183058432
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 104.61,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 183058432
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 104.845,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 183058432
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 105.081,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 183058432
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 105.314,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 183058432
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 105.558,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 183058432
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 105.792,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 183058432
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 106.03,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 183058432
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 106.267,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 183058432
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 106.505,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 183058432
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 106.743,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 183009280
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 106.979,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 183009280
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 107.215,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 183009280
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 107.461,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 183009280
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 107.697,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 183009280
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 107.933,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 183009280
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 108.169,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 183009280
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 108.407,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 183009280
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 108.645,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 183009280
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 108.881,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 183009280
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 109.123,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 183009280
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 109.342,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 186548224
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 109.56,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 186597376
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 109.786,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 186695680
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 110.006,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 186728448
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 110.224,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 186728448
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 110.443,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 186728448
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 110.661,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 186728448
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 110.89,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 186728448
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 111.109,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 186728448
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 111.328,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 188628992
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 111.547,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 188645376
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 111.783,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 188710912
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 112.021,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 188727296
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 112.255,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 188809216
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 112.495,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 188841984
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 112.731,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 188923904
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 112.968,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 188956672
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 113.204,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 189005824
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 113.44,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 189054976
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 113.678,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 189087744
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 113.915,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 189104128
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 114.15,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 189136896
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 114.392,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 189186048
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 114.63,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 189169664
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 114.867,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 189186048
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 115.103,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 189218816
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 115.341,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 189267968
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 115.566,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 192331776
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 115.787,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 192331776
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 116.005,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 192348160
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 116.242,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 192348160
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 116.481,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 192348160
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 116.719,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 192348160
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 116.957,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 192348160
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 117.194,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 192348160
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 117.433,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 192348160
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 117.672,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 192348160
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 117.904,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 192348160
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 118.14,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 192348160
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 118.379,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 192348160
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 118.615,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 192348160
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 118.86,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 192348160
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 119.095,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 192348160
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 119.334,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 192348160
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 119.579,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 192348160
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 119.817,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 192348160
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 120.056,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 192348160
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 120.293,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 192348160
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 120.531,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 192348160
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 120.768,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 192348160
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 120.986,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 203243520
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 121.209,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 203898880
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 121.428,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 204488704
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 121.646,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 205160448
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 121.865,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 206094336
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 122.083,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 206749696
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 122.302,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 207388672
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 122.52,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 208044032
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 122.739,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 208683008
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 122.958,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 209321984
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 123.177,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 209977344
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 123.411,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 210059264
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 123.761,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 300351488
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 123.98,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 300351488
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 124.2,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 300351488
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 124.426,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 300351488
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 124.648,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 300351488
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 124.87,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 300351488
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 125.095,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 300351488
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 125.314,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 300351488
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 125.534,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 300351488
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 125.755,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 300351488
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 126.104,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 300351488
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 126.324,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 300351488
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 126.552,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 300351488
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 126.772,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 300351488
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 126.991,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 300351488
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 127.21,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 300351488
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 127.439,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 300351488
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 127.658,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 300351488
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 128.213,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 300351488
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 128.432,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 300351488
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 128.651,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 300351488
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 128.87,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 300302336
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 129.096,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 300302336
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 129.322,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 300302336
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 129.542,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 300302336
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 129.761,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 300302336
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 129.982,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 300302336
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 130.201,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 300302336
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 130.42,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 300302336
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 130.64,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 300302336
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 130.859,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 300302336
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 131.078,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 300302336
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 131.299,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 300302336
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 131.518,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 367837184
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 131.737,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 389169152
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 131.956,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 389169152
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 132.176,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 389201920
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 132.395,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 389201920
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 132.614,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 389234688
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 132.833,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 389234688
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 133.052,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 389267456
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 133.271,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 389267456
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 133.494,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 389267456
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 133.713,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 389300224
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 133.933,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 389300224
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 134.152,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 389251072
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 134.375,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 389283840
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 134.595,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 389283840
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 134.814,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 389283840
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 135.037,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 389283840
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 135.257,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 389316608
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 135.477,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 389349376
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 135.696,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 389349376
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 135.919,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 389349376
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 136.138,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 389382144
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 136.356,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 389382144
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 136.575,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 389382144
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 136.794,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 389414912
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 137.013,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 389414912
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 137.232,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 389447680
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 137.451,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 389447680
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 137.669,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 389447680
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 137.888,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 389480448
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 138.114,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 389480448
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 138.342,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 389513216
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 138.562,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 389513216
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 138.781,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 389545984
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 139.0,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 389545984
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 139.219,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 389578752
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 139.438,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 389578752
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 139.664,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 389611520
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 139.882,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 389611520
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 140.102,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 389644288
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 140.321,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 389644288
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 140.541,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 389677056
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 140.762,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 389677056
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 140.982,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 389677056
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 141.206,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 389709824
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 141.426,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 389709824
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 141.645,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 389742592
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 141.864,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 389742592
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 142.083,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 389775360
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 142.303,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 301088768
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 142.522,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 301088768
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 142.748,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 301088768
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 142.967,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 301088768
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 143.186,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 301088768
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 143.406,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 301088768
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 143.625,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 301088768
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 143.844,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 301088768
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 144.064,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 301088768
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 144.284,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 222642176
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 144.503,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 222642176
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 144.722,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 222642176
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 144.948,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 222642176
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 145.168,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 222642176
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 145.395,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 222642176
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 145.614,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 222642176
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 145.834,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 231374848
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 146.056,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 216612864
+        },
+        {
+          "pid": 59411,
+          "role": "Typeflux",
+          "rss_bytes": 32768
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 146.274,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 233570304
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 146.493,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 233603072
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 146.721,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 233603072
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 146.94,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 233472000
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 147.175,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 233472000
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 147.394,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 233635840
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 147.613,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 233635840
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 147.846,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 233635840
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 148.072,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 233717760
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 148.308,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 234553344
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 148.543,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 234766336
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 148.782,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 234799104
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 149.019,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 234799104
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 149.257,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 234799104
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 149.493,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 234799104
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 149.731,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 234799104
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 149.97,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 234799104
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 150.207,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 234799104
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 150.443,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 234799104
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 150.678,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 234799104
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 150.896,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 234799104
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 151.131,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 234618880
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 151.368,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 234815488
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 151.604,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 234815488
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 151.842,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 234815488
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 152.079,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 234815488
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 152.314,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 234815488
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 152.55,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 234815488
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 152.787,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 234815488
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 153.022,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 234815488
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 153.259,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 234815488
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 153.501,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 234815488
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 153.735,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 234815488
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 153.963,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 268419072
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 154.182,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 288440320
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 154.405,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 291225600
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 154.637,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 291012608
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 154.872,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 291061760
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 155.106,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 291569664
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 155.327,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 291717120
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 155.546,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561545216
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 155.764,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561627136
+        },
+        {
+          "pid": 59637,
+          "role": "Typeflux",
+          "rss_bytes": 57212928
+        },
+        {
+          "pid": 59638,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 32768
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 156.002,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561627136
+        },
+        {
+          "pid": 59637,
+          "role": "Typeflux",
+          "rss_bytes": 57212928
+        },
+        {
+          "pid": 59638,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 5898240
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 156.24,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561627136
+        },
+        {
+          "pid": 59637,
+          "role": "Typeflux",
+          "rss_bytes": 57212928
+        },
+        {
+          "pid": 59638,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 9781248
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 156.484,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561627136
+        },
+        {
+          "pid": 59637,
+          "role": "Typeflux",
+          "rss_bytes": 57212928
+        },
+        {
+          "pid": 59638,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 17285120
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 156.721,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561627136
+        },
+        {
+          "pid": 59637,
+          "role": "Typeflux",
+          "rss_bytes": 57212928
+        },
+        {
+          "pid": 59638,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 19529728
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 156.959,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561627136
+        },
+        {
+          "pid": 59637,
+          "role": "Typeflux",
+          "rss_bytes": 57212928
+        },
+        {
+          "pid": 59638,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 21872640
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 157.197,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561627136
+        },
+        {
+          "pid": 59637,
+          "role": "Typeflux",
+          "rss_bytes": 57212928
+        },
+        {
+          "pid": 59638,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 32096256
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 157.434,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561627136
+        },
+        {
+          "pid": 59637,
+          "role": "Typeflux",
+          "rss_bytes": 57212928
+        },
+        {
+          "pid": 59638,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 41517056
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 157.67,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561627136
+        },
+        {
+          "pid": 59637,
+          "role": "Typeflux",
+          "rss_bytes": 57212928
+        },
+        {
+          "pid": 59638,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 50905088
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 157.907,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561627136
+        },
+        {
+          "pid": 59637,
+          "role": "Typeflux",
+          "rss_bytes": 57212928
+        },
+        {
+          "pid": 59638,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 59015168
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 158.149,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561627136
+        },
+        {
+          "pid": 59637,
+          "role": "Typeflux",
+          "rss_bytes": 57212928
+        },
+        {
+          "pid": 59638,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 68567040
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 158.386,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561627136
+        },
+        {
+          "pid": 59637,
+          "role": "Typeflux",
+          "rss_bytes": 57212928
+        },
+        {
+          "pid": 59638,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 78004224
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 158.606,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561627136
+        },
+        {
+          "pid": 59637,
+          "role": "Typeflux",
+          "rss_bytes": 57212928
+        },
+        {
+          "pid": 59638,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 147603456
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 158.824,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561627136
+        },
+        {
+          "pid": 59637,
+          "role": "Typeflux",
+          "rss_bytes": 57212928
+        },
+        {
+          "pid": 59638,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 499466240
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 159.047,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561627136
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 159.272,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561627136
+        },
+        {
+          "pid": 59655,
+          "role": "Typeflux",
+          "rss_bytes": 57196544
+        },
+        {
+          "pid": 59656,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 94093312
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 159.493,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561627136
+        },
+        {
+          "pid": 59655,
+          "role": "Typeflux",
+          "rss_bytes": 57196544
+        },
+        {
+          "pid": 59656,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 197509120
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 159.711,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561627136
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 159.93,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561643520
+        },
+        {
+          "pid": 59660,
+          "role": "Typeflux",
+          "rss_bytes": 57212928
+        },
+        {
+          "pid": 59661,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 134135808
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 160.154,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561577984
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 160.374,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561577984
+        },
+        {
+          "pid": 59670,
+          "role": "Typeflux",
+          "rss_bytes": 57212928
+        },
+        {
+          "pid": 59671,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 41271296
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 160.594,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561577984
+        },
+        {
+          "pid": 59670,
+          "role": "Typeflux",
+          "rss_bytes": 57212928
+        },
+        {
+          "pid": 59671,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 183042048
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 160.812,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561577984
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 161.031,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561577984
+        },
+        {
+          "pid": 59675,
+          "role": "Typeflux",
+          "rss_bytes": 57180160
+        },
+        {
+          "pid": 59676,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 130433024
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 161.257,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561577984
+        },
+        {
+          "pid": 59675,
+          "role": "Typeflux",
+          "rss_bytes": 57180160
+        },
+        {
+          "pid": 59676,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 501170176
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 161.476,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561577984
+        },
+        {
+          "pid": 59679,
+          "role": "Typeflux",
+          "rss_bytes": 57212928
+        },
+        {
+          "pid": 59680,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 9945088
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 161.697,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561577984
+        },
+        {
+          "pid": 59679,
+          "role": "Typeflux",
+          "rss_bytes": 57212928
+        },
+        {
+          "pid": 59680,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 182960128
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 161.915,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561594368
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 162.135,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561594368
+        },
+        {
+          "pid": 59684,
+          "role": "Typeflux",
+          "rss_bytes": 57212928
+        },
+        {
+          "pid": 59685,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 127647744
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 162.355,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561594368
+        },
+        {
+          "pid": 59684,
+          "role": "Typeflux",
+          "rss_bytes": 57212928
+        },
+        {
+          "pid": 59685,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 205160448
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 162.574,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561594368
+        },
+        {
+          "pid": 59688,
+          "role": "Typeflux",
+          "rss_bytes": 671744
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 162.794,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561594368
+        },
+        {
+          "pid": 59688,
+          "role": "Typeflux",
+          "rss_bytes": 57196544
+        },
+        {
+          "pid": 59690,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 166248448
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 163.012,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561594368
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 163.23,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561594368
+        },
+        {
+          "pid": 59693,
+          "role": "Typeflux",
+          "rss_bytes": 57196544
+        },
+        {
+          "pid": 59694,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 107593728
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 163.456,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561594368
+        },
+        {
+          "pid": 59693,
+          "role": "Typeflux",
+          "rss_bytes": 57196544
+        },
+        {
+          "pid": 59694,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 204144640
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 163.674,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561594368
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 163.894,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561627136
+        },
+        {
+          "pid": 59698,
+          "role": "Typeflux",
+          "rss_bytes": 57196544
+        },
+        {
+          "pid": 59699,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 135348224
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 164.115,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561627136
+        },
+        {
+          "pid": 59698,
+          "role": "Typeflux",
+          "rss_bytes": 57196544
+        },
+        {
+          "pid": 59699,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 515031040
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 164.334,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561627136
+        },
+        {
+          "pid": 59732,
+          "role": "Typeflux",
+          "rss_bytes": 13516800
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 164.558,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561627136
+        },
+        {
+          "pid": 59732,
+          "role": "Typeflux",
+          "rss_bytes": 57212928
+        },
+        {
+          "pid": 59734,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 174604288
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 164.776,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561627136
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 164.994,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561627136
+        },
+        {
+          "pid": 59743,
+          "role": "Typeflux",
+          "rss_bytes": 57196544
+        },
+        {
+          "pid": 59744,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 87195648
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 165.22,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561610752
+        },
+        {
+          "pid": 59743,
+          "role": "Typeflux",
+          "rss_bytes": 57196544
+        },
+        {
+          "pid": 59744,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 198262784
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 165.441,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561627136
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 165.659,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561627136
+        },
+        {
+          "pid": 59757,
+          "role": "Typeflux",
+          "rss_bytes": 57212928
+        },
+        {
+          "pid": 59758,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 134086656
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 165.88,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561627136
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 166.099,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561643520
+        },
+        {
+          "pid": 59761,
+          "role": "Typeflux",
+          "rss_bytes": 57196544
+        },
+        {
+          "pid": 59762,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 12402688
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 166.32,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561643520
+        },
+        {
+          "pid": 59761,
+          "role": "Typeflux",
+          "rss_bytes": 57196544
+        },
+        {
+          "pid": 59762,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 183222272
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 166.538,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561643520
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 166.757,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561643520
+        },
+        {
+          "pid": 59766,
+          "role": "Typeflux",
+          "rss_bytes": 57196544
+        },
+        {
+          "pid": 59767,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 130711552
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 166.976,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561643520
+        },
+        {
+          "pid": 59766,
+          "role": "Typeflux",
+          "rss_bytes": 57196544
+        },
+        {
+          "pid": 59767,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 204947456
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 167.196,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561643520
+        },
+        {
+          "pid": 59778,
+          "role": "Typeflux",
+          "rss_bytes": 524288
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 167.415,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561643520
+        },
+        {
+          "pid": 59778,
+          "role": "Typeflux",
+          "rss_bytes": 57212928
+        },
+        {
+          "pid": 59780,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 162447360
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 167.64,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561659904
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 167.858,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561676288
+        },
+        {
+          "pid": 59784,
+          "role": "Typeflux",
+          "rss_bytes": 57196544
+        },
+        {
+          "pid": 59785,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 106610688
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 168.078,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561676288
+        },
+        {
+          "pid": 59784,
+          "role": "Typeflux",
+          "rss_bytes": 57196544
+        },
+        {
+          "pid": 59785,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 199835648
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 168.297,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561676288
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 168.515,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561676288
+        },
+        {
+          "pid": 59789,
+          "role": "Typeflux",
+          "rss_bytes": 57196544
+        },
+        {
+          "pid": 59790,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 136888320
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 168.738,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561676288
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 168.963,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561217536
+        },
+        {
+          "pid": 59793,
+          "role": "Typeflux",
+          "rss_bytes": 57196544
+        },
+        {
+          "pid": 59794,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 85835776
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 169.184,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561217536
+        },
+        {
+          "pid": 59793,
+          "role": "Typeflux",
+          "rss_bytes": 57196544
+        },
+        {
+          "pid": 59794,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 193822720
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 169.402,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561217536
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 169.62,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561217536
+        },
+        {
+          "pid": 59798,
+          "role": "Typeflux",
+          "rss_bytes": 57196544
+        },
+        {
+          "pid": 59799,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 134332416
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 169.841,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561217536
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 170.06,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561233920
+        },
+        {
+          "pid": 59805,
+          "role": "Typeflux",
+          "rss_bytes": 57212928
+        },
+        {
+          "pid": 59806,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 12419072
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 170.281,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561233920
+        },
+        {
+          "pid": 59805,
+          "role": "Typeflux",
+          "rss_bytes": 57212928
+        },
+        {
+          "pid": 59806,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 184926208
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 170.5,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561233920
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 170.721,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561233920
+        },
+        {
+          "pid": 59810,
+          "role": "Typeflux",
+          "rss_bytes": 57212928
+        },
+        {
+          "pid": 59811,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 130973696
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 170.941,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561233920
+        },
+        {
+          "pid": 59810,
+          "role": "Typeflux",
+          "rss_bytes": 57212928
+        },
+        {
+          "pid": 59811,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 500416512
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 171.169,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561233920
+        },
+        {
+          "pid": 59814,
+          "role": "Typeflux",
+          "rss_bytes": 57196544
+        },
+        {
+          "pid": 59815,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 12369920
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 171.39,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561233920
+        },
+        {
+          "pid": 59814,
+          "role": "Typeflux",
+          "rss_bytes": 57196544
+        },
+        {
+          "pid": 59815,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 185516032
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 171.608,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561233920
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 171.83,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561233920
+        },
+        {
+          "pid": 59827,
+          "role": "Typeflux",
+          "rss_bytes": 57196544
+        },
+        {
+          "pid": 59828,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 128303104
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 172.05,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561233920
+        },
+        {
+          "pid": 59827,
+          "role": "Typeflux",
+          "rss_bytes": 57196544
+        },
+        {
+          "pid": 59828,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 491765760
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 172.272,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561250304
+        },
+        {
+          "pid": 59831,
+          "role": "Typeflux",
+          "rss_bytes": 57196544
+        },
+        {
+          "pid": 59833,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 147456
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 172.499,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561250304
+        },
+        {
+          "pid": 59831,
+          "role": "Typeflux",
+          "rss_bytes": 57196544
+        },
+        {
+          "pid": 59833,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 181272576
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 172.721,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561250304
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 172.942,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561250304
+        },
+        {
+          "pid": 59836,
+          "role": "Typeflux",
+          "rss_bytes": 57196544
+        },
+        {
+          "pid": 59837,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 126451712
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 173.168,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561250304
+        },
+        {
+          "pid": 59836,
+          "role": "Typeflux",
+          "rss_bytes": 57196544
+        },
+        {
+          "pid": 59837,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 409452544
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 173.388,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561266688
+        },
+        {
+          "pid": 59840,
+          "role": "Typeflux",
+          "rss_bytes": 163840
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 173.607,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 561266688
+        },
+        {
+          "pid": 59840,
+          "role": "Typeflux",
+          "rss_bytes": 57196544
+        },
+        {
+          "pid": 59842,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 167280640
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 173.825,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 506740736
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 174.043,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 506740736
+        },
+        {
+          "pid": 59845,
+          "role": "Typeflux",
+          "rss_bytes": 57212928
+        },
+        {
+          "pid": 59846,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 108511232
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 174.262,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 506740736
+        },
+        {
+          "pid": 59845,
+          "role": "Typeflux",
+          "rss_bytes": 57212928
+        },
+        {
+          "pid": 59846,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 205668352
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 174.482,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 506757120
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 174.702,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 506757120
+        },
+        {
+          "pid": 59850,
+          "role": "Typeflux",
+          "rss_bytes": 57212928
+        },
+        {
+          "pid": 59851,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 136445952
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 174.921,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 506757120
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 175.141,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 506757120
+        },
+        {
+          "pid": 59871,
+          "role": "Typeflux",
+          "rss_bytes": 57212928
+        },
+        {
+          "pid": 59872,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 59654144
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 175.368,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 506757120
+        },
+        {
+          "pid": 59871,
+          "role": "Typeflux",
+          "rss_bytes": 57212928
+        },
+        {
+          "pid": 59872,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 185286656
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 175.588,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 506773504
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 175.816,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 506773504
+        },
+        {
+          "pid": 59876,
+          "role": "Typeflux",
+          "rss_bytes": 57196544
+        },
+        {
+          "pid": 59877,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 123797504
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 176.036,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 506773504
+        },
+        {
+          "pid": 59876,
+          "role": "Typeflux",
+          "rss_bytes": 57196544
+        },
+        {
+          "pid": 59877,
+          "role": "TypefluxSemanticHelper",
+          "rss_bytes": 204783616
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 176.254,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 506773504
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 176.475,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 506642432
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 176.7,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 508116992
+        },
+        {
+          "pid": 59884,
+          "role": "Typeflux",
+          "rss_bytes": 57851904
+        },
+        {
+          "pid": 59885,
+          "role": "Typeflux",
+          "rss_bytes": 57114624
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 176.917,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 507183104
+        },
+        {
+          "pid": 59888,
+          "role": "Typeflux",
+          "rss_bytes": 57786368
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 177.135,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 509919232
+        },
+        {
+          "pid": 59888,
+          "role": "Typeflux",
+          "rss_bytes": 57950208
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 177.353,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 507805696
+        },
+        {
+          "pid": 59891,
+          "role": "Typeflux",
+          "rss_bytes": 57835520
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 177.571,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 510738432
+        },
+        {
+          "pid": 59891,
+          "role": "Typeflux",
+          "rss_bytes": 57901056
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 177.789,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 508329984
+        },
+        {
+          "pid": 59895,
+          "role": "Typeflux",
+          "rss_bytes": 57835520
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 178.007,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 508526592
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 178.234,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 511213568
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 178.467,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 511246336
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 178.685,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 511197184
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 178.908,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 512278528
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 179.135,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 547667968
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 179.353,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 550977536
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 179.578,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 553533440
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 179.796,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 553566208
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 180.018,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 553598976
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 180.235,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 553631744
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 180.453,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 553664512
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 180.671,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 553697280
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 180.889,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 553713664
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 181.107,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 553746432
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 181.325,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 553762816
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 181.544,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 553795584
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 181.762,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 553811968
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 181.98,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 553828352
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 182.198,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 553844736
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 182.417,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 553877504
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 182.635,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 553893888
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 182.854,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 553910272
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 183.072,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 553926656
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 183.301,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 553943040
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 183.519,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 553943040
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 183.738,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 553959424
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 183.957,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 436535296
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 184.182,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 436551680
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 184.4,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 436568064
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 184.619,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 436584448
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 184.837,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 436600832
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 185.065,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 436617216
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 185.284,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 436617216
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 185.512,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 436633600
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 185.731,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 436649984
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 185.949,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 436666368
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 186.167,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 436682752
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 186.391,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 436682752
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 186.611,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 436699136
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 186.84,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 436633600
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 187.068,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 436649984
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 187.286,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 436649984
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 187.514,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 436666368
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 187.732,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 436682752
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 187.951,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 436682752
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 188.17,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 436699136
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 188.388,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 436715520
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 188.617,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 436731904
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 188.835,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 436731904
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 189.053,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 436748288
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 189.272,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 436764672
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 189.491,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 436764672
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 189.72,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 436781056
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 189.939,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 436797440
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 190.157,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 436797440
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 190.376,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 436813824
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 190.594,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 436830208
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 190.822,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 436830208
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 191.041,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 436846592
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 191.261,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 436846592
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 191.488,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 436862976
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 191.707,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 436879360
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 191.926,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 436879360
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 192.154,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 436813824
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 192.383,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 436830208
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 192.602,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 436830208
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 192.831,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 436846592
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 193.049,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 436846592
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 193.273,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 436862976
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 193.492,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 436879360
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 193.711,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 436879360
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 193.929,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 323633152
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 194.153,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 323633152
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 194.376,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 323649536
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 194.605,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 323649536
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 194.824,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 323665920
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 195.049,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 323665920
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 195.275,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 323682304
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 195.501,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 323698688
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 195.73,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 323698688
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 195.958,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 323715072
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 196.177,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 323715072
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 196.395,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 323731456
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 196.615,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 323731456
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 196.834,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 323747840
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 197.053,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 323747840
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 197.273,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 315572224
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 197.497,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 316112896
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 197.715,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 316801024
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 197.933,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 317440000
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 198.153,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 317456384
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 198.372,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 315326464
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 198.637,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 315359232
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 198.856,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 315179008
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 199.075,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 315162624
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 199.303,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 315162624
+        },
+        {
+          "pid": 60171,
+          "role": "Typeflux",
+          "rss_bytes": 720896
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 199.521,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 316260352
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 199.739,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 339329024
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 199.958,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 344309760
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 200.183,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 349274112
+        },
+        {
+          "pid": 60180,
+          "role": "Typeflux",
+          "rss_bytes": 81838080
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 200.403,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 351174656
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 200.622,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 351354880
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 200.857,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 351371264
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 201.095,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 352550912
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 201.334,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 352681984
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 201.564,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 352632832
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 201.782,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 352649216
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 202.026,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 352649216
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 202.267,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 352649216
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 202.506,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 352649216
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 202.747,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 352649216
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 202.986,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 352649216
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 203.226,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 352649216
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 203.465,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 352649216
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 203.702,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 352649216
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 203.949,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 352649216
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 204.185,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 352649216
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 204.423,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 352698368
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 204.661,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 352698368
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 204.885,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 352714752
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 205.124,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 352714752
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 205.36,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 352600064
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 205.6,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 352550912
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 205.845,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 352550912
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 206.086,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 352550912
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 206.327,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 352550912
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 206.574,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 352976896
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 206.795,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 352976896
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 207.039,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 352976896
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 207.278,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 352976896
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 207.524,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 352796672
+        }
+      ]
+    },
+    {
+      "elapsed_seconds": 207.759,
+      "processes": [
+        {
+          "pid": 58725,
+          "role": "swiftpm-testing-helper",
+          "rss_bytes": 353009664
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "command": [
+    "make",
+    "coverage",
+    "SUITE=SemanticIndexFairnessTests SemanticIndexFairnessServiceTests SemanticIndexPruneTests SemanticIndexRecoveryTests SemanticIndexEventTests SemanticFilePolicyTests SemanticFileStoreTests SemanticFileContentTests SemanticFileIndexerTests SemanticFileCapacityTests SemanticMediaIndexTests SemanticMediaExtractorTests SemanticFileServiceTests SemanticMediaServiceTests SemanticIndexPriorityTests SemanticRealtimeSearchTests SemanticHybridSearchTests AskFileReliabilityTests AskFileStreamingTests"
+  ],
+  "exit_code": 0,
+  "wall_seconds": 213.4,
+  "profile": "fresh; no cross-binary profile merge",
+  "rss_samples": 491
+}

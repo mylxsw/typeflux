@@ -1,0 +1,14 @@
+{
+  "command": [
+    "swift",
+    "build",
+    "--build-system",
+    "native",
+    "--jobs",
+    "4",
+    "--enable-code-coverage"
+  ],
+  "exit_code": 1,
+  "wall_seconds": 55.66,
+  "cache": "APFS clone of prior reviewed build; new checkout paths and source edits require revalidation/recompilation"
+}
