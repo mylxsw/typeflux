@@ -1,0 +1,144 @@
+{
+  "baseline": "fa9643cf42db201667c15169cb7a3c1527946acb",
+  "denominator": "Added/modified executable Swift lines in Sources/Typeflux, including new files, intersected with final LLVM LCOV DA records. Tests, helper wrapper and unchanged vendor code excluded; helper reported separately.",
+  "executable": 694,
+  "covered": 673,
+  "percent": 96.97,
+  "files": {
+    "Sources/Typeflux/Ask/AskComposerTextView.swift": {
+      "executable": 8,
+      "covered": 8,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/AskComposerViews.swift": {
+      "executable": 30,
+      "covered": 29,
+      "percent": 96.67,
+      "uncovered": [
+        1241
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/AskQuickSearchSession.swift": {
+      "executable": 22,
+      "covered": 22,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Files/AskFileReader.swift": {
+      "executable": 5,
+      "covered": 5,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Files/AskFileWorkerCommand.swift": {
+      "executable": 0,
+      "covered": 0,
+      "percent": null,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/AskPluginSession.swift": {
+      "executable": 7,
+      "covered": 7,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Files/AskFileSearchPlugin.swift": {
+      "executable": 31,
+      "covered": 31,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Files/AskSemanticFileSearchPlugin.swift": {
+      "executable": 5,
+      "covered": 5,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticEmbeddingWorker.swift": {
+      "executable": 114,
+      "covered": 106,
+      "percent": 92.98,
+      "uncovered": [
+        94,
+        192,
+        193,
+        194,
+        253,
+        254,
+        255,
+        257
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer+Priority.swift": {
+      "executable": 69,
+      "covered": 65,
+      "percent": 94.2,
+      "uncovered": [
+        67,
+        70,
+        75,
+        78
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer.swift": {
+      "executable": 44,
+      "covered": 43,
+      "percent": 97.73,
+      "uncovered": [
+        154
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFilePolicy.swift": {
+      "executable": 8,
+      "covered": 8,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift": {
+      "executable": 208,
+      "covered": 204,
+      "percent": 98.08,
+      "uncovered": [
+        518,
+        519,
+        520,
+        521
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore.swift": {
+      "executable": 10,
+      "covered": 10,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileValidator.swift": {
+      "executable": 25,
+      "covered": 25,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticIndexPauseGate.swift": {
+      "executable": 25,
+      "covered": 25,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticLexicalReader.swift": {
+      "executable": 70,
+      "covered": 67,
+      "percent": 95.71,
+      "uncovered": [
+        12,
+        41,
+        81
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSearchTrace.swift": {
+      "executable": 13,
+      "covered": 13,
+      "percent": 100.0,
+      "uncovered": []
+    }
+  }
+}

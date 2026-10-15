@@ -32,6 +32,9 @@ def main():
                             text=True, capture_output=True, timeout=180, check=True)
     replies = [json.loads(line) for line in result.stdout.splitlines()]
     assert len(replies) == 4, "one response per request"
+    assert replies[0]["semanticTiming"]["modelLoadMilliseconds"] > 0
+    assert all(reply["semanticTiming"]["encodingMilliseconds"] >= 0 for reply in replies)
+    assert all("modelLoadMilliseconds" not in reply["semanticTiming"] for reply in replies[1:])
     vectors = replies[0]["embeddings"]
     assert len(vectors) == len(framed)
     for vector in vectors:

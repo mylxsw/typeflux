@@ -1,0 +1,41 @@
+{
+  "lexical": {
+    "n": 25,
+    "recall_at_5": 1.0,
+    "mrr": 1.0
+  },
+  "identifier": {
+    "n": 25,
+    "recall_at_5": 1.0,
+    "mrr": 0.8746666666666667
+  },
+  "chinese_short": {
+    "n": 25,
+    "recall_at_5": 1.0,
+    "mrr": 1.0
+  },
+  "cross_language": {
+    "n": 25,
+    "recall_at_5": 0.44,
+    "mrr": 0.20133333333333334
+  },
+  "long_tail": {
+    "n": 25,
+    "recall_at_5": 0.0,
+    "mrr": 0.0
+  },
+  "scanned": {
+    "n": 25,
+    "recall_at_5": 0.0,
+    "mrr": 0.0
+  },
+  "media_timestamp": {
+    "n": 25,
+    "recall_at_5": 0.0,
+    "mrr": 0.0
+  },
+  "no_answer": {
+    "n": 25,
+    "false_positive_rate": 1.0
+  }
+}

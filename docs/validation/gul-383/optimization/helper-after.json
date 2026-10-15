@@ -1,0 +1,422 @@
+{
+  "scope": "Release helper IPC only, excluding app scheduling, retrieval, permissions and UI",
+  "hardware": "arm64",
+  "model_sha256": "2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135",
+  "samples": 100,
+  "cold_ms": 696.6232079430483,
+  "warm_p50_ms": 13.048458029516041,
+  "warm_p95_ms": 14.514499984215945,
+  "warm_p99_ms": 16.795125033240765,
+  "samples_ms": [
+    696.6232079430483,
+    16.795125033240765,
+    15.981541946530342,
+    15.483417024370283,
+    14.514499984215945,
+    13.92620796104893,
+    13.993582979310304,
+    13.674916001036763,
+    13.519583037123084,
+    13.625667023006827,
+    12.885875010397285,
+    12.38062500488013,
+    11.886625026818365,
+    13.72083299793303,
+    12.418458005413413,
+    13.979958952404559,
+    11.768791999202222,
+    13.978959002997726,
+    12.85316696157679,
+    13.681999989785254,
+    11.787458963226527,
+    13.83558299858123,
+    11.870207963511348,
+    13.976624992210418,
+    11.988165962975472,
+    13.81375000346452,
+    11.351791967172176,
+    12.416333018336445,
+    11.885166983120143,
+    13.86666699545458,
+    11.837750033009797,
+    14.70424997387454,
+    11.939916992560029,
+    13.78270803252235,
+    11.906708998139948,
+    13.622125028632581,
+    11.93237496772781,
+    13.647333020344377,
+    11.813542048912495,
+    13.756166968960315,
+    11.907084030099213,
+    13.96158296847716,
+    11.976499983575195,
+    13.354624970816076,
+    10.59499999973923,
+    12.832458014599979,
+    11.894124967511743,
+    13.73000000603497,
+    11.939916992560029,
+    14.490375004243106,
+    11.98974996805191,
+    13.900583027862012,
+    11.762916983570904,
+    14.498415985144675,
+    12.23708299221471,
+    13.252749980892986,
+    11.113083979580551,
+    14.00666602421552,
+    12.091000040527433,
+    13.866499997675419,
+    11.823291948530823,
+    13.558332982938737,
+    11.964542034547776,
+    13.670457992702723,
+    11.780583998188376,
+    13.9391670236364,
+    12.062416994012892,
+    14.180125028360635,
+    11.716875014826655,
+    14.0281249769032,
+    12.150291993748397,
+    14.441667008213699,
+    12.152249983046204,
+    14.31787497131154,
+    11.898708005901426,
+    13.955875008832663,
+    12.010291975457221,
+    13.781707966700196,
+    12.057250016368926,
+    14.03583399951458,
+    12.02287495834753,
+    14.41375003196299,
+    12.281708011869341,
+    14.129667019005865,
+    11.995875043794513,
+    14.22275003278628,
+    12.428542017005384,
+    14.210166991688311,
+    12.056915962602943,
+    12.741957965772599,
+    11.264000029768795,
+    14.21991700772196,
+    13.048458029516041,
+    12.541832984425128,
+    12.07649998832494,
+    13.990790990646929,
+    12.037749984301627,
+    13.732959050685167,
+    11.76100003067404,
+    13.911541958805174,
+    11.931957968045026
+  ],
+  "helper_timings": [
+    {
+      "encodingMilliseconds": 23.53991667041555,
+      "modelLoadMilliseconds": 664.8775833309628
+    },
+    {
+      "encodingMilliseconds": 15.30670834472403
+    },
+    {
+      "encodingMilliseconds": 15.419791685417295
+    },
+    {
+      "encodingMilliseconds": 14.617333305068314
+    },
+    {
+      "encodingMilliseconds": 13.737041677813977
+    },
+    {
+      "encodingMilliseconds": 13.235750026069582
+    },
+    {
+      "encodingMilliseconds": 13.231208373326808
+    },
+    {
+      "encodingMilliseconds": 12.93891662498936
+    },
+    {
+      "encodingMilliseconds": 12.751541682519019
+    },
+    {
+      "encodingMilliseconds": 13.01708328537643
+    },
+    {
+      "encodingMilliseconds": 12.511291657574475
+    },
+    {
+      "encodingMilliseconds": 11.714374995790422
+    },
+    {
+      "encodingMilliseconds": 11.177791631780565
+    },
+    {
+      "encodingMilliseconds": 13.014000025577843
+    },
+    {
+      "encodingMilliseconds": 11.704416654538363
+    },
+    {
+      "encodingMilliseconds": 13.280541636049747
+    },
+    {
+      "encodingMilliseconds": 11.07070833677426
+    },
+    {
+      "encodingMilliseconds": 13.107624952681363
+    },
+    {
+      "encodingMilliseconds": 12.14362500468269
+    },
+    {
+      "encodingMilliseconds": 12.977916689123958
+    },
+    {
+      "encodingMilliseconds": 11.095333320554346
+    },
+    {
+      "encodingMilliseconds": 13.097750023007393
+    },
+    {
+      "encodingMilliseconds": 11.131000006571412
+    },
+    {
+      "encodingMilliseconds": 13.2527916575782
+    },
+    {
+      "encodingMilliseconds": 11.291375034488738
+    },
+    {
+      "encodingMilliseconds": 13.11970833921805
+    },
+    {
+      "encodingMilliseconds": 10.640291671734303
+    },
+    {
+      "encodingMilliseconds": 11.72324997605756
+    },
+    {
+      "encodingMilliseconds": 11.177916661836207
+    },
+    {
+      "encodingMilliseconds": 13.165666663553566
+    },
+    {
+      "encodingMilliseconds": 11.124749958980829
+    },
+    {
+      "encodingMilliseconds": 14.015083375852555
+    },
+    {
+      "encodingMilliseconds": 11.215000005904585
+    },
+    {
+      "encodingMilliseconds": 13.050791691057384
+    },
+    {
+      "encodingMilliseconds": 11.135541717521846
+    },
+    {
+      "encodingMilliseconds": 12.93408335186541
+    },
+    {
+      "encodingMilliseconds": 11.214874975848943
+    },
+    {
+      "encodingMilliseconds": 12.927125033456832
+    },
+    {
+      "encodingMilliseconds": 11.050791654270142
+    },
+    {
+      "encodingMilliseconds": 13.050500012468547
+    },
+    {
+      "encodingMilliseconds": 11.185833311174065
+    },
+    {
+      "encodingMilliseconds": 13.248750008642673
+    },
+    {
+      "encodingMilliseconds": 11.25258335378021
+    },
+    {
+      "encodingMilliseconds": 12.761708348989487
+    },
+    {
+      "encodingMilliseconds": 9.768291667569429
+    },
+    {
+      "encodingMilliseconds": 12.088916671928018
+    },
+    {
+      "encodingMilliseconds": 11.1814999836497
+    },
+    {
+      "encodingMilliseconds": 13.156250002793968
+    },
+    {
+      "encodingMilliseconds": 11.224250018130988
+    },
+    {
+      "encodingMilliseconds": 13.777916610706598
+    },
+    {
+      "encodingMilliseconds": 11.266541667282581
+    },
+    {
+      "encodingMilliseconds": 13.152291649021208
+    },
+    {
+      "encodingMilliseconds": 11.053291673306376
+    },
+    {
+      "encodingMilliseconds": 13.527375005651265
+    },
+    {
+      "encodingMilliseconds": 11.526708316523582
+    },
+    {
+      "encodingMilliseconds": 12.644041678868234
+    },
+    {
+      "encodingMilliseconds": 10.411500057671219
+    },
+    {
+      "encodingMilliseconds": 13.291458308231086
+    },
+    {
+      "encodingMilliseconds": 11.382958386093378
+    },
+    {
+      "encodingMilliseconds": 13.151250022929162
+    },
+    {
+      "encodingMilliseconds": 11.106124962680042
+    },
+    {
+      "encodingMilliseconds": 12.875041633378714
+    },
+    {
+      "encodingMilliseconds": 11.276750010438263
+    },
+    {
+      "encodingMilliseconds": 12.980375031474978
+    },
+    {
+      "encodingMilliseconds": 11.096625006757677
+    },
+    {
+      "encodingMilliseconds": 13.233333302196115
+    },
+    {
+      "encodingMilliseconds": 11.334749986417592
+    },
+    {
+      "encodingMilliseconds": 13.450583326630294
+    },
+    {
+      "encodingMilliseconds": 10.996124998200685
+    },
+    {
+      "encodingMilliseconds": 13.317124976310879
+    },
+    {
+      "encodingMilliseconds": 11.41933334292844
+    },
+    {
+      "encodingMilliseconds": 13.728374964557588
+    },
+    {
+      "encodingMilliseconds": 11.42416667426005
+    },
+    {
+      "encodingMilliseconds": 13.53933336213231
+    },
+    {
+      "encodingMilliseconds": 11.193666665349156
+    },
+    {
+      "encodingMilliseconds": 13.247833354398608
+    },
+    {
+      "encodingMilliseconds": 11.30954164545983
+    },
+    {
+      "encodingMilliseconds": 13.068249973002821
+    },
+    {
+      "encodingMilliseconds": 11.344291677232832
+    },
+    {
+      "encodingMilliseconds": 13.317541684955359
+    },
+    {
+      "encodingMilliseconds": 11.319833341985941
+    },
+    {
+      "encodingMilliseconds": 13.729041675105691
+    },
+    {
+      "encodingMilliseconds": 11.593583330977708
+    },
+    {
+      "encodingMilliseconds": 13.453624967951328
+    },
+    {
+      "encodingMilliseconds": 11.302958359010518
+    },
+    {
+      "encodingMilliseconds": 13.47433333285153
+    },
+    {
+      "encodingMilliseconds": 11.562041647266597
+    },
+    {
+      "encodingMilliseconds": 13.599333295132965
+    },
+    {
+      "encodingMilliseconds": 11.38158334651962
+    },
+    {
+      "encodingMilliseconds": 12.054749997332692
+    },
+    {
+      "encodingMilliseconds": 10.560083319433033
+    },
+    {
+      "encodingMilliseconds": 13.509666663594544
+    },
+    {
+      "encodingMilliseconds": 12.310291640460491
+    },
+    {
+      "encodingMilliseconds": 11.824791610706598
+    },
+    {
+      "encodingMilliseconds": 11.295708362013102
+    },
+    {
+      "encodingMilliseconds": 13.279666658490896
+    },
+    {
+      "encodingMilliseconds": 11.245375033468008
+    },
+    {
+      "encodingMilliseconds": 13.028791698161513
+    },
+    {
+      "encodingMilliseconds": 11.060208373237401
+    },
+    {
+      "encodingMilliseconds": 13.179708330426365
+    },
+    {
+      "encodingMilliseconds": 11.234875011723489
+    }
+  ],
+  "indexing_concurrency": 0,
+  "child_max_rss_bytes": 516243456,
+  "wall_seconds": 2.1365840840153396
+}

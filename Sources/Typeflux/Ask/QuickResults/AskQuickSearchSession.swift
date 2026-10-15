@@ -27,6 +27,7 @@ final class AskQuickSearchSession: ObservableObject {
     private var delay: Task<Void, Never>?
     private var publication: Task<Void, Never>?
     private var generation = 0
+    private var contentTrace = SemanticSearchTrace()
     private var appResults: [AskAppMatch] = []
     private var fileResults: FileBatch?
     private var appsReady = false
@@ -65,6 +66,8 @@ final class AskQuickSearchSession: ObservableObject {
 
     func update(text: String, chinese: Bool, calculator: Bool, numberConversions: Bool = true,
                 sources: AskQuickResults.Sources) {
+        contentTrace = SemanticSearchTrace.current ?? .init()
+        contentTrace.mark("mixed-input-accepted")
         let previous = results
         let presentation = self.presentation
         let appID = sources.apps.map(ObjectIdentifier.init), fileID = sources.files.map(ObjectIdentifier.init)
@@ -142,15 +145,25 @@ final class AskQuickSearchSession: ObservableObject {
         results = (sameQuery ? previous : nil) ?? immediate ?? AskQuickResults(apps: [], lead: false)
         if browserEnabled { startBrowserQuery(text: text, sources: sources, ticket: ticket) }
         if semanticEnabled, let semantic = sources.semantic {
-            semanticReady = false
-            semanticTask = Task { [weak self] in
-                let hits = await semantic.search(text, type: .all, limit: 24)
-                guard let self, generation == ticket, !Task.isCancelled else { return }
-                semanticResults = hits; semanticReady = true; publish()
-            }
+            startSemanticQuery(semantic, text: text, ticket: ticket)
         }
         startQueries(text: text, query: query, appIndex: appIndex, fileIndex: sources.files,
                      fuzzy: sources.settings.fuzzy, ticket: ticket)
+    }
+
+    private func startSemanticQuery(_ semantic: any SemanticFileSearching, text: String, ticket: Int) {
+        semanticReady = false
+        let trace = contentTrace
+        semanticTask = Task { [weak self] in
+            let hits = await SemanticSearchTrace.$current.withValue(trace) {
+                await semantic.search(text, type: .all, limit: 24) { [weak self] hits in
+                    guard let self, generation == ticket, !Task.isCancelled else { return }
+                    semanticResults = hits; publish()
+                }
+            }
+            guard let self, generation == ticket, !Task.isCancelled else { return }
+            semanticResults = hits; semanticReady = true; publish()
+        }
     }
 
     private func startQueries(text: String, query: AskSearchQuery, appIndex: (any AskAppSearching)?,
@@ -270,9 +283,14 @@ final class AskQuickSearchSession: ObservableObject {
         next?.searchingContent = !semanticReady
         next?.keepChoice(from: results?.chosen == true ? results : previousChoice)
         results = next ?? (isSearching ? AskQuickResults(apps: [], lead: false) : nil)
+        contentTrace.mark("mixed-published")
         // An empty application batch is not the final answer while files are
         // still searching. Do not flash Ask AI between two useful batches.
         if next != nil || !isSearching { pendingResults = nil }
+    }
+
+    func recordRender() {
+        contentTrace.mark("mixed-view-updated")
     }
 
     func isCurrent(text: String) -> Bool { isVisible && text == currentText }

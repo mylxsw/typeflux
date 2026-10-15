@@ -1,0 +1,32 @@
+{
+  "baseline": "fa9643cf42db201667c15169cb7a3c1527946acb",
+  "scope": [
+    "Sources/Typeflux/Ask/AskComposerTextView.swift",
+    "Sources/Typeflux/Ask/AskComposerViews.swift",
+    "Sources/Typeflux/Ask/QuickResults/AskQuickSearchSession.swift",
+    "Sources/Typeflux/Ask/QuickResults/Files/AskFileReader.swift",
+    "Sources/Typeflux/Ask/QuickResults/Files/AskFileWorkerCommand.swift",
+    "Sources/Typeflux/Ask/QuickResults/Plugins/AskPluginSession.swift",
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Files/AskFileSearchPlugin.swift",
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Files/AskSemanticFileSearchPlugin.swift",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticEmbeddingWorker.swift",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer+Priority.swift",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer.swift",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFilePolicy.swift",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore.swift",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileValidator.swift",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticIndexPauseGate.swift",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticLexicalReader.swift",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSearchTrace.swift",
+    "Sources/TypefluxSemanticHelper/main.swift"
+  ],
+  "baseline_violations": 106,
+  "current_violations": 106,
+  "introduced": [],
+  "baseline_exit": 2,
+  "current_exit": 2,
+  "baseline_wall_seconds": 0.56281862501055,
+  "current_wall_seconds": 0.27498095796909183,
+  "comparison": "Rule and source line per file, allowing moved pre-existing diagnostics. Full strict lint is not green."
+}

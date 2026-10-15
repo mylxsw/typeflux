@@ -4,7 +4,14 @@ import Foundation
 // Private disposable helper. stdout contains only line-delimited JSON; inputs are never logged.
 struct Media: Decodable { var kind: String; var path: String }
 struct Request: Decodable { var texts: [String]?; var media: Media? }
-struct Response: Encodable { let entries: [String] = []; var embeddings: [[Float]]?; var error: Int32? }
+struct Response: Encodable {
+    let entries: [String] = []
+    var embeddings: [[Float]]?
+    var error: Int32?
+    var semanticTiming: Timing?
+}
+
+struct Timing: Encodable { var modelLoadMilliseconds: Double?; var encodingMilliseconds: Double }
 enum Failure: Error { case invalidInput, inference }
 
 final class Encoder {
@@ -134,10 +141,13 @@ final class Encoder {
 
 do {
     guard (2 ... 3).contains(CommandLine.arguments.count) else { exit(64) }
+    let loading = ProcessInfo.processInfo.systemUptime
     let encoder = try Encoder(path: CommandLine.arguments[1],
                               projector: CommandLine.arguments.count == 3 ? CommandLine.arguments[2] : nil)
+    var loadMilliseconds: Double? = (ProcessInfo.processInfo.systemUptime - loading) * 1000
     while let line = readLine() {
-        let response: Response
+        let started = ProcessInfo.processInfo.systemUptime
+        var response: Response
         do {
             guard line.utf8.count <= 32768 else { throw Failure.invalidInput }
             let request = try JSONDecoder().decode(Request.self, from: Data(line.utf8))
@@ -148,6 +158,9 @@ do {
                 response = try Response(embeddings: texts.map(encoder.embed))
             }
         } catch Failure.inference { response = Response(error: EIO) } catch { response = Response(error: EINVAL) }
+        response.semanticTiming = Timing(modelLoadMilliseconds: loadMilliseconds,
+                                         encodingMilliseconds: (ProcessInfo.processInfo.systemUptime - started) * 1000)
+        loadMilliseconds = nil
         try FileHandle.standardOutput.write(contentsOf: JSONEncoder().encode(response) + Data([10]))
     }
 } catch { exit(1) }

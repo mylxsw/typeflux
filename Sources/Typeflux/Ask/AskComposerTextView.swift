@@ -41,6 +41,8 @@ struct AskComposerTextView: NSViewRepresentable {
     var onOpenChat: (() -> Void)?
     /// ⌘K; true when handled.
     var onContextShortcut: (() -> Bool)?
+    /// Carries an opaque timing trace from committed native edits into launcher search.
+    var onAcceptedInput: ((SemanticSearchTrace) -> Void)?
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
@@ -148,7 +150,14 @@ struct AskComposerTextView: NSViewRepresentable {
         init(_ parent: AskComposerTextView) { self.parent = parent }
         func textDidChange(_ notification: Notification) {
             guard let editor = notification.object as? NSTextView else { return }
-            if !parent.defersCompositionUpdates || !editor.hasMarkedText() { parent.text = editor.string }
+            if !parent.defersCompositionUpdates || !editor.hasMarkedText() {
+                if !editor.hasMarkedText(), let accepted = parent.onAcceptedInput {
+                    let trace = SemanticSearchTrace()
+                    trace.mark("native-input-accepted")
+                    accepted(trace)
+                }
+                parent.text = editor.string
+            }
             (editor as? Editor)?.reportHeight()
             (editor as? Editor)?.reportSlash()
         }

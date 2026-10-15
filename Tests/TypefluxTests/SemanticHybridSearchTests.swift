@@ -58,7 +58,7 @@ struct SemanticHybridSearchTests {
                 service.pause(true)
                 try await SemanticFileServiceTests.wait { service.phase == .paused }
             }
-            #expect(!service.isEnabled)
+            #expect(service.isEnabled == (phase == .paused))
             let output = try await plugin.run(request, plan: plugin.plan(request), progress: { _ in })
             #expect(output.items.first?.title == "report.md")
             let session = AskQuickSearchSession()

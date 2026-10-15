@@ -21,12 +21,16 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
     @Published private(set) var modelReady = false
     @Published private(set) var preferences: SemanticFileSettings
     let supported: Bool
+    enum QueryState: Equatable { case idle, warming, searching, degraded }
+    @Published private(set) var queryState: QueryState = .idle
     var isEnabled: Bool {
-        let searchablePhase = [Phase.ready, .indexing].contains(phase) || (phase == .failed && mediaFailed)
-            || (phase == .paused && lowPowerMode() && !thermalConstrained() && !busy && !manuallyPaused)
-        return supported && preferences.enabled && settings.askQuickFileSearchEnabled && modelReady
-            && store != nil && queryWorker != nil && !removing
-            && searchablePhase
+        supported && preferences.enabled && settings.semanticFileSearch.enabled && settings.askQuickFileSearchEnabled
+            && store != nil && scope != nil && (modelReady || chunks > 0) && !removing && fingerprint ==
+            settingsFingerprint
+    }
+
+    private var settingsFingerprint: String {
+        "\(settings.semanticFileSearch.enabled)\u{3}\(settings.askLauncherSearchSettings.fileIndexFingerprint)\u{3}\(settings.askQuickFileSearchEnabled)"
     }
     let settings: SettingsStore
     private let directory: URL
@@ -51,6 +55,10 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
     private var token = AskSearchCancellation()
     private var store: SemanticFileStore?
     private var scope: AskFileScope?
+    private var warmup: Task<Void, Never>?
+    private var prewarmRequested = false
+    private var queryGeneration = 0
+    private var queryValidator: SemanticFileValidator?
     private var queryWorker: (any SemanticQueryEmbedding)?
     private var fingerprint: String?
     private var busy = false
@@ -120,7 +128,11 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
     func setForegroundBusy(_ busy: Bool) {
         guard self.busy != busy else { return }
         self.busy = busy
-        self.refreshPause()
+        if busy {
+            warmup?.cancel(); warmup = nil; queryWorker?.stop()
+            queryState = .idle
+        }
+        refreshPause()
     }
 
     @discardableResult func setEnabled(_ enabled: Bool) -> Bool {
@@ -162,25 +174,28 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
     // Keep generation checks beside every suspension in this lifecycle transition.
     // swiftlint:disable:next function_body_length cyclomatic_complexity
     func start(force: Bool = false) {
-        guard !self.removing else { return }
-        preferences = self.settings.semanticFileSearch
-        let names = self.settings.askLauncherSearchSettings
-        let key = "\(preferences.enabled)\u{3}\(names.fileIndexFingerprint)\u{3}\(self.settings.askQuickFileSearchEnabled)"
-        guard force || self.fingerprint != key else { return }
-        self.dirty = false; self.pendingPaths.removeAll()
-        self.pausedIndexing = false; self.pausedReady = false
-        self.pauseGate.setPaused(self.backgroundPaused)
-        if self.fingerprint != key || !self.backgroundPaused { self.indexProgress = nil }
-        self.fingerprint = key
+        guard !removing else { return }
+        preferences = settings.semanticFileSearch
+        let names = settings.askLauncherSearchSettings
+        let key = "\(preferences.enabled)\u{3}\(names.fileIndexFingerprint)\u{3}\(settings.askQuickFileSearchEnabled)"
+        guard force || fingerprint != key else { return }
+        dirty = false; pendingPaths.removeAll(); _ = pauseGate.takeDocuments()
+        pausedIndexing = false; pausedReady = false
+        pauseGate.setPaused(backgroundPaused)
+        if fingerprint != key || !backgroundPaused {
+            indexProgress = nil
+        }
+        fingerprint = key
         token.cancel(); token = AskSearchCancellation()
         let token = token
-        let previous = self.work
-        self.work?.cancel(); self.rescan?.cancel(); self.watcher.stop()
-        self.queryWorker?.stop(); self.queryWorker = nil
-        self.scope = nil
-        guard self.supported, preferences.enabled,
-              self.settings.askQuickFileSearchEnabled else { self.download?.cancel(); self.phase = .off; return }
-        if self.download != nil {
+        let previous = work
+        work?.cancel(); rescan?.cancel(); watcher.stop()
+        warmup?.cancel(); warmup = nil
+        queryWorker?.stop(); queryWorker = nil; queryState = .idle
+        scope = nil; store = nil; queryValidator = nil
+        guard supported, preferences.enabled,
+              settings.askQuickFileSearchEnabled else { download?.cancel(); phase = .off; return }
+        if download != nil {
             return
         }
         self.mediaDownload = nil; self.mediaFailed = false
@@ -194,28 +209,32 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
                 let prepared = try await Task.detached(priority: .utility) {
                     guard !token.isCancelled else { throw CancellationError() }
                     let scope = SemanticFilePolicy.scope(names: names, fullDiskAccess: access())
-                    guard FileManager.default.fileExists(atPath: model.path) else {
-                        return (scope, Optional<Result<SemanticFileStore, Error>>.none)
-                    }
-                    try models.verify(model, cancelled: { token.isCancelled })
                     let database = Result {
                         try SemanticFileStore(url: directory.appendingPathComponent("semantic-files.sqlite"))
                     }
-                    return (scope, Optional(database))
+                    return (scope, database)
                 }.value
                 guard let self, !token.isCancelled, !Task.isCancelled else { return }
-                self.scope = prepared.0; self.blocked = prepared.0.blockedInScope
-                guard let databaseResult = prepared.1 else {
-                    self.modelReady = false; self.phase = .modelRequired; return
+                scope = prepared.0; blocked = prepared.0.blockedInScope
+                store = try? prepared.1.get()
+                queryValidator = SemanticFileValidator(reader: makeReader())
+                if let database = store {
+                    await updateCounts(database)
                 }
-                self.modelReady = true
-                let database = try databaseResult.get()
-                self.store = database
-                guard FileManager.default.isExecutableFile(atPath: helper.path) else { self.phase = .failed; return }
-                await self.updateCounts(database)
                 guard !token.isCancelled, !Task.isCancelled else { return }
-                self.queryWorker = self.makeQuery(helper, model)
-                self.watcher.start(paths: prepared.0.roots, since: nil) { [weak self] changes, _ in
+                guard FileManager.default.fileExists(atPath: model.path) else {
+                    modelReady = false; phase = .modelRequired; return
+                }
+                try await Task.detached(priority: .utility) {
+                    try models.verify(model, cancelled: { token.isCancelled })
+                }.value
+                guard !token.isCancelled, !Task.isCancelled else { return }
+                modelReady = true
+                let database = try prepared.1.get()
+                guard FileManager.default.isExecutableFile(atPath: helper.path) else { phase = .failed; return }
+                queryWorker = makeQuery(helper, model)
+                if prewarmRequested { prepareForSearch() }
+                watcher.start(paths: prepared.0.roots, since: nil) { [weak self] changes, _ in
                     Task { @MainActor in
                         guard !token.isCancelled else { return }
                         self?.receiveChanges(changes)
@@ -259,7 +278,11 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
             self.pendingPaths.formUnion(plan.files)
         }
         guard plan.fullScan || !plan.files.isEmpty else { return }
-        self.scheduleReconcile()
+        if phase == .indexing || pausedIndexing {
+            if plan.fullScan { pauseGate.enqueueDocumentScan() }
+            pauseGate.enqueueDocuments(plan.files.filter { SemanticMediaPriority.of($0) == .document })
+        }
+        scheduleReconcile()
     }
 
     private func scheduleReconcile() {
@@ -287,7 +310,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
         self.beginIndexing(database, scope: scope, token: token, paths: paths)
     }
 
-    deinit { token.cancel(); work?.cancel(); download?.cancel(); rescan?.cancel() }
+    deinit { token.cancel(); work?.cancel(); download?.cancel(); rescan?.cancel(); warmup?.cancel() }
 }
 
 extension SemanticFileSearchService {
@@ -306,11 +329,12 @@ extension SemanticFileSearchService {
         let reportProgress: @Sendable (SemanticFileIndexer.Summary) -> Void = { [weak self] summary in
             Task { @MainActor [weak self] in
                 guard let self, !token.isCancelled else { return }
-                self.indexProgress = summary
-                self.files = max(self.files, summary.files); self.skipped = summary.skipped
-                if self.countRefresh == nil, Date().timeIntervalSince(self.lastCountRefresh) >= 3 {
-                    self.lastCountRefresh = Date()
-                    self.countRefresh = Task { [weak self] in
+                let priorityChanged = indexProgress?.priorityUpdates != summary.priorityUpdates
+                indexProgress = summary
+                files = max(files, summary.files); skipped = summary.skipped
+                if countRefresh == nil, priorityChanged || Date().timeIntervalSince(lastCountRefresh) >= 3 {
+                    lastCountRefresh = Date()
+                    countRefresh = Task { [weak self] in
                         guard let self else { return }
                         await self.updateCounts(database)
                         self.countRefresh = nil
@@ -321,7 +345,7 @@ extension SemanticFileSearchService {
         self.work = Task { [weak self] in
             do {
                 let result = try await Task.detached(priority: .utility) {
-                    let reader = makeReader()
+                    let reader = makeReader(), priorityReader = makeReader()
                     let encoder = makeEncoder(helper, model)
                     let media = SemanticMediaWorker(helper: helper, model: model, projector: projector,
                         models: mediaModels, makeEncoder: makeMediaEncoder, progress: reportDownload)
@@ -329,7 +353,8 @@ extension SemanticFileSearchService {
                         return try SemanticFileIndexer.reconcile(
                             paths: paths, scope: scope, store: database, reader: reader,
                             encoder: encoder, media: media, idle: { idle() && !pauseGate.isPaused },
-                            paused: { pauseGate.isPaused },
+                            paused: { pauseGate.isPaused }, documents: { pauseGate.takeDocuments() },
+                            priorityReader: priorityReader,
                             cancelled: { token.isCancelled }, progress: reportProgress
                         )
                     }
@@ -337,6 +362,8 @@ extension SemanticFileSearchService {
                                                        encoder: encoder, media: media,
                                                        idle: { idle() && !pauseGate.isPaused },
                                                        paused: { pauseGate.isPaused },
+                                                       documents: { pauseGate.takeDocuments() },
+                                                       priorityReader: priorityReader,
                                                        cancelled: { token.isCancelled }, progress: reportProgress)
                 }.value
                 guard let self, !token.isCancelled, !Task.isCancelled else { return }
@@ -359,49 +386,6 @@ extension SemanticFileSearchService {
                 if case SemanticFileStore.Failure.invalidVector = error { self.modelReady = false }
                 self.phase = .failed
             }
-        }
-    }
-
-    func search(_ text: String, type: AskFileType = .all, limit: Int = 24) async -> [AskFileHit] {
-        guard limit > 0, self.isEnabled,
-              !self.removing,
-              let query = SemanticFilePolicy.query(text, type: type), let store, let scope,
-              let queryWorker else { return [] }
-        let lifecycle = self.token, access = access, makeReader = makeReader
-        do {
-            try await Task.sleep(for: .milliseconds(lowPowerMode() ? 400 : 160))
-            let vector = try await queryWorker.query(query, lifecycle: lifecycle)
-            try Task.checkCancellation()
-            let cancellation = AskSearchCancellation()
-            let results = try await withTaskCancellationHandler {
-                try await Task.detached(priority: .userInitiated) {
-                    let cancelled = { lifecycle.isCancelled || cancellation.isCancelled }
-                    var currentScope = scope
-                    // Full Disk Access can be revoked while an index remains on disk.
-                    if !access() {
-                        currentScope.blocked = AskFileScope.protectedFolders()
-                    }
-                    let hits = try store.search(vector: vector, text: query, query: AskSearchQuery(text), type: type,
-                                                scope: currentScope, limit: min(100, min(100, limit) * 2),
-                                                cancelled: cancelled)
-                    let reader = makeReader()
-                    return Array(hits.filter { hit in
-                        guard !cancelled(), let response = try? reader.read(
-                            .init(operation: .content, path: hit.path,
-                                  scope: currentScope, readText: false),
-                            isCancelled: cancelled
-                        ) else { return false }
-                        return response.error == nil && response.modified == hit.modified
-                    }.prefix(max(0, limit)))
-                }.value
-            } onCancel: { cancellation.cancel() }
-            guard !lifecycle.isCancelled, !Task.isCancelled else { return [] }
-            return results
-        } catch {
-            if !lifecycle.isCancelled, !Task.isCancelled {
-                self.phase = .failed
-            }
-            return []
         }
     }
 
@@ -451,14 +435,15 @@ extension SemanticFileSearchService {
 
     /// Stop every writer before removing artifacts. The name index is never touched.
     func clear(removeModel: Bool = false) async {
-        guard !self.removing else { return }
-        self.removing = true
-        _ = self.setEnabled(false)
-        self.preferences = self.settings.semanticFileSearch
-        self.token.cancel(); self.work?.cancel(); self.rescan?.cancel(); self.download?.cancel(); self.watcher.stop()
-        self.queryWorker?.stop(); self.queryWorker = nil
-        await self.work?.value; await self.download?.value
-        let database = self.store, directory = directory, model = self.modelURL, projector = self.mediaModelURL
+        guard !removing else { return }
+        removing = true
+        _ = setEnabled(false)
+        preferences = settings.semanticFileSearch
+        token.cancel(); work?.cancel(); rescan?.cancel(); download?.cancel(); watcher.stop()
+        warmup?.cancel(); warmup = nil
+        queryWorker?.stop(); queryWorker = nil
+        await work?.value; await download?.value
+        let database = store, directory = directory, model = modelURL, projector = mediaModelURL
         do {
             try await Task.detached(priority: .utility) {
                 if let database {
@@ -479,7 +464,7 @@ extension SemanticFileSearchService {
                 self.modelReady = false
             }
         } catch { self.phase = .failed }
-        self.store = nil; self.scope = nil; self.fingerprint = nil; self.removing = false
+        self.store = nil; self.scope = nil; self.queryValidator = nil; self.fingerprint = nil; self.removing = false
     }
 
     /// Bytes on disk for the content index (database and journal) and the model weights.
@@ -500,5 +485,142 @@ extension SemanticFileSearchService {
         // Scope edits during clearing win; never restore an outdated filename-search scope.
         guard self.phase == .off, self.settings.askLauncherSearchSettings.fileIndexFingerprint == scope else { return }
         _ = self.setEnabled(true)
+    }
+}
+
+extension SemanticFileSearchService {
+    func endSearch() {
+        prewarmRequested = false
+        warmup?.cancel(); warmup = nil
+        if queryState == .warming { queryState = .idle }
+    }
+
+    func prepareForSearch() {
+        prewarmRequested = true
+        guard isEnabled, !busy, !thermalConstrained(), warmup == nil, let queryValidator, let scope else { return }
+        let queryWorker = modelReady ? queryWorker : nil
+        let lifecycle = token, gate = pauseGate
+        gate.beginQuery()
+        queryState = .warming
+        warmup = Task { [weak self] in
+            defer { gate.endQuery() }
+            do {
+                async let permissions: Void = Task.detached(priority: .userInitiated) {
+                    try queryValidator.warm(scope: scope, cancelled: { lifecycle.isCancelled })
+                }.value
+                try await queryWorker?.prepare(lifecycle: lifecycle)
+                try await permissions
+                guard let self, !lifecycle.isCancelled, !Task.isCancelled else { return }
+                if queryState == .warming {
+                    queryState = .idle
+                }
+            } catch {
+                guard let self, !lifecycle.isCancelled, !Task.isCancelled else { return }
+                if queryState == .warming {
+                    queryState = .degraded
+                }
+            }
+            self?.warmup = nil
+        }
+    }
+
+    func search(_ text: String, type: AskFileType = .all, limit: Int = 24) async -> [AskFileHit] {
+        await search(text, type: type, limit: limit, progress: { _ in })
+    }
+
+    // Keep generation, resource priority and permission checks beside each suspension.
+    // swiftlint:disable:next function_body_length cyclomatic_complexity
+    func search(_ text: String, type: AskFileType, limit: Int,
+                progress: @escaping @MainActor @Sendable ([AskFileHit]) -> Void) async -> [AskFileHit] {
+        guard limit > 0, isEnabled, let query = SemanticFilePolicy.query(text, type: type),
+              let store, let scope, let queryValidator else { return [] }
+        let lifecycle = token, cancellation = AskSearchCancellation()
+        let access = access
+        let trace = SemanticSearchTrace.current ?? .init()
+        queryGeneration += 1
+        let generation = queryGeneration
+        func current() -> Bool {
+            !lifecycle.isCancelled && !Task.isCancelled && isEnabled
+        }
+        /// Both channels revalidate every file and current disk permission before publication.
+        func retrieve(_ vector: [Float]?, preserving: [AskFileHit] = []) async throws -> [AskFileHit] {
+            try await withTaskCancellationHandler {
+                try await Task.detached(priority: .userInitiated) {
+                    try SemanticSearchTrace.$current.withValue(trace) {
+                        let cancelled = { lifecycle.isCancelled || cancellation.isCancelled }
+                        var currentScope = scope
+                        if !access() {
+                            currentScope.blocked = AskFileScope.protectedFolders()
+                        }
+                        let hits: [AskFileHit]
+                        trace.mark(vector == nil ? "fts-start" : "vector-start")
+                        if let vector {
+                            let semantic = try store.search(vector: vector, text: query, query: AskSearchQuery(text),
+                                                            type: type, scope: currentScope,
+                                                            limit: min(100, min(100, limit) * 2),
+                                                            cancelled: cancelled)
+                            hits = SemanticFilePolicy.merge(preserving, semantic, limit: 100)
+                        } else {
+                            hits = try store.lexicalSearch(text: query, query: AskSearchQuery(text), type: type,
+                                                           scope: currentScope,
+                                                           limit: min(100, min(100, limit) * 2),
+                                                           cancelled: cancelled)
+                        }
+                        trace.mark(vector == nil ? "fts-end" : "vector-end")
+                        let valid = queryValidator.validate(hits, scope: currentScope, limit: min(100, limit),
+                                                            cancelled: cancelled)
+                        trace.mark("permissions-end")
+                        return valid
+                    }
+                }.value
+            } onCancel: { cancellation.cancel() }
+        }
+        func permitted(_ hits: [AskFileHit]) -> [AskFileHit] {
+            var latestScope = scope
+            if !access() { latestScope.blocked = AskFileScope.protectedFolders() }
+            return hits.filter { latestScope.includes($0.path, isDirectory: false) }
+        }
+        func fallback() async -> [AskFileHit] {
+            let hits = (try? await retrieve(nil)) ?? []
+            return current() ? permitted(hits) : []
+        }
+        let lexical = await fallback()
+        guard current() else { return [] }
+        progress(lexical)
+        trace.mark("fts-published")
+        guard !busy, !thermalConstrained(), modelReady, let queryWorker else { return lexical }
+        pauseGate.beginQuery()
+        defer {
+            pauseGate.endQuery()
+            if generation == queryGeneration, queryState == .searching {
+                queryState = .idle
+            }
+        }
+        queryState = .searching
+        do {
+            try await Task.sleep(for: .milliseconds(lowPowerMode() ? 160 : 45))
+            guard current() else { return [] }
+            guard !busy, !thermalConstrained() else { return await fallback() }
+            trace.mark("scheduled")
+            let vector = try await queryWorker.query(query, lifecycle: lifecycle)
+            trace.mark("encoded")
+            try Task.checkCancellation()
+            guard current() else { return [] }
+            guard !busy, !thermalConstrained() else { return await fallback() }
+            let hits = try await retrieve(vector, preserving: lexical)
+            guard current() else { return [] }
+            guard !busy, !thermalConstrained() else { return await fallback() }
+            if generation == queryGeneration {
+                queryState = .idle
+            }
+            trace.mark("semantic-published")
+            return permitted(hits)
+        } catch {
+            guard current() else { return [] }
+            if generation == queryGeneration {
+                queryState = .degraded
+            }
+            return await fallback()
+        }
     }
 }

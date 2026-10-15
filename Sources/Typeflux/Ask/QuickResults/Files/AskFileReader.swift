@@ -60,6 +60,7 @@ final class AskFileReader: AskFileReading {
             result.text = response.text ?? result.text
             result.pages = response.pages ?? result.pages
             result.embeddings = response.embeddings ?? result.embeddings
+            result.semanticTiming = response.semanticTiming ?? result.semanticTiming
             result.truncated = response.truncated ?? result.truncated
             result.fileSize = response.fileSize ?? result.fileSize
             result.modified = response.modified ?? result.modified
@@ -78,7 +79,10 @@ final class AskFileReader: AskFileReading {
         do {
             if isCancelled() { throw AskFileReadError.cancelled }
             let starting = process == nil
-            if starting { try start() }
+            if starting {
+                SemanticSearchTrace.current?.mark("helper-launch")
+                try start()
+            }
             guard let input, let output else { throw AskFileReadError.unavailable }
             var deadline = ProcessInfo.processInfo.systemUptime + (starting ? startupTimeout : timeout)
             let data = try JSONEncoder().encode(request) + Data([10])

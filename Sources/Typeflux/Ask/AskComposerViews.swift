@@ -361,6 +361,8 @@ struct AskComposer: View {
     @State private var quickReserve: CGFloat = 0
     /// Settles the kept heights once typing pauses.
     @State private var reserveSettle: Task<Void, Never>?
+    /// The last committed native input, shared by the launcher's search channels.
+    @State private var searchInputTrace: SemanticSearchTrace?
     /// The highlighted result's actions, open after → or a context click.
     @State private var quickActions: AskQuickActionPanel?
     /// Quick results show while the launcher's text is all there is to send:
@@ -377,6 +379,12 @@ struct AskComposer: View {
     /// Writes state only when the results change: the workspace composer and
     /// ordinary questions must not re-render on every keystroke for this.
     private func refreshQuickResults(resetActions: Bool = true) {
+        SemanticSearchTrace.$current.withValue(SemanticSearchTrace.current ?? searchInputTrace) {
+            refreshQuickResultsBody(resetActions: resetActions)
+        }
+    }
+
+    private func refreshQuickResultsBody(resetActions: Bool) {
         guard launcher, searchVisible, quickSearch.isVisible else { return }
         if model.launcherHistoryMode { quickSearch.cancel(); quickResults = nil; return }
         if refreshPlugins() { quickSearch.cancel(); quickResults = nil; return }
@@ -1174,13 +1182,16 @@ struct AskComposer: View {
                 }
                 if draft.wrappedValue.hasText, !quickSearch.isSearching { reportHeight() }
             }
-            .onChange(of: quickResults) { _ in quickResultsChanged() }
+            .onChange(of: quickResults) { _ in quickResultsChanged(); quickSearch.recordRender() }
             .onChange(of: quickSearch.pendingResults) { _ in quickResultsChanged() }
             .onChange(of: quickSearch.isSearching) { searching in
                 if !searching { scheduleReserveSettle() }
             }
             .onChange(of: pluginDisplay) { display in
                 guard launcher else { return }
+                if AskFileSearchPlugin.showsFileResults(for: plugins.keyword?.pluginID) {
+                    searchInputTrace?.mark("file-view-updated")
+                }
                 updateFilePreview()
                 if let followUp = display?.followUp {
                     // A workflow's actions run once per run; they close the launcher when they say so.
@@ -1211,12 +1222,27 @@ struct AskComposer: View {
                 if recording { closePalette(); contextPanelOpen = false }
                 reportHeight()
             }
-            .onAppear { searchVisible = true; refreshQuickResults(); reportHeight() }
+            .onAppear {
+                searchVisible = true
+                if launcher {
+                    model.semanticSearch?.prepareForSearch()
+                }
+                refreshQuickResults(); reportHeight()
+            }
             .onDisappear {
                 reserveSettle?.cancel()
-                if launcher { searchVisible = false; quickSearch.cancel() }
+                if launcher {
+                    searchVisible = false; quickSearch.cancel(); model.semanticSearch?.endSearch()
+                }
             }
-            .onChange(of: quickSearch.isVisible) { visible in if visible { refreshQuickResults() } }
+            .onChange(of: quickSearch.isVisible) { visible in
+                guard launcher else { return }
+                if visible {
+                    model.semanticSearch?.prepareForSearch(); refreshQuickResults()
+                } else {
+                    model.semanticSearch?.endSearch()
+                }
+            }
             .onReceive(NotificationCenter.default.publisher(for: AskAppIndex.didChange)) { notification in
                 if (notification.object as AnyObject?) === model.appIndex {
                     homeAppsRevision += 1
@@ -1843,7 +1869,7 @@ struct AskComposer: View {
             placeholder: placeholder,
             placeholderSingleLine: launcher,
             placeholderColor: launcher ? AskTheme.launcherPlaceholderText : StudioTheme.textSecondary,
-            defersCompositionUpdates: model.launcherHistoryMode || plugins.plugin?.id == AskEmojiPlugin.id,
+            defersCompositionUpdates: launcher || model.launcherHistoryMode || plugins.plugin?.id == AskEmojiPlugin.id,
             usesKeyViewTabs: plugins.plugin?.id == AskEmojiPlugin.id,
             voice: voice,
             contextID: contextID,
@@ -1861,7 +1887,8 @@ struct AskComposer: View {
             onHorizontalArrow: launcher ? moveLauncherHorizontal : nil,
             onEmptyBackspace: launcher ? emptyLauncherBackspace : nil,
             onOpenChat: launcher ? openChatOrMonitorWindow : nil,
-            onContextShortcut: launcher ? toggleContextPanel : nil
+            onContextShortcut: launcher ? toggleContextPanel : nil,
+            onAcceptedInput: launcher ? { searchInputTrace = $0 } : nil
         )
         .frame(height: min(editorHeight, layout.editorMaximumHeight))
         .disabled(model.isOpeningChat || (!launcher && model.isLoadingSelection))

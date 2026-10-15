@@ -110,7 +110,7 @@ struct AskSemanticFileSearchPluginTests {
         let plugin = AskSemanticFileSearchPlugin(semantic: { service }, settings: { configuration })
         let request = request("How do I claim expenses? ext:pdf in:team")
         let plan = await plugin.plan(request)
-        #expect(plan.mode == .live && plan.debounce == .milliseconds(150))
+        #expect(plan.mode == .live && plan.debounce == .milliseconds(16))
         #expect(plugin.id == keyword.pluginID && plugin.defaultKeywords == [keyword])
         #expect(plugin.placeholder(selectionLines: nil) == L("semantic.keyword.placeholder"))
         #expect(plugin.chipDetail(for: keyword, language: .english) == nil)

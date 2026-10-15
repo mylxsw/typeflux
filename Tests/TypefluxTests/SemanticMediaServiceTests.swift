@@ -36,7 +36,7 @@ struct SemanticMediaServiceTests {
         #expect(await service.search("reimbursement", type: .all, limit: 5).map(\.name) == ["document.md"])
         service.pause(true)
         try await SemanticFileServiceTests.wait { service.phase == .paused }
-        #expect(!service.isEnabled, "manual pause keeps the existing content-search policy")
+        #expect(service.isEnabled, "manual pause affects indexing only")
         await service.clear(removeModel: true)
     }
 
@@ -70,7 +70,7 @@ struct SemanticMediaServiceTests {
         try await Task.sleep(for: .milliseconds(300))
     }
 
-    @Test func changedDocumentWaitsForMediaWithoutRestartingTheHomeScan() async throws {
+    @Test func `changed document preempts media without restarting the home scan`() async throws {
         let gate = AskSearchCancellation()
         let (service, root, watcher, reader, encoder) = try fixture(idle: false,
             idleCheck: { gate.isCancelled })
@@ -87,7 +87,9 @@ struct SemanticMediaServiceTests {
         watcher.change?([.init(path: root.path + "/document.md", rescan: false, isDirectory: false)], 1)
         try await Task.sleep(for: .milliseconds(2_250))
         #expect(service.indexProgress?.waitingForIdle == true)
-        #expect(reader.directoryReads == crawls && encoder.calls == 1)
+        #expect(reader.directoryReads == crawls && encoder.calls == 2)
+        #expect(await service.search("reimbursement", type: .all, limit: 5).first?.modified == reader
+            .modifiedByName["document.md"])
         gate.cancel()
         try await SemanticFileServiceTests.wait { encoder.calls == 2 && service.phase == .ready }
         #expect(reader.directoryReads == crawls)

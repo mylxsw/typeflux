@@ -198,6 +198,9 @@ final class AskPluginSession: ObservableObject {
         guard let next else { set(\.phase, .waiting); set(\.previous, nil); pendingRun = false; return }
         generation += 1
         let current = generation
+        let trace: SemanticSearchTrace? = AskFileSearchPlugin.showsFileResults(for: plugin.id)
+            ? (SemanticSearchTrace.current ?? .init()) : nil
+        trace?.mark("file-input-accepted")
         task = Task { [weak self] in
             let plan = await plugin.plan(next)
             guard let self, !Task.isCancelled, current == self.generation else { return }
@@ -210,7 +213,9 @@ final class AskPluginSession: ObservableObject {
                     try? await Task.sleep(for: plan.debounce ?? self.debounce)
                     guard !Task.isCancelled, current == self.generation else { return }
                 }
-                await self.execute(plan, request: next, generation: current, plugin: plugin, submitted: runNow)
+                await SemanticSearchTrace.$current.withValue(trace) {
+                    await self.execute(plan, request: next, generation: current, plugin: plugin, submitted: runNow)
+                }
             } else {
                 self.set(\.phase, .ready(plan))
             }
@@ -324,6 +329,7 @@ final class AskPluginSession: ObservableObject {
                     partial.selectedItem = Self.selection(keeping: shown, in: incoming)
                 }
                 self.set(\.partial, partial)
+                SemanticSearchTrace.current?.mark("file-partial-published")
             }
             if let sink = handoffSinks.removeValue(forKey: current) {
                 sink(Task.isCancelled ? .cancelled : .done(output))

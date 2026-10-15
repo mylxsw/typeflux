@@ -8,10 +8,12 @@ enum SemanticFileIndexer {
         var skipped = 0
         var scanned = 0
         var discovered = 0
+        /// The initial discovery snapshot; later document refreshes are counted separately.
         var total: Int?
         var processed = 0
         var priority: SemanticMediaPriority = .document
         var waitingForIdle = false
+        var priorityUpdates = 0
     }
     private enum Failure: Error { case inference(Error) }
 
@@ -66,7 +68,8 @@ enum SemanticFileIndexer {
     // swiftlint:disable:next function_parameter_count function_body_length cyclomatic_complexity
     static func run(scope: AskFileScope, store: SemanticFileStore, reader: AskFileReading,
                     encoder: SemanticEmbedding, media: (any SemanticMediaEmbedding)? = nil,
-                    idle: () -> Bool = { true }, paused: () -> Bool = { false }, cancelled: () -> Bool,
+                    idle: () -> Bool = { true }, paused: () -> Bool = { false },
+                    documents: () -> SemanticIndexPauseGate.DocumentWork = { .init() }, priorityReader: AskFileReading? = nil, cancelled: () -> Bool,
                     progress: (Summary) -> Void) throws -> Summary {
         var summary = Summary(), failure: Error?
         try store.beginDiscovery()
@@ -104,18 +107,27 @@ enum SemanticFileIndexer {
                     try waitWhilePaused(paused, cancelled: cancelled)
                     do {
                         let indexed = try index(path, scope: scope, store: store, reader: reader, encoder: encoder,
-                            media: media, cancelled: cancelled, waitForIdle: {
-                                if !idle() {
-                                    summary.waitingForIdle = true; progress(summary)
-                                    while !idle() {
-                                        if cancelled() { throw CancellationError() }
-                                        Thread.sleep(forTimeInterval: 0.25)
-                                    }
-                                    summary.waitingForIdle = false; progress(summary)
-                                }
-                                if cancelled() { throw CancellationError() }
-                            })
-                        if indexed { summary.files += 1 } else { summary.skipped += 1 }
+                                                media: media, cancelled: cancelled,
+                                                checkpoint: { try waitWhilePaused(paused, cancelled: cancelled) },
+                                                waitForIdle: {
+                                                    try waitForMedia(
+                                                        scope: scope,
+                                                        store: store,
+                                                        reader: priorityReader ?? reader,
+                                                        encoder: encoder,
+                                                        idle: idle,
+                                                        paused: paused,
+                                                        documents: documents,
+                                                        cancelled: cancelled,
+                                                        summary: &summary,
+                                                        progress: progress
+                                                    )
+                                                })
+                        if indexed {
+                            summary.files += 1
+                        } else {
+                            summary.skipped += 1
+                        }
                     } catch let error as SemanticFileStore.Failure { throw error } catch let Failure.inference(error) {
                         throw error
                     } catch let error as SemanticMediaFailure { throw error } catch {
@@ -135,10 +147,12 @@ enum SemanticFileIndexer {
     }
 
     /// Reconcile changed files without walking the search roots again.
-    // swiftlint:disable:next function_parameter_count cyclomatic_complexity
+    // swiftlint:disable:next function_parameter_count
     static func reconcile(paths: [String], scope: AskFileScope, store: SemanticFileStore, reader: AskFileReading,
                           encoder: SemanticEmbedding, media: (any SemanticMediaEmbedding)? = nil,
-                          idle: () -> Bool = { true }, paused: () -> Bool = { false }, cancelled: () -> Bool,
+                          idle: () -> Bool = { true }, paused: () -> Bool = { false },
+                          documents: () -> SemanticIndexPauseGate.DocumentWork = { .init() }, priorityReader: AskFileReading? = nil,
+                          cancelled: () -> Bool,
                           progress: (Summary) -> Void) throws -> Summary {
         let paths = Array(Set(paths)).sorted()
         var summary = Summary()
@@ -151,16 +165,21 @@ enum SemanticFileIndexer {
                 try waitWhilePaused(paused, cancelled: cancelled)
                 do {
                     let indexed = try index(path, scope: scope, store: store, reader: reader, encoder: encoder,
-                                            media: media, cancelled: cancelled, waitForIdle: {
-                                                if !idle() {
-                                                    summary.waitingForIdle = true; progress(summary)
-                                                    while !idle() {
-                                                        if cancelled() { throw CancellationError() }
-                                                        Thread.sleep(forTimeInterval: 0.25)
-                                                    }
-                                                    summary.waitingForIdle = false; progress(summary)
-                                                }
-                                                if cancelled() { throw CancellationError() }
+                                            media: media, cancelled: cancelled,
+                                            checkpoint: { try waitWhilePaused(paused, cancelled: cancelled) },
+                                            waitForIdle: {
+                                                try waitForMedia(
+                                                    scope: scope,
+                                                    store: store,
+                                                    reader: priorityReader ?? reader,
+                                                    encoder: encoder,
+                                                    idle: idle,
+                                                    paused: paused,
+                                                    documents: documents,
+                                                    cancelled: cancelled,
+                                                    summary: &summary,
+                                                    progress: progress
+                                                )
                                             })
                     if indexed { summary.files += 1 } else { summary.skipped += 1 }
                 } catch let error as SemanticFileStore.Failure { throw error } catch let Failure.inference(error) {
@@ -177,7 +196,7 @@ enum SemanticFileIndexer {
         return summary
     }
 
-    private static func waitWhilePaused(_ paused: () -> Bool, cancelled: () -> Bool) throws {
+    static func waitWhilePaused(_ paused: () -> Bool, cancelled: () -> Bool) throws {
         while paused() {
             if cancelled() { throw CancellationError() }
             Thread.sleep(forTimeInterval: 0.25)
@@ -188,7 +207,7 @@ enum SemanticFileIndexer {
     // swiftlint:disable:next function_parameter_count cyclomatic_complexity
     private static func index(_ path: String, scope: AskFileScope, store: SemanticFileStore, reader: AskFileReading,
                               encoder: SemanticEmbedding, media: (any SemanticMediaEmbedding)?, cancelled: () -> Bool,
-                              waitForIdle: () throws -> Void) throws -> Bool {
+                              checkpoint: () throws -> Void, waitForIdle: () throws -> Void) throws -> Bool {
         let metadata = try reader.read(
             .init(operation: .content, path: path, scope: scope, readText: false),
             isCancelled: cancelled
@@ -214,6 +233,7 @@ enum SemanticFileIndexer {
         var vectors: [[Float]] = []
         let title = String(path.split(separator: "/").last ?? "").prefix(80)
         for start in stride(from: 0, to: chunks.count, by: 8) {
+            try checkpoint()
             if cancelled() {
                 throw CancellationError()
             }

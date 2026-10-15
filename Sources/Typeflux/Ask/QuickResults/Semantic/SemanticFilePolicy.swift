@@ -145,10 +145,23 @@ struct SemanticChunk: Equatable, Sendable {
 protocol SemanticFileSearching: AnyObject, Sendable {
     @MainActor var isEnabled: Bool { get }
     func search(_ text: String, type: AskFileType, limit: Int) async -> [AskFileHit]
+    func search(_ text: String, type: AskFileType, limit: Int,
+                progress: @escaping @MainActor @Sendable ([AskFileHit]) -> Void) async -> [AskFileHit]
+    @MainActor func prepareForSearch()
+    @MainActor func endSearch()
 }
 
 extension SemanticFileSearching {
-    @MainActor var isEnabled: Bool { true }
+    @MainActor var isEnabled: Bool {
+        true
+    }
+
+    @MainActor func prepareForSearch() {}
+    @MainActor func endSearch() {}
+    func search(_ text: String, type: AskFileType, limit: Int,
+                progress _: @escaping @MainActor @Sendable ([AskFileHit]) -> Void) async -> [AskFileHit] {
+        await search(text, type: type, limit: limit)
+    }
 }
 
 extension SemanticFilePolicy {

@@ -107,6 +107,41 @@ struct SemanticMediaIndexTests {
         #expect(encoder.calls == 1 && media.calls == 3)
     }
 
+    @Test(arguments: [false, true], [false, true])
+    func documentEventsPreemptAtSegmentBoundariesWithoutRepeatingCompletedMedia(rescan: Bool, targeted: Bool) throws {
+        let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
+        let store = try SemanticFileStore(url: root.appendingPathComponent("index.sqlite"))
+        let reader = SemanticMediaFixtureReader(root: root.path)
+        reader.names = ["video.mov"]; reader.pieces = 3
+        let priorityReader = SemanticFixtureReader(path: root.path + "/new-document.md")
+        let encoder = SemanticFixtureEncoder(), media = SemanticFixtureMediaEncoder(), gate = SemanticIndexPauseGate()
+        media.before = { _ in
+            if media.calls == 1 {
+                if rescan { gate.enqueueDocumentScan() }
+                else { gate.enqueueDocuments([priorityReader.path]) }
+            } else {
+                let hits = try store.lexicalSearch(text: "reimbursement", query: .init("reimbursement"), type: .all,
+                                                   scope: semanticScope(root.path), limit: 5, cancelled: { false })
+                #expect(hits.map(\.path) == [priorityReader.path])
+            }
+        }
+        let result: SemanticFileIndexer.Summary
+        if targeted {
+            result = try SemanticFileIndexer.reconcile(paths: [root.path + "/video.mov"], scope: semanticScope(root.path),
+                store: store, reader: reader, encoder: encoder, media: media, documents: { gate.takeDocuments() },
+                priorityReader: priorityReader, cancelled: { false }, progress: { _ in })
+        } else {
+            result = try SemanticFileIndexer.run(scope: semanticScope(root.path), store: store, reader: reader,
+                encoder: encoder, media: media, documents: { gate.takeDocuments() }, priorityReader: priorityReader,
+                cancelled: { false }, progress: { _ in })
+        }
+        #expect(media.calls == 3 && encoder.calls == 1)
+        #expect(result.priorityUpdates == 1)
+        #expect(try store.counts().chunks == 4)
+        #expect(try store.counts().files == 2)
+        #expect(priorityReader.directoryReads == (rescan ? 1 : 0))
+    }
+
     @Test func cancellationDuringMediaNeverPublishesPartialVectorsAndCleansScratch() throws {
         let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
         let reader = SemanticMediaFixtureReader(root: root.path); reader.names = ["video.mov"]; reader.pieces = 2

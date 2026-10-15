@@ -1,0 +1,105 @@
+{
+  "builds": {
+    "initial_helper_failed_seconds": 16.71,
+    "helper_retry_seconds": 52.67,
+    "helper_wrapper_seconds": 2.32,
+    "initial_coverage_build_failed_seconds": 228.1,
+    "swiftbuild_retry_with_test_failures_seconds": 288.77,
+    "initial_app_build_requested_coverage_seconds": 377.62,
+    "coverage_native_discovery_still_uninstrumented_seconds": 525.68,
+    "genuine_instrumented_focused_coverage_seconds": 319.8,
+    "boundary_recheck_seconds": 121.54,
+    "release_benchmark_initial_compile_failure_seconds": 412.74,
+    "release_benchmark_temp_alias_failure_seconds": 51.4,
+    "model_download_seconds": 28.03,
+    "final_main_compatibility_coverage_seconds": 360.64,
+    "final_remaining_same_binary_coverage_seconds": 100.68,
+    "release_controller_and_initial_native_measurement_seconds": 842.7,
+    "helper_clean_benchmark_seconds": 2.34,
+    "final_release_native_build_and_measurement_seconds": 754.73,
+    "final_release_native_build_seconds": 322.75,
+    "final_release_native_test_seconds": 429.86,
+    "permission_fault_coverage_seconds": 96.91
+  },
+  "failures": [
+    "CMake unavailable; installed task-local cmake 4.1.2 and rebuilt helper.",
+    "Swift Testing macro inferred a nonthrowing fixture callback; moved the throwing lookup outside #expect before retry.",
+    "Default Swift Build emitted no __llvm_prf/__llvm_covmap sections despite --enable-code-coverage; rerunning the same focused coverage scope with --build-system native in an isolated scratch path.",
+    "Four initial test methods failed: nondeterministic task enqueue order, a folder token matching /var/folders, combined accessibility labels, and real indexing readiness. Failures are preserved; corrections/retries are scoped.",
+    "The native backend alone was insufficient: swift test list rebuilt test objects without coverage. A native build --build-tests --enable-code-coverage followed by --skip-build discovery restored genuine LLVM coverage; instrumented Mach-O sections were checked.",
+    "Release benchmark compile failed on a forward reference to timer state; moved the declaration before the local helper.",
+    "Release benchmark metadata read rejected a temporary /var path alias with ENOTDIR; canonicalized fixture roots using the production scope utility.",
+    "A trial merge across pre/post-main binaries reported three LLVM counter mismatches. Discarded that aggregate and collected the remaining relevant tests against the identical final binary (SHA checked). Final coverage has no counter mismatch."
+  ],
+  "scope_mapping": {
+    "policy_store_and_revalidation": [
+      "SemanticFilePolicyTests",
+      "SemanticFileStoreTests",
+      "SemanticFileContentTests",
+      "SemanticFileCapacityTests",
+      "SemanticLexicalSearchTests",
+      "AskFileReliabilityTests",
+      "AskFileStreamingTests"
+    ],
+    "query_and_lifecycle": [
+      "SemanticFileServiceTests",
+      "SemanticEmbeddingWorkerTests",
+      "SemanticRealtimeSearchTests",
+      "SemanticHybridSearchTests",
+      "SemanticContentSearchProgressTests"
+    ],
+    "background_priority": [
+      "SemanticFileIndexerTests",
+      "SemanticMediaWorkerTests",
+      "SemanticMediaIndexTests",
+      "SemanticMediaServiceTests",
+      "SemanticIndexPriorityTests",
+      "WorkflowControllerProcessingTests/testSemanticIndexingPriorityFollowsRecordingAndProcessing"
+    ],
+    "actual_native_inputs": [
+      "SemanticNativeInputTests",
+      "AskComposerTests",
+      "AskComposerPlaceholderTests",
+      "AskPluginSessionTests"
+    ],
+    "real_model_oracle": [
+      "SemanticSearchEvaluationTests"
+    ],
+    "opt_in_performance": [
+      "SemanticLatencyTests",
+      "SemanticNativeLatencyTests"
+    ],
+    "latest_main_compatibility": [
+      "AskSemanticFileSearchPluginTests",
+      "AskPluginSessionTests",
+      "SemanticRealtimeSearchTests",
+      "SemanticNativeInputTests"
+    ]
+  },
+  "coverage_denominator": "Added or modified executable Swift lines in Sources/Typeflux, intersected with LLVM executable segments. New files included. Native helper wrapper reported separately; vendor C++ unchanged and excluded. No project-wide coverage claim.",
+  "final_validation": {
+    "swift_testing_methods": 120,
+    "xctest_methods": 1,
+    "failures": 0,
+    "commands": [
+      {
+        "suites": 8,
+        "methods": 37,
+        "wall_seconds": 360.64
+      },
+      {
+        "suites": 18,
+        "methods": 83,
+        "wall_seconds": 100.68
+      },
+      {
+        "suites": 1,
+        "methods": 1,
+        "wall_seconds": 96.91
+      }
+    ],
+    "binary_sha256": "b2c52151ab98ebb69e4b8eca04dc6507431a758c6bcaf5d7d96d395bf788d28d",
+    "merged_profiles": "Only final compatibility, final remaining and final permission profiles. First two binaries are identical (SHA checked); the last adds test code only, with unchanged application source. Final LLVM merge has no mismatch diagnostics.",
+    "delivered_binary_sha256": "90667d282de966a59f3f67e82f263a52005c5723a9878e6d6dadd3730ce403ad"
+  }
+}
