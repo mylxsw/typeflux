@@ -66,7 +66,7 @@ extension AskConversationModel {
     /// Keeps the application list and the file index current; called when the launcher is built and opened.
     func refreshQuickApps() {
         if quickAppsEnabled { appIndex.refreshIfStale() }
-        launcherIconCache.prefetch(appIndex.recentApplications(limit: AskLauncherHome.maximumHomeApplications).map {
+        launcherIconCache.prefetch(appIndex.recentApplications(limit: AskLauncherHome.iconPrefetchCount).map {
             .init(kind: .file, value: $0.url.path)
         })
         fileIndex.start()

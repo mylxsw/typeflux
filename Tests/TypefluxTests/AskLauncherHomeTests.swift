@@ -95,7 +95,7 @@ struct AskLauncherHomeTests {
         #expect(Home.build(context(keywords: [])).isEmpty)
     }
 
-    @Test func homeShowsOnlyApplicationsAndFitsTheAvailableHeight() throws {
+    @Test func homeShowsEveryApplicationAndCapsItsVisibleHeight() throws {
         var input = context(conversations: [conversation("a", ago: 60), conversation("b", ago: 120), conversation("c", ago: 180)])
         input.applications = (0 ..< 20).map { AskTestAppIndex.app("App \($0)", id: "test.app.\($0)") }
         let sections = Home.build(input)
@@ -103,22 +103,15 @@ struct AskLauncherHomeTests {
             Issue.record("Only the application list should appear on the home screen")
             return
         }
-        #expect(apps.count == Home.maximumHomeApplications)
+        #expect(apps.count == input.applications.count)
         #expect(apps.first?.action == .application(input.applications[0]))
-        for (height, expectedAppCount) in [(CGFloat(220), 3), (320, 5), (480, 9)] {
-            let fitted = AskLauncherSuggestions.fitting(sections, height: height)
-            let rows = Home.items(fitted).compactMap { item -> Home.Row? in
-                guard case let .row(row) = item, case .application = row.action else { return nil }
-                return row
-            }
-            #expect(rows.count == expectedAppCount)
-            #expect(rows.first?.action == .application(input.applications[0]))
-            #expect(AskLauncherSuggestions.height(for: fitted) <= height)
-            #expect(fitted.count == 1)
-        }
-        let short = AskLauncherSuggestions.fitting(sections, height: 70)
-        #expect(!short.contains { if case .applications = $0 { true } else { false } })
-        #expect(Home.numberedRows(AskLauncherSuggestions.fitting(sections, height: 480)).count == 9)
+        #expect(apps.last?.action == .application(input.applications[19]))
+        #expect(Home.items(sections).count == 20)
+        #expect(Home.numberedRows(sections).count == 9)
+        #expect(AskLauncherSuggestions.height(for: sections) > 480)
+        #expect(AskLauncherSuggestions.visibleHeight(for: sections, maximum: 480) == 480)
+        #expect(AskLauncherSuggestions.visibleHeight(for: sections, maximum: 0) == 0)
+        #expect(Home.move(8, by: 1, in: Home.items(sections)) == 9)
     }
 
     // MARK: - Navigation

@@ -1068,7 +1068,7 @@ struct AskComposer: View {
     private var home: [AskLauncherHome.Section] {
         guard showsLauncherSuggestions else { return [] }
         _ = homeAppsRevision
-        return AskLauncherSuggestions.fitting(model.launcherHome(), height: launcherHomeViewportHeight)
+        return model.launcherHome()
     }
 
     private var launcherHomeViewportHeight: CGFloat {
@@ -1079,7 +1079,9 @@ struct AskComposer: View {
         return max(0, AskMetrics.launcherWindowHeight - AskMetrics.launcherGutter * 2 - chromeHeight)
     }
 
-    private var homeHeight: CGFloat { AskLauncherSuggestions.height(for: home) }
+    private var homeHeight: CGFloat {
+        AskLauncherSuggestions.visibleHeight(for: home, maximum: launcherHomeViewportHeight)
+    }
 
     private var launcherCollapsed: Bool {
         launcher && model.launcherIsCollapsed && !active && !paletteOpen && !contextPanelOpen
@@ -1268,7 +1270,7 @@ struct AskComposer: View {
             .onReceive(NotificationCenter.default.publisher(for: AskAppIndex.didChange)) { notification in
                 if (notification.object as AnyObject?) === model.appIndex {
                     homeAppsRevision += 1
-                    model.launcherIconCache.prefetch(model.appIndex.recentApplications(limit: AskLauncherHome.maximumHomeApplications).map {
+                    model.launcherIconCache.prefetch(model.appIndex.recentApplications(limit: AskLauncherHome.iconPrefetchCount).map {
                         .init(kind: .file, value: $0.url.path)
                     })
                     refreshQuickResults(resetActions: false)

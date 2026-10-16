@@ -43,6 +43,7 @@ struct AskSuggestion: Equatable, Identifiable {
 /// between rows, Return opens the highlight and ⌘1…⌘9 open a row.
 struct AskLauncherSuggestions: View {
     @Environment(\.colorScheme) private var colorScheme
+    @State private var scrollTarget: String?
     var sections: [AskLauncherHome.Section]
     @Binding var highlighted: Int
     var onPick: (AskLauncherHome.Item) -> Void
@@ -82,15 +83,8 @@ struct AskLauncherSuggestions: View {
         return 1 + listPadding * 2 + content
     }
 
-    /// Show as many complete application rows as fit in the launcher.
-    static func fitting(_ sections: [AskLauncherHome.Section], height: CGFloat) -> [AskLauncherHome.Section] {
-        let fixed = sections.filter { if case .applications = $0 { false } else { true } }
-        let space = height - Self.height(for: fixed) - (fixed.isEmpty ? 1 + listPadding * 2 : 0) - headerHeight
-        let count = max(0, Int(floor((space + rowSpacing) / (rowHeight + rowSpacing))))
-        return sections.compactMap {
-            guard case let .applications(rows) = $0 else { return $0 }
-            return count > 0 ? .applications(rows: Array(rows.prefix(count))) : nil
-        }
+    static func visibleHeight(for sections: [AskLauncherHome.Section], maximum: CGFloat) -> CGFloat {
+        min(height(for: sections), max(0, maximum))
     }
 
     /// A typical application home, for placing the panel before its list arrives.
@@ -137,13 +131,20 @@ struct AskLauncherSuggestions: View {
         let current = items.indices.contains(highlighted) ? items[highlighted].id : nil
         VStack(spacing: 0) {
             Rectangle().fill(AskTheme.launcherSeparator).frame(height: 1).padding(.horizontal, 12)
-            VStack(alignment: .leading, spacing: 0) {
-                ForEach(Array(sections.enumerated()), id: \.offset) { _, section in
-                    if case .keywords = section, viewportHeight != nil { Spacer(minLength: 0) }
-                    sectionView(section, items: items, numbers: numbers, current: current)
+            ScrollViewReader { proxy in
+                ScrollView(.vertical, showsIndicators: true) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        ForEach(Array(sections.enumerated()), id: \.offset) { _, section in
+                            sectionView(section, items: items, numbers: numbers, current: current)
+                        }
+                    }
+                    .padding(Self.listPadding)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .onChange(of: scrollTarget) { id in
+                    if let id { proxy.scrollTo(id) }
                 }
             }
-            .padding(Self.listPadding)
         }
         .frame(height: viewportHeight ?? Self.height(for: sections), alignment: .top)
         .background(AskLauncherHomeKeyMonitor { key in handle(key, items: items) })
@@ -164,6 +165,7 @@ struct AskLauncherSuggestions: View {
         switch key {
         case let .vertical(delta):
             highlighted = AskLauncherHome.move(highlighted, by: delta, in: items)
+            scrollTarget = items[highlighted].id
         case let .horizontal(delta):
             // ←/→ stay with the editor unless a chip is highlighted.
             guard items.indices.contains(highlighted), case .chip = items[highlighted] else { return false }
@@ -228,10 +230,11 @@ struct AskLauncherSuggestions: View {
 
     private func rowList(_ rows: [AskLauncherHome.Row], items: [AskLauncherHome.Item],
                          numbers: [String: Int], current: String?) -> some View {
-        VStack(spacing: Self.rowSpacing) {
+        LazyVStack(spacing: Self.rowSpacing) {
             ForEach(rows) { row in
                 let item = AskLauncherHome.Item.row(row)
                 rowView(row, number: numbers[row.id], highlighted: item.id == current)
+                    .id(item.id)
                     .onHover { if $0, let index = items.firstIndex(of: item) { highlighted = index } }
             }
         }

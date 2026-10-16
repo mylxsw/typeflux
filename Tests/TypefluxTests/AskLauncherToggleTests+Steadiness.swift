@@ -160,7 +160,7 @@ extension AskLauncherToggleTests {
         let gate = DispatchSemaphore(value: 0)
         defer { gate.signal() }
         let apps = AskControlledSearchIndex()
-        apps.recentApps = session.fixture.model.appIndex.recentApplications(limit: AskLauncherHome.maximumHomeApplications)
+        apps.recentApps = session.fixture.model.appIndex.applications()
         apps.appSearch = { _ in _ = gate.wait(timeout: .now() + 5); return [AskQuickSearchSessionTests.app] }
         session.fixture.model.appIndex = apps
         let container = try #require(session.editor.enclosingScrollView)

@@ -75,10 +75,10 @@ enum AskLauncherHome {
     }
 
     static let maximumChips = 6
-    static let maximumHomeApplications = 12
+    static let iconPrefetchCount = 12
 
     static func build(_ context: Context) -> [Section] {
-        let apps = context.applications.filter { $0.kind == .application }.prefix(maximumHomeApplications).map {
+        let apps = context.applications.filter { $0.kind == .application }.map {
             Row(id: "application." + $0.id, title: $0.name, symbol: "app", tint: .neutral,
                 action: .application($0))
         }

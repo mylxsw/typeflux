@@ -1,9 +1,8 @@
 import AppKit
 
-/// Where the ⌥Space launcher sits: centred on the screen like Spotlight, or where
-/// the user last dragged it on that screen. Its top edge stays put while it grows,
-/// so a longer question or the suggestion list opens downward instead of pushing
-/// the input field up.
+/// Where the ⌥Space launcher sits: its maximum-height frame is centred on the
+/// screen like Spotlight, or it uses the last dragged position. Its top edge
+/// stays put while it grows, keeping the input field at the same height.
 enum AskLauncherPlacement {
     /// Keeps the panel this far from the screen's usable edges.
     static let screenMargin: CGFloat = 12
@@ -18,7 +17,7 @@ enum AskLauncherPlacement {
         var fromTop: CGFloat
     }
 
-    /// Both modes share the resting launcher's opening top and grow downward.
+    /// Both modes share a fixed opening top and grow downward.
     static func preferredFrame(on screen: NSRect, anchor: Anchor? = nil,
                                height requestedHeight: CGFloat = restingHeight) -> NSRect {
         let width = min(AskMetrics.launcherWidth, max(1, screen.width - screenMargin * 2))
@@ -29,16 +28,18 @@ enum AskLauncherPlacement {
                        screen: screen)
     }
 
-    /// An empty launcher with a typical application list is centred on the screen;
-    /// its top edge stays fixed when more applications become available.
+    /// The panel starts at this height before its application list arrives.
     static var restingHeight: CGFloat {
         AskMetrics.launcherHeight(editor: 32, banners: 0, suggestions: AskLauncherSuggestions.typicalHeight)
     }
 
-    /// The top edge every launcher on `screen` shares: the resting one's, centred,
-    /// or the remembered one's.
+    /// Centre the maximum-height panel, so even a short launcher opens with its
+    /// input at the same Spotlight-like height. A dragged position takes priority.
     static func top(on screen: NSRect, anchor: Anchor? = nil) -> CGFloat {
-        guard let anchor else { return (screen.midY + restingHeight / 2).rounded() }
+        guard let anchor else {
+            let maximumHeight = min(AskMetrics.launcherWindowHeight, max(1, screen.height - screenMargin * 2))
+            return (screen.midY + maximumHeight / 2).rounded()
+        }
         return (screen.maxY - anchor.fromTop).rounded()
     }
 

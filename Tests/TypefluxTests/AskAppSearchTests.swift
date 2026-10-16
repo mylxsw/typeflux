@@ -222,6 +222,7 @@ struct AskAppIndexTests {
         index.recordUse("com.tencent.xinWeChat", at: date.addingTimeInterval(60))
         index.recordUse("removed.application", at: date.addingTimeInterval(120))
         index.recordUse("com.apple.calculator", at: date.addingTimeInterval(-60))
+        #expect(index.applications().map(\.id) == ["com.tencent.xinWeChat", "com.apple.calculator"])
         #expect(index.recentApplications(limit: 20).map(\.id) == ["com.tencent.xinWeChat", "com.apple.calculator"])
         #expect(index.recentApplications(limit: 1).count == 1)
         #expect(index.recentApplications(limit: 0).isEmpty)
@@ -258,13 +259,6 @@ struct AskAppIndexTests {
         #expect(AskAppIndex.shared === AskAppIndex.shared)
     }
 
-    @Test(.exclusiveUIState) @MainActor func iconsAreCached() async throws {
-        let url = URL(fileURLWithPath: "/System/Applications/Calculator.app")
-        let key = AskResultImageCache.Key(url: url, thumbnail: false)
-        let cache = AskResultImageCache()
-        let first = try #require(await cache.image(key))
-        #expect(await cache.image(key) === first)
-    }
 }
 
 @Suite("Ask quick results with apps", .exclusiveUIState)

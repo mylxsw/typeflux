@@ -6,11 +6,12 @@ import Testing
 struct AskLauncherPlacementTests {
     private let screen = NSRect(x: 0, y: 40, width: 1512, height: 900)
 
-    @Test func launcherOpensAtRestingHeightAndCentredOnALargeDisplay() {
+    @Test func launcherOpensAtRestingHeightWithMaximumPanelCentredOnALargeDisplay() {
         let display = NSRect(x: -2400, y: 100, width: 2400, height: 1600)
         let frame = AskLauncherPlacement.preferredFrame(on: display)
         #expect(frame.size == NSSize(width: 700, height: AskLauncherPlacement.restingHeight))
-        #expect(abs(frame.midX - display.midX) <= 0.5 && abs(frame.midY - display.midY) <= 0.5)
+        #expect(abs(frame.midX - display.midX) <= 0.5)
+        #expect(frame.maxY == (display.midY + AskMetrics.launcherWindowHeight / 2).rounded())
     }
 
     @Test func launcherClampsRequestedHeightInsideASmallerDisplay() {
@@ -34,11 +35,12 @@ struct AskLauncherPlacementTests {
         #expect(outside.maxY == display.maxY - AskLauncherPlacement.screenMargin)
     }
 
-    @Test func emptyLauncherIsCentredOnTheScreen() {
+    @Test func emptyLauncherUsesTheMaximumPanelTopEdge() {
         let height = AskLauncherPlacement.restingHeight
         let frame = AskLauncherPlacement.frame(height: height, width: 680, screen: screen)
         #expect(abs(frame.midX - screen.midX) <= 0.5)
-        #expect(abs(frame.midY - screen.midY) <= 1)
+        #expect(frame.maxY == (screen.midY + AskMetrics.launcherWindowHeight / 2).rounded())
+        #expect(screen.maxY - frame.maxY == (screen.height - AskMetrics.launcherWindowHeight) / 2)
         #expect(frame.height == height && frame.width == 680)
     }
 

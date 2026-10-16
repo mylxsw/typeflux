@@ -8,10 +8,12 @@ protocol AskAppSearching: AnyObject, Sendable {
     /// Remembers an application opened from the launcher, to rank it higher.
     func recordLaunch(_ entry: AskAppEntry)
     func recentApplications(limit: Int) -> [AskAppEntry]
+    func applications() -> [AskAppEntry]
 }
 
 extension AskAppSearching {
     func recentApplications(limit: Int) -> [AskAppEntry] { [] }
+    func applications() -> [AskAppEntry] { recentApplications(limit: .max) }
 }
 
 /// The applications installed on this Mac, and System Settings' panes, kept in
@@ -174,14 +176,19 @@ final class AskAppIndex: AskAppSearching, @unchecked Sendable {
     }
 
     func recentApplications(limit: Int) -> [AskAppEntry] {
+        Array(applications().filter { $0.bundleID != Bundle.main.bundleIdentifier }.prefix(max(0, limit)))
+    }
+
+    /// Every indexed application, with recently used apps first.
+    func applications() -> [AskAppEntry] {
         let (entries, recent, launches) = lock.withLock { (self.entries, lastUsed, self.launches) }
-        return Array(entries.filter { $0.kind == .application && $0.bundleID != Bundle.main.bundleIdentifier }.sorted {
+        return entries.filter { $0.kind == .application }.sorted {
             let left = recent[$0.id] ?? 0, right = recent[$1.id] ?? 0
             if left != right { return left > right }
             let leftCount = launches[$0.id] ?? 0, rightCount = launches[$1.id] ?? 0
             if leftCount != rightCount { return leftCount > rightCount }
             return $0.name.localizedStandardCompare($1.name) == .orderedAscending
-        }.prefix(max(0, limit)))
+        }
     }
 
     // MARK: - Scanning

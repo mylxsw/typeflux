@@ -166,6 +166,19 @@ struct AskLocalModeUITests {
         #expect(AskLauncherSuggestions.height(for: []) == 0)
     }
 
+    @Test func launcherApplicationListKeepsAFixedScrollViewport() {
+        let rows = (0 ..< 20).map {
+            AskLauncherHome.Row(id: "app.\($0)", title: "App \($0)", symbol: "app", tint: .neutral,
+                                action: .ask("\($0)"))
+        }
+        let sections: [AskLauncherHome.Section] = [.applications(rows: rows)]
+        let viewport: CGFloat = 220
+        #expect(AskLauncherSuggestions.height(for: sections) > viewport)
+        let size = fits(AskLauncherSuggestions(sections: sections, highlighted: .constant(0), onPick: { _ in },
+                                               viewportHeight: viewport), width: 640)
+        #expect(abs(size.height - viewport) < 1)
+    }
+
     // MARK: - Status card, sidebar and promo
 
     @Test func statusNamesTheSourceAndOffersCloudOnlyWhenSignedOut() throws {
