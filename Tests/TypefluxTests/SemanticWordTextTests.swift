@@ -165,7 +165,7 @@ struct SemanticWordTextTests {
         let reopened = try SemanticFileStore(url: store.url)
         #expect(try reopened.completedEventID(scope: scope, volumeSignature: "word-fixture") == 101)
         #expect(SemanticFilePolicy.allows(file.path) && SemanticMediaPriority.of(file.path) == .document)
-        for ext in ["doc", "xls", "xlsx", "ppt", "pptx", "odt"] {
+        for ext in ["doc", "xls", "xlsx", "ppt", "pptx"] {
             #expect(!SemanticFilePolicy.allows(root.path + "/unsupported." + ext))
         }
         #expect(SemanticFileStore.documentRecipe(plain.path) == SemanticFileStore.documentProvenance)

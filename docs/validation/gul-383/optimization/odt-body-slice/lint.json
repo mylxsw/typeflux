@@ -1,0 +1,20 @@
+{
+  "command": [
+    "swiftlint",
+    "lint",
+    "--strict",
+    "--quiet",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticDocumentZIP.swift",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileContentWorker.swift",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFilePolicy.swift",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Jobs.swift",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticIndexDiagnostics.swift",
+    "Tests/TypefluxTests/SemanticWordTextTests.swift",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticODTText.swift",
+    "Tests/TypefluxTests/SemanticODTTextTests.swift"
+  ],
+  "exit_code": 0,
+  "wall_seconds": 0.10789687500800937,
+  "output": "",
+  "preliminary_style_findings": "Two short namespace variable names and two long lines were fixed before validation."
+}

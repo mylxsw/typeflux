@@ -1,0 +1,14 @@
+{
+  "wall_seconds": 300.04787995800143,
+  "worker_exit_code": 0,
+  "error": null,
+  "samples": 2704,
+  "missing_identifier": 0,
+  "milliseconds": {
+    "p50": 1.1772919679060578,
+    "p95": 2.356291050091386,
+    "p99": 2.4245420354418457
+  },
+  "peak_rss_bytes": 60096512,
+  "scope": "Debug instrumented production file-index-worker, nice 10, sequential repeated extraction of the same synthetic ODT body, 100 ms between requests. No embedding, background scheduler, UI input, GPU counters or long-term thermal acceptance measured. RSS is ps resident pages; CPU percent is ps lifetime average, 100 percent per core."
+}
