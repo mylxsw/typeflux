@@ -5091,6 +5091,7 @@
 "semantic.manage.subtitle" = "문서 및 미디어 · 이 Mac에서 처리";
 "semantic.progress.download" = "모델 다운로드";
 "semantic.progress.scanning" = "집계 중: 항목 %@개 스캔, 지원 파일 %@개 발견";
+"semantic.progress.scanningPaused" = "일시 중지 전 항목 %@개 스캔, 지원 파일 %@개 발견";
 "semantic.progress.indexing" = "파일 %@ / %@개 처리됨";
 "semantic.metrics" = "내용 색인";
 "semantic.metric.files" = "색인된 파일";
@@ -5525,6 +5526,7 @@
 "activity.contentIndex.title" = "콘텐츠 색인";
 "activity.contentIndex.progress" = "%@ / %@개 파일 처리됨";
 "activity.contentIndex.scanning" = "파일 찾는 중 · %@개 확인";
+"activity.contentIndex.scanningPaused" = "파일 찾기 일시 중지 · %@개 확인";
 "activity.contentIndex.waitingIdle" = "Mac이 유휴 상태일 때 계속 · %@";
 "activity.paused" = "일시 정지됨 · %@";
 "activity.llmModel.title" = "언어 모델 · %@";
@@ -5552,7 +5554,6 @@
 "activity.window.recent" = "최근 완료";
 "activity.window.emptyActive" = "현재 백그라운드 작업이 없습니다";
 "activity.window.emptyRecent" = "Typeflux 시작 후 완료된 작업이 없습니다";
-"activity.window.indicator" = "메뉴 막대 아이콘에 작업 상태 표시";
 "activity.window.notifications" = "긴 다운로드가 끝나면 알림";
 "activity.window.finished" = "완료 · %@";
 "activity.window.justNow" = "방금";
@@ -5584,6 +5585,31 @@
 
 "recording.timelineLoading" = "타임라인 준비 중…";
 "recording.timelineUnavailable" = "타임라인 오디오를 사용할 수 없습니다";
+
+"semantic.details.open" = "처리 상세";
+"semantic.details.title" = "콘텐츠 색인 처리 상세";
+"semantic.details.close" = "닫기";
+"semantic.details.pending" = "대기 중";
+"semantic.details.completed" = "처리됨";
+"semantic.details.total" = "%@개 파일";
+"semantic.details.empty" = "파일이 없습니다";
+"semantic.details.unavailable" = "처리 상세를 불러올 수 없습니다.";
+"semantic.details.historyNote" = "파일별 처리 시간은 이 버전부터 기록됩니다.";
+"semantic.details.previous" = "이전";
+"semantic.details.next" = "다음";
+"semantic.details.pausedFile" = "일시 중지된 파일";
+"semantic.details.current" = "현재 처리 중";
+"semantic.details.scanning" = "폴더에서 파일을 찾는 중…";
+"semantic.details.noCurrent" = "현재 처리 중인 파일이 없습니다";
+"semantic.details.reveal" = "Finder에서 보기";
+"semantic.details.modified" = "수정일 %@";
+"semantic.details.page" = "%@페이지";
+"semantic.details.duration" = "처리 시간 %@";
+"semantic.details.durationUnknown" = "처리 시간 알 수 없음";
+"semantic.details.metadataUnknown" = "파일 정보를 사용할 수 없습니다";
+"semantic.details.state.done" = "색인됨";
+"semantic.details.state.skipped" = "건너뜀";
+"semantic.details.state.failed" = "실패";
 
 "recording.publicationUnknown" = "파일 게시 결과를 확인할 수 없습니다. 원본 녹화와 생성된 파일은 보존됩니다. 다시 내보내기 전에 대상 위치를 확인하세요.";
 "recording.publicationUnavailable" = "파일을 게시할 수 없습니다. 원본 녹화와 생성된 파일은 보존됩니다.";

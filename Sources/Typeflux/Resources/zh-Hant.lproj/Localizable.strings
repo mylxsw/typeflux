@@ -5125,6 +5125,7 @@
 "semantic.manage.subtitle" = "文件與媒體 · 本機處理";
 "semantic.progress.download" = "模型下載";
 "semantic.progress.scanning" = "正在統計：已掃描 %@ 項，找到 %@ 個支援的檔案";
+"semantic.progress.scanningPaused" = "暫停時已掃描 %@ 項，找到 %@ 個支援的檔案";
 "semantic.progress.indexing" = "已處理 %@ / %@ 個檔案";
 "semantic.metrics" = "內容索引";
 "semantic.metric.files" = "已索引檔案";
@@ -5559,6 +5560,7 @@
 "activity.contentIndex.title" = "內容索引";
 "activity.contentIndex.progress" = "已處理 %@ / %@ 個檔案";
 "activity.contentIndex.scanning" = "正在尋找檔案 · 已檢查 %@ 個";
+"activity.contentIndex.scanningPaused" = "尋找檔案已暫停 · 已檢查 %@ 個";
 "activity.contentIndex.waitingIdle" = "等待電腦閒置後繼續 · %@";
 "activity.paused" = "已暫停 · %@";
 "activity.llmModel.title" = "大型語言模型 · %@";
@@ -5586,7 +5588,6 @@
 "activity.window.recent" = "最近完成";
 "activity.window.emptyActive" = "目前沒有背景任務";
 "activity.window.emptyRecent" = "本次執行還沒有完成的任務";
-"activity.window.indicator" = "在選單列圖示上顯示任務狀態";
 "activity.window.notifications" = "耗時下載完成後傳送通知";
 "activity.window.finished" = "已完成 · %@";
 "activity.window.justNow" = "剛剛";
@@ -5618,6 +5619,31 @@
 
 "recording.timelineLoading" = "正在準備時間軸…";
 "recording.timelineUnavailable" = "時間軸音訊無法使用";
+
+"semantic.details.open" = "處理明細";
+"semantic.details.title" = "內容索引處理明細";
+"semantic.details.close" = "關閉";
+"semantic.details.pending" = "待處理";
+"semantic.details.completed" = "已處理";
+"semantic.details.total" = "%@ 個檔案";
+"semantic.details.empty" = "暫無檔案";
+"semantic.details.unavailable" = "暫時無法讀取處理明細。";
+"semantic.details.historyNote" = "從此版本開始記錄每個檔案的處理耗時。";
+"semantic.details.previous" = "上一頁";
+"semantic.details.next" = "下一頁";
+"semantic.details.pausedFile" = "暫停時處理的檔案";
+"semantic.details.current" = "正在處理";
+"semantic.details.scanning" = "正在掃描資料夾…";
+"semantic.details.noCurrent" = "目前沒有正在處理的檔案";
+"semantic.details.reveal" = "在 Finder 中顯示";
+"semantic.details.modified" = "修改於 %@";
+"semantic.details.page" = "第 %@ 頁";
+"semantic.details.duration" = "耗時 %@";
+"semantic.details.durationUnknown" = "耗時未知";
+"semantic.details.metadataUnknown" = "檔案資訊無法使用";
+"semantic.details.state.done" = "已索引";
+"semantic.details.state.skipped" = "已略過";
+"semantic.details.state.failed" = "處理失敗";
 
 "recording.publicationUnknown" = "無法確認檔案發佈結果。原始錄影和產生的檔案已保留；再次匯出前請檢查目標位置。";
 "recording.publicationUnavailable" = "暫時無法發佈檔案，原始錄影和產生的檔案已保留。";

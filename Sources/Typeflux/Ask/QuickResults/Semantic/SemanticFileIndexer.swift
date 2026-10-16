@@ -25,7 +25,8 @@ enum SemanticFileIndexer {
                     idle: () -> Bool = { true }, paused: () -> Bool = { false },
                     documents: () -> SemanticIndexPauseGate.DocumentWork = { .init() },
                     priorityReader: AskFileReading? = nil,
-                    cancelled: () -> Bool, progress: (Summary) -> Void) throws -> Summary {
+                    cancelled: () -> Bool, progress: (Summary) -> Void,
+                    current: (String?) -> Void = { _ in }) throws -> Summary {
         var summary = Summary()
         try discover(scope: scope, store: store, reader: reader, paused: paused,
                      cancelled: cancelled, summary: &summary, progress: progress)
@@ -33,7 +34,7 @@ enum SemanticFileIndexer {
         progress(summary)
         try drainWork(scope: scope, store: store, reader: reader, encoder: encoder, media: media,
                       idle: idle, paused: paused, documents: documents, priorityReader: priorityReader,
-                      cancelled: cancelled, summary: &summary, progress: progress)
+                      cancelled: cancelled, summary: &summary, progress: progress, current: current)
         try waitWhilePaused(paused, cancelled: cancelled)
         try store.pruneDiscovered(cancelled: cancelled)
         progress(summary)
@@ -47,7 +48,8 @@ enum SemanticFileIndexer {
                           idle: () -> Bool = { true }, paused: () -> Bool = { false },
                           documents: () -> SemanticIndexPauseGate.DocumentWork = { .init() },
                           priorityReader: AskFileReading? = nil,
-                          cancelled: () -> Bool, progress: (Summary) -> Void) throws -> Summary {
+                          cancelled: () -> Bool, progress: (Summary) -> Void,
+                          current: (String?) -> Void = { _ in }) throws -> Summary {
         let paths = Array(Set(paths)).sorted()
         _ = try store.discover(paths.map { ($0, SemanticMediaPriority.of($0)) })
         var summary = Summary()
@@ -55,7 +57,7 @@ enum SemanticFileIndexer {
         progress(summary)
         try drainWork(scope: scope, store: store, reader: reader, encoder: encoder, media: media,
                       idle: idle, paused: paused, documents: documents, priorityReader: priorityReader,
-                      cancelled: cancelled, summary: &summary, progress: progress)
+                      cancelled: cancelled, summary: &summary, progress: progress, current: current)
         return summary
     }
 
@@ -66,7 +68,8 @@ enum SemanticFileIndexer {
                                   idle: () -> Bool, paused: () -> Bool,
                                   documents: () -> SemanticIndexPauseGate.DocumentWork,
                                   priorityReader: AskFileReading?, cancelled: () -> Bool,
-                                  summary: inout Summary, progress: (Summary) -> Void) throws {
+                                  summary: inout Summary, progress: (Summary) -> Void,
+                                  current: (String?) -> Void) throws {
         for priority in SemanticMediaPriority.allCases {
             summary.priority = priority
             if priority == .image {
@@ -76,12 +79,17 @@ enum SemanticFileIndexer {
             if priority == .document {
                 try drainDocuments(scope: scope, store: store, reader: reader, encoder: encoder,
                                    paused: paused, documents: documents, cancelled: cancelled,
-                                   updates: false, summary: &summary, progress: progress)
+                                   updates: false, summary: &summary, progress: progress, current: current)
                 continue
             }
             while let path = try store.nextWork(priority) {
                 try waitWhilePaused(paused, cancelled: cancelled)
-                let result = try process(path, scope: scope, store: store, reader: reader, encoder: encoder,
+                current(path)
+                defer { current(nil) }
+                let started = ProcessInfo.processInfo.systemUptime
+                let result: SemanticFileStore.JobState
+                do {
+                    result = try process(path, scope: scope, store: store, reader: reader, encoder: encoder,
                                          media: media, cancelled: cancelled, checkpoint: { try waitWhilePaused(
                                              paused,
                                              cancelled: cancelled
@@ -97,10 +105,16 @@ enum SemanticFileIndexer {
                                                  documents: documents,
                                                  cancelled: cancelled,
                                                  summary: &summary,
-                                                 progress: progress
+                                                 progress: progress,
+                                                 current: current
                                              )
                                          })
-                try store.completeWork(path, more: result == .partial)
+                } catch {
+                    store.recordInterruptedWork(path, elapsed: ProcessInfo.processInfo.systemUptime - started)
+                    throw error
+                }
+                try store.completeWork(path, more: result == .partial,
+                                       elapsed: ProcessInfo.processInfo.systemUptime - started)
                 if result != .partial {
                     if result == .done {
                         summary.files += 1

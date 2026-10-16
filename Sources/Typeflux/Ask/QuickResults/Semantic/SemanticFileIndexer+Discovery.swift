@@ -18,6 +18,8 @@ extension SemanticFileIndexer {
                         if cancelled() {
                             return false
                         }
+                        do { try waitWhilePaused(paused, cancelled: cancelled) }
+                        catch { writeFailure = error; return false }
                         if let code = response.error, code != ENOENT, code != ENOTDIR {
                             failed = true
                         }
@@ -27,6 +29,7 @@ extension SemanticFileIndexer {
                             }
                             // Even an injected reader's large frame is committed in bounded transactions.
                             for start in stride(from: 0, to: response.entries.count, by: 128) {
+                                try waitWhilePaused(paused, cancelled: cancelled)
                                 let entries = response.entries[start ..< min(start + 128, response.entries.count)]
                                 var directories: [String] = [], files: [(String, SemanticMediaPriority)] = []
                                 for entry in entries {
@@ -61,6 +64,7 @@ extension SemanticFileIndexer {
             if let writeFailure {
                 throw writeFailure
             }
+            try waitWhilePaused(paused, cancelled: cancelled)
             try store.finishDirectory(path, failed: failed)
             if failed {
                 summary.skipped += 1

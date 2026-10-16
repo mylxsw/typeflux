@@ -5091,6 +5091,7 @@
 "semantic.manage.subtitle" = "文書とメディア · このMacで処理";
 "semantic.progress.download" = "モデルのダウンロード";
 "semantic.progress.scanning" = "集計中：%@ 件を走査、対応ファイル %@ 件を検出";
+"semantic.progress.scanningPaused" = "一時停止時点：%@ 件を走査、対応ファイル %@ 件を検出";
 "semantic.progress.indexing" = "%@ / %@ ファイルを処理済み";
 "semantic.metrics" = "内容索引";
 "semantic.metric.files" = "索引済みファイル";
@@ -5525,6 +5526,7 @@
 "activity.contentIndex.title" = "内容インデックス";
 "activity.contentIndex.progress" = "%@ / %@ ファイルを処理済み";
 "activity.contentIndex.scanning" = "ファイルを検索中 · %@ 件確認済み";
+"activity.contentIndex.scanningPaused" = "ファイル検索を一時停止 · %@ 件確認済み";
 "activity.contentIndex.waitingIdle" = "Mac がアイドルになったら続行 · %@";
 "activity.paused" = "一時停止中 · %@";
 "activity.llmModel.title" = "言語モデル · %@";
@@ -5552,7 +5554,6 @@
 "activity.window.recent" = "最近完了";
 "activity.window.emptyActive" = "現在バックグラウンドタスクはありません";
 "activity.window.emptyRecent" = "Typeflux の起動後に完了したタスクはありません";
-"activity.window.indicator" = "メニューバーのアイコンにタスクの状態を表示";
 "activity.window.notifications" = "長いダウンロードが完了したら通知";
 "activity.window.finished" = "完了 · %@";
 "activity.window.justNow" = "たった今";
@@ -5584,6 +5585,31 @@
 
 "recording.timelineLoading" = "タイムラインを準備中…";
 "recording.timelineUnavailable" = "タイムラインの音声を利用できません";
+
+"semantic.details.open" = "処理の詳細";
+"semantic.details.title" = "コンテンツ索引の処理状況";
+"semantic.details.close" = "閉じる";
+"semantic.details.pending" = "待機中";
+"semantic.details.completed" = "処理済み";
+"semantic.details.total" = "%@ ファイル";
+"semantic.details.empty" = "ファイルはありません";
+"semantic.details.unavailable" = "処理の詳細を読み込めません。";
+"semantic.details.historyNote" = "ファイルごとの処理時間はこのバージョンから記録します。";
+"semantic.details.previous" = "前へ";
+"semantic.details.next" = "次へ";
+"semantic.details.pausedFile" = "一時停止したファイル";
+"semantic.details.current" = "処理中";
+"semantic.details.scanning" = "フォルダをスキャン中…";
+"semantic.details.noCurrent" = "現在処理中のファイルはありません";
+"semantic.details.reveal" = "Finderで表示";
+"semantic.details.modified" = "更新日 %@";
+"semantic.details.page" = "%@ ページ";
+"semantic.details.duration" = "処理時間 %@";
+"semantic.details.durationUnknown" = "処理時間は不明";
+"semantic.details.metadataUnknown" = "ファイル情報を取得できません";
+"semantic.details.state.done" = "索引済み";
+"semantic.details.state.skipped" = "スキップ";
+"semantic.details.state.failed" = "失敗";
 
 "recording.publicationUnknown" = "ファイルの保存結果を確認できません。元の録画と生成ファイルは保持されています。再度書き出す前に保存先を確認してください。";
 "recording.publicationUnavailable" = "ファイルを保存できません。元の録画と生成ファイルは保持されています。";

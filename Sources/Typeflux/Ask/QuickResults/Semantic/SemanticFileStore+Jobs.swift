@@ -43,6 +43,8 @@ extension SemanticFileStore {
             CREATE INDEX IF NOT EXISTS chunk_generation ON chunks(path,generation);
             """)
             try addColumn("jobs", name: "recipe", declaration: "TEXT NOT NULL DEFAULT ''")
+            try addColumn("jobs", name: "processing_seconds", declaration: "REAL")
+            try addColumn("jobs", name: "completed_at", declaration: "REAL")
         }
     }
 
@@ -257,9 +259,13 @@ extension SemanticFileStore {
         }
     }
 
-    func completeWork(_ path: String, more: Bool) throws {
+    func completeWork(_ path: String, more: Bool, elapsed: TimeInterval = 0) throws {
         try lock.withLock {
             try transaction {
+                try execute("""
+                    UPDATE jobs SET processing_seconds=COALESCE(processing_seconds,0)+?,
+                        completed_at=CASE WHEN ? THEN NULL ELSE ? END WHERE path=?
+                    """, [max(0, elapsed), more ? 1 : 0, Date().timeIntervalSince1970, path])
                 if more {
                     try execute(
                         "UPDATE work_queue SET turn=(SELECT COALESCE(max(turn),0)+1 FROM work_queue) WHERE path=?",
@@ -269,6 +275,14 @@ extension SemanticFileStore {
                     try execute("DELETE FROM work_queue WHERE path=?", [path])
                 }
             }
+        }
+    }
+
+    func recordInterruptedWork(_ path: String, elapsed: TimeInterval) {
+        guard elapsed > 0 else { return }
+        try? lock.withLock {
+            try execute("UPDATE jobs SET processing_seconds=COALESCE(processing_seconds,0)+? WHERE path=?",
+                        [elapsed, path])
         }
     }
 }

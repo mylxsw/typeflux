@@ -256,6 +256,11 @@ final class AppCoordinator {
         di.askConversationWindowController?.model.onOpenSettings = { [weak self] section in
             self?.statusBarController?.showSettings(section: section)
         }
+        di.askConversationWindowController?.model.onRecoverConversationStorage = { [registry = di.moduleRegistry] in
+            guard let entry = registry.registrations.first(where: { $0.id == .conversations }) else { return }
+            let failure = entry.health.current?.failure
+            _ = await entry.recover(failure == .quarantined || failure == .healthPersistence)
+        }
         self.workflowController?.start()
         self.mouseVoiceInputController?.start()
         // Link the bundled SenseVoice copy before triggering the auto-model

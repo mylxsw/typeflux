@@ -28,13 +28,14 @@ struct SemanticFileSearchStatusTests {
         var measured = SemanticFileIndexer.Summary()
         measured.scanned = 3_000; measured.discovered = 220
         #expect(status(.indexing, indexProgress: measured).progress == .scanning(3_000, 220))
+        #expect(status(.paused, indexProgress: measured).progress == .pausedScanning(3_000, 220))
         measured.total = 220; measured.processed = 55
         #expect(status(.indexing, indexProgress: measured).progress == .indexing(55, 220))
         measured.waitingForIdle = true
         let waiting = status(.indexing, indexProgress: measured)
         #expect(waiting.isPassiveWaiting && waiting.progress == nil)
         #expect(!status(.paused, indexProgress: measured).isPassiveWaiting)
-        #expect(status(.paused, indexProgress: measured).progress == .indexing(55, 220))
+        #expect(status(.paused, indexProgress: measured).progress == .pausedIndexing(55, 220))
         #expect(status(.paused) == .init(tone: .busy, text: L("semantic.paused", 1248.formatted())))
     }
 
