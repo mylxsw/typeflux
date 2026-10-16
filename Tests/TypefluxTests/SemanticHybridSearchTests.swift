@@ -177,7 +177,8 @@ struct SemanticHybridSearchTests {
         )
         var partials: [AskPluginOutput] = []
         let output = try await plugin.run(request, plan: plugin.plan(request), progress: { partials.append($0) })
-        #expect(partials.first?.items.first(where: \.valid)?.title == "reimbursement.md")
+        #expect(partials.first?.items.map(\.title) == ["reimbursement.md"])
+        #expect(partials.first?.selected?.title == "reimbursement.md")
         #expect(output.items.map(\.title) == ["reimbursement.md", "guide.pdf"])
         #expect(output.items[1].subtitle.contains("3"))
         #expect(output.items[1].badge == L("semantic.result"))

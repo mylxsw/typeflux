@@ -5506,7 +5506,6 @@
 
 "ask.translation.stack.ready" = "按 Return 开始翻译";
 
-"semantic.searching" = "正在检索文件内容…";
 
 "semantic.media.downloading" = "正在下载媒体编码器…";
 

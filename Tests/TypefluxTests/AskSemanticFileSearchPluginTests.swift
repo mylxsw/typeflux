@@ -118,7 +118,7 @@ struct AskSemanticFileSearchPluginTests {
         var partials: [AskPluginOutput] = []
         let output = try await plugin.run(request, plan: plan) { partials.append($0) }
         #expect(await service.requests == [.init(text: request.text, type: .all, limit: 7)])
-        #expect(partials.count == 1 && partials[0].items[0].loading && partials[0].selected == nil)
+        #expect(partials.isEmpty)
         #expect(output.items == [AskFileSearchPlugin.item(hit)])
         #expect(output.selected?.fileHit == hit && output.source == L("semantic.title"))
         #expect(output.selected?.excerpt == hit.evidence?.text)

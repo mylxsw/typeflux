@@ -59,7 +59,7 @@ struct AskFileSearchPlugin: AskLauncherPlugin {
         if let candidate, await candidate.isEnabled, SemanticFilePolicy.query(text, type: type) != nil {
             service = candidate
         } else { service = nil }
-        let publication = await ContentPublication(progress: progress, render: { pendingOutput($0) },
+        let publication = await ContentPublication(progress: progress, render: { partialOutput($0) },
                                                    limit: settings.limit)
         async let content = searchContent(service, text: text, type: type, limit: settings.limit,
                                           publication: publication)
@@ -125,7 +125,9 @@ struct AskFileSearchPlugin: AskLauncherPlugin {
         func updateContent(_ hits: [AskFileHit]) { content = hits; publish() }
         private func publish() {
             guard !Task.isCancelled else { return }
-            progress(render(SemanticFilePolicy.merge(names, content, limit: limit)))
+            let hits = SemanticFilePolicy.merge(names, content, limit: limit)
+            guard !hits.isEmpty else { return }
+            progress(render(hits))
         }
     }
 
@@ -134,11 +136,9 @@ struct AskFileSearchPlugin: AskLauncherPlugin {
         return [Self.typeOption: current.next(step).rawValue]
     }
 
-    private func pendingOutput(_ hits: [AskFileHit]) -> AskPluginOutput {
-        let pending = AskPluginItem(id: "semantic.searching", title: L("semantic.searching"),
-                                    valid: false, loading: true)
-        var initial = output([pending] + hits.map(Self.item), note: nil)
-        initial.selectedItem = hits.isEmpty ? -1 : 1
+    private func partialOutput(_ hits: [AskFileHit]) -> AskPluginOutput {
+        var initial = output(hits.map(Self.item), note: nil)
+        initial.selectedItem = initial.selectableIndices.first ?? -1
         return initial
     }
 

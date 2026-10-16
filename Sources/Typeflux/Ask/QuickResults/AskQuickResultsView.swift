@@ -72,11 +72,10 @@ struct AskQuickResultsView: View {
     var body: some View {
         VStack(spacing: 0) {
             Rectangle().fill(AskTheme.separator).frame(height: 1).padding(.horizontal, 12)
-            if !results.listRows.isEmpty || results.notice != nil || results.searchingContent {
+            if !results.listRows.isEmpty || results.notice != nil {
                 ScrollViewReader { proxy in
                     ScrollView(.vertical, showsIndicators: Self.contentHeight(for: results) > visibleHeight) {
                         VStack(spacing: Self.rowSpacing) {
-                            if results.searchingContent { AskContentSearchProgressView() }
                             ForEach(results.listRows.map {
                                 (id: results.identity(of: $0), row: $0)
                             }, id: \.id) { item in

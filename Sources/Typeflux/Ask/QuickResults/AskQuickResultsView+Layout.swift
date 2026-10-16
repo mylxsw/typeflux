@@ -50,7 +50,7 @@ extension AskQuickResultsView {
         let sections = CGFloat(rows.indices.filter { sectionStart(at: $0, in: rows, results: results) != nil }.count)
         let notice = results.notice == nil ? 0 : noticeHeight + rowSpacing
         return 1 + listPadding * 2 + content + CGFloat(max(0, rows.count - 1)) * rowSpacing
-            + sections * (sectionHeight + rowSpacing) + notice + (results.searchingContent ? 28 + rowSpacing : 0)
+            + sections * (sectionHeight + rowSpacing) + notice
     }
 
     /// Return copies a calculation, opens an application or file, or sends to the AI.

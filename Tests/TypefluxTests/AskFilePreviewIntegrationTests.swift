@@ -36,7 +36,7 @@ struct AskFilePreviewIntegrationTests {
         window.setFrameOrigin(CGPoint(x: screen.minX + 30, y: window.frame.minY))
         fixture.model.plugins.enter(AskFileSearchPlugin.keywords[0])
         fixture.model.launcherDraft.text = "preview"
-        try await AskQuickSearchSessionTests.wait { fixture.model.plugins.partial?.items.first?.loading == true }
+        try await AskQuickSearchSessionTests.wait { fixture.model.plugins.partial?.items.count == 2 }
         let row = try #require(fixture.model.plugins.partial?.items.firstIndex { $0.fileHit?.path == hit.path })
         #expect(fixture.model.plugins.selectItem(row))
         try await AskQuickSearchSessionTests.wait { loader.requests.last?.path == hit.path }
