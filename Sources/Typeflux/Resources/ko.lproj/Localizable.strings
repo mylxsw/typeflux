@@ -5581,3 +5581,6 @@
 "recording.previewUnavailable" = "미리보기를 사용할 수 없습니다. 원본 녹화는 보존됩니다.";
 "recording.revealOriginal" = "Finder에서 원본 녹화 보기";
 "recording.reloadPreview" = "미리보기 다시 불러오기";
+
+"recording.timelineLoading" = "타임라인 준비 중…";
+"recording.timelineUnavailable" = "타임라인 오디오를 사용할 수 없습니다";

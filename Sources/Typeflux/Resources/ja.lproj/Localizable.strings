@@ -5581,3 +5581,6 @@
 "recording.previewUnavailable" = "プレビューを利用できません。元の録画は保存されています。";
 "recording.revealOriginal" = "元の録画を Finder で表示";
 "recording.reloadPreview" = "プレビューを再読み込み";
+
+"recording.timelineLoading" = "タイムラインを準備中…";
+"recording.timelineUnavailable" = "タイムラインの音声を利用できません";

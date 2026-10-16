@@ -55,6 +55,7 @@ final class ScreenRecordingCoordinator: ObservableObject {
     }
 
     private var mediaTask: Task<Void, Never>?
+    var loadTimeline: @Sendable (URL) async throws -> ScreenRecordingPreviewMedia = { try await ScreenRecordingPreviewMedia.load($0) }
     private var deviceTask: Task<Void, Never>?
     private var countdownWait: Task<Void, Error>?
     private(set) var sourceURL: URL?
@@ -330,15 +331,16 @@ extension ScreenRecordingCoordinator {
         }
         mediaTask?.cancel()
         if playback.isLoaded {
-            let mediaJob = Task.detached(priority: .userInitiated) { try await ScreenRecordingPreviewMedia.load(url) }
+            let load = loadTimeline
             mediaTask = Task { [weak self] in
                 do {
-                    let result = try await withTaskCancellationHandler { try await mediaJob.value } onCancel: {
-                        mediaJob.cancel()
-                    }
+                    let result = try await load(url)
                     guard let self, !Task.isCancelled, access.allows(), sourceURL == url else { return }
                     media = result
-                } catch { /* The video remains editable even when a damaged audio track cannot be previewed. */ }
+                } catch {
+                    guard let self, !Task.isCancelled, access.allows(), sourceURL == url else { return }
+                    media.audio = .unavailable
+                }
             }
         }
         state = .preview

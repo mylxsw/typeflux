@@ -5695,3 +5695,6 @@
 "recording.previewUnavailable" = "预览暂不可用，原始录屏已保留。";
 "recording.revealOriginal" = "在 Finder 中显示原始录屏";
 "recording.reloadPreview" = "重新加载预览";
+
+"recording.timelineLoading" = "正在准备时间轴…";
+"recording.timelineUnavailable" = "时间轴音频不可用";

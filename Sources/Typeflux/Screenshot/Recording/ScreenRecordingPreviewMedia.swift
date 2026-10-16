@@ -1,6 +1,7 @@
 import AppKit
 import AVFoundation
 import ImageIO
+import TypefluxMediaProtocol
 
 struct ScreenRecordingPreviewMedia: @unchecked Sendable {
     var thumbnails: [CGImage] = []
@@ -8,6 +9,15 @@ struct ScreenRecordingPreviewMedia: @unchecked Sendable {
     var size: CGSize = .zero
     var fps: Float = 0
     var fileBytes: Int64 = 0
+    var audio: MediaRecordingTimeline.Audio? = nil
+
+    var audioNoticeKey: String {
+        switch audio {
+        case nil: "recording.timelineLoading"
+        case .absent: "recording.noAudioTrack"
+        case .available, .unavailable: "recording.timelineUnavailable"
+        }
+    }
 
     static func thumbnail(_ url: URL) throws -> CGImage {
         if url.pathExtension.lowercased() == "gif", let source = CGImageSourceCreateWithURL(url as CFURL, nil),
@@ -22,54 +32,9 @@ struct ScreenRecordingPreviewMedia: @unchecked Sendable {
     }
 
     static func load(_ url: URL) async throws -> Self {
-        let asset = AVURLAsset(url: url)
-        let duration = try await asset.load(.duration).seconds
-        guard duration.isFinite, duration > 0 else { throw ScreenRecordingFailure.noFrames }
-        var result = Self()
-        result.fileBytes = Int64((try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0)
-        if let track = try await asset.loadTracks(withMediaType: .video).first {
-            let size = try await track.load(.naturalSize)
-            let transform = try await track.load(.preferredTransform)
-            let transformed = CGRect(origin: .zero, size: size).applying(transform).size
-            result.size = CGSize(width: abs(transformed.width), height: abs(transformed.height))
-            result.fps = try await track.load(.nominalFrameRate)
-        }
-        let generator = AVAssetImageGenerator(asset: asset)
-        generator.appliesPreferredTrackTransform = true
-        generator.maximumSize = CGSize(width: 200, height: 120)
-        defer { generator.cancelAllCGImageGeneration() }
-        for index in 0 ..< 10 {
-            try Task.checkCancellation()
-            let time = CMTime(seconds: duration * Double(index) / 10, preferredTimescale: 600)
-            if let image = try? generator.copyCGImage(at: time, actualTime: nil) {
-                result.thumbnails.append(image)
-            }
-        }
-        let tracks = try await asset.loadTracks(withMediaType: .audio)
-        if !tracks.isEmpty {
-            result.waveform = [Float](repeating: 0, count: 160)
-            for track in tracks {
-                try Task.checkCancellation()
-                let reader = try AVAssetReader(asset: asset)
-                let output = AVAssetReaderTrackOutput(track: track, outputSettings: [
-                    AVFormatIDKey: kAudioFormatLinearPCM, AVLinearPCMIsFloatKey: true,
-                    AVLinearPCMBitDepthKey: 32, AVLinearPCMIsNonInterleaved: false
-                ])
-                output.alwaysCopiesSampleData = false
-                guard reader.canAdd(output) else { continue }
-                reader.add(output)
-                guard reader.startReading() else { continue }
-                defer { reader.cancelReading() }
-                while let sample = output.copyNextSampleBuffer() {
-                    try Task.checkCancellation()
-                    let position = sample.presentationTimeStamp.seconds
-                    let bin = min(159, max(0, Int(position / duration * 160)))
-                    result.waveform[bin] = max(result.waveform[bin], ScreenRecordingAudioMeter.amplitude(sample))
-                }
-            }
-        }
-        return result
+        try await ScreenRecordingTimelineLoader.shared.load(url)
     }
+
 }
 
 /// Read only a bounded PCM buffer. The lock protects delegate updates from UI polling.

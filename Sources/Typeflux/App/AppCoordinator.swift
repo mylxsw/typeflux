@@ -320,6 +320,7 @@ final class AppCoordinator {
         di.textRecognitionWorkers.preventNewWork()
         di.clipboardOCRWorkers.preventNewWork()
         di.clipboardMetadataWorkers.preventNewWork()
+        di.recordingTimelineWorkers.preventNewWork()
         await di.nativeSystemCommands.shutdown()
         await di.localInferenceWorkers.shutdown()
         await di.mediaWorkers.shutdown()
@@ -330,6 +331,7 @@ final class AppCoordinator {
         await di.textRecognitionWorkers.shutdown()
         await di.clipboardOCRWorkers.shutdown()
         await di.clipboardMetadataWorkers.shutdown()
+        await di.recordingTimelineWorkers.shutdown()
         await di.moduleRegistry.shutdown()
     }
 
@@ -349,6 +351,7 @@ final class AppCoordinator {
         di.textRecognitionWorkers.preventNewWork()
         di.clipboardOCRWorkers.preventNewWork()
         di.clipboardMetadataWorkers.preventNewWork()
+        di.recordingTimelineWorkers.preventNewWork()
         Task { [di] in await di.moduleRegistry.shutdown() }
         if let authAnalyticsObserver { NotificationCenter.default.removeObserver(authAnalyticsObserver) }
         if let authLogoutObserver { NotificationCenter.default.removeObserver(authLogoutObserver) }
