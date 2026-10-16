@@ -64,11 +64,13 @@ struct AskLauncherContextTokenView: View {
 
     private var appIcon: some View {
         ZStack(alignment: .bottomTrailing) {
-            if let bundle = token.bundleID, let icon = AskContextChips.appIcon(bundle) {
-                Image(nsImage: icon).resizable().frame(width: 18, height: 18)
-            } else {
-                Image(systemName: "app").font(.system(size: 13)).foregroundStyle(StudioTheme.textSecondary)
-                    .frame(width: 18, height: 18)
+            AskApplicationIcon(bundleID: token.sourceOff ? nil : token.bundleID) { icon in
+                if let icon {
+                    Image(nsImage: icon).resizable().frame(width: 18, height: 18)
+                } else {
+                    Image(systemName: "app").font(.system(size: 13)).foregroundStyle(StudioTheme.textSecondary)
+                        .frame(width: 18, height: 18)
+                }
             }
             if token.restored {
                 Image(systemName: "clock.fill")
@@ -201,10 +203,12 @@ struct AskLauncherContextPanel: View {
         return row(title: source.app, detail: detail.isEmpty ? nil : detail, isOn: draft.sourceOff != true,
                    disabled: capturing, identifier: "ask.context.panel.source",
                    toggle: { setIncluded(.source, $0) }) {
-            if let bundle = draft.sourceBundleID, let icon = AskContextChips.appIcon(bundle) {
-                Image(nsImage: icon).resizable().frame(width: 22, height: 22)
-            } else {
-                Image(systemName: "app").font(.system(size: 14)).foregroundStyle(StudioTheme.textSecondary)
+            AskApplicationIcon(bundleID: draft.sourceOff == true ? nil : draft.sourceBundleID) { icon in
+                if let icon {
+                    Image(nsImage: icon).resizable().frame(width: 22, height: 22)
+                } else {
+                    Image(systemName: "app").font(.system(size: 14)).foregroundStyle(StudioTheme.textSecondary)
+                }
             }
         }
     }

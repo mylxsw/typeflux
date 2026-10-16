@@ -1,6 +1,6 @@
 import AppKit
 import SwiftUI
-import UniformTypeIdentifiers
+import TypefluxMediaProtocol
 
 struct AskFilePreviewView: View {
     @ObservedObject var state: AskFilePreviewState
@@ -28,6 +28,7 @@ struct AskFilePreviewView: View {
             Divider().opacity(0.4)
             footer.frame(height: 38)
         }
+        .environment(\.askContextImageAccess, state.imageAccess)
         .background(AskGlassBackground(material: .resolve(reduceTransparency: reduceTransparency, style: style),
                                        corner: 16, opaqueFill: AskTheme.surface))
         .clipShape(RoundedRectangle(cornerRadius: 16))
@@ -37,9 +38,8 @@ struct AskFilePreviewView: View {
 
     private var header: some View {
         HStack(spacing: 9) {
-            Image(nsImage: NSWorkspace.shared
-                .icon(for: UTType(filenameExtension: state.hit?.url.pathExtension ?? "") ?? .data))
-                .resizable().scaledToFit().frame(width: 28, height: 28).accessibilityHidden(true)
+            AskNativeIconView(icon: headerIcon)
+                .frame(width: 28, height: 28).accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 3) {
                 Text(state.hit?.name ?? "").font(.system(size: 12, weight: .semibold)).lineLimit(1)
                     .truncationMode(.middle)
@@ -48,6 +48,11 @@ struct AskFilePreviewView: View {
             }
             Spacer(minLength: 0)
         }.padding(.horizontal, 14)
+    }
+
+    private var headerIcon: MediaNativeIcon {
+        let suffix = state.hit?.url.pathExtension ?? ""
+        return suffix.isEmpty ? .init(kind: .type, value: "public.data") : .init(kind: .fileExtension, value: suffix)
     }
 
     private var footer: some View {

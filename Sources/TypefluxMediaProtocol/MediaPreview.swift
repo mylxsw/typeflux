@@ -107,7 +107,7 @@ public enum MediaImageType: String, Codable, Sendable {
 
 /// A native icon lookup, never an instruction to decode the file as image data.
 public struct MediaNativeIcon: Codable, Sendable, Hashable {
-    public enum Kind: String, Codable, Sendable { case file, type }
+    public enum Kind: String, Codable, Sendable { case file, type, application, fileExtension }
     public var kind: Kind
     public var value: String
     public init(kind: Kind, value: String) { self.kind = kind; self.value = value }
@@ -116,5 +116,10 @@ public struct MediaNativeIcon: Codable, Sendable, Hashable {
               kind != .file || value.hasPrefix("/"),
               kind != .type || value.unicodeScalars.allSatisfy({ CharacterSet.alphanumerics.contains($0) || ".-".unicodeScalars.contains($0) })
         else { throw MediaFailure.invalidProtocol }
+        if kind == .application || kind == .fileExtension {
+            guard value.utf8.count <= (kind == .application ? 256 : 64),
+                  value.utf8.allSatisfy({ (48...57).contains($0) || (65...90).contains($0) || (97...122).contains($0) || [45, 46, 95].contains($0) })
+            else { throw MediaFailure.invalidProtocol }
+        }
     }
 }

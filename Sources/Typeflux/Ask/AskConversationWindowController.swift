@@ -316,7 +316,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             onFilePreview: { [weak self] hit, neighbours, empty in
                 guard let self else { return }
                 if self.settings.askFilePreviewEnabled, self.launcher?.isVisible == true {
-                    self.filePreview.request(hit, neighbours: neighbours, empty: empty)
+                    self.filePreview.request(hit, neighbours: neighbours, empty: empty, access: self.model.contextImageAccess(launcher: true))
                 } else { self.filePreview.dismissNow() }
             })
             .interfaceStyle(following: interfaceStyle))
@@ -583,7 +583,12 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     }
 }
 
-private final class AskFloatingPanel: NSPanel {
+final class AskFloatingPanel: NSPanel {
+    static let willOrderOut = Notification.Name("AskFloatingPanel.willOrderOut")
+    override func orderOut(_ sender: Any?) {
+        NotificationCenter.default.post(name: Self.willOrderOut, object: self)
+        super.orderOut(sender)
+    }
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }
 }

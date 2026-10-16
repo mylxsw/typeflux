@@ -293,14 +293,18 @@ struct AskAttachmentChip: View {
                 .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous)
                     .strokeBorder(AskTheme.border, lineWidth: 0.5))
-        } else if let bundle = item.appBundleID, let icon = AskContextChips.appIcon(bundle) {
-            Image(nsImage: icon).resizable().frame(width: 22, height: 22)
         } else {
-            Image(systemName: item.systemImage)
-                .font(.system(size: 10.5, weight: .semibold))
-                .foregroundStyle(item.style == .warning || item.style == .unavailable
-                                 ? StudioTheme.warning : StudioTheme.textSecondary)
-                .frame(width: 22, height: 22)
+            AskApplicationIcon(bundleID: item.appBundleID) { icon in
+                if let icon {
+                    Image(nsImage: icon).resizable().frame(width: 22, height: 22)
+                } else {
+                    Image(systemName: item.systemImage)
+                        .font(.system(size: 10.5, weight: .semibold))
+                        .foregroundStyle(item.style == .warning || item.style == .unavailable
+                                         ? StudioTheme.warning : StudioTheme.textSecondary)
+                        .frame(width: 22, height: 22)
+                }
+            }
         }
     }
 }

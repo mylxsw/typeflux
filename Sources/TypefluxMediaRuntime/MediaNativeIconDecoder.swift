@@ -31,6 +31,11 @@ public enum MediaNativeIconDecoder {
         switch icon.kind {
         case .file:
             return NSWorkspace.shared.icon(forFile: icon.value)
+        case .application:
+            guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: icon.value) else { throw MediaFailure.unreadable }
+            return NSWorkspace.shared.icon(forFile: url.path)
+        case .fileExtension:
+            return NSWorkspace.shared.icon(for: UTType(filenameExtension: icon.value) ?? .data)
         case .type:
             guard let type = UTType(icon.value) else { throw MediaFailure.unreadable }
             return NSWorkspace.shared.icon(for: type)
