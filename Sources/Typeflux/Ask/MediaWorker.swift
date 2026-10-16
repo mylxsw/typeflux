@@ -13,7 +13,7 @@ final class MediaWorker: @unchecked Sendable {
     static let textRecognition = MediaWorker(timeout: 30, requiresLifecycle: true)
     static let clipboardOCR = MediaWorker(timeout: 30, requiresLifecycle: true)
     static let clipboardMetadata = MediaWorker(timeout: 10, requiresLifecycle: true)
-    enum Input { case file(URL), data(Data) }
+    enum Input { case file(URL, version: String? = nil), data(Data) }
     typealias Runner = @Sendable (ManagedProcess.Request, @escaping @Sendable () -> Bool) throws -> ManagedProcess.Result
     struct Authorization: Sendable {
         fileprivate let owner: UUID
@@ -232,14 +232,16 @@ final class MediaWorker: @unchecked Sendable {
         case let .data(data):
             guard data.count <= limit else { throw MediaFailure.tooLarge }
             try data.write(to: target, options: .withoutOverwriting)
-        case let .file(url):
+        case let .file(url, version):
             // Reject FIFOs/devices without blocking open, and bound reads even if
             // the original file grows after its metadata was checked.
-            let fd = open(url.path, O_RDONLY | O_NONBLOCK | O_CLOEXEC)
+            let fd = open(url.path, O_RDONLY | O_NONBLOCK | O_CLOEXEC | (version == nil ? 0 : O_NOFOLLOW))
             guard fd >= 0 else { throw MediaFailure.unreadable }
             defer { close(fd) }
             var info = stat()
             guard fstat(fd, &info) == 0, info.st_mode & S_IFMT == S_IFREG else { throw MediaFailure.unreadable }
+            guard version == nil || AskFileWorkerCommand.contentVersion(info) == version
+            else { throw MediaFailure.unreadable }
             guard info.st_size <= limit else { throw MediaFailure.tooLarge }
             let output = open(target.path, O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0o600)
             guard output >= 0 else { throw MediaFailure.unavailable }
@@ -263,6 +265,7 @@ final class MediaWorker: @unchecked Sendable {
                     }
                 }
             }
+            if let version { try Self.checkVersion(version, descriptor: fd, url: url) }
         }
     }
 
@@ -279,6 +282,15 @@ final class MediaWorker: @unchecked Sendable {
         }
     }
     var activeCount: Int { lock.withLock { active.count } }
+}
+
+extension MediaWorker {
+    private static func checkVersion(_ version: String, descriptor: Int32, url: URL) throws {
+        var after = stat(), current = stat()
+        guard fstat(descriptor, &after) == 0, lstat(url.path, &current) == 0,
+              AskFileWorkerCommand.contentVersion(after) == version,
+              AskFileWorkerCommand.contentVersion(current) == version else { throw MediaFailure.unreadable }
+    }
 }
 
 /// Cleanup needs both host completion and actual child collection. The pool

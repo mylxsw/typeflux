@@ -1,0 +1,19 @@
+[
+  "AskFilePreviewLoaderTests.swift",
+  "AskFilePreviewTests.swift",
+  "ExclusiveUIStateTrait.swift",
+  "SemanticFileSearchTests.swift",
+  "SemanticFileValidatorTests.swift",
+  "SemanticImageOCRTests.swift",
+  "SemanticIndexDiagnosticsTests.swift",
+  "SemanticIndexRecoveryTests.swift",
+  "SemanticLexicalSearchTests.swift",
+  "SemanticMediaExtractorTests.swift",
+  "SemanticMediaIndexTests.swift",
+  "SemanticOCRPreviewTests+Snapshots.swift",
+  "SemanticOCRPreviewTests.swift",
+  "SemanticPDFOCRTests.swift",
+  "SemanticReaderOwnershipTests.swift",
+  "SemanticSearchRankingTests.swift",
+  "SemanticSearchSnippetTests.swift"
+]

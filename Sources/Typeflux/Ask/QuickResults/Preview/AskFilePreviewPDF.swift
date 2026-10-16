@@ -11,6 +11,7 @@ enum AskFilePreviewPDF {
         var duration: Double = 0
         var start: Double = 0
         var waveform: [Float] = []
+        var imageTextLocated: Bool?
     }
     static func render(_ url: URL, pixels: CGSize, evidence: AskFileHit.Evidence?,
                        cancellation: AskSearchCancellation, worker: MediaWorker = .previews) throws -> Result {
@@ -25,9 +26,9 @@ enum AskFilePreviewPDF {
 enum MediaPreviewDisplay {
     /// Runs on an owned background task; original bytes never enter a host decoder.
     static func render(_ url: URL, pixels: CGSize, pdf: Bool, evidence: AskFileHit.Evidence?,
-                       cancellation: AskSearchCancellation, worker: MediaWorker = .previews) throws -> AskFilePreviewPDF.Result {
+                       cancellation: AskSearchCancellation, worker: MediaWorker = .previews, version: String? = nil) throws -> AskFilePreviewPDF.Result {
         try renderRequest(url, pixels: pixels, operation: pdf ? .previewPDF : .previewImage,
-                          evidence: evidence, start: 0, cancellation: cancellation, worker: worker)
+                          evidence: evidence, start: 0, cancellation: cancellation, worker: worker, version: version)
     }
 
     static func renderAV(_ url: URL, pixels: CGSize, video: Bool, start: Double,
@@ -38,16 +39,18 @@ enum MediaPreviewDisplay {
 
     private static func renderRequest(_ url: URL, pixels: CGSize, operation: MediaRequest.Operation,
                                       evidence: AskFileHit.Evidence?, start: Double,
-                                      cancellation: AskSearchCancellation, worker: MediaWorker) throws -> AskFilePreviewPDF.Result {
+                                      cancellation: AskSearchCancellation, worker: MediaWorker, version: String? = nil) throws -> AskFilePreviewPDF.Result {
         guard pixels.width.isFinite, pixels.height.isFinite, pixels.width >= 1, pixels.height >= 1,
               pixels.width <= Double(MediaPreviewOptions.maxEdge), pixels.height <= Double(MediaPreviewOptions.maxEdge)
         else { throw MediaFailure.tooLarge }
+        let locateText = operation == .previewImage && evidence?.segmentKind == "image-ocr"
+            && version != nil && evidence?.version == version
         let options = MediaPreviewOptions(width: Int(pixels.width), height: Int(pixels.height),
                                           page: operation == .previewPDF ? evidence?.page : nil,
-                                          passage: operation == .previewPDF ? evidence?.text : nil,
+                                          passage: operation == .previewPDF || locateText ? evidence?.text : nil,
                                           start: operation.isAV ? (start.isFinite ? max(0, start) : 0) : nil,
                                           container: operation.isAV ? MediaAVContainer(rawValue: url.pathExtension.lowercased()) : nil)
-        return try decode(.file(url), operation: operation, options: options, cancellation: cancellation, worker: worker)
+        return try decode(.file(url, version: version), operation: operation, options: options, cancellation: cancellation, worker: worker)
     }
 
     static func renderImage(_ data: Data, type: MediaImageType?, cancellation: AskSearchCancellation,
@@ -90,7 +93,8 @@ enum MediaPreviewDisplay {
                 return image
             }
             return .init(images: images, numbers: result.rasters.compactMap(\.page), pages: result.pages,
-                         duration: result.duration ?? 0, start: result.start ?? 0, waveform: result.waveform ?? [])
+                         duration: result.duration ?? 0, start: result.start ?? 0, waveform: result.waveform ?? [],
+                         imageTextLocated: result.textGeometry.map { !$0.boxes.isEmpty })
         }
     }
 

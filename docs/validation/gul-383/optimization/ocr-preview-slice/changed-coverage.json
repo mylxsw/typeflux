@@ -1,0 +1,73 @@
+{
+  "baseline": "2bff08de1a38a187b811f1644571f25cb77e8f27",
+  "denominator": "Git added/modified executable Swift lines intersected with LLVM LCOV DA records; new Swift files included. Line coverage only, not branch coverage.",
+  "groups": {
+    "application": {
+      "covered": 46,
+      "executable": 46,
+      "percent": 100.0
+    },
+    "shared_media": {
+      "covered": 54,
+      "executable": 54,
+      "percent": 100.0
+    }
+  },
+  "files": {
+    "Sources/Typeflux/Ask/MediaWorker.swift": {
+      "covered": 11,
+      "executable": 11,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Files/AskFileWorkerCommand.swift": {
+      "covered": 2,
+      "executable": 2,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewContent.swift": {
+      "covered": 0,
+      "executable": 0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewController.swift": {
+      "covered": 5,
+      "executable": 5,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewLoader.swift": {
+      "covered": 8,
+      "executable": 8,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPDF.swift": {
+      "covered": 9,
+      "executable": 9,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewRenderer.swift": {
+      "covered": 4,
+      "executable": 4,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewView.swift": {
+      "covered": 7,
+      "executable": 7,
+      "uncovered": []
+    },
+    "Sources/TypefluxMediaProtocol/MediaPreview.swift": {
+      "covered": 5,
+      "executable": 5,
+      "uncovered": []
+    },
+    "Sources/TypefluxMediaRuntime/MediaPreviewDecoder.swift": {
+      "covered": 12,
+      "executable": 12,
+      "uncovered": []
+    },
+    "Sources/TypefluxMediaRuntime/MediaPreviewOCR.swift": {
+      "covered": 37,
+      "executable": 37,
+      "uncovered": []
+    }
+  }
+}

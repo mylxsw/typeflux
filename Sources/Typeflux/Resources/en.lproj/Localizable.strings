@@ -5801,3 +5801,5 @@
 "settings.services.semanticQueryInference" = "Semantic query inference";
 "settings.services.semanticIndexInference" = "Semantic document inference";
 "settings.services.semanticMediaInference" = "Semantic media inference";
+
+"ask.preview.textLocationUnavailable" = "Text location unavailable";

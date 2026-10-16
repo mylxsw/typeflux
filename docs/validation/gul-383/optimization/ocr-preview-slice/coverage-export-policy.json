@@ -1,0 +1,7 @@
+{
+  "policy": "Export profiles separately using the final binary. Union executable-line counters only for unchanged production functions; revised MediaPreviewOCR.swift uses only final retry coverage. No cross-revision raw profile merge or branch-coverage claim.",
+  "application": "first-tests + final retry, unchanged application source/functions",
+  "shared_media": "first-tests + final retry for unchanged protocol/decoder; MediaPreviewOCR only final retry",
+  "automatic_postprocessing": "The final method assertions passed. SwiftPM returned failure because one raw profile was reported corrupt at automatic merge time. All three profiles validated after command completion; manual merge/export succeeded. The make coverage exit is recorded as 2, not relabeled as success.",
+  "rejected_cross_revision_merge": "A trial merge detected changed counter counts for locate and the edited test method. Its output was discarded; no percentages are derived from that merged profile."
+}

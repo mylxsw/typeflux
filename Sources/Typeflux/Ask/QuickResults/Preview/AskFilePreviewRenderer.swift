@@ -44,12 +44,14 @@ enum AskFilePreviewRenderer {
             let rendered = try await withTaskCancellationHandler {
                 try await Task.detached(priority: .utility) { try MediaPreviewDisplay.render(
                     hit.url, pixels: pixels, pdf: kind == .pdf,
-                    evidence: hit.evidence, cancellation: cancellation, worker: worker
+                    evidence: hit.evidence, cancellation: cancellation, worker: worker, version: info.version
                 ) }.value
             } onCancel: { cancellation.cancel() }
             try Task.checkCancellation()
             return AskFilePreviewContent(kind: kind, images: rendered.images.map { NSImage(cgImage: $0, size: .zero) },
-                                         pageCount: rendered.pages, pageNumbers: rendered.numbers)
+                                         pageCount: rendered.pages, pageNumbers: rendered.numbers,
+                                         imageTextLocated: kind == .image && hit.evidence?.segmentKind == "image-ocr"
+                                            ? rendered.imageTextLocated ?? false : nil)
         }
         if kind == .video || kind == .audio {
             return try await media(hit.url, kind: kind, pixels: pixels, start: hit.evidence?.time ?? 0, worker: worker)

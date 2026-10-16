@@ -136,3 +136,31 @@ struct AskFilePreviewLoaderTests {
         #expect(settings.askFilePreviewEnabled)
     }
 }
+
+extension AskFilePreviewLoaderTests {
+    @Test func versionIdentityAndPostRenderPermissionAreRechecked() async {
+        var version = "one", generated = 0, revoke = false, denyAfterRender = false
+        let loader = AskFilePreviewLoader(metadata: { _, _ in
+            .init(error: revoke ? 13 : nil, fileSize: 20, modified: .distantPast, version: version)
+        }, generate: { _, kind, _, _ in
+            generated += 1
+            if denyAfterRender { revoke = true }
+            return .init(kind: kind, imageTextLocated: true)
+        })
+        loader.load(previewHit("a.png"), pixels: pixels) { #expect($0?.imageTextLocated == true) }; await settle()
+        version = "two"
+        loader.load(previewHit("a.png"), pixels: pixels) { #expect($0 != nil) }; await settle()
+        #expect(generated == 2, "Same-size same-mtime replacements must invalidate the raster cache")
+        version = "three"; denyAfterRender = true
+        loader.load(previewHit("a.png"), pixels: pixels) { #expect($0 == nil) }; await settle()
+        revoke = false
+        let changedDuringRender = AskFilePreviewLoader(metadata: { _, _ in
+            .init(fileSize: 20, modified: .distantPast, version: version)
+        }, generate: { _, kind, _, _ in
+            version = "replacement"
+            return .init(kind: kind, imageTextLocated: true)
+        })
+        changedDuringRender.load(previewHit("a.png"), pixels: pixels) { #expect($0 == nil) }; await settle()
+        #expect(changedDuringRender.cacheCount == 0)
+    }
+}

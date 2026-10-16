@@ -48,12 +48,20 @@ public struct MediaPreviewResult: Codable, Sendable {
     public var start: Double?
     public var waveform: [Float]?
     public var imageType: MediaImageType?
+    /// Exact matched Vision regions in the oriented raster's normalized bottom-left space.
+    /// An empty geometry reports that the requested passage could not be located.
+    public var textGeometry: MediaTextGeometry?
     public init(rasters: [MediaRaster], pages: Int = 0) { self.rasters = rasters; self.pages = pages }
     public func validate(for request: MediaRequest) throws {
         guard let options = request.preview, rasters.count <= 3
         else { throw MediaFailure.invalidProtocol }
         try options.validate()
         guard imageType == options.imageType else { throw MediaFailure.invalidProtocol }
+        if let textGeometry {
+            guard request.operation == .previewImage, options.passage != nil,
+                  textGeometry.boxes.count <= 64 else { throw MediaFailure.invalidProtocol }
+            try textGeometry.validate()
+        }
         for raster in rasters { try raster.validate(for: options) }
         if request.operation.isAV {
             guard pages == 0, let duration, let start, duration.isFinite, duration >= 0,

@@ -1,0 +1,75 @@
+{
+  "commands": [
+    {
+      "command": [
+        "make",
+        "coverage",
+        "SUITE=SemanticOCRPreviewTests AskFilePreviewLoaderTests AskFilePreviewControllerTests AskFilePreviewReaderTests"
+      ],
+      "wall_seconds": 61.7562264999724,
+      "exit_code": 2
+    },
+    {
+      "command": [
+        "make",
+        "coverage",
+        "SUITE=SemanticOCRPreviewTests AskFilePreviewLoaderTests AskFilePreviewControllerTests AskFilePreviewReaderTests"
+      ],
+      "wall_seconds": 301.10801308299415,
+      "exit_code": 2
+    },
+    {
+      "command": [
+        "make",
+        "coverage",
+        "FILTER=SemanticOCRPreviewTests/.*persisted"
+      ],
+      "wall_seconds": 154.2577087500249,
+      "exit_code": 2
+    }
+  ],
+  "total_command_wall_seconds": 517.1219483329915,
+  "builds": [
+    {
+      "run": "coverage-build-cache-failure",
+      "build_seconds": [
+        59.65
+      ]
+    },
+    {
+      "run": "coverage-first-tests",
+      "build_seconds": [
+        255.29
+      ]
+    },
+    {
+      "run": "coverage-retry",
+      "build_seconds": [
+        100.28
+      ]
+    }
+  ],
+  "total_build_seconds": 415.21999999999997,
+  "result": "All 19 selected methods have passing functional results: 18 passed initially, and the sole failed parameterized method passed its two cases after rebuilding the final helper. No full or duplicate plain test run.",
+  "first_failure": "Relocated Clang module cache refused its old absolute path; removed only this private scratch cache and retried the same focused scope.",
+  "first_test_failure": "The first built helper predated the repeated-passage guard added during review; both parameter cases reported that guard. Rebuilt the helper and retried only SemanticOCRPreviewTests/.*persisted.",
+  "postprocessing": "The final method assertions passed. SwiftPM returned failure because one raw profile was reported corrupt at automatic merge time. All three profiles validated after command completion; manual merge/export succeeded. The make coverage exit is recorded as 2, not relabeled as success.",
+  "coverage": {
+    "application": {
+      "covered": 46,
+      "executable": 46,
+      "percent": 100.0
+    },
+    "shared_media": {
+      "covered": 54,
+      "executable": 54,
+      "percent": 100.0
+    }
+  },
+  "coverage_policy": "Profiles exported separately against the final binary. Revised MediaPreviewOCR uses final retry only; other unchanged production files use valid line counters from both exports. Cross-revision profile merge was rejected and discarded. No branch coverage claim.",
+  "visual_QA": "Inspected final mixed light/dark, file-plugin dark, and file-plugin light fallback PNGs. OCR highlights align with text; fallback leaves the image unmarked and shows its localized label.",
+  "geometry": "PNG and EXIF-6 JPEG produced identical normalized error-code boxes at a 720x360 output. The test checks known fixture position and all visible yellow pixels against that box.",
+  "lint": "New helper and test file pass strict SwiftLint. All touched Swift files have 53 pre-existing file/rule warnings, matching base; strict aggregate lint returns 2 for both revisions. No new file/rule counts.",
+  "diff_check": "git diff --check passed",
+  "limits": "Synthetic screenshot/actual Apple Vision; deterministic vectors; native production-view captures. No real embedding quality, full launcher keyboard/controller, Release latency or long-term stability conclusion."
+}

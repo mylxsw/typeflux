@@ -126,7 +126,11 @@ final class AskFilePreviewController: AskImageScopeObserver {
             grace = clock.schedule(after: 0.15) { [weak self] in self?.hide(animated: true) }
             return
         }
-        // Refresh the header immediately while retaining the previous content through the grace window.
+        // Located OCR pixels belong to the previous selection, including its passage and version.
+        if state.content?.imageTextLocated != nil {
+            state.content = nil; state.skeleton = true
+        }
+        // Other previews retain their existing grace transition.
         state.hit = hit
         state.detail = nil
         loader.setVisible(true)

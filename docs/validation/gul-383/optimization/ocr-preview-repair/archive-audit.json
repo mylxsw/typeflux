@@ -1,0 +1,38 @@
+[
+  {
+    "error_code_visible" : true,
+    "filename" : "ocr-files-dark.png",
+    "ink_pixels" : 1086,
+    "preview_region_points" : [
+      606,
+      194,
+      344,
+      172
+    ],
+    "recognized_preview_lines" : [
+      "Connection failed",
+      "Error ERR-739204",
+      "Request ID REQ-482917"
+    ],
+    "sha256" : "c98e3733d049a02c0cb16814261e4d732e10f4a7f40d985dc33ec06d6c537f83",
+    "yellow_pixels" : 3049
+  },
+  {
+    "error_code_visible" : true,
+    "filename" : "arch-reported-blank.png",
+    "ink_pixels" : 1086,
+    "preview_region_points" : [
+      606,
+      194,
+      344,
+      172
+    ],
+    "recognized_preview_lines" : [
+      "Connection failed",
+      "Error ERR-739204",
+      "Request ID REQ-482917"
+    ],
+    "sha256" : "c87c56a7f4aeb3d6093b99824f6dcd9dfc350f692b9ada10434e231e4f62c6fc",
+    "yellow_pixels" : 3049
+  }
+]

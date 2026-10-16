@@ -13,6 +13,7 @@ final class AskFilePreviewLoader: AskFilePreviewLoading {
         var width: Int
         var height: Int
         var evidence: AskFileHit.Evidence?
+        var version: String?
     }
 
     private let metadata: Metadata
@@ -117,13 +118,20 @@ final class AskFilePreviewLoader: AskFilePreviewLoading {
             size: size,
             width: Int(pixels.width),
             height: Int(pixels.height),
-            evidence: hit.evidence
+            evidence: hit.evidence,
+            version: info.version
         )
         if let cached = cache[key] {
             touch(key); return cached
         }
         var result = try await generate(hit, kind, pixels, info)
         try Task.checkCancellation()
+        if info.version != nil {
+            let current = try await metadata(hit, false)
+            try Task.checkCancellation()
+            guard current.error == nil, current.skippedMounts?.isEmpty != false,
+                  current.version == info.version else { throw AskFileReadError.unavailable }
+        }
         result.fileSize = size
         if let width = info.imageWidth, let height = info.imageHeight {
             result.imageSize = CGSize(width: width, height: height)

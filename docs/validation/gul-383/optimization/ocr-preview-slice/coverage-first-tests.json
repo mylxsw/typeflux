@@ -1,0 +1,9 @@
+{
+  "command": [
+    "make",
+    "coverage",
+    "SUITE=SemanticOCRPreviewTests AskFilePreviewLoaderTests AskFilePreviewControllerTests AskFilePreviewReaderTests"
+  ],
+  "wall_seconds": 301.10801308299415,
+  "exit_code": 2
+}
