@@ -32,7 +32,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
     }
 
     private var settingsFingerprint: String {
-        "\(settings.semanticFileSearch.enabled)\u{3}\(settings.askLauncherSearchSettings.fileIndexFingerprint)\u{3}\(settings.askQuickFileSearchEnabled)"
+        settings.semanticScopeFingerprint()
     }
     let settings: SettingsStore
     private let directory: URL
@@ -72,6 +72,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
     private var indexAttempt: SemanticIndexProgressDelivery.Source?
     private var lastCountRefresh = Date.distantPast
     private var token = AskSearchCancellation()
+    private let settingsAuthority = SemanticSettingsAuthority()
     private var store: SemanticFileStore?
     private var scope: AskFileScope?
     private var warmup: Task<Void, Never>?
@@ -129,6 +130,13 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
         self.makeEncoder = makeEncoder; self.makeQuery = makeQuery; self.embeddingOwners = embeddingOwners ?? SemanticEmbeddingOwners(requiresLifecycle: requiresModelLifecycle)
         self.preferences = settings.semanticFileSearch
         guard automaticStart else { return }
+        let authority = settingsAuthority, defaults = settings.defaults
+        observers.append(NotificationCenter.default.publisher(for: SemanticSettingsChange.notification)
+            .sink { notification in
+                guard let source = notification.object as? SettingsStore, source.defaults === defaults,
+                      let change = notification.userInfo?["change"] as? SemanticSettingsChange else { return }
+                authority.receive(change)
+            })
         self.observers
             .append(NotificationCenter.default.publisher(for: .askLauncherSearchSettingsDidChange)
                 .sink { [weak self] _ in
@@ -225,7 +233,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
         preferences = settings.semanticFileSearch
         let names = settings.askLauncherSearchSettings
         let key = "\(preferences.enabled)\u{3}\(names.fileIndexFingerprint)\u{3}\(settings.askQuickFileSearchEnabled)"
-        guard force || fingerprint != key else { return }
+        guard force || fingerprint != key || token.isCancelled else { return }
         if renewReaderAuthorization {
             readerAuthorization = readers.authorization()
             embeddingAuthorization = embeddingOwners.authorization()
@@ -243,6 +251,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
         cancelDownload()
         let previousDownload = download
         token.cancel(); token = AskSearchCancellation()
+        settingsAuthority.bind(token, fingerprint: key)
         let documentSource = SemanticIndexPauseGate.Source(lifecycle: token)
         self.documentSource = documentSource; pauseGate.begin(documentSource)
         readers.stop(); embeddingOwners.stop()

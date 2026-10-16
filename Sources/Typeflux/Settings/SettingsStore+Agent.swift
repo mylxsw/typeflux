@@ -64,6 +64,7 @@ extension SettingsStore {
     var askQuickFileSearchEnabled: Bool {
         get { defaults.object(forKey: "ask.quickResults.files") as? Bool ?? true }
         set {
+            revokeSemanticScope(before: semanticScopeFingerprint(fileSearchEnabled: newValue))
             defaults.set(newValue, forKey: "ask.quickResults.files")
             NotificationCenter.default.post(name: .askLauncherSearchSettingsDidChange, object: self)
         }
@@ -79,7 +80,10 @@ extension SettingsStore {
         set {
             var settings = newValue
             settings.mode = .mixed
-            if let data = try? JSONEncoder().encode(settings) { defaults.set(data, forKey: "ask.search.settings") }
+            if let data = try? JSONEncoder().encode(settings) {
+                revokeSemanticScope(before: semanticScopeFingerprint(names: settings))
+                defaults.set(data, forKey: "ask.search.settings")
+            }
             NotificationCenter.default.post(name: .askLauncherSearchSettingsDidChange, object: self)
         }
     }
