@@ -1,0 +1,181 @@
+{
+  "covered": 238,
+  "executable_added": 254,
+  "percent": 93.7,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Ask/AskComposerViews.swift",
+      "covered": 0,
+      "executable_added": 4,
+      "percent": 0.0,
+      "uncovered": [
+        797,
+        798,
+        799,
+        800
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskContextImage.swift",
+      "covered": 4,
+      "executable_added": 4,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskConversationModel+Plugins.swift",
+      "covered": 3,
+      "executable_added": 3,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskConversationModel+WorkflowImage.swift",
+      "covered": 22,
+      "executable_added": 25,
+      "percent": 88.0,
+      "uncovered": [
+        6,
+        7,
+        8
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskConversationModel.swift",
+      "covered": 2,
+      "executable_added": 2,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/ImageGeneration/AskRemoteImage.swift",
+      "covered": 0,
+      "executable_added": 1,
+      "percent": 0.0,
+      "uncovered": [
+        105
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "covered": 2,
+      "executable_added": 2,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/AskQuickResults.swift",
+      "covered": 4,
+      "executable_added": 4,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/AskLauncherPlugin.swift",
+      "covered": 1,
+      "executable_added": 1,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/AskPluginViews.swift",
+      "covered": 0,
+      "executable_added": 1,
+      "percent": 0.0,
+      "uncovered": [
+        838
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowImage.swift",
+      "covered": 94,
+      "executable_added": 94,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowImageView.swift",
+      "covered": 26,
+      "executable_added": 26,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowPlugin.swift",
+      "covered": 14,
+      "executable_added": 14,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Settings/WorkflowEditor/AskWorkflowEditorComponents.swift",
+      "covered": 0,
+      "executable_added": 6,
+      "percent": 0.0,
+      "uncovered": [
+        415,
+        416,
+        417,
+        418,
+        419,
+        420
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/TypefluxMediaProtocol/MediaProtocol.swift",
+      "covered": 8,
+      "executable_added": 8,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/TypefluxMediaProtocol/MediaWorkflowImage.swift",
+      "covered": 15,
+      "executable_added": 15,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/TypefluxMediaRuntime/MediaDecoder.swift",
+      "covered": 0,
+      "executable_added": 1,
+      "percent": 0.0,
+      "uncovered": [
+        28
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/TypefluxMediaRuntime/MediaHelperCommand.swift",
+      "covered": 1,
+      "executable_added": 1,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/TypefluxMediaRuntime/MediaWorkflowDecoder.swift",
+      "covered": 42,
+      "executable_added": 42,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    }
+  ]
+}

@@ -109,31 +109,31 @@ enum AskWordBookRetention: String, CaseIterable, Sendable {
     }
 }
 
-/// The word book's storage. Every call is synchronous and safe from any thread;
+/// The word book's storage. Calls are asynchronous and failures stay explicit;
 /// changes are announced with `.askWordBookDidChange` on the main queue.
 protocol AskWordBookStoring: AnyObject, Sendable {
-    func entry(forKey key: String) -> AskWordBookEntry?
+    func entry(forKey key: String) async throws -> AskWordBookEntry?
     /// Adds the lookup, or updates its entry: a newer card replaces the old one, and a
     /// translation never replaces a card. `counts` adds one to the times it was looked up.
     @discardableResult
-    func record(_ lookup: AskWordBookLookup, at date: Date, counts: Bool) -> AskWordBookEntry?
+    func record(_ lookup: AskWordBookLookup, at date: Date, counts: Bool) async throws -> AskWordBookEntry?
     /// Stars or unstars the word, adding it first when starring a word not kept yet.
     @discardableResult
-    func setStarred(_ starred: Bool, lookup: AskWordBookLookup, at date: Date) -> AskWordBookEntry?
-    func list(_ query: AskWordBookQuery) -> [AskWordBookEntry]
-    func count(_ scope: AskWordBookQuery.Scope) -> Int
+    func setStarred(_ starred: Bool, lookup: AskWordBookLookup, at date: Date) async throws -> AskWordBookEntry?
+    func list(_ query: AskWordBookQuery) async throws -> [AskWordBookEntry]
+    func count(_ scope: AskWordBookQuery.Scope) async throws -> Int
     /// How many entries `query` matches, ignoring its sort and paging.
-    func count(matching query: AskWordBookQuery) -> Int
+    func count(matching query: AskWordBookQuery) async throws -> Int
     /// When words were first and last looked up, for those last looked up since `date`.
-    func activity(since date: Date) -> [Date]
+    func activity(since date: Date) async throws -> [Date]
     /// Words last looked up since `date`.
-    func lookups(since date: Date) -> Int
-    func languagePairs() -> [AskWordBookLanguagePair]
-    func delete(keys: [String])
+    func lookups(since date: Date) async throws -> Int
+    func languagePairs() async throws -> [AskWordBookLanguagePair]
+    func delete(keys: [String]) async throws
     /// Puts deleted entries back as they were (undo).
-    func restore(_ entries: [AskWordBookEntry])
+    func restore(_ entries: [AskWordBookEntry]) async throws
     /// Removes lookups that are not starred, all of them or those last looked up before `date`.
-    func purgeHistory(before date: Date?)
+    func purgeHistory(before date: Date?) async throws
 }
 
 extension Notification.Name {
@@ -148,28 +148,37 @@ final class AskWordBookRecorder {
     var isEnabled: () -> Bool
     var now: () -> Date = Date.init
     private var recorded: Set<String> = []
+    private var pending: Set<String> = []
+    private var session = UUID()
 
     init(store: any AskWordBookStoring, isEnabled: @escaping () -> Bool = { true }) {
         self.store = store
         self.isEnabled = isEnabled
     }
 
-    /// A new launcher session: every word counts again.
-    func beginSession() { recorded.removeAll() }
+    func beginSession() { session = UUID(); recorded.removeAll() }
 
-    func record(_ lookup: AskWordBookLookup) {
+    func record(_ lookup: AskWordBookLookup) async throws {
         guard isEnabled(), !lookup.headword.isEmpty else { return }
-        let first = recorded.insert(lookup.key).inserted
-        store.record(lookup, at: now(), counts: first)
+        guard pending.insert(lookup.key).inserted else { throw LocalStoreFailure.busy }
+        let current = session
+        defer { pending.remove(lookup.key) }
+        let result = try await store.record(lookup, at: now(), counts: !recorded.contains(lookup.key))
+        guard result != nil else { throw LocalStoreFailure.unavailable }
+        if current == session { recorded.insert(lookup.key) }
     }
 
-    func isStarred(_ key: String) -> Bool { store.entry(forKey: key)?.isStarred == true }
+    func isStarred(_ key: String) async throws -> Bool { try await store.entry(forKey: key)?.isStarred == true }
 
-    /// Stars or unstars the word; returns whether it is starred now.
     @discardableResult
-    func toggleStar(_ lookup: AskWordBookLookup) -> Bool {
-        let starred = !isStarred(lookup.key)
-        store.setStarred(starred, lookup: lookup, at: now())
-        return starred
+    func toggleStar(_ lookup: AskWordBookLookup) async throws -> Bool {
+        guard pending.insert(lookup.key).inserted else { throw LocalStoreFailure.busy }
+        defer { pending.remove(lookup.key) }
+        let starred = try await !isStarred(lookup.key)
+        try Task.checkCancellation()
+        guard let saved = try await store.setStarred(starred, lookup: lookup, at: now()) else {
+            throw LocalStoreFailure.unavailable
+        }
+        return saved.isStarred
     }
 }

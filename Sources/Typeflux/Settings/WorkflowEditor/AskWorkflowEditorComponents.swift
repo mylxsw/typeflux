@@ -372,7 +372,7 @@ struct AskWorkflowLauncherPreview: View {
         } else {
             switch decoded {
             case let .items(list):
-                itemList(list)
+                AskLocalIconScope { itemList(list) }.id(result?.date)
             case let .markdown(text):
                 AskTranscriptText(text: text)
                     .frame(maxHeight: AskPluginResultsView.maximumMarkdownHeight, alignment: .top)
@@ -412,34 +412,13 @@ struct AskWorkflowLauncherPreview: View {
 
     /// The image a test run named, as the launcher shows it; before any run, a sample.
     @ViewBuilder private func imageView(_ name: String) -> some View {
-        switch image(name) {
-        case let .success(image):
-            let size = Self.previewSize(image)
-            if let picture = AskPluginResultsView.loadImage(image.url) {
-                Image(nsImage: picture).resizable().interpolation(.high)
-                    .frame(width: size.width, height: size.height)
-                    .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-                    .frame(maxWidth: .infinity)
-            }
-        case let .failure(failure):
-            if result == nil {
-                // No run yet: what an image result looks like.
-                Image(systemName: "qrcode").font(.system(size: 64, weight: .light))
-                    .foregroundStyle(StudioTheme.textPrimary).frame(maxWidth: .infinity).padding(.vertical, 6)
-            } else {
-                let isData = name.lowercased().hasPrefix("data:")
-                textLines(isData ? AskWorkflowActionRunner.clipped(name, limit: 40) : name)
-                Text(failure == .notImage ? L("ask.workflow.image.invalid")
-                    : L("ask.workflow.image.notFound", AskWorkflowActionRunner.clipped(name, limit: 40)))
-                    .font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
-            }
+        if result != nil, let folder {
+            AskWorkflowImageEditorPreview(name: name, folder: folder)
+                .id(result?.date)
+        } else {
+            Image(systemName: "qrcode").font(.system(size: 64, weight: .light))
+                .foregroundStyle(StudioTheme.textPrimary).frame(maxWidth: .infinity).padding(.vertical, 6)
         }
-    }
-
-    private func image(_ name: String) -> Result<AskPluginImage, AskWorkflowImage.Failure> {
-        guard result != nil, let folder else { return .failure(.notImage) }
-        let cache = FileManager.default.temporaryDirectory.appendingPathComponent("typeflux-workflow-preview")
-        return AskWorkflowImage.resolve(name, folder: folder, cache: cache, home: NSHomeDirectory())
     }
 
     /// The launcher's size for the image, smaller still if the preview is narrower.

@@ -45,7 +45,7 @@ struct AskNotesView: View {
         .overlay(alignment: .bottom) { noticeBar }
         .overlay { if dropTargeted { dropOverlay } }
         .onDrop(of: [.fileURL], isTargeted: $dropTargeted) { providers in
-            Self.loadURLs(providers) { urls in model.importFiles(urls.filter(AskNoteImporter.canImport)) }
+            Self.loadURLs(providers) { urls in model.perform { await model.importFiles(urls.filter(AskNoteImporter.canImport)) } }
             return true
         }
         .background(shortcuts)
@@ -95,12 +95,12 @@ struct AskNotesView: View {
             HStack(spacing: 10) {
                 Text(notice).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textPrimary).lineLimit(1)
                 if model.draftConflict {
-                    Button(L("ask.notes.saveCopy")) { model.saveDraftCopy() }
+                    Button(L("ask.notes.saveCopy")) { model.perform { await model.saveDraftCopy()  } }
                         .buttonStyle(.plain).font(.system(size: 12.5, weight: .semibold))
                         .foregroundStyle(AskTheme.accent)
                 }
                 if model.noticeOffersUndo, !model.deleted.isEmpty {
-                    Button(L("ask.notes.undo")) { model.undoDelete() }
+                    Button(L("ask.notes.undo")) { model.perform { await model.undoDelete()  } }
                         .buttonStyle(.plain).font(.system(size: 12.5, weight: .semibold))
                         .foregroundStyle(AskTheme.accent)
                 }
@@ -127,23 +127,23 @@ struct AskNotesView: View {
     private var shortcuts: some View {
         let typing = focus != nil || model.editing
         return ZStack {
-            Button("") { model.createNote() }.keyboardShortcut("n")
+            Button("") { model.perform { await model.createNote()  } }.keyboardShortcut("n")
             Button("") { focus = .search }.keyboardShortcut("f")
-            Button("") { model.toggleEditing() }.keyboardShortcut("e")
-            Button("") { model.setMode(model.mode == .split ? .read : .split) }
+            Button("") { model.perform { await model.toggleEditing()  } }.keyboardShortcut("e")
+            Button("") { model.perform { await model.setMode(model.mode == .split ? .read : .split)  } }
                 .keyboardShortcut("e", modifiers: [.command, .option])
             Button("") { model.exportSelected(.markdown) }.keyboardShortcut("e", modifiers: [.command, .shift])
-            Button("") { model.togglePin() }.keyboardShortcut("p", modifiers: [.command, .shift])
-            Button("") { model.moveSelection(-1) }.keyboardShortcut(.upArrow, modifiers: []).disabled(typing)
-            Button("") { model.moveSelection(1) }.keyboardShortcut(.downArrow, modifiers: []).disabled(typing)
+            Button("") { model.perform { await model.togglePin()  } }.keyboardShortcut("p", modifiers: [.command, .shift])
+            Button("") { model.perform { await model.moveSelection(-1)  } }.keyboardShortcut(.upArrow, modifiers: []).disabled(typing)
+            Button("") { model.perform { await model.moveSelection(1)  } }.keyboardShortcut(.downArrow, modifiers: []).disabled(typing)
             Button("") { model.copySelectedRich() }
                 .keyboardShortcut("c", modifiers: [.command, .shift]).disabled(typing)
             Button("") { model.openSelectedInWindow() }.keyboardShortcut("o")
-            Button("") { model.selecting ? model.trashPicked() : model.deleteSelected() }
+            Button("") { model.perform { if model.selecting { await model.trashPicked() } else { await model.deleteSelected() }  } }
                 .keyboardShortcut(.delete, modifiers: .command).disabled(typing)
-            Button("") { model.undoDelete() }.keyboardShortcut("z").disabled(model.deleted.isEmpty || typing)
+            Button("") { model.perform { await model.undoDelete()  } }.keyboardShortcut("z").disabled(model.deleted.isEmpty || typing)
             // Only while picking: otherwise ⌘A selects the text being read.
-            Button("") { model.pickAll() }.keyboardShortcut("a").disabled(typing || !model.selecting)
+            Button("") { model.perform { await model.pickAll()  } }.keyboardShortcut("a").disabled(typing || !model.selecting)
             Button("") { onClose() }.keyboardShortcut("w")
             Button("") { escape() }.keyboardShortcut(.cancelAction)
         }
@@ -153,11 +153,11 @@ struct AskNotesView: View {
 
     private func escape() {
         if model.editing {
-            model.setMode(.read)
+            model.perform { await model.setMode(.read) }
         } else if focus != nil {
             focus = nil
         } else if model.selecting {
-            model.setSelecting(false)
+            model.perform { await model.setSelecting(false) }
         } else if !model.searchText.isEmpty {
             model.searchText = ""
         } else {

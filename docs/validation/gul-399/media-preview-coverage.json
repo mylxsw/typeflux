@@ -1,0 +1,118 @@
+{
+  "covered": 238,
+  "executable_added": 243,
+  "percent": 97.94,
+  "files": [
+    {
+      "file": "Sources/Typeflux/App/AppCoordinator.swift",
+      "covered": 0,
+      "executable_added": 3,
+      "percent": 0.0,
+      "uncovered": [
+        302,
+        306,
+        317
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/App/DIContainer.swift",
+      "covered": 0,
+      "executable_added": 1,
+      "percent": 0.0,
+      "uncovered": [
+        24
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "covered": 15,
+      "executable_added": 15,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewLoader.swift",
+      "covered": 2,
+      "executable_added": 2,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPDF.swift",
+      "covered": 38,
+      "executable_added": 38,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewRenderer.swift",
+      "covered": 6,
+      "executable_added": 6,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/TypefluxMediaProtocol/MediaPreview.swift",
+      "covered": 34,
+      "executable_added": 34,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/TypefluxMediaProtocol/MediaPreviewText.swift",
+      "covered": 22,
+      "executable_added": 22,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/TypefluxMediaProtocol/MediaProtocol.swift",
+      "covered": 11,
+      "executable_added": 11,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/TypefluxMediaRuntime/MediaDecoder.swift",
+      "covered": 1,
+      "executable_added": 2,
+      "percent": 50.0,
+      "uncovered": [
+        22
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/TypefluxMediaRuntime/MediaHelperCommand.swift",
+      "covered": 13,
+      "executable_added": 13,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/TypefluxMediaRuntime/MediaPreviewDecoder.swift",
+      "covered": 96,
+      "executable_added": 96,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    }
+  ],
+  "base": "566ae1cba4fcedfb048e8924ff1bceb0d141108e",
+  "profile_attribution": "Thirteen profiles from this run's single final build: seven test-host, five media-helper, one existing file-worker. No profiles across changed counter layouts were merged. The SwiftPM post-test merge raced file-worker profile finalization; all thirteen later validated and merged without warnings.",
+  "binaries": {
+    "TypefluxPackageTests.xctest/Contents/MacOS/TypefluxPackageTests": "67e2fed9fc51af89fdd7bdadff9716f688028be8d293d85bee1616c08a7da6a5",
+    "TypefluxMediaHelper": "b4f09c80245dfb184beada33685fe6db1cb51b86614d0a304754346b32d6227c",
+    "Typeflux": "7c9979ce13839aeaea1db28aa9a3c174469ce0ecd117a42ba46a3ea500308aa6"
+  }
+}

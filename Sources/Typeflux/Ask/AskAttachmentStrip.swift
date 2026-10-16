@@ -51,25 +51,6 @@ enum AskAttachmentStrip {
         }
         return result
     }
-
-    /// The composer re-renders on every keystroke; the screenshot is a large
-    /// data URL, so its thumbnail is decoded once per capture and reused.
-    @MainActor private static var thumbnailCache: (key: ThumbnailKey, image: NSImage?)?
-
-    struct ThumbnailKey: Equatable {
-        var capturedAt: Date?
-        var length: Int
-    }
-
-    @MainActor static func thumbnail(dataURL: String?, capturedAt: Date?,
-                                     decode: (String) -> NSImage? = AskImage.decode) -> NSImage? {
-        guard let dataURL else { return nil }
-        let key = ThumbnailKey(capturedAt: capturedAt, length: dataURL.utf8.count)
-        if let cached = thumbnailCache, cached.key == key { return cached.image }
-        let image = decode(dataURL)
-        thumbnailCache = (key, image)
-        return image
-    }
 }
 
 struct AskAttachmentStripView: View {
@@ -115,13 +96,12 @@ struct AskAttachmentStripView: View {
                     .transition(.scale(scale: 0.7).combined(with: .opacity))
             }
             ForEach(attachments) { attachment in
-                AskAttachmentChip(item: AskAttachmentStrip.item(attachment),
-                                  thumbnail: attachment.image.flatMap {
-                                      AskAttachmentStrip.thumbnail(id: attachment.id, dataURL: $0)
-                                  },
-                                  caption: AskAttachmentStrip.caption(attachment),
-                                  onRemove: { onRemoveAttachment(attachment.id) })
-                    .transition(.scale(scale: 0.7).combined(with: .opacity))
+                AskContextImage(source: attachment.image) { image in
+                    AskAttachmentChip(item: AskAttachmentStrip.item(attachment), thumbnail: image,
+                                      caption: AskAttachmentStrip.caption(attachment),
+                                      onRemove: { onRemoveAttachment(attachment.id) })
+                }
+                .transition(.scale(scale: 0.7).combined(with: .opacity))
             }
             ForEach(choices) { choice in
                 AskAttachmentChip(item: AskContextItem(kind: .source, systemImage: choice.symbol, style: .active,
@@ -197,15 +177,7 @@ extension AskAttachmentStrip {
         }
     }
 
-    /// Attachment images are data URLs; each is decoded once and kept while the app runs.
-    @MainActor private static let imageCache = NSCache<NSString, NSImage>()
 
-    @MainActor static func thumbnail(id: String, dataURL: String) -> NSImage? {
-        if let cached = imageCache.object(forKey: id as NSString) { return cached }
-        guard let image = AskImage.decode(dataURL) else { return nil }
-        imageCache.setObject(image, forKey: id as NSString)
-        return image
-    }
 }
 
 struct AskAttachmentChip: View {

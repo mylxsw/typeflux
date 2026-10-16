@@ -1,0 +1,77 @@
+{
+  "covered": 320,
+  "executable_added": 331,
+  "percent": 96.68,
+  "files": [
+    {
+      "file": "Sources/Typeflux/App/AppCoordinator.swift",
+      "covered": 0,
+      "executable_added": 2,
+      "percent": 0.0,
+      "uncovered": [
+        292,
+        293
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/App/DIContainer.swift",
+      "covered": 0,
+      "executable_added": 6,
+      "percent": 0.0,
+      "uncovered": [
+        107,
+        108,
+        116,
+        117,
+        118,
+        119
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskConversationWindowController.swift",
+      "covered": 2,
+      "executable_added": 2,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/Recovery/RecoveringAskConversationCache.swift",
+      "covered": 14,
+      "executable_added": 14,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Stability/ModuleHandle.swift",
+      "covered": 19,
+      "executable_added": 19,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Stability/ModuleHealth.swift",
+      "covered": 20,
+      "executable_added": 20,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Stability/ModuleSupervisor.swift",
+      "covered": 265,
+      "executable_added": 268,
+      "percent": 98.88,
+      "uncovered": [
+        39,
+        40,
+        81
+      ],
+      "instrumented": true
+    }
+  ]
+}

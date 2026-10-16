@@ -1,5 +1,4 @@
 import AppKit
-import ImageIO
 
 struct AskLocalToolOutput: Sendable {
     var content: String
@@ -21,6 +20,7 @@ enum AskToolRisk: Int, Comparable, Sendable {
 
 @MainActor
 protocol AskToolExecuting {
+    var generationRecoveryRoot: URL? { get }
     func bindConversation(_ id: String)
     func bindExecution(ownerId: String, conversationId: String, runId: String)
     func setExecutionDeadline(_ deadline: Date?, conversationId: String)
@@ -48,6 +48,7 @@ protocol AskToolExecuting {
 }
 
 extension AskToolExecuting {
+    var generationRecoveryRoot: URL? { nil }
     func setExecutionDeadline(_: Date?, conversationId _: String) {}
     func deleteArtifacts(ownerId _: String, conversationId _: String) throws {}
     func cancelProjects(conversationId _: String?) {}
@@ -163,8 +164,13 @@ final class AskLocalTools: AskToolExecuting {
 
     var notebookTool: AskNotebookTool? {
         guard notebookAvailable, let notebook else { return nil }
-        return AskNotebookTool(store: notebook,
-                               hiddenTags: settings?.askNotebookHiddenTags ?? SettingsStore.defaultNotebookHiddenTags)
+        let hiddenTags = settings?.askNotebookHiddenTags ?? SettingsStore.defaultNotebookHiddenTags
+        return AskNotebookTool(store: notebook, hiddenTags: hiddenTags, validateAccess: { [weak self] in
+            guard let self, self.notebookAvailable, self.notebook === notebook,
+                  (self.settings?.askNotebookHiddenTags ?? SettingsStore.defaultNotebookHiddenTags) == hiddenTags else {
+                throw AskLocalError.message(L("ask.approval.changed"))
+            }
+        })
     }
 
     var workflowAuthoring: AskWorkflowAuthoringStore?
@@ -357,7 +363,7 @@ final class AskLocalTools: AskToolExecuting {
             let output = try await tool.call(arguments: call.function.arguments)
             try Task.checkCancellation()
             // Decoding and re-encoding a tool image must not block the main actor.
-            return await Task.detached(priority: .userInitiated) { Self.output(from: output) }.value
+            return await Self.output(from: output)
         }
         let args = try Self.jsonArguments(call.function.arguments)
         switch call.function.name {
@@ -377,7 +383,8 @@ final class AskLocalTools: AskToolExecuting {
             let execution = try await sandbox.run(language, code: code, conversationId: conversationId, timeout: timeout)
             let workspace = try sandbox.workspace(for: conversationId).path
             return .init(content: AskCodeSandbox.report(execution, workspace: workspace), image: execution.image,
-                         isError: execution.timedOut || execution.exitCode != 0)
+                         isError: execution.timedOut || execution.exitCode != 0 || execution.imageIncomplete,
+                         outcome: execution.imageIncomplete ? .init(status: execution.timedOut || execution.exitCode != 0 ? "unknown" : "ok") : nil)
         case "skill":
             guard let name = args["name"] as? String else { throw AskLocalError.message(L("ask.tool.invalid")) }
             guard enabledSkills.contains(where: { $0.name == name }) else {
@@ -392,28 +399,14 @@ final class AskLocalTools: AskToolExecuting {
                 // Writes require the approved dispatch entry point.
                 throw AskLocalError.message(L("ask.tool.unavailable"))
             }
-            return .init(content: try tool.execute(args))
+            return .init(content: try await tool.execute(args))
         default: throw AskLocalError.message(L("ask.tool.unavailable"))
         }
     }
 
     /// Retains ordered typed content, with a conservative legacy projection.
-    nonisolated static func output(from result: MCPToolsCallResult) -> AskLocalToolOutput {
-        AskTypedContent.output(from: result)
-    }
-
-    /// Re-encodes a tool image as a JPEG within the limits the Ask server accepts.
-    nonisolated static func jpegDataURL(base64: String) -> String? {
-        guard let data = Data(base64Encoded: base64, options: .ignoreUnknownCharacters),
-              let source = CGImageSourceCreateWithData(data as CFData, nil),
-              let image = CGImageSourceCreateThumbnailAtIndex(source, 0, [
-                  kCGImageSourceCreateThumbnailFromImageAlways: true,
-                  kCGImageSourceCreateThumbnailWithTransform: true,
-                  kCGImageSourceThumbnailMaxPixelSize: 1600
-              ] as CFDictionary),
-              let jpeg = NSBitmapImageRep(cgImage: image).representation(using: .jpeg, properties: [.compressionFactor: 0.7]),
-              jpeg.count <= 2_000_000 else { return nil }
-        return "data:image/jpeg;base64," + jpeg.base64EncodedString()
+    nonisolated static func output(from result: MCPToolsCallResult) async -> AskLocalToolOutput {
+        await AskTypedContent.output(from: result)
     }
 
     nonisolated static func jsonArguments(_ value: String) throws -> [String: Any] {

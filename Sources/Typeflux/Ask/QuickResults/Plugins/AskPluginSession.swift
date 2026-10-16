@@ -45,6 +45,8 @@ final class AskPluginSession: ObservableObject {
     /// A directory choice waits for typed input or an explicit second Return.
     private var waitingForInput = false
     private var generation = 0
+    /// Async persistence may only update the result that admitted it.
+    var resultGeneration: Int { generation }
     private var task: Task<Void, Never>?
     /// The keywords that led here with `runKeyword`, and the text the last one put in.
     private var chained: (keywords: [String], text: String)?
@@ -328,6 +330,11 @@ final class AskPluginSession: ObservableObject {
                    shown.original == incoming.original {
                     partial.selectedItem = Self.selection(keeping: shown, in: incoming)
                 }
+                // Streaming snapshots precede an in-flight user star; preserve its confirmed state.
+                if let shown = self.partial, let key = partial.wordBook?.key,
+                   shown.wordBook?.key == key, let starred = shown.starred {
+                    partial = partial.starring(starred)
+                }
                 self.set(\.partial, partial)
                 SemanticSearchTrace.current?.mark("file-partial-published")
             }
@@ -344,6 +351,10 @@ final class AskPluginSession: ObservableObject {
                 output.selectedItem = Self.selection(keeping: partial, in: output)
             } else if !output.items.isEmpty, output.selected == nil {
                 output.selectedItem = output.selectableIndices.first ?? -1
+            }
+            if let partial, let key = output.wordBook?.key,
+               partial.wordBook?.key == key, let starred = partial.starred {
+                output = output.starring(starred)
             }
             set(\.previous, nil)
             adopt(output.variables)

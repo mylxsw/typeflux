@@ -1,0 +1,125 @@
+{
+  "covered": 106,
+  "executable_added": 113,
+  "percent": 93.81,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Ask/AskLauncherSuggestions.swift",
+      "covered": 2,
+      "executable_added": 2,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile": "initial matching build (15 profiles; unchanged source)"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "covered": 1,
+      "executable_added": 1,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile": "initial matching build (15 profiles; unchanged source)"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/AskFinderIcon.swift",
+      "covered": 33,
+      "executable_added": 33,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile": "final correction (9 profiles)"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/AskQuickActions.swift",
+      "covered": 8,
+      "executable_added": 13,
+      "percent": 61.54,
+      "uncovered": [
+        210,
+        218,
+        220,
+        223,
+        226
+      ],
+      "instrumented": true,
+      "profile": "initial matching build (15 profiles; unchanged source)"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/AskResultImageCache.swift",
+      "covered": 5,
+      "executable_added": 6,
+      "percent": 83.33,
+      "uncovered": [
+        108
+      ],
+      "instrumented": true,
+      "profile": "initial matching build (15 profiles; unchanged source)"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/AskPluginItemViews.swift",
+      "covered": 3,
+      "executable_added": 3,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile": "initial matching build (15 profiles; unchanged source)"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPDF.swift",
+      "covered": 6,
+      "executable_added": 6,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile": "initial matching build (15 profiles; unchanged source)"
+    },
+    {
+      "file": "Sources/TypefluxMediaProtocol/MediaPreview.swift",
+      "covered": 8,
+      "executable_added": 8,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile": "initial matching build (15 profiles; unchanged source)"
+    },
+    {
+      "file": "Sources/TypefluxMediaProtocol/MediaProtocol.swift",
+      "covered": 7,
+      "executable_added": 7,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile": "initial matching build (15 profiles; unchanged source)"
+    },
+    {
+      "file": "Sources/TypefluxMediaRuntime/MediaDecoder.swift",
+      "covered": 0,
+      "executable_added": 1,
+      "percent": 0.0,
+      "uncovered": [
+        28
+      ],
+      "instrumented": true,
+      "profile": "initial matching build (15 profiles; unchanged source)"
+    },
+    {
+      "file": "Sources/TypefluxMediaRuntime/MediaHelperCommand.swift",
+      "covered": 3,
+      "executable_added": 3,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile": "initial matching build (15 profiles; unchanged source)"
+    },
+    {
+      "file": "Sources/TypefluxMediaRuntime/MediaNativeIconDecoder.swift",
+      "covered": 30,
+      "executable_added": 30,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile": "initial matching build (15 profiles; unchanged source)"
+    }
+  ]
+}

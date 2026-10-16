@@ -155,11 +155,12 @@ struct AskLightV4SnapshotTests {
         let note = AskNote(title: "帮我取一组适合管姓小朋友的名字，包括大名和小名。", body: conversation.messages[1].text,
                            command: "", keyword: "", input: conversation.messages[0].text,
                            tags: ["家庭", "备忘"], createdAt: time, updatedAt: time, source: .chat)
-        notes.save(note)
-        notes.save(makeTestNote("解释 · hell cat", body: "Hellcat 可以指凶猛的猫，也可以指 F6F 战斗机。",
+        try notes.save(note)
+        try notes.save(makeTestNote("解释 · hell cat", body: "Hellcat 可以指凶猛的猫，也可以指 F6F 战斗机。",
                                 input: "hell cat", at: time.addingTimeInterval(-3600).timeIntervalSince1970))
         let notebook = AskNotesViewModel(store: notes, notificationCenter: NotificationCenter())
-        notebook.reveal(note.id)
+        await notebook.waitForReload()
+        await notebook.reveal(note.id)
         try await capture(AskNotesView(model: notebook) {}, size: NSSize(width: 1120, height: 720),
                           file: root.appendingPathComponent("notebook-glass-light.png"))
     }
@@ -185,14 +186,14 @@ struct AskLightV4SnapshotTests {
             card: card,
             model: "AI"
         )
-        words.record(lookup, at: time, counts: true)
+        try words.record(lookup, at: time, counts: true)
         for (word, meaning) in [("狗粮", "dog food; public display of affection"), ("简洁", "concise; succinct")] {
-            words.record(AskWordBookLookup(headword: word, source: "zh-Hans", target: "en", translation: meaning),
+            try words.record(AskWordBookLookup(headword: word, source: "zh-Hans", target: "en", translation: meaning),
                          at: time.addingTimeInterval(-3600), counts: true)
         }
         let wordbook = AskWordBookViewModel(store: words, settings: settings)
         wordbook.reload()
-        wordbook.reveal(lookup.key)
+        await wordbook.reveal(lookup.key)
         try await capture(AskWordBookView(model: wordbook) {}, size: NSSize(width: 1120, height: 720),
                           file: root.appendingPathComponent("wordbook-glass-light.png"))
     }

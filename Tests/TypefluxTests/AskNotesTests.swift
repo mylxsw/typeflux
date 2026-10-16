@@ -23,7 +23,7 @@ func makeTestNote(_ title: String = "Explain · Comparative advantage", body: St
 @Suite(.exclusiveUIState)
 @MainActor
 struct AskNotesStoreTests {
-    @Test func `a draft becomes A note titled after its command and input`() {
+    @Test func `a draft becomes A note titled after its command and input`() async throws {
         let date = Date(timeIntervalSince1970: 50)
         let draft = AskNoteDraft(
             command: "Explain",
@@ -44,7 +44,7 @@ struct AskNotesStoreTests {
         #expect(AskNote.title(command: "Only", input: "") == "Only")
     }
 
-    @Test func `plain text drops markdown for excerpts`() {
+    @Test func `plain text drops markdown for excerpts`() async throws {
         let markdown = """
         # Title
         > quoted **bold** and `code`
@@ -65,7 +65,7 @@ struct AskNotesStoreTests {
         #expect(AskNote.normalizedTag(String(repeating: "a", count: 60))?.count == 40)
     }
 
-    @Test func `saves lists and finds notes`() throws {
+    @Test func `saves lists and finds notes`() async throws {
         let store = makeTestNotes()
         let old = makeTestNote("Old", body: "比较优势与机会成本", tags: ["读书"], at: 100)
         let pinned = makeTestNote(
@@ -78,24 +78,24 @@ struct AskNotesStoreTests {
         )
         var newer = makeTestNote("Newer", body: "100% sure_thing", input: "rag", at: 300)
         newer.createdAt = Date(timeIntervalSince1970: 10)
-        #expect(store.save(old) && store.save(pinned) && store.save(newer))
-        #expect(store.list(AskNoteQuery()).map(\.title) == ["Pinned", "Newer", "Old"], "pinned first, then newest")
-        #expect(store.list(AskNoteQuery(sort: .created)).map(\.title) == ["Pinned", "Old", "Newer"])
-        #expect(store.list(AskNoteQuery(scope: .pinned)).map(\.title) == ["Pinned"])
-        #expect(store.list(AskNoteQuery(scope: .command("Summarize"))).map(\.title) == ["Pinned"])
-        #expect(store.list(AskNoteQuery(scope: .tag("读书"))).map(\.title) == ["Pinned", "Old"])
-        #expect(store.list(AskNoteQuery(text: "机会成本")).map(\.title) == ["Old"], "Chinese matches inside text")
-        #expect(store.list(AskNoteQuery(text: "RAG")).map(\.title) == ["Newer"], "inputs match, case-insensitively")
-        #expect(store.list(AskNoteQuery(text: "100%")).map(\.title) == ["Newer"])
-        #expect(store.list(AskNoteQuery(text: "s_r")).isEmpty, "LIKE wildcards are literal")
-        #expect(store.list(AskNoteQuery(limit: 1, offset: 1)).map(\.title) == ["Newer"])
-        #expect(store.count(.all) == 3 && store.count(.pinned) == 1 && store.count(.tag("work")) == 1)
-        #expect(store.commands() == [
+        #expect(try store.save(old) && store.save(pinned) && store.save(newer))
+        #expect(try store.list(AskNoteQuery()).map(\.title) == ["Pinned", "Newer", "Old"], "pinned first, then newest")
+        #expect(try store.list(AskNoteQuery(sort: .created)).map(\.title) == ["Pinned", "Old", "Newer"])
+        #expect(try store.list(AskNoteQuery(scope: .pinned)).map(\.title) == ["Pinned"])
+        #expect(try store.list(AskNoteQuery(scope: .command("Summarize"))).map(\.title) == ["Pinned"])
+        #expect(try store.list(AskNoteQuery(scope: .tag("读书"))).map(\.title) == ["Pinned", "Old"])
+        #expect(try store.list(AskNoteQuery(text: "机会成本")).map(\.title) == ["Old"], "Chinese matches inside text")
+        #expect(try store.list(AskNoteQuery(text: "RAG")).map(\.title) == ["Newer"], "inputs match, case-insensitively")
+        #expect(try store.list(AskNoteQuery(text: "100%")).map(\.title) == ["Newer"])
+        #expect(try store.list(AskNoteQuery(text: "s_r")).isEmpty, "LIKE wildcards are literal")
+        #expect(try store.list(AskNoteQuery(limit: 1, offset: 1)).map(\.title) == ["Newer"])
+        #expect(try store.count(.all) == 3 && store.count(.pinned) == 1 && store.count(.tag("work")) == 1)
+        #expect(try store.commands() == [
             AskNoteFacet(name: "Explain", count: 2),
             AskNoteFacet(name: "Summarize", count: 1)
         ])
-        #expect(store.tags() == [AskNoteFacet(name: "读书", count: 2), AskNoteFacet(name: "work", count: 1)])
-        let read = try #require(store.note(id: old.id))
+        #expect(try store.tags() == [AskNoteFacet(name: "读书", count: 2), AskNoteFacet(name: "work", count: 1)])
+        let read = try #require(try store.note(id: old.id))
         #expect(read == old, "every field round-trips")
     }
 
@@ -107,18 +107,18 @@ struct AskNotesStoreTests {
         let observer = center.addObserver(forName: .askNotesDidChange, object: nil, queue: nil) { _ in changes += 1 }
         defer { center.removeObserver(observer) }
         var note = makeTestNote()
-        store.save(note)
+        try store.save(note)
         note.body = "Edited"
         note.editedAt = Date(timeIntervalSince1970: 2000)
-        store.save(note)
-        #expect(store.note(id: note.id)?.body == "Edited" && store.note(id: note.id)?.isEdited == true)
-        #expect(store.count(.all) == 1, "saving again replaces")
-        store.delete(ids: [note.id])
-        #expect(store.note(id: note.id) == nil)
-        store.restore([note])
-        #expect(store.note(id: note.id) == note)
-        store.delete(ids: [])
-        store.restore([])
+        try store.save(note)
+        #expect(try store.note(id: note.id)?.body == "Edited" && store.note(id: note.id)?.isEdited == true)
+        #expect(try store.count(.all) == 1, "saving again replaces")
+        try store.delete(ids: [note.id])
+        #expect(try store.note(id: note.id) == nil)
+        try store.restore([note])
+        #expect(try store.note(id: note.id) == note)
+        try store.delete(ids: [])
+        try store.restore([])
         #expect(AskNoteQuery.Sort.allCases == [.updated, .created, .title])
         for _ in 0 ..< 100 where changes < 4 {
             try await Task.sleep(for: .milliseconds(5))
@@ -126,15 +126,17 @@ struct AskNotesStoreTests {
         #expect(changes == 4)
     }
 
-    @Test func `a broken database reads as empty`() throws {
+    @Test func `a broken database reports unavailable`() async throws {
         let file = FileManager.default.temporaryDirectory.appendingPathComponent("notes-dir-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: file, withIntermediateDirectories: true)
         // A directory where the database should be cannot be opened.
         let store = SQLiteAskNoteStore(url: file)
         store.notificationCenter = NotificationCenter()
-        #expect(!store.save(makeTestNote()))
-        #expect(store.list(AskNoteQuery()).isEmpty && store.count(.all) == 0 && store.tags().isEmpty)
-        #expect(store.note(id: UUID()) == nil)
+        #expect(throws: LocalStoreFailure.unavailable) { try store.save(makeTestNote()) }
+        #expect(throws: LocalStoreFailure.unavailable) { try store.list(AskNoteQuery()) }
+        #expect(throws: LocalStoreFailure.unavailable) { try store.count(.all) }
+        #expect(throws: LocalStoreFailure.unavailable) { try store.tags() }
+        #expect(throws: LocalStoreFailure.unavailable) { try store.note(id: UUID()) }
         #expect(SQLiteAskNoteStore.defaultURL().lastPathComponent == "notes.sqlite")
     }
 }
@@ -142,7 +144,7 @@ struct AskNotesStoreTests {
 @Suite(.exclusiveUIState)
 @MainActor
 struct AskNoteExportTests {
-    @Test func `exports markdown with front matter`() {
+    @Test func `exports markdown with front matter`() async throws {
         var note = makeTestNote("Say \"hi\": now", body: "\n# Body\n", tags: ["a", "b c"])
         note.sourceApp = nil
         let text = AskNoteExporter.markdown(note)
@@ -161,7 +163,7 @@ struct AskNoteExportTests {
         #expect(AskNoteExporter.fileName(makeTestNote(String(repeating: "x", count: 100))).count == 83)
     }
 
-    @Test func `copies markdown as HTMLRTF and text`() throws {
+    @Test func `copies markdown as HTMLRTF and text`() async throws {
         let pasteboard = NSPasteboard(name: NSPasteboard.Name("ask.notes.rich.\(UUID().uuidString)"))
         defer { pasteboard.releaseGlobally() }
         AskRichCopy.copy("# Title\n\n**bold** item", to: pasteboard)
@@ -197,8 +199,8 @@ struct AskNotesPluginTests {
     @Test func `lists recent notes and searches`() async throws {
         let store = makeTestNotes()
         let first = makeTestNote("First", body: "alpha", pinned: true, at: 10)
-        store.save(first)
-        store.save(makeTestNote("Second", body: "beta", at: 20))
+        try store.save(first)
+        try store.save(makeTestNote("Second", body: "beta", at: 20))
         let plugin = AskNotesPlugin(store: store)
         let all = try await plugin.run(request(), plan: plugin.plan(request()))
         #expect(all.items.map(\.title) == ["First", "Second", L("ask.notes.openWindow")])
@@ -214,8 +216,9 @@ struct AskNotesPluginTests {
         #expect(last.action(for: .enter)?.kind == .openNotes(id: nil))
         let none = try await plugin.run(request("zzz"), plan: plugin.plan(request("zzz")))
         #expect(none.items.first?.title == L("ask.notes.noMatch") && none.items.first?.valid == false)
-        let empty = try await AskNotesPlugin().run(request(), plan: plugin.plan(request()))
-        #expect(empty.items.first?.title == L("ask.notes.empty"))
+        await #expect(throws: AskPluginFailure.self) {
+            try await AskNotesPlugin().run(request(), plan: plugin.plan(request()))
+        }
         let selection = try await plugin.run(request("beta", origin: .selection), plan: plugin.plan(request()))
         #expect(selection.items.count == 3, "a selection never filters the notes")
     }

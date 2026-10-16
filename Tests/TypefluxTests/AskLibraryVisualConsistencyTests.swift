@@ -21,11 +21,11 @@ struct AskLibraryVisualConsistencyTests {
                 synonyms: ["delivery speed", "release cadence", "deployment frequency", "throughput", "output rate"])
             let lookup = AskWordBookLookup(headword: card.headword, source: "en", target: "zh-Hans", card: card, model: "AI")
             let words = makeTestWordBook()
-            words.record(lookup, at: .now, counts: true)
+            try words.record(lookup, at: .now, counts: true)
             for (word, meaning) in [("简洁", "concise; succinct; brief and to the point"),
                                      ("渐变", "to change gradually; to evolve slowly"),
                                      ("狗粮", "dog food; public display of affection")] {
-                words.record(AskWordBookLookup(headword: word, source: "zh-Hans", target: "en", translation: meaning),
+                try words.record(AskWordBookLookup(headword: word, source: "zh-Hans", target: "en", translation: meaning),
                              at: .now.addingTimeInterval(-60), counts: true)
             }
             let wordController = AskWordBookWindowController()
@@ -48,7 +48,7 @@ struct AskLibraryVisualConsistencyTests {
                 body: "“地狱猫”（hell cat）通常指两种常见意思：\n\n1. **一种绰号**：形容凶猛、难以对付的人或动物。\n2. **一种战斗机**：二战美国海军的 **F6F Hellcat**。",
                 command: "解释", keyword: "ex", input: "hell cat", sourceApp: "Google Chrome",
                 createdAt: .now, updatedAt: .now)
-            notes.save(note)
+            try notes.save(note)
             let noteController = AskNotesWindowController()
             noteController.configure(store: notes, settings: settings, askAI: { _ in }) { NSAppearance(named: .darkAqua) }
             noteController.show(selecting: note.id)
@@ -117,7 +117,7 @@ struct AskLibraryVisualConsistencyTests {
                 window.appearance = NSAppearance(named: .aqua)
             }
             wordModel.shelf = .all
-            wordModel.reveal(lookup.key)
+            await wordModel.reveal(lookup.key)
             try await capture(wordWindow, "wordbook-\(style.rawValue)-720-light.png", hiding: noteWindow)
             noteWindow.setContentSize(NSSize(width: 720, height: 480))
             try await capture(noteWindow, "notebook-\(style.rawValue)-720-light.png", hiding: wordWindow)

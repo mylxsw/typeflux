@@ -4,6 +4,7 @@ import SwiftUI
 
 struct AskConversationView: View {
     @ObservedObject var model: AskConversationModel
+    @State private var showsGenerationRecovery = false
     @State private var showsUsage = false
     @State private var usageRunId: String?
     @State private var deleteId: String?
@@ -54,6 +55,7 @@ struct AskConversationView: View {
         // Measure the viewport, rather than the intrinsic width of its children.
         .ignoresSafeArea(.container, edges: .top)
         .onChange(of: model.selectedId) { _ in
+            showsGenerationRecovery = false
             usageRunId = nil
             showsUsage = false
             showsSidebarDrawer = false
@@ -88,7 +90,18 @@ struct AskConversationView: View {
                 previousResponder = nil
             }
         }
+        .onDisappear { showsGenerationRecovery = false; model.setRemoteImagesVisible(false) }
+        .onChange(of: model.selectionGeneration) { _ in showsGenerationRecovery = false }
+        .onChange(of: auth.isLoggedIn) { _ in showsGenerationRecovery = false; model.invalidateRemoteImages() }
+        .onChange(of: auth.userProfile?.id) { _ in showsGenerationRecovery = false; model.invalidateRemoteImages() }
+        .sheet(isPresented: $showsGenerationRecovery) {
+            if let access = model.generationRecoveryAccess {
+                AskGenerationRecoveryView(access: access, close: { showsGenerationRecovery = false })
+            }
+        }
         .tint(AskTheme.accent)
+        .environment(\.askContextImageAccess, model.contextImageAccess(launcher: false))
+        .environment(\.askRemoteImageAccess, model.remoteImageAccess)
         .environment(\.askArtifactAccess, model.artifactAccess)
         .environment(\.askTerminalAccess, model.terminalAccess)
         .onChange(of: model.draft) { _ in model.persistDrafts() }
@@ -301,6 +314,7 @@ struct AskConversationView: View {
 
     private var expandedTools: some View {
         HStack(spacing: 2) {
+            generationRecoveryButton
             savedDraftMenu
             composeButton
             sidebarToggle
@@ -315,9 +329,16 @@ struct AskConversationView: View {
                 titleBarButton("magnifyingglass", label: L("ask.search")) { openSearch() }
                     .keyboardShortcut("k", modifiers: .command)
             }
+            generationRecoveryButton
             savedDraftMenu
             composeButton
         }
+    }
+
+    private var generationRecoveryButton: some View {
+        titleBarButton("externaldrive.badge.exclamationmark", label: L("imagegen.recovery.title")) {
+            showsGenerationRecovery = true
+        }.disabled(model.generationRecoveryAccess == nil)
     }
 
     @ViewBuilder
@@ -1208,7 +1229,7 @@ struct AskConversationView: View {
                            onRegenerate: { model.regenerate(message.id) },
                            outputs: item.outputs,
                            onSaveNote: model.notes == nil || message.role != "assistant" ? nil
-                               : { excerpt in model.toggleAnswerNote(message, excerpt: excerpt) },
+                               : { excerpt in model.performNotebookAction { await model.toggleAnswerNote(message, excerpt: excerpt) } },
                            savedToNotes: model.answerNoteIDs[message.id] != nil)
         case let .activity(group):
             let results = model.selected?.messages.filter { $0.role == "tool" } ?? []
@@ -1610,6 +1631,9 @@ private struct AskSuggestionCard: View {
 struct AskSentFileChip: View {
     let attachment: AskAttachment
     @State private var previewing = false
+    @StateObject private var imageModel = AskContextImageModel()
+    @Environment(\.askContextImageAccess) private var imageAccess
+    private var thumbnail: NSImage? { imageModel.displayed(attachment.image, access: imageAccess) }
 
     var body: some View {
         Button {
@@ -1621,7 +1645,7 @@ struct AskSentFileChip: View {
         } label: {
             AskSentAttachmentChip(
                 title: [attachment.name, AskAttachmentStrip.caption(attachment)].compactMap { $0 }.joined(separator: " · "),
-                thumbnail: attachment.image.flatMap { AskAttachmentStrip.thumbnail(id: attachment.id, dataURL: $0) },
+                thumbnail: thumbnail,
                 systemImage: AskAttachmentStrip.symbol(attachment)
             )
             .frame(maxWidth: 260)
@@ -1629,11 +1653,17 @@ struct AskSentFileChip: View {
         .buttonStyle(.plain)
         .help(attachment.path ?? attachment.name)
         .popover(isPresented: $previewing) { preview }
+        .task(id: AskContextImageModel.Identity(source: attachment.image, epoch: imageAccess.epoch)) {
+            await imageModel.load(attachment.image, access: imageAccess)
+        }
+        .onDisappear { imageModel.cancel(); previewing = false }
     }
 
     @ViewBuilder private var preview: some View {
-        if let image = attachment.image.flatMap({ AskAttachmentStrip.thumbnail(id: attachment.id, dataURL: $0) }) {
+        if let image = thumbnail {
             Image(nsImage: image).resizable().scaledToFit().frame(maxWidth: 650, maxHeight: 520).padding()
+        } else if attachment.image != nil {
+            Text(L("ask.image.previewUnavailable")).padding()
         } else {
             ScrollView {
                 Text(String((attachment.text ?? "").prefix(20000)))

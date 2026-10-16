@@ -37,13 +37,16 @@ final class SQLiteAskWordBookStore: AskWordBookStoring, @unchecked Sendable {
             try execute("CREATE INDEX IF NOT EXISTS idx_word_book_last ON word_book_entries(last_looked_up_at DESC);")
             try execute("CREATE INDEX IF NOT EXISTS idx_word_book_starred ON word_book_entries(starred_at DESC);")
         } catch {
-            ErrorLogStore.shared.log("Word book database initialization failed: \(error.localizedDescription)")
+            if let db { sqlite3_close(db) }
+            db = nil
+            ErrorLogStore.shared.log("Word book database initialization failed")
         }
     }
 
     /// `~/Library/Application Support/Typeflux/word-book.sqlite`.
     static func defaultURL() -> URL {
-        let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+            ?? FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent("Library/Application Support")
         return support.appendingPathComponent("Typeflux", isDirectory: true).appendingPathComponent("word-book.sqlite")
     }
 
@@ -53,16 +56,17 @@ final class SQLiteAskWordBookStore: AskWordBookStoring, @unchecked Sendable {
 
     // MARK: - AskWordBookStoring
 
-    func entry(forKey key: String) -> AskWordBookEntry? {
-        read("entry") { () throws -> AskWordBookEntry? in try fetch(where: "lookup_key = ?", [.text(key)]).first } ?? nil
+    func entry(forKey key: String) throws -> AskWordBookEntry? {
+        try read("entry") { () throws -> AskWordBookEntry? in try fetch(where: "lookup_key = ?", [.text(key)]).first }
     }
 
     @discardableResult
-    func record(_ lookup: AskWordBookLookup, at date: Date, counts: Bool) -> AskWordBookEntry? {
-        write("record") { () throws -> AskWordBookEntry? in
+    func record(_ lookup: AskWordBookLookup, at date: Date, counts: Bool) throws -> AskWordBookEntry? {
+        try write("record") { () throws -> AskWordBookEntry? in
             if var entry = try fetch(where: "lookup_key = ?", [.text(lookup.key)]).first {
                 Self.merge(lookup, into: &entry)
                 if counts {
+                    guard entry.lookupCount < Int.max else { throw LocalStoreFailure.invalidData }
                     entry.lookupCount += 1
                     entry.lastLookedUpAt = date
                 }
@@ -73,12 +77,12 @@ final class SQLiteAskWordBookStore: AskWordBookStoring, @unchecked Sendable {
                                          lastLookedUpAt: date, starredAt: nil)
             try upsert(entry)
             return entry
-        } ?? nil
+        }
     }
 
     @discardableResult
-    func setStarred(_ starred: Bool, lookup: AskWordBookLookup, at date: Date) -> AskWordBookEntry? {
-        write("star") { () throws -> AskWordBookEntry? in
+    func setStarred(_ starred: Bool, lookup: AskWordBookLookup, at date: Date) throws -> AskWordBookEntry? {
+        try write("star") { () throws -> AskWordBookEntry? in
             if var entry = try fetch(where: "lookup_key = ?", [.text(lookup.key)]).first {
                 Self.merge(lookup, into: &entry)
                 entry.starredAt = starred ? (entry.starredAt ?? date) : nil
@@ -90,11 +94,11 @@ final class SQLiteAskWordBookStore: AskWordBookStoring, @unchecked Sendable {
                                          lastLookedUpAt: date, starredAt: date)
             try upsert(entry)
             return entry
-        } ?? nil
+        }
     }
 
-    func list(_ query: AskWordBookQuery) -> [AskWordBookEntry] {
-        read("list") {
+    func list(_ query: AskWordBookQuery) throws -> [AskWordBookEntry] {
+        try read("list") {
             let (condition, filters) = Self.conditions(query)
             var values = filters
             let order = switch query.sort {
@@ -105,18 +109,18 @@ final class SQLiteAskWordBookStore: AskWordBookStoring, @unchecked Sendable {
             }
             values += [.integer(Int64(max(0, query.limit))), .integer(Int64(max(0, query.offset)))]
             return try fetch(where: condition, values, suffix: "ORDER BY \(order) LIMIT ? OFFSET ?")
-        } ?? []
+        }
     }
 
-    func count(matching query: AskWordBookQuery) -> Int {
-        read("count") {
+    func count(matching query: AskWordBookQuery) throws -> Int {
+        try read("count") {
             let (condition, values) = Self.conditions(query)
             return try integer("SELECT COUNT(*) FROM word_book_entries WHERE \(condition)", values)
-        } ?? 0
+        }
     }
 
-    func activity(since date: Date) -> [Date] {
-        read("activity") {
+    func activity(since date: Date) throws -> [Date] {
+        try read("activity") {
             var dates: [Date] = []
             try query("SELECT first_looked_up_at, last_looked_up_at FROM word_book_entries WHERE last_looked_up_at >= ?",
                       [.double(date.timeIntervalSince1970)]) { statement in
@@ -124,7 +128,7 @@ final class SQLiteAskWordBookStore: AskWordBookStoring, @unchecked Sendable {
                 dates.append(Date(timeIntervalSince1970: sqlite3_column_double(statement, 1)))
             }
             return dates.filter { $0 >= date }
-        } ?? []
+        }
     }
 
     /// The WHERE clause and its values for a query's filters.
@@ -155,21 +159,21 @@ final class SQLiteAskWordBookStore: AskWordBookStoring, @unchecked Sendable {
         return (conditions.isEmpty ? "1" : conditions.joined(separator: " AND "), values)
     }
 
-    func count(_ scope: AskWordBookQuery.Scope) -> Int {
-        read("count") {
+    func count(_ scope: AskWordBookQuery.Scope) throws -> Int {
+        try read("count") {
             try integer("SELECT COUNT(*) FROM word_book_entries" + (scope == .starred ? " WHERE starred_at IS NOT NULL" : ""))
-        } ?? 0
+        }
     }
 
-    func lookups(since date: Date) -> Int {
-        read("lookups") {
+    func lookups(since date: Date) throws -> Int {
+        try read("lookups") {
             try integer("SELECT COUNT(*) FROM word_book_entries WHERE last_looked_up_at >= ?",
                         [.double(date.timeIntervalSince1970)])
-        } ?? 0
+        }
     }
 
-    func languagePairs() -> [AskWordBookLanguagePair] {
-        read("pairs") {
+    func languagePairs() throws -> [AskWordBookLanguagePair] {
+        try read("pairs") {
             var pairs: [AskWordBookLanguagePair] = []
             try query("""
             SELECT source_language, target_language FROM word_book_entries
@@ -179,23 +183,23 @@ final class SQLiteAskWordBookStore: AskWordBookStoring, @unchecked Sendable {
                 pairs.append(AskWordBookLanguagePair(source: Self.text(statement, 0), target: target))
             }
             return pairs
-        } ?? []
+        }
     }
 
-    func delete(keys: [String]) {
+    func delete(keys: [String]) throws {
         guard !keys.isEmpty else { return }
-        write("delete") {
+        try write("delete") {
             for key in keys { try run("DELETE FROM word_book_entries WHERE lookup_key = ?", [.text(key)]) }
         }
     }
 
-    func restore(_ entries: [AskWordBookEntry]) {
+    func restore(_ entries: [AskWordBookEntry]) throws {
         guard !entries.isEmpty else { return }
-        write("restore") { for entry in entries { try upsert(entry) } }
+        try write("restore") { for entry in entries { try upsert(entry) } }
     }
 
-    func purgeHistory(before date: Date?) {
-        write("purge") {
+    func purgeHistory(before date: Date?) throws {
+        try write("purge") {
             if let date {
                 try run("DELETE FROM word_book_entries WHERE starred_at IS NULL AND last_looked_up_at < ?",
                         [.double(date.timeIntervalSince1970)])
@@ -249,21 +253,29 @@ final class SQLiteAskWordBookStore: AskWordBookStoring, @unchecked Sendable {
 
     private var message: String { db.map { String(cString: sqlite3_errmsg($0)) } ?? "no database" }
 
-    private func read<T>(_ what: String, _ body: () throws -> T) -> T? {
-        queue.sync {
+    private func read<T>(_ what: String, _ body: () throws -> T) throws -> T {
+        try queue.sync {
+            guard db != nil else { throw LocalStoreFailure.unavailable }
             do { return try body() } catch {
-                ErrorLogStore.shared.log("Word book \(what) failed: \(error.localizedDescription)")
-                return nil
+                ErrorLogStore.shared.log("Word book \(what) failed")
+                throw (error as? LocalStoreFailure) ?? .unavailable
             }
         }
     }
 
     @discardableResult
-    private func write<T>(_ what: String, _ body: () throws -> T) -> T? {
-        let result: T? = queue.sync {
-            do { return try body() } catch {
-                ErrorLogStore.shared.log("Word book \(what) failed: \(error.localizedDescription)")
-                return nil
+    private func write<T>(_ what: String, _ body: () throws -> T) throws -> T {
+        let result: T = try queue.sync {
+            guard db != nil else { throw LocalStoreFailure.unavailable }
+            do {
+                try execute("BEGIN IMMEDIATE;")
+                let result = try body()
+                try execute("COMMIT;")
+                return result
+            } catch {
+                try? execute("ROLLBACK;")
+                ErrorLogStore.shared.log("Word book \(what) failed")
+                throw (error as? LocalStoreFailure) ?? .unavailable
             }
         }
         let center = notificationCenter
@@ -294,8 +306,12 @@ final class SQLiteAskWordBookStore: AskWordBookStoring, @unchecked Sendable {
         var entries: [AskWordBookEntry] = []
         try query("SELECT \(Self.columns) FROM word_book_entries WHERE \(condition) \(suffix)", values) { statement in
             guard let id = Self.text(statement, 0).flatMap(UUID.init(uuidString:)),
-                  let headword = Self.text(statement, 2), let target = Self.text(statement, 4) else { return }
-            let card = Self.blob(statement, 5).flatMap { try? JSONDecoder().decode(AskWordCard.self, from: $0) }
+                  let headword = Self.text(statement, 2), let target = Self.text(statement, 4) else {
+                throw LocalStoreFailure.invalidData
+            }
+            let card: AskWordCard?
+            do { card = try Self.blob(statement, 5).map { try JSONDecoder().decode(AskWordCard.self, from: $0) } }
+            catch { throw LocalStoreFailure.invalidData }
             let lookup = AskWordBookLookup(headword: headword, source: Self.text(statement, 3), target: target,
                                            card: card, translation: Self.text(statement, 6),
                                            model: Self.text(statement, 8))
@@ -332,20 +348,25 @@ final class SQLiteAskWordBookStore: AskWordBookStoring, @unchecked Sendable {
         defer { sqlite3_finalize(statement) }
         for (offset, value) in values.enumerated() {
             let index = Int32(offset + 1)
+            let status: Int32
             switch value {
             case let .text(text):
-                if let text { sqlite3_bind_text(statement, index, text, -1, SQLITE_TRANSIENT) } else { sqlite3_bind_null(statement, index) }
+                if let text { status = sqlite3_bind_text(statement, index, text, -1, SQLITE_TRANSIENT) }
+                else { status = sqlite3_bind_null(statement, index) }
             case let .double(number):
-                if let number { sqlite3_bind_double(statement, index, number) } else { sqlite3_bind_null(statement, index) }
+                if let number { status = sqlite3_bind_double(statement, index, number) }
+                else { status = sqlite3_bind_null(statement, index) }
             case let .integer(number):
-                sqlite3_bind_int64(statement, index, number)
+                status = sqlite3_bind_int64(statement, index, number)
             case let .blob(data):
                 if let data {
-                    _ = data.withUnsafeBytes { sqlite3_bind_blob(statement, index, $0.baseAddress, Int32(data.count), SQLITE_TRANSIENT) }
-                } else {
-                    sqlite3_bind_null(statement, index)
-                }
+                    guard data.count <= Int(Int32.max) else { throw LocalStoreFailure.invalidData }
+                    status = data.withUnsafeBytes {
+                        sqlite3_bind_blob(statement, index, $0.baseAddress, Int32(data.count), SQLITE_TRANSIENT)
+                    }
+                } else { status = sqlite3_bind_null(statement, index) }
             }
+            guard status == SQLITE_OK else { throw LocalStoreFailure.invalidData }
         }
         while true {
             switch sqlite3_step(statement) {

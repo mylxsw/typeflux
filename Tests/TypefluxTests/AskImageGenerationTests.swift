@@ -31,9 +31,9 @@ final class AskImageGenerationTests: XCTestCase {
         try .init(arguments: ["prompt": "A small blue bird", "layout": layout])
     }
 
-    func testLocalImageDataCoexistsWithPersistedConversationImage() throws {
+    func testLocalImageDataCoexistsWithPersistedConversationImage() async throws {
         let bytes = try Self.picture()
-        let local = try AskGeneratedImageData(data: bytes)
+        let local = try await AskGeneratedImageValidator.shared.validate(bytes)
         let generated = AskImageGenerationResult(images: [local])
         XCTAssertEqual(generated.images.first?.data, bytes)
         XCTAssertEqual(generated.images.first?.mediaType, "image/png")
@@ -225,7 +225,7 @@ final class AskImageGenerationTests: XCTestCase {
                 XCTAssertNil(requests[1].value(forHTTPHeaderField: "x-goog-api-key"))
             }
         }
-        let jpeg = try AskGeneratedImageData(data: Self.picture(.jpeg))
+        let jpeg = try await AskGeneratedImageValidator.shared.validate(Self.picture(.jpeg))
         XCTAssertEqual(jpeg.mediaType, "image/jpeg")
         XCTAssertEqual(jpeg.fileExtension, "jpg")
     }
@@ -239,12 +239,13 @@ final class AskImageGenerationTests: XCTestCase {
             let data = try JSONSerialization.data(withJSONObject: body)
             let transport = ImageTransportStub { _, _ in data }
             do {
-                _ = try await AskImageGenerationService(transport: transport).generate(
+                let result = try await AskImageGenerationService(transport: transport).generate(
                     input(),
                     configuration: .preset(.openAI),
                     key: "key"
                 )
-                XCTFail("Invalid responses must not be successful")
+                XCTAssertTrue(result.incomplete)
+                XCTAssertTrue(result.images.isEmpty)
             } catch { XCTAssertFalse(error.localizedDescription.contains("secret")) }
             let count = await transport.requests.count
             XCTAssertEqual(count, 1)
@@ -257,11 +258,6 @@ final class AskImageGenerationTests: XCTestCase {
         ); XCTFail() } catch {}
         let count = await transport.requests.count
         XCTAssertEqual(count, 1)
-        XCTAssertThrowsError(try AskGeneratedImageData(data: Data()))
-        XCTAssertThrowsError(try AskGeneratedImageData(data: Data(
-            repeating: 0,
-            count: AskArtifactStore.maximumFileBytes + 1
-        )))
         XCTAssertThrowsError(try AskImageGenerationService.object(Data("not JSON".utf8)))
         XCTAssertThrowsError(try AskImageGenerationService.sources(["status": "failed"], provider: .google))
         XCTAssertThrowsError(try AskImageGenerationService.sources(
@@ -314,12 +310,13 @@ final class AskImageGenerationTests: XCTestCase {
                 throw failure
             }
             do {
-                _ = try await AskImageGenerationService(transport: transport).generate(
+                let result = try await AskImageGenerationService(transport: transport).generate(
                     input(),
                     configuration: .preset(.bailian),
                     key: "key"
                 )
-                XCTFail()
+                XCTAssertTrue(result.incomplete)
+                XCTAssertTrue(result.images.isEmpty)
             } catch {}
             let count = await transport.requests.count
             XCTAssertEqual(count, expectedCount)
@@ -393,5 +390,16 @@ final class AskImageGenerationTests: XCTestCase {
                 key: "key"
             ); XCTFail() } catch { XCTAssertEqual(error as? AskImageError, .discovery) }
         }
+    }
+}
+
+// Every test call gets an isolated private retention owner, just like production.
+extension AskImageGenerationService {
+    func generate(_ input: AskImageRequest, configuration: AskImageConfiguration, key: String) async throws -> AskImageGenerationResult {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("image-retention-test-" + UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let retention = try AskImageGenerationRetention(rootURL: root,
+            scope: .init(ownerId: "owner", conversationId: "conversation", runId: "run"), callId: "call", metadata: Data())
+        return try await generate(input, configuration: configuration, key: key, retention: retention)
     }
 }

@@ -117,7 +117,7 @@ enum AskActivity {
                 ) {
                     refs.append(receipt.artifact)
                 }
-                if let receipt = try? JSONDecoder().decode(AskGeneratedImageReceipt.self, from: Data(result.resultText.utf8)) {
+                if let receipt = AskGeneratedImageReceipt.parse(result.resultText) {
                     refs += receipt.generatedImages
                 }
                 for ref in refs where !value.storedArtifacts.contains(where: { $0.id == ref.id }) {
@@ -127,7 +127,7 @@ enum AskActivity {
             guard !["computer", "browser"].contains(name),
                   let result = results.first(where: { $0.toolCallId == call.id }),
                   result.isError != true || result.harness?.outcome != nil else { continue }
-            for (index, image) in result.resultImages.enumerated() {
+            for (index, image) in result.retainedResultImages.enumerated() {
                 value.artifacts.append(.init(id: index == 0 ? call.id : call.id + "/" + String(index),
                                              image: image, toolName: name))
             }

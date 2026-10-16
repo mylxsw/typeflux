@@ -11,12 +11,14 @@ private final class TransparentSettingsHostingView<Content: View>: NSHostingView
 final class SettingsWindowController: NSObject {
     static let shared = SettingsWindowController()
 
+    var moduleRegistry: ModuleRegistry?
     var modelLibrary: AskModelLibrary?
     /// The clipboard history, for Launcher → Clipboard's data usage.
     var clipboardHistoryStore: ClipboardHistoryStore?
     private var settingsStore: SettingsStore?
     private(set) var window: NSWindow?
     private var viewModel: StudioViewModel?
+    private var moduleHealthModel: ModuleHealthSettingsModel?
     private var languageObserver: NSObjectProtocol?
     private var appearanceObserver: NSObjectProtocol?
 
@@ -92,7 +94,9 @@ final class SettingsWindowController: NSObject {
         if let initialModelDomain { viewModel.selectModelPageTab(ModelPageTab(domain: initialModelDomain)) }
         AppLocalization.shared.setLanguage(viewModel.appLanguage)
         if presentFeedback { viewModel.directFeedbackRequestID = UUID() }
-        let view = StudioView(viewModel: viewModel, launcherPane: launcherPane ?? .basics)
+        let moduleHealth = ModuleHealthSettingsModel(registry: moduleRegistry)
+        moduleHealthModel = moduleHealth
+        let view = StudioView(viewModel: viewModel, launcherPane: launcherPane ?? .basics, moduleHealth: moduleHealth)
         let hosting = TransparentSettingsHostingView(rootView: view)
         hosting.sizingOptions = []
 
@@ -146,6 +150,8 @@ final class SettingsWindowController: NSObject {
 
 extension SettingsWindowController: NSWindowDelegate {
     func windowWillClose(_: Notification) {
+        moduleHealthModel?.stopObserving()
+        moduleHealthModel = nil
         if let window {
             DockVisibilityController.shared.windowDidHide(window)
         }

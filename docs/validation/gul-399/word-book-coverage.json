@@ -1,0 +1,237 @@
+{
+  "covered": 428,
+  "executable_added": 451,
+  "percent": 94.9,
+  "files": [
+    {
+      "file": "Sources/Typeflux/App/AppCoordinator.swift",
+      "covered": 0,
+      "executable_added": 2,
+      "percent": 0.0,
+      "uncovered": [
+        292,
+        293
+      ],
+      "instrumented": true,
+      "profile": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/App/DIContainer.swift",
+      "covered": 0,
+      "executable_added": 5,
+      "percent": 0.0,
+      "uncovered": [
+        109,
+        110,
+        120,
+        121,
+        123
+      ],
+      "instrumented": true,
+      "profile": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskConversationModel+Plugins.swift",
+      "covered": 27,
+      "executable_added": 27,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile": "retry"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskConversationModel.swift",
+      "covered": 2,
+      "executable_added": 2,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskConversationWindowController.swift",
+      "covered": 6,
+      "executable_added": 7,
+      "percent": 85.71,
+      "uncovered": [
+        113
+      ],
+      "instrumented": true,
+      "profile": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/AskPluginSession.swift",
+      "covered": 9,
+      "executable_added": 9,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile": "retry"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskTranslatePlugin+Output.swift",
+      "covered": 9,
+      "executable_added": 9,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskTranslatePlugin.swift",
+      "covered": 26,
+      "executable_added": 26,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/Panel/AskTranslationPanelModel+Actions.swift",
+      "covered": 1,
+      "executable_added": 1,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/Panel/AskTranslationPanelModel.swift",
+      "covered": 32,
+      "executable_added": 34,
+      "percent": 94.12,
+      "uncovered": [
+        185,
+        192
+      ],
+      "instrumented": true,
+      "profile": "retry"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/WordBook/AskWordBook.swift",
+      "covered": 19,
+      "executable_added": 20,
+      "percent": 95.0,
+      "uncovered": [
+        180
+      ],
+      "instrumented": true,
+      "profile": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/WordBook/AskWordBookView.swift",
+      "covered": 7,
+      "executable_added": 9,
+      "percent": 77.78,
+      "uncovered": [
+        175,
+        802
+      ],
+      "instrumented": true,
+      "profile": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/WordBook/AskWordBookViewModel.swift",
+      "covered": 165,
+      "executable_added": 170,
+      "percent": 97.06,
+      "uncovered": [
+        301,
+        393,
+        414,
+        447,
+        530
+      ],
+      "instrumented": true,
+      "profile": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/WordBook/AskWordBookWindowController.swift",
+      "covered": 8,
+      "executable_added": 8,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/WordBook/SQLiteAskWordBookStore.swift",
+      "covered": 71,
+      "executable_added": 73,
+      "percent": 97.26,
+      "uncovered": [
+        48,
+        49
+      ],
+      "instrumented": true,
+      "profile": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/Recovery/RecoveringAskWordBookStore.swift",
+      "covered": 46,
+      "executable_added": 49,
+      "percent": 93.88,
+      "uncovered": [
+        8,
+        9,
+        10
+      ],
+      "instrumented": true,
+      "profile": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Resources/en.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false,
+      "profile": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Resources/ja.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false,
+      "profile": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Resources/ko.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false,
+      "profile": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Resources/zh-Hans.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false,
+      "profile": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Resources/zh-Hant.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false,
+      "profile": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Stability/LocalStoreFailure.swift",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false,
+      "profile": "initial"
+    }
+  ]
+}

@@ -156,9 +156,7 @@ extension AskTranslationPanelModel {
         case .configureTranslation, .manageTranslationLanguages, .downloadTranslationLanguages,
              .openSettings, .openWordBook: openDestination(action.kind)
         case let .toggleStar(lookup):
-            let starred = plugin.wordBook?.entry(forKey: lookup.key)?.isStarred != true
-            plugin.wordBook?.setStarred(starred, lookup: lookup, at: now())
-            output = output?.starring(starred)
+            saveWordBook(lookup, toggle: true)
         default: break
         }
     }

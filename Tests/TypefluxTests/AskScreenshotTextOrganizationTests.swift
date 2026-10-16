@@ -176,7 +176,8 @@ struct AskScreenshotTextOrganizationTests {
         #expect(model.plugins.output?.body == markdown)
         let save = try #require(model.plugins.output?.action(for: .commandS))
         #expect(model.performPluginAction(save) == .stay)
-        #expect(model.notes?.list(AskNoteQuery()).first?.body == markdown)
+        await model.notebookTask?.value
+        #expect(try await model.notes?.list(AskNoteQuery()).first?.body == markdown)
         #expect(model.performPluginAction(AskScreenshotTextPlugin.originalAction) == .stay)
         try await fixture.wait { model.plugins.output?.body == raw }
         #expect(model.plugins.output?.markdown == false && generator.prompts.count == 1)

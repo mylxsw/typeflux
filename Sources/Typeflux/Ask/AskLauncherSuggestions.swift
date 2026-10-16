@@ -302,8 +302,8 @@ struct AskLauncherSuggestions: View {
     @ViewBuilder
     private func tile(_ row: AskLauncherHome.Row) -> some View {
         if case let .application(app) = row.action {
-            Image(nsImage: NSWorkspace.shared.icon(forFile: app.url.path))
-                .resizable().interpolation(.high).scaledToFit().frame(width: 28, height: 28)
+            AskNativeIconView(icon: .init(kind: .file, value: app.url.path), symbol: row.symbol)
+                .frame(width: 28, height: 28)
         } else {
             Image(systemName: row.symbol).font(.system(size: 12.5))
             .foregroundStyle(Self.tint(row.tint))

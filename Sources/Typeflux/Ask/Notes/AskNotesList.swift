@@ -62,7 +62,7 @@ struct AskNotesList: View {
             Spacer(minLength: 0)
             HStack(spacing: 0) {
                 AskIconGhostButton(label: L("ask.notes.new") + " ⌘N", systemImage: "square.and.pencil") {
-                    model.createNote()
+                    model.perform { await model.createNote() }
                 }
                 AskIconGhostButton(label: L("ask.sidebar.toggle"), systemImage: "sidebar.left") {
                     showsSidebar.toggle()
@@ -89,17 +89,17 @@ struct AskNotesList: View {
             Spacer(minLength: 4)
             if model.inTrash {
                 if !model.notes.isEmpty {
-                    Button(L("ask.notes.trash.empty")) { model.emptyTrash() }
+                    Button(L("ask.notes.trash.empty")) { model.perform { await model.emptyTrash()  } }
                         .buttonStyle(.plain).font(.system(size: 12)).foregroundStyle(StudioTheme.danger)
                         .accessibilityIdentifier("ask.notes.trash.empty")
                 }
             } else {
                 if model.selecting {
-                    Button(L("ask.notes.done")) { model.setSelecting(false) }
+                    Button(L("ask.notes.done")) { model.perform { await model.setSelecting(false)  } }
                         .buttonStyle(.plain).font(.system(size: 12, weight: .semibold)).foregroundStyle(AskTheme.accent)
                 } else {
                     AskIconGhostButton(label: L("ask.notes.select"), systemImage: "checkmark.circle") {
-                        model.setSelecting(true)
+                        model.perform { await model.setSelecting(true) }
                     }
                 }
                 Menu {
@@ -155,7 +155,7 @@ struct AskNotesList: View {
                 .multilineTextAlignment(.center)
             if !model.searchText.isEmpty, !model.inTrash {
                 Button {
-                    model.createNote(title: AskNotesViewModel.parseSearch(model.searchText).text)
+                    model.perform { await model.createNote(title: AskNotesViewModel.parseSearch(model.searchText).text) }
                 } label: {
                     Label(L("ask.notes.newTitled", AskNotesViewModel.parseSearch(model.searchText).text),
                           systemImage: "plus")
@@ -271,17 +271,16 @@ struct AskNotesListRow: View {
 
     @ViewBuilder private var contextMenu: some View {
         if note.isDeleted {
-            Button(L("ask.notes.trash.restore")) { model.select(note.id); model.restoreFromTrash() }
+            Button(L("ask.notes.trash.restore")) { model.perform { await model.select(note.id); await model.restoreFromTrash()  } }
             Button(L("ask.notes.trash.deleteForever"), role: .destructive) {
-                model.select(note.id)
-                model.deleteForever()
+                model.perform { await model.select(note.id); await model.deleteForever() }
             }
         } else {
-            Button(L(note.pinned ? "ask.notes.unpin" : "ask.notes.pin")) { model.select(note.id); model.togglePin() }
-            Button(L("ask.plugin.action.copy")) { model.select(note.id); model.copySelected() }
-            Button(L("ask.plugin.action.openInWindow")) { model.select(note.id); model.openSelectedInWindow() }
+            Button(L(note.pinned ? "ask.notes.unpin" : "ask.notes.pin")) { model.perform { await model.select(note.id); await model.togglePin()  } }
+            Button(L("ask.plugin.action.copy")) { model.perform { await model.select(note.id); model.copySelected()  } }
+            Button(L("ask.plugin.action.openInWindow")) { model.perform { await model.select(note.id); model.openSelectedInWindow()  } }
             Divider()
-            Button(L("ask.notes.delete"), role: .destructive) { model.select(note.id); model.deleteSelected() }
+            Button(L("ask.notes.delete"), role: .destructive) { model.perform { await model.select(note.id); await model.deleteSelected()  } }
         }
     }
 
@@ -290,11 +289,11 @@ struct AskNotesListRow: View {
         if focus.wrappedValue == .title { focus.wrappedValue = nil }
         let flags = NSApp.currentEvent?.modifierFlags.intersection(.deviceIndependentFlagsMask) ?? []
         if !model.inTrash, flags.contains(.shift) {
-            model.pickRange(to: note.id)
+            model.perform { await model.pickRange(to: note.id) }
         } else if !model.inTrash, flags.contains(.command) || model.selecting {
-            model.togglePick(note.id)
+            model.perform { await model.togglePick(note.id) }
         } else {
-            model.select(note.id)
+            model.perform { await model.select(note.id) }
         }
     }
 

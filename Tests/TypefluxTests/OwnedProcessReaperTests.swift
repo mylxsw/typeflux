@@ -20,12 +20,18 @@ final class OwnedProcessReaperTests: XCTestCase {
         let child = Child()
         let reaper = OwnedProcessReaper(capacity: 1, schedulesReaping: false) { _ in child.reaped() }
         try reaper.reserve()
-        reaper.collect(123)
+        let notified = Child()
+        reaper.collect(123) {
+            // Callback must run outside the reaper lock and may reserve again.
+            if (try? reaper.reserve()) != nil { reaper.release(); notified.finish() }
+        }
+        XCTAssertFalse(notified.reaped())
         XCTAssertThrowsError(try reaper.reserve())
         reaper.collectPending()
         XCTAssertThrowsError(try reaper.reserve())
         child.finish()
         reaper.collectPending()
+        XCTAssertTrue(notified.reaped())
         try reaper.reserve()
         reaper.release()
     }

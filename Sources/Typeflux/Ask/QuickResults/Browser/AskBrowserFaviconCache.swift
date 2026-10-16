@@ -1,33 +1,59 @@
 import AppKit
-import ImageIO
 
-/// Icons are optional: their bounded, cookie-free requests never delay tab search.
+/// Optional origin icons. Pending slots survive cancellation until owned work really returns.
 @MainActor
-final class AskBrowserFaviconCache {
+final class AskBrowserFaviconCache: AskImageScopeObserver {
     private struct Pending {
         let id: UUID
-        let task: Task<Data?, Never>
+        let generation: UUID
+        let task: Task<CGImage?, Never>
         var clients: Set<UUID>
+        var completed = false
     }
-
     typealias Loader = @Sendable (URL) async -> Data?
+    typealias Decoder = @Sendable (Data) async throws -> CGImage
     static let shared = AskBrowserFaviconCache()
-    private let images = NSCache<NSURL, NSImage>()
+    private static let downloads = AskToolPixelBudget(limit: 2)
+    private var images: [URL: CGImage] = [:]
+    private var order: [URL] = []
     private var failures: [URL: Date] = [:]
     private var pending: [URL: Pending] = [:]
+    private var generation = UUID()
+    private weak var scope: AskImagePresentationScope?
+    private var epoch: UUID?
+    private var originalAccess: AskImagePresentationAccess?
+    private var registration: UUID?
     private let loader: Loader
+    private let decode: Decoder
     private let clock: () -> Date
-
     init(loader: @escaping Loader = { await AskBrowserFaviconCache.load($0) },
-         clock: @escaping () -> Date = Date.init) {
-        self.loader = loader
-        self.clock = clock
-        images.countLimit = 256
+         clock: @escaping () -> Date = Date.init,
+         decode: @escaping Decoder = { try await AskSmallIconDecoder.decode(.data($0)) }) {
+        self.loader = loader; self.clock = clock; self.decode = decode
     }
-
+    func cancel() {
+        generation = UUID(); images.removeAll(); order.removeAll(); failures.removeAll()
+        if let registration { scope?.remove(registration) }
+        registration = nil; scope = nil; epoch = nil; originalAccess = nil
+        for key in Array(pending.keys) {
+            pending[key]?.clients.removeAll(); pending[key]?.task.cancel()
+        }
+    }
+    private func bind(_ access: AskImagePresentationAccess?) -> Bool {
+        guard let access else { return epoch == nil }
+        guard access.allows(), let scope = access.scope, let epoch = access.epoch else {
+            if self.epoch == access.epoch { cancel() }
+            return false
+        }
+        if self.epoch == epoch, self.scope === scope, originalAccess?.allows() == true { return true }
+        cancel()
+        guard let registration = try? scope.register(self, epoch: epoch) else { return false }
+        self.scope = scope; self.epoch = epoch; self.registration = registration; originalAccess = access
+        return true
+    }
     /// Only the origin is sent to the website; tab paths, queries and credentials stay local.
     nonisolated static func faviconURL(for text: String) -> URL? {
-        guard var parts = URLComponents(string: text),
+        guard text.utf8.count <= 16 * 1024, var parts = URLComponents(string: text),
               ["http", "https"].contains(parts.scheme?.lowercased() ?? ""),
               let host = parts.host, !host.isEmpty else { return nil }
         parts.scheme = parts.scheme?.lowercased()
@@ -40,72 +66,66 @@ final class AskBrowserFaviconCache {
         return parts.url
     }
 
-    func cached(_ url: URL) -> NSImage? {
-        images.object(forKey: url as NSURL)
+    func cached(_ url: URL, access: AskImagePresentationAccess? = nil) -> CGImage? {
+        guard access.map({ $0.allows() && originalAccess?.allows() == true && $0.epoch == epoch }) ?? (epoch == nil) else { return nil }
+        return images[url]
     }
 
-    func image(_ url: URL) async -> NSImage? {
-        guard !Task.isCancelled, Self.faviconURL(for: url.absoluteString) == url else { return nil }
-        if let image = cached(url) {
-            return image
-        }
-        if let failure = failures[url], clock().timeIntervalSince(failure) < 60 {
-            return nil
-        }
-        let client = UUID()
-        let entry: Pending
+    func image(_ url: URL, access: AskImagePresentationAccess? = nil) async -> CGImage? {
+        guard !Task.isCancelled, url.absoluteString.utf8.count <= 16 * 1024,
+              Self.faviconURL(for: url.absoluteString) == url, bind(access) else { return nil }
+        if let image = cached(url, access: access) { return image }
+        if let failure = failures[url], clock().timeIntervalSince(failure) < 60 { return nil }
+        let client = UUID(), entry: Pending
         if var existing = pending[url] {
-            existing.clients.insert(client)
-            entry = existing
+            guard existing.generation == generation, !existing.task.isCancelled, existing.clients.count < 16 else { return nil }
+            existing.clients.insert(client); entry = existing
         } else {
-            entry = Pending(id: UUID(), task: Task { await loader(url) }, clients: [client])
+            guard pending.count < 2, let slot = try? Self.downloads.acquire(bytes: 1) else { return nil }
+            let task = Task { [loader, decode] () -> CGImage? in
+                defer { withExtendedLifetime(slot) {} }
+                guard !Task.isCancelled, let data = await loader(url), !Task.isCancelled,
+                      !data.isEmpty, data.count <= 262_144 else { return nil }
+                guard let image = try? await decode(data), !Task.isCancelled,
+                      image.width > 0, image.height > 0, image.width <= 56, image.height <= 56 else { return nil }
+                return image
+            }
+            entry = Pending(id: UUID(), generation: generation, task: task, clients: [client])
         }
         pending[url] = entry
         return await withTaskCancellationHandler {
-            let data = await entry.task.value
+            let image = await entry.task.value
+            guard pending[url]?.id == entry.id else { return nil }
+            pending[url]?.completed = true
             defer { release(url, id: entry.id, client: client) }
-            guard !Task.isCancelled, pending[url]?.id == entry.id else { return nil }
-            if let image = cached(url) {
-                return image
-            }
-            guard let data, let image = Self.decode(data) else {
-                failures = failures.filter { clock().timeIntervalSince($0.value) < 60 }
-                if failures.count >= 256 {
-                    failures.removeAll()
+            guard !Task.isCancelled, !entry.task.isCancelled, entry.generation == generation,
+                  access?.allows() ?? true else { return nil }
+            if let image {
+                if images[url] == nil {
+                    if order.count >= 128 { images[order.removeFirst()] = nil }
+                    order.append(url); images[url] = image
                 }
+                failures[url] = nil
+            } else {
+                failures = failures.filter { clock().timeIntervalSince($0.value) < 60 }
+                if failures.count >= 256 { failures.removeAll() }
                 failures[url] = clock()
-                return nil
             }
-            failures[url] = nil
-            images.setObject(image, forKey: url as NSURL)
             return image
         } onCancel: {
             Task { @MainActor [weak self] in self?.release(url, id: entry.id, client: client) }
         }
     }
-
     private func release(_ url: URL, id: UUID, client: UUID) {
-        guard var entry = pending[url], entry.id == id, entry.clients.remove(client) != nil else { return }
-        if entry.clients.isEmpty {
-            pending[url] = nil
-            entry.task.cancel()
-        } else {
-            pending[url] = entry
-        }
-    }
-
-    private static func decode(_ data: Data) -> NSImage? {
-        guard data.count <= 262_144,
-              let source = CGImageSourceCreateWithData(data as CFData, nil),
-              let image = CGImageSourceCreateThumbnailAtIndex(source, 0, [
-                  kCGImageSourceCreateThumbnailFromImageAlways: true,
-                  kCGImageSourceThumbnailMaxPixelSize: 56,
-                  kCGImageSourceShouldCacheImmediately: true
-              ] as CFDictionary) else { return nil }
-        return NSImage(cgImage: image, size: .init(width: 26, height: 26))
+        guard var entry = pending[url], entry.id == id else { return }
+        entry.clients.remove(client)
+        if entry.clients.isEmpty { entry.task.cancel() }
+        if entry.completed, entry.clients.isEmpty { pending[url] = nil }
+        else { pending[url] = entry }
     }
 
     nonisolated static func load(_ url: URL, transport: any AskImageTransport = AskImageHTTP()) async -> Data? {
+        guard Self.faviconURL(for: url.absoluteString) == url else { return nil }
         let request = URLRequest(url: url, timeoutInterval: 3)
         return try? await transport.send(request, limit: 262_144)
     }

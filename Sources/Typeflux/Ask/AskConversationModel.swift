@@ -41,7 +41,7 @@ final class AskConversationModel: ObservableObject {
     @Published var launcherHistoryMode = false
     @Published var launcherHistoryIndex = 0
     @Published var launcherHistoryFillID: UUID?
-    @Published var launcherPresentationID = UUID()
+    @Published var launcherPresentationID = UUID() { didSet { cancelAttachmentWork(launcher: true); launcherImageScope.invalidate(); workflowImageCopyTask?.cancel() } }
     var launcherExecutedInput: String?
     /// Files and folders the launcher can open; tests supply their own.
     var fileIndex: any AskFileSearching = AskFileIndex.shared
@@ -85,13 +85,17 @@ final class AskConversationModel: ObservableObject {
     }
     /// Keeps what the translation plugin looked up; the window controller supplies it.
     var wordBook: AskWordBookRecorder?
+    var wordBookTask: Task<Void, Never>?
     /// Opens the word book dialog on a word; tests record it instead.
     var openWordBook: @MainActor (String?) -> Void = { key in AskWordBookWindowController.shared.show(selecting: key) }
     /// Opens the word book and looks a word up there; tests record it instead.
     var lookUpInWordBook: @MainActor (String) -> Void = { text in
         AskWordBookWindowController.shared.show(lookingUp: text)
     }
+    var workflowImageCopyTask: Task<Void, Never>?
     /// Saved AI prompt results; the window controller supplies them (`AskConversationModel+Notes`).
+    var notebookTask: Task<Void, Never>?
+    var notebookReadTask: Task<Bool, Never>?
     var notes: (any AskNoteStoring)? { didSet { refreshAnswerNotes() } }
     /// The shown result's text and the note it was saved as, so ⌘S again takes it out.
     var launcherNote: (body: String, id: UUID)?
@@ -275,6 +279,7 @@ final class AskConversationModel: ObservableObject {
     @Published var launcherAttachmentNotice: String?
     /// Loads in flight per draft key (`visionDraftKey`); sending waits for them.
     @Published var attachmentLoads: [String: Int] = [:]
+    let attachmentWork = AskAttachmentWork()
     /// Skills, MCP servers, notes and local mode for slash commands; the window controller fills it in.
     var commandSources = AskCommandSources()
     /// Bumped by the "/search" command; the window opens its search palette.
@@ -384,13 +389,17 @@ final class AskConversationModel: ObservableObject {
     // Local consent for the latest submission, retained for retries but never restored from history.
     private var screenshotConsent: [String: String] = [:]
     var captureGeneration = UUID()
-    var selectionGeneration = UUID()
+    let launcherImageScope = AskImagePresentationScope()
+    let conversationImageScope = AskImagePresentationScope()
+    let remoteImageScope = AskRemoteImageScope()
+    var selectionGeneration = UUID() { didSet { cancelAttachmentWork(launcher: false); remoteImageScope.invalidate(); conversationImageScope.invalidate() } }
     private var selectionObservation: Task<Void, Never>?
     private var draftSave: Task<Void, Never>?
     private var draftSaveConversationID: String?
     private var deletedConversationIDs: Set<String> = []
     /// Temporary conversations being kept; ending them meanwhile would delete what the user saved.
     private var keepingTemporaryIDs: Set<String> = []
+    private var imageAuthObserver: AnyCancellable?
     private var authObserver: AnyCancellable?
     private var modelObserver: AnyCancellable?
     private var memoryObserver: AnyCancellable?
@@ -425,14 +434,22 @@ final class AskConversationModel: ObservableObject {
         authObserver = NotificationCenter.default.publisher(for: .authDidLogout).sink { [weak self] _ in
             Task { @MainActor in self?.resetSession() }
         }
+        imageAuthObserver = NotificationCenter.default.publisher(for: .authDidLogin)
+            .merge(with: NotificationCenter.default.publisher(for: .authTokenDidRefresh)).sink { [weak self] _ in
+                Task { @MainActor in self?.invalidateRemoteImages() }
+            }
         notesObserver = NotificationCenter.default.publisher(for: .askNotesDidChange).sink { [weak self] _ in
             Task { @MainActor in
                 guard let self else { return }
                 self.refreshAnswerNotes()
-                if let saved = self.launcherNote, self.notes?.note(id: saved.id).map({ !$0.isDeleted }) != true {
-                    self.launcherNote = nil
-                    self.plugins.showNoteSaved(false)
-                }
+                do {
+                    if let saved = self.launcherNote,
+                       try await self.notes?.note(id: saved.id).map({ !$0.isDeleted }) != true,
+                       self.launcherNote?.id == saved.id {
+                        self.launcherNote = nil
+                        self.plugins.showNoteSaved(false)
+                    }
+                } catch { self.confirm(L("ask.notes.storageUnavailable")) }
             }
         }
         memoryObserver = NotificationCenter.default.publisher(for: .askMemoryDidClear)
@@ -532,6 +549,13 @@ final class AskConversationModel: ObservableObject {
     }
 
     func resetSession() {
+        workflowImageCopyTask?.cancel()
+        launcherImageScope.invalidate(); conversationImageScope.invalidate()
+        cancelAttachmentWork()
+        notebookTask?.cancel()
+        notebookReadTask?.cancel()
+        wordBookTask?.cancel()
+        wordBook?.beginSession()
         quickSearch.cancel()
         quickSearch.results = nil
         recoveryGeneration = UUID(); recoveryWorking = false; inspectingRecovery = false
@@ -1709,6 +1733,7 @@ final class AskConversationModel: ObservableObject {
             try tools.deleteArtifacts(ownerId: current.account, conversationId: id)
             try workflowAuthoring?.remove(id)
             deletedConversationIDs.insert(id)
+            if selectedId == id { remoteImageScope.invalidate(); conversationImageScope.invalidate() }
             titleTasks[id]?.cancel(); titleTasks[id] = nil; titleRetryAfter[id] = nil
             // Drain a writer already inside the cache before deleting its draft.
             // New writers check the tombstone immediately before saving.
@@ -1777,6 +1802,7 @@ final class AskConversationModel: ObservableObject {
         screenshotConsent[id] = nil; permissionModes[id] = nil; cloudApprovals[id] = nil
         titleTasks[id]?.cancel(); titleTasks[id] = nil; titleRetryAfter[id] = nil
         deletedConversationIDs.insert(id)
+        if selectedId == id { remoteImageScope.invalidate(); conversationImageScope.invalidate() }
         if controllingConversationId == id { controllingConversationId = nil; onControlChanged?(false) }
         if selectedId == id {
             selectionObservation?.cancel(); selectionObservation = nil

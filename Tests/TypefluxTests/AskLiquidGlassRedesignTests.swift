@@ -193,19 +193,20 @@ struct AskLiquidGlassRedesignTests {
 
     // MARK: - Attachment strip
 
-    @MainActor @Test func screenshotThumbnailIsDecodedOncePerCapture() {
-        var decodes = 0
-        let image = NSImage(size: NSSize(width: 2, height: 2))
-        let decode: (String) -> NSImage? = { _ in decodes += 1; return image }
-        let first = Date(timeIntervalSince1970: 1)
-        #expect(AskAttachmentStrip.thumbnail(dataURL: nil, capturedAt: first, decode: decode) == nil)
-        #expect(AskAttachmentStrip.thumbnail(dataURL: "data:a", capturedAt: first, decode: decode) === image)
-        #expect(AskAttachmentStrip.thumbnail(dataURL: "data:a", capturedAt: first, decode: decode) === image)
-        #expect(decodes == 1)
-        // A new capture decodes again.
-        _ = AskAttachmentStrip.thumbnail(dataURL: "data:a", capturedAt: Date(timeIntervalSince1970: 2), decode: decode)
-        #expect(decodes == 2)
-        _ = AskAttachmentStrip.thumbnail(dataURL: "data:ab", capturedAt: Date(timeIntervalSince1970: 2), decode: decode)
-        #expect(decodes == 3)
+    @MainActor @Test func screenshotThumbnailIsOwnedByItsViewAndExactContent() async {
+        let scope = AskImagePresentationScope()
+        let access = AskImagePresentationAccess(scope: scope, epoch: scope.epoch, authorize: { true })
+        let model = AskContextImageModel(decode: { _ in
+            .init(images: [AskAttachmentFixture.image(width: 2, height: 2)], numbers: [], pages: 1)
+        })
+        await model.load("first", access: access)
+        let image = model.displayed("first", access: access)
+        await model.load("first", access: access)
+        #expect(model.displayed("first", access: access) === image)
+        #expect(model.displayed("other", access: access) == nil)
+        await model.load("other", access: access)
+        #expect(model.displayed("other", access: access) !== image)
+        scope.invalidate()
+        #expect(model.image == nil)
     }
 }

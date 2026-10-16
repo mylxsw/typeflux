@@ -42,7 +42,8 @@ extension AskQuickResultsInteractionTests {
             try await launcher.press(Self.sKey, .command)
             #expect(model.plugins.savesNoteWhenDone, "⌘S works while the result streams")
             try await waitUntil { model.plugins.output != nil }
-            #expect(store.list(AskNoteQuery()).map(\.body) == ["**Polished** text"])
+            await model.notebookTask?.value
+            #expect(try store.list(AskNoteQuery()).map(\.body) == ["**Polished** text"])
             #expect(model.plugins.output?.starred == true)
             try await launcher.press(8, [.command, .shift])
             #expect(pasteboard.string(forType: .html)?.contains("<strong>Polished</strong>") == true)
@@ -62,7 +63,7 @@ extension AskQuickResultsInteractionTests {
         try await withPasteboard { _ in
             let store = makeTestNotes()
             let note = makeTestNote("Saved answer", body: "Body text")
-            store.save(note)
+            try store.save(note)
             var windows: [UUID] = []
             let launcher = try await Launcher(text: "") { model in
                 model.notes = store
@@ -74,6 +75,7 @@ extension AskQuickResultsInteractionTests {
             try await typeText("nb ", into: launcher)
             try await waitUntil { model.plugins.output?.items.first?.title == "Saved answer" }
             try await launcher.press(Self.returnKey)
+            await model.notebookTask?.value
             #expect(windows == [note.id] && launcher.dismissed == 1)
         }
     }

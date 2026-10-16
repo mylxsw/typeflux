@@ -5473,3 +5473,45 @@
 "semantic.keyword.query" = "찾고 싶은 내용을 설명하세요";
 "semantic.keyword.none" = "일치하는 내용을 찾을 수 없습니다";
 "ask.settings.keywords.kind.semanticFiles.hint" = "내용의 의미로 이 Mac의 파일 검색";
+// Word-book storage availability
+"ask.wordBook.storageUnavailable" = "단어장을 사용할 수 없습니다. 현재 결과는 유지됩니다.";
+"ask.wordBook.saveFailed" = "단어장에 저장하지 못했습니다. 현재 결과는 유지됩니다.";
+
+"ask.notes.storageUnavailable" = "노트 저장소를 일시적으로 사용할 수 없습니다. 현재 텍스트는 유지됩니다.";
+
+// Independently recoverable storage services.
+"settings.services.title" = "서비스 상태";
+"settings.services.conversations" = "대화 기록";
+"settings.services.wordBook" = "단어장";
+"settings.services.notebook" = "노트";
+"settings.services.recover" = "접근 복원";
+"settings.services.hint" = "저장된 데이터와 저장하지 않은 편집 내용을 유지하며 이 서비스에 대한 접근을 복원합니다. 이전 작업은 다시 실행되지 않습니다.";
+"settings.services.stopped" = "시작하지 않음";
+"settings.services.recovering" = "접근 복원 중";
+"settings.services.ready" = "사용 가능";
+"settings.services.coolingDown" = "일시 중지됨";
+"settings.services.unavailable" = "사용할 수 없음";
+"settings.services.disabled" = "비활성화됨";
+"settings.services.quarantined" = "반복된 중단으로 일시 중지됨";
+"settings.services.observationFailed" = "상태를 확인할 수 없습니다. 이 페이지를 다시 열어 새로 고치세요.";
+"settings.services.requested" = "복원을 요청했습니다. 서비스가 준비되면 사용 가능 상태가 업데이트됩니다.";
+"settings.services.wait" = "복원 대기 시간 중입니다. 잠시 후 다시 시도하세요.";
+"settings.services.busy" = "이전 작업이 끝나기를 기다리고 있습니다. 잠시 후 다시 시도하세요.";
+
+// Native system command isolation outcomes.
+"ask.system.notExecuted" = "시스템 서비스를 사용할 수 없어 명령이 실행되지 않았습니다.";
+"ask.system.unknownOutcome" = "명령이 이미 적용되었을 수 있지만 결과를 확인할 수 없습니다. 자동으로 다시 실행하지 않습니다. 다시 시도하기 전에 시스템 상태를 확인하세요.";
+"ask.system.busy" = "다른 시스템 명령이 실행 중입니다. 이번 명령은 실행되지 않았습니다.";
+"ask.system.coolingDown" = "오류 후 시스템 명령이 일시 중지되었습니다. 이번 명령은 실행되지 않았습니다.";
+"ask.system.disabled" = "시스템 명령 서비스가 중지되었습니다. 이번 명령은 실행되지 않았습니다.";
+
+"localSTT.error.inferenceUnavailable" = "로컬 받아쓰기를 사용할 수 없습니다. 요청을 다시 전송하지 않았습니다. 잠시 후 다시 시도해 주세요.";
+
+"ask.attach.busy" = "첨부 파일을 처리 중입니다. 잠시 후 다시 시도하세요.";
+
+// Private generation output recovery
+"imagegen.recovery.title" = "생성 결과 복구";
+"imagegen.recovery.detail" = "이 대화에 보관된 파일을 내보냅니다. 검증되지 않은 파일에는 프롬프트나 제공업체 URL이 포함될 수 있습니다. 재생성, URL 다운로드, 원래의 알 수 없는 실행 상태 변경은 하지 않습니다. 기록은 대화를 삭제할 때까지 보관됩니다.";
+"imagegen.recovery.empty" = "이 대화에 복구할 출력이 없습니다.";
+"imagegen.recovery.saved" = "파일을 저장했습니다. 비공개 원본과 실행 상태는 그대로입니다.";
+"imagegen.recovery.unavailable" = "복구할 수 없거나 접근 권한이 변경되었습니다. 비공개 원본은 삭제되지 않았습니다.";

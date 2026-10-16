@@ -88,6 +88,19 @@ struct AskExecutionOutcome: Codable, Equatable, Sendable {
     var effectVerified: Bool? = nil
     var truncated: Bool? = nil
 
+    /// A denial can persist; it can never grant access or validation authority.
+    var projectionWithheld: Bool? = nil
+    // Local preparation is never encoded, trusted from a peer, or restored as proof.
+    var preparedImages: [String: String] = [:]
+    enum CodingKeys: String, CodingKey {
+        case status, content, artifacts, durationMs, eventDispatched, effectVerified, truncated, projectionWithheld
+    }
+    static func == (lhs: Self, rhs: Self) -> Bool {
+        lhs.status == rhs.status && lhs.content == rhs.content && lhs.artifacts == rhs.artifacts &&
+        lhs.durationMs == rhs.durationMs && lhs.eventDispatched == rhs.eventDispatched &&
+        lhs.effectVerified == rhs.effectVerified && lhs.truncated == rhs.truncated && lhs.projectionWithheld == rhs.projectionWithheld
+    }
+
     var safeStatus: AskExecutionStatus { AskExecutionStatus(rawValue: status) ?? .unknown }
 }
 

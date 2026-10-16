@@ -29,7 +29,7 @@ struct AskWordBookDictTests {
     @Test func aloneItOffersTheWordBookFirstThenRecentWords() async throws {
         let store = makeTestWordBook()
         let saved = AskWordBookLookup(headword: "serendipity", source: "en", target: "zh-Hans", card: wordBookCard)
-        store.record(saved, at: Date(), counts: true)
+        try store.record(saved, at: Date(), counts: true)
         let translate = plugin(store)
         let plan = await translate.plan(request(""))
         #expect(plan.mode == .live && plan.title == L("ask.wordBook.title"))
@@ -60,7 +60,7 @@ struct AskWordBookDictTests {
 
     @Test func aKeptCardPreviewsFromTheBook() async throws {
         let store = makeTestWordBook()
-        store.record(AskWordBookLookup(headword: "serendipity", source: "en", target: "zh-Hans", card: wordBookCard),
+        try store.record(AskWordBookLookup(headword: "serendipity", source: "en", target: "zh-Hans", card: wordBookCard),
                      at: Date(), counts: true)
         let translate = plugin(store, local: false)
         let word = request("serendipity")
@@ -133,7 +133,7 @@ extension AskQuickResultsInteractionTests {
             try await launcher.press(Self.returnKey)
             #expect(looked == ["gregarious"])
             #expect(launcher.dismissed == 1)
-            #expect(translation.store.count(.all) == 0, "the launcher keeps nothing; the window does")
+            #expect(try translation.store.count(.all) == 0, "the launcher keeps nothing; the window does")
         }
     }
 }

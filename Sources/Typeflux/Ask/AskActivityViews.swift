@@ -317,11 +317,8 @@ struct AskToolStepRow: View {
                             AskMonoBlock(title: "", text: result.resultText,
                                          isError: AskPresentation.toolState(result: result) == .failed)
                         }
-                        ForEach(Array(result.resultImages.enumerated()), id: \.offset) { _, url in
-                            if let image = AskImage.decode(url) {
-                                Image(nsImage: image).resizable().scaledToFit().frame(maxHeight: 220)
-                                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                            }
+                        ForEach(Array(result.retainedResultImages.enumerated()), id: \.offset) { _, url in
+                            AskToolImageView(url: url)
                         }
                     }
                 }
@@ -337,25 +334,12 @@ struct AskToolStepRow: View {
 /// Images a run produced and the pages it read, as first-class results.
 struct AskRunOutputsView: View {
     let outputs: AskRunOutputs
+    var remoteImages = AskRemoteImageLoader()
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            ForEach(outputs.generatedImages, id: \.assetId) { image in
-                if let url = image.safeURL {
-                    Link(destination: url) {
-                        AsyncImage(url: url) { phase in
-                            if let loaded = phase.image {
-                                loaded.resizable().scaledToFit().frame(maxWidth: 480, maxHeight: 360)
-                            } else if phase.error != nil {
-                                Label(L("ask.preview"), systemImage: "photo")
-                            } else {
-                                ProgressView().frame(width: 240, height: 160)
-                            }
-                        }
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
-                    }
-                    .accessibilityLabel(L("ask.preview"))
-                }
+            ForEach(Array(outputs.generatedImages.enumerated()), id: \.element.assetId) { index, image in
+                AskRemoteImageView(asset: image, enabled: index < 8, loader: remoteImages)
             }
             ForEach(outputs.storedArtifacts, id: \.id) { ref in
                 AskStoredArtifactCard(ref: ref)
@@ -372,12 +356,19 @@ struct AskRunOutputsView: View {
 
 private struct AskArtifactCard: View {
     let artifact: AskRunOutputs.Artifact
+    @StateObject private var imageModel = AskToolImageModel()
     @State private var preview = false
     @State private var copied = false
     @State private var saveError: String?
 
     var body: some View {
-        if let image = AskImage.decode(artifact.image) {
+        ZStack { content }
+            .task(id: artifact.image) { await imageModel.load(artifact.image) }
+            .onDisappear { imageModel.cancel(); preview = false }
+    }
+
+    @ViewBuilder private var content: some View {
+        if imageModel.source == artifact.image, let image = imageModel.image {
             HStack(alignment: .bottom, spacing: 12) {
                 Button { preview = true } label: {
                     Image(nsImage: image).resizable().scaledToFit()
@@ -414,6 +405,10 @@ private struct AskArtifactCard: View {
                     }
                 }
             }
+        } else if imageModel.unavailable {
+            Label(AskArtifactError.unavailable.localizedDescription, systemImage: "photo")
+        } else {
+            ProgressView().controlSize(.small).frame(width: 32, height: 24)
         }
     }
 }

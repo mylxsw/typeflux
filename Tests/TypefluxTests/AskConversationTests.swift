@@ -630,8 +630,8 @@ struct AskConversationTests {
         #expect(try JSONDecoder().decode(String.self, from: Data(literal.utf8)) == input)
         #expect(AskLocalTools.appleScriptLiteral(input).contains("\\\""))
         #expect(!AskLocalTools.appleScriptLiteral(input).contains("\n"))
-        #expect(AskImage.decode("invalid") == nil)
-        #expect(AskImage.decode("data:image/jpeg;base64,invalid") == nil)
+        #expect(throws: (any Error).self) { try AskContextImageDecoder.input("invalid") }
+        #expect(throws: (any Error).self) { try AskContextImageDecoder.input("data:image/jpeg;base64,invalid") }
     }
 }
 

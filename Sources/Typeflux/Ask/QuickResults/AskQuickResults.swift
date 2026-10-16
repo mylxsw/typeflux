@@ -391,17 +391,13 @@ struct AskQuickResults: Equatable {
     /// Puts the image at `url` on the pasteboard as one item: the image itself, for
     /// apps that paste pictures, and the file, for Finder. False when it is not an image.
     @MainActor @discardableResult
-    static func copyImage(_ url: URL, to pasteboard: NSPasteboard? = nil) -> Bool {
-        guard let image = NSImage(contentsOf: url), let tiff = image.tiffRepresentation else { return false }
+    static func copyImage(_ url: URL, data: AskWorkflowImage.Clipboard, to pasteboard: NSPasteboard? = nil) -> Bool {
         let target = pasteboard ?? Self.pasteboard
         let item = NSPasteboardItem()
-        item.setData(tiff, forType: .tiff)
-        if let png = NSBitmapImageRep(data: tiff)?.representation(using: .png, properties: [:]) {
-            item.setData(png, forType: .png)
-        }
+        item.setData(data.tiff, forType: .tiff)
+        item.setData(data.png, forType: .png)
         item.setString(url.absoluteString, forType: .fileURL)
         target.clearContents()
-        target.writeObjects([item])
-        return true
+        return target.writeObjects([item])
     }
 }

@@ -67,7 +67,7 @@ struct AskResultDocumentTests {
         AskPluginOutput(body: body, original: "Input", meta: [], source: "AI", actions: [])
     }
 
-    @Test func streamingResultsArriveAndFinish() {
+    @Test func streamingResultsArriveAndFinish() async throws {
         let recorder = AskResultServicesRecorder()
         let doc = document(recorder, state: .streaming, body: "")
         var cancelled = 0
@@ -75,9 +75,10 @@ struct AskResultDocumentTests {
         #expect(doc.isStreaming && !doc.canInsert && !doc.canRegenerate)
         doc.receive(.progress(output("Hel")))
         #expect(doc.body == "Hel")
-        doc.toggleNote()
+        await doc.toggleNote()?.value
         #expect(doc.savesWhenDone && doc.notice == L("ask.notes.saveWhenDone"))
         doc.receive(.done(output("Hello")))
+        await doc.waitForNoteAction()
         #expect(doc.state == .done && doc.body == "Hello" && !doc.savesWhenDone)
         #expect(recorder.saved.map(\.body) == ["Hello"], "⌘S while streaming saves once done")
         #expect(doc.noteID != nil && doc.notice == L("ask.notes.saved"))
@@ -85,7 +86,7 @@ struct AskResultDocumentTests {
         #expect(cancelled == 0, "a finished run has nothing to stop")
     }
 
-    @Test func failuresStopsAndCancellations() {
+    @Test func failuresStopsAndCancellations() async throws {
         let recorder = AskResultServicesRecorder()
         let failing = document(recorder, state: .streaming, body: "")
         failing.receive(.failed(AskPluginFailure(message: "boom")))
@@ -109,29 +110,29 @@ struct AskResultDocumentTests {
         #expect(partial.state == .done)
     }
 
-    @Test func savingRemovingAndKeepingEditedNotes() {
+    @Test func savingRemovingAndKeepingEditedNotes() async throws {
         let recorder = AskResultServicesRecorder()
         let doc = document(recorder)
-        doc.toggleNote()
+        await doc.toggleNote()?.value
         let id = try? #require(doc.noteID)
         #expect(recorder.saved.first == AskNoteDraft(command: "Explain", keyword: "ex", input: "Input", body: "Result",
                                                       model: "gpt-test", sourceApp: "Notes",
                                                       sourceBundleID: "com.apple.Notes"))
         recorder.keepsEdited = true
-        doc.toggleNote()
+        await doc.toggleNote()?.value
         #expect(doc.noteID == id && doc.notice == L("ask.notes.editedKept"))
         recorder.keepsEdited = false
-        doc.toggleNote()
+        await doc.toggleNote()?.value
         #expect(doc.noteID == nil && recorder.removed == [id].compactMap { $0 } && doc.notice == L("ask.notes.removed"))
-        doc.toggleNote()
+        await doc.toggleNote()?.value
         let again = doc.noteID
         recorder.existing.removeAll()
-        doc.refreshNote()
+        await doc.refreshNote()?.value
         #expect(again != nil && doc.noteID == nil, "a note deleted in the notes window clears the star")
-        doc.toggleNote()
+        await doc.toggleNote()?.value
         #expect(recorder.saved.count == 3, "a gone note saves anew")
         let blank = document(recorder, body: "  ")
-        blank.toggleNote()
+        await blank.toggleNote()?.value
         #expect(blank.noteID == nil && recorder.saved.count == 3)
     }
 
@@ -171,7 +172,7 @@ struct AskResultDocumentTests {
             progress("New")
             return "New result"
         })
-        doc.toggleNote()
+        await doc.toggleNote()?.value
         #expect(doc.noteID != nil && doc.canRegenerate)
         doc.regenerate()
         #expect(doc.isStreaming && doc.dimmed && doc.noteID == nil, "the old result dims; the new one is not saved")
@@ -189,7 +190,7 @@ struct AskResultDocumentTests {
         #expect(doc.state == .done, "stopping keeps what had arrived")
     }
 
-    @Test func notesOpenReadOnlyAndLinkBack() {
+    @Test func notesOpenReadOnlyAndLinkBack() async throws {
         let recorder = AskResultServicesRecorder()
         let note = makeTestNote()
         recorder.existing.insert(note.id)
@@ -201,7 +202,7 @@ struct AskResultDocumentTests {
         #expect(recorder.openedNotes == [note.id])
     }
 
-    @Test func manualNotesUseTheirTitleWithoutChangingSourceMetadata() {
+    @Test func manualNotesUseTheirTitleWithoutChangingSourceMetadata() async throws {
         var note = makeTestNote("My reading notes")
         note.command = ""
         note.source = .manual
@@ -239,7 +240,7 @@ struct AskResultDocumentTests {
         #expect(cancelled == 1)
     }
 
-    @Test func windowsOpenCascadeAndRememberTheirSize() throws {
+    @Test func windowsOpenCascadeAndRememberTheirSize() async throws {
         let controller = AskResultWindowController()
         let suite = "ask.result.window.\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: suite))

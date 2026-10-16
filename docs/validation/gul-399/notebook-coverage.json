@@ -1,0 +1,342 @@
+{
+  "covered": 930,
+  "executable_added": 991,
+  "percent": 93.84,
+  "files": [
+    {
+      "file": "Sources/Typeflux/App/AppCoordinator.swift",
+      "covered": 0,
+      "executable_added": 2,
+      "percent": 0.0,
+      "uncovered": [
+        292,
+        293
+      ],
+      "instrumented": true,
+      "profile": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/App/DIContainer.swift",
+      "covered": 0,
+      "executable_added": 4,
+      "percent": 0.0,
+      "uncovered": [
+        111,
+        123,
+        124,
+        126
+      ],
+      "instrumented": true,
+      "profile": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskComposerViews.swift",
+      "covered": 6,
+      "executable_added": 6,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile": "final-retry"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskConversationModel+Notes.swift",
+      "covered": 120,
+      "executable_added": 130,
+      "percent": 92.31,
+      "uncovered": [
+        35,
+        36,
+        98,
+        99,
+        100,
+        133,
+        134,
+        144,
+        145,
+        149
+      ],
+      "instrumented": true,
+      "profile": "final-retry"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskConversationModel+Plugins.swift",
+      "covered": 3,
+      "executable_added": 3,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile": "final-retry"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskConversationModel.swift",
+      "covered": 7,
+      "executable_added": 10,
+      "percent": 70.0,
+      "uncovered": [
+        439,
+        440,
+        441
+      ],
+      "instrumented": true,
+      "profile": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskConversationViews.swift",
+      "covered": 0,
+      "executable_added": 1,
+      "percent": 0.0,
+      "uncovered": [
+        1211
+      ],
+      "instrumented": true,
+      "profile": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskConversationWindowController.swift",
+      "covered": 8,
+      "executable_added": 8,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskLocalTools+Approval.swift",
+      "covered": 3,
+      "executable_added": 3,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskLocalTools.swift",
+      "covered": 7,
+      "executable_added": 8,
+      "percent": 87.5,
+      "uncovered": [
+        170
+      ],
+      "instrumented": true,
+      "profile": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/Notes/AskNote.swift",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": true,
+      "profile": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/Notes/AskNoteDetailView.swift",
+      "covered": 12,
+      "executable_added": 23,
+      "percent": 52.17,
+      "uncovered": [
+        75,
+        76,
+        77,
+        78,
+        79,
+        80,
+        105,
+        242,
+        338,
+        594,
+        669
+      ],
+      "instrumented": true,
+      "profile": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/Notes/AskNotebookTool.swift",
+      "covered": 53,
+      "executable_added": 53,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/Notes/AskNotesList.swift",
+      "covered": 7,
+      "executable_added": 14,
+      "percent": 50.0,
+      "uncovered": [
+        65,
+        102,
+        158,
+        276,
+        292,
+        294,
+        296
+      ],
+      "instrumented": true,
+      "profile": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/Notes/AskNotesSidebar.swift",
+      "covered": 1,
+      "executable_added": 1,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/Notes/AskNotesView.swift",
+      "covered": 10,
+      "executable_added": 14,
+      "percent": 71.43,
+      "uncovered": [
+        48,
+        98,
+        156,
+        160
+      ],
+      "instrumented": true,
+      "profile": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/Notes/AskNotesViewModel.swift",
+      "covered": 483,
+      "executable_added": 498,
+      "percent": 96.99,
+      "uncovered": [
+        251,
+        440,
+        441,
+        442,
+        580,
+        581,
+        582,
+        583,
+        584,
+        728,
+        729,
+        798,
+        799,
+        1040,
+        1041
+      ],
+      "instrumented": true,
+      "profile": "final-retry"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/Notes/AskNotesWindowController.swift",
+      "covered": 22,
+      "executable_added": 22,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/Notes/SQLiteAskNoteStore.swift",
+      "covered": 69,
+      "executable_added": 69,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/AskNotesPlugin.swift",
+      "covered": 7,
+      "executable_added": 7,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/AskPluginSession.swift",
+      "covered": 1,
+      "executable_added": 1,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/Recovery/RecoveringAskNoteStore.swift",
+      "covered": 61,
+      "executable_added": 64,
+      "percent": 95.31,
+      "uncovered": [
+        8,
+        9,
+        10
+      ],
+      "instrumented": true,
+      "profile": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/ResultWindow/AskResultDocument.swift",
+      "covered": 49,
+      "executable_added": 49,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/ResultWindow/AskResultWindowView.swift",
+      "covered": 1,
+      "executable_added": 1,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Resources/en.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false,
+      "profile": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Resources/ja.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false,
+      "profile": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Resources/ko.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false,
+      "profile": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Resources/zh-Hans.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false,
+      "profile": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Resources/zh-Hant.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false,
+      "profile": "initial"
+    }
+  ],
+  "baseline": "7e2e6b80",
+  "attribution": "Final retry for four changed production files; initial profile for unchanged production files from this run. See notebook.md."
+}

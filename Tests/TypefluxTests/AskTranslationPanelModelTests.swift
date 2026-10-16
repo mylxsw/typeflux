@@ -200,7 +200,7 @@ struct AskTranslationPanelModelTests {
         #expect(AskTranslationAutoCopy.original.text(original: "", results: []) == nil)
     }
 
-    @Test func `selection commands star copy regenerate and swap use the current results`() async {
+    @Test func `selection commands star copy regenerate and swap use the current results`() async throws {
         let fixture = TranslationPanelFixture()
         defer { fixture.clean() }
         let model = fixture.model
@@ -247,7 +247,8 @@ struct AskTranslationPanelModelTests {
         model.moveSelection(-1)
         model.moveSelection(-10)
         model.shortcut(.commandS)
-        #expect(fixture.book.entry(forKey: lookup.key)?.isStarred == true)
+        await model.wordBookTask?.value
+        #expect(try fixture.book.entry(forKey: lookup.key)?.isStarred == true)
         model.shortcut(.shiftCommandC)
         model.shortcut(.commandB)
         model.perform(.init(kind: .speak("word", language: "en"), title: "", symbol: ""))
@@ -273,6 +274,7 @@ struct AskTranslationPanelModelTests {
         model.translate()
         model.moveSelection(1)
         model.shortcut(.commandS)
+        await model.wordBookTask?.value
         model.swapLanguages()
         #expect(model.output == nil)
     }

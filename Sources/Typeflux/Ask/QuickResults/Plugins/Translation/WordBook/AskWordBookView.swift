@@ -69,7 +69,7 @@ struct AskWordBookView: View {
         }
         .confirmationDialog(L("ask.wordBook.settings.clear.confirm", max(0, (model.counts[.all] ?? 0)
                 - (model.counts[.starred] ?? 0))), isPresented: $confirmsClear) {
-            Button(L("ask.wordBook.settings.clear"), role: .destructive) { model.clearHistory() }
+            Button(L("ask.wordBook.settings.clear"), role: .destructive) { Task { await model.clearHistory() } }
             Button(L("common.cancel"), role: .cancel) {}
         }
         .accessibilityIdentifier("ask.wordBook")
@@ -172,7 +172,7 @@ struct AskWordBookView: View {
     private var exportMenu: some View {
         Menu {
             ForEach(AskWordBookExporter.Format.allCases) { format in
-                Button(format.title) { model.export(format) }
+                Button(format.title) { Task { await model.export(format) } }
             }
         } label: {
             Image(systemName: "square.and.arrow.up").font(.system(size: 12))
@@ -401,7 +401,7 @@ struct AskWordBookView: View {
                                 AskWordBookRow(entry: entry,
                                                selected: selected,
                                                select: { model.selectedKey = entry.key },
-                                               star: { model.toggleStar(entry) })
+                                               star: { Task { await model.toggleStar(entry) } })
                                     .id(entry.key)
                                     .onAppear { if entry.key == model.entries.last?.key { model.loadMore() } }
                             }
@@ -541,7 +541,7 @@ struct AskWordBookView: View {
             HStack(spacing: 12) {
                 Text(notice).font(.system(size: 12.5)).foregroundStyle(StudioTheme.textPrimary).lineLimit(1)
                 if !model.deleted.isEmpty {
-                    Button(L("ask.wordBook.undo")) { model.undoDelete() }
+                    Button(L("ask.wordBook.undo")) { Task { await model.undoDelete() } }
                         .buttonStyle(.plain).font(.system(size: 12.5, weight: .semibold)).foregroundStyle(StudioTheme.accent)
                 }
             }
@@ -566,12 +566,12 @@ struct AskWordBookView: View {
             Button("") { focus = .filter }.keyboardShortcut("f")
             Button("") { model.moveSelection(-1) }.keyboardShortcut(.upArrow, modifiers: []).disabled(typing)
             Button("") { model.moveSelection(1) }.keyboardShortcut(.downArrow, modifiers: []).disabled(typing)
-            Button("") { if let entry = model.displayed { model.toggleStar(entry) } }.keyboardShortcut("s")
+            Button("") { if let entry = model.displayed { Task { await model.toggleStar(entry) } } }.keyboardShortcut("s")
             Button("") { if let entry = model.displayed { model.copyMeaning(entry) } }
                 .keyboardShortcut("c").disabled(typing)
-            Button("") { if let entry = model.displayed { model.delete(entry) } }
+            Button("") { if let entry = model.displayed { Task { await model.delete(entry) } } }
                 .keyboardShortcut(.delete, modifiers: []).disabled(typing)
-            Button("") { model.undoDelete() }.keyboardShortcut("z").disabled(model.deleted.isEmpty || typing)
+            Button("") { Task { await model.undoDelete() } }.keyboardShortcut("z").disabled(model.deleted.isEmpty || typing)
             Button("") { escape() }.keyboardShortcut(.cancelAction)
         }
         .opacity(0)
@@ -728,7 +728,7 @@ struct AskWordBookDetail: View {
                 }
             }
             Spacer(minLength: 8)
-            Button { model.toggleStar(entry) } label: {
+            Button { Task { await model.toggleStar(entry) } } label: {
                 ViewThatFits(in: .horizontal) {
                     starLabel(compact: false)
                     starLabel(compact: true)
@@ -799,7 +799,7 @@ struct AskWordBookDetail: View {
             }
             Rectangle().fill(AskTheme.separator).frame(width: 0.5, height: 16).padding(.horizontal, 4)
             toolbarButton("trash", model.isTransient(entry) ? "ask.wordBook.dismiss" : "ask.wordBook.delete", compact: compact) {
-                model.delete(entry)
+                Task { await model.delete(entry) }
             }
             .accessibilityIdentifier("ask.wordBook.delete")
         }

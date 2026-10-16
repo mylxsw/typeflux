@@ -72,9 +72,12 @@ struct AskNoteDetailView: View {
 
     private func commitTitle() {
         guard titleDraft != titleBaseline, let id = titleNoteID else { return }
-        guard model.savePendingTitle() else { return }
-        titleDraft = model.store.note(id: id)?.title ?? titleDraft
-        titleBaseline = titleDraft
+        let submitted = titleDraft
+        model.perform {
+            guard await model.savePendingTitle(), titleNoteID == id, titleDraft == submitted else { return }
+            titleDraft = model.notes.first(where: { $0.id == id })?.title ?? submitted
+            titleBaseline = titleDraft
+        }
     }
 
     // MARK: - Top bar
@@ -95,11 +98,11 @@ struct AskNoteDetailView: View {
                 modePicker
                     .padding(.trailing, 2)
                 AskIconGhostButton(label: L(note.pinned ? "ask.notes.unpin" : "ask.notes.pin") + " ⇧⌘P",
-                                   systemImage: note.pinned ? "pin.fill" : "pin", action: model.togglePin)
+                                   systemImage: note.pinned ? "pin.fill" : "pin", action: { model.perform { await model.togglePin() } })
                 if !note.headings.isEmpty {
                     AskIconGhostButton(label: L("ask.notes.outline"), systemImage: "list.bullet.indent") {
                         if model.editing {
-                            model.setMode(.read)
+                            model.perform { await model.setMode(.read) }
                             model.showsOutline = true
                         } else {
                             model.showsOutline.toggle()
@@ -146,7 +149,7 @@ struct AskNoteDetailView: View {
         Text(L("ask.notes.shelf.trash")).font(.system(size: 12, weight: .medium))
             .foregroundStyle(StudioTheme.textSecondary)
         Spacer(minLength: 8)
-        Button { model.restoreFromTrash() } label: {
+        Button { model.perform { await model.restoreFromTrash()  } } label: {
             Label(L("ask.notes.trash.restore"), systemImage: "arrow.uturn.backward")
                 .font(.system(size: 12, weight: .medium))
                 .padding(.horizontal, 10).frame(height: 28)
@@ -155,7 +158,7 @@ struct AskNoteDetailView: View {
         }
         .buttonStyle(AskPressableStyle())
         .accessibilityIdentifier("ask.notes.trash.restore")
-        Button { model.deleteForever() } label: {
+        Button { model.perform { await model.deleteForever()  } } label: {
             Text(L("ask.notes.trash.deleteForever")).font(.system(size: 12, weight: .medium))
                 .padding(.horizontal, 10).frame(height: 28)
                 .foregroundStyle(StudioTheme.danger)
@@ -173,7 +176,7 @@ struct AskNoteDetailView: View {
         HStack(spacing: 2) {
             ForEach(AskNotesViewModel.Mode.allCases, id: \.self) { mode in
                 let active = model.mode == mode
-                Button { model.setMode(mode) } label: {
+                Button { model.perform { await model.setMode(mode)  } } label: {
                     Text(L("ask.notes.mode." + mode.rawValue))
                         .font(.system(size: 12, weight: active ? .semibold : .regular))
                         .lineLimit(1)
@@ -234,9 +237,9 @@ struct AskNoteDetailView: View {
             Button(L("ask.plugin.action.openInWindow") + "  ⌘O") { model.openSelectedInWindow() }
             if model.askAI != nil { Button(L("ask.result.askAI")) { model.askAIAboutSelected() } }
             if model.canOpenSource { Button(L("ask.notes.openConversation")) { model.openSource() } }
-            if model.agentRevision != nil { Button(L("ask.notes.revertAgent")) { model.revertAgentChange() } }
+            if model.agentRevision != nil { Button(L("ask.notes.revertAgent")) { model.perform { await model.revertAgentChange()  } } }
             Divider()
-            Button(L("ask.notes.delete") + "  ⌘⌫", role: .destructive) { model.deleteSelected() }
+            Button(L("ask.notes.delete") + "  ⌘⌫", role: .destructive) { model.perform { await model.deleteSelected()  } }
         } label: {
             Image(systemName: "ellipsis").font(.system(size: 12.5)).foregroundStyle(StudioTheme.textTertiary)
                 .frame(width: 28, height: 28)
@@ -332,7 +335,7 @@ struct AskNoteDetailView: View {
         return HStack(spacing: 6) {
             Text(parts.joined(separator: " · ")).lineLimit(1)
             if model.agentRevision != nil, !note.isDeleted {
-                Button(L("ask.notes.revertAgent"), action: model.revertAgentChange)
+                Button(L("ask.notes.revertAgent"), action: { model.perform { await model.revertAgentChange() } })
                     .buttonStyle(.plain).foregroundStyle(AskTheme.accent)
             }
         }
@@ -345,7 +348,7 @@ struct AskNoteDetailView: View {
                     Circle().fill(AskNotesStyle.tagColor(tag)).frame(width: 7, height: 7)
                     Text(tag).font(.system(size: 12)).foregroundStyle(StudioTheme.textPrimary)
                     if !note.isDeleted {
-                        Button { model.removeTag(tag) } label: {
+                        Button { model.perform { await model.removeTag(tag)  } } label: {
                             Image(systemName: "xmark").font(.system(size: 8, weight: .bold))
                         }
                         .buttonStyle(.plain).foregroundStyle(StudioTheme.textTertiary)
@@ -362,7 +365,7 @@ struct AskNoteDetailView: View {
                     .padding(.horizontal, 8).frame(height: 22)
                     .overlay(Capsule().strokeBorder(AskTheme.separator, style: StrokeStyle(lineWidth: 1, dash: [3])))
                     .focused(focus, equals: .tag)
-                    .onSubmit { model.addTag(tagDraft); tagDraft = ""; focus.wrappedValue = .tag }
+                    .onSubmit { model.perform { await model.addTag(tagDraft); tagDraft = ""; focus.wrappedValue = .tag  } }
                     .accessibilityIdentifier("ask.notes.tag")
             }
         }
@@ -416,7 +419,7 @@ struct AskNoteDetailView: View {
                     } else {
                         AskNoteReaderText(text: note.body,
                                           highlight: AskNotesViewModel.parseSearch(model.searchText).text,
-                                          jump: jump, onToggleTask: note.isDeleted ? nil : { model.toggleTask($0) })
+                                          jump: jump, onToggleTask: note.isDeleted ? nil : { value in model.perform { await model.toggleTask(value)  } })
                             .id(note.id)
                     }
                 }
@@ -588,7 +591,7 @@ struct AskNoteDetailView: View {
                     .font(.system(size: 12)).foregroundStyle(StudioTheme.textTertiary).padding(.horizontal, 10)
                 barDivider
                 barButton(L("ask.notes.done"), symbol: "checkmark", key: "⌘E", compact: compact) {
-                    model.setMode(.read)
+                    model.perform { await model.setMode(.read) }
                 }
             } else {
                 barButton(L("ask.plugin.action.copy"), symbol: "doc.on.doc", key: nil, compact: compact,
@@ -605,7 +608,7 @@ struct AskNoteDetailView: View {
                                    systemImage: "macwindow.on.rectangle",
                                    action: model.openSelectedInWindow)
                 AskIconGhostButton(label: L("ask.notes.delete") + " ⌘⌫", systemImage: "trash",
-                                   action: model.deleteSelected)
+                                   action: { model.perform { await model.deleteSelected() } })
                     .accessibilityIdentifier("ask.notes.delete")
             }
         }
@@ -663,18 +666,18 @@ struct AskNoteDetailView: View {
                     HStack {
                         TextField(L("ask.notes.tag.add"), text: $batchTag).textFieldStyle(.roundedBorder)
                             .frame(width: 160)
-                            .onSubmit { model.tagPicked(batchTag); batchTag = ""; showsBatchTag = false }
+                            .onSubmit { model.perform { await model.tagPicked(batchTag); batchTag = ""; showsBatchTag = false  } }
                     }
                     .padding(10)
                 }
-            barButton(L("ask.notes.pin"), symbol: "pin", key: nil, compact: compact, action: model.pinPicked)
+            barButton(L("ask.notes.pin"), symbol: "pin", key: nil, compact: compact, action: { model.perform { await model.pinPicked() } })
             barButton(L("ask.notes.batch.copy"), symbol: "doc.on.doc", key: nil, compact: compact,
                       action: model.copyPicked)
             barButton(L("ask.notes.batch.export"), symbol: "square.and.arrow.up", key: nil, compact: compact,
                       action: model.exportPicked)
             barDivider
             AskLibraryBarButton(title: L("ask.notes.delete"), symbol: "trash", key: nil, danger: true, compact: compact,
-                              action: model.trashPicked)
+                              action: { model.perform { await model.trashPicked() } })
         }
     }
 
@@ -696,7 +699,7 @@ struct AskNoteDetailView: View {
                 }
                 .frame(width: 380)
                 .padding(.top, 8)
-                Button { model.createNote() } label: {
+                Button { model.perform { await model.createNote()  } } label: {
                     Label(L("ask.notes.new"), systemImage: "plus").font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(.white).padding(.horizontal, 14).frame(height: 30)
                         .background(AskTheme.accent, in: style.controlShape(height: 30))

@@ -5473,3 +5473,45 @@
 "semantic.keyword.query" = "探したい内容を入力してください";
 "semantic.keyword.none" = "一致する内容が見つかりません";
 "ask.settings.keywords.kind.semanticFiles.hint" = "内容の意味からこの Mac のファイルを検索";
+// Word-book storage availability
+"ask.wordBook.storageUnavailable" = "単語帳を利用できません。現在の結果は保持されています。";
+"ask.wordBook.saveFailed" = "単語帳に保存できませんでした。現在の結果は保持されています。";
+
+"ask.notes.storageUnavailable" = "ノートの保存先を現在利用できません。入力中のテキストは保持されています。";
+
+// Independently recoverable storage services.
+"settings.services.title" = "サービスの状態";
+"settings.services.conversations" = "会話履歴";
+"settings.services.wordBook" = "単語帳";
+"settings.services.notebook" = "ノート";
+"settings.services.recover" = "アクセスを復元";
+"settings.services.hint" = "保存済みのデータと未保存の編集を保持して、このサービスへのアクセスを復元します。以前の操作は再実行されません。";
+"settings.services.stopped" = "未起動";
+"settings.services.recovering" = "アクセスを復元中";
+"settings.services.ready" = "利用可能";
+"settings.services.coolingDown" = "一時停止中";
+"settings.services.unavailable" = "利用できません";
+"settings.services.disabled" = "無効";
+"settings.services.quarantined" = "繰り返し中断したため停止中";
+"settings.services.observationFailed" = "状態を取得できません。このページを開き直して更新してください。";
+"settings.services.requested" = "復元を要求しました。準備ができると利用状態が更新されます。";
+"settings.services.wait" = "復元の待機期間中です。しばらくしてから再試行してください。";
+"settings.services.busy" = "以前の処理の終了を待っています。しばらくしてから再試行してください。";
+
+// Native system command isolation outcomes.
+"ask.system.notExecuted" = "コマンドは実行されませんでした。システムサービスを利用できません。";
+"ask.system.unknownOutcome" = "コマンドが反映された可能性がありますが、結果を確認できません。自動で再実行しません。再試行する前にシステムの状態を確認してください。";
+"ask.system.busy" = "別のシステムコマンドを実行中です。このコマンドは実行されませんでした。";
+"ask.system.coolingDown" = "障害のためシステムコマンドを一時停止しています。このコマンドは実行されませんでした。";
+"ask.system.disabled" = "システムコマンドサービスは停止しています。このコマンドは実行されませんでした。";
+
+"localSTT.error.inferenceUnavailable" = "ローカル文字起こしを利用できません。リクエストは再送信されていません。しばらくしてからお試しください。";
+
+"ask.attach.busy" = "添付ファイルを処理中です。しばらくしてから再試行してください。";
+
+// Private generation output recovery
+"imagegen.recovery.title" = "生成結果を復元";
+"imagegen.recovery.detail" = "この会話に保存されたファイルを書き出します。未検証のファイルにはプロンプトや提供元のURLが含まれる場合があります。再生成、URLのダウンロード、元の不明な実行状態の変更は行いません。記録は会話を削除するまで残ります。";
+"imagegen.recovery.empty" = "この会話に復元可能な出力はありません。";
+"imagegen.recovery.saved" = "保存しました。元のファイルと実行状態は変更されていません。";
+"imagegen.recovery.unavailable" = "復元できないか、アクセス権が変更されました。元のファイルは削除されていません。";

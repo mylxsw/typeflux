@@ -27,16 +27,16 @@ struct AskNotebookEntryRegressionTests {
         store.notificationCenter = .default
         fixture.model.notes = store
         let answer = await conversation(fixture)
-        fixture.model.toggleAnswerNote(answer)
-        let note = try #require(store.list(AskNoteQuery()).first)
+        await fixture.model.toggleAnswerNote(answer)
+        let note = try #require(try store.list(AskNoteQuery()).first)
         #expect(note.body == answer.text, "saving Markdown must preserve an indented code block")
-        fixture.model.toggleAnswerNote(answer)
-        #expect(store.note(id: note.id)?.isDeleted == true && store.count(.trash) == 1)
+        await fixture.model.toggleAnswerNote(answer)
+        #expect(try store.note(id: note.id)?.isDeleted == true && store.count(.trash) == 1)
         #expect(fixture.model.answerNoteIDs.isEmpty)
-        #expect(!fixture.model.openNoteInWindow(note.id), "trash is only opened from Recently Deleted")
-        store.save(note)
+        #expect(!(await fixture.model.openNoteInWindow(note.id)), "trash is only opened from Recently Deleted")
+        try store.save(note)
         try await settle { fixture.model.answerNoteIDs[answer.id] == note.id }
-        store.trash(ids: [note.id], at: Date())
+        try store.trash(ids: [note.id], at: Date())
         try await settle { fixture.model.answerNoteIDs.isEmpty }
     }
 
@@ -63,13 +63,14 @@ struct AskNotebookEntryRegressionTests {
         unrelated.conversationID = "another-chat"
         unrelated.updatedAt = Date()
         notes.append(unrelated)
-        store.restore(notes)
+        try store.restore(notes)
         fixture.model.notes = store
+        await fixture.model.notebookReadTask?.value
         #expect(fixture.model.answerNoteIDs.count == 511)
         #expect(fixture.model.answerNoteIDs[answer.id] == saved.id)
-        fixture.model.toggleAnswerNote(answer)
-        #expect(store.note(id: saved.id)?.isDeleted == true)
-        #expect(store.note(id: unrelated.id)?.isDeleted == false)
+        await fixture.model.toggleAnswerNote(answer)
+        #expect(try store.note(id: saved.id)?.isDeleted == true)
+        #expect(try store.note(id: unrelated.id)?.isDeleted == false)
     }
 
     @Test func staleMessagesCannotSaveIntoTheCurrentConversation() async throws {
@@ -78,26 +79,26 @@ struct AskNotebookEntryRegressionTests {
         let store = makeTestNotes()
         fixture.model.notes = store
         _ = await conversation(fixture)
-        fixture.model.toggleAnswerNote(AskMessage(id: "foreign", role: "assistant", text: "Other chat", createdAt: Date()))
-        fixture.model.toggleAnswerNote(AskMessage(id: "question", role: "user", text: "Question", createdAt: Date()))
-        #expect(store.count(.all) == 0)
+        await fixture.model.toggleAnswerNote(AskMessage(id: "foreign", role: "assistant", text: "Other chat", createdAt: Date()))
+        await fixture.model.toggleAnswerNote(AskMessage(id: "question", role: "user", text: "Question", createdAt: Date()))
+        #expect(try store.count(.all) == 0)
     }
 
-    @Test func launcherUnsaveIsRecoverableAndTrashedNotesCanBeSavedAgain() throws {
+    @Test func launcherUnsaveIsRecoverableAndTrashedNotesCanBeSavedAgain() async throws {
         let fixture = try AskTestFixture()
         defer { fixture.model.resetSession() }
         let store = makeTestNotes()
         fixture.model.notes = store
         let draft = AskNoteDraft(command: "Explain", keyword: "ex", input: "Topic", body: "Answer")
-        let first = try #require(fixture.model.saveLauncherNote(draft))
-        fixture.model.toggleLauncherNote(draft)
-        #expect(store.note(id: first)?.isDeleted == true && fixture.model.launcherNote == nil)
-        fixture.model.toggleLauncherNote(draft)
-        #expect(store.count(.all) == 1 && store.count(.trash) == 1)
+        let first = try #require(await fixture.model.saveLauncherNote(draft))
+        await fixture.model.toggleLauncherNote(draft)
+        #expect(try store.note(id: first)?.isDeleted == true && fixture.model.launcherNote == nil)
+        await fixture.model.toggleLauncherNote(draft)
+        #expect(try store.count(.all) == 1 && store.count(.trash) == 1)
         let saved = try #require(fixture.model.launcherNote?.id)
-        store.trash(ids: [saved], at: Date())
-        fixture.model.toggleLauncherNote(draft)
-        #expect(store.count(.all) == 1 && store.count(.trash) == 2)
+        try store.trash(ids: [saved], at: Date())
+        await fixture.model.toggleLauncherNote(draft)
+        #expect(try store.count(.all) == 1 && store.count(.trash) == 2)
         #expect(fixture.model.launcherNote?.id != saved)
     }
 
@@ -109,11 +110,11 @@ struct AskNotebookEntryRegressionTests {
         defer { try? FileManager.default.removeItem(at: blocked) }
         fixture.model.notes = SQLiteAskNoteStore(url: blocked.appendingPathComponent("notes.sqlite"))
         let answer = await conversation(fixture)
-        fixture.model.toggleAnswerNote(answer)
+        await fixture.model.toggleAnswerNote(answer)
         #expect(fixture.model.answerNoteIDs.isEmpty)
-        #expect(fixture.model.commandFeedback == L("ask.notes.saveFailed"))
+        #expect(fixture.model.commandFeedback == L("ask.notes.storageUnavailable"))
         let draft = AskNoteDraft(command: "Explain", keyword: "ex", input: "Topic", body: "Answer")
-        #expect(fixture.model.saveLauncherNote(draft) == nil && fixture.model.launcherNote == nil)
-        #expect(fixture.model.commandFeedback == L("ask.notes.saveFailed"))
+        #expect(await fixture.model.saveLauncherNote(draft) == nil && fixture.model.launcherNote == nil)
+        #expect(fixture.model.commandFeedback == L("ask.notes.storageUnavailable"))
     }
 }

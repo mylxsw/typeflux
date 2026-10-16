@@ -1,0 +1,26 @@
+import AppKit
+import Testing
+@testable import Typeflux
+
+@Suite("Application termination ownership", .exclusiveUIState)
+@MainActor
+struct AppTerminationBarrierTests {
+    @Test func repeatedQuitWaitsForCleanupAndRepliesExactlyOnce() async throws {
+        let barrier = AppTerminationBarrier()
+        var cleanupCount = 0, replies = 0
+        var release: CheckedContinuation<Void, Never>?
+        let first = barrier.begin {
+            cleanupCount += 1
+            await withCheckedContinuation { release = $0 }
+        } reply: { replies += 1 }
+        let second = barrier.begin { Issue.record("Cleanup was duplicated") } reply: {
+            Issue.record("Quit reply was duplicated")
+        }
+        #expect(first == .terminateLater && second == .terminateLater)
+        for _ in 0..<100 where release == nil { try await Task.sleep(for: .milliseconds(5)) }
+        #expect(cleanupCount == 1 && replies == 0)
+        release?.resume()
+        for _ in 0..<100 where replies == 0 { try await Task.sleep(for: .milliseconds(5)) }
+        #expect(replies == 1)
+    }
+}

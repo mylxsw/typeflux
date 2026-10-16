@@ -133,8 +133,8 @@ struct StatusBarWordBookMenuTests {
         store.notificationCenter = NotificationCenter()
         let lookup = AskWordBookLookup(headword: "serendipity", source: "en", target: "zh-Hans", card: wordBookCard)
         if hasWords {
-            store.record(lookup, at: Date(), counts: true)
-            store.setStarred(true, lookup: lookup, at: Date())
+            try store.record(lookup, at: Date(), counts: true)
+            try store.setStarred(true, lookup: lookup, at: Date())
         }
         let wordBook = AskWordBookWindowController()
         wordBook.configure(store: store, dictionary: nil, settings: settings, modelName: { "AI" })
