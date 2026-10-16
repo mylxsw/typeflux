@@ -28,7 +28,7 @@ struct ScreenRecordingExporter: ScreenRecordingExporting {
                 try await withTaskCancellationHandler { try await job.value } onCancel: { job.cancel() }
             }
         } catch {
-            try? FileManager.default.removeItem(at: destination)
+            // A failed encoder may have produced useful bytes. Keep them beside the original.
             throw error
         }
     }
@@ -120,7 +120,7 @@ struct ScreenRecordingExporter: ScreenRecordingExporting {
 }
 
 /// Keeps recoverable source files outside the temporary directory. Publishing is
-/// a same-directory move and never replaces an existing user file.
+/// prepared off-thread and committed separately under current authorization.
 struct ScreenRecordingFiles {
     let root: URL
     var manager: FileManager = .default
@@ -132,7 +132,7 @@ struct ScreenRecordingFiles {
 
     func createSession(options: ScreenRecordingOptions) throws -> URL {
         let directory = root.appendingPathComponent(UUID().uuidString, isDirectory: true)
-        try manager.createDirectory(at: directory, withIntermediateDirectories: true)
+        try manager.createDirectory(at: directory, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
         try JSONEncoder().encode(options).write(to: directory.appendingPathComponent("options.json"), options: .atomic)
         return directory
     }
@@ -150,40 +150,15 @@ struct ScreenRecordingFiles {
         try? manager.removeItem(at: directory)
     }
 
-    func publish(
-        _ source: URL,
-        in directory: URL,
-        format: ScreenRecordingFormat,
-        date: Date = Date(),
-        name: String? = nil,
-        destinationURL: URL? = nil
-    ) throws -> URL {
-        try manager.createDirectory(at: directory, withIntermediateDirectories: true)
-        let staging = directory.appendingPathComponent(".typeflux-recording-\(UUID().uuidString).\(format.rawValue)")
-        defer { try? manager.removeItem(at: staging) }
-        try manager.copyItem(at: source, to: staging)
+    func preparePublication(
+        _ source: URL, in directory: URL, format: ScreenRecordingFormat,
+        date: Date = Date(), name: String? = nil, destinationURL: URL? = nil
+    ) async throws -> ScreenRecordingPublication {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "yyyy-MM-dd HH.mm.ss"
-        if let destinationURL {
-            guard destinationURL.deletingLastPathComponent().standardizedFileURL == directory.standardizedFileURL
-            else { throw CocoaError(.fileWriteInvalidFileName) }
-            if manager.fileExists(atPath: destinationURL.path) {
-                _ = try manager.replaceItemAt(destinationURL, withItemAt: staging)
-            } else {
-                try manager.moveItem(at: staging, to: destinationURL)
-            }
-            return destinationURL
-        }
-        let base = name.map(ScreenRecordingLayout.fileName) ?? ("Typeflux Recording " + formatter.string(from: date))
-        for suffix in 0 ..< 10000 {
-            let name = base + (suffix == 0 ? "" : " (\(suffix + 1))") + "." + format.rawValue
-            let result = directory.appendingPathComponent(name)
-            do { try manager.moveItem(at: staging, to: result); return result } catch let error as NSError
-                where error.domain == NSCocoaErrorDomain && error.code == NSFileWriteFileExistsError {
-                continue
-            }
-        }
-        throw CocoaError(.fileWriteFileExists)
+        let base = name ?? ("Typeflux Recording " + formatter.string(from: date))
+        return try await ScreenRecordingPublication.prepare(source: source, directory: directory, format: format,
+            name: base, destination: destinationURL, protectedRoot: root)
     }
 }

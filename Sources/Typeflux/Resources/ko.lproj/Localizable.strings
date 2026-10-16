@@ -5584,3 +5584,6 @@
 
 "recording.timelineLoading" = "타임라인 준비 중…";
 "recording.timelineUnavailable" = "타임라인 오디오를 사용할 수 없습니다";
+
+"recording.publicationUnknown" = "파일 게시 결과를 확인할 수 없습니다. 원본 녹화와 생성된 파일은 보존됩니다. 다시 내보내기 전에 대상 위치를 확인하세요.";
+"recording.publicationUnavailable" = "파일을 게시할 수 없습니다. 원본 녹화와 생성된 파일은 보존됩니다.";

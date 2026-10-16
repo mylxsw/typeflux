@@ -5618,3 +5618,6 @@
 
 "recording.timelineLoading" = "正在準備時間軸…";
 "recording.timelineUnavailable" = "時間軸音訊無法使用";
+
+"recording.publicationUnknown" = "無法確認檔案發佈結果。原始錄影和產生的檔案已保留；再次匯出前請檢查目標位置。";
+"recording.publicationUnavailable" = "暫時無法發佈檔案，原始錄影和產生的檔案已保留。";
