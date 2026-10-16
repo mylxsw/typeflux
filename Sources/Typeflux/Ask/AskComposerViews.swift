@@ -1268,7 +1268,7 @@ struct AskComposer: View {
             .onReceive(NotificationCenter.default.publisher(for: AskAppIndex.didChange)) { notification in
                 if (notification.object as AnyObject?) === model.appIndex {
                     homeAppsRevision += 1
-                    model.launcherIconCache.prefetch(model.appIndex.recentApplications(limit: 3).map {
+                    model.launcherIconCache.prefetch(model.appIndex.recentApplications(limit: AskLauncherHome.maximumHomeApplications).map {
                         .init(kind: .file, value: $0.url.path)
                     })
                     refreshQuickResults(resetActions: false)

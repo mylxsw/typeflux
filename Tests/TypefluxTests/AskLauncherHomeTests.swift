@@ -47,51 +47,14 @@ struct AskLauncherHomeTests {
         return nil
     }
 
-    private func recentRows(_ sections: [Home.Section]) -> [Home.Row] {
-        for section in sections {
-            if case let .recent(rows) = section { return rows }
-        }
-        return []
-    }
-
-    private func chips(_ sections: [Home.Section]) -> (chips: [Home.Chip], teaching: Bool)? {
-        for section in sections {
-            if case let .keywords(chips, teaching) = section { return (chips, teaching) }
-        }
-        return nil
-    }
-
     private func conversation(_ id: String, title: String? = nil, ago: TimeInterval) -> AskConversationSummary {
         AskConversationSummary(id: id, title: title ?? "Conversation " + id, updatedAt: Self.now.addingTimeInterval(-ago))
     }
 
-    @Test func capturedSelectionKeepsHistoryAtTheTop() {
+    @Test func capturedSelectionDoesNotAddOtherHomeSections() {
         let sections = Home.build(context(selection: "first line\nsecond line", bundle: "com.apple.Notes",
                                           conversations: [conversation("a", ago: 60)]))
-        #expect(contextRows(sections) == nil)
-        #expect(recentRows(sections).map(\.id) == ["conversation.a"])
-    }
-
-    // MARK: - Recent conversations
-
-    @Test func recentConversationsAreNewestFirstAndLimitedToTwo() {
-        let conversations = [conversation("old", ago: 2 * 24 * 3600), conversation("b", ago: 3600),
-                             conversation("a", ago: 60), conversation("c", ago: 7200), conversation("untitled", title: "", ago: 10),
-                             conversation("d", ago: 9000)]
-        let alone = recentRows(Home.build(context(conversations: conversations)))
-        #expect(alone.map(\.id) == ["conversation.a", "conversation.b"])
-        #expect(alone[0].action == .conversation(id: "a"))
-        #expect(alone[0].date == Self.now.addingTimeInterval(-60))
-        // Browser context keeps the same two recent conversations.
-        let beside = recentRows(Home.build(context(bundle: "com.google.Chrome", conversations: conversations)))
-        #expect(beside.map(\.id) == ["conversation.a", "conversation.b"])
-        // Captured selections do not replace the default home.
-        #expect(recentRows(Home.build(context(selection: "one\ntwo", conversations: conversations))).count == 2)
-        #expect(recentRows(Home.build(context(selection: "one", keywords: [], conversations: conversations))).count == 2)
-        // A blank selection is no selection.
-        #expect(recentRows(Home.build(context(selection: "  \n", conversations: conversations))).count == 2)
-        #expect(recentRows(Home.build(context())).isEmpty)
-        #expect(recentRows(Home.build(context(conversations: [conversation("old", ago: 3 * 24 * 3600)]))).count == 1)
+        #expect(sections.isEmpty)
     }
 
     // MARK: - Keywords
@@ -99,49 +62,50 @@ struct AskLauncherHomeTests {
     @Test func unusedKeywordsFollowTheSessionShuffleAndOneUseAlreadyRanksFirst() throws {
         var input = context()
         input.fallbackKeywordIDs = Self.builtIn.reversed().map { $0.keyword.id }
-        let fallback = try #require(chips(Home.build(input)))
+        let fallback = Home.chips(input)
         #expect(fallback.teaching)
         #expect(fallback.chips.map(\.keyword.id) == Array(input.fallbackKeywordIDs.prefix(Home.maximumChips)))
         input.usage = [Self.translate.id: 1]
-        let used = try #require(chips(Home.build(input)))
+        let used = Home.chips(input)
         #expect(!used.teaching)
         #expect(used.chips.first?.keyword == Self.translate)
         #expect(used.chips.count == Home.maximumChips)
-        #expect(chips(Home.build(context(keywords: []))) == nil)
+        #expect(Home.chips(context(keywords: [])).chips.isEmpty)
     }
 
     @Test func equalUsageCountsPreferTheMostRecentlyUsedKeyword() throws {
         var input = context(usage: [Self.translate.id: 10, Self.google.id: 10, Self.polish.id: 11])
         input.lastUsed = [Self.translate.id: Self.now, Self.google.id: Self.now.addingTimeInterval(60)]
-        let ranked = try #require(chips(Home.build(input)))
+        let ranked = Home.chips(input)
         #expect(Array(ranked.chips.prefix(3).map(\.keyword.keyword)) == ["rw", "g", "fy"])
     }
 
     @Test func usedKeywordsAreRankedByUsageThenTheUsersOrder() throws {
         let keywords = Self.builtIn + [Self.choice(Self.ip)]
         let usage = [Self.ip.id: 5.0, Self.google.id: 1.0, Self.translate.id: 1.0, Self.polish.id: 3.0, "gone": 9.0]
-        let ranked = try #require(chips(Home.build(context(keywords: keywords, usage: usage))))
+        let ranked = Home.chips(context(keywords: keywords, usage: usage))
         #expect(!ranked.teaching)
         #expect(Array(ranked.chips.prefix(4).map(\.keyword.keyword)) == ["ip", "rw", "fy", "g"])
         #expect(ranked.chips[0].title == "IP")
         let everything = Dictionary(uniqueKeysWithValues: keywords.map { ($0.keyword.id, 1.0) })
-        #expect(try #require(chips(Home.build(context(keywords: keywords, usage: everything)))).chips.count
-            == Home.maximumChips)
+        #expect(Home.chips(context(keywords: keywords, usage: everything)).chips.count == Home.maximumChips)
     }
 
     @Test func anEmptyHomeHasNoSections() {
         #expect(Home.build(context(keywords: [])).isEmpty)
     }
 
-    @Test func applicationsFillTheSpaceBetweenHistoryAndKeywords() throws {
+    @Test func homeShowsOnlyApplicationsAndFitsTheAvailableHeight() throws {
         var input = context(conversations: [conversation("a", ago: 60), conversation("b", ago: 120), conversation("c", ago: 180)])
         input.applications = (0 ..< 20).map { AskTestAppIndex.app("App \($0)", id: "test.app.\($0)") }
         let sections = Home.build(input)
-        guard case .recent = sections.first, case .applications = sections[1], case .keywords = sections.last else {
-            Issue.record("History, applications and keywords must stay in display order")
+        guard case let .applications(apps) = sections.first, sections.count == 1 else {
+            Issue.record("Only the application list should appear on the home screen")
             return
         }
-        for (height, expectedAppCount) in [(CGFloat(320), 2), (380, 3), (480, 3)] {
+        #expect(apps.count == Home.maximumHomeApplications)
+        #expect(apps.first?.action == .application(input.applications[0]))
+        for (height, expectedAppCount) in [(CGFloat(220), 3), (320, 5), (480, 9)] {
             let fitted = AskLauncherSuggestions.fitting(sections, height: height)
             let rows = Home.items(fitted).compactMap { item -> Home.Row? in
                 guard case let .row(row) = item, case .application = row.action else { return nil }
@@ -150,17 +114,11 @@ struct AskLauncherHomeTests {
             #expect(rows.count == expectedAppCount)
             #expect(rows.first?.action == .application(input.applications[0]))
             #expect(AskLauncherSuggestions.height(for: fitted) <= height)
-            #expect(recentRows(fitted).count == 2)
-            #expect(try #require(chips(fitted)).chips.count == Home.maximumChips)
+            #expect(fitted.count == 1)
         }
-        let short = AskLauncherSuggestions.fitting(sections, height: 220)
+        let short = AskLauncherSuggestions.fitting(sections, height: 70)
         #expect(!short.contains { if case .applications = $0 { true } else { false } })
-        #expect(recentRows(short).count == 2)
-        #expect(chips(short) != nil)
-        input.conversations = []
-        let withoutHistory = AskLauncherSuggestions.fitting(Home.build(input), height: 380)
-        #expect(Home.numberedRows(withoutHistory).count == 3)
-        #expect(recentRows(withoutHistory).isEmpty)
+        #expect(Home.numberedRows(AskLauncherSuggestions.fitting(sections, height: 480)).count == 9)
     }
 
     // MARK: - Navigation
@@ -169,12 +127,10 @@ struct AskLauncherHomeTests {
         let actions = ["translate", "polish", "explain"].map {
             Home.Row(id: "text." + $0, title: $0, symbol: "star", tint: .accent, action: .ask($0))
         }
-        let selection: [Home.Section] = [.context(title: "Actions", subtitle: nil, rows: actions)]
-            + Home.build(context())
-        let recent = Home.build(context(conversations: [conversation("a", ago: 60)])).filter {
-            if case .recent = $0 { true } else { false }
-        }
-        let sections = [selection[0]] + recent + selection.dropFirst()
+        let recent: [Home.Section] = [.recent(rows: [Home.Row(id: "conversation.a", title: "A", symbol: "", tint: .neutral,
+                                                             action: .conversation(id: "a"))])]
+        let sections: [Home.Section] = [.context(title: "Actions", subtitle: nil, rows: actions)] + recent
+            + [.keywords(chips: Home.chips(context()).chips, teaching: true)]
         let items = Home.items(sections)
         // Three actions, a conversation, six chips.
         #expect(items.count == 10)
@@ -448,7 +404,7 @@ struct AskLauncherHomeTests {
                                owner: f.sessionState.owner)
         await f.model.loadCachedHistoryIfNeeded()
         #expect(f.model.conversations.map(\.id) == ["cached"])
-        #expect(recentRows(f.model.launcherHome()).map(\.title) == ["Cached"])
+        #expect(f.model.launcherHome().isEmpty)
     }
 
     @Test func signedOutTheCacheIsLeftAlone() async throws {

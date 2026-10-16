@@ -4670,7 +4670,7 @@
 "ask.settings.windowMode.detail" = "下次開啟啟動器時生效。";
 "ask.settings.windowMode.selected" = "已選取";
 
-"ask.home.section.apps" = "最近使用的應用程式";
+"ask.home.section.apps" = "應用程式";
 
 "settings.pane.appearance" = "外觀";
 

@@ -4685,7 +4685,7 @@
 "ask.settings.windowMode.detail" = "Applies the next time you open the launcher.";
 "ask.settings.windowMode.selected" = "Selected";
 
-"ask.home.section.apps" = "Recent apps";
+"ask.home.section.apps" = "Applications";
 
 "settings.pane.appearance" = "Appearance";
 

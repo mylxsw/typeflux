@@ -4663,7 +4663,7 @@
 "ask.settings.windowMode.detail" = "次回ランチャーを開くと反映されます。";
 "ask.settings.windowMode.selected" = "選択済み";
 
-"ask.home.section.apps" = "最近使ったアプリ";
+"ask.home.section.apps" = "アプリ";
 
 "settings.pane.appearance" = "外観";
 

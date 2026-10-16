@@ -28,7 +28,7 @@ extension AskConversationModel {
             usage: keywordUsage.usage.entries.mapValues { Double($0.count) },
             lastUsed: keywordUsage.usage.entries.mapValues(\.lastUsed),
             fallbackKeywordIDs: launcherHomeFallbackKeywordIDs,
-            applications: quickAppsEnabled ? appIndex.recentApplications(limit: AskLauncherHome.maximumRecentApplications) : [],
+            applications: quickAppsEnabled ? appIndex.recentApplications(limit: AskLauncherHome.maximumHomeApplications) : [],
             // A temporary question starts a new conversation; resuming one is not what it offers.
             conversations: draft.temporary == true ? [] : conversations,
             now: now

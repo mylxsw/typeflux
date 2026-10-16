@@ -4663,7 +4663,7 @@
 "ask.settings.windowMode.detail" = "다음에 실행기를 열 때 적용됩니다.";
 "ask.settings.windowMode.selected" = "선택됨";
 
-"ask.home.section.apps" = "최근 사용한 앱";
+"ask.home.section.apps" = "앱";
 
 "settings.pane.appearance" = "외관";
 

@@ -29,8 +29,8 @@ enum AskLauncherPlacement {
                        screen: screen)
     }
 
-    /// An empty launcher with a typical home under it is centred on the screen; the
-    /// home's height follows the captured context, so the top edge stays fixed instead.
+    /// An empty launcher with a typical application list is centred on the screen;
+    /// its top edge stays fixed when more applications become available.
     static var restingHeight: CGFloat {
         AskMetrics.launcherHeight(editor: 32, banners: 0, suggestions: AskLauncherSuggestions.typicalHeight)
     }
