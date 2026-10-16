@@ -1,0 +1,35 @@
+{
+  "baseline": "ebf516a7f410dc047d246627f40709c08542fe68",
+  "methods": [
+    "TypefluxTests.ContextNativeIconTests/testBundleAndExtensionContractsRejectUnboundedOrPathLikeValues",
+    "TypefluxTests.NativeIconIsolationTests/testAllowlistAndBoundsRejectBeforeDispatch",
+    "TypefluxTests.NativeIconIsolationTests/testCancelledQueuedIconNeverStarts",
+    "TypefluxTests.NativeIconIsolationTests/testProtocolRejectsMixedRequestsAndWrongRasterIdentity",
+    "TypefluxTests.NativeIconAuthorityTests/canceledNativeAndQueuedRequestsKeepCapacityUntilActualReturn()",
+    "TypefluxTests.NativeIconAuthorityTests/canceledSharedWorkerWaitCannotDispatchAndRetainsOtherPhysicalWork()",
+    "TypefluxTests.NativeIconAuthorityTests/defaultQueuedRequestCannotAdoptLaterWorkerBindingAndRecovery()",
+    "TypefluxTests.NativeIconAuthorityTests/originalManagedRequestCannotUpgradeAcrossRecovery()",
+    "TypefluxTests.NativeIconAuthorityTests/unavailableCanceledAndOriginalStampsRejectBeforeNativeAndFacade()",
+    "TypefluxTests.NativeIconAuthorityTests/validNativeReplyRetiredBeforeReturnIsRejectedWithoutReplay()",
+    "TypefluxTests.SmallIconAuthorityTests/boundedDefaultReaderPreservesPrivateBytesAndRejectsInvalidSources()",
+    "TypefluxTests.SmallIconAuthorityTests/canceledNativeCallsKeepCapacityAndRejectValidLateReplies()",
+    "TypefluxTests.SmallIconAuthorityTests/canceledPreparationsKeepBothSlotsUntilPhysicalReturn(file:)",
+    "TypefluxTests.SmallIconAuthorityTests/heldOriginalPreparationCannotAdoptRecoveredGeneration(file:)",
+    "TypefluxTests.SmallIconAuthorityTests/unavailableCanceledAndRetiredRequestsCannotPrepareOrReplay()",
+    "TypefluxTests.SmallIconAuthorityTests/validNativeReplyThenOriginalRevocationIsNotAReusableResult()"
+  ],
+  "result": "16/16 distinct methods, first functional pass: 4 XCTest + 12 SwiftTesting. Six new methods.",
+  "selection": "Every selected body and called helper reviewed. No whole-suite invocation.",
+  "exclusions": [
+    "NativeIconIsolation injected native adapter: also invokes actual MediaNativeIconDecoder.lookup",
+    "All real helper/native-resolution/NSWorkspace/window/render/encoding fixtures",
+    "Context native controller/panel/production account object fixtures",
+    "Launcher cache/object fixtures and actual System clipboard, named pasteboard, ConversationModel/AskTestFixture, Downloads/home/apps",
+    "Prior unsafe tool pixel/view/sandbox and SmallIcon decoder admission methods: encode fixtures"
+  ],
+  "limits": [
+    "Default queue test captures standalone availability before later managed binding and disable/start; explicit managed stamp test separately covers recovery forwarding.",
+    "Existing uptime is read-only; scalar task hashes computed inside withUnsafeCurrentTask do not establish exhaustive executor identity/race proof.",
+    "Late synthetic reply is validated inside runner before revocation, not frozen after successful host extraction."
+  ]
+}

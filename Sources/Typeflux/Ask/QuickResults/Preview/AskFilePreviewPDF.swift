@@ -63,9 +63,9 @@ enum MediaPreviewDisplay {
     }
 
     static func renderIcon(_ icon: MediaNativeIcon, edge: Int, cancellation: AskSearchCancellation,
-                           worker: MediaWorker = .previews) throws -> AskFilePreviewPDF.Result {
+                           worker: MediaWorker = .previews, authorization: MediaWorker.Authorization? = nil) throws -> AskFilePreviewPDF.Result {
         try decode(.data(Data()), operation: .nativeIcon, options: .init(width: edge, height: edge),
-                   cancellation: cancellation, worker: worker, icon: icon)
+                   cancellation: cancellation, worker: worker, icon: icon, authorization: authorization)
     }
 
     static func renderQuickLook(_ target: MediaQuickLook, options: MediaPreviewOptions, cancellation: AskSearchCancellation,

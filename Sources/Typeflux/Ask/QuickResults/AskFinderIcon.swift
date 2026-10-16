@@ -3,10 +3,13 @@ import TypefluxMediaProtocol
 
 enum AskFinderIcon {
     private static let admission = AskNativeIconAdmission(limit: 2)
-    static func decode(_ icon: MediaNativeIcon, edge: Int = 56, worker: MediaWorker = .previews) async throws -> AskFilePreviewPDF.Result {
+    static func decode(_ icon: MediaNativeIcon, edge: Int = 56, worker: MediaWorker = .previews,
+                       authorization: MediaWorker.Authorization? = nil) async throws -> AskFilePreviewPDF.Result {
         try Task.checkCancellation()
         try icon.validate()
         guard (1...112).contains(edge) else { throw MediaFailure.tooLarge }
+        let original = authorization ?? worker.authorization()
+        guard worker.permits(original) else { throw MediaFailure.unavailable }
         let slot = try await admission.acquire(), cancellation = AskSearchCancellation()
         defer { withExtendedLifetime(slot) {} }
         return try await withTaskCancellationHandler {
@@ -15,15 +18,20 @@ enum AskFinderIcon {
             let deadline = ContinuousClock.now.advanced(by: .seconds(3))
             while true {
                 try Task.checkCancellation()
+                guard worker.permits(original) else { throw MediaFailure.unavailable }
                 if worker.activeCount >= 2 {
                     guard ContinuousClock.now < deadline else { throw MediaFailure.unavailable }
                     try await Task.sleep(for: .milliseconds(20))
                     continue
                 }
                 let result = try await Task.detached(priority: .utility) {
-                    try MediaPreviewDisplay.renderIcon(icon, edge: edge, cancellation: cancellation, worker: worker)
+                    try Task.checkCancellation()
+                    guard !cancellation.isCancelled, worker.permits(original) else { throw MediaFailure.unavailable }
+                    return try MediaPreviewDisplay.renderIcon(icon, edge: edge, cancellation: cancellation, worker: worker,
+                                                              authorization: original)
                 }.value
                 try Task.checkCancellation()
+                guard worker.permits(original) else { throw MediaFailure.unavailable }
                 return result
             }
         } onCancel: { cancellation.cancel() }
