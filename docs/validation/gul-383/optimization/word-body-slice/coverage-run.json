@@ -1,0 +1,10 @@
+{
+  "command": [
+    "make",
+    "coverage",
+    "SUITE=SemanticWordTextTests SemanticPDFOCRTests SemanticFilePolicyTests SemanticFileStoreTests SemanticFileContentTests SemanticFileIndexerTests SemanticIndexDiagnosticsTests SemanticReaderOwnershipTests SemanticScanAdmissionTests SemanticDiscoveryPauseTests"
+  ],
+  "wall_seconds": 121.00814995804103,
+  "exit_code": 0,
+  "scope": "16 reviewed test/fixture files, with complete service fixture dependencies; unchanged explicit ten suites"
+}

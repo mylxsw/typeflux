@@ -1,0 +1,18 @@
+[
+  "ExclusiveUIStateTrait.swift",
+  "SemanticPDFOCRTests.swift",
+  "SemanticSearchSnippetTests.swift",
+  "SemanticFileSearchTests.swift",
+  "SemanticIndexRecoveryTests.swift",
+  "SemanticLexicalSearchTests.swift",
+  "SemanticIndexDiagnosticsTests.swift",
+  "SemanticFileValidatorTests.swift",
+  "SemanticReaderOwnershipTests.swift",
+  "SemanticSearchRankingTests.swift",
+  "SemanticWordTextTests.swift",
+  "SemanticScanAdmissionTests.swift",
+  "SemanticDiscoveryPauseTests.swift",
+  "SemanticFileServiceTests.swift",
+  "SettingsBehaviorTestSupport.swift",
+  "SemanticFailureURLProtocol.swift"
+]

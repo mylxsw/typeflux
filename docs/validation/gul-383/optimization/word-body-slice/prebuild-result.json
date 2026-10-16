@@ -1,0 +1,8 @@
+{
+  "command": "swift build --build-system native --jobs 4",
+  "start_utc_from_clock_tool": "2026-10-16T18:55:18+00:00",
+  "last_log_write_utc": "2026-10-16T18:59:43.804436+00:00",
+  "approximate_wall_seconds": 265.804436,
+  "exit_code": 1,
+  "reason": "Source was edited during the dependency-preparation build; Swift rejected modified inputs. No tests ran. Final frozen source is validated by the focused coverage command. Timing is approximate to one second because initial tool call returned asynchronously."
+}

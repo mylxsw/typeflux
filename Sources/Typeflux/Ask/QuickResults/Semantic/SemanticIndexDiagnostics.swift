@@ -55,7 +55,8 @@ extension SemanticFileStore {
             VALUES(?,?,'checking',?,?,?,?,?)
             """, [id, reason.rawValue, Date().timeIntervalSince1970, generation,
                   SemanticFilePolicy.profile,
-                  Self.documentProvenance + ";" + SemanticPDFText.recipe + ";" + Self.mediaProvenance,
+                  Self.documentProvenance + ";" + SemanticPDFText.recipe + ";"
+                      + SemanticWordText.recipe + ";" + Self.mediaProvenance,
                   version + " (" + build + ")"])
             activeRunID = id
             try execute(
