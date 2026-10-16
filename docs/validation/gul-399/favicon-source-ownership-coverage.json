@@ -1,0 +1,15 @@
+{
+  "covered": 26,
+  "executable_added": 26,
+  "percent": 100.0,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Browser/AskBrowserFaviconCache.swift",
+      "covered": 26,
+      "executable_added": 26,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    }
+  ]
+}

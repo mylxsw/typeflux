@@ -43,11 +43,20 @@ final class AskBrowserFaviconCache: AskImageScopeObserver {
     }
     private func bind(_ access: AskImagePresentationAccess?) -> Bool {
         guard let access else { return epoch == nil }
-        guard access.allows(), let scope = access.scope, let epoch = access.epoch else {
-            if self.epoch == access.epoch { cancel() }
+        let entry = generation
+        let allowed = access.allows() && access.scope?.visible == true && access.scope?.epoch == access.epoch
+        guard !Task.isCancelled, generation == entry else { return false }
+        guard allowed, let scope = access.scope, let epoch = access.epoch else {
+            let originalAllowed = originalAccess?.allows() == true
+            guard !Task.isCancelled, generation == entry else { return false }
+            if !originalAllowed { cancel() }
             return false
         }
-        if self.epoch == epoch, self.scope === scope, originalAccess?.allows() == true { return true }
+        if self.epoch == epoch, self.scope === scope {
+            let originalAllowed = originalAccess?.allows() == true
+            guard !Task.isCancelled, generation == entry else { return false }
+            if originalAllowed { return true }
+        }
         cancel()
         guard let registration = try? scope.register(self, epoch: epoch) else { return false }
         self.scope = scope; self.epoch = epoch; self.registration = registration; originalAccess = access
@@ -69,15 +78,28 @@ final class AskBrowserFaviconCache: AskImageScopeObserver {
     }
 
     func cached(_ url: URL, access: AskImagePresentationAccess? = nil) -> CGImage? {
-        guard access.map({ $0.allows() && originalAccess?.allows() == true && $0.epoch == epoch }) ?? (epoch == nil) else { return nil }
+        guard hasCurrentAccess(access, generation: generation) else { return nil }
         return images[url]
+    }
+
+    /// Access callbacks may retire this owner. Sample its original authority last.
+    private func hasCurrentAccess(_ access: AskImagePresentationAccess?, generation current: UUID) -> Bool {
+        guard !Task.isCancelled, generation == current else { return false }
+        guard let access else { return epoch == nil }
+        guard scope === access.scope, epoch == access.epoch else { return false }
+        guard access.allows(), !Task.isCancelled, generation == current else { return false }
+        guard originalAccess?.allows() == true, !Task.isCancelled, generation == current else { return false }
+        return access.scope?.visible == true && access.scope?.epoch == access.epoch
     }
 
     func image(_ url: URL, access: AskImagePresentationAccess? = nil) async -> CGImage? {
         guard !Task.isCancelled, url.absoluteString.utf8.count <= 16 * 1024,
               Self.faviconURL(for: url.absoluteString) == url, bind(access) else { return nil }
-        if let image = cached(url, access: access) { return image }
+        let current = generation
+        guard hasCurrentAccess(access, generation: current) else { return nil }
+        if let image = images[url] { return image }
         if let failure = failures[url], clock().timeIntervalSince(failure) < 60 { return nil }
+        guard !Task.isCancelled, generation == current else { return nil }
         let client = UUID(), entry: Pending
         if var existing = pending[url] {
             guard existing.generation == generation, !existing.task.isCancelled, existing.clients.count < 16 else { return nil }
@@ -107,8 +129,7 @@ final class AskBrowserFaviconCache: AskImageScopeObserver {
             guard pending[url]?.id == entry.id else { return nil }
             pending[url]?.completed = true
             defer { release(url, id: entry.id, client: client) }
-            guard !Task.isCancelled, !entry.task.isCancelled, entry.generation == generation,
-                  access?.allows() ?? true else { return nil }
+            guard !entry.task.isCancelled, hasCurrentAccess(access, generation: entry.generation) else { return nil }
             if let authorization = entry.authorization, !worker.permits(authorization) { image = nil }
             if let image {
                 if images[url] == nil {
