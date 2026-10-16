@@ -32,7 +32,7 @@ enum SemanticFilePolicy {
     }
 
     static let documentExtensions: Set<String> = [
-        "txt", "md", "markdown", "rst", "csv", "tsv", "pdf", "docx", "html", "htm"
+        "txt", "md", "markdown", "rst", "csv", "tsv", "pdf", "docx", "html", "htm", "rtf"
     ]
     static let extensions = documentExtensions.union(SemanticMediaPriority.extensions)
     /// Per-request extraction budget, never a file-size or total-chunk quota.

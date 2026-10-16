@@ -1,0 +1,13 @@
+{
+  "command": [
+    "make",
+    "coverage",
+    "SUITE=SemanticRTFTextTests SemanticHTMLTextTests SemanticWordTextTests SemanticPDFOCRTests SemanticFilePolicyTests SemanticFileStoreTests SemanticFileContentTests SemanticFileIndexerTests SemanticIndexDiagnosticsTests SemanticReaderOwnershipTests SemanticScanAdmissionTests SemanticDiscoveryPauseTests"
+  ],
+  "environment": {
+    "TYPEFLUX_GUL405_TEST_FILES": "<repo>/docs/validation/gul-383/optimization/rtf-body-slice/test-files.json",
+    "TYPEFLUX_GUL405_RTF_EVIDENCE": "<repo>/docs/validation/gul-383/optimization/rtf-body-slice",
+    "TYPEFLUX_COVERAGE_SCRATCH": "<repo>/.build"
+  },
+  "started_utc": "2026-10-16T19:52:14Z"
+}

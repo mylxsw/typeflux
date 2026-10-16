@@ -1,0 +1,9 @@
+{
+  "wall_seconds": 54.80765087500913,
+  "exit_code": 0,
+  "command": [
+    "make",
+    "coverage",
+    "FILTER=SemanticWordTextTests.*old"
+  ]
+}

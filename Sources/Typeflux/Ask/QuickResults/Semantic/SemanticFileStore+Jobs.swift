@@ -144,6 +144,7 @@ extension SemanticFileStore {
         case "pdf": return documentProvenance + ";" + SemanticPDFText.recipe
         case "docx": return documentProvenance + ";" + SemanticWordText.recipe
         case "html", "htm": return documentProvenance + ";" + SemanticHTMLText.recipe
+        case "rtf": return documentProvenance + ";" + SemanticRTFText.recipe
         default: return documentProvenance
         }
     }

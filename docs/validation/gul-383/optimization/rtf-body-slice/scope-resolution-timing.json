@@ -1,0 +1,9 @@
+{
+  "wall_seconds": 60.45126287499443,
+  "exit_code": 2,
+  "command": [
+    "make",
+    "coverage",
+    "FILTER=SemanticWordTextTests/old completed discovery rescans new formats and preserves existing text vectors"
+  ]
+}
