@@ -15,7 +15,7 @@ public enum MediaFailure: String, Error, Codable, Sendable {
 }
 
 public struct MediaRequest: Codable, Sendable {
-    public enum Operation: String, Codable, Sendable { case copyClipboardImage, clipboardMedia, quickLook, nativeIcon, image, pdf, inspectWorkflowImage, copyWorkflowImage, validateGeneratedImage, normalizeImage, previewImage, previewPDF, previewVideo, previewAudio
+    public enum Operation: String, Codable, Sendable { case clipboardOCR, copyClipboardImage, clipboardMedia, quickLook, nativeIcon, image, pdf, inspectWorkflowImage, copyWorkflowImage, validateGeneratedImage, normalizeImage, previewImage, previewPDF, previewVideo, previewAudio
         public var isWorkflowImage: Bool { self == .inspectWorkflowImage || self == .copyWorkflowImage || self == .copyClipboardImage }
         public var isAV: Bool { self == .previewVideo || self == .previewAudio }
     }
@@ -76,6 +76,7 @@ public struct MediaResponse: Codable, Sendable {
     public var generatedImage: MediaGeneratedImage?
     public var preview: MediaPreviewResult?
     public var clipboard: MediaClipboardResult?
+    public var ocr: MediaOCRResult?
     public init(id: UUID, items: [MediaItem] = [], failure: MediaFailure? = nil) {
         self.id = id; self.items = items; self.failure = failure
     }
@@ -85,9 +86,16 @@ public struct MediaResponse: Codable, Sendable {
         try request.validate()
         guard version == 1, id == request.id else { throw MediaFailure.invalidProtocol }
         if let failure {
-            guard items.isEmpty, preview == nil, normalization == nil, generatedImage == nil, workflowImage == nil, clipboard == nil else { throw MediaFailure.invalidProtocol }
+            guard items.isEmpty, preview == nil, normalization == nil, generatedImage == nil, workflowImage == nil, clipboard == nil, ocr == nil else { throw MediaFailure.invalidProtocol }
             throw failure
         }
+        if request.operation == .clipboardOCR {
+            guard items.isEmpty, preview == nil, normalization == nil, generatedImage == nil,
+                  workflowImage == nil, clipboard == nil, let ocr else { throw MediaFailure.invalidProtocol }
+            try ocr.validate()
+            return
+        }
+        guard ocr == nil else { throw MediaFailure.invalidProtocol }
         if let options = request.clipboard {
             guard items.isEmpty, preview == nil, normalization == nil, generatedImage == nil, workflowImage == nil, let clipboard else { throw MediaFailure.invalidProtocol }
             try clipboard.validate(for: options)

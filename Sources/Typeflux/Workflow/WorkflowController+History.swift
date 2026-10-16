@@ -276,17 +276,22 @@ extension WorkflowController {
     }
 
     private func copyHistoryImageText(_ entry: ClipboardEntry) {
-        guard let url = entry.contentURLs.first else { return }
-        let actions = clipboardContentActions
-        Task { @MainActor [weak self] in
-            let text = await actions.recognizeText(in: url)
-            guard let self else { return }
-            if let text {
-                clipboard.write(text: text)
-                historyPanelModel.showNotice(L("clipboard.notice.imageTextCopied"))
-            } else {
-                historyPanelModel.showNotice(L("clipboard.notice.noImageText"))
-            }
+        guard Thread.isMainThread, let url = entry.contentURLs.first else { return }
+        let generation = clipboardActionGeneration
+        MainActor.assumeIsolated {
+            let auth = billingAuth(), accountGeneration = billingAuth().sessionGeneration
+            clipboardAction.startText(url: url, actions: clipboardContentActions,
+                authorized: { [weak self] in
+                    guard let self else { return false }
+                    return self.isHistoryPickerPresented && self.historyPanelModel.selectedEntry == entry && self.clipboardActionGeneration == generation &&
+                        self.billingAuth() === auth && auth.sessionGeneration == accountGeneration && self.historyPanelEntries().contains(entry)
+                }, commit: { [weak self] text in
+                    guard let self else { return }
+                    if let text {
+                        self.clipboard.write(text: text)
+                        self.historyPanelModel.showNotice(L("clipboard.notice.imageTextCopied"))
+                    } else { self.historyPanelModel.showNotice(L("clipboard.notice.noImageText")) }
+                }, failed: { [weak self] in self?.historyPanelModel.showNotice(L("ask.plugin.clip.unavailable")) })
         }
     }
 

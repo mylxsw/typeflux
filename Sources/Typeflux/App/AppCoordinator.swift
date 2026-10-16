@@ -303,12 +303,14 @@ final class AppCoordinator {
         di.mediaWorkers.preventNewWork()
         di.mediaPreviewWorkers.preventNewWork()
         di.clipboardThumbnailWorkers.preventNewWork()
+        di.clipboardOCRWorkers.preventNewWork()
         di.clipboardMetadataWorkers.preventNewWork()
         await di.nativeSystemCommands.shutdown()
         await di.localInferenceWorkers.shutdown()
         await di.mediaWorkers.shutdown()
         await di.mediaPreviewWorkers.shutdown()
         await di.clipboardThumbnailWorkers.shutdown()
+        await di.clipboardOCRWorkers.shutdown()
         await di.clipboardMetadataWorkers.shutdown()
         await di.moduleRegistry.shutdown()
     }
@@ -324,6 +326,7 @@ final class AppCoordinator {
         di.mediaWorkers.preventNewWork()
         di.mediaPreviewWorkers.preventNewWork()
         di.clipboardThumbnailWorkers.preventNewWork()
+        di.clipboardOCRWorkers.preventNewWork()
         di.clipboardMetadataWorkers.preventNewWork()
         Task { [di] in await di.moduleRegistry.shutdown() }
         if let authAnalyticsObserver { NotificationCenter.default.removeObserver(authAnalyticsObserver) }

@@ -75,15 +75,15 @@ final class SystemClipboardContentActionsTests: XCTestCase {
         let png = ClipboardTestSupport.imageData(width: 900, height: 240, text: "TYPEFLUX")
         let file = directory.appendingPathComponent("text.png")
         try png.write(to: file)
-        let text = await actions.recognizeText(in: file)
+        let text = try await actions.recognizeText(in: file)
         XCTAssertEqual(text?.uppercased().contains("TYPEFLUX"), true)
 
         let blank = directory.appendingPathComponent("blank.png")
         try ClipboardTestSupport.imageData(width: 200, height: 200).write(to: blank)
-        let none = await actions.recognizeText(in: blank)
+        let none = try await actions.recognizeText(in: blank)
         XCTAssertNil(none)
 
-        let missing = await actions.recognizeText(in: directory.appendingPathComponent("missing.png"))
+        let missing = try? await actions.recognizeText(in: directory.appendingPathComponent("missing.png"))
         XCTAssertNil(missing)
     }
 }
@@ -96,16 +96,16 @@ final class SystemClipboardContentActionsRecognizerTests: XCTestCase {
         func recognizeText(in _: ImageTextSource) async throws -> RecognizedText { try result.get() }
     }
 
-    func testUsesTheInjectedRecognizer() async {
+    func testUsesTheInjectedRecognizer() async throws {
         let lines = [RecognizedText.Line(text: "Injected", confidence: 1, boundingBox: .zero)]
         let actions = SystemClipboardContentActions(textRecognizer: FixedRecognizer(result: .success(RecognizedText(lines: lines))))
-        let text = await actions.recognizeText(in: URL(fileURLWithPath: "/unused.png"))
+        let text = try await actions.recognizeText(in: URL(fileURLWithPath: "/unused.png"))
         XCTAssertEqual(text, "Injected")
     }
 
-    func testRecognitionFailuresBecomeNil() async {
+    func testRecognitionFailureIsDistinctFromEmptyText() async {
         let actions = SystemClipboardContentActions(textRecognizer: FixedRecognizer(result: .failure(UnreadableImage())))
-        let text = await actions.recognizeText(in: URL(fileURLWithPath: "/unused.png"))
-        XCTAssertNil(text)
+        do { _ = try await actions.recognizeText(in: URL(fileURLWithPath: "/unused.png")); XCTFail("Failure became empty text") }
+        catch { XCTAssertTrue(error is UnreadableImage) }
     }
 }
