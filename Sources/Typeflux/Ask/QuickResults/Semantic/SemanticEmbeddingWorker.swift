@@ -120,6 +120,9 @@ final class SemanticEmbeddingWorker: SemanticEmbedding, SemanticQueryEmbedding, 
     private let queue: DispatchQueue
     private let reader: AskFileReader
     private let idleTimeout: TimeInterval
+    private let ownership: SemanticEmbeddingOwnership
+    private let lifecycle: AskSearchCancellation
+    static let maximumPending = 32
     private let requestsLock = NSLock()
     private var pending: [Request] = []
     private var draining = false
@@ -145,25 +148,32 @@ final class SemanticEmbeddingWorker: SemanticEmbedding, SemanticQueryEmbedding, 
         projector: URL? = nil,
         timeout: TimeInterval = 3,
         startupTimeout: TimeInterval = 15,
-        idleTimeout: TimeInterval = 60
+        idleTimeout: TimeInterval = 60,
+        ownership: SemanticEmbeddingOwnership = SemanticEmbeddingOwnership(),
+        lifecycle: AskSearchCancellation = AskSearchCancellation(),
+        reaper: OwnedProcessReaper = .shared
     ) {
         self.queue = DispatchQueue(
             label: "typeflux.semantic.\(indexing ? "index" : "query")",
             qos: indexing ? .utility : .userInitiated
         )
         self.idleTimeout = idleTimeout
+        self.ownership = ownership; self.lifecycle = lifecycle
         self.reader = AskFileReader(
             executable: helper,
             arguments: [model.path] + (projector.map { [$0.path] } ?? []),
             timeout: indexing ? max(45, timeout) : timeout,
             startupTimeout: indexing ? max(90, startupTimeout) : startupTimeout,
-            qualityOfService: projector != nil ? .background : (indexing ? .utility : .userInitiated)
+            qualityOfService: projector != nil ? .background : (indexing ? .utility : .userInitiated),
+            ownership: ownership.native, reaper: reaper
         )
     }
 
     /// Synchronous indexing adapter. Its caller exclusively owns this instance.
     func embed(_ texts: [String], cancelled: () -> Bool) throws -> [[Float]] {
-        try embed(texts, trace: nil, cancelled: cancelled)
+        try ownership.perform(cancelled: { self.lifecycle.isCancelled || cancelled() }) {
+            try embed(texts, trace: nil, cancelled: { self.lifecycle.isCancelled || cancelled() })
+        }
     }
 
     private func embed(_ texts: [String], trace: SemanticSearchTrace?, cancelled: () -> Bool) throws -> [[Float]] {
@@ -185,12 +195,14 @@ final class SemanticEmbeddingWorker: SemanticEmbedding, SemanticQueryEmbedding, 
     func release() { reader.stop() }
 
     func embed(_ input: SemanticMediaInput, cancelled: () -> Bool) throws -> [Float] {
-        guard !cancelled() else { throw CancellationError() }
-        let response = try reader.read(.init(operation: .embedding, path: "", media: input), isCancelled: cancelled)
-        if response.error == EINVAL { throw SemanticMediaInputError.unreadable }
-        guard response.error == nil, let vector = response.embeddings?.first,
-              SemanticFileStore.valid(vector) else { throw SemanticFileStore.Failure.invalidVector }
-        return vector
+        try ownership.perform(cancelled: { self.lifecycle.isCancelled || cancelled() }) {
+            let response = try reader.read(.init(operation: .embedding, path: "", media: input),
+                                           isCancelled: { self.lifecycle.isCancelled || cancelled() })
+            if response.error == EINVAL { throw SemanticMediaInputError.unreadable }
+            guard response.error == nil, let vector = response.embeddings?.first,
+                  SemanticFileStore.valid(vector) else { throw SemanticFileStore.Failure.invalidVector }
+            return vector
+        }
     }
 
     func prepare(lifecycle: AskSearchCancellation) async throws {
@@ -207,22 +219,26 @@ final class SemanticEmbeddingWorker: SemanticEmbedding, SemanticQueryEmbedding, 
         return try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { continuation in
                 let trace = SemanticSearchTrace.current ?? .init()
-                let (discarded, start): ([Request], Bool) = requestsLock.withLock {
+                let (discarded, start, rejected): ([Request], Bool, Bool) = requestsLock.withLock {
                     let request = Request(text: text, lifecycle: lifecycle, cancelled: token, epoch: shutdown,
                                           continuation: continuation, trace: trace,
                                           requiresReadyHelper: requiresReadyHelper)
                     let discarded = pending
                         .filter { $0.text != text || $0.cancelled.isCancelled || $0.lifecycle.isCancelled }
                     pending.removeAll { $0.text != text || $0.cancelled.isCancelled || $0.lifecycle.isCancelled }
+                    guard pending.count < Self.maximumPending, !self.lifecycle.isCancelled else {
+                        return (discarded, false, true)
+                    }
                     pending.append(request)
                     let start = !draining
                     draining = true
-                    return (discarded, start)
+                    return (discarded, start, false)
                 }
                 trace.mark("helper-enqueued")
                 for old in discarded {
                     old.continuation.resume(throwing: CancellationError())
                 }
+                if rejected { continuation.resume(throwing: AskFileReadError.unavailable) }
                 if start {
                     queue.async { [self] in drain() }
                 }
@@ -248,13 +264,15 @@ final class SemanticEmbeddingWorker: SemanticEmbedding, SemanticQueryEmbedding, 
             let result: Result<[Float], Error>
             if let first = active.first {
                 result = Result {
-                    try queryVector(first, requiresReadyHelper: active.contains { $0.requiresReadyHelper })
+                    try ownership.perform(cancelled: { self.lifecycle.isCancelled || first.epoch.isCancelled || first.lifecycle.isCancelled }) {
+                        try queryVector(first, requiresReadyHelper: active.contains { $0.requiresReadyHelper })
+                    }
                 }
             } else {
                 result = .failure(CancellationError())
             }
             for request in requests {
-                if request.cancelled.isCancelled || request.lifecycle.isCancelled || request.epoch.isCancelled {
+                if request.cancelled.isCancelled || request.lifecycle.isCancelled || request.epoch.isCancelled || lifecycle.isCancelled {
                     request.continuation.resume(throwing: CancellationError())
                 } else {
                     request.continuation.resume(with: result)
@@ -278,21 +296,12 @@ final class SemanticEmbeddingWorker: SemanticEmbedding, SemanticQueryEmbedding, 
         if let vector = queryCache[first.text], !requiresReadyHelper || reader.isRunning {
             first.trace.mark("cache-hit"); return vector
         }
-        var vector: [Float] = []
-        for attempt in 0 ..< 2 {
-            guard !stop.isCancelled, !first.lifecycle.isCancelled else { throw CancellationError() }
-            do {
-                vector = try embed(["task: search result | query: " + first.text], trace: first.trace,
-                                   cancelled: { stop.isCancelled || first.lifecycle.isCancelled })[0]
-                break
-            } catch let error as AskFileReadError {
-                guard attempt == 0, !stop.isCancelled, !first.lifecycle.isCancelled,
-                      error != .cancelled else { throw error }
-                reader.stop()
-                first.trace.mark("helper-restart")
-            }
-        }
-        guard !stop.isCancelled, !first.lifecycle.isCancelled else { throw CancellationError() }
+        // A missing reply may follow model loading or inference. Do not replay
+        // that operation; a later explicit request may open a retired helper.
+        guard !stop.isCancelled, !first.lifecycle.isCancelled, !lifecycle.isCancelled else { throw CancellationError() }
+        let vector = try embed(["task: search result | query: " + first.text], trace: first.trace,
+                               cancelled: { stop.isCancelled || first.lifecycle.isCancelled || self.lifecycle.isCancelled })[0]
+        guard !stop.isCancelled, !first.lifecycle.isCancelled, !lifecycle.isCancelled else { throw CancellationError() }
         queryCache[first.text] = vector
         queryOrder.removeAll { $0 == first.text }; queryOrder.append(first.text)
         if queryOrder.count > 16 {
