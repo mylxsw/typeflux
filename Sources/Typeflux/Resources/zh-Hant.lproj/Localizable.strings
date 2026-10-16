@@ -5649,3 +5649,5 @@
 "recording.publicationUnavailable" = "暫時無法發佈檔案，原始錄影和產生的檔案已保留。";
 
 "recording.encodingUnconfirmed" = "無法確認錄影匯出結果。原錄影和已產生的檔案均已保留，未自動重試。";
+
+"settings.services.mediaExtraction" = "附件媒體擷取";

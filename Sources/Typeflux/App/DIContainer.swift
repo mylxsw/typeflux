@@ -19,6 +19,7 @@ final class DIContainer {
     let historyStore: HistoryStore
     let clipboardHistoryStore: ClipboardHistoryStore
     let moduleRegistry: ModuleRegistry
+    let mediaExtractionModule: MediaExtractionModule
     let nativeSystemCommands = NativeSystemWorker.shared
     let mediaWorkers = MediaWorker.shared
     let mediaPreviewWorkers = MediaWorker.previews
@@ -155,7 +156,9 @@ final class DIContainer {
         noteStore = storage.notes
         wordBookStore = storage.words
         conversationCache = storage.conversations
-        moduleRegistry = storage.registry
+        let mediaModule = MediaExtractionModule(worker: MediaWorker.shared, healthDirectory: moduleHealthDirectory)
+        mediaExtractionModule = mediaModule
+        moduleRegistry = ModuleRegistry(storage.registry.registrations + [mediaModule.registration])
         modelLibrary = AskModelLibrary(defaults: settingsStore.defaults)
         let screenCapturePermission = ScreenCapturePermission.live
         self.screenCapturePermission = screenCapturePermission

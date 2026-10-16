@@ -53,7 +53,7 @@ enum AskAttachmentFixture {
 struct AskAttachmentLoaderTests {
     @Test func largeImagesShrinkToTheLongEdgeAsJPEG() throws {
         let png = AskAttachmentFixture.encode(AskAttachmentFixture.image(width: 4000, height: 1000, alpha: true), type: .png)
-        let attachment = try AskAttachmentLoader.image(data: png, name: "wide.png", byteSize: png.count)
+        let attachment = try AskAttachmentLoader.image(data: png, name: "wide.png", byteSize: png.count, worker: MediaWorker())
         #expect(attachment.kind == .image)
         #expect(attachment.byteSize == png.count)
         let url = try #require(attachment.image)
@@ -68,7 +68,7 @@ struct AskAttachmentLoaderTests {
         let jpeg = AskAttachmentFixture.encode(AskAttachmentFixture.image(width: 40, height: 30), type: .jpeg, properties: gps)
         let source = CGImageSourceCreateWithData(jpeg as CFData, nil)!
         #expect((CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any])?[kCGImagePropertyGPSDictionary] != nil)
-        let attachment = try AskAttachmentLoader.image(data: jpeg, name: "trip.jpg", byteSize: jpeg.count)
+        let attachment = try AskAttachmentLoader.image(data: jpeg, name: "trip.jpg", byteSize: jpeg.count, worker: MediaWorker())
         let props = CGImageSourceCopyPropertiesAtIndex(AskAttachmentFixture.decode(attachment.image!), 0, nil) as? [CFString: Any]
         #expect(props?[kCGImagePropertyGPSDictionary] == nil)
     }
@@ -82,7 +82,7 @@ struct AskAttachmentLoaderTests {
 
     @Test func unreadableImageDataIsRefused() {
         #expect(throws: AskAttachmentError.unreadable("x.png")) {
-            try AskAttachmentLoader.image(data: Data("nope".utf8), name: "x.png", byteSize: 4)
+            try AskAttachmentLoader.image(data: Data("nope".utf8), name: "x.png", byteSize: 4, worker: MediaWorker())
         }
     }
 
@@ -103,9 +103,9 @@ struct AskAttachmentLoaderTests {
 
         let picture = dir.appendingPathComponent("shot.png")
         try AskAttachmentFixture.encode(AskAttachmentFixture.image(width: 20, height: 10), type: .png).write(to: picture)
-        #expect(try AskAttachmentLoader.file(picture).first?.kind == .image)
+        #expect(try AskAttachmentLoader.file(picture, worker: MediaWorker()).first?.kind == .image)
 
-        let folder = try AskAttachmentLoader.file(dir)
+        let folder = try AskAttachmentLoader.file(dir, worker: MediaWorker())
         #expect(folder.first?.kind == .folder)
         #expect(folder.first?.path == dir.standardizedFileURL.path)
 
@@ -115,7 +115,7 @@ struct AskAttachmentLoaderTests {
 
         let binary = dir.appendingPathComponent("data.txt")
         try Data([0x00, 0x01, 0x02]).write(to: binary)
-        #expect(throws: AskAttachmentError.unreadable("data.txt")) { try AskAttachmentLoader.file(binary) }
+        #expect(throws: AskAttachmentError.unreadable("data.txt")) { try AskAttachmentLoader.file(binary, worker: MediaWorker()) }
     }
 
     @Test func largeTextFilesAreRefusedAndLongTextIsTruncated() throws {
@@ -142,7 +142,7 @@ struct AskAttachmentLoaderTests {
         view.string = "Quarterly revenue grew"
         let url = dir.appendingPathComponent("report.pdf")
         try view.dataWithPDF(inside: view.bounds).write(to: url)
-        let items = try AskAttachmentLoader.file(url)
+        let items = try AskAttachmentLoader.file(url, worker: MediaWorker())
         #expect(items.count == 1)
         #expect(items[0].pages == 1)
         #expect(items[0].text?.contains("Quarterly revenue grew") == true)
@@ -158,14 +158,14 @@ struct AskAttachmentLoaderTests {
         }
         let url = dir.appendingPathComponent("scan.pdf")
         #expect(document.write(to: url))
-        let items = try AskAttachmentLoader.file(url)
+        let items = try AskAttachmentLoader.file(url, worker: MediaWorker())
         #expect(items.count == 2)
         #expect(items.allSatisfy { $0.kind == .image && $0.image?.hasPrefix("data:image/jpeg;base64,") == true })
         #expect(items[1].name == L("ask.attach.pdfPage", "scan.pdf", 2))
 
         let broken = dir.appendingPathComponent("broken.pdf")
         try Data("not a pdf".utf8).write(to: broken)
-        #expect(throws: AskAttachmentError.unreadable("broken.pdf")) { try AskAttachmentLoader.file(broken) }
+        #expect(throws: AskAttachmentError.unreadable("broken.pdf")) { try AskAttachmentLoader.file(broken, worker: MediaWorker()) }
     }
 
     @Test func batchesKeepLoadedItemsAndReportTheFirstFailure() throws {

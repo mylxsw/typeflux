@@ -5729,3 +5729,5 @@
 "recording.publicationUnavailable" = "Publication is unavailable. The original recording and generated output are retained.";
 
 "recording.encodingUnconfirmed" = "Recording export could not be confirmed. The original and any generated files are retained. No automatic retry was made.";
+
+"settings.services.mediaExtraction" = "Attachment media extraction";

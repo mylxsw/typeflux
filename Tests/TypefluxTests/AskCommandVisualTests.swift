@@ -48,7 +48,7 @@ struct AskCommandVisualTests {
             let now = Date()
             let photo = try AskAttachmentLoader.image(
                 data: AskAttachmentFixture.encode(AskAttachmentFixture.image(width: 320, height: 200), type: .png),
-                name: "设计稿-v2.png", byteSize: 82000)
+                name: "设计稿-v2.png", byteSize: 82000, worker: MediaWorker())
             let conversation = AskConversation(id: "files", title: "对照需求看设计稿", revision: 1, updatedAt: now, messages: [
                 .init(id: "q1", role: "user", text: "对照这张图和需求文档，看看设计稿还缺什么", createdAt: now,
                       attachments: [photo, AskAttachment(kind: .file, name: "产品需求说明书.pdf", text: "需求", pages: 14),
@@ -82,7 +82,9 @@ struct AskCommandVisualTests {
             try await Task.sleep(for: .milliseconds(400))
             try snapshot(hosting, to: root.appendingPathComponent("commands-palette-\(name).png"))
 
-            for character in "mo" {
+            // Select the unique command: /mo also matches /mode, /memory and
+            // skills, whose existing hover/selection can survive filtering.
+            for character in "model" {
                 type(String(character), into: field)
                 try await Task.sleep(for: .milliseconds(150))
             }
