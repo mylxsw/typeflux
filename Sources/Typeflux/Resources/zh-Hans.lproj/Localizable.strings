@@ -5154,6 +5154,7 @@
 "semantic.resume" = "继续";
 "semantic.cancelDownload" = "取消下载";
 "semantic.rebuild" = "重新建立索引";
+"semantic.rescan" = "重新扫描";
 "semantic.clear" = "清空内容索引…";
 "semantic.remove" = "删除模型…";
 "semantic.storage.help" = "这里的操作只影响内容索引。原有文件名索引独立保留。";

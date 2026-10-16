@@ -5105,6 +5105,7 @@
 "semantic.resume" = "계속";
 "semantic.cancelDownload" = "다운로드 취소";
 "semantic.rebuild" = "색인 다시 만들기";
+"semantic.rescan" = "다시 스캔";
 "semantic.clear" = "내용 색인 지우기…";
 "semantic.remove" = "모델 삭제…";
 "semantic.storage.help" = "이 작업은 내용 색인에만 영향을 줍니다. 파일 이름 색인은 별도로 유지됩니다.";

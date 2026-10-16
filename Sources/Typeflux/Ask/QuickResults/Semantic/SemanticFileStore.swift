@@ -77,7 +77,7 @@ final class SemanticFileStore: @unchecked Sendable {
             sqlite3_finalize(existing)
             if old != profile {
                 try sql("""
-                    BEGIN IMMEDIATE; DELETE FROM files; DELETE FROM lexical; DELETE FROM jobs; DELETE FROM media_jobs; DELETE FROM work_queue; DELETE FROM discovery; DELETE FROM scan_directories; DELETE FROM scan_scope; DELETE FROM profile;
+                    BEGIN IMMEDIATE; DELETE FROM files; DELETE FROM lexical; DELETE FROM jobs; DELETE FROM media_jobs; DELETE FROM work_queue; DELETE FROM discovery; DELETE FROM scan_directories; DELETE FROM scan_scope; DELETE FROM scan_checkpoint; DELETE FROM profile;
                     """
                 )
                 do { try execute("INSERT INTO profile VALUES(?)", [profile]); try sql("COMMIT;") } catch {
@@ -179,7 +179,7 @@ final class SemanticFileStore: @unchecked Sendable {
         try lock.withLock {
             try self
                 .sql("""
-                    DELETE FROM files; DELETE FROM jobs; DELETE FROM media_jobs; DELETE FROM work_queue; DELETE FROM discovery; DELETE FROM scan_directories; DELETE FROM scan_scope; PRAGMA wal_checkpoint(TRUNCATE); VACUUM;
+                    DELETE FROM files; DELETE FROM jobs; DELETE FROM media_jobs; DELETE FROM work_queue; DELETE FROM discovery; DELETE FROM scan_directories; DELETE FROM scan_scope; DELETE FROM scan_checkpoint; PRAGMA wal_checkpoint(TRUNCATE); VACUUM;
                     """
                 )
         }

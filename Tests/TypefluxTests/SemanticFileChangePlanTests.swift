@@ -31,7 +31,7 @@ struct SemanticFileChangePlanTests {
         #expect(SemanticFileChangePlan.make([ownDirectory], scope: included, indexDirectory: index) == .init())
     }
 
-    @Test func supportedFilesAreTargetedAndStructuralChangesRequireFullScan() {
+    @Test func supportedFilesAndChangedDirectoriesStayTargeted() {
         let index = root + "/Library/Application Support/Typeflux/SemanticSearch"
         let document = root + "/Documents/report.md"
         let image = root + "/Pictures/photo.png"
@@ -44,8 +44,14 @@ struct SemanticFileChangePlanTests {
         let folder = AskFileChange(path: root + "/New Folder", rescan: false,
                                    isDirectory: true, structureChanged: true)
         let structural = SemanticFileChangePlan.make(files + [folder], scope: scope(), indexDirectory: index)
-        #expect(structural.fullScan && structural.files.isEmpty)
+        #expect(!structural.fullScan && structural.directories == [folder.path]
+            && structural.files == [document, image])
         let dropped = AskFileChange(path: root, rescan: true, isDirectory: true)
-        #expect(SemanticFileChangePlan.make([dropped], scope: scope(), indexDirectory: index).fullScan)
+        #expect(SemanticFileChangePlan.make([dropped], scope: scope(), indexDirectory: index).directories == [root])
+        let renamed = AskFileChange(path: folder.path, rescan: false, isDirectory: true,
+                                    structureChanged: true, renamed: true)
+        #expect(SemanticFileChangePlan.make([renamed], scope: scope(), indexDirectory: index).directories == [root])
+        #expect(SemanticFileChangePlan.make([.init(path: "/", rescan: true)],
+                                            scope: scope(), indexDirectory: index).fullScan)
     }
 }

@@ -83,6 +83,10 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
     private var pausedReady = false
     private var dirty = false
     private var pendingPaths = Set<String>()
+    private var pendingDirectories = Set<String>()
+    private var pendingEventID: UInt64 = 0
+    private var committedEventID: UInt64 = 0
+    private var volumeSignature: String?
     private var removing = false
     var modelURL: URL {
         self.directory.appendingPathComponent("embeddinggemma-2-Q8_0.gguf")
@@ -193,7 +197,9 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
     // swiftlint:disable:next function_body_length cyclomatic_complexity
     func start(force: Bool = false) { start(force: force, renewReaderAuthorization: true) }
 
-    private func start(force: Bool, renewReaderAuthorization: Bool) {
+    func rescanAll() { start(force: true, renewReaderAuthorization: true, fullScan: true) }
+
+    private func start(force: Bool, renewReaderAuthorization: Bool, fullScan: Bool = false) {
         guard !removing else { return }
         preferences = settings.semanticFileSearch
         let names = settings.askLauncherSearchSettings
@@ -203,7 +209,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
             readerAuthorization = readers.authorization()
             embeddingAuthorization = embeddingOwners.authorization()
         }
-        dirty = false; pendingPaths.removeAll(); _ = pauseGate.takeDocuments()
+        dirty = false; pendingPaths.removeAll(); pendingDirectories.removeAll(); _ = pauseGate.takeDocuments()
         pausedIndexing = false; pausedReady = false
         pauseGate.setPaused(backgroundPaused)
         if fingerprint != key || !backgroundPaused {
@@ -262,10 +268,26 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
                 queryWorker = makeQuery?(helper, model) ?? SemanticEmbeddingWorker(
                     helper: helper, model: model, ownership: embeddingOwners.query, authorization: embeddingAuthorization?.query ?? .init(generation: nil), lifecycle: token)
                 if prewarmRequested { prepareForSearch() }
-                watcher.start(paths: prepared.0.roots, since: nil) { [weak self] changes, _ in
+                if fullScan { try database.invalidateDiscovery() }
+                let latestEventID = AskFSEventsWatcher.currentEventID
+                let signature = AskFSEventsWatcher.historySignature(paths: prepared.0.roots)
+                self.volumeSignature = signature
+                let previousEventID: UInt64?
+                if let signature {
+                    previousEventID = try database.completedEventID(scope: prepared.0, volumeSignature: signature)
+                } else {
+                    previousEventID = nil
+                }
+                let savedEventID = previousEventID.flatMap { $0 <= latestEventID ? $0 : nil }
+                let watchEventID = savedEventID ?? latestEventID
+                self.committedEventID = watchEventID
+                self.pendingEventID = watchEventID
+                let prunePending = try savedEventID != nil && database.hasPendingPrune()
+                let retryDirectories = savedEventID != nil ? try database.failedDirectories() : []
+                watcher.start(paths: prepared.0.roots, since: watchEventID) { [weak self] changes, last in
                     Task { @MainActor in
                         guard !token.isCancelled else { return }
-                        self?.receiveChanges(changes)
+                        self?.receiveChanges(changes, eventID: last)
                     }
                 }
                 if self.backgroundPaused {
@@ -275,7 +297,12 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
                 }
                 self.skipped = 0
                 self.phase = .indexing
-                self.beginIndexing(database, scope: prepared.0, token: token)
+                self.beginIndexing(database, scope: prepared.0, token: token,
+                                   paths: savedEventID == nil ? nil : [],
+                                   directories: retryDirectories,
+                                   scanStartEventID: savedEventID == nil ? watchEventID : nil,
+                                   prunePending: prunePending,
+                                   processedEventID: savedEventID)
 
             } catch {
                 guard let self, !token.isCancelled, !Task.isCancelled else { return }
@@ -356,17 +383,19 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
         }
     }
 
-    private func receiveChanges(_ changes: [AskFileChange]) {
+    private func receiveChanges(_ changes: [AskFileChange], eventID: UInt64) {
         guard let scope else { return }
+        pendingEventID = max(pendingEventID, eventID)
         let plan = SemanticFileChangePlan.make(changes, scope: scope, indexDirectory: directory.path)
         if plan.fullScan {
-            self.dirty = true; self.pendingPaths.removeAll()
+            self.dirty = true; self.pendingPaths.removeAll(); self.pendingDirectories.removeAll()
         } else if !self.dirty {
             self.pendingPaths.formUnion(plan.files)
+            self.pendingDirectories.formUnion(plan.directories)
         }
-        guard plan.fullScan || !plan.files.isEmpty else { return }
+        guard plan.fullScan || !plan.files.isEmpty || !plan.directories.isEmpty ||
+            pendingEventID > committedEventID else { return }
         if phase == .indexing || pausedIndexing {
-            if plan.fullScan { pauseGate.enqueueDocumentScan() }
             pauseGate.enqueueDocuments(plan.files.filter { SemanticMediaPriority.of($0) == .document })
         }
         scheduleReconcile()
@@ -374,7 +403,8 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
 
     private func scheduleReconcile() {
         guard self.phase != .indexing, !self.backgroundPaused,
-              self.dirty || !self.pendingPaths.isEmpty else { return }
+              self.dirty || !self.pendingPaths.isEmpty || !self.pendingDirectories.isEmpty ||
+              self.pendingEventID > self.committedEventID else { return }
         self.rescan?.cancel()
         self.rescan = Task { [weak self] in
             do { try await Task.sleep(for: .milliseconds(150)) } catch { return }
@@ -387,15 +417,25 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
               readerAuthorization?.allowsIndexing(in: readers) == true,
               let database = self.store, let scope = self.scope else { return }
         if self.dirty {
-            self.start(force: true, renewReaderAuthorization: false)
+            self.start(force: true, renewReaderAuthorization: false, fullScan: true)
             return
         }
         let paths = self.pendingPaths.sorted()
-        guard !paths.isEmpty else { return }
+        let directories = self.pendingDirectories.sorted()
+        let eventID = self.pendingEventID
+        if paths.isEmpty && directories.isEmpty {
+            do {
+                try database.saveEventID(eventID, scope: scope, volumeSignature: volumeSignature)
+                self.committedEventID = eventID
+            } catch { self.phase = .failed }
+            return
+        }
         self.pendingPaths.removeAll()
+        self.pendingDirectories.removeAll()
         self.indexProgress = nil
         self.phase = .indexing
-        self.beginIndexing(database, scope: scope, token: token, paths: paths)
+        self.beginIndexing(database, scope: scope, token: token, paths: paths,
+                           directories: directories, processedEventID: eventID)
     }
 
     deinit { progressDelivery.invalidate(); countRefresh?.cancel(); token.cancel(); readers.stop(); embeddingOwners.stop(); work?.cancel(); download?.cancel(); rescan?.cancel(); warmup?.cancel() }
@@ -404,7 +444,9 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
 extension SemanticFileSearchService {
     /// Do not retain the service while media waits for user idle time.
     private func beginIndexing(_ database: SemanticFileStore, scope: AskFileScope, token: AskSearchCancellation,
-                               paths: [String]? = nil) {
+                               paths: [String]? = nil, directories: [String] = [],
+                               scanStartEventID: UInt64? = nil, prunePending: Bool = false,
+                               processedEventID: UInt64? = nil) {
         let makeEncoder = makeEncoder, mediaModels = mediaModels, embeddingOwners = embeddingOwners
         let embeddingAuthorization = embeddingAuthorization
         // Capture scopes before scheduling: an obsolete detached job must never
@@ -417,6 +459,7 @@ extension SemanticFileSearchService {
         }
         let helper = helper, model = modelURL
         let projector = mediaModelURL, idle = idle, pauseGate = pauseGate
+        let volumeSignature = volumeSignature
         invalidateIndexProgress()
         let delivery = progressDelivery, attempt = SemanticIndexProgressDelivery.Source()
         indexAttempt = attempt
@@ -443,7 +486,8 @@ extension SemanticFileSearchService {
                             encoder: encoder, media: media, idle: { idle() && !pauseGate.isPaused },
                             paused: { pauseGate.isPaused }, documents: { pauseGate.takeDocuments() },
                             priorityReader: priorityReader,
-                            cancelled: { token.isCancelled }, progress: reportProgress, current: reportCurrent
+                            cancelled: { token.isCancelled }, progress: reportProgress,
+                            directories: directories, prunePending: prunePending, current: reportCurrent
                         )
                     }
                     return try SemanticFileIndexer.run(scope: scope, store: database, reader: reader,
@@ -453,9 +497,22 @@ extension SemanticFileSearchService {
                                                        documents: { pauseGate.takeDocuments() },
                                                        priorityReader: priorityReader,
                                                        cancelled: { token.isCancelled }, progress: reportProgress,
+                                                       discovered: {
+                                                           if let scanStartEventID {
+                                                               try database.saveEventID(scanStartEventID, scope: scope,
+                                                                                        volumeSignature: volumeSignature)
+                                                           }
+                                                       },
                                                        current: reportCurrent)
                 }.value
                 guard let self, !token.isCancelled, !Task.isCancelled else { return }
+                if let processedEventID {
+                    try database.saveEventID(processedEventID, scope: scope,
+                                             volumeSignature: volumeSignature)
+                    self.committedEventID = processedEventID
+                } else if let scanStartEventID {
+                    self.committedEventID = scanStartEventID
+                }
                 if let latest = delivery.finish(attempt) {
                     receiveIndexProgress(latest, database: database, lifecycle: token, attempt: attempt)
                 }
@@ -480,6 +537,8 @@ extension SemanticFileSearchService {
                 self.scheduleReconcile()
             } catch {
                 guard let self, !token.isCancelled, !Task.isCancelled else { return }
+                self.pendingPaths.formUnion(paths ?? [])
+                self.pendingDirectories.formUnion(directories)
                 if let latest = delivery.finish(attempt) {
                     receiveIndexProgress(latest, database: database, lifecycle: token, attempt: attempt)
                 }

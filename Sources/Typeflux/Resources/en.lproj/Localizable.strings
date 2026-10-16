@@ -5154,6 +5154,7 @@
 "semantic.resume" = "Resume";
 "semantic.cancelDownload" = "Cancel Download";
 "semantic.rebuild" = "Rebuild Index";
+"semantic.rescan" = "Rescan";
 "semantic.clear" = "Clear Content Index…";
 "semantic.remove" = "Delete Model…";
 "semantic.storage.help" = "These actions only affect the content index. The file name index is kept separately.";

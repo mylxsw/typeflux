@@ -6,8 +6,8 @@ extension SemanticFileIndexer {
     // swiftlint:disable:next function_parameter_count function_body_length cyclomatic_complexity
     static func discover(scope: AskFileScope, store: SemanticFileStore, reader: AskFileReading,
                          paused: () -> Bool, cancelled: () -> Bool, summary: inout Summary,
-                         progress: (Summary) -> Void) throws {
-        try store.beginDiscovery(scope: scope)
+                         progress: (Summary) -> Void, preparing: Bool = true) throws {
+        if preparing { try store.beginDiscovery(scope: scope) }
         while let path = try store.nextDirectory() {
             try waitWhilePaused(paused, cancelled: cancelled)
             var failed = false, writeFailure: Error?

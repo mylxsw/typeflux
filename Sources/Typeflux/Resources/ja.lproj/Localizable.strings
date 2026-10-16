@@ -5105,6 +5105,7 @@
 "semantic.resume" = "再開";
 "semantic.cancelDownload" = "ダウンロードをキャンセル";
 "semantic.rebuild" = "索引を再作成";
+"semantic.rescan" = "再スキャン";
 "semantic.clear" = "内容索引を消去…";
 "semantic.remove" = "モデルを削除…";
 "semantic.storage.help" = "ここでの操作は内容索引のみに影響します。ファイル名索引は別に保持されます。";
