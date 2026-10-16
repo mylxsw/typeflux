@@ -10,9 +10,9 @@ final class ScreenshotLongImageEditorTests: XCTestCase {
         var height: CGFloat? = 30
         private(set) var measured: [CGSize] = []
 
-        func tallestLineHeight(in image: CGImage) -> CGFloat? {
+        func geometry(in image: CGImage) async throws -> ScreenshotTextGeometry {
             measured.append(CGSize(width: image.width, height: image.height))
-            return height
+            return .init(lines: [], height: height)
         }
     }
 
@@ -175,12 +175,13 @@ final class ScreenshotLongImageEditorTests: XCTestCase {
         XCTAssertEqual(marks.count, 2)
     }
 
-    func testMosaicsAreSizedToTheTextUnderThem() throws {
+    func testMosaicsAreSizedToTheTextUnderThem() async throws {
         let measurer = Measurer()
         let (canvas, _) = makeCanvas(measurer: measurer)
         canvas.handleKeyDown(ScreenshotAnnotationTool.mosaic.keyCode, modifiers: [])
         drag(canvas, from: CGPoint(x: 10, y: 1000), to: CGPoint(x: 60, y: 1020))
 
+        try await MosaicGeometryIsolationTests.waitFor { canvas.mosaicPreparation.state != .preparing }
         XCTAssertEqual(measurer.measured, [CGSize(width: 100, height: 40)], "The image's pixels under it")
         XCTAssertEqual(try XCTUnwrap(canvas.editor.document.annotations.first?.mosaic).textHeight, 15)
         canvas.releaseImage()

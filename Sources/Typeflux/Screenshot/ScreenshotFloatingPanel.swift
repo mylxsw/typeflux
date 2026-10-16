@@ -18,6 +18,10 @@ final class ScreenshotFloatingPanel: NSPanel {
         animationBehavior = .none
     }
 
+    var onHide: (() -> Void)?
+    override func orderOut(_ sender: Any?) { onHide?(); super.orderOut(sender) }
+    override func close() { onHide?(); super.close() }
+
     override var canBecomeKey: Bool { becomesKey }
     override var canBecomeMain: Bool { false }
 }

@@ -1,42 +1,24 @@
 import CoreGraphics
 import Foundation
-import Vision
 
 /// Finds the text under a mosaic: how tall it is, so medium and strong mosaics can use blocks
 /// big enough to make it unreadable, and where its lines are, for mosaics that only cover text.
+struct ScreenshotTextGeometry {
+    var lines: [CGRect]
+    var height: CGFloat?
+}
+
 protocol ScreenshotTextHeightMeasuring {
-    /// The height of the tallest line of text in the image, in its pixels; nil when there is none.
-    func tallestLineHeight(in image: CGImage) -> CGFloat?
-    /// Where the lines of text are, in the image's pixels with the origin at the top-left corner.
-    func textLines(in image: CGImage) -> [CGRect]
+    func geometry(in image: CGImage) async throws -> ScreenshotTextGeometry
 }
 
-extension ScreenshotTextHeightMeasuring {
-    func textLines(in image: CGImage) -> [CGRect] { [] }
-}
-
-/// Vision's text detector: it only locates text, without reading it, so it is quick enough
-/// to run when a mosaic is drawn.
+/// Detection runs in the disposable media child.
 struct VisionTextHeightMeasurer: ScreenshotTextHeightMeasuring {
-    func tallestLineHeight(in image: CGImage) -> CGFloat? {
-        let request = VNDetectTextRectanglesRequest()
-        do {
-            try VNImageRequestHandler(cgImage: image).perform([request])
-        } catch {
-            return nil
-        }
-        return Self.tallest(normalizedBoxes: (request.results ?? []).map(\.boundingBox), imageHeight: image.height)
-    }
-
-    func textLines(in image: CGImage) -> [CGRect] {
-        let request = VNDetectTextRectanglesRequest()
-        do {
-            try VNImageRequestHandler(cgImage: image).perform([request])
-        } catch {
-            return []
-        }
-        return Self.pixelRects(normalizedBoxes: (request.results ?? []).map(\.boundingBox),
-                               imageWidth: image.width, imageHeight: image.height)
+    var recognizer = VisionImageTextRecognizer()
+    func geometry(in image: CGImage) async throws -> ScreenshotTextGeometry {
+        let result = try await recognizer.textGeometry(in: image)
+        let lines = Self.pixelRects(normalizedBoxes: result.boxes, imageWidth: image.width, imageHeight: image.height)
+        return ScreenshotTextGeometry(lines: lines, height: lines.map(\.height).max())
     }
 
     /// Vision's boxes are normalized with the origin at the bottom-left corner.

@@ -5680,3 +5680,6 @@
 "activity.accessibility.attention" = "有后台任务需要处理";
 "activity.accessibility.separator" = "，";
 "screenshot.sensitive.failed" = "无法检查敏感信息，请检查图片并手动遮盖隐私内容。";
+
+"screenshot.mosaic.preparing" = "正在检测文字；未完成检测的遮罩覆盖整个区域。";
+"screenshot.mosaic.unavailable" = "文字检测不可用；未完成检测的遮罩继续覆盖整个区域。";

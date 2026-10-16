@@ -16,6 +16,10 @@ final class ScreenshotOverlayPanel: NSPanel {
         animationBehavior = .none
     }
 
+    var onHide: (() -> Void)?
+    override func orderOut(_ sender: Any?) { onHide?(); super.orderOut(sender) }
+    override func close() { onHide?(); super.close() }
+
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }
 }
@@ -70,6 +74,7 @@ final class ScreenshotOverlayController: ScreenshotOverlayPresenting {
             let panel = ScreenshotOverlayPanel(
                 frame: ScreenCaptureGeometry.flipped(display.frame, primaryDisplayHeight: primaryHeight)
             )
+            panel.onHide = { [weak view] in view?.releaseImage() }
             panel.contentView = view
             panel.orderFrontRegardless()
             panels.append(panel)

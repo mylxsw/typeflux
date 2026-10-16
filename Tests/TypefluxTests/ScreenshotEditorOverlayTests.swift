@@ -12,9 +12,9 @@ final class ScreenshotEditorOverlayTests: XCTestCase {
         var height: CGFloat?
         private(set) var measured: [CGSize] = []
 
-        func tallestLineHeight(in image: CGImage) -> CGFloat? {
+        func geometry(in image: CGImage) async throws -> ScreenshotTextGeometry {
             measured.append(CGSize(width: image.width, height: image.height))
-            return height
+            return .init(lines: [], height: height)
         }
     }
 
@@ -273,7 +273,7 @@ final class ScreenshotEditorOverlayTests: XCTestCase {
         XCTAssertEqual(annotations.count, 1)
     }
 
-    func testMosaicsAreSizedToTheTextUnderThem() {
+    func testMosaicsAreSizedToTheTextUnderThem() async throws {
         let measurer = Measurer()
         measurer.height = 40
         let (view, _) = makeView(scale: 2, measurer: measurer)
@@ -283,11 +283,13 @@ final class ScreenshotEditorOverlayTests: XCTestCase {
         // Half of it hangs outside the region; only the part inside is measured.
         drag(view, from: CGPoint(x: 150, y: 50), to: CGPoint(x: 250, y: 80))
 
+        try await MosaicGeometryIsolationTests.waitFor { view.mosaicPreparation.state != .preparing }
         XCTAssertEqual(measurer.measured, [CGSize(width: 100, height: 60)])
         XCTAssertEqual(view.editor.document.annotations.first?.mosaic?.textHeight, 20, "40 px on a 2× display")
 
         measurer.height = nil
         drag(view, from: CGPoint(x: 20, y: 120), to: CGPoint(x: 60, y: 160))
+        try await MosaicGeometryIsolationTests.waitFor { view.mosaicPreparation.state != .preparing }
         XCTAssertNil(view.editor.document.annotations.last?.mosaic?.textHeight)
 
         let (unmeasured, _) = makeView()

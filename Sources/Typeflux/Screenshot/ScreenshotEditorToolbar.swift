@@ -18,6 +18,7 @@ final class ScreenshotEditorToolbarModel {
         var mosaicStrength: ScreenshotMosaic.Strength = .medium
         var mosaicShape: ScreenshotAnnotationEditor.MosaicShape = .rect
         var mosaicScope: ScreenshotMosaic.Scope = .all
+        var mosaicPreparation: ScreenshotMosaicPreparation.State = .idle
         var recentColors: [ScreenshotAnnotationStyle.Color] = []
         /// What the counters count from.
         var counterStart = 1
@@ -49,7 +50,7 @@ final class ScreenshotEditorToolbarModel {
         /// The toolbar for an editor's current state.
         init(editor: ScreenshotAnnotationEditor, showsColorPanel: Bool, isPickingColor: Bool,
              showsScrollCapture: Bool = true, canScrollCapture: Bool = true, showsPin: Bool = true,
-             showsMoreMenu: Bool = false, canShowSensitivePanel: Bool = false, showsSensitivePanel: Bool = false) {
+             showsMoreMenu: Bool = false, canShowSensitivePanel: Bool = false, showsSensitivePanel: Bool = false, mosaicPreparation: ScreenshotMosaicPreparation.State = .idle) {
             let mosaic = editor.selected?.mosaic
             tool = editor.tool
             optionsTool = editor.optionsTool
@@ -81,6 +82,7 @@ final class ScreenshotEditorToolbarModel {
             prefersToolbarAbove = editor.toolStyles.prefersToolbarAbove
             self.canShowSensitivePanel = canShowSensitivePanel
             self.showsSensitivePanel = showsSensitivePanel
+            self.mosaicPreparation = mosaicPreparation
         }
     }
 
@@ -400,6 +402,10 @@ struct ScreenshotEditorToolbar: View {
             }
             if state.showsMosaicOptions {
                 mosaicOptions
+                if let key = state.mosaicPreparation.noticeKey {
+                    Text(L(key)).font(.system(size: 10)).foregroundStyle(.secondary)
+                        .frame(maxWidth: 150).fixedSize(horizontal: false, vertical: true)
+                }
             } else if let tool = state.optionsTool {
                 shapeOptions(for: tool)
                 toolOptions(for: tool)

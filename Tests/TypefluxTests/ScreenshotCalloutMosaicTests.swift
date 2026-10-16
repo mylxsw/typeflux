@@ -15,11 +15,9 @@ final class ScreenshotCalloutMosaicTests: XCTestCase {
         var lines: [CGRect] = []
         private(set) var images: [CGSize] = []
 
-        func tallestLineHeight(in image: CGImage) -> CGFloat? { 7 }
-
-        func textLines(in image: CGImage) -> [CGRect] {
+        func geometry(in image: CGImage) async throws -> ScreenshotTextGeometry {
             images.append(CGSize(width: image.width, height: image.height))
-            return lines
+            return .init(lines: lines, height: 7)
         }
     }
 
@@ -277,7 +275,7 @@ final class ScreenshotCalloutMosaicTests: XCTestCase {
         XCTAssertLessThan(red(70, 40), 200)
     }
 
-    func testTheOverlayFindsTextLinesInTheFrozenImage() throws {
+    func testTheOverlayFindsTextLinesInTheFrozenImage() async throws {
         let finder = LineFinder()
         // Lines in the pixels of the piece under the mosaic.
         finder.lines = [CGRect(x: 20, y: 20, width: 100, height: 20)]
@@ -294,6 +292,7 @@ final class ScreenshotCalloutMosaicTests: XCTestCase {
         view.mouseDragged(to: CGPoint(x: 200, y: 160))
         view.mouseUp(at: CGPoint(x: 200, y: 160))
 
+        try await MosaicGeometryIsolationTests.waitFor { view.mosaicPreparation.state != .preparing }
         XCTAssertEqual(finder.images, [CGSize(width: 200, height: 120)], "Only the piece under the mosaic")
         let runs = try XCTUnwrap(view.editor.document.annotations.first?.mosaic?.textRuns)
         XCTAssertEqual(runs, [CGRect(x: 110, y: 110, width: 50, height: 10)], "In the display's points")
@@ -328,7 +327,7 @@ final class ScreenshotCalloutMosaicTests: XCTestCase {
         view.releaseImage()
     }
 
-    func testCalloutAndScopeOptionsRenderAndRoundTrip() throws {
+    func testCalloutAndScopeOptionsRenderAndRoundTrip() async throws {
         func width(_ tool: ScreenshotAnnotationTool, mosaicShape: ScreenshotAnnotationEditor.MosaicShape = .rect)
             -> CGFloat {
             var state = ScreenshotEditorToolbarModel.State()
@@ -356,7 +355,7 @@ final class ScreenshotCalloutMosaicTests: XCTestCase {
                                                                                      height: 0.25)],
                                                            imageWidth: 200, imageHeight: 100),
                        [CGRect(x: 20, y: 25, width: 100, height: 25)], "Flipped to a top-left origin")
-        XCTAssertTrue(VisionTextHeightMeasurer().textLines(in: ScreenCaptureTestSupport.image(width: 40, height: 40))
-            .isEmpty, "No text in a gray square")
+        let geometry = try await VisionTextHeightMeasurer().geometry(in: ScreenCaptureTestSupport.image(width: 200, height: 200))
+        XCTAssertTrue(geometry.lines.isEmpty, "No text in a gray square")
     }
 }

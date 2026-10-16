@@ -5566,3 +5566,6 @@
 "activity.accessibility.attention" = "対応が必要なバックグラウンドタスクがあります";
 "activity.accessibility.separator" = "、";
 "screenshot.sensitive.failed" = "機密情報を確認できませんでした。画像を確認し、個人情報を手動で隠してください。";
+
+"screenshot.mosaic.preparing" = "文字を検出中です。未検出のマスクは領域全体を覆います。";
+"screenshot.mosaic.unavailable" = "文字を検出できません。未検出のマスクは領域全体を覆います。";

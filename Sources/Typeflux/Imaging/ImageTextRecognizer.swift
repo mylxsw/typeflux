@@ -18,6 +18,18 @@ struct VisionImageTextRecognizer: ImageTextRecognizing {
     var worker: MediaWorker = .textRecognition
 
     func recognizeText(in source: ImageTextSource) async throws -> RecognizedText {
+        let response = try await perform(source, operation: .recognizeText)
+        guard let result = response.recognition else { throw MediaFailure.invalidProtocol }
+        return Self.materialize(result)
+    }
+
+    func textGeometry(in image: CGImage) async throws -> MediaTextGeometry {
+        let response = try await perform(.image(image), operation: .textGeometry)
+        guard let result = response.geometry else { throw MediaFailure.invalidProtocol }
+        return result
+    }
+
+    private func perform(_ source: ImageTextSource, operation: MediaRequest.Operation) async throws -> MediaResponse {
         try Task.checkCancellation()
         let slot = try Self.admission.acquire(bytes: 1)
         defer { withExtendedLifetime(slot) {} }
@@ -39,16 +51,15 @@ struct VisionImageTextRecognizer: ImageTextRecognizing {
                     context.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
                     media = .data(Data(bytes: bytes, count: shape.byteCount)); options = shape; revision = nil
                 }
-                let result = try worker.perform(.recognizeText, input: media, textInput: options,
+                let result = try worker.perform(operation, input: media, textInput: options,
                     isCancelled: { cancelled.isCancelled }) { response, _ in
-                        guard let value = response.recognition else { throw MediaFailure.invalidProtocol }
-                        return value
+                        return response
                     }
                 if case let .url(url) = input.value, revision?.matches(url) != true { throw MediaFailure.unreadable }
                 return result
             }.value
             try Task.checkCancellation()
-            return Self.materialize(result)
+            return result
         } onCancel: { cancelled.cancel() }
     }
 

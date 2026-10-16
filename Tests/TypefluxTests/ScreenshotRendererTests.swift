@@ -363,17 +363,17 @@ final class ScreenshotRendererTests: XCTestCase {
 
     // MARK: Text height
 
-    func testTallestTextLine() {
+    func testTallestTextLine() async throws {
         XCTAssertEqual(VisionTextHeightMeasurer.tallest(normalizedBoxes: [CGRect(x: 0, y: 0, width: 1, height: 0.1),
                                                                          CGRect(x: 0, y: 0.5, width: 1, height: 0.25)],
                                                         imageHeight: 200), 50)
         XCTAssertNil(VisionTextHeightMeasurer.tallest(normalizedBoxes: [], imageHeight: 200))
         let blank = ScreenCaptureTestSupport.image(width: 64, height: 64, gray: 1)
-        XCTAssertNil(VisionTextHeightMeasurer().tallestLineHeight(in: blank),
-                     "No text on a blank image")
+        let geometry = try await VisionTextHeightMeasurer().geometry(in: blank)
+        XCTAssertNil(geometry.height, "No text on a blank image")
     }
 
-    func testVisionFindsTheHeightOfRealText() throws {
+    func testVisionFindsTheHeightOfRealText() async throws {
         let context = try XCTUnwrap(CGContext(data: nil, width: 600, height: 160, bitsPerComponent: 8, bytesPerRow: 0,
                                               space: Self.sRGB,
                                               bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
@@ -387,7 +387,8 @@ final class ScreenshotRendererTests: XCTestCase {
         NSGraphicsContext.restoreGraphicsState()
         let image = try XCTUnwrap(context.makeImage())
 
-        let height = try XCTUnwrap(VisionTextHeightMeasurer().tallestLineHeight(in: image))
+        let geometry = try await VisionTextHeightMeasurer().geometry(in: image)
+        let height = try XCTUnwrap(geometry.height)
         XCTAssertGreaterThan(height, 20)
         XCTAssertLessThan(height, 120)
     }
