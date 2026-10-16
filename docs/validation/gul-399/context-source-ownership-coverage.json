@@ -1,0 +1,15 @@
+{
+  "covered": 27,
+  "executable_added": 27,
+  "percent": 100.0,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Ask/AskContextImage.swift",
+      "covered": 27,
+      "executable_added": 27,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    }
+  ]
+}

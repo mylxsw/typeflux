@@ -94,7 +94,10 @@ extension AskConversationModel {
         self.worker = worker; self.readInput = readInput
     }
     func displayed(_ value: String?, access: AskImagePresentationAccess) -> NSImage? {
-        guard access.allows(), originalAccess?.allows() == true, epoch == access.epoch, source == value else { return nil }
+        let current = generation
+        guard scope === access.scope, epoch == access.epoch, source == value else { return nil }
+        guard access.allows(), generation == current else { return nil }
+        guard originalAccess?.allows() == true, generation == current else { return nil }
         return image
     }
     func cancel() {
@@ -104,9 +107,22 @@ extension AskConversationModel {
     }
     func load(_ value: String?, access: AskImagePresentationAccess) async {
         guard !Task.isCancelled else { return }
-        guard access.allows() else { if epoch == access.epoch { cancel() }; return }
+        // Access callbacks may cancel or invalidate this owner synchronously.
+        let entry = generation
+        let allowed = access.allows() && access.scope?.visible == true && access.scope?.epoch == access.epoch
+        guard !Task.isCancelled, generation == entry else { return }
+        guard allowed else {
+            let originalAllowed = originalAccess?.allows() == true
+            guard !Task.isCancelled, generation == entry else { return }
+            if !originalAllowed { cancel() }
+            return
+        }
         guard let value else { cancel(); return }
-        if source == value, epoch == access.epoch, originalAccess?.allows() == true { return }
+        if source == value, scope === access.scope, epoch == access.epoch {
+            let originalAllowed = originalAccess?.allows() == true
+            guard !Task.isCancelled, generation == entry else { return }
+            if originalAllowed { return }
+        }
         cancel(); source = value; epoch = access.epoch; originalAccess = access
         let current = generation
         do {
@@ -124,7 +140,10 @@ extension AskConversationModel {
             let result = try await withTaskCancellationHandler { try await task.value } onCancel: { task.cancel() }
             try Task.checkCancellation()
             guard generation == current else { return }
-            guard access.allows() else { cancel(); return }
+            let allowed = access.allows()
+            guard generation == current else { return }
+            try Task.checkCancellation()
+            guard allowed else { cancel(); return }
             if let authorization, !worker.permits(authorization) { throw MediaFailure.unavailable }
             guard result.images.count == 1, let raster = result.images.first,
                   raster.width > 0, raster.height > 0, raster.width <= maximumEdge, raster.height <= maximumEdge else {
@@ -133,8 +152,11 @@ extension AskConversationModel {
             pixels = reservation; image = NSImage(cgImage: raster, size: .zero); operation = nil
         } catch {
             guard generation == current else { return }
+            let allowed = !Task.isCancelled && access.allows()
+            guard generation == current else { return }
+            let retainFailure = !Task.isCancelled && allowed
             cancel()
-            if !Task.isCancelled, access.allows() {
+            if retainFailure {
                 source = value; epoch = access.epoch; originalAccess = access; unavailable = true
                 if let scope = access.scope, let epoch = access.epoch {
                     self.scope = scope; registration = try? scope.register(self, epoch: epoch)
