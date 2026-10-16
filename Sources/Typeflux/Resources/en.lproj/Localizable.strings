@@ -5735,3 +5735,4 @@
 "settings.services.mediaPreviews" = "Media previews";
 "settings.services.clipboardThumbnails" = "Clipboard thumbnails";
 "settings.services.frameRegistration" = "Scrolling screenshot alignment";
+"settings.services.textRecognition" = "Screenshot text recognition";

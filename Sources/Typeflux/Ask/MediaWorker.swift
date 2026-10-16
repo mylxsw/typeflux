@@ -10,7 +10,7 @@ final class MediaWorker: @unchecked Sendable {
     static let previews = MediaWorker(timeout: 3, requiresLifecycle: true)
     static let clipboardThumbnails = MediaWorker(timeout: 3, requiresLifecycle: true)
     static let frameRegistration = MediaWorker(timeout: 3, requiresLifecycle: true)
-    static let textRecognition = MediaWorker(timeout: 30)
+    static let textRecognition = MediaWorker(timeout: 30, requiresLifecycle: true)
     static let clipboardOCR = MediaWorker(timeout: 30)
     static let clipboardMetadata = MediaWorker(timeout: 10)
     enum Input { case file(URL), data(Data) }

@@ -5621,3 +5621,4 @@
 "settings.services.mediaPreviews" = "メディアプレビュー";
 "settings.services.clipboardThumbnails" = "クリップボードのサムネイル";
 "settings.services.frameRegistration" = "スクロールスクリーンショットの位置合わせ";
+"settings.services.textRecognition" = "スクリーンショットの文字認識";
