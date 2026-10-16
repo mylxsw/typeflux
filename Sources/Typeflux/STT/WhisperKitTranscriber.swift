@@ -51,16 +51,17 @@ final class WhisperKitTranscriber: Transcriber, @unchecked Sendable {
         let language = TranscriptionLanguageHints.preferredWhisperLanguageCode(preferredLanguages: Locale.preferredLanguages)
         let owner = self.owner
         do { return try await handle.perform { client in
-            let text = try await client.transcribe(audio: audioFile.fileURL, lowEnergy: profile == .lowEnergyRetry,
-                                                  prompt: prompt, language: language) {
+            try await client.transcribe(audio: audioFile.fileURL, lowEnergy: profile == .lowEnergyRetry,
+                                        prompt: prompt, language: language, deliverFinal: { text in
+                try Task.checkCancellation()
+                guard owner.permitsWork else { throw CancellationError() }
+                await onUpdate(TranscriptionSnapshot(text: text, isFinal: true))
+                try Task.checkCancellation()
+                guard owner.permitsWork else { throw CancellationError() }
+            }) {
                 guard !Task.isCancelled, owner.permitsWork else { return }
                 await onUpdate(TranscriptionSnapshot(text: $0, isFinal: false))
             }
-            try Task.checkCancellation()
-            guard owner.permitsWork else { throw CancellationError() }
-            await onUpdate(TranscriptionSnapshot(text: text, isFinal: true))
-            try Task.checkCancellation()
-            return text
         } } catch {
             if Task.isCancelled { throw CancellationError() }
             throw LocalInferenceUnavailable()
