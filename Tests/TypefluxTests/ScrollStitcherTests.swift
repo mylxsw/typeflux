@@ -610,17 +610,17 @@ final class VisionScrollOffsetEstimatorTests: XCTestCase {
         XCTAssertEqual(VisionScrollOffsetEstimator.shifts(translationY: .nan), [])
     }
 
-    func testVisionProposesTheShiftOfAScrolledPage() {
+    func testVisionProposesTheShiftOfAScrolledPage() async throws {
         let page = ScrollCaptureFixtures.page(width: 200, height: 900)
         let before = page.frameImage(offset: 0, scrollingHeight: 400)
         let after = page.frameImage(offset: 120, scrollingHeight: 400)
 
-        let shifts = VisionScrollOffsetEstimator().verticalShifts(from: before, to: after)
+        let shifts = try await VisionScrollOffsetEstimator().verticalShifts(from: before, to: after)
 
         XCTAssertTrue(shifts.contains(120), "Vision proposed \(shifts)")
         // The stitcher keeps the right one.
-        var stitcher = ScrollStitcher(estimator: VisionScrollOffsetEstimator())
+        var stitcher = ScrollStitcher()
         XCTAssertEqual(stitcher.add(ScrollFrame(image: before)!), .started)
-        XCTAssertEqual(stitcher.add(ScrollFrame(image: after)!), .appended(rows: 120, suspicious: false))
+        XCTAssertEqual(stitcher.add(ScrollFrame(image: after)!, proposedShifts: shifts), .appended(rows: 120, suspicious: false))
     }
 }

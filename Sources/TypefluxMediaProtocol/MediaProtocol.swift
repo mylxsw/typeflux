@@ -15,7 +15,7 @@ public enum MediaFailure: String, Error, Codable, Sendable {
 }
 
 public struct MediaRequest: Codable, Sendable {
-    public enum Operation: String, Codable, Sendable { case textGeometry, recognizeText, clipboardOCR, copyClipboardImage, clipboardMedia, quickLook, nativeIcon, image, pdf, inspectWorkflowImage, copyWorkflowImage, validateGeneratedImage, normalizeImage, previewImage, previewPDF, previewVideo, previewAudio
+    public enum Operation: String, Codable, Sendable { case registerFrames, textGeometry, recognizeText, clipboardOCR, copyClipboardImage, clipboardMedia, quickLook, nativeIcon, image, pdf, inspectWorkflowImage, copyWorkflowImage, validateGeneratedImage, normalizeImage, previewImage, previewPDF, previewVideo, previewAudio
         public var isWorkflowImage: Bool { self == .inspectWorkflowImage || self == .copyWorkflowImage || self == .copyClipboardImage }
         public var isAV: Bool { self == .previewVideo || self == .previewAudio }
     }
@@ -28,8 +28,11 @@ public struct MediaRequest: Codable, Sendable {
     public var quickLook: MediaQuickLook?
     public var clipboard: MediaClipboardOptions?
     public var textInput: MediaTextInput?
+    public var registration: MediaRegistrationInput?
     public init(id: UUID = UUID(), operation: Operation) { self.id = id; self.operation = operation }
     public func validate() throws {
+        guard (operation == .registerFrames) == (registration != nil) else { throw MediaFailure.invalidProtocol }
+        try registration?.validate()
         guard operation == .recognizeText || operation == .textGeometry || textInput == nil else { throw MediaFailure.invalidProtocol }
         try textInput?.validate()
         if operation == .textGeometry, textInput == nil { throw MediaFailure.invalidProtocol }
@@ -83,6 +86,7 @@ public struct MediaResponse: Codable, Sendable {
     public var ocr: MediaOCRResult?
     public var recognition: MediaTextRecognition?
     public var geometry: MediaTextGeometry?
+    public var registration: MediaRegistration?
     public init(id: UUID, items: [MediaItem] = [], failure: MediaFailure? = nil) {
         self.id = id; self.items = items; self.failure = failure
     }
@@ -92,9 +96,17 @@ public struct MediaResponse: Codable, Sendable {
         try request.validate()
         guard version == 1, id == request.id else { throw MediaFailure.invalidProtocol }
         if let failure {
-            guard items.isEmpty, preview == nil, normalization == nil, generatedImage == nil, workflowImage == nil, clipboard == nil, ocr == nil, recognition == nil, geometry == nil else { throw MediaFailure.invalidProtocol }
+            guard items.isEmpty, preview == nil, normalization == nil, generatedImage == nil, workflowImage == nil, clipboard == nil, ocr == nil, recognition == nil, geometry == nil, registration == nil else { throw MediaFailure.invalidProtocol }
             throw failure
         }
+        if let input = request.registration {
+            guard items.isEmpty, preview == nil, normalization == nil, generatedImage == nil,
+                  workflowImage == nil, clipboard == nil, ocr == nil, recognition == nil, geometry == nil,
+                  let registration else { throw MediaFailure.invalidProtocol }
+            try registration.validate(for: input)
+            return
+        }
+        guard registration == nil else { throw MediaFailure.invalidProtocol }
         if request.operation == .textGeometry {
             guard items.isEmpty, preview == nil, normalization == nil, generatedImage == nil,
                   workflowImage == nil, clipboard == nil, ocr == nil, recognition == nil, let geometry
