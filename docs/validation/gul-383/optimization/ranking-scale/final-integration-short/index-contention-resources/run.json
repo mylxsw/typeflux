@@ -1,0 +1,21 @@
+{
+  "command": [
+    "python3",
+    "<repo>/docs/validation/gul-383/optimization/ranking-scale/rework_release_runner.py",
+    "--checkout",
+    ".",
+    "--mode",
+    "contention",
+    "--label",
+    "after",
+    "--size",
+    "100000",
+    "--tag",
+    "final-short-contention"
+  ],
+  "started_unix": 1792173695.859164,
+  "wall_seconds": 89.81603770900983,
+  "exit_code": 247,
+  "samples": 44,
+  "scope": "Same-host reference window and real mixed-file indexing. CPU process time is cumulative; %CPU is lifetime averaged. Owned proc_pid_rusage V2 records sampled physical footprint, physical disk IO and CPU Mach ticks converted using the host timebase; its CPU units were cross-checked against process_time_ns. Unsupported/denied PID reads retain available=false and errno. RSS includes shared resident pages; summed RSS is not unique physical RAM. GPU metrics are best-effort IOAccelerator counters, not energy measurements. No privileged powermetrics, external process arguments, filenames or input contents collected."
+}

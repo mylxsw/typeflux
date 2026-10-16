@@ -1,0 +1,3435 @@
+{
+  "app_max_rss_bytes" : 529055744,
+  "build" : "Release",
+  "chunks" : 100000,
+  "cold_definition" : "Ten fresh service\/helper openings per entry; OS\/model\/shader caches may be warm; opening the panel requests prewarming. Reopen and model verification occur outside the timed native edit.",
+  "complete" : true,
+  "corpus" : [
+    {
+      "chunks" : 100000,
+      "disk_bytes" : 481895416,
+      "entry" : "mixed",
+      "load_seconds" : 3.2992462500114925,
+      "noise_vector_source" : "constructed-orthogonal"
+    },
+    {
+      "chunks" : 100000,
+      "disk_bytes" : 481895416,
+      "entry" : "file-mode",
+      "load_seconds" : 17.391855124966241,
+      "noise_vector_source" : "constructed-orthogonal"
+    }
+  ],
+  "entry_scope" : "all",
+  "failed_body_samples" : 0,
+  "index_inference_concurrency" : 0,
+  "index_writer_concurrency" : 0,
+  "indexed_files" : 2,
+  "model_sha256" : "2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135",
+  "permission_denial_fixture" : false,
+  "rows" : [
+    {
+      "complete_ms" : 212.23112499999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 193.43799999999999,
+      "input_to_publish_ms" : 166.4085,
+      "input_uptime" : 487141.67477787466,
+      "main_actor_max_timer_gap_ms" : 67.785250000000005,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 0,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 194.16787500000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 155.73416700000001,
+      "input_to_publish_ms" : 137.552167,
+      "input_uptime" : 487142.21742587467,
+      "main_actor_max_timer_gap_ms" : 62.724542,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 1,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 195.20666600000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 155.159333,
+      "input_to_publish_ms" : 138.13200000000001,
+      "input_uptime" : 487142.73579150037,
+      "main_actor_max_timer_gap_ms" : 63.386749999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 2,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 201.766042,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 165.76987500000001,
+      "input_to_publish_ms" : 148.04066700000001,
+      "input_uptime" : 487143.25502499938,
+      "main_actor_max_timer_gap_ms" : 68.419833999999994,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 3,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 195.22483299999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 157.547708,
+      "input_to_publish_ms" : 140.28045800000001,
+      "input_uptime" : 487143.78029891668,
+      "main_actor_max_timer_gap_ms" : 62.780540999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 4,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 194.37187499999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 155.14729199999999,
+      "input_to_publish_ms" : 138.21591699999999,
+      "input_uptime" : 487144.30376199936,
+      "main_actor_max_timer_gap_ms" : 62.357999999999997,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 5,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 196.767,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 158.10179199999999,
+      "input_to_publish_ms" : 140.812084,
+      "input_uptime" : 487144.82396554173,
+      "main_actor_max_timer_gap_ms" : 64.512708000000003,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 6,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 195.71375,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 156.02275,
+      "input_to_publish_ms" : 138.47212500000001,
+      "input_uptime" : 487145.34875983367,
+      "main_actor_max_timer_gap_ms" : 63.294625000000003,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 7,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 195.422417,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 158.63091700000001,
+      "input_to_publish_ms" : 141.35529199999999,
+      "input_uptime" : 487145.87238941638,
+      "main_actor_max_timer_gap_ms" : 63.449666000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 8,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 195.32570799999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 159.13104200000001,
+      "input_to_publish_ms" : 141.13733300000001,
+      "input_uptime" : 487146.39500229171,
+      "main_actor_max_timer_gap_ms" : 63.516374999999996,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 9,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 196.857958,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 158.61712499999999,
+      "input_to_publish_ms" : 140.97149999999999,
+      "input_uptime" : 487146.91495195834,
+      "main_actor_max_timer_gap_ms" : 64.279666000000006,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 10,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 195.65829099999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 157.68799999999999,
+      "input_to_publish_ms" : 140.24745799999999,
+      "input_uptime" : 487147.44109712535,
+      "main_actor_max_timer_gap_ms" : 64.063958,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 11,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 194.892458,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 158.58183299999999,
+      "input_to_publish_ms" : 140.83625000000001,
+      "input_uptime" : 487147.96343654202,
+      "main_actor_max_timer_gap_ms" : 62.702249999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 12,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 196.44791699999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 160.22904199999999,
+      "input_to_publish_ms" : 142.58029199999999,
+      "input_uptime" : 487148.47989291674,
+      "main_actor_max_timer_gap_ms" : 63.875624999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 13,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 194.53774999999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 157.121208,
+      "input_to_publish_ms" : 139.601125,
+      "input_uptime" : 487148.99867391674,
+      "main_actor_max_timer_gap_ms" : 62.001041999999998,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 14,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 196.886875,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 157.23304200000001,
+      "input_to_publish_ms" : 140.07037500000001,
+      "input_uptime" : 487149.5256071667,
+      "main_actor_max_timer_gap_ms" : 63.981833000000002,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 15,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 196.21700000000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 158.86479199999999,
+      "input_to_publish_ms" : 142.04208299999999,
+      "input_uptime" : 487150.04483391665,
+      "main_actor_max_timer_gap_ms" : 64.181792000000002,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 16,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 194.030125,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 153.59787499999999,
+      "input_to_publish_ms" : 137.35358400000001,
+      "input_uptime" : 487150.56309866603,
+      "main_actor_max_timer_gap_ms" : 62.325291999999997,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 17,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 196.84,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 153.53125,
+      "input_to_publish_ms" : 136.44591700000001,
+      "input_uptime" : 487151.07148041605,
+      "main_actor_max_timer_gap_ms" : 61.465000000000003,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 18,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 203.38495800000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 163.339,
+      "input_to_publish_ms" : 145.60241600000001,
+      "input_uptime" : 487151.60337091668,
+      "main_actor_max_timer_gap_ms" : 67.953874999999996,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 19,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 195.49975000000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 154.85737499999999,
+      "input_to_publish_ms" : 137.71333300000001,
+      "input_uptime" : 487152.1248625837,
+      "main_actor_max_timer_gap_ms" : 63.001708000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 20,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 195.613,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 158.379167,
+      "input_to_publish_ms" : 141.12608299999999,
+      "input_uptime" : 487152.64627541637,
+      "main_actor_max_timer_gap_ms" : 63.630916999999997,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 21,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 194.691542,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 155.254458,
+      "input_to_publish_ms" : 137.88933299999999,
+      "input_uptime" : 487153.16649266699,
+      "main_actor_max_timer_gap_ms" : 63.007375000000003,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 22,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 197.75258299999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 157.59733299999999,
+      "input_to_publish_ms" : 139.75866600000001,
+      "input_uptime" : 487153.68577812571,
+      "main_actor_max_timer_gap_ms" : 64.377375000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 23,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 194.58750000000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 156.95208299999999,
+      "input_to_publish_ms" : 139.763958,
+      "input_uptime" : 487154.21350808337,
+      "main_actor_max_timer_gap_ms" : 62.269207999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 24,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 195.09383399999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 156.47679199999999,
+      "input_to_publish_ms" : 139.203667,
+      "input_uptime" : 487154.73326379136,
+      "main_actor_max_timer_gap_ms" : 62.713875000000002,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 25,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 196.52808300000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 158.462333,
+      "input_to_publish_ms" : 141.259083,
+      "input_uptime" : 487155.25646945869,
+      "main_actor_max_timer_gap_ms" : 64.182124999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 26,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 196.98629199999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 159.921583,
+      "input_to_publish_ms" : 141.54554200000001,
+      "input_uptime" : 487155.77997941704,
+      "main_actor_max_timer_gap_ms" : 63.897832999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 27,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 194.64812499999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 158.38279199999999,
+      "input_to_publish_ms" : 140.863292,
+      "input_uptime" : 487156.30546166637,
+      "main_actor_max_timer_gap_ms" : 62.792082999999998,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 28,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 195.779,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 158.147041,
+      "input_to_publish_ms" : 141.28504100000001,
+      "input_uptime" : 487156.82771995902,
+      "main_actor_max_timer_gap_ms" : 62.910958000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 29,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 195.20637500000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 157.55937499999999,
+      "input_to_publish_ms" : 139.918125,
+      "input_uptime" : 487157.34827437502,
+      "main_actor_max_timer_gap_ms" : 62.861792000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 30,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 196.012584,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 155.88399999999999,
+      "input_to_publish_ms" : 139.01566700000001,
+      "input_uptime" : 487157.86792129173,
+      "main_actor_max_timer_gap_ms" : 63.669916999999998,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 31,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 195.105042,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 157.87025,
+      "input_to_publish_ms" : 140.806375,
+      "input_uptime" : 487158.38925716665,
+      "main_actor_max_timer_gap_ms" : 63.743457999999997,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 32,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 195.789458,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 158.84929099999999,
+      "input_to_publish_ms" : 140.22466600000001,
+      "input_uptime" : 487158.90681720903,
+      "main_actor_max_timer_gap_ms" : 63.564166999999998,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 33,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 195.702833,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 156.81312500000001,
+      "input_to_publish_ms" : 139.70675,
+      "input_uptime" : 487159.4247212084,
+      "main_actor_max_timer_gap_ms" : 63.324333000000003,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 34,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 197.31791699999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 158.26608400000001,
+      "input_to_publish_ms" : 140.713292,
+      "input_uptime" : 487159.95091887505,
+      "main_actor_max_timer_gap_ms" : 63.888083999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 35,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 194.202125,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 154.40141600000001,
+      "input_to_publish_ms" : 137.74825000000001,
+      "input_uptime" : 487160.47040625039,
+      "main_actor_max_timer_gap_ms" : 62.793042,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 36,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 195.54429200000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 158.90545900000001,
+      "input_to_publish_ms" : 141.62020899999999,
+      "input_uptime" : 487160.98752312502,
+      "main_actor_max_timer_gap_ms" : 63.692540999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 37,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 196.13862499999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 157.21070800000001,
+      "input_to_publish_ms" : 140.07633300000001,
+      "input_uptime" : 487161.50680079137,
+      "main_actor_max_timer_gap_ms" : 63.120167000000002,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 38,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 198.18829099999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 158.17058299999999,
+      "input_to_publish_ms" : 140.66583299999999,
+      "input_uptime" : 487162.03386725066,
+      "main_actor_max_timer_gap_ms" : 65.601166000000006,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 39,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 195.17283399999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 158.03004200000001,
+      "input_to_publish_ms" : 140.70679200000001,
+      "input_uptime" : 487162.55493441666,
+      "main_actor_max_timer_gap_ms" : 63.348374999999997,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 40,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 195.783208,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 156.87074999999999,
+      "input_to_publish_ms" : 139.131292,
+      "input_uptime" : 487163.07639933337,
+      "main_actor_max_timer_gap_ms" : 62.368499999999997,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 41,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 194.84475,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 157.43995799999999,
+      "input_to_publish_ms" : 140.455333,
+      "input_uptime" : 487163.59733120864,
+      "main_actor_max_timer_gap_ms" : 63.222458000000003,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 42,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 196.45112499999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 158.56008399999999,
+      "input_to_publish_ms" : 141.27125000000001,
+      "input_uptime" : 487164.11323899968,
+      "main_actor_max_timer_gap_ms" : 64.020875000000004,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 43,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 195.54162500000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 158.925667,
+      "input_to_publish_ms" : 141.17766700000001,
+      "input_uptime" : 487164.63795795798,
+      "main_actor_max_timer_gap_ms" : 63.882041999999998,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 44,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 196.30333400000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 157.74658400000001,
+      "input_to_publish_ms" : 140.38916699999999,
+      "input_uptime" : 487165.15846908267,
+      "main_actor_max_timer_gap_ms" : 64.146249999999995,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 45,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 194.96520799999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 158.85445799999999,
+      "input_to_publish_ms" : 140.96195800000001,
+      "input_uptime" : 487165.67827383371,
+      "main_actor_max_timer_gap_ms" : 62.806291999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 46,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 202.23625000000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 156.74870899999999,
+      "input_to_publish_ms" : 139.54974999999999,
+      "input_uptime" : 487166.19909587502,
+      "main_actor_max_timer_gap_ms" : 62.710292000000003,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 47,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 196.23195899999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 156.477417,
+      "input_to_publish_ms" : 139.08395899999999,
+      "input_uptime" : 487166.73517399968,
+      "main_actor_max_timer_gap_ms" : 63.909291000000003,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 48,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 197.03270900000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 159.362459,
+      "input_to_publish_ms" : 142.20629199999999,
+      "input_uptime" : 487167.25607512501,
+      "main_actor_max_timer_gap_ms" : 64.697958,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 49,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 192.88641699999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 155.36279200000001,
+      "input_to_publish_ms" : 138.426875,
+      "input_uptime" : 487167.76398408366,
+      "main_actor_max_timer_gap_ms" : 60.673541999999998,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 50,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 194.287375,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 154.36854199999999,
+      "input_to_publish_ms" : 137.18883299999999,
+      "input_uptime" : 487168.27445595834,
+      "main_actor_max_timer_gap_ms" : 62.032625000000003,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 51,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 195.35891699999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 158.381125,
+      "input_to_publish_ms" : 140.94020800000001,
+      "input_uptime" : 487168.77840470808,
+      "main_actor_max_timer_gap_ms" : 63.163874999999997,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 52,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 193.03241600000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 154.46504100000001,
+      "input_to_publish_ms" : 137.88387499999999,
+      "input_uptime" : 487169.28326545865,
+      "main_actor_max_timer_gap_ms" : 60.495790999999997,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 53,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 194.32124999999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 154.96962500000001,
+      "input_to_publish_ms" : 138.30479199999999,
+      "input_uptime" : 487169.79378616635,
+      "main_actor_max_timer_gap_ms" : 62.019458,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 54,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 194.94395800000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 157.954958,
+      "input_to_publish_ms" : 140.62616600000001,
+      "input_uptime" : 487170.31328183366,
+      "main_actor_max_timer_gap_ms" : 63.036208000000002,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 55,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 195.54400000000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 158.52770899999999,
+      "input_to_publish_ms" : 140.95358400000001,
+      "input_uptime" : 487170.83011341607,
+      "main_actor_max_timer_gap_ms" : 63.731042000000002,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 56,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 195.08779200000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 154.8905,
+      "input_to_publish_ms" : 138.12658300000001,
+      "input_uptime" : 487171.3506095414,
+      "main_actor_max_timer_gap_ms" : 63.204707999999997,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 57,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 192.73962499999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 154.67720800000001,
+      "input_to_publish_ms" : 137.86737500000001,
+      "input_uptime" : 487171.86685904139,
+      "main_actor_max_timer_gap_ms" : 60.689082999999997,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 58,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 196.018708,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 154.737042,
+      "input_to_publish_ms" : 138.27758299999999,
+      "input_uptime" : 487172.36830329202,
+      "main_actor_max_timer_gap_ms" : 62.851208,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 59,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 192.22024999999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 151.96295799999999,
+      "input_to_publish_ms" : 134.96312499999999,
+      "input_uptime" : 487172.87346583372,
+      "main_actor_max_timer_gap_ms" : 60.389583000000002,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 60,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 193.16695899999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 152.77391700000001,
+      "input_to_publish_ms" : 135.499709,
+      "input_uptime" : 487173.37933949969,
+      "main_actor_max_timer_gap_ms" : 61.043792000000003,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 61,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 192.12604099999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 154.79508300000001,
+      "input_to_publish_ms" : 137.44550000000001,
+      "input_uptime" : 487173.88259266707,
+      "main_actor_max_timer_gap_ms" : 60.176167,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 62,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 194.14087499999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 156.14375000000001,
+      "input_to_publish_ms" : 138.937375,
+      "input_uptime" : 487174.39200325002,
+      "main_actor_max_timer_gap_ms" : 62.410792000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 63,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 195.39195799999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 157.33458300000001,
+      "input_to_publish_ms" : 140.52883299999999,
+      "input_uptime" : 487174.91223779134,
+      "main_actor_max_timer_gap_ms" : 62.704000000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 64,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 195.39250000000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 158.516042,
+      "input_to_publish_ms" : 141.004167,
+      "input_uptime" : 487175.4290785417,
+      "main_actor_max_timer_gap_ms" : 63.024332999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 65,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 194.58812499999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 155.90337500000001,
+      "input_to_publish_ms" : 139.142583,
+      "input_uptime" : 487175.94893008337,
+      "main_actor_max_timer_gap_ms" : 62.060290999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 66,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 194.98237499999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 155.42391699999999,
+      "input_to_publish_ms" : 137.680792,
+      "input_uptime" : 487176.46857741632,
+      "main_actor_max_timer_gap_ms" : 62.436667,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 67,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 193.04666599999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 156.16849999999999,
+      "input_to_publish_ms" : 138.94145800000001,
+      "input_uptime" : 487176.97950100072,
+      "main_actor_max_timer_gap_ms" : 60.598792000000003,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 68,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 192.47812500000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 154.08416700000001,
+      "input_to_publish_ms" : 137.541417,
+      "input_uptime" : 487177.48248374939,
+      "main_actor_max_timer_gap_ms" : 59.982332999999997,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 69,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 193.737458,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 156.12966599999999,
+      "input_to_publish_ms" : 139.04316600000001,
+      "input_uptime" : 487177.98999745905,
+      "main_actor_max_timer_gap_ms" : 61.536791999999998,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 70,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 195.791459,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 157.188042,
+      "input_to_publish_ms" : 139.29737499999999,
+      "input_uptime" : 487178.49332054169,
+      "main_actor_max_timer_gap_ms" : 63.125416999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 71,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 193.77962500000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 157.257791,
+      "input_to_publish_ms" : 139.96891600000001,
+      "input_uptime" : 487178.99928025005,
+      "main_actor_max_timer_gap_ms" : 61.604374999999997,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 72,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 193.22829200000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 154.63287500000001,
+      "input_to_publish_ms" : 138.069208,
+      "input_uptime" : 487179.50728954165,
+      "main_actor_max_timer_gap_ms" : 60.685791000000002,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 73,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 196.213334,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 158.57216700000001,
+      "input_to_publish_ms" : 141.44550000000001,
+      "input_uptime" : 487180.01074941602,
+      "main_actor_max_timer_gap_ms" : 63.063166000000002,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 74,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 196.08987500000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 160.028042,
+      "input_to_publish_ms" : 142.446834,
+      "input_uptime" : 487180.52866191632,
+      "main_actor_max_timer_gap_ms" : 63.268583,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 75,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 195.523708,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 156.069917,
+      "input_to_publish_ms" : 139.230583,
+      "input_uptime" : 487181.04960329167,
+      "main_actor_max_timer_gap_ms" : 63.763125000000002,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 76,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 196.31658300000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 156.31,
+      "input_to_publish_ms" : 139.07987499999999,
+      "input_uptime" : 487181.56993491703,
+      "main_actor_max_timer_gap_ms" : 63.901499999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 77,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 196.11491699999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 159.18808300000001,
+      "input_to_publish_ms" : 142.14099999999999,
+      "input_uptime" : 487182.08893875004,
+      "main_actor_max_timer_gap_ms" : 64.101249999999993,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 78,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 194.21829199999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 156.15804199999999,
+      "input_to_publish_ms" : 139.30416700000001,
+      "input_uptime" : 487182.60995287471,
+      "main_actor_max_timer_gap_ms" : 62.711292,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 79,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 195.346,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 159.00758300000001,
+      "input_to_publish_ms" : 141.24612500000001,
+      "input_uptime" : 487183.12851066637,
+      "main_actor_max_timer_gap_ms" : 63.740208000000003,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 80,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 195.868042,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 159.354917,
+      "input_to_publish_ms" : 140.36129199999999,
+      "input_uptime" : 487183.64628416637,
+      "main_actor_max_timer_gap_ms" : 62.771084000000002,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 81,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 196.70720800000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 158.44370799999999,
+      "input_to_publish_ms" : 141.349333,
+      "input_uptime" : 487184.16477608302,
+      "main_actor_max_timer_gap_ms" : 65.096958000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 82,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 194.30179200000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 156.45124999999999,
+      "input_to_publish_ms" : 139.215417,
+      "input_uptime" : 487184.68455087498,
+      "main_actor_max_timer_gap_ms" : 62.070667,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 83,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 194.98670799999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 157.34883300000001,
+      "input_to_publish_ms" : 139.575625,
+      "input_uptime" : 487185.20143420831,
+      "main_actor_max_timer_gap_ms" : 63.218333000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 84,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 195.16887500000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 154.461083,
+      "input_to_publish_ms" : 137.54370800000001,
+      "input_uptime" : 487185.71721433371,
+      "main_actor_max_timer_gap_ms" : 62.559750000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 85,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 194.34229199999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 154.94649999999999,
+      "input_to_publish_ms" : 137.76079200000001,
+      "input_uptime" : 487186.23679295805,
+      "main_actor_max_timer_gap_ms" : 62.369790999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 86,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 198.146917,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 158.38550000000001,
+      "input_to_publish_ms" : 141.486875,
+      "input_uptime" : 487186.75692649966,
+      "main_actor_max_timer_gap_ms" : 64.882499999999993,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 87,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 194.74004099999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 154.93625,
+      "input_to_publish_ms" : 137.82262499999999,
+      "input_uptime" : 487187.27723800036,
+      "main_actor_max_timer_gap_ms" : 63.145000000000003,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 88,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 194.19804199999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 156.81725,
+      "input_to_publish_ms" : 139.996917,
+      "input_uptime" : 487187.79666599969,
+      "main_actor_max_timer_gap_ms" : 62.311667,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 89,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 196.229084,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 157.395792,
+      "input_to_publish_ms" : 140.42458400000001,
+      "input_uptime" : 487188.31547837437,
+      "main_actor_max_timer_gap_ms" : 64.183374999999998,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 90,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 195.339125,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 158.29929200000001,
+      "input_to_publish_ms" : 141.04900000000001,
+      "input_uptime" : 487188.8376072917,
+      "main_actor_max_timer_gap_ms" : 62.732792000000003,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 91,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 194.120125,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 156.10229200000001,
+      "input_to_publish_ms" : 138.908084,
+      "input_uptime" : 487189.35858199932,
+      "main_actor_max_timer_gap_ms" : 62.645000000000003,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 92,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 195.564583,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 158.53941599999999,
+      "input_to_publish_ms" : 141.22008299999999,
+      "input_uptime" : 487189.87920995901,
+      "main_actor_max_timer_gap_ms" : 63.546624999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 93,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 194.754209,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 158.30366699999999,
+      "input_to_publish_ms" : 140.16341700000001,
+      "input_uptime" : 487190.39600354171,
+      "main_actor_max_timer_gap_ms" : 62.510708999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 94,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 196.121666,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 156.40529100000001,
+      "input_to_publish_ms" : 139.84075000000001,
+      "input_uptime" : 487190.91482308332,
+      "main_actor_max_timer_gap_ms" : 62.581459000000002,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 95,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 194.58045899999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 156.53020900000001,
+      "input_to_publish_ms" : 139.18533400000001,
+      "input_uptime" : 487191.43476112437,
+      "main_actor_max_timer_gap_ms" : 62.188417000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 96,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 194.603667,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 157.984375,
+      "input_to_publish_ms" : 140.60529199999999,
+      "input_uptime" : 487191.95509945805,
+      "main_actor_max_timer_gap_ms" : 62.762833999999998,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 97,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 193.12129200000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 153.418792,
+      "input_to_publish_ms" : 136.24283299999999,
+      "input_uptime" : 487192.471934292,
+      "main_actor_max_timer_gap_ms" : 61.507832999999998,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 98,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 194.90454199999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 157.23095900000001,
+      "input_to_publish_ms" : 140.331625,
+      "input_uptime" : 487192.98891941604,
+      "main_actor_max_timer_gap_ms" : 62.540292000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 99,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 142.74004199999999,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 136,
+      "input_to_publish_ms" : 122.91166699999999,
+      "input_uptime" : 487212.20862566633,
+      "main_actor_max_timer_gap_ms" : 15.677250000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 0,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 129.49354199999999,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 129.46520799999999,
+      "input_to_publish_ms" : 112.871667,
+      "input_uptime" : 487212.40575616667,
+      "main_actor_max_timer_gap_ms" : 11.743417000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 1,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 128.91725,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 128.887708,
+      "input_to_publish_ms" : 111.827167,
+      "input_uptime" : 487212.58509833337,
+      "main_actor_max_timer_gap_ms" : 11.556958,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 2,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 128.095125,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 128.06512499999999,
+      "input_to_publish_ms" : 110.992375,
+      "input_uptime" : 487212.7616404997,
+      "main_actor_max_timer_gap_ms" : 10.748333000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 3,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 129.19366600000001,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 129.16604100000001,
+      "input_to_publish_ms" : 110.300291,
+      "input_uptime" : 487212.93744920904,
+      "main_actor_max_timer_gap_ms" : 10.796749999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 4,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 129.20595900000001,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 129.17625000000001,
+      "input_to_publish_ms" : 112.583125,
+      "input_uptime" : 487213.11578179168,
+      "main_actor_max_timer_gap_ms" : 11.430292,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 5,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 129.58445800000001,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 129.55687499999999,
+      "input_to_publish_ms" : 112.377208,
+      "input_uptime" : 487213.29317004135,
+      "main_actor_max_timer_gap_ms" : 11.423667,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 6,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 130.419792,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 130.38495800000001,
+      "input_to_publish_ms" : 112.41529199999999,
+      "input_uptime" : 487213.46968979202,
+      "main_actor_max_timer_gap_ms" : 10.907125000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 7,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 132.900125,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 132.86458300000001,
+      "input_to_publish_ms" : 113.98175000000001,
+      "input_uptime" : 487213.650651209,
+      "main_actor_max_timer_gap_ms" : 12.137582999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 8,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 131.08920800000001,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 131.06295800000001,
+      "input_to_publish_ms" : 114.476708,
+      "input_uptime" : 487213.83860379172,
+      "main_actor_max_timer_gap_ms" : 13.07775,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 9,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 129.576166,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 123.546666,
+      "input_to_publish_ms" : 112.76600000000001,
+      "input_uptime" : 487214.017001334,
+      "main_actor_max_timer_gap_ms" : 11.430999999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 10,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 127.646833,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 127.62125,
+      "input_to_publish_ms" : 111.04825,
+      "input_uptime" : 487214.28164129134,
+      "main_actor_max_timer_gap_ms" : 11.237958000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 11,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 133.09704199999999,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 133.07079200000001,
+      "input_to_publish_ms" : 115.723375,
+      "input_uptime" : 487214.45660199935,
+      "main_actor_max_timer_gap_ms" : 12.497624999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 12,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 128.59241700000001,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 128.563625,
+      "input_to_publish_ms" : 110.882125,
+      "input_uptime" : 487214.63882450009,
+      "main_actor_max_timer_gap_ms" : 11.014208,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 13,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 127.18975,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 127.162541,
+      "input_to_publish_ms" : 110.709958,
+      "input_uptime" : 487214.8145785837,
+      "main_actor_max_timer_gap_ms" : 11.301,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 14,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 126.241417,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 126.213584,
+      "input_to_publish_ms" : 109.823459,
+      "input_uptime" : 487214.98907966603,
+      "main_actor_max_timer_gap_ms" : 10.741667,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 15,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 131.261833,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 131.23120800000001,
+      "input_to_publish_ms" : 113.900458,
+      "input_uptime" : 487215.16220095806,
+      "main_actor_max_timer_gap_ms" : 10.935874999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 16,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 128.63300000000001,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 128.60579200000001,
+      "input_to_publish_ms" : 111.039542,
+      "input_uptime" : 487215.34410799935,
+      "main_actor_max_timer_gap_ms" : 11.795707999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 17,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 130.197709,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 130.16583399999999,
+      "input_to_publish_ms" : 112.80166699999999,
+      "input_uptime" : 487215.52107112505,
+      "main_actor_max_timer_gap_ms" : 11.206042,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 18,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 129.45079200000001,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 129.42595800000001,
+      "input_to_publish_ms" : 112.96154199999999,
+      "input_uptime" : 487215.70033325005,
+      "main_actor_max_timer_gap_ms" : 11.575417,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 19,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 128.221416,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 128.19458299999999,
+      "input_to_publish_ms" : 110.6425,
+      "input_uptime" : 487215.87930695905,
+      "main_actor_max_timer_gap_ms" : 11.052042,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 20,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 128.14958300000001,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 121.710875,
+      "input_to_publish_ms" : 110.340791,
+      "input_uptime" : 487216.0600724587,
+      "main_actor_max_timer_gap_ms" : 12.003292,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 21,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 128.12908400000001,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 128.09700000000001,
+      "input_to_publish_ms" : 111.265625,
+      "input_uptime" : 487216.23611679103,
+      "main_actor_max_timer_gap_ms" : 11.071332999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 22,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 129.68866600000001,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 129.65508299999999,
+      "input_to_publish_ms" : 111.83220799999999,
+      "input_uptime" : 487216.4110466257,
+      "main_actor_max_timer_gap_ms" : 11.246458000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 23,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 130.28204099999999,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 130.24975000000001,
+      "input_to_publish_ms" : 112.134,
+      "input_uptime" : 487216.58979670901,
+      "main_actor_max_timer_gap_ms" : 11.245792,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 24,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 133.416875,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 133.389084,
+      "input_to_publish_ms" : 116.421542,
+      "input_uptime" : 487216.76803708303,
+      "main_actor_max_timer_gap_ms" : 12.496708,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 25,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 130.69841700000001,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 130.669375,
+      "input_to_publish_ms" : 113.67375,
+      "input_uptime" : 487216.94902704138,
+      "main_actor_max_timer_gap_ms" : 11.842499999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 26,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 130.30558300000001,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 130.280125,
+      "input_to_publish_ms" : 113.811708,
+      "input_uptime" : 487217.12791479204,
+      "main_actor_max_timer_gap_ms" : 11.022582999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 27,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 131.00745900000001,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 130.97562500000001,
+      "input_to_publish_ms" : 113.764167,
+      "input_uptime" : 487217.30590170837,
+      "main_actor_max_timer_gap_ms" : 11.378500000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 28,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 128.17275000000001,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 128.144375,
+      "input_to_publish_ms" : 111.568083,
+      "input_uptime" : 487217.48620283301,
+      "main_actor_max_timer_gap_ms" : 11.908084000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 29,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 129.28366700000001,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 129.253625,
+      "input_to_publish_ms" : 112.3075,
+      "input_uptime" : 487217.66087675031,
+      "main_actor_max_timer_gap_ms" : 11.519792000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 30,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 127.61450000000001,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 127.584417,
+      "input_to_publish_ms" : 110.194042,
+      "input_uptime" : 487217.83914791635,
+      "main_actor_max_timer_gap_ms" : 10.746207999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 31,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 128.73095799999999,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 128.7055,
+      "input_to_publish_ms" : 111.967833,
+      "input_uptime" : 487218.01441220904,
+      "main_actor_max_timer_gap_ms" : 11.059457999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 32,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 128.618167,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 128.590709,
+      "input_to_publish_ms" : 109.5945,
+      "input_uptime" : 487218.19063254172,
+      "main_actor_max_timer_gap_ms" : 11.744459000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 33,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 125.03387499999999,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 125.004417,
+      "input_to_publish_ms" : 107.79433299999999,
+      "input_uptime" : 487218.36885483301,
+      "main_actor_max_timer_gap_ms" : 11.111667000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 34,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 127.163625,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 127.13383399999999,
+      "input_to_publish_ms" : 109.770625,
+      "input_uptime" : 487218.54311504139,
+      "main_actor_max_timer_gap_ms" : 11.043417,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 35,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 129.44108299999999,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 129.41358299999999,
+      "input_to_publish_ms" : 112.513958,
+      "input_uptime" : 487218.71821441705,
+      "main_actor_max_timer_gap_ms" : 11.970583,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 36,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 131.44800000000001,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 125.079166,
+      "input_to_publish_ms" : 113.94191600000001,
+      "input_uptime" : 487218.896193875,
+      "main_actor_max_timer_gap_ms" : 11.483665999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 37,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 131.71479099999999,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 131.690541,
+      "input_to_publish_ms" : 114.79112499999999,
+      "input_uptime" : 487219.07807995903,
+      "main_actor_max_timer_gap_ms" : 11.733167,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 38,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 130.501667,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 130.47508400000001,
+      "input_to_publish_ms" : 113.004542,
+      "input_uptime" : 487219.25812158303,
+      "main_actor_max_timer_gap_ms" : 10.875707999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 39,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 132.370125,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 125.522375,
+      "input_to_publish_ms" : 113.846625,
+      "input_uptime" : 487219.43610754103,
+      "main_actor_max_timer_gap_ms" : 11.971125000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 40,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 131.38925,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 131.36208400000001,
+      "input_to_publish_ms" : 113.860125,
+      "input_uptime" : 487219.61990316602,
+      "main_actor_max_timer_gap_ms" : 11.263292,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 41,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 131.98112499999999,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 131.95287500000001,
+      "input_to_publish_ms" : 114.590417,
+      "input_uptime" : 487219.79998920835,
+      "main_actor_max_timer_gap_ms" : 12.28575,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 42,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 131.751125,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 131.725458,
+      "input_to_publish_ms" : 114.639708,
+      "input_uptime" : 487219.9813480007,
+      "main_actor_max_timer_gap_ms" : 11.1335,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 43,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 128.45750000000001,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 128.42558299999999,
+      "input_to_publish_ms" : 110.90425,
+      "input_uptime" : 487220.15953408333,
+      "main_actor_max_timer_gap_ms" : 11.042334,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 44,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 131.245,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 124.797917,
+      "input_to_publish_ms" : 113.58875,
+      "input_uptime" : 487220.33534866635,
+      "main_actor_max_timer_gap_ms" : 10.704083000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 45,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 131.15533300000001,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 131.1285,
+      "input_to_publish_ms" : 113.666708,
+      "input_uptime" : 487220.51318754203,
+      "main_actor_max_timer_gap_ms" : 11.097875,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 46,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 133.186792,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 126.93154199999999,
+      "input_to_publish_ms" : 115.77158300000001,
+      "input_uptime" : 487220.692969708,
+      "main_actor_max_timer_gap_ms" : 12.083834,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 47,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 129.73804100000001,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 129.71041600000001,
+      "input_to_publish_ms" : 113.061583,
+      "input_uptime" : 487220.87400900072,
+      "main_actor_max_timer_gap_ms" : 11.499458000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 48,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 131.62704099999999,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 131.59887499999999,
+      "input_to_publish_ms" : 114.216791,
+      "input_uptime" : 487221.0517825007,
+      "main_actor_max_timer_gap_ms" : 11.698,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 49,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 127.242417,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 127.211792,
+      "input_to_publish_ms" : 109.682334,
+      "input_uptime" : 487221.23080949968,
+      "main_actor_max_timer_gap_ms" : 10.980584,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 50,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 127.041833,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 127.014583,
+      "input_to_publish_ms" : 110.488375,
+      "input_uptime" : 487221.40848741669,
+      "main_actor_max_timer_gap_ms" : 11.261832999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 51,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 127.565834,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 127.537792,
+      "input_to_publish_ms" : 110.294084,
+      "input_uptime" : 487221.5833679997,
+      "main_actor_max_timer_gap_ms" : 11.173458,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 52,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 129.31783300000001,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 129.28758300000001,
+      "input_to_publish_ms" : 112.226416,
+      "input_uptime" : 487221.75913262536,
+      "main_actor_max_timer_gap_ms" : 11.00225,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 53,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 130.66437500000001,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 130.636292,
+      "input_to_publish_ms" : 111.19220799999999,
+      "input_uptime" : 487221.93511866702,
+      "main_actor_max_timer_gap_ms" : 11.958334000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 54,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 127.49012500000001,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 127.459667,
+      "input_to_publish_ms" : 110.3695,
+      "input_uptime" : 487222.11395800003,
+      "main_actor_max_timer_gap_ms" : 11.126666,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 55,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 125.681625,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 125.65425,
+      "input_to_publish_ms" : 108.80779099999999,
+      "input_uptime" : 487222.29136462533,
+      "main_actor_max_timer_gap_ms" : 10.769417000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 56,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 129.84941699999999,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 123.72499999999999,
+      "input_to_publish_ms" : 112.830958,
+      "input_uptime" : 487222.46454029134,
+      "main_actor_max_timer_gap_ms" : 11.153083000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 57,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 128.59716599999999,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 128.56120799999999,
+      "input_to_publish_ms" : 111.57237499999999,
+      "input_uptime" : 487222.64277445903,
+      "main_actor_max_timer_gap_ms" : 11.108124999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 58,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 132.77166600000001,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 132.74350000000001,
+      "input_to_publish_ms" : 115.19366599999999,
+      "input_uptime" : 487222.82138962502,
+      "main_actor_max_timer_gap_ms" : 12.310834,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 59,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 129.85862499999999,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 129.83195799999999,
+      "input_to_publish_ms" : 113.168916,
+      "input_uptime" : 487223.002783584,
+      "main_actor_max_timer_gap_ms" : 10.933332999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 60,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 129.339958,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 129.31379100000001,
+      "input_to_publish_ms" : 112.677125,
+      "input_uptime" : 487223.18261070835,
+      "main_actor_max_timer_gap_ms" : 11.322042,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 61,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 130.363958,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 130.33504099999999,
+      "input_to_publish_ms" : 113.175416,
+      "input_uptime" : 487223.35913375037,
+      "main_actor_max_timer_gap_ms" : 10.755625,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 62,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 131.51566600000001,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 131.48654099999999,
+      "input_to_publish_ms" : 114.310125,
+      "input_uptime" : 487223.53638945834,
+      "main_actor_max_timer_gap_ms" : 11.435917,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 63,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 128.942125,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 128.91437500000001,
+      "input_to_publish_ms" : 111.81183299999999,
+      "input_uptime" : 487223.71615945804,
+      "main_actor_max_timer_gap_ms" : 11.271667000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 64,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 129.84308300000001,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 129.81420800000001,
+      "input_to_publish_ms" : 112.17925,
+      "input_uptime" : 487223.89259916637,
+      "main_actor_max_timer_gap_ms" : 10.592458000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 65,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 128.54866699999999,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 128.52074999999999,
+      "input_to_publish_ms" : 111.46625,
+      "input_uptime" : 487224.07006333303,
+      "main_actor_max_timer_gap_ms" : 10.976583,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 66,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 128.46858399999999,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 128.44220899999999,
+      "input_to_publish_ms" : 110.953667,
+      "input_uptime" : 487224.24736924941,
+      "main_actor_max_timer_gap_ms" : 11.109667,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 67,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 125.52500000000001,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 125.496708,
+      "input_to_publish_ms" : 108.7865,
+      "input_uptime" : 487224.42380745802,
+      "main_actor_max_timer_gap_ms" : 11.363666,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 68,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 126.453667,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 126.426958,
+      "input_to_publish_ms" : 110.00841699999999,
+      "input_uptime" : 487224.59833554202,
+      "main_actor_max_timer_gap_ms" : 10.998250000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 69,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 129.358417,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 129.32958400000001,
+      "input_to_publish_ms" : 111.567125,
+      "input_uptime" : 487224.77085937466,
+      "main_actor_max_timer_gap_ms" : 10.858667000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 70,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 129.92254199999999,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 129.89545899999999,
+      "input_to_publish_ms" : 112.913459,
+      "input_uptime" : 487225.03381054103,
+      "main_actor_max_timer_gap_ms" : 10.979291,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 71,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 127.926458,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 127.898083,
+      "input_to_publish_ms" : 111.027208,
+      "input_uptime" : 487225.21229270869,
+      "main_actor_max_timer_gap_ms" : 11.034291,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 72,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 128.07733300000001,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 121.67225000000001,
+      "input_to_publish_ms" : 110.31325,
+      "input_uptime" : 487225.38706845808,
+      "main_actor_max_timer_gap_ms" : 10.915084,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 73,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 127.788625,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 127.76083300000001,
+      "input_to_publish_ms" : 110.293791,
+      "input_uptime" : 487225.5629130837,
+      "main_actor_max_timer_gap_ms" : 11.177208,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 74,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 129.038625,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 122.723,
+      "input_to_publish_ms" : 111.211083,
+      "input_uptime" : 487225.73863708333,
+      "main_actor_max_timer_gap_ms" : 10.804665999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 75,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 130.82441600000001,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 130.795333,
+      "input_to_publish_ms" : 113.563625,
+      "input_uptime" : 487225.91493966669,
+      "main_actor_max_timer_gap_ms" : 10.891292,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 76,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 129.34866600000001,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 129.321958,
+      "input_to_publish_ms" : 112.454083,
+      "input_uptime" : 487226.09339395835,
+      "main_actor_max_timer_gap_ms" : 11.005875,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 77,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 128.65941699999999,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 128.63124999999999,
+      "input_to_publish_ms" : 111.9115,
+      "input_uptime" : 487226.26972566702,
+      "main_actor_max_timer_gap_ms" : 10.873834,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 78,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 130.047833,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 130.02129199999999,
+      "input_to_publish_ms" : 112.214583,
+      "input_uptime" : 487226.44694733369,
+      "main_actor_max_timer_gap_ms" : 11.313084,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 79,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 128.01925,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 127.987292,
+      "input_to_publish_ms" : 110.274209,
+      "input_uptime" : 487226.62574312504,
+      "main_actor_max_timer_gap_ms" : 11.201083000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 80,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 127.96754199999999,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 127.931,
+      "input_to_publish_ms" : 110.863292,
+      "input_uptime" : 487226.80426379165,
+      "main_actor_max_timer_gap_ms" : 10.830458,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 81,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 130.156375,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 130.13041699999999,
+      "input_to_publish_ms" : 112.965084,
+      "input_uptime" : 487226.98216912436,
+      "main_actor_max_timer_gap_ms" : 11.34525,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 82,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 130.26654199999999,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 130.227125,
+      "input_to_publish_ms" : 112.002167,
+      "input_uptime" : 487227.16051999968,
+      "main_actor_max_timer_gap_ms" : 11.029707999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 83,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 128.66370800000001,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 128.637125,
+      "input_to_publish_ms" : 111.207167,
+      "input_uptime" : 487227.34425154136,
+      "main_actor_max_timer_gap_ms" : 11.399958,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 84,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 129.13399999999999,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 129.10416699999999,
+      "input_to_publish_ms" : 112.13737500000001,
+      "input_uptime" : 487227.52071337472,
+      "main_actor_max_timer_gap_ms" : 10.769458,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 85,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 127.62237500000001,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 127.597708,
+      "input_to_publish_ms" : 110.963875,
+      "input_uptime" : 487227.69724079204,
+      "main_actor_max_timer_gap_ms" : 11.065916,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 86,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 125.70454100000001,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 125.67616599999999,
+      "input_to_publish_ms" : 109.442583,
+      "input_uptime" : 487227.87241454236,
+      "main_actor_max_timer_gap_ms" : 10.886165999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 87,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 130.880292,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 130.85433399999999,
+      "input_to_publish_ms" : 113.56950000000001,
+      "input_uptime" : 487228.04509612505,
+      "main_actor_max_timer_gap_ms" : 13.73075,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 88,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 132.24116699999999,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 125.756542,
+      "input_to_publish_ms" : 114.222334,
+      "input_uptime" : 487228.22466649936,
+      "main_actor_max_timer_gap_ms" : 11.247667,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 89,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 128.8075,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 128.782792,
+      "input_to_publish_ms" : 111.792,
+      "input_uptime" : 487228.40473079105,
+      "main_actor_max_timer_gap_ms" : 10.81775,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 90,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 131.93600000000001,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 131.90662499999999,
+      "input_to_publish_ms" : 114.751666,
+      "input_uptime" : 487228.58438045904,
+      "main_actor_max_timer_gap_ms" : 11.268959000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 91,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 132.78941699999999,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 126.471709,
+      "input_to_publish_ms" : 115.04412499999999,
+      "input_uptime" : 487228.76392954134,
+      "main_actor_max_timer_gap_ms" : 11.046165999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 92,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 129.76020800000001,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 122.940333,
+      "input_to_publish_ms" : 111.282708,
+      "input_uptime" : 487228.94527304138,
+      "main_actor_max_timer_gap_ms" : 11.118499999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 93,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 132.07745800000001,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 132.05183299999999,
+      "input_to_publish_ms" : 115.08916600000001,
+      "input_uptime" : 487229.12335933332,
+      "main_actor_max_timer_gap_ms" : 11.131083,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 94,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 128.46970899999999,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 128.44387499999999,
+      "input_to_publish_ms" : 111.753834,
+      "input_uptime" : 487229.30287324969,
+      "main_actor_max_timer_gap_ms" : 11.239292000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 95,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 133.67179200000001,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 133.64150000000001,
+      "input_to_publish_ms" : 116.127334,
+      "input_uptime" : 487229.47923912469,
+      "main_actor_max_timer_gap_ms" : 11.593792000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 96,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 128.572959,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 128.54537500000001,
+      "input_to_publish_ms" : 111.55716700000001,
+      "input_uptime" : 487229.66114824935,
+      "main_actor_max_timer_gap_ms" : 11.739875,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 97,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 130.66987499999999,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 130.64054100000001,
+      "input_to_publish_ms" : 113.52333299999999,
+      "input_uptime" : 487229.83695287537,
+      "main_actor_max_timer_gap_ms" : 11.507458,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 98,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 130.01474999999999,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 129.98737499999999,
+      "input_to_publish_ms" : 112.72241699999999,
+      "input_uptime" : 487230.01719012507,
+      "main_actor_max_timer_gap_ms" : 11.146458000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 99,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    }
+  ],
+  "scenario_scope" : "hot-new-semantic",
+  "scope" : "Actual AskComposer, native NSTextView commit, production mixed\/f sessions and service, real model and permission helper. Drawing forces layout\/display and checks rendered accessibility; it is not a GPU presentation fence.",
+  "warm_samples_per_scenario" : 100
+}

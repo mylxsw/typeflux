@@ -138,8 +138,9 @@ struct SemanticNativeContentionTests {
                                          atomically: true, encoding: .utf8)
                 }
                 data.service.pause(false)
-                data.service
-                    .start(force: true) // The fixture watcher is intentionally inert; schedule its real new files.
+                // Startup now reuses completed discovery. The inert fixture watcher requires
+                // an explicit rescan for files created after startup, outside timed input samples.
+                data.service.rescanAll()
                 stage = "index-start-\(fileMode)"
                 try await wait { data.service.phase == .indexing && observer.completed > 0 }
                 data.service.prepareForSearch()

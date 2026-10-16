@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/usr/bin/swift",
+    "test",
+    "--configuration",
+    "release",
+    "--jobs",
+    "2",
+    "list"
+  ],
+  "wall_seconds": 448.1645365409786,
+  "exit_code": 0,
+  "scope": "Rebuild current Release tools and discover only. No product test execution or baseline rebuild."
+}

@@ -115,8 +115,13 @@ struct SemanticResourceBudgetTests {
         try FileManager.default.createDirectory(at: assets, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
         try await templates(assets)
+        let selectedCondition = env["TYPEFLUX_RESOURCE_CONDITION"]
+        try #require(selectedCondition == nil || selectedCondition == "on" || selectedCondition == "off")
+        let conditions = [false, true].filter {
+            selectedCondition == nil || selectedCondition == ($0 ? "on" : "off")
+        }
         var report: [[String: Any]] = []
-        for enabled in [false, true] {
+        for enabled in conditions {
             let condition = enabled ? "index-on" : "index-off"
             let corpus = root.appendingPathComponent(condition),
                 state = root.appendingPathComponent(condition + "-state")

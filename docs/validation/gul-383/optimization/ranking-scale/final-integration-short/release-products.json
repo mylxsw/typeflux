@@ -1,0 +1,42 @@
+{
+  ".build/out/Products/Release/Typeflux": {
+    "bytes": 142689240,
+    "sha256": "ef81c0cff2d66c65c3125e1dd8193c7588908b1267e55859c190834fc20c0782"
+  },
+  ".build/out/Products/Release/TypefluxAudioSafety.o": {
+    "bytes": 10320,
+    "sha256": "713a81bef1aecdb497fb1c468ac6aed07f9f09a107a1c0470b9aa805b8a5ca28"
+  },
+  ".build/out/Products/Release/TypefluxMediaProtocol.o": {
+    "bytes": 1141464,
+    "sha256": "0963f39f751c3dd1c73bede5d7797524ed1460fd813d0ae86987f328713e17ac"
+  },
+  ".build/out/Products/Release/Typeflux.o": {
+    "bytes": 141499192,
+    "sha256": "b1741529d193078bcccf7696dd5b53c8be841acf9f6d53c3a45d3c83d6e45cdf"
+  },
+  ".build/out/Products/Release/TypefluxInferenceProtocol.o": {
+    "bytes": 136304,
+    "sha256": "15f8f6260f663a3ce9b6910eddc87363a8f5db6a793ffa15610eca4f14bb0e26"
+  },
+  ".build/out/Products/Release/TypefluxInferenceRuntime.o": {
+    "bytes": 70256,
+    "sha256": "1206b2c03ddb9dfe133562c4d971011a0626a528bbfecc7f7907bb674103efb8"
+  },
+  ".build/out/Products/Release/TypefluxMediaRuntime.o": {
+    "bytes": 720728,
+    "sha256": "ac35f0ba5af349bf3faa50f5d7fa8f238c3a424307aa08d0162d7270a6f4d7d6"
+  },
+  ".build/out/Products/Release/TypefluxInferenceHelper": {
+    "bytes": 5869640,
+    "sha256": "6a57566a0d1bcb5303e0d2fd9aa6fbf01d82ca16975177fcd3fbe02a0a0a2930"
+  },
+  ".build/out/Products/Release/TypefluxChat.o": {
+    "bytes": 1503328,
+    "sha256": "773b45c09c996f0a96381ffcb48b7063710fc943b4a1abb83b807320f996ffd4"
+  },
+  ".build/out/Products/Release/TypefluxMediaHelper": {
+    "bytes": 1494464,
+    "sha256": "b9167a06c706d12933ffc311107c722df8c93f6f75955e8305877ba58a9ee17e"
+  }
+}
