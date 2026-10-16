@@ -71,26 +71,26 @@ struct AskContentPreviewTests {
         writer.closePDF()
         let pixels = CGSize(width: 500, height: 600)
         let matched = try AskFilePreviewPDF.render(url, pixels: pixels,
-            evidence: .init(text: "Project reimbursement policy", page: 4), cancellation: AskSearchCancellation())
+            evidence: .init(text: "Project reimbursement policy", page: 4), cancellation: AskSearchCancellation(), worker: MediaWorker(timeout: 3))
         let plain = try AskFilePreviewPDF.render(url, pixels: pixels,
-            evidence: .init(text: "", page: 4), cancellation: AskSearchCancellation())
+            evidence: .init(text: "", page: 4), cancellation: AskSearchCancellation(), worker: MediaWorker(timeout: 3))
         #expect(matched.numbers == [4] && matched.pages == 6 && matched.images.count == 1)
         let highlightedData = try #require(matched.images[0].dataProvider?.data) as Data
         let plainData = try #require(plain.images[0].dataProvider?.data) as Data
         #expect(highlightedData != plainData)
         #expect(try AskFilePreviewPDF.render(url, pixels: pixels, evidence: nil,
-            cancellation: AskSearchCancellation()).numbers == [1, 2, 3])
+            cancellation: AskSearchCancellation(), worker: MediaWorker(timeout: 3)).numbers == [1, 2, 3])
         #expect(try AskFilePreviewPDF.render(url, pixels: pixels, evidence: .init(text: "absent", page: 99),
-            cancellation: AskSearchCancellation()).numbers == [1, 2, 3])
+            cancellation: AskSearchCancellation(), worker: MediaWorker(timeout: 3)).numbers == [1, 2, 3])
         #expect(throws: (any Error).self) {
-            try AskFilePreviewPDF.render(url, pixels: .zero, evidence: nil, cancellation: AskSearchCancellation())
+            try AskFilePreviewPDF.render(url, pixels: .zero, evidence: nil, cancellation: AskSearchCancellation(), worker: MediaWorker(timeout: 3))
         }
         let cancelled = AskSearchCancellation(); cancelled.cancel()
         #expect(throws: (any Error).self) {
-            try AskFilePreviewPDF.render(url, pixels: pixels, evidence: nil, cancellation: cancelled)
+            try AskFilePreviewPDF.render(url, pixels: pixels, evidence: nil, cancellation: cancelled, worker: MediaWorker(timeout: 3))
         }
         #expect(throws: (any Error).self) {
-            try AskFilePreviewPDF.render(root, pixels: pixels, evidence: nil, cancellation: AskSearchCancellation())
+            try AskFilePreviewPDF.render(root, pixels: pixels, evidence: nil, cancellation: AskSearchCancellation(), worker: MediaWorker(timeout: 3))
         }
         let language = AppLocalization.shared.language
         AppLocalization.shared.setLanguage(.simplifiedChinese)
@@ -125,14 +125,14 @@ struct AskContentPreviewTests {
         var hit = previewHit("recording.wav"); hit.path = audio.path
         hit.evidence = .init(text: "", page: nil, time: 30)
         let content = try await AskFilePreviewRenderer.generate(hit, kind: .audio,
-            pixels: CGSize(width: 300, height: 200), info: .init())
+            pixels: CGSize(width: 300, height: 200), info: .init(), worker: MediaWorker(timeout: 3))
         #expect(content.startTime == 30 && content.duration == 31)
         #expect(content.waveform.contains { $0 > 0 })
         let movie = root.appendingPathComponent("clip.mov")
         try await semanticTestMovie(movie)
         hit.path = movie.path; hit.evidence?.time = 1
         let frame = try await AskFilePreviewRenderer.generate(hit, kind: .video,
-            pixels: CGSize(width: 300, height: 200), info: .init())
+            pixels: CGSize(width: 300, height: 200), info: .init(), worker: MediaWorker(timeout: 3))
         #expect(frame.startTime == 1 && frame.images.count == 1)
     }
 

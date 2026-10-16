@@ -338,6 +338,6 @@ struct AskPluginListViewTests {
         let data = try #require(NSBitmapImageRep(data: tiff)?.representation(using: .png, properties: [:]))
         try data.write(to: png)
         #expect(AskPluginItemIcon.image(.image(png)) == nil, "Synchronous getters never decode originals")
-        #expect(try await AskSmallIconDecoder.decode(.file(png)).width == 4)
+        #expect(try await AskSmallIconDecoder.decode(.file(png), worker: MediaWorker(timeout: 3)).width == 4)
     }
 }

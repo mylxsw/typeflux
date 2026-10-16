@@ -38,7 +38,7 @@ final class AskFilePreviewLoader: AskFilePreviewLoading {
     private var pressure: DispatchSourceMemoryPressure?
 
     init(metadata: @escaping Metadata = AskFilePreviewRenderer.metadata,
-         generate: @escaping Generate = AskFilePreviewRenderer.generate,
+         generate: @escaping Generate = { try await AskFilePreviewRenderer.generate($0, kind: $1, pixels: $2, info: $3) },
          clock: any AskFilePreviewClock = AskFilePreviewSystemClock(), timeout: TimeInterval = 3,
          countLimit: Int = 32, costLimit: Int = 64 * 1024 * 1024) {
         self.metadata = metadata; self.generate = generate; self.clock = clock; self.timeout = timeout

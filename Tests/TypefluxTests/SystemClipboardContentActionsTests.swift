@@ -14,7 +14,7 @@ final class SystemClipboardContentActionsTests: XCTestCase {
         directory = ClipboardTestSupport.temporaryDirectory("SystemClipboardContentActionsTests")
         downloads = directory.appendingPathComponent("Downloads", isDirectory: true)
         try? FileManager.default.createDirectory(at: downloads, withIntermediateDirectories: true)
-        actions = SystemClipboardContentActions(pasteboard: pasteboard, downloadsDirectory: downloads)
+        actions = SystemClipboardContentActions(pasteboard: pasteboard, downloadsDirectory: downloads, imageWorker: MediaWorker(timeout: 3))
     }
 
     override func tearDown() {

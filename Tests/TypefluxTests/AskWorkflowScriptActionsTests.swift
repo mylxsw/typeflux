@@ -263,24 +263,24 @@ struct AskWorkflowImageTests {
             "out/qr.png\nignored",
             folder: folder,
             cache: cache,
-            home: "/nowhere"
-        ).get()
+            home: "/nowhere",
+          worker: MediaWorker(timeout: 3)).get()
         #expect(relative.url.lastPathComponent == "qr.png" && relative.width == 40 && relative.height == 20)
         let absolute = try await AskWorkflowImage.resolve(folder.path + "/out/qr.png", folder: URL(fileURLWithPath: "/"),
-                                                    cache: cache, home: "/nowhere").get()
+                                                    cache: cache, home: "/nowhere", worker: MediaWorker(timeout: 3)).get()
         #expect(absolute.url.path.hasSuffix("out/qr.png"))
-        #expect((try? await AskWorkflowImage.resolve("~/out/qr.png", folder: cache, cache: cache, home: folder.path).get()) !=
+        #expect((try? await AskWorkflowImage.resolve("~/out/qr.png", folder: cache, cache: cache, home: folder.path, worker: MediaWorker(timeout: 3)).get()) !=
             nil)
         #expect((try? await AskWorkflowImage.resolve(URL(fileURLWithPath: folder.path + "/out/qr.png").absoluteString,
-                                               folder: cache, cache: cache, home: "/").get()) != nil)
-        #expect(await AskWorkflowImage.resolve("missing.png", folder: folder, cache: cache, home: "/")
+                                               folder: cache, cache: cache, home: "/", worker: MediaWorker(timeout: 3)).get()) != nil)
+        #expect(await AskWorkflowImage.resolve("missing.png", folder: folder, cache: cache, home: "/", worker: MediaWorker(timeout: 3))
             == .failure(.notFound("missing.png")))
-        #expect(await AskWorkflowImage.resolve("", folder: folder, cache: cache, home: "/") == .failure(.notFound("")))
-        #expect(await AskWorkflowImage.resolve("../escape.png", folder: folder, cache: cache, home: "/")
+        #expect(await AskWorkflowImage.resolve("", folder: folder, cache: cache, home: "/", worker: MediaWorker(timeout: 3)) == .failure(.notFound("")))
+        #expect(await AskWorkflowImage.resolve("../escape.png", folder: folder, cache: cache, home: "/", worker: MediaWorker(timeout: 3))
             == .failure(.notFound("../escape.png")), "relative paths stay in the folder")
         try Data("not an image".utf8).write(to: folder.appendingPathComponent("out/fake.png"))
         #expect(await AskWorkflowImage
-            .resolve("out/fake.png", folder: folder, cache: cache, home: "/") == .failure(.notImage))
+            .resolve("out/fake.png", folder: folder, cache: cache, home: "/", worker: MediaWorker(timeout: 3)) == .failure(.notImage))
     }
 
     @Test func `data UR ls are saved once to the cache`() async throws {
@@ -288,16 +288,16 @@ struct AskWorkflowImageTests {
         defer { try? FileManager.default.removeItem(at: folder) }
         let cache = folder.appendingPathComponent("cache")
         let url = try "data:image/png;base64," + askWorkflowTestPNG(width: 8, height: 6).base64EncodedString()
-        let first = try await AskWorkflowImage.resolve(url, folder: folder, cache: cache, home: "/").get()
+        let first = try await AskWorkflowImage.resolve(url, folder: folder, cache: cache, home: "/", worker: MediaWorker(timeout: 3)).get()
         #expect(first.url.deletingLastPathComponent().lastPathComponent == "images")
         #expect(first.url.pathExtension == "png" && first.width == 8 && first.height == 6)
-        let second = try await AskWorkflowImage.resolve("  " + url + "\n", folder: folder, cache: cache, home: "/").get()
+        let second = try await AskWorkflowImage.resolve("  " + url + "\n", folder: folder, cache: cache, home: "/", worker: MediaWorker(timeout: 3)).get()
         #expect(second == first)
         #expect(try FileManager.default.contentsOfDirectory(atPath: first.url.deletingLastPathComponent().path)
             .count == 1)
-        #expect(await AskWorkflowImage.resolve("data:text/plain;base64,aGk=", folder: folder, cache: cache, home: "/")
+        #expect(await AskWorkflowImage.resolve("data:text/plain;base64,aGk=", folder: folder, cache: cache, home: "/", worker: MediaWorker(timeout: 3))
             == .failure(.notImage))
-        #expect(await AskWorkflowImage.resolve("data:image/png;base64,aGk=", folder: folder, cache: cache, home: "/")
+        #expect(await AskWorkflowImage.resolve("data:image/png;base64,aGk=", folder: folder, cache: cache, home: "/", worker: MediaWorker(timeout: 3))
             == .failure(.notImage), "base64 that is no image")
         #expect(AskWorkflowImage.dataURL("data:image/png,raw") == nil && AskWorkflowImage
             .dataURL("data:image/png") == nil)
@@ -335,14 +335,14 @@ struct AskWorkflowImageTests {
         try askWorkflowTestPNG().write(to: file)
         let pasteboard = NSPasteboard(name: NSPasteboard.Name("wf-image-\(UUID().uuidString)"))
         defer { pasteboard.releaseGlobally() }
-        let clipboard = try await AskWorkflowImage.clipboard(file)
+        let clipboard = try await AskWorkflowImage.clipboard(file, worker: MediaWorker(timeout: 3))
         #expect(AskQuickResults.copyImage(file, data: clipboard, to: pasteboard))
         #expect(pasteboard.pasteboardItems?.count == 1)
         #expect(pasteboard.data(forType: .png) != nil && pasteboard.data(forType: .tiff) != nil)
         #expect(pasteboard.string(forType: .fileURL) == file.absoluteString)
-        let image = try await AskWorkflowImage.resolve(file.path, folder: folder, cache: folder.appendingPathComponent("cache"), home: "/").get()
-        #expect(try await AskWorkflowImage.render(image).images.count == 1)
-        do { _ = try await AskWorkflowImage.clipboard(folder.appendingPathComponent("none.png")); Issue.record("Missing file accepted") }
+        let image = try await AskWorkflowImage.resolve(file.path, folder: folder, cache: folder.appendingPathComponent("cache"), home: "/", worker: MediaWorker(timeout: 3)).get()
+        #expect(try await AskWorkflowImage.render(image, worker: MediaWorker(timeout: 3)).images.count == 1)
+        do { _ = try await AskWorkflowImage.clipboard(folder.appendingPathComponent("none.png"), worker: MediaWorker(timeout: 3)); Issue.record("Missing file accepted") }
         catch {}
 
     }

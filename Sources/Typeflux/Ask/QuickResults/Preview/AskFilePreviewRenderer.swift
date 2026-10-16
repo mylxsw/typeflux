@@ -32,7 +32,7 @@ enum AskFilePreviewRenderer {
     }
 
     static func generate(_ hit: AskFileHit, kind: AskFilePreviewKind, pixels: CGSize,
-                         info: AskFileReadResponse) async throws -> AskFilePreviewContent {
+                         info: AskFileReadResponse, worker: MediaWorker = .previews) async throws -> AskFilePreviewContent {
         if kind.readsText {
             guard let text = info.text else { throw AskFileReadError.unavailable }
             return AskFilePreviewContent(kind: kind, text: text, truncated: info.truncated == true)
@@ -44,7 +44,7 @@ enum AskFilePreviewRenderer {
             let rendered = try await withTaskCancellationHandler {
                 try await Task.detached(priority: .utility) { try MediaPreviewDisplay.render(
                     hit.url, pixels: pixels, pdf: kind == .pdf,
-                    evidence: hit.evidence, cancellation: cancellation
+                    evidence: hit.evidence, cancellation: cancellation, worker: worker
                 ) }.value
             } onCancel: { cancellation.cancel() }
             try Task.checkCancellation()
@@ -52,20 +52,20 @@ enum AskFilePreviewRenderer {
                                          pageCount: rendered.pages, pageNumbers: rendered.numbers)
         }
         if kind == .video || kind == .audio {
-            return try await media(hit.url, kind: kind, pixels: pixels, start: hit.evidence?.time ?? 0)
+            return try await media(hit.url, kind: kind, pixels: pixels, start: hit.evidence?.time ?? 0, worker: worker)
         }
-        let rendered = try await AskQuickLookThumbnail.decode(hit.url, pixels: pixels)
+        let rendered = try await AskQuickLookThumbnail.decode(hit.url, pixels: pixels, worker: worker)
         try Task.checkCancellation()
         return AskFilePreviewContent(kind: kind, images: rendered.images.map { NSImage(cgImage: $0, size: .zero) })
     }
 
     private static func media(_ url: URL, kind: AskFilePreviewKind,
-                              pixels: CGSize, start: TimeInterval) async throws -> AskFilePreviewContent {
+                              pixels: CGSize, start: TimeInterval, worker: MediaWorker) async throws -> AskFilePreviewContent {
         let cancellation = AskSearchCancellation()
         let rendered = try await withTaskCancellationHandler {
             try await Task.detached(priority: .utility) {
                 try MediaPreviewDisplay.renderAV(url, pixels: pixels, video: kind == .video,
-                                                 start: start, cancellation: cancellation)
+                                                 start: start, cancellation: cancellation, worker: worker)
             }.value
         } onCancel: { cancellation.cancel() }
         try Task.checkCancellation()

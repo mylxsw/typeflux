@@ -50,7 +50,18 @@ extension EnvironmentValues {
     }
 }
 
+private struct AskSmallIconDecoderKey: EnvironmentKey {
+    static let defaultValue: @Sendable (URL) async throws -> CGImage = { try await AskSmallIconDecoder.decode(.file($0)) }
+}
+extension EnvironmentValues {
+    var askSmallIconDecoder: @Sendable (URL) async throws -> CGImage {
+        get { self[AskSmallIconDecoderKey.self] }
+        set { self[AskSmallIconDecoderKey.self] = newValue }
+    }
+}
+
 struct AskSmallFileIcon: View {
+    @Environment(\.askSmallIconDecoder) private var decode
     let url: URL
     let symbol: String
     var filled = false
@@ -58,7 +69,7 @@ struct AskSmallFileIcon: View {
     @Environment(\.askIconGeneration) private var generation
     var body: some View {
         AskContextImage(source: url.absoluteString, model: AskContextImageModel(maximumEdge: 56, decode: { _ in
-            let image = try await AskSmallIconDecoder.decode(.file(url))
+            let image = try await decode(url)
             return .init(images: [image], numbers: [], pages: 0)
         })) { image in
             if let image { Image(nsImage: image).resizable().scaledToFit() }

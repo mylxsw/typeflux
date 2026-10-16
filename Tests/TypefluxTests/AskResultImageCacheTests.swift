@@ -31,7 +31,7 @@ struct AskResultImageCacheTests {
     @Test(arguments: [CGFloat(1), 2])
     func finderIconsRasterizeOnlyTheDisplaySize(scale: CGFloat) async throws {
         let url = URL(fileURLWithPath: "/System/Applications/Calculator.app")
-        let image = try #require(await AskFinderIcon.image(for: url, scale: scale))
+        let image = try #require(await AskFinderIcon.image(for: url, scale: scale, worker: MediaWorker(timeout: 3)))
         #expect(image.size == NSSize(width: 28, height: 28))
         #expect(image.representations.count == 1)
         #expect(image.representations.first?.pixelsWide == Int(28 * scale))
@@ -44,7 +44,7 @@ struct AskResultImageCacheTests {
         defer { try? FileManager.default.removeItem(at: url) }
         let cache = AskResultImageCache()
         #expect(await cache.image(.init(url: url, thumbnail: false, scale: 2)) == nil, "Native icons are owned by scoped views, not this cache")
-        let image = try #require(await AskFinderIcon.image(for: url, scale: 2))
+        let image = try #require(await AskFinderIcon.image(for: url, scale: 2, worker: MediaWorker(timeout: 3)))
         #expect(image.representations.first?.pixelsWide == 56)
         #expect(image.size == NSSize(width: 28, height: 28))
     }
@@ -133,7 +133,7 @@ struct AskResultImageCacheTests {
     @Test func aCancelledApplicationIconLoadDoesNotPublishAnImage() async {
         let task = Task {
             withUnsafeCurrentTask { $0?.cancel() }
-            return await AskFinderIcon.image(for: URL(fileURLWithPath: "/missing.app"))
+            return await AskFinderIcon.image(for: URL(fileURLWithPath: "/missing.app"), worker: MediaWorker(timeout: 3))
         }
         #expect(await task.value == nil)
     }

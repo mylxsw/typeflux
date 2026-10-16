@@ -5705,3 +5705,5 @@
 "recording.encodingUnconfirmed" = "无法确认录屏导出结果。原录屏和已生成的文件均已保留，未自动重试。";
 
 "settings.services.mediaExtraction" = "附件媒体提取";
+
+"settings.services.mediaPreviews" = "媒体预览";

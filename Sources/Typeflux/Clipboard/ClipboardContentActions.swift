@@ -6,18 +6,26 @@ final class SystemClipboardContentActions: ClipboardContentActing {
     private let pasteboard: NSPasteboard
     private let fileManager: FileManager
     private let downloadsDirectory: URL?
+    private let imageWorker: MediaWorker
     private let textRecognizer: (any ImageTextRecognizing)?
 
     init(
         pasteboard: NSPasteboard = .general,
         fileManager: FileManager = .default,
         downloadsDirectory: URL? = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first,
-        textRecognizer: (any ImageTextRecognizing)? = nil
+        textRecognizer: (any ImageTextRecognizing)? = nil,
+        imageWorker: MediaWorker = .previews
     ) {
         self.pasteboard = pasteboard
         self.fileManager = fileManager
         self.downloadsDirectory = downloadsDirectory
         self.textRecognizer = textRecognizer
+        self.imageWorker = imageWorker
+    }
+
+    func prepareImage(_ entry: ClipboardEntry) async throws -> AskWorkflowImage.Clipboard? {
+        guard entry.filePaths.isEmpty, let path = entry.imagePath else { return nil }
+        return try await AskWorkflowImage.clipboard(URL(fileURLWithPath: path), worker: imageWorker, preserveOriginalPNG: true)
     }
 
     var pasteboardRevision: Int? { pasteboard.changeCount }

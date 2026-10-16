@@ -75,11 +75,11 @@ private final class ContextWorkerGate: @unchecked Sendable {
         let b = Task { try await AskContextImageDecoder.decode(value, worker: bWorker) }
         for _ in 0..<200 where !one.ready || !two.ready { try await Task.sleep(for: .milliseconds(5)) }
         XCTAssertTrue(one.ready && two.ready)
-        do { _ = try await AskContextImageDecoder.decode(value); XCTFail("Third task admitted") }
+        do { _ = try await AskContextImageDecoder.decode(value, worker: MediaWorker(timeout: 3)); XCTFail("Third task admitted") }
         catch { XCTAssertEqual(error as? MediaFailure, .unavailable) }
         a.cancel(); b.cancel(); _ = try? await a.value; _ = try? await b.value
         XCTAssertEqual(aWorker.activeCount + bWorker.activeCount, 0)
-        let cancelled = Task { withUnsafeCurrentTask { $0?.cancel() }; return try await AskContextImageDecoder.decode(value) }
+        let cancelled = Task { withUnsafeCurrentTask { $0?.cancel() }; return try await AskContextImageDecoder.decode(value, worker: MediaWorker(timeout: 3)) }
         do { _ = try await cancelled.value; XCTFail() } catch { XCTAssertTrue(error is CancellationError) }
     }
 

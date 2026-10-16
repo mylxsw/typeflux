@@ -5591,3 +5591,5 @@
 "recording.encodingUnconfirmed" = "録画の書き出し結果を確認できませんでした。元の録画と生成済みファイルは保持されています。自動再試行は行っていません。";
 
 "settings.services.mediaExtraction" = "添付メディアの抽出";
+
+"settings.services.mediaPreviews" = "メディアプレビュー";
