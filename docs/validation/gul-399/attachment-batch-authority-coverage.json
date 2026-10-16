@@ -1,0 +1,27 @@
+{
+  "covered": 27,
+  "executable_added": 30,
+  "percent": 90.0,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Ask/AskAttachment.swift",
+      "covered": 23,
+      "executable_added": 23,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskConversationModel+Attachments.swift",
+      "covered": 4,
+      "executable_added": 7,
+      "percent": 57.14,
+      "uncovered": [
+        37,
+        39,
+        40
+      ],
+      "instrumented": true
+    }
+  ]
+}

@@ -113,6 +113,8 @@ enum AskAttachmentSource: Equatable, @unchecked Sendable {
 /// Turns sources into attachments off the main actor. Images are re-encoded as
 /// JPEG without their metadata, so location data never leaves the Mac.
 enum AskAttachmentLoader {
+    typealias MetadataReader = @Sendable (URL) throws -> URLResourceValues
+    static let metadata: MetadataReader = { try $0.resourceValues(forKeys: [.isDirectoryKey, .fileSizeKey, .contentTypeKey]) }
     static let textExtensions: Set<String> = [
         "txt", "md", "markdown", "csv", "tsv", "json", "jsonl", "yaml", "yml", "xml", "log", "html", "htm", "css",
         "swift", "go", "py", "rb", "rs", "java", "kt", "kts", "c", "h", "cc", "cpp", "hpp", "m", "mm", "cs",
@@ -121,18 +123,28 @@ enum AskAttachmentLoader {
     ]
 
     /// Loads one source. A PDF without text becomes one image per page.
-    static func load(_ source: AskAttachmentSource, worker: MediaWorker = .shared, isCancelled: @escaping @Sendable () -> Bool = { false }) throws -> [AskAttachment] {
+    static func load(_ source: AskAttachmentSource, worker: MediaWorker = .shared,
+                     authorization original: MediaWorker.Authorization? = nil,
+                     readMetadata: MetadataReader = metadata,
+                     isCancelled: @escaping @Sendable () -> Bool = { false }) throws -> [AskAttachment] {
+        let authorization = original ?? worker.authorization()
         switch source {
         case let .image(data, name):
-            return [try image(data: data, name: name, byteSize: data.count, worker: worker, isCancelled: isCancelled)]
+            return [try image(data: data, name: name, byteSize: data.count, worker: worker, authorization: authorization, isCancelled: isCancelled)]
         case let .file(url):
-            return try file(url, worker: worker, isCancelled: isCancelled)
+            return try file(url, worker: worker, authorization: authorization, readMetadata: readMetadata, isCancelled: isCancelled)
         }
     }
 
-    static func file(_ url: URL, worker: MediaWorker = .shared, isCancelled: @escaping @Sendable () -> Bool = { false }) throws -> [AskAttachment] {
+    static func file(_ url: URL, worker: MediaWorker = .shared,
+                     authorization original: MediaWorker.Authorization? = nil,
+                     readMetadata: MetadataReader = metadata,
+                     isCancelled: @escaping @Sendable () -> Bool = { false }) throws -> [AskAttachment] {
+        let authorization = original ?? worker.authorization()
+        if isCancelled() { throw CancellationError() }
         let name = url.lastPathComponent
-        let values = try? url.resourceValues(forKeys: [.isDirectoryKey, .fileSizeKey, .contentTypeKey])
+        let values = try? readMetadata(url)
+        if isCancelled() { throw CancellationError() }
         if values?.isDirectory == true {
             return [AskAttachment(kind: .folder, name: name, path: url.standardizedFileURL.path)]
         }
@@ -141,11 +153,11 @@ enum AskAttachmentLoader {
         let ext = url.pathExtension.lowercased()
         if type?.conforms(to: .pdf) == true || ext == "pdf" {
             guard size <= AskAttachmentLimits.maximumPDFBytes else { throw AskAttachmentError.tooLarge(name) }
-            return try pdf(url, name: name, byteSize: size, worker: worker, isCancelled: isCancelled)
+            return try pdf(url, name: name, byteSize: size, worker: worker, authorization: authorization, isCancelled: isCancelled)
         }
         if type?.conforms(to: .image) == true {
             guard size <= AskAttachmentLimits.maximumImageFileBytes else { throw AskAttachmentError.tooLarge(name) }
-            return try media(.image, source: .file(url), name: name, byteSize: size, worker: worker, isCancelled: isCancelled)
+            return try media(.image, source: .file(url), name: name, byteSize: size, worker: worker, authorization: authorization, isCancelled: isCancelled)
         }
         if textExtensions.contains(ext) || type?.conforms(to: .text) == true || type?.conforms(to: .sourceCode) == true {
             guard size <= AskAttachmentLimits.maximumTextFileBytes else { throw AskAttachmentError.tooLarge(name) }
@@ -176,24 +188,32 @@ enum AskAttachmentLoader {
     }
 
     static func pdf(_ url: URL, name: String, byteSize: Int,
-                    worker: MediaWorker = .shared, isCancelled: @escaping @Sendable () -> Bool = { false }) throws -> [AskAttachment] {
-        try media(.pdf, source: .file(url), name: name, byteSize: byteSize, worker: worker, isCancelled: isCancelled)
+                    worker: MediaWorker = .shared, authorization: MediaWorker.Authorization? = nil,
+                    isCancelled: @escaping @Sendable () -> Bool = { false }) throws -> [AskAttachment] {
+        try media(.pdf, source: .file(url), name: name, byteSize: byteSize, worker: worker, authorization: authorization, isCancelled: isCancelled)
     }
 
     static func image(data: Data, name: String, byteSize: Int,
-                      worker: MediaWorker = .shared, isCancelled: @escaping @Sendable () -> Bool = { false }) throws -> AskAttachment {
-        try media(.image, source: .data(data), name: name, byteSize: byteSize, worker: worker, isCancelled: isCancelled)[0]
+                      worker: MediaWorker = .shared, authorization: MediaWorker.Authorization? = nil,
+                      isCancelled: @escaping @Sendable () -> Bool = { false }) throws -> AskAttachment {
+        try media(.image, source: .data(data), name: name, byteSize: byteSize, worker: worker, authorization: authorization, isCancelled: isCancelled)[0]
     }
 
     private static func media(_ operation: MediaRequest.Operation, source: MediaWorker.Input,
-                              name: String, byteSize: Int, worker: MediaWorker = .shared, isCancelled: @escaping @Sendable () -> Bool) throws -> [AskAttachment] {
+                              name: String, byteSize: Int, worker: MediaWorker = .shared,
+                              authorization original: MediaWorker.Authorization?, isCancelled: @escaping @Sendable () -> Bool) throws -> [AskAttachment] {
+        let authorization = original ?? worker.authorization()
         do {
-            return try worker.decode(operation, input: source, isCancelled: isCancelled).items.map { item in
+            guard !isCancelled(), worker.permits(authorization) else { throw MediaFailure.unavailable }
+            let response = try worker.perform(operation, input: source, authorization: authorization, isCancelled: isCancelled) { response, _ in response }
+            let items = response.items.map { item in
                 AskAttachment(kind: item.image == nil ? .file : .image,
                               name: item.page.map { L("ask.attach.pdfPage", name, $0) } ?? name,
                               byteSize: byteSize, image: item.image, text: item.text,
                               truncated: item.truncated == true ? true : nil, pages: item.pages)
             }
+            guard !isCancelled(), worker.permits(authorization) else { throw MediaFailure.unavailable }
+            return items
         } catch MediaFailure.tooLarge { throw AskAttachmentError.tooLarge(name) }
         catch { throw AskAttachmentError.unreadable(name) }
     }
