@@ -6,6 +6,7 @@ final class AskBrowserFaviconCache: AskImageScopeObserver {
     private struct Pending {
         let id: UUID
         let generation: UUID
+        let authorization: MediaWorker.Authorization?
         let task: Task<CGImage?, Never>
         var clients: Set<UUID>
         var completed = false
@@ -24,12 +25,13 @@ final class AskBrowserFaviconCache: AskImageScopeObserver {
     private var originalAccess: AskImagePresentationAccess?
     private var registration: UUID?
     private let loader: Loader
-    private let decode: Decoder
+    private let decode: Decoder?
+    private let worker: MediaWorker
     private let clock: () -> Date
     init(loader: @escaping Loader = { await AskBrowserFaviconCache.load($0) },
          clock: @escaping () -> Date = Date.init,
-         decode: @escaping Decoder = { try await AskSmallIconDecoder.decode(.data($0)) }) {
-        self.loader = loader; self.clock = clock; self.decode = decode
+         worker: MediaWorker = .previews, decode: Decoder? = nil) {
+        self.loader = loader; self.clock = clock; self.worker = worker; self.decode = decode
     }
     func cancel() {
         generation = UUID(); images.removeAll(); order.removeAll(); failures.removeAll()
@@ -81,25 +83,33 @@ final class AskBrowserFaviconCache: AskImageScopeObserver {
             guard existing.generation == generation, !existing.task.isCancelled, existing.clients.count < 16 else { return nil }
             existing.clients.insert(client); entry = existing
         } else {
-            guard pending.count < 2, let slot = try? Self.downloads.acquire(bytes: 1) else { return nil }
-            let task = Task { [loader, decode] () -> CGImage? in
+            guard pending.count < 2 else { return nil }
+            let authorization = decode == nil ? worker.authorization() : nil
+            guard let slot = try? Self.downloads.acquire(bytes: 1) else { return nil }
+            let task = Task { [loader, decode, worker] () -> CGImage? in
                 defer { withExtendedLifetime(slot) {} }
-                guard !Task.isCancelled, let data = await loader(url), !Task.isCancelled,
+                guard !Task.isCancelled, authorization.map({ worker.permits($0) }) ?? true,
+                      let data = await loader(url), !Task.isCancelled,
+                      authorization.map({ worker.permits($0) }) ?? true,
                       !data.isEmpty, data.count <= 262_144 else { return nil }
-                guard let image = try? await decode(data), !Task.isCancelled,
+                let image: CGImage?
+                if let decode { image = try? await decode(data) }
+                else { image = try? await AskSmallIconDecoder.decode(.data(data), worker: worker, authorization: authorization) }
+                guard let image, !Task.isCancelled, authorization.map({ worker.permits($0) }) ?? true,
                       image.width > 0, image.height > 0, image.width <= 56, image.height <= 56 else { return nil }
                 return image
             }
-            entry = Pending(id: UUID(), generation: generation, task: task, clients: [client])
+            entry = Pending(id: UUID(), generation: generation, authorization: authorization, task: task, clients: [client])
         }
         pending[url] = entry
         return await withTaskCancellationHandler {
-            let image = await entry.task.value
+            var image = await entry.task.value
             guard pending[url]?.id == entry.id else { return nil }
             pending[url]?.completed = true
             defer { release(url, id: entry.id, client: client) }
             guard !Task.isCancelled, !entry.task.isCancelled, entry.generation == generation,
                   access?.allows() ?? true else { return nil }
+            if let authorization = entry.authorization, !worker.permits(authorization) { image = nil }
             if let image {
                 if images[url] == nil {
                     if order.count >= 128 { images[order.removeFirst()] = nil }
