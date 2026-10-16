@@ -1,0 +1,15 @@
+{
+  "covered": 13,
+  "executable_added": 13,
+  "percent": 100.0,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Clipboard/ClipboardTextRecognizer.swift",
+      "covered": 13,
+      "executable_added": 13,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    }
+  ]
+}
