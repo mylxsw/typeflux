@@ -145,17 +145,30 @@ final class BackgroundActivityUITests: XCTestCase {
         XCTAssertNil(StatusItemActivityIndicator.animation(for: .none))
         let breathe = try? XCTUnwrap(StatusItemActivityIndicator.animation(for: .running))
         let blink = try? XCTUnwrap(StatusItemActivityIndicator.animation(for: .attention))
-        XCTAssertEqual(breathe?.toValue as? CGFloat, 0.15)
-        XCTAssertEqual(blink?.toValue as? CGFloat, 0.45)
+        XCTAssertEqual(breathe?.toValue as? CGFloat, 0.12)
+        XCTAssertEqual(blink?.toValue as? CGFloat, 0.2)
+        XCTAssertLessThan(blink?.duration ?? 1, breathe?.duration ?? 0, "attention blinks faster than running breathes")
         XCTAssertEqual(breathe?.autoreverses, true)
         XCTAssertEqual(breathe?.repeatCount, .infinity)
     }
 
     func testMarkImageFillsOnlyTheInfinityCutOut() throws {
+        let exact = try coloredPixels(growth: 0)
+        let thick = try coloredPixels(growth: StatusItemActivityIndicator.markGrowth)
+        XCTAssertGreaterThan(exact.count, 20, "the ∞ cut-out is filled")
+        XCTAssertGreaterThan(thick.count, exact.count * 5 / 4, "the default mark is thicker than the cut-out")
+        XCTAssertLessThan(thick.count, 44 * 44 / 3, "the disc around the ∞ stays clear")
+        XCTAssertTrue(thick.allSatisfy { $0.blue > $0.red }, "only the tint color is drawn")
+        XCTAssertFalse(thick.contains { $0.x == 22 && $0.y <= 3 }, "the icon's ring is not tinted")
+        XCTAssertFalse(thick.contains { $0.x <= 1 || $0.y <= 1 || $0.x >= 42 || $0.y >= 42 })
+    }
+
+    private func coloredPixels(growth: CGFloat) throws -> [(x: Int, y: Int, red: CGFloat, blue: CGFloat)] {
         let configuration = NSImage.SymbolConfiguration(pointSize: 16, weight: .medium)
         let size = NSSize(width: 22, height: 22)
         let image = try XCTUnwrap(StatusItemActivityIndicator.markImage(
-            symbol: StudioTheme.Symbol.brand, configuration: configuration, size: size, color: .systemBlue
+            symbol: StudioTheme.Symbol.brand, configuration: configuration, size: size, color: .systemBlue,
+            growth: growth
         ))
         XCTAssertFalse(image.isTemplate)
         let bitmap = try XCTUnwrap(NSBitmapImageRep(
@@ -167,20 +180,14 @@ final class BackgroundActivityUITests: XCTestCase {
         NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: bitmap)
         image.draw(in: NSRect(origin: .zero, size: size))
         NSGraphicsContext.restoreGraphicsState()
-
-        var colored = 0
+        var pixels: [(x: Int, y: Int, red: CGFloat, blue: CGFloat)] = []
         for x in 0 ..< 44 {
             for y in 0 ..< 44 {
                 guard let color = bitmap.colorAt(x: x, y: y), color.alphaComponent > 0.5 else { continue }
-                colored += 1
-                XCTAssertGreaterThan(color.blueComponent, color.redComponent, "only the tint color is drawn")
+                pixels.append((x, y, color.redComponent, color.blueComponent))
             }
         }
-        XCTAssertGreaterThan(colored, 20, "the ∞ cut-out is filled")
-        XCTAssertLessThan(colored, 44 * 44 / 3, "the disc around the ∞ stays clear")
-        XCTAssertEqual(bitmap.colorAt(x: 0, y: 0)?.alphaComponent ?? 1, 0, accuracy: 0.01)
-        XCTAssertEqual(bitmap.colorAt(x: 22, y: 2)?.alphaComponent ?? 1, 0, accuracy: 0.05,
-                       "the icon's ring is not tinted")
+        return pixels
     }
 
     func testIndicatorBreathesOnlyWhileRunningWithMotionAllowed() throws {
@@ -196,7 +203,16 @@ final class BackgroundActivityUITests: XCTestCase {
 
         apply(.running)
         XCTAssertTrue(indicator.mark.superview === button)
+        XCTAssertTrue(indicator.base.superview === button)
         XCTAssertFalse(indicator.mark.isHidden)
+        XCTAssertFalse(indicator.base.isHidden)
+        XCTAssertEqual(indicator.base.image?.isTemplate, true, "the base follows the icon's color")
+        XCTAssertEqual(indicator.mark.image?.isTemplate, false)
+        XCTAssertFalse(indicator.mark.allowsVibrancy, "vibrancy would mute the colored ∞")
+        XCTAssertTrue(indicator.base.allowsVibrancy)
+        XCTAssertLessThan(try XCTUnwrap(button.subviews.firstIndex { $0 === indicator.base }),
+                          try XCTUnwrap(button.subviews.firstIndex { $0 === indicator.mark }), "color sits above the base")
+        XCTAssertNil(indicator.base.hitTest(NSPoint(x: 5, y: 5)))
         XCTAssertNotNil(indicator.mark.image)
         XCTAssertTrue(indicator.isAnimating)
         XCTAssertEqual(item.length, NSStatusItem.squareLength, "the icon keeps its width")
@@ -214,8 +230,13 @@ final class BackgroundActivityUITests: XCTestCase {
         XCTAssertFalse(indicator.mark.image === runningImage)
         XCTAssertEqual(indicator.state, .attention)
 
+        let baseImage = indicator.base.image
+        apply(.running)
+        XCTAssertTrue(indicator.base.image === baseImage, "the base is shared by both states")
+
         apply(.none)
         XCTAssertTrue(indicator.mark.isHidden)
+        XCTAssertTrue(indicator.base.isHidden)
         XCTAssertFalse(indicator.isAnimating)
         XCTAssertEqual(button.subviews.filter { $0 === indicator.mark }.count, 1)
     }
