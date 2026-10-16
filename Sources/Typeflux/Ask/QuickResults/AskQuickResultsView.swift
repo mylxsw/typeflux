@@ -1,4 +1,3 @@
-import QuickLookThumbnailing
 import SwiftUI
 
 /// The launcher's quick results in place of its starting points: the
