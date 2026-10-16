@@ -5749,3 +5749,6 @@
 "settings.services.mediaPlayback" = "媒体播放";
 
 "settings.services.fileIndex" = "文件索引";
+"settings.services.semanticValidation" = "语义文件校验";
+"settings.services.semanticIndexReading" = "语义内容读取";
+"settings.services.semanticPriorityReading" = "语义优先读取";

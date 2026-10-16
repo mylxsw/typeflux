@@ -5635,3 +5635,6 @@
 "settings.services.mediaPlayback" = "미디어 재생";
 
 "settings.services.fileIndex" = "파일 인덱싱";
+"settings.services.semanticValidation" = "시맨틱 파일 검증";
+"settings.services.semanticIndexReading" = "시맨틱 콘텐츠 읽기";
+"settings.services.semanticPriorityReading" = "시맨틱 우선 읽기";

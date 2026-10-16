@@ -67,6 +67,12 @@ final class SemanticReaderOwnershipTests: XCTestCase {
         XCTAssertNoThrow(try priority.read(request, isCancelled: { false }))
         XCTAssertEqual(fixture.created, 3, "Only independent lanes may allocate readers")
         release.signal(); XCTAssertEqual(group.wait(timeout: .now() + 3), .success)
+        // Host completion alone does not finish the coalesced serial cleanup.
+        let deadline = ProcessInfo.processInfo.systemUptime + 3
+        while lanes.validation.isOccupied, ProcessInfo.processInfo.systemUptime < deadline {
+            Thread.sleep(forTimeInterval: 0.001)
+        }
+        XCTAssertFalse(lanes.validation.isOccupied)
         let calls = fixture.calls
         XCTAssertEqual(calls, 3, "Retirement never queues a replacement operation")
         XCTAssertNoThrow(try next.read(request, isCancelled: { false }))

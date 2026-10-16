@@ -5749,3 +5749,6 @@
 "settings.services.mediaPlayback" = "Media playback";
 
 "settings.services.fileIndex" = "File indexing";
+"settings.services.semanticValidation" = "Semantic file validation";
+"settings.services.semanticIndexReading" = "Semantic content reading";
+"settings.services.semanticPriorityReading" = "Semantic priority reading";

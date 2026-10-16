@@ -22,6 +22,7 @@ final class DIContainer {
     let mediaModules: MediaExtractionModules
     let nativeSystemModule: NativeSystemModule
     let whisperInferenceModule: WhisperInferenceModule
+    let semanticReaderModules: SemanticReaderModules
     let fileIndexModule: FileIndexModule
     let playbackModule: PlaybackModule
     let nativeSystemCommands = NativeSystemWorker.shared
@@ -165,7 +166,8 @@ final class DIContainer {
         whisperInferenceModule = WhisperInferenceModule(pool: localInferenceWorkers, healthDirectory: moduleHealthDirectory)
         playbackModule = PlaybackModule(pool: clipboardPlaybackWorkers, healthDirectory: moduleHealthDirectory)
         fileIndexModule = FileIndexModule(index: AskFileIndex.shared, healthDirectory: moduleHealthDirectory)
-        moduleRegistry = ModuleRegistry(storage.registry.registrations + mediaModules.registrations + [nativeSystemModule.registration, whisperInferenceModule.registration, playbackModule.registration, fileIndexModule.registration])
+        semanticReaderModules = SemanticReaderModules(readers: SemanticFileSearchService.shared.readers, healthDirectory: moduleHealthDirectory)
+        moduleRegistry = ModuleRegistry(storage.registry.registrations + mediaModules.registrations + semanticReaderModules.registrations + [nativeSystemModule.registration, whisperInferenceModule.registration, playbackModule.registration, fileIndexModule.registration])
         modelLibrary = AskModelLibrary(defaults: settingsStore.defaults)
         let screenCapturePermission = ScreenCapturePermission.live
         self.screenCapturePermission = screenCapturePermission

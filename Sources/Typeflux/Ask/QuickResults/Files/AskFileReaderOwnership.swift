@@ -48,6 +48,9 @@ final class AskFileReaderOwnership: @unchecked Sendable {
     }
     func retireManaged() async {
         stopOwned()
+        await waitUntilRetired()
+    }
+    func waitUntilRetired() async {
         await withCheckedContinuation { continuation in
             let done = condition.withLock {
                 guard current != nil else { return true }
