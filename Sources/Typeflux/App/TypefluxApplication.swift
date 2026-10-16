@@ -3,6 +3,10 @@ import ApplicationServices
 
 public enum TypefluxApplication {
     public static func run() {
+        // Shared by SwiftPM and Xcode launchers, before relaunch or application DI.
+        if let code = NativeSystemWorkerCommand.handleInvocation(arguments: Array(CommandLine.arguments.dropFirst())) {
+            exit(code)
+        }
         DevLauncher.relaunchAsAppBundleIfNeeded()
 
         let app = NSApplication.shared

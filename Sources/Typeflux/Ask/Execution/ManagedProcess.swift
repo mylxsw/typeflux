@@ -23,6 +23,8 @@ struct ManagedProcess: Sendable { // swiftlint:disable:this type_body_length
         /// Cumulative, bounded stdout through its last complete line.
         var onOutput: (@Sendable (String) -> Void)?
         var immediateCleanupOnExit = false
+        /// Called only after the direct child has been reaped (possibly later).
+        var onReaped: (@Sendable () -> Void)?
     }
 
     enum Termination: Equatable, Sendable {
@@ -107,7 +109,7 @@ struct ManagedProcess: Sendable { // swiftlint:disable:this type_body_length
         var child: pid_t?
         defer {
             if let child {
-                OwnedProcessReaper.shared.collect(child)
+                OwnedProcessReaper.shared.collect(child, onReaped: request.onReaped ?? {})
             } else {
                 OwnedProcessReaper.shared.release()
             }

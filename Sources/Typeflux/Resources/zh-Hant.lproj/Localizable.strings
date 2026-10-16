@@ -5524,3 +5524,10 @@
 "settings.services.requested" = "已要求恢復。服務就緒後，可用狀態會自動更新。";
 "settings.services.wait" = "恢復正在冷卻，請稍後再試。";
 "settings.services.busy" = "正在等待先前的工作結束，請稍後再試。";
+
+// Native system command isolation outcomes.
+"ask.system.notExecuted" = "命令未執行，系統服務無法使用。";
+"ask.system.unknownOutcome" = "命令可能已經生效，但無法確認結果，不會自動再次執行。再次嘗試前請檢查系統狀態。";
+"ask.system.busy" = "另一個系統命令仍在執行，本次命令未執行。";
+"ask.system.coolingDown" = "系統命令在故障後暫時暫停，本次命令未執行。";
+"ask.system.disabled" = "系統命令服務已停止，本次命令未執行。";

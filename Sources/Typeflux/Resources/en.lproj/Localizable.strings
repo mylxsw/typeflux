@@ -5604,3 +5604,10 @@
 "settings.services.requested" = "Recovery requested. Availability will update when the service is ready.";
 "settings.services.wait" = "Please wait before trying again. Recovery is cooling down.";
 "settings.services.busy" = "Waiting for earlier work to finish. Try again shortly.";
+
+// Native system command isolation outcomes.
+"ask.system.notExecuted" = "The command was not executed. The system service is unavailable.";
+"ask.system.unknownOutcome" = "The command may already have taken effect, but its result could not be confirmed. It will not run again automatically. Check the system state before trying again.";
+"ask.system.busy" = "Another system command is still running. This command was not executed.";
+"ask.system.coolingDown" = "System commands are temporarily paused after a failure. This command was not executed.";
+"ask.system.disabled" = "System commands are stopped. This command was not executed.";

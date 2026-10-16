@@ -9,6 +9,7 @@ final class OwnedProcessReaper: @unchecked Sendable {
     private let capacity: Int
     private var active = 0
     private var pending = Set<pid_t>()
+    private var completions: [pid_t: @Sendable () -> Void] = [:]
     private var timer: DispatchSourceTimer?
     private let reaped: @Sendable (pid_t) -> Bool
     private let schedulesReaping: Bool
@@ -35,12 +36,17 @@ final class OwnedProcessReaper: @unchecked Sendable {
     }
 
     /// Takes ownership of a direct child after the caller has sent its final signal.
-    func collect(_ pid: pid_t) {
-        lock.lock(); defer { lock.unlock() }
+    func collect(_ pid: pid_t, onReaped: @escaping @Sendable () -> Void = {}) {
+        lock.lock()
         if reaped(pid) {
-            active -= 1; return
+            active -= 1
+            lock.unlock()
+            onReaped()
+            return
         }
         pending.insert(pid)
+        completions[pid] = onReaped
+        defer { lock.unlock() }
         guard schedulesReaping, timer == nil else { return }
         let timer = DispatchSource.makeTimerSource(queue: .global(qos: .utility))
         timer.schedule(deadline: .now() + .milliseconds(100), repeating: .milliseconds(100))
@@ -50,14 +56,18 @@ final class OwnedProcessReaper: @unchecked Sendable {
     }
 
     func collectPending() {
-        lock.lock(); defer { lock.unlock() }
+        lock.lock()
+        var completed: [@Sendable () -> Void] = []
         for pid in Array(pending) where reaped(pid) {
             pending.remove(pid)
+            if let completion = completions.removeValue(forKey: pid) { completed.append(completion) }
             active -= 1
         }
         if pending.isEmpty {
             timer?.cancel(); timer = nil
         }
+        lock.unlock()
+        for completion in completed { completion() }
     }
 
     private static func reap(_ pid: pid_t) -> Bool {
