@@ -5525,6 +5525,7 @@
 "activity.contentIndex.title" = "内容インデックス";
 "activity.contentIndex.progress" = "%@ / %@ ファイルを処理済み";
 "activity.contentIndex.scanning" = "ファイルを検索中 · %@ 件確認済み";
+"activity.contentIndex.scanningPaused" = "ファイル検索を一時停止 · %@ 件確認済み";
 "activity.contentIndex.waitingIdle" = "Mac がアイドルになったら続行 · %@";
 "activity.paused" = "一時停止中 · %@";
 "activity.llmModel.title" = "言語モデル · %@";

@@ -161,13 +161,15 @@ final class ContentIndexActivitySource: BackgroundActivitySource {
         let counts: String = if let summary, let total = summary.total {
             L("activity.contentIndex.progress", BackgroundActivityFormat.count(summary.processed),
               BackgroundActivityFormat.count(total))
+        } else if paused {
+            L("activity.contentIndex.scanningPaused", BackgroundActivityFormat.count(summary?.scanned ?? 0))
         } else {
             L("activity.contentIndex.scanning", BackgroundActivityFormat.count(summary?.scanned ?? 0))
         }
         let waiting = !paused && summary?.waitingForIdle == true
         let state: BackgroundActivity.State = paused ? .paused : (waiting ? .waiting : .running)
         let detail = switch state {
-        case .paused: L("activity.paused", counts)
+        case .paused: summary?.total == nil ? counts : L("activity.paused", counts)
         case .waiting: L("activity.contentIndex.waitingIdle", counts)
         default: counts
         }

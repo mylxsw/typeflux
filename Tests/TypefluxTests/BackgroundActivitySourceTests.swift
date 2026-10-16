@@ -150,6 +150,11 @@ final class BackgroundActivitySourceTests: XCTestCase {
         XCTAssertEqual(ContentIndexActivitySource.activities(for: .init(phase: .indexing))[0].detail,
                        L("activity.contentIndex.scanning", 0.formatted()))
 
+        let pausedScan = ContentIndexActivitySource.activities(for: .init(phase: .paused, indexProgress: summary))
+        XCTAssertEqual(pausedScan[0].state, .paused)
+        XCTAssertEqual(pausedScan[0].detail, L("activity.contentIndex.scanningPaused", 12.formatted()))
+        XCTAssertFalse(pausedScan[0].detail.contains(L("activity.contentIndex.scanning", 12.formatted())))
+
         summary.total = 0
         summary.waitingForIdle = true
         let waiting = ContentIndexActivitySource.activities(for: .init(phase: .indexing, indexProgress: summary))

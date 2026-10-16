@@ -5639,6 +5639,7 @@
 "activity.contentIndex.title" = "Content index";
 "activity.contentIndex.progress" = "%@ of %@ files";
 "activity.contentIndex.scanning" = "Finding files · %@ checked";
+"activity.contentIndex.scanningPaused" = "Finding files paused · %@ checked";
 "activity.contentIndex.waitingIdle" = "Continues when your Mac is idle · %@";
 "activity.paused" = "Paused · %@";
 "activity.llmModel.title" = "Language model · %@";

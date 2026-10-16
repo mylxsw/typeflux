@@ -5525,6 +5525,7 @@
 "activity.contentIndex.title" = "콘텐츠 색인";
 "activity.contentIndex.progress" = "%@ / %@개 파일 처리됨";
 "activity.contentIndex.scanning" = "파일 찾는 중 · %@개 확인";
+"activity.contentIndex.scanningPaused" = "파일 찾기 일시 중지 · %@개 확인";
 "activity.contentIndex.waitingIdle" = "Mac이 유휴 상태일 때 계속 · %@";
 "activity.paused" = "일시 정지됨 · %@";
 "activity.llmModel.title" = "언어 모델 · %@";

@@ -5559,6 +5559,7 @@
 "activity.contentIndex.title" = "內容索引";
 "activity.contentIndex.progress" = "已處理 %@ / %@ 個檔案";
 "activity.contentIndex.scanning" = "正在尋找檔案 · 已檢查 %@ 個";
+"activity.contentIndex.scanningPaused" = "尋找檔案已暫停 · 已檢查 %@ 個";
 "activity.contentIndex.waitingIdle" = "等待電腦閒置後繼續 · %@";
 "activity.paused" = "已暫停 · %@";
 "activity.llmModel.title" = "大型語言模型 · %@";
