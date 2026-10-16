@@ -363,7 +363,8 @@ extension SemanticFileSearchService {
                         helper: helper, model: model, indexing: true, ownership: embeddingOwners.indexing, lifecycle: token)
                     defer { encoder.release() }
                     let media = SemanticMediaWorker(helper: helper, model: model, projector: projector,
-                        models: mediaModels, makeEncoder: makeMediaEncoder, progress: reportDownload)
+                        models: mediaModels, makeEncoder: makeMediaEncoder, progress: reportDownload,
+                        embeddingOwners: embeddingOwners)
                     if let paths {
                         return try SemanticFileIndexer.reconcile(
                             paths: paths, scope: scope, store: database, reader: reader,
@@ -408,13 +409,21 @@ extension SemanticFileSearchService {
     }
 
     func downloadModel() {
-        guard self.supported, self.download == nil, self.preferences.enabled else { return }
+        guard self.supported, self.download == nil, self.preferences.enabled, !removing else { return }
+        let mutation: SemanticEmbeddingOwners.Mutation
+        do { mutation = try embeddingOwners.mutation(.model) }
+        catch { phase = .failed; return }
+        let lifecycle = token, installAttempted = AskSearchCancellation()
         let target = self.modelURL
         let models = models
+        self.modelReady = false
         self.phase = .downloading(0)
-        self.download = Task { [weak self] in
+        self.download = Task { [weak self, mutation] in
+            defer { mutation.finish() }
             guard let self else { return }
             do {
+                try Task.checkCancellation()
+                guard !lifecycle.isCancelled else { throw CancellationError() }
                 let (temporary, response) = try await models.fetch { [self] received in
                     Task { @MainActor [self] in
                         guard self.download != nil, self.preferences.enabled else { return }
@@ -427,15 +436,19 @@ extension SemanticFileSearchService {
                 let cancellation = AskSearchCancellation()
                 try await withTaskCancellationHandler {
                     try await Task.detached(priority: .utility) {
-                        try models.install(temporary, to: target, cancelled: { cancellation.isCancelled })
+                        guard !cancellation.isCancelled, !lifecycle.isCancelled else { throw CancellationError() }
+                        installAttempted.cancel()
+                        try models.install(temporary, to: target, cancelled: { cancellation.isCancelled || lifecycle.isCancelled })
                     }.value
                 } onCancel: { cancellation.cancel() }
                 try Task.checkCancellation()
+                guard !lifecycle.isCancelled else { throw CancellationError() }
+                mutation.finish()
                 self.download = nil; self.modelReady = true; self.start(force: true)
             } catch {
                 let cancelled = Task.isCancelled
                 self.download = nil
-                self.phase = !self.preferences.enabled ? .off : (cancelled ? .modelRequired : .failed)
+                self.phase = !self.preferences.enabled ? .off : (cancelled && !installAttempted.isCancelled ? .modelRequired : .failed)
             }
         }
     }
@@ -463,11 +476,14 @@ extension SemanticFileSearchService {
         queryWorker?.stop(); queryWorker = nil
         await work?.value; await download?.value
         let database = store, directory = directory, model = modelURL, projector = mediaModelURL
+        let embeddingOwners = embeddingOwners
         do {
             // Revoked native workers retain model ownership through host work and
             // actual collection. A timeout preserves files for an explicit retry.
             try await embeddingOwners.waitUntilIdle()
             try await Task.detached(priority: .utility) {
+                let mutation = try embeddingOwners.mutation(.model)
+                defer { mutation.finish() }
                 if let database {
                     try database.destroy()
                 } else {

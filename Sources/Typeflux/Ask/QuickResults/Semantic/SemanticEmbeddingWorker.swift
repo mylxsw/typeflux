@@ -63,13 +63,17 @@ enum SemanticModel {
         defer { try? FileManager.default.removeItem(at: staging) }
         try FileManager.default.copyItem(at: source, to: staging)
         try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: staging.path)
+        // Validate the bytes actually copied, not only the earlier source read.
+        // External filesystem mutation is still not an immutable transaction.
+        try self.verify(staging, bytes: bytes, sha256: sha256, cancelled: cancelled)
         if cancelled() {
             throw CancellationError()
         }
         if FileManager.default.fileExists(atPath: target.path) {
             _ = try FileManager.default.replaceItemAt(
                 target,
-                withItemAt: staging
+                withItemAt: staging,
+                options: .usingNewMetadataOnly
             )
         } else {
             try FileManager.default.moveItem(at: staging, to: target)

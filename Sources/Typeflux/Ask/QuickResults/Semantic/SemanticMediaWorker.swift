@@ -40,26 +40,28 @@ final class SemanticMediaWorker: SemanticMediaEmbedding {
     private let model: URL
     private let projector: URL
     private let models: any SemanticModelHandling
-    private let makeEncoder: @Sendable (URL, URL, URL) -> any SemanticMediaEmbedding
+    private let makeEncoder: Factory
+    private let embeddingOwners: SemanticEmbeddingOwners
     private let progress: @Sendable (Double?) -> Void
     private var encoder: (any SemanticMediaEmbedding)?
 
     typealias Factory = @Sendable (URL, URL, URL) -> any SemanticMediaEmbedding
-    static let defaultEncoder: Factory = {
-        SemanticEmbeddingWorker(helper: $0, model: $1, indexing: true, projector: $2,
-                                timeout: 90, startupTimeout: 180)
-    }
 
     init(
         helper: URL,
         model: URL,
         projector: URL,
         models: any SemanticModelHandling = SemanticMediaModelFiles(),
-        makeEncoder: @escaping Factory = SemanticMediaWorker.defaultEncoder,
-        progress: @escaping @Sendable (Double?) -> Void = { _ in }
+        makeEncoder: Factory? = nil,
+        progress: @escaping @Sendable (Double?) -> Void = { _ in },
+        embeddingOwners: SemanticEmbeddingOwners = SemanticEmbeddingOwners()
     ) {
         self.helper = helper; self.model = model; self.projector = projector
-        self.models = models; self.makeEncoder = makeEncoder; self.progress = progress
+        self.models = models; self.progress = progress; self.embeddingOwners = embeddingOwners
+        self.makeEncoder = makeEncoder ?? { helper, model, projector in
+            SemanticEmbeddingWorker(helper: helper, model: model, indexing: true, projector: projector,
+                                    timeout: 90, startupTimeout: 180, ownership: embeddingOwners.media)
+        }
     }
 
     func embed(_ input: SemanticMediaInput, cancelled: () -> Bool) throws -> [Float] {
@@ -81,6 +83,9 @@ final class SemanticMediaWorker: SemanticMediaEmbedding {
     }
 
     private func download(cancelled: () -> Bool) throws {
+        if cancelled() { throw CancellationError() }
+        let mutation = try embeddingOwners.mutation(.projector)
+        defer { mutation.finish() }
         let transfer = Transfer(), models = models, progress = progress
         progress(0)
         defer { progress(nil) }
