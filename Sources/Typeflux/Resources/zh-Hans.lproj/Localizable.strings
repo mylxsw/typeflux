@@ -5733,3 +5733,25 @@
 "settings.services.mediaExtraction" = "附件媒体提取";
 
 "settings.services.mediaPreviews" = "媒体预览";
+"settings.services.clipboardThumbnails" = "剪贴板缩略图";
+"settings.services.frameRegistration" = "滚动截图配准";
+"settings.services.textRecognition" = "截图文字识别";
+"settings.services.clipboardOCR" = "剪贴板图片文字识别";
+"settings.services.clipboardMetadata" = "剪贴板媒体信息";
+
+"settings.services.recordingTimeline" = "录屏时间轴与海报";
+"settings.services.recordingExport" = "录屏编码";
+
+"settings.services.nativeSystem" = "原生系统命令";
+
+"settings.services.whisperInference" = "本地 Whisper 转写";
+
+"settings.services.mediaPlayback" = "媒体播放";
+
+"settings.services.fileIndex" = "文件索引";
+"settings.services.semanticValidation" = "语义文件校验";
+"settings.services.semanticIndexReading" = "语义内容读取";
+"settings.services.semanticPriorityReading" = "语义优先读取";
+"settings.services.semanticQueryInference" = "语义查询推理";
+"settings.services.semanticIndexInference" = "语义文档推理";
+"settings.services.semanticMediaInference" = "语义媒体推理";

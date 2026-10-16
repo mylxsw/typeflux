@@ -1,5 +1,6 @@
 // swiftlint:disable file_length type_body_length
 import CoreGraphics
+import TypefluxMediaProtocol
 @testable import Typeflux
 import XCTest
 
@@ -759,6 +760,40 @@ final class ScrollCaptureSessionTests: XCTestCase {
         XCTAssertEqual(results.count, 1)
     }
 
+    func testManagedRegistrationRecoveryDoesNotCaptureScrollOrFinishAgain() async throws {
+        let root = try AskAttachmentFixture.directory(); defer { try? FileManager.default.removeItem(at: root) }
+        let calls = ScrollHealthCalls()
+        let worker = MediaWorker(executable: URL(fileURLWithPath: "/usr/bin/true"), timeout: 3, requiresLifecycle: true, run: { p, _ in
+            calls.add()
+            let request = try JSONDecoder().decode(MediaRequest.self, from: XCTUnwrap(p.stdin))
+            var response = MediaResponse(id: request.id); response.registration = .init(translationY: nil)
+            return .init(termination: .exited(0), exitCode: 0,
+                stdout: String(decoding: try JSONEncoder().encode(response), as: UTF8.self), stderr: "", outputTruncated: false)
+        })
+        let module = MediaExtractionModule(worker: worker, healthDirectory: root, domain: .frameRegistration)
+        let registry = ModuleRegistry([module.registration]); try await registry.start(.frameRegistration)
+        let session = makeSession(estimator: VisionScrollOffsetEstimator(worker: worker))
+        await start(session); await settle(session, 0); await settle(session, 100)
+        XCTAssertGreaterThan(calls.count, 0)
+        await registry.disable(.frameRegistration)
+        let before = calls.count
+        await settle(session, 180)
+        XCTAssertEqual(session.stitcher.height, 430); XCTAssertEqual(calls.count, before)
+        let scrolls = driver.scrolls.count, starts = source.started.count
+        try await registry.start(.frameRegistration)
+        XCTAssertEqual(calls.count, before); XCTAssertEqual(driver.scrolls.count, scrolls)
+        XCTAssertEqual(source.started.count, starts); XCTAssertTrue(results.isEmpty)
+        session.receive(frame(240)); session.finish(.user); session.finish(.user)
+        await session.finishTask?.value
+        XCTAssertEqual(try XCTUnwrap(finishedImage).0.height, 490)
+        XCTAssertEqual(results.count, 1); XCTAssertEqual(source.stops, 1)
+        let finishedCalls = calls.count
+        await registry.disable(.frameRegistration); try await registry.start(.frameRegistration)
+        XCTAssertEqual(calls.count, finishedCalls); XCTAssertEqual(results.count, 1)
+        XCTAssertEqual(source.started.count, starts); XCTAssertEqual(driver.scrolls.count, scrolls)
+        await registry.shutdown()
+    }
+
     func testFinalDrainWaitsWithoutExtraScrollAndRejectsDuplicateFinish() async throws {
         let registration = ScrollSessionRegistrationGate()
         let session = makeSession(estimator: registration)
@@ -849,4 +884,11 @@ private actor ScrollSessionRegistrationGate: ScrollFrameRegistering {
         }
         XCTFail("Registration was not reached")
     }
+}
+
+private final class ScrollHealthCalls: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value = 0
+    var count: Int { lock.withLock { value } }
+    func add() { lock.withLock { value += 1 } }
 }

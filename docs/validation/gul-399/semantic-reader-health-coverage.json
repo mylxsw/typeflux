@@ -1,0 +1,112 @@
+{
+  "covered": 137,
+  "executable_added": 143,
+  "percent": 95.8,
+  "files": [
+    {
+      "file": "Sources/Typeflux/App/AppCoordinator.swift",
+      "covered": 0,
+      "executable_added": 3,
+      "percent": 0.0,
+      "uncovered": [
+        28,
+        29,
+        30
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/App/DIContainer.swift",
+      "covered": 0,
+      "executable_added": 2,
+      "percent": 0.0,
+      "uncovered": [
+        169,
+        170
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Files/AskFileReaderOwnership.swift",
+      "covered": 3,
+      "executable_added": 3,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileReaders.swift",
+      "covered": 67,
+      "executable_added": 67,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+      "covered": 17,
+      "executable_added": 18,
+      "percent": 94.44,
+      "uncovered": [
+        167
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Resources/en.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    },
+    {
+      "file": "Sources/Typeflux/Resources/ja.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    },
+    {
+      "file": "Sources/Typeflux/Resources/ko.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    },
+    {
+      "file": "Sources/Typeflux/Resources/zh-Hans.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    },
+    {
+      "file": "Sources/Typeflux/Resources/zh-Hant.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    },
+    {
+      "file": "Sources/Typeflux/Stability/ModuleHealthStore.swift",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Stability/SemanticReaderModules.swift",
+      "covered": 50,
+      "executable_added": 50,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    }
+  ]
+}

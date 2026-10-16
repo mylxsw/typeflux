@@ -120,7 +120,7 @@ struct ScreenRecordingCoordinatorTests {
                     ]
                 },
                 waitSecond: wait, playback: playback ?? ClipboardAudioPlayback(video: true, open: { url in
-                    try await ClipboardPlaybackProcess.open(url, video: true, recording: true, run: { request, _ in
+                    try await ClipboardPlaybackProcess.open(url, video: true, recording: true, pool: ClipboardPlaybackPool(), run: { request, _ in
                         var request = request; request.timeout = 10
                         return try ManagedProcess().runBlocking(request, isCancelled: { false })
                     })

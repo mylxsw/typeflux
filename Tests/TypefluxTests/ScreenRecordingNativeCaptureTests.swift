@@ -49,7 +49,7 @@ struct ScreenRecordingNativeCaptureTests {
         #expect(pixels.bytes[offset + 2] < 50)
         let mp4 = url.deletingPathExtension().appendingPathExtension("mp4")
         defer { try? FileManager.default.removeItem(at: mp4) }
-        try await ScreenRecordingExporter().export(source: url, destination: mp4, format: .mp4,
+        try await ScreenRecordingExporter(encoder: ScreenRecordingEncoder(worker: MediaWorker(timeout: 600))).export(source: url, destination: mp4, format: .mp4,
                                                    trim: .init(start: 0, end: duration)) { _ in }
         let exported = AVURLAsset(url: mp4)
         #expect(try await exported.load(.duration).seconds > 0.2)

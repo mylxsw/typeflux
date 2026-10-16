@@ -84,7 +84,8 @@ final class SemanticFileValidator: @unchecked Sendable {
                     }
                 } catch {
                     warm = false
-                    if stopped() {
+                    if stopped() || (error as? AskFileReadError) == .unavailable ||
+                        (error as? AskFileReadError) == .cancelled {
                         return Result(hits: valid, complete: false)
                     }
                 }

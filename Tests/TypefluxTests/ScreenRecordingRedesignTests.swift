@@ -146,7 +146,7 @@ struct ScreenRecordingRedesignTests {
         #expect(fixture.model.options.format == .gif)
         fixture.model.keepFirstGIFSegment()
         #expect(fixture.model.canExport)
-        let metadata = try await ScreenRecordingPreviewMedia.load(url)
+        let metadata = try await ScreenRecordingPreviewMedia.load(url, loader: ScreenRecordingTimelineLoader(worker: MediaWorker()))
         #expect(metadata.thumbnails.count == 10)
         #expect(metadata.size.width > 0)
         #expect(!metadata.waveform.isEmpty)

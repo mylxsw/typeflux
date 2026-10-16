@@ -19,8 +19,13 @@ final class DIContainer {
     let historyStore: HistoryStore
     let clipboardHistoryStore: ClipboardHistoryStore
     let moduleRegistry: ModuleRegistry
-    let mediaExtractionModule: MediaExtractionModule
-    let mediaPreviewModule: MediaExtractionModule
+    let mediaModules: MediaExtractionModules
+    let nativeSystemModule: NativeSystemModule
+    let whisperInferenceModule: WhisperInferenceModule
+    let semanticReaderModules: SemanticReaderModules
+    let semanticModelModules: SemanticModelModules
+    let fileIndexModule: FileIndexModule
+    let playbackModule: PlaybackModule
     let nativeSystemCommands = NativeSystemWorker.shared
     let mediaWorkers = MediaWorker.shared
     let mediaPreviewWorkers = MediaWorker.previews
@@ -157,11 +162,14 @@ final class DIContainer {
         noteStore = storage.notes
         wordBookStore = storage.words
         conversationCache = storage.conversations
-        let mediaModule = MediaExtractionModule(worker: MediaWorker.shared, healthDirectory: moduleHealthDirectory)
-        mediaExtractionModule = mediaModule
-        let previewModule = MediaExtractionModule(worker: mediaPreviewWorkers, healthDirectory: moduleHealthDirectory, domain: .mediaPreviews)
-        mediaPreviewModule = previewModule
-        moduleRegistry = ModuleRegistry(storage.registry.registrations + [mediaModule.registration, previewModule.registration])
+        mediaModules = MediaExtractionModules(healthDirectory: moduleHealthDirectory)
+        nativeSystemModule = NativeSystemModule(worker: nativeSystemCommands, healthDirectory: moduleHealthDirectory)
+        whisperInferenceModule = WhisperInferenceModule(pool: localInferenceWorkers, healthDirectory: moduleHealthDirectory)
+        playbackModule = PlaybackModule(pool: clipboardPlaybackWorkers, healthDirectory: moduleHealthDirectory)
+        fileIndexModule = FileIndexModule(index: AskFileIndex.shared, healthDirectory: moduleHealthDirectory)
+        semanticReaderModules = SemanticReaderModules(readers: SemanticFileSearchService.shared.readers, healthDirectory: moduleHealthDirectory)
+        semanticModelModules = SemanticModelModules(readers: SemanticFileSearchService.shared.embeddingOwners, healthDirectory: moduleHealthDirectory)
+        moduleRegistry = ModuleRegistry(storage.registry.registrations + mediaModules.registrations + semanticReaderModules.registrations + semanticModelModules.registrations + [nativeSystemModule.registration, whisperInferenceModule.registration, playbackModule.registration, fileIndexModule.registration])
         modelLibrary = AskModelLibrary(defaults: settingsStore.defaults)
         let screenCapturePermission = ScreenCapturePermission.live
         self.screenCapturePermission = screenCapturePermission

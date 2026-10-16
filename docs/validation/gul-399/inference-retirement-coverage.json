@@ -1,0 +1,23 @@
+{
+  "covered": 54,
+  "executable_added": 54,
+  "percent": 100.0,
+  "files": [
+    {
+      "file": "Sources/Typeflux/STT/WhisperKitTranscriber.swift",
+      "covered": 8,
+      "executable_added": 8,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/STT/WhisperWorkerClient.swift",
+      "covered": 46,
+      "executable_added": 46,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    }
+  ]
+}

@@ -369,7 +369,7 @@ final class ScreenshotRendererTests: XCTestCase {
                                                         imageHeight: 200), 50)
         XCTAssertNil(VisionTextHeightMeasurer.tallest(normalizedBoxes: [], imageHeight: 200))
         let blank = ScreenCaptureTestSupport.image(width: 64, height: 64, gray: 1)
-        let geometry = try await VisionTextHeightMeasurer().geometry(in: blank)
+        let geometry = try await VisionTextHeightMeasurer(recognizer: .init(worker: MediaWorker(timeout: 30))).geometry(in: blank)
         XCTAssertNil(geometry.height, "No text on a blank image")
     }
 
@@ -387,7 +387,7 @@ final class ScreenshotRendererTests: XCTestCase {
         NSGraphicsContext.restoreGraphicsState()
         let image = try XCTUnwrap(context.makeImage())
 
-        let geometry = try await VisionTextHeightMeasurer().geometry(in: image)
+        let geometry = try await VisionTextHeightMeasurer(recognizer: .init(worker: MediaWorker(timeout: 30))).geometry(in: image)
         let height = try XCTUnwrap(geometry.height)
         XCTAssertGreaterThan(height, 20)
         XCTAssertLessThan(height, 120)

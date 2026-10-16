@@ -119,7 +119,8 @@ private final class PlaybackReaper: @unchecked Sendable {
             _ = try await exchange(.init(id: id, sequence: 1, kind: .load), socket: host)
             if mode == 3 { engine.failure = true }
             let request = MediaPlaybackMessage(id: mode == 1 ? UUID() : id, sequence: mode == 0 ? 1 : 2, kind: mode == 2 ? .load : .status)
-            do { _ = try await exchange(request, socket: host); XCTFail("Invalid control accepted") } catch {}
+            if mode == 3 { let reply = try await exchange(request, socket: host); XCTAssertEqual(reply.kind, .failed); XCTAssertNil(reply.state) }
+            else { do { _ = try await exchange(request, socket: host); XCTFail("Invalid control accepted") } catch {} }
             await task.value; host.stop(); XCTAssertEqual(engine.loads, 1); XCTAssertEqual(engine.stops, 1)
         }
     }

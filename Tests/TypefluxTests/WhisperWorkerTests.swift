@@ -265,6 +265,158 @@ final class WhisperWorkerTests: XCTestCase {
         }
     }
 
+    func testCancelledProgressRetainsCapacityCopyAndModelUntilConsumerReturns() async throws {
+        let pool = WhisperWorkerPool(), fixture = WhisperProcessFixture(), gate = WhisperHostGate()
+        let client = try WhisperWorkerClient(configuration: configuration, pool: pool, run: fixture.run)
+        var prepare = InferenceMessage(kind: .prepare); prepare.configuration = configuration
+        _ = try await client.request(prepare)
+        let audio = try makeAudio()
+        defer { gate.release(); client.stop(); try? FileManager.default.removeItem(at: audio) }
+        let second = try pool.reserve(paths: ["/second"], stop: {})
+        let task = Task { try await client.transcribe(audio: audio, lowEnergy: false, prompt: nil, language: nil) { _ in
+            await gate.suspend()
+        } }
+        await awaitHost { gate.entered }
+        let copy = try XCTUnwrap(fixture.engine.lastRequest?.audioPath)
+        task.cancel()
+        await awaitHost { fixture.finished }
+        try await Task.sleep(for: .milliseconds(50))
+        XCTAssertEqual(pool.activeCount, 2)
+        XCTAssertThrowsError(try pool.reserve(paths: [], stop: {}))
+        XCTAssertThrowsError(try pool.checkUnused(URL(fileURLWithPath: "/fixture/models")))
+        XCTAssertEqual(try Data(contentsOf: URL(fileURLWithPath: copy)), Data("fixture audio".utf8))
+        gate.release()
+        do { _ = try await task.value; XCTFail("Cancelled result escaped") } catch {}
+        pool.release(second, failed: false)
+        await waitForEmpty(pool)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: copy))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: audio.path))
+        try pool.checkUnused(URL(fileURLWithPath: "/fixture/models"))
+        let next = try pool.reserve(paths: [], stop: {})
+        pool.release(next, failed: false)
+        XCTAssertEqual(fixture.launches, 1)
+    }
+
+    func testFinalFacadeCallbackRetainsLeasesAcrossOwnerStopAndBoundedShutdown() async throws {
+        let pool = WhisperWorkerPool(), fixture = WhisperProcessFixture(), gate = WhisperHostGate()
+        let transcriber = WhisperKitTranscriber(modelName: "fixture", modelFolder: "/fixture/models/small", pool: pool) {
+            try WhisperWorkerClient(configuration: $0, pool: $1, run: fixture.run)
+        }
+        let audio = try makeAudio()
+        defer { gate.release(); transcriber.stop(); try? FileManager.default.removeItem(at: audio) }
+        let task = Task { try await transcriber.transcribeStream(audioFile: .init(fileURL: audio, duration: 1)) {
+            if $0.isFinal { await gate.suspend() }
+        } }
+        await awaitHost { gate.entered }
+        let copy = try XCTUnwrap(fixture.engine.lastRequest?.audioPath)
+        transcriber.stop()
+        let start = ContinuousClock.now
+        await pool.shutdown()
+        XCTAssertLessThan(start.duration(to: .now), .seconds(3))
+        XCTAssertTrue(fixture.finished)
+        XCTAssertEqual(pool.activeCount, 1)
+        XCTAssertThrowsError(try pool.checkUnused(URL(fileURLWithPath: "/fixture")))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: copy))
+        gate.release()
+        do { _ = try await task.value; XCTFail("Stopped facade returned success") } catch {}
+        await waitForEmpty(pool)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: copy))
+        do { try await transcriber.prepare(); XCTFail() } catch {}
+        XCTAssertEqual(fixture.launches, 1)
+    }
+
+    func testCancellationDuringUncooperativeCopyRetainsScratchAndCannotSendAudio() async throws {
+        let pool = WhisperWorkerPool(), fixture = WhisperProcessFixture(), gate = WhisperHostGate()
+        let client = try WhisperWorkerClient(configuration: configuration, pool: pool, copyAudio: { source, target in
+            gate.block(target: target)
+            try WhisperWorkerClient.copyAudio(source, target)
+        }, run: fixture.run)
+        _ = try await client.request(.init(kind: .probe))
+        let audio = try makeAudio()
+        defer { gate.release(); client.stop(); try? FileManager.default.removeItem(at: audio) }
+        let task = Task { try await client.transcribe(audio: audio, lowEnergy: false, prompt: nil, language: nil) { _ in
+            XCTFail("No request was sent")
+        } }
+        await awaitHost { gate.entered }
+        let target = try XCTUnwrap(gate.target)
+        task.cancel()
+        await awaitHost { fixture.finished }
+        try await Task.sleep(for: .milliseconds(50))
+        XCTAssertEqual(pool.activeCount, 1)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: target.deletingLastPathComponent().path))
+        XCTAssertThrowsError(try pool.checkUnused(URL(fileURLWithPath: "/fixture")))
+        XCTAssertNil(fixture.engine.lastRequest)
+        gate.release()
+        do { _ = try await task.value; XCTFail() } catch {}
+        await waitForEmpty(pool)
+        XCTAssertNil(fixture.engine.lastRequest)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: target.deletingLastPathComponent().path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: audio.path))
+    }
+
+    func testFailedHostCopyStillWaitsForDelayedChildCollection() async throws {
+        let pool = WhisperWorkerPool(), fixture = WhisperProcessFixture(delayReaping: true), gate = WhisperHostGate()
+        let client = try WhisperWorkerClient(configuration: configuration, pool: pool, copyAudio: { _, target in
+            gate.block(target: target)
+            throw InferenceFailure.unavailable
+        }, run: fixture.run)
+        _ = try await client.request(.init(kind: .probe))
+        defer { gate.release(); fixture.reap(); client.stop() }
+        let task = Task { try await client.transcribe(audio: URL(fileURLWithPath: "/fixture.wav"), lowEnergy: false,
+                                                       prompt: nil, language: nil) { _ in } }
+        await awaitHost { gate.entered }
+        let directory = try XCTUnwrap(gate.target).deletingLastPathComponent()
+        client.stop()
+        await awaitHost { fixture.finished }
+        gate.release()
+        do { _ = try await task.value; XCTFail() } catch {}
+        XCTAssertEqual(pool.activeCount, 1)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: directory.path))
+        fixture.reap(); await waitForEmpty(pool)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: directory.path))
+    }
+
+    func testFinalConsumerCannotReturnSuccessAfterExplicitClientStop() async throws {
+        let pool = WhisperWorkerPool(), fixture = WhisperProcessFixture(), gate = WhisperHostGate()
+        let client = try WhisperWorkerClient(configuration: configuration, pool: pool, run: fixture.run)
+        var prepare = InferenceMessage(kind: .prepare); prepare.configuration = configuration
+        _ = try await client.request(prepare)
+        let audio = try makeAudio()
+        defer { gate.release(); client.stop(); try? FileManager.default.removeItem(at: audio) }
+        let task = Task { try await client.transcribe(audio: audio, lowEnergy: false, prompt: nil, language: nil,
+                                                      deliverFinal: { _ in await gate.suspend() }) { _ in } }
+        await awaitHost { gate.entered }
+        client.stop(); await awaitHost { fixture.finished }
+        XCTAssertEqual(pool.activeCount, 1)
+        gate.release()
+        do { _ = try await task.value; XCTFail() } catch { XCTAssertEqual(error as? InferenceFailure, .cancelled) }
+        await waitForEmpty(pool)
+    }
+
+    func testCollectedProcessCannotAdmitHostWorkThroughAnOpenFixtureSocket() async throws {
+        let pool = WhisperWorkerPool(), peer = WhisperPeerHolder()
+        let client = try WhisperWorkerClient(configuration: configuration, pool: pool) { request in
+            peer.install(try InferenceSocket(owning: dup(try XCTUnwrap(request.ipcDescriptor))))
+            request.onStarted?(); request.onReaped?()
+            return .init(termination: .exited(0), exitCode: 0, stdout: "", stderr: "", outputTruncated: false)
+        }
+        defer { client.stop(); peer.stop() }
+        await waitForEmpty(pool)
+        do { _ = try await client.request(.init(kind: .probe)); XCTFail() } catch {
+            XCTAssertEqual(error as? InferenceFailure, .unavailable)
+        }
+        XCTAssertEqual(pool.activeCount, 0)
+    }
+
+    private func awaitHost(_ predicate: @escaping @Sendable () -> Bool,
+                           file: StaticString = #filePath, line: UInt = #line) async {
+        for _ in 0..<600 {
+            if predicate() { return }
+            try? await Task.sleep(for: .milliseconds(5))
+        }
+        XCTFail("Fixture did not reach owned host activity", file: file, line: line)
+    }
+
     private func makeAudio() throws -> URL {
         let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".wav")
         try Data("fixture audio".utf8).write(to: url)
@@ -292,6 +444,8 @@ private final class WhisperProcessFixture: @unchecked Sendable {
     let engine: InferenceFixtureEngine
     private let lock = NSLock()
     private var count = 0
+    private var didFinish = false
+    var finished: Bool { lock.withLock { didFinish } }
     private let delayReaping: Bool
     private var reaper: (@Sendable () -> Void)?
     init(delayReaping: Bool = false, fail: Bool = false) {
@@ -305,7 +459,35 @@ private final class WhisperProcessFixture: @unchecked Sendable {
         request.onStarted?()
         await InferenceServer(engine: engine).serve(socket: peer)
         if !delayReaping { request.onReaped?() }
+        lock.withLock { didFinish = true }
         return .init(termination: Task.isCancelled ? .cancelled : .exited(0), exitCode: 0,
                      stdout: "", stderr: "", outputTruncated: false)
     }
+}
+
+private final class WhisperHostGate: @unchecked Sendable {
+    private let condition = NSCondition()
+    private var isEntered = false
+    private var released = false
+    private var destination: URL?
+    var entered: Bool { condition.lock(); defer { condition.unlock() }; return isEntered }
+    var target: URL? { condition.lock(); defer { condition.unlock() }; return destination }
+    func block(target: URL? = nil) {
+        condition.lock(); defer { condition.unlock() }
+        destination = target; isEntered = true
+        while !released { condition.wait() }
+    }
+    func suspend() async {
+        await withCheckedContinuation { continuation in
+            DispatchQueue.global().async { self.block(); continuation.resume() }
+        }
+    }
+    func release() { condition.lock(); released = true; condition.broadcast(); condition.unlock() }
+}
+
+private final class WhisperPeerHolder: @unchecked Sendable {
+    private let lock = NSLock()
+    private var peer: InferenceSocket?
+    func install(_ value: InferenceSocket) { lock.withLock { peer = value } }
+    func stop() { lock.withLock { peer?.stop() } }
 }

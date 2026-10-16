@@ -49,7 +49,7 @@ final class ClipboardMediaInfoProviderTests: XCTestCase {
 
     func testCancelledWaveformDecodeReturnsNothingAndCachesNothing() async throws {
         let url = try ClipboardTestSupport.makeAudioFile(named: "long.wav", in: directory, seconds: 30)
-        let provider = ClipboardMediaInfoProvider()
+        let provider = ClipboardMediaInfoProvider(worker: MediaWorker(timeout: 10))
         let task = Task { await provider.waveform(for: url, bars: 8) }
         task.cancel()
         _ = await task.value
@@ -61,7 +61,7 @@ final class ClipboardMediaInfoProviderTests: XCTestCase {
 
     func testAudioDurationAndWaveform() async throws {
         let url = try ClipboardTestSupport.makeAudioFile(named: "tone.wav", in: directory, seconds: 1)
-        let provider = ClipboardMediaInfoProvider()
+        let provider = ClipboardMediaInfoProvider(worker: MediaWorker(timeout: 10))
 
         let info = await provider.info(for: url, kind: .audio)
         XCTAssertEqual(info?.duration ?? 0, 1, accuracy: 0.05)
@@ -76,12 +76,12 @@ final class ClipboardMediaInfoProviderTests: XCTestCase {
 
     func testPDFPageCount() async {
         let url = ClipboardTestSupport.makePDF(named: "doc.pdf", in: directory, pages: 3)
-        let info = await ClipboardMediaInfoProvider().info(for: url, kind: .pdf)
+        let info = await ClipboardMediaInfoProvider(worker: MediaWorker(timeout: 10)).info(for: url, kind: .pdf)
         XCTAssertEqual(info, ClipboardMediaInfo(duration: nil, pageCount: 3))
     }
 
     func testUnreadableMissingOrOtherFilesHaveNoInfo() async {
-        let provider = ClipboardMediaInfoProvider()
+        let provider = ClipboardMediaInfoProvider(worker: MediaWorker(timeout: 10))
         let missing = directory.appendingPathComponent("gone.m4a")
         let garbage = ClipboardTestSupport.makeFile(named: "broken.m4a", in: directory)
         let brokenPDF = ClipboardTestSupport.makeFile(named: "broken.pdf", in: directory)

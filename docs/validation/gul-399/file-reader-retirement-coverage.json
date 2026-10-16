@@ -1,0 +1,31 @@
+{
+  "covered": 113,
+  "executable_added": 113,
+  "percent": 100.0,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Files/AskFileIndex.swift",
+      "covered": 2,
+      "executable_added": 2,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Files/AskFileReader.swift",
+      "covered": 17,
+      "executable_added": 17,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Files/AskFileReaderOwnership.swift",
+      "covered": 94,
+      "executable_added": 94,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    }
+  ]
+}

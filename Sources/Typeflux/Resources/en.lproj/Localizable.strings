@@ -5733,3 +5733,25 @@
 "settings.services.mediaExtraction" = "Attachment media extraction";
 
 "settings.services.mediaPreviews" = "Media previews";
+"settings.services.clipboardThumbnails" = "Clipboard thumbnails";
+"settings.services.frameRegistration" = "Scrolling screenshot alignment";
+"settings.services.textRecognition" = "Screenshot text recognition";
+"settings.services.clipboardOCR" = "Clipboard image text";
+"settings.services.clipboardMetadata" = "Clipboard media information";
+
+"settings.services.recordingTimeline" = "Recording timeline and posters";
+"settings.services.recordingExport" = "Recording encoding";
+
+"settings.services.nativeSystem" = "Native system commands";
+
+"settings.services.whisperInference" = "Local Whisper inference";
+
+"settings.services.mediaPlayback" = "Media playback";
+
+"settings.services.fileIndex" = "File indexing";
+"settings.services.semanticValidation" = "Semantic file validation";
+"settings.services.semanticIndexReading" = "Semantic content reading";
+"settings.services.semanticPriorityReading" = "Semantic priority reading";
+"settings.services.semanticQueryInference" = "Semantic query inference";
+"settings.services.semanticIndexInference" = "Semantic document inference";
+"settings.services.semanticMediaInference" = "Semantic media inference";

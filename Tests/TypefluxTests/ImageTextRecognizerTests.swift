@@ -4,7 +4,7 @@ import XCTest
 
 final class ImageTextRecognizerTests: XCTestCase {
     private var directory: URL!
-    private let recognizer = VisionImageTextRecognizer()
+    private let recognizer = VisionImageTextRecognizer(worker: MediaWorker(timeout: 30))
 
     override func setUp() {
         super.setUp()

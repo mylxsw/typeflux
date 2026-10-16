@@ -25,7 +25,9 @@ final class AppCoordinator {
     // swiftlint:disable:next function_body_length
     func start() {
         moduleStartup?.cancel()
-        moduleStartup = Task { [di] in _ = await di.moduleRegistry.startAll() }
+        moduleStartup = Task { [di] in
+            await SemanticFileSearchService.shared.startForApplication(using: di.moduleRegistry)
+        }
         di.analyticsReporter.reportFirstOpenIfNeeded()
         di.analyticsReporter.report(
             eventName: "app_launch",

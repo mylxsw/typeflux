@@ -10,9 +10,13 @@ protocol LocalWhisperKitTranscribing: AnyObject {
 
     func prepare(onProgress: ((Double, String) -> Void)?) async throws
     func stop()
+    var isAvailableForReuse: Bool { get }
 }
 
-extension LocalWhisperKitTranscribing { func stop() {} }
+extension LocalWhisperKitTranscribing {
+    func stop() {}
+    var isAvailableForReuse: Bool { true }
+}
 
 final class LocalModelTranscriber: TranscriptionProfileAwareTranscriber {
     static let defaultWhisperKitKeepAliveDuration: TimeInterval = 30 * 60
@@ -136,7 +140,7 @@ final class LocalModelTranscriber: TranscriptionProfileAwareTranscriber {
             : identifier
         let cacheKey = "\(modelName)|\(modelFolder)"
         whisperKitCacheLock.lock()
-        if let cached = whisperKitCache[cacheKey] {
+        if let cached = whisperKitCache[cacheKey], cached.isAvailableForReuse {
             refreshWhisperKitCacheExpiration(for: cacheKey)
             whisperKitCacheLock.unlock()
             return cached

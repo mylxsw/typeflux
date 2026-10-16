@@ -83,7 +83,7 @@ struct ScreenRecordingBorderTests {
         let count = try await Self.checkEveryFrame(source)
         #expect(count > 2)
         let duration = try await AVURLAsset(url: source).load(.duration).seconds
-        try await ScreenRecordingExporter().export(source: source, destination: mp4, format: .mp4,
+        try await ScreenRecordingExporter(encoder: ScreenRecordingEncoder(worker: MediaWorker(timeout: 600))).export(source: source, destination: mp4, format: .mp4,
                                                    trim: .init(start: 0, end: duration)) { _ in }
         #expect(try await Self.checkEveryFrame(mp4) > 2)
         await engine.cancel()
