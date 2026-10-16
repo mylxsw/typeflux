@@ -12,7 +12,7 @@ final class MediaWorker: @unchecked Sendable {
     static let frameRegistration = MediaWorker(timeout: 3, requiresLifecycle: true)
     static let textRecognition = MediaWorker(timeout: 30, requiresLifecycle: true)
     static let clipboardOCR = MediaWorker(timeout: 30, requiresLifecycle: true)
-    static let clipboardMetadata = MediaWorker(timeout: 10)
+    static let clipboardMetadata = MediaWorker(timeout: 10, requiresLifecycle: true)
     enum Input { case file(URL), data(Data) }
     typealias Runner = @Sendable (ManagedProcess.Request, @escaping @Sendable () -> Bool) throws -> ManagedProcess.Result
     private let lock = NSLock()

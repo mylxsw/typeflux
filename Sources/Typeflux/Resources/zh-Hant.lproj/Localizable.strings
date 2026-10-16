@@ -5657,3 +5657,4 @@
 "settings.services.frameRegistration" = "捲動截圖對齊";
 "settings.services.textRecognition" = "截圖文字辨識";
 "settings.services.clipboardOCR" = "剪貼簿圖片文字辨識";
+"settings.services.clipboardMetadata" = "剪貼簿媒體資訊";

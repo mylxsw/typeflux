@@ -5623,3 +5623,4 @@
 "settings.services.frameRegistration" = "スクロールスクリーンショットの位置合わせ";
 "settings.services.textRecognition" = "スクリーンショットの文字認識";
 "settings.services.clipboardOCR" = "クリップボード画像の文字認識";
+"settings.services.clipboardMetadata" = "クリップボードのメディア情報";

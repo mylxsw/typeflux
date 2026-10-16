@@ -5737,3 +5737,4 @@
 "settings.services.frameRegistration" = "滚动截图配准";
 "settings.services.textRecognition" = "截图文字识别";
 "settings.services.clipboardOCR" = "剪贴板图片文字识别";
+"settings.services.clipboardMetadata" = "剪贴板媒体信息";

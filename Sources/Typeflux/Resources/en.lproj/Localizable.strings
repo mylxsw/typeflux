@@ -5737,3 +5737,4 @@
 "settings.services.frameRegistration" = "Scrolling screenshot alignment";
 "settings.services.textRecognition" = "Screenshot text recognition";
 "settings.services.clipboardOCR" = "Clipboard image text";
+"settings.services.clipboardMetadata" = "Clipboard media information";

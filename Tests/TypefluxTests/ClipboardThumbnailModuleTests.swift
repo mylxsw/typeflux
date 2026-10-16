@@ -39,11 +39,12 @@ final class ClipboardThumbnailModuleTests: XCTestCase {
         XCTAssertTrue(MediaExtractionModule.Domain.frameRegistration.worker === MediaWorker.frameRegistration)
         XCTAssertTrue(MediaExtractionModule.Domain.textRecognition.worker === MediaWorker.textRecognition)
         XCTAssertTrue(MediaExtractionModule.Domain.clipboardOCR.worker === MediaWorker.clipboardOCR)
+        XCTAssertTrue(MediaExtractionModule.Domain.clipboardMetadata.worker === MediaWorker.clipboardMetadata)
         let modules = MediaExtractionModules(healthDirectory: root, worker: { _ in
             MediaWorker(executable: URL(fileURLWithPath: "/usr/bin/true"), requiresLifecycle: true,
                 run: { _, _ in XCTFail("Composition replayed a request"); throw MediaFailure.unavailable })
         })
-        XCTAssertEqual(Set(modules.registrations.map(\.id)), [.mediaExtraction, .mediaPreviews, .clipboardThumbnails, .frameRegistration, .textRecognition, .clipboardOCR])
+        XCTAssertEqual(Set(modules.registrations.map(\.id)), [.mediaExtraction, .mediaPreviews, .clipboardThumbnails, .frameRegistration, .textRecognition, .clipboardOCR, .clipboardMetadata])
         let registry = ModuleRegistry(modules.registrations)
         let failures = await registry.startAll(); XCTAssertTrue(failures.isEmpty)
         for domain in MediaExtractionModule.Domain.allCases {
