@@ -1,0 +1,6 @@
+{
+  "step": "command-history index",
+  "exit_code": 1,
+  "whole_tool_call_wall_seconds": 0.173328125,
+  "cause": "A historical JSON dataset was an array, not a command dictionary. Corrected by indexing only dictionaries; resource/test results unaffected. No experiment repeated."
+}

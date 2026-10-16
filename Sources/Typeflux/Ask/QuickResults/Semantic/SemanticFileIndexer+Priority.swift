@@ -5,7 +5,7 @@ extension SemanticFileIndexer {
     // swiftlint:disable:next function_parameter_count
     static func waitForMedia(scope: AskFileScope, store: SemanticFileStore, reader: AskFileReading,
                              encoder: SemanticEmbedding, idle: () -> Bool, paused: () -> Bool,
-                             documents: () -> SemanticIndexPauseGate.DocumentWork, cancelled: () -> Bool,
+                             documents: () throws -> SemanticIndexPauseGate.DocumentWork, cancelled: () -> Bool,
                              summary: inout Summary, progress: (Summary) -> Void,
                              current: (String?) -> Void) throws {
         repeat {
@@ -29,21 +29,27 @@ extension SemanticFileIndexer {
 
     // Consume events at every document batch boundary. Partial files rotate in the durable queue;
     // never recursively reconcile a live event's whole file before checking the next event.
-    // swiftlint:disable:next function_parameter_count
+    // Keep the durable queue, checkpoints and current-file timing in one ownership boundary.
+    // swiftlint:disable:next function_parameter_count function_body_length cyclomatic_complexity
     static func drainDocuments(scope: AskFileScope, store: SemanticFileStore, reader: AskFileReading,
                                encoder: SemanticEmbedding, paused: () -> Bool,
-                               documents: () -> SemanticIndexPauseGate.DocumentWork, cancelled: () -> Bool,
+                               documents: () throws -> SemanticIndexPauseGate.DocumentWork, cancelled: () -> Bool,
                                updates: Bool, summary: inout Summary, progress: (Summary) -> Void,
                                current: (String?) -> Void) throws {
         var processedWork = false
+        var batches = 0
+        let limit = SemanticWorkBudget.current?.documentBatchLimit
         defer {
             if updates, processedWork {
                 encoder.release()
             }
         }
         while true {
+            if let limit, batches >= limit {
+                return
+            }
             try waitWhilePaused(paused, cancelled: cancelled)
-            let work = documents()
+            let work = try documents()
             if !updates, work.scan || !work.paths.isEmpty {
                 // A live event invalidates the initial workload snapshot.
                 summary.total = nil
@@ -52,8 +58,19 @@ extension SemanticFileIndexer {
                 _ = try store.discover(work.paths.map { ($0, .document) })
             }
             if work.scan {
-                try discoverPriorityDocuments(scope: scope, store: store, reader: reader, paused: paused,
-                                              cancelled: cancelled, skipped: { summary.skipped += 1 })
+                // Compatibility callers request a document-only scan. Real filesystem subtrees
+                // use the durable scan-request queue below and confirm all supported modalities.
+                try discover(scope: scope, store: store, reader: reader, roots: scope.roots, paused: paused,
+                             cancelled: cancelled, summary: &summary, progress: progress)
+                try store.pruneDiscovered(cancelled: cancelled, documentsOnly: true)
+            }
+            while let request = try store.nextScanRequest() {
+                summary.total = nil
+                try discover(scope: scope, store: store, reader: reader, roots: [request.path], paused: paused,
+                             cancelled: cancelled, summary: &summary, progress: progress)
+                try waitWhilePaused(paused, cancelled: cancelled)
+                try store.pruneDiscovered(cancelled: cancelled)
+                try store.finishScanRequest(request)
             }
             guard let path = try store.nextWork(.document) else { return }
             processedWork = true
@@ -85,42 +102,7 @@ extension SemanticFileIndexer {
                 }
             }
             progress(summary)
+            batches += 1
         }
-    }
-
-    // Disk-backed discovery finishes its stream before any document reads begin.
-    // swiftlint:disable:next function_parameter_count
-    private static func discoverPriorityDocuments(scope: AskFileScope, store: SemanticFileStore,
-                                                  reader: AskFileReading, paused: () -> Bool,
-                                                  cancelled: () -> Bool, skipped: () -> Void) throws {
-        var batch: [(String, SemanticMediaPriority)] = [], failure: Error?
-        func flushDiscovery() throws {
-            _ = try store.discover(batch)
-            batch.removeAll(keepingCapacity: true)
-        }
-        for root in scope.roots {
-            AskFileCrawler.crawl(root, scope: scope, limit: nil, reader: reader, isCancelled: cancelled,
-                                 isPaused: paused, skipped: { _, _ in skipped() }, visit: { entry in
-                                     if entry.kind == .file, SemanticFilePolicy.allows(entry.path),
-                                        SemanticMediaPriority.of(entry.path) == .document {
-                                         batch.append((entry.path, .document))
-                                     }
-                                     do {
-                                         if batch.count >= 128 {
-                                             try flushDiscovery()
-                                         }
-                                     } catch {
-                                         failure = error; return false
-                                     }
-                                     return !cancelled()
-                                 })
-            if let failure {
-                throw failure
-            }
-            if cancelled() {
-                throw CancellationError()
-            }
-        }
-        try flushDiscovery()
     }
 }

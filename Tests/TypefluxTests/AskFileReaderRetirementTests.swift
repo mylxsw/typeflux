@@ -127,8 +127,24 @@ final class AskFileReaderRetirementTests: XCTestCase {
             return collected
         }
         XCTAssertFalse(child.isRunning)
+        XCTAssertFalse(child.suspend()); XCTAssertFalse(child.resume())
         child.stop(); child.stop(); XCTAssertFalse(owner.isOccupied)
     }
+    func testBudgetSignalsRemainInsideTheOwnedChildRetirementBoundary() throws {
+        let input = Pipe(), output = Pipe(), owner = AskFileReaderOwnership()
+        let child = try AskFileReaderProcess(executable: URL(fileURLWithPath: "/bin/sleep"), arguments: ["20"],
+            input: input.fileHandleForReading.fileDescriptor, output: output.fileHandleForWriting.fileDescriptor,
+            qualityOfService: .utility, ownership: owner, reaper: .shared, isCancelled: { false })
+        defer { child.stop() }
+        XCTAssertTrue(child.suspend())
+        usleep(10_000)
+        XCTAssertTrue(child.isRunning)
+        XCTAssertTrue(child.resume())
+        child.stop()
+        XCTAssertFalse(child.suspend()); XCTAssertFalse(child.resume())
+        try wait { !owner.isOccupied }
+    }
+
     func testStopKillsOwnedDescendantBeforeReleasingLeaderIdentity() throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false)

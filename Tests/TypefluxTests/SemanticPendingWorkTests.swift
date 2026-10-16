@@ -61,4 +61,18 @@ struct SemanticPendingWorkTests {
         current.lifecycle.cancel()
         #expect(gate.takeDocuments(from: current).paths.isEmpty)
     }
+    @Test func cancelledQueryPriorityDoesNotPauseItsReplacementButStillBalances() {
+        let gate = SemanticIndexPauseGate(), old = AskSearchCancellation(), current = AskSearchCancellation()
+        gate.beginQuery(lifecycle: old)
+        #expect(gate.isPaused)
+        old.cancel()
+        gate.begin(.init(lifecycle: current))
+        #expect(!gate.isPaused)
+        gate.beginQuery(lifecycle: current)
+        gate.endQuery(lifecycle: old)
+        #expect(gate.isPaused)
+        gate.endQuery(lifecycle: current)
+        #expect(!gate.isPaused)
+    }
+
 }

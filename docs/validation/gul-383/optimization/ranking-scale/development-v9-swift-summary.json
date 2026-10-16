@@ -1,0 +1,212 @@
+{
+  "audio_cross_language": {
+    "before": {
+      "n": 25,
+      "recall": 0.92,
+      "mrr": 0.39666666666666667,
+      "false_positive": null
+    },
+    "after": {
+      "n": 25,
+      "recall": 1.0,
+      "mrr": 0.4293333333333333,
+      "false_positive": null
+    }
+  },
+  "audio_paraphrase": {
+    "before": {
+      "n": 25,
+      "recall": 0.72,
+      "mrr": 0.32,
+      "false_positive": null
+    },
+    "after": {
+      "n": 25,
+      "recall": 0.96,
+      "mrr": 0.5666666666666667,
+      "false_positive": null
+    }
+  },
+  "audio_topic": {
+    "before": {
+      "n": 25,
+      "recall": 0.68,
+      "mrr": 0.19399999999999998,
+      "false_positive": null
+    },
+    "after": {
+      "n": 25,
+      "recall": 0.92,
+      "mrr": 0.2553333333333333,
+      "false_positive": null
+    }
+  },
+  "chinese_short": {
+    "before": {
+      "n": 25,
+      "recall": 1.0,
+      "mrr": 1.0,
+      "false_positive": null
+    },
+    "after": {
+      "n": 25,
+      "recall": 1.0,
+      "mrr": 1.0,
+      "false_positive": null
+    }
+  },
+  "cross_language": {
+    "before": {
+      "n": 25,
+      "recall": 0.4,
+      "mrr": 0.17666666666666667,
+      "false_positive": null
+    },
+    "after": {
+      "n": 25,
+      "recall": 0.96,
+      "mrr": 0.308,
+      "false_positive": null
+    }
+  },
+  "development_extra_no_answer": {
+    "before": {
+      "n": 120,
+      "recall": null,
+      "mrr": null,
+      "false_positive": 1.0
+    },
+    "after": {
+      "n": 120,
+      "recall": null,
+      "mrr": null,
+      "false_positive": 0.0
+    }
+  },
+  "development_short_no_answer": {
+    "before": {
+      "n": 120,
+      "recall": null,
+      "mrr": null,
+      "false_positive": 1.0
+    },
+    "after": {
+      "n": 120,
+      "recall": null,
+      "mrr": null,
+      "false_positive": 0.0
+    }
+  },
+  "document_paraphrase": {
+    "before": {
+      "n": 25,
+      "recall": 0.76,
+      "mrr": 0.5266666666666666,
+      "false_positive": null
+    },
+    "after": {
+      "n": 25,
+      "recall": 0.92,
+      "mrr": 0.6133333333333334,
+      "false_positive": null
+    }
+  },
+  "explicit_audio": {
+    "before": {
+      "n": 25,
+      "recall": 0.72,
+      "mrr": 0.32,
+      "false_positive": null
+    },
+    "after": {
+      "n": 25,
+      "recall": 0.96,
+      "mrr": 0.94,
+      "false_positive": null
+    }
+  },
+  "identifier": {
+    "before": {
+      "n": 25,
+      "recall": 1.0,
+      "mrr": 0.8746666666666667,
+      "false_positive": null
+    },
+    "after": {
+      "n": 25,
+      "recall": 1.0,
+      "mrr": 1.0,
+      "false_positive": null
+    }
+  },
+  "image": {
+    "before": {
+      "n": 6,
+      "recall": 1.0,
+      "mrr": 0.6666666666666666,
+      "false_positive": null
+    },
+    "after": {
+      "n": 6,
+      "recall": 1.0,
+      "mrr": 1.0,
+      "false_positive": null
+    }
+  },
+  "lexical": {
+    "before": {
+      "n": 25,
+      "recall": 1.0,
+      "mrr": 0.98,
+      "false_positive": null
+    },
+    "after": {
+      "n": 25,
+      "recall": 1.0,
+      "mrr": 1.0,
+      "false_positive": null
+    }
+  },
+  "long_tail": {
+    "before": {
+      "n": 25,
+      "recall": 1.0,
+      "mrr": 0.96,
+      "false_positive": null
+    },
+    "after": {
+      "n": 25,
+      "recall": 1.0,
+      "mrr": 1.0,
+      "false_positive": null
+    }
+  },
+  "media_no_answer": {
+    "before": {
+      "n": 25,
+      "recall": null,
+      "mrr": null,
+      "false_positive": 1.0
+    },
+    "after": {
+      "n": 25,
+      "recall": null,
+      "mrr": null,
+      "false_positive": 0.0
+    }
+  },
+  "no_answer": {
+    "before": {
+      "n": 25,
+      "recall": null,
+      "mrr": null,
+      "false_positive": 1.0
+    },
+    "after": {
+      "n": 25,
+      "recall": null,
+      "mrr": null,
+      "false_positive": 0.0
+    }
+  }
+}

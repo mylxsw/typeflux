@@ -1,0 +1,19 @@
+{
+  "source_commit": "6a9c18d79561b49d8c5339754193c6a06ee79374",
+  "row_equivalence_to_source8bc": {
+    "final-holdout": true,
+    "unseen-query": true,
+    "rework-frozen": true,
+    "rework-final2": true,
+    "rework-final3": true
+  },
+  "query_count": 1000,
+  "scope": "Fresh actual Release before/after Swift store-ranking replay on finalUI source. All five frozen cohorts retained; ranking rules/data are unchanged by home permission coalescing. This is not a new extraction/permissions/UI end-to-end measurement.",
+  "captures": {
+    "final-holdout": "e1390573efdc314f1d7224fbb192065c02ef477198c45186268eef81c20c030d",
+    "unseen-query": "0f04c6cbb7c2a5ba10c870dc8078889436f01ad2344aeecf6410f2cf19b18939",
+    "rework-frozen": "c7229f330d9848ffd06f96e154f9c6aee0aea17f6438b2e83b2ead1d7dcd382e",
+    "rework-final2": "4d9bef229de330247c28307e473ab00722d4c67bc7b700a66e17d5a1abdc3b1f",
+    "rework-final3": "49bc16e2f9711137cde33c91014fc48237ebe3ef14e3f8bf31f5abf79410a498"
+  }
+}

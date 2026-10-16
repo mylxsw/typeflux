@@ -1,0 +1,892 @@
+{
+  "final-holdout": {
+    "audio_semantic": {
+      "before": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 0.76,
+        "mrr": 0.2353333333333333,
+        "location": 0.76,
+        "false_positives": 0,
+        "false_positive_rate": null
+      },
+      "after": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 0.97,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      }
+    },
+    "chinese_short": {
+      "before": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      },
+      "after": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      }
+    },
+    "cross_language": {
+      "before": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 0.72,
+        "mrr": 0.24466666666666664,
+        "location": 0.72,
+        "false_positives": 0,
+        "false_positive_rate": null
+      },
+      "after": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 0.358,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      }
+    },
+    "identifier_unicode": {
+      "before": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 0.92,
+        "mrr": 0.83,
+        "location": 0.92,
+        "false_positives": 0,
+        "false_positive_rate": null
+      },
+      "after": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      }
+    },
+    "image_semantic": {
+      "before": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 0.5,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      },
+      "after": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      }
+    },
+    "lexical": {
+      "before": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      },
+      "after": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      }
+    },
+    "no_answer": {
+      "before": {
+        "n": 25,
+        "positive_n": 0,
+        "negative_n": 25,
+        "recall_at_5": null,
+        "mrr": null,
+        "location": null,
+        "false_positives": 25,
+        "false_positive_rate": 1.0
+      },
+      "after": {
+        "n": 25,
+        "positive_n": 0,
+        "negative_n": 25,
+        "recall_at_5": null,
+        "mrr": null,
+        "location": null,
+        "false_positives": 0,
+        "false_positive_rate": 0.0
+      }
+    },
+    "semantic_paraphrase": {
+      "before": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 0.92,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      },
+      "after": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 0.96,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      }
+    }
+  },
+  "unseen-query": {
+    "audio_semantic": {
+      "before": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 0.76,
+        "mrr": 0.25866666666666666,
+        "location": 0.76,
+        "false_positives": 0,
+        "false_positive_rate": null
+      },
+      "after": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      }
+    },
+    "chinese_short": {
+      "before": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      },
+      "after": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      }
+    },
+    "cross_language": {
+      "before": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 0.72,
+        "mrr": 0.22266666666666665,
+        "location": 0.72,
+        "false_positives": 0,
+        "false_positive_rate": null
+      },
+      "after": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 0.32466666666666666,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      }
+    },
+    "identifier_unicode": {
+      "before": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 0.8,
+        "mrr": 0.7233333333333333,
+        "location": 0.8,
+        "false_positives": 0,
+        "false_positive_rate": null
+      },
+      "after": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      }
+    },
+    "image_semantic": {
+      "before": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      },
+      "after": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      }
+    },
+    "lexical": {
+      "before": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      },
+      "after": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      }
+    },
+    "no_answer": {
+      "before": {
+        "n": 25,
+        "positive_n": 0,
+        "negative_n": 25,
+        "recall_at_5": null,
+        "mrr": null,
+        "location": null,
+        "false_positives": 25,
+        "false_positive_rate": 1.0
+      },
+      "after": {
+        "n": 25,
+        "positive_n": 0,
+        "negative_n": 25,
+        "recall_at_5": null,
+        "mrr": null,
+        "location": null,
+        "false_positives": 1,
+        "false_positive_rate": 0.04
+      }
+    },
+    "semantic_paraphrase": {
+      "before": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      },
+      "after": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 0.94,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      }
+    }
+  },
+  "rework-frozen": {
+    "audio_semantic": {
+      "before": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 0.88,
+        "mrr": 0.29533333333333334,
+        "location": 0.88,
+        "false_positives": 0,
+        "false_positive_rate": null
+      },
+      "after": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 0.98,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      }
+    },
+    "chinese_short": {
+      "before": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      },
+      "after": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      }
+    },
+    "cross_language": {
+      "before": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 0.92,
+        "mrr": 0.304,
+        "location": 0.92,
+        "false_positives": 0,
+        "false_positive_rate": null
+      },
+      "after": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 0.36666666666666664,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      }
+    },
+    "identifier_unicode": {
+      "before": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      },
+      "after": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      }
+    },
+    "image_semantic": {
+      "before": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 0.8,
+        "mrr": 0.16,
+        "location": 0.8,
+        "false_positives": 0,
+        "false_positive_rate": null
+      },
+      "after": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      }
+    },
+    "lexical": {
+      "before": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      },
+      "after": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      }
+    },
+    "no_answer": {
+      "before": {
+        "n": 25,
+        "positive_n": 0,
+        "negative_n": 25,
+        "recall_at_5": null,
+        "mrr": null,
+        "location": null,
+        "false_positives": 25,
+        "false_positive_rate": 1.0
+      },
+      "after": {
+        "n": 25,
+        "positive_n": 0,
+        "negative_n": 25,
+        "recall_at_5": null,
+        "mrr": null,
+        "location": null,
+        "false_positives": 2,
+        "false_positive_rate": 0.08
+      }
+    },
+    "semantic_paraphrase": {
+      "before": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 0.96,
+        "mrr": 0.96,
+        "location": 0.96,
+        "false_positives": 0,
+        "false_positive_rate": null
+      },
+      "after": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 0.96,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      }
+    }
+  },
+  "rework-final2": {
+    "audio_semantic": {
+      "before": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 0.84,
+        "mrr": 0.36,
+        "location": 0.84,
+        "false_positives": 0,
+        "false_positive_rate": null
+      },
+      "after": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 0.96,
+        "mrr": 0.96,
+        "location": 0.96,
+        "false_positives": 0,
+        "false_positive_rate": null
+      }
+    },
+    "chinese_short": {
+      "before": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      },
+      "after": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      }
+    },
+    "cross_language": {
+      "before": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 0.368,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      },
+      "after": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 0.43666666666666665,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      }
+    },
+    "identifier_unicode": {
+      "before": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      },
+      "after": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      }
+    },
+    "image_semantic": {
+      "before": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 0.72,
+        "mrr": 0.14400000000000002,
+        "location": 0.72,
+        "false_positives": 0,
+        "false_positive_rate": null
+      },
+      "after": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 0.94,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      }
+    },
+    "lexical": {
+      "before": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      },
+      "after": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      }
+    },
+    "no_answer": {
+      "before": {
+        "n": 25,
+        "positive_n": 0,
+        "negative_n": 25,
+        "recall_at_5": null,
+        "mrr": null,
+        "location": null,
+        "false_positives": 25,
+        "false_positive_rate": 1.0
+      },
+      "after": {
+        "n": 25,
+        "positive_n": 0,
+        "negative_n": 25,
+        "recall_at_5": null,
+        "mrr": null,
+        "location": null,
+        "false_positives": 0,
+        "false_positive_rate": 0.0
+      }
+    },
+    "semantic_paraphrase": {
+      "before": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 0.9466666666666668,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      },
+      "after": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 0.96,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      }
+    }
+  },
+  "rework-final3": {
+    "audio_semantic": {
+      "before": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 0.68,
+        "mrr": 0.25933333333333336,
+        "location": 0.68,
+        "false_positives": 0,
+        "false_positive_rate": null
+      },
+      "after": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      }
+    },
+    "chinese_short": {
+      "before": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      },
+      "after": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      }
+    },
+    "cross_language": {
+      "before": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 0.8,
+        "mrr": 0.2886666666666667,
+        "location": 0.8,
+        "false_positives": 0,
+        "false_positive_rate": null
+      },
+      "after": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 0.43,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      }
+    },
+    "identifier_unicode": {
+      "before": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      },
+      "after": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      }
+    },
+    "image_semantic": {
+      "before": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 0.6,
+        "mrr": 0.12,
+        "location": 0.6,
+        "false_positives": 0,
+        "false_positive_rate": null
+      },
+      "after": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      }
+    },
+    "lexical": {
+      "before": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      },
+      "after": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      }
+    },
+    "no_answer": {
+      "before": {
+        "n": 25,
+        "positive_n": 0,
+        "negative_n": 25,
+        "recall_at_5": null,
+        "mrr": null,
+        "location": null,
+        "false_positives": 25,
+        "false_positive_rate": 1.0
+      },
+      "after": {
+        "n": 25,
+        "positive_n": 0,
+        "negative_n": 25,
+        "recall_at_5": null,
+        "mrr": null,
+        "location": null,
+        "false_positives": 0,
+        "false_positive_rate": 0.0
+      }
+    },
+    "semantic_paraphrase": {
+      "before": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 0.96,
+        "mrr": 0.9133333333333333,
+        "location": 0.96,
+        "false_positives": 0,
+        "false_positive_rate": null
+      },
+      "after": {
+        "n": 25,
+        "positive_n": 25,
+        "negative_n": 0,
+        "recall_at_5": 1.0,
+        "mrr": 0.96,
+        "location": 1.0,
+        "false_positives": 0,
+        "false_positive_rate": null
+      }
+    }
+  }
+}

@@ -101,7 +101,7 @@ final class AskFileReaderOwnership: @unchecked Sendable {
 
 /// POSIX ownership keeps the PID reserved until the last signal. Foundation's
 /// asynchronous Process reaper must not race a later raw kill(pid).
-final class AskFileReaderProcess: @unchecked Sendable {
+final class AskFileReaderProcess: SemanticBudgetChild, @unchecked Sendable {
     private let lock = NSLock()
     let id: UUID
     let pid: pid_t
@@ -126,7 +126,23 @@ final class AskFileReaderProcess: @unchecked Sendable {
         lock.lock(); defer { lock.unlock() }
         guard !stopped else { return false }
         var info = siginfo_t()
-        return waitid(P_PID, id_t(pid), &info, WEXITED | WNOHANG | WNOWAIT) == 0 && info.si_pid == 0
+        return waitid(P_PID, id_t(pid), &info, WEXITED | WNOHANG | WNOWAIT) == 0 &&
+            (info.si_pid == 0 || info.si_code == CLD_STOPPED || info.si_code == CLD_CONTINUED)
+    }
+    // Signal only while the PID remains reserved by this exact lineage. Retirement and
+    // budget suspension share the same lock; a late resume cannot signal a reused PID.
+    func suspend() -> Bool { signal(SIGSTOP) }
+    func resume() -> Bool { signal(SIGCONT) }
+    private func signal(_ value: Int32) -> Bool {
+        lock.withLock {
+            guard !stopped, ownership.permits(id) else { return false }
+            var info = siginfo_t(), result: Int32
+            repeat { result = waitid(P_PID, id_t(pid), &info, WEXITED | WNOHANG | WNOWAIT) }
+            while result < 0 && errno == EINTR
+            guard result == 0, info.si_pid == 0 || info.si_code == CLD_STOPPED || info.si_code == CLD_CONTINUED
+            else { return false }
+            return kill(-pid, value) == 0
+        }
     }
     func stop() {
         lock.lock(); defer { lock.unlock() }
@@ -165,7 +181,12 @@ final class AskFileReaderProcess: @unchecked Sendable {
                 quality == .background ? QOS_CLASS_BACKGROUND : QOS_CLASS_UTILITY))
         }
         let argv = ([executable.path] + arguments).map { strdup($0) } + [nil]
-        let env = ProcessInfo.processInfo.environment.map { strdup("\($0.key)=\($0.value)") } + [nil]
+        var environment = ProcessInfo.processInfo.environment
+        if arguments.contains("--background") {
+            environment["VECLIB_MAXIMUM_THREADS"] = "1"
+            environment["OMP_NUM_THREADS"] = "1"
+        }
+        let env = environment.map { strdup("\($0.key)=\($0.value)") } + [nil]
         defer { (argv + env).forEach { free($0) } }
         var pid: pid_t = 0
         try argv.withUnsafeBufferPointer { args in

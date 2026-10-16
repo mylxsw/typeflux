@@ -1,0 +1,7 @@
+{
+  "command": "python3 docs/validation/gul-383/optimization/ranking-scale/analyze_final_resource.py --folder resource-after-closeout-300",
+  "cwd": "repository root",
+  "exit_code": 1,
+  "whole_tool_call_wall_seconds": 0.022758709,
+  "cause": "Relative folder resolved from repository root; corrected by running from ranking-scale. No test or resource experiment repeated. The following independent matrix analysis succeeded; shell final status did not represent the failed first subcommand."
+}

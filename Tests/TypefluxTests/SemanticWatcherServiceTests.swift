@@ -80,7 +80,7 @@ struct SemanticWatcherServiceTests {
         await service.clear(removeModel: true)
     }
 
-    @Test func overflowRequiresCatchupDiscoveryBeforeItsCheckpointCanAdvance() async throws {
+    @Test func overflowRequiresDurableSubtreeDiscoveryBeforeItsCheckpointCanAdvance() async throws {
         let (service, root, watcher, queue, history, reader, _, store, scope) = try await fixture()
         defer { reader.gate.release(); try? FileManager.default.removeItem(at: root) }
         reader.gate.hold(); history.advance(120)
@@ -91,12 +91,12 @@ struct SemanticWatcherServiceTests {
         #expect(queue.count == 1 && service.phase == .ready)
         queue.run()
         try await SemanticFileServiceTests.wait { reader.gate.waiting }
-        #expect(try store.completedEventID(scope: scope, volumeSignature: "private-fixture-volume") == nil,
-                "full catch-up invalidates the old checkpoint rather than acknowledging the overflow")
+        #expect(try store.completedEventID(scope: scope, volumeSignature: "private-fixture-volume") == 100,
+                "the prior receipt stays unchanged until durable subtree catch-up finishes")
         reader.gate.release()
         await service.prepareModelIfNeeded()
         #expect(service.phase == .ready && service.files == 1)
-        #expect(try store.completedEventID(scope: scope, volumeSignature: "private-fixture-volume") == 120)
+        #expect(try store.completedEventID(scope: scope, volumeSignature: "private-fixture-volume") == 110)
         await service.clear(removeModel: true)
     }
 
@@ -150,11 +150,11 @@ struct SemanticWatcherServiceTests {
         history.advance(120); reader.gate.hold()
         service.pause(false)
         try await SemanticFileServiceTests.wait { reader.gate.waiting }
-        #expect(try store.completedEventID(scope: scope, volumeSignature: "private-fixture-volume") == nil)
+        #expect(try store.completedEventID(scope: scope, volumeSignature: "private-fixture-volume") == 100)
         reader.gate.release()
         await service.prepareModelIfNeeded()
         #expect(service.phase == .ready && service.files == 1)
-        #expect(try store.completedEventID(scope: scope, volumeSignature: "private-fixture-volume") == 120)
+        #expect(try store.completedEventID(scope: scope, volumeSignature: "private-fixture-volume") == 106)
         await service.clear(removeModel: true)
     }
 
@@ -180,7 +180,7 @@ struct SemanticWatcherServiceTests {
         #expect(service.phase == .indexing)
         reader.gate.release()
         try await SemanticFileServiceTests.wait {
-            service.phase == .ready && (try? store.completedEventID(scope: scope, volumeSignature: "private-fixture-volume")) == 120
+            service.phase == .ready && (try? store.completedEventID(scope: scope, volumeSignature: "private-fixture-volume")) == 107
         }
         #expect(try store.counts().files == 1)
         #expect(try !store.unchanged(path: deleted, modified: reader.base.modified - 1, bytes: 10))
@@ -190,6 +190,7 @@ struct SemanticWatcherServiceTests {
     @Test func failedAttemptRestoresBoundedObligationsWithoutAutomaticRetry() async throws {
         let (service, root, watcher, queue, history, reader, encoder, store, scope) = try await fixture()
         defer { reader.gate.release(); encoder.gate.release(); try? FileManager.default.removeItem(at: root) }
+        reader.base.modified += 1
         encoder.gate.hold()
         let original = (0..<300).map { AskFileChange(path: root.path + "/original-\($0).md", rescan: false) }
         watcher.change?(original, 110); queue.run()
@@ -203,11 +204,11 @@ struct SemanticWatcherServiceTests {
         // A fresh event is the existing explicit reconciliation trigger, not a health retry.
         watcher.change?([], 130); queue.run()
         try await SemanticFileServiceTests.wait { reader.gate.waiting }
-        #expect(try store.completedEventID(scope: scope, volumeSignature: "private-fixture-volume") == nil)
+        #expect(try store.completedEventID(scope: scope, volumeSignature: "private-fixture-volume") == 100)
         reader.gate.release()
         await service.prepareModelIfNeeded()
         #expect(service.phase == .ready && service.files == 1)
-        #expect(try store.completedEventID(scope: scope, volumeSignature: "private-fixture-volume") == 140)
+        #expect(try store.completedEventID(scope: scope, volumeSignature: "private-fixture-volume") == 130)
         await service.clear(removeModel: true)
     }
 

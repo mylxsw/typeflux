@@ -10,9 +10,15 @@ enum SemanticMediaPriority: Int, CaseIterable, Sendable {
 
     static func of(_ path: String) -> Self {
         let ext = (path as NSString).pathExtension.lowercased()
-        if images.contains(ext) { return .image }
-        if audioExtensions.contains(ext) { return .audio }
-        if videoExtensions.contains(ext) { return .video }
+        if images.contains(ext) {
+            return .image
+        }
+        if audioExtensions.contains(ext) {
+            return .audio
+        }
+        if videoExtensions.contains(ext) {
+            return .video
+        }
         return .document
     }
 }
@@ -29,4 +35,15 @@ enum SemanticMediaInputError: Error { case unreadable }
 
 protocol SemanticMediaEmbedding: AnyObject {
     func embed(_ input: SemanticMediaInput, cancelled: () -> Bool) throws -> [Float]
+    func release()
+}
+
+extension SemanticMediaEmbedding { func release() {} }
+
+/// Resume only a contiguous committed prefix of a verified media job. Video frames precede audio.
+struct SemanticMediaCursor: Codable, Equatable {
+    var nextOrdinal = 0
+    var videoFrames = 0
+    var imageDone = false
+    var audioUntil: Double = 0
 }

@@ -1,0 +1,2961 @@
+{
+  "complete" : false,
+  "entries" : [
+
+  ],
+  "rows" : [
+    {
+      "complete_ms" : 201.45120800000001,
+      "completed_batches" : 3,
+      "entry" : "mixed",
+      "indexed_chunks" : 100058,
+      "input_to_draw_ms" : 111.024,
+      "input_to_publish_ms" : 78.209999999999994,
+      "input_uptime" : 487240.79252241668,
+      "main_actor_max_timer_gap_ms" : 68.719207999999995,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487240.79220466671,
+        487240.88810362504
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 0,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 189.80737500000001,
+      "completed_batches" : 4,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.444958999999997,
+      "input_to_publish_ms" : 63.463208999999999,
+      "input_uptime" : 487241.3217954167,
+      "main_actor_max_timer_gap_ms" : 61.962417000000002,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487240.96178208338,
+        487241.38528016669
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 1,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 191.03408300000001,
+      "completed_batches" : 5,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.848749999999995,
+      "input_to_publish_ms" : 63.935250000000003,
+      "input_uptime" : 487241.83287770837,
+      "main_actor_max_timer_gap_ms" : 62.335374999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487241.45708812505,
+        487241.8962049167
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 2,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 190.50495900000001,
+      "completed_batches" : 6,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 82.185749999999999,
+      "input_to_publish_ms" : 64.069874999999996,
+      "input_uptime" : 487242.34490383335,
+      "main_actor_max_timer_gap_ms" : 62.468667000000003,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487241.96216258337,
+        487242.41612862505
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 3,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 190.64154199999999,
+      "completed_batches" : 7,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.736417000000003,
+      "input_to_publish_ms" : 63.600000000000001,
+      "input_uptime" : 487242.85424029169,
+      "main_actor_max_timer_gap_ms" : 62.021540999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487242.481153125,
+        487242.92231208336
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 4,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 188.16662500000001,
+      "completed_batches" : 8,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 80.594999999999999,
+      "input_to_publish_ms" : 62.549500000000002,
+      "input_uptime" : 487243.3640765,
+      "main_actor_max_timer_gap_ms" : 61.072457999999997,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487242.98314854171,
+        487243.42928095837
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 5,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 189.79012499999999,
+      "completed_batches" : 9,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 80.806250000000006,
+      "input_to_publish_ms" : 62.868167,
+      "input_uptime" : 487243.87096458336,
+      "main_actor_max_timer_gap_ms" : 61.384416999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487243.49345050001,
+        487243.93472887506
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 6,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 189.25537499999999,
+      "completed_batches" : 10,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.021917000000002,
+      "input_to_publish_ms" : 62.393166999999998,
+      "input_uptime" : 487244.37991662504,
+      "main_actor_max_timer_gap_ms" : 60.883040999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487243.99527362501,
+        487244.44685508334
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 7,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 189.245959,
+      "completed_batches" : 11,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.153084000000007,
+      "input_to_publish_ms" : 62.671416999999998,
+      "input_uptime" : 487244.88588295836,
+      "main_actor_max_timer_gap_ms" : 61.183582999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487244.50821991672,
+        487244.9513850417
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 8,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 189.053292,
+      "completed_batches" : 12,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.752833999999993,
+      "input_to_publish_ms" : 63.279792,
+      "input_uptime" : 487245.39898595837,
+      "main_actor_max_timer_gap_ms" : 61.773209000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487245.01724475005,
+        487245.47128116671
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 9,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 189.52125000000001,
+      "completed_batches" : 13,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.118958000000006,
+      "input_to_publish_ms" : 62.942374999999998,
+      "input_uptime" : 487245.90420112503,
+      "main_actor_max_timer_gap_ms" : 61.471291999999998,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487245.53294733335,
+        487245.96710504172
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 10,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 189.42449999999999,
+      "completed_batches" : 14,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.484542000000005,
+      "input_to_publish_ms" : 63.446959,
+      "input_uptime" : 487246.41028333339,
+      "main_actor_max_timer_gap_ms" : 61.954999999999998,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487246.03544441669,
+        487246.47851945838
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 11,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 189.486458,
+      "completed_batches" : 15,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 80.609707999999998,
+      "input_to_publish_ms" : 63.136291,
+      "input_uptime" : 487246.92440470838,
+      "main_actor_max_timer_gap_ms" : 61.503791,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487246.54610920837,
+        487246.98673487501
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 12,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 188.89120800000001,
+      "completed_batches" : 16,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 80.972832999999994,
+      "input_to_publish_ms" : 62.368166000000002,
+      "input_uptime" : 487247.43610433338,
+      "main_actor_max_timer_gap_ms" : 60.8705,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487247.05048200005,
+        487247.50208716671
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 13,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 190.02975000000001,
+      "completed_batches" : 17,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 82.995334,
+      "input_to_publish_ms" : 64.406583999999995,
+      "input_uptime" : 487247.93970191671,
+      "main_actor_max_timer_gap_ms" : 62.892207999999997,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487247.57209825004,
+        487248.01333929168
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 14,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 188.762125,
+      "completed_batches" : 18,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.030292000000003,
+      "input_to_publish_ms" : 62.757666999999998,
+      "input_uptime" : 487248.44922345836,
+      "main_actor_max_timer_gap_ms" : 61.280625000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487248.07411925006,
+        487248.51686970837
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 15,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 189.48287500000001,
+      "completed_batches" : 19,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.850416999999993,
+      "input_to_publish_ms" : 63.610624999999999,
+      "input_uptime" : 487248.95717316668,
+      "main_actor_max_timer_gap_ms" : 62.103000000000002,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487248.57975858334,
+        487249.02469408337
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 16,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 188.697709,
+      "completed_batches" : 20,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.221417000000002,
+      "input_to_publish_ms" : 62.963124999999998,
+      "input_uptime" : 487249.46342100005,
+      "main_actor_max_timer_gap_ms" : 61.473875,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487249.09119808336,
+        487249.53342333337
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 17,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 189.91883300000001,
+      "completed_batches" : 21,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.607540999999998,
+      "input_to_publish_ms" : 64.088750000000005,
+      "input_uptime" : 487249.97238579171,
+      "main_actor_max_timer_gap_ms" : 62.594791999999998,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487249.59960304172,
+        487250.03972783335
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 18,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 188.72120799999999,
+      "completed_batches" : 22,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 83.635999999999996,
+      "input_to_publish_ms" : 62.941417000000001,
+      "input_uptime" : 487250.47823308338,
+      "main_actor_max_timer_gap_ms" : 61.399166999999998,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487250.10498162505,
+        487250.54685429169
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 19,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 190.56716700000001,
+      "completed_batches" : 23,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 83.515500000000003,
+      "input_to_publish_ms" : 64.190167000000002,
+      "input_uptime" : 487250.98337408336,
+      "main_actor_max_timer_gap_ms" : 62.642000000000003,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487250.61573983339,
+        487251.05568754172
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 20,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 190.89854199999999,
+      "completed_batches" : 24,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.498292000000006,
+      "input_to_publish_ms" : 63.140042000000001,
+      "input_uptime" : 487251.49427741667,
+      "main_actor_max_timer_gap_ms" : 61.682791999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487251.12256679172,
+        487251.56325983338
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 21,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 191.272583,
+      "completed_batches" : 25,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 83.123625000000004,
+      "input_to_publish_ms" : 64.944249999999997,
+      "input_uptime" : 487252.00172533334,
+      "main_actor_max_timer_gap_ms" : 63.461750000000002,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487251.62518529169,
+        487252.0727847917
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 22,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 189.282083,
+      "completed_batches" : 26,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.701958000000005,
+      "input_to_publish_ms" : 63.125166999999998,
+      "input_uptime" : 487252.51116545836,
+      "main_actor_max_timer_gap_ms" : 61.697249999999997,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487252.13968229172,
+        487252.57734154171
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 23,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 189.288375,
+      "completed_batches" : 27,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 80.880707999999998,
+      "input_to_publish_ms" : 62.960082999999997,
+      "input_uptime" : 487253.02107575,
+      "main_actor_max_timer_gap_ms" : 61.434834000000002,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487252.64428033336,
+        487253.09040025005
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 24,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 192.25075000000001,
+      "completed_batches" : 28,
+      "entry" : "mixed",
+      "indexed_chunks" : 100058,
+      "input_to_draw_ms" : 83.576207999999994,
+      "input_to_publish_ms" : 65.447249999999997,
+      "input_uptime" : 487253.52844775002,
+      "main_actor_max_timer_gap_ms" : 63.937375000000003,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487253.1516662917,
+        487253.59514083335
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 25,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 189.205333,
+      "completed_batches" : 29,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 80.940166000000005,
+      "input_to_publish_ms" : 62.885708000000001,
+      "input_uptime" : 487254.03601904167,
+      "main_actor_max_timer_gap_ms" : 61.392249999999997,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487253.65760570834,
+        487254.09991487506
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 26,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 191.704125,
+      "completed_batches" : 30,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 82.845749999999995,
+      "input_to_publish_ms" : 64.664083000000005,
+      "input_uptime" : 487254.54316170834,
+      "main_actor_max_timer_gap_ms" : 63.191291999999997,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487254.16655516671,
+        487254.61416658334
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 27,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 191.34483399999999,
+      "completed_batches" : 31,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 82.843000000000004,
+      "input_to_publish_ms" : 64.900417000000004,
+      "input_uptime" : 487255.05141691671,
+      "main_actor_max_timer_gap_ms" : 63.350833000000002,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487254.67864325002,
+        487255.11707229167
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 28,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 189.75591700000001,
+      "completed_batches" : 32,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 82.378,
+      "input_to_publish_ms" : 63.6815,
+      "input_uptime" : 487255.56103445834,
+      "main_actor_max_timer_gap_ms" : 62.200125,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487255.17832266667,
+        487255.63197045837
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 29,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 190.83308299999999,
+      "completed_batches" : 33,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 82.991874999999993,
+      "input_to_publish_ms" : 64.367707999999993,
+      "input_uptime" : 487256.07683441672,
+      "main_actor_max_timer_gap_ms" : 62.854042,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487255.69872887502,
+        487256.14755966672
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 30,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 190.920208,
+      "completed_batches" : 34,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 83.172499999999999,
+      "input_to_publish_ms" : 64.539833000000002,
+      "input_uptime" : 487256.58702425001,
+      "main_actor_max_timer_gap_ms" : 63.051791000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487256.21642116667,
+        487256.65931008337
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 31,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 190.29554099999999,
+      "completed_batches" : 35,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 82.629874999999998,
+      "input_to_publish_ms" : 64.189832999999993,
+      "input_uptime" : 487257.09358950006,
+      "main_actor_max_timer_gap_ms" : 62.685457999999997,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487256.72612920834,
+        487257.16600308334
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 32,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 190.27016599999999,
+      "completed_batches" : 36,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.924333000000004,
+      "input_to_publish_ms" : 63.971207999999997,
+      "input_uptime" : 487257.60551329172,
+      "main_actor_max_timer_gap_ms" : 62.491250000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487257.22665783338,
+        487257.67226195836
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 33,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 186.93670900000001,
+      "completed_batches" : 37,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 78.667749999999998,
+      "input_to_publish_ms" : 61.365834,
+      "input_uptime" : 487258.11234979169,
+      "main_actor_max_timer_gap_ms" : 59.867209000000003,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487257.73607779172,
+        487258.18307975004
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 34,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 185.966375,
+      "completed_batches" : 38,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 76.720667000000006,
+      "input_to_publish_ms" : 59.796125000000004,
+      "input_uptime" : 487258.60552037501,
+      "main_actor_max_timer_gap_ms" : 58.369542000000003,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487258.25325925002,
+        487258.67733870837
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 35,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 184.93154100000001,
+      "completed_batches" : 39,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 75.681083000000001,
+      "input_to_publish_ms" : 59.165875,
+      "input_uptime" : 487259.09753454168,
+      "main_actor_max_timer_gap_ms" : 57.765707999999997,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487258.74105891667,
+        487259.16667533334
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 36,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 187.50225,
+      "completed_batches" : 40,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 79.292040999999998,
+      "input_to_publish_ms" : 61.659790999999998,
+      "input_uptime" : 487259.58954066667,
+      "main_actor_max_timer_gap_ms" : 60.186667,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487259.22969370836,
+        487259.65570695838
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 37,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 186.53158300000001,
+      "completed_batches" : 41,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 77.729249999999993,
+      "input_to_publish_ms" : 61.142583000000002,
+      "input_uptime" : 487260.08205112501,
+      "main_actor_max_timer_gap_ms" : 59.671999999999997,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487259.71981616667,
+        487260.14509016671
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 38,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 187.251667,
+      "completed_batches" : 42,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 77.668625000000006,
+      "input_to_publish_ms" : 61.553249999999998,
+      "input_uptime" : 487260.57451887504,
+      "main_actor_max_timer_gap_ms" : 60.141125000000002,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487260.21157562506,
+        487260.64084175002
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 39,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 187.05437499999999,
+      "completed_batches" : 43,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 78.220708000000002,
+      "input_to_publish_ms" : 60.965625000000003,
+      "input_uptime" : 487261.0693564167,
+      "main_actor_max_timer_gap_ms" : 59.530500000000004,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487260.70657679171,
+        487261.13260883337
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 40,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 185.99375000000001,
+      "completed_batches" : 44,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 76.724874999999997,
+      "input_to_publish_ms" : 59.584459000000003,
+      "input_uptime" : 487261.56259358337,
+      "main_actor_max_timer_gap_ms" : 58.178750000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487261.20153204171,
+        487261.62621237501
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 41,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 186.98066700000001,
+      "completed_batches" : 45,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 78.320625000000007,
+      "input_to_publish_ms" : 61.086334000000001,
+      "input_uptime" : 487262.05968970835,
+      "main_actor_max_timer_gap_ms" : 59.593667000000003,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487261.6923492917,
+        487262.12624483334
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 42,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 186.811125,
+      "completed_batches" : 46,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 78.553957999999994,
+      "input_to_publish_ms" : 61.027208000000002,
+      "input_uptime" : 487262.5545414167,
+      "main_actor_max_timer_gap_ms" : 59.561500000000002,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487262.19355162501,
+        487262.62247933337
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 43,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 189.53316599999999,
+      "completed_batches" : 47,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.482040999999995,
+      "input_to_publish_ms" : 63.602916,
+      "input_uptime" : 487263.05677600001,
+      "main_actor_max_timer_gap_ms" : 62.084958,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487262.688754,
+        487263.12845904171
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 44,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 190.385875,
+      "completed_batches" : 48,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 82.335082999999997,
+      "input_to_publish_ms" : 64.645583000000002,
+      "input_uptime" : 487263.58457270835,
+      "main_actor_max_timer_gap_ms" : 63.141249999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487263.18939641671,
+        487263.69221966667
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 45,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 190.25925000000001,
+      "completed_batches" : 49,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 80.490875000000003,
+      "input_to_publish_ms" : 63.923208000000002,
+      "input_uptime" : 487264.09652775002,
+      "main_actor_max_timer_gap_ms" : 62.391750000000002,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487263.71307245834,
+        487264.17650108336
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 46,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 189.03508400000001,
+      "completed_batches" : 50,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 79.860709,
+      "input_to_publish_ms" : 62.938958999999997,
+      "input_uptime" : 487264.60698387504,
+      "main_actor_max_timer_gap_ms" : 61.471041999999997,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487264.23729483335,
+        487264.67504929169
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 47,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 189.73679200000001,
+      "completed_batches" : 51,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 82.111457999999999,
+      "input_to_publish_ms" : 63.466625000000001,
+      "input_uptime" : 487265.11266645836,
+      "main_actor_max_timer_gap_ms" : 61.971375000000002,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487264.74285491672,
+        487265.18393587501
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 48,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 190.63987499999999,
+      "completed_batches" : 52,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.674000000000007,
+      "input_to_publish_ms" : 63.808208999999998,
+      "input_uptime" : 487265.6227170417,
+      "main_actor_max_timer_gap_ms" : 62.307583999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487265.24690900004,
+        487265.68704341672
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 49,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 189.627666,
+      "completed_batches" : 53,
+      "entry" : "mixed",
+      "indexed_chunks" : 100058,
+      "input_to_draw_ms" : 81.356207999999995,
+      "input_to_publish_ms" : 63.276249999999997,
+      "input_uptime" : 487266.13056775002,
+      "main_actor_max_timer_gap_ms" : 61.591541999999997,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487265.75322670839,
+        487266.19268466672
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 50,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 191.91312500000001,
+      "completed_batches" : 54,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 84.143000000000001,
+      "input_to_publish_ms" : 65.039709000000002,
+      "input_uptime" : 487266.63777491671,
+      "main_actor_max_timer_gap_ms" : 63.536459000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487266.26115441672,
+        487266.71141695837
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 51,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 189.36054200000001,
+      "completed_batches" : 55,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.634375000000006,
+      "input_to_publish_ms" : 63.023000000000003,
+      "input_uptime" : 487267.15036445839,
+      "main_actor_max_timer_gap_ms" : 61.535167000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487266.77204412501,
+        487267.21604354167
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 52,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 189.452958,
+      "completed_batches" : 56,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.701666000000003,
+      "input_to_publish_ms" : 62.863750000000003,
+      "input_uptime" : 487267.65818725002,
+      "main_actor_max_timer_gap_ms" : 61.316834,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487267.27751595835,
+        487267.72769329167
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 53,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 189.99737500000001,
+      "completed_batches" : 57,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 82.970583000000005,
+      "input_to_publish_ms" : 64.189707999999996,
+      "input_uptime" : 487268.16676562501,
+      "main_actor_max_timer_gap_ms" : 62.552791999999997,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487267.79065954167,
+        487268.2308310417
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 54,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 189.149,
+      "completed_batches" : 58,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 80.719041000000004,
+      "input_to_publish_ms" : 63.051250000000003,
+      "input_uptime" : 487268.67751562502,
+      "main_actor_max_timer_gap_ms" : 61.551541999999998,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487268.29954600002,
+        487268.74068204168
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 55,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 191.67554200000001,
+      "completed_batches" : 59,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 84.041875000000005,
+      "input_to_publish_ms" : 65.428875000000005,
+      "input_uptime" : 487269.18262904172,
+      "main_actor_max_timer_gap_ms" : 63.844374999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487268.80637620838,
+        487269.24767737504
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 56,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 189.06125,
+      "completed_batches" : 60,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.118707999999998,
+      "input_to_publish_ms" : 63.274458000000003,
+      "input_uptime" : 487269.69025579171,
+      "main_actor_max_timer_gap_ms" : 61.643833000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487269.3087577917,
+        487269.75242962502
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 57,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 190.019667,
+      "completed_batches" : 61,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.937875000000005,
+      "input_to_publish_ms" : 63.522708000000002,
+      "input_uptime" : 487270.20161295834,
+      "main_actor_max_timer_gap_ms" : 62.013125000000002,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487269.81818004168,
+        487270.2721482917
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 58,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 190.37629100000001,
+      "completed_batches" : 62,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.650874999999999,
+      "input_to_publish_ms" : 63.911040999999997,
+      "input_uptime" : 487270.70922687504,
+      "main_actor_max_timer_gap_ms" : 62.404167000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487270.33858170838,
+        487270.77223654167
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 59,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 191.560542,
+      "completed_batches" : 63,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 82.720584000000002,
+      "input_to_publish_ms" : 64.414666999999994,
+      "input_uptime" : 487271.21741383336,
+      "main_actor_max_timer_gap_ms" : 62.880417000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487270.84218379168,
+        487271.28461070836
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 60,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 189.032208,
+      "completed_batches" : 64,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 80.998625000000004,
+      "input_to_publish_ms" : 62.389958,
+      "input_uptime" : 487271.73260566668,
+      "main_actor_max_timer_gap_ms" : 60.793208999999997,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487271.34876616672,
+        487271.80022987502
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 61,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 191.19816700000001,
+      "completed_batches" : 65,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 84.298833000000002,
+      "input_to_publish_ms" : 65.430166999999997,
+      "input_uptime" : 487272.24458970834,
+      "main_actor_max_timer_gap_ms" : 63.855625000000003,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487271.86583354167,
+        487272.31085191667
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 62,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 188.63162500000001,
+      "completed_batches" : 66,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 80.768625,
+      "input_to_publish_ms" : 62.828749999999999,
+      "input_uptime" : 487272.75223220838,
+      "main_actor_max_timer_gap_ms" : 61.183667,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487272.3735386667,
+        487272.81394595839
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 63,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 189.47008400000001,
+      "completed_batches" : 67,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 82.001166999999995,
+      "input_to_publish_ms" : 63.601334000000001,
+      "input_uptime" : 487273.26161337504,
+      "main_actor_max_timer_gap_ms" : 62.071249999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487272.87472275004,
+        487273.32975275005
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 64,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 190.184416,
+      "completed_batches" : 68,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 82.798333,
+      "input_to_publish_ms" : 64.036416000000003,
+      "input_uptime" : 487273.76882141671,
+      "main_actor_max_timer_gap_ms" : 62.544375000000002,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487273.39314587502,
+        487273.84104308335
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 65,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 189.58437499999999,
+      "completed_batches" : 69,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.627167,
+      "input_to_publish_ms" : 63.037833999999997,
+      "input_uptime" : 487274.28306054167,
+      "main_actor_max_timer_gap_ms" : 61.490250000000003,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487273.90887641668,
+        487274.35454795836
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 66,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 189.30520799999999,
+      "completed_batches" : 70,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.463250000000002,
+      "input_to_publish_ms" : 63.335625,
+      "input_uptime" : 487274.79384137504,
+      "main_actor_max_timer_gap_ms" : 61.831541000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487274.4208581667,
+        487274.86176804168
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 67,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 191.23974999999999,
+      "completed_batches" : 71,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 82.725750000000005,
+      "input_to_publish_ms" : 64.409915999999996,
+      "input_uptime" : 487275.30322570837,
+      "main_actor_max_timer_gap_ms" : 62.875875000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487274.93066062505,
+        487275.37074712501
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 68,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 189.72341700000001,
+      "completed_batches" : 72,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.357541999999995,
+      "input_to_publish_ms" : 63.466208999999999,
+      "input_uptime" : 487275.80963220837,
+      "main_actor_max_timer_gap_ms" : 61.942250000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487275.43908354169,
+        487275.8819672917
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 69,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 190.42220900000001,
+      "completed_batches" : 73,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 82.919959000000006,
+      "input_to_publish_ms" : 64.067959000000002,
+      "input_uptime" : 487276.31936212501,
+      "main_actor_max_timer_gap_ms" : 62.544041999999997,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487275.94727675006,
+        487276.38926195836
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 70,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 188.76441700000001,
+      "completed_batches" : 74,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.492500000000007,
+      "input_to_publish_ms" : 62.534666999999999,
+      "input_uptime" : 487276.8325540417,
+      "main_actor_max_timer_gap_ms" : 61.033667000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487276.45022125001,
+        487276.90200700006
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 71,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 189.52645899999999,
+      "completed_batches" : 75,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.847375,
+      "input_to_publish_ms" : 63.367750000000001,
+      "input_uptime" : 487277.34230783337,
+      "main_actor_max_timer_gap_ms" : 61.767083,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487276.96322941669,
+        487277.41226866673
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 72,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 189.3905,
+      "completed_batches" : 76,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.179124999999999,
+      "input_to_publish_ms" : 62.999042000000003,
+      "input_uptime" : 487277.8508809167,
+      "main_actor_max_timer_gap_ms" : 61.514457999999998,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487277.47306000005,
+        487277.9144172917
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 73,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 188.53191699999999,
+      "completed_batches" : 77,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 82.560084000000003,
+      "input_to_publish_ms" : 62.742291999999999,
+      "input_uptime" : 487278.36237050005,
+      "main_actor_max_timer_gap_ms" : 61.247999999999998,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487277.97954275005,
+        487278.43273475004
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 74,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 190.328667,
+      "completed_batches" : 78,
+      "entry" : "mixed",
+      "indexed_chunks" : 100058,
+      "input_to_draw_ms" : 81.596874999999997,
+      "input_to_publish_ms" : 63.174374999999998,
+      "input_uptime" : 487278.86743929167,
+      "main_actor_max_timer_gap_ms" : 61.68,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487278.49757295835,
+        487278.93991875002
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 75,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 190.590125,
+      "completed_batches" : 79,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 83.769707999999994,
+      "input_to_publish_ms" : 64.382165999999998,
+      "input_uptime" : 487279.37459083338,
+      "main_actor_max_timer_gap_ms" : 62.772125000000003,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487279.00328091672,
+        487279.44275570835
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 76,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 188.778458,
+      "completed_batches" : 80,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.081083000000007,
+      "input_to_publish_ms" : 62.762374999999999,
+      "input_uptime" : 487279.88644120836,
+      "main_actor_max_timer_gap_ms" : 61.280875000000002,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487279.50574008335,
+        487279.95887929172
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 77,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 192.64666700000001,
+      "completed_batches" : 81,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 86.001458,
+      "input_to_publish_ms" : 66.317082999999997,
+      "input_uptime" : 487280.39422387502,
+      "main_actor_max_timer_gap_ms" : 64.833416999999997,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487280.02308333339,
+        487280.466789375
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 78,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 188.66133300000001,
+      "completed_batches" : 82,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.239958000000001,
+      "input_to_publish_ms" : 62.950333000000001,
+      "input_uptime" : 487280.90629766672,
+      "main_actor_max_timer_gap_ms" : 61.440792000000002,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487280.53390258335,
+        487280.97545225004
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 79,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 190.67504199999999,
+      "completed_batches" : 83,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 80.910875000000004,
+      "input_to_publish_ms" : 63.337708999999997,
+      "input_uptime" : 487281.41327258339,
+      "main_actor_max_timer_gap_ms" : 61.855459000000003,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487281.04017558339,
+        487281.47653583338
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 80,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 190.626791,
+      "completed_batches" : 84,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.232040999999995,
+      "input_to_publish_ms" : 63.442416000000001,
+      "input_uptime" : 487281.92242258339,
+      "main_actor_max_timer_gap_ms" : 61.906292000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487281.53819275001,
+        487281.98850179167
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 81,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 190.630458,
+      "completed_batches" : 85,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 83.386750000000006,
+      "input_to_publish_ms" : 63.262625,
+      "input_uptime" : 487282.43191333336,
+      "main_actor_max_timer_gap_ms" : 61.730249999999998,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487282.05219075002,
+        487282.50267479167
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 82,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 189.33949999999999,
+      "completed_batches" : 86,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 80.503083000000004,
+      "input_to_publish_ms" : 63.230958000000001,
+      "input_uptime" : 487282.94008179172,
+      "main_actor_max_timer_gap_ms" : 61.742083999999998,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487282.56366237503,
+        487283.00988466671
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 83,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 190.56162499999999,
+      "completed_batches" : 87,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.801124999999999,
+      "input_to_publish_ms" : 63.932250000000003,
+      "input_uptime" : 487283.44575425005,
+      "main_actor_max_timer_gap_ms" : 62.306291999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487283.07459862501,
+        487283.50861654169
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 84,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 189.47,
+      "completed_batches" : 88,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.114000000000004,
+      "input_to_publish_ms" : 62.388291000000002,
+      "input_uptime" : 487283.95492962503,
+      "main_actor_max_timer_gap_ms" : 60.844042000000002,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487283.56928500003,
+        487284.02135108336
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 85,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 189.23920799999999,
+      "completed_batches" : 89,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 80.439582999999999,
+      "input_to_publish_ms" : 62.572333,
+      "input_uptime" : 487284.46306558338,
+      "main_actor_max_timer_gap_ms" : 61.051625000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487284.08350083337,
+        487284.52471750003
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 86,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 191.548958,
+      "completed_batches" : 90,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 86.469042000000002,
+      "input_to_publish_ms" : 64.659707999999995,
+      "input_uptime" : 487284.96745979169,
+      "main_actor_max_timer_gap_ms" : 63.143749999999997,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487284.59420554171,
+        487285.03747283336
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 87,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 191.132541,
+      "completed_batches" : 91,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 82.348208,
+      "input_to_publish_ms" : 63.947791000000002,
+      "input_uptime" : 487285.47634079168,
+      "main_actor_max_timer_gap_ms" : 62.461874999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487285.1035496667,
+        487285.5478417917
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 88,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 189.06212500000001,
+      "completed_batches" : 92,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.863957999999997,
+      "input_to_publish_ms" : 63.082250000000002,
+      "input_uptime" : 487285.98799525003,
+      "main_actor_max_timer_gap_ms" : 61.543624999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487285.61369362503,
+        487286.05559433339
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 89,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 191.16620800000001,
+      "completed_batches" : 93,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 83.198415999999995,
+      "input_to_publish_ms" : 64.943665999999993,
+      "input_uptime" : 487286.49382220837,
+      "main_actor_max_timer_gap_ms" : 63.433041000000003,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487286.12278562505,
+        487286.55817670835
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 90,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 190.07654099999999,
+      "completed_batches" : 94,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.699957999999995,
+      "input_to_publish_ms" : 63.263500000000001,
+      "input_uptime" : 487287.00017329172,
+      "main_actor_max_timer_gap_ms" : 61.746541999999998,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487286.62307333335,
+        487287.06672937504
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 91,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 192.56954200000001,
+      "completed_batches" : 95,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 83.758459000000002,
+      "input_to_publish_ms" : 65.442875000000001,
+      "input_uptime" : 487287.50905875,
+      "main_actor_max_timer_gap_ms" : 63.912916000000003,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487287.13671166671,
+        487287.58045441669
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 92,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 192.378625,
+      "completed_batches" : 96,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 83.858750000000001,
+      "input_to_publish_ms" : 65.017792,
+      "input_uptime" : 487288.01803783339,
+      "main_actor_max_timer_gap_ms" : 63.424458000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487287.64147833339,
+        487288.08982470835
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 93,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 188.42037500000001,
+      "completed_batches" : 97,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 80.207708999999994,
+      "input_to_publish_ms" : 62.289999999999999,
+      "input_uptime" : 487288.53135837504,
+      "main_actor_max_timer_gap_ms" : 60.745624999999997,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487288.15064162505,
+        487288.59284816671
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 94,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 190.76887500000001,
+      "completed_batches" : 98,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 82.811834000000005,
+      "input_to_publish_ms" : 64.421042,
+      "input_uptime" : 487289.04193729168,
+      "main_actor_max_timer_gap_ms" : 62.789917000000003,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487288.65426100005,
+        487289.10951962502
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 95,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 191.94408300000001,
+      "completed_batches" : 99,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 84.370874999999998,
+      "input_to_publish_ms" : 66.015957999999998,
+      "input_uptime" : 487289.54763225,
+      "main_actor_max_timer_gap_ms" : 64.363792000000004,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487289.17200837506,
+        487289.61326137505
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 96,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 188.80754200000001,
+      "completed_batches" : 100,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.463583,
+      "input_to_publish_ms" : 62.950125,
+      "input_uptime" : 487290.05609304167,
+      "main_actor_max_timer_gap_ms" : 61.446792000000002,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487289.67639608338,
+        487290.12540116668
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 97,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 189.93687499999999,
+      "completed_batches" : 101,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 82.499791999999999,
+      "input_to_publish_ms" : 63.763209000000003,
+      "input_uptime" : 487290.56362462504,
+      "main_actor_max_timer_gap_ms" : 62.253708000000003,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487290.19104562502,
+        487290.63737616671
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 98,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 189.980333,
+      "completed_batches" : 102,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.521291000000005,
+      "input_to_publish_ms" : 63.398583000000002,
+      "input_uptime" : 487291.0765951667,
+      "main_actor_max_timer_gap_ms" : 61.886707999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487290.70078308339,
+        487291.14405220834
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 99,
+      "scenario" : "fts-real-index"
+    },
+    {
+      "complete_ms" : 198.196709,
+      "completed_batches" : 103,
+      "entry" : "mixed",
+      "indexed_chunks" : 100058,
+      "input_to_draw_ms" : 164.68520899999999,
+      "input_to_publish_ms" : 144.555959,
+      "input_uptime" : 487291.58431716671,
+      "main_actor_max_timer_gap_ms" : 63.148707999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487291.21665420837,
+        487291.65475604171
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 0,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 197.47583299999999,
+      "completed_batches" : 104,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 160.0265,
+      "input_to_publish_ms" : 140.01441600000001,
+      "input_uptime" : 487292.10153950006,
+      "main_actor_max_timer_gap_ms" : 63.602874999999997,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487291.74731150002,
+        487292.16773570835
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 1,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 196.578833,
+      "completed_batches" : 105,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 159.70866699999999,
+      "input_to_publish_ms" : 139.51258300000001,
+      "input_uptime" : 487292.6162001667,
+      "main_actor_max_timer_gap_ms" : 63.945582999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487292.24965400004,
+        487292.68985750002
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 2,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 195.36241699999999,
+      "completed_batches" : 106,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 159.843334,
+      "input_to_publish_ms" : 139.71516700000001,
+      "input_uptime" : 487293.13141025003,
+      "main_actor_max_timer_gap_ms" : 61.316125,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487292.75631200004,
+        487293.19629933336
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 3,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 196.61125000000001,
+      "completed_batches" : 107,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 161.84299999999999,
+      "input_to_publish_ms" : 141.598083,
+      "input_uptime" : 487293.64367420838,
+      "main_actor_max_timer_gap_ms" : 63.091541999999997,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487293.27848095837,
+        487293.71117050003
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 4,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 196.725708,
+      "completed_batches" : 108,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 159.02183299999999,
+      "input_to_publish_ms" : 138.83529100000001,
+      "input_uptime" : 487294.16471441672,
+      "main_actor_max_timer_gap_ms" : 63.440832999999998,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487293.79883229168,
+        487294.22900012502
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 5,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 196.77112500000001,
+      "completed_batches" : 109,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 162.214541,
+      "input_to_publish_ms" : 141.9725,
+      "input_uptime" : 487294.678300125,
+      "main_actor_max_timer_gap_ms" : 63.269125000000003,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487294.31478420837,
+        487294.74716854171
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 6,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 196.926625,
+      "completed_batches" : 110,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 160.76541700000001,
+      "input_to_publish_ms" : 140.454125,
+      "input_uptime" : 487295.19182762504,
+      "main_actor_max_timer_gap_ms" : 62.953000000000003,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487294.83635704167,
+        487295.26017412503
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 7,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 197.153458,
+      "completed_batches" : 111,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 160.749416,
+      "input_to_publish_ms" : 140.45179099999999,
+      "input_uptime" : 487295.70757779171,
+      "main_actor_max_timer_gap_ms" : 63.811582999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487295.35112654167,
+        487295.77688062505
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 8,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 198.52070900000001,
+      "completed_batches" : 112,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 162.54316700000001,
+      "input_to_publish_ms" : 142.234917,
+      "input_uptime" : 487296.22121750005,
+      "main_actor_max_timer_gap_ms" : 64.473792000000003,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487295.8583380417,
+        487296.28784795839
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 9,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 196.518958,
+      "completed_batches" : 113,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 162.36500000000001,
+      "input_to_publish_ms" : 142.16475,
+      "input_uptime" : 487296.73781791667,
+      "main_actor_max_timer_gap_ms" : 63.487250000000003,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487296.37146775005,
+        487296.81099650002
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 10,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 196.12875,
+      "completed_batches" : 114,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 161.552459,
+      "input_to_publish_ms" : 141.844875,
+      "input_uptime" : 487297.25488404167,
+      "main_actor_max_timer_gap_ms" : 63.127124999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487296.89820554171,
+        487297.32019987504
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 11,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 197.17666700000001,
+      "completed_batches" : 115,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 160.30779200000001,
+      "input_to_publish_ms" : 140.011042,
+      "input_uptime" : 487297.76747820835,
+      "main_actor_max_timer_gap_ms" : 64.269166999999996,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487297.40872575005,
+        487297.84243137506
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 12,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 195.76195899999999,
+      "completed_batches" : 116,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 159.385625,
+      "input_to_publish_ms" : 139.64429200000001,
+      "input_uptime" : 487298.28255137504,
+      "main_actor_max_timer_gap_ms" : 62.834874999999997,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487297.92709437502,
+        487298.34771150001
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 13,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 196.61833300000001,
+      "completed_batches" : 117,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 160.70029099999999,
+      "input_to_publish_ms" : 140.64320799999999,
+      "input_uptime" : 487298.798056125,
+      "main_actor_max_timer_gap_ms" : 63.569040999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487298.43690508336,
+        487298.86838000006
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 14,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 196.44004200000001,
+      "completed_batches" : 118,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 160.56725,
+      "input_to_publish_ms" : 140.16737499999999,
+      "input_uptime" : 487299.3170626667,
+      "main_actor_max_timer_gap_ms" : 62.935541999999998,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487298.95774945838,
+        487299.38104891672
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 15,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 197.13304099999999,
+      "completed_batches" : 119,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 161.97874999999999,
+      "input_to_publish_ms" : 141.824333,
+      "input_uptime" : 487299.82976987504,
+      "main_actor_max_timer_gap_ms" : 64.112624999999994,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487299.46456341672,
+        487299.90295929171
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 16,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 196.75554199999999,
+      "completed_batches" : 120,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 160.67724999999999,
+      "input_to_publish_ms" : 140.63695899999999,
+      "input_uptime" : 487300.34741304169,
+      "main_actor_max_timer_gap_ms" : 62.747957999999997,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487299.98754354171,
+        487300.42146737501
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 17,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 195.74837500000001,
+      "completed_batches" : 121,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 161.13020900000001,
+      "input_to_publish_ms" : 140.973375,
+      "input_uptime" : 487300.86445779167,
+      "main_actor_max_timer_gap_ms" : 63.193708999999998,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487300.5038630417,
+        487300.93353337504
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 18,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 196.35037500000001,
+      "completed_batches" : 122,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 161.45166699999999,
+      "input_to_publish_ms" : 140.722542,
+      "input_uptime" : 487301.38033379172,
+      "main_actor_max_timer_gap_ms" : 63.378082999999997,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487301.01939595834,
+        487301.45452537504
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 19,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 196.900834,
+      "completed_batches" : 123,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 161.71575000000001,
+      "input_to_publish_ms" : 141.38095899999999,
+      "input_uptime" : 487301.8954945,
+      "main_actor_max_timer_gap_ms" : 63.201582999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487301.54122254171,
+        487301.96031383338
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 20,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 197.69458299999999,
+      "completed_batches" : 124,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 160.85554200000001,
+      "input_to_publish_ms" : 141.703542,
+      "input_uptime" : 487302.41500704171,
+      "main_actor_max_timer_gap_ms" : 63.993667000000002,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487302.05137658335,
+        487302.48354120838
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 21,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 196.847083,
+      "completed_batches" : 125,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 161.61358300000001,
+      "input_to_publish_ms" : 141.54245800000001,
+      "input_uptime" : 487302.92964954168,
+      "main_actor_max_timer_gap_ms" : 63.357166999999997,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487302.56804395834,
+        487303.00043458334
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 22,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 195.84233399999999,
+      "completed_batches" : 126,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 160.58529200000001,
+      "input_to_publish_ms" : 140.94870900000001,
+      "input_uptime" : 487303.44404220837,
+      "main_actor_max_timer_gap_ms" : 62.672583000000003,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487303.08480325004,
+        487303.51620950003
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 23,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 196.34087500000001,
+      "completed_batches" : 127,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 158.930083,
+      "input_to_publish_ms" : 138.90879200000001,
+      "input_uptime" : 487303.95828008337,
+      "main_actor_max_timer_gap_ms" : 62.645083,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487303.60336458334,
+        487304.0274385417
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 24,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 196.49770799999999,
+      "completed_batches" : 128,
+      "entry" : "mixed",
+      "indexed_chunks" : 100058,
+      "input_to_draw_ms" : 158.19158300000001,
+      "input_to_publish_ms" : 138.43487500000001,
+      "input_uptime" : 487304.47490866669,
+      "main_actor_max_timer_gap_ms" : 62.497624999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487304.10945845838,
+        487304.54656300001
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 25,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 196.00649999999999,
+      "completed_batches" : 129,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 161.172459,
+      "input_to_publish_ms" : 141.398042,
+      "input_uptime" : 487304.99000891671,
+      "main_actor_max_timer_gap_ms" : 63.094749999999998,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487304.6283016667,
+        487305.05927787506
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 26,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 197.37912499999999,
+      "completed_batches" : 130,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 161.868875,
+      "input_to_publish_ms" : 141.623625,
+      "input_uptime" : 487305.50519800006,
+      "main_actor_max_timer_gap_ms" : 63.632458999999997,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487305.15275879169,
+        487305.57259520836
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 27,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 198.213583,
+      "completed_batches" : 131,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 162.870667,
+      "input_to_publish_ms" : 142.560125,
+      "input_uptime" : 487306.02100245835,
+      "main_actor_max_timer_gap_ms" : 64.798666999999995,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487305.65760500001,
+        487306.08952533337
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 28,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 196.024958,
+      "completed_batches" : 132,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 160.82374999999999,
+      "input_to_publish_ms" : 138.88270800000001,
+      "input_uptime" : 487306.53542900004,
+      "main_actor_max_timer_gap_ms" : 62.643332999999998,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487306.17583937501,
+        487306.60853020835
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 29,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 196.662916,
+      "completed_batches" : 133,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 160.179,
+      "input_to_publish_ms" : 140.419916,
+      "input_uptime" : 487307.05081570835,
+      "main_actor_max_timer_gap_ms" : 62.906542000000002,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487306.69666991668,
+        487307.11649770837
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 30,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 197.257959,
+      "completed_batches" : 134,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 160.36708400000001,
+      "input_to_publish_ms" : 139.74104199999999,
+      "input_uptime" : 487307.56767770834,
+      "main_actor_max_timer_gap_ms" : 63.186208000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487307.20388204168,
+        487307.63319712505
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 31,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 195.8545,
+      "completed_batches" : 135,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 159.71045899999999,
+      "input_to_publish_ms" : 139.932084,
+      "input_uptime" : 487308.08186275006,
+      "main_actor_max_timer_gap_ms" : 62.405583999999998,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487307.71954258333,
+        487308.15196425002
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 32,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 198.67516699999999,
+      "completed_batches" : 136,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 162.122333,
+      "input_to_publish_ms" : 141.75079199999999,
+      "input_uptime" : 487308.59846966667,
+      "main_actor_max_timer_gap_ms" : 64.054208000000003,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487308.23284412501,
+        487308.66783875006
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 33,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 197.140625,
+      "completed_batches" : 137,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 160.18950000000001,
+      "input_to_publish_ms" : 140.09816599999999,
+      "input_uptime" : 487309.11734558333,
+      "main_actor_max_timer_gap_ms" : 63.400416,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487308.75070829171,
+        487309.18464491668
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 34,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 196.421334,
+      "completed_batches" : 138,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 159.09537499999999,
+      "input_to_publish_ms" : 139.378084,
+      "input_uptime" : 487309.63446904172,
+      "main_actor_max_timer_gap_ms" : 63.073749999999997,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487309.27389354171,
+        487309.70543429168
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 35,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 195.912542,
+      "completed_batches" : 139,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 159.62787499999999,
+      "input_to_publish_ms" : 139.672417,
+      "input_uptime" : 487310.1496681667,
+      "main_actor_max_timer_gap_ms" : 63.0075,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487309.79234208335,
+        487310.21564470837
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 36,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 197.08591699999999,
+      "completed_batches" : 140,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 161.261292,
+      "input_to_publish_ms" : 141.025834,
+      "input_uptime" : 487310.66481512506,
+      "main_actor_max_timer_gap_ms" : 63.405458000000003,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487310.30115275003,
+        487310.73341912503
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 37,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 198.36979099999999,
+      "completed_batches" : 141,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 162.20233300000001,
+      "input_to_publish_ms" : 141.850291,
+      "input_uptime" : 487311.18071487505,
+      "main_actor_max_timer_gap_ms" : 64.692125000000004,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487310.81762208336,
+        487311.25017720833
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 38,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 198.67699999999999,
+      "completed_batches" : 142,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 160.93087499999999,
+      "input_to_publish_ms" : 140.845,
+      "input_uptime" : 487311.70087404171,
+      "main_actor_max_timer_gap_ms" : 64.453917000000004,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487311.34322033334,
+        487311.7660942917
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 39,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 195.921166,
+      "completed_batches" : 143,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 161.780833,
+      "input_to_publish_ms" : 141.50858299999999,
+      "input_uptime" : 487312.22046970838,
+      "main_actor_max_timer_gap_ms" : 63.417250000000003,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487311.85089633334,
+        487312.28935708338
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 40,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 197.89120800000001,
+      "completed_batches" : 144,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 160.459,
+      "input_to_publish_ms" : 140.77170799999999,
+      "input_uptime" : 487312.73408879171,
+      "main_actor_max_timer_gap_ms" : 63.015875000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487312.38333004172,
+        487312.80234558339
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 41,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 196.622083,
+      "completed_batches" : 145,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 159.30741599999999,
+      "input_to_publish_ms" : 138.88583299999999,
+      "input_uptime" : 487313.24899000005,
+      "main_actor_max_timer_gap_ms" : 63.185917000000003,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487312.89281287504,
+        487313.31824962504
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 42,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 195.911,
+      "completed_batches" : 146,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 158.52475000000001,
+      "input_to_publish_ms" : 138.976167,
+      "input_uptime" : 487313.76822975004,
+      "main_actor_max_timer_gap_ms" : 63.247083000000003,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487313.40650512505,
+        487313.84080487501
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 43,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 198.453542,
+      "completed_batches" : 147,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 161.51541700000001,
+      "input_to_publish_ms" : 141.52533399999999,
+      "input_uptime" : 487314.28296025004,
+      "main_actor_max_timer_gap_ms" : 64.966499999999996,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487313.92467858334,
+        487314.35338854167
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 44,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 195.423,
+      "completed_batches" : 148,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 160.512,
+      "input_to_publish_ms" : 140.04566700000001,
+      "input_uptime" : 487314.79765691672,
+      "main_actor_max_timer_gap_ms" : 62.695917000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487314.43867795839,
+        487314.87015345838
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 45,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 196.90966700000001,
+      "completed_batches" : 149,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 158.96195800000001,
+      "input_to_publish_ms" : 139.037667,
+      "input_uptime" : 487315.31162654172,
+      "main_actor_max_timer_gap_ms" : 63.483874999999998,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487314.95244129171,
+        487315.38548237504
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 46,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 202.2825,
+      "completed_batches" : 150,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 165.57499999999999,
+      "input_to_publish_ms" : 145.05779200000001,
+      "input_uptime" : 487315.82859991671,
+      "main_actor_max_timer_gap_ms" : 68.540750000000003,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487315.47206879169,
+        487315.89951058337
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 47,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 195.35916700000001,
+      "completed_batches" : 151,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 157.87937500000001,
+      "input_to_publish_ms" : 137.38745900000001,
+      "input_uptime" : 487316.38215045835,
+      "main_actor_max_timer_gap_ms" : 62.504542000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487315.98598095839,
+        487316.49198145838
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 48,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 194.67333300000001,
+      "completed_batches" : 152,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 158.27695800000001,
+      "input_to_publish_ms" : 138.93379100000001,
+      "input_uptime" : 487316.90087400004,
+      "main_actor_max_timer_gap_ms" : 62.030208000000002,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487316.5355754167,
+        487316.97646870837
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 49,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 196.28925000000001,
+      "completed_batches" : 153,
+      "entry" : "mixed",
+      "indexed_chunks" : 100058,
+      "input_to_draw_ms" : 161.10983300000001,
+      "input_to_publish_ms" : 140.42387500000001,
+      "input_uptime" : 487317.42270950001,
+      "main_actor_max_timer_gap_ms" : 63.104458999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487317.05951175001,
+        487317.49363600003
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 50,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 197.28645800000001,
+      "completed_batches" : 154,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 160.71270799999999,
+      "input_to_publish_ms" : 140.74725000000001,
+      "input_uptime" : 487317.94030237501,
+      "main_actor_max_timer_gap_ms" : 63.446375000000003,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487317.57519925002,
+        487318.00491783337
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 51,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 196.69470799999999,
+      "completed_batches" : 155,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 161.39500000000001,
+      "input_to_publish_ms" : 141.323083,
+      "input_uptime" : 487318.4544962917,
+      "main_actor_max_timer_gap_ms" : 63.544249999999998,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487318.10062208335,
+        487318.52654670837
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 52,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 196.528875,
+      "completed_batches" : 156,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 160.85425000000001,
+      "input_to_publish_ms" : 140.8075,
+      "input_uptime" : 487318.972178875,
+      "main_actor_max_timer_gap_ms" : 63.111750000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487318.61354012502,
+        487319.04344066669
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 53,
+      "scenario" : "semantic-real-index"
+    },
+    {
+      "complete_ms" : 200.248166,
+      "completed_batches" : 157,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 163.379625,
+      "input_to_publish_ms" : 143.165708,
+      "input_uptime" : 487319.48939262505,
+      "main_actor_max_timer_gap_ms" : 65.877667000000002,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "overlapping_batch" : [
+        487319.12696504168,
+        487319.55804195837
+      ],
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 54,
+      "scenario" : "semantic-real-index"
+    }
+  ],
+  "stage" : "batch-finish-false-semantic-real-index-54"
+}

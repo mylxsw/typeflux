@@ -13,7 +13,7 @@ struct SemanticFileChangePlanTests {
         return AskFileScope(settings: settings, fullDiskAccess: true)
     }
 
-    @Test func ignoredEventsCannotTriggerAnotherHomeScan() {
+    @Test func `ignored events cannot trigger another home scan`() {
         let index = root + "/Library/Application Support/Typeflux/SemanticSearch"
         let events = [
             AskFileChange(path: index + "/semantic-files.sqlite-wal", rescan: false, isDirectory: false),
@@ -39,11 +39,12 @@ struct SemanticFileChangePlanTests {
                      AskFileChange(path: image, rescan: false, isDirectory: false),
                      AskFileChange(path: image, rescan: false, isDirectory: false)]
         let plan = SemanticFileChangePlan.make(files, scope: scope(), indexDirectory: index)
-        #expect(plan.files == [document, image] && !plan.fullScan)
+        #expect(plan.files == [document, image] && plan.subtrees.isEmpty)
 
         let folder = AskFileChange(path: root + "/New Folder", rescan: false,
                                    isDirectory: true, structureChanged: true)
         let structural = SemanticFileChangePlan.make(files + [folder], scope: scope(), indexDirectory: index)
+        #expect(structural.subtrees == [folder.path] && structural.files == [document, image])
         #expect(!structural.fullScan && structural.directories == [folder.path]
             && structural.files == [document, image])
         let dropped = AskFileChange(path: root, rescan: true, isDirectory: true)

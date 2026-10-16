@@ -22,7 +22,7 @@ enum SemanticModel {
         }
         // swift build developers can build the optional helper without installing an app.
         var folder = AskFileReader.executableURL.deletingLastPathComponent()
-        for _ in 0..<7 {
+        for _ in 0 ..< 7 {
             if folder.lastPathComponent == ".build" {
                 return folder.appendingPathComponent("semantic/TypefluxSemanticHelper")
             }
@@ -36,13 +36,23 @@ enum SemanticModel {
         let handle = try FileHandle(forReadingFrom: url)
         defer { try? handle.close() }
         var hash = SHA256(), total: Int64 = 0
-        while let data = try handle.read(upToCount: 4 * 1024 * 1024), !data.isEmpty {
+        while true {
             if cancelled() {
                 throw CancellationError()
             }
-            total += Int64(data.count)
-            guard total <= bytes else { throw SemanticFileStore.Failure.invalidVector }
-            hash.update(data: data)
+            try SemanticWorkBudget.current?.checkpoint(cancelled: cancelled)
+            // A long synchronous indexing job does not drain the thread's outer Cocoa pool.
+            // Keep FileHandle's bridged temporary buffers bounded independently of model size.
+            let count = try autoreleasepool {
+                guard let data = try handle.read(upToCount: 4 * 1024 * 1024), !data.isEmpty else { return 0 }
+                total += Int64(data.count)
+                guard total <= bytes else { throw SemanticFileStore.Failure.invalidVector }
+                hash.update(data: data)
+                return data.count
+            }
+            if count == 0 {
+                break
+            }
         }
         let digest = hash.finalize().map { String(format: "%02x", $0) }.joined()
         guard total == bytes, digest == sha256 else { throw SemanticFileStore.Failure.invalidVector }
@@ -50,7 +60,7 @@ enum SemanticModel {
 
     static func install(_ source: URL, to target: URL, bytes: Int64 = Self.bytes, sha256: String = Self.sha256,
                         cancelled: () -> Bool) throws {
-        try self.verify(source, bytes: bytes, sha256: sha256, cancelled: cancelled)
+        try verify(source, bytes: bytes, sha256: sha256, cancelled: cancelled)
         if cancelled() {
             throw CancellationError()
         }
@@ -161,7 +171,7 @@ final class SemanticEmbeddingWorker: SemanticEmbedding, SemanticQueryEmbedding, 
         lifecycle: AskSearchCancellation = AskSearchCancellation(),
         reaper: OwnedProcessReaper = .shared
     ) {
-        self.queue = DispatchQueue(
+        queue = DispatchQueue(
             label: "typeflux.semantic.\(indexing ? "index" : "query")",
             qos: indexing ? .utility : .userInitiated
         )
@@ -170,12 +180,15 @@ final class SemanticEmbeddingWorker: SemanticEmbedding, SemanticQueryEmbedding, 
         self.authorization = authorization ?? ownership.authorization()
         self.reader = AskFileReader(
             executable: helper,
-            arguments: [model.path] + (projector.map { [$0.path] } ?? []),
+            arguments: [model.path] + (projector.map { [$0.path] } ?? []) + (indexing ? ["--background"] : []),
             timeout: indexing ? max(45, timeout) : timeout,
             startupTimeout: indexing ? max(90, startupTimeout) : startupTimeout,
             qualityOfService: projector != nil ? .background : (indexing ? .utility : .userInitiated),
             ownership: ownership.native, reaper: reaper
         )
+        if indexing {
+            SemanticWorkBudget.current?.register(self)
+        }
     }
 
     /// Synchronous indexing adapter. Its caller exclusively owns this instance.
@@ -204,7 +217,9 @@ final class SemanticEmbeddingWorker: SemanticEmbedding, SemanticQueryEmbedding, 
         return vectors
     }
 
-    func release() { reader.stop() }
+    func release() {
+        reader.stop()
+    }
 
     func embed(_ input: SemanticMediaInput, cancelled: () -> Bool) throws -> [Float] {
         try ownership.perform(authorization: authorization, cancelled: { self.lifecycle.isCancelled || cancelled() }) {
@@ -270,7 +285,9 @@ final class SemanticEmbeddingWorker: SemanticEmbedding, SemanticQueryEmbedding, 
             let requests: [Request] = requestsLock.withLock {
                 let requests = pending
                 pending.removeAll()
-                if requests.isEmpty { draining = false }
+                if requests.isEmpty {
+                    draining = false
+                }
                 return requests
             }
             guard !requests.isEmpty else { return }
@@ -333,7 +350,9 @@ final class SemanticEmbeddingWorker: SemanticEmbedding, SemanticQueryEmbedding, 
             let abandoned = pending; pending.removeAll()
             return abandoned
         }
-        for request in abandoned { request.continuation.resume(throwing: CancellationError()) }
+        for request in abandoned {
+            request.continuation.resume(throwing: CancellationError())
+        }
         queue.async { [self] in
             guard activeEpoch?.isCancelled == true else { return }
             idleGeneration += 1; reader.stop(); queryCache.removeAll(); queryOrder.removeAll(); activeEpoch = nil

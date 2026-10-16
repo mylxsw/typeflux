@@ -14,10 +14,12 @@ struct SemanticMediaModelFiles: SemanticModelHandling {
         try SemanticModel.verify(url, bytes: SemanticMediaModel.bytes, sha256: SemanticMediaModel.sha256,
                                  cancelled: cancelled)
     }
+
     func install(_ url: URL, to target: URL, cancelled: @Sendable () -> Bool) throws {
         try SemanticModel.install(url, to: target, bytes: SemanticMediaModel.bytes, sha256: SemanticMediaModel.sha256,
                                   cancelled: cancelled)
     }
+
     func fetch(progress: @escaping @Sendable (Int64) -> Void) async throws -> (URL, URLResponse) {
         try await SemanticModelDownload(url: SemanticMediaModel.url, progress: progress).fetch()
     }
@@ -26,7 +28,7 @@ struct SemanticMediaModelFiles: SemanticModelHandling {
 enum SemanticMediaIdle {
     static func isIdle() -> Bool {
         let events: [CGEventType] = [.keyDown, .flagsChanged, .mouseMoved, .leftMouseDown,
-                                    .rightMouseDown, .scrollWheel]
+                                     .rightMouseDown, .scrollWheel]
         let idle = events.map { event in
             CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: event)
         }.min() ?? 0
@@ -34,7 +36,7 @@ enum SemanticMediaIdle {
     }
 }
 
-/// Lazy media runtime: documents finish first; only idle media work downloads/loads the additional projector.
+/// Lazy media runtime: document bursts have priority; media loads its projector at an idle checkpoint.
 final class SemanticMediaWorker: SemanticMediaEmbedding {
     private let helper: URL
     private let model: URL
@@ -76,16 +78,24 @@ final class SemanticMediaWorker: SemanticMediaEmbedding {
         if cancelled() { throw CancellationError() }
         if encoder == nil {
             do { try models.verify(projector, cancelled: { cancelled() }) } catch {
-                if cancelled() { throw CancellationError() }
+                if cancelled() {
+                    throw CancellationError()
+                }
                 try download(cancelled: cancelled)
             }
-            if cancelled() { throw CancellationError() }
+            if cancelled() {
+                throw CancellationError()
+            }
             encoder = makeEncoder(helper, model, projector)
         }
         if cancelled() { throw CancellationError() }
         let result = try encoder!.embed(input, cancelled: cancelled)
         if cancelled() { throw CancellationError() }
         return result
+    }
+
+    func release() {
+        encoder?.release(); encoder = nil
     }
 
     private final class Transfer: @unchecked Sendable {
@@ -106,7 +116,7 @@ final class SemanticMediaWorker: SemanticMediaEmbedding {
         let task = Task.detached {
             let result: Result<(URL, URLResponse), Error>
             do {
-                result = .success(try await models.fetch {
+                result = try await .success(models.fetch {
                     progress(min(1, Double($0) / Double(SemanticMediaModel.bytes)))
                 })
             } catch { result = .failure(error) }
@@ -114,11 +124,15 @@ final class SemanticMediaWorker: SemanticMediaEmbedding {
         }
         // Join the transfer even on cancellation; no detached download outlives its indexing job.
         while transfer.done.wait(timeout: .now() + 0.1) == .timedOut {
-            if cancelled() { task.cancel() }
+            if cancelled() {
+                task.cancel()
+            }
         }
         let (temporary, response) = try transfer.lock.withLock { try transfer.result!.get() }
         defer { try? FileManager.default.removeItem(at: temporary) }
-        if cancelled() { throw CancellationError() }
+        if cancelled() {
+            throw CancellationError()
+        }
         guard (response as? HTTPURLResponse)?.statusCode == 200 else { throw URLError(.badServerResponse) }
         try models.install(temporary, to: projector, cancelled: { cancelled() })
     }

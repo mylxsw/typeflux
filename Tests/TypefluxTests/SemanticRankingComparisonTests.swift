@@ -28,7 +28,14 @@ struct SemanticRankingComparisonTests {
         let repository = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
             .deletingLastPathComponent()
         let folder = repository.appendingPathComponent("docs/validation/gul-383/optimization/ranking-scale")
-        for fixture in ["final-holdout", "unseen-query"] {
+        let fixtures = ProcessInfo.processInfo.environment["TYPEFLUX_RANKING_FIXTURES"]?.split(separator: ",")
+            .map(String.init) ?? [
+                "final-holdout",
+                "unseen-query",
+                "rework-frozen"
+            ]
+        for fixture in fixtures {
+            try #require(fixture.range(of: "^[a-z0-9-]+$", options: .regularExpression) != nil)
             let capture = try JSONDecoder().decode(
                 Capture.self,
                 from: Data(contentsOf: folder.appendingPathComponent("\(fixture)-vectors.json"))

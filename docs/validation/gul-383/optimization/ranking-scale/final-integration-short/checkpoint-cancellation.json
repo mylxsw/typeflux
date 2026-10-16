@@ -1,0 +1,12 @@
+{
+  "unix": 1792173785.553341,
+  "pids": [
+    65376,
+    65610,
+    65648,
+    65649,
+    66958
+  ],
+  "reason": "20-minute checkpoint: stop the remaining contention cell, retain partial samples, no automatic retry. Earlier ON and both hot cells completed successfully.",
+  "daemon_pid_excluded": true
+}

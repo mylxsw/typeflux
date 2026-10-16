@@ -16,6 +16,9 @@ struct AskFileReadRequest: Codable {
     var scratch: String?
     var media: SemanticMediaInput?
     var cursor: SemanticContentCursor?
+    var directoryCursor: AskDirectoryCursor?
+    var paced: Bool?
+    var mediaCursor: SemanticMediaCursor?
 }
 
 struct AskFileReadResponse: Codable {
@@ -36,6 +39,10 @@ struct AskFileReadResponse: Codable {
     var version: String?
     var nextCursor: SemanticContentCursor?
     var semanticTiming: SemanticHelperTiming?
+    var directoryCursor: AskDirectoryCursor?
+    var inspected: Int?
+    var mediaOrdinal: Int?
+    var mediaSegments: Int?
 }
 
 struct SemanticHelperTiming: Codable {
@@ -46,12 +53,20 @@ struct SemanticHelperTiming: Codable {
 /// Runs before AppKit startup. Only this child performs potentially stuck directory reads.
 public enum AskFileWorkerCommand {
     public static func run() -> Int32 {
+        let directories = AskDirectorySession()
         while let line = readLine() {
-            guard let request = try? JSONDecoder().decode(AskFileReadRequest.self, from: Data(line.utf8)) else { return 1 }
             do {
-                try stream(request) { response in
-                    let data = try JSONEncoder().encode(response)
-                    try FileHandle.standardOutput.write(contentsOf: data + Data([10]))
+                try autoreleasepool {
+                    let request = try JSONDecoder().decode(AskFileReadRequest.self, from: Data(line.utf8))
+                    try stream(request, directories: directories) { response in
+                        try autoreleasepool {
+                            let data = try JSONEncoder().encode(response)
+                            try FileHandle.standardOutput.write(contentsOf: data + Data([10]))
+                            if request.paced == true, response.more == true {
+                                guard readLine() == "continue" else { throw AskFileReadError.cancelled }
+                            }
+                        }
+                    }
                 }
             } catch { return 1 }
         }
@@ -68,6 +83,8 @@ public enum AskFileWorkerCommand {
             result.pages = frame.pages ?? result.pages
             result.version = frame.version ?? result.version
             result.nextCursor = frame.nextCursor
+            result.directoryCursor = frame.directoryCursor
+            result.inspected = frame.inspected
             result.embeddings = frame.embeddings ?? result.embeddings
             result.truncated = frame.truncated ?? result.truncated
             result.fileSize = frame.fileSize ?? result.fileSize
@@ -81,29 +98,39 @@ public enum AskFileWorkerCommand {
     }
 
     static func stream(_ request: AskFileReadRequest, mounts: AskFileMounts = .current(),
+                       directories: AskDirectorySession? = nil,
                        emit: (AskFileReadResponse) throws -> Void) throws {
         // Acknowledge startup separately from directory progress; the first syscall gets an idle deadline.
         try emit(AskFileReadResponse(more: true))
         if request.operation == .media {
-            try emit(try SemanticMediaExtractor.extract(request, mounts: mounts, emit: emit)); return
+            try emit(SemanticMediaExtractor.extract(request, mounts: mounts, emit: emit)); return
         }
-        try emit(try response(request, mounts: mounts, emit: emit))
+        try emit(response(request, mounts: mounts, directories: directories, emit: emit))
     }
 
     private static func response(_ request: AskFileReadRequest, mounts: AskFileMounts,
+                                 directories: AskDirectorySession?,
                                  emit: (AskFileReadResponse) throws -> Void) throws -> AskFileReadResponse {
-        if request.operation == .preview { return preview(request, mounts: mounts) }
-        if request.operation == .content { return content(request, mounts: mounts) }
-        if request.operation == .embedding { return AskFileReadResponse(error: EINVAL) }
+        if request.operation == .preview {
+            return preview(request, mounts: mounts)
+        }
+        if request.operation == .content {
+            return content(request, mounts: mounts)
+        }
+        if request.operation == .embedding {
+            return AskFileReadResponse(error: EINVAL)
+        }
         if request.operation == .resolve {
             return AskFileReadResponse(path: resolve(request.path, blocked: request.blocked, mounts: mounts))
         }
         guard let scope = request.scope,
-              (scope.includes(request.path, isDirectory: true)
-                || (request.operation == .entry && scope.includes(request.path, isDirectory: false))) else {
+              scope.includes(request.path, isDirectory: true)
+              || (request.operation == .entry && scope.includes(request.path, isDirectory: false)) else {
             return AskFileReadResponse(error: EACCES)
         }
-        if let mount = mounts.blocking(request.path) { return AskFileReadResponse(skippedMounts: [mount]) }
+        if let mount = mounts.blocking(request.path) {
+            return AskFileReadResponse(skippedMounts: [mount])
+        }
         if request.operation == .entry {
             // Check every ancestor without following links before lstat of the leaf.
             let parent = (request.path as NSString).deletingLastPathComponent
@@ -113,7 +140,13 @@ public enum AskFileWorkerCommand {
             let name = (request.path as NSString).lastPathComponent
             errno = 0
             let value = entry(name, parent: descriptor, path: request.path, scope: scope)
-            return AskFileReadResponse(entries: value.map { [$0] } ?? [], error: value == nil && errno != 0 ? errno : nil)
+            return AskFileReadResponse(
+                entries: value.map { [$0] } ?? [],
+                error: value == nil && errno != 0 ? errno : nil
+            )
+        }
+        if request.directoryCursor != nil {
+            return (directories ?? AskDirectorySession()).page(request, scope: scope, mounts: mounts)
         }
         let descriptor = openDirectory(request.path, blocked: scope.blocked)
         guard descriptor >= 0 else { return AskFileReadResponse(error: errno) }
@@ -159,7 +192,7 @@ public enum AskFileWorkerCommand {
         return batch
     }
 
-    private static func entry(_ name: String, parent: Int32, path: String, scope: AskFileScope) -> AskFileCrawler.Entry? {
+    static func entry(_ name: String, parent: Int32, path: String, scope: AskFileScope) -> AskFileCrawler.Entry? {
         guard !AskFileScope.isProtected(path, folders: scope.blocked) else { return nil }
         var info = stat()
         guard fstatat(parent, name, &info, AT_SYMLINK_NOFOLLOW) == 0 else { return nil }
@@ -177,7 +210,9 @@ public enum AskFileWorkerCommand {
               !AskFileScope.isProtected(request.path, folders: request.blocked) else {
             return AskFileReadResponse(error: EACCES)
         }
-        if let mount = mounts.blocking(request.path) { return AskFileReadResponse(skippedMounts: [mount]) }
+        if let mount = mounts.blocking(request.path) {
+            return AskFileReadResponse(skippedMounts: [mount])
+        }
         let parent = openDirectory((request.path as NSString).deletingLastPathComponent,
                                    blocked: request.blocked + mounts.excluded)
         guard parent >= 0 else { return AskFileReadResponse(error: errno) }
@@ -186,19 +221,21 @@ public enum AskFileWorkerCommand {
         var info = stat()
         guard fstatat(parent, name, &info, AT_SYMLINK_NOFOLLOW) == 0 else { return AskFileReadResponse(error: errno) }
         // SF_DATALESS is used by File Provider/iCloud placeholders. Do not trigger a download.
-        guard AskFilePreviewPolicy.isResidentRegularFile(mode: info.st_mode, flags: info.st_flags) else { return AskFileReadResponse(error: EINVAL) }
+        guard AskFilePreviewPolicy.isResidentRegularFile(mode: info.st_mode, flags: info.st_flags)
+        else { return AskFileReadResponse(error: EINVAL) }
         let descriptor = openat(parent, name, O_RDONLY | O_NOFOLLOW | O_NONBLOCK | O_CLOEXEC)
         guard descriptor >= 0 else { return AskFileReadResponse(error: errno) }
         defer { close(descriptor) }
         var opened = stat()
         guard fstat(descriptor, &opened) == 0,
-              AskFilePreviewPolicy.isResidentRegularFile(mode: opened.st_mode, flags: opened.st_flags) else { return AskFileReadResponse(error: EINVAL) }
+              AskFilePreviewPolicy.isResidentRegularFile(mode: opened.st_mode, flags: opened.st_flags)
+        else { return AskFileReadResponse(error: EINVAL) }
         var result = AskFileReadResponse(fileSize: Int64(opened.st_size), modified:
             Date(timeIntervalSince1970: Double(opened.st_mtimespec.tv_sec) + Double(opened.st_mtimespec.tv_nsec) / 1e9))
         guard request.readText else {
             if AskFilePreviewPolicy.kind(path: request.path) == .image,
                let source = CGImageSourceCreateWithURL(URL(fileURLWithPath: request.path) as CFURL,
-                                                      [kCGImageSourceShouldCache: false] as CFDictionary),
+                                                       [kCGImageSourceShouldCache: false] as CFDictionary),
                let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any] {
                 result.imageWidth = properties[kCGImagePropertyPixelWidth] as? Int
                 result.imageHeight = properties[kCGImagePropertyPixelHeight] as? Int
@@ -259,7 +296,9 @@ public enum AskFileWorkerCommand {
                 let full = AskFileScope.normalize(target.hasPrefix("/") ? target : resolved + "/" + target)
                 pending = full.split(separator: "/").map(String.init) + pending
                 resolved = ""
-            } else { resolved = candidate }
+            } else {
+                resolved = candidate
+            }
         }
         return resolved.isEmpty ? "/" : resolved
     }

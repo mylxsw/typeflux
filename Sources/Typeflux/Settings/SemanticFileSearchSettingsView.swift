@@ -83,8 +83,12 @@ struct SemanticFileSearchSettingsView: View {
                     NSWorkspace.shared.open(URL(string: "https://huggingface.co/google/embeddinggemma-2")!)
                 }
             }
-            if !hasScope { Self.caption(L("semantic.folders.empty")) }
-            if !filesEnabled { Self.caption(L("semantic.filesOff")) }
+            if !hasScope {
+                Self.caption(L("semantic.folders.empty"))
+            }
+            if !filesEnabled {
+                Self.caption(L("semantic.filesOff"))
+            }
         }
     }
 
@@ -96,6 +100,9 @@ struct SemanticFileSearchSettingsView: View {
                 SemanticStatusLine(status: status)
                 TFDivider(inset: 0)
             }
+            if let reason = service.resourceWaitReason {
+                Self.caption(L("semantic.wait." + reason.rawValue))
+            }
             if let progress = status.progress {
                 SemanticProgressView(progress: progress, detailed: true)
             }
@@ -104,7 +111,8 @@ struct SemanticFileSearchSettingsView: View {
                 Self.metric(L("semantic.metric.index"),
                             storage.index > 0 ? SemanticFileSearchStatus.size(storage.index) : "—")
                 Self.metric(L("semantic.metric.model"),
-                            service.modelReady && storage.model > 0 ? SemanticFileSearchStatus.size(storage.model) : "—")
+                            service.modelReady && storage.model > 0 ? SemanticFileSearchStatus
+                                .size(storage.model) : "—")
                 Self.metric(L("semantic.metric.location"), L("semantic.metric.local"))
             }
             .accessibilityIdentifier("semantic.metrics")
@@ -115,6 +123,9 @@ struct SemanticFileSearchSettingsView: View {
                 Self.metric(L("semantic.metric.videos"), service.indexedCounts.videos.formatted())
             }
             .accessibilityIdentifier("semantic.fileTypes")
+            if let diagnostics = service.diagnostics {
+                SemanticIndexDiagnosticsView(diagnostics: diagnostics)
+            }
             HStack(spacing: TFMetrics.toolbarSpacing) {
                 lifecycleButton
                 if service.phase != .ready && service.phase != .off {
@@ -127,7 +138,9 @@ struct SemanticFileSearchSettingsView: View {
                     .disabled(!service.modelReady)
             }
             .tfControlSize(.small)
-            if status.action == .permission { permissionHelp }
+            if status.action == .permission {
+                permissionHelp
+            }
             if let confirmation {
                 TFInlineConfirmation(
                     title: L(confirmation == .model ? "semantic.remove.title" : "semantic.clear.title"),
@@ -160,9 +173,14 @@ struct SemanticFileSearchSettingsView: View {
     @ViewBuilder private var lifecycleButton: some View {
         let active = service.preferences.enabled && filesEnabled
         switch service.phase {
+        case .preparing:
+            Self
+                .link(L(service.manuallyPaused ? "semantic.resume" : "semantic.pause")) {
+                    service.pause(!service.manuallyPaused)
+                }
         case .downloading:
             Self.link(L("semantic.cancelDownload")) { service.cancelDownload() }
-        case .indexing, .preparing:
+        case .indexing:
             Self.link(L("semantic.pause")) { service.pause(true) }
         case .paused:
             Self.link(L("semantic.resume")) { service.pause(false) }
@@ -170,7 +188,11 @@ struct SemanticFileSearchSettingsView: View {
             Self.link(L("semantic.download")) { service.downloadModel() }.disabled(!active)
         case .failed:
             Self.link(L(service.modelReady ? "semantic.retry" : "semantic.retryDownload")) {
-                if service.modelReady { service.start(force: true) } else { service.downloadModel() }
+                if service.modelReady {
+                    service.start(force: true)
+                } else {
+                    service.downloadModel()
+                }
             }.disabled(!active)
         case .ready, .off:
             Self.link(L("semantic.rescan")) { service.rescanAll() }
@@ -218,8 +240,8 @@ struct SemanticStatusLine: View {
     var body: some View {
         Text(status.text).font(.system(size: 12)).foregroundStyle(TFColors.textSecondary)
             .fixedSize(horizontal: false, vertical: true)
-        .accessibilityElement(children: .combine)
-        .accessibilityIdentifier("semantic.status")
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("semantic.status")
     }
 }
 
@@ -232,7 +254,11 @@ struct SemanticProgressView: View {
         VStack(alignment: .leading, spacing: 6) {
             switch progress {
             case let .download(fraction), let .mediaDownload(fraction):
-                let media: Bool = { if case .mediaDownload = progress { true } else { false } }()
+                let media = if case .mediaDownload = progress {
+                    true
+                } else {
+                    false
+                }
                 ProgressView(value: fraction).progressViewStyle(.linear)
                 HStack {
                     Text(detailed ? SemanticFileSearchStatus.downloaded(

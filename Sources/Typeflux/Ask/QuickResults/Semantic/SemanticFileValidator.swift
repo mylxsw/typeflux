@@ -45,6 +45,7 @@ final class SemanticFileValidator: @unchecked Sendable {
     struct Result {
         var hits: [AskFileHit]
         var complete: Bool
+        var canRecover = false
     }
 
     func validate(_ hits: [AskFileHit], scope: AskFileScope, limit: Int,
@@ -54,7 +55,7 @@ final class SemanticFileValidator: @unchecked Sendable {
 
     /// A slow file cannot multiply a per-file I/O timeout by TopK. The helper polls cancellation at 50 ms;
     /// on a deadline it is disposed, unvalidated files are withheld, and the caller reports degraded results.
-    func validateBatch(_ hits: [AskFileHit], scope: AskFileScope, limit: Int,
+    func validateBatch(_ hits: [AskFileHit], scope: AskFileScope, limit: Int, recovering: Bool = false,
                        cancelled: @escaping () -> Bool) -> Result {
         let waiting = ProcessInfo.processInfo.systemUptime
         preparationLock.withLock { validations += 1; preparation?.cancel() }
@@ -63,11 +64,16 @@ final class SemanticFileValidator: @unchecked Sendable {
             SemanticSearchTrace.current?.measure("metadata-lock-wait",
                                                  milliseconds: (ProcessInfo.processInfo.systemUptime - waiting) * 1000)
             guard limit > 0 else { return Result(hits: [], complete: true) }
-            let deadline = ProcessInfo.processInfo.systemUptime + (warm ? budget : startupBudget)
+            let warmAttempt = warm && !recovering
+            let deadline = ProcessInfo.processInfo.systemUptime + (warmAttempt ? budget : startupBudget)
             let stopped = { cancelled() || ProcessInfo.processInfo.systemUptime >= deadline }
+            func result(_ hits: [AskFileHit], complete: Bool) -> Result {
+                Result(hits: hits, complete: complete, canRecover: warmAttempt && !complete && !cancelled()
+                    && ProcessInfo.processInfo.systemUptime >= deadline)
+            }
             var valid: [AskFileHit] = []
             for hit in hits {
-                guard !stopped() else { return Result(hits: valid, complete: false) }
+                guard !stopped() else { return result(valid, complete: false) }
                 guard scope.includes(hit.path, isDirectory: false),
                       SemanticFilePolicy.allows(hit.path) else { continue }
                 do {
@@ -75,6 +81,10 @@ final class SemanticFileValidator: @unchecked Sendable {
                         .init(operation: .content, path: hit.path, scope: scope, readText: false),
                         isCancelled: stopped
                     )
+                    if stopped() {
+                        SemanticSearchTrace.current?.mark(cancelled() ? "metadata-cancelled-response" :
+                            "metadata-late-response")
+                    }
                     warm = true
                     guard !stopped(), response.error == nil, response.modified == hit.modified,
                           hit.evidence?.version == nil || hit.evidence?.version == response.version else { continue }
@@ -84,13 +94,15 @@ final class SemanticFileValidator: @unchecked Sendable {
                     }
                 } catch {
                     warm = false
+                    SemanticSearchTrace.current?.mark(cancelled() ? "metadata-cancelled" :
+                        (stopped() ? "metadata-deadline" : "metadata-read-failed"))
                     if stopped() || (error as? AskFileReadError) == .unavailable ||
                         (error as? AskFileReadError) == .cancelled {
-                        return Result(hits: valid, complete: false)
+                        return result(valid, complete: false)
                     }
                 }
             }
-            return Result(hits: valid, complete: !stopped())
+            return result(valid, complete: !stopped())
         }
     }
 }

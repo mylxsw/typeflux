@@ -76,7 +76,13 @@ extension SemanticNativeLatencyTests {
             let data = try SemanticNativeBenchmarkData.make(model: URL(fileURLWithPath: model))
             do {
                 stage = "readiness-" + entry
-                try await wait { data.service.phase == .paused && data.service.modelReady }
+                try await wait { data.service.phase == .ready && data.service.modelReady }
+                data.service.pause(true)
+                try #require(
+                    try data.store.counts()
+                        .chunks == Int(ProcessInfo.processInfo.environment["TYPEFLUX_SEMANTIC_SCALE"] ?? "100000"),
+                    "Startup must retain every seeded scale row"
+                )
                 if environment["TYPEFLUX_SEMANTIC_DENY_DOCUMENT"] == "1" {
                     try FileManager.default.setAttributes([.posixPermissions: 0], ofItemAtPath: data.document.path)
                 }
@@ -155,10 +161,12 @@ extension SemanticNativeLatencyTests {
                             }
                             if cold && (round > 0 || scenario == "cold-fts") {
                                 stage = "cold-reopen-" + sample
-                                data.service.endSearch(); data.service.start(force: true)
-                                try await wait { data.service.phase == .paused && data.service.modelReady }
+                                data.service.endSearch(); data.service.pause(false); data.service.start(force: true)
+                                try await wait { data.service.phase == .ready && data.service.modelReady }
+                                data.service.pause(true)
                             }
-                            let text = if scenario == "fts-cache" || scenario == "index-writer" || scenario == "cold-fts" {
+                            let text = if scenario == "fts-cache" || scenario == "index-writer" || scenario ==
+                                "cold-fts" {
                                 "reimbursement"
                             } else if scenario == "semantic-cache" {
                                 "How can I get back money spent during business travel cached native \(fileMode)"
@@ -247,7 +255,9 @@ extension SemanticNativeLatencyTests {
         }
         complete = true
         var usage = rusage(); getrusage(RUSAGE_SELF, &usage)
-        let report: [String: Any] = ["rows": rows, "complete": true, "failed_body_samples": failedBodySamples,
+        let report: [String: Any] = ["rows": rows,
+                                     "complete": true,
+                                     "failed_body_samples": failedBodySamples,
                                      "entry_scope": selectedEntry ?? "all",
                                      "warm_samples_per_scenario": warmSamples,
                                      "permission_denial_fixture": environment["TYPEFLUX_SEMANTIC_DENY_DOCUMENT"] == "1",
@@ -274,10 +284,14 @@ private final class SemanticNativeTraceRecorder: @unchecked Sendable {
     private let lock = NSLock()
     private var start = ProcessInfo.processInfo.systemUptime
     private var stored: [[String: Any]] = []
-    var events: [[String: Any]] { lock.withLock { stored } }
+    var events: [[String: Any]] {
+        lock.withLock { stored }
+    }
+
     func reset() {
         lock.withLock { start = ProcessInfo.processInfo.systemUptime; stored = [] }
     }
+
     func record(_ event: SemanticSearchTrace.Event) {
         lock.withLock {
             stored.append(["stage": event.stage, "value_ms": event.milliseconds, "duration": event.duration,
@@ -290,13 +304,26 @@ private final class SemanticNativeTraceRecorder: @unchecked Sendable {
 private final class SemanticNativeTraceService: SemanticFileSearching {
     let service: SemanticFileSearchService
     let recorder = SemanticNativeTraceRecorder()
-    init(service: SemanticFileSearchService) { self.service = service }
-    var isEnabled: Bool { service.isEnabled }
-    func prepareForSearch() { service.prepareForSearch() }
-    func endSearch() { service.endSearch() }
+    init(service: SemanticFileSearchService) {
+        self.service = service
+    }
+
+    var isEnabled: Bool {
+        service.isEnabled
+    }
+
+    func prepareForSearch() {
+        service.prepareForSearch()
+    }
+
+    func endSearch() {
+        service.endSearch()
+    }
+
     func search(_ text: String, type: AskFileType, limit: Int) async -> [AskFileHit] {
         await search(text, type: type, limit: limit, progress: { _ in })
     }
+
     func search(_ text: String, type: AskFileType, limit: Int,
                 progress: @escaping @MainActor @Sendable ([AskFileHit]) -> Void) async -> [AskFileHit] {
         let recorder = recorder

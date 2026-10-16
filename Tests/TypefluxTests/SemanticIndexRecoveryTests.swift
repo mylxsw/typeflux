@@ -6,7 +6,7 @@ import SQLite3
 import Testing
 @testable import Typeflux
 
-private final class RecoveryBundle {}
+private final class RecoveryBundle: NSObject {}
 
 private final class RecoveryReader: AskFileReading {
     var textReads = 0
@@ -336,21 +336,24 @@ struct SemanticIndexRecoveryTests {
         let interrupted = Process()
         interrupted.executableURL = URL(fileURLWithPath: "/usr/bin/env")
         interrupted.arguments = ["python3", "-c", """
-            import os, sqlite3, sys
-            connection = sqlite3.connect(sys.argv[1])
-            connection.execute('BEGIN IMMEDIATE')
-            connection.execute("ALTER TABLE files ADD COLUMN version TEXT NOT NULL DEFAULT ''")
-            connection.execute('ALTER TABLE chunks ADD COLUMN time REAL')
-            os._exit(74)
-            """, url.path]
+        import os, sqlite3, sys
+        connection = sqlite3.connect(sys.argv[1])
+        connection.execute('BEGIN IMMEDIATE')
+        connection.execute("ALTER TABLE files ADD COLUMN version TEXT NOT NULL DEFAULT ''")
+        connection.execute('ALTER TABLE chunks ADD COLUMN time REAL')
+        os._exit(74)
+        """, url.path]
         interrupted.standardOutput = FileHandle.nullDevice; interrupted.standardError = FileHandle.nullDevice
         try interrupted.run(); interrupted.waitUntilExit()
         #expect(interrupted.terminationStatus == 74)
         let store = try SemanticFileStore(url: url)
+        while try store.maintainSearchBatch(cancelled: { false }) {}
         #expect(try store.counts().chunks == 1, "compatible migration preserves old payloads after DDL rollback")
         let reopened = try SemanticFileStore(url: url)
         #expect(try reopened.counts().chunks == 1)
-        #expect(try SemanticFileStore(url: url, profile: "incompatible").counts().chunks == 0)
+        let reset = try SemanticFileStore(url: url, profile: "incompatible")
+        while try reset.maintainSearchBatch(cancelled: { false }) {}
+        #expect(try reset.counts().chunks == 0)
     }
 
     @Test func `invalid cursors UTF 8 and long combining characters cannot loop or lose tail`() throws {
@@ -381,7 +384,7 @@ struct SemanticIndexRecoveryTests {
         #expect(AskFileWorkerCommand.contentSlice(Data([0xFF]), offset: 0) == nil)
     }
 
-    @Test func abruptProcessExitRecoversCommittedBatches() throws {
+    @Test func `abrupt process exit recovers committed batches`() throws {
         let env = ProcessInfo.processInfo.environment
         if let childRoot = env["TYPEFLUX_CHECKPOINT_CRASH_ROOT"] {
             let root = URL(fileURLWithPath: childRoot)
@@ -403,8 +406,10 @@ struct SemanticIndexRecoveryTests {
             encoding: .utf8
         )
         let bundle = Bundle(for: RecoveryBundle.self)
-        let binary = bundle.bundleURL
+        let fallback = bundle.bundleURL
             .appendingPathComponent("Contents/MacOS/" + bundle.bundleURL.deletingPathExtension().lastPathComponent)
+        let binary = CommandLine.arguments.first { $0.contains(".xctest/Contents/MacOS/") }
+            .map { URL(fileURLWithPath: $0) } ?? fallback
         let developer = Process(), pipe = Pipe()
         developer.executableURL = URL(fileURLWithPath: "/usr/bin/xcode-select")
         developer.arguments = ["-p"]; developer.standardOutput = pipe
@@ -419,20 +424,27 @@ struct SemanticIndexRecoveryTests {
         process.arguments = [
             "--test-bundle-path",
             binary.path,
-            binary.path,
             "--testing-library",
             "swift-testing",
             "--no-parallel",
             "--filter",
-            "SemanticIndexRecoveryTests/abruptProcessExitRecoversCommittedBatches"
+            "SemanticIndexRecoveryTests/.*" + NSRegularExpression.escapedPattern(for: #function.replacingOccurrences(
+                of: "()",
+                with: ""
+            ))
         ]
         var childEnvironment = env
         childEnvironment["TYPEFLUX_CHECKPOINT_CRASH_ROOT"] = root.path
         childEnvironment["LLVM_PROFILE_FILE"] = root.appendingPathComponent("crash-%p.profraw").path
         process.environment = childEnvironment
-        process.standardOutput = FileHandle.nullDevice; process.standardError = FileHandle.nullDevice
+        let log = root.appendingPathComponent("crash-child.log")
+        FileManager.default.createFile(atPath: log.path, contents: nil)
+        let output = try FileHandle(forWritingTo: log)
+        defer { try? output.close() }
+        process.standardOutput = output; process.standardError = output
         try process.run(); process.waitUntilExit()
-        #expect(process.terminationStatus == 73)
+        let detail = try String(decoding: Data(contentsOf: log), as: UTF8.self)
+        #expect(process.terminationStatus == 73, "Child recovery runner (\(binary.lastPathComponent)): \(detail)")
         let store = try SemanticFileStore(url: root.appendingPathComponent("crash.sqlite"))
         let checkpoint = try store.job(root.path + "/note.txt")
         let before = try #require(checkpoint)
@@ -474,9 +486,11 @@ struct SemanticIndexRecoveryTests {
         #expect(try store.publishVectors(first.map { _ in semanticVector() }, work: first, job: job))
         #expect(try store.vectorWork(job).first?.id != first.first?.id)
     }
-    @Test func mediaMetadataAndRecipeInvalidateOnlyIncompatibleCheckpoints() throws {
+
+    @Test func `media metadata and recipe invalidate only incompatible checkpoints`() throws {
         let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
-        let path = root.path + "/movie.mov", store = try SemanticFileStore(url: root.appendingPathComponent("index.sqlite"))
+        let path = root.path + "/movie.mov",
+            store = try SemanticFileStore(url: root.appendingPathComponent("index.sqlite"))
         let metadata = AskFileReadResponse(fileSize: 10, modified: Date(timeIntervalSince1970: 100), version: "v1")
         let first = try store.beginMediaJob(path: path, metadata: metadata)
         let input = SemanticMediaInput(kind: .audio, path: "fixture", time: 30, endTime: 42)
@@ -488,7 +502,8 @@ struct SemanticIndexRecoveryTests {
         for end in [29.0, Double.infinity] {
             #expect(throws: SemanticFileStore.Failure.self) {
                 try store.saveMediaSegment(path: path, generation: first, ordinal: 1,
-                    input: .init(kind: .audio, path: "fixture", time: 30, endTime: end), vector: semanticVector())
+                                           input: .init(kind: .audio, path: "fixture", time: 30, endTime: end),
+                                           vector: semanticVector())
             }
         }
         try execute(store.url, "UPDATE media_jobs SET recipe='old-projector'")
@@ -499,7 +514,8 @@ struct SemanticIndexRecoveryTests {
         #expect(try store.commitMediaJob(path: path, generation: second, metadata: metadata, segments: 1))
         #expect(try store.mediaUnchanged(path: path, metadata: metadata))
         try store.lock.withLock {
-            let row = try store.statement("SELECT time,end_time,modality,segment_kind,provenance FROM chunks WHERE path=?")
+            let row = try store
+                .statement("SELECT time,end_time,modality,segment_kind,provenance FROM chunks WHERE path=?")
             defer { sqlite3_finalize(row) }
             store.bind(row, [path])
             try #require(sqlite3_step(row) == SQLITE_ROW)
@@ -524,27 +540,36 @@ struct SemanticIndexRecoveryTests {
     }
 
     @Test(arguments: [Int32(EILSEQ), EACCES, ENOENT, EAGAIN, -1])
-    func corruptFilesAndMalformedWorkerCheckpointsDoNotBlockPruneOrRecovery(code: Int32) throws {
+    func `corrupt files and malformed worker checkpoints do not block prune or recovery`(code: Int32) throws {
         let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
         let file = root.appendingPathComponent("bad.txt"), good = root.appendingPathComponent("good.txt")
         try "badzebrabody".write(to: file, atomically: true, encoding: .utf8)
-        if code == EILSEQ { try Data([0,1,2]).write(to: file) }
+        if code == EILSEQ {
+            try Data([0, 1, 2]).write(to: file)
+        }
         try "goodzebrabody".write(to: good, atomically: true, encoding: .utf8)
         let store = try SemanticFileStore(url: root.appendingPathComponent("index.sqlite")), reader = RecoveryReader()
         try store.replace(path: root.path + "/deleted.txt", modified: Date(), bytes: 10,
                           chunks: [.init(text: "deletedzebra", page: nil)], vectors: [semanticVector()])
         reader.transform = { request, response in
             if request.path == file.path, request.readText {
-                if code == -1 { response.nextCursor = request.cursor ?? .init() }
-                else if code != EILSEQ { response.error = code }
+                if code == -1 {
+                    response.nextCursor = request.cursor ?? .init()
+                } else if code != EILSEQ {
+                    response.error = code
+                }
             }
         }
         let result = try run(root, store, reader, RecoveryEncoder())
         #expect(result.files == 1 && result.skipped == 1)
         #expect(try hits(store, root, "deletedzebra").isEmpty)
         #expect(try hits(store, root, "badzebrabody").isEmpty)
-        if code == EACCES { #expect(try store.job(file.path)?.reason == "permission-denied") }
-        if code == ENOENT || code == EAGAIN { #expect(try store.job(file.path)?.reason == "file-missing-or-changed") }
+        if code == EACCES {
+            #expect(try store.job(file.path)?.reason == "permission-denied")
+        }
+        if code == ENOENT || code == EAGAIN {
+            #expect(try store.job(file.path)?.reason == "file-missing-or-changed")
+        }
         if code == EILSEQ || code == -1 {
             #expect(try store.job(file.path)?.state == .failed)
             #expect(try store.job(file.path)?.reason == (code == EILSEQ ? "unreadable-content" : "reader-failed"))
@@ -555,11 +580,11 @@ struct SemanticIndexRecoveryTests {
         #expect(try store.job(file.path)?.state == .done)
         var revokedScope = semanticScope(root.path); revokedScope.excludedPaths = [file.path]
         _ = try SemanticFileIndexer.reconcile(paths: [file.path], scope: revokedScope, store: store, reader: reader,
-            encoder: RecoveryEncoder(), cancelled: { false }, progress: { _ in })
+                                              encoder: RecoveryEncoder(), cancelled: { false }, progress: { _ in })
         #expect(try hits(store, root, "recoveredzebra").isEmpty)
     }
 
-    @Test func pdfSinglePageTextCanContinueWithStablePageOffsets() throws {
+    @Test func `pdf single page text can continue with stable page offsets`() throws {
         let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
         let file = root.appendingPathComponent("single-page.pdf")
         var box = CGRect(x: 0, y: 0, width: 500, height: 8000)
@@ -568,8 +593,11 @@ struct SemanticIndexRecoveryTests {
         let font = CTFontCreateWithName("Helvetica" as CFString, 3, nil)
         for line in 0 ..< 1800 {
             context.textPosition = .init(x: 20, y: 7800 - Double(line * 4))
-            let text = NSAttributedString(string: line == 1799 ? "singlepagetailzebra" : "PDF page body line \(line) has complete checkpoint text.",
-                attributes: [NSAttributedString.Key(kCTFontAttributeName as String): font])
+            let text = NSAttributedString(
+                string: line == 1799 ? "singlepagetailzebra" :
+                    "PDF page body line \(line) has complete checkpoint text.",
+                attributes: [NSAttributedString.Key(kCTFontAttributeName as String): font]
+            )
             CTLineDraw(CTLineCreateWithAttributedString(text), context)
         }
         context.endPDFPage(); context.closePDF()
@@ -578,7 +606,10 @@ struct SemanticIndexRecoveryTests {
         let next = try #require(first.nextCursor)
         #expect(next.page == 0 && next.offset > 0)
         #expect(first.pages?.first?.text.utf8.count ?? 0 <= SemanticFilePolicy.contentBatchBytes)
-        let eof = try reader.read(.init(operation: .content, path: file.path, scope: scope, cursor: .init(page: 1)), isCancelled: { false })
+        let eof = try reader.read(
+            .init(operation: .content, path: file.path, scope: scope, cursor: .init(page: 1)),
+            isCancelled: { false }
+        )
         #expect(eof.pages == [] && eof.nextCursor == nil)
         let store = try SemanticFileStore(url: root.appendingPathComponent("index.sqlite"))
         _ = try run(root, store, reader, RecoveryEncoder())
@@ -587,7 +618,7 @@ struct SemanticIndexRecoveryTests {
         #expect(reader.maximumBytes <= SemanticFilePolicy.contentBatchBytes)
     }
 
-    @Test func pendingAndFailedJobsCountOnlyPublishedFiles() throws {
+    @Test func `pending and failed jobs count only published files`() throws {
         let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
         let store = try SemanticFileStore(url: root.appendingPathComponent("index.sqlite"))
         let path = root.path + "/pending.txt"
@@ -603,5 +634,4 @@ struct SemanticIndexRecoveryTests {
         _ = try store.prepareDocument(path: path, metadata: metadata)
         #expect(try store.counts().files == 0 && store.counts().chunks == 0)
     }
-
 }

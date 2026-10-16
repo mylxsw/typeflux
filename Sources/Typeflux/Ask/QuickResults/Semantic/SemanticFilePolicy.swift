@@ -39,10 +39,55 @@ enum SemanticFilePolicy {
     /// Model-space changes rebuild globally; extraction and sampling are versioned by each job recipe.
     static let profile = "embeddinggemma2-\(SemanticModel.sha256)-llama4d756bc-mean-l2-768-prompts1-utf8chunk1"
 
+    private static let temporaryPath = AskFileScope.canonical(FileManager.default.temporaryDirectory.path)
+
+    static func isLegacyMediaArtifact(_ path: String) -> Bool {
+        AskFileScope.isInside(path, temporaryPath)
+            && path.dropFirst(temporaryPath.count).split(separator: "/").first?.hasPrefix("typeflux-media-") == true
+    }
+
+    /// The normal model directory is private. A custom directory may also contain user documents;
+    /// exclude its owned artifacts precisely rather than excluding those documents with the database.
+    static func isIndexArtifact(_ path: String, directory: String) -> Bool {
+        if AskFileScope.isInside(path, SemanticModel.directory.path) {
+            return true
+        }
+        if AskFileScope.isInside(path, directory) {
+            let relative = path.dropFirst(directory.count).split(separator: "/").map(String.init)
+            if relative.isEmpty {
+                return true
+            }
+            let name = relative[0]
+            if name == ".typeflux-media-cache" || name == "media-cache" {
+                return true
+            }
+            if ["embeddinggemma-2-Q8_0.gguf", SemanticMediaModel.name].contains(name) {
+                return true
+            }
+            if ["semantic-files.sqlite", "index-events.sqlite"].contains(where: {
+                name == $0 || name == $0 + "-wal" || name == $0 + "-shm" || name == $0 + "-journal"
+            }) {
+                return true
+            }
+        }
+        return isLegacyMediaArtifact(path)
+    }
+
     static func allows(_ path: String) -> Bool {
         let parts = path.lowercased().split(separator: "/").map(String.init)
-        let forbidden: Set = [".ssh", ".aws", ".config", ".gnupg", ".git", "node_modules", ".build", "keychains"]
-        guard path.hasPrefix("/"), AskFileScope.normalize(path) == path,
+        let forbidden: Set = [
+            ".ssh",
+            ".aws",
+            ".config",
+            ".gnupg",
+            ".git",
+            "node_modules",
+            ".build",
+            "keychains",
+            ".typeflux-media-cache"
+        ]
+        guard path.hasPrefix("/"), AskFileScope.normalize(path) == path, !isLegacyMediaArtifact(path),
+              !AskFileScope.isInside(path, SemanticModel.directory.path),
               !parts.contains(where: { forbidden.contains($0) || $0.hasPrefix(".env") }),
               let name = parts.last, !name.contains("credential"), !name.contains("secret"),
               !name.hasPrefix("id_rsa"), !name.hasPrefix("id_ed25519") else { return false }
@@ -51,7 +96,16 @@ enum SemanticFilePolicy {
 
     static func scope(names: AskLauncherSearchSettings, fullDiskAccess: Bool) -> AskFileScope {
         var scope = AskFileScope(settings: names, fullDiskAccess: fullDiskAccess)
-        scope.excludedFolderNames.formUnion([".ssh", ".aws", ".config", ".gnupg", ".git", "node_modules", ".build"])
+        scope.excludedFolderNames.formUnion([
+            ".ssh",
+            ".aws",
+            ".config",
+            ".gnupg",
+            ".git",
+            "node_modules",
+            ".build",
+            ".typeflux-media-cache"
+        ])
         return scope
     }
 
@@ -79,9 +133,9 @@ enum SemanticFilePolicy {
     }
 
     /// Same pretokenization for documents and queries, including CJK unigrams/bigrams.
-    static func terms(_ text: String) -> String {
+    static func terms(_ text: String, legacy: Bool = false) -> String {
         var terms: [String] = [], word = "", previous: String?
-        for scalar in SemanticSearchRanking.normalize(text).unicodeScalars {
+        for scalar in (legacy ? text.lowercased() : SemanticSearchRanking.normalize(text)).unicodeScalars {
             let cjk = scalar.properties.isIdeographic || (0x3040 ... 0x30FF).contains(scalar.value)
                 || (0xAC00 ... 0xD7AF).contains(scalar.value)
             if cjk {

@@ -170,6 +170,7 @@ struct SemanticFileStoreTests {
             vectors: [semanticVector()]
         )
         let upgraded = try SemanticFileStore(url: url, profile: "new-profile")
+        while try upgraded.maintainSearchBatch(cancelled: { false }) {}
         #expect(try upgraded.counts().files == 0)
         try upgraded.clear()
         #expect(try upgraded.counts().chunks == 0)
@@ -297,7 +298,11 @@ final class SemanticFixtureReader: AskFileReading, @unchecked Sendable {
         }
         if request.operation == .directory {
             directoryReads += 1
-            return .init(entries: removed ? [] : directoryEntries ?? [.init(path: path, kind: .file, modified: modified)])
+            return .init(entries: removed ? [] : directoryEntries ?? [.init(
+                path: path,
+                kind: .file,
+                modified: modified
+            )])
         }
         if failed {
             return .init(error: EACCES)
@@ -356,7 +361,8 @@ struct SemanticFileIndexerTests {
         let original = reader.modified
         reader.modified = reader.modified.addingTimeInterval(1)
         let result = try SemanticFileIndexer.reconcile(paths: [second, second], scope: semanticScope(root.path),
-            store: store, reader: reader, encoder: encoder, cancelled: { false }, progress: { _ in })
+                                                       store: store, reader: reader, encoder: encoder,
+                                                       cancelled: { false }, progress: { _ in })
         #expect(result.total == 1 && result.processed == 1 && result.files == 1)
         #expect(encoder.calls == 3)
         #expect(reader.directoryReads == crawls)
@@ -364,7 +370,8 @@ struct SemanticFileIndexerTests {
         #expect(try store.unchanged(path: second, modified: reader.modified, bytes: 20))
         reader.failed = true
         let removed = try SemanticFileIndexer.reconcile(paths: [first], scope: semanticScope(root.path),
-            store: store, reader: reader, encoder: encoder, cancelled: { false }, progress: { _ in })
+                                                        store: store, reader: reader, encoder: encoder,
+                                                        cancelled: { false }, progress: { _ in })
         #expect(removed.skipped == 1)
         #expect(try store.counts().files == 1)
         #expect(reader.directoryReads == crawls)
@@ -374,17 +381,18 @@ struct SemanticFileIndexerTests {
         let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
         let path = root.path + "/notes.md"
         let reader = SemanticFixtureReader(path: path), encoder = SemanticFixtureEncoder()
-        reader.directoryEntries = (0 ..< 50_000).map {
+        reader.directoryEntries = (0 ..< 50000).map {
             .init(path: root.path + "/asset-\($0).bin", kind: .file, modified: reader.modified)
         } + [.init(path: path, kind: .file, modified: reader.modified)]
         let store = try SemanticFileStore(url: root.appendingPathComponent("index.sqlite"))
         var progress: [SemanticFileIndexer.Summary] = []
         let result = try SemanticFileIndexer.run(scope: semanticScope(root.path), store: store, reader: reader,
-            encoder: encoder, cancelled: { false }, progress: { progress.append($0) })
+                                                 encoder: encoder, cancelled: { false },
+                                                 progress: { progress.append($0) })
         #expect(result.files == 1)
-        #expect(result.scanned == 50_001 && result.discovered == 1)
+        #expect(result.scanned == 50001 && result.discovered == 1)
         #expect(result.total == 1 && result.processed == 1)
-        #expect(progress.contains { $0.total == nil && $0.scanned >= 1_000 })
+        #expect(progress.contains { $0.total == nil && $0.scanned >= 1000 })
         #expect(progress.contains { $0.total == 1 && $0.processed == 0 })
         #expect(try store.counts().files == 1)
     }
@@ -395,10 +403,11 @@ struct SemanticFileIndexerTests {
         reader.text = "   \n"
         let store = try SemanticFileStore(url: root.appendingPathComponent("index.sqlite"))
         let result = try SemanticFileIndexer.run(scope: semanticScope(root.path), store: store, reader: reader,
-            encoder: encoder, cancelled: { false }, progress: { _ in })
+                                                 encoder: encoder, cancelled: { false }, progress: { _ in })
         #expect(result.files == 0); #expect(result.skipped == 1)
         #expect(encoder.calls == 0); #expect(try store.counts().files == 0)
     }
+
     @Test func `changes deletion failures and cancellation`() throws {
         let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
         let reader = SemanticFixtureReader(path: root.path + "/handbook.txt"), encoder = SemanticFixtureEncoder()

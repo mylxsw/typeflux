@@ -179,6 +179,8 @@ struct SemanticSearchRankingTests {
 
     @Test func `ambiguous low similarity refuses answers without breaking a clear semantic match`() {
         let ranking = SemanticSearchRanking("unseen question")
+        #expect(!ranking.confident(peak: 0.69, runnerUp: 0.68, completeLexical: false))
+        #expect(ranking.confident(peak: 0.70, runnerUp: 0.69, completeLexical: false))
         #expect(!ranking.confident(peak: 0.60, runnerUp: 0.59, completeLexical: false))
         #expect(!ranking.confident(peak: 0.66, runnerUp: 0.65, completeLexical: false))
         #expect(ranking.confident(peak: 0.66, runnerUp: 0.60, completeLexical: false))
@@ -191,6 +193,18 @@ struct SemanticSearchRankingTests {
             evidence: .init(coverage: 0, phrase: false, identifier: false),
             modality: .document
         ) == nil)
+    }
+
+    @Test func `partial lexical overlap never demotes an equally similar passage`() throws {
+        let ranking = SemanticSearchRanking("orchard irrigation maintenance")
+        let absent = ranking.evidence("Workers inspect the pump"),
+            partial = ranking.evidence("Workers inspect irrigation equipment")
+        #expect(absent.coverage == 0 && partial.coverage > 0 && partial.coverage < 1)
+        let unrelated = try #require(ranking.score(cosine: 0.8, evidence: absent, modality: .document))
+        let overlapping = try #require(ranking.score(cosine: 0.8, evidence: partial, modality: .document))
+        #expect(overlapping >= unrelated)
+        let audio = try #require(ranking.score(cosine: 0.8, evidence: absent, modality: .audio))
+        #expect(unrelated == audio, "An ordinary query does not silently prefer a media type")
     }
 
     @Test func `confidence includes low-scoring files and repeated book chunks do not change the answer`() throws {
@@ -224,7 +238,7 @@ struct SemanticSearchRankingTests {
                                    input: .init(kind: .audio, path: path, time: 30, endTime: 60),
                                    vector: semanticVector())
         #expect(try store.commitMediaJob(path: path, generation: generation, metadata: metadata, segments: 1))
-        let hit = try #require(query(store, root, "semantic paraphrase", limit: 1).first)
+        let hit = try #require(query(store, root, "audio semantic paraphrase", limit: 1).first)
         #expect(hit.name == "z.mov" && hit.evidence?.time == 30)
     }
 
@@ -284,7 +298,7 @@ struct SemanticSearchRankingTests {
 }
 
 extension SemanticSearchRankingTests {
-    @Test func lexicalTimestampsRejectNonfiniteNegativeAndIntegerOverflowValues() throws {
+    @Test func `lexical timestamps reject nonfinite negative and integer overflow values`() throws {
         let root = try semanticFixture()
         defer { try? FileManager.default.removeItem(at: root) }
         let store = try SemanticFileStore(url: root.appendingPathComponent("index.sqlite"))
@@ -302,5 +316,40 @@ extension SemanticSearchRankingTests {
             let hit = try #require(hits.first { $0.name == "time-\(index).wav" })
             #expect(hit.evidence?.time == value.1)
         }
+    }
+}
+
+extension SemanticSearchRankingTests {
+    @Test func `format requests exclude incidental content mentions`() {
+        for (query, expected) in [
+            ("play the recording of thunder", SemanticMediaPriority.audio),
+            ("photos of a red train", .image), ("Which video shows the pier?", .video),
+            ("from the document about tides", .document), ("请找海浪录音", .audio),
+            ("玻璃桥的视频在哪里？", .video)
+        ] {
+            #expect(SemanticSearchRanking(query).preferredModality == expected)
+        }
+        for query in ["Does the website publish the recording after the lecture?",
+                      "People described a photo while discussing the schedule",
+                      "文中提到录音设备在星期五维修"] {
+            #expect(SemanticSearchRanking(query).preferredModality == nil)
+        }
+    }
+
+    @Test func `stronger raw evidence keeps its order across script distributions`() throws {
+        let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
+        let store = try SemanticFileStore(url: root.appendingPathComponent("index.sqlite"))
+        func add(_ name: String, _ text: String, _ cosine: Float) throws {
+            var vector = semanticVector(); vector[0] = cosine; vector[1] = sqrt(1 - cosine * cosine)
+            try store.replace(path: root.path + "/" + name + ".txt", modified: Date(), bytes: 1,
+                              chunks: [.init(text: text, page: nil)], vectors: [vector])
+        }
+        try add("strong", "第一段材料", 0.90)
+        try add("weak", "Second passage", 0.75)
+        for index in 0 ..< 12 {
+            try add("filler-\(index)", "其他语料", 0.1)
+        }
+        #expect(try query(store, root, "unseen description").first?.name == "strong.txt")
+        #expect(try query(store, root, "不相同的描述").first?.name == "strong.txt")
     }
 }

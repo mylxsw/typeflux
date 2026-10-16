@@ -1,0 +1,890 @@
+{
+  "scope": "Runtime repository/workspace/home and generated temporary path prefixes replaced in new/modified evidence only. LCOV project SF paths normalized relative to repository. Model/source/binary hashes remain the measured byte fingerprints, not redacted log fingerprints. Original file hashes retained for the redacted artifacts; no original private path mapping is exported. Ignored command logs included in the archive are normalized too.",
+  "files": [
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/closeout-resource-command.json",
+      "original_sha256": "7bf87619ebb9829276f7e7e8b99ef7a042539beebaa23bc300301209c566fc35",
+      "redacted_sha256": "5f3b253d91f69c40bb22bdb32ee4bd45fa16f3cc887b79a0b5c770d048607423"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/closeout-summary.json",
+      "original_sha256": "1b0da8254f80fd2dac86fd79132cec142abfa4c3a6326da590cef0b6660485bb",
+      "redacted_sha256": "0008b936d5ac3c3a91f21079b217c9f688519c44cc4652ee69abfae7f7d7ec6e"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/final-current-quality-commands.json",
+      "original_sha256": "06a497d804a6e3de5172d9c30ef984488c43cb141b1e80e933bc2006e5294722",
+      "redacted_sha256": "0bbfb01c35bee29bd6dfb5df3fcc9f2a917540f39431f0025e7bbdb22c37c2d7"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/final-ui-ranking-commands.json",
+      "original_sha256": "8e1e696ef5674d35d4a3508bc9a810058f3d290480aa46ba777b4cab53d1d82c",
+      "redacted_sha256": "a62852dfe0d7f4ce0e8aecbfd59c3cf7b9cca30a748bf18d16904ca0697777d2"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/matrix-contention-after-10000-final-current/run.json",
+      "original_sha256": "e3da293230dff14d329854697e73730c542cab1d773eb5a859cc2c0a6a1bb8a3",
+      "redacted_sha256": "be209970e62cb84cec117536fa245192a1abf516fbfd1d691464e238a1bc46de"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/matrix-contention-after-10000-final-ui/run.json",
+      "original_sha256": "ce0dca92d65603abd60b9b9872234e6f4c89cbd17357a4c198ab45fdf00f1266",
+      "redacted_sha256": "1d71df6a363e081cf7044b139381ab51390b82e8f8e28ad9a7e2cdc56e04009e"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/matrix-contention-after-100000-final-ui/run.json",
+      "original_sha256": "37d296beac856ceb0c552ab8ffacc4351cb61f33832084553592ddde4342168f",
+      "redacted_sha256": "5de5a61d8df39352a4bba7288923c9d07573d5515864249915322370ccf250aa"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/matrix-contention-before-10000-final/run.json",
+      "original_sha256": "e1b28757a715568dfd98d06c96c4ee5a1f00701cbce077095091d83611cbee46",
+      "redacted_sha256": "764856328852da4da5d7c4290ed05773fab898d7cfe421d6aed86af71fcf068d"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/matrix-contention-before-100000-final-ui/run.json",
+      "original_sha256": "6665ef946128972214f2f3c48fe69810419f515c3e1b611b4a1a593bb8eb2386",
+      "redacted_sha256": "356ba074de6727c29bcc41b644e25e8ce39f5f5a6171bd9f95ef9ea56b1667de"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/matrix-native-after-10000-final-coldfts/run.json",
+      "original_sha256": "861bd44fc2aee23ca11aa9e094ef1c48f275bc04723a100c356318d7b2a68da4",
+      "redacted_sha256": "e8871215076c68078f440d2ec15dd079f0f3d83393f66ae0022189237d2307ac"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/matrix-native-after-10000-final-current-coldfts/run.json",
+      "original_sha256": "9b9883246e508d56dbe091120fcc39b344d8de1ffefdbdb4571df367148e2bcf",
+      "redacted_sha256": "6c44f032056e06b8ec870dbac0a5eaadfba592e58410dae347f946c886cf1168"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/matrix-native-after-10000-final-current-real/run.json",
+      "original_sha256": "a431383b652c00c705d7ee0390c8c42f9170c0cef22652f215561738f8c25c56",
+      "redacted_sha256": "bcc6270328ffa6c3a2bc8a6d9d22538656402afe13dcd9bd1610e159ccf44dea"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/matrix-native-after-10000-final-current/run.json",
+      "original_sha256": "ab4038a61abe005e71e4fb41818ff376f7b341265582bd1e4f6442fded94864a",
+      "redacted_sha256": "cc1bdb9fca0d5047bc03bf79298f5e90c0aa7f549169d09af111e4326486e875"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/matrix-native-after-10000-final-real/run.json",
+      "original_sha256": "526ed32ae8bc3cc3596c4c63260f8b9b0d22e55eb55eba45bb1b53b6cc11beb6",
+      "redacted_sha256": "97e0b141ef1cf14e2b961f16a1e86bf00d0fe5740a0a8794d205d704ac941ed1"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/matrix-native-after-10000-final-ui-coldfts/run.json",
+      "original_sha256": "d9180d6ecb508646a5d9fdfa18d540f8e07c1b84bc748675457e82776dadb3db",
+      "redacted_sha256": "442f2c8ba64b7fea7b44a3a1516b17dfb1e7cdbaa494f811cd752aab80c88fc6"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/matrix-native-after-10000-final-ui-real/run.json",
+      "original_sha256": "7f7913a1b1d518782d4516ed87417e88c150df3d474252c1714821c61a2db61e",
+      "redacted_sha256": "48f4cfa6394fb2a8934c6948703de4360ea3a17c9415e0945e4935a8b5d7a8c3"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/matrix-native-after-10000-final-ui/run.json",
+      "original_sha256": "a96eaf9501f0eda4f8f37e8ca2f2bacf23babf6c490b875323cf402be1890062",
+      "redacted_sha256": "5fd8043419cfa6567d8dbda5aa65de9ce6e1df8ee4a41c163492caf4ef5fca31"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/matrix-native-after-10000-final/run.json",
+      "original_sha256": "8be5188abdef37f9650b4f0168e48171f61d54212366959fa7d007990f95ed9c",
+      "redacted_sha256": "02f9405f8f13390da4b2187602e5e4f943248194adc48a9f66890efd009f945e"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/matrix-native-after-100000-final-current/run.json",
+      "original_sha256": "b34991ec8e57e49b843b171f70ea826c0fa07a1f2ac40b62cc163f44d8a90dfb",
+      "redacted_sha256": "68665f61b0a2df5597682c7ffcd14036d360d08fc06149c7e76267fadd64dd22"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/matrix-native-after-100000-final-ui-coldfts/run.json",
+      "original_sha256": "4002a7368817fbee3042cc4d8553b661aec0912f74eecd03a270b3ce926e088b",
+      "redacted_sha256": "9e22861b30715af9725c3ace138eb809c38edd4807b9a903f6108ba181c06eb2"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/matrix-native-after-100000-final-ui-gate/run.json",
+      "original_sha256": "19e1cd574fc5e81816ef4fa124a5557d76ac5b1e6d415b3badd581a169983e9f",
+      "redacted_sha256": "9ba8e36dd7b41ee3debf8133ca68f660a9a426dac1e909066529d00b9f5d914e"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/matrix-native-after-100000-final-ui-real/run.json",
+      "original_sha256": "8649d0573c59b70d7b60433e0e10f1cae5fbd552acfcd80040f34c8768a637d2",
+      "redacted_sha256": "ad6ec593d4ae4881557d94e9bab05dc87a01037113e2065c97ac612888af83b4"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/matrix-native-before-10000-final-coldfts/run.json",
+      "original_sha256": "fd63feb68aaea7e206d0b6b5452985b0e19634f909202dab6fba044070a2943f",
+      "redacted_sha256": "8d2b3634bebcf6df5adc26ffdc81469ce3f250663b35b2a81430045682289691"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/matrix-native-before-10000-final-real/run.json",
+      "original_sha256": "6ebbde43ec2eb57b63cc9e7c7c4ad46052e845bc0d4e895209cc997756450cf2",
+      "redacted_sha256": "1bddcd97bade85be280c0efdccdd44329949d05259b78001d0db2f7d41e80b12"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/matrix-native-before-10000-final/run.json",
+      "original_sha256": "ab3a1627fbaaaca572bfeb9d7e39fb7c689ca48ccb9150231fdbd5e36cc1c4c6",
+      "redacted_sha256": "a5248f9960201507d06d86c1075b7a5dca25ec2995eba1ace4cc441448f6408f"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/matrix-native-before-100000-final-current/run.json",
+      "original_sha256": "5828b58360aaa7af0e64bc47f8e5626de2dbc119a307844172cec1a14097f5a1",
+      "redacted_sha256": "ed8227f4c1bfbaa08a46d41917edeec255f7c4662dc9b18634b4f9e456e5010b"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/matrix-native-before-100000-final-ui-coldfts/run.json",
+      "original_sha256": "cdce343b15e68f80789163b5e35d20e7341b582e6c091de5065d2dfba01f024b",
+      "redacted_sha256": "f0fb6528e4d7a82c4f08a2e3dbfc06217b64ef666dfdecb1c03071c24547fc06"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/matrix-native-before-100000-final-ui-real/run.json",
+      "original_sha256": "30e53839956044d263c2ab1f7dc06cfbdc732b3e75425843c0a6e14bd9fb0f27",
+      "redacted_sha256": "9e61eceea9f8b7db76eee55ef1ddd17f5583b3619e8378013aa4ff210224486a"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/matrix-native-before-1000000-final-ui/run.json",
+      "original_sha256": "1760e221b147f0bdeaa79db64434b5d6779de066eda216ee213d9f2767815642",
+      "redacted_sha256": "faa9a399191f8f0aeaf0dd40397d73009a77064b82d7473c64a135fcfa50edb9"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/resource-after-closeout-300/run.json",
+      "original_sha256": "d77f0fa40461907b399d41dd42d311f4cb3c79835fd0401d29f4c441c975c92a",
+      "redacted_sha256": "8f2e46b0bbbc402b819eea0319b78219eaab7ed9b72cf0d7ed03b927364ee089"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-app-coverage.lcov",
+      "original_sha256": "6175ad4fda2f7ade8387b43d5c0ee088372b71c7bc3f35388a0c25abfa0787e8",
+      "redacted_sha256": "5cf280891470fbef5b0c3195b726eba2340ab1feb69741104362c842bb4d0c74"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-app-coverage.lcov.gz",
+      "original_sha256": "85c2750eaf55eaceafbd5df9dff92eb6ad583fb23f26acde31e15596c9254490",
+      "redacted_sha256": "9cfcd9fbf0aa02acb4a2bf3c86d6fc0481aaeec66d119aea75ebd1a5c9070560"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-lint-baseline.json",
+      "original_sha256": "93613895cac94dcf1da8a3ed3ddc5fb900c33ddc5a8669417356340e0d8bce51",
+      "redacted_sha256": "8bea341c13a1c41eb40944120f12727a6bc0c91716e0330ed21ad35631ff7095"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-rework-changed-lint.json",
+      "original_sha256": "d836e7ad3432da105e27ad5473c169184dcf693dbbf763fc8eda14fc4bd97d9c",
+      "redacted_sha256": "ba3e982fc19b5a52b3596b00f094f490b57a6a12703cfe58a4f0cdbc6a68cb29"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-rework-lint.json",
+      "original_sha256": "7e33361cdf0f6d698030831ad4a6284f27b51035a8447d5f04eba0fe9e7b8154",
+      "redacted_sha256": "cad76636eec22d8bd54f3b14d388215d44f86421f6e38ee55926d4c01d2b30d6"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-helper-coverage.lcov",
+      "original_sha256": "bb91c0dd388d4455a32d7d46b491f8f62040884f0d3d568b7c3da217565b9996",
+      "redacted_sha256": "2f24acf817a9fd110d67978ab2353d533720255f97398657f370b70f8a4141dd"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-run-contention-after-10000-final-current.json",
+      "original_sha256": "6e6d8ca54fc139b3830e53c16b3628a1246718d3fbeef2cb8e6fae173303b054",
+      "redacted_sha256": "b9e650886bf49262a6aa64cc02857080e557f584ce182703e3ae37e1928891b5"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-run-contention-after-10000-final-ui.json",
+      "original_sha256": "1c92cc9e2770ce07c8cae1af6003f547b1a7d4ad6230269bcc75ab09975499b6",
+      "redacted_sha256": "98fc6b115651b91c41125b4ad1e3072341c19d610dd1efeeeb1f5dad88a2fec0"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-run-contention-after-100000-final-ui.json",
+      "original_sha256": "7223841b3296dda2af460b9fb637582e434f2d227306aae9aa92702ad13bfeb2",
+      "redacted_sha256": "689e2bcc7c52618275f8f38a80973b83e4acfa3269efdce37b5b5adba4bd61eb"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-run-contention-before-10000-final.json",
+      "original_sha256": "51a16532e3c7513e8e62962dea18ff615a0bc989f046081c51c63f6c763f6b68",
+      "redacted_sha256": "31a09914a1637886f0191796b06aeb7535e22575cca4bf31cccefdbfa11f6789"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-run-contention-before-100000-final-ui.json",
+      "original_sha256": "8cf63d10baf6d75c8d349ccf0900f5dd01d75f33aea33e466387fc864f1f62d5",
+      "redacted_sha256": "181beebc86edd6d6e5b18b3be0b2ec832b15852f33769c0da01d68379512be8f"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-run-native-after-10000-final-coldfts.json",
+      "original_sha256": "441daf7fa0e6b059c4faf6d3c1fc91ab9f093bcb3a5076dd0c4fbbf0283ead86",
+      "redacted_sha256": "865eecace6583fce099ef853dd3278cf74c6957a30bbb32f7efed9821cbe9d2f"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-run-native-after-10000-final-current-coldfts.json",
+      "original_sha256": "b22ad8493742b50e9371b25c3f9fe19a2b37a880cecbe7eac7ec74a4f975e9b0",
+      "redacted_sha256": "22ab394f0240ecd43eb1c16b150eaead7fd88a4f76375ddde61a3b0ab2229d8a"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-run-native-after-10000-final-current-real.json",
+      "original_sha256": "c7a3c55ede0a9625134cf6874ea6b10b8e54461f0c1cd24fbe3a81e45fb79f43",
+      "redacted_sha256": "36738590423ade6528c84c82637dfb471e9288a4a8052fe70a19c75a38e3b4f5"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-run-native-after-10000-final-current.json",
+      "original_sha256": "78d15e2cebf9bf98e8346bf1ed7c5d1c98ff4c102c069844dce610c936e36efb",
+      "redacted_sha256": "8be6328db79ab543690f658eea60e82e23df2918e42d1c63e68b27c3740513c2"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-run-native-after-10000-final-real.json",
+      "original_sha256": "279312afe73e143dd4eb4af2bdb6cb1ebcb0c3b22149b2cae2e1515694297d76",
+      "redacted_sha256": "47a6b52da0eba4bf8986145522dc35f93f99d9183f12cd4012eeafe80633569c"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-run-native-after-10000-final-ui-coldfts.json",
+      "original_sha256": "c0114d45cdc6eef00f08c8daed49392592b2f75619f03ab3423f8e36ea50cef4",
+      "redacted_sha256": "279687ee6547c3514c8c8e46309b59c8a87f9627746c73363b7ee5cd0559a9c4"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-run-native-after-10000-final-ui-real.json",
+      "original_sha256": "bcedb8c26dd878630fa3a696bd201d45d58e93222e0df24a6a826ab32266a6fa",
+      "redacted_sha256": "fa7d7484a239ada8a31a9273beab9119bb6e5eba33746bf3ea7891df5ff5c83f"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-run-native-after-10000-final-ui.json",
+      "original_sha256": "33e762b602dc8ca346b6561c86fe52eb37e7d6c92006e9ff26a5fa8c3515924e",
+      "redacted_sha256": "d2d44bfedb16affb333a90490a91a542b8ba1db6d7522985e966ebba5eb97289"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-run-native-after-10000-final.json",
+      "original_sha256": "7b96e87018274a314eefe1e4cf0eb0ab70e0ae8d1440409284d8231ce734fcf5",
+      "redacted_sha256": "2d2d8594aa8156fdb3b95df8bd24a33ae964bc8db3aea060ef2c408602b4fcfb"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-run-native-after-10000-metadata-trace.json",
+      "original_sha256": "f5a94f8c03838d485aa0bc5283dceffdd00e06c337f39b47ed5ee80f230b4730",
+      "redacted_sha256": "1becfd0ffc3e66d255e1293d65689b9d883b2c47fcddf667cba0c7ce7e8f52f8"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-run-native-after-100000-final-current.json",
+      "original_sha256": "e52d7f0a6ebc53458f73aee4a3439e01179586feb41657273dc4b39f3983ed48",
+      "redacted_sha256": "6befd70bd67e5e408f9f113cbf2fc0eb5800181187fb06b1a64f72cf39739d78"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-run-native-after-100000-final-ui-coldfts.json",
+      "original_sha256": "0fef85fcaea0eea28cb90c85028c0167288d1b2e6fcca6a40f0a580d9bb19f22",
+      "redacted_sha256": "d6b4dc7218cf9a97bd791aa362a4af175f88b9a3a88f3527280ee64ebd36c8a5"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-run-native-after-100000-final-ui-gate.json",
+      "original_sha256": "a571cd0b01f6b6c01b0ffc270ee5826f017e989a9d75c483c192f69602740fe8",
+      "redacted_sha256": "3462de7357a0a155695d9507fef7f2103d43f36ac9fbd88680b3883d4af4a8f4"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-run-native-after-100000-final-ui-real.json",
+      "original_sha256": "5e0ddd2aa2d1202f65188b14e02ad15041895fc14c8cac7d7594731a80265b67",
+      "redacted_sha256": "0df422918f2373dd5fbbb16caba6c1d85d997d14f1ba0c2e351d978e508989d5"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-run-native-before-10000-final-coldfts.json",
+      "original_sha256": "2d5bc0dcf22e2e845a24640804d5e331574d4a0b3112ad9045cb72b916aa4c3c",
+      "redacted_sha256": "a5c6291ae18557c62ad84aba041ce9fbf129e57a52dd7f6e350da126b2c27a50"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-run-native-before-10000-final-real.json",
+      "original_sha256": "ae7c14026f4b127811889356d59fb84db3642737644c53519296fd38adcc7af6",
+      "redacted_sha256": "dfd3e7bbb9935d2ad5e4c1f224767a984e851d52d7692d501528a7109025286f"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-run-native-before-10000-final.json",
+      "original_sha256": "bf19525c8ddb85e371a79effe89d7e15114c1e67afb43a943485e3826a63a724",
+      "redacted_sha256": "7bbad624489d68d9fff04c229cf3738c78a48ec0080a1c99eac71af7cc29e14b"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-run-native-before-100000-final-current.json",
+      "original_sha256": "78dced8d4098712b6bb34deb86cfc126e387619f67e0273b1d7700a922dddfb6",
+      "redacted_sha256": "108c1b85c0df33cac11dc6ebbafd54c2286066fbce23d717f8d37b13d9f4ee67"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-run-native-before-100000-final-ui-coldfts.json",
+      "original_sha256": "5b8bbb38f7f1f3621311b45056739cb895fc7be2040b9816605b6b3270f008b8",
+      "redacted_sha256": "7d13aee0b14d5382d5849fde6a0db17c5733081b3b72d0bb179dac74171843ab"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-run-native-before-100000-final-ui-real.json",
+      "original_sha256": "cd6112e8e93ebb2f416aa1edc5ac895a97b40fafa3bc4f724fb6117254b078dc",
+      "redacted_sha256": "2fc7d9bc709ac64a00a928b65e2e1dd829498480e09ef7662740a7af6815930d"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-run-native-before-1000000-final-ui.json",
+      "original_sha256": "84e548a7769eb99a928391c268876fbb8e48033b43c3ecd8e9bb81769bdf4763",
+      "redacted_sha256": "d801665f4c7dd22e0bb9936f9bd802f3c56495c9a17c23408c7662a98d838ff8"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-run-original-after-100000-final-current.json",
+      "original_sha256": "2c273ac48a068175f3e70556bfa0b728e9f76aa81036ed68b05d671c90008b01",
+      "redacted_sha256": "4d4ee366f33b91b770a50f3ba68820f562a977e7829f0c57c81ec87cfe0ac343"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-run-original-before-100000-final-current.json",
+      "original_sha256": "9ca7a05617e4192c6a41118b955f06be6fe219008e540d8d65d4d0076246dd67",
+      "redacted_sha256": "f169b4f2992697f53ede815efd5bfea6489ccac3afeccec665e2373d09dde649"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-run-original-before-100000-rework.json",
+      "original_sha256": "789b9a6b36a0facd0ba8b3985e9cea5bb872aa5e87a7c873126750e5944c5d5e",
+      "redacted_sha256": "6f06b609736c34682cc4f28fee783326786dabc26bd9ed527538047b54b06ae8"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-run-ranking-after-100000-final-current.json",
+      "original_sha256": "c5e5fcd65b2f8f2ce114617ad68f5e20a00adf8ee2db0478a9fada6daeaabe6d",
+      "redacted_sha256": "0155227ed251f0dd282339716453a003e97533b57d878a433eb4a0c511c0e680"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-run-ranking-after-100000-final.json",
+      "original_sha256": "0a4740b4cfd4419b57bf4d4261a675834fd52e9f84d82ee218109170da32508f",
+      "redacted_sha256": "d690943707318a7db2becb52d33c917e1cc887b26edb3a1e9045c5bf3fd683c7"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-run-ranking-after-100000-rework.json",
+      "original_sha256": "3cfa2358638596e67e2b25ec665d7541a3d3e2ac9d05db8250b0ca12aa81f381",
+      "redacted_sha256": "3d31773e6884073ef2d2840f1fa86a57bb752e88fe5ecf0992f4149b1b8ace27"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-run-ranking-after-100000-ui-final.json",
+      "original_sha256": "c37e8093de7353a160eef8c69a9b6258a491f6a8693a1a744a9805ed724cafa5",
+      "redacted_sha256": "181f0959868332a2142419f62707d165ad8254b72c3fc9096ffd9dfd5daabe69"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-run-ranking-before-100000-development-v9.json",
+      "original_sha256": "d91f6589a564d01ff8da3926ba01b86925c4b0912fefb380ea404d06f295add2",
+      "redacted_sha256": "3d58e2773d857cf979baa356b983ce4987b930373ecf5948e5ab5a6459527bdb"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-run-ranking-before-100000-final-current.json",
+      "original_sha256": "e02cbc4054002ad816d7ffdb8eb50015f0a270e4660a04a1beaf47bf3b5062bb",
+      "redacted_sha256": "7dcade288c5dcf1e5e65fff92c2f059fdb8ebca37ad6d596b5ab2c7d4d4130b0"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-run-ranking-before-100000-final.json",
+      "original_sha256": "457c87b2bbffea6f35098fb78e6ad1e9232906403b9e81c47de43bc4706574b2",
+      "redacted_sha256": "d86e17c370d1a99febc71a9752b0a55480dec44dce6693378f550e3ad62d29a7"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-run-ranking-before-100000-rework.json",
+      "original_sha256": "4c7647e5ea0586604c344e0a5c2c76e704d54212afc731c56a15ec091f0ad684",
+      "redacted_sha256": "e5d4de419cc0678361ffad597385bef96ade1f24bb6fc19ce959a6d8e41ba660"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-run-ranking-before-100000-ui-final.json",
+      "original_sha256": "319fe40c4d160be35eeac13ec93721e4705998f5a70b1c47abfcfd6e7e710577",
+      "redacted_sha256": "8d2cf9721cc8e8628c49bdf355e84223da6c56c0ca7bf29d33343ee77f070a7b"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-run-resource-after-100000-closeout-300.json",
+      "original_sha256": "f727a4f695600ffe6759b9453a02bcd2bf5ec6752af60682894d2940bf39840e",
+      "redacted_sha256": "5d25af1737dcb9659063a5280c168407cdffc0b28e0bb62f10f1812effa0e254"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-run-resource-after-100000-final.json",
+      "original_sha256": "fde7b3a52c4e63cb205ab4046cbdc47f6a6ea420dc1908d486fa9b6d9445b41f",
+      "redacted_sha256": "0d820a2f1c3b7a363c7fccf09d6a8deea3c0f1bbc3e12ec19e6b1f215ef1e58d"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-run-resource-after-100000-rework-failed-finish-launching.json",
+      "original_sha256": "60ae14f236b52392a52bb608beb7a5b1617c318effe8c0b227e74d752d5f453e",
+      "redacted_sha256": "a1ba291568cebe8169f3628ba2ccd91b88d224b8b5d1e12c6f65e735f6e57a0e"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-run-resource-after-100000-rework-failed-no-event-pump.json",
+      "original_sha256": "be3b6262106457a068e650a4f61120ab996943db3545b3d05d34a67868be155d",
+      "redacted_sha256": "35faf60f12734be9f7a64b1cb8e6c0c36027bb07d7c655125167e56c1acd7c42"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-run-resource-after-100000-rework-failed-test-pump-exit.json",
+      "original_sha256": "5e4df967abab6d6ffeaaec4859fdc8838a5ea142af16b0b5c57b416df1c2c5a1",
+      "redacted_sha256": "2c84e0647ed6e83aebd538665902efcd5b4ed1c2867667cf87074f64b6a3c30e"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-run-resource-after-100000-rework.json",
+      "original_sha256": "c8bd4b3545b219abc6781a6670b73129960af646996bc51a3cf5fbdedc7fa30b",
+      "redacted_sha256": "3579d5a7d7b43bd1bceef6d1bdb5228af27d990180d00b0867897b11c3ccc6dd"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/final-release-build-after-source8bc.log",
+      "original_sha256": "a956fdd0af830dad1126988cfc60d4fd573f73a2b5a82754f903f09ed3646dff",
+      "redacted_sha256": "f85886eac33d1c43e2742072823d6cde38bb0b0b135c516b170e4ea0440b49ba"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/closeout-resource-build.log",
+      "original_sha256": "9e53c423edabe925458475ec3ba49b542454be8bf1dab0c3c0cff8256d5d0545",
+      "redacted_sha256": "972dafaa2f4c6e88fb5b179365dfeffd702e9d0d44c2d32dc66b54287fd8dbc3"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/prelint-release-build-after.log",
+      "original_sha256": "279b10e9a37af86ae328976d6fb1fe13055f48dfbf47275265e1aa0234b1fa3e",
+      "redacted_sha256": "6d191055fe0c6349887f7af981e15c2afa76113fbf6c27234be8f93aeac6148b"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/prelong-release-build-after.log",
+      "original_sha256": "9773d4024696748219668d001a6861c0c99d378fc0b251bcf80e320492855097",
+      "redacted_sha256": "910458b067df78060ea012d02d0e063713b4e56ea981757e0e51161bc14ea581"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/final-release-build-after.log",
+      "original_sha256": "dc5fca57b0ccf800180e32481d82ed182cd6ab948befb6ffe2898f2ec726b23d",
+      "redacted_sha256": "97ba86aa731ebf582bfaefbbb8fba61d29a26d2f5f4e07f88b6158deabda1a95"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/prelint-release-build-before.log",
+      "original_sha256": "b3c55cf44790398e38ea538c07a2c170723de6e2105e6d007b73f050a5372c22",
+      "redacted_sha256": "0704b913f0c0901a0827357cf948ce293d12b86a63f946b05bc55e1e39973042"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/final-release-build-after-historical1265.log",
+      "original_sha256": "baabd488a97723026a7e3e524d1d4451972474d7fc7bacfe39b8d5770b1eb5ac",
+      "redacted_sha256": "5c00bda2cb3192aad06e8a2adeff922f2d624c35dfdb1be97d7786c448ccb635"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/matrix-native-before-1000000-final-ui/command.log",
+      "original_sha256": "c3be209682d69d84eca47f46754a208adfbee936ceb8f0c8b0cce06d8eac9982",
+      "redacted_sha256": "1b1b465f42b81efd9f48f285f1edc96de086d1a8abcf887db91fb1bdc018f551"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/matrix-native-after-10000-final-ui-coldfts/command.log",
+      "original_sha256": "e96f9311222944e1321ae32366d24105d08c1763952503976bde1bfad6349498",
+      "redacted_sha256": "c98a6733ed661f813215b6be31e679f4e240b8a9ab7f3d222c7a18085b826363"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/matrix-native-before-10000-final-real/command.log",
+      "original_sha256": "8ca637acb896455b28da730c91e03c6db904f2c52beeb6a793d359cc26410a4e",
+      "redacted_sha256": "0e281ad901c88e83c1602d0fc67b0f0eb3cd9f34fc481cdf7b4032557e96a8a9"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/matrix-contention-before-100000-final-ui/command.log",
+      "original_sha256": "7fb6254e188e2cc16a27c3fcddcc314e1f7263c4566ce36c5a10ab943b64637b",
+      "redacted_sha256": "1ee942c52802fa3d3846b4b009656a960a11f362bba366817a4359d92e2fe132"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/resource-after-rework-failed-test-pump-exit/command.log",
+      "original_sha256": "5ea35daa9b985ed6373176ef8b7ad8dbd070f89b27cb5e0d6c01aa0a79b7407b",
+      "redacted_sha256": "6d98fce3dbfade8cb69c6855f439b722c0edad08b5bc7848b401d6e58ab93eff"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/matrix-native-before-100000-final-ui-real/command.log",
+      "original_sha256": "66308a5d3f0c6111d6b207cf1d172d8dced650372ecd57749100fde1da64b629",
+      "redacted_sha256": "388240145810fcaa689e6ebb9d35272b1585905331aa3c2cf692b45b13ea01e1"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/matrix-native-before-10000-final-coldfts/command.log",
+      "original_sha256": "de3746c75c07368c592766d23b95625db6cadd56214a5e894358edf1f8bd164c",
+      "redacted_sha256": "b7f4fb0e9814c642ee94dd488de1b00d1094461e4a7bbec8487b9de15b0b7289"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/matrix-native-after-100000-final-current/command.log",
+      "original_sha256": "170613e589b4c03940e382422d44c1815313492f97b1ca3d824ff6ce3b1d1deb",
+      "redacted_sha256": "01f139b233977662cba2159236459f5811440f7aae3e749a2f0ebedf91912a72"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/matrix-native-after-10000-final-ui/command.log",
+      "original_sha256": "519c240d79064aa0b009884a5943335019e7f4e2d3bcf92e791ab61484721d71",
+      "redacted_sha256": "f88e4a9b30a6e49d527fd77a74eae9e932c0f29149d428255f02571a54eefb42"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/resource-after-rework-failed-no-event-pump/command.log",
+      "original_sha256": "774f517de48900db785f0d833239eb8c0094f24cba18f7a760ccc33ac48de9bf",
+      "redacted_sha256": "794ea2e6474104f63c196580af6f25dbd96dd7ad7ba1151908a0fea24f684145"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/matrix-native-after-10000-final/command.log",
+      "original_sha256": "6745407b359465d2065b5289ae046f797775b73f67ac28603fd9a5ba4f71d518",
+      "redacted_sha256": "9b0c4cb10a225b15b7a3c4353d002ace1d3b01af0c7a8015ae90131049842c2c"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/matrix-native-after-100000-final-ui-gate/command.log",
+      "original_sha256": "7e8770aa611c90a1c2950a70e6fcf8dbafe21459c87f00fd8a692849d24abe5b",
+      "redacted_sha256": "33bc01f1780f173ca44f85ffd7c7bc7aa67567f4d7c8e321a5a9b19a14050862"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/matrix-native-after-10000-final-real/command.log",
+      "original_sha256": "b195de92b98bdf28617c85202f52a979d817930100913fd09a75ef85eb8802f6",
+      "redacted_sha256": "fbd55a74349fa7c6ddcfae292b9df06339569c790450cd99bcfd93a5894be241"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/matrix-contention-after-100000-final-ui/command.log",
+      "original_sha256": "7fc21d8fa19a3f2e4dc81939425ac2f88d6da895fc5d35e5878c6c051dfd8bc0",
+      "redacted_sha256": "7dbddef7538dece8b843ea8d4f9cbbf5fbb076e4ce4cf4916793d2ded72639f9"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/matrix-native-before-100000-final-ui-coldfts/command.log",
+      "original_sha256": "c2ad9a0c40a34c69eba508a79d88a3b42f6bceedf8d2a68b8d0ee9c7c1250436",
+      "redacted_sha256": "dcab42144d2001d76244dbec44aa018b38a46823e8a225ed8ffc3448faf7b9fc"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/matrix-native-after-10000-final-ui-real/command.log",
+      "original_sha256": "10d04de6103c0170892764b3f7ea2e67fb91fe11f5b34351493a152baa53cc4c",
+      "redacted_sha256": "0cbeda7d4a48977d0717a83f44c36cafd435381a08d45947bf97765413f1deb8"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/matrix-native-after-10000-final-current-coldfts/command.log",
+      "original_sha256": "9dff12e317c3d0b6fbd40ace0f1cff1963657b583071ffd254f0e4b3481618c7",
+      "redacted_sha256": "7aea81e5718c74718da142704cf001733ce9e3095d450ca2a91b31f0810be471"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/matrix-native-after-100000-final-ui-coldfts/command.log",
+      "original_sha256": "0173df9f4735878b3278b6bc8babb22ba9b2a890a8fa0147eef1e912eb6d2ed7",
+      "redacted_sha256": "85e2633dc299c400e38774f3fbe01de1dd0609fe260a78515a91a8cde0a3e56f"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/matrix-contention-after-10000-final-ui/command.log",
+      "original_sha256": "2fa3eea445cfa1c55e06e980724872cbff698e32ae6dc93eb6044eedace0b7cc",
+      "redacted_sha256": "f2545d040205826dad73ef1d2241e67b25ac19a33fa8be850db7f95bcdd7d43f"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/matrix-native-after-10000-final-current-real/command.log",
+      "original_sha256": "551ce77f37f5c7c0beafd2ec3750263fb3faebdbf2d7732ddab54835f2202ba6",
+      "redacted_sha256": "dc6dcca168d45f43372f0f17cf91c37425e17aa9373cf044967c962848b18027"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/resource-after-closeout-300/command.log",
+      "original_sha256": "4f63615d3b75c48abe184fbd55bb3ff6b4723754df60bb9f080a05ef8101b46b",
+      "redacted_sha256": "20617f1535fe4c7328e726d1f2262c24d594e88491956ec20b8215aa0d09eb2d"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/matrix-native-after-10000-final-coldfts/command.log",
+      "original_sha256": "07326bd44d6b73e10c74c66d8c7b95e67a107265c5216bb14db48e6f6c547408",
+      "redacted_sha256": "0f141b415653a901311277c3a7824426bed563911cc2d13c98727fee569eddc1"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/matrix-contention-before-10000-final/command.log",
+      "original_sha256": "84ab83d9ff4fd43a984fbe2d73734572a96d5dfa713a3a4aedc4079d8dd5a711",
+      "redacted_sha256": "083259ab51b938a913877dca32457f7e7d535c07386a5ed637bbf65c7bb67972"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/resource-after-final/command.log",
+      "original_sha256": "467d81e3568045fbafba484ae547b597186b205a02ae9afdee2ffdafa059577f",
+      "redacted_sha256": "dbb0d83cc9525eb1bf77705c1b2db7a27da68e4e810ce6aace811e5ac128bc8d"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/resource-after-rework-failed-finish-launching/command.log",
+      "original_sha256": "5bad5d50ed1dbdd5792a4b8805e0da57230c95ede3f80b7aef85fd0660dfcc9f",
+      "redacted_sha256": "259ceb48a5874e0a493b3fbd456d3b79da471bb3af4b0bd550788110672fcf53"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/matrix-native-after-10000-final-current/command.log",
+      "original_sha256": "3811eaa298842b5086261dd6b8c8be57c68b1757f726c5d829a875445bba0a69",
+      "redacted_sha256": "f76ef492a54583bd14d2667a0718104bfb147d68de2a06b4800122ed17bcbe22"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/resource-after-rework/command.log",
+      "original_sha256": "2fb4bfdd8fd979c5c182eeb3b20268e55962c0d366b4bf4ae5a77c89eb070c6d",
+      "redacted_sha256": "a612f8294131bf88366c71d5c72076697c5827164efcb1da9da92f8dc823e62e"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/matrix-native-after-10000-metadata-trace/command.log",
+      "original_sha256": "5bd2d9dde70fb42a90986860a6019368becfcece10009b5d85cf493d95ce21e2",
+      "redacted_sha256": "f3216cb8b4d030e4a65fa8290ec39fc617e00e6879ae7163b460d9785a646365"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/matrix-native-after-100000-final-ui-real/command.log",
+      "original_sha256": "4472e54f9d0b7cdddf3fb949e59acb27c1d7be8f82f59cc779fc7d108cb4347c",
+      "redacted_sha256": "7d28add885c94429353a4f48fb9263cd76ff84365b34ee5cba7da2b54891d11d"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/matrix-native-before-100000-final-current/command.log",
+      "original_sha256": "a242b672d3f1715c258027ae298417bd06a166bc06946ee4484de2484f7a2394",
+      "redacted_sha256": "0d155db894f10339969b709fa0b2268172b68b33669c0a08dbafae6967957dbb"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/matrix-contention-after-10000-final-current/command.log",
+      "original_sha256": "54a3a0afbddc0143d7f554359c5f91a58073401042c9afc7f265486e34b83bf1",
+      "redacted_sha256": "90d300408bdf8fef706a2343a65aaffed6e6a2e4575f8744a29bd5fd84ddd8cf"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/matrix-native-before-10000-final/command.log",
+      "original_sha256": "cb82ed3d5884f106509fd99307eca96f406fb9bb5f08f29d2448694fa4b021ed",
+      "redacted_sha256": "fe73438ac56e06bfab2ba91c81361851ac3dc262d65367d39bb36c69fae4ddbb"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-ranking-v9-coverage.log",
+      "original_sha256": "ee8f647b1f1479dc62f4470f462f57473d646242752032db30d7ee77af1bc237",
+      "redacted_sha256": "a0d56fe11436d2600ef51dea2ffaa59ad0bd4b93b6e1a31e6f5a9e280cea048b"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-rework-helper-coverage-gpu.log",
+      "original_sha256": "ee8b0ed1ed4187af3aacfb348dd63e891e0b3bc1660b7902e2ba244b6b77fedc",
+      "redacted_sha256": "edc2268445773ef730579a066a811668a174c213b90ceca808e8542f5e000a02"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-final2-coverage.log",
+      "original_sha256": "95339f408b59efd0809c078d992897c09ad49d43a8cce97c7799c558e04f3814",
+      "redacted_sha256": "496e02cae4dfbef8207fc0e654d377656be14cffb079ccbc6432dfd7d80beb95"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-current-quality.log",
+      "original_sha256": "d3578f197a73f466ed6f5d0887d5ed0e722414972f9aca521728e06caad126c1",
+      "redacted_sha256": "c17ed5fbe5299235c1192e052ee2e0af8305bbd973f5705e1d23f7768d19c864"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-metadata-priority-format.log",
+      "original_sha256": "67ba245b77863d61d1faa46716a9474d1067d5b41fa5d965514062a2785ad69f",
+      "redacted_sha256": "ecad847ce32a591a3e83a68e4bb51fd49e5112d3f9c5c59f46457cc2e15d985d"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-rework-format-retry.log",
+      "original_sha256": "2ce72a38df4dad2a8b145070f69649d8d65714a1b4f240ccdd2277d5e8a60c00",
+      "redacted_sha256": "b777d4f47c72a0a3fec051e76eba10bf9858b49fae87c3f74a93a753bbd241ae"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-development-baseline-build.log",
+      "original_sha256": "104f723e2e6a55371bddba1b73b36c8f967772fe4d589d2b193cf62e75e68070",
+      "redacted_sha256": "d370227d84bcb8f74ac643e1e93c73955e48255804198d84c80ce918eee23c64"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-final-current-matrix.log",
+      "original_sha256": "a711c525f3cfbead85babc4a855a589ede286ff5ca6d38d4b2991d8edd2a9078",
+      "redacted_sha256": "5438cfc45b5e50e950cb06a3e0c16151478186e6bb7e94a05efb9cd2e9147f62"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-final-ui-gate.log",
+      "original_sha256": "5a0fc0e5ea11dd87fc9a808a570e862b1820033f069b091a7e733da286186b99",
+      "redacted_sha256": "3058bef44363822fa0ce654aa567d046d6f6370b5e8b9e7d701b94edd8473b62"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-rework-coverage-preparation-failed.log",
+      "original_sha256": "54072993ee1d7e1696e45eb232c59985a23570e603b1f76875ebc5c5e25128ed",
+      "redacted_sha256": "da7be3c5983c63e07e58269e9648ecef6022ac671bdda693a0709aa30e16d591"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-rework-coverage-initial-failed.log",
+      "original_sha256": "4ba8cbec5af24b7664be6083bb90404fdd693a531048d14082d397c96cbed789",
+      "redacted_sha256": "e45416561492fd4f1ad648fcc73d48312cc795ebbcca22b34a3a3f95ea270c22"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-rusage-preflight.log",
+      "original_sha256": "ff99f4cf39837d22bc7b72e3034f5e0089da2bb90020d646280bfdfd3c9299b4",
+      "redacted_sha256": "57ad5e83569bf0a7b0c548c860cbcd33054d1dcf6c09b29c3d26a73f40bfaf24"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-rework-format-final.log",
+      "original_sha256": "c7b2430720d1032a2912d8e1592056ca3c1338ed80d6feec8b20a8cd9adef049",
+      "redacted_sha256": "cb6459527ca08e10ba48a0bc037e576632b6de1430bfafe38f2705792d53f385"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-rework-coverage-monitor-callers.log",
+      "original_sha256": "3a986bfcde3ad42a614d2a06220066b839833dbff81618e144db9ee0fec91eab",
+      "redacted_sha256": "6fa466bf73dbc40a9bc459ffa1e55f6315fab77cdf9104662c99f8802fd2cbbe"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-rework-test-build-5.log",
+      "original_sha256": "e8e8a751bd3c0a250bf88c3e23209fde935497212d4f99dc77581b191346d9bb",
+      "redacted_sha256": "272682e141687b94db34a786c2f0f992ea9b24cb19fddd5352f6115525805296"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-rework-test-build-4.log",
+      "original_sha256": "73898e267813949f2825679bf483e365bd0c18509876d797cebfc937b1fa25dc",
+      "redacted_sha256": "20e7923e861d567ad15c38549c11e0ba9927aea60e5697dc795a67cef722750c"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-rework-coverage-third.log",
+      "original_sha256": "b398a542270c5ad4d01374daf6cfe8ef79eaf4dced183a6f05abc07cc75de7e3",
+      "redacted_sha256": "3eb6bcc7a95bf230cdd8b45129c4a9e1bda33bc473b6e8693ce6826d082768ec"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-main-integration-format.log",
+      "original_sha256": "1eca25b3078cc43c25bf5c41cb1d3187788221bf09de243ec1be6a759989b921",
+      "redacted_sha256": "3ce8c956882d8ea74218e16129e3ab8cdad86c97c206f8dec7544c2721f1c325"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-main-integration-coverage.log",
+      "original_sha256": "4d99cdd9ac4ba0b405f96454034335b508d0b700c6b39c0089968bc38fcb0764",
+      "redacted_sha256": "b6a413eede6ce3bc2d7a3c7537aa452d7c07b3328a627ef930bcddf4d0d13f2a"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-rework-test-build-6.log",
+      "original_sha256": "ba3e2607594e67f4da90ce8d0475660371ce6f7f7218dc75549db946fa029c74",
+      "redacted_sha256": "06d0d2e25de4d1a140e13ca2e4541212212e8794b6ab4c6120797f5b47d6bc46"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-rework-test-build-7.log",
+      "original_sha256": "b29bb9bbd455484bfea8d3765237f8453b2e73784c5410b387fa302acfd4efa5",
+      "redacted_sha256": "468b932a51548aab3b82d02110b5b2fe64a685439e8d3d021e3e48402c45219b"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-development-baseline-replay.log",
+      "original_sha256": "03d8af2802a9da6d9ea6cc033599a280a2eb9bb6337d2bfa7ba8fca5e7ee60bc",
+      "redacted_sha256": "630d7141aa0ceed5c18751950f5cb53f7ae7c8ce63273ea98985ed53aa444442"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-metadata-recovery-retry.log",
+      "original_sha256": "b681666e8b0c3fbaddd766f0a27b97ae887c9072c7ae8acc972e9638ba56fb59",
+      "redacted_sha256": "d1bf023a7eecf1ca53092edcbdc19b32a4d9356243a296f37e411335eaf675fa"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-home-ui-coverage-retry.log",
+      "original_sha256": "8585a632c28de486e8323c6110b6f0807bd887cf97dcdffbcfee06be5e77b03b",
+      "redacted_sha256": "b4d365c507af3bce8626a68f7d71144135d1c37b138bdee9a69c8836c76f58b7"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-rework-test-build.log",
+      "original_sha256": "4c7382b04c1e6c1dd5b99a5b6ddb57eaf9fa977ea5a7e363c0769c2b76a4f7e5",
+      "redacted_sha256": "9bc040654eee7d177e7771d396145fc3ad1058bd5826e61e5ee0c1e04ef73103"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-rework-resource-standalone-build.log",
+      "original_sha256": "92dd427ad6b5bafd0af3c135ebc2f342fe94553061afc36695ca10e9d1515f69",
+      "redacted_sha256": "bf6649b77a183caf85e2304bd7c2ab970be813ae7a683ff007ed09b6d08ea48f"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-rework-test-build-3.log",
+      "original_sha256": "e267431306c6d6ed8bd6a8750675512c9e02fba3f1b1bc0d526bae7d9652693b",
+      "redacted_sha256": "0cb6077a830b98c4593907cda50b5c79665614e4096dc00da60e4d892757c567"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-rework-test-build-2.log",
+      "original_sha256": "ff7b5fb7ba0ffe5093ea96e812b718e6dfda1f48f824eeac1fca5b3deccbef10",
+      "redacted_sha256": "311894060c865625e26a7326a198b3d6fa6e5af25338c52640eaad225c691288"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-rework-resource-driver-build.log",
+      "original_sha256": "165995cf00fb226c64652ecc43e205fe055f055063f5c96576567a4fc41c51ef",
+      "redacted_sha256": "1e56c075a31b8d395754356623991ea064d596d9432c61d078fdf6965632a396"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-rework-coverage-crash-final.log",
+      "original_sha256": "e8c1fc04760745d75f103b268ffe65f8b6de7aaa9ebff81834f8bda84a4f41af",
+      "redacted_sha256": "b9b3277eccf74abb86edfa28b6be49292cbbb693159e9e27ed581da8b720e7b4"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-rework-baseline-release-build.log",
+      "original_sha256": "0787a1139ec3aa6f8a5e3dd199b92dcbd6c000ad158b678e4096497230f768a8",
+      "redacted_sha256": "1f73adba3459262c67080432f481280422bec00c7b4a094b21e835fcd9af7bd6"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-metadata-recovery-format.log",
+      "original_sha256": "3d4aa0915d0223c3976712994c6d54c5c9ebc2307836f54b7bb359866192430d",
+      "redacted_sha256": "457a842b0a0630ca587ab71f11c3e6a2124b632a771073d4f21340bdded5742c"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-metadata-recovery-format-final.log",
+      "original_sha256": "54521d24e86405b1cb4cd1e84fa3576c0c6afbcb50344d4b4b5e465afc01578f",
+      "redacted_sha256": "2f81b6d19edbac28414919cb8171cddf9fa5d50e62b53b0c4f61951c4c847c7e"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-rework-build-5.log",
+      "original_sha256": "58d50f11adfdbdf340d1f097bcb26bcc1802c21a7c8c77325081b587272b47ed",
+      "redacted_sha256": "9dae678b9673cd713095c3e3b3c49baa7db88a2b27f1aa8d46525e81ac645ad3"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-rework-build-4.log",
+      "original_sha256": "e481ff9b8681c473daa3dd5fd194c6d0659d525adad879fc006ea3b25cc4c1ed",
+      "redacted_sha256": "8bddf4087da0c363ac53fe629ff012fd5289049c17792d3aca1facda26ea932f"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-metadata-recovery-lint.log",
+      "original_sha256": "7f26af5a47f99fa5602541efd58b56d3bef0db70b4b087439a5066cb6d71e4a8",
+      "redacted_sha256": "2b84be1226dcbbd47d903465432e6ea01263e25bddfb15f5b3cc5d9408cff202"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-closeout-resource.log",
+      "original_sha256": "90bdae2ba9e6e2e93e010d1d56c64af3fe4ece06219c1182a3e49b8db60b0e62",
+      "redacted_sha256": "e7c0d6f9ca1369f5b43b47ac81c1b470dbd3fdbea583a84718042ab94fcddb05"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-rework-coverage-retry.log",
+      "original_sha256": "4997e143145525c31d7eaceae93596ca71faeb1207d8362eeb5ce6e3b0f07e57",
+      "redacted_sha256": "bcb83e52e11017a34b73f7d4351a3626169acacecbb5bb43c8a5ba1c9b29264e"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-rework-release-build.log",
+      "original_sha256": "7066f85a100fac2a849d679dd97a88316c20ec90bb573abdf32b28d39ad4a824",
+      "redacted_sha256": "1c7c1a8b76634976cbbeaacdc7b06aa5f710796334d4269b9ac9ee73ddd2e35a"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-metadata-recovery-format-retry.log",
+      "original_sha256": "dfb999d320ae170e7d9738a3ca13e90ea06da10a446c77654ee839dea792a7d7",
+      "redacted_sha256": "278832ee65caf53dc48b5363546e6dae90f6d70b49df9e4e20937dae02ce607a"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-final-lint.log",
+      "original_sha256": "a20f054058900ce59636441319d1acd1c241da8f4acfe97df5bf2feee447be6b",
+      "redacted_sha256": "c766de5bc5716b32e280a5d70991d17fa0a7a05b092db1dde8d74ed780a4892e"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-rework-build-3.log",
+      "original_sha256": "7e981fda3e9a409691ee625ee029c32a6caaccf4742cad5efdd384c8d4f8d0f1",
+      "redacted_sha256": "1350d82a326da9ee0475eea5fbb72dca8b51b692f52eaf79108c09d005a208ab"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-rework-build-2.log",
+      "original_sha256": "7b617e75f92328d5e5fcffb967250be340cc09e6d39e9827d12c09d50fd66d3e",
+      "redacted_sha256": "ca45ac9b4a3a0265141ce2b03ce647bf775a5ecb54066dcc88914ed3db1d3d26"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-home-ui-coverage-initial.log",
+      "original_sha256": "2b5e65daf8c8da3e62e64ae6e5a982f4f532edc49c2f38ebdba933a3ce8c37cd",
+      "redacted_sha256": "681c9799c324624d5e5f1c91b6cfc2d01721390cc2d1bbf81d6f9680dc2f6cd9"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-final-format.log",
+      "original_sha256": "e50b41aa8630a954e16fbdf20862652eee78f6e94f464fe1eb6fcac2e262f580",
+      "redacted_sha256": "3249cf24dee735353b458c2d4115d1a0205e87f2b92da7ebc60b6e82e1fb8130"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-main-integration-retry.log",
+      "original_sha256": "a34c2fcca818cae185cc774cb76466b7c8e2c8e4ec528661d12422200d2b4b47",
+      "redacted_sha256": "d1921831f345f78f40ed09dcdc894a1e245497f6f22fbf011b3c1b34709c92e3"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-rework-build.log",
+      "original_sha256": "837a59ae2ccb3ed8ed45389015734b50280507e3b2faf418f2ca315840e154ee",
+      "redacted_sha256": "cef3bcac6223faccf66b16894b32ddd1dbdd40aba3ef3fa5e8613874c32f8440"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-rework-resource-driver-build-2.log",
+      "original_sha256": "c45fb8e7d86e24b18e2adf9ec585c928e77c6c89c5ff03432f255b0337e21712",
+      "redacted_sha256": "fd054b79039206fc262d847542ca3b79c3e7a2c1bbfea621e6c08855e7959d68"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-rework-format.log",
+      "original_sha256": "3041aae66e5c86276f5ab81827503c41bd271f1c0e052a57bde4fc2ad10b6295",
+      "redacted_sha256": "d617e30439414db2b8dce0d67876d82e5a8c730d527f123327ac20c841bf3fee"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-final2-retry.log",
+      "original_sha256": "4458e01fc0bab45be8d71ec026968a2e29ba810e6ebc1f6349562e940fc4339f",
+      "redacted_sha256": "194dddd43d866c5e9e5f40792e46d3625482add072d6bdf5764930fd9d250cad"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-home-ui-coverage.log",
+      "original_sha256": "2b5e65daf8c8da3e62e64ae6e5a982f4f532edc49c2f38ebdba933a3ce8c37cd",
+      "redacted_sha256": "681c9799c324624d5e5f1c91b6cfc2d01721390cc2d1bbf81d6f9680dc2f6cd9"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-current-lint.log",
+      "original_sha256": "611afc04cac5fce56d85e7b79d5fae57c1ec6afa318eec371019d88643aff804",
+      "redacted_sha256": "a614d43bbaaed74b5c33550a5757e3f087df4e8126f00176dc40a00b0582ec28"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-rework-format-3.log",
+      "original_sha256": "e2672ca36d7529af3ecbeb30fcaaed0a88dbc3bc64c33a465c328ae6d67ea318",
+      "redacted_sha256": "e24d2cffa402a4e845efbcdd43e9ea1430aaf8ac075115f1b7164b05f545ae1c"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-rework-final-lint.log",
+      "original_sha256": "5531a7db83915e389f9e48267d2da7831aefbf5691981c10e0bd48d6ae5b7153",
+      "redacted_sha256": "4159c37ee4e938b61c99a1334052682fffee383f2f77303339b7c50637860cf1"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-lint-final-coverage.log",
+      "original_sha256": "d50ece20717c2267def2f74cf2a618f5b6adf61883ac968cb443488366ccc482",
+      "redacted_sha256": "38ed6f3b6a42044a24f9463ea81e53fc9e20fb8fdc7030312b34c2dd6621b4c1"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-final-ui-matrix.log",
+      "original_sha256": "d67ae7677bbb25cdb36259360818fe44144537a2e9a837fc47e7dca4566800eb",
+      "redacted_sha256": "35d3fb02ad0bad3a9d75ebdc0d122f4511cc8363bf361c35f768f39b2e2ea4ca"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-metadata-trace-build.log",
+      "original_sha256": "d5dc1d0597613df1dea97346b764d1178e77ffb7790c40986cce09682f661e7f",
+      "redacted_sha256": "d70c48c14e20798630d517144f155c4717b3f9b7e7ade431d73429055595e6a5"
+    },
+    {
+      "path": "docs/validation/gul-383/optimization/ranking-scale/rework-command-history/gul404-metadata-priority-coverage.log",
+      "original_sha256": "b8b8e7ecf330011e521a943749a07b19524e9962b086e2d8a4fc795fe2d2b9fa",
+      "redacted_sha256": "0e3c28663abc4d0b66973f0d6f3ee21852359b3c84682149efc25f856179c7aa"
+    }
+  ]
+}

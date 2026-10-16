@@ -7,7 +7,7 @@ struct AskFileChange: Equatable, Sendable {
     /// Events were dropped or merged: everything below `path` must be read again.
     var rescan: Bool
     /// FSEvents reports the entry kind even when the entry has already been removed.
-    var isDirectory: Bool? = nil
+    var isDirectory: Bool?
     /// A directory was created, removed, or renamed, so its children may have changed.
     var structureChanged = false
     var renamed = false
@@ -28,6 +28,11 @@ final class AskFSEventsWatcher: AskFileWatching {
     private let queue = DispatchQueue(label: "typeflux.ask.files.events", qos: .utility)
     private var onChange: (([AskFileChange], UInt64) -> Void)?
     var latency: CFTimeInterval = 0.5
+    private let maximumBatchSize: Int?
+
+    init(maximumBatchSize: Int? = nil) {
+        self.maximumBatchSize = maximumBatchSize.map { max(1, $0) }
+    }
 
     deinit { stop() }
 
@@ -66,8 +71,14 @@ final class AskFSEventsWatcher: AskFileWatching {
                                                  renamed: flag & kFSEventStreamEventFlagItemRenamed != 0))
                 }
                 last = max(last, ids[index])
+                if let size = watcher.maximumBatchSize, changes.count >= size {
+                    watcher.onChange?(changes, last)
+                    changes.removeAll(keepingCapacity: true)
+                }
             }
-            watcher.onChange?(changes, last)
+            if !changes.isEmpty || watcher.maximumBatchSize == nil {
+                watcher.onChange?(changes, last)
+            }
         }
         let since = since.map { FSEventStreamEventId($0) } ?? FSEventStreamEventId(kFSEventStreamEventIdSinceNow)
         guard let stream = FSEventStreamCreate(nil, callback, &context, paths as CFArray, since, latency,

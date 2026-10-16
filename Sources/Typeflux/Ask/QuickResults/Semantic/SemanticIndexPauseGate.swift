@@ -11,6 +11,7 @@ final class SemanticIndexPauseGate: @unchecked Sendable {
     private var source: Source?
     private var paused = false
     private var queries = 0
+    private var scopedQueries: [ObjectIdentifier: (AskSearchCancellation, Int)] = [:]
     private var documents = SemanticFileChangePlan()
     private var documentScan = false
     struct DocumentWork {
@@ -31,7 +32,25 @@ final class SemanticIndexPauseGate: @unchecked Sendable {
         lock.withLock { source = nil; documents = .init(); documentScan = false }
     }
 
-    var isPaused: Bool { lock.withLock { paused || queries > 0 } }
+    // Cancellation releases scheduling priority, while the independent reader owner
+    // continues retaining a blocked host operation until it physically retires.
+    var isPaused: Bool { lock.withLock {
+        paused || queries > 0 || scopedQueries.values.contains { !$0.0.isCancelled && $0.1 > 0 }
+    } }
+    func beginQuery(lifecycle: AskSearchCancellation) {
+        lock.withLock {
+            let key = ObjectIdentifier(lifecycle)
+            scopedQueries[key] = (lifecycle, (scopedQueries[key]?.1 ?? 0) + 1)
+        }
+    }
+    func endQuery(lifecycle: AskSearchCancellation) {
+        lock.withLock {
+            let key = ObjectIdentifier(lifecycle)
+            guard let value = scopedQueries[key] else { return }
+            if value.1 <= 1 { scopedQueries.removeValue(forKey: key) }
+            else { scopedQueries[key] = (lifecycle, value.1 - 1) }
+        }
+    }
     func beginQuery() { lock.withLock { queries += 1 } }
     func endQuery() { lock.withLock { queries = max(0, queries - 1) } }
 

@@ -1,24 +1,66 @@
-# Acceptance remains open
+Superseded policy snapshot: the current issue revision20 relaxes small-sample quality and contention limits, drops the full million/cold precondition and requests300seconds per resource condition. Use `closeout-results.md` for the current handoff; this historical table retains the original strict failures without rewriting raw data.
 
-This is a draft implementation and evidence handoff for Arch's technical adjustment. GUL-404 is not complete, the PR is not ready to merge, and the next serial stage must remain parked.
+GUL-404 business acceptance remains **open**. Source `6a9c18d79561b49d8c5339754193c6a06ee79374`; main base `ceeaaef5`; baseline `262135bc`. PR551 was externally merged before this rework and does not contain the new commits. No agent merge or next-stage dispatch occurred.
 
-| Requirement | Retained observation | State |
-| --- | --- | --- |
-| 100k cold first-body draw p95 ≤100 ms | Primary after matrix: mixed 125.28 ms, file-mode 200.24 ms | Not met |
-| 100k body under a writer ≤100 ms | Primary after matrix: mixed 108.58 ms | Not met |
-| Warm new semantic draw p95 ≤300 ms at all scales | Final-source real-model 1m probe: mixed 377.91 ms, file-mode 823.06 ms | Not met |
-| Semantic during actual indexing ≤300 ms | Primary after matrix: 10k mixed/file 355.40/335.60 ms, 100k mixed 313.82 ms, 1m mixed 412.35 ms | Not met |
-| Per-group MRR non-regression | New-wording holdout: semantic paraphrase 1.00→0.52, Chinese short 1.00→0.84 | Not met |
-| Supported holdout Recall@5 ≥85%; no-answer false positives ≤5% | Answerable groups 92–100%; no-answer 1/25 (4%) | Met on this query holdout only |
-| Complete original oracle | 50 labelled scan/media-timestamp cases lack captured source fixtures and remain failures; full denominator 125/175 | Evidence gap retained |
-| Changed-code coverage ≥90% | App 747/781 (95.65%); helper 40/43 (93.02%) | Met in aggregate, with per-file uncovered paths retained |
-| Actual foreground ASR priority | Direct service busy boundary, 40 transcriptions per scale and implementation (10 × two entries × two conditions); latest after artifacts assert actual started-batch counters | Controlled-boundary evidence only |
-| Run reasons/counters, affected-subtree scheduling, resource-wait UI | No implementation in this patch | Not delivered |
-| Adaptive duty cycle, memory/thermal hysteresis, pressure release and bounded work | Existing pause policy remains; resident query pages add memory. The lexical recipe migration is still a single unbudgeted transaction | Not delivered |
-| Sustained document/image/audio/video system-interaction and resource proof | No 15-minute native mouse/keyboard/window comparison, per-process I/O or GPU/power curves | Not delivered |
+The implemented event/migration/budget paths have focused deterministic regressions and deep self-review. Passing those checks does not pass the remaining quality/resource gates. The final source is frozen; live benchmark results below must be updated only from collected reports.
 
-The primary cold/cache/writer/real-index matrix predates the final equivalent-output candidate-allocation optimization. Source manifests and per-run binary hashes keep the stages separate. The final-source 400-query replay is identical, and final-source hot real-model probes cover all three scales; they do not replace a full current-source matrix. See `candidate-guard-summary.md` for every sample's quantiles and the remaining hot conditions.
+| Area | Current result |
+| --- | --- |
+| Durable bounded events, private counters/UI | Implemented; no-change/recovery/single-file/storm/exclusion regressions retained |
+| One-time pages and shadow lexical migration | Implemented; interruption/reopen/old-writer compatibility regressions retained |
+| Work budget, pressure/priority, bounded memory | Implemented; policy/lifecycle/cancellation regressions retained; resource acceptance remains separate |
+| Changed executable-line coverage | App2264/2460 (92.03%); helper38/38 (100%), againstmainceeaaef5 |
+| Final-source 10k/100k/1m native matrix | Running; original100k hot body100ms / actual uncached hot semantic300ms only |
+| Sustained real-file OFF/ON | Final-source repeat pending; historical1265 run retains612.78ms maximum mouse delay and growing backlog |
+| Incident root cause | User installed incident build and causal explanation remain unconfirmed |
 
-The shared host changed during the final 1m probe: host swap use increased from `4089.50M` to `4285.00M` in sysctl output, and free disk increased from 18.69 to 35.74 billion bytes. These observations do not attribute swap growth or other activity to Typeflux. They also prevent an isolated causal performance claim. The original two-file stress fixture, metadata budgets and thermal overrides do not establish safety under the user's many-file workload.
+| Frozen cohort / group | n | Before MRR | After MRR | After Recall@5 | False positives |
+| --- | --- | --- | --- | --- | --- |
+| final-holdout / audio_semantic | 25 | 0.2353 | 0.9700 | 1.0000 | 0/0 |
+| final-holdout / chinese_short | 25 | 1.0000 | 1.0000 | 1.0000 | 0/0 |
+| final-holdout / cross_language | 25 | 0.2447 | 0.3580 | 1.0000 | 0/0 |
+| final-holdout / identifier_unicode | 25 | 0.8300 | 1.0000 | 1.0000 | 0/0 |
+| final-holdout / image_semantic | 25 | 0.5000 | 1.0000 | 1.0000 | 0/0 |
+| final-holdout / lexical | 25 | 1.0000 | 1.0000 | 1.0000 | 0/0 |
+| final-holdout / no_answer | 25 | — | — | — | 0/25 |
+| final-holdout / semantic_paraphrase | 25 | 0.9200 | 0.9600 | 1.0000 | 0/0 |
+| unseen-query / audio_semantic | 25 | 0.2587 | 1.0000 | 1.0000 | 0/0 |
+| unseen-query / chinese_short | 25 | 1.0000 | 1.0000 | 1.0000 | 0/0 |
+| unseen-query / cross_language | 25 | 0.2227 | 0.3247 | 1.0000 | 0/0 |
+| unseen-query / identifier_unicode | 25 | 0.7233 | 1.0000 | 1.0000 | 0/0 |
+| unseen-query / image_semantic | 25 | 1.0000 | 1.0000 | 1.0000 | 0/0 |
+| unseen-query / lexical | 25 | 1.0000 | 1.0000 | 1.0000 | 0/0 |
+| unseen-query / no_answer | 25 | — | — | — | 1/25 |
+| unseen-query / semantic_paraphrase | 25 | 1.0000 | 0.9400 | 1.0000 | 0/0 |
+| rework-frozen / audio_semantic | 25 | 0.2953 | 0.9800 | 1.0000 | 0/0 |
+| rework-frozen / chinese_short | 25 | 1.0000 | 1.0000 | 1.0000 | 0/0 |
+| rework-frozen / cross_language | 25 | 0.3040 | 0.3667 | 1.0000 | 0/0 |
+| rework-frozen / identifier_unicode | 25 | 1.0000 | 1.0000 | 1.0000 | 0/0 |
+| rework-frozen / image_semantic | 25 | 0.1600 | 1.0000 | 1.0000 | 0/0 |
+| rework-frozen / lexical | 25 | 1.0000 | 1.0000 | 1.0000 | 0/0 |
+| rework-frozen / no_answer | 25 | — | — | — | 2/25 |
+| rework-frozen / semantic_paraphrase | 25 | 0.9600 | 0.9600 | 1.0000 | 0/0 |
+| rework-final2 / audio_semantic | 25 | 0.3600 | 0.9600 | 0.9600 | 0/0 |
+| rework-final2 / chinese_short | 25 | 1.0000 | 1.0000 | 1.0000 | 0/0 |
+| rework-final2 / cross_language | 25 | 0.3680 | 0.4367 | 1.0000 | 0/0 |
+| rework-final2 / identifier_unicode | 25 | 1.0000 | 1.0000 | 1.0000 | 0/0 |
+| rework-final2 / image_semantic | 25 | 0.1440 | 0.9400 | 1.0000 | 0/0 |
+| rework-final2 / lexical | 25 | 1.0000 | 1.0000 | 1.0000 | 0/0 |
+| rework-final2 / no_answer | 25 | — | — | — | 0/25 |
+| rework-final2 / semantic_paraphrase | 25 | 0.9467 | 0.9600 | 1.0000 | 0/0 |
+| rework-final3 / audio_semantic | 25 | 0.2593 | 1.0000 | 1.0000 | 0/0 |
+| rework-final3 / chinese_short | 25 | 1.0000 | 1.0000 | 1.0000 | 0/0 |
+| rework-final3 / cross_language | 25 | 0.2887 | 0.4300 | 1.0000 | 0/0 |
+| rework-final3 / identifier_unicode | 25 | 1.0000 | 1.0000 | 1.0000 | 0/0 |
+| rework-final3 / image_semantic | 25 | 0.1200 | 1.0000 | 1.0000 | 0/0 |
+| rework-final3 / lexical | 25 | 1.0000 | 1.0000 | 1.0000 | 0/0 |
+| rework-final3 / no_answer | 25 | — | — | — | 0/25 |
+| rework-final3 / semantic_paraphrase | 25 | 0.9133 | 0.9600 | 1.0000 | 0/0 |
 
-The user's installed revision and incident root cause remain unknown. This patch has not demonstrated that repeated scanning, fan/heat or pointer stalls are fixed. `resource-investigation.md` identifies the concrete event, migration and pressure-control paths requiring implementation; `self-review.md` records the completed code review and open findings. Arch's existing durable callback handles this unsuccessful acceptance handoff; no additional dispatch or next-stage promotion is performed here.
+All1000 current held-out rows and their before comparisons remain. The original four200-query cohorts are not replaced by final3. In particular, unseen-query semanticMRR1.00→0.94 and rework-frozen no-answer2/25(8%) still fail. Pooled precision must not erase the failing25-query stratum. Current per-row failures and source observations are in final-current-heldout-failures.json. No held-out parameter tuning followed these results.
+
+Original175-positive native extraction/timestamp oracle: the first88-file attempt omitted12 supported audio fixtures and is retained as a failure (original-oracle-first-attempt-erratum.json); corrected13MOV+12WAV generation and audio timestamp validation will be rerun after the matrix; unsupported25 scanned-PDF cases remain explicitly failed, not removed. Supported files use actual native extraction and fixed models; original media labels and timestamps remain unchanged.
+
+Native query results are actual committed NSTextView input → forcedlayout/display+AX, without a query-result WindowServer fence. Cold means fresh service/helper with warm OS/model/shader caches possible; readiness is excluded. Scale stress uses two repeated-chunk files. The separate resource probe measures generated own-window input → WindowServer event-ID pixels, not hardware HID/monitor scanout. No physical input or microphone capture claim. Native fixtures clamp legacy low-power/query-thermal callbacks false; the new budget reads actual pressure/thermal state.
+
+See rework-self-review.md for ownership, cancellation, fresh permissions, rollback/re-upgrade consistency, privacy and UI/localization checks. Known strict-lint debt and unverified Swift6.3.1 remain disclosed; the available compiler wasSwift6.4. Model/helper/binary fingerprints and all command failures/whole-command wall times are retained. Raw profiles from different binaries are exported separately; only byte-identical production source line observations are unioned.

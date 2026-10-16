@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/usr/bin/swift",
+    "test",
+    "--configuration",
+    "release",
+    "--jobs",
+    "2",
+    "list"
+  ],
+  "wall_seconds": 87.46624724997673,
+  "exit_code": 0,
+  "scope": "Current checkout only; test harness duration/completeness rebuild and discovery. No test execution, no baseline rebuild."
+}

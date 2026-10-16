@@ -1,0 +1,68 @@
+{
+  "reason": "Prior run cancelled by user around2026-10-16T16:32Z after prolonged execution. New closeout explicitly excludes restarting the matrix. No active owned benchmark/helper processes found at closeout start.",
+  "completed_run_cells": 11,
+  "remaining_matrix": "Not a current closeout precondition",
+  "partial_reports": [
+    {
+      "file": "native-after-1000000-final-ui.partial.json",
+      "rows": 161,
+      "complete": false,
+      "stage": "settle-file-mode-index-writer-0"
+    },
+    {
+      "file": "contention-before-1000000.partial.json",
+      "rows": 120,
+      "complete": true,
+      "stage": "voice-preempt-index-readiness"
+    },
+    {
+      "file": "native-after-1000000-cold-fts.partial.json",
+      "rows": 20,
+      "complete": true,
+      "stage": "settle-file-mode-cold-fts-9"
+    },
+    {
+      "file": "native-after-1000000-candidate-guard.partial.json",
+      "rows": 40,
+      "complete": true,
+      "stage": "settle-file-mode-hot-new-semantic-19"
+    },
+    {
+      "file": "contention-after-1000000.partial.json",
+      "rows": 120,
+      "complete": true,
+      "stage": "voice-preempt-index-readiness"
+    },
+    {
+      "file": "native-after-1000000.partial.json",
+      "rows": 180,
+      "complete": true,
+      "stage": "settle-file-mode-index-writer-19"
+    },
+    {
+      "file": "native-before-1000000-real-noise.partial.json",
+      "rows": 40,
+      "complete": true,
+      "stage": "settle-file-mode-hot-new-semantic-19"
+    },
+    {
+      "file": "native-before-1000000.partial.json",
+      "rows": 180,
+      "complete": true,
+      "stage": "settle-file-mode-index-writer-19"
+    },
+    {
+      "file": "native-before-1000000-cold-fts.partial.json",
+      "rows": 20,
+      "complete": true,
+      "stage": "settle-file-mode-cold-fts-9"
+    },
+    {
+      "file": "native-after-1000000-real-noise.partial.json",
+      "rows": 40,
+      "complete": true,
+      "stage": "settle-file-mode-hot-new-semantic-19"
+    }
+  ],
+  "scope": "All existing raw successful, failed and partial rows retained; no new samples generated or failures zero-filled."
+}

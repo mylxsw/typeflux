@@ -9,29 +9,22 @@ struct SemanticSearchRanking {
         var identifier: Bool
     }
 
+    let originalText: String
     let text: String
     let terms: [String]
     let identifiers: [String]
     let quoted: [String]
+    let prefersCJK: Bool
     let preferredModality: SemanticMediaPriority?
     var semanticFloor: Double = 0.45
 
     init(_ text: String) {
+        prefersCJK = SemanticScoreCalibration.script(text) == 1
+        originalText = text
         self.text = Self.normalize(text)
         terms = Array(SemanticFilePolicy.searchTerms(text).prefix(64))
         let normalized = Self.normalize(text)
-        let hints: [(SemanticMediaPriority, [String])] = [
-            (.image, ["image", "photo", "screenshot", "图片", "照片", "截图"]),
-            (.audio, ["audio", "recording", "音频", "录音"]),
-            (.video, ["video", "movie", "视频", "影片"]),
-            (.document, ["pdf", "document", "文档"])
-        ]
-        preferredModality = hints.first { _, words in
-            words.contains { word in
-                word.unicodeScalars.contains(where: \.properties.isIdeographic) ? normalized.contains(word)
-                    : normalized.split(whereSeparator: { !$0.isLetter }).contains(Substring(word))
-            }
-        }?.0
+        preferredModality = Self.formatIntent(normalized)
         identifiers = normalized.split {
             !$0.isASCII || (!$0.isLetter && !$0.isNumber && $0 != "-" && $0 != "_")
         }.map(String.init).filter {
@@ -43,6 +36,39 @@ struct SemanticSearchRanking {
         }
         let pieces = Self.normalize(text).split(separator: "\"", omittingEmptySubsequences: false)
         quoted = pieces.enumerated().filter { $0.offset % 2 == 1 }.map { String($0.element) }.filter { !$0.isEmpty }
+    }
+
+    /// A mention of a format can describe content. Only a format request changes ranking.
+    private static func formatIntent(_ text: String) -> SemanticMediaPriority? {
+        let words = text.split(whereSeparator: { !$0.isLetter }).map(String.init).filter { $0 != "please" }
+        let verbs: Set = ["find", "show", "search", "open", "locate", "play", "display", "view"]
+        struct Hint { var modality: SemanticMediaPriority; var english: [String]; var chinese: [String] }
+        let hints: [Hint] = [
+            Hint(
+                modality: .image,
+                english: ["image", "images", "photo", "photos", "screenshot", "screenshots"],
+                chinese: ["图片", "照片", "截图"]
+            ),
+            Hint(modality: .audio, english: ["audio", "recording", "recordings"], chinese: ["音频", "录音"]),
+            Hint(modality: .video, english: ["video", "videos", "movie", "movies"], chinese: ["视频", "影片"]),
+            Hint(modality: .document, english: ["pdf", "document", "documents"], chinese: ["文档"])
+        ]
+        return hints.first { hint in
+            let english = hint.english, chinese = hint.chinese
+            let mentions = words.contains { english.contains($0) }
+            let leadingQuestion = words.count > 1 && ["which", "what"].contains(words[0])
+                && english.contains(words[1])
+            let englishRequest = mentions && (words.first.map(english.contains) == true
+                || words.last.map(english.contains) == true || !verbs.isDisjoint(with: words) || leadingQuestion
+                || english.contains { text.hasPrefix("in the " + $0) || text.hasPrefix("from the " + $0) })
+            let trimmed = text.trimmingCharacters(in: CharacterSet(charactersIn: "？?。 "))
+            let chineseRequest = chinese.contains { word in
+                text.contains(word) && (text.hasPrefix(word) || trimmed.hasSuffix(word)
+                    || ["找", "搜索", "查看", "显示", "打开", "寻找"].contains(where: text.contains)
+                    || trimmed.hasSuffix("在哪") || trimmed.hasSuffix("在哪里"))
+            }
+            return englishRequest || chineseRequest
+        }?.modality
     }
 
     static func normalize(_ text: String) -> String {
@@ -82,7 +108,7 @@ struct SemanticSearchRanking {
     }
 
     func confident(peak: Double, runnerUp: Double?, completeLexical: Bool) -> Bool {
-        completeLexical || peak >= 0.675 || (runnerUp.map { peak >= semanticFloor && peak - $0 >= 0.04 } ?? false)
+        completeLexical || peak >= 0.70 || (runnerUp.map { peak >= semanticFloor && peak - $0 >= 0.04 } ?? false)
     }
 
     func lexicalAccepted(_ evidence: Evidence) -> Bool {
@@ -113,13 +139,23 @@ struct SemanticSearchRanking {
         // The generated-speech calibration changes ordering only, never answerability.
         guard lexicalAccepted(evidence) || (cosine ?? 0) >= semanticFloor else { return nil }
         if evidence.identifier {
+            return 3.0 + (cosine ?? 0) * 0.01
+        }
+        if evidence.coverage == 1 && evidence.phrase {
+            // Preserve the exact body phrase contract independently of soft semantic tuning.
             return 1.0 + (cosine ?? 0) * 0.01
         }
-        let lexical = 0.30 * evidence.coverage * evidence.coverage + (evidence.phrase ? 0.12 : 0)
-            + (evidence.coverage == 1 ? 0.35 : 0)
-            - (evidence.coverage > 0 && evidence.coverage < 1 ? 0.18 : 0)
-        return 0.55 * (cosine ?? 0) + lexical + (preferredModality == modality ? 0.04 : 0)
-            + (embedding == .audio || (embedding == nil && modality == .audio) ? 0.025 : 0)
+        // Partial lexical evidence never subtracts score at equal cosine. Explicit media intent
+        // retains its context preference; ordinary queries use a small script tie-break only.
+        let lexical = (evidence.phrase ? 0.12 : 0) + (evidence.coverage == 1 ? 0.10 : 0)
+        let matchingMedia = preferredModality == modality || (preferredModality == .audio && embedding == .audio)
+            || (preferredModality == .image && embedding == .image)
+        return 0.55 * (cosine ?? 0) + lexical + (matchingMedia ? 0.10 : 0)
+    }
+
+    func scriptAdjustment(_ bucket: SemanticScoreCalibration.Bucket) -> Double {
+        guard preferredModality == nil, bucket == .text || bucket == .cjkText else { return 0 }
+        return prefersCJK == (bucket == .cjkText) ? 0.025 : 0
     }
 
     static func allowed(_ path: String, query: AskSearchQuery, type: AskFileType, scope: AskFileScope) -> Bool {

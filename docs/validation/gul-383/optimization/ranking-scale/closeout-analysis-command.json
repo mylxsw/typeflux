@@ -1,0 +1,11 @@
+{
+  "command": [
+    "python3",
+    "analyze_final_resource.py",
+    "--folder",
+    "resource-after-closeout-300"
+  ],
+  "cwd": "ranking-scale",
+  "exit_code": 0,
+  "wall_seconds": 0.052083457994740456
+}

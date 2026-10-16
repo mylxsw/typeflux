@@ -5,6 +5,10 @@ struct SemanticFileChangePlan: Equatable, Sendable {
     var files = Set<String>()
     var directories = Set<String>()
     var fullScan = false
+    var subtrees: Set<String> {
+        get { directories }
+        set { directories = newValue }
+    }
 
     // Bounds retained handoff state, not the caller's input array or the index queue.
     static let handoffPaths = 512
@@ -35,6 +39,9 @@ struct SemanticFileChangePlan: Equatable, Sendable {
         for change in changes {
             let path = AskFileScope.normalize(change.path)
             guard path.hasPrefix("/") else { continue }
+            let sharedRoot = path == indexDirectory && scope.roots.contains(path)
+                && !AskFileScope.isInside(path, SemanticModel.directory.path)
+            guard sharedRoot || !SemanticFilePolicy.isIndexArtifact(path, directory: indexDirectory) else { continue }
             let included = scope.includes(path, isDirectory: change.isDirectory == true)
             let inScope = included || scope.roots.contains(where: { AskFileScope.isInside($0, path) })
             guard inScope else { continue }
@@ -66,7 +73,9 @@ struct SemanticFileChangePlan: Equatable, Sendable {
                 continue
             }
             if SemanticFilePolicy.allows(path) {
-                if scope.includes(path, isDirectory: false) { plan.files.insert(path) }
+                if scope.includes(path, isDirectory: false) {
+                    plan.files.insert(path)
+                }
                 continue
             }
         }

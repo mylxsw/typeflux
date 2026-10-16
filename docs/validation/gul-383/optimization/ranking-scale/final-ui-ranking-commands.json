@@ -1,0 +1,34 @@
+[
+  {
+    "command": [
+      "python3",
+      "<repository>/docs/validation/gul-383/optimization/ranking-scale/rework_release_runner.py",
+      "--checkout",
+      "<repository>/.build/baseline-code",
+      "--mode",
+      "ranking",
+      "--label",
+      "before",
+      "--tag",
+      "ui-final"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 1.8351787500432692
+  },
+  {
+    "command": [
+      "python3",
+      "<repository>/docs/validation/gul-383/optimization/ranking-scale/rework_release_runner.py",
+      "--checkout",
+      "<repository>",
+      "--mode",
+      "ranking",
+      "--label",
+      "after",
+      "--tag",
+      "ui-final"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 1.686271290993318
+  }
+]

@@ -9,6 +9,7 @@ extension SemanticFileIndexer {
         guard scope.includes(path, isDirectory: false), SemanticFilePolicy.allows(path) else {
             try store.remove(path); return .skipped
         }
+        try store.setStage(.checking)
         let metadata = try reader.read(.init(operation: .content, path: path, scope: scope, readText: false),
                                        isCancelled: cancelled)
         guard metadata.error == nil, metadata.modified != nil, metadata.fileSize != nil else {
@@ -20,6 +21,8 @@ extension SemanticFileIndexer {
         }
         if SemanticMediaPriority.of(path) != .document {
             if try store.mediaUnchanged(path: path, metadata: metadata) {
+                try store.record(.metadataReused)
+                try store.record(.vectorReusedFiles)
                 return .done
             }
             guard let media else { return .skipped }
@@ -28,6 +31,10 @@ extension SemanticFileIndexer {
         }
         let job = try store.prepareDocument(path: path, metadata: metadata)
         if job.state == .done || job.state == .skipped {
+            try store.record(.metadataReused)
+            if job.state == .done {
+                try store.record(.vectorReusedFiles)
+            }
             return job.state
         }
         func verify() throws -> Bool {
@@ -54,6 +61,12 @@ extension SemanticFileIndexer {
         }
         var work = try store.vectorWork(job)
         if work.isEmpty, !job.extracted {
+            let tail = job.cursor.offset > 0 || job.cursor.page > 0
+            try store.setStage(tail ? .tail : .extracting)
+            if tail {
+                try store.record(.tailBatches)
+            }
+            try store.record(.extractionBatches)
             let contents = try reader.read(.init(operation: .content, path: path, scope: scope, cursor: job.cursor),
                                            isCancelled: cancelled)
             guard contents.error == nil, SemanticFileStore.version(contents) == job.version,
@@ -78,12 +91,22 @@ extension SemanticFileIndexer {
             else { return .skipped }
             work = try store.vectorWork(job)
         }
+        if SemanticWorkBudget.current?.enabled == true {
+            work = Array(work.prefix(1))
+        }
         if !work.isEmpty {
             try checkpoint()
+            try store.setStage(.encoding)
+            try store.record(.encodingRequests)
             let title = String(path.split(separator: "/").last ?? "").prefix(80)
             let texts = work.map { "title: \(title) | text: " + $0.text }
             let vectors: [[Float]]
-            do { vectors = try encoder.embed(texts, cancelled: cancelled) } catch { throw Failure.inference(error) }
+            do {
+                vectors = try encoder.embed(texts, cancelled: cancelled)
+            } catch is SemanticWorkBudget.Interrupted {
+                throw SemanticWorkBudget.Interrupted()
+            } catch { throw Failure.inference(error) }
+            try store.record(.vectorsInferred, count: vectors.count)
             guard try verify() else { return .skipped }
             guard try store.publishVectors(vectors, work: work, job: job) else { return .skipped }
         }

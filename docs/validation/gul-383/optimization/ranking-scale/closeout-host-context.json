@@ -1,0 +1,14 @@
+{
+  "unix": 1792169361.595994,
+  "non_benchmark_app_snapshot": [
+    {
+      "pid": 46030,
+      "parent": 1,
+      "rss_bytes": 216776704,
+      "lifetime_cpu_percent": 0.0,
+      "cpu_time": "152:39.39",
+      "name": "Typeflux"
+    }
+  ],
+  "scope": "Read-only snapshot of another Typeflux app on the shared host; no external process arguments or contents captured. This app is outside the benchmark-owned process tree and its work is not attributed to the indexer. Continuous unrelated-app CPU is not measured; global pressure/swap/GPU remain shared."
+}

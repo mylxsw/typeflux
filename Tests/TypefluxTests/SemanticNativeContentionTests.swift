@@ -121,7 +121,13 @@ struct SemanticNativeContentionTests {
             })
             do {
                 stage = "initial-readiness-\(fileMode)"
-                try await wait { data.service.phase == .paused && data.service.modelReady }
+                try await wait { data.service.phase == .ready && data.service.modelReady }
+                data.service.pause(true)
+                try #require(
+                    try data.store.counts()
+                        .chunks == Int(ProcessInfo.processInfo.environment["TYPEFLUX_SEMANTIC_SCALE"] ?? "100000"),
+                    "Startup must retain every seeded scale row"
+                )
                 // Keep real documents available beyond the measured window, without a synthetic write loop.
                 let background = String(
                     repeating: "Basalt crystals beneath volcanic ridges. Quartz mineral formations. ",
@@ -132,6 +138,9 @@ struct SemanticNativeContentionTests {
                                          atomically: true, encoding: .utf8)
                 }
                 data.service.pause(false)
+                // Startup now reuses completed discovery. The inert fixture watcher requires
+                // an explicit rescan for files created after startup, outside timed input samples.
+                data.service.rescanAll()
                 stage = "index-start-\(fileMode)"
                 try await wait { data.service.phase == .indexing && observer.completed > 0 }
                 data.service.prepareForSearch()
@@ -266,7 +275,7 @@ struct SemanticNativeContentionTests {
                             }
                             let active = observer.active, completed = observer.completed
                             // Drive the same foreground-busy boundary used by workflow recording/processing.
-                            // The real CPU transcriber runs while a previously active GPU batch yields.
+                            // The real CPU transcriber runs while a previously active index batch yields.
                             data.service.setForegroundBusy(true)
                             let startsAtVoiceBoundary = observer.startedBatches
                             let start = ContinuousClock.now
@@ -282,7 +291,9 @@ struct SemanticNativeContentionTests {
                             let asrMs = ms(start)
                             let foundBody = hits.contains { $0.path == data.document.path }
                             let nonemptyTranscript = !transcript.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                            if !foundBody { failedBodySamples += 1 }
+                            if !foundBody {
+                                failedBodySamples += 1
+                            }
                             #expect(nonemptyTranscript)
                             #expect(foundBody)
                             let noNewCompletions = observer.completed <= completed + (active ? 1 : 0)

@@ -1,0 +1,252 @@
+{
+  "scope": "Current integrated 300-second ON only. Historical OFF is not a paired current measurement. measured durations are reported per condition. Observed CPU and per-process physical IO are lower bounds from adjacent samples of identical PID/start-time; first/last intervals and processes entirely between samples are missed. CPU 100% means one core, not machine capacity. RSS sums shared pages; footprint sums are not exact unique machine RAM. Global IOAccelerator GPU counters include other applications. External compiler/test process presence and adjacent cumulative CPU deltas are separate; nearest-sample overlap is not causal attribution. Own-window ScreenCaptureKit displayTime is a WindowServer observation, not physical HID/monitor scanout or search-result rendering. No privileged watts/energy data. Missing values remain null.",
+  "phases": [
+    {
+      "condition": "index-on",
+      "wall_seconds": 303.06026420829585,
+      "samples": 144,
+      "per_kind": {
+        "keyboard": {
+          "n": 100,
+          "missing_handler": 0,
+          "missing_windowserver": 0,
+          "invalid_handler_context": 0,
+          "windowserver_ms": {
+            "0.5": 23.569916666019708,
+            "0.95": 26.165833289269358,
+            "0.99": 190.53899991558865,
+            "1": 190.53899991558865
+          },
+          "handler_ms": {
+            "0.5": 2.415791677776724,
+            "0.95": 9.433333296328783,
+            "0.99": 169.73924997728318,
+            "1": 169.73924997728318
+          },
+          "producer_delay_ms": {
+            "0.5": 0.7618750096298754,
+            "0.95": 1.1081250268034637,
+            "0.99": 1.1369583662599325,
+            "1": 1.1369583662599325
+          }
+        },
+        "mouse": {
+          "n": 101,
+          "missing_handler": 0,
+          "missing_windowserver": 0,
+          "invalid_handler_context": 0,
+          "windowserver_ms": {
+            "0.5": 23.588583280798048,
+            "0.95": 25.620208296459168,
+            "0.99": 57.01020825654268,
+            "1": 215.30537493526936
+          },
+          "handler_ms": {
+            "0.5": 6.830041646026075,
+            "0.95": 10.544624994508922,
+            "0.99": 43.320541677530855,
+            "1": 206.6017499892041
+          },
+          "producer_delay_ms": {
+            "0.5": 1.0564166586846113,
+            "0.95": 1.1095833615399897,
+            "0.99": 1.115499995648861,
+            "1": 1.116958330385387
+          }
+        },
+        "window": {
+          "n": 101,
+          "missing_handler": 0,
+          "missing_windowserver": 0,
+          "invalid_handler_context": 0,
+          "windowserver_ms": {
+            "0.5": 25.539416645187885,
+            "0.95": 31.241458316799253,
+            "0.99": 35.296374931931496,
+            "1": 43.20929164532572
+          },
+          "handler_ms": {
+            "0.5": 3.0329583678394556,
+            "0.95": 8.298416621983051,
+            "0.99": 13.321541657205671,
+            "1": 22.517333331052214
+          },
+          "producer_delay_ms": {
+            "0.5": 1.0657500242814422,
+            "0.95": 1.1137499823234975,
+            "0.99": 1.1182916932739317,
+            "1": 1.1254583369009197
+          }
+        }
+      },
+      "per_process": {
+        "Python": {
+          "peak_rss_bytes": 25493504,
+          "available_rusage_samples": 144.0,
+          "peak_footprint_bytes": 14549400,
+          "observed_cpu_user_ns": 0.0,
+          "observed_cpu_system_ns": 0.0,
+          "observed_disk_read_bytes": 0.0,
+          "observed_disk_written_bytes": 0.0,
+          "observed_pageins": 0.0
+        },
+        "swiftpm-testing-helper": {
+          "peak_rss_bytes": 107905024,
+          "available_rusage_samples": 144.0,
+          "peak_footprint_bytes": 36979624,
+          "observed_cpu_user_ns": 1903891917.0,
+          "observed_cpu_system_ns": 1977560792.0,
+          "observed_disk_read_bytes": 4239360.0,
+          "observed_disk_written_bytes": 5447680.0,
+          "observed_pageins": 0.0
+        },
+        "SemanticNativeResponseProbe": {
+          "peak_rss_bytes": 83476480,
+          "available_rusage_samples": 144.0,
+          "peak_footprint_bytes": 83198840,
+          "observed_cpu_user_ns": 1195213583.0,
+          "observed_cpu_system_ns": 500477125.0,
+          "observed_disk_read_bytes": 2420736.0,
+          "observed_disk_written_bytes": 6877184.0,
+          "observed_pageins": 64.0
+        },
+        "Typeflux": {
+          "peak_rss_bytes": 44613632,
+          "available_rusage_samples": 280.0,
+          "peak_footprint_bytes": 14091032,
+          "observed_cpu_user_ns": 113665833.0,
+          "observed_cpu_system_ns": 92577875.0,
+          "observed_disk_read_bytes": 2199552.0,
+          "observed_disk_written_bytes": 3997696.0,
+          "observed_pageins": 153.0
+        },
+        "TypefluxSemanticHelper": {
+          "peak_rss_bytes": 1393917952,
+          "available_rusage_samples": 179.0,
+          "peak_footprint_bytes": 1059030768,
+          "observed_cpu_user_ns": 113319232374.0,
+          "observed_cpu_system_ns": 2695330581.0,
+          "observed_disk_read_bytes": 30662656.0,
+          "observed_disk_written_bytes": 0.0,
+          "observed_pageins": 2316.0
+        },
+        "<defunct>": {
+          "peak_rss_bytes": 0.0,
+          "available_rusage_samples": 1.0,
+          "peak_footprint_bytes": 0.0,
+          "observed_cpu_user_ns": 1020841459.0,
+          "observed_cpu_system_ns": 3335500.0,
+          "observed_disk_read_bytes": 0.0,
+          "observed_disk_written_bytes": 0.0,
+          "observed_pageins": 0.0,
+          "unavailable_rusage_samples": 1.0
+        }
+      },
+      "observed_cpu_seconds": 122.822127039,
+      "observed_mean_cpu_core_percent": 40.52729491273172,
+      "cpu_core_percent": {
+        "0.5": 51.25008854468895,
+        "0.95": 53.938492651865296,
+        "0.99": 54.210516943152385,
+        "1": 54.23504643133415
+      },
+      "owned_sum_rss_bytes": {
+        "0.5": 1664696320,
+        "0.95": 2373173248,
+        "0.99": 2376122368,
+        "1": 2380283904
+      },
+      "owned_sum_footprint_bytes": {
+        "0.5": 1194349800,
+        "0.95": 1575819720,
+        "0.99": 1604835808,
+        "1": 1606965728
+      },
+      "embedding_helpers_sum_rss_bytes": {
+        "0.5": 1393786880,
+        "0.95": 2100789248,
+        "0.99": 2103312384,
+        "1": 2103361536
+      },
+      "embedding_helpers_sum_footprint_bytes": {
+        "0.5": 1058948848,
+        "0.95": 1433521080,
+        "0.99": 1471286224,
+        "1": 1471925200
+      },
+      "external_process_present_samples": 45,
+      "external_observed_cpu_core_percent": {
+        "0.5": 0,
+        "0.95": 380.6734981192399,
+        "0.99": 389.6548139038444,
+        "1": 390.37190373679266
+      },
+      "swap_mb": {
+        "first": 3524.56,
+        "last": 3508.56,
+        "minimum": 3508.56,
+        "maximum": 3524.56
+      },
+      "pressure_values": [
+        "kern.memorystatus_vm_pressure_level: 1"
+      ],
+      "thermal_values": [
+        "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded"
+      ],
+      "process_info_thermal_states": [
+        0
+      ],
+      "global_gpu_percent": {
+        "0.5": 0,
+        "0.95": 2,
+        "0.99": 5,
+        "1": 10
+      },
+      "inputs_over_100ms": [
+        {
+          "id": 60,
+          "kind": "keyboard",
+          "windowserver_ms": 190.53899991558865,
+          "seconds": 59.997838735580444,
+          "nearest_sample_offset_seconds": -0.5733296871185303,
+          "external_process_present": false,
+          "observed_external_cpu_core_percent": 0
+        },
+        {
+          "id": 280,
+          "kind": "mouse",
+          "windowserver_ms": 215.30537493526936,
+          "seconds": 279.9982399940491,
+          "nearest_sample_offset_seconds": 1.0127778053283691,
+          "external_process_present": true,
+          "observed_external_cpu_core_percent": 178.1556610259799
+        }
+      ],
+      "published": {
+        "audio": 3,
+        "chunks": 235,
+        "documents": 9,
+        "images": 3,
+        "videos": 3
+      },
+      "database": {
+        "jobs_done": 9,
+        "jobs_failed": 0,
+        "jobs_partial": 10,
+        "jobs_pending": 0,
+        "largest_document_bytes": 3840014,
+        "pending_vectors": 130,
+        "published_vectors": 105,
+        "queued_audio": 10,
+        "queued_documents": 10,
+        "queued_images": 10,
+        "queued_video": 10,
+        "saved_media_segments": 0,
+        "subtree_requests": 0
+      },
+      "effective_vectors_per_second": 0.346465744277952,
+      "completed_jobs_per_second": 0.02969706379525303,
+      "supplied_files": 40
+    }
+  ]
+}

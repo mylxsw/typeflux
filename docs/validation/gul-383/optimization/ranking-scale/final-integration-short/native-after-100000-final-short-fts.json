@@ -1,0 +1,3435 @@
+{
+  "app_max_rss_bytes" : 523059200,
+  "build" : "Release",
+  "chunks" : 100000,
+  "cold_definition" : "Ten fresh service\/helper openings per entry; OS\/model\/shader caches may be warm; opening the panel requests prewarming. Reopen and model verification occur outside the timed native edit.",
+  "complete" : true,
+  "corpus" : [
+    {
+      "chunks" : 100000,
+      "disk_bytes" : 481895416,
+      "entry" : "mixed",
+      "load_seconds" : 26.051695375004783,
+      "noise_vector_source" : "constructed-orthogonal"
+    },
+    {
+      "chunks" : 100000,
+      "disk_bytes" : 481895416,
+      "entry" : "file-mode",
+      "load_seconds" : 3.2712054583826102,
+      "noise_vector_source" : "constructed-orthogonal"
+    }
+  ],
+  "entry_scope" : "all",
+  "failed_body_samples" : 0,
+  "index_inference_concurrency" : 0,
+  "index_writer_concurrency" : 0,
+  "indexed_files" : 2,
+  "model_sha256" : "2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135",
+  "permission_denial_fixture" : false,
+  "rows" : [
+    {
+      "complete_ms" : 218.72475,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 143.543083,
+      "input_to_publish_ms" : 100.888166,
+      "input_uptime" : 487066.54582333402,
+      "main_actor_max_timer_gap_ms" : 73.417749999999998,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 0,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 189.81062499999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 82.114625000000004,
+      "input_to_publish_ms" : 64.030541999999997,
+      "input_uptime" : 487067.10109941667,
+      "main_actor_max_timer_gap_ms" : 62.516874999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 1,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 190.69791599999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.783208000000002,
+      "input_to_publish_ms" : 64.673625000000001,
+      "input_uptime" : 487067.61590412538,
+      "main_actor_max_timer_gap_ms" : 63.201666000000003,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 2,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 191.09412499999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 80.883125000000007,
+      "input_to_publish_ms" : 64.477000000000004,
+      "input_uptime" : 487068.13189741637,
+      "main_actor_max_timer_gap_ms" : 63.046708000000002,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 3,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 186.48525000000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 77.09375,
+      "input_to_publish_ms" : 61.198833999999998,
+      "input_uptime" : 487068.63528466603,
+      "main_actor_max_timer_gap_ms" : 59.770041999999997,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 4,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 186.156667,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 76.180708999999993,
+      "input_to_publish_ms" : 60.393459,
+      "input_uptime" : 487069.12822237436,
+      "main_actor_max_timer_gap_ms" : 59.009042000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 5,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 187.156125,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 79.002791000000002,
+      "input_to_publish_ms" : 60.875875000000001,
+      "input_uptime" : 487069.61996400036,
+      "main_actor_max_timer_gap_ms" : 59.445582999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 6,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 185.40795800000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 75.762208000000001,
+      "input_to_publish_ms" : 59.982250000000001,
+      "input_uptime" : 487070.10761279165,
+      "main_actor_max_timer_gap_ms" : 58.564582999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 7,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 185.677167,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 76.142042000000004,
+      "input_to_publish_ms" : 60.320042000000001,
+      "input_uptime" : 487070.59768600005,
+      "main_actor_max_timer_gap_ms" : 58.939582999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 8,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 187.36099999999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 77.551083000000006,
+      "input_to_publish_ms" : 60.993917000000003,
+      "input_uptime" : 487071.08342604135,
+      "main_actor_max_timer_gap_ms" : 59.550916999999998,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 9,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 185.69345899999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 78.398416999999995,
+      "input_to_publish_ms" : 60.064624999999999,
+      "input_uptime" : 487071.59574487503,
+      "main_actor_max_timer_gap_ms" : 58.677332999999997,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 10,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 191.65908400000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.129625000000004,
+      "input_to_publish_ms" : 64.177458999999999,
+      "input_uptime" : 487072.09780537442,
+      "main_actor_max_timer_gap_ms" : 62.615333,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 11,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 192.52479199999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.213207999999995,
+      "input_to_publish_ms" : 63.917667000000002,
+      "input_uptime" : 487072.61514233303,
+      "main_actor_max_timer_gap_ms" : 62.442124999999997,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 12,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 190.276083,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.423041999999995,
+      "input_to_publish_ms" : 64.626999999999995,
+      "input_uptime" : 487073.13204266637,
+      "main_actor_max_timer_gap_ms" : 63.132207999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 13,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 189.45891700000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 80.365125000000006,
+      "input_to_publish_ms" : 63.819541999999998,
+      "input_uptime" : 487073.64944466634,
+      "main_actor_max_timer_gap_ms" : 62.350042000000002,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 14,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 190.323083,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 80.754416000000006,
+      "input_to_publish_ms" : 64.262833000000001,
+      "input_uptime" : 487074.16214583337,
+      "main_actor_max_timer_gap_ms" : 62.796833999999997,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 15,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 189.65741700000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 80.821916999999999,
+      "input_to_publish_ms" : 64.183959000000002,
+      "input_uptime" : 487074.67787699966,
+      "main_actor_max_timer_gap_ms" : 62.71425,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 16,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 190.659333,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.967583000000005,
+      "input_to_publish_ms" : 63.901667000000003,
+      "input_uptime" : 487075.19300991634,
+      "main_actor_max_timer_gap_ms" : 62.411957999999998,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 17,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 189.90495799999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.588458000000003,
+      "input_to_publish_ms" : 64.216791000000001,
+      "input_uptime" : 487075.71102358372,
+      "main_actor_max_timer_gap_ms" : 62.766333000000003,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 18,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 188.987875,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 79.721874999999997,
+      "input_to_publish_ms" : 63.425083000000001,
+      "input_uptime" : 487076.2240469167,
+      "main_actor_max_timer_gap_ms" : 61.942999999999998,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 19,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 189.660875,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.114125000000001,
+      "input_to_publish_ms" : 64.557249999999996,
+      "input_uptime" : 487076.73930808337,
+      "main_actor_max_timer_gap_ms" : 63.048583000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 20,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 190.64504199999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 82.115708999999995,
+      "input_to_publish_ms" : 64.769750000000002,
+      "input_uptime" : 487077.25318949932,
+      "main_actor_max_timer_gap_ms" : 63.318041999999998,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 21,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 190.60124999999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 84.375917000000001,
+      "input_to_publish_ms" : 65.755207999999996,
+      "input_uptime" : 487077.76758145873,
+      "main_actor_max_timer_gap_ms" : 64.265874999999994,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 22,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 191.30945800000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 82.280167000000006,
+      "input_to_publish_ms" : 65.377082999999999,
+      "input_uptime" : 487078.28229004203,
+      "main_actor_max_timer_gap_ms" : 63.933666000000002,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 23,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 191.550083,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 83.383332999999993,
+      "input_to_publish_ms" : 66.170124999999999,
+      "input_uptime" : 487078.79592545872,
+      "main_actor_max_timer_gap_ms" : 64.689750000000004,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 24,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 189.92975000000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 80.257208000000006,
+      "input_to_publish_ms" : 63.881500000000003,
+      "input_uptime" : 487079.31128620903,
+      "main_actor_max_timer_gap_ms" : 62.428792000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 25,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 189.32137499999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 79.854292000000001,
+      "input_to_publish_ms" : 63.718499999999999,
+      "input_uptime" : 487079.82808799937,
+      "main_actor_max_timer_gap_ms" : 62.289875000000002,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 26,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 190.25770800000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 82.180499999999995,
+      "input_to_publish_ms" : 65.059042000000005,
+      "input_uptime" : 487080.33978483302,
+      "main_actor_max_timer_gap_ms" : 63.556333000000002,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 27,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 190.373875,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.231791999999999,
+      "input_to_publish_ms" : 64.891874999999999,
+      "input_uptime" : 487080.85293316672,
+      "main_actor_max_timer_gap_ms" : 63.459792,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 28,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 189.148,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 80.747874999999993,
+      "input_to_publish_ms" : 64.061832999999993,
+      "input_uptime" : 487081.36632937536,
+      "main_actor_max_timer_gap_ms" : 62.633667000000003,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 29,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 189.94245799999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.883624999999995,
+      "input_to_publish_ms" : 64.587917000000004,
+      "input_uptime" : 487081.88082154171,
+      "main_actor_max_timer_gap_ms" : 63.124208000000003,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 30,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 190.85145900000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 80.002459000000002,
+      "input_to_publish_ms" : 63.372999999999998,
+      "input_uptime" : 487082.39426225005,
+      "main_actor_max_timer_gap_ms" : 61.9375,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 31,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 189.21041700000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 79.534791999999996,
+      "input_to_publish_ms" : 63.365209,
+      "input_uptime" : 487082.9075282914,
+      "main_actor_max_timer_gap_ms" : 61.898499999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 32,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 189.10558399999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 79.6785,
+      "input_to_publish_ms" : 63.529667000000003,
+      "input_uptime" : 487083.42152312503,
+      "main_actor_max_timer_gap_ms" : 62.052540999999998,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 33,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 189.51824999999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.536833000000001,
+      "input_to_publish_ms" : 64.169916000000001,
+      "input_uptime" : 487083.93424395903,
+      "main_actor_max_timer_gap_ms" : 62.725999999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 34,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 188.55616699999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 79.954499999999996,
+      "input_to_publish_ms" : 63.157375000000002,
+      "input_uptime" : 487084.44732616673,
+      "main_actor_max_timer_gap_ms" : 61.699249999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 35,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 189.53812500000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 80.735124999999996,
+      "input_to_publish_ms" : 64.262332999999998,
+      "input_uptime" : 487084.95916175004,
+      "main_actor_max_timer_gap_ms" : 62.804583999999998,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 36,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 188.36366699999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 80.332083999999995,
+      "input_to_publish_ms" : 63.273291999999998,
+      "input_uptime" : 487085.46892112464,
+      "main_actor_max_timer_gap_ms" : 61.796374999999998,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 37,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 189.38691700000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 80.302958000000004,
+      "input_to_publish_ms" : 63.597791999999998,
+      "input_uptime" : 487085.98044316703,
+      "main_actor_max_timer_gap_ms" : 62.163291000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 38,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 189.34999999999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 79.796000000000006,
+      "input_to_publish_ms" : 63.379874999999998,
+      "input_uptime" : 487086.49399020866,
+      "main_actor_max_timer_gap_ms" : 61.903584000000002,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 39,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 190.412375,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.721000000000004,
+      "input_to_publish_ms" : 65.067333000000005,
+      "input_uptime" : 487087.0051172917,
+      "main_actor_max_timer_gap_ms" : 63.597000000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 40,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 189.13637499999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 80.668999999999997,
+      "input_to_publish_ms" : 63.493290999999999,
+      "input_uptime" : 487087.51783762535,
+      "main_actor_max_timer_gap_ms" : 62.057749999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 41,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 189.50479200000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.546082999999996,
+      "input_to_publish_ms" : 64.078083000000007,
+      "input_uptime" : 487088.03419341706,
+      "main_actor_max_timer_gap_ms" : 62.597042000000002,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 42,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 190.9265,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 82.891582999999997,
+      "input_to_publish_ms" : 65.772165999999999,
+      "input_uptime" : 487088.54562650033,
+      "main_actor_max_timer_gap_ms" : 64.325249999999997,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 43,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 190.57262499999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 79.989583999999994,
+      "input_to_publish_ms" : 63.802750000000003,
+      "input_uptime" : 487089.05873649934,
+      "main_actor_max_timer_gap_ms" : 62.336416999999997,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 44,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 188.96545800000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 80.475583,
+      "input_to_publish_ms" : 63.533875000000002,
+      "input_uptime" : 487089.57053429139,
+      "main_actor_max_timer_gap_ms" : 62.019291000000003,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 45,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 190.38933299999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.337208000000004,
+      "input_to_publish_ms" : 65.011166000000003,
+      "input_uptime" : 487090.08285620908,
+      "main_actor_max_timer_gap_ms" : 63.555500000000002,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 46,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 189.21575000000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 80.553042000000005,
+      "input_to_publish_ms" : 63.634208000000001,
+      "input_uptime" : 487090.59749683371,
+      "main_actor_max_timer_gap_ms" : 62.173333,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 47,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 188.786,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 79.563374999999994,
+      "input_to_publish_ms" : 63.163874999999997,
+      "input_uptime" : 487091.10969612503,
+      "main_actor_max_timer_gap_ms" : 61.730499999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 48,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 191.263125,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 82.516834000000003,
+      "input_to_publish_ms" : 65.660499999999999,
+      "input_uptime" : 487091.62316241668,
+      "main_actor_max_timer_gap_ms" : 64.123125000000002,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 49,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 189.95991699999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 80.375416999999999,
+      "input_to_publish_ms" : 64.001917000000006,
+      "input_uptime" : 487092.13822629105,
+      "main_actor_max_timer_gap_ms" : 62.517874999999997,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 50,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 189.545875,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.420167000000006,
+      "input_to_publish_ms" : 64.189499999999995,
+      "input_uptime" : 487092.6523611247,
+      "main_actor_max_timer_gap_ms" : 62.693041000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 51,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 190.62404100000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.853166000000002,
+      "input_to_publish_ms" : 65.018790999999993,
+      "input_uptime" : 487093.16683158372,
+      "main_actor_max_timer_gap_ms" : 63.531874999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 52,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 193.00187500000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 84.014916999999997,
+      "input_to_publish_ms" : 66.258332999999993,
+      "input_uptime" : 487093.662395083,
+      "main_actor_max_timer_gap_ms" : 64.714207999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 53,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 190.470583,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 82.871207999999996,
+      "input_to_publish_ms" : 65.318332999999996,
+      "input_uptime" : 487094.18233245902,
+      "main_actor_max_timer_gap_ms" : 63.791708999999997,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 54,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 189.406375,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.401167000000001,
+      "input_to_publish_ms" : 64.153041999999999,
+      "input_uptime" : 487094.69855449937,
+      "main_actor_max_timer_gap_ms" : 62.688082999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 55,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 188.90787499999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 79.514042000000003,
+      "input_to_publish_ms" : 63.056542,
+      "input_uptime" : 487095.20850687503,
+      "main_actor_max_timer_gap_ms" : 61.610917000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 56,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 189.24770799999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 80.228791999999999,
+      "input_to_publish_ms" : 63.774625,
+      "input_uptime" : 487095.7203047087,
+      "main_actor_max_timer_gap_ms" : 62.318708999999998,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 57,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 190.43145799999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 82.240875000000003,
+      "input_to_publish_ms" : 65.028958000000003,
+      "input_uptime" : 487096.23410137539,
+      "main_actor_max_timer_gap_ms" : 63.485708000000002,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 58,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 190.732958,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 82.156208000000007,
+      "input_to_publish_ms" : 65.049290999999997,
+      "input_uptime" : 487096.75065312535,
+      "main_actor_max_timer_gap_ms" : 63.572125,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 59,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 187.57666599999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 78.521957999999998,
+      "input_to_publish_ms" : 61.935124999999999,
+      "input_uptime" : 487097.25456683402,
+      "main_actor_max_timer_gap_ms" : 60.53425,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 60,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 191.53225,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 82.445625000000007,
+      "input_to_publish_ms" : 65.488583000000006,
+      "input_uptime" : 487097.76559758408,
+      "main_actor_max_timer_gap_ms" : 63.939959000000002,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 61,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 192.15704199999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 82.612083999999996,
+      "input_to_publish_ms" : 65.717708999999999,
+      "input_uptime" : 487098.28128987504,
+      "main_actor_max_timer_gap_ms" : 64.187875000000005,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 62,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 189.82304199999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 80.736125000000001,
+      "input_to_publish_ms" : 63.986666999999997,
+      "input_uptime" : 487098.79584675003,
+      "main_actor_max_timer_gap_ms" : 62.499209,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 63,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 189.477666,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 80.290415999999993,
+      "input_to_publish_ms" : 63.536541,
+      "input_uptime" : 487099.31791962503,
+      "main_actor_max_timer_gap_ms" : 62.102791000000003,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 64,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 221.595125,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 128.32675,
+      "input_to_publish_ms" : 88.233333999999999,
+      "input_uptime" : 487099.84087587503,
+      "main_actor_max_timer_gap_ms" : 85.789124999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 65,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 191.58674999999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 82.159833000000006,
+      "input_to_publish_ms" : 64.763874999999999,
+      "input_uptime" : 487100.41547179141,
+      "main_actor_max_timer_gap_ms" : 63.220500000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 66,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 190.42224999999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.607249999999993,
+      "input_to_publish_ms" : 64.827832999999998,
+      "input_uptime" : 487100.93038891634,
+      "main_actor_max_timer_gap_ms" : 63.237917000000003,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 67,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 187.00929199999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 78.831041999999997,
+      "input_to_publish_ms" : 61.522458999999998,
+      "input_uptime" : 487101.44176929136,
+      "main_actor_max_timer_gap_ms" : 60.005249999999997,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 68,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 191.00616600000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 82.343874999999997,
+      "input_to_publish_ms" : 65.276291000000001,
+      "input_uptime" : 487101.95550695836,
+      "main_actor_max_timer_gap_ms" : 63.683332999999998,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 69,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 189.38858300000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 80.903582999999998,
+      "input_to_publish_ms" : 64.072291000000007,
+      "input_uptime" : 487102.47054258373,
+      "main_actor_max_timer_gap_ms" : 62.500667,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 70,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 219.00575000000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 112.13654200000001,
+      "input_to_publish_ms" : 93.626166999999995,
+      "input_uptime" : 487103.03021425003,
+      "main_actor_max_timer_gap_ms" : 91.137332999999998,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 71,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 193.05625000000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 83.025582999999997,
+      "input_to_publish_ms" : 66.115542000000005,
+      "input_uptime" : 487103.57668941637,
+      "main_actor_max_timer_gap_ms" : 64.546333000000004,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 72,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 191.12537499999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 82.683458000000002,
+      "input_to_publish_ms" : 65.637874999999994,
+      "input_uptime" : 487104.09180604166,
+      "main_actor_max_timer_gap_ms" : 64.179584000000006,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 73,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 188.82112499999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 79.216832999999994,
+      "input_to_publish_ms" : 62.831166000000003,
+      "input_uptime" : 487104.60789562564,
+      "main_actor_max_timer_gap_ms" : 61.304124999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 74,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 190.58099999999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 82.508667000000003,
+      "input_to_publish_ms" : 65.425334000000007,
+      "input_uptime" : 487105.12277649937,
+      "main_actor_max_timer_gap_ms" : 63.854374999999997,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 75,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 190.64345800000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.099917000000005,
+      "input_to_publish_ms" : 64.621042000000003,
+      "input_uptime" : 487105.63771641703,
+      "main_actor_max_timer_gap_ms" : 63.053624999999997,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 76,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 191.84975,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 78.261208999999994,
+      "input_to_publish_ms" : 61.180124999999997,
+      "input_uptime" : 487106.15283062437,
+      "main_actor_max_timer_gap_ms" : 59.708582999999997,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 77,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 191.78812500000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 83.823415999999995,
+      "input_to_publish_ms" : 66.609999999999999,
+      "input_uptime" : 487106.72735133406,
+      "main_actor_max_timer_gap_ms" : 65.012916000000004,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 78,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 193.474583,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 85.260249999999999,
+      "input_to_publish_ms" : 67.921082999999996,
+      "input_uptime" : 487107.2576477917,
+      "main_actor_max_timer_gap_ms" : 66.323625000000007,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 79,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 191.408333,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 82.186541000000005,
+      "input_to_publish_ms" : 65.503124999999997,
+      "input_uptime" : 487107.77111308335,
+      "main_actor_max_timer_gap_ms" : 63.929499999999997,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 80,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 190.066292,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 80.929958999999997,
+      "input_to_publish_ms" : 64.133250000000004,
+      "input_uptime" : 487108.29052154173,
+      "main_actor_max_timer_gap_ms" : 62.586291000000003,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 81,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 191.341542,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 82.613208999999998,
+      "input_to_publish_ms" : 65.867791999999994,
+      "input_uptime" : 487108.80805025005,
+      "main_actor_max_timer_gap_ms" : 64.280625000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 82,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 190.391458,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 80.047499999999999,
+      "input_to_publish_ms" : 63.320708000000003,
+      "input_uptime" : 487109.32035666669,
+      "main_actor_max_timer_gap_ms" : 61.867542,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 83,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 189.14220900000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 79.463875000000002,
+      "input_to_publish_ms" : 63.253542000000003,
+      "input_uptime" : 487109.83936549968,
+      "main_actor_max_timer_gap_ms" : 61.763165999999998,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 84,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 190.231583,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 81.838082999999997,
+      "input_to_publish_ms" : 65.051165999999995,
+      "input_uptime" : 487110.37224633404,
+      "main_actor_max_timer_gap_ms" : 63.454084000000002,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 85,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 191.60400000000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 82.423709000000002,
+      "input_to_publish_ms" : 65.364458999999997,
+      "input_uptime" : 487110.88254024938,
+      "main_actor_max_timer_gap_ms" : 63.822375000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 86,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 190.35066699999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 82.3155,
+      "input_to_publish_ms" : 65.016583999999995,
+      "input_uptime" : 487111.39913420769,
+      "main_actor_max_timer_gap_ms" : 63.405833999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 87,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 191.83775,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 82.591125000000005,
+      "input_to_publish_ms" : 65.402000000000001,
+      "input_uptime" : 487111.91463549971,
+      "main_actor_max_timer_gap_ms" : 63.837541999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 88,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 198.09133299999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 90.511082999999999,
+      "input_to_publish_ms" : 72.047957999999994,
+      "input_uptime" : 487112.42859187571,
+      "main_actor_max_timer_gap_ms" : 70.434250000000006,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 89,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 189.48925,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 80.107749999999996,
+      "input_to_publish_ms" : 63.562708999999998,
+      "input_uptime" : 487112.95657812437,
+      "main_actor_max_timer_gap_ms" : 61.982374999999998,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 90,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 188.777041,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 80.465040999999999,
+      "input_to_publish_ms" : 62.777999999999999,
+      "input_uptime" : 487113.47097733401,
+      "main_actor_max_timer_gap_ms" : 61.253625,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 91,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 187.338167,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 82.735709,
+      "input_to_publish_ms" : 62.021374999999999,
+      "input_uptime" : 487113.98668441607,
+      "main_actor_max_timer_gap_ms" : 60.372791999999997,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 92,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 186.49579199999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 76.804249999999996,
+      "input_to_publish_ms" : 60.957334000000003,
+      "input_uptime" : 487114.48367104138,
+      "main_actor_max_timer_gap_ms" : 59.528916000000002,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 93,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 188.98570900000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 80.895708999999997,
+      "input_to_publish_ms" : 63.772834000000003,
+      "input_uptime" : 487114.98234541604,
+      "main_actor_max_timer_gap_ms" : 62.28275,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 94,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 185.36895799999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 78.773583000000002,
+      "input_to_publish_ms" : 59.690750000000001,
+      "input_uptime" : 487115.47556195804,
+      "main_actor_max_timer_gap_ms" : 58.296875,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 95,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 186.450917,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 77.570166999999998,
+      "input_to_publish_ms" : 61.307291999999997,
+      "input_uptime" : 487115.96697991667,
+      "main_actor_max_timer_gap_ms" : 59.931874999999998,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 96,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 185.29766699999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 75.657459000000003,
+      "input_to_publish_ms" : 60.055334000000002,
+      "input_uptime" : 487116.46142079134,
+      "main_actor_max_timer_gap_ms" : 58.664042000000002,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 97,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 188.957458,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 82.977333000000002,
+      "input_to_publish_ms" : 63.573082999999997,
+      "input_uptime" : 487116.96228904166,
+      "main_actor_max_timer_gap_ms" : 61.476500000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 98,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 185.29216700000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 76.051000000000002,
+      "input_to_publish_ms" : 60.096499999999999,
+      "input_uptime" : 487117.45535016706,
+      "main_actor_max_timer_gap_ms" : 58.701542000000003,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 99,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 137.28399999999999,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 72.030000000000001,
+      "input_to_publish_ms" : 59.624208000000003,
+      "input_uptime" : 487122.2893734164,
+      "main_actor_max_timer_gap_ms" : 34.142583999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 0,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 97.927791999999997,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 43.145167000000001,
+      "input_to_publish_ms" : 33.250208999999998,
+      "input_uptime" : 487122.46998050006,
+      "main_actor_max_timer_gap_ms" : 10.507375,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 1,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 97.397958000000003,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 43.037624999999998,
+      "input_to_publish_ms" : 33.412292000000001,
+      "input_uptime" : 487122.60843891703,
+      "main_actor_max_timer_gap_ms" : 10.581416000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 2,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 98.241667000000007,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 43.612541999999998,
+      "input_to_publish_ms" : 33.733666999999997,
+      "input_uptime" : 487122.74760466674,
+      "main_actor_max_timer_gap_ms" : 10.762499999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 3,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 98.263999999999996,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 44.422624999999996,
+      "input_to_publish_ms" : 33.928083999999998,
+      "input_uptime" : 487122.88594550005,
+      "main_actor_max_timer_gap_ms" : 10.756500000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 4,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 100.179125,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 45.690790999999997,
+      "input_to_publish_ms" : 35.183957999999997,
+      "input_uptime" : 487123.0238776257,
+      "main_actor_max_timer_gap_ms" : 10.964167,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 5,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 98.826041000000004,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 44.776166000000003,
+      "input_to_publish_ms" : 34.403624999999998,
+      "input_uptime" : 487123.16595583374,
+      "main_actor_max_timer_gap_ms" : 11.09975,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 6,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 102.928,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 48.340707999999999,
+      "input_to_publish_ms" : 36.921750000000003,
+      "input_uptime" : 487123.30799416732,
+      "main_actor_max_timer_gap_ms" : 11.801625,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 7,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 108.14916599999999,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 48.003041000000003,
+      "input_to_publish_ms" : 36.573,
+      "input_uptime" : 487123.45617658336,
+      "main_actor_max_timer_gap_ms" : 12.265416999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 8,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 101.881208,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 47.743875000000003,
+      "input_to_publish_ms" : 36.765875000000001,
+      "input_uptime" : 487123.60954883334,
+      "main_actor_max_timer_gap_ms" : 12.511125,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 9,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 101.076125,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 48.265791999999998,
+      "input_to_publish_ms" : 35.869208,
+      "input_uptime" : 487123.75370941672,
+      "main_actor_max_timer_gap_ms" : 11.93,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 10,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 101.043875,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 46.817625,
+      "input_to_publish_ms" : 35.993375,
+      "input_uptime" : 487123.91334645834,
+      "main_actor_max_timer_gap_ms" : 12.255834,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 11,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 107.287333,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 45.589750000000002,
+      "input_to_publish_ms" : 35.451542000000003,
+      "input_uptime" : 487124.05711408303,
+      "main_actor_max_timer_gap_ms" : 11.438917,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 12,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 99.352542,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 44.523625000000003,
+      "input_to_publish_ms" : 35.034083000000003,
+      "input_uptime" : 487124.21024704137,
+      "main_actor_max_timer_gap_ms" : 11.377416999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 13,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 101.754375,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 45.268416999999999,
+      "input_to_publish_ms" : 35.355958999999999,
+      "input_uptime" : 487124.35149525001,
+      "main_actor_max_timer_gap_ms" : 11.572416,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 14,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 101.41820800000001,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 45.898166000000003,
+      "input_to_publish_ms" : 35.087625000000003,
+      "input_uptime" : 487124.49537383369,
+      "main_actor_max_timer_gap_ms" : 11.424167000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 15,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 99.199833999999996,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 43.915917,
+      "input_to_publish_ms" : 33.739542,
+      "input_uptime" : 487124.63850187435,
+      "main_actor_max_timer_gap_ms" : 10.4345,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 16,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 102.702208,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 48.706541000000001,
+      "input_to_publish_ms" : 39.257415999999999,
+      "input_uptime" : 487124.78579950071,
+      "main_actor_max_timer_gap_ms" : 15.992792,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 17,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 96.781791999999996,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 42.402959000000003,
+      "input_to_publish_ms" : 33.064374999999998,
+      "input_uptime" : 487124.92833262437,
+      "main_actor_max_timer_gap_ms" : 10.332000000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 18,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 101.21270800000001,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 47.659999999999997,
+      "input_to_publish_ms" : 36.225667000000001,
+      "input_uptime" : 487125.06602804206,
+      "main_actor_max_timer_gap_ms" : 11.837375,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 19,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 106.408125,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 48.777250000000002,
+      "input_to_publish_ms" : 37.691583000000001,
+      "input_uptime" : 487125.21096570836,
+      "main_actor_max_timer_gap_ms" : 12.681832999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 20,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 105.385958,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 45.385415999999999,
+      "input_to_publish_ms" : 35.152166000000001,
+      "input_uptime" : 487125.36152083339,
+      "main_actor_max_timer_gap_ms" : 11.865875000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 21,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 100.668542,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 45.934958999999999,
+      "input_to_publish_ms" : 36.256583999999997,
+      "input_uptime" : 487125.50923079171,
+      "main_actor_max_timer_gap_ms" : 12.643416999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 22,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 99.991665999999995,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 44.033665999999997,
+      "input_to_publish_ms" : 34.027250000000002,
+      "input_uptime" : 487125.65110108402,
+      "main_actor_max_timer_gap_ms" : 11.22875,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 23,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 98.895708999999997,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 43.341959000000003,
+      "input_to_publish_ms" : 33.604292000000001,
+      "input_uptime" : 487125.79177424934,
+      "main_actor_max_timer_gap_ms" : 10.815334,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 24,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 98.623999999999995,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 44.369542000000003,
+      "input_to_publish_ms" : 33.986542,
+      "input_uptime" : 487125.93061054201,
+      "main_actor_max_timer_gap_ms" : 11.023250000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 25,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 98.637,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 44.623291000000002,
+      "input_to_publish_ms" : 34.528291000000003,
+      "input_uptime" : 487126.07064458402,
+      "main_actor_max_timer_gap_ms" : 11.400959,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 26,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 97.679333,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 43.236958000000001,
+      "input_to_publish_ms" : 33.704250000000002,
+      "input_uptime" : 487126.20881033404,
+      "main_actor_max_timer_gap_ms" : 10.676709000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 27,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 99.046875,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 44.228250000000003,
+      "input_to_publish_ms" : 34.315416999999997,
+      "input_uptime" : 487126.34749425005,
+      "main_actor_max_timer_gap_ms" : 11.100542000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 28,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 98.535332999999994,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 44.4285,
+      "input_to_publish_ms" : 34.470041999999999,
+      "input_uptime" : 487126.48743279139,
+      "main_actor_max_timer_gap_ms" : 10.717499999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 29,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 98.623374999999996,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 43.338500000000003,
+      "input_to_publish_ms" : 33.438749999999999,
+      "input_uptime" : 487126.62661141704,
+      "main_actor_max_timer_gap_ms" : 10.514416000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 30,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 102.81204099999999,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 48.300291000000001,
+      "input_to_publish_ms" : 37.958291000000003,
+      "input_uptime" : 487126.76928958338,
+      "main_actor_max_timer_gap_ms" : 11.70975,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 31,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 99.3215,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 45.852041,
+      "input_to_publish_ms" : 35.261249999999997,
+      "input_uptime" : 487126.91310620873,
+      "main_actor_max_timer_gap_ms" : 10.7605,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 32,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 97.648207999999997,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 43.301665999999997,
+      "input_to_publish_ms" : 33.347250000000003,
+      "input_uptime" : 487127.05409245868,
+      "main_actor_max_timer_gap_ms" : 10.268666,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 33,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 96.845583000000005,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 42.833458,
+      "input_to_publish_ms" : 33.042957999999999,
+      "input_uptime" : 487127.19132929208,
+      "main_actor_max_timer_gap_ms" : 10.277583,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 34,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 97.498791999999995,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 43.365541999999998,
+      "input_to_publish_ms" : 33.398584,
+      "input_uptime" : 487127.32860666636,
+      "main_actor_max_timer_gap_ms" : 10.790708,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 35,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 99.435749999999999,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 44.085875000000001,
+      "input_to_publish_ms" : 34.268541999999997,
+      "input_uptime" : 487127.46698195802,
+      "main_actor_max_timer_gap_ms" : 11.246209,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 36,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 98.440291000000002,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 44.510415999999999,
+      "input_to_publish_ms" : 34.254165999999998,
+      "input_uptime" : 487127.608224125,
+      "main_actor_max_timer_gap_ms" : 10.897833,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 37,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 98.804333,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 45.358457999999999,
+      "input_to_publish_ms" : 34.449165999999998,
+      "input_uptime" : 487127.74657295865,
+      "main_actor_max_timer_gap_ms" : 10.909375000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 38,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 104.1835,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 43.793624999999999,
+      "input_to_publish_ms" : 33.901000000000003,
+      "input_uptime" : 487127.88640991703,
+      "main_actor_max_timer_gap_ms" : 10.791582999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 39,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 98.014416999999995,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 43.486291999999999,
+      "input_to_publish_ms" : 33.535167000000001,
+      "input_uptime" : 487128.03190241632,
+      "main_actor_max_timer_gap_ms" : 10.470666,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 40,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 98.614999999999995,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 44.603209,
+      "input_to_publish_ms" : 34.462667000000003,
+      "input_uptime" : 487128.17227762501,
+      "main_actor_max_timer_gap_ms" : 10.307167,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 41,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 98.640583000000007,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 44.878500000000003,
+      "input_to_publish_ms" : 34.642207999999997,
+      "input_uptime" : 487128.31397404138,
+      "main_actor_max_timer_gap_ms" : 11.628208000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 42,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 98.469166000000001,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 44.495125000000002,
+      "input_to_publish_ms" : 34.294083000000001,
+      "input_uptime" : 487128.45358708373,
+      "main_actor_max_timer_gap_ms" : 11.137957999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 43,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 104.080084,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 43.779249999999998,
+      "input_to_publish_ms" : 33.706291999999998,
+      "input_uptime" : 487128.59333737439,
+      "main_actor_max_timer_gap_ms" : 10.698916000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 44,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 97.887083000000004,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 43.623624999999997,
+      "input_to_publish_ms" : 33.518707999999997,
+      "input_uptime" : 487128.73724241671,
+      "main_actor_max_timer_gap_ms" : 10.471291000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 45,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 97.745208000000005,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 43.342874999999999,
+      "input_to_publish_ms" : 33.391125000000002,
+      "input_uptime" : 487128.8753050837,
+      "main_actor_max_timer_gap_ms" : 10.350542000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 46,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 98.207875000000001,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 45.648291,
+      "input_to_publish_ms" : 33.448416000000002,
+      "input_uptime" : 487129.01375762571,
+      "main_actor_max_timer_gap_ms" : 10.879166,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 47,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 97.964292,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 44.053375000000003,
+      "input_to_publish_ms" : 33.736832999999997,
+      "input_uptime" : 487129.15216329205,
+      "main_actor_max_timer_gap_ms" : 11.090208000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 48,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 98.575665999999998,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 43.581249999999997,
+      "input_to_publish_ms" : 33.815916000000001,
+      "input_uptime" : 487129.2904073337,
+      "main_actor_max_timer_gap_ms" : 10.721417000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 49,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 97.803459000000004,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 43.728499999999997,
+      "input_to_publish_ms" : 33.529041999999997,
+      "input_uptime" : 487129.42993924971,
+      "main_actor_max_timer_gap_ms" : 10.4085,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 50,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 98.229875000000007,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 43.074249999999999,
+      "input_to_publish_ms" : 33.368333,
+      "input_uptime" : 487129.57038483373,
+      "main_actor_max_timer_gap_ms" : 10.529833,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 51,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 100.167292,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 44.869709,
+      "input_to_publish_ms" : 34.676000000000002,
+      "input_uptime" : 487129.70926437469,
+      "main_actor_max_timer_gap_ms" : 11.184625,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 52,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 99.297334000000006,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 44.997624999999999,
+      "input_to_publish_ms" : 34.646250000000002,
+      "input_uptime" : 487129.85175591666,
+      "main_actor_max_timer_gap_ms" : 11.195416,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 53,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 103.584958,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 43.346249999999998,
+      "input_to_publish_ms" : 33.599541000000002,
+      "input_uptime" : 487129.99319962505,
+      "main_actor_max_timer_gap_ms" : 10.719666999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 54,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 97.920709000000002,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 43.756583999999997,
+      "input_to_publish_ms" : 33.941541999999998,
+      "input_uptime" : 487130.13700262475,
+      "main_actor_max_timer_gap_ms" : 10.200333000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 55,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 98.292625000000001,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 43.368875000000003,
+      "input_to_publish_ms" : 33.487290999999999,
+      "input_uptime" : 487130.27660375065,
+      "main_actor_max_timer_gap_ms" : 10.783666,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 56,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 97.735375000000005,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 44.012416999999999,
+      "input_to_publish_ms" : 33.5535,
+      "input_uptime" : 487130.4149442917,
+      "main_actor_max_timer_gap_ms" : 10.533291999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 57,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 104.936542,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 45.054333,
+      "input_to_publish_ms" : 35.114041999999998,
+      "input_uptime" : 487130.55502745835,
+      "main_actor_max_timer_gap_ms" : 11.828916,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 58,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 104.55225,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 44.637082999999997,
+      "input_to_publish_ms" : 34.655458000000003,
+      "input_uptime" : 487130.69964683306,
+      "main_actor_max_timer_gap_ms" : 11.057874999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 59,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 97.732500000000002,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 43.911290999999999,
+      "input_to_publish_ms" : 33.773583000000002,
+      "input_uptime" : 487130.84476345871,
+      "main_actor_max_timer_gap_ms" : 11.118416,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 60,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 98.472791999999998,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 43.306375000000003,
+      "input_to_publish_ms" : 33.340083,
+      "input_uptime" : 487130.98464045866,
+      "main_actor_max_timer_gap_ms" : 10.545583000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 61,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 97.699207999999999,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 43.884917000000002,
+      "input_to_publish_ms" : 33.758541999999998,
+      "input_uptime" : 487131.12327916635,
+      "main_actor_max_timer_gap_ms" : 10.683208,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 62,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 97.507541000000003,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 45.165666000000002,
+      "input_to_publish_ms" : 33.168750000000003,
+      "input_uptime" : 487131.26176900032,
+      "main_actor_max_timer_gap_ms" : 10.707541000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 63,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 98.664541,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 44.951290999999998,
+      "input_to_publish_ms" : 34.678375000000003,
+      "input_uptime" : 487131.40027437505,
+      "main_actor_max_timer_gap_ms" : 11.432333,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 64,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 99.314582999999999,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 44.813915999999999,
+      "input_to_publish_ms" : 34.665125000000003,
+      "input_uptime" : 487131.54018745874,
+      "main_actor_max_timer_gap_ms" : 10.25925,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 65,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 98.620125000000002,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 44.547041,
+      "input_to_publish_ms" : 34.347707999999997,
+      "input_uptime" : 487131.68199483369,
+      "main_actor_max_timer_gap_ms" : 11.197125,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 66,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 98.777167000000006,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 44.396374999999999,
+      "input_to_publish_ms" : 34.536999999999999,
+      "input_uptime" : 487131.82368295838,
+      "main_actor_max_timer_gap_ms" : 11.299916,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 67,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 99.728375,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 43.753749999999997,
+      "input_to_publish_ms" : 33.868208000000003,
+      "input_uptime" : 487131.96344783338,
+      "main_actor_max_timer_gap_ms" : 10.853458,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 68,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 97.261125000000007,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 43.240042000000003,
+      "input_to_publish_ms" : 33.409208,
+      "input_uptime" : 487132.1044966667,
+      "main_actor_max_timer_gap_ms" : 10.469334,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 69,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 97.569000000000003,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 43.350084000000003,
+      "input_to_publish_ms" : 33.581916999999997,
+      "input_uptime" : 487132.24188624939,
+      "main_actor_max_timer_gap_ms" : 10.758082999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 70,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 98.172332999999995,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 44.146332999999998,
+      "input_to_publish_ms" : 33.841915999999998,
+      "input_uptime" : 487132.3821777507,
+      "main_actor_max_timer_gap_ms" : 11.022625,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 71,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 97.414458999999994,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 42.820833999999998,
+      "input_to_publish_ms" : 33.285083999999998,
+      "input_uptime" : 487132.52161374938,
+      "main_actor_max_timer_gap_ms" : 10.306125,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 72,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 97.611709000000005,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 43.496167,
+      "input_to_publish_ms" : 33.532167000000001,
+      "input_uptime" : 487132.65970637469,
+      "main_actor_max_timer_gap_ms" : 10.546208,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 73,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 102.644958,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 48.340707999999999,
+      "input_to_publish_ms" : 38.191457999999997,
+      "input_uptime" : 487132.79779600067,
+      "main_actor_max_timer_gap_ms" : 13.755667000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 74,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 98.098124999999996,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 44.493791999999999,
+      "input_to_publish_ms" : 34.392207999999997,
+      "input_uptime" : 487132.94198716636,
+      "main_actor_max_timer_gap_ms" : 10.804957999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 75,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 99.249125000000006,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 44.769750000000002,
+      "input_to_publish_ms" : 34.720374999999997,
+      "input_uptime" : 487133.08108058333,
+      "main_actor_max_timer_gap_ms" : 11.362083,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 76,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 97.693040999999994,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 43.673250000000003,
+      "input_to_publish_ms" : 33.927916000000003,
+      "input_uptime" : 487133.22157733404,
+      "main_actor_max_timer_gap_ms" : 10.727375,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 77,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 97.128,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 42.456167000000001,
+      "input_to_publish_ms" : 32.949792000000002,
+      "input_uptime" : 487133.35855912499,
+      "main_actor_max_timer_gap_ms" : 10.042624999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 78,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 97.545625000000001,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 41.772708999999999,
+      "input_to_publish_ms" : 32.356833999999999,
+      "input_uptime" : 487133.49500412471,
+      "main_actor_max_timer_gap_ms" : 9.8852499999999992,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 79,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 97.672083000000001,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 44.073582999999999,
+      "input_to_publish_ms" : 34.130583000000001,
+      "input_uptime" : 487133.63429250004,
+      "main_actor_max_timer_gap_ms" : 11.166207999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 80,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 97.218292000000005,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 43.183917000000001,
+      "input_to_publish_ms" : 33.431792000000002,
+      "input_uptime" : 487133.77398962504,
+      "main_actor_max_timer_gap_ms" : 10.224125000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 81,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 98.566083000000006,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 44.576292000000002,
+      "input_to_publish_ms" : 34.780166999999999,
+      "input_uptime" : 487133.91070441634,
+      "main_actor_max_timer_gap_ms" : 11.858833000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 82,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 97.316666999999995,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 44.140166999999998,
+      "input_to_publish_ms" : 32.758459000000002,
+      "input_uptime" : 487134.04783012439,
+      "main_actor_max_timer_gap_ms" : 10.113709,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 83,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 100.181792,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 44.5015,
+      "input_to_publish_ms" : 34.463000000000001,
+      "input_uptime" : 487134.18741866673,
+      "main_actor_max_timer_gap_ms" : 11.146583,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 84,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 98.530292000000003,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 44.620207999999998,
+      "input_to_publish_ms" : 34.113582999999998,
+      "input_uptime" : 487134.33015962469,
+      "main_actor_max_timer_gap_ms" : 11.082791,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 85,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 97.267415999999997,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 43.690750000000001,
+      "input_to_publish_ms" : 33.378250000000001,
+      "input_uptime" : 487134.46980350005,
+      "main_actor_max_timer_gap_ms" : 10.659791999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 86,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 97.623958999999999,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 43.281292000000001,
+      "input_to_publish_ms" : 33.184041999999998,
+      "input_uptime" : 487134.60801837436,
+      "main_actor_max_timer_gap_ms" : 10.030291999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 87,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 104.300708,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 43.564708000000003,
+      "input_to_publish_ms" : 33.431249999999999,
+      "input_uptime" : 487134.74636808306,
+      "main_actor_max_timer_gap_ms" : 10.586166,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 88,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 97.237458000000004,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 42.903832999999999,
+      "input_to_publish_ms" : 33.087166000000003,
+      "input_uptime" : 487134.89042008336,
+      "main_actor_max_timer_gap_ms" : 10.398458,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 89,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 99.634625,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 45.802999999999997,
+      "input_to_publish_ms" : 35.419083000000001,
+      "input_uptime" : 487135.02828316635,
+      "main_actor_max_timer_gap_ms" : 11.189916999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 90,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 97.687208999999996,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 43.987166999999999,
+      "input_to_publish_ms" : 33.587625000000003,
+      "input_uptime" : 487135.17508375004,
+      "main_actor_max_timer_gap_ms" : 10.723917,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 91,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 104.21670899999999,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 44.058959000000002,
+      "input_to_publish_ms" : 33.976334000000001,
+      "input_uptime" : 487135.31310937472,
+      "main_actor_max_timer_gap_ms" : 11.182124999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 92,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 97.471000000000004,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 43.162708000000002,
+      "input_to_publish_ms" : 33.429291999999997,
+      "input_uptime" : 487135.45784566668,
+      "main_actor_max_timer_gap_ms" : 10.575917,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 93,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 97.891917000000007,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 43.571834000000003,
+      "input_to_publish_ms" : 33.585667000000001,
+      "input_uptime" : 487135.59557837434,
+      "main_actor_max_timer_gap_ms" : 10.767875,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 94,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 99.243207999999996,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 44.850499999999997,
+      "input_to_publish_ms" : 34.834000000000003,
+      "input_uptime" : 487135.73450758337,
+      "main_actor_max_timer_gap_ms" : 10.893666,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 95,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 99.272333000000003,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 45.370874999999998,
+      "input_to_publish_ms" : 34.401083,
+      "input_uptime" : 487135.87613408332,
+      "main_actor_max_timer_gap_ms" : 10.628667,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 96,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 103.79774999999999,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 43.882624999999997,
+      "input_to_publish_ms" : 33.933999999999997,
+      "input_uptime" : 487136.01622245868,
+      "main_actor_max_timer_gap_ms" : 10.933334,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 97,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 97.955416999999997,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 43.361417000000003,
+      "input_to_publish_ms" : 33.892667000000003,
+      "input_uptime" : 487136.16047499969,
+      "main_actor_max_timer_gap_ms" : 11.163167,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 98,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 104.301541,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 44.839333000000003,
+      "input_to_publish_ms" : 34.614083000000001,
+      "input_uptime" : 487136.29901245865,
+      "main_actor_max_timer_gap_ms" : 10.731166999999999,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 99,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    }
+  ],
+  "scenario_scope" : "fts-cache",
+  "scope" : "Actual AskComposer, native NSTextView commit, production mixed\/f sessions and service, real model and permission helper. Drawing forces layout\/display and checks rendered accessibility; it is not a GPU presentation fence.",
+  "warm_samples_per_scenario" : 100
+}

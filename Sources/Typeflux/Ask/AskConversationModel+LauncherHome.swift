@@ -9,8 +9,25 @@ extension AskConversationModel {
     func launcherHomeContext(now: Date = Date()) -> AskLauncherHome.Context {
         let draft = launcherDraft
         let language = AppLocalization.shared.language
+        // One consistent read per capture plugin within this presentation snapshot. Repeated
+        // keyword labels must not issue synchronous TCC IPC for every synonym and mode.
+        // The next snapshot and actual capture plan still perform fresh permission checks.
+        var permissions: [String: Bool] = [:]
+        func granted(_ id: String, read: @Sendable () -> Bool) -> Bool {
+            if let value = permissions[id] {
+                return value
+            }
+            let value = read(); permissions[id] = value; return value
+        }
         let keywords = launcherKeywords.filter(\.enabled).compactMap { keyword -> AskLauncherHome.KeywordChoice? in
-            guard let plugin = plugins.plugin(for: keyword) else { return nil }
+            guard var plugin = plugins.plugin(for: keyword) else { return nil }
+            if var capture = plugin as? AskScreenshotPlugin {
+                let value = granted(capture.id, read: capture.isPermissionGranted)
+                capture.isPermissionGranted = { value }; plugin = capture
+            } else if var capture = plugin as? AskScreenshotTextPlugin {
+                let value = granted(capture.id, read: capture.isPermissionGranted)
+                capture.isPermissionGranted = { value }; plugin = capture
+            }
             return .init(keyword: keyword, title: Self.chipTitle(plugin: plugin, keyword: keyword, language: language),
                          symbol: plugin.symbol)
         }
