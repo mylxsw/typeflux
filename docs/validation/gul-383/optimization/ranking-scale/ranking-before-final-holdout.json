@@ -1,0 +1,3209 @@
+{
+  "fixture" : "final-holdout",
+  "label" : "before",
+  "model_sha256" : "2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135",
+  "projector_sha256" : "c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f",
+  "rows" : [
+    {
+      "expected" : [
+        "final-en-00"
+      ],
+      "group" : "lexical",
+      "hits" : [
+        "final-en-00",
+        "final-audio-00",
+        "final-audio-07",
+        "final-en-07",
+        "final-zh-00"
+      ],
+      "id" : "final_lexical-00",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-en-00"
+      ],
+      "group" : "identifier_unicode",
+      "hits" : [
+        "final-en-01",
+        "final-en-00",
+        "final-en-05",
+        "final-en-03",
+        "final-en-23"
+      ],
+      "id" : "final_identifier_unicode-00",
+      "location_correct" : true,
+      "rank" : 2
+    },
+    {
+      "expected" : [
+        "final-zh-00"
+      ],
+      "group" : "chinese_short",
+      "hits" : [
+        "final-zh-00",
+        "final-zh-07",
+        "final-zh-08",
+        "final-zh-16",
+        "final-zh-01"
+      ],
+      "id" : "final_chinese_short-00",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-en-00"
+      ],
+      "group" : "cross_language",
+      "hits" : [
+        "final-zh-00",
+        "final-zh-07",
+        "final-zh-06",
+        "final-zh-15",
+        "final-zh-22"
+      ],
+      "id" : "final_cross_language-00",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "final-en-00"
+      ],
+      "group" : "semantic_paraphrase",
+      "hits" : [
+        "final-en-00",
+        "final-en-05",
+        "final-audio-00",
+        "final-zh-00",
+        "final-audio-07"
+      ],
+      "id" : "final_semantic_paraphrase-00",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-audio-00"
+      ],
+      "group" : "audio_semantic",
+      "hits" : [
+        "final-en-00",
+        "final-en-05",
+        "final-audio-00",
+        "final-zh-00",
+        "final-audio-07"
+      ],
+      "id" : "final_audio_semantic-00",
+      "location_correct" : true,
+      "rank" : 3
+    },
+    {
+      "expected" : [
+        "final-image-red-circle"
+      ],
+      "group" : "image_semantic",
+      "hits" : [
+        "final-en-15",
+        "final-image-red-circle",
+        "final-image-black-circle",
+        "final-image-green-circle",
+        "final-image-blue-circle"
+      ],
+      "id" : "final_image_semantic-00",
+      "location_correct" : true,
+      "rank" : 2
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+        "final-en-06",
+        "final-en-21",
+        "final-zh-15",
+        "final-image-green-circle",
+        "final-en-16"
+      ],
+      "id" : "final_no_answer-00",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "final-en-01"
+      ],
+      "group" : "lexical",
+      "hits" : [
+        "final-en-01",
+        "final-en-13",
+        "final-en-20",
+        "final-audio-01",
+        "final-zh-01"
+      ],
+      "id" : "final_lexical-01",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-en-01"
+      ],
+      "group" : "identifier_unicode",
+      "hits" : [
+        "final-en-01",
+        "final-en-05",
+        "final-en-03",
+        "final-en-07",
+        "final-en-18"
+      ],
+      "id" : "final_identifier_unicode-01",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-zh-01"
+      ],
+      "group" : "chinese_short",
+      "hits" : [
+        "final-zh-01",
+        "final-en-01",
+        "final-audio-01",
+        "final-zh-06",
+        "final-zh-15"
+      ],
+      "id" : "final_chinese_short-01",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-zh-01"
+      ],
+      "group" : "cross_language",
+      "hits" : [
+        "final-en-01",
+        "final-en-13",
+        "final-en-23",
+        "final-en-12",
+        "final-en-15"
+      ],
+      "id" : "final_cross_language-01",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "final-zh-01"
+      ],
+      "group" : "semantic_paraphrase",
+      "hits" : [
+        "final-zh-01",
+        "final-zh-13",
+        "final-audio-01",
+        "final-en-01",
+        "final-zh-07"
+      ],
+      "id" : "final_semantic_paraphrase-01",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-audio-01"
+      ],
+      "group" : "audio_semantic",
+      "hits" : [
+        "final-en-01",
+        "final-en-13",
+        "final-en-23",
+        "final-en-12",
+        "final-en-15"
+      ],
+      "id" : "final_audio_semantic-01",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "final-image-red-triangle"
+      ],
+      "group" : "image_semantic",
+      "hits" : [
+        "final-en-15",
+        "final-image-red-triangle",
+        "final-image-red-diamond",
+        "final-image-green-triangle",
+        "final-image-black-triangle"
+      ],
+      "id" : "final_image_semantic-01",
+      "location_correct" : true,
+      "rank" : 2
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+        "final-zh-17",
+        "final-en-17",
+        "final-en-06",
+        "final-zh-22",
+        "final-image-yellow-circle"
+      ],
+      "id" : "final_no_answer-01",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "final-en-02"
+      ],
+      "group" : "lexical",
+      "hits" : [
+        "final-en-02",
+        "final-zh-02",
+        "final-audio-02",
+        "final-audio-21",
+        "final-en-21"
+      ],
+      "id" : "final_lexical-02",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-en-02"
+      ],
+      "group" : "identifier_unicode",
+      "hits" : [
+        "final-en-02",
+        "final-en-05",
+        "final-en-01",
+        "final-en-03",
+        "final-en-07"
+      ],
+      "id" : "final_identifier_unicode-02",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-zh-02"
+      ],
+      "group" : "chinese_short",
+      "hits" : [
+        "final-zh-02",
+        "final-en-02",
+        "final-zh-19",
+        "final-zh-14",
+        "final-zh-21"
+      ],
+      "id" : "final_chinese_short-02",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-en-02"
+      ],
+      "group" : "cross_language",
+      "hits" : [
+        "final-zh-02",
+        "final-zh-11",
+        "final-en-02",
+        "final-audio-02",
+        "final-zh-19"
+      ],
+      "id" : "final_cross_language-02",
+      "location_correct" : true,
+      "rank" : 3
+    },
+    {
+      "expected" : [
+        "final-en-02"
+      ],
+      "group" : "semantic_paraphrase",
+      "hits" : [
+        "final-en-02",
+        "final-en-05",
+        "final-en-20",
+        "final-audio-02",
+        "final-zh-02"
+      ],
+      "id" : "final_semantic_paraphrase-02",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-audio-02"
+      ],
+      "group" : "audio_semantic",
+      "hits" : [
+        "final-en-02",
+        "final-en-05",
+        "final-en-20",
+        "final-audio-02",
+        "final-zh-02"
+      ],
+      "id" : "final_audio_semantic-02",
+      "location_correct" : true,
+      "rank" : 4
+    },
+    {
+      "expected" : [
+        "final-image-red-diamond"
+      ],
+      "group" : "image_semantic",
+      "hits" : [
+        "final-en-15",
+        "final-image-red-diamond",
+        "final-image-black-diamond",
+        "final-image-blue-diamond",
+        "final-image-green-diamond"
+      ],
+      "id" : "final_image_semantic-02",
+      "location_correct" : true,
+      "rank" : 2
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+        "final-en-18",
+        "final-en-05",
+        "final-en-04",
+        "final-en-15",
+        "final-en-13"
+      ],
+      "id" : "final_no_answer-02",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "final-en-03"
+      ],
+      "group" : "lexical",
+      "hits" : [
+        "final-en-03",
+        "final-audio-03",
+        "final-zh-03",
+        "final-en-16",
+        "final-zh-16"
+      ],
+      "id" : "final_lexical-03",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-en-03"
+      ],
+      "group" : "identifier_unicode",
+      "hits" : [
+        "final-en-03",
+        "final-en-05",
+        "final-en-01",
+        "final-en-23",
+        "final-en-07"
+      ],
+      "id" : "final_identifier_unicode-03",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-zh-03"
+      ],
+      "group" : "chinese_short",
+      "hits" : [
+        "final-zh-03",
+        "final-en-03",
+        "final-zh-16",
+        "final-zh-07",
+        "final-zh-15"
+      ],
+      "id" : "final_chinese_short-03",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-zh-03"
+      ],
+      "group" : "cross_language",
+      "hits" : [
+        "final-en-09",
+        "final-en-03",
+        "final-zh-03",
+        "final-audio-03",
+        "final-audio-16"
+      ],
+      "id" : "final_cross_language-03",
+      "location_correct" : true,
+      "rank" : 3
+    },
+    {
+      "expected" : [
+        "final-zh-03"
+      ],
+      "group" : "semantic_paraphrase",
+      "hits" : [
+        "final-zh-03",
+        "final-zh-24",
+        "final-en-03",
+        "final-audio-03",
+        "final-zh-15"
+      ],
+      "id" : "final_semantic_paraphrase-03",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-audio-03"
+      ],
+      "group" : "audio_semantic",
+      "hits" : [
+        "final-en-09",
+        "final-en-03",
+        "final-zh-03",
+        "final-audio-03",
+        "final-audio-18"
+      ],
+      "id" : "final_audio_semantic-03",
+      "location_correct" : true,
+      "rank" : 4
+    },
+    {
+      "expected" : [
+        "final-image-red-star"
+      ],
+      "group" : "image_semantic",
+      "hits" : [
+        "final-en-15",
+        "final-image-red-star",
+        "final-image-blue-star",
+        "final-image-black-star",
+        "final-image-green-star"
+      ],
+      "id" : "final_image_semantic-03",
+      "location_correct" : true,
+      "rank" : 2
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+        "final-en-12",
+        "final-zh-17",
+        "final-en-18",
+        "final-en-00",
+        "final-en-05"
+      ],
+      "id" : "final_no_answer-03",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "final-en-04"
+      ],
+      "group" : "lexical",
+      "hits" : [
+        "final-en-04",
+        "final-en-12",
+        "final-en-21",
+        "final-zh-04",
+        "final-audio-21"
+      ],
+      "id" : "final_lexical-04",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-en-04"
+      ],
+      "group" : "identifier_unicode",
+      "hits" : [
+        "final-en-04",
+        "final-en-05",
+        "final-en-03",
+        "final-en-01",
+        "final-en-07"
+      ],
+      "id" : "final_identifier_unicode-04",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-zh-04"
+      ],
+      "group" : "chinese_short",
+      "hits" : [
+        "final-zh-04",
+        "final-en-04",
+        "final-zh-21",
+        "final-zh-02",
+        "final-zh-01"
+      ],
+      "id" : "final_chinese_short-04",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-en-04"
+      ],
+      "group" : "cross_language",
+      "hits" : [
+        "final-zh-04",
+        "final-en-04",
+        "final-audio-04",
+        "final-zh-21",
+        "final-zh-19"
+      ],
+      "id" : "final_cross_language-04",
+      "location_correct" : true,
+      "rank" : 2
+    },
+    {
+      "expected" : [
+        "final-en-04"
+      ],
+      "group" : "semantic_paraphrase",
+      "hits" : [
+        "final-en-04",
+        "final-en-21",
+        "final-en-12",
+        "final-en-09",
+        "final-en-15"
+      ],
+      "id" : "final_semantic_paraphrase-04",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-audio-04"
+      ],
+      "group" : "audio_semantic",
+      "hits" : [
+        "final-en-04",
+        "final-en-21",
+        "final-en-12",
+        "final-en-09",
+        "final-en-15"
+      ],
+      "id" : "final_audio_semantic-04",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "final-image-red-cross"
+      ],
+      "group" : "image_semantic",
+      "hits" : [
+        "final-en-15",
+        "final-image-red-cross",
+        "final-image-black-cross",
+        "final-image-blue-cross",
+        "final-image-green-cross"
+      ],
+      "id" : "final_image_semantic-04",
+      "location_correct" : true,
+      "rank" : 2
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+        "final-audio-06",
+        "final-en-06",
+        "final-zh-06",
+        "final-en-22",
+        "final-audio-22"
+      ],
+      "id" : "final_no_answer-04",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "final-en-05"
+      ],
+      "group" : "lexical",
+      "hits" : [
+        "final-en-05",
+        "final-en-18",
+        "final-zh-05",
+        "final-en-00",
+        "final-en-21"
+      ],
+      "id" : "final_lexical-05",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-en-05"
+      ],
+      "group" : "identifier_unicode",
+      "hits" : [
+        "final-en-05",
+        "final-en-01",
+        "final-en-03",
+        "final-en-07",
+        "final-en-18"
+      ],
+      "id" : "final_identifier_unicode-05",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-zh-05"
+      ],
+      "group" : "chinese_short",
+      "hits" : [
+        "final-zh-05",
+        "final-zh-19",
+        "final-zh-11",
+        "final-zh-21",
+        "final-zh-14"
+      ],
+      "id" : "final_chinese_short-05",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-zh-05"
+      ],
+      "group" : "cross_language",
+      "hits" : [
+        "final-en-05",
+        "final-audio-05",
+        "final-zh-05",
+        "final-en-00",
+        "final-audio-07"
+      ],
+      "id" : "final_cross_language-05",
+      "location_correct" : true,
+      "rank" : 3
+    },
+    {
+      "expected" : [
+        "final-zh-05"
+      ],
+      "group" : "semantic_paraphrase",
+      "hits" : [
+        "final-zh-05",
+        "final-en-05",
+        "final-audio-05",
+        "final-zh-10",
+        "final-zh-14"
+      ],
+      "id" : "final_semantic_paraphrase-05",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-audio-05"
+      ],
+      "group" : "audio_semantic",
+      "hits" : [
+        "final-en-05",
+        "final-audio-05",
+        "final-zh-05",
+        "final-en-00",
+        "final-en-18"
+      ],
+      "id" : "final_audio_semantic-05",
+      "location_correct" : true,
+      "rank" : 2
+    },
+    {
+      "expected" : [
+        "final-image-blue-circle"
+      ],
+      "group" : "image_semantic",
+      "hits" : [
+        "final-en-15",
+        "final-image-blue-circle",
+        "final-image-blue-diamond",
+        "final-image-blue-triangle",
+        "final-image-black-circle"
+      ],
+      "id" : "final_image_semantic-05",
+      "location_correct" : true,
+      "rank" : 2
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+        "final-en-08",
+        "final-audio-08",
+        "final-zh-08",
+        "final-en-23",
+        "final-audio-06"
+      ],
+      "id" : "final_no_answer-05",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "final-en-06"
+      ],
+      "group" : "lexical",
+      "hits" : [
+        "final-en-06",
+        "final-audio-06",
+        "final-zh-06",
+        "final-audio-22",
+        "final-en-22"
+      ],
+      "id" : "final_lexical-06",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-en-06"
+      ],
+      "group" : "identifier_unicode",
+      "hits" : [
+        "final-en-06",
+        "final-en-05",
+        "final-en-03",
+        "final-en-01",
+        "final-en-07"
+      ],
+      "id" : "final_identifier_unicode-06",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-zh-06"
+      ],
+      "group" : "chinese_short",
+      "hits" : [
+        "final-zh-06",
+        "final-zh-22",
+        "final-en-06",
+        "final-en-22",
+        "final-zh-05"
+      ],
+      "id" : "final_chinese_short-06",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-en-06"
+      ],
+      "group" : "cross_language",
+      "hits" : [
+        "final-zh-06",
+        "final-zh-22",
+        "final-zh-17",
+        "final-zh-15",
+        "final-audio-06"
+      ],
+      "id" : "final_cross_language-06",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "final-en-06"
+      ],
+      "group" : "semantic_paraphrase",
+      "hits" : [
+        "final-en-22",
+        "final-en-17",
+        "final-en-09",
+        "final-en-06",
+        "final-audio-06"
+      ],
+      "id" : "final_semantic_paraphrase-06",
+      "location_correct" : true,
+      "rank" : 4
+    },
+    {
+      "expected" : [
+        "final-audio-06"
+      ],
+      "group" : "audio_semantic",
+      "hits" : [
+        "final-en-22",
+        "final-en-17",
+        "final-en-09",
+        "final-en-06",
+        "final-audio-06"
+      ],
+      "id" : "final_audio_semantic-06",
+      "location_correct" : true,
+      "rank" : 5
+    },
+    {
+      "expected" : [
+        "final-image-blue-triangle"
+      ],
+      "group" : "image_semantic",
+      "hits" : [
+        "final-en-15",
+        "final-image-blue-triangle",
+        "final-image-blue-diamond",
+        "final-image-green-triangle",
+        "final-image-black-triangle"
+      ],
+      "id" : "final_image_semantic-06",
+      "location_correct" : true,
+      "rank" : 2
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+        "final-audio-06",
+        "final-en-06",
+        "final-en-11",
+        "final-audio-03",
+        "final-image-yellow-circle"
+      ],
+      "id" : "final_no_answer-06",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "final-en-07"
+      ],
+      "group" : "lexical",
+      "hits" : [
+        "final-en-07",
+        "final-zh-07",
+        "final-audio-07",
+        "final-en-06",
+        "final-en-00"
+      ],
+      "id" : "final_lexical-07",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-en-07"
+      ],
+      "group" : "identifier_unicode",
+      "hits" : [
+        "final-en-07",
+        "final-en-05",
+        "final-en-01",
+        "final-en-03",
+        "final-en-08"
+      ],
+      "id" : "final_identifier_unicode-07",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-zh-07"
+      ],
+      "group" : "chinese_short",
+      "hits" : [
+        "final-zh-07",
+        "final-en-07",
+        "final-en-06",
+        "final-zh-06",
+        "final-zh-01"
+      ],
+      "id" : "final_chinese_short-07",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-zh-07"
+      ],
+      "group" : "cross_language",
+      "hits" : [
+        "final-en-07",
+        "final-audio-07",
+        "final-zh-07",
+        "final-audio-15",
+        "final-audio-10"
+      ],
+      "id" : "final_cross_language-07",
+      "location_correct" : true,
+      "rank" : 3
+    },
+    {
+      "expected" : [
+        "final-zh-07"
+      ],
+      "group" : "semantic_paraphrase",
+      "hits" : [
+        "final-zh-07",
+        "final-audio-07",
+        "final-en-07",
+        "final-zh-10",
+        "final-zh-05"
+      ],
+      "id" : "final_semantic_paraphrase-07",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-audio-07"
+      ],
+      "group" : "audio_semantic",
+      "hits" : [
+        "final-en-07",
+        "final-audio-07",
+        "final-audio-18",
+        "final-zh-07",
+        "final-en-18"
+      ],
+      "id" : "final_audio_semantic-07",
+      "location_correct" : true,
+      "rank" : 2
+    },
+    {
+      "expected" : [
+        "final-image-blue-diamond"
+      ],
+      "group" : "image_semantic",
+      "hits" : [
+        "final-en-15",
+        "final-image-blue-diamond",
+        "final-image-blue-triangle",
+        "final-image-blue-circle",
+        "final-image-black-diamond"
+      ],
+      "id" : "final_image_semantic-07",
+      "location_correct" : true,
+      "rank" : 2
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+        "final-en-12",
+        "final-en-14",
+        "final-en-09",
+        "final-en-05",
+        "final-en-13"
+      ],
+      "id" : "final_no_answer-07",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "final-en-08"
+      ],
+      "group" : "lexical",
+      "hits" : [
+        "final-en-08",
+        "final-audio-08",
+        "final-zh-08",
+        "final-audio-05",
+        "final-audio-19"
+      ],
+      "id" : "final_lexical-08",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-en-08"
+      ],
+      "group" : "identifier_unicode",
+      "hits" : [
+        "final-en-08",
+        "final-en-01",
+        "final-en-05",
+        "final-en-03",
+        "final-en-18"
+      ],
+      "id" : "final_identifier_unicode-08",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-zh-08"
+      ],
+      "group" : "chinese_short",
+      "hits" : [
+        "final-zh-08",
+        "final-en-08",
+        "final-audio-08",
+        "final-zh-21",
+        "final-zh-16"
+      ],
+      "id" : "final_chinese_short-08",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-en-08"
+      ],
+      "group" : "cross_language",
+      "hits" : [
+        "final-zh-08",
+        "final-zh-21",
+        "final-audio-08",
+        "final-en-08",
+        "final-zh-16"
+      ],
+      "id" : "final_cross_language-08",
+      "location_correct" : true,
+      "rank" : 4
+    },
+    {
+      "expected" : [
+        "final-en-08"
+      ],
+      "group" : "semantic_paraphrase",
+      "hits" : [
+        "final-en-08",
+        "final-en-02",
+        "final-audio-08",
+        "final-zh-08",
+        "final-zh-21"
+      ],
+      "id" : "final_semantic_paraphrase-08",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-audio-08"
+      ],
+      "group" : "audio_semantic",
+      "hits" : [
+        "final-en-08",
+        "final-en-02",
+        "final-audio-08",
+        "final-zh-08",
+        "final-audio-18"
+      ],
+      "id" : "final_audio_semantic-08",
+      "location_correct" : true,
+      "rank" : 3
+    },
+    {
+      "expected" : [
+        "final-image-blue-star"
+      ],
+      "group" : "image_semantic",
+      "hits" : [
+        "final-en-15",
+        "final-image-blue-star",
+        "final-image-yellow-star",
+        "final-image-blue-diamond",
+        "final-image-black-star"
+      ],
+      "id" : "final_image_semantic-08",
+      "location_correct" : true,
+      "rank" : 2
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+        "final-en-06",
+        "final-audio-06",
+        "final-en-22",
+        "final-zh-22",
+        "final-en-04"
+      ],
+      "id" : "final_no_answer-08",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "final-en-09"
+      ],
+      "group" : "lexical",
+      "hits" : [
+        "final-en-09",
+        "final-audio-09",
+        "final-zh-09",
+        "final-audio-19",
+        "final-en-19"
+      ],
+      "id" : "final_lexical-09",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-en-09"
+      ],
+      "group" : "identifier_unicode",
+      "hits" : [
+        "final-en-01",
+        "final-en-03",
+        "final-en-05",
+        "final-en-07",
+        "final-en-10"
+      ],
+      "id" : "final_identifier_unicode-09",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "final-zh-09"
+      ],
+      "group" : "chinese_short",
+      "hits" : [
+        "final-zh-09",
+        "final-en-09",
+        "final-zh-19",
+        "final-zh-14",
+        "final-zh-22"
+      ],
+      "id" : "final_chinese_short-09",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-zh-09"
+      ],
+      "group" : "cross_language",
+      "hits" : [
+        "final-en-09",
+        "final-en-12",
+        "final-en-13",
+        "final-en-23",
+        "final-en-15"
+      ],
+      "id" : "final_cross_language-09",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "final-zh-09"
+      ],
+      "group" : "semantic_paraphrase",
+      "hits" : [
+        "final-zh-09",
+        "final-audio-09",
+        "final-en-09",
+        "final-zh-19",
+        "final-zh-14"
+      ],
+      "id" : "final_semantic_paraphrase-09",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-audio-09"
+      ],
+      "group" : "audio_semantic",
+      "hits" : [
+        "final-en-09",
+        "final-en-23",
+        "final-en-12",
+        "final-en-13",
+        "final-en-15"
+      ],
+      "id" : "final_audio_semantic-09",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "final-image-blue-cross"
+      ],
+      "group" : "image_semantic",
+      "hits" : [
+        "final-en-15",
+        "final-image-blue-cross",
+        "final-image-black-cross",
+        "final-image-red-cross",
+        "final-image-yellow-cross"
+      ],
+      "id" : "final_image_semantic-09",
+      "location_correct" : true,
+      "rank" : 2
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+        "final-en-23",
+        "final-en-06",
+        "final-en-09",
+        "final-en-05",
+        "final-audio-23"
+      ],
+      "id" : "final_no_answer-09",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "final-en-10"
+      ],
+      "group" : "lexical",
+      "hits" : [
+        "final-en-10",
+        "final-en-16",
+        "final-audio-16",
+        "final-audio-10",
+        "final-zh-10"
+      ],
+      "id" : "final_lexical-10",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-en-10"
+      ],
+      "group" : "identifier_unicode",
+      "hits" : [
+        "final-en-10",
+        "final-en-01",
+        "final-en-03",
+        "final-en-18",
+        "final-en-12"
+      ],
+      "id" : "final_identifier_unicode-10",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-zh-10"
+      ],
+      "group" : "chinese_short",
+      "hits" : [
+        "final-zh-10",
+        "final-zh-14",
+        "final-zh-11",
+        "final-zh-05",
+        "final-zh-19"
+      ],
+      "id" : "final_chinese_short-10",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-en-10"
+      ],
+      "group" : "cross_language",
+      "hits" : [
+        "final-zh-10",
+        "final-zh-07",
+        "final-zh-18",
+        "final-zh-15",
+        "final-zh-01"
+      ],
+      "id" : "final_cross_language-10",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "final-en-10"
+      ],
+      "group" : "semantic_paraphrase",
+      "hits" : [
+        "final-en-10",
+        "final-en-05",
+        "final-en-20",
+        "final-en-09",
+        "final-audio-10"
+      ],
+      "id" : "final_semantic_paraphrase-10",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-audio-10"
+      ],
+      "group" : "audio_semantic",
+      "hits" : [
+        "final-en-10",
+        "final-en-05",
+        "final-en-09",
+        "final-en-20",
+        "final-audio-10"
+      ],
+      "id" : "final_audio_semantic-10",
+      "location_correct" : true,
+      "rank" : 5
+    },
+    {
+      "expected" : [
+        "final-image-green-circle"
+      ],
+      "group" : "image_semantic",
+      "hits" : [
+        "final-en-15",
+        "final-image-green-circle",
+        "final-image-green-diamond",
+        "final-image-yellow-circle",
+        "final-image-black-circle"
+      ],
+      "id" : "final_image_semantic-10",
+      "location_correct" : true,
+      "rank" : 2
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+        "final-en-05",
+        "final-en-20",
+        "final-en-04",
+        "final-en-21",
+        "final-en-12"
+      ],
+      "id" : "final_no_answer-10",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "final-en-11"
+      ],
+      "group" : "lexical",
+      "hits" : [
+        "final-en-11",
+        "final-en-15",
+        "final-en-17",
+        "final-zh-11",
+        "final-audio-15"
+      ],
+      "id" : "final_lexical-11",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-en-11"
+      ],
+      "group" : "identifier_unicode",
+      "hits" : [
+        "final-en-11",
+        "final-en-01",
+        "final-en-10",
+        "final-en-21",
+        "final-en-12"
+      ],
+      "id" : "final_identifier_unicode-11",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-zh-11"
+      ],
+      "group" : "chinese_short",
+      "hits" : [
+        "final-zh-11",
+        "final-zh-20",
+        "final-zh-17",
+        "final-zh-12",
+        "final-en-11"
+      ],
+      "id" : "final_chinese_short-11",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-zh-11"
+      ],
+      "group" : "cross_language",
+      "hits" : [
+        "final-en-11",
+        "final-en-12",
+        "final-en-15",
+        "final-zh-11",
+        "final-audio-11"
+      ],
+      "id" : "final_cross_language-11",
+      "location_correct" : true,
+      "rank" : 4
+    },
+    {
+      "expected" : [
+        "final-zh-11"
+      ],
+      "group" : "semantic_paraphrase",
+      "hits" : [
+        "final-zh-11",
+        "final-en-11",
+        "final-audio-11",
+        "final-zh-21",
+        "final-zh-14"
+      ],
+      "id" : "final_semantic_paraphrase-11",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-audio-11"
+      ],
+      "group" : "audio_semantic",
+      "hits" : [
+        "final-en-11",
+        "final-en-15",
+        "final-en-12",
+        "final-zh-11",
+        "final-audio-11"
+      ],
+      "id" : "final_audio_semantic-11",
+      "location_correct" : true,
+      "rank" : 5
+    },
+    {
+      "expected" : [
+        "final-image-green-triangle"
+      ],
+      "group" : "image_semantic",
+      "hits" : [
+        "final-en-15",
+        "final-image-green-triangle",
+        "final-image-green-diamond",
+        "final-image-yellow-triangle",
+        "final-image-black-triangle"
+      ],
+      "id" : "final_image_semantic-11",
+      "location_correct" : true,
+      "rank" : 2
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+        "final-en-06",
+        "final-en-23",
+        "final-zh-06",
+        "final-zh-17",
+        "final-en-22"
+      ],
+      "id" : "final_no_answer-11",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "final-en-12"
+      ],
+      "group" : "lexical",
+      "hits" : [
+        "final-en-12",
+        "final-en-04",
+        "final-en-21",
+        "final-audio-12",
+        "final-zh-12"
+      ],
+      "id" : "final_lexical-12",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-en-12"
+      ],
+      "group" : "identifier_unicode",
+      "hits" : [
+        "final-en-12",
+        "final-en-01",
+        "final-en-03",
+        "final-en-10",
+        "final-en-18"
+      ],
+      "id" : "final_identifier_unicode-12",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-zh-12"
+      ],
+      "group" : "chinese_short",
+      "hits" : [
+        "final-zh-12",
+        "final-audio-12",
+        "final-en-12",
+        "final-zh-20",
+        "final-zh-11"
+      ],
+      "id" : "final_chinese_short-12",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-en-12"
+      ],
+      "group" : "cross_language",
+      "hits" : [
+        "final-zh-12",
+        "final-en-12",
+        "final-audio-12",
+        "final-zh-04",
+        "final-zh-21"
+      ],
+      "id" : "final_cross_language-12",
+      "location_correct" : true,
+      "rank" : 2
+    },
+    {
+      "expected" : [
+        "final-en-12"
+      ],
+      "group" : "semantic_paraphrase",
+      "hits" : [
+        "final-en-12",
+        "final-en-10",
+        "final-en-22",
+        "final-en-24",
+        "final-en-15"
+      ],
+      "id" : "final_semantic_paraphrase-12",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-audio-12"
+      ],
+      "group" : "audio_semantic",
+      "hits" : [
+        "final-en-12",
+        "final-en-10",
+        "final-en-24",
+        "final-en-22",
+        "final-en-15"
+      ],
+      "id" : "final_audio_semantic-12",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "final-image-green-diamond"
+      ],
+      "group" : "image_semantic",
+      "hits" : [
+        "final-en-15",
+        "final-image-green-diamond",
+        "final-image-black-diamond",
+        "final-image-red-diamond",
+        "final-image-yellow-diamond"
+      ],
+      "id" : "final_image_semantic-12",
+      "location_correct" : true,
+      "rank" : 2
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+        "final-en-16",
+        "final-audio-04",
+        "final-en-09",
+        "final-en-21",
+        "final-en-04"
+      ],
+      "id" : "final_no_answer-12",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "final-en-13"
+      ],
+      "group" : "lexical",
+      "hits" : [
+        "final-en-13",
+        "final-audio-13",
+        "final-zh-13",
+        "final-audio-01",
+        "final-audio-00"
+      ],
+      "id" : "final_lexical-13",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-en-13"
+      ],
+      "group" : "identifier_unicode",
+      "hits" : [
+        "final-en-13",
+        "final-en-23",
+        "final-en-03",
+        "final-en-01",
+        "final-en-12"
+      ],
+      "id" : "final_identifier_unicode-13",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-zh-13"
+      ],
+      "group" : "chinese_short",
+      "hits" : [
+        "final-zh-13",
+        "final-zh-01",
+        "final-zh-24",
+        "final-zh-15",
+        "final-zh-18"
+      ],
+      "id" : "final_chinese_short-13",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-zh-13"
+      ],
+      "group" : "cross_language",
+      "hits" : [
+        "final-en-13",
+        "final-audio-13",
+        "final-zh-13",
+        "final-audio-01",
+        "final-audio-02"
+      ],
+      "id" : "final_cross_language-13",
+      "location_correct" : true,
+      "rank" : 3
+    },
+    {
+      "expected" : [
+        "final-zh-13"
+      ],
+      "group" : "semantic_paraphrase",
+      "hits" : [
+        "final-zh-13",
+        "final-zh-01",
+        "final-en-13",
+        "final-audio-13",
+        "final-zh-19"
+      ],
+      "id" : "final_semantic_paraphrase-13",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-audio-13"
+      ],
+      "group" : "audio_semantic",
+      "hits" : [
+        "final-en-13",
+        "final-audio-13",
+        "final-zh-13",
+        "final-audio-01",
+        "final-en-18"
+      ],
+      "id" : "final_audio_semantic-13",
+      "location_correct" : true,
+      "rank" : 2
+    },
+    {
+      "expected" : [
+        "final-image-green-star"
+      ],
+      "group" : "image_semantic",
+      "hits" : [
+        "final-en-15",
+        "final-image-green-star",
+        "final-image-yellow-star",
+        "final-image-green-diamond",
+        "final-image-green-circle"
+      ],
+      "id" : "final_image_semantic-13",
+      "location_correct" : true,
+      "rank" : 2
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+        "final-en-01",
+        "final-audio-09",
+        "final-en-18",
+        "final-en-13",
+        "final-zh-17"
+      ],
+      "id" : "final_no_answer-13",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "final-en-14"
+      ],
+      "group" : "lexical",
+      "hits" : [
+        "final-en-14",
+        "final-zh-14",
+        "final-audio-14",
+        "final-en-04",
+        "final-en-21"
+      ],
+      "id" : "final_lexical-14",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-en-14"
+      ],
+      "group" : "identifier_unicode",
+      "hits" : [
+        "final-en-01",
+        "final-en-14",
+        "final-en-04",
+        "final-en-12",
+        "final-en-10"
+      ],
+      "id" : "final_identifier_unicode-14",
+      "location_correct" : true,
+      "rank" : 2
+    },
+    {
+      "expected" : [
+        "final-zh-14"
+      ],
+      "group" : "chinese_short",
+      "hits" : [
+        "final-zh-14",
+        "final-en-14",
+        "final-zh-10",
+        "final-zh-21",
+        "final-en-04"
+      ],
+      "id" : "final_chinese_short-14",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-en-14"
+      ],
+      "group" : "cross_language",
+      "hits" : [
+        "final-zh-14",
+        "final-en-14",
+        "final-audio-14",
+        "final-zh-19",
+        "final-zh-02"
+      ],
+      "id" : "final_cross_language-14",
+      "location_correct" : true,
+      "rank" : 2
+    },
+    {
+      "expected" : [
+        "final-en-14"
+      ],
+      "group" : "semantic_paraphrase",
+      "hits" : [
+        "final-en-14",
+        "final-en-00",
+        "final-en-13",
+        "final-en-23",
+        "final-en-03"
+      ],
+      "id" : "final_semantic_paraphrase-14",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-audio-14"
+      ],
+      "group" : "audio_semantic",
+      "hits" : [
+        "final-en-14",
+        "final-en-00",
+        "final-en-13",
+        "final-en-03",
+        "final-en-23"
+      ],
+      "id" : "final_audio_semantic-14",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "final-image-green-cross"
+      ],
+      "group" : "image_semantic",
+      "hits" : [
+        "final-en-15",
+        "final-image-green-cross",
+        "final-image-red-cross",
+        "final-image-yellow-cross",
+        "final-image-black-cross"
+      ],
+      "id" : "final_image_semantic-14",
+      "location_correct" : true,
+      "rank" : 2
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+        "final-audio-09",
+        "final-en-18",
+        "final-en-09",
+        "final-en-24",
+        "final-audio-04"
+      ],
+      "id" : "final_no_answer-14",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "final-en-15"
+      ],
+      "group" : "lexical",
+      "hits" : [
+        "final-en-15",
+        "final-en-22",
+        "final-en-11",
+        "final-audio-15",
+        "final-zh-15"
+      ],
+      "id" : "final_lexical-15",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-en-15"
+      ],
+      "group" : "identifier_unicode",
+      "hits" : [
+        "final-en-15",
+        "final-en-05",
+        "final-en-01",
+        "final-en-12",
+        "final-en-18"
+      ],
+      "id" : "final_identifier_unicode-15",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-zh-15"
+      ],
+      "group" : "chinese_short",
+      "hits" : [
+        "final-zh-15",
+        "final-zh-20",
+        "final-en-15",
+        "final-zh-06",
+        "final-zh-11"
+      ],
+      "id" : "final_chinese_short-15",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-zh-15"
+      ],
+      "group" : "cross_language",
+      "hits" : [
+        "final-en-15",
+        "final-en-12",
+        "final-audio-15",
+        "final-zh-15",
+        "final-en-22"
+      ],
+      "id" : "final_cross_language-15",
+      "location_correct" : true,
+      "rank" : 4
+    },
+    {
+      "expected" : [
+        "final-zh-15"
+      ],
+      "group" : "semantic_paraphrase",
+      "hits" : [
+        "final-zh-15",
+        "final-zh-06",
+        "final-zh-17",
+        "final-zh-22",
+        "final-audio-15"
+      ],
+      "id" : "final_semantic_paraphrase-15",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-audio-15"
+      ],
+      "group" : "audio_semantic",
+      "hits" : [
+        "final-en-15",
+        "final-en-12",
+        "final-audio-15",
+        "final-zh-15",
+        "final-audio-18"
+      ],
+      "id" : "final_audio_semantic-15",
+      "location_correct" : true,
+      "rank" : 3
+    },
+    {
+      "expected" : [
+        "final-image-yellow-circle"
+      ],
+      "group" : "image_semantic",
+      "hits" : [
+        "final-en-15",
+        "final-image-yellow-circle",
+        "final-image-yellow-diamond",
+        "final-image-yellow-triangle",
+        "final-image-black-circle"
+      ],
+      "id" : "final_image_semantic-15",
+      "location_correct" : true,
+      "rank" : 2
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+        "final-en-22",
+        "final-en-06",
+        "final-en-23",
+        "final-zh-06",
+        "final-zh-22"
+      ],
+      "id" : "final_no_answer-15",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "final-en-16"
+      ],
+      "group" : "lexical",
+      "hits" : [
+        "final-en-16",
+        "final-zh-16",
+        "final-audio-16",
+        "final-en-03",
+        "final-en-08"
+      ],
+      "id" : "final_lexical-16",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-en-16"
+      ],
+      "group" : "identifier_unicode",
+      "hits" : [
+        "final-en-16",
+        "final-en-18",
+        "final-en-01",
+        "final-en-10",
+        "final-en-12"
+      ],
+      "id" : "final_identifier_unicode-16",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-zh-16"
+      ],
+      "group" : "chinese_short",
+      "hits" : [
+        "final-zh-16",
+        "final-en-16",
+        "final-zh-14",
+        "final-zh-11",
+        "final-zh-21"
+      ],
+      "id" : "final_chinese_short-16",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-en-16"
+      ],
+      "group" : "cross_language",
+      "hits" : [
+        "final-zh-16",
+        "final-audio-16",
+        "final-en-16",
+        "final-zh-14",
+        "final-zh-21"
+      ],
+      "id" : "final_cross_language-16",
+      "location_correct" : true,
+      "rank" : 3
+    },
+    {
+      "expected" : [
+        "final-en-16"
+      ],
+      "group" : "semantic_paraphrase",
+      "hits" : [
+        "final-en-16",
+        "final-en-10",
+        "final-audio-16",
+        "final-zh-16",
+        "final-en-03"
+      ],
+      "id" : "final_semantic_paraphrase-16",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-audio-16"
+      ],
+      "group" : "audio_semantic",
+      "hits" : [
+        "final-en-16",
+        "final-en-10",
+        "final-audio-16",
+        "final-zh-16",
+        "final-en-03"
+      ],
+      "id" : "final_audio_semantic-16",
+      "location_correct" : true,
+      "rank" : 3
+    },
+    {
+      "expected" : [
+        "final-image-yellow-triangle"
+      ],
+      "group" : "image_semantic",
+      "hits" : [
+        "final-en-15",
+        "final-image-yellow-triangle",
+        "final-image-yellow-diamond",
+        "final-image-green-triangle",
+        "final-image-black-triangle"
+      ],
+      "id" : "final_image_semantic-16",
+      "location_correct" : true,
+      "rank" : 2
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+        "final-en-02",
+        "final-en-16",
+        "final-en-12",
+        "final-en-00",
+        "final-en-21"
+      ],
+      "id" : "final_no_answer-16",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "final-en-17"
+      ],
+      "group" : "lexical",
+      "hits" : [
+        "final-en-17",
+        "final-zh-17",
+        "final-audio-17",
+        "final-en-11",
+        "final-audio-15"
+      ],
+      "id" : "final_lexical-17",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-en-17"
+      ],
+      "group" : "identifier_unicode",
+      "hits" : [
+        "final-en-01",
+        "final-en-17",
+        "final-en-03",
+        "final-en-18",
+        "final-en-07"
+      ],
+      "id" : "final_identifier_unicode-17",
+      "location_correct" : true,
+      "rank" : 2
+    },
+    {
+      "expected" : [
+        "final-zh-17"
+      ],
+      "group" : "chinese_short",
+      "hits" : [
+        "final-zh-17",
+        "final-en-17",
+        "final-zh-22",
+        "final-zh-11",
+        "final-zh-12"
+      ],
+      "id" : "final_chinese_short-17",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-zh-17"
+      ],
+      "group" : "cross_language",
+      "hits" : [
+        "final-en-17",
+        "final-en-12",
+        "final-en-04",
+        "final-en-15",
+        "final-audio-17"
+      ],
+      "id" : "final_cross_language-17",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "final-zh-17"
+      ],
+      "group" : "semantic_paraphrase",
+      "hits" : [
+        "final-zh-15",
+        "final-zh-17",
+        "final-zh-22",
+        "final-zh-06",
+        "final-zh-20"
+      ],
+      "id" : "final_semantic_paraphrase-17",
+      "location_correct" : true,
+      "rank" : 2
+    },
+    {
+      "expected" : [
+        "final-audio-17"
+      ],
+      "group" : "audio_semantic",
+      "hits" : [
+        "final-en-17",
+        "final-en-15",
+        "final-en-12",
+        "final-en-04",
+        "final-audio-17"
+      ],
+      "id" : "final_audio_semantic-17",
+      "location_correct" : true,
+      "rank" : 5
+    },
+    {
+      "expected" : [
+        "final-image-yellow-diamond"
+      ],
+      "group" : "image_semantic",
+      "hits" : [
+        "final-en-15",
+        "final-image-yellow-diamond",
+        "final-image-red-diamond",
+        "final-image-black-diamond",
+        "final-image-yellow-triangle"
+      ],
+      "id" : "final_image_semantic-17",
+      "location_correct" : true,
+      "rank" : 2
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+        "final-en-06",
+        "final-zh-06",
+        "final-audio-06",
+        "final-en-11",
+        "final-image-black-circle"
+      ],
+      "id" : "final_no_answer-17",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "final-en-18"
+      ],
+      "group" : "lexical",
+      "hits" : [
+        "final-en-18",
+        "final-zh-18",
+        "final-audio-18",
+        "final-audio-01",
+        "final-audio-05"
+      ],
+      "id" : "final_lexical-18",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-en-18"
+      ],
+      "group" : "identifier_unicode",
+      "hits" : [
+        "final-en-18",
+        "final-en-01",
+        "final-en-21",
+        "final-en-12",
+        "final-en-10"
+      ],
+      "id" : "final_identifier_unicode-18",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-zh-18"
+      ],
+      "group" : "chinese_short",
+      "hits" : [
+        "final-zh-18",
+        "final-zh-01",
+        "final-zh-10",
+        "final-zh-16",
+        "final-zh-06"
+      ],
+      "id" : "final_chinese_short-18",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-en-18"
+      ],
+      "group" : "cross_language",
+      "hits" : [
+        "final-zh-18",
+        "final-en-18",
+        "final-audio-18",
+        "final-zh-15",
+        "final-zh-10"
+      ],
+      "id" : "final_cross_language-18",
+      "location_correct" : true,
+      "rank" : 2
+    },
+    {
+      "expected" : [
+        "final-en-18"
+      ],
+      "group" : "semantic_paraphrase",
+      "hits" : [
+        "final-en-12",
+        "final-en-15",
+        "final-en-09",
+        "final-en-18",
+        "final-audio-18"
+      ],
+      "id" : "final_semantic_paraphrase-18",
+      "location_correct" : true,
+      "rank" : 4
+    },
+    {
+      "expected" : [
+        "final-audio-18"
+      ],
+      "group" : "audio_semantic",
+      "hits" : [
+        "final-en-12",
+        "final-en-15",
+        "final-en-09",
+        "final-audio-18",
+        "final-en-18"
+      ],
+      "id" : "final_audio_semantic-18",
+      "location_correct" : true,
+      "rank" : 4
+    },
+    {
+      "expected" : [
+        "final-image-yellow-star"
+      ],
+      "group" : "image_semantic",
+      "hits" : [
+        "final-en-15",
+        "final-image-yellow-star",
+        "final-image-black-star",
+        "final-image-yellow-circle",
+        "final-image-green-star"
+      ],
+      "id" : "final_image_semantic-18",
+      "location_correct" : true,
+      "rank" : 2
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+        "final-en-18",
+        "final-en-01",
+        "final-en-16",
+        "final-en-05",
+        "final-zh-16"
+      ],
+      "id" : "final_no_answer-18",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "final-en-19"
+      ],
+      "group" : "lexical",
+      "hits" : [
+        "final-en-19",
+        "final-audio-19",
+        "final-zh-19",
+        "final-audio-02",
+        "final-audio-21"
+      ],
+      "id" : "final_lexical-19",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-en-19"
+      ],
+      "group" : "identifier_unicode",
+      "hits" : [
+        "final-en-19",
+        "final-en-01",
+        "final-en-18",
+        "final-en-10",
+        "final-en-21"
+      ],
+      "id" : "final_identifier_unicode-19",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-zh-19"
+      ],
+      "group" : "chinese_short",
+      "hits" : [
+        "final-zh-19",
+        "final-zh-06",
+        "final-zh-01",
+        "final-zh-02",
+        "final-zh-07"
+      ],
+      "id" : "final_chinese_short-19",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-zh-19"
+      ],
+      "group" : "cross_language",
+      "hits" : [
+        "final-en-19",
+        "final-en-12",
+        "final-en-15",
+        "final-audio-19",
+        "final-zh-19"
+      ],
+      "id" : "final_cross_language-19",
+      "location_correct" : true,
+      "rank" : 5
+    },
+    {
+      "expected" : [
+        "final-zh-19"
+      ],
+      "group" : "semantic_paraphrase",
+      "hits" : [
+        "final-zh-19",
+        "final-zh-00",
+        "final-zh-21",
+        "final-zh-12",
+        "final-zh-04"
+      ],
+      "id" : "final_semantic_paraphrase-19",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-audio-19"
+      ],
+      "group" : "audio_semantic",
+      "hits" : [
+        "final-en-19",
+        "final-en-12",
+        "final-en-15",
+        "final-audio-19",
+        "final-zh-19"
+      ],
+      "id" : "final_audio_semantic-19",
+      "location_correct" : true,
+      "rank" : 4
+    },
+    {
+      "expected" : [
+        "final-image-yellow-cross"
+      ],
+      "group" : "image_semantic",
+      "hits" : [
+        "final-en-15",
+        "final-image-yellow-cross",
+        "final-image-yellow-diamond",
+        "final-image-black-cross",
+        "final-image-green-cross"
+      ],
+      "id" : "final_image_semantic-19",
+      "location_correct" : true,
+      "rank" : 2
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+        "final-image-blue-diamond",
+        "final-image-black-diamond",
+        "final-image-red-diamond",
+        "final-image-green-diamond",
+        "final-en-15"
+      ],
+      "id" : "final_no_answer-19",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "final-en-20"
+      ],
+      "group" : "lexical",
+      "hits" : [
+        "final-en-20",
+        "final-zh-20",
+        "final-audio-12",
+        "final-en-14",
+        "final-en-12"
+      ],
+      "id" : "final_lexical-20",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-en-20"
+      ],
+      "group" : "identifier_unicode",
+      "hits" : [
+        "final-en-20",
+        "final-en-23",
+        "final-en-01",
+        "final-en-21",
+        "final-en-10"
+      ],
+      "id" : "final_identifier_unicode-20",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-zh-20"
+      ],
+      "group" : "chinese_short",
+      "hits" : [
+        "final-zh-20",
+        "final-zh-17",
+        "final-en-20",
+        "final-zh-12",
+        "final-zh-11"
+      ],
+      "id" : "final_chinese_short-20",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-en-20"
+      ],
+      "group" : "cross_language",
+      "hits" : [
+        "final-zh-20",
+        "final-zh-10",
+        "final-en-20",
+        "final-audio-20",
+        "final-zh-07"
+      ],
+      "id" : "final_cross_language-20",
+      "location_correct" : true,
+      "rank" : 3
+    },
+    {
+      "expected" : [
+        "final-en-20"
+      ],
+      "group" : "semantic_paraphrase",
+      "hits" : [
+        "final-en-20",
+        "final-zh-20",
+        "final-audio-20",
+        "final-en-00",
+        "final-en-07"
+      ],
+      "id" : "final_semantic_paraphrase-20",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-audio-20"
+      ],
+      "group" : "audio_semantic",
+      "hits" : [
+        "final-en-20",
+        "final-zh-20",
+        "final-audio-20",
+        "final-en-01",
+        "final-en-00"
+      ],
+      "id" : "final_audio_semantic-20",
+      "location_correct" : true,
+      "rank" : 3
+    },
+    {
+      "expected" : [
+        "final-image-black-circle"
+      ],
+      "group" : "image_semantic",
+      "hits" : [
+        "final-en-15",
+        "final-image-black-circle",
+        "final-image-blue-circle",
+        "final-image-green-circle",
+        "final-image-yellow-circle"
+      ],
+      "id" : "final_image_semantic-20",
+      "location_correct" : true,
+      "rank" : 2
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+        "final-en-16",
+        "final-en-02",
+        "final-en-05",
+        "final-audio-16",
+        "final-audio-04"
+      ],
+      "id" : "final_no_answer-20",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "final-en-21"
+      ],
+      "group" : "lexical",
+      "hits" : [
+        "final-en-21",
+        "final-en-04",
+        "final-en-12",
+        "final-zh-21",
+        "final-audio-21"
+      ],
+      "id" : "final_lexical-21",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-en-21"
+      ],
+      "group" : "identifier_unicode",
+      "hits" : [
+        "final-en-21",
+        "final-en-01",
+        "final-en-12",
+        "final-en-23",
+        "final-en-07"
+      ],
+      "id" : "final_identifier_unicode-21",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-zh-21"
+      ],
+      "group" : "chinese_short",
+      "hits" : [
+        "final-zh-21",
+        "final-en-21",
+        "final-zh-08",
+        "final-en-08",
+        "final-zh-11"
+      ],
+      "id" : "final_chinese_short-21",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-zh-21"
+      ],
+      "group" : "cross_language",
+      "hits" : [
+        "final-en-21",
+        "final-en-04",
+        "final-audio-21",
+        "final-zh-21",
+        "final-audio-04"
+      ],
+      "id" : "final_cross_language-21",
+      "location_correct" : true,
+      "rank" : 4
+    },
+    {
+      "expected" : [
+        "final-zh-21"
+      ],
+      "group" : "semantic_paraphrase",
+      "hits" : [
+        "final-zh-21",
+        "final-en-21",
+        "final-audio-21",
+        "final-zh-04",
+        "final-zh-14"
+      ],
+      "id" : "final_semantic_paraphrase-21",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-audio-21"
+      ],
+      "group" : "audio_semantic",
+      "hits" : [
+        "final-en-21",
+        "final-en-04",
+        "final-audio-21",
+        "final-audio-04",
+        "final-zh-21"
+      ],
+      "id" : "final_audio_semantic-21",
+      "location_correct" : true,
+      "rank" : 3
+    },
+    {
+      "expected" : [
+        "final-image-black-triangle"
+      ],
+      "group" : "image_semantic",
+      "hits" : [
+        "final-en-15",
+        "final-image-black-triangle",
+        "final-image-black-diamond",
+        "final-image-blue-triangle",
+        "final-image-red-triangle"
+      ],
+      "id" : "final_image_semantic-21",
+      "location_correct" : true,
+      "rank" : 2
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+        "final-en-18",
+        "final-en-12",
+        "final-en-14",
+        "final-audio-03",
+        "final-audio-12"
+      ],
+      "id" : "final_no_answer-21",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "final-en-22"
+      ],
+      "group" : "lexical",
+      "hits" : [
+        "final-en-22",
+        "final-en-15",
+        "final-audio-22",
+        "final-audio-06",
+        "final-en-06"
+      ],
+      "id" : "final_lexical-22",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-en-22"
+      ],
+      "group" : "identifier_unicode",
+      "hits" : [
+        "final-en-23",
+        "final-en-21",
+        "final-en-12",
+        "final-en-22",
+        "final-en-02"
+      ],
+      "id" : "final_identifier_unicode-22",
+      "location_correct" : true,
+      "rank" : 4
+    },
+    {
+      "expected" : [
+        "final-zh-22"
+      ],
+      "group" : "chinese_short",
+      "hits" : [
+        "final-zh-22",
+        "final-zh-06",
+        "final-zh-15",
+        "final-image-blue-star",
+        "final-en-22"
+      ],
+      "id" : "final_chinese_short-22",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-en-22"
+      ],
+      "group" : "cross_language",
+      "hits" : [
+        "final-zh-22",
+        "final-zh-06",
+        "final-zh-15",
+        "final-zh-17",
+        "final-audio-22"
+      ],
+      "id" : "final_cross_language-22",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "final-en-22"
+      ],
+      "group" : "semantic_paraphrase",
+      "hits" : [
+        "final-en-22",
+        "final-en-09",
+        "final-audio-22",
+        "final-zh-22",
+        "final-en-06"
+      ],
+      "id" : "final_semantic_paraphrase-22",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-audio-22"
+      ],
+      "group" : "audio_semantic",
+      "hits" : [
+        "final-en-22",
+        "final-en-09",
+        "final-audio-22",
+        "final-zh-22",
+        "final-en-18"
+      ],
+      "id" : "final_audio_semantic-22",
+      "location_correct" : true,
+      "rank" : 3
+    },
+    {
+      "expected" : [
+        "final-image-black-diamond"
+      ],
+      "group" : "image_semantic",
+      "hits" : [
+        "final-en-15",
+        "final-image-black-diamond",
+        "final-image-red-diamond",
+        "final-image-blue-diamond",
+        "final-image-black-triangle"
+      ],
+      "id" : "final_image_semantic-22",
+      "location_correct" : true,
+      "rank" : 2
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+        "final-zh-17",
+        "final-en-04",
+        "final-en-13",
+        "final-en-01",
+        "final-audio-09"
+      ],
+      "id" : "final_no_answer-22",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "final-en-23"
+      ],
+      "group" : "lexical",
+      "hits" : [
+        "final-en-23",
+        "final-audio-23",
+        "final-zh-23",
+        "final-en-04",
+        "final-audio-20"
+      ],
+      "id" : "final_lexical-23",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-en-23"
+      ],
+      "group" : "identifier_unicode",
+      "hits" : [
+        "final-en-23",
+        "final-en-03",
+        "final-en-12",
+        "final-en-21",
+        "final-en-01"
+      ],
+      "id" : "final_identifier_unicode-23",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-zh-23"
+      ],
+      "group" : "chinese_short",
+      "hits" : [
+        "final-zh-23",
+        "final-en-23",
+        "final-zh-14",
+        "final-zh-11",
+        "final-zh-05"
+      ],
+      "id" : "final_chinese_short-23",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-zh-23"
+      ],
+      "group" : "cross_language",
+      "hits" : [
+        "final-en-23",
+        "final-en-14",
+        "final-audio-23",
+        "final-zh-23",
+        "final-en-17"
+      ],
+      "id" : "final_cross_language-23",
+      "location_correct" : true,
+      "rank" : 4
+    },
+    {
+      "expected" : [
+        "final-zh-23"
+      ],
+      "group" : "semantic_paraphrase",
+      "hits" : [
+        "final-zh-23",
+        "final-zh-14",
+        "final-zh-11",
+        "final-zh-19",
+        "final-zh-05"
+      ],
+      "id" : "final_semantic_paraphrase-23",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-audio-23"
+      ],
+      "group" : "audio_semantic",
+      "hits" : [
+        "final-en-23",
+        "final-en-14",
+        "final-zh-23",
+        "final-audio-23",
+        "final-en-17"
+      ],
+      "id" : "final_audio_semantic-23",
+      "location_correct" : true,
+      "rank" : 4
+    },
+    {
+      "expected" : [
+        "final-image-black-star"
+      ],
+      "group" : "image_semantic",
+      "hits" : [
+        "final-en-15",
+        "final-image-black-star",
+        "final-image-blue-star",
+        "final-image-yellow-star",
+        "final-image-black-circle"
+      ],
+      "id" : "final_image_semantic-23",
+      "location_correct" : true,
+      "rank" : 2
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+        "final-audio-09",
+        "final-en-06",
+        "final-en-18",
+        "final-zh-17",
+        "final-en-02"
+      ],
+      "id" : "final_no_answer-23",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "final-en-24"
+      ],
+      "group" : "lexical",
+      "hits" : [
+        "final-en-24",
+        "final-zh-24",
+        "final-audio-10",
+        "final-audio-18",
+        "final-en-10"
+      ],
+      "id" : "final_lexical-24",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-en-24"
+      ],
+      "group" : "identifier_unicode",
+      "hits" : [
+        "final-en-23",
+        "final-en-04",
+        "final-en-12",
+        "final-en-01",
+        "final-en-21"
+      ],
+      "id" : "final_identifier_unicode-24",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "final-zh-24"
+      ],
+      "group" : "chinese_short",
+      "hits" : [
+        "final-zh-24",
+        "final-en-24",
+        "final-zh-15",
+        "final-zh-10",
+        "final-zh-07"
+      ],
+      "id" : "final_chinese_short-24",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-en-24"
+      ],
+      "group" : "cross_language",
+      "hits" : [
+        "final-zh-24",
+        "final-zh-03",
+        "final-en-24",
+        "final-audio-01",
+        "final-audio-24"
+      ],
+      "id" : "final_cross_language-24",
+      "location_correct" : true,
+      "rank" : 3
+    },
+    {
+      "expected" : [
+        "final-en-24"
+      ],
+      "group" : "semantic_paraphrase",
+      "hits" : [
+        "final-en-24",
+        "final-en-09",
+        "final-zh-24",
+        "final-audio-24",
+        "final-audio-10"
+      ],
+      "id" : "final_semantic_paraphrase-24",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "expected" : [
+        "final-audio-24"
+      ],
+      "group" : "audio_semantic",
+      "hits" : [
+        "final-en-24",
+        "final-en-09",
+        "final-zh-24",
+        "final-audio-18",
+        "final-audio-01"
+      ],
+      "id" : "final_audio_semantic-24",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "expected" : [
+        "final-image-black-cross"
+      ],
+      "group" : "image_semantic",
+      "hits" : [
+        "final-en-15",
+        "final-image-black-cross",
+        "final-image-blue-cross",
+        "final-image-red-cross",
+        "final-image-yellow-cross"
+      ],
+      "id" : "final_image_semantic-24",
+      "location_correct" : true,
+      "rank" : 2
+    },
+    {
+      "expected" : [
+
+      ],
+      "group" : "no_answer",
+      "hits" : [
+        "final-en-06",
+        "final-en-18",
+        "final-en-12",
+        "final-audio-06",
+        "final-audio-21"
+      ],
+      "id" : "final_no_answer-24",
+      "location_correct" : false,
+      "rank" : null
+    }
+  ],
+  "scope" : "Same fixed real captured vectors and baseline-compatible Swift harness. Store\/ranking comparison only. Media fixtures each have one segment at zero; extraction, permission checks and UI are excluded."
+}

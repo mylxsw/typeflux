@@ -1,0 +1,57 @@
+{
+  "wall_seconds": 116.94954383402364,
+  "checks": [
+    {
+      "tag": "file-probe",
+      "command": [
+        "python3",
+        "docs/validation/gul-383/optimization/ranking-scale/run_scale_matrix.py",
+        "--checkout",
+        ".",
+        "--label",
+        "after",
+        "--mode",
+        "native",
+        "--size",
+        "100000",
+        "--tag",
+        "availability-v5-file-probe",
+        "--entry",
+        "file-mode",
+        "--scenario",
+        "fts-cache"
+      ],
+      "exit_code": 0,
+      "expected_failure": false,
+      "rows": 100,
+      "missing": 0,
+      "passed": true
+    },
+    {
+      "tag": "denial",
+      "command": [
+        "python3",
+        "docs/validation/gul-383/optimization/ranking-scale/run_scale_matrix.py",
+        "--checkout",
+        ".",
+        "--label",
+        "after",
+        "--mode",
+        "native",
+        "--size",
+        "100000",
+        "--tag",
+        "availability-v5-denial",
+        "--scenario",
+        "cold-fts",
+        "--deny-document"
+      ],
+      "exit_code": 1,
+      "expected_failure": true,
+      "rows": 20,
+      "missing": 20,
+      "passed": true
+    }
+  ],
+  "passed": true
+}

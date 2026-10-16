@@ -1,0 +1,8 @@
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite "Baseline-compatible frozen ranking comparison" started.
+◇ Test "compare frozen corpus when requested" started.
+✔ Test "compare frozen corpus when requested" passed after 0.394 seconds.
+✔ Suite "Baseline-compatible frozen ranking comparison" passed after 0.394 seconds.
+✔ Test run with 1 test in 1 suite passed after 0.394 seconds.

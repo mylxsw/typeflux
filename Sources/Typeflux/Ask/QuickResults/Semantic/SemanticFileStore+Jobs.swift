@@ -108,10 +108,9 @@ extension SemanticFileStore {
                 try execute("INSERT INTO files(path,modified,bytes,version) VALUES(?,?,?,?)",
                             [path, modified.timeIntervalSince1970, bytes, metadata.version ?? ""])
                 try execute("""
-                    INSERT OR REPLACE INTO jobs(path,version,generation,state,cursor,recipe) VALUES(?,?,?,'pending',?,?)
-                    """,
-                    [path, version, generation, "{\"page\":0,\"offset\":0}", Self.documentProvenance]
-                )
+                            INSERT OR REPLACE INTO jobs(path,version,generation,state,cursor,recipe) VALUES(?,?,?,'pending',?,?)
+                            """,
+                            [path, version, generation, "{\"page\":0,\"offset\":0}", Self.documentProvenance])
                 return Job(path: path, version: version, generation: generation, state: .pending,
                            cursor: .init(), extracted: false, attempts: 0, recipe: Self.documentProvenance)
             }
@@ -134,11 +133,12 @@ extension SemanticFileStore {
             return try transaction {
                 for chunk in chunks {
                     try execute("""
-                    INSERT INTO chunks(path,text,page,vector,generation,start_offset,end_offset,modality,segment_kind,provenance)
-                    VALUES(?,?,?,X'',?,?,?,'text',?,?)
+                    INSERT INTO chunks(path,text,page,vector,generation,start_offset,end_offset,modality,segment_kind,provenance,search_script)
+                    VALUES(?,?,?,X'',?,?,?,'text',?,?,?)
                     """, [job.path, chunk.text, chunk.page as Any, job.generation,
                           chunk.startOffset as Any, chunk.endOffset as Any,
-                          chunk.page == nil ? "text" : "pdf-text", Self.documentProvenance])
+                          chunk.page == nil ? "text" : "pdf-text", Self.documentProvenance,
+                          SemanticScoreCalibration.script(chunk.text)])
                     try execute("INSERT INTO lexical(rowid,terms) VALUES(?,?)",
                                 [sqlite3_last_insert_rowid(database), SemanticFilePolicy.terms(chunk.text)])
                 }
@@ -220,10 +220,9 @@ extension SemanticFileStore {
                 try execute("DELETE FROM files WHERE path=?", [path])
                 try execute("DELETE FROM media_jobs WHERE path=?", [path])
                 try execute("""
-                    INSERT OR REPLACE INTO jobs(path,version,generation,state,cursor,reason) VALUES(?,'',?,'skipped',?,?)
-                    """,
-                    [path, UUID().uuidString, "{\"page\":0,\"offset\":0}", reason]
-                )
+                            INSERT OR REPLACE INTO jobs(path,version,generation,state,cursor,reason) VALUES(?,'',?,'skipped',?,?)
+                            """,
+                            [path, UUID().uuidString, "{\"page\":0,\"offset\":0}", reason])
             }
         }
     }

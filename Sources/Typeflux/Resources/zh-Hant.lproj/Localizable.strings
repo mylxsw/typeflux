@@ -5586,7 +5586,7 @@
 "activity.window.recent" = "最近完成";
 "activity.window.emptyActive" = "目前沒有背景任務";
 "activity.window.emptyRecent" = "本次執行還沒有完成的任務";
-"activity.window.indicator" = "在選單列圖示顯示狀態點";
+"activity.window.indicator" = "在選單列圖示上顯示任務狀態";
 "activity.window.notifications" = "耗時下載完成後傳送通知";
 "activity.window.finished" = "已完成 · %@";
 "activity.window.justNow" = "剛剛";

@@ -1,0 +1,5 @@
+{
+  "free_bytes_before": 11980398592,
+  "free_bytes_after": 13383397376,
+  "scope": "Only this task generated native coverage build scratch; final test binary, profdata and exported LCOV retained for audit. Release and baseline builds are separate and preserved."
+}

@@ -1,0 +1,214 @@
+Building for production...
+[Computing dependencies]
+[Using on-disk description]
+[1 / 4]
+[1 / 7] DequeModule
+[1 / 4] CYaml
+[1 / 4] TypefluxFocusedTests-product
+[2 / 6] TypefluxFocusedTests-product
+[12 / 16]
+<checkout>/Tests/TypefluxTests/SemanticNativeContentionTests.swift:77:30: warning: 'accessibilityAttributeValue' was deprecated in macOS 10.10: Use the NSAccessibility protocol methods instead (see NSAccessibilityProtocols.h) [#DeprecatedDeclaration]
+ 75 |         _ = NSApplication.shared
+ 76 |         let attribute = NSAccessibility.Attribute(rawValue: "AXEnhancedUserInterface")
+ 77 |         let previous = NSApp.accessibilityAttributeValue(attribute)
+    |                              `- warning: 'accessibilityAttributeValue' was deprecated in macOS 10.10: Use the NSAccessibility protocol methods instead (see NSAccessibilityProtocols.h) [#DeprecatedDeclaration]
+ 78 |         NSApp.accessibilitySetValue(true, forAttribute: attribute)
+ 79 |         defer { NSApp.accessibilitySetValue(previous ?? false, forAttribute: attribute) }
+
+<checkout>/Tests/TypefluxTests/SemanticNativeContentionTests.swift:78:15: warning: 'accessibilitySetValue(_:forAttribute:)' was deprecated in macOS 10.10: Use the NSAccessibility protocol methods instead (see NSAccessibilityProtocols.h) [#DeprecatedDeclaration]
+ 76 |         let attribute = NSAccessibility.Attribute(rawValue: "AXEnhancedUserInterface")
+ 77 |         let previous = NSApp.accessibilityAttributeValue(attribute)
+ 78 |         NSApp.accessibilitySetValue(true, forAttribute: attribute)
+    |               `- warning: 'accessibilitySetValue(_:forAttribute:)' was deprecated in macOS 10.10: Use the NSAccessibility protocol methods instead (see NSAccessibilityProtocols.h) [#DeprecatedDeclaration]
+ 79 |         defer { NSApp.accessibilitySetValue(previous ?? false, forAttribute: attribute) }
+ 80 |         var rows: [[String: Any]] = [], entries: [[String: Any]] = []
+
+<checkout>/Tests/TypefluxTests/SemanticNativeContentionTests.swift:79:23: warning: 'accessibilitySetValue(_:forAttribute:)' was deprecated in macOS 10.10: Use the NSAccessibility protocol methods instead (see NSAccessibilityProtocols.h) [#DeprecatedDeclaration]
+ 77 |         let previous = NSApp.accessibilityAttributeValue(attribute)
+ 78 |         NSApp.accessibilitySetValue(true, forAttribute: attribute)
+ 79 |         defer { NSApp.accessibilitySetValue(previous ?? false, forAttribute: attribute) }
+    |                       `- warning: 'accessibilitySetValue(_:forAttribute:)' was deprecated in macOS 10.10: Use the NSAccessibility protocol methods instead (see NSAccessibilityProtocols.h) [#DeprecatedDeclaration]
+ 80 |         var rows: [[String: Any]] = [], entries: [[String: Any]] = []
+ 81 |         var failedBodySamples = 0
+
+<checkout>/Tests/TypefluxTests/SemanticNativeLatencyTests.swift:24:30: warning: 'accessibilityAttributeValue' was deprecated in macOS 10.10: Use the NSAccessibility protocol methods instead (see NSAccessibilityProtocols.h) [#DeprecatedDeclaration]
+ 22 |         _ = NSApplication.shared
+ 23 |         let attribute = NSAccessibility.Attribute(rawValue: "AXEnhancedUserInterface")
+ 24 |         let previous = NSApp.accessibilityAttributeValue(attribute)
+    |                              `- warning: 'accessibilityAttributeValue' was deprecated in macOS 10.10: Use the NSAccessibility protocol methods instead (see NSAccessibilityProtocols.h) [#DeprecatedDeclaration]
+ 25 |         NSApp.accessibilitySetValue(true, forAttribute: attribute)
+ 26 |         defer { NSApp.accessibilitySetValue(previous ?? false, forAttribute: attribute) }
+
+<checkout>/Tests/TypefluxTests/SemanticNativeLatencyTests.swift:25:15: warning: 'accessibilitySetValue(_:forAttribute:)' was deprecated in macOS 10.10: Use the NSAccessibility protocol methods instead (see NSAccessibilityProtocols.h) [#DeprecatedDeclaration]
+ 23 |         let attribute = NSAccessibility.Attribute(rawValue: "AXEnhancedUserInterface")
+ 24 |         let previous = NSApp.accessibilityAttributeValue(attribute)
+ 25 |         NSApp.accessibilitySetValue(true, forAttribute: attribute)
+    |               `- warning: 'accessibilitySetValue(_:forAttribute:)' was deprecated in macOS 10.10: Use the NSAccessibility protocol methods instead (see NSAccessibilityProtocols.h) [#DeprecatedDeclaration]
+ 26 |         defer { NSApp.accessibilitySetValue(previous ?? false, forAttribute: attribute) }
+ 27 |         var rows: [[String: Any]] = [], corpus: [[String: Any]] = []
+
+<checkout>/Tests/TypefluxTests/SemanticNativeLatencyTests.swift:26:23: warning: 'accessibilitySetValue(_:forAttribute:)' was deprecated in macOS 10.10: Use the NSAccessibility protocol methods instead (see NSAccessibilityProtocols.h) [#DeprecatedDeclaration]
+ 24 |         let previous = NSApp.accessibilityAttributeValue(attribute)
+ 25 |         NSApp.accessibilitySetValue(true, forAttribute: attribute)
+ 26 |         defer { NSApp.accessibilitySetValue(previous ?? false, forAttribute: attribute) }
+    |                       `- warning: 'accessibilitySetValue(_:forAttribute:)' was deprecated in macOS 10.10: Use the NSAccessibility protocol methods instead (see NSAccessibilityProtocols.h) [#DeprecatedDeclaration]
+ 27 |         var rows: [[String: Any]] = [], corpus: [[String: Any]] = []
+ 28 |         var failedBodySamples = 0
+
+<checkout>/Tests/TypefluxTests/SettingsBehaviorTestSupport.swift:35:24: warning: call to main actor-isolated instance method 'performClick' in a synchronous nonisolated context [#ActorIsolatedCall]
+ 31 |         }
+ 32 |
+ 33 |         func press() throws {
+    |              `- note: add '@MainActor' to make instance method 'press()' part of global actor 'MainActor'
+ 34 |             if let button = object as? NSButton {
+ 35 |                 button.performClick(nil)
+    |                        `- warning: call to main actor-isolated instance method 'performClick' in a synchronous nonisolated context [#ActorIsolatedCall]
+ 36 |                 return
+ 37 |             }
+
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX27.0.sdk/System/Library/Frameworks/AppKit.framework/Headers/NSControl.h:56:1: note: calls to instance method 'performClick' from outside of its actor context are implicitly asynchronous
+ 54 | - (void)takeIntegerValueFrom:(nullable id)sender API_AVAILABLE(macos(10.5));
+ 55 |
+ 56 | - (void)performClick:(nullable id)sender;
+    | |- note: calls to instance method 'performClick' from outside of its actor context are implicitly asynchronous
+    | `- note: main actor isolation inferred from inheritance from class 'NSView'
+ 57 |
+ 58 | /* The following methods apply only to controls with apparent textual content of some sort (buttons with labels, textfields, etc.).
+
+<checkout>/Tests/TypefluxTests/SettingsBehaviorTestSupport.swift:39:22: warning: call to main actor-isolated instance method 'performClick' in a synchronous nonisolated context [#ActorIsolatedCall]
+ 31 |         }
+ 32 |
+ 33 |         func press() throws {
+    |              `- note: add '@MainActor' to make instance method 'press()' part of global actor 'MainActor'
+ 34 |             if let button = object as? NSButton {
+ 35 |                 button.performClick(nil)
+    :
+ 37 |             }
+ 38 |             if let cell = object as? NSButtonCell {
+ 39 |                 cell.performClick(nil)
+    |                      `- warning: call to main actor-isolated instance method 'performClick' in a synchronous nonisolated context [#ActorIsolatedCall]
+ 40 |                 return
+ 41 |             }
+
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX27.0.sdk/System/Library/Frameworks/AppKit.framework/Headers/NSButtonCell.h:120:1: note: calls to instance method 'performClick' from outside of its actor context are implicitly asynchronous
+118 | - (void)setPeriodicDelay:(float)delay interval:(float)interval;
+119 | - (void)getPeriodicDelay:(float *)delay interval:(float *)interval;
+120 | - (void)performClick:(nullable id)sender;
+    | |- note: calls to instance method 'performClick' from outside of its actor context are implicitly asynchronous
+    | `- note: main actor isolation inferred from inheritance from class 'NSActionCell'
+121 | - (void)mouseEntered:(NSEvent *)event;
+122 | - (void)mouseExited:(NSEvent *)event;
+
+<checkout>/Tests/TypefluxTests/SettingsBehaviorTestSupport.swift:82:43: warning: 'accessibilityAttributeValue' was deprecated in macOS 10.10: Use the NSAccessibility protocol methods instead (see NSAccessibilityProtocols.h) [#DeprecatedDeclaration]
+ 80 |         _ = NSApplication.shared
+ 81 |         let attribute = NSAccessibility.Attribute(rawValue: "AXEnhancedUserInterface")
+ 82 |         let previousAccessibility = NSApp.accessibilityAttributeValue(attribute)
+    |                                           `- warning: 'accessibilityAttributeValue' was deprecated in macOS 10.10: Use the NSAccessibility protocol methods instead (see NSAccessibilityProtocols.h) [#DeprecatedDeclaration]
+ 83 |         NSApp.accessibilitySetValue(true, forAttribute: attribute)
+ 84 |         let previousLanguage = AppLocalization.shared.language
+
+<checkout>/Tests/TypefluxTests/SettingsBehaviorTestSupport.swift:83:15: warning: 'accessibilitySetValue(_:forAttribute:)' was deprecated in macOS 10.10: Use the NSAccessibility protocol methods instead (see NSAccessibilityProtocols.h) [#DeprecatedDeclaration]
+ 81 |         let attribute = NSAccessibility.Attribute(rawValue: "AXEnhancedUserInterface")
+ 82 |         let previousAccessibility = NSApp.accessibilityAttributeValue(attribute)
+ 83 |         NSApp.accessibilitySetValue(true, forAttribute: attribute)
+    |               `- warning: 'accessibilitySetValue(_:forAttribute:)' was deprecated in macOS 10.10: Use the NSAccessibility protocol methods instead (see NSAccessibilityProtocols.h) [#DeprecatedDeclaration]
+ 84 |         let previousLanguage = AppLocalization.shared.language
+ 85 |         let previousMemoryStore = KeychainTokenStore.useInMemoryStoreForTesting
+
+<checkout>/Tests/TypefluxTests/SettingsBehaviorTestSupport.swift:99:19: warning: 'accessibilitySetValue(_:forAttribute:)' was deprecated in macOS 10.10: Use the NSAccessibility protocol methods instead (see NSAccessibilityProtocols.h) [#DeprecatedDeclaration]
+ 97 |             AuthState.shared.isLoggedIn = previousLogin
+ 98 |             AppLocalization.shared.setLanguage(previousLanguage)
+ 99 |             NSApp.accessibilitySetValue(previousAccessibility ?? false, forAttribute: attribute)
+    |                   `- warning: 'accessibilitySetValue(_:forAttribute:)' was deprecated in macOS 10.10: Use the NSAccessibility protocol methods instead (see NSAccessibilityProtocols.h) [#DeprecatedDeclaration]
+100 |         }
+101 |         let defaults = try #require(fixtureDefaults)
+
+<checkout>/Tests/TypefluxTests/SemanticLatencyTests.swift:295:54: warning: will never be executed
+293 |             "index_writer_concurrency": 1,
+294 |             "index_inference_concurrency": 0,
+295 |             "build": _isDebugAssertConfiguration() ? "Debug with coverage" : "Release"
+    |                      |                               `- warning: will never be executed
+    |                      `- note: condition always evaluates to false
+296 |         ]
+297 |         try JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted, .sortedKeys])
+
+<checkout>/Tests/TypefluxTests/SemanticNativeContentionTests.swift:329:79: warning: will never be executed
+327 |                                      "thermal_before": thermalBefore,
+328 |                                      "thermal_after": ProcessInfo.processInfo.thermalState.rawValue,
+329 |                                      "build": _isDebugAssertConfiguration() ? "Debug" : "Release",
+    |                                               |                               `- warning: will never be executed
+    |                                               `- note: condition always evaluates to false
+330 |                                      "index_inference_concurrency": 1,
+331 |                                      "scope": "Actual composer/native commits, production service/indexer, real background document embeddings and query model; base corpus is synthetic noise plus one real winning passage. Layout/display is not a GPU fence; timer gaps include polling/accessibility work."]
+
+<checkout>/Tests/TypefluxTests/SemanticNativeLatencyTests.swift:258:79: warning: will never be executed
+256 |                                      "indexed_files": 2,
+257 |                                      "scope": "Actual AskComposer, native NSTextView commit, production mixed/f sessions and service, real model and permission helper. Drawing forces layout/display and checks rendered accessibility; it is not a GPU presentation fence.",
+258 |                                      "build": _isDebugAssertConfiguration() ? "Debug" : "Release",
+    |                                               |                               `- warning: will never be executed
+    |                                               `- note: condition always evaluates to false
+259 |                                      "index_writer_concurrency": 1,
+260 |                                      "index_inference_concurrency": 0,
+
+[#ActorIsolatedCall]: <https://docs.swift.org/compiler/documentation/diagnostics/actor-isolated-call>
+[#DeprecatedDeclaration]: <https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration>
+[13 / 16] TypefluxFocusedTests-product
+[16 / 20] TypefluxFocusedTests-product
+[18 / 20] TypefluxFocusedTests-product
+Build complete! (29.58 secs)
+TypefluxFocusedTests.AskAppEntryTests/initialsSplitWordsAndCamelCase()
+TypefluxFocusedTests.AskAppEntryTests/namesAreLoweredAndDeduplicated()
+TypefluxFocusedTests.AskAppEntryTests/pinyinKeepsLatinRuns()
+TypefluxFocusedTests.AskAppIndexTests/defaultsCoverTheUsualFolders()
+TypefluxFocusedTests.AskAppIndexTests/hiddenApplicationLinksAreIndexedAndDeduplicated()
+TypefluxFocusedTests.AskAppIndexTests/homeApplicationsPreferLastUseAndPersistAcrossRestarts()
+TypefluxFocusedTests.AskAppIndexTests/iconsAreCached()
+TypefluxFocusedTests.AskAppIndexTests/refreshIfStaleScansInTheBackgroundOnce()
+TypefluxFocusedTests.AskAppIndexTests/scanReadsNamesInEveryLanguage()
+TypefluxFocusedTests.AskAppIndexTests/searchesAfterARefreshAndRemembersLaunches()
+TypefluxFocusedTests.AskAppMatcherTests/findsApplications(query:expected:)
+TypefluxFocusedTests.AskAppMatcherTests/ignoresTextThatNamesNothing(query:)
+TypefluxFocusedTests.AskAppMatcherTests/launchesAndShorterNamesBreakTies()
+TypefluxFocusedTests.AskAppMatcherTests/onlyShortClearQueriesTakeReturn()
+TypefluxFocusedTests.AskAppMatcherTests/scoresByStrength()
+TypefluxFocusedTests.AskConversationTests/authenticationAndRecordingDoNotSendOrLoseDraft()
+TypefluxFocusedTests.AskConversationTests/cacheIsAccountScopedAndRejectsOlderSnapshots()
+TypefluxFocusedTests.AskConversationTests/deletedConversationRetainsToolJournalEvidence()
+TypefluxFocusedTests.AskConversationTests/draftCaptureSendAndFollowUpUseSameConversation()
+TypefluxFocusedTests.AskConversationTests/expiredApprovalCannotExecuteTool()
+TypefluxFocusedTests.AskConversationTests/failedToolIsVisibleAndConversationCanContinue()
+TypefluxFocusedTests.AskConversationTests/historySelectionDeleteAndDraftPersistence()
+TypefluxFocusedTests.AskConversationTests/loadingASkillNeedsNoApproval()
+TypefluxFocusedTests.AskConversationTests/localToolArgumentsAndScriptLiteralsRemainData()
+TypefluxFocusedTests.AskConversationTests/networkRetryReusesMessageIdentifier()
+TypefluxFocusedTests.AskConversationTests/oversizedInputStaysEditableWithoutNetworkRequest()
+TypefluxFocusedTests.AskConversationTests/pullRefreshKeepsSelectionDraftAndReadingPositionOnFailure()
+TypefluxFocusedTests.AskConversationTests/recapturePreservesTextAndSelectionAndLogoutClearsState()
+TypefluxFocusedTests.AskConversationTests/resumedToolNeverRepeatsJournaledExecution(hasResult:)
+TypefluxFocusedTests.AskConversationTests/screenshotDefaultsAndRemovedAttachmentsAreRespected()
+TypefluxFocusedTests.AskConversationTests/standardReadsAutomaticallyButEveryMutationStillRequiresApproval()
+TypefluxFocusedTests.AskConversationTests/stopWhileAwaitingApprovalNeverRunsTool()
+TypefluxFocusedTests.AskConversationTests/toolReportedErrorIsNotSentAsSuccess()
+TypefluxFocusedTests.AskConversationTests/toolRequiresApprovalAndKeepsResults(allow:)
+TypefluxFocusedTests.AskConversationTests/wireDatesAndToolSchemaRoundTrip()
+TypefluxFocusedTests.AskNavigationTests/backgroundToolCompletionKeepsOtherConversationAndListPosition()
+TypefluxFocusedTests.AskNavigationTests/cachedSelectionKeepsContentWhileRefreshingAndRetryKeepsIdentity()
+TypefluxFocusedTests.AskNavigationTests/failedCacheMissKeepsTargetAndBlocksAccidentalNewConversation()
+TypefluxFocusedTests.AskNavigationTests/lateSnapshotCannotReplaceNewerCachedRevision()
+TypefluxFocusedTests.AskNavigationTests/loadingDoesNotOverwriteAnExistingPersistedDraft()
+TypefluxFocusedTests.AskNavigationTests/rapidSelectionLateResponsesDoNotStealFocusOrDrafts()
+TypefluxFocusedTests.AskNavigationTests/sameTitlesRemainDistinctAndOverlappingPagesAreUnique()
+TypefluxFocusedTests.AskNavigationTests/tenFollowUpsNeverCreateNewHistoryOrChangeIdentity()
+TypefluxFocusedTests.AskNavigationTests/uncachedSelectionIsImmediateAndCannotSendAsNew()
+TypefluxFocusedTests.AskNavigationTests/uuidSpellingIsCanonicalInListSnapshotAndOldCache()
+TypefluxFocusedTests.AskQuickResultsAppTests/aChosenApplicationStaysChosenWhileTyping()
+TypefluxFocusedTests.AskQuickResultsAppTests/aClearNameLeadsAndTakesReturn()
+TypefluxFocusedTests.AskQuickResultsAppTests/aQuestionKeepsAskAISelectedInTheFooter()
+TypefluxFocusedTests.AskQuickResultsAppTests/anUnfinishedExpressionDoesNotKeepApplications()
+TypefluxFocusedTests.AskQuickResultsAppTests/arithmeticBeatsApplications()
+TypefluxFocusedTests.AskQuickResultsAppTests/theSettingDefaultsOn()
+TypefluxFocusedTests.AskQuickResultsAppTests/viewMetricsFollowTheRows()
+TypefluxFocusedTests.SemanticLatencyTests/`measure both production entrypoints when explicitly requested`()
+TypefluxFocusedTests.SemanticNativeContentionTests/`measure both entries during real indexing when requested`()
+TypefluxFocusedTests.SemanticNativeLatencyTests/`measure committed native input to body publication and drawing when requested`()
+TypefluxFocusedTests.SemanticRankingComparisonTests/`compare frozen corpus when requested`()

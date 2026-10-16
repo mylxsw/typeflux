@@ -1,0 +1,16 @@
+{
+  "before": {
+    "binary_sha256": "d0972718da19f7a0e16979e30f8523193f02d13435a9e7678126fa7334209b68",
+    "native_harness_sha256": "96cd1c1bed68cd613ccb4954abdbf5e22dfa8ae551ec9f63d07050aee7412cba",
+    "load_fixture_sha256": "afeb6d77d2e446c0356a5fbffca37d194e15fc1763026f52ee019ab33f9510cd",
+    "protocol": "availability-v6-capacity-sampling",
+    "scope": "1m native matrix; compiled before actual-start-counter contention audit. Contentions are rebuilt separately. Production sources unchanged from source-hashes.json / baseline HEAD."
+  },
+  "after": {
+    "binary_sha256": "d5c6fc6fbd16e10ec5f7bf3e3c82ef4663f2d98c74f63ae914fa656e76c0c89d",
+    "native_harness_sha256": "96cd1c1bed68cd613ccb4954abdbf5e22dfa8ae551ec9f63d07050aee7412cba",
+    "load_fixture_sha256": "afeb6d77d2e446c0356a5fbffca37d194e15fc1763026f52ee019ab33f9510cd",
+    "protocol": "availability-v6-capacity-sampling",
+    "scope": "1m native matrix; compiled before actual-start-counter contention audit. Contentions are rebuilt separately. Production sources unchanged from source-hashes.json / baseline HEAD."
+  }
+}

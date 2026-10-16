@@ -1,0 +1,84 @@
+{
+  "completed": [
+    {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "<checkout>/docs/validation/gul-383/optimization/ranking-scale/run_scale_matrix.py",
+        "--checkout",
+        ".",
+        "--label",
+        "after",
+        "--mode",
+        "ranking",
+        "--tag",
+        "candidate-guard"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 345.8008388339658
+    },
+    {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "<checkout>/docs/validation/gul-383/optimization/ranking-scale/run_scale_matrix.py",
+        "--checkout",
+        ".",
+        "--label",
+        "after",
+        "--mode",
+        "native",
+        "--size",
+        "1000000",
+        "--scenario",
+        "hot-new-semantic",
+        "--tag",
+        "candidate-guard",
+        "--real-noise"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 434.045721374976
+    },
+    {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "<checkout>/docs/validation/gul-383/optimization/ranking-scale/run_scale_matrix.py",
+        "--checkout",
+        ".",
+        "--label",
+        "after",
+        "--mode",
+        "native",
+        "--size",
+        "10000",
+        "--scenario",
+        "hot-new-semantic",
+        "--tag",
+        "candidate-guard",
+        "--real-noise"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 220.8164026250015
+    },
+    {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "<checkout>/docs/validation/gul-383/optimization/ranking-scale/run_scale_matrix.py",
+        "--checkout",
+        ".",
+        "--label",
+        "after",
+        "--mode",
+        "native",
+        "--size",
+        "100000",
+        "--scenario",
+        "hot-new-semantic",
+        "--tag",
+        "candidate-guard",
+        "--real-noise"
+      ],
+      "exit_code": 0,
+      "wall_seconds": 207.22357699996792
+    }
+  ],
+  "wall_seconds": 1207.8915467500337
+}

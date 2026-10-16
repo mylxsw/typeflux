@@ -1,0 +1,8 @@
+{
+  "pid": 53821,
+  "reason": "Pause loop owner only; current baseline contention child continues. Fix nonmonotonic partial-coverage penalty, finish self-review, then focused coverage after UI child exits. No performance result is claimed for changed final production sources until after rebuild/retest.",
+  "paused_at_unix": 1792119623.3896768,
+  "outcome": "Reject zero partial-coverage penalty on development data; restore byte-identical production. No heldout rerun and no new unit coverage pass: production and existing validated tests unchanged. Initial unretained exploratory run hit empty-eligible max(); writer now preserves all failed trial rows before returning nonzero. Its exact initial wall time was not recorded.",
+  "resumed_at_unix": 1792120735.212737,
+  "pause_seconds": 1111.8230602741241
+}

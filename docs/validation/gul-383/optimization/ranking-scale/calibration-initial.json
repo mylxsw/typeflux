@@ -1,0 +1,1567 @@
+{
+  "split": "Even topic IDs train, odd topic IDs held out. All 200 queries frozen before selection; unsupported groups remain failures.",
+  "candidates": [
+    {
+      "floor": 0.45,
+      "fusion": "calibrated",
+      "groups": {
+        "chinese_short": {
+          "n": 13,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "false_positive_rate": null
+        },
+        "cross_language": {
+          "n": 13,
+          "recall_at_5": 0.8461538461538461,
+          "mrr": 0.36153846153846153,
+          "false_positive_rate": null
+        },
+        "identifier": {
+          "n": 13,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "false_positive_rate": null
+        },
+        "lexical": {
+          "n": 13,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "false_positive_rate": null
+        },
+        "long_tail": {
+          "n": 13,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "false_positive_rate": null
+        },
+        "media_timestamp": {
+          "n": 13,
+          "recall_at_5": 0.0,
+          "mrr": 0.0,
+          "false_positive_rate": null
+        },
+        "no_answer": {
+          "n": 13,
+          "recall_at_5": 0.0,
+          "mrr": 0.0,
+          "false_positive_rate": 0.0
+        },
+        "scanned": {
+          "n": 13,
+          "recall_at_5": 0.0,
+          "mrr": 0.0,
+          "false_positive_rate": null
+        }
+      },
+      "supported_recall": 0.9692307692307692,
+      "supported_mrr": 0.8723076923076923,
+      "false_positive_rate": 0.0
+    },
+    {
+      "floor": 0.5,
+      "fusion": "calibrated",
+      "groups": {
+        "chinese_short": {
+          "n": 13,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "false_positive_rate": null
+        },
+        "cross_language": {
+          "n": 13,
+          "recall_at_5": 0.8461538461538461,
+          "mrr": 0.36153846153846153,
+          "false_positive_rate": null
+        },
+        "identifier": {
+          "n": 13,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "false_positive_rate": null
+        },
+        "lexical": {
+          "n": 13,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "false_positive_rate": null
+        },
+        "long_tail": {
+          "n": 13,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "false_positive_rate": null
+        },
+        "media_timestamp": {
+          "n": 13,
+          "recall_at_5": 0.0,
+          "mrr": 0.0,
+          "false_positive_rate": null
+        },
+        "no_answer": {
+          "n": 13,
+          "recall_at_5": 0.0,
+          "mrr": 0.0,
+          "false_positive_rate": 0.0
+        },
+        "scanned": {
+          "n": 13,
+          "recall_at_5": 0.0,
+          "mrr": 0.0,
+          "false_positive_rate": null
+        }
+      },
+      "supported_recall": 0.9692307692307692,
+      "supported_mrr": 0.8723076923076923,
+      "false_positive_rate": 0.0
+    },
+    {
+      "floor": 0.55,
+      "fusion": "calibrated",
+      "groups": {
+        "chinese_short": {
+          "n": 13,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "false_positive_rate": null
+        },
+        "cross_language": {
+          "n": 13,
+          "recall_at_5": 0.8461538461538461,
+          "mrr": 0.36153846153846153,
+          "false_positive_rate": null
+        },
+        "identifier": {
+          "n": 13,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "false_positive_rate": null
+        },
+        "lexical": {
+          "n": 13,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "false_positive_rate": null
+        },
+        "long_tail": {
+          "n": 13,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "false_positive_rate": null
+        },
+        "media_timestamp": {
+          "n": 13,
+          "recall_at_5": 0.0,
+          "mrr": 0.0,
+          "false_positive_rate": null
+        },
+        "no_answer": {
+          "n": 13,
+          "recall_at_5": 0.0,
+          "mrr": 0.0,
+          "false_positive_rate": 0.0
+        },
+        "scanned": {
+          "n": 13,
+          "recall_at_5": 0.0,
+          "mrr": 0.0,
+          "false_positive_rate": null
+        }
+      },
+      "supported_recall": 0.9692307692307692,
+      "supported_mrr": 0.8723076923076923,
+      "false_positive_rate": 0.0
+    },
+    {
+      "floor": 0.45,
+      "fusion": "rrf",
+      "groups": {
+        "chinese_short": {
+          "n": 13,
+          "recall_at_5": 1.0,
+          "mrr": 0.9615384615384616,
+          "false_positive_rate": null
+        },
+        "cross_language": {
+          "n": 13,
+          "recall_at_5": 0.8461538461538461,
+          "mrr": 0.36153846153846153,
+          "false_positive_rate": null
+        },
+        "identifier": {
+          "n": 13,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "false_positive_rate": null
+        },
+        "lexical": {
+          "n": 13,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "false_positive_rate": null
+        },
+        "long_tail": {
+          "n": 13,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "false_positive_rate": null
+        },
+        "media_timestamp": {
+          "n": 13,
+          "recall_at_5": 0.0,
+          "mrr": 0.0,
+          "false_positive_rate": null
+        },
+        "no_answer": {
+          "n": 13,
+          "recall_at_5": 0.0,
+          "mrr": 0.0,
+          "false_positive_rate": 0.0
+        },
+        "scanned": {
+          "n": 13,
+          "recall_at_5": 0.0,
+          "mrr": 0.0,
+          "false_positive_rate": null
+        }
+      },
+      "supported_recall": 0.9692307692307692,
+      "supported_mrr": 0.8646153846153847,
+      "false_positive_rate": 0.0
+    },
+    {
+      "floor": 0.5,
+      "fusion": "rrf",
+      "groups": {
+        "chinese_short": {
+          "n": 13,
+          "recall_at_5": 1.0,
+          "mrr": 0.9615384615384616,
+          "false_positive_rate": null
+        },
+        "cross_language": {
+          "n": 13,
+          "recall_at_5": 0.8461538461538461,
+          "mrr": 0.36153846153846153,
+          "false_positive_rate": null
+        },
+        "identifier": {
+          "n": 13,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "false_positive_rate": null
+        },
+        "lexical": {
+          "n": 13,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "false_positive_rate": null
+        },
+        "long_tail": {
+          "n": 13,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "false_positive_rate": null
+        },
+        "media_timestamp": {
+          "n": 13,
+          "recall_at_5": 0.0,
+          "mrr": 0.0,
+          "false_positive_rate": null
+        },
+        "no_answer": {
+          "n": 13,
+          "recall_at_5": 0.0,
+          "mrr": 0.0,
+          "false_positive_rate": 0.0
+        },
+        "scanned": {
+          "n": 13,
+          "recall_at_5": 0.0,
+          "mrr": 0.0,
+          "false_positive_rate": null
+        }
+      },
+      "supported_recall": 0.9692307692307692,
+      "supported_mrr": 0.8646153846153847,
+      "false_positive_rate": 0.0
+    },
+    {
+      "floor": 0.55,
+      "fusion": "rrf",
+      "groups": {
+        "chinese_short": {
+          "n": 13,
+          "recall_at_5": 1.0,
+          "mrr": 0.9615384615384616,
+          "false_positive_rate": null
+        },
+        "cross_language": {
+          "n": 13,
+          "recall_at_5": 0.8461538461538461,
+          "mrr": 0.36153846153846153,
+          "false_positive_rate": null
+        },
+        "identifier": {
+          "n": 13,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "false_positive_rate": null
+        },
+        "lexical": {
+          "n": 13,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "false_positive_rate": null
+        },
+        "long_tail": {
+          "n": 13,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "false_positive_rate": null
+        },
+        "media_timestamp": {
+          "n": 13,
+          "recall_at_5": 0.0,
+          "mrr": 0.0,
+          "false_positive_rate": null
+        },
+        "no_answer": {
+          "n": 13,
+          "recall_at_5": 0.0,
+          "mrr": 0.0,
+          "false_positive_rate": 0.0
+        },
+        "scanned": {
+          "n": 13,
+          "recall_at_5": 0.0,
+          "mrr": 0.0,
+          "false_positive_rate": null
+        }
+      },
+      "supported_recall": 0.9692307692307692,
+      "supported_mrr": 0.8646153846153847,
+      "false_positive_rate": 0.0
+    }
+  ],
+  "selected": {
+    "floor": 0.45,
+    "fusion": "calibrated",
+    "groups": {
+      "chinese_short": {
+        "n": 13,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "false_positive_rate": null
+      },
+      "cross_language": {
+        "n": 13,
+        "recall_at_5": 0.8461538461538461,
+        "mrr": 0.36153846153846153,
+        "false_positive_rate": null
+      },
+      "identifier": {
+        "n": 13,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "false_positive_rate": null
+      },
+      "lexical": {
+        "n": 13,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "false_positive_rate": null
+      },
+      "long_tail": {
+        "n": 13,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "false_positive_rate": null
+      },
+      "media_timestamp": {
+        "n": 13,
+        "recall_at_5": 0.0,
+        "mrr": 0.0,
+        "false_positive_rate": null
+      },
+      "no_answer": {
+        "n": 13,
+        "recall_at_5": 0.0,
+        "mrr": 0.0,
+        "false_positive_rate": 0.0
+      },
+      "scanned": {
+        "n": 13,
+        "recall_at_5": 0.0,
+        "mrr": 0.0,
+        "false_positive_rate": null
+      }
+    },
+    "supported_recall": 0.9692307692307692,
+    "supported_mrr": 0.8723076923076923,
+    "false_positive_rate": 0.0
+  },
+  "holdout": {
+    "groups": {
+      "chinese_short": {
+        "n": 12,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "false_positive_rate": null
+      },
+      "cross_language": {
+        "n": 12,
+        "recall_at_5": 0.0,
+        "mrr": 0.0,
+        "false_positive_rate": null
+      },
+      "identifier": {
+        "n": 12,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "false_positive_rate": null
+      },
+      "lexical": {
+        "n": 12,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "false_positive_rate": null
+      },
+      "long_tail": {
+        "n": 12,
+        "recall_at_5": 1.0,
+        "mrr": 1.0,
+        "false_positive_rate": null
+      },
+      "media_timestamp": {
+        "n": 12,
+        "recall_at_5": 0.0,
+        "mrr": 0.0,
+        "false_positive_rate": null
+      },
+      "no_answer": {
+        "n": 12,
+        "recall_at_5": 0.0,
+        "mrr": 0.0,
+        "false_positive_rate": 0.0
+      },
+      "scanned": {
+        "n": 12,
+        "recall_at_5": 0.0,
+        "mrr": 0.0,
+        "false_positive_rate": null
+      }
+    },
+    "rows": [
+      {
+        "id": "lexical-01",
+        "group": "lexical",
+        "supported": true,
+        "answerable": true,
+        "rank": 1,
+        "hits": [
+          "en-01",
+          "tail-01",
+          "en-20",
+          "en-07",
+          "en-18"
+        ]
+      },
+      {
+        "id": "identifier-01",
+        "group": "identifier",
+        "supported": true,
+        "answerable": true,
+        "rank": 1,
+        "hits": [
+          "en-01"
+        ]
+      },
+      {
+        "id": "chinese_short-01",
+        "group": "chinese_short",
+        "supported": true,
+        "answerable": true,
+        "rank": 1,
+        "hits": [
+          "zh-01",
+          "en-01",
+          "tail-01",
+          "zh-20",
+          "zh-18"
+        ]
+      },
+      {
+        "id": "cross_language-01",
+        "group": "cross_language",
+        "supported": true,
+        "answerable": true,
+        "rank": null,
+        "hits": [
+          "en-01",
+          "tail-01",
+          "en-20",
+          "en-07",
+          "en-18"
+        ]
+      },
+      {
+        "id": "long_tail-01",
+        "group": "long_tail",
+        "supported": true,
+        "answerable": true,
+        "rank": 1,
+        "hits": [
+          "tail-01"
+        ]
+      },
+      {
+        "id": "scanned-01",
+        "group": "scanned",
+        "supported": false,
+        "answerable": true,
+        "rank": null,
+        "hits": []
+      },
+      {
+        "id": "media_timestamp-01",
+        "group": "media_timestamp",
+        "supported": false,
+        "answerable": true,
+        "rank": null,
+        "hits": [
+          "en-01",
+          "tail-01",
+          "zh-01",
+          "en-20",
+          "en-21"
+        ]
+      },
+      {
+        "id": "no_answer-01",
+        "group": "no_answer",
+        "supported": true,
+        "answerable": false,
+        "rank": null,
+        "hits": []
+      },
+      {
+        "id": "lexical-03",
+        "group": "lexical",
+        "supported": true,
+        "answerable": true,
+        "rank": 1,
+        "hits": [
+          "en-03",
+          "tail-03",
+          "en-00",
+          "en-04",
+          "en-23"
+        ]
+      },
+      {
+        "id": "identifier-03",
+        "group": "identifier",
+        "supported": true,
+        "answerable": true,
+        "rank": 1,
+        "hits": [
+          "en-03"
+        ]
+      },
+      {
+        "id": "chinese_short-03",
+        "group": "chinese_short",
+        "supported": true,
+        "answerable": true,
+        "rank": 1,
+        "hits": [
+          "zh-03",
+          "en-03",
+          "tail-03",
+          "zh-10",
+          "zh-00"
+        ]
+      },
+      {
+        "id": "cross_language-03",
+        "group": "cross_language",
+        "supported": true,
+        "answerable": true,
+        "rank": null,
+        "hits": [
+          "en-03",
+          "tail-03",
+          "en-00",
+          "en-04",
+          "en-23"
+        ]
+      },
+      {
+        "id": "long_tail-03",
+        "group": "long_tail",
+        "supported": true,
+        "answerable": true,
+        "rank": 1,
+        "hits": [
+          "tail-03"
+        ]
+      },
+      {
+        "id": "scanned-03",
+        "group": "scanned",
+        "supported": false,
+        "answerable": true,
+        "rank": null,
+        "hits": []
+      },
+      {
+        "id": "media_timestamp-03",
+        "group": "media_timestamp",
+        "supported": false,
+        "answerable": true,
+        "rank": null,
+        "hits": [
+          "tail-03",
+          "en-03",
+          "zh-03",
+          "tail-00",
+          "tail-04"
+        ]
+      },
+      {
+        "id": "no_answer-03",
+        "group": "no_answer",
+        "supported": true,
+        "answerable": false,
+        "rank": null,
+        "hits": []
+      },
+      {
+        "id": "lexical-05",
+        "group": "lexical",
+        "supported": true,
+        "answerable": true,
+        "rank": 1,
+        "hits": [
+          "en-05",
+          "tail-05",
+          "en-20",
+          "en-10",
+          "en-16"
+        ]
+      },
+      {
+        "id": "identifier-05",
+        "group": "identifier",
+        "supported": true,
+        "answerable": true,
+        "rank": 1,
+        "hits": [
+          "en-05"
+        ]
+      },
+      {
+        "id": "chinese_short-05",
+        "group": "chinese_short",
+        "supported": true,
+        "answerable": true,
+        "rank": 1,
+        "hits": [
+          "zh-05",
+          "en-05",
+          "tail-05",
+          "zh-11",
+          "en-20"
+        ]
+      },
+      {
+        "id": "cross_language-05",
+        "group": "cross_language",
+        "supported": true,
+        "answerable": true,
+        "rank": null,
+        "hits": [
+          "en-05",
+          "tail-05",
+          "en-20",
+          "en-10",
+          "en-16"
+        ]
+      },
+      {
+        "id": "long_tail-05",
+        "group": "long_tail",
+        "supported": true,
+        "answerable": true,
+        "rank": 1,
+        "hits": [
+          "tail-05"
+        ]
+      },
+      {
+        "id": "scanned-05",
+        "group": "scanned",
+        "supported": false,
+        "answerable": true,
+        "rank": null,
+        "hits": []
+      },
+      {
+        "id": "media_timestamp-05",
+        "group": "media_timestamp",
+        "supported": false,
+        "answerable": true,
+        "rank": null,
+        "hits": [
+          "tail-05",
+          "en-05",
+          "en-20",
+          "tail-20",
+          "zh-05"
+        ]
+      },
+      {
+        "id": "no_answer-05",
+        "group": "no_answer",
+        "supported": true,
+        "answerable": false,
+        "rank": null,
+        "hits": []
+      },
+      {
+        "id": "lexical-07",
+        "group": "lexical",
+        "supported": true,
+        "answerable": true,
+        "rank": 1,
+        "hits": [
+          "en-07",
+          "tail-07",
+          "en-14",
+          "en-16",
+          "en-18"
+        ]
+      },
+      {
+        "id": "identifier-07",
+        "group": "identifier",
+        "supported": true,
+        "answerable": true,
+        "rank": 1,
+        "hits": [
+          "en-07"
+        ]
+      },
+      {
+        "id": "chinese_short-07",
+        "group": "chinese_short",
+        "supported": true,
+        "answerable": true,
+        "rank": 1,
+        "hits": [
+          "zh-07",
+          "en-07",
+          "tail-07",
+          "zh-19",
+          "zh-01"
+        ]
+      },
+      {
+        "id": "cross_language-07",
+        "group": "cross_language",
+        "supported": true,
+        "answerable": true,
+        "rank": null,
+        "hits": [
+          "en-07",
+          "tail-07",
+          "en-14",
+          "en-16",
+          "en-18"
+        ]
+      },
+      {
+        "id": "long_tail-07",
+        "group": "long_tail",
+        "supported": true,
+        "answerable": true,
+        "rank": 1,
+        "hits": [
+          "tail-07"
+        ]
+      },
+      {
+        "id": "scanned-07",
+        "group": "scanned",
+        "supported": false,
+        "answerable": true,
+        "rank": null,
+        "hits": []
+      },
+      {
+        "id": "media_timestamp-07",
+        "group": "media_timestamp",
+        "supported": false,
+        "answerable": true,
+        "rank": null,
+        "hits": [
+          "en-07",
+          "tail-07",
+          "zh-07",
+          "en-14",
+          "en-01"
+        ]
+      },
+      {
+        "id": "no_answer-07",
+        "group": "no_answer",
+        "supported": true,
+        "answerable": false,
+        "rank": null,
+        "hits": []
+      },
+      {
+        "id": "lexical-09",
+        "group": "lexical",
+        "supported": true,
+        "answerable": true,
+        "rank": 1,
+        "hits": [
+          "en-09",
+          "tail-09",
+          "en-18",
+          "en-07",
+          "en-10"
+        ]
+      },
+      {
+        "id": "identifier-09",
+        "group": "identifier",
+        "supported": true,
+        "answerable": true,
+        "rank": 1,
+        "hits": [
+          "en-09"
+        ]
+      },
+      {
+        "id": "chinese_short-09",
+        "group": "chinese_short",
+        "supported": true,
+        "answerable": true,
+        "rank": 1,
+        "hits": [
+          "zh-09",
+          "en-09",
+          "tail-09",
+          "zh-18",
+          "zh-19"
+        ]
+      },
+      {
+        "id": "cross_language-09",
+        "group": "cross_language",
+        "supported": true,
+        "answerable": true,
+        "rank": null,
+        "hits": [
+          "en-09",
+          "tail-09",
+          "en-18",
+          "en-07",
+          "en-10"
+        ]
+      },
+      {
+        "id": "long_tail-09",
+        "group": "long_tail",
+        "supported": true,
+        "answerable": true,
+        "rank": 1,
+        "hits": [
+          "tail-09"
+        ]
+      },
+      {
+        "id": "scanned-09",
+        "group": "scanned",
+        "supported": false,
+        "answerable": true,
+        "rank": null,
+        "hits": []
+      },
+      {
+        "id": "media_timestamp-09",
+        "group": "media_timestamp",
+        "supported": false,
+        "answerable": true,
+        "rank": null,
+        "hits": [
+          "en-09",
+          "tail-09",
+          "zh-09",
+          "en-08",
+          "en-18"
+        ]
+      },
+      {
+        "id": "no_answer-09",
+        "group": "no_answer",
+        "supported": true,
+        "answerable": false,
+        "rank": null,
+        "hits": []
+      },
+      {
+        "id": "lexical-11",
+        "group": "lexical",
+        "supported": true,
+        "answerable": true,
+        "rank": 1,
+        "hits": [
+          "en-11",
+          "tail-11",
+          "en-21",
+          "en-10",
+          "en-05"
+        ]
+      },
+      {
+        "id": "identifier-11",
+        "group": "identifier",
+        "supported": true,
+        "answerable": true,
+        "rank": 1,
+        "hits": [
+          "en-11"
+        ]
+      },
+      {
+        "id": "chinese_short-11",
+        "group": "chinese_short",
+        "supported": true,
+        "answerable": true,
+        "rank": 1,
+        "hits": [
+          "zh-11",
+          "tail-11",
+          "en-11",
+          "en-21",
+          "zh-21"
+        ]
+      },
+      {
+        "id": "cross_language-11",
+        "group": "cross_language",
+        "supported": true,
+        "answerable": true,
+        "rank": null,
+        "hits": [
+          "en-11",
+          "tail-11",
+          "en-21",
+          "en-10",
+          "en-05"
+        ]
+      },
+      {
+        "id": "long_tail-11",
+        "group": "long_tail",
+        "supported": true,
+        "answerable": true,
+        "rank": 1,
+        "hits": [
+          "tail-11"
+        ]
+      },
+      {
+        "id": "scanned-11",
+        "group": "scanned",
+        "supported": false,
+        "answerable": true,
+        "rank": null,
+        "hits": []
+      },
+      {
+        "id": "media_timestamp-11",
+        "group": "media_timestamp",
+        "supported": false,
+        "answerable": true,
+        "rank": null,
+        "hits": [
+          "tail-11",
+          "en-11",
+          "zh-11",
+          "en-21",
+          "tail-21"
+        ]
+      },
+      {
+        "id": "no_answer-11",
+        "group": "no_answer",
+        "supported": true,
+        "answerable": false,
+        "rank": null,
+        "hits": []
+      },
+      {
+        "id": "lexical-13",
+        "group": "lexical",
+        "supported": true,
+        "answerable": true,
+        "rank": 1,
+        "hits": [
+          "en-13",
+          "tail-13",
+          "en-06",
+          "en-21",
+          "en-16"
+        ]
+      },
+      {
+        "id": "identifier-13",
+        "group": "identifier",
+        "supported": true,
+        "answerable": true,
+        "rank": 1,
+        "hits": [
+          "en-13"
+        ]
+      },
+      {
+        "id": "chinese_short-13",
+        "group": "chinese_short",
+        "supported": true,
+        "answerable": true,
+        "rank": 1,
+        "hits": [
+          "zh-13",
+          "en-13",
+          "tail-13",
+          "zh-12",
+          "zh-06"
+        ]
+      },
+      {
+        "id": "cross_language-13",
+        "group": "cross_language",
+        "supported": true,
+        "answerable": true,
+        "rank": null,
+        "hits": [
+          "en-13",
+          "tail-13",
+          "en-06",
+          "en-21",
+          "en-16"
+        ]
+      },
+      {
+        "id": "long_tail-13",
+        "group": "long_tail",
+        "supported": true,
+        "answerable": true,
+        "rank": 1,
+        "hits": [
+          "tail-13"
+        ]
+      },
+      {
+        "id": "scanned-13",
+        "group": "scanned",
+        "supported": false,
+        "answerable": true,
+        "rank": null,
+        "hits": []
+      },
+      {
+        "id": "media_timestamp-13",
+        "group": "media_timestamp",
+        "supported": false,
+        "answerable": true,
+        "rank": null,
+        "hits": [
+          "tail-13",
+          "en-13",
+          "tail-06",
+          "en-06",
+          "zh-13"
+        ]
+      },
+      {
+        "id": "no_answer-13",
+        "group": "no_answer",
+        "supported": true,
+        "answerable": false,
+        "rank": null,
+        "hits": []
+      },
+      {
+        "id": "lexical-15",
+        "group": "lexical",
+        "supported": true,
+        "answerable": true,
+        "rank": 1,
+        "hits": [
+          "en-15",
+          "tail-15",
+          "en-10",
+          "en-14",
+          "en-18"
+        ]
+      },
+      {
+        "id": "identifier-15",
+        "group": "identifier",
+        "supported": true,
+        "answerable": true,
+        "rank": 1,
+        "hits": [
+          "en-15"
+        ]
+      },
+      {
+        "id": "chinese_short-15",
+        "group": "chinese_short",
+        "supported": true,
+        "answerable": true,
+        "rank": 1,
+        "hits": [
+          "zh-15",
+          "tail-15",
+          "en-15",
+          "zh-08",
+          "zh-00"
+        ]
+      },
+      {
+        "id": "cross_language-15",
+        "group": "cross_language",
+        "supported": true,
+        "answerable": true,
+        "rank": null,
+        "hits": [
+          "en-15",
+          "tail-15",
+          "en-10",
+          "en-14",
+          "en-18"
+        ]
+      },
+      {
+        "id": "long_tail-15",
+        "group": "long_tail",
+        "supported": true,
+        "answerable": true,
+        "rank": 1,
+        "hits": [
+          "tail-15"
+        ]
+      },
+      {
+        "id": "scanned-15",
+        "group": "scanned",
+        "supported": false,
+        "answerable": true,
+        "rank": null,
+        "hits": []
+      },
+      {
+        "id": "media_timestamp-15",
+        "group": "media_timestamp",
+        "supported": false,
+        "answerable": true,
+        "rank": null,
+        "hits": [
+          "tail-15",
+          "en-15",
+          "zh-15",
+          "en-08",
+          "en-20"
+        ]
+      },
+      {
+        "id": "no_answer-15",
+        "group": "no_answer",
+        "supported": true,
+        "answerable": false,
+        "rank": null,
+        "hits": []
+      },
+      {
+        "id": "lexical-17",
+        "group": "lexical",
+        "supported": true,
+        "answerable": true,
+        "rank": 1,
+        "hits": [
+          "en-17",
+          "en-20",
+          "en-10",
+          "tail-17",
+          "en-23"
+        ]
+      },
+      {
+        "id": "identifier-17",
+        "group": "identifier",
+        "supported": true,
+        "answerable": true,
+        "rank": 1,
+        "hits": [
+          "en-17"
+        ]
+      },
+      {
+        "id": "chinese_short-17",
+        "group": "chinese_short",
+        "supported": true,
+        "answerable": true,
+        "rank": 1,
+        "hits": [
+          "zh-17",
+          "en-17",
+          "zh-19",
+          "tail-17",
+          "zh-20"
+        ]
+      },
+      {
+        "id": "cross_language-17",
+        "group": "cross_language",
+        "supported": true,
+        "answerable": true,
+        "rank": null,
+        "hits": [
+          "en-17",
+          "en-20",
+          "en-10",
+          "tail-17",
+          "en-23"
+        ]
+      },
+      {
+        "id": "long_tail-17",
+        "group": "long_tail",
+        "supported": true,
+        "answerable": true,
+        "rank": 1,
+        "hits": [
+          "tail-17"
+        ]
+      },
+      {
+        "id": "scanned-17",
+        "group": "scanned",
+        "supported": false,
+        "answerable": true,
+        "rank": null,
+        "hits": []
+      },
+      {
+        "id": "media_timestamp-17",
+        "group": "media_timestamp",
+        "supported": false,
+        "answerable": true,
+        "rank": null,
+        "hits": [
+          "en-17",
+          "tail-17",
+          "zh-17",
+          "tail-20",
+          "en-20"
+        ]
+      },
+      {
+        "id": "no_answer-17",
+        "group": "no_answer",
+        "supported": true,
+        "answerable": false,
+        "rank": null,
+        "hits": []
+      },
+      {
+        "id": "lexical-19",
+        "group": "lexical",
+        "supported": true,
+        "answerable": true,
+        "rank": 1,
+        "hits": [
+          "en-19",
+          "tail-19",
+          "en-07",
+          "en-14",
+          "en-21"
+        ]
+      },
+      {
+        "id": "identifier-19",
+        "group": "identifier",
+        "supported": true,
+        "answerable": true,
+        "rank": 1,
+        "hits": [
+          "en-19"
+        ]
+      },
+      {
+        "id": "chinese_short-19",
+        "group": "chinese_short",
+        "supported": true,
+        "answerable": true,
+        "rank": 1,
+        "hits": [
+          "zh-19",
+          "tail-19",
+          "en-19",
+          "zh-04",
+          "zh-13"
+        ]
+      },
+      {
+        "id": "cross_language-19",
+        "group": "cross_language",
+        "supported": true,
+        "answerable": true,
+        "rank": null,
+        "hits": [
+          "en-19",
+          "tail-19",
+          "en-07",
+          "en-14",
+          "en-21"
+        ]
+      },
+      {
+        "id": "long_tail-19",
+        "group": "long_tail",
+        "supported": true,
+        "answerable": true,
+        "rank": 1,
+        "hits": [
+          "tail-19"
+        ]
+      },
+      {
+        "id": "scanned-19",
+        "group": "scanned",
+        "supported": false,
+        "answerable": true,
+        "rank": null,
+        "hits": []
+      },
+      {
+        "id": "media_timestamp-19",
+        "group": "media_timestamp",
+        "supported": false,
+        "answerable": true,
+        "rank": null,
+        "hits": [
+          "tail-19",
+          "en-19",
+          "zh-19",
+          "en-21",
+          "en-11"
+        ]
+      },
+      {
+        "id": "no_answer-19",
+        "group": "no_answer",
+        "supported": true,
+        "answerable": false,
+        "rank": null,
+        "hits": []
+      },
+      {
+        "id": "lexical-21",
+        "group": "lexical",
+        "supported": true,
+        "answerable": true,
+        "rank": 1,
+        "hits": [
+          "en-21",
+          "tail-21",
+          "en-11",
+          "en-16",
+          "en-10"
+        ]
+      },
+      {
+        "id": "identifier-21",
+        "group": "identifier",
+        "supported": true,
+        "answerable": true,
+        "rank": 1,
+        "hits": [
+          "en-21"
+        ]
+      },
+      {
+        "id": "chinese_short-21",
+        "group": "chinese_short",
+        "supported": true,
+        "answerable": true,
+        "rank": 1,
+        "hits": [
+          "zh-21",
+          "en-21",
+          "tail-21",
+          "zh-11",
+          "zh-19"
+        ]
+      },
+      {
+        "id": "cross_language-21",
+        "group": "cross_language",
+        "supported": true,
+        "answerable": true,
+        "rank": null,
+        "hits": [
+          "en-21",
+          "tail-21",
+          "en-11",
+          "en-16",
+          "en-10"
+        ]
+      },
+      {
+        "id": "long_tail-21",
+        "group": "long_tail",
+        "supported": true,
+        "answerable": true,
+        "rank": 1,
+        "hits": [
+          "tail-21"
+        ]
+      },
+      {
+        "id": "scanned-21",
+        "group": "scanned",
+        "supported": false,
+        "answerable": true,
+        "rank": null,
+        "hits": []
+      },
+      {
+        "id": "media_timestamp-21",
+        "group": "media_timestamp",
+        "supported": false,
+        "answerable": true,
+        "rank": null,
+        "hits": [
+          "en-21",
+          "tail-21",
+          "en-11",
+          "tail-11",
+          "zh-11"
+        ]
+      },
+      {
+        "id": "no_answer-21",
+        "group": "no_answer",
+        "supported": true,
+        "answerable": false,
+        "rank": null,
+        "hits": []
+      },
+      {
+        "id": "lexical-23",
+        "group": "lexical",
+        "supported": true,
+        "answerable": true,
+        "rank": 1,
+        "hits": [
+          "en-23",
+          "tail-23",
+          "en-14",
+          "en-07",
+          "en-18"
+        ]
+      },
+      {
+        "id": "identifier-23",
+        "group": "identifier",
+        "supported": true,
+        "answerable": true,
+        "rank": 1,
+        "hits": [
+          "en-23"
+        ]
+      },
+      {
+        "id": "chinese_short-23",
+        "group": "chinese_short",
+        "supported": true,
+        "answerable": true,
+        "rank": 1,
+        "hits": [
+          "zh-23",
+          "tail-23",
+          "en-23",
+          "zh-14",
+          "zh-18"
+        ]
+      },
+      {
+        "id": "cross_language-23",
+        "group": "cross_language",
+        "supported": true,
+        "answerable": true,
+        "rank": null,
+        "hits": [
+          "en-23",
+          "tail-23",
+          "en-14",
+          "en-07",
+          "en-18"
+        ]
+      },
+      {
+        "id": "long_tail-23",
+        "group": "long_tail",
+        "supported": true,
+        "answerable": true,
+        "rank": 1,
+        "hits": [
+          "tail-23"
+        ]
+      },
+      {
+        "id": "scanned-23",
+        "group": "scanned",
+        "supported": false,
+        "answerable": true,
+        "rank": null,
+        "hits": []
+      },
+      {
+        "id": "media_timestamp-23",
+        "group": "media_timestamp",
+        "supported": false,
+        "answerable": true,
+        "rank": null,
+        "hits": [
+          "tail-23",
+          "en-23",
+          "zh-23",
+          "tail-09",
+          "en-14"
+        ]
+      },
+      {
+        "id": "no_answer-23",
+        "group": "no_answer",
+        "supported": true,
+        "answerable": false,
+        "rank": null,
+        "hits": []
+      }
+    ],
+    "supported_recall": 0.8,
+    "supported_mrr": 0.8,
+    "false_positive_rate": 0.0
+  },
+  "native_probe_cosine": 0.6527161675524482,
+  "limitation": "Hand-authored single-source synthetic regression oracle. Text/long-tail documents only. No media embeddings or scanned PDFs in this harness; no representative relevance claim."
+}

@@ -1,0 +1,7 @@
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite "Native composer semantic latency" started.
+◇ Test "measure committed native input to body publication and drawing when requested" started.
+Note: Some test targets reported failures:
+  - TypefluxFocusedTests (Swift Testing)

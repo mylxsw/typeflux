@@ -1,0 +1,133 @@
+{
+  "baseline": "262135bcebc1e3694ddc02ce6e2b15086a10dd23",
+  "denominator": "Added/modified executable Swift lines in Sources/Typeflux, including new files, intersected with final LLVM LCOV DA records. Tests, helper wrapper and unchanged vendor code excluded; helper reported separately.",
+  "executable": 781,
+  "covered": 747,
+  "percent": 95.65,
+  "files": {
+    "Sources/Typeflux/Ask/QuickResults/AskQuickSearchSession.swift": {
+      "executable": 3,
+      "covered": 3,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFilePolicy.swift": {
+      "executable": 1,
+      "covered": 1,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift": {
+      "executable": 33,
+      "covered": 31,
+      "percent": 93.94,
+      "uncovered": [
+        591,
+        592
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Jobs.swift": {
+      "executable": 10,
+      "covered": 10,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore.swift": {
+      "executable": 13,
+      "covered": 8,
+      "percent": 61.54,
+      "uncovered": [
+        284,
+        285,
+        286,
+        287,
+        306
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileValidator.swift": {
+      "executable": 62,
+      "covered": 62,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticLexicalReader.swift": {
+      "executable": 97,
+      "covered": 81,
+      "percent": 83.51,
+      "uncovered": [
+        92,
+        93,
+        94,
+        97,
+        98,
+        99,
+        106,
+        107,
+        108,
+        109,
+        110,
+        111,
+        112,
+        113,
+        120,
+        126
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+SearchSchema.swift": {
+      "executable": 57,
+      "covered": 57,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSQLiteCancellation.swift": {
+      "executable": 21,
+      "covered": 21,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticScoreCalibration.swift": {
+      "executable": 52,
+      "covered": 52,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSearchRanking.swift": {
+      "executable": 105,
+      "covered": 105,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticVectorReader.swift": {
+      "executable": 327,
+      "covered": 316,
+      "percent": 96.64,
+      "uncovered": [
+        64,
+        77,
+        152,
+        153,
+        154,
+        156,
+        157,
+        188,
+        224,
+        263,
+        372
+      ]
+    }
+  },
+  "provenance": {
+    "base_pass": "103 tests / 17 suites (coverage-centered-retry.json).",
+    "replaced_source_records": {
+      "SemanticFileSearchService.swift": "coverage-ranking-final.json",
+      "SemanticSearchRanking.swift": "coverage-ranking-final.json",
+      "SemanticScoreCalibration.swift": "coverage-candidate-guard-final.json",
+      "SemanticFileStore.swift": "coverage-store-format-final.json",
+      "AskQuickSearchSession.swift": "coverage-publication-final.json (32 tests / 2 suites)",
+      "SemanticLexicalReader.swift": "coverage-timestamp-final.json",
+      "SemanticSQLiteCancellation.swift": "coverage-candidate-guard-final.json",
+      "SemanticVectorReader.swift": "coverage-candidate-guard-final.json"
+    },
+    "method": "Replace entire LCOV source records for later changed files; no LLVM binary-profile merge across compilations. All remaining source records retain the same executable source/line mapping."
+  }
+}

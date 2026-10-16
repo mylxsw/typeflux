@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/usr/bin/swift",
+    "build",
+    "--build-tests",
+    "--enable-code-coverage",
+    "--jobs",
+    "4"
+  ],
+  "wall_seconds": 37.72030545899179,
+  "exit_code": -15,
+  "test_files": [
+    "SemanticSearchRankingTests.swift",
+    "SemanticFileSearchTests.swift",
+    "ExclusiveUIStateTrait.swift"
+  ]
+}

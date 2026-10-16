@@ -1,0 +1,6 @@
+{
+  "reason": "Initial baseline completed only 47 rows before semantic settle exceeded 30 seconds; all partial rows retained. Paired 1m capacity sampling now uses 20 warm rounds per entry/scenario and 120-second wait, preserving latency thresholds. 100k gate retains 100 warm rounds. Cold and ASR remain 10.",
+  "harness": "availability-v6-capacity-sampling",
+  "production_changed": false,
+  "initial_baseline_wall_seconds": 753.4194235840114
+}

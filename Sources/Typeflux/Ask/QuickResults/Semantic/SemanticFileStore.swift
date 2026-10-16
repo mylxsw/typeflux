@@ -1,11 +1,10 @@
-import Accelerate
 import Foundation
 import SQLite3
 
 private let semanticTransient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
 
 /// A separate WAL database. Each content/checkpoint batch and each vector batch commits atomically.
-/// Serialized by the lock; no main-actor disk I/O and no shared filename-index state.
+/// Writes are serialized; each search channel owns an independent WAL reader and lock.
 final class SemanticFileStore: @unchecked Sendable {
     enum Failure: Error { case database, invalidVector }
     /// Files with published content, including partial documents; discovered candidates are separate.
@@ -24,6 +23,7 @@ final class SemanticFileStore: @unchecked Sendable {
     let lock = NSLock()
     var database: OpaquePointer?
     private var lexicalReader: SemanticLexicalReader?
+    private var vectorReader: SemanticVectorReader?
     let url: URL
 
     // Keep schema migration and reader startup in one initialization failure boundary.
@@ -84,7 +84,9 @@ final class SemanticFileStore: @unchecked Sendable {
                     try? sql("ROLLBACK"); throw error
                 }
             }
+            try prepareSearchSchema()
             lexicalReader = try SemanticLexicalReader(url: url)
+            vectorReader = try SemanticVectorReader(url: url)
         } catch { sqlite3_close(database); database = nil; throw error }
     }
 
@@ -122,8 +124,9 @@ final class SemanticFileStore: @unchecked Sendable {
                 for (chunk, vector) in zip(chunks, vectors) {
                     let data = vector.withUnsafeBytes { Data($0) }
                     try self.execute(
-                        "INSERT INTO chunks(path,text,page,time,vector) VALUES(?,?,?,?,?)",
-                        [path, chunk.text, chunk.page as Any, chunk.time as Any, data]
+                        "INSERT INTO chunks(path,text,page,time,vector,search_script) VALUES(?,?,?,?,?,?)",
+                        [path, chunk.text, chunk.page as Any, chunk.time as Any, data,
+                         SemanticScoreCalibration.script(chunk.text)]
                     )
                     let id = sqlite3_last_insert_rowid(database)
                     try execute(
@@ -205,112 +208,12 @@ final class SemanticFileStore: @unchecked Sendable {
         }
     }
 
-    // Scope/type/filter checks precede ranking; forbidden rows cannot consume TopK slots.
-    // Keep permission checks and the bounded TopK loop together.
-    // swiftlint:disable:next function_body_length cyclomatic_complexity function_parameter_count
+    // swiftlint:disable:next function_parameter_count
     func search(vector: [Float], text: String, query: AskSearchQuery, type: AskFileType,
                 scope: AskFileScope, limit: Int, cancelled: () -> Bool) throws -> [AskFileHit] {
-        guard limit > 0, Self.valid(vector) else { return [] }
-        let waiting = ProcessInfo.processInfo.systemUptime
-        return try lock.withLock {
-            SemanticSearchTrace.current?.measure("vector-lock-wait",
-                                                 milliseconds: (ProcessInfo.processInfo.systemUptime - waiting) * 1000)
-            let terms = SemanticFilePolicy.searchTerms(text)
-                .prefix(64)
-            var lexical = Set<Int64>()
-            if !terms.isEmpty {
-                let stmt = try statement("SELECT rowid FROM lexical WHERE lexical MATCH ?")
-                defer { sqlite3_finalize(stmt) }
-                self.bind(stmt, [terms.map { "\"" + $0 + "\"" }.joined(separator: " OR ")])
-                while sqlite3_step(stmt) == SQLITE_ROW {
-                    if cancelled() {
-                        throw CancellationError()
-                    }
-                    lexical.insert(sqlite3_column_int64(stmt, 0))
-                }
-            }
-            let stmt = try statement(
-                """
-                SELECT c.id,c.path,c.page,c.vector,f.modified,c.time,f.version,c.start_offset,c.end_offset,c.provenance
-                FROM chunks c JOIN files f ON f.path=c.path ORDER BY c.id
-                """
-            )
-            defer { sqlite3_finalize(stmt) }
-            var best: [(id: Int64, hit: AskFileHit)] = []
-            var previousPath: String?, allowed = false, mediaFile = false
-            while sqlite3_step(stmt) == SQLITE_ROW {
-                if cancelled() {
-                    throw CancellationError()
-                }
-                let path = self.string(stmt, 1)
-                if previousPath != path {
-                    previousPath = path
-                    mediaFile = SemanticMediaPriority.of(path) != .document
-                    let ext = (path as NSString).pathExtension.lowercased()
-                    allowed = scope.includes(path, isDirectory: false) && SemanticFilePolicy.allows(path)
-                        && type.matches(kind: .file, extension: ext)
-                        && (query.fileExtension == nil || query.fileExtension == ext)
-                    if let folder = query.folder {
-                        let place = AskSearchText.normalize((path as NSString).deletingLastPathComponent)
-                        allowed = allowed && AskFileIndexState.contains(place, folder)
-                    }
-                }
-                // A changed/unknown projector must not join the current vector space during rebuild or pause.
-                guard !mediaFile || self.string(stmt, 9) == Self.mediaProvenance else { continue }
-                guard allowed, sqlite3_column_bytes(stmt, 3) == SemanticFilePolicy.dimension * 4,
-                      let raw = sqlite3_column_blob(stmt, 3) else { continue }
-                // SQLite owns this blob until the next step; score it directly without allocating 768 Floats per row.
-                let cosine = vector.withUnsafeBufferPointer {
-                    Double(cblas_sdot(Int32($0.count), $0.baseAddress!, 1, raw.assumingMemoryBound(to: Float.self), 1))
-                }
-                let id = sqlite3_column_int64(stmt, 0), lexicalMatch = lexical.contains(id)
-                guard cosine.isFinite, cosine >= 0.35 || lexicalMatch else { continue }
-                let score = max(0, cosine) * 0.7 + (lexicalMatch ? 0.18 : 0)
-                if let existing = best.firstIndex(where: { $0.hit.path == path }) {
-                    if best[existing].hit.score >= score {
-                        continue
-                    }
-                    best.remove(at: existing)
-                }
-                let page = sqlite3_column_type(stmt, 2) == SQLITE_NULL ? nil : Int(sqlite3_column_int(stmt, 2))
-                let value = sqlite3_column_type(stmt, 5) == SQLITE_NULL ? nil : sqlite3_column_double(stmt, 5)
-                let time = value.flatMap { $0.isFinite && $0 >= 0 && $0 < Double(Int.max) ? $0 : nil }
-                let hit = AskFileHit(path: path, name: (path as NSString).lastPathComponent, kind: .file,
-                                     modified: Date(timeIntervalSince1970: sqlite3_column_double(stmt, 4)),
-                                     score: score, evidence: .init(text: "", page: page, time: time,
-                                                                   version: self.string(stmt, 6).isEmpty ? nil : self
-                                                                       .string(
-                                                                           stmt,
-                                                                           6
-                                                                       ),
-                                                                   startOffset: sqlite3_column_type(stmt, 7) ==
-                                                                       SQLITE_NULL ? nil : sqlite3_column_int64(
-                                                                           stmt,
-                                                                           7
-                                                                       ),
-                                                                   endOffset: sqlite3_column_type(stmt, 8) ==
-                                                                       SQLITE_NULL ? nil : sqlite3_column_int64(
-                                                                           stmt,
-                                                                           8
-                                                                       )))
-                best.append((id, hit))
-                best.sort { $0.hit.score == $1.hit.score ? $0.hit.path < $1.hit.path : $0.hit.score > $1.hit.score }
-                if best.count > min(100, limit) {
-                    best.removeLast()
-                }
-            }
-            // Materialize passages only for the winning files, not for every scanned chunk.
-            return try best.map { candidate in
-                let textRow = try statement("SELECT text FROM chunks WHERE id=?")
-                defer { sqlite3_finalize(textRow) }
-                self.bind(textRow, [candidate.id])
-                var hit = candidate.hit
-                if sqlite3_step(textRow) == SQLITE_ROW {
-                    hit.evidence?.text = String(self.string(textRow, 0).prefix(180))
-                }
-                return hit
-            }
-        }
+        guard let vectorReader else { throw Failure.database }
+        return try vectorReader.search(vector: vector, text: text, query: query, type: type,
+                                       scope: scope, limit: limit, cancelled: cancelled)
     }
 
     // swiftlint:disable:next function_parameter_count
@@ -378,6 +281,11 @@ final class SemanticFileStore: @unchecked Sendable {
 }
 
 extension SemanticFileStore {
+    func prepareSearch(cancelled: () -> Bool) throws {
+        guard let vectorReader else { throw Failure.database }
+        try vectorReader.prepare(cancelled: cancelled)
+    }
+
     private func prepareContentSchema() throws {
         let columns = try statement("PRAGMA table_info(chunks)")
         var hasTime = false
@@ -395,6 +303,7 @@ extension SemanticFileStore {
     func destroy() throws {
         try lock.withLock {
             lexicalReader?.close()
+            vectorReader?.close()
             guard sqlite3_close(database) == SQLITE_OK else { throw Failure.database }
             database = nil
             try Self.removeFiles(at: url)

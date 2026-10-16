@@ -28,7 +28,7 @@ final class BackgroundActivityUITests: XCTestCase {
         XCTAssertEqual(controller.activityIndicatorState, .none)
 
         source.feed.publish([makeActivity("download")])
-        drain()
+        drain(until: { controller.menu?.items.first?.view != nil })
 
         let section = try XCTUnwrap(controller.menu?.items.first?.view)
         XCTAssertEqual(section.frame.size, NSSize(width: BackgroundActivityMenuLayout.width,
@@ -138,47 +138,107 @@ final class BackgroundActivityUITests: XCTestCase {
 
     // MARK: - Dot
 
-    func testIndicatorGeometryAndColors() {
-        XCTAssertEqual(StatusItemActivityIndicator.length(for: .none, thickness: 22), NSStatusItem.squareLength)
-        XCTAssertEqual(StatusItemActivityIndicator.length(for: .running, thickness: 22),
-                       22 + StatusItemActivityIndicator.extraWidth)
+    func testIndicatorColorsAndAnimations() {
         XCTAssertNil(StatusItemActivityIndicator.color(for: .none))
         XCTAssertEqual(StatusItemActivityIndicator.color(for: .running), .systemBlue)
         XCTAssertEqual(StatusItemActivityIndicator.color(for: .attention), .systemOrange)
-
-        let icon = NSImage(size: NSSize(width: 22, height: 22))
-        icon.accessibilityDescription = "Typeflux"
-        let padded = StatusItemActivityIndicator.paddedIcon(icon, thickness: 24)
-        XCTAssertEqual(padded.size, NSSize(width: 24 + StatusItemActivityIndicator.extraWidth, height: 22))
-        XCTAssertTrue(padded.isTemplate)
-        XCTAssertEqual(padded.accessibilityDescription, "Typeflux")
-        XCTAssertNotNil(padded.cgImage(forProposedRect: nil, context: nil, hints: nil))
+        XCTAssertNil(StatusItemActivityIndicator.animation(for: .none))
+        let breathe = try? XCTUnwrap(StatusItemActivityIndicator.animation(for: .running))
+        let blink = try? XCTUnwrap(StatusItemActivityIndicator.animation(for: .attention))
+        XCTAssertEqual(breathe?.toValue as? CGFloat, 0.12)
+        XCTAssertEqual(blink?.toValue as? CGFloat, 0.2)
+        XCTAssertLessThan(blink?.duration ?? 1, breathe?.duration ?? 0, "attention blinks faster than running breathes")
+        XCTAssertEqual(breathe?.autoreverses, true)
+        XCTAssertEqual(breathe?.repeatCount, .infinity)
     }
 
-    func testIndicatorPulsesOnlyWhileRunningWithMotionAllowed() throws {
+    func testMarkImageFillsOnlyTheInfinityCutOut() throws {
+        let exact = try coloredPixels(growth: 0)
+        let thick = try coloredPixels(growth: StatusItemActivityIndicator.markGrowth)
+        XCTAssertGreaterThan(exact.count, 20, "the ∞ cut-out is filled")
+        XCTAssertGreaterThan(thick.count, exact.count * 5 / 4, "the default mark is thicker than the cut-out")
+        XCTAssertLessThan(thick.count, 44 * 44 / 3, "the disc around the ∞ stays clear")
+        XCTAssertTrue(thick.allSatisfy { $0.blue > $0.red }, "only the tint color is drawn")
+        XCTAssertFalse(thick.contains { $0.x == 22 && $0.y <= 3 }, "the icon's ring is not tinted")
+        XCTAssertFalse(thick.contains { $0.x <= 1 || $0.y <= 1 || $0.x >= 42 || $0.y >= 42 })
+    }
+
+    private func coloredPixels(growth: CGFloat) throws -> [(x: Int, y: Int, red: CGFloat, blue: CGFloat)] {
+        let configuration = NSImage.SymbolConfiguration(pointSize: 16, weight: .medium)
+        let size = NSSize(width: 22, height: 22)
+        let image = try XCTUnwrap(StatusItemActivityIndicator.markImage(
+            symbol: StudioTheme.Symbol.brand, configuration: configuration, size: size, color: .systemBlue,
+            growth: growth
+        ))
+        XCTAssertFalse(image.isTemplate)
+        let bitmap = try XCTUnwrap(NSBitmapImageRep(
+            bitmapDataPlanes: nil, pixelsWide: 44, pixelsHigh: 44, bitsPerSample: 8, samplesPerPixel: 4,
+            hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0
+        ))
+        bitmap.size = size
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: bitmap)
+        image.draw(in: NSRect(origin: .zero, size: size))
+        NSGraphicsContext.restoreGraphicsState()
+        var pixels: [(x: Int, y: Int, red: CGFloat, blue: CGFloat)] = []
+        for x in 0 ..< 44 {
+            for y in 0 ..< 44 {
+                guard let color = bitmap.colorAt(x: x, y: y), color.alphaComponent > 0.5 else { continue }
+                pixels.append((x, y, color.redComponent, color.blueComponent))
+            }
+        }
+        return pixels
+    }
+
+    func testIndicatorBreathesOnlyWhileRunningWithMotionAllowed() throws {
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
         defer { NSStatusBar.system.removeStatusItem(item) }
         let button = try XCTUnwrap(item.button)
         let indicator = StatusItemActivityIndicator()
+        let configuration = NSImage.SymbolConfiguration(pointSize: 16, weight: .medium)
+        func apply(_ state: BackgroundActivityIndicator, reduceMotion: Bool = false) {
+            indicator.apply(state, to: button, symbol: StudioTheme.Symbol.brand, configuration: configuration,
+                            size: NSSize(width: 22, height: 22), reduceMotion: reduceMotion)
+        }
 
-        indicator.apply(.running, to: button, reduceMotion: false)
-        XCTAssertTrue(indicator.dot.superview === button)
-        XCTAssertFalse(indicator.dot.isHidden)
-        XCTAssertTrue(indicator.isPulsing)
-        indicator.apply(.running, to: button, reduceMotion: false)
-        XCTAssertTrue(indicator.isPulsing)
+        apply(.running)
+        XCTAssertTrue(indicator.mark.superview === button)
+        XCTAssertTrue(indicator.base.superview === button)
+        XCTAssertFalse(indicator.mark.isHidden)
+        XCTAssertFalse(indicator.base.isHidden)
+        XCTAssertEqual(indicator.base.image?.isTemplate, true, "the base follows the icon's color")
+        XCTAssertEqual(indicator.mark.image?.isTemplate, false)
+        XCTAssertFalse(indicator.mark.allowsVibrancy, "vibrancy would mute the colored ∞")
+        XCTAssertTrue(indicator.base.allowsVibrancy)
+        XCTAssertLessThan(try XCTUnwrap(button.subviews.firstIndex { $0 === indicator.base }),
+                          try XCTUnwrap(button.subviews.firstIndex { $0 === indicator.mark }), "color sits above the base")
+        XCTAssertNil(indicator.base.hitTest(NSPoint(x: 5, y: 5)))
+        XCTAssertNotNil(indicator.mark.image)
+        XCTAssertTrue(indicator.isAnimating)
+        XCTAssertEqual(item.length, NSStatusItem.squareLength, "the icon keeps its width")
+        XCTAssertNil(indicator.mark.hitTest(NSPoint(x: 5, y: 5)), "clicks reach the status bar button")
+        let runningImage = indicator.mark.image
+        apply(.running)
+        XCTAssertTrue(indicator.mark.image === runningImage, "the tinted image is reused")
 
-        indicator.apply(.running, to: button, reduceMotion: true)
-        XCTAssertFalse(indicator.isPulsing)
+        apply(.running, reduceMotion: true)
+        XCTAssertFalse(indicator.isAnimating)
+        XCTAssertFalse(indicator.mark.isHidden, "without motion the ∞ stays tinted")
 
-        indicator.apply(.attention, to: button, reduceMotion: false)
-        XCTAssertFalse(indicator.isPulsing)
-        XCTAssertEqual(indicator.dot.layer?.backgroundColor, NSColor.systemOrange.cgColor)
+        apply(.attention)
+        XCTAssertTrue(indicator.isAnimating)
+        XCTAssertFalse(indicator.mark.image === runningImage)
         XCTAssertEqual(indicator.state, .attention)
 
-        indicator.apply(.none, to: button)
-        XCTAssertTrue(indicator.dot.isHidden)
-        XCTAssertEqual(button.subviews.filter { $0 === indicator.dot }.count, 1)
+        let baseImage = indicator.base.image
+        apply(.running)
+        XCTAssertTrue(indicator.base.image === baseImage, "the base is shared by both states")
+
+        apply(.none)
+        XCTAssertTrue(indicator.mark.isHidden)
+        XCTAssertTrue(indicator.base.isHidden)
+        XCTAssertFalse(indicator.isAnimating)
+        XCTAssertEqual(button.subviews.filter { $0 === indicator.mark }.count, 1)
     }
 
     // MARK: - Views and window
@@ -305,8 +365,12 @@ final class BackgroundActivityUITests: XCTestCase {
         _ = host.fittingSize
     }
 
-    private func drain() {
-        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+    /// Lets main queue work run; with a condition, waits up to two seconds for it.
+    private func drain(until condition: (() -> Bool)? = nil) {
+        let deadline = Date().addingTimeInterval(condition == nil ? 0.05 : 2)
+        repeat {
+            RunLoop.main.run(until: Date().addingTimeInterval(0.02))
+        } while Date() < deadline && !(condition?() ?? false)
     }
 }
 

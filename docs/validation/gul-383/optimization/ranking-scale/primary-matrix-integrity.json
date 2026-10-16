@@ -1,0 +1,113 @@
+{
+  "cases": [
+    {
+      "stem": "native-before-10000",
+      "rows": 820,
+      "exit_code": 0,
+      "missing_body": 0
+    },
+    {
+      "stem": "contention-before-10000",
+      "rows": 440,
+      "exit_code": 0,
+      "missing_body": 0
+    },
+    {
+      "stem": "native-before-10000-cold-fts",
+      "rows": 20,
+      "exit_code": 0,
+      "missing_body": 0
+    },
+    {
+      "stem": "native-before-100000",
+      "rows": 820,
+      "exit_code": 0,
+      "missing_body": 0
+    },
+    {
+      "stem": "contention-before-100000",
+      "rows": 440,
+      "exit_code": 0,
+      "missing_body": 0
+    },
+    {
+      "stem": "native-before-100000-cold-fts",
+      "rows": 20,
+      "exit_code": 0,
+      "missing_body": 0
+    },
+    {
+      "stem": "native-before-1000000",
+      "rows": 180,
+      "exit_code": 0,
+      "missing_body": 0
+    },
+    {
+      "stem": "contention-before-1000000",
+      "rows": 120,
+      "exit_code": 0,
+      "missing_body": 0
+    },
+    {
+      "stem": "native-before-1000000-cold-fts",
+      "rows": 20,
+      "exit_code": 0,
+      "missing_body": 0
+    },
+    {
+      "stem": "native-after-10000",
+      "rows": 820,
+      "exit_code": 0,
+      "missing_body": 0
+    },
+    {
+      "stem": "contention-after-10000",
+      "rows": 440,
+      "exit_code": 0,
+      "missing_body": 0
+    },
+    {
+      "stem": "native-after-10000-cold-fts",
+      "rows": 20,
+      "exit_code": 0,
+      "missing_body": 0
+    },
+    {
+      "stem": "native-after-100000",
+      "rows": 820,
+      "exit_code": 0,
+      "missing_body": 0
+    },
+    {
+      "stem": "contention-after-100000",
+      "rows": 440,
+      "exit_code": 0,
+      "missing_body": 0
+    },
+    {
+      "stem": "native-after-100000-cold-fts",
+      "rows": 20,
+      "exit_code": 0,
+      "missing_body": 0
+    },
+    {
+      "stem": "native-after-1000000",
+      "rows": 180,
+      "exit_code": 0,
+      "missing_body": 0
+    },
+    {
+      "stem": "contention-after-1000000",
+      "rows": 120,
+      "exit_code": 0,
+      "missing_body": 0
+    },
+    {
+      "stem": "native-after-1000000-cold-fts",
+      "rows": 20,
+      "exit_code": 0,
+      "missing_body": 0
+    }
+  ],
+  "scope": "Legacy complete markers may be absent; row cardinality and recorded successful command exit are required. The final after10k contention repeat follows."
+}

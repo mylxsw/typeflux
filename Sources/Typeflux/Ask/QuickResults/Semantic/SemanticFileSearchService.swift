@@ -492,24 +492,30 @@ extension SemanticFileSearchService {
     func endSearch() {
         prewarmRequested = false
         warmup?.cancel(); warmup = nil
-        if queryState == .warming { queryState = .idle }
+        if queryState == .warming {
+            queryState = .idle
+        }
     }
 
     func prepareForSearch() {
         prewarmRequested = true
         guard isEnabled, !busy, !thermalConstrained(), warmup == nil, let queryValidator, let scope else { return }
         let queryWorker = modelReady ? queryWorker : nil
-        let lifecycle = token, gate = pauseGate
+        let lifecycle = token, preparation = AskSearchCancellation(), gate = pauseGate, store = store
         gate.beginQuery()
         queryState = .warming
         warmup = Task { [weak self] in
             defer { gate.endQuery() }
             do {
-                async let permissions: Void = Task.detached(priority: .userInitiated) {
-                    try queryValidator.warm(scope: scope, cancelled: { lifecycle.isCancelled })
-                }.value
-                try await queryWorker?.prepare(lifecycle: lifecycle)
-                try await permissions
+                try await withTaskCancellationHandler {
+                    async let permissions: Void = Task.detached(priority: .userInitiated) {
+                        let stopped = { lifecycle.isCancelled || preparation.isCancelled }
+                        try queryValidator.warm(scope: scope, cancelled: stopped)
+                        try store?.prepareSearch(cancelled: stopped)
+                    }.value
+                    try await queryWorker?.prepare(lifecycle: lifecycle)
+                    try await permissions
+                } onCancel: { preparation.cancel() }
                 guard let self, !lifecycle.isCancelled, !Task.isCancelled else { return }
                 if queryState == .warming {
                     queryState = .idle
@@ -539,11 +545,12 @@ extension SemanticFileSearchService {
         let trace = SemanticSearchTrace.current ?? .init()
         queryGeneration += 1
         let generation = queryGeneration
+        let permissionBudgetExpired = AskSearchCancellation()
         func current() -> Bool {
             !lifecycle.isCancelled && !Task.isCancelled && isEnabled
         }
         /// Both channels revalidate every file and current disk permission before publication.
-        func retrieve(_ vector: [Float]?, preserving: [AskFileHit] = []) async throws -> [AskFileHit] {
+        func retrieve(_ vector: [Float]?) async throws -> [AskFileHit] {
             try await withTaskCancellationHandler {
                 try await Task.detached(priority: .userInitiated) {
                     try SemanticSearchTrace.$current.withValue(trace) {
@@ -559,7 +566,7 @@ extension SemanticFileSearchService {
                                                             type: type, scope: currentScope,
                                                             limit: min(100, min(100, limit) * 2),
                                                             cancelled: cancelled)
-                            hits = SemanticFilePolicy.merge(preserving, semantic, limit: 100)
+                            hits = semantic
                         } else {
                             hits = try store.lexicalSearch(text: query, query: AskSearchQuery(text), type: type,
                                                            scope: currentScope,
@@ -567,28 +574,37 @@ extension SemanticFileSearchService {
                                                            cancelled: cancelled)
                         }
                         trace.mark(vector == nil ? "fts-end" : "vector-end")
-                        let valid = queryValidator.validate(hits, scope: currentScope, limit: min(100, limit),
-                                                            cancelled: cancelled)
+                        let valid = queryValidator.validateBatch(hits, scope: currentScope, limit: min(100, limit),
+                                                                 cancelled: cancelled)
+                        if !valid.complete {
+                            permissionBudgetExpired.cancel()
+                        }
                         trace.mark("permissions-end")
-                        return valid
+                        return valid.hits
                     }
                 }.value
             } onCancel: { cancellation.cancel() }
         }
         func permitted(_ hits: [AskFileHit]) -> [AskFileHit] {
             var latestScope = scope
-            if !access() { latestScope.blocked = AskFileScope.protectedFolders() }
+            if !access() {
+                latestScope.blocked = AskFileScope.protectedFolders()
+            }
             return hits.filter { latestScope.includes($0.path, isDirectory: false) }
         }
         func fallback() async -> [AskFileHit] {
-            let hits = (try? await retrieve(nil)) ?? []
+            let hits = await (try? retrieve(nil)) ?? []
             return current() ? permitted(hits) : []
         }
         let lexical = await fallback()
         guard current() else { return [] }
         progress(lexical)
         trace.mark("fts-published")
-        guard !busy, !thermalConstrained(), modelReady, let queryWorker else { return lexical }
+        if generation == queryGeneration, permissionBudgetExpired.isCancelled {
+            queryState = .degraded
+        }
+        guard !permissionBudgetExpired.isCancelled, !busy, !thermalConstrained(), modelReady,
+              let queryWorker else { return lexical }
         pauseGate.beginQuery()
         defer {
             pauseGate.endQuery()
@@ -607,11 +623,11 @@ extension SemanticFileSearchService {
             try Task.checkCancellation()
             guard current() else { return [] }
             guard !busy, !thermalConstrained() else { return await fallback() }
-            let hits = try await retrieve(vector, preserving: lexical)
+            let hits = try await retrieve(vector)
             guard current() else { return [] }
             guard !busy, !thermalConstrained() else { return await fallback() }
             if generation == queryGeneration {
-                queryState = .idle
+                queryState = permissionBudgetExpired.isCancelled ? .degraded : .idle
             }
             trace.mark("semantic-published")
             return permitted(hits)

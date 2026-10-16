@@ -1,0 +1,69 @@
+{
+  "baseline": "262135bc",
+  "denominator": "Added/modified executable Swift lines in Sources/Typeflux, including new files, intersected with final LLVM LCOV DA records. Tests, helper wrapper and unchanged vendor code excluded; helper reported separately.",
+  "executable": 551,
+  "covered": 541,
+  "percent": 98.19,
+  "files": {
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFilePolicy.swift": {
+      "executable": 1,
+      "covered": 1,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift": {
+      "executable": 12,
+      "covered": 12,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+SearchSchema.swift": {
+      "executable": 45,
+      "covered": 45,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore.swift": {
+      "executable": 10,
+      "covered": 10,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileValidator.swift": {
+      "executable": 39,
+      "covered": 39,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticLexicalReader.swift": {
+      "executable": 81,
+      "covered": 75,
+      "percent": 92.59,
+      "uncovered": [
+        88,
+        89,
+        90,
+        91,
+        92,
+        93
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSearchRanking.swift": {
+      "executable": 90,
+      "covered": 90,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticVectorReader.swift": {
+      "executable": 273,
+      "covered": 269,
+      "percent": 98.53,
+      "uncovered": [
+        58,
+        71,
+        177,
+        213
+      ]
+    }
+  }
+}

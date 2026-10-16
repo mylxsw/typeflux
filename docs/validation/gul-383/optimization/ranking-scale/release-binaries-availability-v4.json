@@ -1,0 +1,42 @@
+{
+  "before": {
+    "test_binary_sha256": "8bbf99a3b120e61cc5db1b68a89518dedff1e386c12a6d5e579182bd517a8465",
+    "harness_version": "availability-v4-trace-disabled-in-formal-matrix",
+    "harness_sha256": "2646b48d30d3c2f22050713eb3a87c5538ea16c9581da97e56cd35eace2144a3",
+    "harness_sources_sha256": {
+      "Tests/TypefluxTests/SemanticNativeLatencyTests.swift": "2646b48d30d3c2f22050713eb3a87c5538ea16c9581da97e56cd35eace2144a3",
+      "Tests/TypefluxTests/SemanticNativeContentionTests.swift": "fe80ceec935cd4b9342930a6cfdcdbc04a7d17d2bd5a22dea1ed7b8401bdc23a",
+      "Tests/TypefluxTests/SemanticLatencyTests.swift": "afeb6d77d2e446c0356a5fbffca37d194e15fc1763026f52ee019ab33f9510cd"
+    },
+    "production_sources": {
+      "git_head": "262135bcebc1e3694ddc02ce6e2b15086a10dd23"
+    }
+  },
+  "after": {
+    "test_binary_sha256": "2fd2c87ea61095e2d7bfc9e37c084ad516f173ea0bf88a93a497828ee5e374b8",
+    "harness_version": "availability-v4-trace-disabled-in-formal-matrix",
+    "harness_sha256": "2646b48d30d3c2f22050713eb3a87c5538ea16c9581da97e56cd35eace2144a3",
+    "harness_sources_sha256": {
+      "Tests/TypefluxTests/SemanticNativeLatencyTests.swift": "2646b48d30d3c2f22050713eb3a87c5538ea16c9581da97e56cd35eace2144a3",
+      "Tests/TypefluxTests/SemanticNativeContentionTests.swift": "fe80ceec935cd4b9342930a6cfdcdbc04a7d17d2bd5a22dea1ed7b8401bdc23a",
+      "Tests/TypefluxTests/SemanticLatencyTests.swift": "afeb6d77d2e446c0356a5fbffca37d194e15fc1763026f52ee019ab33f9510cd"
+    },
+    "production_sources": {
+      "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFilePolicy.swift": "0a9e7959d0fb6a562b6aeaa2ba46d3421667464a9d4a28074218d927f4efd6a8",
+      "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift": "39e2135de96aca9b69b8b8bd1a37297b1dd03c8e3c559eadf9a2a94c01d56060",
+      "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Discovery.swift": "ef09d10891484ef8b3fe2eb50d6764bba80f662c6543f7341b2dd59d99023409",
+      "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Jobs.swift": "f9d9cac3b33bb74707ce5da2378593cdf4b63b9dc7efa437a6fe735dbad0d5ba",
+      "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+MediaJobs.swift": "2cd9469059b636152d73d326beb38ede896ee4be5f0a9d5eba05877a8ce90fd7",
+      "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+SearchSchema.swift": "c2de0d597c48ac2b1d75eb247121201d6587146660913e879fc4b5ac03b1164e",
+      "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore.swift": "f43f4820aee96fbbb661c8be32dc3e695c31373889d7f56f04bf08d517e626be",
+      "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileValidator.swift": "e94836b6e779971d3e0352c361fbe1e26f4d6830a61996c09cf03faeec799d47",
+      "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticLexicalReader.swift": "23e66e04f5493f92fe32eb66c40fb96eecd6c72f54ab24d70e94622d105d41d1",
+      "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticScoreCalibration.swift": "11c58756fed908d112134e77066d0da202486a5f6b941a2deca3308a0b64ffa8",
+      "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSearchRanking.swift": "38cecb38ce4ab3a1a0ab6cc1ed810d5cf4fb99364af523a1db45af44cdfd92da",
+      "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticVectorReader.swift": "ae84fd2171c6f952b869b922fab16f3c6c6e0c1e235f2071d8f35780355569d4",
+      "Sources/TypefluxSemanticHelper/main.swift": "717ffa1200119dcb16eb132490e69c39034ff8e0da9533fad2505ebb9763bc79",
+      "Sources/Typeflux/Ask/QuickResults/AskQuickSearchSession.swift": "2453104bd6d42cf7277396f093cb60314ae99c40ff8a08244ea7008670e9beea",
+      "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSQLiteCancellation.swift": "c4d95924f0d90b1c0223dce7a5c4c5e1774cc3a6601817067872179066338369"
+    }
+  }
+}

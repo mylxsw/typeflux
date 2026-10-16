@@ -1,0 +1,602 @@
+{
+  "scope": [
+    "Tests/TypefluxTests/SemanticCalibratedEvaluationTests.swift",
+    "Tests/TypefluxTests/SemanticFileValidatorTests.swift",
+    "Tests/TypefluxTests/SemanticLatencyTests.swift",
+    "Tests/TypefluxTests/SemanticNativeContentionTests.swift",
+    "Tests/TypefluxTests/SemanticNativeLatencyTests.swift",
+    "Tests/TypefluxTests/SemanticPreparationServiceTests.swift",
+    "Tests/TypefluxTests/SemanticRankingComparisonTests.swift",
+    "Tests/TypefluxTests/SemanticScoreCalibrationTests.swift",
+    "Tests/TypefluxTests/SemanticSearchRankingTests.swift"
+  ],
+  "current": {
+    "exit_code": 2,
+    "diagnostics": [
+      {
+        "character": 11,
+        "file": "Tests/TypefluxTests/SemanticRankingComparisonTests.swift",
+        "line": 21,
+        "reason": "Function body should span 50 lines or less excluding comments and whitespace: currently spans 72 lines",
+        "rule_id": "function_body_length",
+        "severity": "Error",
+        "type": "Function Body Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticRankingComparisonTests.swift",
+        "line": 90,
+        "reason": "Line should be 200 characters or less; currently it has 252 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 9,
+        "file": "Tests/TypefluxTests/SemanticRankingComparisonTests.swift",
+        "line": 9,
+        "reason": "Types should be nested at most 1 level deep",
+        "rule_id": "nesting",
+        "severity": "Error",
+        "type": "Nesting"
+      },
+      {
+        "character": 9,
+        "file": "Tests/TypefluxTests/SemanticRankingComparisonTests.swift",
+        "line": 13,
+        "reason": "Types should be nested at most 1 level deep",
+        "rule_id": "nesting",
+        "severity": "Error",
+        "type": "Nesting"
+      },
+      {
+        "character": 13,
+        "file": "Tests/TypefluxTests/SemanticScoreCalibrationTests.swift",
+        "line": 61,
+        "reason": "Variable name 'db' should be between 3 and 40 characters long",
+        "rule_id": "identifier_name",
+        "severity": "Error",
+        "type": "Identifier Name"
+      },
+      {
+        "character": 11,
+        "file": "Tests/TypefluxTests/SemanticNativeContentionTests.swift",
+        "line": 73,
+        "reason": "Function should have complexity 10 or less; currently complexity is 18",
+        "rule_id": "cyclomatic_complexity",
+        "severity": "Error",
+        "type": "Cyclomatic Complexity"
+      },
+      {
+        "character": 11,
+        "file": "Tests/TypefluxTests/SemanticNativeContentionTests.swift",
+        "line": 73,
+        "reason": "Function body should span 100 lines or less excluding comments and whitespace: currently spans 242 lines",
+        "rule_id": "function_body_length",
+        "severity": "Error",
+        "type": "Function Body Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticNativeContentionTests.swift",
+        "line": 314,
+        "reason": "Line should be 200 characters or less; currently it has 305 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 11,
+        "file": "Tests/TypefluxTests/SemanticNativeLatencyTests.swift",
+        "line": 18,
+        "reason": "Function should have complexity 10 or less; currently complexity is 15",
+        "rule_id": "cyclomatic_complexity",
+        "severity": "Error",
+        "type": "Cyclomatic Complexity"
+      },
+      {
+        "character": 11,
+        "file": "Tests/TypefluxTests/SemanticNativeLatencyTests.swift",
+        "line": 18,
+        "reason": "Function body should span 100 lines or less excluding comments and whitespace: currently spans 143 lines",
+        "rule_id": "function_body_length",
+        "severity": "Error",
+        "type": "Function Body Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticNativeLatencyTests.swift",
+        "line": 151,
+        "reason": "Line should be 200 characters or less; currently it has 270 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticNativeLatencyTests.swift",
+        "line": 155,
+        "reason": "Line should be 200 characters or less; currently it has 245 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 5,
+        "file": "Tests/TypefluxTests/SemanticCalibratedEvaluationTests.swift",
+        "line": 175,
+        "reason": "Function body should span 50 lines or less excluding comments and whitespace: currently spans 58 lines",
+        "rule_id": "function_body_length",
+        "severity": "Error",
+        "type": "Function Body Length"
+      },
+      {
+        "character": 13,
+        "file": "Tests/TypefluxTests/SemanticCalibratedEvaluationTests.swift",
+        "line": 11,
+        "reason": "Variable name 'query_vectors' should only contain alphanumeric and other allowed characters",
+        "rule_id": "identifier_name",
+        "severity": "Error",
+        "type": "Identifier Name"
+      },
+      {
+        "character": 30,
+        "file": "Tests/TypefluxTests/SemanticCalibratedEvaluationTests.swift",
+        "line": 204,
+        "reason": "Tuples should have at most 2 members",
+        "rule_id": "large_tuple",
+        "severity": "Error",
+        "type": "Large Tuple"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticCalibratedEvaluationTests.swift",
+        "line": 62,
+        "reason": "Line should be 200 characters or less; currently it has 228 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticCalibratedEvaluationTests.swift",
+        "line": 104,
+        "reason": "Line should be 200 characters or less; currently it has 212 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticCalibratedEvaluationTests.swift",
+        "line": 167,
+        "reason": "Line should be 200 characters or less; currently it has 300 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticCalibratedEvaluationTests.swift",
+        "line": 222,
+        "reason": "Line should be 200 characters or less; currently it has 518 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 9,
+        "file": "Tests/TypefluxTests/SemanticCalibratedEvaluationTests.swift",
+        "line": 112,
+        "reason": "Types should be nested at most 1 level deep",
+        "rule_id": "nesting",
+        "severity": "Error",
+        "type": "Nesting"
+      },
+      {
+        "character": 9,
+        "file": "Tests/TypefluxTests/SemanticCalibratedEvaluationTests.swift",
+        "line": 116,
+        "reason": "Types should be nested at most 1 level deep",
+        "rule_id": "nesting",
+        "severity": "Error",
+        "type": "Nesting"
+      },
+      {
+        "character": 11,
+        "file": "Tests/TypefluxTests/SemanticLatencyTests.swift",
+        "line": 91,
+        "reason": "Function should have complexity 10 or less; currently complexity is 12",
+        "rule_id": "cyclomatic_complexity",
+        "severity": "Error",
+        "type": "Cyclomatic Complexity"
+      },
+      {
+        "character": 11,
+        "file": "Tests/TypefluxTests/SemanticLatencyTests.swift",
+        "line": 91,
+        "reason": "Function body should span 100 lines or less excluding comments and whitespace: currently spans 207 lines",
+        "rule_id": "function_body_length",
+        "severity": "Error",
+        "type": "Function Body Length"
+      },
+      {
+        "character": 12,
+        "file": "Tests/TypefluxTests/SemanticLatencyTests.swift",
+        "line": 325,
+        "reason": "Function body should span 50 lines or less excluding comments and whitespace: currently spans 65 lines",
+        "rule_id": "function_body_length",
+        "severity": "Error",
+        "type": "Function Body Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticLatencyTests.swift",
+        "line": 114,
+        "reason": "Line should be 120 characters or less; currently it has 138 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticLatencyTests.swift",
+        "line": 287,
+        "reason": "Line should be 120 characters or less; currently it has 123 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticLatencyTests.swift",
+        "line": 288,
+        "reason": "Line should be 200 characters or less; currently it has 222 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticLatencyTests.swift",
+        "line": 291,
+        "reason": "Line should be 120 characters or less; currently it has 160 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticLatencyTests.swift",
+        "line": 292,
+        "reason": "Line should be 120 characters or less; currently it has 125 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticLatencyTests.swift",
+        "line": 343,
+        "reason": "Line should be 120 characters or less; currently it has 145 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 13,
+        "file": "Tests/TypefluxTests/SemanticSearchRankingTests.swift",
+        "line": 28,
+        "reason": "Variable name 'db' should be between 3 and 40 characters long",
+        "rule_id": "identifier_name",
+        "severity": "Error",
+        "type": "Identifier Name"
+      },
+      {
+        "character": 13,
+        "file": "Tests/TypefluxTests/SemanticSearchRankingTests.swift",
+        "line": 142,
+        "reason": "Variable name 'db' should be between 3 and 40 characters long",
+        "rule_id": "identifier_name",
+        "severity": "Error",
+        "type": "Identifier Name"
+      }
+    ]
+  },
+  "baseline": {
+    "exit_code": 2,
+    "diagnostics": [
+      {
+        "character": 11,
+        "file": "Tests/TypefluxTests/SemanticNativeLatencyTests.swift",
+        "line": 18,
+        "reason": "Function should have complexity 10 or less; currently complexity is 15",
+        "rule_id": "cyclomatic_complexity",
+        "severity": "Error",
+        "type": "Cyclomatic Complexity"
+      },
+      {
+        "character": 11,
+        "file": "Tests/TypefluxTests/SemanticNativeLatencyTests.swift",
+        "line": 18,
+        "reason": "Function body should span 100 lines or less excluding comments and whitespace: currently spans 143 lines",
+        "rule_id": "function_body_length",
+        "severity": "Error",
+        "type": "Function Body Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticNativeLatencyTests.swift",
+        "line": 151,
+        "reason": "Line should be 200 characters or less; currently it has 270 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticNativeLatencyTests.swift",
+        "line": 155,
+        "reason": "Line should be 200 characters or less; currently it has 245 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 11,
+        "file": "Tests/TypefluxTests/SemanticNativeContentionTests.swift",
+        "line": 73,
+        "reason": "Function should have complexity 10 or less; currently complexity is 18",
+        "rule_id": "cyclomatic_complexity",
+        "severity": "Error",
+        "type": "Cyclomatic Complexity"
+      },
+      {
+        "character": 11,
+        "file": "Tests/TypefluxTests/SemanticNativeContentionTests.swift",
+        "line": 73,
+        "reason": "Function body should span 100 lines or less excluding comments and whitespace: currently spans 242 lines",
+        "rule_id": "function_body_length",
+        "severity": "Error",
+        "type": "Function Body Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticNativeContentionTests.swift",
+        "line": 314,
+        "reason": "Line should be 200 characters or less; currently it has 305 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 11,
+        "file": "Tests/TypefluxTests/SemanticLatencyTests.swift",
+        "line": 91,
+        "reason": "Function should have complexity 10 or less; currently complexity is 12",
+        "rule_id": "cyclomatic_complexity",
+        "severity": "Error",
+        "type": "Cyclomatic Complexity"
+      },
+      {
+        "character": 11,
+        "file": "Tests/TypefluxTests/SemanticLatencyTests.swift",
+        "line": 91,
+        "reason": "Function body should span 100 lines or less excluding comments and whitespace: currently spans 207 lines",
+        "rule_id": "function_body_length",
+        "severity": "Error",
+        "type": "Function Body Length"
+      },
+      {
+        "character": 12,
+        "file": "Tests/TypefluxTests/SemanticLatencyTests.swift",
+        "line": 325,
+        "reason": "Function body should span 50 lines or less excluding comments and whitespace: currently spans 65 lines",
+        "rule_id": "function_body_length",
+        "severity": "Error",
+        "type": "Function Body Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticLatencyTests.swift",
+        "line": 114,
+        "reason": "Line should be 120 characters or less; currently it has 138 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticLatencyTests.swift",
+        "line": 287,
+        "reason": "Line should be 120 characters or less; currently it has 123 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticLatencyTests.swift",
+        "line": 288,
+        "reason": "Line should be 200 characters or less; currently it has 222 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticLatencyTests.swift",
+        "line": 291,
+        "reason": "Line should be 120 characters or less; currently it has 160 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticLatencyTests.swift",
+        "line": 292,
+        "reason": "Line should be 120 characters or less; currently it has 125 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticLatencyTests.swift",
+        "line": 343,
+        "reason": "Line should be 120 characters or less; currently it has 145 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      }
+    ]
+  },
+  "introduced": [
+    {
+      "character": 11,
+      "file": "Tests/TypefluxTests/SemanticRankingComparisonTests.swift",
+      "line": 21,
+      "reason": "Function body should span 50 lines or less excluding comments and whitespace: currently spans 72 lines",
+      "rule_id": "function_body_length",
+      "severity": "Error",
+      "type": "Function Body Length"
+    },
+    {
+      "character": 1,
+      "file": "Tests/TypefluxTests/SemanticRankingComparisonTests.swift",
+      "line": 90,
+      "reason": "Line should be 200 characters or less; currently it has 252 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 9,
+      "file": "Tests/TypefluxTests/SemanticRankingComparisonTests.swift",
+      "line": 9,
+      "reason": "Types should be nested at most 1 level deep",
+      "rule_id": "nesting",
+      "severity": "Error",
+      "type": "Nesting"
+    },
+    {
+      "character": 9,
+      "file": "Tests/TypefluxTests/SemanticRankingComparisonTests.swift",
+      "line": 13,
+      "reason": "Types should be nested at most 1 level deep",
+      "rule_id": "nesting",
+      "severity": "Error",
+      "type": "Nesting"
+    },
+    {
+      "character": 13,
+      "file": "Tests/TypefluxTests/SemanticScoreCalibrationTests.swift",
+      "line": 61,
+      "reason": "Variable name 'db' should be between 3 and 40 characters long",
+      "rule_id": "identifier_name",
+      "severity": "Error",
+      "type": "Identifier Name"
+    },
+    {
+      "character": 5,
+      "file": "Tests/TypefluxTests/SemanticCalibratedEvaluationTests.swift",
+      "line": 175,
+      "reason": "Function body should span 50 lines or less excluding comments and whitespace: currently spans 58 lines",
+      "rule_id": "function_body_length",
+      "severity": "Error",
+      "type": "Function Body Length"
+    },
+    {
+      "character": 13,
+      "file": "Tests/TypefluxTests/SemanticCalibratedEvaluationTests.swift",
+      "line": 11,
+      "reason": "Variable name 'query_vectors' should only contain alphanumeric and other allowed characters",
+      "rule_id": "identifier_name",
+      "severity": "Error",
+      "type": "Identifier Name"
+    },
+    {
+      "character": 30,
+      "file": "Tests/TypefluxTests/SemanticCalibratedEvaluationTests.swift",
+      "line": 204,
+      "reason": "Tuples should have at most 2 members",
+      "rule_id": "large_tuple",
+      "severity": "Error",
+      "type": "Large Tuple"
+    },
+    {
+      "character": 1,
+      "file": "Tests/TypefluxTests/SemanticCalibratedEvaluationTests.swift",
+      "line": 62,
+      "reason": "Line should be 200 characters or less; currently it has 228 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 1,
+      "file": "Tests/TypefluxTests/SemanticCalibratedEvaluationTests.swift",
+      "line": 104,
+      "reason": "Line should be 200 characters or less; currently it has 212 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 1,
+      "file": "Tests/TypefluxTests/SemanticCalibratedEvaluationTests.swift",
+      "line": 167,
+      "reason": "Line should be 200 characters or less; currently it has 300 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 1,
+      "file": "Tests/TypefluxTests/SemanticCalibratedEvaluationTests.swift",
+      "line": 222,
+      "reason": "Line should be 200 characters or less; currently it has 518 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 9,
+      "file": "Tests/TypefluxTests/SemanticCalibratedEvaluationTests.swift",
+      "line": 112,
+      "reason": "Types should be nested at most 1 level deep",
+      "rule_id": "nesting",
+      "severity": "Error",
+      "type": "Nesting"
+    },
+    {
+      "character": 9,
+      "file": "Tests/TypefluxTests/SemanticCalibratedEvaluationTests.swift",
+      "line": 116,
+      "reason": "Types should be nested at most 1 level deep",
+      "rule_id": "nesting",
+      "severity": "Error",
+      "type": "Nesting"
+    },
+    {
+      "character": 13,
+      "file": "Tests/TypefluxTests/SemanticSearchRankingTests.swift",
+      "line": 28,
+      "reason": "Variable name 'db' should be between 3 and 40 characters long",
+      "rule_id": "identifier_name",
+      "severity": "Error",
+      "type": "Identifier Name"
+    },
+    {
+      "character": 13,
+      "file": "Tests/TypefluxTests/SemanticSearchRankingTests.swift",
+      "line": 142,
+      "reason": "Variable name 'db' should be between 3 and 40 characters long",
+      "rule_id": "identifier_name",
+      "severity": "Error",
+      "type": "Identifier Name"
+    }
+  ],
+  "note": "Baseline benchmark files contain the shared measurement harness; report identifies newly added test-file diagnostics."
+}

@@ -1,0 +1,655 @@
+{
+  "candidates": [
+    {
+      "mode": "variance",
+      "offset": 0,
+      "groups": {
+        "lexical": {
+          "n": 25,
+          "correct": 25,
+          "rr": 25.0,
+          "fp": 0
+        },
+        "identifier": {
+          "n": 25,
+          "correct": 25,
+          "rr": 25.0,
+          "fp": 0
+        },
+        "chinese_short": {
+          "n": 25,
+          "correct": 25,
+          "rr": 25.0,
+          "fp": 0
+        },
+        "cross_language": {
+          "n": 25,
+          "correct": 13,
+          "rr": 5.283333333333333,
+          "fp": 0
+        },
+        "long_tail": {
+          "n": 25,
+          "correct": 25,
+          "rr": 25.0,
+          "fp": 0
+        },
+        "no_answer": {
+          "n": 25,
+          "correct": 0,
+          "rr": 0,
+          "fp": 0
+        },
+        "audio_topic": {
+          "n": 25,
+          "correct": 20,
+          "rr": 5.316666666666666,
+          "fp": 0
+        },
+        "audio_paraphrase": {
+          "n": 25,
+          "correct": 25,
+          "rr": 15.916666666666668,
+          "fp": 0
+        },
+        "audio_cross_language": {
+          "n": 25,
+          "correct": 25,
+          "rr": 12.416666666666668,
+          "fp": 0
+        },
+        "media_no_answer": {
+          "n": 25,
+          "correct": 0,
+          "rr": 0,
+          "fp": 1
+        },
+        "image": {
+          "n": 6,
+          "correct": 6,
+          "rr": 4.583333333333334,
+          "fp": 0
+        }
+      }
+    },
+    {
+      "mode": "variance",
+      "offset": 0.025,
+      "groups": {
+        "lexical": {
+          "n": 25,
+          "correct": 25,
+          "rr": 25.0,
+          "fp": 0
+        },
+        "identifier": {
+          "n": 25,
+          "correct": 25,
+          "rr": 25.0,
+          "fp": 0
+        },
+        "chinese_short": {
+          "n": 25,
+          "correct": 25,
+          "rr": 25.0,
+          "fp": 0
+        },
+        "cross_language": {
+          "n": 25,
+          "correct": 12,
+          "rr": 3.866666666666667,
+          "fp": 0
+        },
+        "long_tail": {
+          "n": 25,
+          "correct": 25,
+          "rr": 25.0,
+          "fp": 0
+        },
+        "no_answer": {
+          "n": 25,
+          "correct": 0,
+          "rr": 0,
+          "fp": 0
+        },
+        "audio_topic": {
+          "n": 25,
+          "correct": 23,
+          "rr": 6.9833333333333325,
+          "fp": 0
+        },
+        "audio_paraphrase": {
+          "n": 25,
+          "correct": 25,
+          "rr": 24.0,
+          "fp": 0
+        },
+        "audio_cross_language": {
+          "n": 25,
+          "correct": 25,
+          "rr": 23.75,
+          "fp": 0
+        },
+        "media_no_answer": {
+          "n": 25,
+          "correct": 0,
+          "rr": 0,
+          "fp": 1
+        },
+        "image": {
+          "n": 6,
+          "correct": 6,
+          "rr": 4.0,
+          "fp": 0
+        }
+      }
+    },
+    {
+      "mode": "variance",
+      "offset": 0.05,
+      "groups": {
+        "lexical": {
+          "n": 25,
+          "correct": 25,
+          "rr": 25.0,
+          "fp": 0
+        },
+        "identifier": {
+          "n": 25,
+          "correct": 25,
+          "rr": 25.0,
+          "fp": 0
+        },
+        "chinese_short": {
+          "n": 25,
+          "correct": 25,
+          "rr": 25.0,
+          "fp": 0
+        },
+        "cross_language": {
+          "n": 25,
+          "correct": 6,
+          "rr": 1.5666666666666664,
+          "fp": 0
+        },
+        "long_tail": {
+          "n": 25,
+          "correct": 25,
+          "rr": 25.0,
+          "fp": 0
+        },
+        "no_answer": {
+          "n": 25,
+          "correct": 0,
+          "rr": 0,
+          "fp": 0
+        },
+        "audio_topic": {
+          "n": 25,
+          "correct": 23,
+          "rr": 7.333333333333331,
+          "fp": 0
+        },
+        "audio_paraphrase": {
+          "n": 25,
+          "correct": 25,
+          "rr": 24.5,
+          "fp": 0
+        },
+        "audio_cross_language": {
+          "n": 25,
+          "correct": 25,
+          "rr": 24.5,
+          "fp": 0
+        },
+        "media_no_answer": {
+          "n": 25,
+          "correct": 0,
+          "rr": 0,
+          "fp": 1
+        },
+        "image": {
+          "n": 6,
+          "correct": 6,
+          "rr": 3.2,
+          "fp": 0
+        }
+      }
+    },
+    {
+      "mode": "class-rrf",
+      "offset": 0,
+      "groups": {
+        "lexical": {
+          "n": 25,
+          "correct": 25,
+          "rr": 25.0,
+          "fp": 0
+        },
+        "identifier": {
+          "n": 25,
+          "correct": 25,
+          "rr": 25.0,
+          "fp": 0
+        },
+        "chinese_short": {
+          "n": 25,
+          "correct": 25,
+          "rr": 25.0,
+          "fp": 0
+        },
+        "cross_language": {
+          "n": 25,
+          "correct": 20,
+          "rr": 9.083333333333334,
+          "fp": 0
+        },
+        "long_tail": {
+          "n": 25,
+          "correct": 25,
+          "rr": 25.0,
+          "fp": 0
+        },
+        "no_answer": {
+          "n": 25,
+          "correct": 0,
+          "rr": 0,
+          "fp": 0
+        },
+        "audio_topic": {
+          "n": 25,
+          "correct": 19,
+          "rr": 4.550000000000001,
+          "fp": 0
+        },
+        "audio_paraphrase": {
+          "n": 25,
+          "correct": 24,
+          "rr": 7.249999999999998,
+          "fp": 0
+        },
+        "audio_cross_language": {
+          "n": 25,
+          "correct": 25,
+          "rr": 7.666666666666664,
+          "fp": 0
+        },
+        "media_no_answer": {
+          "n": 25,
+          "correct": 0,
+          "rr": 0,
+          "fp": 1
+        },
+        "image": {
+          "n": 6,
+          "correct": 6,
+          "rr": 4.25,
+          "fp": 0
+        }
+      }
+    },
+    {
+      "mode": "class-rrf",
+      "offset": 0.025,
+      "groups": {
+        "lexical": {
+          "n": 25,
+          "correct": 25,
+          "rr": 25.0,
+          "fp": 0
+        },
+        "identifier": {
+          "n": 25,
+          "correct": 25,
+          "rr": 25.0,
+          "fp": 0
+        },
+        "chinese_short": {
+          "n": 25,
+          "correct": 25,
+          "rr": 25.0,
+          "fp": 0
+        },
+        "cross_language": {
+          "n": 25,
+          "correct": 20,
+          "rr": 6.199999999999999,
+          "fp": 0
+        },
+        "long_tail": {
+          "n": 25,
+          "correct": 25,
+          "rr": 25.0,
+          "fp": 0
+        },
+        "no_answer": {
+          "n": 25,
+          "correct": 0,
+          "rr": 0,
+          "fp": 0
+        },
+        "audio_topic": {
+          "n": 25,
+          "correct": 19,
+          "rr": 6.333333333333331,
+          "fp": 0
+        },
+        "audio_paraphrase": {
+          "n": 25,
+          "correct": 25,
+          "rr": 24.2,
+          "fp": 0
+        },
+        "audio_cross_language": {
+          "n": 25,
+          "correct": 25,
+          "rr": 25.0,
+          "fp": 0
+        },
+        "media_no_answer": {
+          "n": 25,
+          "correct": 0,
+          "rr": 0,
+          "fp": 1
+        },
+        "image": {
+          "n": 6,
+          "correct": 6,
+          "rr": 4.083333333333333,
+          "fp": 0
+        }
+      }
+    },
+    {
+      "mode": "class-rrf",
+      "offset": 0.05,
+      "groups": {
+        "lexical": {
+          "n": 25,
+          "correct": 25,
+          "rr": 25.0,
+          "fp": 0
+        },
+        "identifier": {
+          "n": 25,
+          "correct": 25,
+          "rr": 25.0,
+          "fp": 0
+        },
+        "chinese_short": {
+          "n": 25,
+          "correct": 25,
+          "rr": 25.0,
+          "fp": 0
+        },
+        "cross_language": {
+          "n": 25,
+          "correct": 20,
+          "rr": 6.199999999999999,
+          "fp": 0
+        },
+        "long_tail": {
+          "n": 25,
+          "correct": 25,
+          "rr": 25.0,
+          "fp": 0
+        },
+        "no_answer": {
+          "n": 25,
+          "correct": 0,
+          "rr": 0,
+          "fp": 0
+        },
+        "audio_topic": {
+          "n": 25,
+          "correct": 19,
+          "rr": 6.333333333333331,
+          "fp": 0
+        },
+        "audio_paraphrase": {
+          "n": 25,
+          "correct": 25,
+          "rr": 24.2,
+          "fp": 0
+        },
+        "audio_cross_language": {
+          "n": 25,
+          "correct": 25,
+          "rr": 25.0,
+          "fp": 0
+        },
+        "media_no_answer": {
+          "n": 25,
+          "correct": 0,
+          "rr": 0,
+          "fp": 1
+        },
+        "image": {
+          "n": 6,
+          "correct": 6,
+          "rr": 2.4166666666666665,
+          "fp": 0
+        }
+      }
+    },
+    {
+      "mode": "mean",
+      "offset": 0,
+      "groups": {
+        "lexical": {
+          "n": 25,
+          "correct": 25,
+          "rr": 25.0,
+          "fp": 0
+        },
+        "identifier": {
+          "n": 25,
+          "correct": 25,
+          "rr": 25.0,
+          "fp": 0
+        },
+        "chinese_short": {
+          "n": 25,
+          "correct": 25,
+          "rr": 25.0,
+          "fp": 0
+        },
+        "cross_language": {
+          "n": 25,
+          "correct": 12,
+          "rr": 4.033333333333333,
+          "fp": 0
+        },
+        "long_tail": {
+          "n": 25,
+          "correct": 25,
+          "rr": 25.0,
+          "fp": 0
+        },
+        "no_answer": {
+          "n": 25,
+          "correct": 0,
+          "rr": 0,
+          "fp": 0
+        },
+        "audio_topic": {
+          "n": 25,
+          "correct": 21,
+          "rr": 5.983333333333333,
+          "fp": 0
+        },
+        "audio_paraphrase": {
+          "n": 25,
+          "correct": 25,
+          "rr": 22.916666666666664,
+          "fp": 0
+        },
+        "audio_cross_language": {
+          "n": 25,
+          "correct": 25,
+          "rr": 20.333333333333332,
+          "fp": 0
+        },
+        "media_no_answer": {
+          "n": 25,
+          "correct": 0,
+          "rr": 0,
+          "fp": 1
+        },
+        "image": {
+          "n": 6,
+          "correct": 6,
+          "rr": 5.333333333333334,
+          "fp": 0
+        }
+      }
+    },
+    {
+      "mode": "mean",
+      "offset": 0.025,
+      "groups": {
+        "lexical": {
+          "n": 25,
+          "correct": 25,
+          "rr": 25.0,
+          "fp": 0
+        },
+        "identifier": {
+          "n": 25,
+          "correct": 25,
+          "rr": 25.0,
+          "fp": 0
+        },
+        "chinese_short": {
+          "n": 25,
+          "correct": 25,
+          "rr": 25.0,
+          "fp": 0
+        },
+        "cross_language": {
+          "n": 25,
+          "correct": 7,
+          "rr": 1.9833333333333332,
+          "fp": 0
+        },
+        "long_tail": {
+          "n": 25,
+          "correct": 25,
+          "rr": 25.0,
+          "fp": 0
+        },
+        "no_answer": {
+          "n": 25,
+          "correct": 0,
+          "rr": 0,
+          "fp": 0
+        },
+        "audio_topic": {
+          "n": 25,
+          "correct": 23,
+          "rr": 6.9833333333333325,
+          "fp": 0
+        },
+        "audio_paraphrase": {
+          "n": 25,
+          "correct": 25,
+          "rr": 24.5,
+          "fp": 0
+        },
+        "audio_cross_language": {
+          "n": 25,
+          "correct": 25,
+          "rr": 24.25,
+          "fp": 0
+        },
+        "media_no_answer": {
+          "n": 25,
+          "correct": 0,
+          "rr": 0,
+          "fp": 1
+        },
+        "image": {
+          "n": 6,
+          "correct": 6,
+          "rr": 5.25,
+          "fp": 0
+        }
+      }
+    },
+    {
+      "mode": "mean",
+      "offset": 0.05,
+      "groups": {
+        "lexical": {
+          "n": 25,
+          "correct": 25,
+          "rr": 25.0,
+          "fp": 0
+        },
+        "identifier": {
+          "n": 25,
+          "correct": 25,
+          "rr": 25.0,
+          "fp": 0
+        },
+        "chinese_short": {
+          "n": 25,
+          "correct": 25,
+          "rr": 25.0,
+          "fp": 0
+        },
+        "cross_language": {
+          "n": 25,
+          "correct": 1,
+          "rr": 0.25,
+          "fp": 0
+        },
+        "long_tail": {
+          "n": 25,
+          "correct": 25,
+          "rr": 25.0,
+          "fp": 0
+        },
+        "no_answer": {
+          "n": 25,
+          "correct": 0,
+          "rr": 0,
+          "fp": 0
+        },
+        "audio_topic": {
+          "n": 25,
+          "correct": 23,
+          "rr": 7.333333333333331,
+          "fp": 0
+        },
+        "audio_paraphrase": {
+          "n": 25,
+          "correct": 25,
+          "rr": 24.5,
+          "fp": 0
+        },
+        "audio_cross_language": {
+          "n": 25,
+          "correct": 25,
+          "rr": 25.0,
+          "fp": 0
+        },
+        "media_no_answer": {
+          "n": 25,
+          "correct": 0,
+          "rr": 0,
+          "fp": 1
+        },
+        "image": {
+          "n": 6,
+          "correct": 6,
+          "rr": 4.083333333333333,
+          "fp": 0
+        }
+      }
+    }
+  ],
+  "selected": null,
+  "partial_penalty": 0.0,
+  "scope": "All 256 supported development queries over the combined 102-source text/media corpus. Unsupported groups stay in original 200-query production reporting. Held-out files are never read; selection is not a held-out result."
+}
