@@ -4,9 +4,13 @@ import TypefluxMediaProtocol
 enum AskArtifactPresentation {
     private static let admission = ArtifactImageAdmission()
     /// Only raw, validated pixels cross back into the UI process.
-    static func image(_ data: Data, mediaType: String, worker: MediaWorker = .previews) async throws -> AskFilePreviewPDF.Result {
+    static func image(_ data: Data, mediaType: String, worker: MediaWorker = .previews,
+                      authorization original: MediaWorker.Authorization? = nil) async throws -> AskFilePreviewPDF.Result {
+        try Task.checkCancellation()
         guard !data.isEmpty, data.count <= AskArtifactStore.maximumFileBytes else { throw AskArtifactError.tooLarge }
         guard let type = MediaImageType(rawValue: mediaType) else { throw AskArtifactError.unsupported }
+        let authorization = original ?? worker.authorization()
+        guard worker.permits(authorization) else { throw AskArtifactError.unavailable }
         guard admission.enter() else { throw AskArtifactError.unavailable }
         defer { admission.leave() }
         let cancellation = AskSearchCancellation()
@@ -14,9 +18,12 @@ enum AskArtifactPresentation {
             try Task.checkCancellation()
             do {
                 let result = try await Task.detached(priority: .utility) {
-                    try MediaPreviewDisplay.renderImage(data, type: type, cancellation: cancellation, worker: worker)
+                    guard !cancellation.isCancelled, worker.permits(authorization) else { throw CancellationError() }
+                    return try MediaPreviewDisplay.renderImage(data, type: type, cancellation: cancellation, worker: worker,
+                                                              authorization: authorization)
                 }.value
                 try Task.checkCancellation()
+                guard worker.permits(authorization) else { throw AskArtifactError.unavailable }
                 return result
             } catch {
                 if Task.isCancelled || error is CancellationError { throw CancellationError() }
@@ -34,12 +41,13 @@ enum AskArtifactPresentation {
     @Published private(set) var error: String?
     @Published private(set) var busy = false
     private var generation = UUID()
-    private let decode: Decoder
+    private let decode: Decoder?
+    private let worker: MediaWorker
     private let write: @MainActor (Data, String) -> Bool
 
-    init(decode: @escaping Decoder = { try await AskArtifactPresentation.image($0, mediaType: $1) },
+    init(worker: MediaWorker = .previews, decode: Decoder? = nil,
          write: @escaping @MainActor (Data, String) -> Bool = { writeImage($0, mediaType: $1) }) {
-        self.decode = decode; self.write = write
+        self.worker = worker; self.decode = decode; self.write = write
     }
 
     static func writeImage(_ data: Data, mediaType: String, pasteboard: NSPasteboard = .general) -> Bool {
@@ -62,6 +70,8 @@ enum AskArtifactPresentation {
     }
 
     private func perform(_ ref: AskArtifactRef, access: AskArtifactAccess, copying: Bool) async {
+        guard !Task.isCancelled else { return }
+        let authorization = decode == nil ? worker.authorization() : nil
         let current = UUID(); generation = current
         busy = true; error = nil
         if !copying { image = nil }
@@ -69,16 +79,24 @@ enum AskArtifactPresentation {
         do {
             try Task.checkCancellation()
             try access.validate(ref)
+            try Task.checkCancellation()
+            if let authorization, !worker.permits(authorization) { throw AskArtifactError.unavailable }
             let bundle = try access.load(ref)
+            try Task.checkCancellation()
+            if let authorization, !worker.permits(authorization) { throw AskArtifactError.unavailable }
             guard bundle.manifest.ref == ref, let data = bundle.files[bundle.manifest.entry],
                   MediaImageType(rawValue: ref.mediaType) != nil,
                   data.count <= AskArtifactStore.maximumFileBytes,
                   AskToolPolicy.digest(data) == ref.sha256 else { throw AskArtifactError.corrupt }
-            let result = try await decode(data, ref.mediaType)
+            let result: AskFilePreviewPDF.Result
+            if let decode { result = try await decode(data, ref.mediaType) }
+            else { result = try await AskArtifactPresentation.image(data, mediaType: ref.mediaType, worker: worker, authorization: authorization) }
             try Task.checkCancellation()
             guard generation == current else { return }
             // Account, conversation, grant or expiry may have changed during decoding.
             try access.validate(ref)
+            try Task.checkCancellation()
+            if let authorization, !worker.permits(authorization) { throw AskArtifactError.unavailable }
             guard let pixels = result.images.first else { throw AskArtifactError.corrupt }
             if copying, !write(data, ref.mediaType) { throw AskArtifactError.unavailable }
             image = NSImage(cgImage: pixels, size: .zero)
