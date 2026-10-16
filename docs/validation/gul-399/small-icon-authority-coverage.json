@@ -1,0 +1,15 @@
+{
+  "covered": 29,
+  "executable_added": 29,
+  "percent": 100.0,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/AskSmallIcon.swift",
+      "covered": 29,
+      "executable_added": 29,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "baseline": "6c617e30d6704430098b8f1f69a2abf3256c47e7",
+  "methods": [
+    "TypefluxTests.MediaWorkerTests/testBundledAndSwiftPMHelperLocations",
+    "TypefluxTests.MediaWorkerTests/testCancellationBeforeAndAfterDispatchRejectsLateResult",
+    "TypefluxTests.MediaWorkerTests/testCopiedInputIsPrivateAndRemovedOnlyAfterConfirmedCollection",
+    "TypefluxTests.MediaWorkerTests/testMalformedInputFailureDoesNotPoisonOtherAttachments",
+    "TypefluxTests.MediaWorkerTests/testOversizedDataFileMissingFileAndFIFORefusedBeforeSpawn",
+    "TypefluxTests.MediaWorkerTests/testProtocolIdentityFailureAndCooldownNeverReplay",
+    "TypefluxTests.MediaWorkerTests/testShutdownCancelsRunningChildAndRejectsNewWork",
+    "TypefluxTests.MediaWorkerTests/testTwoRetainedChildrenBoundAdmissionAndShutdownFences",
+    "TypefluxTests.SmallIconIsolationTests/testCacheHasStrictCapacityAndNeverCachesOversizedDecoderResults",
+    "TypefluxTests.SmallIconIsolationTests/testCancelledDownloadsRetainAdmissionUntilUncooperativeCompletion",
+    "TypefluxTests.SmallIconIsolationTests/testInputAndOutputLimitsRefuseBeforeNativeWork",
+    "TypefluxTests.SmallIconIsolationTests/testRevocationDuringDecodeRejectsLatePixels",
+    "TypefluxTests.SmallIconIsolationTests/testScopeInvalidationAndFreshAuthorizationCannotBlessOldCache",
+    "TypefluxTests.SmallIconIsolationTests/testSharedWaitersAreBoundedAndOneCancellationDoesNotCancelOthers",
+    "TypefluxTests.SmallIconIsolationTests/testSmallPixelBudgetIsReservedBeforeDecodeAndReleasedOnRevocation",
+    "TypefluxTests.SmallIconAuthorityTests/boundedDefaultReaderPreservesPrivateBytesAndRejectsInvalidSources()",
+    "TypefluxTests.SmallIconAuthorityTests/canceledNativeCallsKeepCapacityAndRejectValidLateReplies()",
+    "TypefluxTests.SmallIconAuthorityTests/canceledPreparationsKeepBothSlotsUntilPhysicalReturn(file:)",
+    "TypefluxTests.SmallIconAuthorityTests/heldOriginalPreparationCannotAdoptRecoveredGeneration(file:)",
+    "TypefluxTests.SmallIconAuthorityTests/unavailableCanceledAndRetiredRequestsCannotPrepareOrReplay()",
+    "TypefluxTests.SmallIconAuthorityTests/validNativeReplyThenOriginalRevocationIsNotAReusableResult()"
+  ],
+  "result": "21/21 distinct methods passed on first functional run: 15 XCTest in two suites + 6 Swift Testing in one suite. Six new methods include eight cases.",
+  "distinct_passing_methods": 21,
+  "exclusions": [
+    "SmallIconIsolationTests.testRealHelperDecodesPNGICOAndFreshFileBytesWithoutPathCache: actual codec/helper",
+    "SmallIconIsolationTests.testDecoderAdmissionRetainsCancelledNativeWorkUntilReturn: png() encodes despite injected runner",
+    "SmallIconIsolationTests.testFileAndFaviconViewsShowPixelsRefreshIdentityAndClearPrivateDisplay and testEditorLocalIconScopeLoadsAndCancelsOnRemoval: encoders/windows/helper",
+    "MediaWorkerTests.testRealHelperImagePDFMalformedAndCrashHangFixtures: actual helper/codec",
+    "Production SystemClipboardContentActions, AskConversationModel/AskTestFixture, named pasteboards, home/app/file-index objects",
+    "All unrelated real model/media/permissions/document-indexing/resource-matrix/full-suite tests"
+  ],
+  "fixtures": "Private bytes/text/sparse/FIFO files, raw small CGImage, injected input readers, private health stores and fake JSON/RGBA native responses. Browser cache tests use injected loaders and raw-pixel decoders; no HTTP/native fallback."
+}
