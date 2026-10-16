@@ -69,6 +69,7 @@ final class ScreenRecordingWindowController: NSObject, NSWindowDelegate {
     }
 
     deinit {
+        Task { @MainActor [weak model] in model?.retirePreview() }
         if let appearanceObservation {
             NotificationCenter.default.removeObserver(appearanceObservation)
         }
@@ -214,6 +215,7 @@ final class ScreenRecordingWindowController: NSObject, NSWindowDelegate {
     }
 
     func hide() {
+        model?.retirePreview()
         window?.orderOut(nil)
         window?.contentView = nil; window?.delegate = nil; window = nil
         border?.orderOut(nil); border = nil

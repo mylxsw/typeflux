@@ -1,0 +1,162 @@
+{
+  "covered": 200,
+  "executable_added": 215,
+  "percent": 93.02,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Clipboard/ClipboardAudioPlayback.swift",
+      "covered": 24,
+      "executable_added": 24,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Clipboard/ClipboardPlaybackClient.swift",
+      "covered": 17,
+      "executable_added": 17,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Resources/en.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    },
+    {
+      "file": "Sources/Typeflux/Resources/ja.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    },
+    {
+      "file": "Sources/Typeflux/Resources/ko.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    },
+    {
+      "file": "Sources/Typeflux/Resources/zh-Hans.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    },
+    {
+      "file": "Sources/Typeflux/Resources/zh-Hant.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    },
+    {
+      "file": "Sources/Typeflux/Screenshot/Recording/ScreenRecordingCoordinator+Presentation.swift",
+      "covered": 4,
+      "executable_added": 4,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Screenshot/Recording/ScreenRecordingCoordinator.swift",
+      "covered": 87,
+      "executable_added": 90,
+      "percent": 96.67,
+      "uncovered": [
+        111,
+        362,
+        363
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Screenshot/Recording/ScreenRecordingPreviewPanel.swift",
+      "covered": 2,
+      "executable_added": 3,
+      "percent": 66.67,
+      "uncovered": [
+        8
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Screenshot/Recording/ScreenRecordingPreviewView.swift",
+      "covered": 26,
+      "executable_added": 35,
+      "percent": 74.29,
+      "uncovered": [
+        99,
+        100,
+        101,
+        102,
+        184,
+        185,
+        186,
+        187,
+        188
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Screenshot/Recording/ScreenRecordingTimelineView.swift",
+      "covered": 3,
+      "executable_added": 5,
+      "percent": 60.0,
+      "uncovered": [
+        42,
+        98
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Screenshot/Recording/ScreenRecordingWindowController+Presentation.swift",
+      "covered": 2,
+      "executable_added": 2,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Screenshot/Recording/ScreenRecordingWindowController.swift",
+      "covered": 2,
+      "executable_added": 2,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/TypefluxMediaHelper/TypefluxMediaHelper.swift",
+      "covered": 2,
+      "executable_added": 2,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/TypefluxMediaProtocol/MediaPlayback.swift",
+      "covered": 9,
+      "executable_added": 9,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/TypefluxMediaRuntime/MediaPlaybackServer.swift",
+      "covered": 22,
+      "executable_added": 22,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    }
+  ]
+}

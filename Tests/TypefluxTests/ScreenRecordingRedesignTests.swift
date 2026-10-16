@@ -109,9 +109,12 @@ struct ScreenRecordingRedesignTests {
         fixture.model.setTrimEnd(0.9)
         #expect(fixture.model.selectionDuration >= 0.5)
         fixture.model.seek(0)
+        try await fixture.waitForPlayback { !fixture.model.playback.isBusy }
         fixture.model.togglePlayback()
+        try await fixture.waitForPlayback { fixture.model.isPlaying && !fixture.model.playback.isBusy }
         #expect(fixture.model.isPlaying)
         fixture.model.togglePlayback()
+        try await fixture.waitForPlayback { !fixture.model.isPlaying && !fixture.model.playback.isBusy }
         #expect(!fixture.model.isPlaying)
         fixture.model.fileName = "../Demo"
         fixture.model.outputDirectory = fixture.root.appendingPathComponent("chosen")
@@ -121,7 +124,7 @@ struct ScreenRecordingRedesignTests {
         #expect(url.lastPathComponent == "..-Demo.mp4")
         #expect(url.deletingLastPathComponent().resolvingSymlinksInPath().path == fixture.model.outputDirectory?
             .resolvingSymlinksInPath().path)
-        #expect(NSPasteboard.general.readObjects(forClasses: [NSURL.self])?.first as? URL == url)
+        #expect(fixture.copiedURL == url)
         fixture.model.finishSavedPresentation()
         #expect(fixture.model.state == .idle)
         await fixture.clean()

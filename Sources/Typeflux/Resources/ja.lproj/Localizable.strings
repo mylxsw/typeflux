@@ -5576,3 +5576,8 @@
 "clipboard.video.pause" = "一時停止";
 "clipboard.video.position" = "再生位置";
 "clipboard.video.volume" = "音量";
+
+/* Isolated recording preview */
+"recording.previewUnavailable" = "プレビューを利用できません。元の録画は保存されています。";
+"recording.revealOriginal" = "元の録画を Finder で表示";
+"recording.reloadPreview" = "プレビューを再読み込み";

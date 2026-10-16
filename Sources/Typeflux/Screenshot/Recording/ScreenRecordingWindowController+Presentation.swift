@@ -99,12 +99,13 @@ extension ScreenRecordingWindowController {
                 for: .preview,
                 available: CGSize(width: area.width - 32, height: area.height - 48)
             )
-            let panel = NSPanel(
+            let panel = ScreenRecordingPreviewPanel(
                 contentRect: CGRect(origin: .zero, size: size),
                 styleMask: [.titled, .closable, .resizable, .fullSizeContentView],
                 backing: .buffered,
                 defer: false
             )
+            panel.retire = { [weak model] in model?.retirePreview() }
             panel.identifier = Self.previewIdentifier
             panel.title = L("recording.previewTitle")
             panel.titleVisibility = .hidden; panel.titlebarAppearsTransparent = true; panel

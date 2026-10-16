@@ -6,6 +6,13 @@ protocol ClipboardPlaybackClient: Sendable {
     func request(_ kind: MediaPlaybackMessage.Kind, fraction: Double?) async throws -> MediaPlaybackState
     func stop()
     func retainPixels(_ reservation: AskToolPixelBudget.Lease) throws
+    func request(_ kind: MediaPlaybackMessage.Kind, fraction: Double?, range: MediaPlaybackRange?) async throws -> MediaPlaybackState
+}
+extension ClipboardPlaybackClient {
+    func request(_ kind: MediaPlaybackMessage.Kind, fraction: Double?, range: MediaPlaybackRange?) async throws -> MediaPlaybackState {
+        guard range == nil else { throw MediaFailure.invalidProtocol }
+        return try await request(kind, fraction: fraction)
+    }
 }
 
 /// Independent playback admission. Cancelled children keep their slot and input until reaped.
@@ -59,20 +66,21 @@ final class ClipboardPlaybackPool: @unchecked Sendable {
 
 struct ClipboardPlaybackSource: Equatable, Sendable {
     let url: URL
+    let limit: Int
     let device: dev_t, inode: ino_t, bytes: off_t
     let modified: Int, modifiedNanos: Int, changed: Int, changedNanos: Int
-    init(_ url: URL) throws {
+    init(_ url: URL, limit: Int = 512 * 1024 * 1024) throws {
         var info = stat(), mount = statfs()
         guard url.isFileURL, url.path.utf8.count <= 4096, !url.path.contains("\0"),
               lstat(url.path, &info) == 0, info.st_mode & S_IFMT == S_IFREG,
-              info.st_size > 0, info.st_size <= 512 * 1024 * 1024,
+              info.st_size > 0, info.st_size <= limit, limit > 0, limit <= 8 * 1024 * 1024 * 1024,
               info.st_flags & UInt32(SF_DATALESS) == 0, statfs(url.path, &mount) == 0,
               mount.f_flags & UInt32(MNT_LOCAL) != 0 else { throw MediaFailure.unreadable }
-        self.url = url; device = info.st_dev; inode = info.st_ino; bytes = info.st_size
+        self.url = url; self.limit = limit; device = info.st_dev; inode = info.st_ino; bytes = info.st_size
         modified = info.st_mtimespec.tv_sec; modifiedNanos = info.st_mtimespec.tv_nsec
         changed = info.st_ctimespec.tv_sec; changedNanos = info.st_ctimespec.tv_nsec
     }
-    func check() throws { guard self == (try Self(url)) else { throw MediaFailure.unreadable } }
+    func check() throws { guard self == (try Self(url, limit: limit)) else { throw MediaFailure.unreadable } }
 }
 
 final class ClipboardPlaybackProcess: ClipboardPlaybackClient, @unchecked Sendable {
@@ -93,10 +101,10 @@ final class ClipboardPlaybackProcess: ClipboardPlaybackClient, @unchecked Sendab
         self.socket = socket; self.lease = lease; self.retirement = ClipboardPlaybackRetirement(lease); self.source = source; self.pool = pool; self.poolID = poolID; self.timeout = timeout; self.video = video
     }
     /// Admission precedes any detached copy, spawn or socket operation.
-    static func open(_ url: URL, video: Bool = false, pool: ClipboardPlaybackPool = .shared,
+    static func open(_ url: URL, video: Bool = false, recording: Bool = false, pool: ClipboardPlaybackPool = .shared,
                      executable: URL = MediaWorker.helperURL, timeout: Double = 5,
                      run: @escaping Runner = { try ManagedProcess().runBlocking($0, isCancelled: $1) }) async throws -> ClipboardPlaybackProcess {
-        guard timeout.isFinite, timeout > 0, timeout <= 10,
+        guard !recording || video, timeout.isFinite, timeout > 0, timeout <= 10,
               let container = MediaAVContainer(rawValue: url.pathExtension.lowercased()) else { throw MediaFailure.unreadable }
         try Task.checkCancellation()
         let (key, lease) = try pool.reserve()
@@ -104,12 +112,13 @@ final class ClipboardPlaybackProcess: ClipboardPlaybackClient, @unchecked Sendab
             let client = try await Task.detached(priority: .utility) {
                 do {
                     if lease.cancelled { throw CancellationError() }
-                    let source = try ClipboardPlaybackSource(url)
+                    let limit = recording ? 8 * 1024 * 1024 * 1024 : 512 * 1024 * 1024
+                    let source = try ClipboardPlaybackSource(url, limit: limit)
                     let directory = FileManager.default.temporaryDirectory.appendingPathComponent("typeflux-playback-" + key.uuidString)
                     try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false, attributes: [.posixPermissions: 0o700])
                     lease.directory = directory
                     try MediaWorker.copy(.file(url), to: directory.appendingPathComponent("audio." + container.rawValue),
-                                         limit: 512 * 1024 * 1024, cancelled: { lease.cancelled })
+                                         limit: limit, cancelled: { lease.cancelled })
                     try source.check()
                     if lease.cancelled { throw CancellationError() }
                     var pair: [Int32] = [-1, -1]
@@ -129,7 +138,7 @@ final class ClipboardPlaybackProcess: ClipboardPlaybackClient, @unchecked Sendab
                         defer { close(fd) }
                         do {
                             _ = try run(.init(executable: executable.path,
-                                arguments: [video ? "--video-playback" : "--audio-playback", "100", container.rawValue],
+                                arguments: [recording ? "--recording-playback" : video ? "--video-playback" : "--audio-playback", "100", container.rawValue],
                                 environment: ["PATH": "/usr/bin:/bin", "LANG": "en_US.UTF-8"],
                                 directoryDescriptor: fd, timeout: MediaPlaybackMessage.lifetime,
                                 outputLimit: 1024, stopOnOutputLimit: true,
@@ -150,6 +159,9 @@ final class ClipboardPlaybackProcess: ClipboardPlaybackClient, @unchecked Sendab
     func stop() { socket.stop(); lease.cancel() }
     func retainPixels(_ reservation: AskToolPixelBudget.Lease) throws { try pool.retainPixels(poolID, reservation: reservation) }
     func request(_ kind: MediaPlaybackMessage.Kind, fraction: Double? = nil) async throws -> MediaPlaybackState {
+        try await request(kind, fraction: fraction, range: nil)
+    }
+    func request(_ kind: MediaPlaybackMessage.Kind, fraction: Double?, range: MediaPlaybackRange?) async throws -> MediaPlaybackState {
         let number = try lock.withLock {
             guard !busy, !lease.cancelled, !socket.isStopped else { throw MediaFailure.unavailable }
             try retirement.beginRequest()
@@ -160,7 +172,7 @@ final class ClipboardPlaybackProcess: ClipboardPlaybackClient, @unchecked Sendab
             do {
                 let result = try await Task.detached(priority: .utility) { [self] in
                     try source.check()
-                    let request = MediaPlaybackMessage(id: id, sequence: number, kind: video && kind == .load ? .loadVideo : kind, fraction: fraction)
+                    let request = MediaPlaybackMessage(id: id, sequence: number, kind: video && kind == .load ? .loadVideo : kind, fraction: fraction, range: range)
                     let deadline = ContinuousClock.now.advanced(by: .seconds(kind == .load ? 10 : timeout))
                     try socket.send(request, deadline: deadline)
                     let response = try socket.receive(deadline: deadline)

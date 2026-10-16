@@ -4,6 +4,7 @@ struct ScreenRecordingTimelineView: View {
     @ObservedObject var model: ScreenRecordingCoordinator
     var body: some View {
         GeometryReader { geometry in
+            let interaction = model.playback.interactionID
             let width = geometry.size.width
             let start = ScreenRecordingLayout.position(time: model.trimStart, width: width, duration: model.duration)
             let end = ScreenRecordingLayout.position(time: model.trimEnd, width: width, duration: model.duration)
@@ -38,6 +39,7 @@ struct ScreenRecordingTimelineView: View {
                 Rectangle().fill(.clear).contentShape(Rectangle()).frame(width: width, height: 104)
                     .gesture(DragGesture(minimumDistance: 0, coordinateSpace: .named("recording.timeline"))
                         .onChanged { value in
+                            guard model.playback.interactionID == interaction else { return }
                             model.seek(ScreenRecordingLayout.time(
                                 at: value.location.x,
                                 width: width,
@@ -89,9 +91,11 @@ struct ScreenRecordingTimelineView: View {
     }
 
     private func handle(start: Bool, width: CGFloat) -> some View {
-        RoundedRectangle(cornerRadius: 6).fill(AskTheme.accent).frame(width: 12, height: 84)
+        let interaction = model.playback.interactionID
+        return RoundedRectangle(cornerRadius: 6).fill(AskTheme.accent).frame(width: 12, height: 84)
             .overlay(Capsule().fill(.white.opacity(0.85)).frame(width: 2, height: 18))
             .gesture(DragGesture(minimumDistance: 0, coordinateSpace: .named("recording.timeline")).onChanged { value in
+                guard model.playback.interactionID == interaction else { return }
                 let time = ScreenRecordingLayout.time(at: value.location.x, width: width, duration: model.duration)
                 if start {
                     model.setTrimStart(time)

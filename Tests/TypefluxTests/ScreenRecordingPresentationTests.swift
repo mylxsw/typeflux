@@ -74,16 +74,17 @@ struct ScreenRecordingPresentationTests {
         await fixture.recording()
         fixture.model.stop()
         await fixture.model.pendingTask?.value
-        let player = try #require(fixture.model.player)
+        let player = fixture.model.playback
+        #expect(player.isLoaded)
         fixture.model.setTrimStart(0.4)
         for _ in 0 ..< 100 {
-            if abs(player.currentTime().seconds - 0.4) < 0.01 {
+            if abs(player.elapsed - 0.4) < 0.01 {
                 break
             }
             try await Task.sleep(for: .milliseconds(20))
         }
-        #expect(abs(player.currentTime().seconds - 0.4) < 0.01)
-        #expect(player.rate == 0)
+        #expect(abs(player.elapsed - 0.4) < 0.01)
+        #expect(!player.isPlaying)
         await fixture.clean()
     }
 

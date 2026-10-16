@@ -1,6 +1,8 @@
 // swiftlint:disable file_length
 import AppKit
-import AVKit
+import AVFoundation
+import Combine
+import TypefluxMediaProtocol
 import ScreenCaptureKit
 
 @MainActor
@@ -24,7 +26,11 @@ final class ScreenRecordingCoordinator: ObservableObject {
     @Published var trimEnd: Double = 0
     @Published private(set) var error: String?
     @Published private(set) var savedURL: URL?
-    @Published private(set) var player: AVPlayer?
+    let playback: ClipboardAudioPlayback
+    private let previewScope = AskImagePresentationScope()
+    private var previewAuthorized = false
+    private var previewObservation: AnyCancellable?
+    private var accountObservers: [NSObjectProtocol] = []
     @Published private(set) var recovered: [URL] = []
     @Published var fileName = ""
     @Published var outputDirectory: URL? {
@@ -35,8 +41,9 @@ final class ScreenRecordingCoordinator: ObservableObject {
         }
     }
 
-    @Published private(set) var currentTime: Double = 0
-    @Published private(set) var isPlaying = false
+    var currentTime: Double { playback.elapsed }
+    var isPlaying: Bool { playback.isPlaying }
+    var canUsePreview: Bool { previewAuthorized }
     @Published private(set) var media = ScreenRecordingPreviewMedia()
     var prepareCapture: () async -> Void = {}
     var liveSession: AVCaptureSession? {
@@ -47,7 +54,6 @@ final class ScreenRecordingCoordinator: ObservableObject {
         engine.audioLevel
     }
 
-    private var playerObserver: Any?
     private var mediaTask: Task<Void, Never>?
     private var deviceTask: Task<Void, Never>?
     private var countdownWait: Task<Void, Error>?
@@ -73,6 +79,7 @@ final class ScreenRecordingCoordinator: ObservableObject {
     var isOtherCaptureActive: () -> Bool = { false }
     var present: (ScreenRecordingCoordinator) -> Void = { _ in }
     var dismiss: () -> Void = {}
+    var copyPublishedFile: (URL) -> Void = ScreenRecordingCoordinator.copyFile
     var updateIndicator: (String?) -> Void = { _ in }
     var showBorder: (ScreenRecordingTarget?) -> Void = { _ in }
     private let permission: any ScreenCapturePermissionProviding
@@ -101,7 +108,9 @@ final class ScreenRecordingCoordinator: ObservableObject {
          authorizeDevices: @escaping (ScreenRecordingOptions) async throws -> Void = ScreenRecordingCoordinator
              .authorize,
          loadChoices: @escaping () async throws -> [ScreenRecordingChoice] = ScreenRecordingCoordinator.catalog,
-         waitSecond: @escaping () async throws -> Void = { try await Task.sleep(for: .seconds(1)) }) {
+         waitSecond: @escaping () async throws -> Void = { try await Task.sleep(for: .seconds(1)) },
+         playback: ClipboardAudioPlayback? = nil) {
+        self.playback = playback ?? ClipboardAudioPlayback(video: true, open: { try await ClipboardPlaybackProcess.open($0, video: true, recording: true) })
         self.permission = permission
         self.capture = capture
         self.overlay = overlay ?? ScreenshotOverlayController()
@@ -114,6 +123,12 @@ final class ScreenRecordingCoordinator: ObservableObject {
         self.loadChoices = loadChoices
         self.waitSecond = waitSecond
         options = .load(from: defaults)
+        previewObservation = self.playback.objectWillChange.sink { [weak self] in self?.objectWillChange.send() }
+        for name in [Notification.Name.authDidLogin, .authDidLogout, .authTokenDidRefresh] {
+            accountObservers.append(NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.retirePreview() }
+            })
+        }
         self.engine.onError = { [weak self] error in
             guard let self else { return }
             if state == .starting {
@@ -123,6 +138,7 @@ final class ScreenRecordingCoordinator: ObservableObject {
             }
         }
     }
+    deinit { accountObservers.forEach(NotificationCenter.default.removeObserver); mediaTask?.cancel() }
 }
 
 extension ScreenRecordingCoordinator {
@@ -288,64 +304,91 @@ extension ScreenRecordingCoordinator {
     }
 
     private func preparePreview(_ url: URL) async throws {
-        let asset = AVURLAsset(url: url)
-        let duration = try await asset.load(.duration).seconds
-        try Task.checkCancellation()
-        guard duration.isFinite, duration > 0 else { throw ScreenRecordingFailure.noFrames }
+        retirePreview()
         sourceURL = url
-        self.duration = duration
-        trimStart = 0
-        trimEnd = duration
-        removePlayerObserver()
-        player = AVPlayer(url: url)
-        currentTime = 0
-        isPlaying = false
+        previewAuthorized = true
+        previewScope.setVisible(true)
+        let token = generation
+        let access = AskImagePresentationAccess(scope: previewScope, epoch: previewScope.epoch, authorize: { [weak self] in
+            self?.previewAuthorized == true && self?.sourceURL == url && self?.generation == token
+        })
+        duration = 0; trimStart = 0; trimEnd = 0
+        do {
+            let duration = try await playback.prepare(url, access: access)
+            try Task.checkCancellation()
+            guard access.allows() else { throw CancellationError() }
+            self.duration = duration; trimEnd = duration
+        } catch {
+            guard !Task.isCancelled, access.allows() else { throw CancellationError() }
+            // A successful recording remains recoverable even if its preview cannot decode.
+            self.error = L("recording.previewUnavailable")
+        }
         if fileName.isEmpty {
             let formatter = DateFormatter()
             formatter.dateFormat = "yyyy-MM-dd HH.mm.ss"
             fileName = L("recording.title") + " " + formatter.string(from: Date())
         }
-        playerObserver = player?.addPeriodicTimeObserver(
-            forInterval: CMTime(seconds: 0.05, preferredTimescale: 600),
-            queue: .main
-        ) { [weak self] time in
-            MainActor.assumeIsolated {
-                guard let self else { return }
-                self.currentTime = time.seconds
-                if self.currentTime >= self.trimEnd, self.isPlaying {
-                    self.player?.pause(); self.isPlaying = false
-                }
-            }
-        }
         mediaTask?.cancel()
-        let mediaJob = Task.detached(priority: .userInitiated) { try await ScreenRecordingPreviewMedia.load(url) }
-        mediaTask = Task { [weak self] in
-            do {
-                let result = try await withTaskCancellationHandler { try await mediaJob.value } onCancel: {
-                    mediaJob.cancel()
-                }
-                guard let self, !Task.isCancelled, sourceURL == url else { return }
-                media = result
-            } catch { /* The video remains editable even when a damaged audio track cannot be previewed. */ }
+        if playback.isLoaded {
+            let mediaJob = Task.detached(priority: .userInitiated) { try await ScreenRecordingPreviewMedia.load(url) }
+            mediaTask = Task { [weak self] in
+                do {
+                    let result = try await withTaskCancellationHandler { try await mediaJob.value } onCancel: {
+                        mediaJob.cancel()
+                    }
+                    guard let self, !Task.isCancelled, access.allows(), sourceURL == url else { return }
+                    media = result
+                } catch { /* The video remains editable even when a damaged audio track cannot be previewed. */ }
+            }
         }
         state = .preview
         present(self)
     }
 
     func seek(_ seconds: Double) {
-        player?.pause()
-        isPlaying = false
-        currentTime = max(0, min(duration, seconds))
-        player?.seek(to: CMTime(seconds: max(0, min(duration, seconds)), preferredTimescale: 600),
-                     toleranceBefore: .zero, toleranceAfter: .zero)
+        guard state == .preview, previewAuthorized, seconds.isFinite, duration > 0 else { return }
+        playback.seekPaused(to: min(duration, max(0, seconds)) / duration)
+    }
+
+    /// Visibility/account retirement never deletes the original finished recording.
+    func retirePreview() {
+        previewAuthorized = false; previewScope.invalidate(); playback.stop()
+        mediaTask?.cancel(); media = ScreenRecordingPreviewMedia()
+        if state == .exporting { pendingTask?.cancel() }
+    }
+
+    func revealOriginal() {
+        guard previewAuthorized, let sourceURL else { return }
+        NSWorkspace.shared.activateFileViewerSelecting([sourceURL])
+    }
+
+    /// Explicitly reload presentation only; never recapture or repeat export.
+    func reloadPreviewPlayback() {
+        guard state == .preview, previewAuthorized, !playback.isBusy, let sourceURL else { return }
+        let token = generation
+        let access = AskImagePresentationAccess(scope: previewScope, epoch: previewScope.epoch, authorize: { [weak self] in
+            self?.previewAuthorized == true && self?.generation == token && self?.sourceURL == sourceURL
+        })
+        playback.stop()
+        pendingTask = Task { [weak self] in
+            guard let self else { return }
+            do {
+                let value = try await playback.prepare(sourceURL, access: access)
+                guard access.allows(), !Task.isCancelled, state == .preview else { return }
+                if duration == 0 { duration = value; trimStart = 0; trimEnd = value }
+                error = nil
+            } catch {
+                if access.allows(), !Task.isCancelled, state == .preview { self.error = L("recording.previewUnavailable") }
+            }
+        }
     }
 
     func export(directory: URL? = nil, destinationURL: URL? = nil, copy: Bool = false) {
-        guard state == .preview, let sourceURL, let sessionDirectory else { return }
+        guard state == .preview, previewAuthorized, let sourceURL, let sessionDirectory else { return }
         let trim = ScreenRecordingTrim(start: trimStart, end: trimEnd)
         guard trimIsValid else { error = ScreenRecordingFailure.invalidRange.localizedDescription; return }
-        player?.pause()
-        isPlaying = false
+        pendingTask?.cancel()
+        playback.stop()
         state = .exporting
         error = nil
         progress = 0
@@ -364,6 +407,7 @@ extension ScreenRecordingCoordinator {
                         }
                     }
                 try Task.checkCancellation()
+                guard let owner = self, owner.generation == token, owner.previewAuthorized else { throw CancellationError() }
                 let published = try await Task.detached { try files.publish(
                     output,
                     in: destination,
@@ -372,7 +416,7 @@ extension ScreenRecordingCoordinator {
                     destinationURL: destinationURL
                 ) }
                 .value
-                guard let self, generation == token else { return }
+                guard let self, generation == token, previewAuthorized, !Task.isCancelled else { throw CancellationError() }
                 await completeExport(published, copy: copy, session: sessionDirectory, token: token)
             } catch {
                 guard let self, generation == token else { return }
@@ -386,13 +430,12 @@ extension ScreenRecordingCoordinator {
     private func completeExport(_ published: URL, copy: Bool, session: URL, token: Int) async {
         savedURL = published
         if copy {
-            Self.copyFile(published)
+            copyPublishedFile(published)
         }
-        removePlayerObserver()
-        player = nil
+        playback.stop()
         mediaTask?.cancel()
         await mediaTask?.value
-        guard generation == token else { return }
+        guard generation == token, previewAuthorized else { return }
         sourceURL = nil
         files.discard(session)
         sessionDirectory = nil
@@ -408,6 +451,7 @@ extension ScreenRecordingCoordinator {
     func cancel() {
         guard state != .idle else { return }
         generation += 1
+        retirePreview()
         let previous = pendingTask
         let previousMedia = mediaTask
         let previousDevices = deviceTask
@@ -425,10 +469,7 @@ extension ScreenRecordingCoordinator {
             await previousDevices?.value
             guard let self else { return }
             await engine.cancel()
-            player?.pause()
-            isPlaying = false
-            removePlayerObserver()
-            player = nil
+            playback.stop()
             sourceURL = nil
             if let sessionDirectory {
                 files.discard(sessionDirectory)
@@ -451,7 +492,7 @@ extension ScreenRecordingCoordinator {
         await pendingTask?.value
         mediaTask?.cancel()
         await mediaTask?.value
-        player?.pause()
+        retirePreview()
         stopMonitoring()
     }
 
@@ -701,27 +742,9 @@ extension ScreenRecordingCoordinator {
     }
 
     func togglePlayback() {
-        guard state == .preview, let player else { return }
-        if isPlaying {
-            player.pause(); isPlaying = false; return
-        }
-        if currentTime < trimStart || currentTime >= trimEnd {
-            currentTime = trimStart
-            player.seek(
-                to: CMTime(seconds: trimStart, preferredTimescale: 600),
-                toleranceBefore: .zero,
-                toleranceAfter: .zero
-            )
-        }
-        player.play()
-        isPlaying = true
-    }
-
-    private func removePlayerObserver() {
-        if let playerObserver {
-            player?.removeTimeObserver(playerObserver)
-        }
-        playerObserver = nil
+        guard state == .preview, previewAuthorized, trimIsValid else { return }
+        if playback.isPlaying { playback.toggle() }
+        else { playback.play(range: .init(start: trimStart, end: trimEnd)) }
     }
 
     func keepFirstGIFSegment() {

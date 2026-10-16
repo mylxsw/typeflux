@@ -1,4 +1,4 @@
-import AVKit
+import AppKit
 import SwiftUI
 
 struct ScreenRecordingPreviewView: View {
@@ -9,6 +9,13 @@ struct ScreenRecordingPreviewView: View {
     var saveAs: () -> Void = {}
 
     var body: some View {
+        Group {
+            if model.canUsePreview { content }
+            else { Text(L("recording.previewUnavailable")).padding().frame(maxWidth: .infinity, maxHeight: .infinity) }
+        }
+    }
+
+    private var content: some View {
         VStack(spacing: 0) {
             HStack(spacing: 5) {
                 TextField(L("recording.fileName"), text: $model.fileName).textFieldStyle(.plain)
@@ -25,14 +32,15 @@ struct ScreenRecordingPreviewView: View {
                     .accessibilityIdentifier("recording.fileName")
                 Text("." + model.options.format.rawValue).foregroundStyle(StudioTheme.textTertiary)
                 Spacer()
+                ScreenRecordingPreviewVolume(playback: model.playback).frame(width: 85)
                 Picker(L("recording.format"), selection: $model.options.format) {
                     Text("MP4").tag(ScreenRecordingFormat.mp4); Text("GIF").tag(ScreenRecordingFormat.gif)
                 }.pickerStyle(.segmented).labelsHidden().frame(width: 128)
             }.padding(.leading, 78).padding(.trailing, 14).frame(height: 46).disabled(model.state == .exporting)
             Divider()
             ZStack {
-                ScreenRecordingPlayerView(player: model.player)
-                if !model.isPlaying {
+                ScreenRecordingPlayerView(playback: model.playback)
+                if !model.isPlaying, model.playback.isLoaded {
                     Button(action: model.togglePlayback) {
                         Image(systemName: "play.fill").font(.system(size: 22)).foregroundStyle(.white)
                             .frame(width: 56, height: 56).background(.black.opacity(0.6), in: Circle())
@@ -46,7 +54,7 @@ struct ScreenRecordingPreviewView: View {
                     Image(systemName: model.isPlaying ? "pause.fill" : "play.fill")
                         .frame(width: 30, height: 30).contentShape(Rectangle())
                 }
-                .buttonStyle(.plain).accessibilityLabel(L("recording.play"))
+                .buttonStyle(.plain).accessibilityLabel(L("recording.play")).disabled(!model.playback.isLoaded || model.playback.isBusy)
                 Text(ScreenRecordingLayout.preciseTime(model.currentTime) + " / " + ScreenRecordingLayout
                     .preciseTime(model.duration))
                     .font(.system(size: 12, design: .monospaced))
@@ -83,6 +91,14 @@ struct ScreenRecordingPreviewView: View {
             if let error = model.error {
                 Label(error, systemImage: "exclamationmark.triangle").foregroundStyle(StudioTheme.danger)
                     .font(.system(size: 12)).padding(.horizontal, 16).padding(.bottom, 8)
+            }
+            if model.sourceURL != nil {
+                Button(L("recording.revealOriginal"), action: model.revealOriginal).disabled(!model.canUsePreview)
+                    .font(.caption).padding(.bottom, 6)
+                if !model.playback.isLoaded, model.state == .preview {
+                    Button(L("recording.reloadPreview"), action: model.reloadPreviewPlayback)
+                        .disabled(!model.canUsePreview || model.playback.isBusy)
+                }
             }
             Divider()
             footer.frame(height: 58).padding(.horizontal, 14)
@@ -146,21 +162,32 @@ struct ScreenRecordingPreviewView: View {
     }
 }
 
-struct ScreenRecordingPlayerView: NSViewRepresentable {
-    var player: AVPlayer?
-    func makeNSView(context _: Context) -> AVPlayerView {
-        let view = AVPlayerView()
-        view.controlsStyle = .none
-        view.videoGravity = .resizeAspect
-        return view
+struct ScreenRecordingPlayerView: View {
+    @ObservedObject var playback: ClipboardAudioPlayback
+    var body: some View {
+        ZStack {
+            Color.black
+            if let image = playback.image { Image(nsImage: image).resizable().scaledToFit() }
+            else { Text(L("recording.previewUnavailable")).font(.caption).foregroundStyle(.white).padding() }
+        }
     }
+}
 
-    func updateNSView(_ view: AVPlayerView, context _: Context) {
-        view.player = player
-    }
-
-    static func dismantleNSView(_ view: AVPlayerView, coordinator _: ()) {
-        view.player = nil
+private struct ScreenRecordingPreviewVolume: View {
+    @ObservedObject var playback: ClipboardAudioPlayback
+    @State private var value = 1.0
+    @State private var interaction: UUID?
+    var body: some View {
+        HStack {
+            Image(systemName: "speaker.wave.2.fill")
+            Slider(value: $value, in: 0...1) { editing in
+                if editing { interaction = playback.interactionID }
+                else if let token = interaction {
+                    interaction = nil; playback.setVolume(value, interactionID: token)
+                }
+            }.accessibilityLabel(L("clipboard.video.volume"))
+        }.disabled(!playback.isLoaded || playback.isBusy)
+            .onChange(of: playback.volume) { if interaction == nil { value = $0 } }
     }
 }
 

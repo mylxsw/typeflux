@@ -122,10 +122,13 @@ struct ScreenRecordingNativeInteractionTests {
         presenter.show(fixture.model)
         let window = try #require(presenter.window)
         #expect(try presenter.handleEditorKey(key(code: 49, text: " ", window: window)))
+        try await fixture.waitForPlayback { fixture.model.isPlaying && !fixture.model.playback.isBusy }
         #expect(fixture.model.isPlaying)
         #expect(try presenter.handleEditorKey(key(code: 49, text: " ", window: window)))
+        try await fixture.waitForPlayback { !fixture.model.isPlaying && !fixture.model.playback.isBusy }
         #expect(!fixture.model.isPlaying)
         fixture.model.seek(0.2)
+        try await fixture.waitForPlayback { abs(fixture.model.currentTime - 0.2) < 0.001 && !fixture.model.playback.isBusy }
         #expect(try presenter.handleEditorKey(key(code: 34, text: "i", window: window)))
         #expect(fixture.model.trimStart == 0.2)
         let text = NSTextView(frame: .zero)

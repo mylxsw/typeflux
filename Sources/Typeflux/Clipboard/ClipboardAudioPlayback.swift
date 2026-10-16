@@ -28,6 +28,7 @@ import TypefluxMediaProtocol
     private var registration: UUID?
     private var pendingLoad: (URL, AskImagePresentationAccess)?
     private var command: (MediaPlaybackMessage.Kind, Double?)?
+    private var commandRange: MediaPlaybackRange?
     init(video: Bool = false, budget: AskToolPixelBudget = .shared, open: Open? = nil) {
         self.video = video; self.budget = budget
         self.open = open ?? { try await ClipboardPlaybackProcess.open($0, video: video) }
@@ -61,10 +62,11 @@ import TypefluxMediaProtocol
                 self?.client = client
                 if let reservation { try client.retainPixels(reservation) }
                 var next: (MediaPlaybackMessage.Kind, Double?) = (.load, nil)
+                var range: MediaPlaybackRange?
                 while !Task.isCancelled {
                     guard self?.permits(current) == true else { self?.stop(); return }
                     let state = try await withTaskCancellationHandler {
-                        try await client.request(next.0, fraction: next.1)
+                        try await client.request(next.0, fraction: next.1, range: range)
                     } onCancel: { client.stop() }
                     try Task.checkCancellation()
                     try state.validate()
@@ -76,6 +78,7 @@ import TypefluxMediaProtocol
                     if next.0 != .status { self?.isBusy = false }
                     try await Task.sleep(for: .milliseconds(video && state.phase == .playing ? 33 : 250))
                     guard self?.permits(current) == true else { self?.stop(); return }
+                    range = self?.commandRange; self?.commandRange = nil
                     next = self?.takeCommand() ?? (.status, nil)
                 }
             } catch {
@@ -99,6 +102,26 @@ import TypefluxMediaProtocol
         duration = state.duration; elapsed = state.elapsed; progress = elapsed / duration
     }
     func toggle() { submit(isPlaying ? .pause : .play, fraction: nil) }
+    func play(range: MediaPlaybackRange) {
+        guard (try? range.validate()) != nil, range.end <= duration, isLoaded, !isBusy, command == nil,
+              originalAccess?.allows() == true else { return }
+        commandRange = range; submit(.playRange, fraction: nil)
+    }
+    func seekPaused(to fraction: Double) {
+        guard fraction.isFinite, isLoaded, originalAccess?.allows() == true,
+              command == nil || command?.0 == .seekPaused else { return }
+        // Scrubbing coalesces only unsent read-only seeks, never a play/write operation.
+        command = (.seekPaused, min(1, max(0, fraction))); commandRange = nil; isBusy = true
+    }
+    func prepare(_ url: URL, access: AskImagePresentationAccess) async throws -> Double {
+        load(url, access: access)
+        do {
+            while isBusy && !isLoaded { try await Task.sleep(for: .milliseconds(10)) }
+            try Task.checkCancellation()
+            guard access.allows(), isLoaded else { throw MediaFailure.unavailable }
+            return duration
+        } catch { stop(); throw error }
+    }
     var interactionID: UUID { generation }
     func seek(to fraction: Double, interactionID: UUID) {
         guard interactionID == generation else { return }
@@ -138,7 +161,7 @@ import TypefluxMediaProtocol
         command = (kind, fraction); isBusy = true
     }
     private func clear() {
-        client?.stop(); client = nil; command = nil
+        client?.stop(); client = nil; command = nil; commandRange = nil
         isLoaded = false; isPlaying = false; isBusy = false; failed = false
         progress = 0; elapsed = 0; duration = 0; volume = 1; image = nil
     }
