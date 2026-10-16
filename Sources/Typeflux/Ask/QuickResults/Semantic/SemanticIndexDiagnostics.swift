@@ -54,7 +54,8 @@ extension SemanticFileStore {
             INSERT INTO index_runs(id,reason,stage,started,configuration,model,recipe,application)
             VALUES(?,?,'checking',?,?,?,?,?)
             """, [id, reason.rawValue, Date().timeIntervalSince1970, generation,
-                  SemanticFilePolicy.profile, Self.documentProvenance + ";" + Self.mediaProvenance,
+                  SemanticFilePolicy.profile,
+                  Self.documentProvenance + ";" + SemanticPDFText.recipe + ";" + Self.mediaProvenance,
                   version + " (" + build + ")"])
             activeRunID = id
             try execute(

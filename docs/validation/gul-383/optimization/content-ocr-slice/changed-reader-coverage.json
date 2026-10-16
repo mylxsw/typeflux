@@ -1,0 +1,24 @@
+{
+  "baseline": "dcae50561a637082ffc8710f06a9d99924cd3f5c",
+  "denominator": "Added/modified executable Swift lines in Sources/Typeflux, including new files, intersected with final LLVM LCOV DA records. Tests, helper wrapper and unchanged vendor code excluded; helper reported separately.",
+  "scope": "Shared Swift content-reader code executed in the disposable child",
+  "files": {
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileContentWorker.swift": {
+      "executable": 8,
+      "covered": 8,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticPDFText.swift": {
+      "executable": 27,
+      "covered": 26,
+      "percent": 96.3,
+      "uncovered": [
+        18
+      ]
+    }
+  },
+  "executable": 35,
+  "covered": 34,
+  "percent": 97.14
+}

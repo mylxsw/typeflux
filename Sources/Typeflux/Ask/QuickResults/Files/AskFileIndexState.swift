@@ -61,6 +61,8 @@ struct AskFileHit: Equatable, Sendable, Identifiable {
         var version: String?
         var startOffset: Int64?
         var endOffset: Int64?
+        var chunkID: Int64?
+        var segmentKind: String?
     }
     var path: String
     var name: String

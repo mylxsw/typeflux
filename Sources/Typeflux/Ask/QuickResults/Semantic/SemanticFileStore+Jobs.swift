@@ -45,6 +45,11 @@ extension SemanticFileStore {
             try addColumn("jobs", name: "recipe", declaration: "TEXT NOT NULL DEFAULT ''")
             try addColumn("jobs", name: "processing_seconds", declaration: "REAL")
             try addColumn("jobs", name: "completed_at", declaration: "REAL")
+            // A completed discovery must not hide PDFs whose previously blank pages now support OCR.
+            try execute("""
+            INSERT OR IGNORE INTO work_queue(path,priority)
+            SELECT path,0 FROM jobs WHERE recipe=? AND lower(substr(path,-4))='.pdf'
+            """, [Self.documentProvenance])
         }
     }
 
@@ -95,9 +100,10 @@ extension SemanticFileStore {
     func prepareDocument(path: String, metadata: AskFileReadResponse) throws -> Job {
         guard let modified = metadata.modified, let bytes = metadata.fileSize else { throw Failure.database }
         let version = Self.version(metadata)
+        let recipe = Self.documentRecipe(path)
         return try lock.withLock {
             if var existing = try readJob(path), existing.version == version,
-               existing.recipe == Self.documentProvenance {
+               existing.recipe == recipe {
                 if existing.state == .failed {
                     try execute("UPDATE jobs SET state='partial',reason=NULL,attempts=attempts+1 WHERE path=?", [path])
                     existing.state = .partial; existing.reason = nil; existing.attempts += 1
@@ -107,15 +113,21 @@ extension SemanticFileStore {
             }
             let generation = UUID().uuidString
             return try transaction {
-                try execute("DELETE FROM files WHERE path=?", [path])
-                try execute("INSERT INTO files(path,modified,bytes,version) VALUES(?,?,?,?)",
+                let existing = try readJob(path)
+                let upgradePDF = recipe != Self.documentProvenance && existing?.recipe == Self.documentProvenance
+                    && existing?.version == version
+                if !upgradePDF {
+                    try execute("DELETE FROM files WHERE path=?", [path])
+                }
+                // Preserve compatible PDF vectors until their unchanged chunks are adopted by the new job.
+                try execute("INSERT OR IGNORE INTO files(path,modified,bytes,version) VALUES(?,?,?,?)",
                             [path, modified.timeIntervalSince1970, bytes, metadata.version ?? ""])
                 try execute("""
                             INSERT OR REPLACE INTO jobs(path,version,generation,state,cursor,recipe) VALUES(?,?,?,'pending',?,?)
                             """,
-                            [path, version, generation, "{\"page\":0,\"offset\":0}", Self.documentProvenance])
+                            [path, version, generation, "{\"page\":0,\"offset\":0}", recipe])
                 return Job(path: path, version: version, generation: generation, state: .pending,
-                           cursor: .init(), extracted: false, attempts: 0, recipe: Self.documentProvenance)
+                           cursor: .init(), extracted: false, attempts: 0, recipe: recipe)
             }
         }
     }
@@ -126,6 +138,30 @@ extension SemanticFileStore {
 
     static let documentProvenance = "model=\(SemanticModel.sha256);projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2"
 
+    static func documentRecipe(_ path: String) -> String {
+        (path as NSString).pathExtension.lowercased() == "pdf"
+            ? documentProvenance + ";" + SemanticPDFText.recipe : documentProvenance
+    }
+
+    /// Only a same-version, same-input PDF upgrade may reuse an old vector. No model-space change occurs.
+    private func adoptPDFChunk(_ chunk: SemanticChunk, job: Job) throws -> Bool {
+        guard job.recipe == Self.documentRecipe(job.path), job.recipe != Self.documentProvenance else { return false }
+        let row = try statement("""
+        SELECT id FROM chunks WHERE path=? AND generation<>? AND provenance=? AND text=?
+        AND page=? AND start_offset=? AND end_offset=? AND length(vector)=? LIMIT 1
+        """)
+        defer { sqlite3_finalize(row) }
+        bind(row, [job.path, job.generation, Self.documentProvenance, chunk.text, chunk.page as Any,
+                   chunk.startOffset as Any, chunk.endOffset as Any, SemanticFilePolicy.dimension * 4])
+        let step = sqlite3_step(row)
+        guard step == SQLITE_ROW || step == SQLITE_DONE else { throw Failure.database }
+        guard step == SQLITE_ROW else { return false }
+        try execute("UPDATE chunks SET generation=?,provenance=?,segment_kind=? WHERE id=?",
+                    [job.generation, job.recipe, chunk.segmentKind ?? "pdf-text", sqlite3_column_int64(row, 0)])
+        try recordLocked(.vectorReusedSegments)
+        return true
+    }
+
     /// FTS and the next extraction checkpoint commit together. Empty vectors mean pending encoding;
     /// vector readers already reject any payload that is not 768 floats.
     @discardableResult
@@ -134,17 +170,20 @@ extension SemanticFileStore {
             guard let current = try readJob(job.path), current.generation == job.generation,
                   current.cursor == job.cursor, !current.extracted else { return false }
             return try transaction {
+                var published = 0
                 for chunk in chunks {
+                    if try adoptPDFChunk(chunk, job: job) { continue }
                     try execute("""
                     INSERT INTO chunks(path,text,page,vector,generation,start_offset,end_offset,modality,segment_kind,provenance,search_script)
                     VALUES(?,?,?,X'',?,?,?,'text',?,?,?)
                     """, [job.path, chunk.text, chunk.page as Any, job.generation,
                           chunk.startOffset as Any, chunk.endOffset as Any,
-                          chunk.page == nil ? "text" : "pdf-text", Self.documentProvenance,
+                          chunk.segmentKind ?? (chunk.page == nil ? "text" : "pdf-text"), job.recipe,
                           SemanticScoreCalibration.script(chunk.text)])
                     try writeLexical(sqlite3_last_insert_rowid(database), text: chunk.text)
+                    published += 1
                 }
-                try recordLocked(.ftsChunks, count: chunks.count)
+                try recordLocked(.ftsChunks, count: published)
                 let data = try JSONEncoder().encode(next ?? job.cursor)
                 try execute("UPDATE jobs SET cursor=?,extracted=?,state='partial',reason=NULL WHERE path=?",
                             [String(data: data, encoding: .utf8) ?? "", next == nil ? 1 : 0, job.path])
@@ -207,6 +246,8 @@ extension SemanticFileStore {
             guard sqlite3_column_int64(row, 1) == 0 else { return .partial }
             let empty = sqlite3_column_int64(row, 0) == 0
             try transaction {
+                // Remove old-only chunks only after the complete replacement was extracted and encoded.
+                try execute("DELETE FROM chunks WHERE path=? AND generation<>?", [job.path, job.generation])
                 try execute("UPDATE jobs SET state=?,reason=? WHERE path=?",
                             [empty ? "skipped" : "done", empty ? "empty-or-no-text" as Any : NSNull(), job.path])
                 if empty {

@@ -75,7 +75,10 @@ extension SemanticFileIndexer {
                     let reason = contents.error == EACCES ? "permission-denied" : "file-missing-or-changed"
                     try store.skipUnavailable(path, reason: reason)
                 } else {
-                    try store.failJob(path, reason: "unreadable-content")
+                    let reason = contents.error == EAUTH ? "password-required"
+                        : contents.error == EIO && (path as NSString).pathExtension.lowercased() == "pdf"
+                        ? "pdf-ocr-failed" : "unreadable-content"
+                    try store.failJob(path, reason: reason)
                 }
                 return .skipped
             }
