@@ -86,8 +86,8 @@ struct AskWordCardTranslationTests {
         // The original word's pinyin still uses its source language for pronunciation.
         #expect(output.actions.contains { $0.kind == .speak("狗蛋", language: "zh-Hans") })
         let lookup = try #require(output.wordBook)
-        store.record(lookup, at: Date(), counts: true)
-        let saved = try #require(store.entry(forKey: lookup.key))
+        try store.record(lookup, at: Date(), counts: true)
+        let saved = try #require(try store.entry(forKey: lookup.key))
         #expect(saved.lookup.card?.translation == "silly fool")
         #expect(saved.lookup.firstMeaning == "silly fool")
         #expect(AskTranslatePlugin.item(saved).actions.contains { $0.kind == .writeBack("silly fool") })

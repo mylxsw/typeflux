@@ -7,29 +7,105 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		416C33B80BF0D241676DD388 /* TypefluxMediaHelper in Embed media helper */ = {isa = PBXBuildFile; fileRef = 2C6E44CD9EC87847306AAC37 /* TypefluxMediaHelper */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		562C917C6553DDF4847F69C4 /* swift-transformers_Hub.bundle in Embed inference helper */ = {isa = PBXBuildFile; fileRef = 7935FE2FE689F8A3C8633185 /* swift-transformers_Hub.bundle */; };
 		687C552D7D63619CA6F20BD4 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D7DCD59424C3B5F1B988E350 /* Cocoa.framework */; };
+		76A2D42036749CA19380BACA /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8D67B304CC5684E32605F39D /* Cocoa.framework */; };
+		7F5F79A4D832A3108595F5F0 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8D67B304CC5684E32605F39D /* Cocoa.framework */; };
+		B03D41CB1D968CD98932231A /* TypefluxMediaWorkerKit in Frameworks */ = {isa = PBXBuildFile; productRef = F04468CDC6FD5681C126CBC6 /* TypefluxMediaWorkerKit */; };
 		BC7E37126F11DFD1CAF66AD5 /* Typeflux.icns in Resources */ = {isa = PBXBuildFile; fileRef = 0EF1DD4DF7DB34487F73A003 /* Typeflux.icns */; };
+		D34176AADAE8C4D9F3911A97 /* TypefluxInferenceHelper in Embed inference helper */ = {isa = PBXBuildFile; fileRef = 27875DC8E2E09D096C067B2C /* TypefluxInferenceHelper */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		DBDD2EC01294F77F103A45A3 /* TypefluxInferenceWorkerKit in Frameworks */ = {isa = PBXBuildFile; productRef = 04F5628CB32105DDF40483F4 /* TypefluxInferenceWorkerKit */; };
 		E72FB606B9EB31D953A60119 /* TypefluxKit in Frameworks */ = {isa = PBXBuildFile; productRef = 63E2E255FBC0FB81F86D40A1 /* TypefluxKit */; };
+		EFB6911934D71DF70021313B /* TypefluxInferenceHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 62746A23BAE8292240E64B2B /* TypefluxInferenceHelper.swift */; };
+		FAADF543C4C1000A1868A0CB /* TypefluxMediaHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 567EDB758F46CE17A32F208E /* TypefluxMediaHelper.swift */; };
 		FFE5AAFDA9372C2F70CC005A /* TypefluxXcodeMain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A81678B00497A889F3C9A71 /* TypefluxXcodeMain.swift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		D31C63634B7A4BDD92FBEDD0 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3A9F08B0DDDAB878E7422879 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 2444A92E0406869F908E3E5E;
+			remoteInfo = TypefluxMediaHelper;
+		};
+		F285718D47056A7EAC22F928 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 3A9F08B0DDDAB878E7422879 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = CF205547502CECE13E0259DC;
+			remoteInfo = TypefluxInferenceHelper;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		F9016852DF08D78201C4ED30 /* Embed media helper */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = ../Helpers;
+			dstSubfolderSpec = 6;
+			files = (
+				416C33B80BF0D241676DD388 /* TypefluxMediaHelper in Embed media helper */,
+			);
+			name = "Embed media helper";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FDDD54B71D825865ED69D0B3 /* Embed inference helper */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = ../Helpers;
+			dstSubfolderSpec = 6;
+			files = (
+				D34176AADAE8C4D9F3911A97 /* TypefluxInferenceHelper in Embed inference helper */,
+				562C917C6553DDF4847F69C4 /* swift-transformers_Hub.bundle in Embed inference helper */,
+			);
+			name = "Embed inference helper";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		0EF1DD4DF7DB34487F73A003 /* Typeflux.icns */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = image.icns; name = Typeflux.icns; path = app/Typeflux.icns; sourceTree = "<group>"; };
+		27875DC8E2E09D096C067B2C /* TypefluxInferenceHelper */ = {isa = PBXFileReference; includeInIndex = 0; path = TypefluxInferenceHelper; sourceTree = BUILT_PRODUCTS_DIR; };
+		2C6E44CD9EC87847306AAC37 /* TypefluxMediaHelper */ = {isa = PBXFileReference; includeInIndex = 0; path = TypefluxMediaHelper; sourceTree = BUILT_PRODUCTS_DIR; };
 		2DDB70C53E2097A89CFACB4F /* Typeflux.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Typeflux.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		38F3926F848D24C49AE499C2 /* Typeflux.entitlements */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.entitlements; name = Typeflux.entitlements; path = app/Typeflux.entitlements; sourceTree = "<group>"; };
 		4A81678B00497A889F3C9A71 /* TypefluxXcodeMain.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = TypefluxXcodeMain.swift; path = app/TypefluxXcodeMain.swift; sourceTree = "<group>"; };
+		567EDB758F46CE17A32F208E /* TypefluxMediaHelper.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = TypefluxMediaHelper.swift; path = Sources/TypefluxMediaHelper/TypefluxMediaHelper.swift; sourceTree = "<group>"; };
+		62746A23BAE8292240E64B2B /* TypefluxInferenceHelper.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = TypefluxInferenceHelper.swift; path = Sources/TypefluxInferenceHelper/TypefluxInferenceHelper.swift; sourceTree = "<group>"; };
+		7935FE2FE689F8A3C8633185 /* swift-transformers_Hub.bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 1; lastKnownFileType = "wrapper.plug-in"; path = "swift-transformers_Hub.bundle"; sourceTree = BUILT_PRODUCTS_DIR; };
+		8D67B304CC5684E32605F39D /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.0.sdk/System/Library/Frameworks/Cocoa.framework; sourceTree = DEVELOPER_DIR; };
 		933D640EAC9946F3AF4B13C0 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; name = Info.plist; path = app/Info.plist; sourceTree = "<group>"; };
 		A54B93972F97B94400E3730D /* TypefluxAppRelease.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TypefluxAppRelease.entitlements; sourceTree = "<group>"; };
 		D7DCD59424C3B5F1B988E350 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.0.sdk/System/Library/Frameworks/Cocoa.framework; sourceTree = DEVELOPER_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		185C90A1AE153E156F698556 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				76A2D42036749CA19380BACA /* Cocoa.framework in Frameworks */,
+				B03D41CB1D968CD98932231A /* TypefluxMediaWorkerKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		8943AFBD34EE783CE69C8BE8 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				687C552D7D63619CA6F20BD4 /* Cocoa.framework in Frameworks */,
 				E72FB606B9EB31D953A60119 /* TypefluxKit in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E2FEE4F81BB7F51DFFDF0CFB /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7F5F79A4D832A3108595F5F0 /* Cocoa.framework in Frameworks */,
+				DBDD2EC01294F77F103A45A3 /* TypefluxInferenceWorkerKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -40,6 +116,7 @@
 			isa = PBXGroup;
 			children = (
 				D7DCD59424C3B5F1B988E350 /* Cocoa.framework */,
+				8D67B304CC5684E32605F39D /* Cocoa.framework */,
 			);
 			name = "OS X";
 			sourceTree = "<group>";
@@ -51,6 +128,9 @@
 				7B0A6CC89F60A35356EAE68E /* Products */,
 				CE9748FBCDCFB24152FC3E4C /* Frameworks */,
 				E9845375B60BD7C71C9D4098 /* app */,
+				62746A23BAE8292240E64B2B /* TypefluxInferenceHelper.swift */,
+				7935FE2FE689F8A3C8633185 /* swift-transformers_Hub.bundle */,
+				567EDB758F46CE17A32F208E /* TypefluxMediaHelper.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -58,6 +138,8 @@
 			isa = PBXGroup;
 			children = (
 				2DDB70C53E2097A89CFACB4F /* Typeflux.app */,
+				27875DC8E2E09D096C067B2C /* TypefluxInferenceHelper */,
+				2C6E44CD9EC87847306AAC37 /* TypefluxMediaHelper */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -84,6 +166,44 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		2444A92E0406869F908E3E5E /* TypefluxMediaHelper */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = F5722C454360A0211D151C75 /* Build configuration list for PBXNativeTarget "TypefluxMediaHelper" */;
+			buildPhases = (
+				454D6F3F9C95438E8422C5EC /* Sources */,
+				185C90A1AE153E156F698556 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TypefluxMediaHelper;
+			packageProductDependencies = (
+				F04468CDC6FD5681C126CBC6 /* TypefluxMediaWorkerKit */,
+			);
+			productName = TypefluxMediaHelper;
+			productReference = 2C6E44CD9EC87847306AAC37 /* TypefluxMediaHelper */;
+			productType = "com.apple.product-type.tool";
+		};
+		CF205547502CECE13E0259DC /* TypefluxInferenceHelper */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A52B36C42C74A8C1F0920130 /* Build configuration list for PBXNativeTarget "TypefluxInferenceHelper" */;
+			buildPhases = (
+				6387778DDC236244D6C8C53A /* Sources */,
+				E2FEE4F81BB7F51DFFDF0CFB /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = TypefluxInferenceHelper;
+			packageProductDependencies = (
+				04F5628CB32105DDF40483F4 /* TypefluxInferenceWorkerKit */,
+			);
+			productName = TypefluxInferenceHelper;
+			productReference = 27875DC8E2E09D096C067B2C /* TypefluxInferenceHelper */;
+			productType = "com.apple.product-type.tool";
+		};
 		D42AC802ACB13ABE04EA8A7B /* TypefluxApp */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 6BB9A270CE379F86CABF9B01 /* Build configuration list for PBXNativeTarget "TypefluxApp" */;
@@ -91,10 +211,14 @@
 				86C816A910313B4409387950 /* Sources */,
 				8943AFBD34EE783CE69C8BE8 /* Frameworks */,
 				D6B012BCF425A407570E90E6 /* Resources */,
+				FDDD54B71D825865ED69D0B3 /* Embed inference helper */,
+				F9016852DF08D78201C4ED30 /* Embed media helper */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				76F3DAC91969CB0E0D9C8E40 /* PBXTargetDependency */,
+				56D358D3726A586277F4B7BA /* PBXTargetDependency */,
 			);
 			name = TypefluxApp;
 			packageProductDependencies = (
@@ -130,6 +254,8 @@
 			projectRoot = "";
 			targets = (
 				D42AC802ACB13ABE04EA8A7B /* TypefluxApp */,
+				CF205547502CECE13E0259DC /* TypefluxInferenceHelper */,
+				2444A92E0406869F908E3E5E /* TypefluxMediaHelper */,
 			);
 		};
 /* End PBXProject section */
@@ -146,6 +272,22 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		454D6F3F9C95438E8422C5EC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FAADF543C4C1000A1868A0CB /* TypefluxMediaHelper.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6387778DDC236244D6C8C53A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				EFB6911934D71DF70021313B /* TypefluxInferenceHelper.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		86C816A910313B4409387950 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -155,6 +297,21 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		56D358D3726A586277F4B7BA /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = TypefluxMediaHelper;
+			target = 2444A92E0406869F908E3E5E /* TypefluxMediaHelper */;
+			targetProxy = D31C63634B7A4BDD92FBEDD0 /* PBXContainerItemProxy */;
+		};
+		76F3DAC91969CB0E0D9C8E40 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = TypefluxInferenceHelper;
+			target = CF205547502CECE13E0259DC /* TypefluxInferenceHelper */;
+			targetProxy = F285718D47056A7EAC22F928 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		20EFE73B2F92F05966120044 /* Release */ = {
@@ -265,6 +422,19 @@
 			};
 			name = Debug;
 		};
+		76EB84C8ADB027D20F93DD0D /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = N95437SZ2A;
+				ENABLE_HARDENED_RUNTIME = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
 		93EB863DF220BE4CEDA4AFC7 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -326,6 +496,45 @@
 			};
 			name = Debug;
 		};
+		9932E7EA86034EF93CB003BA /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = N95437SZ2A;
+				ENABLE_HARDENED_RUNTIME = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		ED63061D08518B957A1B6A91 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = N95437SZ2A;
+				ENABLE_HARDENED_RUNTIME = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		EFC4989C064D250631DAC75E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = N95437SZ2A;
+				ENABLE_HARDENED_RUNTIME = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -347,6 +556,24 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+		A52B36C42C74A8C1F0920130 /* Build configuration list for PBXNativeTarget "TypefluxInferenceHelper" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9932E7EA86034EF93CB003BA /* Release */,
+				ED63061D08518B957A1B6A91 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		F5722C454360A0211D151C75 /* Build configuration list for PBXNativeTarget "TypefluxMediaHelper" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				76EB84C8ADB027D20F93DD0D /* Release */,
+				EFC4989C064D250631DAC75E /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
@@ -357,9 +584,17 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		04F5628CB32105DDF40483F4 /* TypefluxInferenceWorkerKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TypefluxInferenceWorkerKit;
+		};
 		63E2E255FBC0FB81F86D40A1 /* TypefluxKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = TypefluxKit;
+		};
+		F04468CDC6FD5681C126CBC6 /* TypefluxMediaWorkerKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TypefluxMediaWorkerKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

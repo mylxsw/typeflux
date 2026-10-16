@@ -1,5 +1,4 @@
 import AppKit
-import ImageIO
 import SwiftUI
 import WebKit
 
@@ -18,11 +17,16 @@ struct AskStoredArtifactCard: View {
     @Environment(\.askArtifactAccess) private var access
     @State private var error: String?
     @State private var preview: AskArtifactBundle?
-    @State private var thumbnail: NSImage?
+    @StateObject private var imageModel = AskArtifactImageModel()
+    @State private var copying: Task<Void, Never>?
+
+    @MainActor init(ref: AskArtifactRef, imageModel: AskArtifactImageModel? = nil) {
+        self.ref = ref; _imageModel = StateObject(wrappedValue: imageModel ?? AskArtifactImageModel())
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 7) {
-            if let thumbnail {
+            if let thumbnail = imageModel.image {
                 Image(nsImage: thumbnail).resizable().scaledToFit().frame(maxHeight: 260)
                     .accessibilityLabel(L("imagegen.preview"))
             }
@@ -44,22 +48,25 @@ struct AskStoredArtifactCard: View {
                 }
                 Button(L("ask.artifact.save")) { save() }
                 if ref.mediaType.hasPrefix("image/") {
-                    Button(L("imagegen.copy")) { copyImage() }
+                    Button(L("imagegen.copy")) {
+                        copying?.cancel()
+                        copying = Task { await imageModel.copy(ref, access: access) }
+                    }.disabled(imageModel.busy)
                 }
             }
-            if let error {
+            if let error = error ?? imageModel.error {
                 Text(error).foregroundStyle(StudioTheme.danger).font(.system(size: 12))
             }
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(AskTheme.monoSurface, in: RoundedRectangle(cornerRadius: 10))
-        .task(id: ref.id) {
+        .task(id: ref) {
+            copying?.cancel(); copying = nil; imageModel.cancel()
             guard ref.mediaType.hasPrefix("image/") else { return }
-            if let bundle = try? access.load(ref), let data = bundle.files[bundle.manifest.entry] {
-                thumbnail = AskArtifactPresentation.image(data)
-            }
+            await imageModel.load(ref, access: access)
         }
+        .onDisappear { copying?.cancel(); copying = nil; imageModel.cancel() }
         .sheet(isPresented: Binding(get: { preview != nil }, set: {
             if !$0 {
                 preview = nil
@@ -82,18 +89,6 @@ struct AskStoredArtifactCard: View {
             error = nil
         } catch { self.error = error.localizedDescription }
     }
-
-    private func copyImage() {
-        do {
-            let bundle = try access.load(ref)
-            guard let data = bundle.files[bundle.manifest.entry], let image = NSImage(data: data) else {
-                throw AskArtifactError.corrupt
-            }
-            NSPasteboard.general.clearContents()
-            NSPasteboard.general.writeObjects([image])
-            error = nil
-        } catch { self.error = error.localizedDescription }
-    }
 }
 
 enum AskArtifactExport {
@@ -109,6 +104,13 @@ struct AskArtifactPreviewView: View {
     let access: AskArtifactAccess
     let close: () -> Void
     @State private var error: String?
+    @StateObject private var imageModel = AskArtifactImageModel()
+
+    @MainActor init(bundle: AskArtifactBundle, access: AskArtifactAccess, close: @escaping () -> Void,
+                    imageModel: AskArtifactImageModel? = nil) {
+        self.bundle = bundle; self.access = access; self.close = close
+        _imageModel = StateObject(wrappedValue: imageModel ?? AskArtifactImageModel())
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -135,9 +137,14 @@ struct AskArtifactPreviewView: View {
                     } else {
                         Text(AskArtifactError.unsupported.localizedDescription)
                     }
-                } else if bundle.manifest.ref.mediaType.hasPrefix("image/"),
-                          let image = AskArtifactPresentation.image(data) {
-                    Image(nsImage: image).resizable().scaledToFit()
+                } else if bundle.manifest.ref.mediaType.hasPrefix("image/") {
+                    if let image = imageModel.image {
+                        Image(nsImage: image).resizable().scaledToFit()
+                    } else if imageModel.busy {
+                        ProgressView()
+                    } else {
+                        Text(imageModel.error ?? AskArtifactError.unsupported.localizedDescription)
+                    }
                 } else {
                     Text(AskArtifactError.unsupported.localizedDescription)
                 }
@@ -148,6 +155,11 @@ struct AskArtifactPreviewView: View {
         }
         .padding(20)
         .frame(width: 760, height: 560)
+        .task(id: bundle.manifest.ref) {
+            guard bundle.manifest.ref.mediaType.hasPrefix("image/") else { return }
+            await imageModel.load(bundle.manifest.ref, access: access)
+        }
+        .onDisappear { imageModel.cancel() }
     }
 }
 
@@ -186,17 +198,5 @@ private struct AskArtifactWebView: NSViewRepresentable {
     static func dismantleNSView(_: NSView, coordinator: Coordinator) {
         coordinator.loading?.cancel()
         coordinator.host.close()
-    }
-}
-
-enum AskArtifactPresentation {
-    static func image(_ data: Data) -> NSImage? {
-        guard let source = CGImageSourceCreateWithData(data as CFData, nil),
-              let image = CGImageSourceCreateThumbnailAtIndex(source, 0, [
-                  kCGImageSourceCreateThumbnailFromImageAlways: true,
-                  kCGImageSourceCreateThumbnailWithTransform: true,
-                  kCGImageSourceThumbnailMaxPixelSize: 1600
-              ] as CFDictionary) else { return nil }
-        return NSImage(cgImage: image, size: .zero)
     }
 }

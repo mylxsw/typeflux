@@ -16,6 +16,9 @@ struct AskWorkflowPlugin: AskLauncherPlugin {
     var source: @MainActor @Sendable () -> (app: String?, bundleID: String?) = { (nil, nil) }
     var record: @Sendable (AskWorkflowLog.Entry) -> Void = { _ in }
     var home = NSHomeDirectory()
+    var resolveImage: @Sendable (String, URL, URL, String) async -> Result<AskPluginImage, AskWorkflowImage.Failure> = {
+        await AskWorkflowImage.resolve($0, folder: $1, cache: $2, home: $3)
+    }
 
     var manifest: AskWorkflowManifest? { workflow.manifest }
     var id: String { Self.idPrefix + workflow.id }
@@ -129,11 +132,11 @@ struct AskWorkflowPlugin: AskLauncherPlugin {
         record(AskWorkflowLog.Entry(workflowID: workflow.id, keyword: request.keyword.keyword, date: Date(),
                                     duration: result.duration, exitCode: result.exitCode, timedOut: result.timedOut,
                                     stderr: String(result.stderr.suffix(4096))))
-        return try finish(result, request: request, plan: plan, input: input, manifest: manifest)
+        return try await finish(result, request: request, plan: plan, input: input, manifest: manifest)
     }
 
     private func finish(_ result: AskWorkflowRunResult, request: AskPluginRequest, plan: AskPluginPlan, input: Input,
-                        manifest: AskWorkflowManifest) throws -> AskPluginOutput {
+                        manifest: AskWorkflowManifest) async throws -> AskPluginOutput {
         if result.timedOut {
             let reason = L("ask.workflow.timedOut", Int(manifest.timeout))
             throw failure(reason, result: result, request: request, input: input, manifest: manifest)
@@ -166,7 +169,8 @@ struct AskWorkflowPlugin: AskLauncherPlugin {
         case .markdown:
             shown.markdown = true
         case let .image(name):
-            shown = imageOutput(name, base: shown)
+            shown = await imageOutput(name, base: shown)
+            try Task.checkCancellation()
         }
         if result.truncated {
             shown.note = L("ask.workflow.truncated")
@@ -376,10 +380,10 @@ extension AskWorkflowPlugin {
 
     /// An image card: ↩ copies the image, ⌥↩ shows its file in Finder. What cannot be
     /// read as an image stays a text card that says why.
-    private func imageOutput(_ name: String, base: AskPluginOutput) -> AskPluginOutput {
+    private func imageOutput(_ name: String, base: AskPluginOutput) async -> AskPluginOutput {
         var shown = base
         let cache = AskWorkflow.cacheDirectory(for: workflow.id, home: home)
-        switch AskWorkflowImage.resolve(name, folder: workflow.folder, cache: cache, home: home) {
+        switch await resolveImage(name, workflow.folder, cache, home) {
         case let .success(image):
             shown.image = image
             shown.actions = base.actions.compactMap { action in
@@ -397,11 +401,12 @@ extension AskWorkflowPlugin {
         case let .failure(.notFound(path)):
             shown.note = L("ask.workflow.image.notFound", AskWorkflowActionRunner.clipped(path, limit: 60))
         case .failure(.notImage):
-            // A data URL is no use as text; say what it was instead.
-            if name.lowercased().hasPrefix("data:") {
-                shown.body = AskWorkflowActionRunner.clipped(name, limit: 60)
-            }
+            // Bound display text; the original copy action still holds the complete result.
+            if name.lowercased().hasPrefix("data:") { shown.body = AskWorkflowActionRunner.clipped(name, limit: 60) }
             shown.note = L("ask.workflow.image.invalid")
+        case .failure(.unavailable):
+            if name.lowercased().hasPrefix("data:") { shown.body = AskWorkflowActionRunner.clipped(name, limit: 60) }
+            shown.note = L("ask.image.previewUnavailable")
         }
         return shown
     }

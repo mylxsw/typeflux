@@ -18,6 +18,14 @@ final class DIContainer {
     let textInjector: AXTextInjector
     let historyStore: HistoryStore
     let clipboardHistoryStore: ClipboardHistoryStore
+    let moduleRegistry: ModuleRegistry
+    let nativeSystemCommands = NativeSystemWorker.shared
+    let mediaWorkers = MediaWorker.shared
+    let mediaPreviewWorkers = MediaWorker.previews
+    let localInferenceWorkers = WhisperWorkerPool.shared
+    let noteStore: RecoveringAskNoteStore
+    let wordBookStore: RecoveringAskWordBookStore
+    let conversationCache: RecoveringAskConversationCache
     let clipboardMonitor: ClipboardMonitor
     let clipboardPanelController: ClipboardPanelController
     let llmService: LLMService
@@ -103,7 +111,9 @@ final class DIContainer {
             screenCapture: screenCapture,
             screenCapturePermission: screenCapturePermission,
             clipboardHistoryStore: clipboardHistoryStore,
-            filePreviewLoader: AskFilePreviewLoader()
+            filePreviewLoader: AskFilePreviewLoader(),
+            conversationCache: conversationCache,
+            wordBookStore: wordBookStore, noteStore: noteStore
         ) } catch {
             ErrorLogStore.shared
                 .log("Ask conversation storage could not be initialized: \(error.localizedDescription)"); return nil
@@ -111,11 +121,24 @@ final class DIContainer {
     }()
 
     // swiftlint:disable:next function_body_length
-    init() {
+    init(conversationCacheFactory: @escaping @Sendable () throws -> any AskCaching = {
+        try AskConversationCache(url: AskConversationCache.defaultURL())
+    }, wordBookFactory: @escaping @Sendable () throws -> any AskWordBookStoring = {
+        SQLiteAskWordBookStore(url: SQLiteAskWordBookStore.defaultURL())
+    }, noteFactory: @escaping @Sendable () throws -> any AskNoteStoring = {
+        SQLiteAskNoteStore(url: SQLiteAskNoteStore.defaultURL())
+    }, moduleHealthDirectory: URL = ModuleHealthStore.directory()) {
+        let storage = StorageModules(healthDirectory: moduleHealthDirectory,
+            conversationFactory: conversationCacheFactory, wordBookFactory: wordBookFactory, noteFactory: noteFactory)
+        noteStore = storage.notes
+        wordBookStore = storage.words
+        conversationCache = storage.conversations
+        moduleRegistry = storage.registry
         modelLibrary = AskModelLibrary(defaults: settingsStore.defaults)
         let screenCapturePermission = ScreenCapturePermission.live
         self.screenCapturePermission = screenCapturePermission
         screenCapture = ScreenCaptureService(permission: screenCapturePermission)
+        SettingsWindowController.shared.moduleRegistry = moduleRegistry
         SettingsWindowController.shared.modelLibrary = modelLibrary
         hotkeyService = EventTapHotkeyService(settingsStore: settingsStore)
         audioRecorder = SwitchableAudioRecorder(

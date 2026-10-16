@@ -204,28 +204,27 @@ struct AskFileIconView: View {
               modified: modified, scale: NSScreen.main?.backingScaleFactor ?? 2)
     }
 
-    private var iconKey: AskResultImageCache.Key {
-        .init(url: url, thumbnail: false, modified: modified, scale: key.scale)
-    }
-
     var body: some View {
         Group {
-            if let shown = AskResultImageCache.shared.cached(key) ?? (imageURL == url ? image : nil)
-                ?? AskResultImageCache.shared.cached(iconKey) {
+            if key.thumbnail, url.pathExtension.lowercased() != "app" {
+                thumbnailView
+            } else {
+                AskNativeIconView(icon: .init(kind: .file, value: url.path),
+                    symbol: url.hasDirectoryPath ? "folder" : "doc", revision: modified)
+            }
+        }.accessibilityHidden(true)
+    }
+
+    private var thumbnailView: some View {
+        Group {
+            if let shown = AskResultImageCache.shared.cached(key) ?? (imageURL == url ? image : nil) {
                 Image(nsImage: shown).resizable().interpolation(.high).scaledToFit()
             } else {
-                Image(systemName: url.hasDirectoryPath ? "folder" : "doc")
-                    .resizable().scaledToFit().padding(3).foregroundStyle(StudioTheme.textTertiary)
+                AskNativeIconView(icon: .init(kind: .file, value: url.path), revision: modified)
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: thumbnail ? 4 : 0, style: .continuous))
-        .accessibilityHidden(true)
+        .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
         .task(id: key) {
-            if key.thumbnail {
-                let icon = await AskResultImageCache.shared.image(iconKey)
-                guard !Task.isCancelled else { return }
-                if let icon { image = icon; imageURL = url }
-            }
             let loaded = await AskResultImageCache.shared.image(key)
             guard !Task.isCancelled else { return }
             if let loaded { image = loaded; imageURL = url }

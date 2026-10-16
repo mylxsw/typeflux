@@ -5,6 +5,16 @@ struct AskGeneratedImageReceipt: Codable {
     var provider: String
     var model: String
     var notice: String
+    var recoveryID: String?
+    var incomplete: Bool?
+
+    /// Legacy transport projects an unknown status into text. Preserve its device
+    /// artifact references without treating them as access or validation grants.
+    static func parse(_ text: String) -> Self? {
+        let prefix = "[Tool outcome: unknown]\n"
+        let payload = text.hasPrefix(prefix) ? String(text.dropFirst(prefix.count)) : text
+        return try? JSONDecoder().decode(Self.self, from: Data(payload.utf8))
+    }
 }
 
 extension AskLocalTools {
@@ -64,12 +74,24 @@ extension AskLocalTools {
         guard let scope = projectScopes[conversationId], let (configuration, key) = imageConfiguration,
               try imageGenerationBinding(args) == binding else { throw AskImageError.configuration }
         try authorize()
-        let result = try await imageGenerator.generate(input, configuration: configuration, key: key)
+        let retention = try AskImageGenerationRetention(
+            rootURL: AskImageGenerationRetention.root(for: artifactStore), scope: scope, callId: call.id,
+            metadata: AskTypedContent.json(["provider": configuration.provider.rawValue, "model": configuration.model,
+                "prompt": input.prompt, "layout": input.layout, "size": configuration.size]).data)
+        let result: AskImageGenerationResult
+        var unknown = false
+        do { result = try await imageGenerator.generate(input, configuration: configuration, key: key, retention: retention) }
+        catch {
+            // A dispatched paid request may have completed. A redacted receipt keeps
+            // its identity; neither this layer nor recovery invokes it again.
+            result = .init(images: [], incomplete: true)
+            unknown = true
+        }
         try Task.checkCancellation()
         try authorize()
         guard projectScopes[conversationId] == scope else { throw CancellationError() }
-        try artifactStore.cleanupExpired()
         var refs: [AskArtifactRef] = []
+        var incomplete = result.incomplete || result.images.isEmpty
         for (index, image) in result.images.enumerated() {
             let name = "generated-\(index + 1)." + image.fileExtension
             let metadata = AskTypedContent.json([
@@ -80,29 +102,41 @@ extension AskLocalTools {
                 "response_model": result.responseModel ?? "", "response_provider": result.responseProvider ?? "",
                 "usage": result.usage.flatMap { try? JSONSerialization.jsonObject(with: $0.data) } ?? [:]
             ]).data
-            try refs.append(artifactStore.publish(
+            do { try refs.append(artifactStore.publish(
                 files: [name: image.data, "generation.json": metadata],
                 entry: name,
                 scope: scope
-            ))
+            )) } catch { incomplete = true }
         }
-        guard !refs.isEmpty else { throw AskImageError.noImage }
+        // An unavailable decoder does not discard paid output. A generic binary
+        // artifact can be exported, but never enters an encoded-image UI parser.
+        for (index, bytes) in result.unvalidatedImages.enumerated() {
+            let name = "generated-unvalidated-\(index + 1).bin"
+            do { refs.append(try artifactStore.publish(files: [name: bytes], entry: name, scope: scope)) }
+            catch { incomplete = true }
+        }
+        if !incomplete, !refs.isEmpty { try? retention.published(refs) }
         let receipt = AskGeneratedImageReceipt(generatedImages: refs, provider: configuration.provider.rawValue,
                                                model: configuration.model,
-                                               notice: """
-                                               Generated images are saved on this Mac until the conversation is deleted.
-                                               """)
+                                               notice: unknown
+                                                   ? "The paid request outcome is unknown. A private recovery record is saved on this Mac; output retention may be incomplete. Do not repeat the request."
+                                                   : incomplete
+                                                   ? "Generation output is incomplete. Unvalidated binary artifacts can be saved without decoding. A private recovery record is retained on this Mac for this call; if saving failed, output retention may be incomplete. Do not repeat the paid request."
+                                                   : "Generated images are saved on this Mac until the conversation is deleted.",
+                                               recoveryID: retention.id, incomplete: incomplete)
         guard let text = try String(data: JSONEncoder().encode(receipt), encoding: .utf8) else {
             throw AskImageError.invalidResponse
         }
         return .init(
-            content: text,
-            outcome: .init(status: "ok", content: [AskTypedContent.json(["type": "text", "text": text])],
-                           artifacts: refs, effectVerified: true)
+            content: text, isError: incomplete,
+            outcome: .init(status: incomplete ? "unknown" : "ok", content: [AskTypedContent.json(["type": "text", "text": text])],
+                           artifacts: refs, effectVerified: incomplete ? nil : true)
         )
     }
 
     func deleteArtifacts(ownerId: String, conversationId: String) throws {
+        try AskImageGenerationRetention.delete(rootURL: AskImageGenerationRetention.root(for: artifactStore),
+                                               ownerId: ownerId, conversationId: conversationId)
         try artifactStore.delete(ownerId: ownerId, conversationId: conversationId)
     }
 }

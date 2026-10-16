@@ -4,10 +4,12 @@ extension AskConversationModel {
     func performSystemCommand(_ command: AskSystemCommand) -> PluginActionOutcome {
         guard confirmSystemCommand(command) else { return .stay }
         finishPluginResult()
+        let runner = systemCommandRunner
         Task {
             do {
-                try await systemCommandRunner.run(command)
+                try await runner.run(command)
             } catch {
+                guard runner.presentsFailures(for: command) else { return }
                 let alert = NSAlert()
                 alert.messageText = command.title
                 alert.informativeText = (error as? AskPluginFailure)?.message ?? error.localizedDescription

@@ -18,19 +18,40 @@ extension AskConversationModel {
     /// the draft that was on screen when they arrived. A draft the user left in
     /// the meantime is not touched.
     func addAttachments(_ sources: [AskAttachmentSource], launcher: Bool,
-                        load: @escaping @Sendable ([AskAttachmentSource]) -> AskAttachmentBatch = { AskAttachmentBatch.load($0) }) {
+                        load: (@Sendable ([AskAttachmentSource]) -> AskAttachmentBatch)? = nil) {
         guard !sources.isEmpty else { return }
+        guard attachmentWork.count < 2 else {
+            if launcher { launcherAttachmentNotice = AskAttachmentError.busy.message }
+            else { attachmentNotice = AskAttachmentError.busy.message }
+            return
+        }
         let key = visionDraftKey(launcher: launcher)
         let presentation = launcherPresentationID
+        let generation = selectionGeneration
+        let id = UUID()
+        let sourceCount = sources.count
         attachmentLoads[key, default: 0] += 1
+        let boundedSources = Array(sources.prefix(AskAttachmentLimits.maximumItems + AskAttachmentLimits.maximumFolders))
+        let work = Task.detached(priority: .userInitiated) {
+            load?(boundedSources) ?? AskAttachmentBatch.load(boundedSources, isCancelled: { Task.isCancelled })
+        }
+        attachmentWork.insert(id, launcher: launcher, cancel: { work.cancel() })
         Task { [weak self] in
-            let batch = await Task.detached(priority: .userInitiated) { load(sources) }.value
-            guard let self, !launcher || launcherPresentationID == presentation else { return }
+            var batch = await work.value
+            guard let self, attachmentWork.remove(id) else { return }
             let remaining = (attachmentLoads[key] ?? 1) - 1
             attachmentLoads[key] = remaining > 0 ? remaining : nil
+            guard !work.isCancelled, launcher ? launcherPresentationID == presentation : selectionGeneration == generation else { return }
             guard visionDraftKey(launcher: launcher) == key else { return }
+            if sourceCount > boundedSources.count { batch.failure = batch.failure ?? .tooMany }
             applyAttachments(batch, launcher: launcher)
         }
+    }
+
+    func cancelAttachmentWork(launcher: Bool? = nil) {
+        attachmentWork.cancel(launcher: launcher)
+        if let launcher { attachmentLoads[visionDraftKey(launcher: launcher)] = nil }
+        else { attachmentLoads = [:] }
     }
 
     func applyAttachments(_ batch: AskAttachmentBatch, launcher: Bool) {
@@ -76,10 +97,17 @@ struct AskAttachmentBatch: Equatable, Sendable {
     var items: [AskAttachment] = []
     var failure: AskAttachmentError?
 
-    static func load(_ sources: [AskAttachmentSource]) -> AskAttachmentBatch {
+    static func load(_ sources: [AskAttachmentSource], isCancelled: @escaping @Sendable () -> Bool = { false }) -> AskAttachmentBatch {
         var batch = AskAttachmentBatch()
         for source in sources {
-            do { batch.items += try AskAttachmentLoader.load(source) } catch let error as AskAttachmentError {
+            if isCancelled() { break }
+            do {
+                for item in try AskAttachmentLoader.load(source, isCancelled: isCancelled) {
+                    if let refusal = AskDraft.refusal(for: item, in: batch.items, screenshot: false) {
+                        batch.failure = batch.failure ?? refusal
+                    } else { batch.items.append(item) }
+                }
+            } catch let error as AskAttachmentError {
                 batch.failure = batch.failure ?? error
             } catch {
                 batch.failure = batch.failure ?? .unreadable(source.name)
@@ -87,4 +115,17 @@ struct AskAttachmentBatch: Equatable, Sendable {
         }
         return batch
     }
+}
+
+/// A UI lifetime owns cancellation without a task retaining its model.
+final class AskAttachmentWork {
+    private var entries: [UUID: (launcher: Bool, cancelled: Bool, cancel: () -> Void)] = [:]
+    var count: Int { entries.count }
+    func insert(_ id: UUID, launcher: Bool, cancel: @escaping () -> Void) { entries[id] = (launcher, false, cancel) }
+    func remove(_ id: UUID) -> Bool { entries.removeValue(forKey: id).map { !$0.cancelled } ?? false }
+    func cancel(launcher: Bool? = nil) {
+        let ids = entries.keys.filter { launcher == nil || entries[$0]?.launcher == launcher }
+        for id in ids { entries[id]?.cancelled = true; entries[id]?.cancel() }
+    }
+    deinit { entries.values.forEach { $0.cancel() } }
 }

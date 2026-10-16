@@ -1,0 +1,202 @@
+{
+  "covered": 486,
+  "executable_added": 518,
+  "percent": 93.82,
+  "files": [
+    {
+      "file": "Sources/Typeflux/App/AppCoordinator.swift",
+      "covered": 0,
+      "executable_added": 3,
+      "percent": 0.0,
+      "uncovered": [
+        300,
+        302,
+        311
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/App/DIContainer.swift",
+      "covered": 0,
+      "executable_added": 1,
+      "percent": 0.0,
+      "uncovered": [
+        23
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/Execution/ManagedProcess.swift",
+      "covered": 4,
+      "executable_added": 4,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Resources/en.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    },
+    {
+      "file": "Sources/Typeflux/Resources/ja.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    },
+    {
+      "file": "Sources/Typeflux/Resources/ko.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    },
+    {
+      "file": "Sources/Typeflux/Resources/zh-Hans.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    },
+    {
+      "file": "Sources/Typeflux/Resources/zh-Hant.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    },
+    {
+      "file": "Sources/Typeflux/STT/LocalModelManager.swift",
+      "covered": 5,
+      "executable_added": 7,
+      "percent": 71.43,
+      "uncovered": [
+        327,
+        328
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/STT/LocalModelTranscriber.swift",
+      "covered": 7,
+      "executable_added": 8,
+      "percent": 87.5,
+      "uncovered": [
+        15
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/STT/WhisperKitTranscriber.swift",
+      "covered": 45,
+      "executable_added": 48,
+      "percent": 93.75,
+      "uncovered": [
+        16,
+        17,
+        109
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/STT/WhisperWorkerClient.swift",
+      "covered": 171,
+      "executable_added": 173,
+      "percent": 98.84,
+      "uncovered": [
+        38,
+        39
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/STT/WhisperWorkerPool.swift",
+      "covered": 60,
+      "executable_added": 60,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/TypefluxInferenceHelper/TypefluxInferenceHelper.swift",
+      "covered": 23,
+      "executable_added": 23,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/TypefluxInferenceProtocol/InferenceMessage.swift",
+      "covered": 36,
+      "executable_added": 36,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/TypefluxInferenceProtocol/InferenceSocket.swift",
+      "covered": 58,
+      "executable_added": 58,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/TypefluxInferenceRuntime/InferenceServer.swift",
+      "covered": 64,
+      "executable_added": 65,
+      "percent": 98.46,
+      "uncovered": [
+        28
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/TypefluxInferenceRuntime/WhisperInferenceEngine.swift",
+      "covered": 13,
+      "executable_added": 32,
+      "percent": 40.62,
+      "uncovered": [
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43
+      ],
+      "instrumented": true
+    }
+  ],
+  "base": "46d76c66cb7e785ff3f9367727eea8ab95296e37",
+  "validation": {
+    "swift_methods": 64,
+    "python_methods": 2,
+    "failed_methods": 0,
+    "profile_source": "One final build, three host profiles and two helper profiles; no mixed-layout merge"
+  },
+  "binary_sha256": {
+    "tests": "25b1e519b7b4b6e7e0d3f40433a2934b1bd91b0c79d1f2dbaccda6a789ea2e1b",
+    "helper": "f48287152da7678af8bb295b13e470b80c10f122a30528c6d6588b737a9f6e72"
+  }
+}

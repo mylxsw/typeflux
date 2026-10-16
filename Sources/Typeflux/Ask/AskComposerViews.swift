@@ -170,9 +170,10 @@ struct AskComposer: View {
                                         restored: model.launcherContextRestored,
                                         collapsed: draft.wrappedValue.hasText)
     }
-    private var screenshotThumbnail: NSImage? {
-        AskAttachmentStrip.thumbnail(dataURL: draft.wrappedValue.screenshot, capturedAt: draft.wrappedValue.capturedAt)
-    }
+    @StateObject private var screenshotImage = AskContextImageModel()
+    private var screenshotSource: String? { draft.wrappedValue.includeScreenshot ? draft.wrappedValue.screenshot : nil }
+    private var imageAccess: AskImagePresentationAccess { model.contextImageAccess(launcher: launcher) }
+    private var screenshotThumbnail: NSImage? { screenshotImage.displayed(screenshotSource, access: imageAccess) }
     @State private var contextPanelOpen = false
     @State private var editorHeight: CGFloat = 32
     @State private var measuredWidth: CGFloat = 600
@@ -803,11 +804,21 @@ struct AskComposer: View {
     }
 
     private func performPluginAction(_ action: AskPluginAction) {
+        if case let .copyImage(url) = action.kind {
+            model.copyWorkflowImage(url, completed: onDismiss)
+            return
+        }
         if case .enterKeyword = action.kind { pluginHighlight = 0; pluginReserve = 0 }
         if case let .focusBrowserTab(target) = action.kind {
             Task {
                 if await model.focusBrowserTab(target) { onDismiss() }
                 else { refreshSearchIndex() }
+            }
+            return
+        }
+        if case let .openNote(id) = action.kind {
+            model.performNotebookAction {
+                if await model.openNoteInWindow(id) { onDismiss() }
             }
             return
         }
@@ -1133,6 +1144,12 @@ struct AskComposer: View {
 
     var body: some View {
         card
+            .environment(\.askContextImageAccess, imageAccess)
+            .environment(\.askIconGeneration, model.plugins.resultGeneration)
+            .task(id: AskContextImageModel.Identity(source: screenshotSource, epoch: imageAccess.epoch)) {
+                await screenshotImage.load(screenshotSource, access: imageAccess)
+            }
+            .onDisappear { screenshotImage.cancel() }
             .background(GeometryReader { geometry in
                 Color.clear.preference(key: AskComposerWidth.self, value: geometry.size.width)
                     .preference(key: AskComposerHeight.self, value: geometry.size.height)
@@ -1499,8 +1516,7 @@ struct AskComposer: View {
             if showsStrip {
                 AskAttachmentStripView(
                     items: attachedItems,
-                    screenshot: AskAttachmentStrip.thumbnail(dataURL: draft.wrappedValue.screenshot,
-                                                             capturedAt: draft.wrappedValue.capturedAt),
+                    screenshot: screenshotThumbnail,
                     onPreview: { showingStripPreview = true },
                     onRemove: remove,
                     attachments: userAttachments,
@@ -2001,7 +2017,9 @@ struct AskComposer: View {
                 // Command-K keeps the context panel reachable without adding a footer control.
                 // It is a glass menu like the composer's others: the same material, and Esc closes only it.
                 .askMenu(isPresented: $contextPanelOpen, glass: true) {
-                    AskObservedContent(model: model) { contextPanel }
+                    AskObservedContent(model: model) {
+                        AskObservedContent(model: screenshotImage) { contextPanel }
+                    }
                 }
             // In the launcher the empty space moves the panel; it lays out exactly like the spacer.
             Spacer(minLength: 8)
@@ -2476,8 +2494,8 @@ struct AskComposer: View {
 }
 
 /// Redraws content shown outside the composer (a glass menu) as the model changes.
-private struct AskObservedContent<Content: View>: View {
-    @ObservedObject var model: AskConversationModel
+private struct AskObservedContent<Model: ObservableObject, Content: View>: View {
+    @ObservedObject var model: Model
     @ViewBuilder var content: () -> Content
 
     var body: some View { content() }
@@ -2510,8 +2528,8 @@ private struct AskContextPreview: View {
             Text(L("ask.context.screen.full")).font(.system(size: 13, weight: .semibold))
             Text(L("ask.context.screen.scope")).font(.system(size: 12)).foregroundStyle(StudioTheme.textSecondary)
             if let date = draft.capturedAt { Text(date, style: .time).font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary) }
-            if let dataURL = draft.screenshot, let image = AskImage.decode(dataURL) {
-                Image(nsImage: image).resizable().scaledToFit().frame(maxHeight: 230)
+            if draft.includeScreenshot, let dataURL = draft.screenshot {
+                AskContextImagePreview(source: dataURL).frame(maxHeight: 230)
                     .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
                 HStack(spacing: 8) {
                     Button(L("ask.capture.refresh"), action: recapture).disabled(capturing)
@@ -2526,13 +2544,5 @@ private struct AskContextPreview: View {
         }
         .padding(18)
         .frame(width: 400)
-    }
-}
-
-enum AskImage {
-    static func decode(_ value: String) -> NSImage? {
-        guard let comma = value.firstIndex(of: ","),
-              let data = Data(base64Encoded: String(value[value.index(after: comma)...])) else { return nil }
-        return NSImage(data: data)
     }
 }

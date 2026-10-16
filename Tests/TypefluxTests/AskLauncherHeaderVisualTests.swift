@@ -67,6 +67,7 @@ struct AskLauncherHeaderVisualTests {
     }
 
     private func captured(_ fixture: AskTestFixture, text: String = "") {
+        fixture.model.owner = fixture.model.session()?.owner ?? ""
         let png = AskAttachmentFixture.encode(AskAttachmentFixture.image(width: 320, height: 200), type: .png)
         var draft = AskDraft(text: text)
         draft.source = "Google Chrome — Issues | Multica - Google Chrome"
@@ -170,8 +171,8 @@ struct AskLauncherHeaderVisualTests {
                 captured(fixture)
                 fixture.model.launcherDraft.selection = "first line\nsecond line"
                 let draft = Binding(get: { fixture.model.launcherDraft }, set: { fixture.model.launcherDraft = $0 })
-                let thumbnail = AskAttachmentStrip.thumbnail(dataURL: fixture.model.launcherDraft.screenshot,
-                                                             capturedAt: fixture.model.launcherDraft.capturedAt)
+                let raw = try await AskContextImageDecoder.decode(try #require(fixture.model.launcherDraft.screenshot))
+                let thumbnail = NSImage(cgImage: try #require(raw.images.first), size: .zero)
                 let panel = AskLauncherContextPanel(draft: draft, thumbnail: thumbnail, screenshotState: .attached,
                                                     restored: true, capturing: false, screenshotCapturing: false,
                                                     setIncluded: { _, _ in }, toggleScreenshot: {}, fixScreenshot: nil,

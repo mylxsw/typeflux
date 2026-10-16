@@ -111,7 +111,7 @@ struct AskWorkflowAuthoringTests {
         #expect(FileManager.default.fileExists(atPath: preview.folder.appendingPathComponent("result.png").path))
         #expect(fixture.store.workflows.isEmpty && !session.isRunning)
         #expect(preview.result.input.query == "input" && preview.manifest.output.display == .image)
-        let image = AskWorkflowImage.resolve("result.png", folder: preview.folder,
+        let image = await AskWorkflowImage.resolve("result.png", folder: preview.folder,
             cache: fixture.home.appendingPathComponent("images"), home: fixture.home.path)
         guard case .success = image else { Issue.record("Preview image must remain readable"); return }
         let saved = try session.save()

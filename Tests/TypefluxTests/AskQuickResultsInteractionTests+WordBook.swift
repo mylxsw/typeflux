@@ -36,15 +36,17 @@ extension AskQuickResultsInteractionTests {
                 try await Task.sleep(for: .milliseconds(5))
             }
             let lookup = try #require(model.plugins.output?.wordBook)
-            #expect(translation.store.count(.all) == 0, "a word typed on the fly waits to settle")
+            #expect(try translation.store.count(.all) == 0, "a word typed on the fly waits to settle")
 
             try await launcher.press(Self.sKey, .command)
-            #expect(translation.store.entry(forKey: lookup.key)?.isStarred == true)
+            await model.wordBookTask?.value
+            #expect(try translation.store.entry(forKey: lookup.key)?.isStarred == true)
             #expect(model.plugins.output?.starred == true)
             #expect(launcher.dismissed == 0, "starring keeps the launcher open")
 
             try await launcher.press(Self.sKey, .command)
-            #expect(translation.store.entry(forKey: lookup.key)?.isStarred == false)
+            await model.wordBookTask?.value
+            #expect(try translation.store.entry(forKey: lookup.key)?.isStarred == false)
             #expect(model.plugins.output?.starred == false)
 
             try await launcher.press(Self.returnKey)
@@ -52,7 +54,8 @@ extension AskQuickResultsInteractionTests {
             try await launcher.press(Self.returnKey)
             #expect(pasteboard.string(forType: .string) == "[zh-Hans] resilient")
             #expect(launcher.dismissed == 1)
-            #expect(translation.store.entry(forKey: lookup.key)?.lookupCount == 1, "counted once in this session")
+            await model.wordBookTask?.value
+            #expect(try translation.store.entry(forKey: lookup.key)?.lookupCount == 1, "counted once in this session")
         }
     }
 }

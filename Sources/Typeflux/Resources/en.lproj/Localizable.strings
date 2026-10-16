@@ -5587,3 +5587,45 @@
 "semantic.keyword.query" = "Describe the content you want to find";
 "semantic.keyword.none" = "No matching content found";
 "ask.settings.keywords.kind.semanticFiles.hint" = "Find local files by the meaning of their content";
+// Word-book storage availability
+"ask.wordBook.storageUnavailable" = "The word book is unavailable. Your current result is still available.";
+"ask.wordBook.saveFailed" = "Could not save to the word book. Your current result is still available.";
+
+"ask.notes.storageUnavailable" = "Notebook storage is temporarily unavailable. Your current text has been kept.";
+
+// Independently recoverable storage services.
+"settings.services.title" = "Service status";
+"settings.services.conversations" = "Conversation history";
+"settings.services.wordBook" = "Word book";
+"settings.services.notebook" = "Notebook";
+"settings.services.recover" = "Restore access";
+"settings.services.hint" = "Restores access to this service while keeping saved data and unsaved edits. Previous actions will not run again.";
+"settings.services.stopped" = "Not started";
+"settings.services.recovering" = "Restoring access";
+"settings.services.ready" = "Available";
+"settings.services.coolingDown" = "Temporarily paused";
+"settings.services.unavailable" = "Unavailable";
+"settings.services.disabled" = "Disabled";
+"settings.services.quarantined" = "Paused after interruptions";
+"settings.services.observationFailed" = "Status is unavailable. Reopen this page to refresh it.";
+"settings.services.requested" = "Recovery requested. Availability will update when the service is ready.";
+"settings.services.wait" = "Please wait before trying again. Recovery is cooling down.";
+"settings.services.busy" = "Waiting for earlier work to finish. Try again shortly.";
+
+// Native system command isolation outcomes.
+"ask.system.notExecuted" = "The command was not executed. The system service is unavailable.";
+"ask.system.unknownOutcome" = "The command may already have taken effect, but its result could not be confirmed. It will not run again automatically. Check the system state before trying again.";
+"ask.system.busy" = "Another system command is still running. This command was not executed.";
+"ask.system.coolingDown" = "System commands are temporarily paused after a failure. This command was not executed.";
+"ask.system.disabled" = "System commands are stopped. This command was not executed.";
+
+"localSTT.error.inferenceUnavailable" = "Local transcription is unavailable. Your request was not retried. Try again later.";
+
+"ask.attach.busy" = "Attachments are being processed. Please try again shortly.";
+
+// Private generation output recovery
+"imagegen.recovery.title" = "Recover generated output";
+"imagegen.recovery.detail" = "Export retained files from this conversation. Files are unvalidated and may contain prompts or provider URLs. This does not generate again, download URLs, or change the original unknown outcome. Records remain until you delete the conversation.";
+"imagegen.recovery.empty" = "No retained output is available for this conversation.";
+"imagegen.recovery.saved" = "File saved. The private original and execution status are unchanged.";
+"imagegen.recovery.unavailable" = "Recovery is unavailable or access changed. Private originals have not been removed.";

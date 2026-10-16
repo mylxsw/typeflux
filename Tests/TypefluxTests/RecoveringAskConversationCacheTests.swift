@@ -44,6 +44,7 @@ struct RecoveringAskConversationCacheTests {
         #expect(state.count == 2)
         #expect(try await cache.claimTool(id: "tool", owner: "owner"))
         #expect(try await !cache.claimTool(id: "tool", owner: "owner"))
+        await cache.shutdown()
     }
 
     @Test func `failed write is not replayed and recovery preserves durable claims`() async throws {
@@ -56,11 +57,11 @@ struct RecoveringAskConversationCacheTests {
             return try AskConversationCache(url: url)
         }, uptime: { state.now() })
         #expect(try await cache.claimTool(id: "once", owner: "owner"))
-        var db: OpaquePointer?
-        #expect(sqlite3_open(url.path, &db) == SQLITE_OK)
-        defer { sqlite3_close(db) }
+        var database: OpaquePointer?
+        #expect(sqlite3_open(url.path, &database) == SQLITE_OK)
+        defer { sqlite3_close(database) }
         #expect(sqlite3_exec(
-            db,
+            database,
             "CREATE TRIGGER fail_save BEFORE INSERT ON ask_drafts BEGIN SELECT RAISE(ABORT,'fixture'); END;",
             nil,
             nil,
@@ -70,13 +71,17 @@ struct RecoveringAskConversationCacheTests {
             try await cache.saveDraft(.init(text: "unsaved"), key: "draft", owner: "owner")
         }
         #expect(state.count == 1)
-        #expect(sqlite3_exec(db, "DROP TRIGGER fail_save;", nil, nil, nil) == SQLITE_OK)
+        #expect(sqlite3_exec(database, "DROP TRIGGER fail_save;", nil, nil, nil) == SQLITE_OK)
+        for _ in 0..<200 where await cache.module.supervisor.health().hasLifecycleWork {
+            try await Task.sleep(nanoseconds: 5_000_000)
+        }
         state.advance()
         #expect(try await cache.draft(key: "draft", owner: "owner") == nil)
         #expect(try await !cache.claimTool(id: "once", owner: "owner"))
         #expect(state.count == 2)
         try await cache.saveDraft(.init(text: "explicit save"), key: "draft", owner: "owner")
         #expect(try await cache.draft(key: "draft", owner: "owner")?.text == "explicit save")
+        await cache.shutdown()
     }
 
     @Test func `forwarding preserves account scoping and execution receipts`() async throws {
@@ -124,6 +129,7 @@ struct RecoveringAskConversationCacheTests {
         #expect(try await cache.savedChatDrafts(owner: "owner").isEmpty)
         try await cache.delete(id: value.id, owner: "owner")
         #expect(try await cache.load(id: value.id, owner: "owner") == nil)
+        await cache.shutdown()
     }
 
     @Test func `cancelled request does not open storage`() async throws {
@@ -138,5 +144,63 @@ struct RecoveringAskConversationCacheTests {
         }
         await #expect(throws: CancellationError.self) { _ = try await task.value }
         #expect(state.count == 0)
+        await cache.shutdown()
     }
+    @Test func `blocked synchronous database open cannot block supervision or create replacement writers`() async throws {
+        let state = State()
+        let release = DispatchSemaphore(value: 0)
+        var policy = ModulePolicy(); policy.startupTimeout = 0.03
+        let cache = RecoveringAskConversationCache(factory: {
+            _ = state.attempt()
+            _ = release.wait(timeout: .now() + 3)
+            return try AskConversationCache.inMemory()
+        }, uptime: { state.now() }, policy: policy)
+        await #expect(throws: AskRecoveryError.storage) { _ = try await cache.list(owner: "owner") }
+        #expect(state.count == 1)
+        #expect(await cache.module.supervisor.health().failure == .startupTimeout)
+        state.advance()
+        await #expect(throws: AskRecoveryError.storage) { _ = try await cache.claimTool(id: "once", owner: "owner") }
+        #expect(state.count == 1)
+        cache.preventNewWork()
+        await cache.shutdown()
+        release.signal()
+        for _ in 0..<200 where await cache.module.supervisor.health().hasLifecycleWork {
+            try await Task.sleep(nanoseconds: 5_000_000)
+        }
+        await cache.module.setEnabled(true)
+        await #expect(throws: AskRecoveryError.storage) { _ = try await cache.list(owner: "owner") }
+        #expect(state.count == 1)
+    }
+
+    @Test func `committed execution claim survives a timed out response and is never claimed twice`() async throws {
+        let state = State(), release = DispatchSemaphore(value: 0)
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let url = root.appendingPathComponent("cache.sqlite")
+        var policy = ModulePolicy(); policy.operationTimeout = 0.05; policy.automaticallyRecover = false
+        let cache = RecoveringAskConversationCache(factory: {
+            _ = state.attempt()
+            return try AskConversationCache(url: url)
+        }, uptime: { state.now() }, policy: policy)
+        let claim = Task {
+            try await cache.module.perform { underlying in
+                let claimed = try await underlying.claimTool(id: "effect-may-have-happened", owner: "owner")
+                _ = release.wait(timeout: .now() + 3)
+                return claimed
+            }
+        }
+        await #expect(throws: ModuleFailure.operationTimeout) { try await claim.value }
+        #expect(await cache.module.supervisor.health().activeOperations == 1)
+        release.signal()
+        for _ in 0..<200 {
+            let health = await cache.module.supervisor.health()
+            if !health.hasLifecycleWork, health.activeOperations == 0 { break }
+            try await Task.sleep(nanoseconds: 5_000_000)
+        }
+        state.advance()
+        #expect(try await !cache.claimTool(id: "effect-may-have-happened", owner: "owner"))
+        #expect(state.count == 2)
+        await cache.shutdown()
+    }
+
 }

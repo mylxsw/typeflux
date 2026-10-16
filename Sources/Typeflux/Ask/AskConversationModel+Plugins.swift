@@ -253,7 +253,9 @@ extension AskConversationModel {
             }
         }
         // Using a result is what makes a word typed on the fly count as looked up.
-        plugins.settleWordBook()
+        if case .toggleStar = action.kind {
+            // Recording and starring are sequenced in one admitted task below.
+        } else { plugins.settleWordBook() }
         switch action.kind {
         case let .emoji(action):
             performEmojiAction(action)
@@ -356,10 +358,9 @@ extension AskConversationModel {
             finishPluginResult()
             revealFile(url)
             return .close
-        case let .copyImage(url):
-            guard AskQuickResults.copyImage(url) else { confirm(L("ask.workflow.image.copyFailed")); return .stay }
-            finishPluginResult()
-            return .close
+        case .copyImage:
+            // The composer owns asynchronous preparation and post-await authorization.
+            return .stay
         case let .runWith(text):
             launcherDraft.text = text
             if plugins.plugin?.id == AskTranslatePlugin.id, plugins.output?.items.isEmpty == false {
@@ -413,7 +414,7 @@ extension AskConversationModel {
         case .openInWindow:
             return openLauncherResultInWindow()
         case let .toggleNote(draft):
-            toggleLauncherNote(draft)
+            performNotebookAction { [weak self] in await self?.toggleLauncherNote(draft) }
             return .stay
         case let .openNotes(id):
             let shown = id ?? launcherNoteID
@@ -421,7 +422,8 @@ extension AskConversationModel {
             openNotes(shown)
             return .close
         case let .openNote(id):
-            return openNoteInWindow(id) ? .close : .stay
+            performNotebookAction { [weak self] in _ = await self?.openNoteInWindow(id) }
+            return .stay
         case let .createNote(title):
             finishPluginResult()
             createNote(title)
@@ -442,16 +444,37 @@ extension AskConversationModel {
 
     /// Lets `session` keep looked-up words in the word book.
     func connectWordBook(to session: AskPluginSession) {
-        session.recordWordBook = { [weak self] lookup in self?.wordBook?.record(lookup) }
+        session.recordWordBook = { [weak self] lookup in self?.recordWordBook(lookup) }
         session.beginWordBookSession = { [weak self] in self?.wordBook?.beginSession() }
     }
 
     /// ⌘S: stars or unstars the word and says so in the bottom bar; ⌘S again undoes it.
     func toggleWordBookStar(_ lookup: AskWordBookLookup) {
         guard let wordBook else { return }
-        let starred = wordBook.toggleStar(lookup)
-        plugins.showStarred(starred, key: lookup.key)
-        confirm(L(starred ? "ask.wordBook.starred" : "ask.wordBook.unstarred", lookup.headword))
+        guard wordBookTask == nil else { confirm(L("ask.wordBook.saveFailed")); return }
+        wordBookTask = Task { [weak self] in
+            guard let self else { return }
+            defer { wordBookTask = nil }
+            do {
+                try await wordBook.record(lookup)
+                try Task.checkCancellation()
+                let starred = try await wordBook.toggleStar(lookup)
+                guard !Task.isCancelled else { return }
+                plugins.showStarred(starred, key: lookup.key)
+                confirm(L(starred ? "ask.wordBook.starred" : "ask.wordBook.unstarred", lookup.headword))
+            } catch { if !Task.isCancelled { confirm(L("ask.wordBook.saveFailed")) } }
+        }
+    }
+
+    private func recordWordBook(_ lookup: AskWordBookLookup) {
+        guard let wordBook else { return }
+        guard wordBookTask == nil else { confirm(L("ask.wordBook.saveFailed")); return }
+        wordBookTask = Task { [weak self] in
+            guard let self else { return }
+            defer { wordBookTask = nil }
+            do { try await wordBook.record(lookup) }
+            catch { if !Task.isCancelled { confirm(L("ask.wordBook.saveFailed")) } }
+        }
     }
 
     /// A workflow's `runKeyword`: puts `keyword argument` in the launcher and runs it,

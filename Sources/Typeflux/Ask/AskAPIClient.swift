@@ -119,7 +119,9 @@ struct AskAPIClient: AskAPI {
         return try await execute(path: "/\(conversationId)/messages", method: "POST", body: AskCoding.encoder().encode(request), token: token)
     }
     func result(conversationId: String, request: AskToolResultRequest, token: String) async throws -> AskConversation {
-        let wire = request.forPeer(trustedPeer, enabled: enabledCapabilities)
+        let prepared = await request.prepared()
+        try Task.checkCancellation()
+        let wire = prepared.forPeer(trustedPeer, enabled: enabledCapabilities)
         var response: AskConversation = try await execute(path: "/\(conversationId)/tool-results", method: "POST", body: AskCoding.encoder().encode(wire), token: token)
         // Keep the local receipt visible even when an old server only echoes legacy fields.
         if request.approveExecution == nil, let index = response.messages.firstIndex(where: { $0.role == "tool" && $0.toolCallId == request.toolCallId }),

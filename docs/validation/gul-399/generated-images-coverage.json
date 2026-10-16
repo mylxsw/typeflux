@@ -1,0 +1,80 @@
+{
+  "covered": 241,
+  "executable_added": 241,
+  "percent": 100.0,
+  "attribution": "Per-file matching binaries/profiles; no cross-layout merge. Initial failed-pass profiles excluded.",
+  "files": [
+    {
+      "file": "Sources/Typeflux/Ask/ImageGeneration/AskGeneratedImageValidator.swift",
+      "covered": 21,
+      "executable_added": 21,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile_build": "retention-correction: 19 tests plus copied-helper probe"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/ImageGeneration/AskImageGenerationRetention.swift",
+      "covered": 102,
+      "executable_added": 102,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile_build": "retention-correction: 19 tests plus copied-helper probe"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/ImageGeneration/AskImageGenerationService.swift",
+      "covered": 39,
+      "executable_added": 39,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile_build": "retention-correction: 19 tests plus copied-helper probe"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "covered": 2,
+      "executable_added": 2,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile_build": "retention-correction: 19 tests plus copied-helper probe"
+    },
+    {
+      "file": "Sources/TypefluxMediaProtocol/MediaProtocol.swift",
+      "covered": 14,
+      "executable_added": 14,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile_build": "retention-correction: 19 tests plus copied-helper probe"
+    },
+    {
+      "file": "Sources/TypefluxMediaRuntime/MediaDecoder.swift",
+      "covered": 22,
+      "executable_added": 22,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile_build": "retention-correction: 19 tests plus copied-helper probe"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskActivity.swift",
+      "covered": 1,
+      "executable_added": 1,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile_build": "receipt-final: 9 tool tests"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/ImageGeneration/AskLocalTools+ImageGeneration.swift",
+      "covered": 40,
+      "executable_added": 40,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile_build": "receipt-final: 9 tool tests"
+    }
+  ]
+}

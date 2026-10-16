@@ -198,11 +198,14 @@ struct StudioView: View {
     @StateObject private var interfaceStyleObserver: InterfaceStyleObserver
     @State private var launcherPane: LauncherSettingsPane
     @State private var settingsPane: AppSettingsPane
+    @StateObject private var moduleHealth: ModuleHealthSettingsModel
 
     /// `launcherPane` opens the Launcher page at one of its panes, e.g. the keyword list.
     init(viewModel: StudioViewModel, launcherPane: LauncherSettingsPane = .basics,
-         settingsPane: AppSettingsPane = .general, agentPane: AgentSettingsPane = .overview) {
+         settingsPane: AppSettingsPane = .general, agentPane: AgentSettingsPane = .overview,
+         moduleHealth: ModuleHealthSettingsModel? = nil) {
         self.viewModel = viewModel
+        _moduleHealth = StateObject(wrappedValue: moduleHealth ?? ModuleHealthSettingsModel(registry: nil))
         _interfaceStyleObserver = StateObject(wrappedValue: InterfaceStyleObserver(settings: viewModel.askToolSettings))
         _imageSettings = StateObject(wrappedValue: AskImageSettingsModel(
             store: AskImageSettings(defaults: viewModel.askToolSettings.defaults)
@@ -1039,6 +1042,7 @@ struct StudioView: View {
 
     private var advancedSettingsPage: some View {
         VStack(alignment: .leading, spacing: TFMetrics.sectionSpacing) {
+            ModuleHealthSettingsView(model: moduleHealth)
             TFFormSection {
                 /*
                   Local optimization is hidden because SenseVoice availability and the

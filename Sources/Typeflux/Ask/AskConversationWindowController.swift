@@ -46,7 +46,9 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
          screenCapturePermission: any ScreenCapturePermissionProviding = ScreenCapturePermission.live,
          services: AskConversationWindowServices? = nil,
          clipboardHistoryStore: (any ClipboardHistoryStore)? = nil,
-         filePreviewLoader: (any AskFilePreviewLoading)? = nil) throws {
+         filePreviewLoader: (any AskFilePreviewLoading)? = nil,
+         conversationCache: (any AskCaching)? = nil,
+         wordBookStore: (any AskWordBookStoring)? = nil, noteStore: (any AskNoteStoring)? = nil) throws {
         self.filePreview = AskFilePreviewController(loader: filePreviewLoader)
         self.dockVisibility = dockVisibility
         self.settings = settings
@@ -58,7 +60,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         )
         let sandbox = tools.sandbox
         self.tools = tools
-        let cache: any AskCaching = services?.cache ?? RecoveringAskConversationCache()
+        let cache: any AskCaching = services?.cache ?? conversationCache ?? RecoveringAskConversationCache()
         let deviceKey = "ask.deviceId"
         let deviceId = settings.defaults.string(forKey: deviceKey) ?? UUID().uuidString
         settings.defaults.set(deviceId, forKey: deviceKey)
@@ -103,10 +105,14 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         model.workflowAuthoring = authoring
         authoring.onChange = { [weak model] in model?.objectWillChange.send() }
         // The word book: words the translation plugin looked up, and the ones starred.
-        let wordBook = services?.wordBook ?? SQLiteAskWordBookStore(url: SQLiteAskWordBookStore.defaultURL())
+        let wordBook = services?.wordBook ?? wordBookStore ?? RecoveringAskWordBookStore()
         // Forever keeps everything; `purgeHistory(before: nil)` would clear it instead.
         if let cutoff = settings.askWordBookRetention.cutoff(now: Date()) {
-            maintenanceTasks.append(Task.detached(priority: .utility) { wordBook.purgeHistory(before: cutoff) })
+            maintenanceTasks.append(Task.detached(priority: .utility) {
+                do { try await wordBook.purgeHistory(before: cutoff) } catch {
+                    ErrorLogStore.shared.log("Word book retention cleanup failed")
+                }
+            })
         }
         model.wordBook = AskWordBookRecorder(store: wordBook) { [weak settings] in
             settings?.askWordBookRecordsHistory ?? true
@@ -128,7 +134,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             if case .notApplied = result { throw TextDeliveryError.noInput }
         }
         // Saved AI prompt results, and the windows results and notes open in.
-        let notes = services?.notes ?? SQLiteAskNoteStore(url: SQLiteAskNoteStore.defaultURL())
+        let notes = services?.notes ?? noteStore ?? RecoveringAskNoteStore()
         model.notes = notes
         // The agent's `notebook` tool reads and writes the same notes.
         tools.notebook = notes
@@ -150,7 +156,8 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
                               })
         // Recently Deleted keeps notes for 30 days.
         maintenanceTasks.append(Task.detached(priority: .utility) {
-            notes.purgeTrash(before: Date().addingTimeInterval(-AskNoteQuery.trashRetention))
+            do { try await notes.purgeTrash(before: Date().addingTimeInterval(-AskNoteQuery.trashRetention)) }
+            catch { ErrorLogStore.shared.log("Notes retention cleanup unavailable") }
         })
         let resultWindow = services?.resultWindow ?? AskResultWindowController.shared
         resultWindow.interfaceStyle = interfaceStyle
@@ -160,15 +167,15 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         resultWindow.services = AskResultDocument.Services(
             saveNote: { draft in
                 let note = AskNote(draft: draft, at: Date())
-                return notes.save(note) ? note.id : nil
+                return try await notes.save(note) ? note.id : nil
             },
             removeNote: { id in
-                guard let note = notes.note(id: id), !note.isEdited, !note.isDeleted else { return false }
+                guard let note = try await notes.note(id: id), !note.isEdited, !note.isDeleted else { return false }
                 var removed = note
                 removed.deletedAt = Date()
-                return notes.save(removed, replacing: note, revisionAt: nil)
+                return try await notes.save(removed, replacing: note, revisionAt: nil)
             },
-            noteExists: { notes.note(id: $0).map { !$0.isDeleted } ?? false },
+            noteExists: { try await notes.note(id: $0).map { !$0.isDeleted } ?? false },
             openNotes: { notesWindow.show(selecting: $0) },
             insert: { text, bundleID in
                 guard let bundleID,
@@ -267,6 +274,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             launcherOpeningTop = AskLauncherPlacement.top(on: frame, anchor: anchor)
         }
         // Take keyboard focus without activating the app and raising its other windows.
+        model.setLauncherImagesVisible(true)
         panel.makeKeyAndOrderFront(nil)
         // Select after focus: AppKit may restore the editor's previous source
         // when it becomes first responder. Do this only on a fresh opening.
@@ -403,6 +411,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     }
 
     func dismissLauncher() {
+        model.setLauncherImagesVisible(false)
         filePreview.dismissNow()
         launcherHeightAnimator.stop()
         // Menus and hover cards are child panels; close them with the launcher so
@@ -469,6 +478,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         dockVisibility.windowDidShow(conversationWindow)
         if conversationWindow.isMiniaturized { conversationWindow.deminiaturize(nil) }
         NSApp.activate(ignoringOtherApps: true)
+        model.setRemoteImagesVisible(true)
         conversationWindow.makeKeyAndOrderFront(nil)
         focusEditor(in: conversationWindow)
         conversationRefreshTask = Task { await model.refreshHistory(); await model.loadSavedChatDrafts() }
@@ -493,6 +503,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             }
         }
         model.voiceInput.cancel()
+        model.setRemoteImagesVisible(false)
         sender.orderOut(nil)
         dockVisibility.windowDidHide(sender)
         return false
@@ -500,6 +511,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
 
     func windowWillClose(_ notification: Notification) {
         guard let window = notification.object as? NSWindow else { return }
+        if window === conversationWindow { model.cancelAttachmentWork(launcher: false); model.setRemoteImagesVisible(false) }
         dockVisibility.windowDidHide(window)
     }
 
@@ -507,9 +519,10 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         guard active else {
             let wasVisible = controlPanel?.isVisible == true
             controlPanel?.orderOut(nil)
-            if wasVisible { conversationWindow?.makeKeyAndOrderFront(nil) }
+            if wasVisible { model.setRemoteImagesVisible(true); conversationWindow?.makeKeyAndOrderFront(nil) }
             return
         }
+        model.setRemoteImagesVisible(false)
         conversationWindow?.orderOut(nil)
         if controlPanel == nil {
             let panel = AskFloatingPanel(contentRect: NSRect(x: 0, y: 0, width: 380, height: 60), styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)

@@ -29,7 +29,13 @@ struct AskNotesPlugin: AskLauncherPlugin {
     func run(_ request: AskPluginRequest, plan: AskPluginPlan,
              progress: @escaping AskPluginProgress) async throws -> AskPluginOutput {
         let query = request.origin == .argument ? request.text.trimmingCharacters(in: .whitespacesAndNewlines) : ""
-        let notes = store?.list(AskNoteQuery(text: query, limit: Self.limit)) ?? []
+        let notes: [AskNote]
+        do {
+            guard let store else { throw LocalStoreFailure.unavailable }
+            notes = try await store.list(AskNoteQuery(text: query, limit: Self.limit))
+        } catch {
+            throw AskPluginFailure(message: L("ask.notes.storageUnavailable"))
+        }
         try Task.checkCancellation()
         var items = notes.map { note in
             AskPluginItem(

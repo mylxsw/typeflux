@@ -14,11 +14,11 @@ final class AskResultDocument: ObservableObject, Identifiable {
     /// What the window does through the rest of the app; tests record calls instead.
     struct Services {
         /// Saves a result as a note, returning its id; nil when it could not be saved.
-        var saveNote: @MainActor (AskNoteDraft) -> UUID? = { _ in nil }
+        var saveNote: @MainActor (AskNoteDraft) async throws -> UUID? = { _ in nil }
         /// Takes a saved result out of the notes. False when it stays (the user edited it).
-        var removeNote: @MainActor (UUID) -> Bool = { _ in false }
+        var removeNote: @MainActor (UUID) async throws -> Bool = { _ in false }
         /// Whether a note still exists, to keep the star honest after the notes window deleted it.
-        var noteExists: @MainActor (UUID) -> Bool = { _ in false }
+        var noteExists: @MainActor (UUID) async throws -> Bool = { _ in false }
         var openNotes: @MainActor (UUID?) -> Void = { _ in }
         /// Writes text into the app with this bundle id (it is brought forward first).
         var insert: @MainActor (String, String?) async -> Bool = { _, _ in false }
@@ -63,6 +63,8 @@ final class AskResultDocument: ObservableObject, Identifiable {
     private let regenerator: Regenerate?
     private var cancelRun: (@MainActor () -> Void)?
     private var task: Task<Void, Never>?
+    private var noteTask: Task<Void, Never>?
+    private var noteGeneration = UUID()
     private var noticeTask: Task<Void, Never>?
     var clock: () -> Date = Date.init
 
@@ -166,11 +168,15 @@ final class AskResultDocument: ObservableObject, Identifiable {
     /// The window closed: nothing may keep running for it.
     func close() {
         stop()
+        noteTask?.cancel()
+        noteGeneration = UUID()
         noticeTask?.cancel()
     }
 
     func regenerate() {
         guard canRegenerate, let regenerator else { return }
+        noteTask?.cancel()
+        noteGeneration = UUID()
         noteID = nil
         state = .streaming
         dimmed = true
@@ -209,34 +215,66 @@ final class AskResultDocument: ObservableObject, Identifiable {
     // MARK: - Actions
 
     /// ⌘S: save to the notes, or take it out; while streaming, save once done.
-    func toggleNote() {
+    @discardableResult
+    func toggleNote() -> Task<Void, Never>? {
         if isStreaming {
             savesWhenDone.toggle()
             show(L(savesWhenDone ? "ask.notes.saveWhenDone" : "ask.notes.saveWhenDone.cancelled"))
-            return
+            return nil
         }
-        if let noteID, services.noteExists(noteID) {
-            if services.removeNote(noteID) {
-                self.noteID = nil
-                show(L("ask.notes.removed"))
-            } else {
-                show(L("ask.notes.editedKept"))
-            }
-            return
+        return performNoteAction {
+            if let id = self.noteID, try await self.services.noteExists(id) {
+                try Task.checkCancellation()
+                if try await self.services.removeNote(id) {
+                    try Task.checkCancellation()
+                    self.noteID = nil
+                    self.show(L("ask.notes.removed"))
+                } else { self.show(L("ask.notes.editedKept")) }
+            } else { try await self.persistNote() }
         }
-        save()
     }
 
-    private func save() {
+    func waitForNoteAction() async { await noteTask?.value }
+
+    private func save() { performNoteAction { try await self.persistNote() } }
+
+    private func persistNote() async throws {
+        try Task.checkCancellation()
         guard case .done = state, !body.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
-        guard let id = services.saveNote(draft) else { return }
+        let submitted = body
+        guard let id = try await services.saveNote(draft) else { throw LocalStoreFailure.unavailable }
+        try Task.checkCancellation()
+        guard body == submitted else { return }
         noteID = id
         show(L("ask.notes.saved"))
     }
 
-    /// The notes window deleted or restored notes: the star follows.
-    func refreshNote() {
-        if let noteID, !services.noteExists(noteID) { self.noteID = nil }
+    @discardableResult
+    private func performNoteAction(_ action: @escaping @MainActor () async throws -> Void) -> Task<Void, Never>? {
+        guard noteTask == nil else { return nil }
+        let generation = noteGeneration
+        let task = Task { [weak self] in
+            guard let self else { return }
+            defer { self.noteTask = nil }
+            do { try await action() } catch {
+                guard !Task.isCancelled, self.noteGeneration == generation else { return }
+                self.show(L("ask.notes.storageUnavailable"))
+            }
+        }
+        noteTask = task
+        return task
+    }
+
+    /// A failed refresh keeps the confirmed star; it cannot establish absence.
+    @discardableResult
+    func refreshNote() -> Task<Void, Never>? {
+        guard noteTask == nil else { return nil }
+        return performNoteAction {
+            if let id = self.noteID, !(try await self.services.noteExists(id)) {
+                try Task.checkCancellation()
+                if self.noteID == id { self.noteID = nil }
+            }
+        }
     }
 
     func copy() {

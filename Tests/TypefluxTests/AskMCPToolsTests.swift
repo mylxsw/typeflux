@@ -117,8 +117,8 @@ final class AskMCPToolsTests: XCTestCase {
         XCTAssertEqual(output.outcome?.safeStatus, .unknown)
     }
 
-    func testOutputMapsTextResourcesAndImages() throws {
-        let text = AskLocalTools.output(from: MCPToolsCallResult(content: [
+    func testOutputMapsTextResourcesAndImages() async throws {
+        let text = await AskLocalTools.output(from: MCPToolsCallResult(content: [
             MCPContentBlock(type: "text", text: "line"),
             MCPContentBlock(type: "resource", resource: MCPEmbeddedResource(uri: "file:///a", mimeType: "text/plain", text: "file body"))
         ], isError: nil))
@@ -128,7 +128,7 @@ final class AskMCPToolsTests: XCTestCase {
         XCTAssertNil(text.image)
 
         let png = try Self.pngBase64(width: 3200, height: 1600)
-        let image = AskLocalTools.output(from: MCPToolsCallResult(content: [
+        let image = await AskLocalTools.output(from: MCPToolsCallResult(content: [
             MCPContentBlock(type: "image", data: "not an image", mimeType: "image/png"),
             MCPContentBlock(type: "image", data: png, mimeType: "image/png"),
             MCPContentBlock(type: "image", data: png, mimeType: "image/png")
@@ -142,18 +142,18 @@ final class AskMCPToolsTests: XCTestCase {
         XCTAssertTrue(image.content.contains("Multiple images retained"))
         XCTAssertTrue(image.isError)
 
-        let invalid = AskLocalTools.output(from: MCPToolsCallResult(content: [MCPContentBlock(type: "image", data: "@@@")], isError: false))
+        let invalid = await AskLocalTools.output(from: MCPToolsCallResult(content: [MCPContentBlock(type: "image", data: "@@@")], isError: false))
         XCTAssertNil(invalid.image)
-        XCTAssertTrue(invalid.content.contains("Unsupported or invalid image"))
+        XCTAssertTrue(invalid.content.contains("projection unavailable or invalid"))
         XCTAssertTrue(invalid.isError)
 
-        let onlyImage = AskLocalTools.output(from: MCPToolsCallResult(content: [MCPContentBlock(type: "image", data: png, mimeType: "image/png")], isError: false))
+        let onlyImage = await AskLocalTools.output(from: MCPToolsCallResult(content: [MCPContentBlock(type: "image", data: png, mimeType: "image/png")], isError: false))
         XCTAssertEqual(onlyImage.content, "[Tool image attached]")
-        let empty = AskLocalTools.output(from: MCPToolsCallResult(content: [], isError: true))
+        let empty = await AskLocalTools.output(from: MCPToolsCallResult(content: [], isError: true))
         XCTAssertTrue(empty.content.contains("Tool returned no content"))
         XCTAssertTrue(empty.isError)
 
-        let long = AskLocalTools.output(from: MCPToolsCallResult(content: [MCPContentBlock(type: "text", text: String(repeating: "x", count: 70000))], isError: false))
+        let long = await AskLocalTools.output(from: MCPToolsCallResult(content: [MCPContentBlock(type: "text", text: String(repeating: "x", count: 70000))], isError: false))
         XCTAssertTrue(long.content.contains("projection truncated"))
         XCTAssertTrue(long.isError)
     }
@@ -169,6 +169,10 @@ final class AskMCPToolsTests: XCTestCase {
         XCTAssertTrue(output.contains("embedded"))
         XCTAssertTrue(output.contains("Unsupported"))
         XCTAssertTrue(output.contains("error"))
+        await client.setMockCallResult(.init(content: [.init(type: "image", data: try AskTypedContentTests.image(), mimeType: "image/jpeg")], isError: false))
+        let imageOnly = try await MCPToolAdapter(client: client, toolDef: tool("t")).execute(arguments: "{}")
+        XCTAssertTrue(imageOnly.contains("error"))
+        XCTAssertTrue(imageOnly.contains("Do not repeat"))
     }
 
     func testToolPagesStopOnRepeatedCursorAndPageLimit() async throws {

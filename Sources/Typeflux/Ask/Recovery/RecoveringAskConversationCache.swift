@@ -5,60 +5,35 @@ import Foundation
 /// is replayed. In particular, unavailable execution history never becomes an
 /// empty in-memory journal that could authorize a duplicate tool invocation.
 actor RecoveringAskConversationCache: AskCaching {
-    private let factory: @Sendable () throws -> any AskCaching
-    private let uptime: @Sendable () -> TimeInterval
-    private var cache: (any AskCaching)?
-    private var budget = ModuleRecoveryBudget()
-    private var inFlight = 0
-    private var failed = false
+    nonisolated let module: ModuleHandle<any AskCaching>
 
     init(
         factory: @escaping @Sendable () throws -> any AskCaching = {
             try AskConversationCache(url: AskConversationCache.defaultURL())
         },
-        uptime: @escaping @Sendable () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }
+        uptime: @escaping @Sendable () -> TimeInterval = { ProcessInfo.processInfo.systemUptime },
+        policy: ModulePolicy = .init(), healthStore: ModuleHealthStore? = nil
     ) {
-        self.factory = factory
-        self.uptime = uptime
+        module = ModuleHandle(policy: policy, healthStore: healthStore, factory: { try factory() }, classify: { error in
+            // Binding/approval errors do not invalidate the durable journal.
+            let storage = (error as NSError).domain == NSCocoaErrorDomain
+                || (error as? AskRecoveryError) == .storage
+            return storage ? .recover : .operationOnly
+        }, uptime: uptime)
     }
 
-    private func perform<T>(_ body: (any AskCaching) async throws -> T) async throws -> T {
-        try Task.checkCancellation()
-        guard !failed || inFlight == 0, budget.permitsAttempt(at: uptime()) else { throw AskRecoveryError.storage }
-        if cache == nil {
-            do {
-                cache = try factory()
-                failed = false
-            } catch {
-                budget.failed(at: uptime())
-                throw error
-            }
-        }
-        guard let cache else { throw AskRecoveryError.storage }
-        inFlight += 1
-        defer {
-            inFlight -= 1
-            if failed, inFlight == 0 {
-                self.cache = nil
-            }
-        }
-        do {
-            let result = try await body(cache)
-            if !failed {
-                budget.succeeded(at: uptime())
-            }
-            return result
-        } catch {
-            // Binding/approval errors and cancellation do not invalidate the DB.
-            let isStorage = (error as NSError).domain == NSCocoaErrorDomain
-                || (error as? AskRecoveryError) == .storage
-            if isStorage, !failed {
-                failed = true
-                budget.failed(at: uptime())
-            }
-            throw error
+    private func perform<T: Sendable>(
+        _ body: @escaping @Sendable (any AskCaching) async throws -> T
+    ) async throws -> T {
+        do { return try await module.perform(body) } catch is ModuleFailure {
+            // Preserve the existing fail-closed recovery contract for approvals
+            // and execution claims. An unavailable journal is never empty.
+            throw AskRecoveryError.storage
         }
     }
+
+    nonisolated func preventNewWork() { module.preventNewWork() }
+    func shutdown() async { await module.shutdown() }
 
     func execution(id: String, owner: String) async throws -> AskExecutionEntry? {
         try await perform { try await $0.execution(id: id, owner: owner) }

@@ -240,34 +240,34 @@ struct AskNoteRevision: Equatable, Sendable {
 /// Where notes are kept; `SQLiteAskNoteStore` on this Mac, a memory store in tests.
 protocol AskNoteStoring: AnyObject, Sendable {
     /// The note, deleted or not.
-    func note(id: UUID) -> AskNote?
+    func note(id: UUID) async throws -> AskNote?
     /// Inserts or replaces the note with its id.
     @discardableResult
-    func save(_ note: AskNote) -> Bool
+    func save(_ note: AskNote) async throws -> Bool
     /// Saves only if the stored note still matches the caller's snapshot. An optional
     /// revision and the replacement commit together, so failed writes never create undo entries.
     @discardableResult
-    func save(_ note: AskNote, replacing previous: AskNote, revisionAt date: Date?) -> Bool
+    func save(_ note: AskNote, replacing previous: AskNote, revisionAt date: Date?) async throws -> Bool
     /// Removes notes for good.
-    func delete(ids: [UUID])
+    func delete(ids: [UUID]) async throws
     /// Puts deleted notes back, as they were (undo).
-    func restore(_ notes: [AskNote])
+    func restore(_ notes: [AskNote]) async throws
     /// Pinned notes first, then by the query's sort, newest first.
-    func list(_ query: AskNoteQuery) -> [AskNote]
-    func count(_ scope: AskNoteQuery.Scope) -> Int
-    func commands() -> [AskNoteFacet]
+    func list(_ query: AskNoteQuery) async throws -> [AskNote]
+    func count(_ scope: AskNoteQuery.Scope) async throws -> Int
+    func commands() async throws -> [AskNoteFacet]
     /// Note counts per `AskNoteSource` raw value.
-    func sources() -> [AskNoteFacet]
-    func tags() -> [AskNoteFacet]
+    func sources() async throws -> [AskNoteFacet]
+    func tags() async throws -> [AskNoteFacet]
     /// Moves notes to Recently Deleted.
-    func trash(ids: [UUID], at date: Date)
+    func trash(ids: [UUID], at date: Date) async throws
     /// Removes notes deleted before `date` for good.
-    func purgeTrash(before date: Date)
+    func purgeTrash(before date: Date) async throws
     /// Keeps the note's current text before the agent changes it; the newest 20 per note stay.
-    func saveRevision(_ note: AskNote, at date: Date)
+    func saveRevision(_ note: AskNote, at date: Date) async throws
     /// Newest first.
-    func revisions(of id: UUID) -> [AskNoteRevision]
-    func deleteRevision(of id: UUID, at date: Date)
+    func revisions(of id: UUID) async throws -> [AskNoteRevision]
+    func deleteRevision(of id: UUID, at date: Date) async throws
 }
 
 extension Notification.Name {

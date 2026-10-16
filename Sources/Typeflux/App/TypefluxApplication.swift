@@ -3,6 +3,10 @@ import ApplicationServices
 
 public enum TypefluxApplication {
     public static func run() {
+        // Shared by SwiftPM and Xcode launchers, before relaunch or application DI.
+        if let code = NativeSystemWorkerCommand.handleInvocation(arguments: Array(CommandLine.arguments.dropFirst())) {
+            exit(code)
+        }
         DevLauncher.relaunchAsAppBundleIfNeeded()
 
         let app = NSApplication.shared
@@ -17,7 +21,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var appCoordinator: AppCoordinator?
     private var languageObserver: NSObjectProtocol?
     private var appearanceObserver: NSObjectProtocol?
-    private var isFinishingRecording = false
+    private let termination = AppTerminationBarrier()
 
     func applicationDidFinishLaunching(_: Notification) {
         let settingsStore = SettingsStore()
@@ -61,14 +65,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
-        guard appCoordinator?.hasScreenRecording == true else { return .terminateNow }
-        guard !isFinishingRecording else { return .terminateLater }
-        isFinishingRecording = true
-        Task { @MainActor in
-            await appCoordinator?.finishScreenRecordingForTermination()
+        guard let appCoordinator else { return .terminateNow }
+        return termination.begin {
+            if appCoordinator.hasScreenRecording {
+                await appCoordinator.finishScreenRecordingForTermination()
+            }
+            await appCoordinator.prepareForTermination()
+        } reply: {
             sender.reply(toApplicationShouldTerminate: true)
         }
-        return .terminateLater
     }
 
     func applicationWillTerminate(_: Notification) {

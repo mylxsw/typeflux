@@ -11,6 +11,8 @@ struct AskConversationWindowLifecycleTests {
             await controller.conversationRefreshTask?.value
             let conversation = try #require(controller.conversationWindow)
             #expect(conversation.isVisible)
+            #expect(fixture.model.remoteImageScope.visible)
+            #expect(fixture.model.conversationImageScope.visible)
             #expect(policy.currentActivationPolicy == .regular)
             #expect(conversation.contentView?.isOpaque == false)
             fixture.model.draft.text = "Keep this draft across control mode."
@@ -18,6 +20,8 @@ struct AskConversationWindowLifecycleTests {
             let control = try #require(controller.controlWindow)
             #expect(control.isVisible)
             #expect(!conversation.isVisible)
+            #expect(!fixture.model.remoteImageScope.visible)
+            #expect(!fixture.model.conversationImageScope.visible)
             #expect(control.styleMask.contains(.nonactivatingPanel))
             #expect(control.level == .floating)
             #expect(!control.isOpaque)
@@ -27,16 +31,22 @@ struct AskConversationWindowLifecycleTests {
             fixture.model.onControlChanged?(false)
             #expect(!control.isVisible)
             #expect(conversation.isVisible)
+            #expect(fixture.model.remoteImageScope.visible)
+            #expect(fixture.model.conversationImageScope.visible)
             #expect(fixture.model.draft.text == "Keep this draft across control mode.")
             // An inactive callback while already hidden must not raise a dismissed conversation.
             #expect(!controller.windowShouldClose(conversation))
             fixture.model.onControlChanged?(false)
             #expect(!conversation.isVisible)
+            #expect(!fixture.model.remoteImageScope.visible)
+            #expect(!fixture.model.conversationImageScope.visible)
             #expect(policy.currentActivationPolicy == .accessory)
             controller.showConversation()
             await controller.conversationRefreshTask?.value
             #expect(controller.conversationWindow === conversation)
             #expect(conversation.isVisible)
+            #expect(fixture.model.remoteImageScope.visible)
+            #expect(fixture.model.conversationImageScope.visible)
             controller.windowWillClose(.init(name: NSWindow.willCloseNotification, object: conversation))
             controller.windowWillClose(.init(name: NSWindow.willCloseNotification, object: "unrelated"))
             #expect(policy.currentActivationPolicy == .accessory)
@@ -61,6 +71,8 @@ struct AskConversationWindowLifecycleTests {
             #expect(fixture.model.controllingConversationId == nil)
             #expect(!control.isVisible)
             #expect(conversation.isVisible)
+            #expect(fixture.model.remoteImageScope.visible)
+            #expect(fixture.model.conversationImageScope.visible)
         }
     }
 
@@ -106,11 +118,27 @@ struct AskConversationWindowLifecycleTests {
             #expect(!controller.windowShouldClose(window))
             #expect(handled)
             #expect(window.isVisible == (choice == 2))
+            #expect(fixture.model.remoteImageScope.visible == (choice == 2))
+            #expect(fixture.model.conversationImageScope.visible == (choice == 2))
             if choice == 1 {
                 try await SettingsBehaviorTestSupport.wait { fixture.model.selected?.run?.status == "cancelled" }
             } else {
                 #expect(fixture.model.selected?.run?.status == "awaiting_approval")
             }
+        }
+    }
+
+    @Test func launcherCloseFencesContextImagesAndReopenUsesFreshScope() async throws {
+        try await withController { fixture, controller, _ in
+            controller.showLauncher()
+            #expect(fixture.model.launcherImageScope.visible)
+            let old = fixture.model.launcherImageScope.epoch
+            controller.dismissLauncher()
+            #expect(!fixture.model.launcherImageScope.visible)
+            #expect(fixture.model.launcherImageScope.epoch != old)
+            controller.showLauncher()
+            #expect(fixture.model.launcherImageScope.visible)
+            controller.dismissLauncher()
         }
     }
 

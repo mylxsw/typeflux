@@ -109,6 +109,21 @@ struct AskFilePreviewLoaderTests {
         #expect(loader.cacheCount == 0)
     }
 
+    @Test func invalidPixelRequestsFailBeforeMetadataOrIntegerConversion() async {
+        var calls = 0, completions = 0
+        let loader = AskFilePreviewLoader(metadata: { _, _ in
+            calls += 1; return .init(fileSize: 1, modified: .distantPast)
+        })
+        for pixels in [CGSize.zero, CGSize(width: CGFloat.nan, height: 10),
+                       CGSize(width: CGFloat.infinity, height: 10), CGSize(width: 5000, height: 10)] {
+            loader.load(previewHit("image.png"), pixels: pixels) {
+                #expect($0 == nil); completions += 1
+            }
+            await settle()
+        }
+        #expect(calls == 0 && completions == 4)
+    }
+
     @Test func `preview setting defaults and persists`() throws {
         let name = "preview-setting-\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: name))

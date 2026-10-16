@@ -78,7 +78,7 @@ struct AskResultWindowView: View {
     private var starButton: some View {
         let saved = document.noteID != nil
         let pending = document.savesWhenDone
-        return Button(action: document.toggleNote) {
+        return Button(action: { document.toggleNote() }) {
             Image(systemName: saved || pending ? "star.fill" : "star").font(.system(size: 12.5))
                 .foregroundStyle(saved || pending ? AskWordBookStyle.star : StudioTheme.textSecondary)
                 .opacity(pending ? 0.55 : 1)

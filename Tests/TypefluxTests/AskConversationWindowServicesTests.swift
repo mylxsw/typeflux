@@ -18,6 +18,7 @@ struct AskConversationWindowServicesTests {
                 #expect(controller.model.launcherDraft.text == "search remains usable")
                 await #expect(throws: (any Error).self) { _ = try await unavailable.list(owner: "owner") }
                 #expect(controller.launcherWindow?.isVisible == true)
+                await unavailable.shutdown()
             } catch {
                 await fixture.close()
                 throw error
@@ -52,7 +53,7 @@ struct AskConversationWindowServicesTests {
                 #expect(controller.conversationWindow === conversation)
                 #expect(controller.model.draft.text == "Keep the workspace draft.")
                 try await checkNotes(fixture)
-                try checkWordBook(fixture, settings)
+                try await checkWordBook(fixture, settings)
                 #expect(!fixture.results.services.isRunning("invalid.fixture.application"))
                 #expect(await fixture.results.services.insert("fixture text", nil) == false)
                 #expect(await fixture.results.services.insert("fixture text", "invalid.fixture.application") == false)
@@ -69,9 +70,9 @@ struct AskConversationWindowServicesTests {
         let services = fixture.results.services
         let draft = AskNoteDraft(command: "Explain", keyword: "ex", input: "Fixture concept",
                                  body: "A controlled result", model: nil, sourceApp: nil, sourceBundleID: nil)
-        let id = try #require(services.saveNote(draft))
-        #expect(services.noteExists(id))
-        var note = try #require(fixture.notes.note(id: id))
+        let id = try #require((try await services.saveNote(draft)))
+        #expect((try await services.noteExists(id)))
+        var note = try #require(try fixture.notes.note(id: id))
         #expect(note.body == draft.body)
         let document = AskResultDocument(note: note, services: services)
         defer { document.close() }
@@ -88,27 +89,27 @@ struct AskConversationWindowServicesTests {
         #expect(await fixture.api.sends.isEmpty)
         #expect(controller.model.savedChatDrafts.contains { $0.draft.text == "Keep the workspace draft." })
         note.editedAt = Date()
-        #expect(fixture.notes.save(note))
-        #expect(!services.removeNote(id), "An edited note must survive unstar from its original result")
+        #expect(try fixture.notes.save(note))
+        #expect(!(try await services.removeNote(id)), "An edited note must survive unstar from its original result")
         note.editedAt = nil
-        #expect(fixture.notes.save(note))
-        #expect(services.removeNote(id))
-        #expect(!services.noteExists(id))
-        #expect(fixture.notes.note(id: id)?.isDeleted == true)
-        #expect(fixture.notes.count(.trash) == 1, "result-window unstar remains recoverable")
-        #expect(!services.removeNote(id))
+        #expect(try fixture.notes.save(note))
+        #expect((try await services.removeNote(id)))
+        #expect(!(try await services.noteExists(id)))
+        #expect(try fixture.notes.note(id: id)?.isDeleted == true)
+        #expect(try fixture.notes.count(.trash) == 1, "result-window unstar remains recoverable")
+        #expect(!(try await services.removeNote(id)))
     }
 
-    private func checkWordBook(_ fixture: Fixture, _ settings: SettingsStore) throws {
+    private func checkWordBook(_ fixture: Fixture, _ settings: SettingsStore) async throws {
         let recorder = try #require(fixture.controller?.model.wordBook)
         let lookup = AskWordBookLookup(headword: "fixture", source: "en", target: "zh", card: nil,
                                        translation: "controlled translation", model: nil)
         settings.askWordBookRecordsHistory = false
-        recorder.record(lookup)
-        #expect(fixture.wordBook.entry(forKey: lookup.key) == nil)
+        try await recorder.record(lookup)
+        #expect(try fixture.wordBook.entry(forKey: lookup.key) == nil)
         settings.askWordBookRecordsHistory = true
-        recorder.record(lookup)
-        #expect(fixture.wordBook.entry(forKey: lookup.key)?.headword == "fixture")
+        try await recorder.record(lookup)
+        #expect(try fixture.wordBook.entry(forKey: lookup.key)?.headword == "fixture")
     }
 
     @MainActor

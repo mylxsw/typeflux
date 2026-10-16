@@ -93,7 +93,7 @@ struct AskTranslationRoutingTests {
     func cachedCardsUseTheCheckedAIOrGiveWayToBriefTranslations(checked: Bool) async throws {
         let book = makeTestWordBook()
         let card = AskWordCard(headword: "apple", translation: "苹果")
-        book.record(.init(headword: "apple", source: "en", target: "zh-Hans", card: card), at: Date(), counts: false)
+        try book.record(.init(headword: "apple", source: "en", target: "zh-Hans", card: card), at: Date(), counts: false)
         let ai = AskTestTranslationEngine()
         let provider = AskTestTranslationEngine()
         let settings = AskTranslationSettings(services: [
@@ -177,7 +177,7 @@ struct AskTranslationLLMServiceTests {
         }
     }
 
-    @Test func theSettingsServiceReadsTheChosenModel() async {
+    @Test func theSettingsServiceReadsTheChosenModel() async throws {
         let defaults = UserDefaults(suiteName: "AskTranslationLLMServiceTests-" + UUID().uuidString)!
         let settings = SettingsStore(defaults: defaults)
         let text = AskTestLLMService()

@@ -1,11 +1,18 @@
 import AppKit
-import CoreWLAN
-import Darwin
 
 /// Only fixed, built-in operations reach the process runner. Search text is never a command.
 @MainActor
 struct AskSystemCommandRunner {
     var process: any ProcessCommandRunning = ProcessCommandRunner(timeout: 60, outputLimit: 200_000)
+
+    var native: any NativeSystemWorking = NativeSystemWorker.shared
+
+    func presentsFailures(for command: AskSystemCommand) -> Bool {
+        switch command {
+        case .toggleWiFi, .toggleBluetooth, .toggleScrollDirection: native.isEnabled
+        default: true
+        }
+    }
 
     struct Invocation: Equatable {
         var executable: String
@@ -52,19 +59,23 @@ struct AskSystemCommandRunner {
             return
         }
         switch command {
-        case .toggleWiFi:
-            guard let interface = CWWiFiClient.shared().interface() else { throw failure() }
-            try interface.setPower(!interface.powerOn())
-        case .toggleBluetooth:
-            try await toggleBluetooth()
+        case .toggleWiFi, .toggleBluetooth, .toggleScrollDirection:
+            let operation: NativeSystemOperation = switch command {
+            case .toggleWiFi: .toggleWiFi
+            case .toggleBluetooth: .toggleBluetooth
+            default: .toggleScrollDirection
+            }
+            do { try await native.perform(operation) }
+            catch {
+                let failure = error as? NativeSystemFailure ?? .unknown
+                throw AskPluginFailure(message: L(failure.messageKey), retry: false)
+            }
         case .toggleHiddenFiles:
             try await togglePreference(domain: "com.apple.finder", key: "AppleShowAllFiles", fallback: false)
             try await execute(.init(executable: "/usr/bin/killall", arguments: ["Finder"]))
         case .toggleDesktopFiles:
             try await togglePreference(domain: "com.apple.finder", key: "CreateDesktop", fallback: true)
             try await execute(.init(executable: "/usr/bin/killall", arguments: ["Finder"]))
-        case .toggleScrollDirection:
-            try toggleScrollDirection()
         case .cleanScreen:
             try AskScreenCleaningController.shared.show()
         default: throw failure()
@@ -94,44 +105,7 @@ struct AskSystemCommandRunner {
                                 ]))
     }
 
-    /// macOS exposes the Bluetooth preference functions through IOBluetooth.
-    /// Resolve them at runtime so missing symbols produce a visible failure.
-    private func toggleBluetooth() async throws {
-        guard let framework = dlopen("/System/Library/Frameworks/IOBluetooth.framework/IOBluetooth", RTLD_LAZY)
-        else { throw failure() }
-        defer { dlclose(framework) }
-        guard let getSymbol = dlsym(framework, "IOBluetoothPreferenceGetControllerPowerState"),
-              let setSymbol = dlsym(framework, "IOBluetoothPreferenceSetControllerPowerState") else { throw failure() }
-        let get = unsafeBitCast(getSymbol, to: (@convention(c) () -> Int32).self)
-        let set = unsafeBitCast(setSymbol, to: (@convention(c) (Int32) -> Void).self)
-        let target: Int32 = get() == 0 ? 1 : 0
-        set(target)
-        for _ in 0 ..< 20 {
-            try await Task.sleep(for: .milliseconds(100))
-            if get() == target { return }
-        }
-        throw failure()
-    }
-
     private func failure() -> AskPluginFailure {
         .init(message: L("ask.system.failed"), retry: false)
-    }
-
-    /// The preference pane's setter updates the input driver as well as the saved value.
-    /// Changing defaults alone does not change current scrolling behavior.
-    private func toggleScrollDirection() throws {
-        let path = "/System/Library/PrivateFrameworks/PreferencePanesSupport.framework/PreferencePanesSupport"
-        guard let framework = dlopen(path, RTLD_LAZY) else { throw failure() }
-        defer { dlclose(framework) }
-        guard let getSymbol = dlsym(framework, "swipeScrollDirection"),
-              let setSymbol = dlsym(framework, "setSwipeScrollDirection") else { throw failure() }
-        let get = unsafeBitCast(getSymbol, to: (@convention(c) () -> Bool).self)
-        let set = unsafeBitCast(setSymbol, to: (@convention(c) (Bool) -> Void).self)
-        let target = !get()
-        set(target)
-        guard get() == target else { throw failure() }
-        DistributedNotificationCenter.default().postNotificationName(
-            .init("SwipeScrollDirectionDidChangeNotification"), object: nil, userInfo: nil, deliverImmediately: true
-        )
     }
 }

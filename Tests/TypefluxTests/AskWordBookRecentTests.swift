@@ -15,13 +15,13 @@ struct AskTranslateRecentWordsTests {
                          interfaceLanguage: .simplifiedChinese)
     }
 
-    private func filled(_ store: SQLiteAskWordBookStore) {
+    private func filled(_ store: SQLiteAskWordBookStore) throws {
         let base = Date(timeIntervalSince1970: 1_800_000_000)
         for index in 0 ..< 10 {
             let lookup = AskWordBookLookup(headword: "w\(index)", source: "en", target: "zh-Hans",
                                            translation: index == 3 ? "" : "义\(index)")
-            store.record(lookup, at: base.addingTimeInterval(Double(index)), counts: true)
-            if index.isMultiple(of: 4) { store.setStarred(true, lookup: lookup, at: base.addingTimeInterval(Double(index))) }
+            try store.record(lookup, at: base.addingTimeInterval(Double(index)), counts: true)
+            if index.isMultiple(of: 4) { try store.setStarred(true, lookup: lookup, at: base.addingTimeInterval(Double(index))) }
         }
     }
 
@@ -32,7 +32,7 @@ struct AskTranslateRecentWordsTests {
 
     @Test func listsTheLatestWordsThenTheWayIntoTheWordBook() async throws {
         let store = makeTestWordBook()
-        filled(store)
+        try filled(store)
         let translate = plugin(store)
         let plan = await translate.plan(empty())
         #expect(plan.mode == .live && plan.title == L("ask.wordBook.list.recent"))
@@ -54,7 +54,7 @@ struct AskTranslateRecentWordsTests {
 
     @Test func tabSwitchesToTheStarredWords() async throws {
         let store = makeTestWordBook()
-        filled(store)
+        try filled(store)
         let translate = plugin(store)
         let recent = await translate.plan(empty())
         let next = try #require(translate.nextOptions(after: recent, request: empty(), step: 1))
@@ -76,7 +76,7 @@ struct AskTranslateRecentWordsTests {
             == L("ask.wordBook.list.emptyStarred"))
     }
 
-    @Test func aRowShowsItsStarWithoutRunningAgain() {
+    @Test func aRowShowsItsStarWithoutRunningAgain() throws {
         let lookup = AskWordBookLookup(headword: "w", source: "en", target: "zh-Hans", translation: "义")
         let entry = AskWordBookEntry(id: UUID(), lookup: lookup, lookupCount: 1, firstLookedUpAt: Date(),
                                      lastLookedUpAt: Date(), starredAt: nil)
@@ -93,7 +93,7 @@ extension AskQuickResultsInteractionTests {
         try await withPasteboard { _ in
             let translation = WordBookTranslation()
             let lookup = AskWordBookLookup(headword: "resilient", source: "en", target: "zh-Hans", translation: "有弹性的")
-            translation.store.record(lookup, at: Date(), counts: true)
+            try translation.store.record(lookup, at: Date(), counts: true)
             var opened: [String?] = []
             let launcher = try await Launcher(text: "") { model in
                 translation.install(in: model)
@@ -109,7 +109,8 @@ extension AskQuickResultsInteractionTests {
             #expect(model.plugins.output?.items.first?.title == "resilient")
 
             try await launcher.press(Self.sKey, .command)
-            #expect(translation.store.entry(forKey: lookup.key)?.isStarred == true)
+            await model.wordBookTask?.value
+            #expect(try translation.store.entry(forKey: lookup.key)?.isStarred == true)
             #expect(model.plugins.output?.items.first?.icon == .symbol("star.fill"), "the row shows the star in place")
 
             try await launcher.press(Self.bKey, .command)

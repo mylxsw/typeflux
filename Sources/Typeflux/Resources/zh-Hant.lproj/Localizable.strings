@@ -5507,3 +5507,45 @@
 "semantic.keyword.query" = "描述你想尋找的內容";
 "semantic.keyword.none" = "找不到符合的內容";
 "ask.settings.keywords.kind.semanticFiles.hint" = "根據內容含義搜尋本機檔案";
+// Word-book storage availability
+"ask.wordBook.storageUnavailable" = "單字本暫時無法使用，目前的結果仍然保留。";
+"ask.wordBook.saveFailed" = "無法儲存至單字本，目前的結果仍然保留。";
+
+"ask.notes.storageUnavailable" = "筆記儲存暫時無法使用，目前文字已保留。";
+
+// Independently recoverable storage services.
+"settings.services.title" = "服務狀態";
+"settings.services.conversations" = "對話歷史";
+"settings.services.wordBook" = "單詞本";
+"settings.services.notebook" = "筆記本";
+"settings.services.recover" = "恢復存取";
+"settings.services.hint" = "恢復此服務的存取，保留已儲存的資料和未儲存的編輯。先前的操作不會再次執行。";
+"settings.services.stopped" = "尚未啟動";
+"settings.services.recovering" = "正在恢復存取";
+"settings.services.ready" = "可用";
+"settings.services.coolingDown" = "暫時暫停";
+"settings.services.unavailable" = "無法使用";
+"settings.services.disabled" = "已停用";
+"settings.services.quarantined" = "多次中斷後已暫停";
+"settings.services.observationFailed" = "無法取得狀態。請重新開啟此頁面以重新整理。";
+"settings.services.requested" = "已要求恢復。服務就緒後，可用狀態會自動更新。";
+"settings.services.wait" = "恢復正在冷卻，請稍後再試。";
+"settings.services.busy" = "正在等待先前的工作結束，請稍後再試。";
+
+// Native system command isolation outcomes.
+"ask.system.notExecuted" = "命令未執行，系統服務無法使用。";
+"ask.system.unknownOutcome" = "命令可能已經生效，但無法確認結果，不會自動再次執行。再次嘗試前請檢查系統狀態。";
+"ask.system.busy" = "另一個系統命令仍在執行，本次命令未執行。";
+"ask.system.coolingDown" = "系統命令在故障後暫時暫停，本次命令未執行。";
+"ask.system.disabled" = "系統命令服務已停止，本次命令未執行。";
+
+"localSTT.error.inferenceUnavailable" = "本機轉寫暫時無法使用，未重複提交本次請求。請稍後再試。";
+
+"ask.attach.busy" = "附件處理中，請稍後再試。";
+
+// Private generation output recovery
+"imagegen.recovery.title" = "復原生圖輸出";
+"imagegen.recovery.detail" = "匯出此對話保留的檔案。檔案未經驗證，可能包含提示詞或服務商連結。此操作不會重新生成、下載連結或改變原有的未知執行狀態。記錄保留至你刪除對話。";
+"imagegen.recovery.empty" = "此對話沒有可復原的輸出。";
+"imagegen.recovery.saved" = "檔案已儲存，私有原件和執行狀態保持不變。";
+"imagegen.recovery.unavailable" = "復原暫不可用或存取權限已變更。私有原件未刪除。";
