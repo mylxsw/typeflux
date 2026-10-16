@@ -67,7 +67,7 @@ struct ScreenRecordingTimelineView: View {
     private var waveform: some View {
         ZStack {
             if model.options.format == .gif || model.media.waveform.isEmpty {
-                Text(L(model.options.format == .gif ? "recording.gifSilent" : "recording.noAudioTrack"))
+                Text(L(model.options.format == .gif ? "recording.gifSilent" : model.media.audioNoticeKey))
                     .font(.system(size: 11)).foregroundStyle(StudioTheme.textTertiary)
             } else {
                 Canvas { context, size in

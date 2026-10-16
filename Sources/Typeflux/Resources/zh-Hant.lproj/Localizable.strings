@@ -5615,3 +5615,6 @@
 "recording.previewUnavailable" = "預覽暫不可用，原始錄影已保留。";
 "recording.revealOriginal" = "在 Finder 中顯示原始錄影";
 "recording.reloadPreview" = "重新載入預覽";
+
+"recording.timelineLoading" = "正在準備時間軸…";
+"recording.timelineUnavailable" = "時間軸音訊無法使用";

@@ -15,7 +15,7 @@ public enum MediaFailure: String, Error, Codable, Sendable {
 }
 
 public struct MediaRequest: Codable, Sendable {
-    public enum Operation: String, Codable, Sendable { case registerFrames, textGeometry, recognizeText, clipboardOCR, copyClipboardImage, clipboardMedia, quickLook, nativeIcon, image, pdf, inspectWorkflowImage, copyWorkflowImage, validateGeneratedImage, normalizeImage, previewImage, previewPDF, previewVideo, previewAudio
+    public enum Operation: String, Codable, Sendable { case recordingTimeline, registerFrames, textGeometry, recognizeText, clipboardOCR, copyClipboardImage, clipboardMedia, quickLook, nativeIcon, image, pdf, inspectWorkflowImage, copyWorkflowImage, validateGeneratedImage, normalizeImage, previewImage, previewPDF, previewVideo, previewAudio
         public var isWorkflowImage: Bool { self == .inspectWorkflowImage || self == .copyWorkflowImage || self == .copyClipboardImage }
         public var isAV: Bool { self == .previewVideo || self == .previewAudio }
     }
@@ -87,6 +87,7 @@ public struct MediaResponse: Codable, Sendable {
     public var recognition: MediaTextRecognition?
     public var geometry: MediaTextGeometry?
     public var registration: MediaRegistration?
+    public var timeline: MediaRecordingTimeline?
     public init(id: UUID, items: [MediaItem] = [], failure: MediaFailure? = nil) {
         self.id = id; self.items = items; self.failure = failure
     }
@@ -96,9 +97,17 @@ public struct MediaResponse: Codable, Sendable {
         try request.validate()
         guard version == 1, id == request.id else { throw MediaFailure.invalidProtocol }
         if let failure {
-            guard items.isEmpty, preview == nil, normalization == nil, generatedImage == nil, workflowImage == nil, clipboard == nil, ocr == nil, recognition == nil, geometry == nil, registration == nil else { throw MediaFailure.invalidProtocol }
+            guard items.isEmpty, preview == nil, normalization == nil, generatedImage == nil, workflowImage == nil, clipboard == nil, ocr == nil, recognition == nil, geometry == nil, registration == nil, timeline == nil else { throw MediaFailure.invalidProtocol }
             throw failure
         }
+        if request.operation == .recordingTimeline {
+            guard items.isEmpty, preview == nil, normalization == nil, generatedImage == nil,
+                  workflowImage == nil, clipboard == nil, ocr == nil, recognition == nil,
+                  geometry == nil, registration == nil, let timeline else { throw MediaFailure.invalidProtocol }
+            try timeline.validate()
+            return
+        }
+        guard timeline == nil else { throw MediaFailure.invalidProtocol }
         if let input = request.registration {
             guard items.isEmpty, preview == nil, normalization == nil, generatedImage == nil,
                   workflowImage == nil, clipboard == nil, ocr == nil, recognition == nil, geometry == nil,

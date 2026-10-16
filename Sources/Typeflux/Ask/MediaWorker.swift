@@ -5,6 +5,7 @@ import TypefluxMediaProtocol
 /// A bounded, independent fault domain for disposable media decoders.
 final class MediaWorker: @unchecked Sendable {
     static let shared = MediaWorker()
+    static let recordingTimeline = MediaWorker(timeout: 30)
     static let previews = MediaWorker(timeout: 3)
     static let clipboardThumbnails = MediaWorker(timeout: 3)
     static let frameRegistration = MediaWorker(timeout: 3)
@@ -46,7 +47,7 @@ final class MediaWorker: @unchecked Sendable {
     }
 
     /// Result extraction finishes before the private directory can be retired.
-    func perform<T>(_ operation: MediaRequest.Operation, input: Input, preview: MediaPreviewOptions? = nil, normalization: MediaImageType? = nil, icon: MediaNativeIcon? = nil, quickLook: MediaQuickLook? = nil, clipboard: MediaClipboardOptions? = nil, textInput: MediaTextInput? = nil, registration: MediaRegistrationInput? = nil,
+    func perform<T>(_ operation: MediaRequest.Operation, input: Input, preview: MediaPreviewOptions? = nil, normalization: MediaImageType? = nil, icon: MediaNativeIcon? = nil, quickLook: MediaQuickLook? = nil, clipboard: MediaClipboardOptions? = nil, textInput: MediaTextInput? = nil, registration: MediaRegistrationInput? = nil, retaining: AnyObject? = nil,
                     isCancelled: @escaping @Sendable () -> Bool,
                     extract: (MediaResponse, Int32) throws -> T) throws -> T {
         var request = MediaRequest(operation: operation)
@@ -62,6 +63,7 @@ final class MediaWorker: @unchecked Sendable {
         guard encoded.count <= (preview == nil ? MediaLimits.requestBytes : MediaPreviewOptions.requestBytes)
         else { throw MediaFailure.tooLarge }
         let id = request.id, lease = MediaLease()
+        lease.retained = retaining
         try lock.withLock {
             guard !disabled, budget.permitsAttempt(at: uptime()), active.count < 2,
                   !isCancelled() else { throw MediaFailure.unavailable }
@@ -76,14 +78,14 @@ final class MediaWorker: @unchecked Sendable {
                                                attributes: [.posixPermissions: 0o700])
         lease.directory = directory
         try Self.copy(input, to: directory.appendingPathComponent("input"),
-                 limit: operation == .registerFrames ? MediaRegistrationInput.pairBytes : (operation == .recognizeText || operation == .textGeometry) ? (textInput == nil ? MediaOCRResult.inputBytes : MediaTextInput.rawBytes) : operation == .clipboardOCR ? MediaOCRResult.inputBytes : operation.isWorkflowImage ? MediaWorkflowImage.inputBytes : operation == .validateGeneratedImage ? 16 * 1024 * 1024 : operation == .normalizeImage ? 10 * 1024 * 1024 : (operation.isAV || (clipboard != nil && clipboard?.kind != .pdf) ? MediaAVLimits.inputBytes : MediaLimits.inputBytes), cancelled: cancelled)
+                 limit: operation == .recordingTimeline ? MediaRecordingTimeline.inputBytes : operation == .registerFrames ? MediaRegistrationInput.pairBytes : (operation == .recognizeText || operation == .textGeometry) ? (textInput == nil ? MediaOCRResult.inputBytes : MediaTextInput.rawBytes) : operation == .clipboardOCR ? MediaOCRResult.inputBytes : operation.isWorkflowImage ? MediaWorkflowImage.inputBytes : operation == .validateGeneratedImage ? 16 * 1024 * 1024 : operation == .normalizeImage ? 10 * 1024 * 1024 : (operation.isAV || (clipboard != nil && clipboard?.kind != .pdf) ? MediaAVLimits.inputBytes : MediaLimits.inputBytes), cancelled: cancelled)
         try check(cancelled)
         let fd = open(directory.path, O_RDONLY | O_DIRECTORY | O_CLOEXEC)
         guard fd >= 0 else { throw MediaFailure.unavailable }
         defer { close(fd) }
         do {
             let process = ManagedProcess.Request(executable: executable.path, environment: ["PATH": "/usr/bin:/bin", "LANG": "en_US.UTF-8"],
-                directoryDescriptor: fd, timeout: timeout, outputLimit: operation == .registerFrames ? 1024 : (operation == .textGeometry || operation == .recognizeText || operation == .clipboardOCR) ? MediaOCRResult.responseBytes : preview == nil && clipboard == nil && operation != .validateGeneratedImage && !operation.isWorkflowImage ? MediaLimits.responseBytes : 16 * 1024,
+                directoryDescriptor: fd, timeout: timeout, outputLimit: operation == .recordingTimeline ? 16 * 1024 : operation == .registerFrames ? 1024 : (operation == .textGeometry || operation == .recognizeText || operation == .clipboardOCR) ? MediaOCRResult.responseBytes : preview == nil && clipboard == nil && operation != .validateGeneratedImage && !operation.isWorkflowImage ? MediaLimits.responseBytes : 16 * 1024,
                 stopOnOutputLimit: true, preserveWhitespace: true, onStarted: { lease.started() },
                 stdin: encoded, stderrLimit: 1024,
                 onReaped: { lease.reaped() })
@@ -170,6 +172,7 @@ final class MediaLease: @unchecked Sendable {
     private let lock = NSLock()
     private var stopped = false, launched = false, collected = false, finished = false, cleaned = false
     var directory: URL?
+    var retained: AnyObject?
     var cleanup: (@Sendable () -> Void)?
     var cancelled: Bool { lock.withLock { stopped } }
     func cancel() { lock.withLock { stopped = true } }
@@ -185,6 +188,7 @@ final class MediaLease: @unchecked Sendable {
         let remove: @Sendable () -> Void = { [self] in
             if let directory { try? FileManager.default.removeItem(at: directory) }
             cleanup?()
+            retained = nil
         }
         // A delayed reaper callback must not block collection of other children.
         if asynchronously { DispatchQueue.global(qos: .utility).async(execute: remove) }
