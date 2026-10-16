@@ -1,0 +1,55 @@
+{
+  "command": "Python compile() for evidence scripts; invalid runner CLI invocations only (no additional Swift tests).",
+  "compiled": [
+    "calibrate.py",
+    "calibrate_modalities.py",
+    "capture_final_holdout.py",
+    "capture_media.py",
+    "capture_unseen_queries.py",
+    "compare_mixed_calibration-before-monotonic-fix.py",
+    "compare_mixed_calibration.py",
+    "compare_variance-before-monotonic-fix.py",
+    "compare_variance.py",
+    "coverage-runner.py",
+    "create_holdout.py",
+    "freeze_final_holdout.py",
+    "measure_batch.py",
+    "measure_quantization.py",
+    "run_scale_matrix.py",
+    "summarize_scale.py",
+    "verify_helper_wrapper.py",
+    "write_candidate_guard_report.py",
+    "write_performance_report.py"
+  ],
+  "invalid_argument_checks": [
+    {
+      "arguments": [
+        "--checkout",
+        ".",
+        "--label",
+        "after",
+        "--mode",
+        "native",
+        "--real-noise"
+      ],
+      "exit_code": 2,
+      "stderr": "usage: run_scale_matrix.py [-h] --checkout CHECKOUT --label {before,after}\n                           [--size {10000,100000,1000000}]\n                           --mode {build,native,contention,ranking}\n                           [--asr ASR] [--speech SPEECH]\n                           [--entry {mixed,file-mode}]\n                           [--scenario {cold,cold-fts,fts-cache,semantic-cache,hot-new-semantic,index-writer}]\n                           [--tag TAG] [--trace] [--deny-document]\n                           [--real-noise]\nrun_scale_matrix.py: error: Real-model background-vector probes require native mode and a unique tag\n"
+    },
+    {
+      "arguments": [
+        "--checkout",
+        ".",
+        "--label",
+        "after",
+        "--mode",
+        "contention",
+        "--scenario",
+        "cold"
+      ],
+      "exit_code": 2,
+      "stderr": "usage: run_scale_matrix.py [-h] --checkout CHECKOUT --label {before,after}\n                           [--size {10000,100000,1000000}]\n                           --mode {build,native,contention,ranking}\n                           [--asr ASR] [--speech SPEECH]\n                           [--entry {mixed,file-mode}]\n                           [--scenario {cold,cold-fts,fts-cache,semantic-cache,hot-new-semantic,index-writer}]\n                           [--tag TAG] [--trace] [--deny-document]\n                           [--real-noise]\nrun_scale_matrix.py: error: Narrow native retries require --mode native and a unique --tag\n"
+    }
+  ],
+  "exit_code": 0,
+  "wall_seconds": 0.11861166695598513
+}

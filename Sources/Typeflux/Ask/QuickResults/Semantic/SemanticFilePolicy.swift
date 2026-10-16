@@ -80,7 +80,7 @@ enum SemanticFilePolicy {
     /// Same pretokenization for documents and queries, including CJK unigrams/bigrams.
     static func terms(_ text: String) -> String {
         var terms: [String] = [], word = "", previous: String?
-        for scalar in text.lowercased().unicodeScalars {
+        for scalar in SemanticSearchRanking.normalize(text).unicodeScalars {
             let cjk = scalar.properties.isIdeographic || (0x3040 ... 0x30FF).contains(scalar.value)
                 || (0xAC00 ... 0xD7AF).contains(scalar.value)
             if cjk {

@@ -1,0 +1,20 @@
+{
+  "command": [
+    "/opt/homebrew/opt/python@3.14/bin/python3.14",
+    "docs/validation/gul-383/optimization/ranking-scale/run_scale_matrix.py",
+    "--checkout",
+    ".",
+    "--label",
+    "after",
+    "--mode",
+    "contention",
+    "--size",
+    "10000",
+    "--asr",
+    ".build/asr-assets",
+    "--speech",
+    ".build/asr-assets/speech.wav"
+  ],
+  "exit_code": 0,
+  "complete_capture": true
+}

@@ -1,0 +1,12 @@
+{
+  "before": {
+    "test_binary_sha256": "43911d15fd4e28944c9c7fdcfbde7596505ce694b5bb65a858d2b5cca1b91c6d",
+    "harness_version": "checkpoint-v2",
+    "harness_sha256": "cef4da51e3decddf2f58c4e089a7ae3ed16147e01569e3d28d56b291f2498e30"
+  },
+  "after": {
+    "test_binary_sha256": "73d552feafd59cc3119396214bf6d7f9ccd2d6688d35b65d72e37503544523f3",
+    "harness_version": "checkpoint-v2",
+    "harness_sha256": "cef4da51e3decddf2f58c4e089a7ae3ed16147e01569e3d28d56b291f2498e30"
+  }
+}

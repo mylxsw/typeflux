@@ -1,0 +1,7 @@
+{
+  "production_hash_mismatches": [],
+  "baseline_production_differences": [],
+  "baseline_head": "262135bcebc1e3694ddc02ce6e2b15086a10dd23",
+  "upstream_head": "e4c18e0bbee8861142d967c192368ca59f1c262f",
+  "source_scope": "Production only; benchmark harnesses deliberately copied/modified in both checkouts."
+}

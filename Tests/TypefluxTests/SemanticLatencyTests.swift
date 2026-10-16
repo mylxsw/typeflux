@@ -131,13 +131,31 @@ struct SemanticLatencyTests {
             try store.replace(path: url.path, modified: #require(value.modified), bytes: #require(value.fileSize),
                               chunks: [.init(text: url == document ? "reimbursement" : "synthetic filler", page: nil)],
                               vectors: [embedding])
+            // This deliberately synthetic load is already complete. Without compatible jobs the
+            // GUL-403 migration correctly re-extracts the two source files, destroying the scale fixture.
+            try store.lock.withLock {
+                try store.transaction {
+                    try store.execute("UPDATE files SET version=? WHERE path=?", [value.version ?? "", url.path])
+                    try store.execute("""
+                    INSERT OR REPLACE INTO jobs(path,version,generation,state,cursor,extracted,recipe)
+                    VALUES(?,?,?,'done','{"page":0,"offset":0}',1,?)
+                    """, [
+                        url.path,
+                        SemanticFileStore.version(value),
+                        "benchmark-load",
+                        SemanticFileStore.documentProvenance
+                    ])
+                    try store.execute("UPDATE chunks SET generation=?,provenance=? WHERE path=?",
+                                      ["benchmark-load", SemanticFileStore.documentProvenance, url.path])
+                }
+            }
         }
         var database: OpaquePointer?
         try #require(sqlite3_open(store.url.path, &database) == SQLITE_OK)
         defer { sqlite3_close(database) }
         try #require(sqlite3_exec(database, """
         BEGIN IMMEDIATE;
-        WITH RECURSIVE numbers(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM numbers WHERE n<99998)
+        WITH RECURSIVE numbers(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM numbers WHERE n<\(max(1, Int(ProcessInfo.processInfo.environment["TYPEFLUX_SEMANTIC_SCALE"] ?? "100000")! - 2)))
         INSERT INTO chunks(path,text,page,vector) SELECT c.path,c.text,c.page,c.vector FROM chunks c CROSS JOIN numbers WHERE c.id=1;
         INSERT INTO lexical(rowid,terms) SELECT id,'synthetic filler' FROM chunks WHERE id>2;
         COMMIT;
@@ -293,13 +311,25 @@ struct SemanticNativeBenchmarkData {
     let service: SemanticFileSearchService
     let names: any AskFileSearching
     let backgroundVector: [Float]
+    let noiseVectorSource: String
     let defaults: UserDefaults
     let suite: String
+    let loadSeconds: Double
+    var diskBytes: Int64 {
+        ["", "-wal", "-shm"].reduce(0) { total, suffix in
+            total +
+                ((try? FileManager.default.attributesOfItem(atPath: store.url.path + suffix)[.size] as? NSNumber)?
+                    .int64Value ?? 0)
+        }
+    }
 
+    // Keep untimed corpus preparation together so measured query boundaries stay visible.
+    // swiftlint:disable:next function_body_length
     static func make(model: URL,
                      makeEncoder: @escaping @Sendable (URL, URL) -> any SemanticEmbedding = {
                          SemanticEmbeddingWorker(helper: $0, model: $1, indexing: true)
                      }) throws -> Self {
+        let loading = ProcessInfo.processInfo.systemUptime
         try SemanticModel.verify(model)
         let temporary = FileManager.default.temporaryDirectory
             .appendingPathComponent("semantic-native-latency-" + UUID().uuidString)
@@ -314,42 +344,73 @@ struct SemanticNativeBenchmarkData {
         let scope = SemanticFilePolicy.scope(names: configuration, fullDiskAccess: true)
         let document = root.appendingPathComponent("handbook.txt"), noise = root.appendingPathComponent("noise.txt")
         let text = "Employees submit project expense reimbursement requests using the finance form. Attach receipts and obtain manager approval."
+        let realNoise = ProcessInfo.processInfo.environment["TYPEFLUX_SEMANTIC_REAL_NOISE"] == "1"
+        let noiseText = realNoise ? "Basalt crystals beneath volcanic ridges. Quartz mineral formations."
+            : "synthetic filler"
         try text.write(to: document, atomically: true, encoding: .utf8)
-        try "synthetic filler".write(to: noise, atomically: true, encoding: .utf8)
+        try noiseText.write(to: noise, atomically: true, encoding: .utf8)
         var background = [Float](repeating: 0, count: SemanticFilePolicy.dimension); background[1] = 1
         let encoder = SemanticEmbeddingWorker(helper: SemanticModel.helperURL, model: model)
         defer { encoder.release() }
+        if realNoise {
+            background = try encoder.embed(["title: noise.txt | text: " + noiseText], cancelled: { false })[0]
+        }
         let vector = try encoder.embed(["title: handbook.txt | text: " + text], cancelled: { false })[0]
         let store = try SemanticFileStore(url: root.appendingPathComponent("semantic-files.sqlite"))
         let metadata = AskFileReader()
         for (url, embedding) in [(noise, background), (document, vector)] {
             let value = try metadata.read(.init(operation: .content, path: url.path, scope: scope, readText: false))
             try store.replace(path: url.path, modified: #require(value.modified), bytes: #require(value.fileSize),
-                              chunks: [.init(text: url == document ? "reimbursement" : "synthetic filler", page: nil)],
+                              chunks: [.init(text: url == document ? text : noiseText, page: nil)],
                               vectors: [embedding])
+            // This deliberately synthetic load is already complete. Without compatible jobs the
+            // GUL-403 migration correctly re-extracts the two source files, destroying the scale fixture.
+            try store.lock.withLock {
+                try store.transaction {
+                    try store.execute("UPDATE files SET version=? WHERE path=?", [value.version ?? "", url.path])
+                    try store.execute("""
+                    INSERT OR REPLACE INTO jobs(path,version,generation,state,cursor,extracted,recipe)
+                    VALUES(?,?,?,'done','{"page":0,"offset":0}',1,?)
+                    """, [
+                        url.path,
+                        SemanticFileStore.version(value),
+                        "benchmark-load",
+                        SemanticFileStore.documentProvenance
+                    ])
+                    try store.execute("UPDATE chunks SET generation=?,provenance=? WHERE path=?",
+                                      ["benchmark-load", SemanticFileStore.documentProvenance, url.path])
+                }
+            }
         }
         var database: OpaquePointer?
         try #require(sqlite3_open(store.url.path, &database) == SQLITE_OK)
         defer { sqlite3_close(database) }
         try #require(sqlite3_exec(database, """
         BEGIN IMMEDIATE;
-        WITH RECURSIVE numbers(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM numbers WHERE n<99998)
+        WITH RECURSIVE numbers(n) AS (VALUES(1) UNION ALL SELECT n+1 FROM numbers WHERE n<\(max(1, Int(ProcessInfo.processInfo.environment["TYPEFLUX_SEMANTIC_SCALE"] ?? "100000")! - 2)))
         INSERT INTO chunks(path,text,page,vector) SELECT c.path,c.text,c.page,c.vector FROM chunks c CROSS JOIN numbers WHERE c.id=1;
-        INSERT INTO lexical(rowid,terms) SELECT id,'synthetic filler' FROM chunks WHERE id>2;
+        INSERT INTO lexical(rowid,terms) SELECT id,'\(SemanticFilePolicy.terms(noiseText))' FROM chunks WHERE id>2;
         COMMIT;
         """, nil, nil, nil) == SQLITE_OK)
         let service = SemanticFileSearchService(settings: settings, directory: root, supported: true,
-            watcher: SemanticBenchmarkWatcher(), access: { true }, automaticStart: false,
-            lowPowerMode: { false }, thermalConstrained: { false }, makeEncoder: makeEncoder)
+                                                watcher: SemanticBenchmarkWatcher(), access: { true },
+                                                automaticStart: false,
+                                                lowPowerMode: { false }, thermalConstrained: { false },
+                                                makeEncoder: makeEncoder)
         service.pause(true)
         try #require(service.setEnabled(true))
         return Self(root: root, document: document, store: store, scope: scope, service: service,
-                    names: SemanticBenchmarkNames(), backgroundVector: background, defaults: defaults, suite: suite)
+                    names: SemanticBenchmarkNames(), backgroundVector: background,
+                    noiseVectorSource: realNoise ? "real-pinned-model-geology-document" : "constructed-orthogonal",
+                    defaults: defaults, suite: suite,
+                    loadSeconds: ProcessInfo.processInfo.systemUptime - loading)
     }
 
     func clear() async {
         service.endSearch()
         await service.clear(removeModel: true)
+        // The fixture also owns a writer connection, independently of the service's Store.
+        try? store.destroy()
         defaults.removePersistentDomain(forName: suite)
         try? FileManager.default.removeItem(at: root)
     }

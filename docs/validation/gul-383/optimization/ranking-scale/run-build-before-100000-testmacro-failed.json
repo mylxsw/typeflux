@@ -1,0 +1,1 @@
+{"command":["/usr/bin/swift","test","--configuration","release","--jobs","4","list"],"label":"before","mode":"build","size":100000,"exit_code":1,"wall_seconds":523.731919666985,"sample_period_seconds":0.5,"samples":[],"rss_definition":"Descendant ps resident pages in bytes; compilers excluded. Summed RSS double-counts shared pages."}

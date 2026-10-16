@@ -29,7 +29,7 @@ final class Encoder {
         guard let model = llama_model_load_from_file(path, modelParams) else { throw Failure.inference }
         var params = llama_context_default_params()
         params.n_ctx = 2048; params.n_batch = 2048; params.n_ubatch = 2048
-        params.n_seq_max = 1; params.kv_unified = true
+        params.n_seq_max = 8; params.kv_unified = true
         params.embeddings = true; params.pooling_type = LLAMA_POOLING_TYPE_MEAN
         guard let context = llama_init_from_model(model, params) else {
             llama_model_free(model); throw Failure.inference
@@ -54,7 +54,9 @@ final class Encoder {
     }
 
     deinit {
-        if let media { mtmd_free(media) }
+        if let media {
+            mtmd_free(media)
+        }
         llama_batch_ext_free(batch); llama_free(context); llama_model_free(model)
         llama_backend_free()
     }
@@ -66,7 +68,9 @@ final class Encoder {
         else { throw Failure.invalidInput }
         let loaded = mtmd_helper_bitmap_init_from_file(media, input.path, false, mtmd_helper_init_opt_default())
         if let video = loaded.video_ctx {
-            if let bitmap = loaded.bitmap { mtmd_bitmap_free(bitmap) }
+            if let bitmap = loaded.bitmap {
+                mtmd_bitmap_free(bitmap)
+            }
             mtmd_helper_video_free(video); throw Failure.invalidInput
         }
         guard let bitmap = loaded.bitmap else { throw Failure.invalidInput }
@@ -102,7 +106,7 @@ final class Encoder {
                 }
             }
         }
-        return try run()
+        return try run()[0]
     }
 
     private func place(_ row: Int32, position: Int) throws {
@@ -111,31 +115,52 @@ final class Encoder {
               llama_batch_ext_set_output_embd(batch, row, true) else { throw Failure.inference }
     }
 
-    private func run() throws -> [Float] {
-        guard llama_process(context, LLAMA_PROCESS_TYPE_ENCODE, batch) == 0,
-              let vector = llama_get_embeddings_seq(context, 0) else { throw Failure.inference }
-        let values = Array(UnsafeBufferPointer(start: vector, count: 768))
-        let norm = sqrt(values.reduce(0.0) { $0 + Double($1) * Double($1) })
-        guard norm.isFinite, norm > 0, values.allSatisfy(\.isFinite) else { throw Failure.inference }
-        return values.map { $0 / Float(norm) }
+    private func run(sequences: Int = 1) throws -> [[Float]] {
+        guard llama_process(context, LLAMA_PROCESS_TYPE_ENCODE, batch) == 0 else { throw Failure.inference }
+        return try (0 ..< sequences).map { sequence in
+            guard let vector = llama_get_embeddings_seq(context, llama_seq_id(sequence))
+            else { throw Failure.inference }
+            let values = Array(UnsafeBufferPointer(start: vector, count: 768))
+            let norm = sqrt(values.reduce(0.0) { $0 + Double($1) * Double($1) })
+            guard norm.isFinite, norm > 0, values.allSatisfy(\.isFinite) else { throw Failure.inference }
+            return values.map { $0 / Float(norm) }
+        }
     }
 
-    func embed(_ text: String) throws -> [Float] {
+    private func tokenize(_ text: String) throws -> [llama_token] {
         guard !text.isEmpty, text.utf8.count <= 1800 else { throw Failure.invalidInput }
         let bytes = Array(text.utf8CString)
         var tokens = [llama_token](repeating: 0, count: bytes.count + 8)
         let count = llama_tokenize(llama_model_get_vocab(model), bytes, Int32(bytes.count - 1),
                                    &tokens, Int32(tokens.count), true, false)
         guard count > 0, count <= 2048 else { throw Failure.invalidInput }
-        llama_batch_ext_clear(self.batch)
-        defer { llama_batch_ext_clear(batch) }
-        for index in 0 ..< Int(count) {
-            let row = llama_batch_ext_add_token(batch, 0, tokens[index])
-            var position: [llama_pos] = [llama_pos(index), 0, 0, 0]
-            guard row >= 0, llama_batch_ext_set_pos(self.batch, row, &position),
-                  llama_batch_ext_set_output_embd(self.batch, row, true) else { throw Failure.inference }
+        return Array(tokens.prefix(Int(count)))
+    }
+
+    /// A real multi-sequence encode. Token budget and sequence count bound each GPU submission;
+    /// request order is retained across splits, with independent positions and mean pooling per sequence.
+    func embed(_ texts: [String]) throws -> [[Float]] {
+        let tokens = try texts.map(tokenize)
+        var result: [[Float]] = [], start = 0
+        while start < tokens.count {
+            var end = start, count = 0
+            while end < tokens.count, end - start < 8, count + tokens[end].count <= 2048 {
+                count += tokens[end].count; end += 1
+            }
+            llama_batch_ext_clear(batch)
+            defer { llama_batch_ext_clear(batch) }
+            for sequence in start ..< end {
+                for (index, token) in tokens[sequence].enumerated() {
+                    let row = llama_batch_ext_add_token(batch, llama_seq_id(sequence - start), token)
+                    var position: [llama_pos] = [llama_pos(index), 0, 0, 0]
+                    guard row >= 0, llama_batch_ext_set_pos(batch, row, &position),
+                          llama_batch_ext_set_output_embd(batch, row, true) else { throw Failure.inference }
+                }
+            }
+            result += try run(sequences: end - start)
+            start = end
         }
-        return try run()
+        return result
     }
 }
 
@@ -155,7 +180,7 @@ do {
                 response = try Response(embeddings: [encoder.embedMedia(media)])
             } else {
                 guard let texts = request.texts, (1 ... 16).contains(texts.count) else { throw Failure.invalidInput }
-                response = try Response(embeddings: texts.map(encoder.embed))
+                response = try Response(embeddings: encoder.embed(texts))
             }
         } catch Failure.inference { response = Response(error: EIO) } catch { response = Response(error: EINVAL) }
         response.semanticTiming = Timing(modelLoadMilliseconds: loadMilliseconds,

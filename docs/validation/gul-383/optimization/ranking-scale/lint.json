@@ -1,0 +1,126 @@
+{
+  "before": [
+    {
+      "character": 13,
+      "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+      "line": 318,
+      "reason": "Function should have complexity 10 or less; currently complexity is 12",
+      "rule_id": "cyclomatic_complexity",
+      "severity": "Error",
+      "type": "Cyclomatic Complexity"
+    },
+    {
+      "character": 1,
+      "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+      "line": 626,
+      "reason": "File should contain 400 lines or less excluding comments and whitespaces: currently contains 590",
+      "rule_id": "file_length",
+      "severity": "Error",
+      "type": "File Length"
+    },
+    {
+      "character": 13,
+      "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+      "line": 318,
+      "reason": "Function body should span 50 lines or less excluding comments and whitespace: currently spans 70 lines",
+      "rule_id": "function_body_length",
+      "severity": "Error",
+      "type": "Function Body Length"
+    },
+    {
+      "character": 91,
+      "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+      "line": 160,
+      "reason": "Else and catch should be on the same line, one space after the previous declaration",
+      "rule_id": "statement_position",
+      "severity": "Error",
+      "type": "Statement Position"
+    },
+    {
+      "character": 7,
+      "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+      "line": 5,
+      "reason": "Class body should span 250 lines or less excluding comments and whitespace: currently spans 291 lines",
+      "rule_id": "type_body_length",
+      "severity": "Error",
+      "type": "Type Body Length"
+    }
+  ],
+  "after": [
+    {
+      "character": 13,
+      "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+      "line": 318,
+      "reason": "Function should have complexity 10 or less; currently complexity is 12",
+      "rule_id": "cyclomatic_complexity",
+      "severity": "Error",
+      "type": "Cyclomatic Complexity"
+    },
+    {
+      "character": 1,
+      "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+      "line": 629,
+      "reason": "File should contain 400 lines or less excluding comments and whitespaces: currently contains 593",
+      "rule_id": "file_length",
+      "severity": "Error",
+      "type": "File Length"
+    },
+    {
+      "character": 13,
+      "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+      "line": 318,
+      "reason": "Function body should span 50 lines or less excluding comments and whitespace: currently spans 70 lines",
+      "rule_id": "function_body_length",
+      "severity": "Error",
+      "type": "Function Body Length"
+    },
+    {
+      "character": 91,
+      "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+      "line": 160,
+      "reason": "Else and catch should be on the same line, one space after the previous declaration",
+      "rule_id": "statement_position",
+      "severity": "Error",
+      "type": "Statement Position"
+    },
+    {
+      "character": 7,
+      "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+      "line": 5,
+      "reason": "Class body should span 250 lines or less excluding comments and whitespace: currently spans 291 lines",
+      "rule_id": "type_body_length",
+      "severity": "Error",
+      "type": "Type Body Length"
+    },
+    {
+      "character": 1,
+      "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore.swift",
+      "line": 226,
+      "reason": "Limit vertical whitespace to a single empty line; currently 2",
+      "rule_id": "vertical_whitespace",
+      "severity": "Error",
+      "type": "Vertical Whitespace"
+    }
+  ],
+  "introduced": [
+    {
+      "character": 1,
+      "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+      "line": 629,
+      "reason": "File should contain 400 lines or less excluding comments and whitespaces: currently contains 593",
+      "rule_id": "file_length",
+      "severity": "Error",
+      "type": "File Length"
+    },
+    {
+      "character": 1,
+      "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore.swift",
+      "line": 226,
+      "reason": "Limit vertical whitespace to a single empty line; currently 2",
+      "rule_id": "vertical_whitespace",
+      "severity": "Error",
+      "type": "Vertical Whitespace"
+    }
+  ],
+  "strict_passed": false
+}

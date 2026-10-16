@@ -1,0 +1,4225 @@
+{
+  "source": "unseen-query-vectors.json",
+  "source_sha256": "0f04c6cbb7c2a5ba10c870dc8078889436f01ad2344aeecf6410f2cf19b18939",
+  "scope": "Real captured Float32 query vectors and document payloads, double-precision dot accumulation for both representations. This isolates FP16 representation, not BLAS accumulation or final calibrated ranking. No model execution or UI timing.",
+  "queries": 200,
+  "documents": 100,
+  "max_absolute_cosine_error": 0.0001220993250661273,
+  "cosine_error_quantiles": {
+    "p50": 0.00011060652120709058,
+    "p95": 0.00011796853919698869,
+    "p99": 0.00011966091463277984
+  },
+  "raw_top1_changes": 0,
+  "raw_top5_order_changes": 3,
+  "raw_top5_set_changes": 1,
+  "theoretical_matrix_bytes_per_million_rows": {
+    "float32": 3072000000,
+    "float16": 1536000000
+  },
+  "page_float32_scratch_bytes": 786432,
+  "query_scalar_bytes_per_million_rows": 4000000,
+  "wall_seconds": 0.9370242920122109,
+  "rows": [
+    {
+      "id": "unseen_lexical-00",
+      "max_absolute_cosine_error": 0.00011796853919698869,
+      "raw_top5_float32_payload": [
+        "final-en-00",
+        "final-audio-00",
+        "final-en-04",
+        "final-en-21",
+        "final-en-12"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-00",
+        "final-audio-00",
+        "final-en-04",
+        "final-en-21",
+        "final-en-12"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_identifier_unicode-00",
+      "max_absolute_cosine_error": 0.00011277851885893586,
+      "raw_top5_float32_payload": [
+        "final-en-00",
+        "final-en-05",
+        "final-en-07",
+        "final-en-03",
+        "final-en-04"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-00",
+        "final-en-05",
+        "final-en-07",
+        "final-en-03",
+        "final-en-04"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_chinese_short-00",
+      "max_absolute_cosine_error": 0.00011320176447193742,
+      "raw_top5_float32_payload": [
+        "final-zh-00",
+        "final-zh-07",
+        "final-zh-16",
+        "final-zh-08",
+        "final-zh-01"
+      ],
+      "raw_top5_float16_payload": [
+        "final-zh-00",
+        "final-zh-07",
+        "final-zh-16",
+        "final-zh-08",
+        "final-zh-01"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_cross_language-00",
+      "max_absolute_cosine_error": 9.918335694780733e-05,
+      "raw_top5_float32_payload": [
+        "final-zh-00",
+        "final-en-00",
+        "final-zh-19",
+        "final-audio-00",
+        "final-zh-07"
+      ],
+      "raw_top5_float16_payload": [
+        "final-zh-00",
+        "final-en-00",
+        "final-zh-19",
+        "final-audio-00",
+        "final-zh-07"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_semantic_paraphrase-00",
+      "max_absolute_cosine_error": 0.00010402420750799113,
+      "raw_top5_float32_payload": [
+        "final-en-00",
+        "final-audio-00",
+        "final-zh-00",
+        "final-audio-07",
+        "final-audio-14"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-00",
+        "final-audio-00",
+        "final-zh-00",
+        "final-audio-07",
+        "final-audio-14"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_audio_semantic-00",
+      "max_absolute_cosine_error": 0.0001015897422000922,
+      "raw_top5_float32_payload": [
+        "final-en-00",
+        "final-audio-00",
+        "final-zh-00",
+        "final-audio-07",
+        "final-zh-14"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-00",
+        "final-audio-00",
+        "final-zh-00",
+        "final-audio-07",
+        "final-zh-14"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_image_semantic-00",
+      "max_absolute_cosine_error": 0.00011470752500120085,
+      "raw_top5_float32_payload": [
+        "final-image-red-circle",
+        "final-image-green-circle",
+        "final-image-black-circle",
+        "final-image-red-triangle",
+        "final-image-blue-circle"
+      ],
+      "raw_top5_float16_payload": [
+        "final-image-red-circle",
+        "final-image-green-circle",
+        "final-image-black-circle",
+        "final-image-red-triangle",
+        "final-image-blue-circle"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_no_answer-00",
+      "max_absolute_cosine_error": 0.00010570148623723075,
+      "raw_top5_float32_payload": [
+        "final-zh-17",
+        "final-en-01",
+        "final-zh-10",
+        "final-zh-19",
+        "final-en-05"
+      ],
+      "raw_top5_float16_payload": [
+        "final-zh-17",
+        "final-en-01",
+        "final-zh-10",
+        "final-zh-19",
+        "final-en-05"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_lexical-01",
+      "max_absolute_cosine_error": 0.00011773149338545341,
+      "raw_top5_float32_payload": [
+        "final-en-01",
+        "final-zh-01",
+        "final-audio-01",
+        "final-en-13",
+        "final-en-00"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-01",
+        "final-zh-01",
+        "final-audio-01",
+        "final-en-13",
+        "final-en-00"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_identifier_unicode-01",
+      "max_absolute_cosine_error": 0.00011213404595478149,
+      "raw_top5_float32_payload": [
+        "final-en-01",
+        "final-en-05",
+        "final-en-00",
+        "final-en-07",
+        "final-en-04"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-01",
+        "final-en-05",
+        "final-en-00",
+        "final-en-07",
+        "final-en-04"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_chinese_short-01",
+      "max_absolute_cosine_error": 0.00011654372326352913,
+      "raw_top5_float32_payload": [
+        "final-zh-01",
+        "final-en-01",
+        "final-zh-15",
+        "final-zh-06",
+        "final-zh-14"
+      ],
+      "raw_top5_float16_payload": [
+        "final-zh-01",
+        "final-en-01",
+        "final-zh-15",
+        "final-zh-06",
+        "final-zh-14"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_cross_language-01",
+      "max_absolute_cosine_error": 0.00011471059450329779,
+      "raw_top5_float32_payload": [
+        "final-audio-01",
+        "final-en-01",
+        "final-audio-24",
+        "final-zh-01",
+        "final-en-13"
+      ],
+      "raw_top5_float16_payload": [
+        "final-audio-01",
+        "final-en-01",
+        "final-audio-24",
+        "final-zh-01",
+        "final-en-13"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_semantic_paraphrase-01",
+      "max_absolute_cosine_error": 0.00011053662467619407,
+      "raw_top5_float32_payload": [
+        "final-audio-01",
+        "final-zh-01",
+        "final-en-01",
+        "final-zh-07",
+        "final-zh-10"
+      ],
+      "raw_top5_float16_payload": [
+        "final-audio-01",
+        "final-zh-01",
+        "final-en-01",
+        "final-zh-07",
+        "final-zh-10"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_audio_semantic-01",
+      "max_absolute_cosine_error": 0.0001136000647995461,
+      "raw_top5_float32_payload": [
+        "final-audio-01",
+        "final-en-01",
+        "final-zh-01",
+        "final-en-13",
+        "final-audio-24"
+      ],
+      "raw_top5_float16_payload": [
+        "final-audio-01",
+        "final-en-01",
+        "final-zh-01",
+        "final-en-13",
+        "final-audio-24"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_image_semantic-01",
+      "max_absolute_cosine_error": 0.00011466769691514944,
+      "raw_top5_float32_payload": [
+        "final-image-red-triangle",
+        "final-image-green-triangle",
+        "final-image-red-diamond",
+        "final-image-black-triangle",
+        "final-image-blue-triangle"
+      ],
+      "raw_top5_float16_payload": [
+        "final-image-red-triangle",
+        "final-image-green-triangle",
+        "final-image-red-diamond",
+        "final-image-black-triangle",
+        "final-image-blue-triangle"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_no_answer-01",
+      "max_absolute_cosine_error": 9.51981810228264e-05,
+      "raw_top5_float32_payload": [
+        "final-audio-03",
+        "final-en-03",
+        "final-audio-00",
+        "final-audio-04",
+        "final-audio-01"
+      ],
+      "raw_top5_float16_payload": [
+        "final-audio-03",
+        "final-en-03",
+        "final-audio-00",
+        "final-audio-04",
+        "final-audio-01"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_lexical-02",
+      "max_absolute_cosine_error": 0.00010810826420259989,
+      "raw_top5_float32_payload": [
+        "final-en-02",
+        "final-audio-02",
+        "final-zh-02",
+        "final-audio-09",
+        "final-audio-17"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-02",
+        "final-audio-02",
+        "final-zh-02",
+        "final-audio-09",
+        "final-audio-17"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_identifier_unicode-02",
+      "max_absolute_cosine_error": 0.0001139434957572183,
+      "raw_top5_float32_payload": [
+        "final-en-05",
+        "final-en-07",
+        "final-en-00",
+        "final-en-02",
+        "final-en-04"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-05",
+        "final-en-07",
+        "final-en-00",
+        "final-en-02",
+        "final-en-04"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_chinese_short-02",
+      "max_absolute_cosine_error": 0.00011004633693723065,
+      "raw_top5_float32_payload": [
+        "final-zh-02",
+        "final-en-02",
+        "final-zh-19",
+        "final-zh-14",
+        "final-zh-07"
+      ],
+      "raw_top5_float16_payload": [
+        "final-zh-02",
+        "final-en-02",
+        "final-zh-19",
+        "final-zh-14",
+        "final-zh-07"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_cross_language-02",
+      "max_absolute_cosine_error": 0.00010783801221592171,
+      "raw_top5_float32_payload": [
+        "final-zh-02",
+        "final-audio-02",
+        "final-en-02",
+        "final-zh-19",
+        "final-zh-11"
+      ],
+      "raw_top5_float16_payload": [
+        "final-zh-02",
+        "final-audio-02",
+        "final-en-02",
+        "final-zh-19",
+        "final-zh-11"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_semantic_paraphrase-02",
+      "max_absolute_cosine_error": 0.00010619484355034459,
+      "raw_top5_float32_payload": [
+        "final-audio-02",
+        "final-en-02",
+        "final-zh-02",
+        "final-en-19",
+        "final-audio-13"
+      ],
+      "raw_top5_float16_payload": [
+        "final-audio-02",
+        "final-en-02",
+        "final-zh-02",
+        "final-en-19",
+        "final-audio-13"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_audio_semantic-02",
+      "max_absolute_cosine_error": 0.00010968142996392594,
+      "raw_top5_float32_payload": [
+        "final-audio-02",
+        "final-en-02",
+        "final-zh-02",
+        "final-en-13",
+        "final-audio-13"
+      ],
+      "raw_top5_float16_payload": [
+        "final-audio-02",
+        "final-en-02",
+        "final-zh-02",
+        "final-en-13",
+        "final-audio-13"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_image_semantic-02",
+      "max_absolute_cosine_error": 0.00011305055635801864,
+      "raw_top5_float32_payload": [
+        "final-image-red-diamond",
+        "final-image-black-diamond",
+        "final-image-green-diamond",
+        "final-image-blue-diamond",
+        "final-image-red-triangle"
+      ],
+      "raw_top5_float16_payload": [
+        "final-image-red-diamond",
+        "final-image-black-diamond",
+        "final-image-green-diamond",
+        "final-image-blue-diamond",
+        "final-image-red-triangle"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_no_answer-02",
+      "max_absolute_cosine_error": 9.440733973153925e-05,
+      "raw_top5_float32_payload": [
+        "final-en-12",
+        "final-en-23",
+        "final-en-14",
+        "final-zh-05",
+        "final-en-05"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-12",
+        "final-en-23",
+        "final-en-14",
+        "final-zh-05",
+        "final-en-05"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_lexical-03",
+      "max_absolute_cosine_error": 0.0001114078271233776,
+      "raw_top5_float32_payload": [
+        "final-en-03",
+        "final-zh-03",
+        "final-audio-03",
+        "final-en-16",
+        "final-en-10"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-03",
+        "final-zh-03",
+        "final-audio-03",
+        "final-en-16",
+        "final-en-10"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_identifier_unicode-03",
+      "max_absolute_cosine_error": 0.00011315383551824265,
+      "raw_top5_float32_payload": [
+        "final-en-03",
+        "final-en-05",
+        "final-en-00",
+        "final-en-07",
+        "final-en-04"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-03",
+        "final-en-05",
+        "final-en-00",
+        "final-en-07",
+        "final-en-04"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_chinese_short-03",
+      "max_absolute_cosine_error": 0.00011446166422035553,
+      "raw_top5_float32_payload": [
+        "final-zh-03",
+        "final-zh-15",
+        "final-zh-07",
+        "final-zh-10",
+        "final-zh-16"
+      ],
+      "raw_top5_float16_payload": [
+        "final-zh-03",
+        "final-zh-15",
+        "final-zh-07",
+        "final-zh-10",
+        "final-zh-16"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_cross_language-03",
+      "max_absolute_cosine_error": 0.00010717561587192392,
+      "raw_top5_float32_payload": [
+        "final-en-03",
+        "final-audio-03",
+        "final-zh-03",
+        "final-audio-16",
+        "final-en-16"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-03",
+        "final-audio-03",
+        "final-zh-03",
+        "final-audio-16",
+        "final-en-16"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_semantic_paraphrase-03",
+      "max_absolute_cosine_error": 0.00010162292004300966,
+      "raw_top5_float32_payload": [
+        "final-zh-03",
+        "final-en-03",
+        "final-audio-03",
+        "final-zh-15",
+        "final-zh-06"
+      ],
+      "raw_top5_float16_payload": [
+        "final-zh-03",
+        "final-en-03",
+        "final-audio-03",
+        "final-zh-15",
+        "final-zh-06"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_audio_semantic-03",
+      "max_absolute_cosine_error": 0.00010778218639018178,
+      "raw_top5_float32_payload": [
+        "final-en-03",
+        "final-audio-03",
+        "final-zh-03",
+        "final-en-16",
+        "final-audio-16"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-03",
+        "final-audio-03",
+        "final-zh-03",
+        "final-en-16",
+        "final-audio-16"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_image_semantic-03",
+      "max_absolute_cosine_error": 0.00011917165536678986,
+      "raw_top5_float32_payload": [
+        "final-image-red-star",
+        "final-image-green-star",
+        "final-image-blue-star",
+        "final-image-black-star",
+        "final-image-yellow-star"
+      ],
+      "raw_top5_float16_payload": [
+        "final-image-red-star",
+        "final-image-green-star",
+        "final-image-blue-star",
+        "final-image-black-star",
+        "final-image-yellow-star"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_no_answer-03",
+      "max_absolute_cosine_error": 9.453037617063176e-05,
+      "raw_top5_float32_payload": [
+        "final-audio-21",
+        "final-en-06",
+        "final-en-21",
+        "final-audio-06",
+        "final-en-04"
+      ],
+      "raw_top5_float16_payload": [
+        "final-audio-21",
+        "final-en-06",
+        "final-en-21",
+        "final-audio-06",
+        "final-en-04"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_lexical-04",
+      "max_absolute_cosine_error": 0.00011267270977721733,
+      "raw_top5_float32_payload": [
+        "final-en-04",
+        "final-en-12",
+        "final-en-21",
+        "final-audio-04",
+        "final-zh-04"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-04",
+        "final-en-12",
+        "final-en-21",
+        "final-audio-04",
+        "final-zh-04"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_identifier_unicode-04",
+      "max_absolute_cosine_error": 0.00011263257817373251,
+      "raw_top5_float32_payload": [
+        "final-en-04",
+        "final-en-05",
+        "final-en-00",
+        "final-en-07",
+        "final-en-03"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-04",
+        "final-en-05",
+        "final-en-00",
+        "final-en-07",
+        "final-en-03"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_chinese_short-04",
+      "max_absolute_cosine_error": 0.00010853029595125907,
+      "raw_top5_float32_payload": [
+        "final-zh-04",
+        "final-en-04",
+        "final-zh-01",
+        "final-zh-02",
+        "final-zh-23"
+      ],
+      "raw_top5_float16_payload": [
+        "final-zh-04",
+        "final-en-04",
+        "final-zh-01",
+        "final-zh-02",
+        "final-zh-23"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_cross_language-04",
+      "max_absolute_cosine_error": 0.00010202455578389724,
+      "raw_top5_float32_payload": [
+        "final-zh-04",
+        "final-en-04",
+        "final-zh-21",
+        "final-zh-07",
+        "final-zh-16"
+      ],
+      "raw_top5_float16_payload": [
+        "final-zh-04",
+        "final-en-04",
+        "final-zh-21",
+        "final-zh-07",
+        "final-zh-16"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_semantic_paraphrase-04",
+      "max_absolute_cosine_error": 0.00010297048813845411,
+      "raw_top5_float32_payload": [
+        "final-en-04",
+        "final-zh-04",
+        "final-audio-04",
+        "final-en-14",
+        "final-zh-14"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-04",
+        "final-zh-04",
+        "final-audio-04",
+        "final-en-14",
+        "final-zh-14"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_audio_semantic-04",
+      "max_absolute_cosine_error": 0.00010557533463917412,
+      "raw_top5_float32_payload": [
+        "final-en-04",
+        "final-zh-04",
+        "final-audio-04",
+        "final-zh-14",
+        "final-en-14"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-04",
+        "final-zh-04",
+        "final-audio-04",
+        "final-zh-14",
+        "final-en-14"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_image_semantic-04",
+      "max_absolute_cosine_error": 0.00011966091463277984,
+      "raw_top5_float32_payload": [
+        "final-image-red-cross",
+        "final-image-black-cross",
+        "final-image-green-cross",
+        "final-image-blue-cross",
+        "final-image-yellow-cross"
+      ],
+      "raw_top5_float16_payload": [
+        "final-image-red-cross",
+        "final-image-black-cross",
+        "final-image-green-cross",
+        "final-image-blue-cross",
+        "final-image-yellow-cross"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_no_answer-04",
+      "max_absolute_cosine_error": 9.506774129641737e-05,
+      "raw_top5_float32_payload": [
+        "final-en-12",
+        "final-audio-12",
+        "final-en-16",
+        "final-zh-12",
+        "final-en-05"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-12",
+        "final-audio-12",
+        "final-en-16",
+        "final-zh-12",
+        "final-en-05"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_lexical-05",
+      "max_absolute_cosine_error": 0.00011459566917271236,
+      "raw_top5_float32_payload": [
+        "final-en-05",
+        "final-zh-05",
+        "final-audio-05",
+        "final-en-18",
+        "final-en-21"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-05",
+        "final-zh-05",
+        "final-audio-05",
+        "final-en-18",
+        "final-en-21"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_identifier_unicode-05",
+      "max_absolute_cosine_error": 0.00011520472874759768,
+      "raw_top5_float32_payload": [
+        "final-en-05",
+        "final-en-07",
+        "final-en-00",
+        "final-en-04",
+        "final-en-03"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-05",
+        "final-en-07",
+        "final-en-00",
+        "final-en-04",
+        "final-en-03"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_chinese_short-05",
+      "max_absolute_cosine_error": 0.00011310485906812495,
+      "raw_top5_float32_payload": [
+        "final-zh-05",
+        "final-zh-19",
+        "final-zh-11",
+        "final-zh-14",
+        "final-zh-06"
+      ],
+      "raw_top5_float16_payload": [
+        "final-zh-05",
+        "final-zh-19",
+        "final-zh-11",
+        "final-zh-14",
+        "final-zh-06"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_cross_language-05",
+      "max_absolute_cosine_error": 0.00010986663170964306,
+      "raw_top5_float32_payload": [
+        "final-en-05",
+        "final-audio-05",
+        "final-zh-05",
+        "final-en-01",
+        "final-en-11"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-05",
+        "final-audio-05",
+        "final-zh-05",
+        "final-en-01",
+        "final-en-11"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_semantic_paraphrase-05",
+      "max_absolute_cosine_error": 0.00010584599636992431,
+      "raw_top5_float32_payload": [
+        "final-audio-05",
+        "final-zh-05",
+        "final-en-05",
+        "final-zh-07",
+        "final-zh-10"
+      ],
+      "raw_top5_float16_payload": [
+        "final-audio-05",
+        "final-zh-05",
+        "final-en-05",
+        "final-zh-07",
+        "final-zh-10"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_audio_semantic-05",
+      "max_absolute_cosine_error": 0.00011207600522156191,
+      "raw_top5_float32_payload": [
+        "final-en-05",
+        "final-audio-05",
+        "final-zh-05",
+        "final-en-01",
+        "final-en-18"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-05",
+        "final-audio-05",
+        "final-zh-05",
+        "final-en-01",
+        "final-en-18"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_image_semantic-05",
+      "max_absolute_cosine_error": 0.00011425618245197722,
+      "raw_top5_float32_payload": [
+        "final-image-blue-circle",
+        "final-image-blue-triangle",
+        "final-image-blue-diamond",
+        "final-image-black-circle",
+        "final-image-green-circle"
+      ],
+      "raw_top5_float16_payload": [
+        "final-image-blue-circle",
+        "final-image-blue-triangle",
+        "final-image-blue-diamond",
+        "final-image-black-circle",
+        "final-image-green-circle"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_no_answer-05",
+      "max_absolute_cosine_error": 9.876160488275776e-05,
+      "raw_top5_float32_payload": [
+        "final-en-16",
+        "final-en-23",
+        "final-en-19",
+        "final-audio-15",
+        "final-audio-04"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-16",
+        "final-en-23",
+        "final-en-19",
+        "final-audio-15",
+        "final-audio-04"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_lexical-06",
+      "max_absolute_cosine_error": 0.00011126515139192605,
+      "raw_top5_float32_payload": [
+        "final-en-06",
+        "final-audio-06",
+        "final-zh-06",
+        "final-en-22",
+        "final-audio-22"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-06",
+        "final-audio-06",
+        "final-zh-06",
+        "final-en-22",
+        "final-audio-22"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_identifier_unicode-06",
+      "max_absolute_cosine_error": 0.00011382593248665529,
+      "raw_top5_float32_payload": [
+        "final-en-05",
+        "final-en-07",
+        "final-en-06",
+        "final-en-00",
+        "final-en-04"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-05",
+        "final-en-07",
+        "final-en-06",
+        "final-en-00",
+        "final-en-04"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_chinese_short-06",
+      "max_absolute_cosine_error": 0.00011190343562850202,
+      "raw_top5_float32_payload": [
+        "final-zh-06",
+        "final-zh-22",
+        "final-en-06",
+        "final-zh-05",
+        "final-zh-23"
+      ],
+      "raw_top5_float16_payload": [
+        "final-zh-06",
+        "final-zh-22",
+        "final-en-06",
+        "final-zh-05",
+        "final-zh-23"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_cross_language-06",
+      "max_absolute_cosine_error": 0.00010713414062435422,
+      "raw_top5_float32_payload": [
+        "final-zh-06",
+        "final-audio-06",
+        "final-zh-22",
+        "final-en-06",
+        "final-zh-07"
+      ],
+      "raw_top5_float16_payload": [
+        "final-zh-06",
+        "final-audio-06",
+        "final-zh-22",
+        "final-en-06",
+        "final-zh-07"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_semantic_paraphrase-06",
+      "max_absolute_cosine_error": 0.00011722411075965056,
+      "raw_top5_float32_payload": [
+        "final-audio-06",
+        "final-en-06",
+        "final-zh-06",
+        "final-audio-24",
+        "final-audio-00"
+      ],
+      "raw_top5_float16_payload": [
+        "final-audio-06",
+        "final-en-06",
+        "final-zh-06",
+        "final-audio-24",
+        "final-audio-00"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_audio_semantic-06",
+      "max_absolute_cosine_error": 0.00011450056337780623,
+      "raw_top5_float32_payload": [
+        "final-audio-06",
+        "final-en-06",
+        "final-zh-06",
+        "final-audio-24",
+        "final-audio-00"
+      ],
+      "raw_top5_float16_payload": [
+        "final-audio-06",
+        "final-en-06",
+        "final-zh-06",
+        "final-audio-24",
+        "final-audio-00"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_image_semantic-06",
+      "max_absolute_cosine_error": 0.00011326471965478202,
+      "raw_top5_float32_payload": [
+        "final-image-blue-triangle",
+        "final-image-blue-diamond",
+        "final-image-green-triangle",
+        "final-image-yellow-triangle",
+        "final-image-black-triangle"
+      ],
+      "raw_top5_float16_payload": [
+        "final-image-blue-triangle",
+        "final-image-blue-diamond",
+        "final-image-green-triangle",
+        "final-image-yellow-triangle",
+        "final-image-black-triangle"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_no_answer-06",
+      "max_absolute_cosine_error": 0.00010351896267202232,
+      "raw_top5_float32_payload": [
+        "final-en-06",
+        "final-audio-06",
+        "final-audio-09",
+        "final-en-05",
+        "final-audio-03"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-06",
+        "final-audio-06",
+        "final-audio-09",
+        "final-en-05",
+        "final-audio-03"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_lexical-07",
+      "max_absolute_cosine_error": 0.00010995607573616173,
+      "raw_top5_float32_payload": [
+        "final-en-07",
+        "final-audio-07",
+        "final-zh-07",
+        "final-audio-10",
+        "final-en-10"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-07",
+        "final-audio-07",
+        "final-zh-07",
+        "final-audio-10",
+        "final-en-10"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_identifier_unicode-07",
+      "max_absolute_cosine_error": 0.00011373500259281855,
+      "raw_top5_float32_payload": [
+        "final-en-07",
+        "final-en-05",
+        "final-en-00",
+        "final-en-08",
+        "final-en-04"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-07",
+        "final-en-05",
+        "final-en-00",
+        "final-en-08",
+        "final-en-04"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_chinese_short-07",
+      "max_absolute_cosine_error": 0.00011577642776539054,
+      "raw_top5_float32_payload": [
+        "final-zh-07",
+        "final-en-07",
+        "final-zh-01",
+        "final-zh-11",
+        "final-zh-06"
+      ],
+      "raw_top5_float16_payload": [
+        "final-zh-07",
+        "final-en-07",
+        "final-zh-01",
+        "final-zh-11",
+        "final-zh-06"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_cross_language-07",
+      "max_absolute_cosine_error": 9.976731286120977e-05,
+      "raw_top5_float32_payload": [
+        "final-en-07",
+        "final-audio-07",
+        "final-zh-07",
+        "final-audio-00",
+        "final-audio-05"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-07",
+        "final-audio-07",
+        "final-zh-07",
+        "final-audio-00",
+        "final-audio-05"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_semantic_paraphrase-07",
+      "max_absolute_cosine_error": 0.00010188724135362648,
+      "raw_top5_float32_payload": [
+        "final-zh-07",
+        "final-audio-07",
+        "final-en-07",
+        "final-zh-10",
+        "final-zh-15"
+      ],
+      "raw_top5_float16_payload": [
+        "final-zh-07",
+        "final-audio-07",
+        "final-en-07",
+        "final-zh-10",
+        "final-zh-15"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_audio_semantic-07",
+      "max_absolute_cosine_error": 0.00010419117322690852,
+      "raw_top5_float32_payload": [
+        "final-en-07",
+        "final-audio-07",
+        "final-zh-07",
+        "final-audio-00",
+        "final-audio-10"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-07",
+        "final-audio-07",
+        "final-zh-07",
+        "final-audio-00",
+        "final-audio-10"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_image_semantic-07",
+      "max_absolute_cosine_error": 0.00011045404804532755,
+      "raw_top5_float32_payload": [
+        "final-image-blue-diamond",
+        "final-image-blue-triangle",
+        "final-image-red-diamond",
+        "final-image-black-diamond",
+        "final-image-blue-circle"
+      ],
+      "raw_top5_float16_payload": [
+        "final-image-blue-diamond",
+        "final-image-blue-triangle",
+        "final-image-red-diamond",
+        "final-image-black-diamond",
+        "final-image-blue-circle"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_no_answer-07",
+      "max_absolute_cosine_error": 9.639330120314593e-05,
+      "raw_top5_float32_payload": [
+        "final-en-12",
+        "final-audio-21",
+        "final-audio-12",
+        "final-en-21",
+        "final-en-04"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-12",
+        "final-audio-21",
+        "final-audio-12",
+        "final-en-21",
+        "final-en-04"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_lexical-08",
+      "max_absolute_cosine_error": 0.00010860998484440998,
+      "raw_top5_float32_payload": [
+        "final-audio-08",
+        "final-en-08",
+        "final-zh-08",
+        "final-audio-05",
+        "final-audio-13"
+      ],
+      "raw_top5_float16_payload": [
+        "final-audio-08",
+        "final-en-08",
+        "final-zh-08",
+        "final-audio-05",
+        "final-audio-13"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_identifier_unicode-08",
+      "max_absolute_cosine_error": 0.00011324995420192163,
+      "raw_top5_float32_payload": [
+        "final-en-08",
+        "final-en-05",
+        "final-en-07",
+        "final-en-04",
+        "final-en-00"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-08",
+        "final-en-05",
+        "final-en-07",
+        "final-en-04",
+        "final-en-00"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_chinese_short-08",
+      "max_absolute_cosine_error": 0.00011645266927906572,
+      "raw_top5_float32_payload": [
+        "final-zh-08",
+        "final-en-08",
+        "final-zh-21",
+        "final-audio-08",
+        "final-zh-16"
+      ],
+      "raw_top5_float16_payload": [
+        "final-zh-08",
+        "final-en-08",
+        "final-zh-21",
+        "final-audio-08",
+        "final-zh-16"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_cross_language-08",
+      "max_absolute_cosine_error": 0.00010315543439332053,
+      "raw_top5_float32_payload": [
+        "final-zh-08",
+        "final-audio-08",
+        "final-en-08",
+        "final-zh-00",
+        "final-zh-16"
+      ],
+      "raw_top5_float16_payload": [
+        "final-zh-08",
+        "final-audio-08",
+        "final-en-08",
+        "final-zh-00",
+        "final-zh-16"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_semantic_paraphrase-08",
+      "max_absolute_cosine_error": 0.0001044983705539293,
+      "raw_top5_float32_payload": [
+        "final-audio-08",
+        "final-en-08",
+        "final-zh-08",
+        "final-audio-05",
+        "final-zh-21"
+      ],
+      "raw_top5_float16_payload": [
+        "final-audio-08",
+        "final-en-08",
+        "final-zh-08",
+        "final-audio-05",
+        "final-zh-21"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_audio_semantic-08",
+      "max_absolute_cosine_error": 0.0001083745362926436,
+      "raw_top5_float32_payload": [
+        "final-audio-08",
+        "final-en-08",
+        "final-zh-08",
+        "final-audio-05",
+        "final-en-00"
+      ],
+      "raw_top5_float16_payload": [
+        "final-audio-08",
+        "final-en-08",
+        "final-zh-08",
+        "final-audio-05",
+        "final-en-00"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_image_semantic-08",
+      "max_absolute_cosine_error": 0.0001180317404846365,
+      "raw_top5_float32_payload": [
+        "final-image-blue-star",
+        "final-image-yellow-star",
+        "final-image-blue-diamond",
+        "final-image-black-star",
+        "final-image-green-star"
+      ],
+      "raw_top5_float16_payload": [
+        "final-image-blue-star",
+        "final-image-yellow-star",
+        "final-image-blue-diamond",
+        "final-image-black-star",
+        "final-image-blue-triangle"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": true,
+      "raw_top5_set_changed": true
+    },
+    {
+      "id": "unseen_no_answer-08",
+      "max_absolute_cosine_error": 0.00010188498072505325,
+      "raw_top5_float32_payload": [
+        "final-image-yellow-diamond",
+        "final-image-red-diamond",
+        "final-image-yellow-circle",
+        "final-audio-03",
+        "final-image-yellow-triangle"
+      ],
+      "raw_top5_float16_payload": [
+        "final-image-yellow-diamond",
+        "final-image-red-diamond",
+        "final-image-yellow-circle",
+        "final-audio-03",
+        "final-image-yellow-triangle"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_lexical-09",
+      "max_absolute_cosine_error": 0.00011102784583327807,
+      "raw_top5_float32_payload": [
+        "final-en-09",
+        "final-zh-09",
+        "final-audio-09",
+        "final-audio-19",
+        "final-en-19"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-09",
+        "final-zh-09",
+        "final-audio-09",
+        "final-audio-19",
+        "final-en-19"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_identifier_unicode-09",
+      "max_absolute_cosine_error": 0.00011216842773253966,
+      "raw_top5_float32_payload": [
+        "final-en-00",
+        "final-en-05",
+        "final-en-07",
+        "final-en-04",
+        "final-en-03"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-00",
+        "final-en-05",
+        "final-en-07",
+        "final-en-04",
+        "final-en-03"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_chinese_short-09",
+      "max_absolute_cosine_error": 0.00011109891633964697,
+      "raw_top5_float32_payload": [
+        "final-zh-09",
+        "final-en-09",
+        "final-zh-14",
+        "final-zh-19",
+        "final-zh-01"
+      ],
+      "raw_top5_float16_payload": [
+        "final-zh-09",
+        "final-en-09",
+        "final-zh-14",
+        "final-zh-19",
+        "final-zh-01"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_cross_language-09",
+      "max_absolute_cosine_error": 0.00010946399350120206,
+      "raw_top5_float32_payload": [
+        "final-audio-09",
+        "final-en-09",
+        "final-zh-09",
+        "final-en-02",
+        "final-audio-17"
+      ],
+      "raw_top5_float16_payload": [
+        "final-audio-09",
+        "final-en-09",
+        "final-zh-09",
+        "final-en-02",
+        "final-audio-17"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_semantic_paraphrase-09",
+      "max_absolute_cosine_error": 0.00010960224577571953,
+      "raw_top5_float32_payload": [
+        "final-zh-09",
+        "final-audio-09",
+        "final-en-09",
+        "final-zh-23",
+        "final-audio-23"
+      ],
+      "raw_top5_float16_payload": [
+        "final-zh-09",
+        "final-audio-09",
+        "final-en-09",
+        "final-zh-23",
+        "final-audio-23"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_audio_semantic-09",
+      "max_absolute_cosine_error": 0.00011128219006784068,
+      "raw_top5_float32_payload": [
+        "final-audio-09",
+        "final-en-09",
+        "final-zh-09",
+        "final-en-14",
+        "final-en-17"
+      ],
+      "raw_top5_float16_payload": [
+        "final-audio-09",
+        "final-en-09",
+        "final-zh-09",
+        "final-en-14",
+        "final-en-17"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_image_semantic-09",
+      "max_absolute_cosine_error": 0.00011861575085936327,
+      "raw_top5_float32_payload": [
+        "final-image-blue-cross",
+        "final-image-red-cross",
+        "final-image-black-cross",
+        "final-image-green-cross",
+        "final-image-yellow-cross"
+      ],
+      "raw_top5_float16_payload": [
+        "final-image-blue-cross",
+        "final-image-red-cross",
+        "final-image-black-cross",
+        "final-image-green-cross",
+        "final-image-yellow-cross"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_no_answer-09",
+      "max_absolute_cosine_error": 0.00010782100073081224,
+      "raw_top5_float32_payload": [
+        "final-en-06",
+        "final-en-12",
+        "final-zh-17",
+        "final-en-14",
+        "final-en-16"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-06",
+        "final-en-12",
+        "final-zh-17",
+        "final-en-14",
+        "final-en-16"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_lexical-10",
+      "max_absolute_cosine_error": 0.00011565525311230118,
+      "raw_top5_float32_payload": [
+        "final-en-10",
+        "final-audio-10",
+        "final-zh-10",
+        "final-audio-16",
+        "final-en-16"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-10",
+        "final-audio-10",
+        "final-zh-10",
+        "final-audio-16",
+        "final-en-16"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_identifier_unicode-10",
+      "max_absolute_cosine_error": 0.00011396171640587482,
+      "raw_top5_float32_payload": [
+        "final-en-10",
+        "final-en-00",
+        "final-en-14",
+        "final-en-05",
+        "final-en-21"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-10",
+        "final-en-00",
+        "final-en-14",
+        "final-en-05",
+        "final-en-21"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_chinese_short-10",
+      "max_absolute_cosine_error": 0.00011441318702687386,
+      "raw_top5_float32_payload": [
+        "final-zh-10",
+        "final-zh-14",
+        "final-zh-05",
+        "final-zh-07",
+        "final-zh-11"
+      ],
+      "raw_top5_float16_payload": [
+        "final-zh-10",
+        "final-zh-14",
+        "final-zh-05",
+        "final-zh-07",
+        "final-zh-11"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_cross_language-10",
+      "max_absolute_cosine_error": 9.773134890334045e-05,
+      "raw_top5_float32_payload": [
+        "final-zh-10",
+        "final-audio-10",
+        "final-en-10",
+        "final-zh-07",
+        "final-zh-04"
+      ],
+      "raw_top5_float16_payload": [
+        "final-zh-10",
+        "final-audio-10",
+        "final-en-10",
+        "final-zh-07",
+        "final-zh-04"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_semantic_paraphrase-10",
+      "max_absolute_cosine_error": 0.00010479112687356018,
+      "raw_top5_float32_payload": [
+        "final-audio-10",
+        "final-en-10",
+        "final-zh-10",
+        "final-audio-16",
+        "final-audio-03"
+      ],
+      "raw_top5_float16_payload": [
+        "final-audio-10",
+        "final-en-10",
+        "final-zh-10",
+        "final-audio-16",
+        "final-audio-03"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_audio_semantic-10",
+      "max_absolute_cosine_error": 0.0001074928676280118,
+      "raw_top5_float32_payload": [
+        "final-audio-10",
+        "final-en-10",
+        "final-zh-10",
+        "final-audio-03",
+        "final-audio-16"
+      ],
+      "raw_top5_float16_payload": [
+        "final-audio-10",
+        "final-en-10",
+        "final-zh-10",
+        "final-audio-03",
+        "final-audio-16"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_image_semantic-10",
+      "max_absolute_cosine_error": 0.00011269725373952433,
+      "raw_top5_float32_payload": [
+        "final-image-green-circle",
+        "final-image-green-diamond",
+        "final-image-green-triangle",
+        "final-image-yellow-circle",
+        "final-image-black-circle"
+      ],
+      "raw_top5_float16_payload": [
+        "final-image-green-circle",
+        "final-image-green-diamond",
+        "final-image-green-triangle",
+        "final-image-yellow-circle",
+        "final-image-black-circle"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_no_answer-10",
+      "max_absolute_cosine_error": 0.0001061612750579144,
+      "raw_top5_float32_payload": [
+        "final-en-13",
+        "final-en-06",
+        "final-audio-23",
+        "final-en-23",
+        "final-en-18"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-13",
+        "final-en-06",
+        "final-audio-23",
+        "final-en-23",
+        "final-en-18"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_lexical-11",
+      "max_absolute_cosine_error": 0.00011332893421700518,
+      "raw_top5_float32_payload": [
+        "final-en-11",
+        "final-zh-11",
+        "final-en-17",
+        "final-en-23",
+        "final-en-15"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-11",
+        "final-zh-11",
+        "final-en-17",
+        "final-en-23",
+        "final-en-15"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_identifier_unicode-11",
+      "max_absolute_cosine_error": 0.00011033064969467876,
+      "raw_top5_float32_payload": [
+        "final-en-11",
+        "final-en-21",
+        "final-en-14",
+        "final-en-00",
+        "final-en-01"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-11",
+        "final-en-21",
+        "final-en-14",
+        "final-en-00",
+        "final-en-01"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_chinese_short-11",
+      "max_absolute_cosine_error": 0.0001155001106893927,
+      "raw_top5_float32_payload": [
+        "final-zh-11",
+        "final-zh-20",
+        "final-zh-17",
+        "final-zh-10",
+        "final-zh-07"
+      ],
+      "raw_top5_float16_payload": [
+        "final-zh-11",
+        "final-zh-20",
+        "final-zh-17",
+        "final-zh-10",
+        "final-zh-07"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_cross_language-11",
+      "max_absolute_cosine_error": 0.00011157208490553128,
+      "raw_top5_float32_payload": [
+        "final-en-11",
+        "final-audio-11",
+        "final-zh-11",
+        "final-en-17",
+        "final-en-19"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-11",
+        "final-audio-11",
+        "final-zh-11",
+        "final-en-17",
+        "final-en-19"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_semantic_paraphrase-11",
+      "max_absolute_cosine_error": 0.00010745125671873801,
+      "raw_top5_float32_payload": [
+        "final-zh-11",
+        "final-en-11",
+        "final-audio-11",
+        "final-zh-14",
+        "final-zh-16"
+      ],
+      "raw_top5_float16_payload": [
+        "final-zh-11",
+        "final-en-11",
+        "final-audio-11",
+        "final-zh-14",
+        "final-zh-16"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_audio_semantic-11",
+      "max_absolute_cosine_error": 0.00011419797759981698,
+      "raw_top5_float32_payload": [
+        "final-en-11",
+        "final-audio-11",
+        "final-zh-11",
+        "final-en-17",
+        "final-audio-04"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-11",
+        "final-audio-11",
+        "final-zh-11",
+        "final-en-17",
+        "final-audio-04"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_image_semantic-11",
+      "max_absolute_cosine_error": 0.00011251230478315222,
+      "raw_top5_float32_payload": [
+        "final-image-green-triangle",
+        "final-image-green-diamond",
+        "final-image-yellow-triangle",
+        "final-image-red-triangle",
+        "final-image-black-triangle"
+      ],
+      "raw_top5_float16_payload": [
+        "final-image-green-triangle",
+        "final-image-green-diamond",
+        "final-image-yellow-triangle",
+        "final-image-red-triangle",
+        "final-image-black-triangle"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_no_answer-11",
+      "max_absolute_cosine_error": 9.394859609457296e-05,
+      "raw_top5_float32_payload": [
+        "final-en-10",
+        "final-en-02",
+        "final-en-04",
+        "final-en-18",
+        "final-image-blue-cross"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-10",
+        "final-en-02",
+        "final-en-04",
+        "final-en-18",
+        "final-image-blue-cross"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_lexical-12",
+      "max_absolute_cosine_error": 0.00010949561308493116,
+      "raw_top5_float32_payload": [
+        "final-en-12",
+        "final-audio-12",
+        "final-zh-12",
+        "final-en-21",
+        "final-en-04"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-12",
+        "final-audio-12",
+        "final-zh-12",
+        "final-en-21",
+        "final-en-04"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_identifier_unicode-12",
+      "max_absolute_cosine_error": 0.00011533543850872352,
+      "raw_top5_float32_payload": [
+        "final-en-12",
+        "final-en-16",
+        "final-en-21",
+        "final-en-05",
+        "final-en-00"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-12",
+        "final-en-16",
+        "final-en-21",
+        "final-en-05",
+        "final-en-00"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_chinese_short-12",
+      "max_absolute_cosine_error": 0.00010625364775840307,
+      "raw_top5_float32_payload": [
+        "final-zh-12",
+        "final-zh-20",
+        "final-en-12",
+        "final-audio-12",
+        "final-zh-11"
+      ],
+      "raw_top5_float16_payload": [
+        "final-zh-12",
+        "final-zh-20",
+        "final-en-12",
+        "final-audio-12",
+        "final-zh-11"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_cross_language-12",
+      "max_absolute_cosine_error": 0.0001112999044777796,
+      "raw_top5_float32_payload": [
+        "final-zh-12",
+        "final-audio-12",
+        "final-en-12",
+        "final-zh-18",
+        "final-zh-10"
+      ],
+      "raw_top5_float16_payload": [
+        "final-zh-12",
+        "final-audio-12",
+        "final-en-12",
+        "final-zh-18",
+        "final-zh-10"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_semantic_paraphrase-12",
+      "max_absolute_cosine_error": 0.00010658198548940678,
+      "raw_top5_float32_payload": [
+        "final-audio-12",
+        "final-en-12",
+        "final-zh-12",
+        "final-audio-22",
+        "final-en-22"
+      ],
+      "raw_top5_float16_payload": [
+        "final-audio-12",
+        "final-en-12",
+        "final-zh-12",
+        "final-audio-22",
+        "final-en-22"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_audio_semantic-12",
+      "max_absolute_cosine_error": 0.0001042585725254952,
+      "raw_top5_float32_payload": [
+        "final-audio-12",
+        "final-en-12",
+        "final-zh-12",
+        "final-audio-22",
+        "final-audio-10"
+      ],
+      "raw_top5_float16_payload": [
+        "final-audio-12",
+        "final-en-12",
+        "final-zh-12",
+        "final-audio-22",
+        "final-audio-10"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_image_semantic-12",
+      "max_absolute_cosine_error": 0.00011060652120709058,
+      "raw_top5_float32_payload": [
+        "final-image-green-diamond",
+        "final-image-black-diamond",
+        "final-image-red-diamond",
+        "final-image-yellow-diamond",
+        "final-image-green-triangle"
+      ],
+      "raw_top5_float16_payload": [
+        "final-image-green-diamond",
+        "final-image-black-diamond",
+        "final-image-red-diamond",
+        "final-image-yellow-diamond",
+        "final-image-green-triangle"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_no_answer-12",
+      "max_absolute_cosine_error": 9.883693510037705e-05,
+      "raw_top5_float32_payload": [
+        "final-en-14",
+        "final-en-09",
+        "final-zh-06",
+        "final-zh-05",
+        "final-zh-07"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-14",
+        "final-en-09",
+        "final-zh-06",
+        "final-zh-05",
+        "final-zh-07"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_lexical-13",
+      "max_absolute_cosine_error": 0.00011150091810752105,
+      "raw_top5_float32_payload": [
+        "final-en-13",
+        "final-audio-13",
+        "final-zh-13",
+        "final-audio-01",
+        "final-en-01"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-13",
+        "final-audio-13",
+        "final-zh-13",
+        "final-audio-01",
+        "final-en-01"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_identifier_unicode-13",
+      "max_absolute_cosine_error": 0.00011355998300111025,
+      "raw_top5_float32_payload": [
+        "final-en-13",
+        "final-en-16",
+        "final-en-00",
+        "final-en-05",
+        "final-en-21"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-13",
+        "final-en-16",
+        "final-en-00",
+        "final-en-05",
+        "final-en-21"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_chinese_short-13",
+      "max_absolute_cosine_error": 0.00011144065923829327,
+      "raw_top5_float32_payload": [
+        "final-zh-13",
+        "final-zh-01",
+        "final-zh-15",
+        "final-zh-24",
+        "final-zh-07"
+      ],
+      "raw_top5_float16_payload": [
+        "final-zh-13",
+        "final-zh-01",
+        "final-zh-15",
+        "final-zh-24",
+        "final-zh-07"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_cross_language-13",
+      "max_absolute_cosine_error": 0.00011032034225588738,
+      "raw_top5_float32_payload": [
+        "final-audio-13",
+        "final-en-13",
+        "final-zh-13",
+        "final-audio-19",
+        "final-audio-00"
+      ],
+      "raw_top5_float16_payload": [
+        "final-audio-13",
+        "final-en-13",
+        "final-zh-13",
+        "final-audio-19",
+        "final-audio-00"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_semantic_paraphrase-13",
+      "max_absolute_cosine_error": 0.00010635008196657747,
+      "raw_top5_float32_payload": [
+        "final-zh-13",
+        "final-en-13",
+        "final-audio-13",
+        "final-zh-19",
+        "final-zh-14"
+      ],
+      "raw_top5_float16_payload": [
+        "final-zh-13",
+        "final-en-13",
+        "final-audio-13",
+        "final-zh-19",
+        "final-zh-14"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_audio_semantic-13",
+      "max_absolute_cosine_error": 0.00011141262929181828,
+      "raw_top5_float32_payload": [
+        "final-en-13",
+        "final-zh-13",
+        "final-audio-13",
+        "final-audio-01",
+        "final-en-01"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-13",
+        "final-zh-13",
+        "final-audio-13",
+        "final-audio-01",
+        "final-en-01"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_image_semantic-13",
+      "max_absolute_cosine_error": 0.00011633166339009016,
+      "raw_top5_float32_payload": [
+        "final-image-green-star",
+        "final-image-yellow-star",
+        "final-image-green-diamond",
+        "final-image-green-triangle",
+        "final-image-green-circle"
+      ],
+      "raw_top5_float16_payload": [
+        "final-image-green-star",
+        "final-image-yellow-star",
+        "final-image-green-diamond",
+        "final-image-green-triangle",
+        "final-image-green-circle"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_no_answer-13",
+      "max_absolute_cosine_error": 9.566523547610561e-05,
+      "raw_top5_float32_payload": [
+        "final-audio-07",
+        "final-zh-17",
+        "final-audio-17",
+        "final-en-07",
+        "final-audio-01"
+      ],
+      "raw_top5_float16_payload": [
+        "final-audio-07",
+        "final-zh-17",
+        "final-audio-17",
+        "final-en-07",
+        "final-audio-01"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_lexical-14",
+      "max_absolute_cosine_error": 0.00011898992168346556,
+      "raw_top5_float32_payload": [
+        "final-en-14",
+        "final-zh-14",
+        "final-audio-14",
+        "final-en-04",
+        "final-audio-23"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-14",
+        "final-zh-14",
+        "final-audio-14",
+        "final-en-04",
+        "final-audio-23"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_identifier_unicode-14",
+      "max_absolute_cosine_error": 0.00011163701868210918,
+      "raw_top5_float32_payload": [
+        "final-en-14",
+        "final-en-04",
+        "final-en-00",
+        "final-en-21",
+        "final-en-16"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-14",
+        "final-en-04",
+        "final-en-00",
+        "final-en-21",
+        "final-en-16"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_chinese_short-14",
+      "max_absolute_cosine_error": 0.00011660954496195419,
+      "raw_top5_float32_payload": [
+        "final-zh-14",
+        "final-en-14",
+        "final-zh-10",
+        "final-zh-01",
+        "final-zh-23"
+      ],
+      "raw_top5_float16_payload": [
+        "final-zh-14",
+        "final-en-14",
+        "final-zh-10",
+        "final-zh-01",
+        "final-zh-23"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_cross_language-14",
+      "max_absolute_cosine_error": 0.00010317229485579116,
+      "raw_top5_float32_payload": [
+        "final-audio-14",
+        "final-zh-14",
+        "final-en-14",
+        "final-zh-02",
+        "final-zh-11"
+      ],
+      "raw_top5_float16_payload": [
+        "final-audio-14",
+        "final-zh-14",
+        "final-en-14",
+        "final-zh-02",
+        "final-zh-11"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_semantic_paraphrase-14",
+      "max_absolute_cosine_error": 0.00010619667199207594,
+      "raw_top5_float32_payload": [
+        "final-audio-14",
+        "final-en-14",
+        "final-zh-14",
+        "final-en-11",
+        "final-audio-21"
+      ],
+      "raw_top5_float16_payload": [
+        "final-audio-14",
+        "final-en-14",
+        "final-zh-14",
+        "final-en-11",
+        "final-audio-21"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_audio_semantic-14",
+      "max_absolute_cosine_error": 0.00010729374834372862,
+      "raw_top5_float32_payload": [
+        "final-audio-14",
+        "final-en-14",
+        "final-zh-14",
+        "final-en-11",
+        "final-zh-02"
+      ],
+      "raw_top5_float16_payload": [
+        "final-audio-14",
+        "final-en-14",
+        "final-zh-14",
+        "final-en-11",
+        "final-zh-02"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_image_semantic-14",
+      "max_absolute_cosine_error": 0.00011871893274262302,
+      "raw_top5_float32_payload": [
+        "final-image-green-cross",
+        "final-image-red-cross",
+        "final-image-yellow-cross",
+        "final-image-black-cross",
+        "final-image-blue-cross"
+      ],
+      "raw_top5_float16_payload": [
+        "final-image-green-cross",
+        "final-image-red-cross",
+        "final-image-yellow-cross",
+        "final-image-black-cross",
+        "final-image-blue-cross"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_no_answer-14",
+      "max_absolute_cosine_error": 9.968620200007106e-05,
+      "raw_top5_float32_payload": [
+        "final-en-18",
+        "final-en-13",
+        "final-en-01",
+        "final-en-05",
+        "final-en-21"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-18",
+        "final-en-13",
+        "final-en-01",
+        "final-en-05",
+        "final-en-21"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_lexical-15",
+      "max_absolute_cosine_error": 0.00010880702763116368,
+      "raw_top5_float32_payload": [
+        "final-audio-15",
+        "final-en-15",
+        "final-zh-15",
+        "final-en-22",
+        "final-en-11"
+      ],
+      "raw_top5_float16_payload": [
+        "final-audio-15",
+        "final-en-15",
+        "final-zh-15",
+        "final-en-22",
+        "final-en-11"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_identifier_unicode-15",
+      "max_absolute_cosine_error": 0.0001140138571060767,
+      "raw_top5_float32_payload": [
+        "final-en-05",
+        "final-en-16",
+        "final-en-14",
+        "final-en-18",
+        "final-en-21"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-05",
+        "final-en-16",
+        "final-en-14",
+        "final-en-18",
+        "final-en-21"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_chinese_short-15",
+      "max_absolute_cosine_error": 0.00011347369141956332,
+      "raw_top5_float32_payload": [
+        "final-zh-15",
+        "final-zh-20",
+        "final-zh-06",
+        "final-zh-11",
+        "final-en-15"
+      ],
+      "raw_top5_float16_payload": [
+        "final-zh-15",
+        "final-zh-20",
+        "final-zh-06",
+        "final-zh-11",
+        "final-en-15"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_cross_language-15",
+      "max_absolute_cosine_error": 0.00011226708476053116,
+      "raw_top5_float32_payload": [
+        "final-audio-15",
+        "final-en-15",
+        "final-zh-15",
+        "final-en-22",
+        "final-audio-06"
+      ],
+      "raw_top5_float16_payload": [
+        "final-audio-15",
+        "final-en-15",
+        "final-zh-15",
+        "final-en-22",
+        "final-audio-06"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_semantic_paraphrase-15",
+      "max_absolute_cosine_error": 0.0001060230214336988,
+      "raw_top5_float32_payload": [
+        "final-zh-15",
+        "final-audio-15",
+        "final-en-15",
+        "final-zh-06",
+        "final-zh-22"
+      ],
+      "raw_top5_float16_payload": [
+        "final-zh-15",
+        "final-audio-15",
+        "final-en-15",
+        "final-zh-06",
+        "final-zh-22"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_audio_semantic-15",
+      "max_absolute_cosine_error": 0.00011326441153292066,
+      "raw_top5_float32_payload": [
+        "final-audio-15",
+        "final-en-15",
+        "final-zh-15",
+        "final-audio-18",
+        "final-en-22"
+      ],
+      "raw_top5_float16_payload": [
+        "final-audio-15",
+        "final-en-15",
+        "final-zh-15",
+        "final-audio-18",
+        "final-en-22"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_image_semantic-15",
+      "max_absolute_cosine_error": 0.00010909859722829651,
+      "raw_top5_float32_payload": [
+        "final-image-yellow-circle",
+        "final-image-yellow-diamond",
+        "final-image-yellow-triangle",
+        "final-image-yellow-star",
+        "final-image-green-circle"
+      ],
+      "raw_top5_float16_payload": [
+        "final-image-yellow-circle",
+        "final-image-yellow-diamond",
+        "final-image-yellow-triangle",
+        "final-image-yellow-star",
+        "final-image-green-circle"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_no_answer-15",
+      "max_absolute_cosine_error": 9.450841630365137e-05,
+      "raw_top5_float32_payload": [
+        "final-en-12",
+        "final-en-18",
+        "final-en-04",
+        "final-en-05",
+        "final-en-21"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-12",
+        "final-en-18",
+        "final-en-04",
+        "final-en-05",
+        "final-en-21"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_lexical-16",
+      "max_absolute_cosine_error": 0.00011494580916959762,
+      "raw_top5_float32_payload": [
+        "final-en-16",
+        "final-audio-16",
+        "final-zh-16",
+        "final-en-03",
+        "final-en-04"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-16",
+        "final-audio-16",
+        "final-zh-16",
+        "final-en-03",
+        "final-en-04"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_identifier_unicode-16",
+      "max_absolute_cosine_error": 0.00011317899872331783,
+      "raw_top5_float32_payload": [
+        "final-en-16",
+        "final-en-18",
+        "final-en-19",
+        "final-en-21",
+        "final-en-07"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-16",
+        "final-en-18",
+        "final-en-21",
+        "final-en-19",
+        "final-en-07"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": true,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_chinese_short-16",
+      "max_absolute_cosine_error": 0.00010949699773366017,
+      "raw_top5_float32_payload": [
+        "final-zh-16",
+        "final-en-16",
+        "final-zh-14",
+        "final-zh-11",
+        "final-zh-08"
+      ],
+      "raw_top5_float16_payload": [
+        "final-zh-16",
+        "final-en-16",
+        "final-zh-14",
+        "final-zh-11",
+        "final-zh-08"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_cross_language-16",
+      "max_absolute_cosine_error": 0.0001071649406855224,
+      "raw_top5_float32_payload": [
+        "final-zh-16",
+        "final-audio-16",
+        "final-en-16",
+        "final-zh-14",
+        "final-zh-21"
+      ],
+      "raw_top5_float16_payload": [
+        "final-zh-16",
+        "final-audio-16",
+        "final-en-16",
+        "final-zh-14",
+        "final-zh-21"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_semantic_paraphrase-16",
+      "max_absolute_cosine_error": 0.0001053502282045704,
+      "raw_top5_float32_payload": [
+        "final-audio-16",
+        "final-zh-16",
+        "final-en-16",
+        "final-en-03",
+        "final-en-21"
+      ],
+      "raw_top5_float16_payload": [
+        "final-audio-16",
+        "final-zh-16",
+        "final-en-16",
+        "final-en-03",
+        "final-en-21"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_audio_semantic-16",
+      "max_absolute_cosine_error": 0.00010911576836269976,
+      "raw_top5_float32_payload": [
+        "final-audio-16",
+        "final-zh-16",
+        "final-en-16",
+        "final-en-03",
+        "final-en-21"
+      ],
+      "raw_top5_float16_payload": [
+        "final-audio-16",
+        "final-zh-16",
+        "final-en-16",
+        "final-en-03",
+        "final-en-21"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_image_semantic-16",
+      "max_absolute_cosine_error": 0.0001094035207480637,
+      "raw_top5_float32_payload": [
+        "final-image-yellow-triangle",
+        "final-image-yellow-diamond",
+        "final-image-green-triangle",
+        "final-image-black-triangle",
+        "final-image-red-triangle"
+      ],
+      "raw_top5_float16_payload": [
+        "final-image-yellow-triangle",
+        "final-image-yellow-diamond",
+        "final-image-green-triangle",
+        "final-image-black-triangle",
+        "final-image-red-triangle"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_no_answer-16",
+      "max_absolute_cosine_error": 9.92883481938378e-05,
+      "raw_top5_float32_payload": [
+        "final-zh-17",
+        "final-en-10",
+        "final-en-23",
+        "final-en-01",
+        "final-en-17"
+      ],
+      "raw_top5_float16_payload": [
+        "final-zh-17",
+        "final-en-10",
+        "final-en-23",
+        "final-en-01",
+        "final-en-17"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_lexical-17",
+      "max_absolute_cosine_error": 0.00011356824863684167,
+      "raw_top5_float32_payload": [
+        "final-en-17",
+        "final-audio-17",
+        "final-zh-17",
+        "final-en-12",
+        "final-en-11"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-17",
+        "final-audio-17",
+        "final-zh-17",
+        "final-en-12",
+        "final-en-11"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_identifier_unicode-17",
+      "max_absolute_cosine_error": 0.0001128519974018527,
+      "raw_top5_float32_payload": [
+        "final-en-07",
+        "final-en-21",
+        "final-en-16",
+        "final-en-00",
+        "final-en-03"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-07",
+        "final-en-21",
+        "final-en-16",
+        "final-en-00",
+        "final-en-03"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_chinese_short-17",
+      "max_absolute_cosine_error": 0.00011448506174216444,
+      "raw_top5_float32_payload": [
+        "final-zh-17",
+        "final-en-17",
+        "final-zh-01",
+        "final-zh-11",
+        "final-zh-20"
+      ],
+      "raw_top5_float16_payload": [
+        "final-zh-17",
+        "final-en-17",
+        "final-zh-01",
+        "final-zh-11",
+        "final-zh-20"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_cross_language-17",
+      "max_absolute_cosine_error": 0.00010613930051783793,
+      "raw_top5_float32_payload": [
+        "final-en-17",
+        "final-audio-17",
+        "final-en-11",
+        "final-zh-17",
+        "final-en-21"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-17",
+        "final-audio-17",
+        "final-en-11",
+        "final-zh-17",
+        "final-en-21"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_semantic_paraphrase-17",
+      "max_absolute_cosine_error": 0.00010698504989370416,
+      "raw_top5_float32_payload": [
+        "final-zh-17",
+        "final-en-17",
+        "final-zh-11",
+        "final-zh-12",
+        "final-zh-15"
+      ],
+      "raw_top5_float16_payload": [
+        "final-zh-17",
+        "final-en-17",
+        "final-zh-11",
+        "final-zh-12",
+        "final-zh-15"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_audio_semantic-17",
+      "max_absolute_cosine_error": 0.00010639634896081329,
+      "raw_top5_float32_payload": [
+        "final-en-17",
+        "final-audio-17",
+        "final-en-11",
+        "final-zh-17",
+        "final-zh-11"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-17",
+        "final-audio-17",
+        "final-en-11",
+        "final-zh-17",
+        "final-zh-11"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_image_semantic-17",
+      "max_absolute_cosine_error": 0.00010715959791307572,
+      "raw_top5_float32_payload": [
+        "final-image-yellow-diamond",
+        "final-image-red-diamond",
+        "final-image-black-diamond",
+        "final-image-green-diamond",
+        "final-image-yellow-triangle"
+      ],
+      "raw_top5_float16_payload": [
+        "final-image-yellow-diamond",
+        "final-image-red-diamond",
+        "final-image-black-diamond",
+        "final-image-green-diamond",
+        "final-image-yellow-triangle"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_no_answer-17",
+      "max_absolute_cosine_error": 9.907872447556532e-05,
+      "raw_top5_float32_payload": [
+        "final-audio-03",
+        "final-audio-21",
+        "final-image-yellow-diamond",
+        "final-audio-23",
+        "final-image-red-triangle"
+      ],
+      "raw_top5_float16_payload": [
+        "final-audio-03",
+        "final-audio-21",
+        "final-image-yellow-diamond",
+        "final-audio-23",
+        "final-image-red-triangle"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_lexical-18",
+      "max_absolute_cosine_error": 0.00011666100625518094,
+      "raw_top5_float32_payload": [
+        "final-en-18",
+        "final-zh-18",
+        "final-audio-18",
+        "final-audio-05",
+        "final-en-01"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-18",
+        "final-zh-18",
+        "final-audio-18",
+        "final-audio-05",
+        "final-en-01"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_identifier_unicode-18",
+      "max_absolute_cosine_error": 0.00011413652669189922,
+      "raw_top5_float32_payload": [
+        "final-en-18",
+        "final-en-21",
+        "final-en-16",
+        "final-en-19",
+        "final-en-12"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-18",
+        "final-en-21",
+        "final-en-16",
+        "final-en-19",
+        "final-en-12"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_chinese_short-18",
+      "max_absolute_cosine_error": 0.00011696130713678698,
+      "raw_top5_float32_payload": [
+        "final-zh-18",
+        "final-zh-01",
+        "final-zh-10",
+        "final-zh-06",
+        "final-zh-15"
+      ],
+      "raw_top5_float16_payload": [
+        "final-zh-18",
+        "final-zh-01",
+        "final-zh-10",
+        "final-zh-06",
+        "final-zh-15"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_cross_language-18",
+      "max_absolute_cosine_error": 0.00010835831254241146,
+      "raw_top5_float32_payload": [
+        "final-zh-18",
+        "final-en-18",
+        "final-audio-18",
+        "final-zh-15",
+        "final-zh-10"
+      ],
+      "raw_top5_float16_payload": [
+        "final-zh-18",
+        "final-en-18",
+        "final-audio-18",
+        "final-zh-15",
+        "final-zh-10"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_semantic_paraphrase-18",
+      "max_absolute_cosine_error": 0.00010343098176968102,
+      "raw_top5_float32_payload": [
+        "final-audio-18",
+        "final-en-18",
+        "final-zh-18",
+        "final-audio-22",
+        "final-en-22"
+      ],
+      "raw_top5_float16_payload": [
+        "final-audio-18",
+        "final-en-18",
+        "final-zh-18",
+        "final-audio-22",
+        "final-en-22"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_audio_semantic-18",
+      "max_absolute_cosine_error": 0.00010347851722403156,
+      "raw_top5_float32_payload": [
+        "final-audio-18",
+        "final-en-18",
+        "final-zh-18",
+        "final-audio-10",
+        "final-audio-22"
+      ],
+      "raw_top5_float16_payload": [
+        "final-audio-18",
+        "final-en-18",
+        "final-zh-18",
+        "final-audio-10",
+        "final-audio-22"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_image_semantic-18",
+      "max_absolute_cosine_error": 0.0001141915620591627,
+      "raw_top5_float32_payload": [
+        "final-image-yellow-star",
+        "final-image-green-star",
+        "final-image-black-star",
+        "final-image-blue-star",
+        "final-image-yellow-circle"
+      ],
+      "raw_top5_float16_payload": [
+        "final-image-yellow-star",
+        "final-image-green-star",
+        "final-image-black-star",
+        "final-image-blue-star",
+        "final-image-yellow-circle"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_no_answer-18",
+      "max_absolute_cosine_error": 0.00010266962648031175,
+      "raw_top5_float32_payload": [
+        "final-zh-17",
+        "final-en-01",
+        "final-en-05",
+        "final-zh-15",
+        "final-en-21"
+      ],
+      "raw_top5_float16_payload": [
+        "final-zh-17",
+        "final-en-01",
+        "final-en-05",
+        "final-zh-15",
+        "final-en-21"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_lexical-19",
+      "max_absolute_cosine_error": 0.00011894212312801855,
+      "raw_top5_float32_payload": [
+        "final-en-19",
+        "final-audio-19",
+        "final-zh-19",
+        "final-audio-02",
+        "final-en-21"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-19",
+        "final-audio-19",
+        "final-zh-19",
+        "final-audio-02",
+        "final-en-21"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_identifier_unicode-19",
+      "max_absolute_cosine_error": 0.00011075208156208216,
+      "raw_top5_float32_payload": [
+        "final-en-19",
+        "final-en-21",
+        "final-en-00",
+        "final-en-07",
+        "final-en-14"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-19",
+        "final-en-21",
+        "final-en-00",
+        "final-en-07",
+        "final-en-14"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_chinese_short-19",
+      "max_absolute_cosine_error": 0.0001147737305817742,
+      "raw_top5_float32_payload": [
+        "final-zh-19",
+        "final-zh-01",
+        "final-zh-06",
+        "final-zh-02",
+        "final-zh-11"
+      ],
+      "raw_top5_float16_payload": [
+        "final-zh-19",
+        "final-zh-01",
+        "final-zh-06",
+        "final-zh-02",
+        "final-zh-11"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_cross_language-19",
+      "max_absolute_cosine_error": 0.00011250389472916567,
+      "raw_top5_float32_payload": [
+        "final-audio-19",
+        "final-zh-19",
+        "final-en-19",
+        "final-audio-14",
+        "final-audio-04"
+      ],
+      "raw_top5_float16_payload": [
+        "final-audio-19",
+        "final-zh-19",
+        "final-en-19",
+        "final-audio-14",
+        "final-audio-04"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_semantic_paraphrase-19",
+      "max_absolute_cosine_error": 0.00011189388592569571,
+      "raw_top5_float32_payload": [
+        "final-zh-19",
+        "final-en-19",
+        "final-audio-19",
+        "final-zh-14",
+        "final-zh-02"
+      ],
+      "raw_top5_float16_payload": [
+        "final-zh-19",
+        "final-en-19",
+        "final-audio-19",
+        "final-zh-14",
+        "final-zh-02"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_audio_semantic-19",
+      "max_absolute_cosine_error": 0.00011474823298984749,
+      "raw_top5_float32_payload": [
+        "final-audio-19",
+        "final-zh-19",
+        "final-en-19",
+        "final-audio-04",
+        "final-audio-14"
+      ],
+      "raw_top5_float16_payload": [
+        "final-audio-19",
+        "final-zh-19",
+        "final-en-19",
+        "final-audio-04",
+        "final-audio-14"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_image_semantic-19",
+      "max_absolute_cosine_error": 0.00011284246330589554,
+      "raw_top5_float32_payload": [
+        "final-image-yellow-cross",
+        "final-image-yellow-diamond",
+        "final-image-green-cross",
+        "final-image-black-cross",
+        "final-image-red-cross"
+      ],
+      "raw_top5_float16_payload": [
+        "final-image-yellow-cross",
+        "final-image-yellow-diamond",
+        "final-image-green-cross",
+        "final-image-black-cross",
+        "final-image-red-cross"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_no_answer-19",
+      "max_absolute_cosine_error": 9.917971595241326e-05,
+      "raw_top5_float32_payload": [
+        "final-audio-15",
+        "final-en-21",
+        "final-en-12",
+        "final-audio-20",
+        "final-audio-06"
+      ],
+      "raw_top5_float16_payload": [
+        "final-audio-15",
+        "final-en-21",
+        "final-en-12",
+        "final-audio-20",
+        "final-audio-06"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_lexical-20",
+      "max_absolute_cosine_error": 0.00010858260542112586,
+      "raw_top5_float32_payload": [
+        "final-en-20",
+        "final-zh-20",
+        "final-audio-20",
+        "final-audio-12",
+        "final-en-07"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-20",
+        "final-zh-20",
+        "final-audio-20",
+        "final-audio-12",
+        "final-en-07"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_identifier_unicode-20",
+      "max_absolute_cosine_error": 0.00011574964466265492,
+      "raw_top5_float32_payload": [
+        "final-en-16",
+        "final-en-20",
+        "final-en-21",
+        "final-en-07",
+        "final-en-00"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-16",
+        "final-en-20",
+        "final-en-21",
+        "final-en-07",
+        "final-en-00"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_chinese_short-20",
+      "max_absolute_cosine_error": 0.00010443285605898911,
+      "raw_top5_float32_payload": [
+        "final-zh-20",
+        "final-en-20",
+        "final-zh-17",
+        "final-zh-11",
+        "final-zh-12"
+      ],
+      "raw_top5_float16_payload": [
+        "final-zh-20",
+        "final-en-20",
+        "final-zh-17",
+        "final-zh-11",
+        "final-zh-12"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_cross_language-20",
+      "max_absolute_cosine_error": 9.884171539942255e-05,
+      "raw_top5_float32_payload": [
+        "final-zh-20",
+        "final-en-20",
+        "final-audio-20",
+        "final-zh-12",
+        "final-zh-10"
+      ],
+      "raw_top5_float16_payload": [
+        "final-zh-20",
+        "final-en-20",
+        "final-audio-20",
+        "final-zh-12",
+        "final-zh-10"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_semantic_paraphrase-20",
+      "max_absolute_cosine_error": 0.00010541387906781718,
+      "raw_top5_float32_payload": [
+        "final-en-20",
+        "final-zh-20",
+        "final-audio-20",
+        "final-audio-12",
+        "final-en-10"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-20",
+        "final-zh-20",
+        "final-audio-20",
+        "final-audio-12",
+        "final-en-10"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_audio_semantic-20",
+      "max_absolute_cosine_error": 0.000108370199196961,
+      "raw_top5_float32_payload": [
+        "final-en-20",
+        "final-zh-20",
+        "final-audio-20",
+        "final-audio-18",
+        "final-audio-12"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-20",
+        "final-zh-20",
+        "final-audio-20",
+        "final-audio-18",
+        "final-audio-12"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_image_semantic-20",
+      "max_absolute_cosine_error": 0.0001182181884334943,
+      "raw_top5_float32_payload": [
+        "final-image-black-circle",
+        "final-image-green-circle",
+        "final-image-blue-circle",
+        "final-image-yellow-circle",
+        "final-image-black-diamond"
+      ],
+      "raw_top5_float16_payload": [
+        "final-image-black-circle",
+        "final-image-green-circle",
+        "final-image-blue-circle",
+        "final-image-yellow-circle",
+        "final-image-black-diamond"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_no_answer-20",
+      "max_absolute_cosine_error": 9.777975045155429e-05,
+      "raw_top5_float32_payload": [
+        "final-audio-09",
+        "final-en-01",
+        "final-en-06",
+        "final-en-23",
+        "final-en-05"
+      ],
+      "raw_top5_float16_payload": [
+        "final-audio-09",
+        "final-en-01",
+        "final-en-06",
+        "final-en-23",
+        "final-en-05"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_lexical-21",
+      "max_absolute_cosine_error": 0.00011692752502179271,
+      "raw_top5_float32_payload": [
+        "final-en-21",
+        "final-audio-21",
+        "final-en-04",
+        "final-zh-21",
+        "final-en-12"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-21",
+        "final-audio-21",
+        "final-en-04",
+        "final-zh-21",
+        "final-en-12"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_identifier_unicode-21",
+      "max_absolute_cosine_error": 0.00011242035045999632,
+      "raw_top5_float32_payload": [
+        "final-en-21",
+        "final-en-05",
+        "final-en-00",
+        "final-en-07",
+        "final-en-12"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-21",
+        "final-en-05",
+        "final-en-00",
+        "final-en-07",
+        "final-en-12"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_chinese_short-21",
+      "max_absolute_cosine_error": 0.00011227706404492999,
+      "raw_top5_float32_payload": [
+        "final-zh-21",
+        "final-en-21",
+        "final-zh-08",
+        "final-zh-06",
+        "final-zh-11"
+      ],
+      "raw_top5_float16_payload": [
+        "final-zh-21",
+        "final-en-21",
+        "final-zh-08",
+        "final-zh-06",
+        "final-zh-11"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_cross_language-21",
+      "max_absolute_cosine_error": 0.00010718547687971203,
+      "raw_top5_float32_payload": [
+        "final-audio-21",
+        "final-en-21",
+        "final-zh-21",
+        "final-en-19",
+        "final-en-17"
+      ],
+      "raw_top5_float16_payload": [
+        "final-audio-21",
+        "final-en-21",
+        "final-zh-21",
+        "final-en-19",
+        "final-en-17"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_semantic_paraphrase-21",
+      "max_absolute_cosine_error": 0.00010213799512726052,
+      "raw_top5_float32_payload": [
+        "final-zh-21",
+        "final-audio-21",
+        "final-en-21",
+        "final-zh-11",
+        "final-en-19"
+      ],
+      "raw_top5_float16_payload": [
+        "final-zh-21",
+        "final-audio-21",
+        "final-en-21",
+        "final-zh-11",
+        "final-en-19"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_audio_semantic-21",
+      "max_absolute_cosine_error": 0.00010881660550310368,
+      "raw_top5_float32_payload": [
+        "final-audio-21",
+        "final-en-21",
+        "final-en-17",
+        "final-zh-21",
+        "final-en-19"
+      ],
+      "raw_top5_float16_payload": [
+        "final-audio-21",
+        "final-en-21",
+        "final-en-17",
+        "final-zh-21",
+        "final-en-19"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_image_semantic-21",
+      "max_absolute_cosine_error": 0.00011618485524977906,
+      "raw_top5_float32_payload": [
+        "final-image-black-triangle",
+        "final-image-red-triangle",
+        "final-image-green-triangle",
+        "final-image-blue-triangle",
+        "final-image-yellow-triangle"
+      ],
+      "raw_top5_float16_payload": [
+        "final-image-black-triangle",
+        "final-image-red-triangle",
+        "final-image-green-triangle",
+        "final-image-blue-triangle",
+        "final-image-yellow-triangle"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_no_answer-21",
+      "max_absolute_cosine_error": 0.00010543662536721676,
+      "raw_top5_float32_payload": [
+        "final-audio-06",
+        "final-en-06",
+        "final-en-22",
+        "final-zh-06",
+        "final-zh-22"
+      ],
+      "raw_top5_float16_payload": [
+        "final-audio-06",
+        "final-en-06",
+        "final-en-22",
+        "final-zh-06",
+        "final-zh-22"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_lexical-22",
+      "max_absolute_cosine_error": 0.00010895602965022011,
+      "raw_top5_float32_payload": [
+        "final-en-22",
+        "final-audio-06",
+        "final-en-06",
+        "final-audio-22",
+        "final-audio-15"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-22",
+        "final-audio-06",
+        "final-en-06",
+        "final-audio-22",
+        "final-audio-15"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_identifier_unicode-22",
+      "max_absolute_cosine_error": 0.0001164688135218972,
+      "raw_top5_float32_payload": [
+        "final-en-21",
+        "final-en-16",
+        "final-en-23",
+        "final-en-12",
+        "final-en-05"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-21",
+        "final-en-16",
+        "final-en-23",
+        "final-en-12",
+        "final-en-05"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_chinese_short-22",
+      "max_absolute_cosine_error": 0.00011067125406860612,
+      "raw_top5_float32_payload": [
+        "final-zh-22",
+        "final-zh-06",
+        "final-zh-15",
+        "final-zh-17",
+        "final-zh-10"
+      ],
+      "raw_top5_float16_payload": [
+        "final-zh-22",
+        "final-zh-06",
+        "final-zh-15",
+        "final-zh-17",
+        "final-zh-10"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_cross_language-22",
+      "max_absolute_cosine_error": 0.00010316412865285507,
+      "raw_top5_float32_payload": [
+        "final-zh-22",
+        "final-audio-22",
+        "final-en-22",
+        "final-zh-06",
+        "final-zh-15"
+      ],
+      "raw_top5_float16_payload": [
+        "final-zh-22",
+        "final-audio-22",
+        "final-en-22",
+        "final-zh-06",
+        "final-zh-15"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_semantic_paraphrase-22",
+      "max_absolute_cosine_error": 0.00010693599778099916,
+      "raw_top5_float32_payload": [
+        "final-audio-22",
+        "final-en-22",
+        "final-zh-22",
+        "final-audio-12",
+        "final-en-06"
+      ],
+      "raw_top5_float16_payload": [
+        "final-audio-22",
+        "final-en-22",
+        "final-zh-22",
+        "final-audio-12",
+        "final-en-06"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_audio_semantic-22",
+      "max_absolute_cosine_error": 0.00011042573101949227,
+      "raw_top5_float32_payload": [
+        "final-audio-22",
+        "final-en-22",
+        "final-zh-22",
+        "final-en-06",
+        "final-audio-12"
+      ],
+      "raw_top5_float16_payload": [
+        "final-audio-22",
+        "final-en-22",
+        "final-zh-22",
+        "final-en-06",
+        "final-audio-12"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_image_semantic-22",
+      "max_absolute_cosine_error": 0.00011493285906116757,
+      "raw_top5_float32_payload": [
+        "final-image-black-diamond",
+        "final-image-red-diamond",
+        "final-image-blue-diamond",
+        "final-image-black-triangle",
+        "final-image-green-diamond"
+      ],
+      "raw_top5_float16_payload": [
+        "final-image-black-diamond",
+        "final-image-red-diamond",
+        "final-image-blue-diamond",
+        "final-image-black-triangle",
+        "final-image-green-diamond"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_no_answer-22",
+      "max_absolute_cosine_error": 9.793404512947745e-05,
+      "raw_top5_float32_payload": [
+        "final-en-06",
+        "final-en-05",
+        "final-en-12",
+        "final-audio-05",
+        "final-en-21"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-06",
+        "final-en-05",
+        "final-en-12",
+        "final-audio-05",
+        "final-en-21"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_lexical-23",
+      "max_absolute_cosine_error": 0.00010798465593087059,
+      "raw_top5_float32_payload": [
+        "final-en-23",
+        "final-audio-23",
+        "final-zh-23",
+        "final-audio-20",
+        "final-audio-15"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-23",
+        "final-audio-23",
+        "final-zh-23",
+        "final-audio-20",
+        "final-audio-15"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_identifier_unicode-23",
+      "max_absolute_cosine_error": 0.00011667428144312986,
+      "raw_top5_float32_payload": [
+        "final-en-23",
+        "final-en-00",
+        "final-en-21",
+        "final-en-05",
+        "final-en-07"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-23",
+        "final-en-00",
+        "final-en-21",
+        "final-en-05",
+        "final-en-07"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_chinese_short-23",
+      "max_absolute_cosine_error": 0.00011290569404032169,
+      "raw_top5_float32_payload": [
+        "final-zh-23",
+        "final-en-23",
+        "final-zh-14",
+        "final-zh-05",
+        "final-zh-06"
+      ],
+      "raw_top5_float16_payload": [
+        "final-zh-23",
+        "final-en-23",
+        "final-zh-14",
+        "final-zh-05",
+        "final-zh-06"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_cross_language-23",
+      "max_absolute_cosine_error": 0.00011074502595120883,
+      "raw_top5_float32_payload": [
+        "final-audio-23",
+        "final-en-23",
+        "final-zh-23",
+        "final-audio-09",
+        "final-en-14"
+      ],
+      "raw_top5_float16_payload": [
+        "final-audio-23",
+        "final-en-23",
+        "final-zh-23",
+        "final-audio-09",
+        "final-en-14"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_semantic_paraphrase-23",
+      "max_absolute_cosine_error": 0.00010168766682816521,
+      "raw_top5_float32_payload": [
+        "final-zh-23",
+        "final-zh-14",
+        "final-en-23",
+        "final-zh-05",
+        "final-zh-09"
+      ],
+      "raw_top5_float16_payload": [
+        "final-zh-23",
+        "final-zh-14",
+        "final-en-23",
+        "final-zh-05",
+        "final-zh-09"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_audio_semantic-23",
+      "max_absolute_cosine_error": 0.00011284153031831945,
+      "raw_top5_float32_payload": [
+        "final-audio-23",
+        "final-en-23",
+        "final-zh-23",
+        "final-zh-14",
+        "final-en-14"
+      ],
+      "raw_top5_float16_payload": [
+        "final-audio-23",
+        "final-en-23",
+        "final-zh-23",
+        "final-zh-14",
+        "final-en-14"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_image_semantic-23",
+      "max_absolute_cosine_error": 0.0001220993250661273,
+      "raw_top5_float32_payload": [
+        "final-image-black-star",
+        "final-image-blue-star",
+        "final-image-yellow-star",
+        "final-image-green-star",
+        "final-image-red-star"
+      ],
+      "raw_top5_float16_payload": [
+        "final-image-black-star",
+        "final-image-blue-star",
+        "final-image-yellow-star",
+        "final-image-green-star",
+        "final-image-red-star"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_no_answer-23",
+      "max_absolute_cosine_error": 0.00010111449835548125,
+      "raw_top5_float32_payload": [
+        "final-en-23",
+        "final-en-13",
+        "final-en-06",
+        "final-en-11",
+        "final-zh-17"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-23",
+        "final-en-13",
+        "final-en-06",
+        "final-en-11",
+        "final-zh-17"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_lexical-24",
+      "max_absolute_cosine_error": 0.00010837895031967637,
+      "raw_top5_float32_payload": [
+        "final-en-24",
+        "final-zh-24",
+        "final-audio-10",
+        "final-audio-18",
+        "final-audio-24"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-24",
+        "final-zh-24",
+        "final-audio-10",
+        "final-audio-18",
+        "final-audio-24"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_identifier_unicode-24",
+      "max_absolute_cosine_error": 0.00011254014118866618,
+      "raw_top5_float32_payload": [
+        "final-en-04",
+        "final-en-00",
+        "final-en-21",
+        "final-en-07",
+        "final-en-23"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-04",
+        "final-en-00",
+        "final-en-21",
+        "final-en-23",
+        "final-en-07"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": true,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_chinese_short-24",
+      "max_absolute_cosine_error": 0.00011359097700025522,
+      "raw_top5_float32_payload": [
+        "final-zh-24",
+        "final-zh-15",
+        "final-en-24",
+        "final-zh-10",
+        "final-zh-07"
+      ],
+      "raw_top5_float16_payload": [
+        "final-zh-24",
+        "final-zh-15",
+        "final-en-24",
+        "final-zh-10",
+        "final-zh-07"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_cross_language-24",
+      "max_absolute_cosine_error": 0.00011314049066990517,
+      "raw_top5_float32_payload": [
+        "final-zh-24",
+        "final-en-24",
+        "final-audio-24",
+        "final-zh-15",
+        "final-zh-06"
+      ],
+      "raw_top5_float16_payload": [
+        "final-zh-24",
+        "final-en-24",
+        "final-audio-24",
+        "final-zh-15",
+        "final-zh-06"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_semantic_paraphrase-24",
+      "max_absolute_cosine_error": 0.00011440457412492666,
+      "raw_top5_float32_payload": [
+        "final-audio-24",
+        "final-en-24",
+        "final-zh-24",
+        "final-audio-01",
+        "final-en-22"
+      ],
+      "raw_top5_float16_payload": [
+        "final-audio-24",
+        "final-en-24",
+        "final-zh-24",
+        "final-audio-01",
+        "final-en-22"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_audio_semantic-24",
+      "max_absolute_cosine_error": 0.00011568363679947957,
+      "raw_top5_float32_payload": [
+        "final-audio-24",
+        "final-en-24",
+        "final-zh-24",
+        "final-audio-18",
+        "final-audio-01"
+      ],
+      "raw_top5_float16_payload": [
+        "final-audio-24",
+        "final-en-24",
+        "final-zh-24",
+        "final-audio-18",
+        "final-audio-01"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_image_semantic-24",
+      "max_absolute_cosine_error": 0.0001210646233743562,
+      "raw_top5_float32_payload": [
+        "final-image-black-cross",
+        "final-image-red-cross",
+        "final-image-yellow-cross",
+        "final-image-blue-cross",
+        "final-image-green-cross"
+      ],
+      "raw_top5_float16_payload": [
+        "final-image-black-cross",
+        "final-image-red-cross",
+        "final-image-yellow-cross",
+        "final-image-blue-cross",
+        "final-image-green-cross"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    },
+    {
+      "id": "unseen_no_answer-24",
+      "max_absolute_cosine_error": 0.00010163341400293291,
+      "raw_top5_float32_payload": [
+        "final-en-05",
+        "final-en-17",
+        "final-zh-17",
+        "final-zh-05",
+        "final-en-00"
+      ],
+      "raw_top5_float16_payload": [
+        "final-en-05",
+        "final-en-17",
+        "final-zh-17",
+        "final-zh-05",
+        "final-en-00"
+      ],
+      "raw_top1_changed": false,
+      "raw_top5_order_changed": false,
+      "raw_top5_set_changed": false
+    }
+  ]
+}

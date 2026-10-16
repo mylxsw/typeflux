@@ -1,0 +1,5 @@
+{
+  "unix": 1792113948.3793569,
+  "stopped_test_pid": 27084,
+  "reason": "File-mode terminal predicate observed the old done phase after request changed but before new planning ran. 409 file-mode no-body rows are invalid sampling results, not production availability failures. Mixed-entry rows are valid. Require isPlanCurrent before accepting a terminal output."
+}

@@ -1,0 +1,16 @@
+Building for production...
+[Computing dependencies]
+[Using on-disk description]
+[1 / 4]
+[1 / 6] Atomics
+[1 / 4] CYaml
+[1 / 3] CNIOBoringSSL
+Build complete! (2.71 secs)
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite "Native composer semantic latency" started.
+◇ Test "measure committed native input to body publication and drawing when requested" started.
+✔ Test "measure committed native input to body publication and drawing when requested" passed after 190.881 seconds.
+✔ Suite "Native composer semantic latency" passed after 190.881 seconds.
+✔ Test run with 1 test in 1 suite passed after 190.881 seconds.

@@ -1,0 +1,14 @@
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite "Native composer semantic latency" started.
+◇ Test "measure committed native input to body publication and drawing when requested" started.
+✘ Test "measure committed native input to body publication and drawing when requested" recorded an issue at SemanticNativeLatencyTests.swift:264:9: Expectation failed: failedBodySamples == 0
+↳ terminal queries without the expected body remain failed samples
+↳ failedBodySamples == 0 → false
+↳   failedBodySamples → 20
+✘ Test "measure committed native input to body publication and drawing when requested" failed after 62.078 seconds with 1 issue.
+✘ Suite "Native composer semantic latency" failed after 62.078 seconds with 1 issue.
+✘ Test run with 1 test in 1 suite failed after 62.078 seconds with 1 issue.
+Note: Some test targets reported failures:
+  - TypefluxFocusedTests (Swift Testing)

@@ -1,0 +1,163 @@
+{
+  "plan": [
+    [
+      "after",
+      "native",
+      1000000
+    ],
+    [
+      "before",
+      "native",
+      1000000
+    ],
+    [
+      "before",
+      "contention",
+      1000000
+    ],
+    [
+      "after",
+      "contention",
+      1000000
+    ],
+    [
+      "after",
+      "native",
+      100000
+    ],
+    [
+      "after",
+      "native",
+      10000
+    ],
+    [
+      "after",
+      "contention",
+      100000
+    ],
+    [
+      "before",
+      "cold-fts",
+      10000
+    ],
+    [
+      "after",
+      "cold-fts",
+      10000
+    ],
+    [
+      "before",
+      "cold-fts",
+      100000
+    ],
+    [
+      "after",
+      "cold-fts",
+      100000
+    ],
+    [
+      "before",
+      "cold-fts",
+      1000000
+    ],
+    [
+      "after",
+      "cold-fts",
+      1000000
+    ]
+  ],
+  "completed": [
+    {
+      "label": "after",
+      "mode": "native",
+      "size": 1000000,
+      "exit_code": 0,
+      "complete_capture": true
+    },
+    {
+      "label": "before",
+      "mode": "native",
+      "size": 1000000,
+      "exit_code": 0,
+      "complete_capture": true
+    },
+    {
+      "label": "before",
+      "mode": "contention",
+      "size": 1000000,
+      "exit_code": 0,
+      "complete_capture": true
+    },
+    {
+      "label": "after",
+      "mode": "contention",
+      "size": 1000000,
+      "exit_code": 0,
+      "complete_capture": true
+    },
+    {
+      "label": "after",
+      "mode": "native",
+      "size": 100000,
+      "exit_code": 0,
+      "complete_capture": true
+    },
+    {
+      "label": "after",
+      "mode": "native",
+      "size": 10000,
+      "exit_code": 0,
+      "complete_capture": true
+    },
+    {
+      "label": "after",
+      "mode": "contention",
+      "size": 100000,
+      "exit_code": 0,
+      "complete_capture": true
+    },
+    {
+      "label": "before",
+      "mode": "cold-fts",
+      "size": 10000,
+      "exit_code": 0,
+      "complete_capture": true
+    },
+    {
+      "label": "after",
+      "mode": "cold-fts",
+      "size": 10000,
+      "exit_code": 0,
+      "complete_capture": true
+    },
+    {
+      "label": "before",
+      "mode": "cold-fts",
+      "size": 100000,
+      "exit_code": 0,
+      "complete_capture": true
+    },
+    {
+      "label": "after",
+      "mode": "cold-fts",
+      "size": 100000,
+      "exit_code": 0,
+      "complete_capture": true
+    },
+    {
+      "label": "before",
+      "mode": "cold-fts",
+      "size": 1000000,
+      "exit_code": 0,
+      "complete_capture": true
+    },
+    {
+      "label": "after",
+      "mode": "cold-fts",
+      "size": 1000000,
+      "exit_code": 0,
+      "complete_capture": true
+    }
+  ],
+  "wall_seconds": 9421.590271874971
+}

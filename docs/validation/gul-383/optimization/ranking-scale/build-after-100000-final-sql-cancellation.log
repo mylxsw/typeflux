@@ -1,0 +1,442 @@
+Building for production...
+[Computing dependencies]
+[Constructing description]
+[Pre-planning 1 / 1854]
+[Planning deferred tasks]
+[Writing build description]
+[Starting]
+[5 / 12]
+[8 / 15] WhisperKit
+[11 / 16] CNIOBoringSSL
+[12 / 16] Typeflux
+[18 / 26]
+[21 / 26]
+<checkout>/Sources/Typeflux/Ask/Artifacts/AskPreviewHost.swift:152:23: warning: 'processPool' was deprecated in macOS 12.0: Creating and using multiple instances of WKProcessPool no longer has any effect. [#DeprecatedDeclaration]
+150 |         try AskPreviewEnginePolicy.apply(to: configuration.preferences)
+151 |         configuration.websiteDataStore = .nonPersistent()
+152 |         configuration.processPool = WKProcessPool()
+    |                       `- warning: 'processPool' was deprecated in macOS 12.0: Creating and using multiple instances of WKProcessPool no longer has any effect. [#DeprecatedDeclaration]
+153 |         configuration.defaultWebpagePreferences.allowsContentJavaScript = true
+154 |         configuration.preferences.javaScriptCanOpenWindowsAutomatically = false
+
+<checkout>/Sources/Typeflux/Ask/Artifacts/AskPreviewHost.swift:152:37: warning: 'WKProcessPool' was deprecated in macOS 12.0: Creating and using multiple instances of WKProcessPool no longer has any effect. [#DeprecatedDeclaration]
+150 |         try AskPreviewEnginePolicy.apply(to: configuration.preferences)
+151 |         configuration.websiteDataStore = .nonPersistent()
+152 |         configuration.processPool = WKProcessPool()
+    |                                     `- warning: 'WKProcessPool' was deprecated in macOS 12.0: Creating and using multiple instances of WKProcessPool no longer has any effect. [#DeprecatedDeclaration]
+153 |         configuration.defaultWebpagePreferences.allowsContentJavaScript = true
+154 |         configuration.preferences.javaScriptCanOpenWindowsAutomatically = false
+
+<checkout>/Sources/Typeflux/Ask/Artifacts/AskPreviewHost.swift:211:11: warning: cast from '()' to unrelated type '[String]' always fails
+209 |             in: nil,
+210 |             in: .defaultClient
+211 |         ) as? [String] ?? []
+    |           `- warning: cast from '()' to unrelated type '[String]' always fails
+212 |         for error in errors {
+213 |             record(error)
+
+<checkout>/Sources/Typeflux/Ask/Artifacts/AskPreviewHost.swift:207:26: warning: no 'async' operations occur within 'await' expression [#UnnecessaryEffectMarker]
+205 |         try validate?()
+206 |         guard let view = webView else { throw AskArtifactError.unavailable }
+207 |         let errors = try await view.evaluateJavaScript(
+    |                          `- warning: no 'async' operations occur within 'await' expression [#UnnecessaryEffectMarker]
+208 |             "typefluxPreviewErrors.splice(0)",
+209 |             in: nil,
+
+<checkout>/Sources/Typeflux/Ask/Artifacts/AskPreviewHost.swift:207:22: warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+205 |         try validate?()
+206 |         guard let view = webView else { throw AskArtifactError.unavailable }
+207 |         let errors = try await view.evaluateJavaScript(
+    |                      `- warning: no calls to throwing functions occur within 'try' expression [#UnnecessaryEffectMarker]
+208 |             "typefluxPreviewErrors.splice(0)",
+209 |             in: nil,
+
+<checkout>/Sources/Typeflux/Ask/AskConversationViews.swift:706:20: warning: value 'id' was defined but never used; consider replacing with boolean test [#NoUsage]
+ 704 |     private var spaciousHeader: some View {
+ 705 |         HStack(spacing: 8) {
+ 706 |             if let id = model.selectedId {
+     |                    `- warning: value 'id' was defined but never used; consider replacing with boolean test [#NoUsage]
+ 707 |                 HStack(spacing: 10) {
+ 708 |                     Text(headerTitle ?? model.selected?.title
+
+<checkout>/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticMediaExtractor.swift:111:33: warning: 'tracks(withMediaType:)' was deprecated in macOS 13.0: Use loadTracks(withMediaType:) instead [#DeprecatedDeclaration]
+109 |     private static func audio(_ asset: AVAsset, folder: URL,
+110 |                               emit: (AskFileReadResponse) throws -> Void) throws {
+111 |         guard let track = asset.tracks(withMediaType: .audio).first else { return }
+    |                                 `- warning: 'tracks(withMediaType:)' was deprecated in macOS 13.0: Use loadTracks(withMediaType:) instead [#DeprecatedDeclaration]
+112 |         let reader = try AVAssetReader(asset: asset)
+113 |         let output = AVAssetReaderTrackOutput(track: track, outputSettings: [
+
+<checkout>/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticMediaExtractor.swift:161:30: warning: 'duration' was deprecated in macOS 13.0: Use load(.duration) instead [#DeprecatedDeclaration]
+159 |     private static func video(_ asset: AVAsset, folder: URL,
+160 |                               emit: (AskFileReadResponse) throws -> Void) throws {
+161 |         let duration = asset.duration.seconds
+    |                              `- warning: 'duration' was deprecated in macOS 13.0: Use load(.duration) instead [#DeprecatedDeclaration]
+162 |         guard duration.isFinite, duration > 0, duration < Double(Int.max),
+163 |               !asset.tracks(withMediaType: .video).isEmpty else { return }
+
+<checkout>/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticMediaExtractor.swift:163:22: warning: 'tracks(withMediaType:)' was deprecated in macOS 13.0: Use loadTracks(withMediaType:) instead [#DeprecatedDeclaration]
+161 |         let duration = asset.duration.seconds
+162 |         guard duration.isFinite, duration > 0, duration < Double(Int.max),
+163 |               !asset.tracks(withMediaType: .video).isEmpty else { return }
+    |                      `- warning: 'tracks(withMediaType:)' was deprecated in macOS 13.0: Use loadTracks(withMediaType:) instead [#DeprecatedDeclaration]
+164 |         let generator = AVAssetImageGenerator(asset: asset)
+165 |         generator.appliesPreferredTrackTransform = true
+
+<checkout>/Sources/Typeflux/Clipboard/ClipboardPanelController.swift:302:1: warning: '@preconcurrency' on conformance to 'QLPreviewPanelDataSource' has no effect
+300 | }
+301 |
+302 | extension ClipboardPanelController: @preconcurrency QLPreviewPanelDataSource {
+    | `- warning: '@preconcurrency' on conformance to 'QLPreviewPanelDataSource' has no effect
+303 |     func numberOfPreviewItems(in _: QLPreviewPanel!) -> Int {
+304 |         quickLookURLs.count
+
+<checkout>/Sources/Typeflux/Imaging/ImageTiling.swift:70:49: warning: converting non-Sendable function value to '@Sendable (NSRange) -> CGRect?' (aka '@Sendable (_NSRange) -> Optional<CGRect>') may introduce data races
+ 68 |                                             width: rect.width / imageSize.width,
+ 69 |                                             height: rect.height / imageSize.height)
+ 70 |                 placed.locate = line.locate.map { locate in
+    |                                                 `- warning: converting non-Sendable function value to '@Sendable (NSRange) -> CGRect?' (aka '@Sendable (_NSRange) -> Optional<CGRect>') may introduce data races
+ 71 |                     { [band] range in
+ 72 |                         locate(range).map { box in
+
+<checkout>/Sources/Typeflux/Screenshot/Pin/ScreenshotPinController.swift:286:9: warning: result of call to 'item(_:_:key:)' is unused [#NoUsage]
+284 |             return item
+285 |         }
+286 |         item(L("screenshot.edit.copy"), #selector(copyFromMenu), key: "c")
+    |         `- warning: result of call to 'item(_:_:key:)' is unused [#NoUsage]
+287 |         item(L("screenshot.edit.save"), #selector(saveFromMenu), key: "s")
+288 |         item(L("screenshot.pin.edit"), #selector(editFromMenu))
+
+<checkout>/Sources/Typeflux/Screenshot/Pin/ScreenshotPinController.swift:287:9: warning: result of call to 'item(_:_:key:)' is unused [#NoUsage]
+285 |         }
+286 |         item(L("screenshot.edit.copy"), #selector(copyFromMenu), key: "c")
+287 |         item(L("screenshot.edit.save"), #selector(saveFromMenu), key: "s")
+    |         `- warning: result of call to 'item(_:_:key:)' is unused [#NoUsage]
+288 |         item(L("screenshot.pin.edit"), #selector(editFromMenu))
+289 |         menu.addItem(.separator())
+
+<checkout>/Sources/Typeflux/Screenshot/Pin/ScreenshotPinController.swift:288:9: warning: result of call to 'item(_:_:key:)' is unused [#NoUsage]
+286 |         item(L("screenshot.edit.copy"), #selector(copyFromMenu), key: "c")
+287 |         item(L("screenshot.edit.save"), #selector(saveFromMenu), key: "s")
+288 |         item(L("screenshot.pin.edit"), #selector(editFromMenu))
+    |         `- warning: result of call to 'item(_:_:key:)' is unused [#NoUsage]
+289 |         menu.addItem(.separator())
+290 |         item(L("screenshot.pin.actualSize"), #selector(actualSizeFromMenu), key: "0")
+
+<checkout>/Sources/Typeflux/Screenshot/Pin/ScreenshotPinController.swift:290:9: warning: result of call to 'item(_:_:key:)' is unused [#NoUsage]
+288 |         item(L("screenshot.pin.edit"), #selector(editFromMenu))
+289 |         menu.addItem(.separator())
+290 |         item(L("screenshot.pin.actualSize"), #selector(actualSizeFromMenu), key: "0")
+    |         `- warning: result of call to 'item(_:_:key:)' is unused [#NoUsage]
+291 |         item(L("screenshot.pin.clickThrough"), #selector(clickThroughFromMenu))
+292 |         menu.addItem(.separator())
+
+<checkout>/Sources/Typeflux/Screenshot/Pin/ScreenshotPinController.swift:291:9: warning: result of call to 'item(_:_:key:)' is unused [#NoUsage]
+289 |         menu.addItem(.separator())
+290 |         item(L("screenshot.pin.actualSize"), #selector(actualSizeFromMenu), key: "0")
+291 |         item(L("screenshot.pin.clickThrough"), #selector(clickThroughFromMenu))
+    |         `- warning: result of call to 'item(_:_:key:)' is unused [#NoUsage]
+292 |         menu.addItem(.separator())
+293 |         item(L("screenshot.pin.close"), #selector(closeFromMenu))
+
+<checkout>/Sources/Typeflux/Screenshot/Pin/ScreenshotPinController.swift:293:9: warning: result of call to 'item(_:_:key:)' is unused [#NoUsage]
+291 |         item(L("screenshot.pin.clickThrough"), #selector(clickThroughFromMenu))
+292 |         menu.addItem(.separator())
+293 |         item(L("screenshot.pin.close"), #selector(closeFromMenu))
+    |         `- warning: result of call to 'item(_:_:key:)' is unused [#NoUsage]
+294 |         return menu
+295 |     }
+
+<checkout>/Sources/Typeflux/Screenshot/Recording/ScreenRecordingCapture.swift:226:29: warning: 'masterClock' was deprecated in macOS 12.3 [#DeprecatedDeclaration]
+224 |             meter.update(sample)
+225 |         }
+226 |         let stamp = session.masterClock.map {
+    |                             `- warning: 'masterClock' was deprecated in macOS 12.3 [#DeprecatedDeclaration]
+227 |             CMSyncConvertTime(sample.presentationTimeStamp, from: $0, to: CMClockGetHostTimeClock())
+228 |         } ?? sample.presentationTimeStamp
+
+<checkout>/Sources/Typeflux/Screenshot/Scrolling/ScrollStitcher.swift:281:24: warning: implicit reordering of tuple elements from 'fixed:candidate:' to 'candidate:fixed:' is deprecated; this will be an error in a future Swift language mode [#deprecation]
+279 |                                               current: current),
+280 |                isBetter(widened.candidate, than: plain) {
+281 |                 return widened
+    |                        `- warning: implicit reordering of tuple elements from 'fixed:candidate:' to 'candidate:fixed:' is deprecated; this will be an error in a future Swift language mode [#deprecation]
+282 |             }
+283 |             return (plain, fixed)
+
+<checkout>/Sources/Typeflux/Settings/SettingsViewModel.swift:506:31: warning: capture of 'settingsStore' with non-Sendable type 'SettingsStore' in a '@Sendable' closure [#SendableClosureCaptures]
+ 504 |                 guard let self else { return }
+ 505 |                 let preserveDraft = hasPersonaDraftChanges || isCreatingPersonaDraft
+ 506 |                 let updated = settingsStore.personas
+     |                               `- warning: capture of 'settingsStore' with non-Sendable type 'SettingsStore' in a '@Sendable' closure [#SendableClosureCaptures]
+ 507 |                 if personas.sorted(by: { $0.id.uuidString < $1.id.uuidString })
+ 508 |                     != updated.sorted(by: { $0.id.uuidString < $1.id.uuidString }) {
+
+<checkout>/Sources/Typeflux/Settings/SettingsStore.swift:113:13: note: class 'SettingsStore' does not conform to the 'Sendable' protocol
+ 111 | }
+ 112 |
+ 113 | final class SettingsStore {
+     |             `- note: class 'SettingsStore' does not conform to the 'Sendable' protocol
+ 114 |     struct TextLLMConfiguration {
+ 115 |         let provider: LLMRemoteProvider
+
+<checkout>/Sources/Typeflux/UI/ComponentGallery/ComponentGalleryWindowController.swift:64:51: warning: call to main actor-isolated instance method 'activate(ignoringOtherApps:)' in a synchronous nonisolated context [#ActorIsolatedCall]
+ 62 |
+ 63 |     init(dock: DockVisibilityController = .shared,
+ 64 |          activate: @escaping () -> Void = { NSApp.activate(ignoringOtherApps: true) }) {
+    |                                                   `- warning: call to main actor-isolated instance method 'activate(ignoringOtherApps:)' in a synchronous nonisolated context [#ActorIsolatedCall]
+ 65 |         self.dock = dock
+ 66 |         self.activate = activate
+
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX27.0.sdk/System/Library/Frameworks/AppKit.framework/Headers/NSApplication.h:222:1: note: calls to instance method 'activate(ignoringOtherApps:)' from outside of its actor context are implicitly asynchronous
+220 | /// Makes the receiver the active app.
+221 | /// - Parameter ignoreOtherApps: If `NO`, the app is activated only if no other app is currently active. If `YES`, the app activates regardless.
+222 | - (void)activateIgnoringOtherApps:(BOOL)ignoreOtherApps API_DEPRECATED("This method will be deprecated in a future release. Use NSApp.activate instead.", macos(10.0, API_TO_BE_DEPRECATED));
+    | |- note: calls to instance method 'activate(ignoringOtherApps:)' from outside of its actor context are implicitly asynchronous
+    | `- note: main actor isolation inferred from inheritance from class 'NSResponder'
+223 |
+224 | /// Makes the receiver the active app, if possible.
+
+<checkout>/Sources/Typeflux/UI/ComponentGallery/ComponentGalleryWindowController.swift:64:45: warning: main actor-isolated var 'NSApp' can not be referenced from a nonisolated context
+ 62 |
+ 63 |     init(dock: DockVisibilityController = .shared,
+ 64 |          activate: @escaping () -> Void = { NSApp.activate(ignoringOtherApps: true) }) {
+    |                                             `- warning: main actor-isolated var 'NSApp' can not be referenced from a nonisolated context
+ 65 |         self.dock = dock
+ 66 |         self.activate = activate
+
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX27.0.sdk/System/Library/Frameworks/AppKit.framework/Headers/NSApplication.h:196:58: note: var declared here
+194 | @interface NSApplication : NSResponder <NSUserInterfaceValidations, NSMenuItemValidation, NSAccessibilityElement, NSAccessibility>
+195 |
+196 | APPKIT_EXTERN __kindof NSApplication * _Null_unspecified NSApp NS_SWIFT_UI_ACTOR;
+    |                                                          `- note: var declared here
+197 |
+198 | @property (class, readonly, strong) __kindof NSApplication *sharedApplication;
+
+<checkout>/Sources/Typeflux/STT/DefaultSenseVoiceFallbackTranscriber.swift:37:10: warning: weak reference will always be nil because the referenced object is deallocated here
+35 |             modelManager: modelManager
+36 |         )
+37 |         .transcribeStream(audioFile: audioFile, onUpdate: onUpdate)
+   |          `- warning: weak reference will always be nil because the referenced object is deallocated here
+38 |     }
+39 | }
+
+[#ActorIsolatedCall]: <https://docs.swift.org/compiler/documentation/diagnostics/actor-isolated-call>
+[#DeprecatedDeclaration]: <https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration>
+[#NoUsage]: <https://docs.swift.org/compiler/documentation/diagnostics/no-usage>
+[#SendableClosureCaptures]: <https://docs.swift.org/compiler/documentation/diagnostics/sendable-closure-captures>
+[#UnnecessaryEffectMarker]: <https://docs.swift.org/compiler/documentation/diagnostics/unnecessary-effect-marker>
+[22 / 26] Typeflux
+[23 / 25] Typeflux
+[24 / 25] Typeflux
+[28 / 29] Typeflux
+[29 / 29] TypefluxKit-product
+[32 / 38] Typeflux-product
+[40 / 49]
+[44 / 49] Typeflux-product
+[46 / 49] Typeflux-product
+<checkout>/Tests/TypefluxTests/SemanticNativeContentionTests.swift:77:30: warning: 'accessibilityAttributeValue' was deprecated in macOS 10.10: Use the NSAccessibility protocol methods instead (see NSAccessibilityProtocols.h) [#DeprecatedDeclaration]
+ 75 |         _ = NSApplication.shared
+ 76 |         let attribute = NSAccessibility.Attribute(rawValue: "AXEnhancedUserInterface")
+ 77 |         let previous = NSApp.accessibilityAttributeValue(attribute)
+    |                              `- warning: 'accessibilityAttributeValue' was deprecated in macOS 10.10: Use the NSAccessibility protocol methods instead (see NSAccessibilityProtocols.h) [#DeprecatedDeclaration]
+ 78 |         NSApp.accessibilitySetValue(true, forAttribute: attribute)
+ 79 |         defer { NSApp.accessibilitySetValue(previous ?? false, forAttribute: attribute) }
+
+<checkout>/Tests/TypefluxTests/SemanticNativeContentionTests.swift:78:15: warning: 'accessibilitySetValue(_:forAttribute:)' was deprecated in macOS 10.10: Use the NSAccessibility protocol methods instead (see NSAccessibilityProtocols.h) [#DeprecatedDeclaration]
+ 76 |         let attribute = NSAccessibility.Attribute(rawValue: "AXEnhancedUserInterface")
+ 77 |         let previous = NSApp.accessibilityAttributeValue(attribute)
+ 78 |         NSApp.accessibilitySetValue(true, forAttribute: attribute)
+    |               `- warning: 'accessibilitySetValue(_:forAttribute:)' was deprecated in macOS 10.10: Use the NSAccessibility protocol methods instead (see NSAccessibilityProtocols.h) [#DeprecatedDeclaration]
+ 79 |         defer { NSApp.accessibilitySetValue(previous ?? false, forAttribute: attribute) }
+ 80 |         var rows: [[String: Any]] = [], entries: [[String: Any]] = []
+
+<checkout>/Tests/TypefluxTests/SemanticNativeContentionTests.swift:79:23: warning: 'accessibilitySetValue(_:forAttribute:)' was deprecated in macOS 10.10: Use the NSAccessibility protocol methods instead (see NSAccessibilityProtocols.h) [#DeprecatedDeclaration]
+ 77 |         let previous = NSApp.accessibilityAttributeValue(attribute)
+ 78 |         NSApp.accessibilitySetValue(true, forAttribute: attribute)
+ 79 |         defer { NSApp.accessibilitySetValue(previous ?? false, forAttribute: attribute) }
+    |                       `- warning: 'accessibilitySetValue(_:forAttribute:)' was deprecated in macOS 10.10: Use the NSAccessibility protocol methods instead (see NSAccessibilityProtocols.h) [#DeprecatedDeclaration]
+ 80 |         var rows: [[String: Any]] = [], entries: [[String: Any]] = []
+ 81 |         let thermalBefore = ProcessInfo.processInfo.thermalState.rawValue
+
+<checkout>/Tests/TypefluxTests/SemanticNativeLatencyTests.swift:24:30: warning: 'accessibilityAttributeValue' was deprecated in macOS 10.10: Use the NSAccessibility protocol methods instead (see NSAccessibilityProtocols.h) [#DeprecatedDeclaration]
+ 22 |         _ = NSApplication.shared
+ 23 |         let attribute = NSAccessibility.Attribute(rawValue: "AXEnhancedUserInterface")
+ 24 |         let previous = NSApp.accessibilityAttributeValue(attribute)
+    |                              `- warning: 'accessibilityAttributeValue' was deprecated in macOS 10.10: Use the NSAccessibility protocol methods instead (see NSAccessibilityProtocols.h) [#DeprecatedDeclaration]
+ 25 |         NSApp.accessibilitySetValue(true, forAttribute: attribute)
+ 26 |         defer { NSApp.accessibilitySetValue(previous ?? false, forAttribute: attribute) }
+
+<checkout>/Tests/TypefluxTests/SemanticNativeLatencyTests.swift:25:15: warning: 'accessibilitySetValue(_:forAttribute:)' was deprecated in macOS 10.10: Use the NSAccessibility protocol methods instead (see NSAccessibilityProtocols.h) [#DeprecatedDeclaration]
+ 23 |         let attribute = NSAccessibility.Attribute(rawValue: "AXEnhancedUserInterface")
+ 24 |         let previous = NSApp.accessibilityAttributeValue(attribute)
+ 25 |         NSApp.accessibilitySetValue(true, forAttribute: attribute)
+    |               `- warning: 'accessibilitySetValue(_:forAttribute:)' was deprecated in macOS 10.10: Use the NSAccessibility protocol methods instead (see NSAccessibilityProtocols.h) [#DeprecatedDeclaration]
+ 26 |         defer { NSApp.accessibilitySetValue(previous ?? false, forAttribute: attribute) }
+ 27 |         var rows: [[String: Any]] = [], corpus: [[String: Any]] = []
+
+<checkout>/Tests/TypefluxTests/SemanticNativeLatencyTests.swift:26:23: warning: 'accessibilitySetValue(_:forAttribute:)' was deprecated in macOS 10.10: Use the NSAccessibility protocol methods instead (see NSAccessibilityProtocols.h) [#DeprecatedDeclaration]
+ 24 |         let previous = NSApp.accessibilityAttributeValue(attribute)
+ 25 |         NSApp.accessibilitySetValue(true, forAttribute: attribute)
+ 26 |         defer { NSApp.accessibilitySetValue(previous ?? false, forAttribute: attribute) }
+    |                       `- warning: 'accessibilitySetValue(_:forAttribute:)' was deprecated in macOS 10.10: Use the NSAccessibility protocol methods instead (see NSAccessibilityProtocols.h) [#DeprecatedDeclaration]
+ 27 |         var rows: [[String: Any]] = [], corpus: [[String: Any]] = []
+ 28 |         var timerGap = 0.0
+
+<checkout>/Tests/TypefluxTests/SettingsBehaviorTestSupport.swift:35:24: warning: call to main actor-isolated instance method 'performClick' in a synchronous nonisolated context [#ActorIsolatedCall]
+ 31 |         }
+ 32 |
+ 33 |         func press() throws {
+    |              `- note: add '@MainActor' to make instance method 'press()' part of global actor 'MainActor'
+ 34 |             if let button = object as? NSButton {
+ 35 |                 button.performClick(nil)
+    |                        `- warning: call to main actor-isolated instance method 'performClick' in a synchronous nonisolated context [#ActorIsolatedCall]
+ 36 |                 return
+ 37 |             }
+
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX27.0.sdk/System/Library/Frameworks/AppKit.framework/Headers/NSControl.h:56:1: note: calls to instance method 'performClick' from outside of its actor context are implicitly asynchronous
+ 54 | - (void)takeIntegerValueFrom:(nullable id)sender API_AVAILABLE(macos(10.5));
+ 55 |
+ 56 | - (void)performClick:(nullable id)sender;
+    | |- note: calls to instance method 'performClick' from outside of its actor context are implicitly asynchronous
+    | `- note: main actor isolation inferred from inheritance from class 'NSView'
+ 57 |
+ 58 | /* The following methods apply only to controls with apparent textual content of some sort (buttons with labels, textfields, etc.).
+
+<checkout>/Tests/TypefluxTests/SettingsBehaviorTestSupport.swift:39:22: warning: call to main actor-isolated instance method 'performClick' in a synchronous nonisolated context [#ActorIsolatedCall]
+ 31 |         }
+ 32 |
+ 33 |         func press() throws {
+    |              `- note: add '@MainActor' to make instance method 'press()' part of global actor 'MainActor'
+ 34 |             if let button = object as? NSButton {
+ 35 |                 button.performClick(nil)
+    :
+ 37 |             }
+ 38 |             if let cell = object as? NSButtonCell {
+ 39 |                 cell.performClick(nil)
+    |                      `- warning: call to main actor-isolated instance method 'performClick' in a synchronous nonisolated context [#ActorIsolatedCall]
+ 40 |                 return
+ 41 |             }
+
+/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX27.0.sdk/System/Library/Frameworks/AppKit.framework/Headers/NSButtonCell.h:120:1: note: calls to instance method 'performClick' from outside of its actor context are implicitly asynchronous
+118 | - (void)setPeriodicDelay:(float)delay interval:(float)interval;
+119 | - (void)getPeriodicDelay:(float *)delay interval:(float *)interval;
+120 | - (void)performClick:(nullable id)sender;
+    | |- note: calls to instance method 'performClick' from outside of its actor context are implicitly asynchronous
+    | `- note: main actor isolation inferred from inheritance from class 'NSActionCell'
+121 | - (void)mouseEntered:(NSEvent *)event;
+122 | - (void)mouseExited:(NSEvent *)event;
+
+<checkout>/Tests/TypefluxTests/SettingsBehaviorTestSupport.swift:82:43: warning: 'accessibilityAttributeValue' was deprecated in macOS 10.10: Use the NSAccessibility protocol methods instead (see NSAccessibilityProtocols.h) [#DeprecatedDeclaration]
+ 80 |         _ = NSApplication.shared
+ 81 |         let attribute = NSAccessibility.Attribute(rawValue: "AXEnhancedUserInterface")
+ 82 |         let previousAccessibility = NSApp.accessibilityAttributeValue(attribute)
+    |                                           `- warning: 'accessibilityAttributeValue' was deprecated in macOS 10.10: Use the NSAccessibility protocol methods instead (see NSAccessibilityProtocols.h) [#DeprecatedDeclaration]
+ 83 |         NSApp.accessibilitySetValue(true, forAttribute: attribute)
+ 84 |         let previousLanguage = AppLocalization.shared.language
+
+<checkout>/Tests/TypefluxTests/SettingsBehaviorTestSupport.swift:83:15: warning: 'accessibilitySetValue(_:forAttribute:)' was deprecated in macOS 10.10: Use the NSAccessibility protocol methods instead (see NSAccessibilityProtocols.h) [#DeprecatedDeclaration]
+ 81 |         let attribute = NSAccessibility.Attribute(rawValue: "AXEnhancedUserInterface")
+ 82 |         let previousAccessibility = NSApp.accessibilityAttributeValue(attribute)
+ 83 |         NSApp.accessibilitySetValue(true, forAttribute: attribute)
+    |               `- warning: 'accessibilitySetValue(_:forAttribute:)' was deprecated in macOS 10.10: Use the NSAccessibility protocol methods instead (see NSAccessibilityProtocols.h) [#DeprecatedDeclaration]
+ 84 |         let previousLanguage = AppLocalization.shared.language
+ 85 |         let previousMemoryStore = KeychainTokenStore.useInMemoryStoreForTesting
+
+<checkout>/Tests/TypefluxTests/SettingsBehaviorTestSupport.swift:99:19: warning: 'accessibilitySetValue(_:forAttribute:)' was deprecated in macOS 10.10: Use the NSAccessibility protocol methods instead (see NSAccessibilityProtocols.h) [#DeprecatedDeclaration]
+ 97 |             AuthState.shared.isLoggedIn = previousLogin
+ 98 |             AppLocalization.shared.setLanguage(previousLanguage)
+ 99 |             NSApp.accessibilitySetValue(previousAccessibility ?? false, forAttribute: attribute)
+    |                   `- warning: 'accessibilitySetValue(_:forAttribute:)' was deprecated in macOS 10.10: Use the NSAccessibility protocol methods instead (see NSAccessibilityProtocols.h) [#DeprecatedDeclaration]
+100 |         }
+101 |         let defaults = try #require(fixtureDefaults)
+
+<checkout>/Tests/TypefluxTests/SemanticLatencyTests.swift:295:54: warning: will never be executed
+293 |             "index_writer_concurrency": 1,
+294 |             "index_inference_concurrency": 0,
+295 |             "build": _isDebugAssertConfiguration() ? "Debug with coverage" : "Release"
+    |                      |                               `- warning: will never be executed
+    |                      `- note: condition always evaluates to false
+296 |         ]
+297 |         try JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted, .sortedKeys])
+
+<checkout>/Tests/TypefluxTests/SemanticNativeContentionTests.swift:312:79: warning: will never be executed
+310 |                                      "thermal_before": thermalBefore,
+311 |                                      "thermal_after": ProcessInfo.processInfo.thermalState.rawValue,
+312 |                                      "build": _isDebugAssertConfiguration() ? "Debug" : "Release",
+    |                                               |                               `- warning: will never be executed
+    |                                               `- note: condition always evaluates to false
+313 |                                      "index_inference_concurrency": 1,
+314 |                                      "scope": "Actual composer/native commits, production service/indexer, real background document embeddings and query model; base corpus is synthetic noise plus one real winning passage. Layout/display is not a GPU fence; timer gaps include polling/accessibility work."]
+
+<checkout>/Tests/TypefluxTests/SemanticNativeLatencyTests.swift:242:79: warning: will never be executed
+240 |                                      "indexed_files": 2,
+241 |                                      "scope": "Actual AskComposer, native NSTextView commit, production mixed/f sessions and service, real model and permission helper. Drawing forces layout/display and checks rendered accessibility; it is not a GPU presentation fence.",
+242 |                                      "build": _isDebugAssertConfiguration() ? "Debug" : "Release",
+    |                                               |                               `- warning: will never be executed
+    |                                               `- note: condition always evaluates to false
+243 |                                      "index_writer_concurrency": 1,
+244 |                                      "index_inference_concurrency": 0,
+
+[#ActorIsolatedCall]: <https://docs.swift.org/compiler/documentation/diagnostics/actor-isolated-call>
+[#DeprecatedDeclaration]: <https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration>
+[46 / 49] TypefluxFocusedTests-product
+[49 / 53] TypefluxFocusedTests-product
+[51 / 53] TypefluxFocusedTests-product
+[52 / 52] Typeflux-product
+Build complete! (297.22 secs)
+TypefluxFocusedTests.AskAppEntryTests/initialsSplitWordsAndCamelCase()
+TypefluxFocusedTests.AskAppEntryTests/namesAreLoweredAndDeduplicated()
+TypefluxFocusedTests.AskAppEntryTests/pinyinKeepsLatinRuns()
+TypefluxFocusedTests.AskAppIndexTests/defaultsCoverTheUsualFolders()
+TypefluxFocusedTests.AskAppIndexTests/hiddenApplicationLinksAreIndexedAndDeduplicated()
+TypefluxFocusedTests.AskAppIndexTests/homeApplicationsPreferLastUseAndPersistAcrossRestarts()
+TypefluxFocusedTests.AskAppIndexTests/iconsAreCached()
+TypefluxFocusedTests.AskAppIndexTests/refreshIfStaleScansInTheBackgroundOnce()
+TypefluxFocusedTests.AskAppIndexTests/scanReadsNamesInEveryLanguage()
+TypefluxFocusedTests.AskAppIndexTests/searchesAfterARefreshAndRemembersLaunches()
+TypefluxFocusedTests.AskAppMatcherTests/findsApplications(query:expected:)
+TypefluxFocusedTests.AskAppMatcherTests/ignoresTextThatNamesNothing(query:)
+TypefluxFocusedTests.AskAppMatcherTests/launchesAndShorterNamesBreakTies()
+TypefluxFocusedTests.AskAppMatcherTests/onlyShortClearQueriesTakeReturn()
+TypefluxFocusedTests.AskAppMatcherTests/scoresByStrength()
+TypefluxFocusedTests.AskConversationTests/authenticationAndRecordingDoNotSendOrLoseDraft()
+TypefluxFocusedTests.AskConversationTests/cacheIsAccountScopedAndRejectsOlderSnapshots()
+TypefluxFocusedTests.AskConversationTests/deletedConversationRetainsToolJournalEvidence()
+TypefluxFocusedTests.AskConversationTests/draftCaptureSendAndFollowUpUseSameConversation()
+TypefluxFocusedTests.AskConversationTests/expiredApprovalCannotExecuteTool()
+TypefluxFocusedTests.AskConversationTests/failedToolIsVisibleAndConversationCanContinue()
+TypefluxFocusedTests.AskConversationTests/historySelectionDeleteAndDraftPersistence()
+TypefluxFocusedTests.AskConversationTests/loadingASkillNeedsNoApproval()
+TypefluxFocusedTests.AskConversationTests/localToolArgumentsAndScriptLiteralsRemainData()
+TypefluxFocusedTests.AskConversationTests/networkRetryReusesMessageIdentifier()
+TypefluxFocusedTests.AskConversationTests/oversizedInputStaysEditableWithoutNetworkRequest()
+TypefluxFocusedTests.AskConversationTests/pullRefreshKeepsSelectionDraftAndReadingPositionOnFailure()
+TypefluxFocusedTests.AskConversationTests/recapturePreservesTextAndSelectionAndLogoutClearsState()
+TypefluxFocusedTests.AskConversationTests/resumedToolNeverRepeatsJournaledExecution(hasResult:)
+TypefluxFocusedTests.AskConversationTests/screenshotDefaultsAndRemovedAttachmentsAreRespected()
+TypefluxFocusedTests.AskConversationTests/standardReadsAutomaticallyButEveryMutationStillRequiresApproval()
+TypefluxFocusedTests.AskConversationTests/stopWhileAwaitingApprovalNeverRunsTool()
+TypefluxFocusedTests.AskConversationTests/toolReportedErrorIsNotSentAsSuccess()
+TypefluxFocusedTests.AskConversationTests/toolRequiresApprovalAndKeepsResults(allow:)
+TypefluxFocusedTests.AskConversationTests/wireDatesAndToolSchemaRoundTrip()
+TypefluxFocusedTests.AskNavigationTests/backgroundToolCompletionKeepsOtherConversationAndListPosition()
+TypefluxFocusedTests.AskNavigationTests/cachedSelectionKeepsContentWhileRefreshingAndRetryKeepsIdentity()
+TypefluxFocusedTests.AskNavigationTests/failedCacheMissKeepsTargetAndBlocksAccidentalNewConversation()
+TypefluxFocusedTests.AskNavigationTests/lateSnapshotCannotReplaceNewerCachedRevision()
+TypefluxFocusedTests.AskNavigationTests/loadingDoesNotOverwriteAnExistingPersistedDraft()
+TypefluxFocusedTests.AskNavigationTests/rapidSelectionLateResponsesDoNotStealFocusOrDrafts()
+TypefluxFocusedTests.AskNavigationTests/sameTitlesRemainDistinctAndOverlappingPagesAreUnique()
+TypefluxFocusedTests.AskNavigationTests/tenFollowUpsNeverCreateNewHistoryOrChangeIdentity()
+TypefluxFocusedTests.AskNavigationTests/uncachedSelectionIsImmediateAndCannotSendAsNew()
+TypefluxFocusedTests.AskNavigationTests/uuidSpellingIsCanonicalInListSnapshotAndOldCache()
+TypefluxFocusedTests.AskQuickResultsAppTests/aChosenApplicationStaysChosenWhileTyping()
+TypefluxFocusedTests.AskQuickResultsAppTests/aClearNameLeadsAndTakesReturn()
+TypefluxFocusedTests.AskQuickResultsAppTests/aQuestionKeepsAskAISelectedInTheFooter()
+TypefluxFocusedTests.AskQuickResultsAppTests/anUnfinishedExpressionDoesNotKeepApplications()
+TypefluxFocusedTests.AskQuickResultsAppTests/arithmeticBeatsApplications()
+TypefluxFocusedTests.AskQuickResultsAppTests/theSettingDefaultsOn()
+TypefluxFocusedTests.AskQuickResultsAppTests/viewMetricsFollowTheRows()
+TypefluxFocusedTests.SemanticLatencyTests/`measure both production entrypoints when explicitly requested`()
+TypefluxFocusedTests.SemanticNativeContentionTests/`measure both entries during real indexing when requested`()
+TypefluxFocusedTests.SemanticNativeLatencyTests/`measure committed native input to body publication and drawing when requested`()
+TypefluxFocusedTests.SemanticRankingComparisonTests/`compare frozen corpus when requested`()

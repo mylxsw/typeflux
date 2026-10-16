@@ -1,0 +1,16 @@
+{
+  "artifacts": {
+    "TypefluxPackageTests": {
+      "bytes": 259311416,
+      "sha256": "f6c8cdc05113f5362779e3f399a9c92dd255c8daacb9405c0dabfe0136bab9a5"
+    },
+    "default.profdata": {
+      "bytes": 112312,
+      "sha256": "9177ec1981315a939528b53d940e272daa4070de54c2ad31fe0e63acf8bc24f2"
+    }
+  },
+  "test_summary": [
+    "Test run with 19 tests in 3 suites passed after 0.800 seconds."
+  ],
+  "scope": "Final native-backend focused coverage binary/profile retained locally; source records exported to app-final-coverage.lcov.gz. The binary itself is not in the evidence attachment."
+}

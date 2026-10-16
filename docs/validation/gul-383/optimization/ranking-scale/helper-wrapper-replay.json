@@ -1,0 +1,19 @@
+{
+  "command": [
+    "python3",
+    "docs/validation/gul-383/optimization/ranking-scale/verify_helper_wrapper.py",
+    "--helper",
+    ".build/semantic/TypefluxSemanticHelperCoverageFinal",
+    "--model",
+    ".build/semantic/embeddinggemma-2-Q8_0.gguf",
+    "--projector",
+    ".build/semantic/mmproj-embeddinggemma-2-Q8_0.gguf",
+    "--media-dir",
+    ".build/media-calibration",
+    "--profiles",
+    ".build/semantic/helper-profiles-replay"
+  ],
+  "exit_code": 0,
+  "wall_seconds": 3.579797874961514,
+  "scope": "Consolidated functional helper probe; run beside application coverage preparation, not a latency benchmark"
+}

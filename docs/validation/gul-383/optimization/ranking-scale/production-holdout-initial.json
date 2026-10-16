@@ -1,0 +1,2141 @@
+{
+  "indexed_documents" : 75,
+  "model_sha256" : "2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135",
+  "queries" : 200,
+  "rows" : [
+    {
+      "group" : "english_semantic",
+      "hits" : [
+        "tail-00",
+        "en-00",
+        "zh-00",
+        "tail-12",
+        "en-22"
+      ],
+      "id" : "holdout_english_semantic-00",
+      "rank" : 2
+    },
+    {
+      "group" : "chinese_semantic",
+      "hits" : [
+        "tail-00",
+        "zh-00",
+        "en-00",
+        "zh-12",
+        "zh-13"
+      ],
+      "id" : "holdout_chinese_semantic-00",
+      "rank" : 2
+    },
+    {
+      "group" : "english_to_chinese",
+      "hits" : [
+        "tail-00",
+        "en-00",
+        "zh-00",
+        "tail-12",
+        "en-22"
+      ],
+      "id" : "holdout_english_to_chinese-00",
+      "rank" : 3
+    },
+    {
+      "group" : "chinese_to_english",
+      "hits" : [
+        "tail-00",
+        "zh-00",
+        "en-00",
+        "zh-12",
+        "zh-13"
+      ],
+      "id" : "holdout_chinese_to_english-00",
+      "rank" : 3
+    },
+    {
+      "group" : "identifier_unicode",
+      "hits" : [
+        "en-00"
+      ],
+      "id" : "holdout_identifier_unicode-00",
+      "rank" : 1
+    },
+    {
+      "group" : "phrase",
+      "hits" : [
+        "tail-00",
+        "en-00"
+      ],
+      "id" : "holdout_phrase-00",
+      "rank" : 2
+    },
+    {
+      "group" : "chinese_short",
+      "hits" : [
+        "zh-00",
+        "tail-00",
+        "zh-12",
+        "en-00",
+        "zh-10"
+      ],
+      "id" : "holdout_chinese_short-00",
+      "rank" : 1
+    },
+    {
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "holdout_no_answer-00",
+      "rank" : null
+    },
+    {
+      "group" : "english_semantic",
+      "hits" : [
+        "zh-01",
+        "en-01",
+        "tail-01",
+        "en-20",
+        "tail-20"
+      ],
+      "id" : "holdout_english_semantic-01",
+      "rank" : 2
+    },
+    {
+      "group" : "chinese_semantic",
+      "hits" : [
+        "zh-01",
+        "tail-01",
+        "en-01",
+        "zh-20",
+        "en-20"
+      ],
+      "id" : "holdout_chinese_semantic-01",
+      "rank" : 1
+    },
+    {
+      "group" : "english_to_chinese",
+      "hits" : [
+        "zh-01",
+        "en-01",
+        "tail-01",
+        "en-20",
+        "tail-20"
+      ],
+      "id" : "holdout_english_to_chinese-01",
+      "rank" : 1
+    },
+    {
+      "group" : "chinese_to_english",
+      "hits" : [
+        "zh-01",
+        "tail-01",
+        "en-01",
+        "zh-20",
+        "en-20"
+      ],
+      "id" : "holdout_chinese_to_english-01",
+      "rank" : 3
+    },
+    {
+      "group" : "identifier_unicode",
+      "hits" : [
+        "en-01"
+      ],
+      "id" : "holdout_identifier_unicode-01",
+      "rank" : 1
+    },
+    {
+      "group" : "phrase",
+      "hits" : [
+        "tail-01",
+        "en-01"
+      ],
+      "id" : "holdout_phrase-01",
+      "rank" : 2
+    },
+    {
+      "group" : "chinese_short",
+      "hits" : [
+        "zh-01",
+        "en-01",
+        "tail-01",
+        "zh-08",
+        "zh-20"
+      ],
+      "id" : "holdout_chinese_short-01",
+      "rank" : 1
+    },
+    {
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "holdout_no_answer-01",
+      "rank" : null
+    },
+    {
+      "group" : "english_semantic",
+      "hits" : [
+        "tail-02",
+        "zh-02",
+        "en-02",
+        "en-06",
+        "zh-06"
+      ],
+      "id" : "holdout_english_semantic-02",
+      "rank" : 3
+    },
+    {
+      "group" : "chinese_semantic",
+      "hits" : [
+        "zh-02",
+        "tail-02",
+        "en-02",
+        "zh-19",
+        "zh-07"
+      ],
+      "id" : "holdout_chinese_semantic-02",
+      "rank" : 1
+    },
+    {
+      "group" : "english_to_chinese",
+      "hits" : [
+        "tail-02",
+        "zh-02",
+        "en-02",
+        "en-06",
+        "zh-06"
+      ],
+      "id" : "holdout_english_to_chinese-02",
+      "rank" : 2
+    },
+    {
+      "group" : "chinese_to_english",
+      "hits" : [
+        "zh-02",
+        "tail-02",
+        "en-02",
+        "zh-19",
+        "zh-07"
+      ],
+      "id" : "holdout_chinese_to_english-02",
+      "rank" : 3
+    },
+    {
+      "group" : "identifier_unicode",
+      "hits" : [
+        "en-02"
+      ],
+      "id" : "holdout_identifier_unicode-02",
+      "rank" : 1
+    },
+    {
+      "group" : "phrase",
+      "hits" : [
+        "tail-02",
+        "en-02"
+      ],
+      "id" : "holdout_phrase-02",
+      "rank" : 2
+    },
+    {
+      "group" : "chinese_short",
+      "hits" : [
+        "zh-02",
+        "en-02",
+        "tail-02",
+        "zh-19",
+        "tail-06"
+      ],
+      "id" : "holdout_chinese_short-02",
+      "rank" : 1
+    },
+    {
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "holdout_no_answer-02",
+      "rank" : null
+    },
+    {
+      "group" : "english_semantic",
+      "hits" : [
+        "tail-03",
+        "en-03",
+        "zh-03",
+        "en-09",
+        "tail-15"
+      ],
+      "id" : "holdout_english_semantic-03",
+      "rank" : 2
+    },
+    {
+      "group" : "chinese_semantic",
+      "hits" : [
+        "zh-03",
+        "tail-03",
+        "en-03",
+        "zh-08",
+        "zh-14"
+      ],
+      "id" : "holdout_chinese_semantic-03",
+      "rank" : 1
+    },
+    {
+      "group" : "english_to_chinese",
+      "hits" : [
+        "tail-03",
+        "en-03",
+        "zh-03",
+        "en-09",
+        "tail-15"
+      ],
+      "id" : "holdout_english_to_chinese-03",
+      "rank" : 3
+    },
+    {
+      "group" : "chinese_to_english",
+      "hits" : [
+        "zh-03",
+        "tail-03",
+        "en-03",
+        "zh-08",
+        "zh-14"
+      ],
+      "id" : "holdout_chinese_to_english-03",
+      "rank" : 3
+    },
+    {
+      "group" : "identifier_unicode",
+      "hits" : [
+        "en-03"
+      ],
+      "id" : "holdout_identifier_unicode-03",
+      "rank" : 1
+    },
+    {
+      "group" : "phrase",
+      "hits" : [
+        "tail-03",
+        "en-03"
+      ],
+      "id" : "holdout_phrase-03",
+      "rank" : 2
+    },
+    {
+      "group" : "chinese_short",
+      "hits" : [
+        "zh-03",
+        "tail-03",
+        "en-03",
+        "zh-16",
+        "zh-10"
+      ],
+      "id" : "holdout_chinese_short-03",
+      "rank" : 1
+    },
+    {
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "holdout_no_answer-03",
+      "rank" : null
+    },
+    {
+      "group" : "english_semantic",
+      "hits" : [
+        "en-04",
+        "tail-04",
+        "zh-04",
+        "en-08",
+        "tail-05"
+      ],
+      "id" : "holdout_english_semantic-04",
+      "rank" : 1
+    },
+    {
+      "group" : "chinese_semantic",
+      "hits" : [
+        "zh-04",
+        "en-04",
+        "tail-04",
+        "zh-13",
+        "tail-12"
+      ],
+      "id" : "holdout_chinese_semantic-04",
+      "rank" : 1
+    },
+    {
+      "group" : "english_to_chinese",
+      "hits" : [
+        "en-04",
+        "tail-04",
+        "zh-04",
+        "en-08",
+        "tail-05"
+      ],
+      "id" : "holdout_english_to_chinese-04",
+      "rank" : 3
+    },
+    {
+      "group" : "chinese_to_english",
+      "hits" : [
+        "zh-04",
+        "en-04",
+        "tail-04",
+        "zh-13",
+        "tail-12"
+      ],
+      "id" : "holdout_chinese_to_english-04",
+      "rank" : 2
+    },
+    {
+      "group" : "identifier_unicode",
+      "hits" : [
+        "en-04"
+      ],
+      "id" : "holdout_identifier_unicode-04",
+      "rank" : 1
+    },
+    {
+      "group" : "phrase",
+      "hits" : [
+        "tail-04",
+        "en-04"
+      ],
+      "id" : "holdout_phrase-04",
+      "rank" : 2
+    },
+    {
+      "group" : "chinese_short",
+      "hits" : [
+        "zh-04",
+        "zh-13",
+        "zh-19",
+        "zh-12",
+        "en-21"
+      ],
+      "id" : "holdout_chinese_short-04",
+      "rank" : 1
+    },
+    {
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "holdout_no_answer-04",
+      "rank" : null
+    },
+    {
+      "group" : "english_semantic",
+      "hits" : [
+        "zh-05",
+        "tail-05",
+        "en-05",
+        "tail-20",
+        "en-20"
+      ],
+      "id" : "holdout_english_semantic-05",
+      "rank" : 3
+    },
+    {
+      "group" : "chinese_semantic",
+      "hits" : [
+        "zh-05",
+        "en-05",
+        "tail-05",
+        "zh-20",
+        "en-20"
+      ],
+      "id" : "holdout_chinese_semantic-05",
+      "rank" : 1
+    },
+    {
+      "group" : "english_to_chinese",
+      "hits" : [
+        "zh-05",
+        "tail-05",
+        "en-05",
+        "tail-20",
+        "en-20"
+      ],
+      "id" : "holdout_english_to_chinese-05",
+      "rank" : 1
+    },
+    {
+      "group" : "chinese_to_english",
+      "hits" : [
+        "zh-05",
+        "en-05",
+        "tail-05",
+        "zh-20",
+        "en-20"
+      ],
+      "id" : "holdout_chinese_to_english-05",
+      "rank" : 2
+    },
+    {
+      "group" : "identifier_unicode",
+      "hits" : [
+        "en-05"
+      ],
+      "id" : "holdout_identifier_unicode-05",
+      "rank" : 1
+    },
+    {
+      "group" : "phrase",
+      "hits" : [
+        "tail-05",
+        "en-05"
+      ],
+      "id" : "holdout_phrase-05",
+      "rank" : 2
+    },
+    {
+      "group" : "chinese_short",
+      "hits" : [
+        "zh-05",
+        "tail-05",
+        "en-05",
+        "zh-11",
+        "en-20"
+      ],
+      "id" : "holdout_chinese_short-05",
+      "rank" : 1
+    },
+    {
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "holdout_no_answer-05",
+      "rank" : null
+    },
+    {
+      "group" : "english_semantic",
+      "hits" : [
+        "en-02",
+        "en-06",
+        "en-13",
+        "tail-02",
+        "tail-06"
+      ],
+      "id" : "holdout_english_semantic-06",
+      "rank" : 2
+    },
+    {
+      "group" : "chinese_semantic",
+      "hits" : [
+        "zh-06",
+        "zh-02",
+        "tail-02",
+        "en-06",
+        "zh-11"
+      ],
+      "id" : "holdout_chinese_semantic-06",
+      "rank" : 1
+    },
+    {
+      "group" : "english_to_chinese",
+      "hits" : [
+        "en-02",
+        "en-06",
+        "en-13",
+        "tail-02",
+        "tail-06"
+      ],
+      "id" : "holdout_english_to_chinese-06",
+      "rank" : null
+    },
+    {
+      "group" : "chinese_to_english",
+      "hits" : [
+        "zh-06",
+        "zh-02",
+        "tail-02",
+        "en-06",
+        "zh-11"
+      ],
+      "id" : "holdout_chinese_to_english-06",
+      "rank" : 4
+    },
+    {
+      "group" : "identifier_unicode",
+      "hits" : [
+        "en-06"
+      ],
+      "id" : "holdout_identifier_unicode-06",
+      "rank" : 1
+    },
+    {
+      "group" : "phrase",
+      "hits" : [
+        "tail-06",
+        "en-06"
+      ],
+      "id" : "holdout_phrase-06",
+      "rank" : 2
+    },
+    {
+      "group" : "chinese_short",
+      "hits" : [
+        "zh-06",
+        "en-06",
+        "tail-06",
+        "zh-13",
+        "en-21"
+      ],
+      "id" : "holdout_chinese_short-06",
+      "rank" : 1
+    },
+    {
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "holdout_no_answer-06",
+      "rank" : null
+    },
+    {
+      "group" : "english_semantic",
+      "hits" : [
+        "zh-07",
+        "en-07",
+        "tail-07",
+        "en-11",
+        "en-21"
+      ],
+      "id" : "holdout_english_semantic-07",
+      "rank" : 2
+    },
+    {
+      "group" : "chinese_semantic",
+      "hits" : [
+        "zh-07",
+        "en-07",
+        "tail-07",
+        "zh-19",
+        "zh-11"
+      ],
+      "id" : "holdout_chinese_semantic-07",
+      "rank" : 1
+    },
+    {
+      "group" : "english_to_chinese",
+      "hits" : [
+        "zh-07",
+        "en-07",
+        "tail-07",
+        "en-11",
+        "en-21"
+      ],
+      "id" : "holdout_english_to_chinese-07",
+      "rank" : 1
+    },
+    {
+      "group" : "chinese_to_english",
+      "hits" : [
+        "zh-07",
+        "en-07",
+        "tail-07",
+        "zh-19",
+        "zh-11"
+      ],
+      "id" : "holdout_chinese_to_english-07",
+      "rank" : 2
+    },
+    {
+      "group" : "identifier_unicode",
+      "hits" : [
+        "en-07"
+      ],
+      "id" : "holdout_identifier_unicode-07",
+      "rank" : 1
+    },
+    {
+      "group" : "phrase",
+      "hits" : [
+        "en-07",
+        "tail-07"
+      ],
+      "id" : "holdout_phrase-07",
+      "rank" : 1
+    },
+    {
+      "group" : "chinese_short",
+      "hits" : [
+        "zh-07",
+        "en-07",
+        "tail-07",
+        "zh-19",
+        "zh-01"
+      ],
+      "id" : "holdout_chinese_short-07",
+      "rank" : 1
+    },
+    {
+      "group" : "no_answer",
+      "hits" : [
+        "tail-07",
+        "tail-06",
+        "en-07",
+        "en-06",
+        "tail-21"
+      ],
+      "id" : "holdout_no_answer-07",
+      "rank" : null
+    },
+    {
+      "group" : "english_semantic",
+      "hits" : [
+        "en-08",
+        "tail-08",
+        "zh-08",
+        "en-14",
+        "tail-20"
+      ],
+      "id" : "holdout_english_semantic-08",
+      "rank" : 1
+    },
+    {
+      "group" : "chinese_semantic",
+      "hits" : [
+        "zh-08",
+        "en-08",
+        "tail-08",
+        "zh-23",
+        "zh-00"
+      ],
+      "id" : "holdout_chinese_semantic-08",
+      "rank" : 1
+    },
+    {
+      "group" : "english_to_chinese",
+      "hits" : [
+        "en-08",
+        "tail-08",
+        "zh-08",
+        "en-14",
+        "tail-20"
+      ],
+      "id" : "holdout_english_to_chinese-08",
+      "rank" : 3
+    },
+    {
+      "group" : "chinese_to_english",
+      "hits" : [
+        "zh-08",
+        "en-08",
+        "tail-08",
+        "zh-23",
+        "zh-00"
+      ],
+      "id" : "holdout_chinese_to_english-08",
+      "rank" : 2
+    },
+    {
+      "group" : "identifier_unicode",
+      "hits" : [
+        "en-08"
+      ],
+      "id" : "holdout_identifier_unicode-08",
+      "rank" : 1
+    },
+    {
+      "group" : "phrase",
+      "hits" : [
+        "en-08",
+        "tail-08"
+      ],
+      "id" : "holdout_phrase-08",
+      "rank" : 1
+    },
+    {
+      "group" : "chinese_short",
+      "hits" : [
+        "zh-08",
+        "en-08",
+        "tail-08",
+        "zh-10",
+        "tail-10"
+      ],
+      "id" : "holdout_chinese_short-08",
+      "rank" : 1
+    },
+    {
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "holdout_no_answer-08",
+      "rank" : null
+    },
+    {
+      "group" : "english_semantic",
+      "hits" : [
+        "en-09",
+        "tail-09",
+        "zh-09",
+        "en-04",
+        "tail-04"
+      ],
+      "id" : "holdout_english_semantic-09",
+      "rank" : 1
+    },
+    {
+      "group" : "chinese_semantic",
+      "hits" : [
+        "zh-09",
+        "en-09",
+        "tail-09",
+        "zh-18",
+        "zh-02"
+      ],
+      "id" : "holdout_chinese_semantic-09",
+      "rank" : 1
+    },
+    {
+      "group" : "english_to_chinese",
+      "hits" : [
+        "en-09",
+        "tail-09",
+        "zh-09",
+        "en-04",
+        "tail-04"
+      ],
+      "id" : "holdout_english_to_chinese-09",
+      "rank" : 3
+    },
+    {
+      "group" : "chinese_to_english",
+      "hits" : [
+        "zh-09",
+        "en-09",
+        "tail-09",
+        "zh-18",
+        "zh-02"
+      ],
+      "id" : "holdout_chinese_to_english-09",
+      "rank" : 2
+    },
+    {
+      "group" : "identifier_unicode",
+      "hits" : [
+        "en-09"
+      ],
+      "id" : "holdout_identifier_unicode-09",
+      "rank" : 1
+    },
+    {
+      "group" : "phrase",
+      "hits" : [
+        "en-09",
+        "tail-09"
+      ],
+      "id" : "holdout_phrase-09",
+      "rank" : 1
+    },
+    {
+      "group" : "chinese_short",
+      "hits" : [
+        "zh-09",
+        "en-09",
+        "tail-09",
+        "zh-18",
+        "zh-08"
+      ],
+      "id" : "holdout_chinese_short-09",
+      "rank" : 1
+    },
+    {
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "holdout_no_answer-09",
+      "rank" : null
+    },
+    {
+      "group" : "english_semantic",
+      "hits" : [
+        "tail-10",
+        "en-10",
+        "zh-10",
+        "en-08",
+        "tail-04"
+      ],
+      "id" : "holdout_english_semantic-10",
+      "rank" : 2
+    },
+    {
+      "group" : "chinese_semantic",
+      "hits" : [
+        "zh-10",
+        "tail-10",
+        "en-10",
+        "zh-13",
+        "zh-14"
+      ],
+      "id" : "holdout_chinese_semantic-10",
+      "rank" : 1
+    },
+    {
+      "group" : "english_to_chinese",
+      "hits" : [
+        "tail-10",
+        "en-10",
+        "zh-10",
+        "en-08",
+        "tail-04"
+      ],
+      "id" : "holdout_english_to_chinese-10",
+      "rank" : 3
+    },
+    {
+      "group" : "chinese_to_english",
+      "hits" : [
+        "zh-10",
+        "tail-10",
+        "en-10",
+        "zh-13",
+        "zh-14"
+      ],
+      "id" : "holdout_chinese_to_english-10",
+      "rank" : 3
+    },
+    {
+      "group" : "identifier_unicode",
+      "hits" : [
+        "en-10"
+      ],
+      "id" : "holdout_identifier_unicode-10",
+      "rank" : 1
+    },
+    {
+      "group" : "phrase",
+      "hits" : [
+        "tail-10",
+        "en-10"
+      ],
+      "id" : "holdout_phrase-10",
+      "rank" : 2
+    },
+    {
+      "group" : "chinese_short",
+      "hits" : [
+        "zh-10",
+        "tail-06",
+        "zh-23",
+        "en-06",
+        "en-10"
+      ],
+      "id" : "holdout_chinese_short-10",
+      "rank" : 1
+    },
+    {
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "holdout_no_answer-10",
+      "rank" : null
+    },
+    {
+      "group" : "english_semantic",
+      "hits" : [
+        "en-11",
+        "tail-11",
+        "zh-11",
+        "en-21",
+        "en-09"
+      ],
+      "id" : "holdout_english_semantic-11",
+      "rank" : 1
+    },
+    {
+      "group" : "chinese_semantic",
+      "hits" : [
+        "zh-11",
+        "en-11",
+        "tail-11",
+        "zh-02",
+        "zh-04"
+      ],
+      "id" : "holdout_chinese_semantic-11",
+      "rank" : 1
+    },
+    {
+      "group" : "english_to_chinese",
+      "hits" : [
+        "en-11",
+        "tail-11",
+        "zh-11",
+        "en-21",
+        "en-09"
+      ],
+      "id" : "holdout_english_to_chinese-11",
+      "rank" : 3
+    },
+    {
+      "group" : "chinese_to_english",
+      "hits" : [
+        "zh-11",
+        "en-11",
+        "tail-11",
+        "zh-02",
+        "zh-04"
+      ],
+      "id" : "holdout_chinese_to_english-11",
+      "rank" : 2
+    },
+    {
+      "group" : "identifier_unicode",
+      "hits" : [
+        "en-11"
+      ],
+      "id" : "holdout_identifier_unicode-11",
+      "rank" : 1
+    },
+    {
+      "group" : "phrase",
+      "hits" : [
+        "tail-11",
+        "en-11"
+      ],
+      "id" : "holdout_phrase-11",
+      "rank" : 2
+    },
+    {
+      "group" : "chinese_short",
+      "hits" : [
+        "zh-11",
+        "tail-11",
+        "en-11",
+        "en-21",
+        "tail-21"
+      ],
+      "id" : "holdout_chinese_short-11",
+      "rank" : 1
+    },
+    {
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "holdout_no_answer-11",
+      "rank" : null
+    },
+    {
+      "group" : "english_semantic",
+      "hits" : [
+        "tail-12",
+        "en-12",
+        "zh-12",
+        "en-05",
+        "en-13"
+      ],
+      "id" : "holdout_english_semantic-12",
+      "rank" : 2
+    },
+    {
+      "group" : "chinese_semantic",
+      "hits" : [
+        "zh-12",
+        "tail-12",
+        "en-12",
+        "zh-13",
+        "zh-05"
+      ],
+      "id" : "holdout_chinese_semantic-12",
+      "rank" : 1
+    },
+    {
+      "group" : "english_to_chinese",
+      "hits" : [
+        "tail-12",
+        "en-12",
+        "zh-12",
+        "en-05",
+        "en-13"
+      ],
+      "id" : "holdout_english_to_chinese-12",
+      "rank" : 3
+    },
+    {
+      "group" : "chinese_to_english",
+      "hits" : [
+        "zh-12",
+        "tail-12",
+        "en-12",
+        "zh-13",
+        "zh-05"
+      ],
+      "id" : "holdout_chinese_to_english-12",
+      "rank" : 3
+    },
+    {
+      "group" : "identifier_unicode",
+      "hits" : [
+        "en-12"
+      ],
+      "id" : "holdout_identifier_unicode-12",
+      "rank" : 1
+    },
+    {
+      "group" : "phrase",
+      "hits" : [
+        "tail-12",
+        "en-12"
+      ],
+      "id" : "holdout_phrase-12",
+      "rank" : 2
+    },
+    {
+      "group" : "chinese_short",
+      "hits" : [
+        "zh-12",
+        "tail-12",
+        "en-12",
+        "zh-00",
+        "zh-04"
+      ],
+      "id" : "holdout_chinese_short-12",
+      "rank" : 1
+    },
+    {
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "holdout_no_answer-12",
+      "rank" : null
+    },
+    {
+      "group" : "english_semantic",
+      "hits" : [
+        "en-13",
+        "tail-13",
+        "zh-13",
+        "tail-12",
+        "en-12"
+      ],
+      "id" : "holdout_english_semantic-13",
+      "rank" : 1
+    },
+    {
+      "group" : "chinese_semantic",
+      "hits" : [
+        "zh-13",
+        "en-13",
+        "tail-13",
+        "tail-12",
+        "en-12"
+      ],
+      "id" : "holdout_chinese_semantic-13",
+      "rank" : 1
+    },
+    {
+      "group" : "english_to_chinese",
+      "hits" : [
+        "en-13",
+        "tail-13",
+        "zh-13",
+        "tail-12",
+        "en-12"
+      ],
+      "id" : "holdout_english_to_chinese-13",
+      "rank" : 3
+    },
+    {
+      "group" : "chinese_to_english",
+      "hits" : [
+        "zh-13",
+        "en-13",
+        "tail-13",
+        "tail-12",
+        "en-12"
+      ],
+      "id" : "holdout_chinese_to_english-13",
+      "rank" : 2
+    },
+    {
+      "group" : "identifier_unicode",
+      "hits" : [
+        "en-13"
+      ],
+      "id" : "holdout_identifier_unicode-13",
+      "rank" : 1
+    },
+    {
+      "group" : "phrase",
+      "hits" : [
+        "tail-13",
+        "en-13"
+      ],
+      "id" : "holdout_phrase-13",
+      "rank" : 2
+    },
+    {
+      "group" : "chinese_short",
+      "hits" : [
+        "zh-13",
+        "tail-13",
+        "en-13",
+        "zh-12",
+        "zh-04"
+      ],
+      "id" : "holdout_chinese_short-13",
+      "rank" : 1
+    },
+    {
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "holdout_no_answer-13",
+      "rank" : null
+    },
+    {
+      "group" : "english_semantic",
+      "hits" : [
+        "tail-04",
+        "zh-14",
+        "tail-23",
+        "en-14",
+        "tail-14"
+      ],
+      "id" : "holdout_english_semantic-14",
+      "rank" : 4
+    },
+    {
+      "group" : "chinese_semantic",
+      "hits" : [
+        "zh-14",
+        "en-14",
+        "tail-14",
+        "zh-23",
+        "tail-23"
+      ],
+      "id" : "holdout_chinese_semantic-14",
+      "rank" : 1
+    },
+    {
+      "group" : "english_to_chinese",
+      "hits" : [
+        "tail-04",
+        "zh-14",
+        "tail-23",
+        "en-14",
+        "tail-14"
+      ],
+      "id" : "holdout_english_to_chinese-14",
+      "rank" : 2
+    },
+    {
+      "group" : "chinese_to_english",
+      "hits" : [
+        "zh-14",
+        "en-14",
+        "tail-14",
+        "zh-23",
+        "tail-23"
+      ],
+      "id" : "holdout_chinese_to_english-14",
+      "rank" : 2
+    },
+    {
+      "group" : "identifier_unicode",
+      "hits" : [
+        "en-14"
+      ],
+      "id" : "holdout_identifier_unicode-14",
+      "rank" : 1
+    },
+    {
+      "group" : "phrase",
+      "hits" : [
+        "tail-14",
+        "en-14"
+      ],
+      "id" : "holdout_phrase-14",
+      "rank" : 2
+    },
+    {
+      "group" : "chinese_short",
+      "hits" : [
+        "zh-14",
+        "tail-14",
+        "en-14",
+        "zh-23",
+        "tail-23"
+      ],
+      "id" : "holdout_chinese_short-14",
+      "rank" : 1
+    },
+    {
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "holdout_no_answer-14",
+      "rank" : null
+    },
+    {
+      "group" : "english_semantic",
+      "hits" : [
+        "en-15",
+        "tail-15",
+        "en-08",
+        "zh-15",
+        "en-14"
+      ],
+      "id" : "holdout_english_semantic-15",
+      "rank" : 1
+    },
+    {
+      "group" : "chinese_semantic",
+      "hits" : [
+        "zh-15",
+        "tail-15",
+        "en-15",
+        "en-08",
+        "zh-08"
+      ],
+      "id" : "holdout_chinese_semantic-15",
+      "rank" : 1
+    },
+    {
+      "group" : "english_to_chinese",
+      "hits" : [
+        "en-15",
+        "tail-15",
+        "en-08",
+        "zh-15",
+        "en-14"
+      ],
+      "id" : "holdout_english_to_chinese-15",
+      "rank" : 4
+    },
+    {
+      "group" : "chinese_to_english",
+      "hits" : [
+        "zh-15",
+        "tail-15",
+        "en-15",
+        "en-08",
+        "zh-08"
+      ],
+      "id" : "holdout_chinese_to_english-15",
+      "rank" : 3
+    },
+    {
+      "group" : "identifier_unicode",
+      "hits" : [
+        "en-15"
+      ],
+      "id" : "holdout_identifier_unicode-15",
+      "rank" : 1
+    },
+    {
+      "group" : "phrase",
+      "hits" : [
+        "tail-15",
+        "en-15"
+      ],
+      "id" : "holdout_phrase-15",
+      "rank" : 2
+    },
+    {
+      "group" : "chinese_short",
+      "hits" : [
+        "zh-15",
+        "tail-15",
+        "en-15",
+        "zh-08",
+        "zh-23"
+      ],
+      "id" : "holdout_chinese_short-15",
+      "rank" : 1
+    },
+    {
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "holdout_no_answer-15",
+      "rank" : null
+    },
+    {
+      "group" : "english_semantic",
+      "hits" : [
+        "tail-16",
+        "zh-16",
+        "en-16",
+        "en-04",
+        "tail-04"
+      ],
+      "id" : "holdout_english_semantic-16",
+      "rank" : 3
+    },
+    {
+      "group" : "chinese_semantic",
+      "hits" : [
+        "zh-16",
+        "tail-16",
+        "en-16",
+        "en-21",
+        "tail-21"
+      ],
+      "id" : "holdout_chinese_semantic-16",
+      "rank" : 1
+    },
+    {
+      "group" : "english_to_chinese",
+      "hits" : [
+        "tail-16",
+        "zh-16",
+        "en-16",
+        "en-04",
+        "tail-04"
+      ],
+      "id" : "holdout_english_to_chinese-16",
+      "rank" : 2
+    },
+    {
+      "group" : "chinese_to_english",
+      "hits" : [
+        "zh-16",
+        "tail-16",
+        "en-16",
+        "en-21",
+        "tail-21"
+      ],
+      "id" : "holdout_chinese_to_english-16",
+      "rank" : 3
+    },
+    {
+      "group" : "identifier_unicode",
+      "hits" : [
+        "en-16"
+      ],
+      "id" : "holdout_identifier_unicode-16",
+      "rank" : 1
+    },
+    {
+      "group" : "phrase",
+      "hits" : [
+        "tail-16",
+        "en-16"
+      ],
+      "id" : "holdout_phrase-16",
+      "rank" : 2
+    },
+    {
+      "group" : "chinese_short",
+      "hits" : [
+        "zh-16",
+        "en-16",
+        "tail-16",
+        "zh-19",
+        "zh-23"
+      ],
+      "id" : "holdout_chinese_short-16",
+      "rank" : 1
+    },
+    {
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "holdout_no_answer-16",
+      "rank" : null
+    },
+    {
+      "group" : "english_semantic",
+      "hits" : [
+        "en-17",
+        "tail-17",
+        "zh-17",
+        "en-19",
+        "en-20"
+      ],
+      "id" : "holdout_english_semantic-17",
+      "rank" : 1
+    },
+    {
+      "group" : "chinese_semantic",
+      "hits" : [
+        "zh-17",
+        "en-17",
+        "tail-17",
+        "zh-19",
+        "zh-16"
+      ],
+      "id" : "holdout_chinese_semantic-17",
+      "rank" : 1
+    },
+    {
+      "group" : "english_to_chinese",
+      "hits" : [
+        "en-17",
+        "tail-17",
+        "zh-17",
+        "en-19",
+        "en-20"
+      ],
+      "id" : "holdout_english_to_chinese-17",
+      "rank" : 3
+    },
+    {
+      "group" : "chinese_to_english",
+      "hits" : [
+        "zh-17",
+        "en-17",
+        "tail-17",
+        "zh-19",
+        "zh-16"
+      ],
+      "id" : "holdout_chinese_to_english-17",
+      "rank" : 2
+    },
+    {
+      "group" : "identifier_unicode",
+      "hits" : [
+        "en-17"
+      ],
+      "id" : "holdout_identifier_unicode-17",
+      "rank" : 1
+    },
+    {
+      "group" : "phrase",
+      "hits" : [
+        "en-17",
+        "tail-17"
+      ],
+      "id" : "holdout_phrase-17",
+      "rank" : 1
+    },
+    {
+      "group" : "chinese_short",
+      "hits" : [
+        "zh-17",
+        "en-17",
+        "tail-17",
+        "zh-19",
+        "zh-20"
+      ],
+      "id" : "holdout_chinese_short-17",
+      "rank" : 1
+    },
+    {
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "holdout_no_answer-17",
+      "rank" : null
+    },
+    {
+      "group" : "english_semantic",
+      "hits" : [
+        "en-18",
+        "tail-18",
+        "zh-18",
+        "en-09",
+        "en-23"
+      ],
+      "id" : "holdout_english_semantic-18",
+      "rank" : 1
+    },
+    {
+      "group" : "chinese_semantic",
+      "hits" : [
+        "zh-18",
+        "en-18",
+        "tail-18",
+        "zh-09",
+        "zh-23"
+      ],
+      "id" : "holdout_chinese_semantic-18",
+      "rank" : 1
+    },
+    {
+      "group" : "english_to_chinese",
+      "hits" : [
+        "en-18",
+        "tail-18",
+        "zh-18",
+        "en-09",
+        "en-23"
+      ],
+      "id" : "holdout_english_to_chinese-18",
+      "rank" : 3
+    },
+    {
+      "group" : "chinese_to_english",
+      "hits" : [
+        "zh-18",
+        "en-18",
+        "tail-18",
+        "zh-09",
+        "zh-23"
+      ],
+      "id" : "holdout_chinese_to_english-18",
+      "rank" : 2
+    },
+    {
+      "group" : "identifier_unicode",
+      "hits" : [
+        "en-18"
+      ],
+      "id" : "holdout_identifier_unicode-18",
+      "rank" : 1
+    },
+    {
+      "group" : "phrase",
+      "hits" : [
+        "en-18",
+        "tail-18"
+      ],
+      "id" : "holdout_phrase-18",
+      "rank" : 1
+    },
+    {
+      "group" : "chinese_short",
+      "hits" : [
+        "zh-18",
+        "zh-09",
+        "en-18",
+        "tail-18",
+        "en-09"
+      ],
+      "id" : "holdout_chinese_short-18",
+      "rank" : 1
+    },
+    {
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "holdout_no_answer-18",
+      "rank" : null
+    },
+    {
+      "group" : "english_semantic",
+      "hits" : [
+        "en-19",
+        "zh-19",
+        "tail-19",
+        "en-21",
+        "en-04"
+      ],
+      "id" : "holdout_english_semantic-19",
+      "rank" : 1
+    },
+    {
+      "group" : "chinese_semantic",
+      "hits" : [
+        "zh-19",
+        "en-19",
+        "zh-04",
+        "tail-19",
+        "zh-23"
+      ],
+      "id" : "holdout_chinese_semantic-19",
+      "rank" : 1
+    },
+    {
+      "group" : "english_to_chinese",
+      "hits" : [
+        "en-19",
+        "zh-19",
+        "tail-19",
+        "en-21",
+        "en-04"
+      ],
+      "id" : "holdout_english_to_chinese-19",
+      "rank" : 2
+    },
+    {
+      "group" : "chinese_to_english",
+      "hits" : [
+        "zh-19",
+        "en-19",
+        "zh-04",
+        "tail-19",
+        "zh-23"
+      ],
+      "id" : "holdout_chinese_to_english-19",
+      "rank" : 2
+    },
+    {
+      "group" : "identifier_unicode",
+      "hits" : [
+        "en-19"
+      ],
+      "id" : "holdout_identifier_unicode-19",
+      "rank" : 1
+    },
+    {
+      "group" : "phrase",
+      "hits" : [
+        "en-19",
+        "tail-19"
+      ],
+      "id" : "holdout_phrase-19",
+      "rank" : 1
+    },
+    {
+      "group" : "chinese_short",
+      "hits" : [
+        "zh-19",
+        "tail-19",
+        "en-19",
+        "zh-04",
+        "zh-24"
+      ],
+      "id" : "holdout_chinese_short-19",
+      "rank" : 1
+    },
+    {
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "holdout_no_answer-19",
+      "rank" : null
+    },
+    {
+      "group" : "english_semantic",
+      "hits" : [
+        "tail-20",
+        "en-20",
+        "zh-20",
+        "tail-04",
+        "en-05"
+      ],
+      "id" : "holdout_english_semantic-20",
+      "rank" : 2
+    },
+    {
+      "group" : "chinese_semantic",
+      "hits" : [
+        "zh-20",
+        "tail-20",
+        "en-20",
+        "zh-01",
+        "en-05"
+      ],
+      "id" : "holdout_chinese_semantic-20",
+      "rank" : 1
+    },
+    {
+      "group" : "english_to_chinese",
+      "hits" : [
+        "tail-20",
+        "en-20",
+        "zh-20",
+        "tail-04",
+        "en-05"
+      ],
+      "id" : "holdout_english_to_chinese-20",
+      "rank" : 3
+    },
+    {
+      "group" : "chinese_to_english",
+      "hits" : [
+        "zh-20",
+        "tail-20",
+        "en-20",
+        "zh-01",
+        "en-05"
+      ],
+      "id" : "holdout_chinese_to_english-20",
+      "rank" : 3
+    },
+    {
+      "group" : "identifier_unicode",
+      "hits" : [
+        "en-20"
+      ],
+      "id" : "holdout_identifier_unicode-20",
+      "rank" : 1
+    },
+    {
+      "group" : "phrase",
+      "hits" : [
+        "tail-20",
+        "en-20"
+      ],
+      "id" : "holdout_phrase-20",
+      "rank" : 2
+    },
+    {
+      "group" : "chinese_short",
+      "hits" : [
+        "zh-20",
+        "en-20",
+        "tail-20",
+        "en-05",
+        "zh-08"
+      ],
+      "id" : "holdout_chinese_short-20",
+      "rank" : 1
+    },
+    {
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "holdout_no_answer-20",
+      "rank" : null
+    },
+    {
+      "group" : "english_semantic",
+      "hits" : [
+        "en-21",
+        "tail-21",
+        "zh-21",
+        "tail-16",
+        "en-16"
+      ],
+      "id" : "holdout_english_semantic-21",
+      "rank" : 1
+    },
+    {
+      "group" : "chinese_semantic",
+      "hits" : [
+        "zh-21",
+        "en-21",
+        "tail-21",
+        "zh-16",
+        "zh-19"
+      ],
+      "id" : "holdout_chinese_semantic-21",
+      "rank" : 1
+    },
+    {
+      "group" : "english_to_chinese",
+      "hits" : [
+        "en-21",
+        "tail-21",
+        "zh-21",
+        "tail-16",
+        "en-16"
+      ],
+      "id" : "holdout_english_to_chinese-21",
+      "rank" : 3
+    },
+    {
+      "group" : "chinese_to_english",
+      "hits" : [
+        "zh-21",
+        "en-21",
+        "tail-21",
+        "zh-16",
+        "zh-19"
+      ],
+      "id" : "holdout_chinese_to_english-21",
+      "rank" : 2
+    },
+    {
+      "group" : "identifier_unicode",
+      "hits" : [
+        "en-21"
+      ],
+      "id" : "holdout_identifier_unicode-21",
+      "rank" : 1
+    },
+    {
+      "group" : "phrase",
+      "hits" : [
+        "en-21",
+        "tail-21"
+      ],
+      "id" : "holdout_phrase-21",
+      "rank" : 1
+    },
+    {
+      "group" : "chinese_short",
+      "hits" : [
+        "zh-21",
+        "tail-21",
+        "en-21",
+        "zh-11",
+        "tail-11"
+      ],
+      "id" : "holdout_chinese_short-21",
+      "rank" : 1
+    },
+    {
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "holdout_no_answer-21",
+      "rank" : null
+    },
+    {
+      "group" : "english_semantic",
+      "hits" : [
+        "tail-22",
+        "en-22",
+        "zh-22",
+        "tail-00",
+        "en-00"
+      ],
+      "id" : "holdout_english_semantic-22",
+      "rank" : 2
+    },
+    {
+      "group" : "chinese_semantic",
+      "hits" : [
+        "zh-22",
+        "en-22",
+        "zh-00",
+        "tail-22",
+        "tail-00"
+      ],
+      "id" : "holdout_chinese_semantic-22",
+      "rank" : 1
+    },
+    {
+      "group" : "english_to_chinese",
+      "hits" : [
+        "tail-22",
+        "en-22",
+        "zh-22",
+        "tail-00",
+        "en-00"
+      ],
+      "id" : "holdout_english_to_chinese-22",
+      "rank" : 3
+    },
+    {
+      "group" : "chinese_to_english",
+      "hits" : [
+        "zh-22",
+        "en-22",
+        "zh-00",
+        "tail-22",
+        "tail-00"
+      ],
+      "id" : "holdout_chinese_to_english-22",
+      "rank" : 2
+    },
+    {
+      "group" : "identifier_unicode",
+      "hits" : [
+        "en-22"
+      ],
+      "id" : "holdout_identifier_unicode-22",
+      "rank" : 1
+    },
+    {
+      "group" : "phrase",
+      "hits" : [
+        "en-22",
+        "tail-22"
+      ],
+      "id" : "holdout_phrase-22",
+      "rank" : 1
+    },
+    {
+      "group" : "chinese_short",
+      "hits" : [
+        "zh-22",
+        "zh-00",
+        "zh-06",
+        "zh-23",
+        "tail-06"
+      ],
+      "id" : "holdout_chinese_short-22",
+      "rank" : 1
+    },
+    {
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "holdout_no_answer-22",
+      "rank" : null
+    },
+    {
+      "group" : "english_semantic",
+      "hits" : [
+        "tail-23",
+        "en-23",
+        "zh-23",
+        "tail-04",
+        "tail-07"
+      ],
+      "id" : "holdout_english_semantic-23",
+      "rank" : 2
+    },
+    {
+      "group" : "chinese_semantic",
+      "hits" : [
+        "zh-23",
+        "tail-23",
+        "en-23",
+        "zh-14",
+        "tail-14"
+      ],
+      "id" : "holdout_chinese_semantic-23",
+      "rank" : 1
+    },
+    {
+      "group" : "english_to_chinese",
+      "hits" : [
+        "tail-23",
+        "en-23",
+        "zh-23",
+        "tail-04",
+        "tail-07"
+      ],
+      "id" : "holdout_english_to_chinese-23",
+      "rank" : 3
+    },
+    {
+      "group" : "chinese_to_english",
+      "hits" : [
+        "zh-23",
+        "tail-23",
+        "en-23",
+        "zh-14",
+        "tail-14"
+      ],
+      "id" : "holdout_chinese_to_english-23",
+      "rank" : 3
+    },
+    {
+      "group" : "identifier_unicode",
+      "hits" : [
+        "en-23"
+      ],
+      "id" : "holdout_identifier_unicode-23",
+      "rank" : 1
+    },
+    {
+      "group" : "phrase",
+      "hits" : [
+        "en-23",
+        "tail-23"
+      ],
+      "id" : "holdout_phrase-23",
+      "rank" : 1
+    },
+    {
+      "group" : "chinese_short",
+      "hits" : [
+        "zh-23",
+        "tail-23",
+        "en-23",
+        "zh-14",
+        "zh-18"
+      ],
+      "id" : "holdout_chinese_short-23",
+      "rank" : 1
+    },
+    {
+      "group" : "no_answer",
+      "hits" : [
+        "tail-07",
+        "tail-16",
+        "en-16",
+        "tail-06",
+        "en-07"
+      ],
+      "id" : "holdout_no_answer-23",
+      "rank" : null
+    },
+    {
+      "group" : "english_semantic",
+      "hits" : [
+        "zh-24",
+        "en-24",
+        "tail-24",
+        "tail-00",
+        "en-00"
+      ],
+      "id" : "holdout_english_semantic-24",
+      "rank" : 2
+    },
+    {
+      "group" : "chinese_semantic",
+      "hits" : [
+        "zh-24",
+        "en-24",
+        "tail-24",
+        "zh-00",
+        "zh-22"
+      ],
+      "id" : "holdout_chinese_semantic-24",
+      "rank" : 1
+    },
+    {
+      "group" : "english_to_chinese",
+      "hits" : [
+        "zh-24",
+        "en-24",
+        "tail-24",
+        "tail-00",
+        "en-00"
+      ],
+      "id" : "holdout_english_to_chinese-24",
+      "rank" : 1
+    },
+    {
+      "group" : "chinese_to_english",
+      "hits" : [
+        "zh-24",
+        "en-24",
+        "tail-24",
+        "zh-00",
+        "zh-22"
+      ],
+      "id" : "holdout_chinese_to_english-24",
+      "rank" : 2
+    },
+    {
+      "group" : "identifier_unicode",
+      "hits" : [
+        "en-24"
+      ],
+      "id" : "holdout_identifier_unicode-24",
+      "rank" : 1
+    },
+    {
+      "group" : "phrase",
+      "hits" : [
+        "en-24",
+        "tail-24"
+      ],
+      "id" : "holdout_phrase-24",
+      "rank" : 1
+    },
+    {
+      "group" : "chinese_short",
+      "hits" : [
+        "zh-24",
+        "en-24",
+        "tail-24",
+        "zh-11",
+        "tail-11"
+      ],
+      "id" : "holdout_chinese_short-24",
+      "rank" : 1
+    },
+    {
+      "group" : "no_answer",
+      "hits" : [
+
+      ],
+      "id" : "holdout_no_answer-24",
+      "rank" : null
+    }
+  ],
+  "scope" : "New wording holdout; fresh real model embeddings and production store\/ranker. Shared source facts. No extraction or UI in this quality harness."
+}

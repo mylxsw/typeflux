@@ -1,0 +1,1756 @@
+{
+  "version": 1,
+  "provenance": "50 new hand-authored semantic questions plus derived exact/Unicode/short/no-answer cases. Frozen after initial 200-query calibration diagnosis. Query wording held out; source facts and documents are shared. Synthetic, single-author labels; not a representative corpus.",
+  "queries": [
+    {
+      "id": "holdout_english_semantic-00",
+      "group": "english_semantic",
+      "query": "What evidence and sign-off are needed to recover business spending?",
+      "expected": [
+        "en-00"
+      ],
+      "anchor": "Attach receipts and obtain manager approval."
+    },
+    {
+      "id": "holdout_chinese_semantic-00",
+      "group": "chinese_semantic",
+      "query": "员工想拿回垫付的项目费用，要准备什么并由谁同意？",
+      "expected": [
+        "zh-00"
+      ],
+      "anchor": "附上发票并获得主管批准。"
+    },
+    {
+      "id": "holdout_english_to_chinese-00",
+      "group": "english_to_chinese",
+      "query": "What evidence and sign-off are needed to recover business spending?",
+      "expected": [
+        "zh-00"
+      ],
+      "anchor": "附上发票并获得主管批准。"
+    },
+    {
+      "id": "holdout_chinese_to_english-00",
+      "group": "chinese_to_english",
+      "query": "员工想拿回垫付的项目费用，要准备什么并由谁同意？",
+      "expected": [
+        "en-00"
+      ],
+      "anchor": "Attach receipts and obtain manager approval."
+    },
+    {
+      "id": "holdout_identifier_unicode-00",
+      "group": "identifier_unicode",
+      "query": "ＴＳ－９０００",
+      "expected": [
+        "en-00"
+      ],
+      "anchor": "TS-9000"
+    },
+    {
+      "id": "holdout_phrase-00",
+      "group": "phrase",
+      "query": "\"Attach receipts and obtain manager approval\"",
+      "expected": [
+        "en-00"
+      ],
+      "anchor": "Attach receipts and obtain manager approval."
+    },
+    {
+      "id": "holdout_chinese_short-00",
+      "group": "chinese_short",
+      "query": "报销？",
+      "expected": [
+        "zh-00"
+      ],
+      "anchor": "附上发票并获得主管批准。"
+    },
+    {
+      "id": "holdout_no_answer-00",
+      "group": "no_answer",
+      "query": "How do dragons obtain licenses for teleportation?",
+      "expected": [],
+      "anchor": null
+    },
+    {
+      "id": "holdout_english_semantic-01",
+      "group": "english_semantic",
+      "query": "How often should tomatoes receive water?",
+      "expected": [
+        "en-01"
+      ],
+      "anchor": "Water tomato plants twice weekly."
+    },
+    {
+      "id": "holdout_chinese_semantic-01",
+      "group": "chinese_semantic",
+      "query": "番茄苗多久需要补一次水？",
+      "expected": [
+        "zh-01"
+      ],
+      "anchor": "每周给番茄浇水两次。"
+    },
+    {
+      "id": "holdout_english_to_chinese-01",
+      "group": "english_to_chinese",
+      "query": "How often should tomatoes receive water?",
+      "expected": [
+        "zh-01"
+      ],
+      "anchor": "每周给番茄浇水两次。"
+    },
+    {
+      "id": "holdout_chinese_to_english-01",
+      "group": "chinese_to_english",
+      "query": "番茄苗多久需要补一次水？",
+      "expected": [
+        "en-01"
+      ],
+      "anchor": "Water tomato plants twice weekly."
+    },
+    {
+      "id": "holdout_identifier_unicode-01",
+      "group": "identifier_unicode",
+      "query": "ＴＳ－９００１",
+      "expected": [
+        "en-01"
+      ],
+      "anchor": "TS-9001"
+    },
+    {
+      "id": "holdout_phrase-01",
+      "group": "phrase",
+      "query": "\"Water tomato plants twice weekly\"",
+      "expected": [
+        "en-01"
+      ],
+      "anchor": "Water tomato plants twice weekly."
+    },
+    {
+      "id": "holdout_chinese_short-01",
+      "group": "chinese_short",
+      "query": "园艺？",
+      "expected": [
+        "zh-01"
+      ],
+      "anchor": "每周给番茄浇水两次。"
+    },
+    {
+      "id": "holdout_no_answer-01",
+      "group": "no_answer",
+      "query": "Does the lunar embassy accept crystal currency?",
+      "expected": [],
+      "anchor": null
+    },
+    {
+      "id": "holdout_english_semantic-02",
+      "group": "english_semantic",
+      "query": "Is a sleeper train seat booking required before getting on?",
+      "expected": [
+        "en-02"
+      ],
+      "anchor": "Reserve a seat before boarding the overnight train."
+    },
+    {
+      "id": "holdout_chinese_semantic-02",
+      "group": "chinese_semantic",
+      "query": "上夜行火车之前是否要先留座？",
+      "expected": [
+        "zh-02"
+      ],
+      "anchor": "乘坐夜间列车前请预订座位。"
+    },
+    {
+      "id": "holdout_english_to_chinese-02",
+      "group": "english_to_chinese",
+      "query": "Is a sleeper train seat booking required before getting on?",
+      "expected": [
+        "zh-02"
+      ],
+      "anchor": "乘坐夜间列车前请预订座位。"
+    },
+    {
+      "id": "holdout_chinese_to_english-02",
+      "group": "chinese_to_english",
+      "query": "上夜行火车之前是否要先留座？",
+      "expected": [
+        "en-02"
+      ],
+      "anchor": "Reserve a seat before boarding the overnight train."
+    },
+    {
+      "id": "holdout_identifier_unicode-02",
+      "group": "identifier_unicode",
+      "query": "ＴＳ－９００２",
+      "expected": [
+        "en-02"
+      ],
+      "anchor": "TS-9002"
+    },
+    {
+      "id": "holdout_phrase-02",
+      "group": "phrase",
+      "query": "\"Reserve a seat before boarding the overnight train\"",
+      "expected": [
+        "en-02"
+      ],
+      "anchor": "Reserve a seat before boarding the overnight train."
+    },
+    {
+      "id": "holdout_chinese_short-02",
+      "group": "chinese_short",
+      "query": "铁路？",
+      "expected": [
+        "zh-02"
+      ],
+      "anchor": "乘坐夜间列车前请预订座位。"
+    },
+    {
+      "id": "holdout_no_answer-02",
+      "group": "no_answer",
+      "query": "Where can a mermaid recharge a flying chariot?",
+      "expected": [],
+      "anchor": null
+    },
+    {
+      "id": "holdout_english_semantic-03",
+      "group": "english_semantic",
+      "query": "Where should protected duplicate data be stored?",
+      "expected": [
+        "en-03"
+      ],
+      "anchor": "Keep encrypted copies on a separate disk."
+    },
+    {
+      "id": "holdout_chinese_semantic-03",
+      "group": "chinese_semantic",
+      "query": "加密的数据副本应该放在哪里？",
+      "expected": [
+        "zh-03"
+      ],
+      "anchor": "在独立磁盘上保存加密副本。"
+    },
+    {
+      "id": "holdout_english_to_chinese-03",
+      "group": "english_to_chinese",
+      "query": "Where should protected duplicate data be stored?",
+      "expected": [
+        "zh-03"
+      ],
+      "anchor": "在独立磁盘上保存加密副本。"
+    },
+    {
+      "id": "holdout_chinese_to_english-03",
+      "group": "chinese_to_english",
+      "query": "加密的数据副本应该放在哪里？",
+      "expected": [
+        "en-03"
+      ],
+      "anchor": "Keep encrypted copies on a separate disk."
+    },
+    {
+      "id": "holdout_identifier_unicode-03",
+      "group": "identifier_unicode",
+      "query": "ＴＳ－９００３",
+      "expected": [
+        "en-03"
+      ],
+      "anchor": "TS-9003"
+    },
+    {
+      "id": "holdout_phrase-03",
+      "group": "phrase",
+      "query": "\"Keep encrypted copies on a separate disk\"",
+      "expected": [
+        "en-03"
+      ],
+      "anchor": "Keep encrypted copies on a separate disk."
+    },
+    {
+      "id": "holdout_chinese_short-03",
+      "group": "chinese_short",
+      "query": "备份？",
+      "expected": [
+        "zh-03"
+      ],
+      "anchor": "在独立磁盘上保存加密副本。"
+    },
+    {
+      "id": "holdout_no_answer-03",
+      "group": "no_answer",
+      "query": "How many feathers are needed to steer a comet?",
+      "expected": [],
+      "anchor": null
+    },
+    {
+      "id": "holdout_english_semantic-04",
+      "group": "english_semantic",
+      "query": "Where can a new employee pick up their computer?",
+      "expected": [
+        "en-04"
+      ],
+      "anchor": "Collect the laptop from the reception desk."
+    },
+    {
+      "id": "holdout_chinese_semantic-04",
+      "group": "chinese_semantic",
+      "query": "新同事去哪儿拿工作用的电脑？",
+      "expected": [
+        "zh-04"
+      ],
+      "anchor": "从前台领取笔记本电脑。"
+    },
+    {
+      "id": "holdout_english_to_chinese-04",
+      "group": "english_to_chinese",
+      "query": "Where can a new employee pick up their computer?",
+      "expected": [
+        "zh-04"
+      ],
+      "anchor": "从前台领取笔记本电脑。"
+    },
+    {
+      "id": "holdout_chinese_to_english-04",
+      "group": "chinese_to_english",
+      "query": "新同事去哪儿拿工作用的电脑？",
+      "expected": [
+        "en-04"
+      ],
+      "anchor": "Collect the laptop from the reception desk."
+    },
+    {
+      "id": "holdout_identifier_unicode-04",
+      "group": "identifier_unicode",
+      "query": "ＴＳ－９００４",
+      "expected": [
+        "en-04"
+      ],
+      "anchor": "TS-9004"
+    },
+    {
+      "id": "holdout_phrase-04",
+      "group": "phrase",
+      "query": "\"Collect the laptop from the reception desk\"",
+      "expected": [
+        "en-04"
+      ],
+      "anchor": "Collect the laptop from the reception desk."
+    },
+    {
+      "id": "holdout_chinese_short-04",
+      "group": "chinese_short",
+      "query": "入职？",
+      "expected": [
+        "zh-04"
+      ],
+      "anchor": "从前台领取笔记本电脑。"
+    },
+    {
+      "id": "holdout_no_answer-04",
+      "group": "no_answer",
+      "query": "What language do invisible nebula creatures speak?",
+      "expected": [],
+      "anchor": null
+    },
+    {
+      "id": "holdout_english_semantic-05",
+      "group": "english_semantic",
+      "query": "At what hours is the midday meal available?",
+      "expected": [
+        "en-05"
+      ],
+      "anchor": "Lunch is served between noon and two."
+    },
+    {
+      "id": "holdout_chinese_semantic-05",
+      "group": "chinese_semantic",
+      "query": "中饭在几点之间供应？",
+      "expected": [
+        "zh-05"
+      ],
+      "anchor": "午餐供应时间为中午十二点到两点。"
+    },
+    {
+      "id": "holdout_english_to_chinese-05",
+      "group": "english_to_chinese",
+      "query": "At what hours is the midday meal available?",
+      "expected": [
+        "zh-05"
+      ],
+      "anchor": "午餐供应时间为中午十二点到两点。"
+    },
+    {
+      "id": "holdout_chinese_to_english-05",
+      "group": "chinese_to_english",
+      "query": "中饭在几点之间供应？",
+      "expected": [
+        "en-05"
+      ],
+      "anchor": "Lunch is served between noon and two."
+    },
+    {
+      "id": "holdout_identifier_unicode-05",
+      "group": "identifier_unicode",
+      "query": "ＴＳ－９００５",
+      "expected": [
+        "en-05"
+      ],
+      "anchor": "TS-9005"
+    },
+    {
+      "id": "holdout_phrase-05",
+      "group": "phrase",
+      "query": "\"Lunch is served between noon and two\"",
+      "expected": [
+        "en-05"
+      ],
+      "anchor": "Lunch is served between noon and two."
+    },
+    {
+      "id": "holdout_chinese_short-05",
+      "group": "chinese_short",
+      "query": "食堂？",
+      "expected": [
+        "zh-05"
+      ],
+      "anchor": "午餐供应时间为中午十二点到两点。"
+    },
+    {
+      "id": "holdout_no_answer-05",
+      "group": "no_answer",
+      "query": "Can a wizard turn moonlight into edible diamonds?",
+      "expected": [],
+      "anchor": null
+    },
+    {
+      "id": "holdout_english_semantic-06",
+      "group": "english_semantic",
+      "query": "Which channel and ticket class should employees use for trips?",
+      "expected": [
+        "en-06"
+      ],
+      "anchor": "Book economy tickets through the travel portal."
+    },
+    {
+      "id": "holdout_chinese_semantic-06",
+      "group": "chinese_semantic",
+      "query": "出差订机票应该选什么舱位，在哪里订？",
+      "expected": [
+        "zh-06"
+      ],
+      "anchor": "通过差旅门户预订经济舱机票。"
+    },
+    {
+      "id": "holdout_english_to_chinese-06",
+      "group": "english_to_chinese",
+      "query": "Which channel and ticket class should employees use for trips?",
+      "expected": [
+        "zh-06"
+      ],
+      "anchor": "通过差旅门户预订经济舱机票。"
+    },
+    {
+      "id": "holdout_chinese_to_english-06",
+      "group": "chinese_to_english",
+      "query": "出差订机票应该选什么舱位，在哪里订？",
+      "expected": [
+        "en-06"
+      ],
+      "anchor": "Book economy tickets through the travel portal."
+    },
+    {
+      "id": "holdout_identifier_unicode-06",
+      "group": "identifier_unicode",
+      "query": "ＴＳ－９００６",
+      "expected": [
+        "en-06"
+      ],
+      "anchor": "TS-9006"
+    },
+    {
+      "id": "holdout_phrase-06",
+      "group": "phrase",
+      "query": "\"Book economy tickets through the travel portal\"",
+      "expected": [
+        "en-06"
+      ],
+      "anchor": "Book economy tickets through the travel portal."
+    },
+    {
+      "id": "holdout_chinese_short-06",
+      "group": "chinese_short",
+      "query": "差旅？",
+      "expected": [
+        "zh-06"
+      ],
+      "anchor": "通过差旅门户预订经济舱机票。"
+    },
+    {
+      "id": "holdout_no_answer-06",
+      "group": "no_answer",
+      "query": "Which spell reverses the direction of gravity?",
+      "expected": [],
+      "anchor": null
+    },
+    {
+      "id": "holdout_english_semantic-07",
+      "group": "english_semantic",
+      "query": "How should everyone evacuate and where should they gather?",
+      "expected": [
+        "en-07"
+      ],
+      "anchor": "Use the stairs and assemble outside the east gate."
+    },
+    {
+      "id": "holdout_chinese_semantic-07",
+      "group": "chinese_semantic",
+      "query": "遇到火警应该走哪条路，最后在哪里集合？",
+      "expected": [
+        "zh-07"
+      ],
+      "anchor": "走楼梯撤离并在东门外集合。"
+    },
+    {
+      "id": "holdout_english_to_chinese-07",
+      "group": "english_to_chinese",
+      "query": "How should everyone evacuate and where should they gather?",
+      "expected": [
+        "zh-07"
+      ],
+      "anchor": "走楼梯撤离并在东门外集合。"
+    },
+    {
+      "id": "holdout_chinese_to_english-07",
+      "group": "chinese_to_english",
+      "query": "遇到火警应该走哪条路，最后在哪里集合？",
+      "expected": [
+        "en-07"
+      ],
+      "anchor": "Use the stairs and assemble outside the east gate."
+    },
+    {
+      "id": "holdout_identifier_unicode-07",
+      "group": "identifier_unicode",
+      "query": "ＴＳ－９００７",
+      "expected": [
+        "en-07"
+      ],
+      "anchor": "TS-9007"
+    },
+    {
+      "id": "holdout_phrase-07",
+      "group": "phrase",
+      "query": "\"Use the stairs and assemble outside the east gate\"",
+      "expected": [
+        "en-07"
+      ],
+      "anchor": "Use the stairs and assemble outside the east gate."
+    },
+    {
+      "id": "holdout_chinese_short-07",
+      "group": "chinese_short",
+      "query": "消防？",
+      "expected": [
+        "zh-07"
+      ],
+      "anchor": "走楼梯撤离并在东门外集合。"
+    },
+    {
+      "id": "holdout_no_answer-07",
+      "group": "no_answer",
+      "query": "Where is the portal to the underwater kingdom?",
+      "expected": [],
+      "anchor": null
+    },
+    {
+      "id": "holdout_english_semantic-08",
+      "group": "english_semantic",
+      "query": "Which container takes unsoiled sheets of paper?",
+      "expected": [
+        "en-08"
+      ],
+      "anchor": "Put clean paper in the blue bin."
+    },
+    {
+      "id": "holdout_chinese_semantic-08",
+      "group": "chinese_semantic",
+      "query": "没有污渍的废纸该丢进哪种颜色的桶？",
+      "expected": [
+        "zh-08"
+      ],
+      "anchor": "将干净纸张放入蓝色垃圾桶。"
+    },
+    {
+      "id": "holdout_english_to_chinese-08",
+      "group": "english_to_chinese",
+      "query": "Which container takes unsoiled sheets of paper?",
+      "expected": [
+        "zh-08"
+      ],
+      "anchor": "将干净纸张放入蓝色垃圾桶。"
+    },
+    {
+      "id": "holdout_chinese_to_english-08",
+      "group": "chinese_to_english",
+      "query": "没有污渍的废纸该丢进哪种颜色的桶？",
+      "expected": [
+        "en-08"
+      ],
+      "anchor": "Put clean paper in the blue bin."
+    },
+    {
+      "id": "holdout_identifier_unicode-08",
+      "group": "identifier_unicode",
+      "query": "ＴＳ－９００８",
+      "expected": [
+        "en-08"
+      ],
+      "anchor": "TS-9008"
+    },
+    {
+      "id": "holdout_phrase-08",
+      "group": "phrase",
+      "query": "\"Put clean paper in the blue bin\"",
+      "expected": [
+        "en-08"
+      ],
+      "anchor": "Put clean paper in the blue bin."
+    },
+    {
+      "id": "holdout_chinese_short-08",
+      "group": "chinese_short",
+      "query": "回收？",
+      "expected": [
+        "zh-08"
+      ],
+      "anchor": "将干净纸张放入蓝色垃圾桶。"
+    },
+    {
+      "id": "holdout_no_answer-08",
+      "group": "no_answer",
+      "query": "How is a phoenix hatched inside a neutron star?",
+      "expected": [],
+      "anchor": null
+    },
+    {
+      "id": "holdout_english_semantic-09",
+      "group": "english_semantic",
+      "query": "Where may staff leave their bikes?",
+      "expected": [
+        "en-09"
+      ],
+      "anchor": "Store bicycles in the basement parking area."
+    },
+    {
+      "id": "holdout_chinese_semantic-09",
+      "group": "chinese_semantic",
+      "query": "骑来的单车放在什么地方？",
+      "expected": [
+        "zh-09"
+      ],
+      "anchor": "将自行车停放在地下停车区。"
+    },
+    {
+      "id": "holdout_english_to_chinese-09",
+      "group": "english_to_chinese",
+      "query": "Where may staff leave their bikes?",
+      "expected": [
+        "zh-09"
+      ],
+      "anchor": "将自行车停放在地下停车区。"
+    },
+    {
+      "id": "holdout_chinese_to_english-09",
+      "group": "chinese_to_english",
+      "query": "骑来的单车放在什么地方？",
+      "expected": [
+        "en-09"
+      ],
+      "anchor": "Store bicycles in the basement parking area."
+    },
+    {
+      "id": "holdout_identifier_unicode-09",
+      "group": "identifier_unicode",
+      "query": "ＴＳ－９００９",
+      "expected": [
+        "en-09"
+      ],
+      "anchor": "TS-9009"
+    },
+    {
+      "id": "holdout_phrase-09",
+      "group": "phrase",
+      "query": "\"Store bicycles in the basement parking area\"",
+      "expected": [
+        "en-09"
+      ],
+      "anchor": "Store bicycles in the basement parking area."
+    },
+    {
+      "id": "holdout_chinese_short-09",
+      "group": "chinese_short",
+      "query": "自行车？",
+      "expected": [
+        "zh-09"
+      ],
+      "anchor": "将自行车停放在地下停车区。"
+    },
+    {
+      "id": "holdout_no_answer-09",
+      "group": "no_answer",
+      "query": "Who invented time travel for ancient dinosaurs?",
+      "expected": [],
+      "anchor": null
+    },
+    {
+      "id": "holdout_english_semantic-10",
+      "group": "english_semantic",
+      "query": "How long can someone keep a borrowed book?",
+      "expected": [
+        "en-10"
+      ],
+      "anchor": "Return borrowed books within twenty days."
+    },
+    {
+      "id": "holdout_chinese_semantic-10",
+      "group": "chinese_semantic",
+      "query": "借阅书籍多少天内需要送回？",
+      "expected": [
+        "zh-10"
+      ],
+      "anchor": "请在二十天内归还借阅的图书。"
+    },
+    {
+      "id": "holdout_english_to_chinese-10",
+      "group": "english_to_chinese",
+      "query": "How long can someone keep a borrowed book?",
+      "expected": [
+        "zh-10"
+      ],
+      "anchor": "请在二十天内归还借阅的图书。"
+    },
+    {
+      "id": "holdout_chinese_to_english-10",
+      "group": "chinese_to_english",
+      "query": "借阅书籍多少天内需要送回？",
+      "expected": [
+        "en-10"
+      ],
+      "anchor": "Return borrowed books within twenty days."
+    },
+    {
+      "id": "holdout_identifier_unicode-10",
+      "group": "identifier_unicode",
+      "query": "ＴＳ－９０１０",
+      "expected": [
+        "en-10"
+      ],
+      "anchor": "TS-9010"
+    },
+    {
+      "id": "holdout_phrase-10",
+      "group": "phrase",
+      "query": "\"Return borrowed books within twenty days\"",
+      "expected": [
+        "en-10"
+      ],
+      "anchor": "Return borrowed books within twenty days."
+    },
+    {
+      "id": "holdout_chinese_short-10",
+      "group": "chinese_short",
+      "query": "图书？",
+      "expected": [
+        "zh-10"
+      ],
+      "anchor": "请在二十天内归还借阅的图书。"
+    },
+    {
+      "id": "holdout_no_answer-10",
+      "group": "no_answer",
+      "query": "What fuel powers a spaceship made of starlight?",
+      "expected": [],
+      "anchor": null
+    },
+    {
+      "id": "holdout_english_semantic-11",
+      "group": "english_semantic",
+      "query": "Which space should a group book for discussions?",
+      "expected": [
+        "en-11"
+      ],
+      "anchor": "Reserve the large room for group discussions."
+    },
+    {
+      "id": "holdout_chinese_semantic-11",
+      "group": "chinese_semantic",
+      "query": "多人讨论该提前订哪个房间？",
+      "expected": [
+        "zh-11"
+      ],
+      "anchor": "集体讨论请预订大会议室。"
+    },
+    {
+      "id": "holdout_english_to_chinese-11",
+      "group": "english_to_chinese",
+      "query": "Which space should a group book for discussions?",
+      "expected": [
+        "zh-11"
+      ],
+      "anchor": "集体讨论请预订大会议室。"
+    },
+    {
+      "id": "holdout_chinese_to_english-11",
+      "group": "chinese_to_english",
+      "query": "多人讨论该提前订哪个房间？",
+      "expected": [
+        "en-11"
+      ],
+      "anchor": "Reserve the large room for group discussions."
+    },
+    {
+      "id": "holdout_identifier_unicode-11",
+      "group": "identifier_unicode",
+      "query": "ＴＳ－９０１１",
+      "expected": [
+        "en-11"
+      ],
+      "anchor": "TS-9011"
+    },
+    {
+      "id": "holdout_phrase-11",
+      "group": "phrase",
+      "query": "\"Reserve the large room for group discussions\"",
+      "expected": [
+        "en-11"
+      ],
+      "anchor": "Reserve the large room for group discussions."
+    },
+    {
+      "id": "holdout_chinese_short-11",
+      "group": "chinese_short",
+      "query": "会议？",
+      "expected": [
+        "zh-11"
+      ],
+      "anchor": "集体讨论请预订大会议室。"
+    },
+    {
+      "id": "holdout_no_answer-11",
+      "group": "no_answer",
+      "query": "How can a ghost unlock a parallel universe?",
+      "expected": [],
+      "anchor": null
+    },
+    {
+      "id": "holdout_english_semantic-12",
+      "group": "english_semantic",
+      "query": "On which working day does employee pay arrive?",
+      "expected": [
+        "en-12"
+      ],
+      "anchor": "Salaries arrive on the last business day."
+    },
+    {
+      "id": "holdout_chinese_semantic-12",
+      "group": "chinese_semantic",
+      "query": "每个月哪一天能收到薪水？",
+      "expected": [
+        "zh-12"
+      ],
+      "anchor": "工资于最后一个工作日到账。"
+    },
+    {
+      "id": "holdout_english_to_chinese-12",
+      "group": "english_to_chinese",
+      "query": "On which working day does employee pay arrive?",
+      "expected": [
+        "zh-12"
+      ],
+      "anchor": "工资于最后一个工作日到账。"
+    },
+    {
+      "id": "holdout_chinese_to_english-12",
+      "group": "chinese_to_english",
+      "query": "每个月哪一天能收到薪水？",
+      "expected": [
+        "en-12"
+      ],
+      "anchor": "Salaries arrive on the last business day."
+    },
+    {
+      "id": "holdout_identifier_unicode-12",
+      "group": "identifier_unicode",
+      "query": "ＴＳ－９０１２",
+      "expected": [
+        "en-12"
+      ],
+      "anchor": "TS-9012"
+    },
+    {
+      "id": "holdout_phrase-12",
+      "group": "phrase",
+      "query": "\"Salaries arrive on the last business day\"",
+      "expected": [
+        "en-12"
+      ],
+      "anchor": "Salaries arrive on the last business day."
+    },
+    {
+      "id": "holdout_chinese_short-12",
+      "group": "chinese_short",
+      "query": "工资？",
+      "expected": [
+        "zh-12"
+      ],
+      "anchor": "工资于最后一个工作日到账。"
+    },
+    {
+      "id": "holdout_no_answer-12",
+      "group": "no_answer",
+      "query": "Are enchanted asteroids allergic to silver dust?",
+      "expected": [],
+      "anchor": null
+    },
+    {
+      "id": "holdout_english_semantic-13",
+      "group": "english_semantic",
+      "query": "How far ahead should paid time off be requested?",
+      "expected": [
+        "en-13"
+      ],
+      "anchor": "Request annual leave two weeks ahead."
+    },
+    {
+      "id": "holdout_chinese_semantic-13",
+      "group": "chinese_semantic",
+      "query": "申请带薪年假需要提前多久？",
+      "expected": [
+        "zh-13"
+      ],
+      "anchor": "请提前两周申请年假。"
+    },
+    {
+      "id": "holdout_english_to_chinese-13",
+      "group": "english_to_chinese",
+      "query": "How far ahead should paid time off be requested?",
+      "expected": [
+        "zh-13"
+      ],
+      "anchor": "请提前两周申请年假。"
+    },
+    {
+      "id": "holdout_chinese_to_english-13",
+      "group": "chinese_to_english",
+      "query": "申请带薪年假需要提前多久？",
+      "expected": [
+        "en-13"
+      ],
+      "anchor": "Request annual leave two weeks ahead."
+    },
+    {
+      "id": "holdout_identifier_unicode-13",
+      "group": "identifier_unicode",
+      "query": "ＴＳ－９０１３",
+      "expected": [
+        "en-13"
+      ],
+      "anchor": "TS-9013"
+    },
+    {
+      "id": "holdout_phrase-13",
+      "group": "phrase",
+      "query": "\"Request annual leave two weeks ahead\"",
+      "expected": [
+        "en-13"
+      ],
+      "anchor": "Request annual leave two weeks ahead."
+    },
+    {
+      "id": "holdout_chinese_short-13",
+      "group": "chinese_short",
+      "query": "休假？",
+      "expected": [
+        "zh-13"
+      ],
+      "anchor": "请提前两周申请年假。"
+    },
+    {
+      "id": "holdout_no_answer-13",
+      "group": "no_answer",
+      "query": "How are unicorn dreams transmitted to distant galaxies?",
+      "expected": [],
+      "anchor": null
+    },
+    {
+      "id": "holdout_english_semantic-14",
+      "group": "english_semantic",
+      "query": "Where should a package awaiting collection be left?",
+      "expected": [
+        "en-14"
+      ],
+      "anchor": "Leave outgoing parcels at the loading dock."
+    },
+    {
+      "id": "holdout_chinese_semantic-14",
+      "group": "chinese_semantic",
+      "query": "等候寄送的包裹应该放在哪里？",
+      "expected": [
+        "zh-14"
+      ],
+      "anchor": "将待寄包裹放在装卸区。"
+    },
+    {
+      "id": "holdout_english_to_chinese-14",
+      "group": "english_to_chinese",
+      "query": "Where should a package awaiting collection be left?",
+      "expected": [
+        "zh-14"
+      ],
+      "anchor": "将待寄包裹放在装卸区。"
+    },
+    {
+      "id": "holdout_chinese_to_english-14",
+      "group": "chinese_to_english",
+      "query": "等候寄送的包裹应该放在哪里？",
+      "expected": [
+        "en-14"
+      ],
+      "anchor": "Leave outgoing parcels at the loading dock."
+    },
+    {
+      "id": "holdout_identifier_unicode-14",
+      "group": "identifier_unicode",
+      "query": "ＴＳ－９０１４",
+      "expected": [
+        "en-14"
+      ],
+      "anchor": "TS-9014"
+    },
+    {
+      "id": "holdout_phrase-14",
+      "group": "phrase",
+      "query": "\"Leave outgoing parcels at the loading dock\"",
+      "expected": [
+        "en-14"
+      ],
+      "anchor": "Leave outgoing parcels at the loading dock."
+    },
+    {
+      "id": "holdout_chinese_short-14",
+      "group": "chinese_short",
+      "query": "快递？",
+      "expected": [
+        "zh-14"
+      ],
+      "anchor": "将待寄包裹放在装卸区。"
+    },
+    {
+      "id": "holdout_no_answer-14",
+      "group": "no_answer",
+      "query": "Which potion lets a jellyfish breathe in vacuum?",
+      "expected": [],
+      "anchor": null
+    },
+    {
+      "id": "holdout_english_semantic-15",
+      "group": "english_semantic",
+      "query": "How should preliminary documents be printed to save paper?",
+      "expected": [
+        "en-15"
+      ],
+      "anchor": "Use double sided printing for draft documents."
+    },
+    {
+      "id": "holdout_chinese_semantic-15",
+      "group": "chinese_semantic",
+      "query": "文件初稿怎样印才节约纸张？",
+      "expected": [
+        "zh-15"
+      ],
+      "anchor": "草稿文件请使用双面打印。"
+    },
+    {
+      "id": "holdout_english_to_chinese-15",
+      "group": "english_to_chinese",
+      "query": "How should preliminary documents be printed to save paper?",
+      "expected": [
+        "zh-15"
+      ],
+      "anchor": "草稿文件请使用双面打印。"
+    },
+    {
+      "id": "holdout_chinese_to_english-15",
+      "group": "chinese_to_english",
+      "query": "文件初稿怎样印才节约纸张？",
+      "expected": [
+        "en-15"
+      ],
+      "anchor": "Use double sided printing for draft documents."
+    },
+    {
+      "id": "holdout_identifier_unicode-15",
+      "group": "identifier_unicode",
+      "query": "ＴＳ－９０１５",
+      "expected": [
+        "en-15"
+      ],
+      "anchor": "TS-9015"
+    },
+    {
+      "id": "holdout_phrase-15",
+      "group": "phrase",
+      "query": "\"Use double sided printing for draft documents\"",
+      "expected": [
+        "en-15"
+      ],
+      "anchor": "Use double sided printing for draft documents."
+    },
+    {
+      "id": "holdout_chinese_short-15",
+      "group": "chinese_short",
+      "query": "打印？",
+      "expected": [
+        "zh-15"
+      ],
+      "anchor": "草稿文件请使用双面打印。"
+    },
+    {
+      "id": "holdout_no_answer-15",
+      "group": "no_answer",
+      "query": "Why do imaginary planets orbit a square sun?",
+      "expected": [],
+      "anchor": null
+    },
+    {
+      "id": "holdout_english_semantic-16",
+      "group": "english_semantic",
+      "query": "How do guests get short term internet access?",
+      "expected": [
+        "en-16"
+      ],
+      "anchor": "Visitors obtain a temporary network pass at reception."
+    },
+    {
+      "id": "holdout_chinese_semantic-16",
+      "group": "chinese_semantic",
+      "query": "来访人员如何取得临时联网凭证？",
+      "expected": [
+        "zh-16"
+      ],
+      "anchor": "访客可在前台领取临时上网凭证。"
+    },
+    {
+      "id": "holdout_english_to_chinese-16",
+      "group": "english_to_chinese",
+      "query": "How do guests get short term internet access?",
+      "expected": [
+        "zh-16"
+      ],
+      "anchor": "访客可在前台领取临时上网凭证。"
+    },
+    {
+      "id": "holdout_chinese_to_english-16",
+      "group": "chinese_to_english",
+      "query": "来访人员如何取得临时联网凭证？",
+      "expected": [
+        "en-16"
+      ],
+      "anchor": "Visitors obtain a temporary network pass at reception."
+    },
+    {
+      "id": "holdout_identifier_unicode-16",
+      "group": "identifier_unicode",
+      "query": "ＴＳ－９０１６",
+      "expected": [
+        "en-16"
+      ],
+      "anchor": "TS-9016"
+    },
+    {
+      "id": "holdout_phrase-16",
+      "group": "phrase",
+      "query": "\"Visitors obtain a temporary network pass at reception\"",
+      "expected": [
+        "en-16"
+      ],
+      "anchor": "Visitors obtain a temporary network pass at reception."
+    },
+    {
+      "id": "holdout_chinese_short-16",
+      "group": "chinese_short",
+      "query": "无线网络？",
+      "expected": [
+        "zh-16"
+      ],
+      "anchor": "访客可在前台领取临时上网凭证。"
+    },
+    {
+      "id": "holdout_no_answer-16",
+      "group": "no_answer",
+      "query": "Can talking mountains predict the colour of tomorrow?",
+      "expected": [],
+      "anchor": null
+    },
+    {
+      "id": "holdout_english_semantic-17",
+      "group": "english_semantic",
+      "query": "Who receives reports of damaged apparatus?",
+      "expected": [
+        "en-17"
+      ],
+      "anchor": "Report broken equipment to the facilities desk."
+    },
+    {
+      "id": "holdout_chinese_semantic-17",
+      "group": "chinese_semantic",
+      "query": "仪器坏了该找哪个服务部门？",
+      "expected": [
+        "zh-17"
+      ],
+      "anchor": "设备损坏请向后勤服务台报修。"
+    },
+    {
+      "id": "holdout_english_to_chinese-17",
+      "group": "english_to_chinese",
+      "query": "Who receives reports of damaged apparatus?",
+      "expected": [
+        "zh-17"
+      ],
+      "anchor": "设备损坏请向后勤服务台报修。"
+    },
+    {
+      "id": "holdout_chinese_to_english-17",
+      "group": "chinese_to_english",
+      "query": "仪器坏了该找哪个服务部门？",
+      "expected": [
+        "en-17"
+      ],
+      "anchor": "Report broken equipment to the facilities desk."
+    },
+    {
+      "id": "holdout_identifier_unicode-17",
+      "group": "identifier_unicode",
+      "query": "ＴＳ－９０１７",
+      "expected": [
+        "en-17"
+      ],
+      "anchor": "TS-9017"
+    },
+    {
+      "id": "holdout_phrase-17",
+      "group": "phrase",
+      "query": "\"Report broken equipment to the facilities desk\"",
+      "expected": [
+        "en-17"
+      ],
+      "anchor": "Report broken equipment to the facilities desk."
+    },
+    {
+      "id": "holdout_chinese_short-17",
+      "group": "chinese_short",
+      "query": "维修？",
+      "expected": [
+        "zh-17"
+      ],
+      "anchor": "设备损坏请向后勤服务台报修。"
+    },
+    {
+      "id": "holdout_no_answer-17",
+      "group": "no_answer",
+      "query": "Where are the invisible wings of a cosmic serpent?",
+      "expected": [],
+      "anchor": null
+    },
+    {
+      "id": "holdout_english_semantic-18",
+      "group": "english_semantic",
+      "query": "What must a driver do before using the indoor car park?",
+      "expected": [
+        "en-18"
+      ],
+      "anchor": "Register the vehicle plate before entering the garage."
+    },
+    {
+      "id": "holdout_chinese_semantic-18",
+      "group": "chinese_semantic",
+      "query": "开车进地下车场之前要登记什么？",
+      "expected": [
+        "zh-18"
+      ],
+      "anchor": "进入车库前请登记车牌。"
+    },
+    {
+      "id": "holdout_english_to_chinese-18",
+      "group": "english_to_chinese",
+      "query": "What must a driver do before using the indoor car park?",
+      "expected": [
+        "zh-18"
+      ],
+      "anchor": "进入车库前请登记车牌。"
+    },
+    {
+      "id": "holdout_chinese_to_english-18",
+      "group": "chinese_to_english",
+      "query": "开车进地下车场之前要登记什么？",
+      "expected": [
+        "en-18"
+      ],
+      "anchor": "Register the vehicle plate before entering the garage."
+    },
+    {
+      "id": "holdout_identifier_unicode-18",
+      "group": "identifier_unicode",
+      "query": "ＴＳ－９０１８",
+      "expected": [
+        "en-18"
+      ],
+      "anchor": "TS-9018"
+    },
+    {
+      "id": "holdout_phrase-18",
+      "group": "phrase",
+      "query": "\"Register the vehicle plate before entering the garage\"",
+      "expected": [
+        "en-18"
+      ],
+      "anchor": "Register the vehicle plate before entering the garage."
+    },
+    {
+      "id": "holdout_chinese_short-18",
+      "group": "chinese_short",
+      "query": "停车？",
+      "expected": [
+        "zh-18"
+      ],
+      "anchor": "进入车库前请登记车牌。"
+    },
+    {
+      "id": "holdout_no_answer-18",
+      "group": "no_answer",
+      "query": "How does a sorcerer bottle the sound of thunder?",
+      "expected": [],
+      "anchor": null
+    },
+    {
+      "id": "holdout_english_semantic-19",
+      "group": "english_semantic",
+      "query": "What is required before someone is allowed inside the lab?",
+      "expected": [
+        "en-19"
+      ],
+      "anchor": "Complete the safety course before laboratory access."
+    },
+    {
+      "id": "holdout_chinese_semantic-19",
+      "group": "chinese_semantic",
+      "query": "想进入实验室，得先学完什么？",
+      "expected": [
+        "zh-19"
+      ],
+      "anchor": "进入实验室前须完成安全课程。"
+    },
+    {
+      "id": "holdout_english_to_chinese-19",
+      "group": "english_to_chinese",
+      "query": "What is required before someone is allowed inside the lab?",
+      "expected": [
+        "zh-19"
+      ],
+      "anchor": "进入实验室前须完成安全课程。"
+    },
+    {
+      "id": "holdout_chinese_to_english-19",
+      "group": "chinese_to_english",
+      "query": "想进入实验室，得先学完什么？",
+      "expected": [
+        "en-19"
+      ],
+      "anchor": "Complete the safety course before laboratory access."
+    },
+    {
+      "id": "holdout_identifier_unicode-19",
+      "group": "identifier_unicode",
+      "query": "ＴＳ－９０１９",
+      "expected": [
+        "en-19"
+      ],
+      "anchor": "TS-9019"
+    },
+    {
+      "id": "holdout_phrase-19",
+      "group": "phrase",
+      "query": "\"Complete the safety course before laboratory access\"",
+      "expected": [
+        "en-19"
+      ],
+      "anchor": "Complete the safety course before laboratory access."
+    },
+    {
+      "id": "holdout_chinese_short-19",
+      "group": "chinese_short",
+      "query": "培训？",
+      "expected": [
+        "zh-19"
+      ],
+      "anchor": "进入实验室前须完成安全课程。"
+    },
+    {
+      "id": "holdout_no_answer-19",
+      "group": "no_answer",
+      "query": "What is the mass of a fictional antimatter dragon?",
+      "expected": [],
+      "anchor": null
+    },
+    {
+      "id": "holdout_english_semantic-20",
+      "group": "english_semantic",
+      "query": "What morning task keeps the kitchen drinks machine supplied?",
+      "expected": [
+        "en-20"
+      ],
+      "anchor": "Refill beans in the kitchen machine every morning."
+    },
+    {
+      "id": "holdout_chinese_semantic-20",
+      "group": "chinese_semantic",
+      "query": "每天早上要为厨房的饮品机器添什么？",
+      "expected": [
+        "zh-20"
+      ],
+      "anchor": "每天早上为厨房咖啡机补充咖啡豆。"
+    },
+    {
+      "id": "holdout_english_to_chinese-20",
+      "group": "english_to_chinese",
+      "query": "What morning task keeps the kitchen drinks machine supplied?",
+      "expected": [
+        "zh-20"
+      ],
+      "anchor": "每天早上为厨房咖啡机补充咖啡豆。"
+    },
+    {
+      "id": "holdout_chinese_to_english-20",
+      "group": "chinese_to_english",
+      "query": "每天早上要为厨房的饮品机器添什么？",
+      "expected": [
+        "en-20"
+      ],
+      "anchor": "Refill beans in the kitchen machine every morning."
+    },
+    {
+      "id": "holdout_identifier_unicode-20",
+      "group": "identifier_unicode",
+      "query": "ＴＳ－９０２０",
+      "expected": [
+        "en-20"
+      ],
+      "anchor": "TS-9020"
+    },
+    {
+      "id": "holdout_phrase-20",
+      "group": "phrase",
+      "query": "\"Refill beans in the kitchen machine every morning\"",
+      "expected": [
+        "en-20"
+      ],
+      "anchor": "Refill beans in the kitchen machine every morning."
+    },
+    {
+      "id": "holdout_chinese_short-20",
+      "group": "chinese_short",
+      "query": "咖啡？",
+      "expected": [
+        "zh-20"
+      ],
+      "anchor": "每天早上为厨房咖啡机补充咖啡豆。"
+    },
+    {
+      "id": "holdout_no_answer-20",
+      "group": "no_answer",
+      "query": "How many moons fit inside a magical teacup?",
+      "expected": [],
+      "anchor": null
+    },
+    {
+      "id": "holdout_english_semantic-21",
+      "group": "english_semantic",
+      "query": "What identification is required to enter an exhibition?",
+      "expected": [
+        "en-21"
+      ],
+      "anchor": "Show the badge at the exhibition entrance."
+    },
+    {
+      "id": "holdout_chinese_semantic-21",
+      "group": "chinese_semantic",
+      "query": "进入展览现场需要出示什么证件？",
+      "expected": [
+        "zh-21"
+      ],
+      "anchor": "在展览入口出示参会证件。"
+    },
+    {
+      "id": "holdout_english_to_chinese-21",
+      "group": "english_to_chinese",
+      "query": "What identification is required to enter an exhibition?",
+      "expected": [
+        "zh-21"
+      ],
+      "anchor": "在展览入口出示参会证件。"
+    },
+    {
+      "id": "holdout_chinese_to_english-21",
+      "group": "chinese_to_english",
+      "query": "进入展览现场需要出示什么证件？",
+      "expected": [
+        "en-21"
+      ],
+      "anchor": "Show the badge at the exhibition entrance."
+    },
+    {
+      "id": "holdout_identifier_unicode-21",
+      "group": "identifier_unicode",
+      "query": "ＴＳ－９０２１",
+      "expected": [
+        "en-21"
+      ],
+      "anchor": "TS-9021"
+    },
+    {
+      "id": "holdout_phrase-21",
+      "group": "phrase",
+      "query": "\"Show the badge at the exhibition entrance\"",
+      "expected": [
+        "en-21"
+      ],
+      "anchor": "Show the badge at the exhibition entrance."
+    },
+    {
+      "id": "holdout_chinese_short-21",
+      "group": "chinese_short",
+      "query": "会展？",
+      "expected": [
+        "zh-21"
+      ],
+      "anchor": "在展览入口出示参会证件。"
+    },
+    {
+      "id": "holdout_no_answer-21",
+      "group": "no_answer",
+      "query": "Which mythical ocean contains liquid rainbows?",
+      "expected": [],
+      "anchor": null
+    },
+    {
+      "id": "holdout_english_semantic-22",
+      "group": "english_semantic",
+      "query": "What order document accompanies a billing request?",
+      "expected": [
+        "en-22"
+      ],
+      "anchor": "Include the purchase order when requesting an invoice."
+    },
+    {
+      "id": "holdout_chinese_semantic-22",
+      "group": "chinese_semantic",
+      "query": "申请开具账单时应该附带哪张采购单据？",
+      "expected": [
+        "zh-22"
+      ],
+      "anchor": "申请开票时请附上采购订单。"
+    },
+    {
+      "id": "holdout_english_to_chinese-22",
+      "group": "english_to_chinese",
+      "query": "What order document accompanies a billing request?",
+      "expected": [
+        "zh-22"
+      ],
+      "anchor": "申请开票时请附上采购订单。"
+    },
+    {
+      "id": "holdout_chinese_to_english-22",
+      "group": "chinese_to_english",
+      "query": "申请开具账单时应该附带哪张采购单据？",
+      "expected": [
+        "en-22"
+      ],
+      "anchor": "Include the purchase order when requesting an invoice."
+    },
+    {
+      "id": "holdout_identifier_unicode-22",
+      "group": "identifier_unicode",
+      "query": "ＴＳ－９０２２",
+      "expected": [
+        "en-22"
+      ],
+      "anchor": "TS-9022"
+    },
+    {
+      "id": "holdout_phrase-22",
+      "group": "phrase",
+      "query": "\"Include the purchase order when requesting an invoice\"",
+      "expected": [
+        "en-22"
+      ],
+      "anchor": "Include the purchase order when requesting an invoice."
+    },
+    {
+      "id": "holdout_chinese_short-22",
+      "group": "chinese_short",
+      "query": "开票？",
+      "expected": [
+        "zh-22"
+      ],
+      "anchor": "申请开票时请附上采购订单。"
+    },
+    {
+      "id": "holdout_no_answer-22",
+      "group": "no_answer",
+      "query": "How does a centaur repair a broken time machine?",
+      "expected": [],
+      "anchor": null
+    },
+    {
+      "id": "holdout_english_semantic-23",
+      "group": "english_semantic",
+      "query": "What inventory step is required before relocating stock?",
+      "expected": [
+        "en-23"
+      ],
+      "anchor": "Scan the barcode before moving inventory."
+    },
+    {
+      "id": "holdout_chinese_semantic-23",
+      "group": "chinese_semantic",
+      "query": "挪动库里的货物之前得先扫什么？",
+      "expected": [
+        "zh-23"
+      ],
+      "anchor": "移动库存前请扫描条码。"
+    },
+    {
+      "id": "holdout_english_to_chinese-23",
+      "group": "english_to_chinese",
+      "query": "What inventory step is required before relocating stock?",
+      "expected": [
+        "zh-23"
+      ],
+      "anchor": "移动库存前请扫描条码。"
+    },
+    {
+      "id": "holdout_chinese_to_english-23",
+      "group": "chinese_to_english",
+      "query": "挪动库里的货物之前得先扫什么？",
+      "expected": [
+        "en-23"
+      ],
+      "anchor": "Scan the barcode before moving inventory."
+    },
+    {
+      "id": "holdout_identifier_unicode-23",
+      "group": "identifier_unicode",
+      "query": "ＴＳ－９０２３",
+      "expected": [
+        "en-23"
+      ],
+      "anchor": "TS-9023"
+    },
+    {
+      "id": "holdout_phrase-23",
+      "group": "phrase",
+      "query": "\"Scan the barcode before moving inventory\"",
+      "expected": [
+        "en-23"
+      ],
+      "anchor": "Scan the barcode before moving inventory."
+    },
+    {
+      "id": "holdout_chinese_short-23",
+      "group": "chinese_short",
+      "query": "仓库？",
+      "expected": [
+        "zh-23"
+      ],
+      "anchor": "移动库存前请扫描条码。"
+    },
+    {
+      "id": "holdout_no_answer-23",
+      "group": "no_answer",
+      "query": "What password opens the dream dimension?",
+      "expected": [],
+      "anchor": null
+    },
+    {
+      "id": "holdout_english_semantic-24",
+      "group": "english_semantic",
+      "query": "Who must approve agreements with vendors?",
+      "expected": [
+        "en-24"
+      ],
+      "anchor": "Legal counsel reviews every supplier agreement."
+    },
+    {
+      "id": "holdout_chinese_semantic-24",
+      "group": "chinese_semantic",
+      "query": "与供货商签的协议必须由谁审阅？",
+      "expected": [
+        "zh-24"
+      ],
+      "anchor": "每份供应商协议均须经法务审核。"
+    },
+    {
+      "id": "holdout_english_to_chinese-24",
+      "group": "english_to_chinese",
+      "query": "Who must approve agreements with vendors?",
+      "expected": [
+        "zh-24"
+      ],
+      "anchor": "每份供应商协议均须经法务审核。"
+    },
+    {
+      "id": "holdout_chinese_to_english-24",
+      "group": "chinese_to_english",
+      "query": "与供货商签的协议必须由谁审阅？",
+      "expected": [
+        "en-24"
+      ],
+      "anchor": "Legal counsel reviews every supplier agreement."
+    },
+    {
+      "id": "holdout_identifier_unicode-24",
+      "group": "identifier_unicode",
+      "query": "ＴＳ－９０２４",
+      "expected": [
+        "en-24"
+      ],
+      "anchor": "TS-9024"
+    },
+    {
+      "id": "holdout_phrase-24",
+      "group": "phrase",
+      "query": "\"Legal counsel reviews every supplier agreement\"",
+      "expected": [
+        "en-24"
+      ],
+      "anchor": "Legal counsel reviews every supplier agreement."
+    },
+    {
+      "id": "holdout_chinese_short-24",
+      "group": "chinese_short",
+      "query": "合同？",
+      "expected": [
+        "zh-24"
+      ],
+      "anchor": "每份供应商协议均须经法务审核。"
+    },
+    {
+      "id": "holdout_no_answer-24",
+      "group": "no_answer",
+      "query": "How do extraterrestrial fairies manufacture dark matter?",
+      "expected": [],
+      "anchor": null
+    }
+  ]
+}

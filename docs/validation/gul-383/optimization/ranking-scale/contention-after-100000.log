@@ -1,0 +1,16 @@
+Building for production...
+[Computing dependencies]
+[Using on-disk description]
+[1 / 4]
+[1 / 6] ContainersPreview
+[1 / 3] CAtomic
+[1 / 1] TypefluxFocusedTests-product
+Build complete! (1.68 secs)
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite "Native input during real document inference" started.
+◇ Test "measure both entries during real indexing when requested" started.
+✔ Test "measure both entries during real indexing when requested" passed after 417.802 seconds.
+✔ Suite "Native input during real document inference" passed after 417.803 seconds.
+✔ Test run with 1 test in 1 suite passed after 417.803 seconds.

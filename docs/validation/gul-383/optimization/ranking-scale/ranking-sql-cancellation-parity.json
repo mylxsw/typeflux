@@ -1,0 +1,12 @@
+{
+  "ranking-after-final-holdout.json": {
+    "rows": 200,
+    "identical_rank_hits_and_location": true,
+    "identical_full_json": true
+  },
+  "ranking-after-unseen-query.json": {
+    "rows": 200,
+    "identical_rank_hits_and_location": true,
+    "identical_full_json": true
+  }
+}

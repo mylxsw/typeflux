@@ -1,0 +1,5 @@
+{
+  "unix": 1792111490.490397,
+  "test_process_pid": 80244,
+  "reason": "Controlled interruption of the current after benchmark to fix invalid FTS timestamps before final measurement. Root CLI is allowed to collect the termination; completed rows remain in its checkpoint."
+}

@@ -230,3 +230,29 @@ struct SemanticHybridSearchTests {
         #expect(AskQuickResultsView.rowHeight(rows[0]) == AskQuickResultsView.fileHeight)
     }
 }
+
+extension SemanticHybridSearchTests {
+    @Test(arguments: [false, true])
+    func validatedContentBypassesSlowNamesWithoutChangingReturn(requireApps: Bool) async throws {
+        let gate = DispatchSemaphore(value: 0)
+        let files = AskControlledSearchIndex(), apps = AskControlledSearchIndex()
+        files.fileSearch = { _ in
+            _ = gate.wait(timeout: .now() + 5)
+            return [AskQuickSearchSessionTests.file]
+        }
+        let semantic = SemanticDelayedSearch(hits: [hit])
+        let session = AskQuickSearchSession(publicationGrace: .seconds(5))
+        session.fileDebounce = .zero
+        defer { gate.signal(); session.cancel() }
+        session.update(text: "guide", chinese: false, calculator: false,
+                       sources: .init(apps: requireApps ? apps : nil, files: files, semantic: semantic))
+        try await SemanticFileServiceTests.wait { session.results?.files.contains(hit) == true }
+        #expect(session.isSearching, "validated body results must not wait for the blocked filename worker")
+        #expect(session.results?.best == nil)
+        #expect(session.results?.highlightedRow == .askAI)
+        gate.signal()
+        try await SemanticFileServiceTests.wait { !session.isSearching }
+        #expect(session.results?.files == [AskQuickSearchSessionTests.file, hit])
+        #expect(session.results?.best == .file(0), "only the filename match may become the default Return candidate")
+    }
+}

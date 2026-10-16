@@ -1,0 +1,38 @@
+{
+  "before": {
+    "binaries": {
+      ".build/out/Products/Release/Typeflux": {
+        "sha256": "07fddc14f2f55b18809d62ab5a849cd87ebb52fd753d189caf36099e170ab2d0",
+        "modified": 1792103820.6029024
+      },
+      ".build/out/Products/Release/TypefluxFocusedTests.xctest/Contents/MacOS/TypefluxFocusedTests": {
+        "sha256": "cf11b8cd4af2b785a5f10d982e5e46648575e778bffda995bd3c90e92c5f5ee7",
+        "modified": 1792103964.2676988
+      }
+    },
+    "harness": {
+      "SemanticLatencyTests.swift": "88c7e79b2ba5d25f63ca53139027167bb6918b64f7ed608b50d230b99d1823e4",
+      "SemanticNativeLatencyTests.swift": "816f07514921d25a44a7f1efc6156dce33adf83f1031dcc960edab6de9bf9a96",
+      "SemanticNativeContentionTests.swift": "d30ae3877c5690565a758f79f49d8839c50e079864b44808d791a83f45da78c8",
+      "SemanticRankingComparisonTests.swift": "19fc1fff98477e6d66480363d5f7fcf8270ac8a936358652b9b7b99776419378"
+    }
+  },
+  "after": {
+    "binaries": {
+      ".build/out/Products/Release/Typeflux": {
+        "sha256": "841ff5f99e4875412737110539d0beb83d7b165e50339dd1eb6097ff158c67e9",
+        "modified": 1792103942.115603
+      },
+      ".build/out/Products/Release/TypefluxFocusedTests.xctest/Contents/MacOS/TypefluxFocusedTests": {
+        "sha256": "92374ab78f3ce886919c91062b2cf79ee818887271ab37ee1da42051c587a61a",
+        "modified": 1792103957.4828258
+      }
+    },
+    "harness": {
+      "SemanticLatencyTests.swift": "88c7e79b2ba5d25f63ca53139027167bb6918b64f7ed608b50d230b99d1823e4",
+      "SemanticNativeLatencyTests.swift": "816f07514921d25a44a7f1efc6156dce33adf83f1031dcc960edab6de9bf9a96",
+      "SemanticNativeContentionTests.swift": "d30ae3877c5690565a758f79f49d8839c50e079864b44808d791a83f45da78c8",
+      "SemanticRankingComparisonTests.swift": "19fc1fff98477e6d66480363d5f7fcf8270ac8a936358652b9b7b99776419378"
+    }
+  }
+}

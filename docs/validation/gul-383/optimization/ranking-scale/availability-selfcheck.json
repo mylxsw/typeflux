@@ -1,0 +1,27 @@
+{
+  "command": [
+    "python3",
+    "docs/validation/gul-383/optimization/ranking-scale/run_scale_matrix.py",
+    "--checkout",
+    ".",
+    "--label",
+    "after",
+    "--mode",
+    "native",
+    "--size",
+    "100000",
+    "--entry",
+    "mixed",
+    "--scenario",
+    "cold",
+    "--tag",
+    "availability-selfcheck",
+    "--deny-document"
+  ],
+  "wall_seconds": 85.44455841602758,
+  "expected_benchmark_failure": true,
+  "benchmark_exit_code": 1,
+  "reporting_selfcheck_passed": true,
+  "rows": 10,
+  "null_draw_rows": 10
+}
