@@ -48,7 +48,7 @@ struct BackgroundActivity: Identifiable, Equatable {
     var actions: [Action] = []
     var route: Route?
 
-    /// Uses resources right now or waits for the user: the menu bar dot is on.
+    /// Uses resources right now or waits for the user: the menu bar icon shows it.
     var isActive: Bool {
         state == .running || state == .attention
     }
@@ -85,7 +85,7 @@ struct BackgroundActivity: Identifiable, Equatable {
     }
 }
 
-/// The dot beside the menu bar icon.
+/// What the ∞ in the menu bar icon shows.
 enum BackgroundActivityIndicator: Equatable {
     case none
     case running
