@@ -88,16 +88,21 @@ struct ClipboardImageRevision: Equatable, Sendable {
         observeAccount()
         committed = false
         let current = generation
-        let originalRevision = Result { try ClipboardImageRevision(url) }
+        let recognition = actions.textRecognition(in: url)
+        let originalRevision = Result {
+            guard recognition.isCurrent() else { throw MediaFailure.unavailable }
+            return try ClipboardImageRevision(url)
+        }
         task = Task { [weak self] in
             defer { self?.task = nil }
             do {
                 let revision = try originalRevision.get()
-                let text = try await actions.recognizeText(in: url)
+                let text = try await recognition.recognize()
                 guard !Task.isCancelled, self?.generation == current, authorized() else { return }
                 guard revision.matches(url) else { throw MediaFailure.unreadable }
                 let result = MediaOCRResult(lines: text?.components(separatedBy: "\n") ?? [])
                 try result.validate()
+                guard recognition.isCurrent() else { throw MediaFailure.unavailable }
                 self?.committed = true
                 commit(result.text)
             } catch {

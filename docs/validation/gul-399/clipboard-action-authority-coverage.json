@@ -1,0 +1,35 @@
+{
+  "covered": 20,
+  "executable_added": 23,
+  "percent": 86.96,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Clipboard/ClipboardContentActing.swift",
+      "covered": 13,
+      "executable_added": 13,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Clipboard/ClipboardContentAction.swift",
+      "covered": 7,
+      "executable_added": 7,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Clipboard/ClipboardContentActions.swift",
+      "covered": 0,
+      "executable_added": 3,
+      "percent": 0.0,
+      "uncovered": [
+        96,
+        97,
+        98
+      ],
+      "instrumented": true
+    }
+  ]
+}
