@@ -81,6 +81,8 @@ enum SemanticModel {
     }
 }
 
+enum SemanticEmbeddingRefusal: Error { case rejected }
+
 protocol SemanticEmbedding: AnyObject {
     func embed(_ texts: [String], cancelled: () -> Bool) throws -> [[Float]]
     func release()
@@ -124,6 +126,7 @@ final class SemanticEmbeddingWorker: SemanticEmbedding, SemanticQueryEmbedding, 
     private let queue: DispatchQueue
     private let reader: AskFileReader
     private let idleTimeout: TimeInterval
+    private let authorization: SemanticEmbeddingOwnership.Authorization
     private let ownership: SemanticEmbeddingOwnership
     private let lifecycle: AskSearchCancellation
     static let maximumPending = 32
@@ -154,6 +157,7 @@ final class SemanticEmbeddingWorker: SemanticEmbedding, SemanticQueryEmbedding, 
         startupTimeout: TimeInterval = 15,
         idleTimeout: TimeInterval = 60,
         ownership: SemanticEmbeddingOwnership = SemanticEmbeddingOwnership(),
+        authorization: SemanticEmbeddingOwnership.Authorization? = nil,
         lifecycle: AskSearchCancellation = AskSearchCancellation(),
         reaper: OwnedProcessReaper = .shared
     ) {
@@ -163,6 +167,7 @@ final class SemanticEmbeddingWorker: SemanticEmbedding, SemanticQueryEmbedding, 
         )
         self.idleTimeout = idleTimeout
         self.ownership = ownership; self.lifecycle = lifecycle
+        self.authorization = authorization ?? ownership.authorization()
         self.reader = AskFileReader(
             executable: helper,
             arguments: [model.path] + (projector.map { [$0.path] } ?? []),
@@ -175,7 +180,7 @@ final class SemanticEmbeddingWorker: SemanticEmbedding, SemanticQueryEmbedding, 
 
     /// Synchronous indexing adapter. Its caller exclusively owns this instance.
     func embed(_ texts: [String], cancelled: () -> Bool) throws -> [[Float]] {
-        try ownership.perform(cancelled: { self.lifecycle.isCancelled || cancelled() }) {
+        try ownership.perform(authorization: authorization, cancelled: { self.lifecycle.isCancelled || cancelled() }) {
             try embed(texts, trace: nil, cancelled: { self.lifecycle.isCancelled || cancelled() })
         }
     }
@@ -191,20 +196,28 @@ final class SemanticEmbeddingWorker: SemanticEmbedding, SemanticQueryEmbedding, 
             }
             trace.measure("model-encode", milliseconds: timing.encodingMilliseconds)
         }
+        if response.error != nil, response.embeddings == nil { throw SemanticEmbeddingRefusal.rejected }
         guard response.error == nil, let vectors = response.embeddings, vectors.count == texts.count,
-              vectors.allSatisfy(SemanticFileStore.valid) else { throw SemanticFileStore.Failure.invalidVector }
+              vectors.allSatisfy(SemanticFileStore.valid) else {
+            ownership.invalidVector(authorization); throw SemanticFileStore.Failure.invalidVector
+        }
         return vectors
     }
 
     func release() { reader.stop() }
 
     func embed(_ input: SemanticMediaInput, cancelled: () -> Bool) throws -> [Float] {
-        try ownership.perform(cancelled: { self.lifecycle.isCancelled || cancelled() }) {
+        try ownership.perform(authorization: authorization, cancelled: { self.lifecycle.isCancelled || cancelled() }) {
             let response = try reader.read(.init(operation: .embedding, path: "", media: input),
                                            isCancelled: { self.lifecycle.isCancelled || cancelled() })
-            if response.error == EINVAL { throw SemanticMediaInputError.unreadable }
-            guard response.error == nil, let vector = response.embeddings?.first,
-                  SemanticFileStore.valid(vector) else { throw SemanticFileStore.Failure.invalidVector }
+            if response.error != nil, response.embeddings == nil {
+                if response.error == EINVAL { throw SemanticMediaInputError.unreadable }
+                throw SemanticEmbeddingRefusal.rejected
+            }
+            guard response.error == nil, response.embeddings?.count == 1, let vector = response.embeddings?.first,
+                  SemanticFileStore.valid(vector) else {
+                ownership.invalidVector(authorization); throw SemanticFileStore.Failure.invalidVector
+            }
             return vector
         }
     }
@@ -230,7 +243,7 @@ final class SemanticEmbeddingWorker: SemanticEmbedding, SemanticQueryEmbedding, 
                     let discarded = pending
                         .filter { $0.text != text || $0.cancelled.isCancelled || $0.lifecycle.isCancelled }
                     pending.removeAll { $0.text != text || $0.cancelled.isCancelled || $0.lifecycle.isCancelled }
-                    guard pending.count < Self.maximumPending, !self.lifecycle.isCancelled else {
+                    guard pending.count < Self.maximumPending, !self.lifecycle.isCancelled, ownership.permits(authorization) else {
                         return (discarded, false, true)
                     }
                     pending.append(request)
@@ -268,7 +281,7 @@ final class SemanticEmbeddingWorker: SemanticEmbedding, SemanticQueryEmbedding, 
             let result: Result<[Float], Error>
             if let first = active.first {
                 result = Result {
-                    try ownership.perform(cancelled: { self.lifecycle.isCancelled || first.epoch.isCancelled || first.lifecycle.isCancelled }) {
+                    try ownership.perform(authorization: authorization, cancelled: { self.lifecycle.isCancelled || first.epoch.isCancelled || first.lifecycle.isCancelled }) {
                         try queryVector(first, requiresReadyHelper: active.contains { $0.requiresReadyHelper })
                     }
                 }
@@ -276,7 +289,7 @@ final class SemanticEmbeddingWorker: SemanticEmbedding, SemanticQueryEmbedding, 
                 result = .failure(CancellationError())
             }
             for request in requests {
-                if request.cancelled.isCancelled || request.lifecycle.isCancelled || request.epoch.isCancelled || lifecycle.isCancelled {
+                if request.cancelled.isCancelled || request.lifecycle.isCancelled || request.epoch.isCancelled || lifecycle.isCancelled || !ownership.permits(authorization) {
                     request.continuation.resume(throwing: CancellationError())
                 } else {
                     request.continuation.resume(with: result)

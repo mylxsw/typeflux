@@ -6,6 +6,38 @@ final class SemanticEmbeddingOwnership: @unchecked Sendable {
     let native = AskFileReaderOwnership()
     private let state = NSLock()
     private var occupied = false
+    private let requiresLifecycle: Bool
+    private var gate: ModuleWorkerGate?
+    private var waiter: CheckedContinuation<Void, Never>?
+    struct Authorization: Sendable { let generation: UUID? }
+
+    init(requiresLifecycle: Bool = false) { self.requiresLifecycle = requiresLifecycle }
+    func bind(_ gate: ModuleWorkerGate) -> Bool {
+        state.withLock {
+            guard self.gate == nil, !occupied,
+                  native.bind(gate, invalidate: {}) else { return false }
+            self.gate = gate; return true
+        }
+    }
+    func authorization() -> Authorization { state.withLock { .init(generation: try? gate?.admit()) } }
+    func permits(_ authorization: Authorization) -> Bool {
+        state.withLock { gate.map { $0.permits(authorization.generation) } ?? !requiresLifecycle }
+    }
+    func invalidVector(_ authorization: Authorization) {
+        state.withLock { gate?.failed(authorization.generation, configuration: false) }
+        native.stopOwned()
+    }
+    func retireManaged() async {
+        native.stopOwned()
+        await withCheckedContinuation { continuation in
+            let done = state.withLock {
+                guard occupied else { return true }
+                waiter = continuation; return false
+            }
+            if done { continuation.resume() }
+        }
+        await native.waitUntilRetired()
+    }
 
     private func acquire(requireRetired: Bool) -> Bool {
         state.withLock {
@@ -14,15 +46,26 @@ final class SemanticEmbeddingOwnership: @unchecked Sendable {
         }
     }
     fileprivate func acquireMutation() -> Bool { acquire(requireRetired: true) }
-    fileprivate func release() { state.withLock { occupied = false } }
+    fileprivate func release() {
+        let (waiter, gate) = state.withLock {
+            occupied = false
+            let pending = self.waiter; self.waiter = nil
+            return (pending, self.gate)
+        }
+        waiter?.resume(); gate?.changed()
+    }
 
-    func perform<T>(cancelled: () -> Bool, _ body: () throws -> T) throws -> T {
+    func perform<T>(authorization: Authorization? = nil, cancelled: () -> Bool, _ body: () throws -> T) throws -> T {
+        let authorization = authorization ?? self.authorization()
+        guard permits(authorization) else { throw AskFileReadError.unavailable }
         guard !cancelled() else { throw CancellationError() }
         guard acquire(requireRetired: false) else { throw AskFileReadError.unavailable }
         defer { release() }
+        guard permits(authorization) else { throw AskFileReadError.unavailable }
         guard !cancelled() else { throw CancellationError() }
         let result = try body()
         guard !cancelled() else { throw CancellationError() }
+        guard permits(authorization) else { throw AskFileReadError.unavailable }
         return result
     }
 
@@ -33,9 +76,20 @@ final class SemanticEmbeddingOwnership: @unchecked Sendable {
 
 final class SemanticEmbeddingOwners: @unchecked Sendable {
     enum Artifact { case model, projector }
-    let query = SemanticEmbeddingOwnership()
-    let indexing = SemanticEmbeddingOwnership()
-    let media = SemanticEmbeddingOwnership()
+    let query: SemanticEmbeddingOwnership
+    let indexing: SemanticEmbeddingOwnership
+    let media: SemanticEmbeddingOwnership
+    init(requiresLifecycle: Bool = false) {
+        query = .init(requiresLifecycle: requiresLifecycle)
+        indexing = .init(requiresLifecycle: requiresLifecycle)
+        media = .init(requiresLifecycle: requiresLifecycle)
+    }
+    struct Authorization: Sendable {
+        let query, indexing, media: SemanticEmbeddingOwnership.Authorization
+    }
+    func authorization() -> Authorization {
+        .init(query: query.authorization(), indexing: indexing.authorization(), media: media.authorization())
+    }
 
     /// Admission only: no waiting, filesystem work, cancellation or producer replay.
     /// The lease may cross actors; no thread-owned lock crosses an await.

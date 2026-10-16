@@ -42,6 +42,7 @@ final class SemanticMediaWorker: SemanticMediaEmbedding {
     private let models: any SemanticModelHandling
     private let makeEncoder: Factory
     private let embeddingOwners: SemanticEmbeddingOwners
+    private let authorization: SemanticEmbeddingOwnership.Authorization
     private let progress: @Sendable (Double?) -> Void
     private var encoder: (any SemanticMediaEmbedding)?
 
@@ -54,17 +55,22 @@ final class SemanticMediaWorker: SemanticMediaEmbedding {
         models: any SemanticModelHandling = SemanticMediaModelFiles(),
         makeEncoder: Factory? = nil,
         progress: @escaping @Sendable (Double?) -> Void = { _ in },
-        embeddingOwners: SemanticEmbeddingOwners = SemanticEmbeddingOwners()
+        embeddingOwners: SemanticEmbeddingOwners = SemanticEmbeddingOwners(),
+        authorization: SemanticEmbeddingOwnership.Authorization? = nil
     ) {
         self.helper = helper; self.model = model; self.projector = projector
         self.models = models; self.progress = progress; self.embeddingOwners = embeddingOwners
+        let authorization = authorization ?? embeddingOwners.media.authorization()
+        self.authorization = authorization
         self.makeEncoder = makeEncoder ?? { helper, model, projector in
             SemanticEmbeddingWorker(helper: helper, model: model, indexing: true, projector: projector,
-                                    timeout: 90, startupTimeout: 180, ownership: embeddingOwners.media)
+                                    timeout: 90, startupTimeout: 180, ownership: embeddingOwners.media, authorization: authorization)
         }
     }
 
-    func embed(_ input: SemanticMediaInput, cancelled: () -> Bool) throws -> [Float] {
+    func embed(_ input: SemanticMediaInput, cancelled originalCancelled: () -> Bool) throws -> [Float] {
+        guard embeddingOwners.media.permits(authorization) else { throw AskFileReadError.unavailable }
+        @Sendable func cancelled() -> Bool { originalCancelled() || !embeddingOwners.media.permits(authorization) }
         if encoder == nil {
             do { try models.verify(projector, cancelled: { cancelled() }) } catch {
                 if cancelled() { throw CancellationError() }

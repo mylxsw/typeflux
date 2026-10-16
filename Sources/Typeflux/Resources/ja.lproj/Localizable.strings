@@ -5638,3 +5638,6 @@
 "settings.services.semanticValidation" = "セマンティックファイル検証";
 "settings.services.semanticIndexReading" = "セマンティックコンテンツ読み取り";
 "settings.services.semanticPriorityReading" = "セマンティック優先読み取り";
+"settings.services.semanticQueryInference" = "セマンティッククエリ推論";
+"settings.services.semanticIndexInference" = "セマンティック文書推論";
+"settings.services.semanticMediaInference" = "セマンティックメディア推論";

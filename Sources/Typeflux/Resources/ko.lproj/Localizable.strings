@@ -5638,3 +5638,6 @@
 "settings.services.semanticValidation" = "시맨틱 파일 검증";
 "settings.services.semanticIndexReading" = "시맨틱 콘텐츠 읽기";
 "settings.services.semanticPriorityReading" = "시맨틱 우선 읽기";
+"settings.services.semanticQueryInference" = "시맨틱 쿼리 추론";
+"settings.services.semanticIndexInference" = "시맨틱 문서 추론";
+"settings.services.semanticMediaInference" = "시맨틱 미디어 추론";

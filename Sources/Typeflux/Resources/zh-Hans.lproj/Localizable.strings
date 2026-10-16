@@ -5752,3 +5752,6 @@
 "settings.services.semanticValidation" = "语义文件校验";
 "settings.services.semanticIndexReading" = "语义内容读取";
 "settings.services.semanticPriorityReading" = "语义优先读取";
+"settings.services.semanticQueryInference" = "语义查询推理";
+"settings.services.semanticIndexInference" = "语义文档推理";
+"settings.services.semanticMediaInference" = "语义媒体推理";

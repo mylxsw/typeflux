@@ -5752,3 +5752,6 @@
 "settings.services.semanticValidation" = "Semantic file validation";
 "settings.services.semanticIndexReading" = "Semantic content reading";
 "settings.services.semanticPriorityReading" = "Semantic priority reading";
+"settings.services.semanticQueryInference" = "Semantic query inference";
+"settings.services.semanticIndexInference" = "Semantic document inference";
+"settings.services.semanticMediaInference" = "Semantic media inference";

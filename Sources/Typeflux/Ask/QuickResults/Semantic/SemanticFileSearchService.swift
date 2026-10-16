@@ -7,7 +7,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
         settings: SettingsStore(),
         supported: !AskFileIndex.isTesting && SemanticFilePolicy.supported,
         automaticStart: !AskFileIndex.isTesting,
-        requiresReaderLifecycle: true, deferInitialStart: true
+        requiresReaderLifecycle: true, requiresModelLifecycle: true, deferInitialStart: true
     )
     enum Phase: Equatable { case off, preparing, modelRequired, downloading(Double), indexing, ready, paused, failed }
     @Published private(set) var phase: Phase = .off
@@ -49,7 +49,8 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
     private var readerAuthorization: SemanticFileReaders.Authorization?
     private let makeEncoder: (@Sendable (URL, URL) -> any SemanticEmbedding)?
     private let makeQuery: (@Sendable (URL, URL) -> any SemanticQueryEmbedding)?
-    private let embeddingOwners: SemanticEmbeddingOwners
+    let embeddingOwners: SemanticEmbeddingOwners
+    private var embeddingAuthorization: SemanticEmbeddingOwners.Authorization?
     private var observers: [AnyCancellable] = []
     private var work: Task<Void, Never>?
     private var download: Task<Void, Never>?
@@ -91,14 +92,14 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
          makeReader: (@Sendable () -> any AskFileReading)? = nil,
          makeEncoder: (@Sendable (URL, URL) -> any SemanticEmbedding)? = nil,
          makeQuery: (@Sendable (URL, URL) -> any SemanticQueryEmbedding)? = nil,
-         embeddingOwners: SemanticEmbeddingOwners = SemanticEmbeddingOwners(),
-         requiresReaderLifecycle: Bool = false, deferInitialStart: Bool = false) {
+         embeddingOwners: SemanticEmbeddingOwners? = nil,
+         requiresReaderLifecycle: Bool = false, requiresModelLifecycle: Bool = false, deferInitialStart: Bool = false) {
         self.settings = settings; self.directory = directory; self.helper = helper
         self.supported = supported; self.watcher = watcher; self.access = access
         self.lowPowerMode = lowPowerMode; self.thermalConstrained = thermalConstrained
         self.mediaModels = mediaModels; self.idle = idle; self.makeMediaEncoder = makeMediaEncoder
         self.models = models; self.readers = SemanticFileReaders(makeReader: makeReader, requiresLifecycle: requiresReaderLifecycle)
-        self.makeEncoder = makeEncoder; self.makeQuery = makeQuery; self.embeddingOwners = embeddingOwners
+        self.makeEncoder = makeEncoder; self.makeQuery = makeQuery; self.embeddingOwners = embeddingOwners ?? SemanticEmbeddingOwners(requiresLifecycle: requiresModelLifecycle)
         self.preferences = settings.semanticFileSearch
         guard automaticStart else { return }
         self.observers
@@ -185,7 +186,10 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
         let names = settings.askLauncherSearchSettings
         let key = "\(preferences.enabled)\u{3}\(names.fileIndexFingerprint)\u{3}\(settings.askQuickFileSearchEnabled)"
         guard force || fingerprint != key else { return }
-        if renewReaderAuthorization { readerAuthorization = readers.authorization() }
+        if renewReaderAuthorization {
+            readerAuthorization = readers.authorization()
+            embeddingAuthorization = embeddingOwners.authorization()
+        }
         dirty = false; pendingPaths.removeAll(); _ = pauseGate.takeDocuments()
         pausedIndexing = false; pausedReady = false
         pauseGate.setPaused(backgroundPaused)
@@ -242,7 +246,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
                 let database = try prepared.1.get()
                 guard FileManager.default.isExecutableFile(atPath: helper.path) else { phase = .failed; return }
                 queryWorker = makeQuery?(helper, model) ?? SemanticEmbeddingWorker(
-                    helper: helper, model: model, ownership: embeddingOwners.query, lifecycle: token)
+                    helper: helper, model: model, ownership: embeddingOwners.query, authorization: embeddingAuthorization?.query ?? .init(generation: nil), lifecycle: token)
                 if prewarmRequested { prepareForSearch() }
                 watcher.start(paths: prepared.0.roots, since: nil) { [weak self] changes, _ in
                     Task { @MainActor in
@@ -329,13 +333,14 @@ extension SemanticFileSearchService {
     private func beginIndexing(_ database: SemanticFileStore, scope: AskFileScope, token: AskSearchCancellation,
                                paths: [String]? = nil) {
         let makeEncoder = makeEncoder, mediaModels = mediaModels, embeddingOwners = embeddingOwners
+        let embeddingAuthorization = embeddingAuthorization
         // Capture scopes before scheduling: an obsolete detached job must never
         // mint a new reader generation after a newer service transition.
         let reader = readers.indexing.scope(generation: readerAuthorization?.indexing)
         let priorityReader = readers.priority.scope(generation: readerAuthorization?.priority)
         let makeMediaEncoder: SemanticMediaWorker.Factory = self.makeMediaEncoder ?? { helper, model, projector in
             SemanticEmbeddingWorker(helper: helper, model: model, indexing: true, projector: projector,
-                timeout: 90, startupTimeout: 180, ownership: embeddingOwners.media, lifecycle: token)
+                timeout: 90, startupTimeout: 180, ownership: embeddingOwners.media, authorization: embeddingAuthorization?.media ?? .init(generation: nil), lifecycle: token)
         }
         let helper = helper, model = modelURL
         let projector = mediaModelURL, idle = idle, pauseGate = pauseGate
@@ -375,11 +380,11 @@ extension SemanticFileSearchService {
                     defer { reader.stop(); priorityReader.stop() }
                     guard !token.isCancelled else { throw CancellationError() }
                     let encoder = makeEncoder?(helper, model) ?? SemanticEmbeddingWorker(
-                        helper: helper, model: model, indexing: true, ownership: embeddingOwners.indexing, lifecycle: token)
+                        helper: helper, model: model, indexing: true, ownership: embeddingOwners.indexing, authorization: embeddingAuthorization?.indexing ?? .init(generation: nil), lifecycle: token)
                     defer { encoder.release() }
                     let media = SemanticMediaWorker(helper: helper, model: model, projector: projector,
                         models: mediaModels, makeEncoder: makeMediaEncoder, progress: reportDownload,
-                        embeddingOwners: embeddingOwners)
+                        embeddingOwners: embeddingOwners, authorization: embeddingAuthorization?.media ?? .init(generation: nil))
                     if let paths {
                         return try SemanticFileIndexer.reconcile(
                             paths: paths, scope: scope, store: database, reader: reader,
