@@ -79,7 +79,8 @@ final class AskWordBookViewModel: ObservableObject {
     @Published var retention: AskWordBookRetention {
         didSet {
             settings.askWordBookRetention = retention
-            purgeExpired()
+            retentionTask?.cancel()
+            retentionTask = Task { [weak self] in await self?.purgeExpired() }
         }
     }
 
@@ -120,6 +121,12 @@ final class AskWordBookViewModel: ObservableObject {
     static let streakDays = 60
     private var limit = AskWordBookViewModel.pageSize
     private var observer: NSObjectProtocol?
+    private(set) var retentionTask: Task<Void, Never>?
+    private(set) var reloadTask: Task<Void, Never>?
+    private var reloadGeneration = UUID()
+    private var revealGeneration = UUID()
+    private var revealedEntry: AskWordBookEntry?
+    private var changingStorage = false
 
     init(store: any AskWordBookStoring, settings: SettingsStore) {
         self.store = store
@@ -128,12 +135,14 @@ final class AskWordBookViewModel: ObservableObject {
         retention = settings.askWordBookRetention
         observer = NotificationCenter.default.addObserver(forName: .askWordBookDidChange, object: nil,
                                                           queue: .main) { [weak self] _ in
-            MainActor.assumeIsolated { self?.reload() }
+            MainActor.assumeIsolated { _ = self?.reload() }
         }
         reload()
     }
 
     deinit {
+        reloadTask?.cancel()
+        retentionTask?.cancel()
         if let observer { NotificationCenter.default.removeObserver(observer) }
     }
 
@@ -158,7 +167,9 @@ final class AskWordBookViewModel: ObservableObject {
         return monday.dateInterval(of: .weekOfYear, for: now())?.start ?? calendar.startOfDay(for: now())
     }
 
-    var selected: AskWordBookEntry? { entries.first { $0.key == selectedKey } ?? selectedKey.flatMap(store.entry(forKey:)) }
+    var selected: AskWordBookEntry? {
+        entries.first { $0.key == selectedKey } ?? (revealedEntry?.key == selectedKey ? revealedEntry : nil)
+    }
 
     /// What the detail shows: a fresh result kept out of the book, or the chosen word.
     var displayed: AskWordBookEntry? { transient ?? selected }
@@ -181,25 +192,60 @@ final class AskWordBookViewModel: ObservableObject {
         return sections
     }
 
-    func reload() {
-        entries = store.list(query(for: shelf))
-        pairs = store.languagePairs()
-        var counts: [Shelf: Int] = [:]
-        for shelf in [Shelf.all, .starred, .today, .week] + pairs.map(Shelf.pair) {
-            counts[shelf] = store.count(matching: query(for: shelf, filtered: false))
-        }
-        self.counts = counts
-        if case let .pair(pair) = shelf, !pairs.contains(pair) { shelf = .all }
-        updateActivity()
-        if transient == nil, selectedKey == nil || !entries.contains(where: { $0.key == selectedKey }) {
-            selectedKey = entries.first?.key
+    @discardableResult
+    func reload() -> Task<Void, Never> {
+        reloadTask?.cancel()
+        let generation = UUID()
+        reloadGeneration = generation
+        let task = Task<Void, Never> { [weak self] in await self?.loadSnapshot(generation) }
+        reloadTask = task
+        return task
+    }
+
+    func waitForReload() async {
+        while !Task.isCancelled {
+            let generation = reloadGeneration
+            await reloadTask?.value
+            if generation == reloadGeneration { return }
         }
     }
 
-    private func updateActivity() {
+    func refresh() async {
+        reload()
+        await waitForReload()
+    }
+
+    private func loadSnapshot(_ generation: UUID) async {
+        let query = query(for: shelf)
         let today = calendar.startOfDay(for: now())
         let since = calendar.date(byAdding: .day, value: -Self.streakDays, to: today) ?? today
-        let dates = store.activity(since: since)
+        do {
+            let entries = try await store.list(query)
+            let pairs = try await store.languagePairs()
+            var counts: [Shelf: Int] = [:]
+            for shelf in [Shelf.all, .starred, .today, .week] + pairs.map(Shelf.pair) {
+                counts[shelf] = try await store.count(matching: self.query(for: shelf, filtered: false))
+            }
+            let dates = try await store.activity(since: since)
+            guard generation == reloadGeneration, !Task.isCancelled else { return }
+            self.entries = entries
+            self.pairs = pairs
+            self.counts = counts
+            if notice == L("ask.wordBook.storageUnavailable") { notice = nil }
+            if case let .pair(pair) = shelf, !pairs.contains(pair) { shelf = .all }
+            updateActivity(dates)
+            if transient == nil, selectedKey == nil || !entries.contains(where: { $0.key == selectedKey }) {
+                selectedKey = entries.first?.key
+                revealedEntry = nil
+            }
+        } catch {
+            guard generation == reloadGeneration, !Task.isCancelled else { return }
+            notice = L("ask.wordBook.storageUnavailable")
+        }
+    }
+
+    private func updateActivity(_ dates: [Date]) {
+        let today = calendar.startOfDay(for: now())
         let days = Set(dates.map { calendar.dateComponents([.day], from: calendar.startOfDay(for: $0), to: today).day ?? -1 })
         var day = days.contains(0) ? 0 : 1
         var run = 0
@@ -233,17 +279,27 @@ final class AskWordBookViewModel: ObservableObject {
     }
 
     /// Shows a word where it lives: the current shelf when it is there, else all words.
-    func reveal(_ key: String?) {
-        guard let key, store.entry(forKey: key) != nil else { return }
-        transient = nil
-        filterText = ""
-        reload()
-        if !entries.contains(where: { $0.key == key }) {
-            shelf = .all
-            sort = .recent
-            reload()
+    func reveal(_ key: String?) async {
+        guard let key else { return }
+        let generation = UUID()
+        revealGeneration = generation
+        do {
+            guard let entry = try await store.entry(forKey: key), revealGeneration == generation,
+                  !Task.isCancelled else { return }
+            filterText = ""
+            await refresh()
+            if !entries.contains(where: { $0.key == key }) {
+                shelf = .all
+                sort = .recent
+                await refresh()
+            }
+            guard revealGeneration == generation, !Task.isCancelled else { return }
+            revealedEntry = entry
+            selectedKey = key
+            transient = nil
+        } catch {
+            if revealGeneration == generation, !Task.isCancelled { notice = L("ask.wordBook.storageUnavailable") }
         }
-        selectedKey = key
     }
 
     /// ↑ / ↓ through the list.
@@ -297,8 +353,8 @@ final class AskWordBookViewModel: ObservableObject {
         let text = lookupText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { preview = nil; return }
         let (source, target) = direction(for: text)
-        if let entry = store.entry(forKey: AskWordBookEntry.key(headword: text, source: source, target: target)),
-           entry.lookup.card != nil {
+        if let entry = try? await store.entry(forKey: AskWordBookEntry.key(headword: text, source: source, target: target)),
+           text == lookupText.trimmingCharacters(in: .whitespacesAndNewlines), entry.lookup.card != nil {
             preview = .kept(entry.lookup.summary)
             return
         }
@@ -317,43 +373,57 @@ final class AskWordBookViewModel: ObservableObject {
     func lookUp(_ text: String? = nil) async {
         let word = (text ?? lookupText).trimmingCharacters(in: .whitespacesAndNewlines)
         guard !word.isEmpty, lookingUp == nil else { return }
+        lookingUp = word
+        defer { lookingUp = nil }
         lookupText = word
         preview = nil
         freshKey = nil
         let (source, target) = direction(for: word)
         let key = AskWordBookEntry.key(headword: word, source: source, target: target)
-        if let entry = store.entry(forKey: key), entry.lookup.card != nil {
-            if recordsHistory { store.record(entry.lookup, at: now(), counts: true) }
-            reveal(key)
+        let existing: AskWordBookEntry?
+        do { existing = try await store.entry(forKey: key) } catch {
+            existing = nil
+            notice = L("ask.wordBook.storageUnavailable")
+        }
+        guard !Task.isCancelled else { return }
+        if let existing, existing.lookup.card != nil {
+            if recordsHistory {
+                do {
+                    guard try await store.record(existing.lookup, at: now(), counts: true) != nil else {
+                        throw LocalStoreFailure.unavailable
+                    }
+                }
+                catch { notice = L("ask.wordBook.saveFailed") }
+            }
+            await reveal(key)
             return
         }
-        guard let dictionary else {
-            notice = L("ask.plugin.translate.noModel")
-            return
-        }
-        lookingUp = word
+        guard let dictionary else { notice = L("ask.plugin.translate.noModel"); return }
         transient = nil
-        defer { lookingUp = nil }
         do {
             let reply = try await dictionary.lookUp(word, from: source, to: target, generation: "0")
+            guard !Task.isCancelled else { return }
             switch reply {
             case let .card(card):
                 let lookup = AskWordBookLookup(headword: word, source: source, target: target, card: card,
                                                model: modelName())
+                transient = loose(lookup)
                 if recordsHistory, AskWordCard.isLookup(word) {
-                    let known = store.entry(forKey: key) != nil
-                    store.record(lookup, at: now(), counts: true)
-                    reveal(key)
-                    freshKey = known ? nil : key
-                } else {
-                    transient = loose(lookup)
+                    do {
+                        guard try await store.record(lookup, at: now(), counts: true) != nil else {
+                            throw LocalStoreFailure.unavailable
+                        }
+                        await reveal(key)
+                        freshKey = existing == nil ? key : nil
+                    } catch { notice = L("ask.wordBook.saveFailed") }
                 }
             case let .translation(translation), let .unreadable(translation):
                 transient = loose(AskWordBookLookup(headword: word, source: source, target: target,
                                                     translation: translation, model: modelName()))
             }
         } catch {
-            notice = (error as? AskPluginFailure)?.message ?? error.localizedDescription
+            notice = error is LocalStoreFailure ? L("ask.wordBook.saveFailed")
+                : (error as? AskPluginFailure)?.message ?? error.localizedDescription
         }
     }
 
@@ -368,39 +438,47 @@ final class AskWordBookViewModel: ObservableObject {
 
     // MARK: - Changes
 
-    func toggleStar(_ entry: AskWordBookEntry) {
-        let starred = !entry.isStarred
-        store.setStarred(starred, lookup: entry.lookup, at: now())
-        notice = L(starred ? "ask.wordBook.starred" : "ask.wordBook.unstarred", entry.headword)
-        if isTransient(entry) {
-            transient = nil
-            reveal(entry.key)
-        } else {
-            reload()
-        }
+    func toggleStar(_ entry: AskWordBookEntry) async {
+        guard !changingStorage else { return }
+        changingStorage = true
+        defer { changingStorage = false }
+        do {
+            guard let saved = try await store.setStarred(!entry.isStarred, lookup: entry.lookup, at: now()) else {
+                throw LocalStoreFailure.unavailable
+            }
+            notice = L(saved.isStarred ? "ask.wordBook.starred" : "ask.wordBook.unstarred", entry.headword)
+            if isTransient(entry) { await reveal(entry.key) } else { await refresh() }
+        } catch { notice = L("ask.wordBook.saveFailed") }
     }
 
-    /// Deletes the entry; `undoDelete` brings it back. A loose result is just dismissed.
-    func delete(_ entry: AskWordBookEntry) {
-        if isTransient(entry) {
-            transient = nil
-            return
-        }
+    /// State changes only after the transaction is confirmed; failures retain undo data.
+    func delete(_ entry: AskWordBookEntry) async {
+        guard !changingStorage else { return }
+        if isTransient(entry) { transient = nil; return }
+        changingStorage = true
+        defer { changingStorage = false }
         let index = entries.firstIndex { $0.key == entry.key }
-        store.delete(keys: [entry.key])
-        deleted = [entry]
-        notice = L("ask.wordBook.deleted", entry.headword)
-        reload()
-        if let index, !entries.isEmpty { selectedKey = entries[min(index, entries.count - 1)].key }
+        do {
+            try await store.delete(keys: [entry.key])
+            deleted = [entry]
+            revealedEntry = nil
+            notice = L("ask.wordBook.deleted", entry.headword)
+            await refresh()
+            if let index, !entries.isEmpty { selectedKey = entries[min(index, entries.count - 1)].key }
+        } catch { notice = L("ask.wordBook.saveFailed") }
     }
 
-    func undoDelete() {
-        guard !deleted.isEmpty else { return }
-        store.restore(deleted)
-        selectedKey = deleted.first?.key
-        deleted = []
-        notice = nil
-        reload()
+    func undoDelete() async {
+        guard !deleted.isEmpty, !changingStorage else { return }
+        changingStorage = true
+        defer { changingStorage = false }
+        do {
+            try await store.restore(deleted)
+            selectedKey = deleted.first?.key
+            deleted = []
+            notice = nil
+            await refresh()
+        } catch { notice = L("ask.wordBook.saveFailed") }
     }
 
     func copyMeaning(_ entry: AskWordBookEntry) {
@@ -435,6 +513,7 @@ final class AskWordBookViewModel: ObservableObject {
         do {
             let reply = try await dictionary.lookUp(entry.headword, from: entry.lookup.source, to: entry.lookup.target,
                                                     generation: UUID().uuidString)
+            guard !Task.isCancelled else { return }
             guard case let .card(card) = reply else {
                 notice = L("ask.wordBook.regenerate.failed")
                 return
@@ -445,39 +524,50 @@ final class AskWordBookViewModel: ObservableObject {
             if isTransient(entry) {
                 transient = loose(lookup)
             } else {
-                store.record(lookup, at: now(), counts: false)
-                reload()
+                // Keep the newly generated card visible even if persistence fails.
+                transient = loose(lookup)
+                guard try await store.record(lookup, at: now(), counts: false) != nil else {
+                    throw LocalStoreFailure.unavailable
+                }
+                await reveal(entry.key)
             }
             notice = L("ask.wordBook.regenerated", entry.headword)
         } catch {
-            notice = (error as? AskPluginFailure)?.message ?? error.localizedDescription
+            notice = error is LocalStoreFailure ? L("ask.wordBook.saveFailed")
+                : (error as? AskPluginFailure)?.message ?? error.localizedDescription
         }
     }
 
     /// Saves what the list shows now (filter and shelf apply) in `format`.
-    func export(_ format: AskWordBookExporter.Format) {
-        let all = store.list(query(for: shelf, limit: .max))
+    func export(_ format: AskWordBookExporter.Format) async {
+        let all: [AskWordBookEntry]
+        do { all = try await store.list(query(for: shelf, limit: .max)) }
+        catch { notice = L("ask.wordBook.storageUnavailable"); return }
         guard !all.isEmpty else { return }
         let name = L("ask.wordBook.title") + "." + format.fileExtension
         guard let url = chooseExportURL(name) else { return }
         do {
             try AskWordBookExporter.export(all, as: format).write(to: url, atomically: true, encoding: .utf8)
             notice = L("ask.wordBook.exported", all.count)
-        } catch {
-            notice = error.localizedDescription
-        }
+        } catch { notice = error.localizedDescription }
     }
 
-    /// Removes every lookup that is not starred.
-    func clearHistory() {
-        store.purgeHistory(before: nil)
-        reload()
-    }
+    func clearHistory() async { await purge(before: nil) }
 
-    func purgeExpired() {
+    func purgeExpired() async {
         guard let cutoff = retention.cutoff(now: now()) else { return }
-        store.purgeHistory(before: cutoff)
-        reload()
+        await purge(before: cutoff)
+    }
+
+    private func purge(before date: Date?) async {
+        guard !changingStorage else { return }
+        changingStorage = true
+        defer { changingStorage = false }
+        do {
+            try await store.purgeHistory(before: date)
+            revealedEntry = nil
+            await refresh()
+        } catch { notice = L("ask.wordBook.saveFailed") }
     }
 
     static func askForExportURL(_ name: String) -> URL? {

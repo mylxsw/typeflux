@@ -5579,3 +5579,7 @@
 "ask.translation.panel.shortcut.newline" = "New line";
 "ask.translation.panel.shortcut.select" = "Move between results";
 "ask.translation.panel.shortcut.close" = "Close (pinned: clear first)";
+
+// Word-book storage availability
+"ask.wordBook.storageUnavailable" = "The word book is unavailable. Your current result is still available.";
+"ask.wordBook.saveFailed" = "Could not save to the word book. Your current result is still available.";

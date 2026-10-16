@@ -185,14 +185,14 @@ struct AskLightV4SnapshotTests {
             card: card,
             model: "AI"
         )
-        words.record(lookup, at: time, counts: true)
+        try words.record(lookup, at: time, counts: true)
         for (word, meaning) in [("狗粮", "dog food; public display of affection"), ("简洁", "concise; succinct")] {
-            words.record(AskWordBookLookup(headword: word, source: "zh-Hans", target: "en", translation: meaning),
+            try words.record(AskWordBookLookup(headword: word, source: "zh-Hans", target: "en", translation: meaning),
                          at: time.addingTimeInterval(-3600), counts: true)
         }
         let wordbook = AskWordBookViewModel(store: words, settings: settings)
         wordbook.reload()
-        wordbook.reveal(lookup.key)
+        await wordbook.reveal(lookup.key)
         try await capture(AskWordBookView(model: wordbook) {}, size: NSSize(width: 1120, height: 720),
                           file: root.appendingPathComponent("wordbook-glass-light.png"))
     }

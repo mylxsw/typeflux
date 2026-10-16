@@ -21,11 +21,11 @@ struct AskLibraryVisualConsistencyTests {
                 synonyms: ["delivery speed", "release cadence", "deployment frequency", "throughput", "output rate"])
             let lookup = AskWordBookLookup(headword: card.headword, source: "en", target: "zh-Hans", card: card, model: "AI")
             let words = makeTestWordBook()
-            words.record(lookup, at: .now, counts: true)
+            try words.record(lookup, at: .now, counts: true)
             for (word, meaning) in [("简洁", "concise; succinct; brief and to the point"),
                                      ("渐变", "to change gradually; to evolve slowly"),
                                      ("狗粮", "dog food; public display of affection")] {
-                words.record(AskWordBookLookup(headword: word, source: "zh-Hans", target: "en", translation: meaning),
+                try words.record(AskWordBookLookup(headword: word, source: "zh-Hans", target: "en", translation: meaning),
                              at: .now.addingTimeInterval(-60), counts: true)
             }
             let wordController = AskWordBookWindowController()
@@ -117,7 +117,7 @@ struct AskLibraryVisualConsistencyTests {
                 window.appearance = NSAppearance(named: .aqua)
             }
             wordModel.shelf = .all
-            wordModel.reveal(lookup.key)
+            await wordModel.reveal(lookup.key)
             try await capture(wordWindow, "wordbook-\(style.rawValue)-720-light.png", hiding: noteWindow)
             noteWindow.setContentSize(NSSize(width: 720, height: 480))
             try await capture(noteWindow, "notebook-\(style.rawValue)-720-light.png", hiding: wordWindow)

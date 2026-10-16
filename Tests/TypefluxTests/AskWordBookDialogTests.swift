@@ -63,7 +63,7 @@ struct AskWordBookViewModelTests {
     /// Friday 15 January 2027, 08:00 UTC.
     private static let now = Date(timeIntervalSince1970: 1_800_000_000)
 
-    private func fixture() throws -> (AskWordBookViewModel, SQLiteAskWordBookStore, SettingsStore, String) {
+    private func fixture() async throws -> (AskWordBookViewModel, SQLiteAskWordBookStore, SettingsStore, String) {
         let store = makeTestWordBook()
         let suite = "wordbook-dialog-\(UUID().uuidString)"
         let settings = SettingsStore(defaults: try #require(UserDefaults(suiteName: suite)))
@@ -71,8 +71,8 @@ struct AskWordBookViewModelTests {
                                                 ("delta", 10, false), ("epsilon", 40, false)]
         for (word, daysAgo, starred) in words {
             let lookup = AskWordBookLookup(headword: word, source: "en", target: "zh-Hans", translation: word + " 义")
-            store.record(lookup, at: Self.now.addingTimeInterval(-daysAgo * 86400), counts: true)
-            if starred { store.setStarred(true, lookup: lookup, at: Self.now.addingTimeInterval(-daysAgo * 86400)) }
+            try store.record(lookup, at: Self.now.addingTimeInterval(-daysAgo * 86400), counts: true)
+            if starred { try store.setStarred(true, lookup: lookup, at: Self.now.addingTimeInterval(-daysAgo * 86400)) }
         }
         let model = AskWordBookViewModel(store: store, settings: settings)
         var calendar = Calendar(identifier: .gregorian)
@@ -82,15 +82,15 @@ struct AskWordBookViewModelTests {
         model.detector = AskTestLanguageDetector(language: "en")
         model.interfaceLanguage = { .simplifiedChinese }
         model.onDevice = AskTestTranslationEngine(available: false)
-        model.reload()
+        await model.refresh()
         return (model, store, settings, suite)
     }
 
     private func key(_ word: String) -> String { AskWordBookEntry.key(headword: word, source: "en", target: "zh-Hans") }
     private let pair = AskWordBookLanguagePair(source: "en", target: "zh-Hans")
 
-    @Test func opensOnAllWordsWithShelfCountsAndActivity() throws {
-        let (model, _, _, suite) = try fixture()
+    @Test func opensOnAllWordsWithShelfCountsAndActivity() async throws {
+        let (model, _, _, suite) = try await fixture()
         defer { UserDefaults().removePersistentDomain(forName: suite) }
         #expect(model.shelf == .all)
         #expect(model.entries.map(\.headword) == ["alpha", "beta", "gamma", "delta", "epsilon"])
@@ -106,23 +106,30 @@ struct AskWordBookViewModelTests {
         }
     }
 
-    @Test func shelvesFilterAndSort() throws {
-        let (model, _, _, suite) = try fixture()
+    @Test func shelvesFilterAndSort() async throws {
+        let (model, _, _, suite) = try await fixture()
         defer { UserDefaults().removePersistentDomain(forName: suite) }
         model.shelf = .starred
+        await model.waitForReload()
         #expect(model.entries.map(\.headword) == ["alpha", "gamma"])
         model.shelf = .today
+        await model.waitForReload()
         #expect(model.entries.map(\.headword) == ["alpha"])
         model.shelf = .week
+        await model.waitForReload()
         #expect(model.entries.map(\.headword) == ["alpha", "beta", "gamma"])
         model.shelf = .pair(pair)
+        await model.waitForReload()
         #expect(model.entries.count == 5)
         model.shelf = .pair(AskWordBookLanguagePair(source: "ja", target: "en"))
+        await model.waitForReload()
         #expect(model.shelf == .all, "a direction with no words falls back to all")
         model.sort = .alphabetical
+        await model.waitForReload()
         #expect(model.sections.map(\.period) == [nil])
         #expect(model.entries.map(\.headword) == ["alpha", "beta", "delta", "epsilon", "gamma"])
         model.filterText = "zzz"
+        await model.waitForReload()
         #expect(model.sections.isEmpty && model.selected == nil && model.displayed == nil)
         #expect(model.counts[.all] == 5, "the counts ignore the filter")
     }
@@ -134,23 +141,26 @@ struct AskWordBookViewModelTests {
         #expect(AskWordBookViewModel.Period.allCases.allSatisfy { !$0.title.isEmpty })
     }
 
-    @Test func revealingAWordShowsItWhereItLives() throws {
-        let (model, _, _, suite) = try fixture()
+    @Test func revealingAWordShowsItWhereItLives() async throws {
+        let (model, _, _, suite) = try await fixture()
         defer { UserDefaults().removePersistentDomain(forName: suite) }
         model.shelf = .starred
+        await model.waitForReload()
         model.filterText = "alp"
-        model.reveal(key("delta"))
+        await model.waitForReload()
+        await model.reveal(key("delta"))
         #expect(model.shelf == .all && model.filterText.isEmpty && model.selectedKey == key("delta"))
         model.shelf = .starred
-        model.reveal(key("gamma"))
+        await model.waitForReload()
+        await model.reveal(key("gamma"))
         #expect(model.shelf == .starred && model.selected?.headword == "gamma")
-        model.reveal("unknown")
-        model.reveal(nil)
+        await model.reveal("unknown")
+        await model.reveal(nil)
         #expect(model.selectedKey == key("gamma"))
     }
 
-    @Test func arrowsMoveThroughTheList() throws {
-        let (model, _, _, suite) = try fixture()
+    @Test func arrowsMoveThroughTheList() async throws {
+        let (model, _, _, suite) = try await fixture()
         defer { UserDefaults().removePersistentDomain(forName: suite) }
         model.moveSelection(1)
         #expect(model.selected?.headword == "beta")
@@ -162,6 +172,7 @@ struct AskWordBookViewModelTests {
         model.moveSelection(1)
         #expect(model.selected?.headword == "alpha")
         model.filterText = "zzz"
+        await model.waitForReload()
         model.moveSelection(1)
         #expect(model.selected == nil)
     }
@@ -169,32 +180,33 @@ struct AskWordBookViewModelTests {
     // MARK: Looking up
 
     @Test func aWordWithAKeptCardOpensWithoutAskingTheAI() async throws {
-        let (model, store, _, suite) = try fixture()
+        let (model, store, _, suite) = try await fixture()
         defer { UserDefaults().removePersistentDomain(forName: suite) }
         let kept = AskWordBookLookup(headword: "serendipity", source: "en", target: "zh-Hans", card: wordBookCard)
-        store.record(kept, at: Self.now.addingTimeInterval(-20 * 86400), counts: true)
+        try store.record(kept, at: Self.now.addingTimeInterval(-20 * 86400), counts: true)
         let dictionary = AskTestWordLookup(answer: .card(wordBookCard))
         model.dictionary = dictionary
         model.shelf = .starred
+        await model.waitForReload()
         await model.lookUp(" Serendipity ")
         #expect(dictionary.requests.isEmpty)
         #expect(model.lookupText == "Serendipity")
         #expect(model.selectedKey == kept.key && model.shelf == .all && model.freshKey == nil)
-        #expect(store.entry(forKey: kept.key)?.lookupCount == 2)
+        #expect(try store.entry(forKey: kept.key)?.lookupCount == 2)
         model.recordsHistory = false
         await model.lookUp("serendipity")
-        #expect(store.entry(forKey: kept.key)?.lookupCount == 2, "history off keeps the count")
+        #expect(try store.entry(forKey: kept.key)?.lookupCount == 2, "history off keeps the count")
     }
 
     @Test func aNewWordGetsACardAndGoesIntoTheBook() async throws {
-        let (model, store, _, suite) = try fixture()
+        let (model, store, _, suite) = try await fixture()
         defer { UserDefaults().removePersistentDomain(forName: suite) }
         let dictionary = AskTestWordLookup(answer: .card(wordBookCard))
         model.dictionary = dictionary
         model.modelName = { "gpt-test" }
         model.lookupText = "serendipity"
         await model.lookUp()
-        let entry = try #require(store.entry(forKey: key("serendipity")))
+        let entry = try #require(try store.entry(forKey: key("serendipity")))
         #expect(entry.lookup.card == wordBookCard && entry.lookup.model == "gpt-test" && entry.lookupCount == 1)
         #expect(dictionary.requests.first?.generation == "0")
         #expect(model.displayed == entry && model.freshKey == entry.key && model.lookingUp == nil)
@@ -204,17 +216,17 @@ struct AskWordBookViewModelTests {
     }
 
     @Test func withHistoryOffOrForASentenceTheResultStaysLoose() async throws {
-        let (model, store, _, suite) = try fixture()
+        let (model, store, _, suite) = try await fixture()
         defer { UserDefaults().removePersistentDomain(forName: suite) }
         let dictionary = AskTestWordLookup(answer: .card(wordBookCard))
         model.dictionary = dictionary
         model.recordsHistory = false
         await model.lookUp("serendipity")
         let loose = try #require(model.transient)
-        #expect(store.entry(forKey: loose.key) == nil)
+        #expect(try store.entry(forKey: loose.key) == nil)
         #expect(model.displayed == loose && model.isTransient(loose))
-        model.toggleStar(loose)
-        #expect(store.entry(forKey: loose.key)?.isStarred == true, "starring keeps it")
+        await model.toggleStar(loose)
+        #expect(try store.entry(forKey: loose.key)?.isStarred == true, "starring keeps it")
         #expect(model.transient == nil && model.selectedKey == loose.key)
 
         model.recordsHistory = true
@@ -222,14 +234,14 @@ struct AskWordBookViewModelTests {
         await model.lookUp("The meeting moved to Friday.")
         let sentence = try #require(model.transient)
         #expect(sentence.lookup.translation == "会议改到周五了。" && sentence.lookup.card == nil)
-        model.delete(sentence)
+        await model.delete(sentence)
         #expect(model.transient == nil && model.deleted.isEmpty, "a loose result is just dismissed")
         model.selectedKey = key("beta")
         #expect(model.displayed?.headword == "beta")
     }
 
     @Test func lookingUpSaysWhatWentWrong() async throws {
-        let (model, _, _, suite) = try fixture()
+        let (model, _, _, suite) = try await fixture()
         defer { UserDefaults().removePersistentDomain(forName: suite) }
         await model.lookUp("serendipity")
         #expect(model.notice == L("ask.plugin.translate.noModel"))
@@ -239,7 +251,7 @@ struct AskWordBookViewModelTests {
     }
 
     @Test func thePreviewNeverLeavesTheMac() async throws {
-        let (model, store, _, suite) = try fixture()
+        let (model, store, _, suite) = try await fixture()
         defer { UserDefaults().removePersistentDomain(forName: suite) }
         await model.refreshPreview()
         #expect(model.preview == nil)
@@ -249,14 +261,14 @@ struct AskWordBookViewModelTests {
         model.onDevice = AskTestTranslationEngine(available: true)
         await model.refreshPreview()
         #expect(model.preview == .device("[zh-Hans] hello"))
-        store.record(AskWordBookLookup(headword: "hello", source: "en", target: "zh-Hans", card: wordBookCard),
+        try store.record(AskWordBookLookup(headword: "hello", source: "en", target: "zh-Hans", card: wordBookCard),
                      at: Self.now, counts: true)
         await model.refreshPreview()
         #expect(model.preview == .kept("n. 机缘巧合；意外的好运  adj. 偶然的"))
     }
 
-    @Test func theDirectionFollowsTheTextAndTabChangesIt() throws {
-        let (model, _, _, suite) = try fixture()
+    @Test func theDirectionFollowsTheTextAndTabChangesIt() async throws {
+        let (model, _, _, suite) = try await fixture()
         defer { UserDefaults().removePersistentDomain(forName: suite) }
         model.lookupText = "hello"
         #expect(model.direction(for: "hello").target == "zh-Hans")
@@ -272,29 +284,31 @@ struct AskWordBookViewModelTests {
 
     // MARK: Changes
 
-    @Test func starringAndDeletingWithUndo() throws {
-        let (model, store, _, suite) = try fixture()
+    @Test func starringAndDeletingWithUndo() async throws {
+        let (model, store, _, suite) = try await fixture()
         defer { UserDefaults().removePersistentDomain(forName: suite) }
         model.shelf = .starred
+        await model.waitForReload()
         let gamma = try #require(model.entries.last)
-        model.toggleStar(gamma)
+        await model.toggleStar(gamma)
         #expect(model.entries.map(\.headword) == ["alpha"] && model.counts[.starred] == 1)
         #expect(model.notice == L("ask.wordBook.unstarred", "gamma"))
         model.shelf = .all
+        await model.waitForReload()
         let beta = try #require(model.entries.first { $0.headword == "beta" })
         model.selectedKey = beta.key
-        model.delete(beta)
-        #expect(store.entry(forKey: beta.key) == nil)
+        await model.delete(beta)
+        #expect(try store.entry(forKey: beta.key) == nil)
         #expect(model.notice == L("ask.wordBook.deleted", "beta"))
         #expect(model.selected?.headword == "gamma", "the next word is chosen")
-        model.undoDelete()
-        #expect(store.entry(forKey: beta.key) == beta)
+        await model.undoDelete()
+        #expect(try store.entry(forKey: beta.key) == beta)
         #expect(model.selectedKey == beta.key && model.deleted.isEmpty && model.notice == nil)
-        model.undoDelete()
+        await model.undoDelete()
     }
 
-    @Test func copyingReadingAloudAndAskingTheAI() throws {
-        let (model, _, _, suite) = try fixture()
+    @Test func copyingReadingAloudAndAskingTheAI() async throws {
+        let (model, _, _, suite) = try await fixture()
         defer { UserDefaults().removePersistentDomain(forName: suite) }
         var copied: [String] = []
         var spoken: [(String, String)] = []
@@ -319,7 +333,7 @@ struct AskWordBookViewModelTests {
     }
 
     @Test func regeneratingKeepsTheNewCardWithoutCounting() async throws {
-        let (model, store, _, suite) = try fixture()
+        let (model, store, _, suite) = try await fixture()
         defer { UserDefaults().removePersistentDomain(forName: suite) }
         let alpha = try #require(model.selected)
         #expect(!model.canRegenerate)
@@ -328,7 +342,7 @@ struct AskWordBookViewModelTests {
         model.dictionary = dictionary
         model.modelName = { "gpt-test" }
         await model.regenerate(alpha)
-        let entry = try #require(store.entry(forKey: alpha.key))
+        let entry = try #require(try store.entry(forKey: alpha.key))
         #expect(entry.lookup.card == wordBookCard && entry.lookup.model == "gpt-test" && entry.lookupCount == 1)
         #expect(dictionary.requests.first?.generation != "0")
         #expect(model.notice == L("ask.wordBook.regenerated", "alpha") && model.regenerating == nil)
@@ -345,69 +359,76 @@ struct AskWordBookViewModelTests {
         await model.lookUp("loose")
         let loose = try #require(model.transient)
         await model.regenerate(loose)
-        #expect(model.transient?.lookup.card == wordBookCard && store.entry(forKey: loose.key) == nil)
+        #expect(try model.transient?.lookup.card == wordBookCard && store.entry(forKey: loose.key) == nil)
     }
 
-    @Test func exportWritesWhatTheListShows() throws {
-        let (model, _, _, suite) = try fixture()
+    @Test func exportWritesWhatTheListShows() async throws {
+        let (model, _, _, suite) = try await fixture()
         defer { UserDefaults().removePersistentDomain(forName: suite) }
         model.shelf = .starred
+        await model.waitForReload()
         let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         var asked: [String] = []
         model.chooseExportURL = { name in asked.append(name); return folder.appendingPathComponent(name) }
-        model.export(.csv)
+        await model.export(.csv)
         let url = folder.appendingPathComponent(L("ask.wordBook.title") + ".csv")
         let written = try String(contentsOf: url, encoding: .utf8)
         #expect(written.components(separatedBy: "\n").filter { !$0.isEmpty }.count == 3, "header and the two starred words")
         #expect(model.notice == L("ask.wordBook.exported", 2))
         model.chooseExportURL = { name in asked.append(name); return nil }
         model.notice = nil
-        model.export(.anki)
+        await model.export(.anki)
         #expect(model.notice == nil, "cancelled")
         model.filterText = "zzz"
-        model.export(.csv)
+        await model.waitForReload()
+        await model.export(.csv)
         #expect(asked.count == 2, "nothing to export asks nothing")
         model.filterText = ""
+        await model.waitForReload()
         model.chooseExportURL = { _ in URL(fileURLWithPath: "/dev/null/nope.csv") }
-        model.export(.markdown)
+        await model.export(.markdown)
         #expect(model.notice != nil && model.notice != L("ask.wordBook.exported", 2))
     }
 
-    @Test func settingsPurgeAndClear() throws {
-        let (model, store, settings, suite) = try fixture()
+    @Test func settingsPurgeAndClear() async throws {
+        let (model, store, settings, suite) = try await fixture()
         defer { UserDefaults().removePersistentDomain(forName: suite) }
         model.recordsHistory = false
         #expect(!settings.askWordBookRecordsHistory)
         model.retention = .week
+        await model.retentionTask?.value
         #expect(settings.askWordBookRetention == .week)
-        #expect(store.count(.all) == 3, "delta and epsilon were older than a week")
+        #expect(try store.count(.all) == 3, "delta and epsilon were older than a week")
         model.retention = .forever
-        #expect(store.count(.all) == 3)
-        model.clearHistory()
-        #expect(store.count(.all) == 2 && model.counts[.all] == 2)
+        await model.retentionTask?.value
+        #expect(try store.count(.all) == 3)
+        await model.clearHistory()
+        #expect(try store.count(.all) == 2 && model.counts[.all] == 2)
     }
 
-    @Test func pagesLoadAsTheListScrolls() throws {
-        let (model, store, _, suite) = try fixture()
+    @Test func pagesLoadAsTheListScrolls() async throws {
+        let (model, store, _, suite) = try await fixture()
         defer { UserDefaults().removePersistentDomain(forName: suite) }
         model.loadMore()
+        await model.waitForReload()
         #expect(model.entries.count == 5)
         for index in 0 ..< AskWordBookViewModel.pageSize {
-            store.record(AskWordBookLookup(headword: "w\(index)", source: "en", target: "ja", translation: "x"),
+            try store.record(AskWordBookLookup(headword: "w\(index)", source: "en", target: "ja", translation: "x"),
                          at: Self.now, counts: true)
         }
-        model.reload()
+        await model.refresh()
         #expect(model.entries.count == AskWordBookViewModel.pageSize)
         model.loadMore()
+        await model.waitForReload()
         #expect(model.entries.count == AskWordBookViewModel.pageSize + 5)
     }
 
     @Test func changesElsewhereShowUp() async throws {
-        let (model, store, _, suite) = try fixture()
+        let (model, store, _, suite) = try await fixture()
         defer { UserDefaults().removePersistentDomain(forName: suite) }
         store.notificationCenter = .default
-        store.setStarred(true, lookup: AskWordBookLookup(headword: "beta", source: "en", target: "zh-Hans"), at: Self.now)
+        try store.setStarred(true, lookup: AskWordBookLookup(headword: "beta", source: "en", target: "zh-Hans"), at: Self.now)
         for _ in 0 ..< 1000 where model.counts[.starred] != 3 { try await Task.sleep(for: .milliseconds(5)) }
         #expect(model.counts[.starred] == 3)
     }
@@ -419,8 +440,8 @@ struct AskWordBookViewModelTests {
             == "→ Japanese")
     }
 
-    @Test func marksTodayInTheWeekAndFoldsTheSidebarWhenNarrow() throws {
-        let (model, _, _, suite) = try fixture()
+    @Test func marksTodayInTheWeekAndFoldsTheSidebarWhenNarrow() async throws {
+        let (model, _, _, suite) = try await fixture()
         defer { UserDefaults().removePersistentDomain(forName: suite) }
         // Friday: the week starts on Monday.
         #expect(model.todayIndex == 4)
@@ -432,7 +453,7 @@ struct AskWordBookViewModelTests {
     }
 
     @Test func theViewDrawsEveryState() async throws {
-        let (model, _, _, suite) = try fixture()
+        let (model, _, _, suite) = try await fixture()
         defer { UserDefaults().removePersistentDomain(forName: suite) }
         func draw() {
             for width in [1120.0, 900.0] {
@@ -444,24 +465,28 @@ struct AskWordBookViewModelTests {
         }
         draw()
         model.shelf = .starred
+        await model.waitForReload()
         model.recordsHistory = false
         draw()
         model.filterText = "zzz"
+        await model.waitForReload()
         draw()
         model.filterText = ""
+        await model.waitForReload()
         model.dictionary = AskTestWordLookup(answer: .card(wordBookCard))
         model.askAI = { _ in }
         model.notice = "note"
         draw()
         await model.lookUp("serendipity")
         draw()
-        model.clearHistory()
+        await model.clearHistory()
         model.shelf = .all
-        for entry in model.entries { model.delete(entry) }
+        await model.waitForReload()
+        for entry in model.entries { await model.delete(entry) }
         draw()
     }
 
-    @Test func rowsAndChipsDraw() {
+    @Test func rowsAndChipsDraw() throws {
         let entry = AskWordBookEntry(id: UUID(), lookup: AskWordBookLookup(headword: "w", source: "en", target: "zh-Hans",
                                                                           card: wordBookCard),
                                      lookupCount: 3, firstLookedUpAt: Self.now, lastLookedUpAt: Self.now, starredAt: Self.now)
@@ -491,8 +516,8 @@ struct AskWordBookWindowTests {
     @Test func opensOnceShowsTheWordAskedForAndLooksWordsUp() async throws {
         let store = makeTestWordBook()
         let lookup = AskWordBookLookup(headword: "beta", source: "en", target: "zh-Hans", translation: "b")
-        store.record(lookup, at: Date(), counts: true)
-        store.record(AskWordBookLookup(headword: "alpha", source: "en", target: "zh-Hans", translation: "a"),
+        try store.record(lookup, at: Date(), counts: true)
+        try store.record(AskWordBookLookup(headword: "alpha", source: "en", target: "zh-Hans", translation: "a"),
                      at: Date(), counts: true)
         let controller = AskWordBookWindowController()
         let frameName = "wordbook-window-frame-\(UUID().uuidString)"
@@ -521,6 +546,8 @@ struct AskWordBookWindowTests {
         #expect(controller.interfaceStyle?.style == .classic)
         settings.interfaceStyle = .liquidGlass
         #expect(controller.interfaceStyle?.style == .liquidGlass)
+        await controller.presentationTask?.value
+        await controller.model?.waitForReload()
         #expect(controller.model?.selectedKey == lookup.key)
         controller.show()
         #expect(controller.window === window, "one window")
@@ -618,27 +645,27 @@ struct AskWordBookRenderTests {
         let now = Date()
         let card = AskWordBookLookup(headword: "serendipity", source: "en", target: "zh-Hans", card: wordBookCard,
                                      model: "gpt-5-mini")
-        for _ in 0 ..< 3 { store.record(card, at: now, counts: true) }
-        store.setStarred(true, lookup: card, at: now)
+        for _ in 0 ..< 3 { try store.record(card, at: now, counts: true) }
+        try store.setStarred(true, lookup: card, at: now)
         let words: [(String, String, Double)] = [("resilient", "有弹性的；适应力强的", 0), ("ubiquitous", "无处不在的", 1),
                                                  ("meticulous", "一丝不苟的", 3), ("leverage", "杠杆作用；利用", 9)]
         for (word, meaning, daysAgo) in words {
-            store.record(AskWordBookLookup(headword: word, source: "en", target: "zh-Hans", translation: meaning),
+            try store.record(AskWordBookLookup(headword: word, source: "en", target: "zh-Hans", translation: meaning),
                          at: now.addingTimeInterval(-daysAgo * 86400 - 60), counts: true)
         }
         let model = AskWordBookViewModel(store: store, settings: settings)
         model.dictionary = AskTestWordLookup(answer: .card(wordBookCard))
         model.askAI = { _ in }
         model.modelName = { "gpt-5-mini" }
-        model.reload()
-        model.reveal(card.key)
+        await model.refresh()
+        await model.reveal(card.key)
         try await render(model, size: NSSize(width: 1120, height: 720), dark: true, name: "word-book-dark.png")
         try await render(model, size: NSSize(width: 1120, height: 720), dark: false, name: "word-book-light.png")
         try await render(model, size: NSSize(width: 900, height: 600), dark: true, name: "word-book-narrow.png")
         model.selectedKey = AskWordBookEntry.key(headword: "resilient", source: "en", target: "zh-Hans")
         try await render(model, size: NSSize(width: 1120, height: 720), dark: false, name: "word-book-plain-light.png")
-        model.clearHistory()
-        for entry in model.entries { model.delete(entry) }
+        await model.clearHistory()
+        for entry in model.entries { await model.delete(entry) }
         model.notice = nil
         try await render(model, size: NSSize(width: 1120, height: 720), dark: true, name: "word-book-empty.png")
     }
@@ -679,12 +706,12 @@ struct AskWordBookRenderTests {
                              target: "该团队通过自动化发布流程提高了交付效率。")],
             synonyms: ["delivery speed", "release frequency", "software deployment throughput"])
         let lookup = AskWordBookLookup(headword: card.headword, source: "en", target: "zh-Hans", card: card, model: "AI")
-        store.record(lookup, at: Date(), counts: true)
+        try store.record(lookup, at: Date(), counts: true)
         let model = AskWordBookViewModel(store: store, settings: settings)
         model.askAI = { _ in }
         model.dictionary = AskTestWordLookup(answer: .card(card))
-        model.reload()
-        model.reveal(lookup.key)
+        await model.refresh()
+        await model.reveal(lookup.key)
         for style in InterfaceStyle.allCases {
             for width in [720.0, 900.0, 1120.0, 1440.0] {
                 try await render(model, size: NSSize(width: width, height: 600), dark: true,

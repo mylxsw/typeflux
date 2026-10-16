@@ -289,6 +289,8 @@ final class AppCoordinator {
     }
 
     func stop() {
+        di.wordBookStore.preventNewWork()
+        Task { await di.wordBookStore.shutdown() }
         di.conversationCache.preventNewWork()
         Task { await di.conversationCache.shutdown() }
         if let authAnalyticsObserver { NotificationCenter.default.removeObserver(authAnalyticsObserver) }
