@@ -1,0 +1,57 @@
+{
+  "baseline": "f7ae9d057ef0d46aac99177a5cd74aec530ebf8a",
+  "methods": [
+    "TypefluxTests.ClipboardCopyIsolationTests/testBeforeCommitIsRecheckedAndCancelledPreparationCannotReplaceItself",
+    "TypefluxTests.ClipboardCopyIsolationTests/testDeletionOrRevocationAfterAwaitNeverWrites",
+    "TypefluxTests.ClipboardCopyIsolationTests/testDuplicateActionAndCancellationRetainAdmissionUntilPreparationFinishes",
+    "TypefluxTests.ClipboardCopyIsolationTests/testFailureIsReportedOnceWithoutPasteOrRetryAndCopyNeedsNoShortcut",
+    "TypefluxTests.ClipboardCopyIsolationTests/testIntentionalDismissalAllowsOnePasteButChangedClipboardOrAccountStopsIt",
+    "TypefluxTests.ClipboardCopyIsolationTests/testOwnerReleaseCancelsLatePreparation",
+    "TypefluxTests.ClipboardCopyIsolationTests/testShutdownFencesPendingAndFutureActions",
+    "TypefluxTests.ClipboardOCRIsolationTests/testDuplicateAndOwnerReleaseKeepLateOCRFromCommitting",
+    "TypefluxTests.ClipboardOCRIsolationTests/testExplicitCopyCommitsOnceAndEmptyDiffersFromFailure",
+    "TypefluxTests.ClipboardOCRIsolationTests/testRevocationDeletionHideSourceMutationAndShutdownFenceCopy",
+    "TypefluxTests.ClipboardActionAuthorityTests/canceledEnteredNativeKeepsActionSlotUntilPhysicalCollection()",
+    "TypefluxTests.ClipboardActionAuthorityTests/customActorFactoryRemainsIndependentAndBlankCommitsOnce()",
+    "TypefluxTests.ClipboardActionAuthorityTests/deniedOrMissingSourceCannotDispatchNativeOrCommit()",
+    "TypefluxTests.ClipboardActionAuthorityTests/finalSourceAuthorizationCannotBlessRetiredValidText()",
+    "TypefluxTests.ClipboardActionAuthorityTests/preReadyActionBindsBeforeTaskAndNeverReplaysWhenReady()",
+    "TypefluxTests.ClipboardActionAuthorityTests/readyActionCannotRecaptureAfterSynchronousRevocation()",
+    "TypefluxTests.ClipboardOCRSourceOwnershipTests/canceledBindingCannotPrepareSourceOrQueueRecognition(_:)",
+    "TypefluxTests.ClipboardOCRSourceOwnershipTests/canceledQueuedRequestCannotRecognizeAndFreshRequestStillCommits()",
+    "TypefluxTests.ClipboardOCRSourceOwnershipTests/failureAuthorizationCannotReportRetiredFailure(_:)",
+    "TypefluxTests.ClipboardOCRSourceOwnershipTests/finalAuthorizationRetirementCannotCommitValidText(_:)",
+    "TypefluxTests.ClipboardOCRSourceOwnershipTests/heldCanceledRecognitionRetainsOwnerSlotAndEnteredCommitIsNeverReplayed()",
+    "TypefluxTests.ClipboardOCRSourceOwnershipTests/nestedAcceptedRequestCannotBeOverwrittenByOldEntry(_:)",
+    "TypefluxTests.ClipboardOCRSourceOwnershipTests/preCanceledAndRetiredEntryCallbacksNeverBindRecognition()",
+    "TypefluxTests.ClipboardOCRSourceOwnershipTests/terminalPermitCallbackCannotRestoreRetiredCommit(_:)",
+    "TypefluxTests.ClipboardVisionRequestAuthorityTests/accountNotificationCancelsHeldNativeWithoutReplayOrEarlyAdmissionRelease()",
+    "TypefluxTests.ClipboardVisionRequestAuthorityTests/canceledPreparationOrNativeRetainsBothSlotsUntilPhysicalReturn(_:)",
+    "TypefluxTests.ClipboardVisionRequestAuthorityTests/originalSourceAndAccountStillFenceCompletedRecognitionAndBlankRemainsNil()",
+    "TypefluxTests.ClipboardVisionRequestAuthorityTests/preReadyInjectedNativeRequestCannotUpgradeWhenRegistryStarts()",
+    "TypefluxTests.ClipboardVisionRequestAuthorityTests/readyRequestRetainsOriginalNativeGenerationBeforeQueuedEntry()",
+    "TypefluxTests.ClipboardVisionRequestAuthorityTests/validRecognitionCannotCommitAfterFinalPermissionRevokesOriginalNativeGrant()"
+  ],
+  "distinct_methods": 30,
+  "first_functional_pass": true,
+  "mapping": {
+    "ClipboardOCRSourceOwnershipTests": "Eight actual-action/private-file/fake-callback methods; entry/factory/permit/terminal/failure ownership, nested admission, queued cancellation, physical collection and one entered sink effect",
+    "ClipboardActionAuthorityTests": "Default clipboardOCR factory and independent custom actor contract",
+    "ClipboardVisionRequestAuthorityTests": "Direct injected-native original textRecognition grant and physical collection",
+    "ClipboardOCRIsolationTests": "Three explicit private fake-action source/account/blank/failure/owner methods",
+    "ClipboardCopyIsolationTests": "Seven explicit fake preparation/write/paste methods for shared action and intentional dismissal regressions"
+  },
+  "excluded": [
+    "All System clipboard object/pasteboard/named-pasteboard/Downloads/home methods",
+    "All AskConversationModel/AskTestFixture/window/app/production-account methods",
+    "Clipboard OCR child/real-helper/encoding methods",
+    "Copy malformed/file-list/System/child-conversion methods",
+    "All actual model/provider/network/paid/capture/audio/TCC/codec/helper/full-suite execution"
+  ],
+  "limitations": [
+    "Source callback boundaries only, not arbitrary Published/Combine/AppKit/global UI epochs",
+    "System bridge and production DI objects unhit; exact factories exercised by private fake actions",
+    "Entered commit effects retained, no rollback or replay",
+    "Existing owner-release fixtures use unchanged 20ms cleanup"
+  ]
+}
