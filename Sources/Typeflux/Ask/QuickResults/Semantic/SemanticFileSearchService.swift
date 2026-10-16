@@ -54,6 +54,8 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
     private var observers: [AnyCancellable] = []
     private var work: Task<Void, Never>?
     private var download: Task<Void, Never>?
+    private var downloadAttempt: SemanticDownloadProgressDelivery.Source?
+    private let downloadProgress: SemanticDownloadProgressDelivery
     private var rescan: Task<Void, Never>?
     private var countRefresh: Task<Void, Never>?
     private var countRefreshID: UUID?
@@ -109,8 +111,10 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
          embeddingOwners: SemanticEmbeddingOwners? = nil,
          requiresReaderLifecycle: Bool = false, requiresModelLifecycle: Bool = false, deferInitialStart: Bool = false,
          progressDelivery: SemanticIndexProgressDelivery = SemanticIndexProgressDelivery(),
+         downloadProgress: SemanticDownloadProgressDelivery = SemanticDownloadProgressDelivery(),
          countSnapshot: @escaping @Sendable (SemanticFileStore) throws -> SemanticFileStore.Counts = { try $0.counts() }) {
         self.progressDelivery = progressDelivery; self.countSnapshot = countSnapshot
+        self.downloadProgress = downloadProgress
         self.settings = settings; self.directory = directory; self.helper = helper
         self.supported = supported; self.watcher = watcher; self.access = access
         self.lowPowerMode = lowPowerMode; self.thermalConstrained = thermalConstrained
@@ -218,6 +222,8 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
         currentProcessingPath = nil
         fingerprint = key
         invalidateIndexProgress()
+        cancelDownload()
+        let previousDownload = download
         token.cancel(); token = AskSearchCancellation()
         readers.stop(); embeddingOwners.stop()
         let token = token
@@ -227,16 +233,14 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
         queryWorker?.stop(); queryWorker = nil; queryState = .idle
         scope = nil; store = nil; queryValidator = nil
         guard supported, preferences.enabled,
-              settings.askQuickFileSearchEnabled else { download?.cancel(); phase = .off; return }
-        if download != nil {
-            return
-        }
+              settings.askQuickFileSearchEnabled else { phase = .off; return }
         self.mediaDownload = nil; self.mediaFailed = false
         self.phase = .preparing
         let directory = directory, model = self.modelURL, helper = helper, access = access
         let models = models
         self.work = Task { [weak self] in
             await previous?.value
+            await previousDownload?.value
             guard !Task.isCancelled, !token.isCancelled else { return }
             do {
                 let prepared = try await Task.detached(priority: .utility) {
@@ -438,7 +442,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
                            directories: directories, processedEventID: eventID)
     }
 
-    deinit { progressDelivery.invalidate(); countRefresh?.cancel(); token.cancel(); readers.stop(); embeddingOwners.stop(); work?.cancel(); download?.cancel(); rescan?.cancel(); warmup?.cancel() }
+    deinit { downloadProgress.invalidate(); progressDelivery.invalidate(); countRefresh?.cancel(); token.cancel(); readers.stop(); embeddingOwners.stop(); work?.cancel(); download?.cancel(); rescan?.cancel(); warmup?.cancel() }
 }
 
 extension SemanticFileSearchService {
@@ -551,29 +555,49 @@ extension SemanticFileSearchService {
         }
     }
 
+    private func ownsDownload(_ attempt: SemanticDownloadProgressDelivery.Source,
+                              lifecycle: AskSearchCancellation, fingerprint: String) -> Bool {
+        downloadAttempt === attempt && !lifecycle.isCancelled && !removing &&
+            fingerprint == settingsFingerprint && preferences.enabled && settings.askQuickFileSearchEnabled
+    }
+
     func downloadModel() {
-        guard self.supported, self.download == nil, self.preferences.enabled, !removing else { return }
+        guard supported, download == nil, preferences.enabled, !removing,
+              !token.isCancelled, fingerprint == settingsFingerprint else { return }
         let mutation: SemanticEmbeddingOwners.Mutation
         do { mutation = try embeddingOwners.mutation(.model) }
         catch { phase = .failed; return }
         let lifecycle = token, installAttempted = AskSearchCancellation()
-        let target = self.modelURL
-        let models = models
-        self.modelReady = false
-        self.phase = .downloading(0)
-        self.download = Task { [weak self, mutation] in
+        let attempt = SemanticDownloadProgressDelivery.Source(), fingerprint = settingsFingerprint
+        let target = modelURL, models = models, progress = downloadProgress
+        downloadAttempt = attempt
+        progress.begin(attempt) { [weak self] fraction in
+            guard let self, self.ownsDownload(attempt, lifecycle: lifecycle, fingerprint: fingerprint),
+                  self.download?.isCancelled == false else { return }
+            self.phase = .downloading(fraction)
+        }
+        modelReady = false
+        phase = .downloading(0)
+        download = Task { [weak self, mutation] in
+            // Keep the physical slot and mutation admission until fetch/install really
+            // returns, even when cancellation is ignored by the producer.
             defer { mutation.finish() }
             guard let self else { return }
+            defer {
+                if self.downloadAttempt === attempt {
+                    progress.invalidate()
+                    self.downloadAttempt = nil; self.download = nil
+                }
+            }
             do {
                 try Task.checkCancellation()
-                guard !lifecycle.isCancelled else { throw CancellationError() }
-                let (temporary, response) = try await models.fetch { [self] received in
-                    Task { @MainActor [self] in
-                        guard self.download != nil, self.preferences.enabled else { return }
-                        self.phase = .downloading(min(1, Double(received) / Double(SemanticModel.bytes)))
-                    }
+                guard self.ownsDownload(attempt, lifecycle: lifecycle, fingerprint: fingerprint) else { throw CancellationError() }
+                let (temporary, response) = try await models.fetch { received in
+                    progress.offer(min(1, max(0, Double(received) / Double(SemanticModel.bytes))), from: attempt)
                 }
                 defer { try? FileManager.default.removeItem(at: temporary) }
+                try Task.checkCancellation()
+                guard self.ownsDownload(attempt, lifecycle: lifecycle, fingerprint: fingerprint) else { throw CancellationError() }
                 guard let http = response as? HTTPURLResponse,
                       http.statusCode == 200 else { throw URLError(.badServerResponse) }
                 let cancellation = AskSearchCancellation()
@@ -585,23 +609,30 @@ extension SemanticFileSearchService {
                     }.value
                 } onCancel: { cancellation.cancel() }
                 try Task.checkCancellation()
-                guard !lifecycle.isCancelled else { throw CancellationError() }
+                guard self.ownsDownload(attempt, lifecycle: lifecycle, fingerprint: fingerprint) else { throw CancellationError() }
+                progress.invalidate()
                 mutation.finish()
-                self.download = nil; self.modelReady = true; self.start(force: true, renewReaderAuthorization: false)
+                self.downloadAttempt = nil; self.download = nil; self.modelReady = true
+                self.start(force: true, renewReaderAuthorization: false)
             } catch {
-                let cancelled = Task.isCancelled
-                self.download = nil
-                self.phase = !self.preferences.enabled ? .off : (cancelled && !installAttempted.isCancelled ? .modelRequired : .failed)
+                // A replacement start owns its own preparation/terminal phase. The
+                // old attempt may retire its slot, never publish into that lifecycle.
+                guard self.ownsDownload(attempt, lifecycle: lifecycle, fingerprint: fingerprint) else { return }
+                progress.invalidate()
+                self.phase = Task.isCancelled && !installAttempted.isCancelled ? .modelRequired : .failed
             }
         }
     }
 
     func cancelDownload() {
-        self.download?.cancel()
+        downloadProgress.invalidate()
+        download?.cancel()
     }
 
     func prepareModelIfNeeded() async {
+        let lifecycle = token, fingerprint = settingsFingerprint
         await self.work?.value
+        guard !Task.isCancelled, !lifecycle.isCancelled, fingerprint == settingsFingerprint else { return }
         if self.phase == .modelRequired {
             self.downloadModel()
         }
@@ -614,7 +645,7 @@ extension SemanticFileSearchService {
         _ = setEnabled(false)
         preferences = settings.semanticFileSearch
         invalidateIndexProgress()
-        token.cancel(); work?.cancel(); rescan?.cancel(); download?.cancel(); watcher.stop()
+        token.cancel(); work?.cancel(); rescan?.cancel(); cancelDownload(); watcher.stop()
         readers.stop(); embeddingOwners.stop()
         warmup?.cancel(); warmup = nil
         queryWorker?.stop(); queryWorker = nil
