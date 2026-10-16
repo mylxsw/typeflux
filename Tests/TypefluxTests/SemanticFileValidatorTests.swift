@@ -36,6 +36,27 @@ private final class SlowPreparationReader: AskFileReading, @unchecked Sendable {
 
 @Suite("Bounded semantic permission validation")
 struct SemanticFileValidatorTests {
+    @Test func `only an expired warm batch permits one startup budget recovery`() throws {
+        let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
+        let reader = ValidationReader()
+        let validator = SemanticFileValidator(reader: reader, budget: 0.01, startupBudget: 0.025)
+        let scope = semanticScope(root.path)
+        let hit = AskFileHit(path: root.path + "/note.txt", name: "note", kind: .file,
+                             modified: Date(timeIntervalSince1970: 1), score: 1)
+        try validator.warm(scope: scope, cancelled: { false })
+        reader.stall = true
+        let expired = validator.validateBatch([hit], scope: scope, limit: 1, cancelled: { false })
+        #expect(expired.hits.isEmpty && !expired.complete && expired.canRecover)
+        let recovery = validator.validateBatch([hit], scope: scope, limit: 1, recovering: true,
+                                               cancelled: { false })
+        #expect(recovery.hits.isEmpty && !recovery.complete && !recovery.canRecover)
+        #expect(reader.calls == 3, "recovery keeps one batch deadline instead of retrying each file")
+        reader.stall = false
+        let cancelled = validator.validateBatch([hit], scope: scope, limit: 1, cancelled: { true })
+        #expect(cancelled.hits.isEmpty && !cancelled.complete && !cancelled.canRecover)
+        #expect(validator.validate([hit], scope: scope, limit: 1, cancelled: { false }).count == 1)
+    }
+
     @Test func `interactive validation preempts a stalled root prewarm`() throws {
         let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
         let reader = SlowPreparationReader(), validator = SemanticFileValidator(reader: reader)

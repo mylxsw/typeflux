@@ -26,6 +26,7 @@ struct SemanticResourceBudgetTests {
             "jobs_partial": "SELECT count(*) FROM jobs WHERE state='partial'",
             "jobs_pending": "SELECT count(*) FROM jobs WHERE state='pending'",
             "jobs_failed": "SELECT count(*) FROM jobs WHERE state='failed'",
+            "largest_document_bytes": "SELECT COALESCE(max(bytes),0) FROM files WHERE path LIKE '%.txt'",
             "subtree_requests": "SELECT count(*) FROM scan_requests"
         ]
         var result: [String: Int] = [:]
@@ -176,7 +177,10 @@ struct SemanticResourceBudgetTests {
                     try #require(probe.isRunning, "Native response probe stopped before this condition completed")
                     if now >= nextFile {
                         let number = supplied
-                        try (String(repeating: "Project \(number) travel receipts and finance approval. ", count: 500) +
+                        // The first real file remains eligible for durable tail work while short
+                        // documents and media continue arriving; no repeated-chunk SQL fixture.
+                        let repetitions = number == 0 ? 80000 : 500
+                        try (String(repeating: "Project \(number) travel receipts and finance approval. ", count: repetitions) +
                             " tail marker \(number)")
                             .write(
                                 to: corpus.appendingPathComponent("document-\(number).txt"),
@@ -225,6 +229,7 @@ struct SemanticResourceBudgetTests {
                     "inputs": nativeReport["inputs"] ?? [],
                     "progress": progress,
                     "supplied_files": supplied * 4,
+                    "workload": "Four actual files every thirty seconds: text, PNG, generated speech WAV, generated MOV. First text file repeats 80000 paragraphs; later texts repeat 500. Four generated templates are reused; this is a controlled sustained workload, not a 27000-file representative corpus.",
                     "final_database_snapshot": snapshot,
                     "final_diagnostics": service.diagnostics.map {
                         try JSONSerialization.jsonObject(with: JSONEncoder().encode($0))

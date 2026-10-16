@@ -79,7 +79,8 @@ private final class SemanticObservedEncoder: SemanticEmbedding {
 @MainActor
 struct SemanticRealtimeSearchTests {
     func fixture(query: SemanticQueryProbe = .init(), thermal: AskSearchCancellation = .init(),
-                 access: AskSearchCancellation = .init(), text: String? = nil) async throws
+                 access: AskSearchCancellation = .init(), text: String? = nil,
+                 makeReader: (@Sendable (SemanticFixtureReader) -> any AskFileReading)? = nil) async throws
         -> (SemanticFileSearchService, URL, SemanticFixtureReader, SemanticFixtureWatcher) {
         let (base, root, reader, models) = try SemanticFileServiceTests().fixture()
         if let text {
@@ -93,7 +94,7 @@ struct SemanticRealtimeSearchTests {
                                                 access: { !access.isCancelled }, automaticStart: false,
                                                 lowPowerMode: { false },
                                                 thermalConstrained: { thermal.isCancelled }, models: models,
-                                                makeReader: { reader },
+                                                makeReader: { makeReader?(reader) ?? reader },
                                                 makeEncoder: { _, _ in SemanticFixtureEncoder() },
                                                 makeQuery: { _, _ in query })
         #expect(service.setEnabled(true))

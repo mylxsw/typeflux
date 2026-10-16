@@ -746,6 +746,7 @@ extension SemanticFileSearchService {
             }
         }
         let permissionBudgetExpired = AskSearchCancellation()
+        let permissionRecoveryStarted = AskSearchCancellation()
         func current() -> Bool {
             !lifecycle.isCancelled && !Task.isCancelled && isEnabled
         }
@@ -774,8 +775,17 @@ extension SemanticFileSearchService {
                                                            cancelled: cancelled)
                         }
                         trace.mark(vector == nil ? "fts-end" : "vector-end")
-                        let valid = queryValidator.validateBatch(hits, scope: currentScope, limit: min(100, limit),
+                        var valid = queryValidator.validateBatch(hits, scope: currentScope, limit: min(100, limit),
                                                                  cancelled: cancelled)
+                        // A pure semantic result gets one startup-budget recovery with fresh
+                        // permissions. An exhausted FTS budget still returns immediately.
+                        if vector != nil, valid.hits.isEmpty, valid.canRecover, !permissionRecoveryStarted.isCancelled,
+                           !cancelled() {
+                            permissionRecoveryStarted.cancel()
+                            trace.mark("metadata-recovery")
+                            valid = queryValidator.validateBatch(hits, scope: currentScope, limit: min(100, limit),
+                                                                 recovering: true, cancelled: cancelled)
+                        }
                         if !valid.complete {
                             permissionBudgetExpired.cancel()
                         }

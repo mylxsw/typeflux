@@ -274,7 +274,7 @@ struct SemanticNativeContentionTests {
                             }
                             let active = observer.active, completed = observer.completed
                             // Drive the same foreground-busy boundary used by workflow recording/processing.
-                            // The real CPU transcriber runs while a previously active GPU batch yields.
+                            // The real CPU transcriber runs while a previously active index batch yields.
                             data.service.setForegroundBusy(true)
                             let startsAtVoiceBoundary = observer.startedBatches
                             let start = ContinuousClock.now
