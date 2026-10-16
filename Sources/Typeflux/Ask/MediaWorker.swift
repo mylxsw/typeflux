@@ -15,6 +15,13 @@ final class MediaWorker: @unchecked Sendable {
     static let clipboardMetadata = MediaWorker(timeout: 10, requiresLifecycle: true)
     enum Input { case file(URL), data(Data) }
     typealias Runner = @Sendable (ManagedProcess.Request, @escaping @Sendable () -> Bool) throws -> ManagedProcess.Result
+    struct Authorization: Sendable {
+        fileprivate let owner: UUID
+        fileprivate let gate: ModuleWorkerGate?
+        fileprivate let generation: UUID?
+        fileprivate let available: Bool
+    }
+    private let authorityID = UUID()
     private let lock = NSLock()
     private var active: [UUID: MediaLease] = [:]
     private var disabled = false
@@ -45,6 +52,28 @@ final class MediaWorker: @unchecked Sendable {
             .appendingPathComponent("TypefluxMediaHelper")
     }
 
+    /// Snapshot existing availability before a caller defers source preparation.
+    /// This does not reserve capacity, spend recovery budget or start work.
+    func authorization() -> Authorization {
+        lock.withLock {
+            let generation = try? lifecycle?.admit()
+            let available = !disabled && (lifecycle != nil ? generation != nil :
+                !requiresLifecycle && budget.permitsAttempt(at: uptime()))
+            return .init(owner: authorityID, gate: lifecycle, generation: generation, available: available)
+        }
+    }
+
+    func permits(_ authorization: Authorization) -> Bool {
+        lock.withLock { permitsLocked(authorization) }
+    }
+
+    private func permitsLocked(_ authorization: Authorization) -> Bool {
+        guard !disabled, authorization.available, authorization.owner == authorityID,
+              authorization.gate === lifecycle else { return false }
+        if let lifecycle { return lifecycle.permits(authorization.generation) }
+        return !requiresLifecycle && budget.permitsAttempt(at: uptime())
+    }
+
     /// Synchronous only on an owned background task.
     func decode(_ operation: MediaRequest.Operation, input: Input,
                 isCancelled: @escaping @Sendable () -> Bool = { false }) throws -> MediaResponse {
@@ -52,7 +81,7 @@ final class MediaWorker: @unchecked Sendable {
     }
 
     /// Result extraction finishes before the private directory can be retired.
-    func perform<T>(_ operation: MediaRequest.Operation, input: Input, preview: MediaPreviewOptions? = nil, normalization: MediaImageType? = nil, icon: MediaNativeIcon? = nil, quickLook: MediaQuickLook? = nil, clipboard: MediaClipboardOptions? = nil, textInput: MediaTextInput? = nil, registration: MediaRegistrationInput? = nil, retaining: AnyObject? = nil,
+    func perform<T>(_ operation: MediaRequest.Operation, input: Input, preview: MediaPreviewOptions? = nil, normalization: MediaImageType? = nil, icon: MediaNativeIcon? = nil, quickLook: MediaQuickLook? = nil, clipboard: MediaClipboardOptions? = nil, textInput: MediaTextInput? = nil, registration: MediaRegistrationInput? = nil, retaining: AnyObject? = nil, authorization: Authorization? = nil,
                     isCancelled: @escaping @Sendable () -> Bool,
                     extract: (MediaResponse, Int32) throws -> T) throws -> T {
         var request = MediaRequest(operation: operation)
@@ -67,7 +96,7 @@ final class MediaWorker: @unchecked Sendable {
         let encoded = try JSONEncoder().encode(request)
         guard encoded.count <= (preview == nil ? MediaLimits.requestBytes : MediaPreviewOptions.requestBytes)
         else { throw MediaFailure.tooLarge }
-        return try owned(id: request.id, retaining: retaining, isCancelled: isCancelled) { lease, executable, timeout, run, cancelled in
+        return try owned(id: request.id, retaining: retaining, authorization: authorization, isCancelled: isCancelled) { lease, executable, timeout, run, cancelled in
         let id = request.id
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent("typeflux-media-" + id.uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false,
@@ -116,15 +145,21 @@ final class MediaWorker: @unchecked Sendable {
     }
 
     /// The caller owns its directory policy; failed producers must retain their outputs.
-    func owned<T>(id: UUID, retaining: AnyObject?, isCancelled: @escaping @Sendable () -> Bool,
+    func owned<T>(id: UUID, retaining: AnyObject?, authorization: Authorization? = nil, isCancelled: @escaping @Sendable () -> Bool,
                   body: (MediaLease, URL, TimeInterval, Runner, @escaping @Sendable () -> Bool) throws -> T) throws -> T {
+        // Caller cancellation can query this worker; never invoke it under our state lock.
+        guard !isCancelled() else { throw MediaFailure.unavailable }
         let lease = MediaLease()
         lease.retained = retaining
         let gate: ModuleWorkerGate?, generation: UUID?
         (gate, generation) = try lock.withLock {
-            guard !disabled, active.count < 2, active[id] == nil, !isCancelled() else { throw MediaFailure.unavailable }
+            guard !disabled, active.count < 2, active[id] == nil else { throw MediaFailure.unavailable }
             if requiresLifecycle && lifecycle == nil { throw MediaFailure.unavailable }
-            let generation = try lifecycle?.admit()
+            let generation: UUID?
+            if let authorization {
+                guard permitsLocked(authorization) else { throw MediaFailure.unavailable }
+                generation = authorization.generation
+            } else { generation = try lifecycle?.admit() }
             if lifecycle == nil, !budget.permitsAttempt(at: uptime()) { throw MediaFailure.unavailable }
             active[id] = lease
             return (lifecycle, generation)
