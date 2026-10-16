@@ -75,7 +75,7 @@ struct AskQuickResultsView: View {
             if !results.listRows.isEmpty || results.notice != nil {
                 ScrollViewReader { proxy in
                     ScrollView(.vertical, showsIndicators: Self.contentHeight(for: results) > visibleHeight) {
-                        VStack(spacing: Self.rowSpacing) {
+                        LazyVStack(spacing: Self.rowSpacing) {
                             ForEach(results.listRows.map {
                                 (id: results.identity(of: $0), row: $0)
                             }, id: \.id) { item in

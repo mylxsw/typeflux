@@ -54,6 +54,7 @@ extension AskConversationModel {
     }
     func setLauncherImagesVisible(_ visible: Bool) {
         if !visible { workflowImageCopyTask?.cancel(); clipboardAction.cancelPreparation() }
+        if !visible { launcherIconCache.cancelPrefetch() }
         launcherImageScope.setVisible(visible); objectWillChange.send()
     }
 }

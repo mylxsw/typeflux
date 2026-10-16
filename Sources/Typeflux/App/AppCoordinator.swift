@@ -26,7 +26,13 @@ final class AppCoordinator {
     func start() {
         moduleStartup?.cancel()
         moduleStartup = Task { [di] in
+            // Start the preview pool first and pay the helper/LaunchServices cold
+            // start before the first launcher search needs an application icon.
+            let previewReady = (try? await di.moduleRegistry.start(.mediaPreviews)) != nil
+            async let iconWarmup = previewReady
+                ? (try? AskFinderIcon.decode(.init(kind: .type, value: "public.folder"))) : nil
             await SemanticFileSearchService.shared.startForApplication(using: di.moduleRegistry)
+            _ = await iconWarmup
         }
         di.analyticsReporter.reportFirstOpenIfNeeded()
         di.analyticsReporter.report(

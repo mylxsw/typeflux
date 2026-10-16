@@ -111,10 +111,49 @@ private actor NativeIconCalls {
         let second = Task { try await AskFinderIcon.decode(icon, worker: worker) }
         for _ in 0..<200 where block.count < 2 { try await Task.sleep(for: .milliseconds(5)) }
         XCTAssertEqual(block.count, 2); first.cancel(); second.cancel()
-        do { _ = try await AskFinderIcon.decode(icon, worker: worker); XCTFail("Cancelled slots reused") } catch {}
+        let third = Task { try await AskFinderIcon.decode(icon, worker: worker) }
+        try await Task.sleep(for: .milliseconds(50))
         XCTAssertEqual(block.count, 2); block.gate.signal(); block.gate.signal()
         _ = try? await first.value; _ = try? await second.value
+        for _ in 0..<200 where block.count < 3 { try await Task.sleep(for: .milliseconds(5)) }
+        XCTAssertEqual(block.count, 3)
+        block.gate.signal(); _ = try? await third.value
         XCTAssertEqual(worker.activeCount, 0)
+    }
+
+    func testCancelledQueuedIconNeverStarts() async throws {
+        let admission = AskNativeIconAdmission(limit: 1)
+        var first: AskNativeIconAdmission.Permit? = try await admission.acquire()
+        let queued = Task { try await admission.acquire() }
+        try await Task.sleep(for: .milliseconds(10))
+        queued.cancel()
+        do { _ = try await queued.value; XCTFail("Cancelled request acquired a slot") }
+        catch is CancellationError {}
+        first = nil
+        let next = try await admission.acquire()
+        withExtendedLifetime(next) {}
+    }
+
+    func testLauncherCachesAndCoalescesApplicationIcons() async throws {
+        let calls = NativeIconCalls(), pixels = raster()
+        let cache = AskLauncherIconCache(decode: { _ in
+            await calls.called()
+            try await Task.sleep(for: .milliseconds(30))
+            return .init(images: [pixels], numbers: [], pages: 0)
+        })
+        let icon = MediaNativeIcon(kind: .file, value: "/Applications/Fixture.app")
+        async let first = cache.load(icon)
+        async let second = cache.load(icon)
+        _ = try await (first, second)
+        let afterParallel = await calls.count
+        XCTAssertEqual(afterParallel, 1)
+        XCTAssertEqual(cache.cached(icon)?.images.first?.width, 56)
+        _ = try await cache.load(icon)
+        let afterCache = await calls.count
+        XCTAssertEqual(afterCache, 1)
+        cache.clear()
+        XCTAssertNil(cache.cached(icon))
+        XCTAssertFalse(AskLauncherIconCache.eligible(.init(kind: .file, value: "/private/secret.pdf")))
     }
 
     func testDefaultLegacyCacheDoesNotPrefetchOrCacheNativeIcons() async {

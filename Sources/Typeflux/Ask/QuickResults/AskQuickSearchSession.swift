@@ -15,6 +15,7 @@ final class AskQuickSearchSession: ObservableObject {
     private let apps = AskSearchWorker<[AskAppMatch]>(label: "typeflux.ask.search.apps")
     private let files = AskSearchWorker<FileBatch>(label: "typeflux.ask.search.files")
     private let imageCache: AskResultImageCache
+    var launcherIconCache: AskLauncherIconCache?
     private let publicationGrace: Duration
     private var browserTask: Task<Void, Never>?
     private var semanticTask: Task<Void, Never>?
@@ -176,6 +177,7 @@ final class AskQuickSearchSession: ObservableObject {
                 guard let self, generation == ticket else { return }
                 appResults = matches
                 prefetchIcons(matches.map { .init(url: $0.entry.url, thumbnail: false) })
+                launcherIconCache?.prefetch(matches.map { .init(kind: .file, value: $0.entry.url.path) })
                 appsReady = true
                 os_signpost(.event, log: Self.log, name: "Applications ready", "%{public}d", ticket)
                 publish()

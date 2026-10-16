@@ -1,7 +1,7 @@
 import AppKit
 
-/// Compatibility cache for injected loaders. Production icons and thumbnails
-/// are owned by scoped views; search assembly must not prefetch native work.
+/// Compatibility cache for injected loaders. Production uses scoped views;
+/// only launcher application bundles use the separate bounded native icon cache.
 @MainActor
 final class AskResultImageCache {
     struct Key: Hashable {
