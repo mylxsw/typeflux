@@ -28,11 +28,20 @@ import TypefluxMediaProtocol
                 let request = try await Task.detached { try socket.receive(deadline: .now.advanced(by: .seconds(10))) }.value
                 try request.validate()
                 watchdog()
-                guard ContinuousClock.now < expires, request.sequence == sequence, request.kind != .reply,
+                guard ContinuousClock.now < expires, request.sequence == sequence, request.kind != .reply, request.kind != .failed,
                       session == nil ? [.load, .loadVideo].contains(request.kind) : (request.id == session && ![.load, .loadVideo].contains(request.kind))
                 else { throw MediaFailure.invalidProtocol }
-                if session == nil { session = request.id; try await engine.load(input) }
-                let state = try await engine.perform(request)
+                let state: MediaPlaybackState
+                do {
+                    if session == nil { session = request.id; try await engine.load(input) }
+                    state = try await engine.perform(request)
+                } catch {
+                    // A controlled native refusal is distinct from corrupt transport.
+                    // It can follow partial control effects and must never be replayed.
+                    let failure = MediaPlaybackMessage(id: request.id, sequence: sequence, kind: .failed)
+                    try await Task.detached { try socket.send(failure, deadline: .now.advanced(by: .seconds(2))) }.value
+                    return
+                }
                 try state.validate()
                 guard state.frame?.bytes == state.pixels?.count else { throw MediaFailure.invalidProtocol }
                 let reply = MediaPlaybackMessage(id: request.id, sequence: sequence, kind: .reply, state: state)
@@ -119,7 +128,7 @@ import TypefluxMediaProtocol
         case .load, .loadVideo:
             guard (command.kind == .loadVideo) == video else { throw MediaFailure.invalidProtocol }
         case .status: break
-        case .reply: throw MediaFailure.invalidProtocol
+        case .reply, .failed: throw MediaFailure.invalidProtocol
         }
         let time = player.currentTime().seconds
         guard time.isFinite else { throw MediaFailure.unreadable }

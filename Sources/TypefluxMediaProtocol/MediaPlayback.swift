@@ -2,7 +2,7 @@ import Foundation
 
 /// A playback session has one ordered command and one reply in flight, never a replay queue.
 public struct MediaPlaybackMessage: Codable, Equatable, Sendable {
-    public enum Kind: String, Codable, Sendable { case load, loadVideo, play, pause, seek, volume, playRange, seekPaused, status, reply }
+    public enum Kind: String, Codable, Sendable { case load, loadVideo, play, pause, seek, volume, playRange, seekPaused, status, reply, failed }
     public static let maximumBytes = 2048
     public static let maximumSequence = 100_000
     public static let lifetime: Double = 14_400

@@ -5665,3 +5665,5 @@
 "settings.services.nativeSystem" = "原生系統命令";
 
 "settings.services.whisperInference" = "本機 Whisper 轉寫";
+
+"settings.services.mediaPlayback" = "媒體播放";

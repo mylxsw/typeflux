@@ -5631,3 +5631,5 @@
 "settings.services.nativeSystem" = "ネイティブシステムコマンド";
 
 "settings.services.whisperInference" = "ローカル Whisper 文字起こし";
+
+"settings.services.mediaPlayback" = "メディア再生";

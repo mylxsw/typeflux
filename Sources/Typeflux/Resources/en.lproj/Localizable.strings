@@ -5745,3 +5745,5 @@
 "settings.services.nativeSystem" = "Native system commands";
 
 "settings.services.whisperInference" = "Local Whisper inference";
+
+"settings.services.mediaPlayback" = "Media playback";
