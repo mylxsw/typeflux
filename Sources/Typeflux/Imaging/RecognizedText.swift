@@ -1,5 +1,6 @@
 import CoreGraphics
 import Foundation
+import TypefluxMediaProtocol
 
 /// Text found in an image, one entry per line in reading order.
 struct RecognizedText: Equatable {
@@ -13,6 +14,7 @@ struct RecognizedText: Equatable {
         var boundingBox: CGRect
         /// Exact bounds of part of the line, from the recognizer that read it. Not compared.
         var locate: RangeLocator?
+        var sensitiveMatches: [MediaSensitiveText.Match]?
 
         init(text: String, confidence: Float, boundingBox: CGRect, locate: RangeLocator? = nil) {
             self.text = text

@@ -67,6 +67,7 @@ struct AskScreenshotTextPlugin: AskLauncherPlugin {
         }
         let recognized = try await source.recognition.value
         try Task.checkCancellation()
+        guard await screenshot()?.id == source.id else { throw CancellationError() }
         if plan.values[Self.organizeOption] == source.id.uuidString {
             return try await organize(recognized, source: source, keyword: request.keyword.keyword,
                                       progress: progress)

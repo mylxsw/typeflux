@@ -202,8 +202,10 @@ struct AskPluginItem: Equatable, Sendable, Identifiable {
         case fileIcon(URL)
         /// The icon of a type, such as `public.folder`.
         case fileType(String)
+        /// Resolved only by the media child when a visible, authorized row requests it.
+        case application(String)
         /// Loaded asynchronously from the website's origin, with a browser icon fallback.
-        case websiteIcon(URL, fallback: URL?)
+        case websiteIcon(URL, fallback: URL?, application: String? = nil)
     }
 
     var id: String

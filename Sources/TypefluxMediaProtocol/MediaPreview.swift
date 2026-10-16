@@ -70,7 +70,7 @@ public struct MediaPreviewResult: Codable, Sendable {
             return
         }
         guard !rasters.isEmpty, duration == nil, start == nil, waveform == nil else { throw MediaFailure.invalidProtocol }
-        if request.operation == .previewImage || request.operation == .nativeIcon {
+        if request.operation == .quickLook || request.operation == .previewImage || request.operation == .nativeIcon {
             guard rasters.count == 1, pages == 0, rasters[0].page == nil
             else { throw MediaFailure.invalidProtocol }
         } else {

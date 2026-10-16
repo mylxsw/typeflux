@@ -5597,3 +5597,4 @@
 "activity.accessibility" = "%d 個背景任務進行中";
 "activity.accessibility.attention" = "有背景任務需要處理";
 "activity.accessibility.separator" = "，";
+"screenshot.sensitive.failed" = "無法檢查敏感資訊，請檢查圖片並手動遮蓋隱私內容。";

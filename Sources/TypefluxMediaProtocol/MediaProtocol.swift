@@ -15,8 +15,8 @@ public enum MediaFailure: String, Error, Codable, Sendable {
 }
 
 public struct MediaRequest: Codable, Sendable {
-    public enum Operation: String, Codable, Sendable { case nativeIcon, image, pdf, inspectWorkflowImage, copyWorkflowImage, validateGeneratedImage, normalizeImage, previewImage, previewPDF, previewVideo, previewAudio
-        public var isWorkflowImage: Bool { self == .inspectWorkflowImage || self == .copyWorkflowImage }
+    public enum Operation: String, Codable, Sendable { case recognizeText, clipboardOCR, copyClipboardImage, clipboardMedia, quickLook, nativeIcon, image, pdf, inspectWorkflowImage, copyWorkflowImage, validateGeneratedImage, normalizeImage, previewImage, previewPDF, previewVideo, previewAudio
+        public var isWorkflowImage: Bool { self == .inspectWorkflowImage || self == .copyWorkflowImage || self == .copyClipboardImage }
         public var isAV: Bool { self == .previewVideo || self == .previewAudio }
     }
     public var version = 1
@@ -25,18 +25,31 @@ public struct MediaRequest: Codable, Sendable {
     public var normalization: MediaImageType?
     public var preview: MediaPreviewOptions?
     public var icon: MediaNativeIcon?
+    public var quickLook: MediaQuickLook?
+    public var clipboard: MediaClipboardOptions?
+    public var textInput: MediaTextInput?
     public init(id: UUID = UUID(), operation: Operation) { self.id = id; self.operation = operation }
     public func validate() throws {
+        guard operation == .recognizeText || textInput == nil else { throw MediaFailure.invalidProtocol }
+        try textInput?.validate()
+        guard (operation == .clipboardMedia) == (clipboard != nil) else { throw MediaFailure.invalidProtocol }
+        if let clipboard { try clipboard.validate() }
         guard (operation == .normalizeImage) == (normalization != nil) else { throw MediaFailure.invalidProtocol }
         guard (operation == .nativeIcon) == (icon != nil) else { throw MediaFailure.invalidProtocol }
         if let icon { try icon.validate() }
+        guard (operation == .quickLook) == (quickLook != nil) else { throw MediaFailure.invalidProtocol }
+        if let quickLook { try quickLook.validate() }
         guard version == 1 else { throw MediaFailure.invalidProtocol }
-        if operation == .nativeIcon || operation == .previewImage || operation == .previewPDF || operation.isAV {
+        if operation == .quickLook || operation == .nativeIcon || operation == .previewImage || operation == .previewPDF || operation.isAV {
             guard let preview else { throw MediaFailure.invalidProtocol }
             try preview.validate()
             if operation == .nativeIcon {
                 guard preview.width <= 112, preview.height <= 112, preview.page == nil, preview.passage == nil,
                       preview.start == nil, preview.container == nil, preview.imageType == nil else { throw MediaFailure.invalidProtocol }
+            }
+            if operation == .quickLook {
+                guard preview.page == nil, preview.passage == nil, preview.start == nil,
+                      preview.container == nil, preview.imageType == nil else { throw MediaFailure.invalidProtocol }
             }
             if preview.imageType != nil, operation != .previewImage { throw MediaFailure.invalidProtocol }
             if operation.isAV, preview.page != nil || preview.passage != nil { throw MediaFailure.invalidProtocol }
@@ -65,6 +78,9 @@ public struct MediaResponse: Codable, Sendable {
     public var workflowImage: MediaWorkflowImage?
     public var generatedImage: MediaGeneratedImage?
     public var preview: MediaPreviewResult?
+    public var clipboard: MediaClipboardResult?
+    public var ocr: MediaOCRResult?
+    public var recognition: MediaTextRecognition?
     public init(id: UUID, items: [MediaItem] = [], failure: MediaFailure? = nil) {
         self.id = id; self.items = items; self.failure = failure
     }
@@ -74,12 +90,32 @@ public struct MediaResponse: Codable, Sendable {
         try request.validate()
         guard version == 1, id == request.id else { throw MediaFailure.invalidProtocol }
         if let failure {
-            guard items.isEmpty, preview == nil, normalization == nil, generatedImage == nil, workflowImage == nil else { throw MediaFailure.invalidProtocol }
+            guard items.isEmpty, preview == nil, normalization == nil, generatedImage == nil, workflowImage == nil, clipboard == nil, ocr == nil, recognition == nil else { throw MediaFailure.invalidProtocol }
             throw failure
         }
+        if request.operation == .recognizeText {
+            guard items.isEmpty, preview == nil, normalization == nil, generatedImage == nil,
+                  workflowImage == nil, clipboard == nil, ocr == nil, let recognition else { throw MediaFailure.invalidProtocol }
+            try recognition.validate()
+            return
+        }
+        guard recognition == nil else { throw MediaFailure.invalidProtocol }
+        if request.operation == .clipboardOCR {
+            guard items.isEmpty, preview == nil, normalization == nil, generatedImage == nil,
+                  workflowImage == nil, clipboard == nil, let ocr else { throw MediaFailure.invalidProtocol }
+            try ocr.validate()
+            return
+        }
+        guard ocr == nil else { throw MediaFailure.invalidProtocol }
+        if let options = request.clipboard {
+            guard items.isEmpty, preview == nil, normalization == nil, generatedImage == nil, workflowImage == nil, let clipboard else { throw MediaFailure.invalidProtocol }
+            try clipboard.validate(for: options)
+            return
+        }
+        guard clipboard == nil else { throw MediaFailure.invalidProtocol }
         if request.operation.isWorkflowImage {
             guard items.isEmpty, preview == nil, normalization == nil, generatedImage == nil, let workflowImage else { throw MediaFailure.invalidProtocol }
-            try workflowImage.validate(copying: request.operation == .copyWorkflowImage)
+            try workflowImage.validate(copying: request.operation != .inspectWorkflowImage, clipboard: request.operation == .copyClipboardImage)
             return
         }
         guard workflowImage == nil else { throw MediaFailure.invalidProtocol }

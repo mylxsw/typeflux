@@ -61,13 +61,16 @@ enum AskWorkflowImage {
         let png: Data
         let tiff: Data
         let reservation: AskToolPixelBudget.Lease
+        var sourceRevision: ClipboardImageRevision?
     }
-    static func clipboard(_ url: URL, digest: String? = nil, worker: MediaWorker = .previews) async throws -> Clipboard {
+    static func clipboard(_ url: URL, digest: String? = nil, worker: MediaWorker = .previews, preserveOriginalPNG: Bool = false) async throws -> Clipboard {
         let reservation = try clipboardBudget.acquire(bytes: MediaWorkflowImage.copyBytes)
         return try await work { cancellation in
+            let revision = try preserveOriginalPNG ? ClipboardImageRevision(url) : nil
             let data = try read(url)
+            if preserveOriginalPNG, data.count > ClipboardCaptureRules.maximumImageBytes { throw MediaFailure.tooLarge }
             guard digest == nil || hash(data) == digest else { throw MediaFailure.unreadable }
-            return try worker.perform(.copyWorkflowImage, input: .data(data), isCancelled: { cancellation.isCancelled }) { response, fd in
+            return try worker.perform(preserveOriginalPNG ? .copyClipboardImage : .copyWorkflowImage, input: .data(data), isCancelled: { cancellation.isCancelled }) { response, fd in
                 guard let metadata = response.workflowImage, let pngSize = metadata.pngBytes, let tiffSize = metadata.tiffBytes else { throw MediaFailure.invalidProtocol }
                 let directory = AskSecureDirectory(descriptor: dup(fd))
                 let png = try directory.readFile("clipboard-png", limit: pngSize)
@@ -75,7 +78,8 @@ enum AskWorkflowImage {
                 guard png.count == pngSize, tiff.count == tiffSize,
                       png.starts(with: [0x89, 0x50, 0x4e, 0x47, 13, 10, 26, 10]),
                       tiff.starts(with: [0x49, 0x49, 42, 0]) || tiff.starts(with: [0x4d, 0x4d, 0, 42]) else { throw MediaFailure.invalidProtocol }
-                return Clipboard(png: png, tiff: tiff, reservation: reservation)
+                if let revision { guard revision.matches(url), png == data else { throw MediaFailure.unreadable } }
+                return Clipboard(png: png, tiff: tiff, reservation: reservation, sourceRevision: revision)
             }
         }
     }

@@ -6,14 +6,19 @@ struct ClipboardWaveformView: View {
     let bars: Int
     var progress: Double = 0
     var onSeek: ((Double) -> Void)?
-    @State private var levels: [Float]?
 
     /// Bars drawn before the waveform is decoded, or when it cannot be.
     static let placeholderLevel: CGFloat = 0.12
 
     var body: some View {
+        ClipboardMediaValue(request: (1...ClipboardMediaInfoProvider.waveformResolution).contains(bars) ? .waveform(url) : nil) { value in
+            waveform(levels: value?.waveform.map { ClipboardMediaInfoProvider.resample($0, to: bars) })
+        }
+    }
+
+    private func waveform(levels: [Float]?) -> some View {
         Canvas { context, size in
-            let count = max(bars, 1)
+            let count = min(ClipboardMediaInfoProvider.waveformResolution, max(bars, 1))
             let gap: CGFloat = 2
             let width = max((size.width - gap * CGFloat(count - 1)) / CGFloat(count), 1)
             for index in 0 ..< count {
@@ -40,16 +45,6 @@ struct ClipboardWaveformView: View {
                             onSeek(value.location.x / proxy.size.width)
                         })
                 }
-            }
-        }
-        .task(id: "\(url?.path ?? "")#\(bars)") {
-            guard let url else {
-                levels = nil
-                return
-            }
-            levels = ClipboardMediaInfoProvider.shared.cachedWaveform(for: url, bars: bars)
-            if levels == nil {
-                levels = await ClipboardMediaInfoProvider.shared.waveform(for: url, bars: bars)
             }
         }
         .accessibilityHidden(true)

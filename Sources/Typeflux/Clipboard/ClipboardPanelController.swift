@@ -9,6 +9,7 @@ import SwiftUI
 @preconcurrency @MainActor
 final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPresenting {
     private let settingsStore: SettingsStore
+    private let thumbnailDecoder: ClipboardThumbnailDecoding
     private var panel: ClipboardPanelWindow?
     private var hostingView: NSHostingView<AnyView>?
     private lazy var interfaceStyleObserver = InterfaceStyleObserver(settings: settingsStore)
@@ -18,14 +19,38 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
     private var focusRequest = 0
     private var quickLookURLs: [URL] = []
     private var previewObservation: AnyCancellable?
+    private var entryObservation: AnyCancellable?
+    private var privacyObservers: [NSObjectProtocol] = []
+    let thumbnails = ClipboardThumbnailSession()
     private let layout = ClipboardPanelLayout()
     /// The launcher's scalar spring also drives the clipboard's width.
     private let previewWidthAnimator = AskLauncherHeightAnimator()
     private var previewCenterX: CGFloat?
     var reduceMotion: () -> Bool = { NSWorkspace.shared.accessibilityDisplayShouldReduceMotion }
 
-    init(settingsStore: SettingsStore) {
+    init(settingsStore: SettingsStore, thumbnailDecoder: @escaping ClipboardThumbnailDecoding = { try await ClipboardThumbnailProvider.decode($0, edge: $1) }) {
         self.settingsStore = settingsStore
+        self.thumbnailDecoder = thumbnailDecoder
+        super.init()
+        for name in [Notification.Name.authDidLogin, .authDidLogout, .authTokenDidRefresh] {
+            privacyObservers.append(NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated {
+                    if self?.isPresented == true { self?.model?.onDismiss?() }
+                    self?.dismiss()
+                }
+            })
+        }
+    }
+
+    deinit {
+        privacyObservers.forEach(NotificationCenter.default.removeObserver)
+        entryObservation?.cancel()
+        Task { @MainActor [thumbnails, weak panel, keyMonitor, clickMonitor] in
+            thumbnails.end()
+            panel?.orderOut(nil)
+            if let keyMonitor { NSEvent.removeMonitor(keyMonitor) }
+            if let clickMonitor { NSEvent.removeMonitor(clickMonitor) }
+        }
     }
 
     var isPresented: Bool {
@@ -40,6 +65,8 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
         previewWidthAnimator.stop()
         previewObservation = nil
         self.model = model
+        thumbnails.begin(model)
+        entryObservation = model.$entries.dropFirst().sink { [weak self] _ in self?.thumbnails.changed() }
         focusRequest += 1
         layout.setWidth(ClipboardPanelView.size(showsPreview: model.showsPreview).width)
         let panel = panel(for: model)
@@ -50,6 +77,7 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
         panel.makeKeyAndOrderFront(nil)
         installMonitors()
         previewObservation = model.$showsPreview.dropFirst().removeDuplicates().sink { [weak self] shows in
+            self?.thumbnails.changed()
             self?.resizeForPreview(shows)
         }
     }
@@ -80,6 +108,7 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
     }
 
     func dismiss() {
+        thumbnails.end(); entryObservation = nil
         previewWidthAnimator.stop()
         previewObservation = nil
         closeQuickLook()
@@ -104,7 +133,8 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
     // MARK: - Window
 
     private func panel(for model: ClipboardPanelModel) -> ClipboardPanelWindow {
-        let rootView = AnyView(ClipboardPanelView(model: model, focusRequest: focusRequest, layout: layout)
+        let rootView = AnyView(ClipboardPanelView(thumbnails: thumbnails, model: model, focusRequest: focusRequest, layout: layout)
+            .environment(\.clipboardThumbnailDecoder, thumbnailDecoder)
             .interfaceStyle(following: interfaceStyleObserver))
         if let panel, let hostingView {
             hostingView.rootView = rootView
@@ -118,6 +148,7 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
             defer: false
         )
         panel.quickLookController = self
+        panel.onHide = { [weak self] in self?.thumbnails.end(); self?.entryObservation = nil }
         panel.level = .floating
         panel.isOpaque = false
         panel.backgroundColor = .clear
@@ -312,6 +343,9 @@ extension ClipboardPanelController: @preconcurrency QLPreviewPanelDataSource {
 /// A borderless panel that can become key (for the search field) and drive Quick Look.
 final class ClipboardPanelWindow: NSPanel {
     fileprivate weak var quickLookController: ClipboardPanelController?
+    var onHide: (() -> Void)?
+    override func orderOut(_ sender: Any?) { onHide?(); super.orderOut(sender) }
+    override func close() { onHide?(); super.close() }
 
     override var canBecomeKey: Bool { true }
     override var canBecomeMain: Bool { false }

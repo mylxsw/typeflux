@@ -37,6 +37,8 @@ final class AskFilePreviewController: AskImageScopeObserver {
     private var accessRegistration: UUID?
 
     private func retireImageAccess() {
+        // Cached private content cannot cross selection, visibility or authorization epochs.
+        loader.clearCache()
         imageScope.setVisible(false); state.imageAccess = .init()
         if let accessRegistration { originalAccess?.scope?.remove(accessRegistration) }
         accessRegistration = nil; originalAccess = nil

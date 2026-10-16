@@ -5677,3 +5677,4 @@
 "activity.accessibility" = "%d background tasks in progress";
 "activity.accessibility.attention" = "a background task needs your attention";
 "activity.accessibility.separator" = ", ";
+"screenshot.sensitive.failed" = "Could not check for sensitive information. Review the image and cover private content manually.";

@@ -41,7 +41,7 @@ final class AskConversationModel: ObservableObject {
     @Published var launcherHistoryMode = false
     @Published var launcherHistoryIndex = 0
     @Published var launcherHistoryFillID: UUID?
-    @Published var launcherPresentationID = UUID() { didSet { cancelAttachmentWork(launcher: true); launcherImageScope.invalidate(); workflowImageCopyTask?.cancel() } }
+    @Published var launcherPresentationID = UUID() { didSet { cancelAttachmentWork(launcher: true); launcherImageScope.invalidate(); workflowImageCopyTask?.cancel(); clipboardAction.cancelPreparation() } }
     var launcherExecutedInput: String?
     /// Files and folders the launcher can open; tests supply their own.
     var fileIndex: any AskFileSearching = AskFileIndex.shared
@@ -134,6 +134,7 @@ final class AskConversationModel: ObservableObject {
     var deliverText: ((String) async throws -> Void)?
     /// The existing clipboard history; supplied by the app's shared store.
     var clipboardEntries: @MainActor @Sendable () -> [ClipboardEntry] = { [] }
+    let clipboardAction = ClipboardContentAction()
     var clipboardContentActions: any ClipboardContentActing = SystemClipboardContentActions()
     @Published var launcherClipboardPreview: ClipboardEntry?
     /// Reads text aloud in a language; tests record it instead.
@@ -359,7 +360,10 @@ final class AskConversationModel: ObservableObject {
     /// Shows the launcher, then runs the closure once its context is in (`AskConversationModel+Screenshot`).
     var onShowLauncher: ((@escaping @MainActor () -> Void) -> Void)?
     /// The screenshot handed to the launcher, while its text shows there.
-    var launcherScreenshot: AskLauncherScreenshot?
+    var launcherScreenshot: AskLauncherScreenshot? {
+        didSet { if oldValue?.source.id != launcherScreenshot?.source.id { oldValue?.source.recognition.cancel() } }
+    }
+    deinit { launcherScreenshot?.source.recognition.cancel() }
     /// Reads a screenshot's text, band by band when it is long.
     var screenshotTextRecognizer: any ImageTextRecognizing = TiledImageTextRecognizer(base: VisionImageTextRecognizer())
     var onSignIn: () -> Void = { LoginWindowController.shared.show() }
@@ -549,6 +553,7 @@ final class AskConversationModel: ObservableObject {
     }
 
     func resetSession() {
+        releaseLauncherScreenshot()
         workflowImageCopyTask?.cancel()
         launcherImageScope.invalidate(); conversationImageScope.invalidate()
         cancelAttachmentWork()

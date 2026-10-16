@@ -30,6 +30,7 @@ final class PreviewTestLoader: AskFilePreviewLoading {
     var cancelled = 0
     var prefetched: [AskFileHit] = []
     var visible: [Bool] = []
+    func clearCache() {}
     func load(_ hit: AskFileHit, pixels _: CGSize, completion: @escaping (AskFilePreviewContent?) -> Void) {
         requests.append(hit); completions.append(completion)
     }

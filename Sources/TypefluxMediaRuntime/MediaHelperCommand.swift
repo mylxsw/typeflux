@@ -20,7 +20,9 @@ public enum MediaHelperCommand {
             let request = try read(input)
             let response: MediaResponse
             do {
-                if request.operation == .nativeIcon { response = try await MediaNativeIconDecoder.decode(request, directory: directory) }
+                if request.operation == .clipboardMedia { response = try await MediaClipboardDecoder.decode(request, directory: directory) }
+                else if request.operation == .quickLook { response = try await MediaQuickLookDecoder.decode(request, directory: directory) }
+                else if request.operation == .nativeIcon { response = try await MediaNativeIconDecoder.decode(request, directory: directory) }
                 else if request.operation.isAV { response = try await MediaAVDecoder.decode(request, directory: directory) }
                 else { response = try decode(request, directory: directory) }
             } catch { response = failure(request, error: error) }
@@ -29,7 +31,9 @@ public enum MediaHelperCommand {
     }
 
     private static func decode(_ request: MediaRequest, directory: URL) throws -> MediaResponse {
-        guard request.operation != .nativeIcon else { throw MediaFailure.invalidProtocol }
+        guard request.operation != .clipboardMedia, request.operation != .nativeIcon, request.operation != .quickLook else { throw MediaFailure.invalidProtocol }
+        if request.operation == .recognizeText { return try MediaTextDecoder.decode(request, directory: directory) }
+        if request.operation == .clipboardOCR { return try MediaOCRDecoder.decode(request, directory: directory) }
         if request.operation.isWorkflowImage { return try MediaWorkflowDecoder.decode(request, directory: directory) }
         if request.preview != nil { return try MediaPreviewDecoder.decode(request, directory: directory) }
         return try MediaDecoder.decode(request, input: directory.appendingPathComponent("input"))

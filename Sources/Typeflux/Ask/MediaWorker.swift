@@ -6,6 +6,10 @@ import TypefluxMediaProtocol
 final class MediaWorker: @unchecked Sendable {
     static let shared = MediaWorker()
     static let previews = MediaWorker(timeout: 3)
+    static let clipboardThumbnails = MediaWorker(timeout: 3)
+    static let textRecognition = MediaWorker(timeout: 30)
+    static let clipboardOCR = MediaWorker(timeout: 30)
+    static let clipboardMetadata = MediaWorker(timeout: 10)
     enum Input { case file(URL), data(Data) }
     typealias Runner = @Sendable (ManagedProcess.Request, @escaping @Sendable () -> Bool) throws -> ManagedProcess.Result
     private let lock = NSLock()
@@ -41,13 +45,16 @@ final class MediaWorker: @unchecked Sendable {
     }
 
     /// Result extraction finishes before the private directory can be retired.
-    func perform<T>(_ operation: MediaRequest.Operation, input: Input, preview: MediaPreviewOptions? = nil, normalization: MediaImageType? = nil, icon: MediaNativeIcon? = nil,
+    func perform<T>(_ operation: MediaRequest.Operation, input: Input, preview: MediaPreviewOptions? = nil, normalization: MediaImageType? = nil, icon: MediaNativeIcon? = nil, quickLook: MediaQuickLook? = nil, clipboard: MediaClipboardOptions? = nil, textInput: MediaTextInput? = nil,
                     isCancelled: @escaping @Sendable () -> Bool,
                     extract: (MediaResponse, Int32) throws -> T) throws -> T {
         var request = MediaRequest(operation: operation)
         request.preview = preview
         request.normalization = normalization
         request.icon = icon
+        request.quickLook = quickLook
+        request.clipboard = clipboard
+        request.textInput = textInput
         try request.validate()
         let encoded = try JSONEncoder().encode(request)
         guard encoded.count <= (preview == nil ? MediaLimits.requestBytes : MediaPreviewOptions.requestBytes)
@@ -67,14 +74,14 @@ final class MediaWorker: @unchecked Sendable {
                                                attributes: [.posixPermissions: 0o700])
         lease.directory = directory
         try copy(input, to: directory.appendingPathComponent("input"),
-                 limit: operation.isWorkflowImage ? MediaWorkflowImage.inputBytes : operation == .validateGeneratedImage ? 16 * 1024 * 1024 : operation == .normalizeImage ? 10 * 1024 * 1024 : (operation.isAV ? MediaAVLimits.inputBytes : MediaLimits.inputBytes), cancelled: cancelled)
+                 limit: operation == .recognizeText ? (textInput == nil ? MediaOCRResult.inputBytes : MediaTextInput.rawBytes) : operation == .clipboardOCR ? MediaOCRResult.inputBytes : operation.isWorkflowImage ? MediaWorkflowImage.inputBytes : operation == .validateGeneratedImage ? 16 * 1024 * 1024 : operation == .normalizeImage ? 10 * 1024 * 1024 : (operation.isAV || (clipboard != nil && clipboard?.kind != .pdf) ? MediaAVLimits.inputBytes : MediaLimits.inputBytes), cancelled: cancelled)
         try check(cancelled)
         let fd = open(directory.path, O_RDONLY | O_DIRECTORY | O_CLOEXEC)
         guard fd >= 0 else { throw MediaFailure.unavailable }
         defer { close(fd) }
         do {
             let process = ManagedProcess.Request(executable: executable.path, environment: ["PATH": "/usr/bin:/bin", "LANG": "en_US.UTF-8"],
-                directoryDescriptor: fd, timeout: timeout, outputLimit: preview == nil && operation != .validateGeneratedImage && !operation.isWorkflowImage ? MediaLimits.responseBytes : 16 * 1024,
+                directoryDescriptor: fd, timeout: timeout, outputLimit: (operation == .recognizeText || operation == .clipboardOCR) ? MediaOCRResult.responseBytes : preview == nil && clipboard == nil && operation != .validateGeneratedImage && !operation.isWorkflowImage ? MediaLimits.responseBytes : 16 * 1024,
                 stopOnOutputLimit: true, preserveWhitespace: true, onStarted: { lease.started() },
                 stdin: encoded, stderrLimit: 1024,
                 onReaped: { lease.reaped() })

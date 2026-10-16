@@ -18,7 +18,6 @@ struct ClipboardPanelRow: View, Equatable {
     var onClick: (Int) -> Void = { _ in }
     var onPerform: (ClipboardEntryAction) -> Void = { _ in }
     var onHover: (Bool) -> Void = { _ in }
-    @State private var info: ClipboardMediaInfo?
 
     static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.entry == rhs.entry && lhs.index == rhs.index && lhs.isSelected == rhs.isSelected
@@ -26,11 +25,15 @@ struct ClipboardPanelRow: View, Equatable {
     }
 
     var body: some View {
+        ClipboardMediaValue(request: isMissing ? nil : .info(entry)) { value in row(info: value?.info) }
+    }
+
+    private func row(info: ClipboardMediaInfo?) -> some View {
         HStack(alignment: .center, spacing: 11) {
             ClipboardEntryLeadingIcon(entry: entry)
                 .opacity(isMissing ? 0.55 : 1)
             VStack(alignment: .leading, spacing: 2) {
-                content
+                content(info: info)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             if entry.isPinned {
@@ -58,28 +61,27 @@ struct ClipboardPanelRow: View, Equatable {
         .onHover(perform: onHover)
         .contextMenu { contextMenu }
         .modifier(AskLauncherNumberBadge(number: number))
-        .task(id: entry.id) { await loadInfo() }
     }
 
     @ViewBuilder
-    private var content: some View {
+    private func content(info: ClipboardMediaInfo?) -> some View {
         if entry.hasInlineMedia {
             ClipboardInlineMedia(entry: entry, info: info, isExpanded: false, isMissing: isMissing)
                 .opacity(isMissing ? 0.55 : 1)
                 .padding(.top, 1)
                 .padding(.bottom, 3)
-            subtitle(caption: entry.mediaCaption)
+            subtitle(caption: entry.mediaCaption, info: info)
         } else if entry.kind == .pdf {
             HStack(alignment: .center, spacing: 10) {
                 ClipboardPDFThumbnail(url: isMissing ? nil : entry.fileURLs.first, isExpanded: false)
                 VStack(alignment: .leading, spacing: 2) {
                     title
-                    subtitle()
+                    subtitle(info: info)
                 }
             }
         } else {
             title
-            subtitle()
+            subtitle(info: info)
         }
     }
 
@@ -93,7 +95,7 @@ struct ClipboardPanelRow: View, Equatable {
     }
 
     /// Kind, size, source and time; media rows lead with the file name, which truncates first.
-    private func subtitle(caption: String? = nil) -> some View {
+    private func subtitle(caption: String? = nil, info: ClipboardMediaInfo?) -> some View {
         HStack(spacing: 6) {
             if let caption {
                 Text(caption)
@@ -129,10 +131,6 @@ struct ClipboardPanelRow: View, Equatable {
         }
     }
 
-    private func loadInfo() async {
-        info = await ClipboardMediaInfoProvider.shared.loadInfo(for: entry)
-    }
-
     @ViewBuilder
     private var contextMenu: some View {
         let actions = ClipboardEntryAction.available(for: entry)
@@ -154,19 +152,20 @@ struct ClipboardPanelRow: View, Equatable {
 /// kind's tile when the source is unknown, as for records captured before sources were kept.
 struct ClipboardEntryLeadingIcon: View {
     let entry: ClipboardEntry
-    var iconProvider = ClipboardAppIconProvider.shared
 
     var body: some View {
-        if let icon = iconProvider.icon(for: entry) {
-            Image(nsImage: icon)
-                .resizable()
-                .interpolation(.high)
-                .scaledToFit()
-                .frame(width: 28, height: 28)
-                .frame(width: 32, height: 32)
-                .help(entry.kind == .voice ? "Typeflux" : entry.sourceAppName ?? "")
-        } else {
-            ClipboardEntryTile(entry: entry)
+        AskNativeIconImage(icon: ClipboardAppIconProvider.target(for: entry)) { icon in
+            if let icon {
+                Image(nsImage: icon)
+                    .resizable()
+                    .interpolation(.high)
+                    .scaledToFit()
+                    .frame(width: 28, height: 28)
+                    .frame(width: 32, height: 32)
+                    .help(entry.kind == .voice ? "Typeflux" : entry.sourceAppName ?? "")
+            } else {
+                ClipboardEntryTile(entry: entry)
+            }
         }
     }
 }
@@ -257,34 +256,26 @@ struct ClipboardThumbnailView: View {
     let maxPixelSize: CGFloat
     let placeholder: String
     var contentMode: ContentMode = .fill
-    @State private var image: NSImage?
-    /// The file `image` shows; a size change for the same file keeps it visible while reloading.
-    @State private var imagePath: String?
+    @Environment(\.askContextImageAccess) private var access
+    @Environment(\.clipboardThumbnailDecoder) private var decode
 
     var body: some View {
-        ZStack {
-            AskTheme.raisedSurface
-            if let image {
-                Image(nsImage: image).resizable().aspectRatio(contentMode: contentMode)
-            } else {
-                Image(systemName: placeholder).foregroundStyle(.tertiary)
+        let url = self.url, edge = maxPixelSize, decode = self.decode
+        return AskContextImage(source: url?.absoluteString,
+            model: AskContextImageModel(maximumEdge: edge.isFinite && edge >= 1 && edge <= 900 ? Int(edge) : 1, decode: { _ in
+                guard let url else { throw CancellationError() }
+                return try await decode(url, edge)
+            })) { image in
+                ZStack {
+                    AskTheme.raisedSurface
+                    if let image { Image(nsImage: image).resizable().aspectRatio(contentMode: contentMode) }
+                    else { Image(systemName: placeholder).foregroundStyle(.tertiary) }
+                }
             }
-        }
-        // A selected row asks for a larger size of the same file; reload it at that size.
-        .task(id: "\(url?.path ?? "")#\(Int(maxPixelSize))") {
-            guard let url else { return }
-            if imagePath != url.path { image = nil }
-            let provider = ClipboardThumbnailProvider.shared
-            var loaded = provider.cachedThumbnail(for: url, maxPixelSize: maxPixelSize)
-            if loaded == nil {
-                loaded = await provider.thumbnail(for: url, maxPixelSize: maxPixelSize)
-            }
-            if let loaded {
-                image = loaded
-                imagePath = url.path
-            }
-        }
+            .id(Identity(url: url, edge: edge.isFinite ? edge : -1, epoch: access.epoch))
     }
+    private struct Identity: Hashable { let url: URL?; let edge: CGFloat; let epoch: UUID? }
+
 }
 
 /// The first page of a copied PDF, enlarged on the selected row.

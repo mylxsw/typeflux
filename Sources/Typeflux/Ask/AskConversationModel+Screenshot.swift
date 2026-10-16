@@ -38,8 +38,12 @@ extension AskConversationModel: ScreenshotFollowUpHandling {
     func makeLauncherScreenshot(_ image: ScreenshotFollowUpImage) -> AskLauncherScreenshot {
         let recognizer = screenshotTextRecognizer
         let picture = image.image
-        let recognition = Task.detached(priority: .userInitiated) {
-            try await recognizer.recognizeText(in: .image(picture))
+        let original = session()
+        let recognition = Task { [weak self] in
+            let result = try await recognizer.recognizeText(in: .image(picture))
+            try Task.checkCancellation()
+            guard let self, self.session()?.owner == original?.owner, self.session()?.token == original?.token else { throw CancellationError() }
+            return result
         }
         let fits = (try? ImageTiling.slices(imageSize: image.pixelSize,
                                             longEdge: AskAttachmentLimits.imageLongEdge).get()) != nil
@@ -68,8 +72,10 @@ extension AskConversationModel: ScreenshotFollowUpHandling {
     /// Translates the text once it is read; nothing happens when none was found (the card says
     /// so) or the user moved on meanwhile.
     private func translateWhenRead(_ screenshot: AskLauncherScreenshot) {
+        let original = session()
         Task { [weak self] in
             guard let text = try? await screenshot.source.recognition.value.string, let self,
+                  session()?.owner == original?.owner, session()?.token == original?.token,
                   launcherScreenshot?.source.id == screenshot.source.id,
                   plugins.keyword?.pluginID == AskScreenshotTextPlugin.id else { return }
             translateInLauncher(text)

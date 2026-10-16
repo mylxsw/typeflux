@@ -305,6 +305,8 @@ final class AppCoordinator {
     }
 
     func prepareForTermination() async {
+        workflowController?.clipboardAction.preventNewWork()
+        di.askConversationWindowController?.model.clipboardAction.preventNewWork()
         moduleStartup?.cancel()
         moduleStartup = nil
         di.moduleRegistry.preventNewWork()
@@ -312,14 +314,24 @@ final class AppCoordinator {
         di.localInferenceWorkers.preventNewWork()
         di.mediaWorkers.preventNewWork()
         di.mediaPreviewWorkers.preventNewWork()
+        di.clipboardThumbnailWorkers.preventNewWork()
+        di.textRecognitionWorkers.preventNewWork()
+        di.clipboardOCRWorkers.preventNewWork()
+        di.clipboardMetadataWorkers.preventNewWork()
         await di.nativeSystemCommands.shutdown()
         await di.localInferenceWorkers.shutdown()
         await di.mediaWorkers.shutdown()
         await di.mediaPreviewWorkers.shutdown()
+        await di.clipboardThumbnailWorkers.shutdown()
+        await di.textRecognitionWorkers.shutdown()
+        await di.clipboardOCRWorkers.shutdown()
+        await di.clipboardMetadataWorkers.shutdown()
         await di.moduleRegistry.shutdown()
     }
 
     func stop() {
+        workflowController?.clipboardAction.preventNewWork()
+        di.askConversationWindowController?.model.clipboardAction.preventNewWork()
         moduleStartup?.cancel()
         moduleStartup = nil
         di.moduleRegistry.preventNewWork()
@@ -327,6 +339,10 @@ final class AppCoordinator {
         di.localInferenceWorkers.preventNewWork()
         di.mediaWorkers.preventNewWork()
         di.mediaPreviewWorkers.preventNewWork()
+        di.clipboardThumbnailWorkers.preventNewWork()
+        di.textRecognitionWorkers.preventNewWork()
+        di.clipboardOCRWorkers.preventNewWork()
+        di.clipboardMetadataWorkers.preventNewWork()
         Task { [di] in await di.moduleRegistry.shutdown() }
         if let authAnalyticsObserver { NotificationCenter.default.removeObserver(authAnalyticsObserver) }
         if let authLogoutObserver { NotificationCenter.default.removeObserver(authLogoutObserver) }
