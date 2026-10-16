@@ -372,7 +372,7 @@ struct AskWorkflowLauncherPreview: View {
         } else {
             switch decoded {
             case let .items(list):
-                itemList(list)
+                AskLocalIconScope { itemList(list) }.id(result?.date)
             case let .markdown(text):
                 AskTranscriptText(text: text)
                     .frame(maxHeight: AskPluginResultsView.maximumMarkdownHeight, alignment: .top)

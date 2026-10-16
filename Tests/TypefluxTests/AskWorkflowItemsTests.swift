@@ -320,7 +320,7 @@ struct AskPluginListViewTests {
         #expect(AskPluginResultsView.markdownHeight("one line") == line, "measured once, then remembered")
     }
 
-    @Test func `icons come from symbols files and types`() throws {
+    @Test func `icons come from symbols files and types`() async throws {
         #expect(AskPluginItemIcon.symbolName(.symbol("wifi")) == "wifi")
         #expect(AskPluginItemIcon.symbolName(.symbol("no.such.symbol.anywhere")) == nil)
         #expect(AskPluginItemIcon.symbolName(nil) == nil && AskPluginItemIcon.image(.symbol("wifi")) == nil)
@@ -337,7 +337,7 @@ struct AskPluginListViewTests {
         let tiff = try #require(image.tiffRepresentation)
         let data = try #require(NSBitmapImageRep(data: tiff)?.representation(using: .png, properties: [:]))
         try data.write(to: png)
-        #expect(AskPluginItemIcon.image(.image(png)) != nil)
-        #expect(AskPluginItemIcon.image(.image(png)) != nil, "and again from the cache")
+        #expect(AskPluginItemIcon.image(.image(png)) == nil, "Synchronous getters never decode originals")
+        #expect(try await AskSmallIconDecoder.decode(.file(png)).width == 4)
     }
 }

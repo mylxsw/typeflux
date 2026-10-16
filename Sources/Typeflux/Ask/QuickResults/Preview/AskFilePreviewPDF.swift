@@ -51,8 +51,9 @@ enum MediaPreviewDisplay {
     }
 
     static func renderImage(_ data: Data, type: MediaImageType?, cancellation: AskSearchCancellation,
-                            worker: MediaWorker = .previews) throws -> AskFilePreviewPDF.Result {
-        let options = MediaPreviewOptions(width: 1600, height: 1600, imageType: type)
+                            worker: MediaWorker = .previews, edge: Int = 1600) throws -> AskFilePreviewPDF.Result {
+        guard (1...1600).contains(edge) else { throw MediaFailure.tooLarge }
+        let options = MediaPreviewOptions(width: edge, height: edge, imageType: type)
         return try decode(.data(data), operation: .previewImage, options: options, cancellation: cancellation, worker: worker)
     }
 

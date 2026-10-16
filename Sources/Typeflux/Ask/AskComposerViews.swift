@@ -1135,6 +1135,7 @@ struct AskComposer: View {
     var body: some View {
         card
             .environment(\.askContextImageAccess, imageAccess)
+            .environment(\.askIconGeneration, model.plugins.resultGeneration)
             .task(id: AskContextImageModel.Identity(source: screenshotSource, epoch: imageAccess.epoch)) {
                 await screenshotImage.load(screenshotSource, access: imageAccess)
             }
