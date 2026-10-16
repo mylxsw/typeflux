@@ -1,0 +1,23 @@
+{
+  "covered": 61,
+  "executable_added": 61,
+  "percent": 100.0,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "covered": 27,
+      "executable_added": 27,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Screenshot/Recording/ScreenRecordingTimelineLoader.swift",
+      "covered": 34,
+      "executable_added": 34,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    }
+  ]
+}
