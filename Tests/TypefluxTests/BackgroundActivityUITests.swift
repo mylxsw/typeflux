@@ -150,6 +150,7 @@ final class BackgroundActivityUITests: XCTestCase {
             for hover in [true, false] {
                 render(BackgroundActivityRowView(activity: item, revealsActionsOnHover: hover) { _ in })
             }
+            render(BackgroundActivityWindowRowView(activity: item) { _ in })
         }
         for action in BackgroundActivity.Action.allCases {
             XCTAssertFalse(BackgroundActivityRowView.symbol(action).isEmpty)
