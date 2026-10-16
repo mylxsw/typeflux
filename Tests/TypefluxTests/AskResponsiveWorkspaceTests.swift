@@ -11,6 +11,18 @@ import Testing
 @Suite("Ask responsive workspace", .serialized, .exclusiveUIState)
 @MainActor
 struct AskResponsiveWorkspaceTests {
+    @Test func storageWarningCanRecoverAndImageRecoveryButtonIsAbsent() async throws {
+        let session = PreviewSession()
+        defer { session.restore() }
+        let host = try await makeHost(scene: "empty")
+        defer { host.close() }
+        #expect(find(label: L("imagegen.recovery.title"), in: host.window) == nil)
+
+        host.fixture.model.error = L("ask.cache.failed")
+        try await settle(host.window)
+        _ = try element(label: L("settings.services.recover"), in: host.window)
+    }
+
     private static let sizes: [NSSize] = [
         NSSize(width: 1180, height: 760), NSSize(width: 760, height: 560),
         NSSize(width: 440, height: 880), NSSize(width: 960, height: 320),
