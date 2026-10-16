@@ -1,8 +1,7 @@
 import AppKit
-import QuickLookThumbnailing
 
-/// Quick Look supplies content previews; Finder supplies application and file
-/// icons. Filesystem work runs off the main thread, never in view bodies.
+/// Compatibility cache for injected loaders. Production icons and thumbnails
+/// are owned by scoped views; search assembly must not prefetch native work.
 @MainActor
 final class AskResultImageCache {
     struct Key: Hashable {
@@ -25,11 +24,11 @@ final class AskResultImageCache {
     private let cache = NSCache<NSString, NSImage>()
     private var pending: [Key: (task: Task<LoadedImage, Never>, clients: Set<UUID>)] = [:]
     private let loader: Loader
-    private let nativeIconsInViews: Bool
+    private let imagesInViews: Bool
 
     init(loader: Loader? = nil) {
-        self.loader = loader ?? AskResultImageCache.generate
-        self.nativeIconsInViews = loader == nil
+        self.loader = loader ?? { _ in nil }
+        self.imagesInViews = loader == nil
         cache.countLimit = 256
     }
 
@@ -42,13 +41,14 @@ final class AskResultImageCache {
     /// Start while search batches are being assembled, before SwiftUI creates rows.
     /// These consumers also keep useful loads alive when typing replaces a row.
     func prefetch(_ keys: [Key]) {
-        for key in Set(keys) where cached(key) == nil && (!nativeIconsInViews || (key.thumbnail && key.url.pathExtension.lowercased() != "app")) {
+        guard !imagesInViews else { return }
+        for key in Set(keys) where cached(key) == nil {
             Task { _ = await image(key) }
         }
     }
 
     func image(_ key: Key) async -> NSImage? {
-        guard !Task.isCancelled, !nativeIconsInViews || (key.thumbnail && key.url.pathExtension.lowercased() != "app") else { return nil }
+        guard !Task.isCancelled, !imagesInViews else { return nil }
         let original = key
         let key = await Self.resolved(key)
         guard !Task.isCancelled else { return nil }
@@ -103,19 +103,4 @@ final class AskResultImageCache {
         return resolved
     }
 
-    private static func generate(_ key: Key) async -> NSImage? {
-        if !key.thumbnail || key.url.pathExtension.lowercased() == "app" {
-            return nil
-        }
-        let request = QLThumbnailGenerator.Request(fileAt: key.url, size: CGSize(width: 56, height: 56),
-                                                   scale: key.scale, representationTypes: .all)
-        return await withTaskCancellationHandler {
-            guard !Task.isCancelled,
-                  let representation = try? await QLThumbnailGenerator.shared.generateBestRepresentation(for: request),
-                  !Task.isCancelled else { return nil }
-            return representation.nsImage
-        } onCancel: {
-            QLThumbnailGenerator.shared.cancel(request)
-        }
-    }
 }

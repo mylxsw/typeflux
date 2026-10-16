@@ -1,5 +1,4 @@
 import AppKit
-import QuickLookThumbnailing
 
 /// Each reader belongs to one serial queue. Cancellation reaches its deadline-bound pipe loop.
 private final class AskPreviewReader: @unchecked Sendable {
@@ -38,7 +37,7 @@ enum AskFilePreviewRenderer {
             guard let text = info.text else { throw AskFileReadError.unavailable }
             return AskFilePreviewContent(kind: kind, text: text, truncated: info.truncated == true)
         }
-        // SVG retains the existing system Quick Look service path below. Failed
+        // SVG uses the isolated Quick Look path below. Failed
         // bitmap/PDF decoding never falls back to parsing the original in the host.
         if kind == .pdf || (kind == .image && hit.url.pathExtension.lowercased() != "svg") {
             let cancellation = AskSearchCancellation()
@@ -55,18 +54,9 @@ enum AskFilePreviewRenderer {
         if kind == .video || kind == .audio {
             return try await media(hit.url, kind: kind, pixels: pixels, start: hit.evidence?.time ?? 0)
         }
-        let request = QLThumbnailGenerator.Request(
-            fileAt: hit.url,
-            size: pixels,
-            scale: 1,
-            representationTypes: .thumbnail
-        )
-        return try await withTaskCancellationHandler {
-            try Task.checkCancellation()
-            let representation = try await QLThumbnailGenerator.shared.generateBestRepresentation(for: request)
-            try Task.checkCancellation()
-            return AskFilePreviewContent(kind: kind, images: [representation.nsImage])
-        } onCancel: { QLThumbnailGenerator.shared.cancel(request) }
+        let rendered = try await AskQuickLookThumbnail.decode(hit.url, pixels: pixels)
+        try Task.checkCancellation()
+        return AskFilePreviewContent(kind: kind, images: rendered.images.map { NSImage(cgImage: $0, size: .zero) })
     }
 
     private static func media(_ url: URL, kind: AskFilePreviewKind,

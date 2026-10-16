@@ -64,6 +64,7 @@ struct AskFilePreviewContent {
 protocol AskFilePreviewLoading: AnyObject {
     func load(_ hit: AskFileHit, pixels: CGSize, completion: @escaping (AskFilePreviewContent?) -> Void)
     func cancel()
+    func clearCache()
     func prefetch(_ hits: [AskFileHit], pixels: CGSize)
     func setVisible(_ visible: Bool)
 }

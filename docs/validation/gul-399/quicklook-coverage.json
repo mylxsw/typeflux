@@ -1,0 +1,142 @@
+{
+  "covered": 135,
+  "executable_added": 139,
+  "percent": 97.12,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "covered": 1,
+      "executable_added": 1,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/AskQuickActions.swift",
+      "covered": 1,
+      "executable_added": 1,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/AskQuickLookThumbnail.swift",
+      "covered": 37,
+      "executable_added": 39,
+      "percent": 94.87,
+      "uncovered": [
+        32,
+        45
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/AskQuickResultsView.swift",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/AskResultImageCache.swift",
+      "covered": 5,
+      "executable_added": 5,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewContent.swift",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewController.swift",
+      "covered": 2,
+      "executable_added": 2,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPDF.swift",
+      "covered": 5,
+      "executable_added": 5,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewRenderer.swift",
+      "covered": 4,
+      "executable_added": 4,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/TypefluxMediaProtocol/MediaPreview.swift",
+      "covered": 1,
+      "executable_added": 1,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/TypefluxMediaProtocol/MediaProtocol.swift",
+      "covered": 7,
+      "executable_added": 7,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/TypefluxMediaProtocol/MediaQuickLook.swift",
+      "covered": 4,
+      "executable_added": 4,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/TypefluxMediaRuntime/MediaDecoder.swift",
+      "covered": 0,
+      "executable_added": 1,
+      "percent": 0.0,
+      "uncovered": [
+        28
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/TypefluxMediaRuntime/MediaHelperCommand.swift",
+      "covered": 2,
+      "executable_added": 3,
+      "percent": 66.67,
+      "uncovered": [
+        33
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/TypefluxMediaRuntime/MediaPreviewDecoder.swift",
+      "covered": 2,
+      "executable_added": 2,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/TypefluxMediaRuntime/MediaQuickLookDecoder.swift",
+      "covered": 64,
+      "executable_added": 64,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    }
+  ]
+}

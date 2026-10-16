@@ -1,5 +1,4 @@
 import AppKit
-import QuickLookThumbnailing
 import QuartzCore
 import Quartz
 import SwiftUI
@@ -196,8 +195,6 @@ struct AskFileIconView: View {
     var url: URL
     var thumbnail: Bool
     var modified: Date?
-    @State private var image: NSImage?
-    @State private var imageURL: URL?
 
     private var key: AskResultImageCache.Key {
         .init(url: url, thumbnail: thumbnail && AskFileType.hasThumbnail(url.pathExtension.lowercased()),
@@ -216,19 +213,7 @@ struct AskFileIconView: View {
     }
 
     private var thumbnailView: some View {
-        Group {
-            if let shown = AskResultImageCache.shared.cached(key) ?? (imageURL == url ? image : nil) {
-                Image(nsImage: shown).resizable().interpolation(.high).scaledToFit()
-            } else {
-                AskNativeIconView(icon: .init(kind: .file, value: url.path), revision: modified)
-            }
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
-        .task(id: key) {
-            let loaded = await AskResultImageCache.shared.image(key)
-            guard !Task.isCancelled else { return }
-            if let loaded { image = loaded; imageURL = url }
-        }
+        AskQuickLookThumbnailView(url: url, modified: modified, scale: key.scale)
     }
 }
 
