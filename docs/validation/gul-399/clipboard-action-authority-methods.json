@@ -1,0 +1,43 @@
+{
+  "baseline": "703e2f57a078d4fdb1e43c4a64793d56905bb234",
+  "methods": [
+    "TypefluxTests.ClipboardOCRIsolationTests/testCancelledUncooperativeWorkRetainsBothAdmissions",
+    "TypefluxTests.ClipboardOCRIsolationTests/testDuplicateAndOwnerReleaseKeepLateOCRFromCommitting",
+    "TypefluxTests.ClipboardOCRIsolationTests/testExplicitCopyCommitsOnceAndEmptyDiffersFromFailure",
+    "TypefluxTests.ClipboardOCRIsolationTests/testProtocolRejectsMixedIdentityExcessLinesBytesAndControls",
+    "TypefluxTests.ClipboardOCRIsolationTests/testRevocationDeletionHideSourceMutationAndShutdownFenceCopy",
+    "TypefluxTests.ClipboardOCRIsolationTests/testSourceChangeAndOversizeRefuseWithoutPublishingText",
+    "TypefluxTests.ClipboardOCRModuleTests/testCorruptRecordRequiresExplicitResetWithoutRecognitionReplay",
+    "TypefluxTests.ClipboardOCRModuleTests/testExpectedRefusalAndMalformedTextHaveDifferentHealthOutcomes",
+    "TypefluxTests.ClipboardOCRModuleTests/testIndependentPersistentBudgetsFaultsDisableAndQuit",
+    "TypefluxTests.ClipboardOCRModuleTests/testManagedCancellationRetainsCapacityUntilUncooperativeHostReturns",
+    "TypefluxTests.MediaWorkerTests/testBundledAndSwiftPMHelperLocations",
+    "TypefluxTests.MediaWorkerTests/testCancellationBeforeAndAfterDispatchRejectsLateResult",
+    "TypefluxTests.MediaWorkerTests/testCopiedInputIsPrivateAndRemovedOnlyAfterConfirmedCollection",
+    "TypefluxTests.MediaWorkerTests/testMalformedInputFailureDoesNotPoisonOtherAttachments",
+    "TypefluxTests.MediaWorkerTests/testOversizedDataFileMissingFileAndFIFORefusedBeforeSpawn",
+    "TypefluxTests.MediaWorkerTests/testProtocolIdentityFailureAndCooldownNeverReplay",
+    "TypefluxTests.MediaWorkerTests/testShutdownCancelsRunningChildAndRejectsNewWork",
+    "TypefluxTests.MediaWorkerTests/testTwoRetainedChildrenBoundAdmissionAndShutdownFences",
+    "TypefluxTests.ClipboardActionAuthorityTests/canceledEnteredNativeKeepsActionSlotUntilPhysicalCollection()",
+    "TypefluxTests.ClipboardActionAuthorityTests/customActorFactoryRemainsIndependentAndBlankCommitsOnce()",
+    "TypefluxTests.ClipboardActionAuthorityTests/deniedOrMissingSourceCannotDispatchNativeOrCommit()",
+    "TypefluxTests.ClipboardActionAuthorityTests/finalSourceAuthorizationCannotBlessRetiredValidText()",
+    "TypefluxTests.ClipboardActionAuthorityTests/preReadyActionBindsBeforeTaskAndNeverReplaysWhenReady()",
+    "TypefluxTests.ClipboardActionAuthorityTests/readyActionCannotRecaptureAfterSynchronousRevocation()",
+    "TypefluxTests.ClipboardRecognizerAuthorityTests/actualActionWithFakeActionsDoesNotCommitOrReplayRevokedRecognition()",
+    "TypefluxTests.ClipboardRecognizerAuthorityTests/blankIsNilAndControlledRefusalDoesNotPoisonNativeHealth()",
+    "TypefluxTests.ClipboardRecognizerAuthorityTests/canceledMetadataRetainsBothRecognizerSlotsUntilActualReturn()",
+    "TypefluxTests.ClipboardRecognizerAuthorityTests/canceledNativeWorkRetainsCapacityAndRejectsLateText()",
+    "TypefluxTests.ClipboardRecognizerAuthorityTests/heldMetadataCannotAdoptRecoveredNativeGeneration()",
+    "TypefluxTests.ClipboardRecognizerAuthorityTests/preReadyRetainedAndCanceledInputsCannotInspectMetadata()",
+    "TypefluxTests.ClipboardRecognizerAuthorityTests/validLateNativeReplyAfterRevocationCannotReturnText()"
+  ],
+  "result": "31/31 first functional pass; fixture-only compile correction before tests",
+  "exclusions": [
+    "All SystemClipboardContentActions objects and named/general pasteboards, Downloads/home defaults",
+    "Real OCR/Vision/helper/codec/image encoding/window/capture/network/provider/paid fixtures",
+    "ClipboardOCRIsolation ChildValidatesImage and RealHelper; ClipboardOCRModule ProductionDefaults/ManagedRealFile/ManagedLateOCR/HealthView",
+    "MediaWorkerTests.testRealHelperImagePDFMalformedAndCrashHangFixtures"
+  ]
+}

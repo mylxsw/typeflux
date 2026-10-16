@@ -92,4 +92,8 @@ final class SystemClipboardContentActions: ClipboardContentActing {
         if let textRecognizer { return try await textRecognizer.recognizeText(in: .url(imageURL)).string }
         return try await ClipboardTextRecognizer(worker: textWorker).recognize(imageURL)
     }
+
+    @MainActor func textRecognition(in imageURL: URL) -> ClipboardTextRecognition {
+        .make(in: imageURL, worker: textWorker, textRecognizer: textRecognizer)
+    }
 }
