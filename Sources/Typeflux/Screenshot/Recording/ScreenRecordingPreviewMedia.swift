@@ -22,8 +22,8 @@ struct ScreenRecordingPreviewMedia: @unchecked Sendable {
         try await ScreenRecordingTimelineLoader.shared.thumbnail(url)
     }
 
-    static func load(_ url: URL) async throws -> Self {
-        try await ScreenRecordingTimelineLoader.shared.load(url)
+    static func load(_ url: URL, loader: ScreenRecordingTimelineLoader = .shared) async throws -> Self {
+        try await loader.load(url)
     }
 
 }

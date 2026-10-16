@@ -6,7 +6,7 @@ import TypefluxMediaProtocol
 final class MediaWorker: @unchecked Sendable {
     static let shared = MediaWorker(requiresLifecycle: true)
     static let recordingExport = MediaWorker(timeout: 600)
-    static let recordingTimeline = MediaWorker(timeout: 30)
+    static let recordingTimeline = MediaWorker(timeout: 30, requiresLifecycle: true)
     static let previews = MediaWorker(timeout: 3, requiresLifecycle: true)
     static let clipboardThumbnails = MediaWorker(timeout: 3, requiresLifecycle: true)
     static let frameRegistration = MediaWorker(timeout: 3, requiresLifecycle: true)
