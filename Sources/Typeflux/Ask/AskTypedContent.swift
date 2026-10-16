@@ -7,6 +7,8 @@ enum AskTypedContent {
     static let maxBlocks = 64
     static let maxTextBytes = 60000
     static let advertisement = AskHarnessContract(version: 1, capabilities: [AskHarnessCapability.typedContent.rawValue])
+    // Immutable receipt parser, shared across the batch just like its native authority.
+    typealias ImageReader = @Sendable (JSONValue) -> (data: Data, type: MediaImageType)?
 
     struct Projection {
         var text: String
@@ -26,11 +28,16 @@ enum AskTypedContent {
     }
 
     static func output(from result: MCPToolsCallResult,
-                       normalize: @Sendable (Data, MediaImageType) async throws -> String = { try await AskToolImageNormalizer.image($0, type: $1) }) async -> AskLocalToolOutput {
+                       normalize: (@Sendable (Data, MediaImageType) async throws -> String)? = nil,
+                       normalizer: AskToolImageNormalizer = .shared,
+                       readImage: ImageReader = { imageInput(object($0)) }) async -> AskLocalToolOutput {
+        let batch = normalizer.batch(using: normalize)
         var blocks = result.content.map(\.raw)
         if let value = result.structuredContent { blocks.append(json(["type": "structured_content", "value": object(value)])) }
         if let value = result.metadata { blocks.append(json(["type": "mcp_metadata", "value": object(value)])) }
-        let outcome = await prepare(.init(status: result.isError == true ? "unknown" : "ok", content: blocks), normalize: normalize)
+        var outcome = await prepare(.init(status: result.isError == true ? "unknown" : "ok", content: blocks),
+                                    limit: 4, batch: batch, readImage: readImage)
+        if !batch.isCurrent { withholdImages(&outcome) }
         let projection = project(outcome)
         let legacyImage = projection.images.first
         // A legacy peer must never interpret a partial multi-image result as complete.
@@ -74,9 +81,14 @@ enum AskTypedContent {
 
     /// Read-only preparation. Failure retains the original result and never repeats its producer.
     static func prepare(_ original: AskExecutionOutcome, limit: Int = 4,
-                        normalize: @Sendable (Data, MediaImageType) async throws -> String = {
-                            try await AskToolImageNormalizer.image($0, type: $1)
-                        }) async -> AskExecutionOutcome {
+                        normalize: (@Sendable (Data, MediaImageType) async throws -> String)? = nil,
+                        normalizer: AskToolImageNormalizer = .shared,
+                        readImage: ImageReader = { imageInput(object($0)) }) async -> AskExecutionOutcome {
+        await prepare(original, limit: limit, batch: normalizer.batch(using: normalize), readImage: readImage)
+    }
+
+    private static func prepare(_ original: AskExecutionOutcome, limit: Int,
+                                batch: AskToolImageNormalizer.Batch, readImage: ImageReader) async -> AskExecutionOutcome {
         var outcome = bounded(original)
         outcome.preparedImages = [:]
         guard outcome.projectionWithheld != true else { return outcome }
@@ -84,33 +96,47 @@ enum AskTypedContent {
         for raw in outcome.content ?? [] {
             let block = object(raw)
             guard block["type"] as? String == "image" else { continue }
-            guard !Task.isCancelled, attempts < min(4, limit) else { break }
+            guard batch.isCurrent, attempts < min(4, limit) else { break }
             attempts += 1
-            guard let input = imageInput(block) else { continue }
+            guard let input = readImage(raw) else { continue }
+            guard batch.isCurrent else { break }
             let key = AskToolPolicy.digest(raw.data)
             do {
-                let image = try await normalize(input.data, input.type)
-                guard !Task.isCancelled, AskToolImageNormalizer.valid(image),
+                let image = try await batch.normalize(input.data, input.type)
+                guard batch.isCurrent, AskToolImageNormalizer.valid(image),
                       bytes + image.utf8.count <= 2_000_000 else { continue }
                 bytes += image.utf8.count
                 outcome.preparedImages[key] = image
             } catch { /* The outcome, including execution status and raw content, is retained. */ }
         }
+        if !batch.isCurrent { withholdImages(&outcome) }
         return outcome
+    }
+
+    private static func withholdImages(_ outcome: inout AskExecutionOutcome) {
+        guard bounded(outcome).content?.contains(where: { object($0)["type"] as? String == "image" }) == true else { return }
+        outcome.preparedImages = [:]
+        outcome.projectionWithheld = true
     }
 
     /// Prepare only a bounded recent window. Older/unavailable images stay explicitly incomplete.
     static func prepareHistory(_ messages: [AskMessage],
-                               normalize: @Sendable (Data, MediaImageType) async throws -> String = { try await AskToolImageNormalizer.image($0, type: $1) }) async -> [AskMessage] {
+                               normalize: (@Sendable (Data, MediaImageType) async throws -> String)? = nil,
+                               normalizer: AskToolImageNormalizer = .shared,
+                               readImage: ImageReader = { imageInput(object($0)) }) async -> [AskMessage] {
+        let batch = normalizer.batch(using: normalize)
         var result = messages, remaining = 8, bytes = 0
-        for index in result.indices { result[index].harness?.outcome?.preparedImages = [:] }
+        for index in result.indices {
+            result[index].harness?.outcome?.preparedImages = [:]
+            if result[index].harness?.version == 1, result[index].harness?.outcome?.content != nil { result[index].image = nil }
+        }
         for index in messages.indices.suffix(12).reversed() {
-            guard remaining > 0, !Task.isCancelled else { break }
+            guard remaining > 0, batch.isCurrent else { break }
             guard messages[index].harness?.version == 1, let outcome = messages[index].harness?.outcome,
                   let content = bounded(outcome).content else { continue }
             let count = content.filter { object($0)["type"] as? String == "image" }.count
             guard count > 0 else { continue }
-            var prepared = await prepare(outcome, limit: remaining, normalize: normalize)
+            var prepared = await prepare(outcome, limit: remaining, batch: batch, readImage: readImage)
             remaining -= min(4, count)
             let size = project(prepared).images.reduce(0) { $0 + $1.utf8.count }
             if bytes + size > 2_000_000 { prepared.preparedImages = [:] }
@@ -120,6 +146,18 @@ enum AskTypedContent {
             result[index].image = projection.images.first
             result[index].text = projection.text + (projection.images.count > 1 ? "\n[Multiple images retained; legacy delivery is incomplete]" : "")
             result[index].isError = projection.incomplete || projection.images.count > 1 || prepared.safeStatus != .ok
+        }
+        if !batch.isCurrent {
+            for index in result.indices.suffix(12) {
+                guard result[index].harness?.version == 1, var outcome = result[index].harness?.outcome else { continue }
+                withholdImages(&outcome)
+                result[index].harness?.outcome = outcome
+                if outcome.projectionWithheld == true {
+                    result[index].image = nil
+                    result[index].text = project(outcome).text
+                    result[index].isError = true
+                }
+            }
         }
         return result
     }
