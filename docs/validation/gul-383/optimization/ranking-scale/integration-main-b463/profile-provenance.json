@@ -1,0 +1,9 @@
+{
+  "binary_sha256": "cf4f8a742b2d61f665bbef1c96a958c4adc38716820eae891c4a8d7d949e8145",
+  "same_binary_verified_before_merge": true,
+  "profiles": "Full native scope plus narrow failed-method/direct-caller retry. Both exports used the exact same executable; merged before LCOV export. Raw profiles and default.profraw are excluded from Git.",
+  "production_commit": "3c3de617b158a09497918afb1b8e5250523a1a91",
+  "latest_main_read": "4c2ad5b91ad10d806261da80a6ad7e753f93b619",
+  "latest_main_dry_merge_exit_code": 0,
+  "latest_main_dry_merge_tree": "04ceec39969132075e945bd92cf3b074a7ce1fb4"
+}

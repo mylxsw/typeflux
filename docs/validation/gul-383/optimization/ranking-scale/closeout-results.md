@@ -1,3 +1,5 @@
+Current integration handoff: [reviewed-main integration](integration-main-b463/results.md). The measurements below describe the earlier production source.
+
 GUL-404 closeout under the current issue policy (2026-10-17)
 
 Production source is frozen at `6a9c18d79561b49d8c5339754193c6a06ee79374`. This closeout changes only the test duration/completeness checks and evidence. It stops the cancelled million-scale matrix and performs no ranking tuning, new holdout, repeated baseline or full test run.

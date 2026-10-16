@@ -1,0 +1,22 @@
+{
+  "Sources/Typeflux/Resources/zh-Hans.lproj/Localizable.strings": {
+    "exit_code": 0,
+    "output": "Sources/Typeflux/Resources/zh-Hans.lproj/Localizable.strings: OK\n"
+  },
+  "Sources/Typeflux/Resources/ja.lproj/Localizable.strings": {
+    "exit_code": 0,
+    "output": "Sources/Typeflux/Resources/ja.lproj/Localizable.strings: OK\n"
+  },
+  "Sources/Typeflux/Resources/en.lproj/Localizable.strings": {
+    "exit_code": 0,
+    "output": "Sources/Typeflux/Resources/en.lproj/Localizable.strings: OK\n"
+  },
+  "Sources/Typeflux/Resources/ko.lproj/Localizable.strings": {
+    "exit_code": 0,
+    "output": "Sources/Typeflux/Resources/ko.lproj/Localizable.strings: OK\n"
+  },
+  "Sources/Typeflux/Resources/zh-Hant.lproj/Localizable.strings": {
+    "exit_code": 0,
+    "output": "Sources/Typeflux/Resources/zh-Hant.lproj/Localizable.strings: OK\n"
+  }
+}
