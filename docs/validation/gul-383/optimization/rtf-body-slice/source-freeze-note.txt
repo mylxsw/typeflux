@@ -1,0 +1,1 @@
+Header delimiter and multibyte state were self-reviewed before validation. The final DBCS raw delimiter/single-byte correction and fixture were saved during dependency compilation, before any product/test compile or test execution. Frozen hashes updated once to this final source.
