@@ -4713,7 +4713,9 @@ private final class MockClipboardContentActions: ClipboardContentActing, @unchec
     var writes: [(title: String, plainText: Bool)] { lock.withLock { storedWrites } }
     var pasteShortcutCount: Int { lock.withLock { storedPasteShortcutCount } }
 
-    func writeToPasteboard(_ entry: ClipboardEntry, asPlainText: Bool) -> Bool {
+    func prepareImage(_ entry: ClipboardEntry) async throws -> AskWorkflowImage.Clipboard? { nil }
+
+    func writeToPasteboard(_ entry: ClipboardEntry, asPlainText: Bool, image: AskWorkflowImage.Clipboard?) -> Bool {
         lock.withLock { storedWrites.append((entry.title, asPlainText)) }
         return writeSucceeds
     }
@@ -4823,12 +4825,13 @@ extension WorkflowControllerProcessingTests {
         XCTAssertEqual(harness.presenter.dismissCount, 1)
     }
 
-    func testPastingFilesWritesThePasteboardThenSendsPaste() async {
+    @MainActor func testPastingFilesWritesThePasteboardThenSendsPaste() async {
         let harness = makeClipboardPanelHarness(configure: seed)
         harness.controller.handleHistoryPickerRequested()
 
         harness.model.perform(.paste, at: harness.index(of: "report.pdf"))
 
+        await waitUntil { harness.actions.writes.count == 1 }
         XCTAssertFalse(harness.controller.isHistoryPickerPresented)
         XCTAssertEqual(harness.actions.writes.map(\.plainText), [false])
         await waitUntil { harness.actions.pasteShortcutCount == 1 }
@@ -4836,24 +4839,27 @@ extension WorkflowControllerProcessingTests {
         XCTAssertTrue(harness.textInjector.insertedTexts.isEmpty)
     }
 
-    func testPastingFilePathsAsPlainText() async {
+    @MainActor func testPastingFilePathsAsPlainText() async {
         let harness = makeClipboardPanelHarness(configure: seed)
         harness.controller.handleHistoryPickerRequested()
         harness.model.perform(.pastePlainText, at: harness.index(of: "report.pdf"))
+        await waitUntil { harness.actions.writes.count == 1 }
         XCTAssertEqual(harness.actions.writes.map(\.plainText), [true])
         await waitUntil { harness.actions.pasteShortcutCount == 1 }
     }
 
-    func testFailedPasteboardWriteDoesNotSendPaste() async {
+    @MainActor func testFailedPasteboardWriteDoesNotSendPaste() async {
         let harness = makeClipboardPanelHarness(configure: seed)
         harness.actions.writeSucceeds = false
         harness.controller.handleHistoryPickerRequested()
         harness.model.perform(.paste, at: harness.index(of: "report.pdf"))
         try? await Task.sleep(for: .milliseconds(50))
         XCTAssertEqual(harness.actions.pasteShortcutCount, 0)
+        XCTAssertTrue(harness.controller.isHistoryPickerPresented)
+        XCTAssertEqual(harness.model.notice, L("ask.plugin.clip.unavailable"))
     }
 
-    func testPastingCopiedTextInsertsIt() async {
+    @MainActor func testPastingCopiedTextInsertsIt() async {
         let harness = makeClipboardPanelHarness(configure: seed)
         harness.controller.handleHistoryPickerRequested()
         harness.model.perform(.paste, at: harness.index(of: "copied text"))
@@ -4862,17 +4868,18 @@ extension WorkflowControllerProcessingTests {
         XCTAssertEqual(harness.textInjector.insertedTexts, ["copied text"])
     }
 
-    func testCopyingAnImageWritesThePasteboardWithoutPasting() async {
+    @MainActor func testCopyingAnImageWritesThePasteboardWithoutPasting() async {
         let harness = makeClipboardPanelHarness(configure: seed)
         harness.controller.handleHistoryPickerRequested()
         harness.model.perform(.copy, at: harness.index(of: L("clipboard.entry.image")))
+        await waitUntil { harness.actions.writes.count == 1 }
         XCTAssertFalse(harness.controller.isHistoryPickerPresented)
         XCTAssertEqual(harness.actions.writes.count, 1)
         try? await Task.sleep(for: .milliseconds(50))
         XCTAssertEqual(harness.actions.pasteShortcutCount, 0)
     }
 
-    func testFailedImageCopyKeepsThePanelOpen() {
+    @MainActor func testFailedImageCopyKeepsThePanelOpen() {
         let harness = makeClipboardPanelHarness(configure: seed)
         harness.actions.writeSucceeds = false
         harness.controller.handleHistoryPickerRequested()

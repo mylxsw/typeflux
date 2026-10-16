@@ -212,6 +212,8 @@ final class WorkflowController {
     let historyPanelModel = ClipboardPanelModel()
     var clipboardHistoryStore: ClipboardHistoryStore?
     var clipboardPanelPresenter: ClipboardPanelPresenting?
+    let clipboardAction = ClipboardContentAction()
+    var clipboardActionGeneration = UUID()
     var clipboardContentActions: ClipboardContentActing = SystemClipboardContentActions()
     var clipboardHistoryObserver: NSObjectProtocol?
     var clipboardPauseObserver: NSObjectProtocol?
@@ -472,6 +474,8 @@ final class WorkflowController {
     }
 
     func stop() {
+        clipboardActionGeneration = UUID()
+        Task { @MainActor [weak self] in self?.clipboardAction.cancel() }
         hotkeyService.stop()
         dismissPersonaPicker()
         dismissHistoryPicker()

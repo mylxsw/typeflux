@@ -41,7 +41,7 @@ final class AskConversationModel: ObservableObject {
     @Published var launcherHistoryMode = false
     @Published var launcherHistoryIndex = 0
     @Published var launcherHistoryFillID: UUID?
-    @Published var launcherPresentationID = UUID() { didSet { cancelAttachmentWork(launcher: true); launcherImageScope.invalidate(); workflowImageCopyTask?.cancel() } }
+    @Published var launcherPresentationID = UUID() { didSet { cancelAttachmentWork(launcher: true); launcherImageScope.invalidate(); workflowImageCopyTask?.cancel(); clipboardAction.cancelPreparation() } }
     var launcherExecutedInput: String?
     /// Files and folders the launcher can open; tests supply their own.
     var fileIndex: any AskFileSearching = AskFileIndex.shared
@@ -134,6 +134,7 @@ final class AskConversationModel: ObservableObject {
     var deliverText: ((String) async throws -> Void)?
     /// The existing clipboard history; supplied by the app's shared store.
     var clipboardEntries: @MainActor @Sendable () -> [ClipboardEntry] = { [] }
+    let clipboardAction = ClipboardContentAction()
     var clipboardContentActions: any ClipboardContentActing = SystemClipboardContentActions()
     @Published var launcherClipboardPreview: ClipboardEntry?
     /// Reads text aloud in a language; tests record it instead.

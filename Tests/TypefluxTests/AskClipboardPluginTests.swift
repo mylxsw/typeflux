@@ -191,23 +191,52 @@ struct AskClipboardPluginTests {
         defer { try? FileManager.default.removeItem(at: directory) }
         let file = ClipboardTestSupport.makeFile(named: "report.pdf", in: directory)
         let entry = ClipboardTestSupport.entry(.files, filePaths: [file.path])
+        var closed = 0
         let actions = ClipboardPluginTestActions()
+        f.model.owner = f.sessionState.owner
         f.model.clipboardContentActions = actions
         f.model.clipboardEntries = { [entry] }
         f.model.plugins.enter(AskClipboardPlugin.keywords[0])
         #expect(f.model.applyLauncherClipboard(id: entry.id, paste: false) == .stay)
+        try await f.wait { actions.writes.count == 1 && !f.model.clipboardAction.isRunning }
         #expect(actions.writes == [entry] && actions.pastes == 0 && f.model.plugins.isActive)
-        #expect(f.model.applyLauncherClipboard(id: entry.id, paste: true) == .close)
+        #expect(f.model.applyLauncherClipboard(id: entry.id, paste: true, completed: { closed += 1 }) == .stay)
+        try await f.wait { actions.writes.count == 2 }
         #expect(actions.writes == [entry, entry] && actions.pastes == 0 && !f.model.plugins.isActive)
         try await f.wait { actions.pastes == 1 }
+        #expect(closed == 1)
         actions.succeeds = false
         #expect(f.model.applyLauncherClipboard(id: entry.id, paste: true) == .stay)
+        try await f.wait { actions.writes.count == 3 && !f.model.clipboardAction.isRunning }
+        #expect(actions.pastes == 1 && closed == 1)
+    }
+
+    @Test func `late image preparation cannot write a deleted launcher entry`() async throws {
+        let f = try AskTestFixture()
+        defer { try? FileManager.default.removeItem(at: f.root) }
+        f.model.owner = f.sessionState.owner
+        let directory = ClipboardTestSupport.temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let file = ClipboardTestSupport.makeFile(named: "image.png", in: directory)
+        let entry = ClipboardTestSupport.entry(.image, imagePath: file.path)
+        let actions = ClipboardPluginTestActions()
+        var resume: CheckedContinuation<Void, Never>?
+        actions.prepare = { await withCheckedContinuation { resume = $0 }; return nil }
+        f.model.clipboardContentActions = actions
+        f.model.clipboardEntries = { [entry] }
+        #expect(f.model.applyLauncherClipboard(id: entry.id, paste: true) == .stay)
+        try await f.wait { resume != nil }
+        f.model.clipboardEntries = { [] }
+        resume?.resume()
+        try await f.wait { !f.model.clipboardAction.isRunning }
+        #expect(actions.writes.isEmpty && actions.pastes == 0)
     }
 
     @Test func `deleted entries and missing files cannot change clipboard or paste`() throws {
         let f = try AskTestFixture()
         let entry = ClipboardTestSupport.entry(.files, filePaths: ["/missing/clip-test.pdf"])
         let actions = ClipboardPluginTestActions()
+        f.model.owner = f.sessionState.owner
         f.model.clipboardContentActions = actions
         f.model.clipboardEntries = { [entry] }
         #expect(f.model.applyLauncherClipboard(id: entry.id, paste: true) == .stay)
@@ -288,7 +317,9 @@ private final class ClipboardPluginTestActions: ClipboardContentActing {
     var writes: [ClipboardEntry] = []
     var pastes = 0
     var succeeds = true
-    func writeToPasteboard(_ entry: ClipboardEntry, asPlainText _: Bool) -> Bool {
+    var prepare: () async throws -> AskWorkflowImage.Clipboard? = { nil }
+    func prepareImage(_ entry: ClipboardEntry) async throws -> AskWorkflowImage.Clipboard? { try await prepare() }
+    func writeToPasteboard(_ entry: ClipboardEntry, asPlainText _: Bool, image: AskWorkflowImage.Clipboard?) -> Bool {
         writes.append(entry)
         return succeeds
     }

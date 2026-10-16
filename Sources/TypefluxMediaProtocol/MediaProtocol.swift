@@ -15,8 +15,8 @@ public enum MediaFailure: String, Error, Codable, Sendable {
 }
 
 public struct MediaRequest: Codable, Sendable {
-    public enum Operation: String, Codable, Sendable { case clipboardMedia, quickLook, nativeIcon, image, pdf, inspectWorkflowImage, copyWorkflowImage, validateGeneratedImage, normalizeImage, previewImage, previewPDF, previewVideo, previewAudio
-        public var isWorkflowImage: Bool { self == .inspectWorkflowImage || self == .copyWorkflowImage }
+    public enum Operation: String, Codable, Sendable { case copyClipboardImage, clipboardMedia, quickLook, nativeIcon, image, pdf, inspectWorkflowImage, copyWorkflowImage, validateGeneratedImage, normalizeImage, previewImage, previewPDF, previewVideo, previewAudio
+        public var isWorkflowImage: Bool { self == .inspectWorkflowImage || self == .copyWorkflowImage || self == .copyClipboardImage }
         public var isAV: Bool { self == .previewVideo || self == .previewAudio }
     }
     public var version = 1
@@ -96,7 +96,7 @@ public struct MediaResponse: Codable, Sendable {
         guard clipboard == nil else { throw MediaFailure.invalidProtocol }
         if request.operation.isWorkflowImage {
             guard items.isEmpty, preview == nil, normalization == nil, generatedImage == nil, let workflowImage else { throw MediaFailure.invalidProtocol }
-            try workflowImage.validate(copying: request.operation == .copyWorkflowImage)
+            try workflowImage.validate(copying: request.operation != .inspectWorkflowImage, clipboard: request.operation == .copyClipboardImage)
             return
         }
         guard workflowImage == nil else { throw MediaFailure.invalidProtocol }

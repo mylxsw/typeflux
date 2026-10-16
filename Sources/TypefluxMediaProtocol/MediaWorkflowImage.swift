@@ -20,11 +20,12 @@ public struct MediaWorkflowImage: Codable, Sendable {
     public init(format: MediaWorkflowFormat, width: Int, height: Int, scale: Int) {
         self.format = format; self.width = width; self.height = height; self.scale = scale
     }
-    public func validate(copying: Bool) throws {
+    public func validate(copying: Bool, clipboard: Bool = false) throws {
         guard width > 0, height > 0, width <= 100_000, height <= 100_000,
               width <= 100_000_000 / height, scale == 1 || scale == 2 else { throw MediaFailure.invalidProtocol }
         if copying {
-            guard width <= 8192, height <= 8192, width <= 16_777_216 / height,
+            guard width <= (clipboard ? 16384 : 8192), height <= (clipboard ? 16384 : 8192), width <= (clipboard ? 16_000_000 : 16_777_216) / height,
+                  !clipboard || format == .png,
                   let pngBytes, let tiffBytes, pngBytes > 0, tiffBytes > 0,
                   pngBytes <= Self.copyBytes, tiffBytes <= Self.copyBytes - pngBytes else { throw MediaFailure.invalidProtocol }
         } else if pngBytes != nil || tiffBytes != nil { throw MediaFailure.invalidProtocol }

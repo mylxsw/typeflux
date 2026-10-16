@@ -28,29 +28,30 @@ final class SystemClipboardContentActionsTests: XCTestCase {
         let second = ClipboardTestSupport.makeFile(named: "b.txt", in: directory)
         let entry = ClipboardTestSupport.entry(.files, filePaths: [first.path, second.path])
 
-        XCTAssertTrue(actions.writeToPasteboard(entry, asPlainText: false))
+        XCTAssertTrue(actions.writeToPasteboard(entry, asPlainText: false, image: nil))
         let urls = try XCTUnwrap(pasteboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL])
         XCTAssertEqual(urls.map(\.lastPathComponent), ["a.pdf", "b.txt"])
 
-        XCTAssertTrue(actions.writeToPasteboard(entry, asPlainText: true))
+        XCTAssertTrue(actions.writeToPasteboard(entry, asPlainText: true, image: nil))
         XCTAssertEqual(pasteboard.string(forType: .string), "\(first.path)\n\(second.path)")
     }
 
-    func testWritesStoredImagesAsPNGAndTIFF() {
+    func testWritesStoredImagesAsPNGAndTIFF() async throws {
         let png = ClipboardTestSupport.imageData(width: 4, height: 4)
         let file = directory.appendingPathComponent("shot.png")
         FileManager.default.createFile(atPath: file.path, contents: png)
 
         let entry = ClipboardTestSupport.entry(.image, imagePath: file.path)
-        XCTAssertTrue(actions.writeToPasteboard(entry, asPlainText: false))
+        let prepared = try await actions.prepareImage(entry)
+        XCTAssertTrue(actions.writeToPasteboard(entry, asPlainText: false, image: prepared))
         XCTAssertEqual(pasteboard.data(forType: .png), png)
         XCTAssertNotNil(pasteboard.data(forType: .tiff))
     }
 
     func testWritingFailsWithoutContent() {
         let missing = ClipboardTestSupport.entry(.image, imagePath: "/missing.png")
-        XCTAssertFalse(actions.writeToPasteboard(missing, asPlainText: false))
-        XCTAssertFalse(actions.writeToPasteboard(ClipboardTestSupport.entry(.image), asPlainText: false))
+        XCTAssertFalse(actions.writeToPasteboard(missing, asPlainText: false, image: nil))
+        XCTAssertFalse(actions.writeToPasteboard(ClipboardTestSupport.entry(.image), asPlainText: false, image: nil))
     }
 
     func testSavesCopiesIntoDownloadsWithoutOverwriting() throws {

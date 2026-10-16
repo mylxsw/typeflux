@@ -45,6 +45,7 @@ extension WorkflowController {
     }
 
     func handleHistoryPickerRequested() {
+        clipboardActionGeneration = UUID()
         if isHistoryPickerPresented {
             dismissHistoryPicker()
             return
@@ -181,6 +182,7 @@ extension WorkflowController {
     }
 
     func dismissHistoryPicker() {
+        Task { @MainActor [weak self] in self?.clipboardAction.cancelPreparation() }
         guard isHistoryPickerPresented else { return }
         isHistoryPickerPresented = false
         clipboardPanelPresenter?.dismiss()
@@ -200,20 +202,15 @@ extension WorkflowController {
 
     private func pasteHistoryEntry(_ entry: ClipboardEntry, plainText: Bool) {
         soundEffectPlayer.playAsync(.tip)
-        dismissHistoryPicker()
 
         if entry.kind.isTextual, let text = entry.text {
+            dismissHistoryPicker()
             deliverHistoryText(text)
             return
         }
 
-        guard clipboardContentActions.writeToPasteboard(entry, asPlainText: plainText) else { return }
-        let actions = clipboardContentActions
-        Task { [weak self] in
-            guard let self else { return }
-            await sleep(Self.historyPanelFocusReturnDelay)
-            actions.sendPasteShortcut()
-        }
+        runHistoryClipboardAction(entry, plainText: plainText, paste: true)
+
     }
 
     /// Pastes text edited in the panel.
@@ -241,10 +238,31 @@ extension WorkflowController {
         if entry.kind.isTextual, let text = entry.text {
             clipboard.write(text: text)
         } else {
-            guard clipboardContentActions.writeToPasteboard(entry, asPlainText: false) else { return }
+            runHistoryClipboardAction(entry, plainText: false, paste: false)
+            return
         }
         soundEffectPlayer.playAsync(.tip)
         dismissHistoryPicker()
+    }
+
+    private func runHistoryClipboardAction(_ entry: ClipboardEntry, plainText: Bool, paste: Bool) {
+        // Panel actions originate on the UI thread. Refuse off-thread callers before any mutation.
+        guard Thread.isMainThread else { return }
+        let generation = clipboardActionGeneration
+        MainActor.assumeIsolated {
+            let auth = billingAuth(), accountGeneration = billingAuth().sessionGeneration
+            clipboardAction.start(entry: entry, plainText: plainText, paste: paste, actions: clipboardContentActions,
+                authorized: { [weak self] in
+                    guard let self else { return false }
+                    return self.clipboardActionGeneration == generation && self.billingAuth() === auth && auth.sessionGeneration == accountGeneration && self.historyPanelEntries().contains(entry)
+                }, beforeCommit: { [weak self] in self?.isHistoryPickerPresented == true },
+                committed: { [weak self] in
+                    guard let self else { return }
+                    if !paste { self.soundEffectPlayer.playAsync(.tip) }
+                    self.dismissHistoryPicker()
+                }, failed: { [weak self] in self?.historyPanelModel.showNotice(L("ask.plugin.clip.unavailable")) },
+                delay: { [weak self] in await self?.sleep(Self.historyPanelFocusReturnDelay) })
+        }
     }
 
     private func saveHistoryImageToDownloads(_ entry: ClipboardEntry) {
