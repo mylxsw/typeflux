@@ -56,6 +56,36 @@ enum AskSmallIconDecoder {
     }
 }
 
+/// One accepted file-icon consumer, bound before Context's queued preparation.
+struct AskSmallFileIconPreparation: Sendable {
+    typealias Decoder = @Sendable (URL) async throws -> CGImage
+    struct Batch: Sendable {
+        let decode: @Sendable () async throws -> AskFilePreviewPDF.Result
+        let isCurrent: @Sendable () -> Bool
+    }
+    let url: URL
+    var decode: Decoder?
+    var worker: MediaWorker = .previews
+    var readInput: AskSmallIconDecoder.InputReader = { try AskSmallIconDecoder.read($0) }
+
+    /// Memory-only snapshot; no input read, native work, or capacity is acquired here.
+    func bind(_ source: String) -> Batch {
+        let original = decode == nil ? worker.authorization() : nil
+        let isCurrent: @Sendable () -> Bool = {
+            !Task.isCancelled && (original.map { worker.permits($0) } ?? true)
+        }
+        return .init(decode: {
+            guard isCurrent() else { throw MediaFailure.unavailable }
+            guard source == url.absoluteString else { throw MediaFailure.unreadable }
+            let image: CGImage
+            if let decode { image = try await decode(url) }
+            else { image = try await AskSmallIconDecoder.decode(.file(url), worker: worker, authorization: original, readInput: readInput) }
+            guard isCurrent() else { throw MediaFailure.unavailable }
+            return .init(images: [image], numbers: [], pages: 0)
+        }, isCurrent: isCurrent)
+    }
+}
+
 private struct AskIconGenerationKey: EnvironmentKey { static let defaultValue = 0 }
 extension EnvironmentValues {
     var askIconGeneration: Int {
@@ -64,28 +94,33 @@ extension EnvironmentValues {
     }
 }
 
+fileprivate struct AskSmallIconDecoderOverride: Sendable {
+    let decode: AskSmallFileIconPreparation.Decoder
+}
 private struct AskSmallIconDecoderKey: EnvironmentKey {
-    static let defaultValue: @Sendable (URL) async throws -> CGImage = { try await AskSmallIconDecoder.decode(.file($0)) }
+    static let defaultValue: AskSmallIconDecoderOverride? = nil
 }
 extension EnvironmentValues {
     var askSmallIconDecoder: @Sendable (URL) async throws -> CGImage {
-        get { self[AskSmallIconDecoderKey.self] }
-        set { self[AskSmallIconDecoderKey.self] = newValue }
+        get {
+            if let custom = self[AskSmallIconDecoderKey.self] { return custom.decode }
+            return { @Sendable in try await AskSmallIconDecoder.decode(.file($0)) }
+        }
+        set { self[AskSmallIconDecoderKey.self] = .init(decode: newValue) }
     }
+    fileprivate var smallFileIconDecoderOverride: AskSmallIconDecoderOverride? { self[AskSmallIconDecoderKey.self] }
 }
 
 struct AskSmallFileIcon: View {
-    @Environment(\.askSmallIconDecoder) private var decode
+    @Environment(\.smallFileIconDecoderOverride) private var decode
     let url: URL
     let symbol: String
     var filled = false
     @Environment(\.askContextImageAccess) private var access
     @Environment(\.askIconGeneration) private var generation
     var body: some View {
-        AskContextImage(source: url.absoluteString, model: AskContextImageModel(maximumEdge: 56, decode: { _ in
-            let image = try await decode(url)
-            return .init(images: [image], numbers: [], pages: 0)
-        })) { image in
+        AskContextImage(source: url.absoluteString, model: AskContextImageModel(maximumEdge: 56,
+            smallFileIcon: .init(url: url, decode: decode?.decode))) { image in
             if let image { Image(nsImage: image).resizable().scaledToFit() }
             else { AskPluginItemIcon(icon: .symbol(symbol), symbol: symbol, filled: filled) }
         }

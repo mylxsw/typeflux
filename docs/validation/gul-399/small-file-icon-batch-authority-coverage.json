@@ -1,0 +1,37 @@
+{
+  "covered": 32,
+  "executable_added": 32,
+  "percent": 100.0,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Ask/AskContextImage.swift",
+      "covered": 7,
+      "executable_added": 7,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/AskSmallIcon.swift",
+      "covered": 25,
+      "executable_added": 25,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    }
+  ],
+  "baseline": "f629bfab7bf62bbf917423e90af916b6b5486c62",
+  "proof": {
+    "inputs": 2006,
+    "sources": 1149,
+    "tests": 857,
+    "profiles": 3,
+    "binary_hashes": {
+      "tests": "f024fb33a8d5e9c303685149276ad3b100e78009697a33cb3a354e9f01a0fdf1",
+      "app": "cecca1c2e5677354294d5b151af5d112fecd31b9e3f31b56947153497407ca74"
+    },
+    "reported_function_hashes": 789,
+    "all_reported_hashes_zero": true,
+    "note": "Zero Swift hashes do not establish layout compatibility. HOST profiles only; no child coverage claim."
+  }
+}
