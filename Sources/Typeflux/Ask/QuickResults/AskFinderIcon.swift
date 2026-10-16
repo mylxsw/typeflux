@@ -52,8 +52,8 @@ extension EnvironmentValues {
     }
 }
 
-/// Native icons remain scoped to visible views; launcher application bundles
-/// can reuse their small, bounded icon cache across searches.
+/// Native icons remain scoped to visible views. Launcher searches also reuse
+/// bounded application icons and temporarily cache versioned file icons.
 struct AskNativeIconImage<Content: View>: View {
     let icon: MediaNativeIcon?
     var revision: Date?
@@ -67,14 +67,17 @@ struct AskNativeIconImage<Content: View>: View {
         let iconCache = launcherCache
         let selectedDecode = decode ?? environmentDecode
         let useCache = decode == nil
+        let cached = access.allows() && useCache ? icon.flatMap {
+            iconCache?.cached($0, revision: revision)?.images.first
+        }.map { NSImage(cgImage: $0, size: .zero) } : nil
         return AskContextImage(source: icon.map { $0.kind.rawValue + ":" + $0.value },
             model: AskContextImageModel(maximumEdge: 56, decode: { _ in
                 guard let icon else { throw MediaFailure.unavailable }
-                if useCache, let iconCache, AskLauncherIconCache.eligible(icon) {
-                    return try await iconCache.load(icon)
+                if useCache, let iconCache, AskLauncherIconCache.eligible(icon, revision: revision) {
+                    return try await iconCache.load(icon, revision: revision)
                 }
                 return try await selectedDecode(icon)
-            }), content: content)
+            }), content: { image in content(image ?? cached) })
         .id(Identity(icon: icon, epoch: access.epoch, generation: generation, revision: revision))
     }
     private struct Identity: Hashable {

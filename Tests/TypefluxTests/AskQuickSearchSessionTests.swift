@@ -2,6 +2,7 @@ import AppKit
 import Foundation
 import Combine
 import Testing
+import TypefluxMediaProtocol
 @testable import Typeflux
 
 /// Providers deliberately stall off the main thread; all waits have a deadline.
@@ -142,6 +143,13 @@ struct AskQuickSearchSessionTests {
 
     @Test func searchBatchesPrefetchIconsBeforeRowsAreCreated() async throws {
         let expected = NSImage(size: .init(width: 28, height: 28))
+        let context = try #require(CGContext(data: nil, width: 56, height: 56, bitsPerComponent: 8,
+                                             bytesPerRow: 224, space: CGColorSpaceCreateDeviceRGB(),
+                                             bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+        let pixels = try #require(context.makeImage())
+        let nativeCache = AskLauncherIconCache(decode: { _ in
+            .init(images: [pixels], numbers: [], pages: 0)
+        })
         var loaded: [AskResultImageCache.Key] = []
         let cache = AskResultImageCache { key in
             loaded.append(key)
@@ -151,6 +159,7 @@ struct AskQuickSearchSessionTests {
         apps.appSearch = { _ in [Self.app] }
         files.fileSearch = { _ in [Self.file] }
         let session = AskQuickSearchSession(imageCache: cache)
+        session.launcherIconCache = nativeCache
         update(session, apps: apps, files: files)
         let scale = NSScreen.main?.backingScaleFactor ?? 2
         // Publication never waits for icons. Verify the search's prefetch clients
@@ -164,6 +173,8 @@ struct AskQuickSearchSessionTests {
                                   scale: scale)) === expected)
         #expect(loaded.count == 2, "Search must warm both types of rows without waiting for a view task")
         #expect(loaded.allSatisfy { !$0.thumbnail })
+        let fileIcon = MediaNativeIcon(kind: .file, value: Self.file.path)
+        try await Self.wait { nativeCache.cached(fileIcon, revision: Self.file.modified) != nil }
     }
 
     nonisolated static let app = AskAppMatch(entry: AskTestAppIndex.app("Notes"), score: 0.9)

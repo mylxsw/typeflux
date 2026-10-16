@@ -159,11 +159,15 @@ final class AskQuickSearchSession: ObservableObject {
             let hits = await SemanticSearchTrace.$current.withValue(trace) {
                 await semantic.search(text, type: .all, limit: 24) { [weak self] hits in
                     guard let self, generation == ticket, !Task.isCancelled else { return }
-                    semanticResults = hits; publish()
+                    semanticResults = hits
+                    launcherIconCache?.prefetchFiles(fileResults?.hits ?? hits)
+                    publish()
                 }
             }
             guard let self, generation == ticket, !Task.isCancelled else { return }
-            semanticResults = hits; semanticReady = true; publish()
+            semanticResults = hits; semanticReady = true
+            launcherIconCache?.prefetchFiles(fileResults?.hits ?? hits)
+            publish()
         }
     }
 
@@ -195,6 +199,7 @@ final class AskQuickSearchSession: ObservableObject {
                     guard let self, generation == ticket else { return }
                     fileResults = batch
                     prefetchIcons(batch.hits.map { .init(url: $0.url, thumbnail: false, modified: $0.modified) })
+                    launcherIconCache?.prefetchFiles(batch.hits)
                     os_signpost(.event, log: Self.log, name: "Files ready", "%{public}d", ticket)
                     publish()
                 })
@@ -282,6 +287,7 @@ final class AskQuickSearchSession: ObservableObject {
                 status: fileResults?.status, settings: currentSettings, entries: currentEntries))
         next = AskQuickResults.addingBrowsers(browserResults, to: next)
         if next == nil, !semanticReady { next = AskQuickResults(apps: [], lead: false) }
+        launcherIconCache?.prefetchFiles(next?.files ?? [])
         next?.searchingContent = !semanticReady
         next?.keepChoice(from: results?.chosen == true ? results : previousChoice)
         results = next ?? (isSearching ? AskQuickResults(apps: [], lead: false) : nil)

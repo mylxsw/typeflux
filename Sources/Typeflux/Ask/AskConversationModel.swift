@@ -123,6 +123,7 @@ final class AskConversationModel: ObservableObject {
         }
         connectWordBook(to: session)
         connectNotes(to: session)
+        session.launcherIconCache = launcherIconCache
         session.onActivate = { [weak self] keyword in self?.keywordUsage.record(keyword) }
         session.onRunInput = { [weak self] keyword, text, title in
             self?.recordLauncherInput(destination: .keyword, label: title, text: text, keyword: keyword.keyword)

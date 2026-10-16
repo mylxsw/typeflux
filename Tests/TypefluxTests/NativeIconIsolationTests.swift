@@ -156,6 +156,74 @@ private actor NativeIconCalls {
         XCTAssertFalse(AskLauncherIconCache.eligible(.init(kind: .file, value: "/private/secret.pdf")))
     }
 
+    func testLauncherPrefetchesVersionedFilesAndFoldersAndClearsThemOnHide() async throws {
+        let calls = NativeIconCalls(), pixels = raster(), revision = Date(timeIntervalSince1970: 1_000)
+        let cache = AskLauncherIconCache(fileCapacity: 3, decode: { _ in
+            await calls.called()
+            return .init(images: [pixels], numbers: [], pages: 0)
+        })
+        let app = MediaNativeIcon(kind: .file, value: "/Applications/Fixture.app")
+        let file = MediaNativeIcon(kind: .file, value: "/tmp/invoice.pdf")
+        let folder = MediaNativeIcon(kind: .file, value: "/tmp/Receipts")
+        let hits = [
+            AskFileHit(path: file.value, name: "invoice.pdf", kind: .file, modified: revision, score: 1),
+            AskFileHit(path: folder.value, name: "Receipts", kind: .folder, modified: revision, score: 0.9)
+        ]
+        _ = try await cache.load(app)
+        cache.prefetchFiles(hits)
+        for _ in 0..<100 where cache.cached(file, revision: revision) == nil ||
+            cache.cached(folder, revision: revision) == nil {
+            try await Task.sleep(for: .milliseconds(5))
+        }
+        XCTAssertNotNil(cache.cached(file, revision: revision))
+        XCTAssertNotNil(cache.cached(folder, revision: revision))
+        let prefetched = await calls.count
+        XCTAssertEqual(prefetched, 3)
+        _ = try await cache.load(file, revision: revision)
+        let reused = await calls.count
+        XCTAssertEqual(reused, 3)
+
+        let changed = revision.addingTimeInterval(1)
+        XCTAssertNil(cache.cached(file, revision: changed))
+        _ = try await cache.load(file, revision: changed)
+        let reloaded = await calls.count
+        XCTAssertEqual(reloaded, 4)
+        cache.clearFiles()
+        XCTAssertNil(cache.cached(file, revision: changed))
+        XCTAssertNil(cache.cached(folder, revision: revision))
+        XCTAssertNotNil(cache.cached(app), "Application icons survive launcher sessions")
+        XCTAssertFalse(AskLauncherIconCache.eligible(file, revision: nil))
+        XCTAssertTrue(AskLauncherIconCache.eligible(file, revision: revision))
+    }
+
+    func testLauncherFileIconCacheHasSeparateSizeBound() async throws {
+        let pixels = raster(), revision = Date(timeIntervalSince1970: 1_000)
+        let cache = AskLauncherIconCache(fileCapacity: 1, decode: { _ in
+            .init(images: [pixels], numbers: [], pages: 0)
+        })
+        let first = MediaNativeIcon(kind: .file, value: "/tmp/first.txt")
+        let second = MediaNativeIcon(kind: .file, value: "/tmp/second.txt")
+        _ = try await cache.load(first, revision: revision)
+        _ = try await cache.load(second, revision: revision)
+        XCTAssertNil(cache.cached(first, revision: revision))
+        XCTAssertNotNil(cache.cached(second, revision: revision))
+    }
+
+    func testClosingLauncherDoesNotRepopulatePrivateIconCacheFromLateDecode() async throws {
+        let pixels = raster(), revision = Date(timeIntervalSince1970: 1_000)
+        let cache = AskLauncherIconCache(decode: { _ in
+            try await Task.sleep(for: .milliseconds(100))
+            return .init(images: [pixels], numbers: [], pages: 0)
+        })
+        let icon = MediaNativeIcon(kind: .file, value: "/tmp/private.txt")
+        let loading = Task { try await cache.load(icon, revision: revision) }
+        try await Task.sleep(for: .milliseconds(10))
+        cache.clearFiles()
+        do { _ = try await loading.value; XCTFail("Closed launcher accepted a late private icon") }
+        catch is CancellationError {}
+        XCTAssertNil(cache.cached(icon, revision: revision))
+    }
+
     func testDefaultLegacyCacheDoesNotPrefetchOrCacheNativeIcons() async {
         let cache = AskResultImageCache(), key = AskResultImageCache.Key(url: URL(fileURLWithPath: "/missing.app"), thumbnail: false)
         cache.prefetch([key]); let first = await cache.image(key); XCTAssertNil(first); XCTAssertNil(cache.cached(key))

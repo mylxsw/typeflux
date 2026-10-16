@@ -1,5 +1,7 @@
+import AppKit
 import Foundation
 import Testing
+import TypefluxMediaProtocol
 @testable import Typeflux
 
 actor SemanticGatedSearch: SemanticFileSearching {
@@ -44,10 +46,22 @@ struct SemanticContentSearchProgressTests {
         let semantic = SemanticGatedSearch(hits: [hit])
         let plugin = AskFileSearchPlugin(index: { files }, settings: { .init() }, semantic: { semantic })
         let session = AskPluginSession(plugins: [plugin]) { AskFileSearchPlugin.keywords }
+        let context = try #require(CGContext(data: nil, width: 56, height: 56, bitsPerComponent: 8,
+                                             bytesPerRow: 224, space: CGColorSpaceCreateDeviceRGB(),
+                                             bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+        let pixels = try #require(context.makeImage())
+        let iconCache = AskLauncherIconCache(decode: { _ in
+            .init(images: [pixels], numbers: [], pages: 0)
+        })
+        session.launcherIconCache = iconCache
         defer { _ = session.deactivate() }
         session.enter(AskFileSearchPlugin.keywords[0])
         session.update(text: "report", selection: nil, language: .english)
         try await AskQuickSearchSessionTests.wait { session.partial?.items.count == 2 }
+        let firstFile = try #require(session.partial?.items.first?.fileHit)
+        try await AskQuickSearchSessionTests.wait {
+            iconCache.cached(.init(kind: .file, value: firstFile.path), revision: firstFile.modified) != nil
+        }
         #expect(session.partial?.items.map(\.title) == ["report-a.md", "report-b.pdf"])
         #expect(session.selectItem(1))
         #expect(session.partial?.selected?.fileHit?.path == hit.path)
