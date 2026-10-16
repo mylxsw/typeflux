@@ -52,13 +52,31 @@ final class ScreenRecordingEncoder: @unchecked Sendable {
                         preserveWhitespace: true, onStarted: { lease.started() }, stdin: encoded, stderrLimit: 1024,
                         onOutput: { stream.accept($0) }, onReaped: { lease.reaped() })
                     do {
-                    let result = try run(process, { cancelled() || stream.invalid })
+                    let result: ManagedProcess.Result
+                    do { result = try run(process, { cancelled() || stream.invalid }) }
+                    catch {
+                        lease.infrastructureFailed = true
+                        let code = error as NSError
+                        lease.configurationFailure = code.domain == NSPOSIXErrorDomain && [Int(EACCES), Int(EPERM), Int(ENOENT), Int(ENOEXEC)].contains(code.code)
+                        throw error
+                    }
                     try Self.check(cancelled)
                     stream.accept(result.stdout)
-                    guard result.termination == .exited(0), !result.outputTruncated, !stream.invalid, stream.isComplete(result.stdout),
-                          let bytes = stream.completedBytes else { throw MediaFailure.unavailable }
+                    guard result.termination == .exited(0), !result.outputTruncated, !stream.invalid, stream.isComplete(result.stdout) else {
+                        lease.infrastructureFailed = true; throw MediaFailure.invalidProtocol
+                    }
+                    // A valid failed terminal is a controlled job refusal, not a crashed service.
+                    // Its files remain unconfirmed: even known failure may have produced partial bytes.
+                    if stream.requestFailed { throw Failure.unconfirmed }
+                    guard let bytes = stream.completedBytes else { lease.infrastructureFailed = true; throw MediaFailure.invalidProtocol }
                     try original.check()
-                    try Self.validateOutput(request, bytes: bytes, directory: fd)
+                    do { try Self.validateOutput(request, bytes: bytes, directory: fd) }
+                    catch {
+                        // Missing or inconsistent promised output is a protocol fault. Applying local
+                        // permissions is host filesystem work and must not blame the decoder.
+                        if (error as? MediaFailure) != .unavailable { lease.infrastructureFailed = true }
+                        throw error
+                    }
                     try Self.check(cancelled)
                     var currentParent = stat()
                     guard lstat(parent.path, &currentParent) == 0, currentParent.st_dev == parentInfo.st_dev,
@@ -98,7 +116,8 @@ final class ScreenRecordingEncoder: @unchecked Sendable {
         guard fstat(fd, &info) == 0, info.st_mode & S_IFMT == S_IFREG, info.st_nlink == 1,
               info.st_size == bytes, bytes <= request.outputLimit, read(fd, &header, header.count) == 12 else { throw MediaFailure.invalidProtocol }
         let signature = request.format == .gif ? (Array(header.prefix(6)) == Array("GIF89a".utf8) || Array(header.prefix(6)) == Array("GIF87a".utf8)) : Array(header[4..<8]) == Array("ftyp".utf8)
-        guard signature, fchmod(fd, 0o600) == 0 else { throw MediaFailure.invalidProtocol }
+        guard signature else { throw MediaFailure.invalidProtocol }
+        guard fchmod(fd, 0o600) == 0 else { throw MediaFailure.unavailable }
     }
     private final class Ownership: @unchecked Sendable {
         let slot: AskToolPixelBudget.Lease
@@ -116,6 +135,7 @@ final class ScreenRecordingEncoder: @unchecked Sendable {
         init(request: MediaRecordingExport, progress: @escaping @Sendable (Double) -> Void) { self.request = request; self.progress = progress }
         var invalid: Bool { lock.withLock { failed } }
         var completedBytes: Int? { lock.withLock { bytes } }
+        var requestFailed: Bool { lock.withLock { terminal && bytes == nil } }
         func isComplete(_ value: String) -> Bool { lock.withLock { terminal && consumed == value.utf8.count } }
         func accept(_ value: String) {
             lock.withLock {

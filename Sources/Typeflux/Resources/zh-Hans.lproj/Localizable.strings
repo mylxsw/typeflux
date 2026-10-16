@@ -5740,3 +5740,4 @@
 "settings.services.clipboardMetadata" = "剪贴板媒体信息";
 
 "settings.services.recordingTimeline" = "录屏时间轴与海报";
+"settings.services.recordingExport" = "录屏编码";

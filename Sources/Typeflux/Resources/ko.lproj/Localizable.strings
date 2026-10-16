@@ -5626,3 +5626,4 @@
 "settings.services.clipboardMetadata" = "클립보드 미디어 정보";
 
 "settings.services.recordingTimeline" = "녹화 타임라인 및 포스터";
+"settings.services.recordingExport" = "녹화 인코딩";

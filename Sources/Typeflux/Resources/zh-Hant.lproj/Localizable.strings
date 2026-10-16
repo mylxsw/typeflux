@@ -5660,3 +5660,4 @@
 "settings.services.clipboardMetadata" = "剪貼簿媒體資訊";
 
 "settings.services.recordingTimeline" = "錄影時間軸與海報";
+"settings.services.recordingExport" = "錄影編碼";

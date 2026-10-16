@@ -160,7 +160,7 @@ struct ScreenRecordingMediaTests {
         try await Self.makeMovie(at: source, withAudio: true, withCamera: true)
         let sourceAsset = AVURLAsset(url: source)
         #expect(try await sourceAsset.loadTracks(withMediaType: .audio).count == 2)
-        let exporter = ScreenRecordingExporter()
+        let exporter = ScreenRecordingExporter(encoder: ScreenRecordingEncoder(worker: MediaWorker(timeout: 600)))
         let mp4 = directory.appendingPathComponent("result.mp4")
         let trim = ScreenRecordingTrim(start: 0.2, end: 1)
         try await exporter.export(source: source, destination: mp4, format: .mp4, trim: trim) { _ in }

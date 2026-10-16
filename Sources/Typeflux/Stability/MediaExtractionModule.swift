@@ -4,7 +4,7 @@ import Foundation
 /// pool; the supervisor manages readiness and recovery, never request replay.
 final class MediaExtractionModule: @unchecked Sendable {
     enum Domain: String, CaseIterable, Sendable {
-        case mediaExtraction, mediaPreviews, clipboardThumbnails, frameRegistration, textRecognition, clipboardOCR, clipboardMetadata, recordingTimeline
+        case mediaExtraction, mediaPreviews, clipboardThumbnails, frameRegistration, textRecognition, clipboardOCR, clipboardMetadata, recordingTimeline, recordingExport
         var id: ModuleID {
             switch self {
             case .mediaExtraction: .mediaExtraction
@@ -15,6 +15,7 @@ final class MediaExtractionModule: @unchecked Sendable {
             case .clipboardOCR: .clipboardOCR
             case .clipboardMetadata: .clipboardMetadata
             case .recordingTimeline: .recordingTimeline
+            case .recordingExport: .recordingExport
             }
         }
         var worker: MediaWorker {
@@ -27,6 +28,7 @@ final class MediaExtractionModule: @unchecked Sendable {
             case .clipboardOCR: .clipboardOCR
             case .clipboardMetadata: .clipboardMetadata
             case .recordingTimeline: .recordingTimeline
+            case .recordingExport: .recordingExport
             }
         }
     }

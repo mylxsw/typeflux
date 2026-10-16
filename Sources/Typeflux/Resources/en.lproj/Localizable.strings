@@ -5740,3 +5740,4 @@
 "settings.services.clipboardMetadata" = "Clipboard media information";
 
 "settings.services.recordingTimeline" = "Recording timeline and posters";
+"settings.services.recordingExport" = "Recording encoding";
