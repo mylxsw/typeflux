@@ -142,19 +142,16 @@ final class ClipboardPanelRenderingTests: XCTestCase {
         }
     }
 
-    func testThumbnailsAreGeneratedAndCached() async {
+    func testThumbnailsUseValidatedPixelsWithoutPathCache() async throws {
         let png = directory.appendingPathComponent("thumb.png")
-        let pngData = ClipboardTestSupport.imageData(width: 300, height: 200)
-        FileManager.default.createFile(atPath: png.path, contents: pngData)
-        let provider = ClipboardThumbnailProvider()
-
-        XCTAssertNil(provider.cachedThumbnail(for: png, maxPixelSize: 64))
-        let image = await provider.thumbnail(for: png, maxPixelSize: 64)
-        XCTAssertNotNil(image)
-        XCTAssertLessThanOrEqual(image?.size.width ?? 999, 64)
-        XCTAssertNotNil(provider.cachedThumbnail(for: png, maxPixelSize: 64))
-        let missing = await provider.thumbnail(for: directory.appendingPathComponent("none.png"), maxPixelSize: 64)
-        XCTAssertNil(missing)
+        try ClipboardTestSupport.imageData(width: 300, height: 200).write(to: png)
+        let image = try await ClipboardThumbnailProvider.decode(png, edge: 64)
+        XCTAssertEqual(image.images.count, 1)
+        XCTAssertLessThanOrEqual(image.images.first?.width ?? 999, 64)
+        do {
+            _ = try await ClipboardThumbnailProvider.decode(directory.appendingPathComponent("none.png"), edge: 64)
+            XCTFail("Missing image accepted")
+        } catch {}
     }
 
     /// A panel dismissed by another controller keeps the clipboard identifier in `NSApp.windows`;

@@ -14,6 +14,7 @@ struct ClipboardPanelView: View {
 
     private static let listSpace = "ClipboardPanelView.list"
 
+    @ObservedObject var thumbnails = ClipboardThumbnailSession()
     @ObservedObject var model: ClipboardPanelModel
     let focusRequest: Int
     /// Read from settings each time the panel opens.
@@ -89,6 +90,9 @@ struct ClipboardPanelView: View {
     private var preview: some View {
         let entry = model.previewEntry ?? model.selectedEntry
         return ClipboardPreviewPane(entry: entry, isMissing: entry.map(model.isMarkedMissing) ?? false)
+            .environment(\.askContextImageAccess, model.showsPreview ? thumbnails.access(for: entry) : .init())
+            .id(entry?.id)
+
             .overlay(alignment: .leading) {
                 Rectangle().fill(Color.primary.opacity(0.12)).frame(width: 0.5)
             }
@@ -231,6 +235,7 @@ struct ClipboardPanelView: View {
             }
         )
         .equatable()
+        .environment(\.askContextImageAccess, thumbnails.access(for: row.entry))
         .background(GeometryReader { proxy in
             let frame = proxy.frame(in: .named(Self.listSpace))
             Color.clear.preference(key: ClipboardRowFramesKey.self, value: [index: frame.minY ... frame.maxY])
