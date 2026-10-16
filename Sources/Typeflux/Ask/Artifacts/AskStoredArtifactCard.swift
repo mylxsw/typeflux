@@ -64,16 +64,19 @@ struct AskStoredArtifactCard: View {
     let ref: AskArtifactRef
     @Environment(\.askArtifactAccess) private var access
     @State private var error: String?
-    @State private var preview: AskArtifactBundle?
+    @StateObject private var previewModel = AskArtifactPreviewModel()
     @StateObject private var imageModel = AskArtifactImageModel()
     @State private var copying: Task<Void, Never>?
 
-    @MainActor init(ref: AskArtifactRef, imageModel: AskArtifactImageModel? = nil) {
+    @MainActor init(ref: AskArtifactRef, imageModel: AskArtifactImageModel? = nil,
+                    previewModel: AskArtifactPreviewModel? = nil) {
         self.ref = ref; _imageModel = StateObject(wrappedValue: imageModel ?? AskArtifactImageModel())
+        _previewModel = StateObject(wrappedValue: previewModel ?? AskArtifactPreviewModel())
     }
 
     var body: some View {
         let projection = imageModel.projection(for: ref, access: access)
+        let previewProjection = previewModel.projection(for: ref, access: access)
         return VStack(alignment: .leading, spacing: 7) {
             if let thumbnail = projection.image {
                 Image(nsImage: thumbnail).resizable().scaledToFit().frame(maxHeight: 260)
@@ -93,7 +96,8 @@ struct AskStoredArtifactCard: View {
             }
             HStack {
                 Button(L("ask.preview")) {
-                    do { preview = try access.load(ref); error = nil } catch { self.error = error.localizedDescription }
+                    previewModel.open(ref, access: access)
+                    if previewModel.projection(for: ref, access: access).preview != nil { error = nil }
                 }
                 Button(L("ask.artifact.save")) { save() }
                 if ref.mediaType.hasPrefix("image/") {
@@ -103,7 +107,7 @@ struct AskStoredArtifactCard: View {
                     }.disabled(projection.busy)
                 }
             }
-            if let error = error ?? projection.error {
+            if let error = error ?? previewProjection.error ?? projection.error {
                 Text(error).foregroundStyle(StudioTheme.danger).font(.system(size: 12))
             }
         }
@@ -117,13 +121,13 @@ struct AskStoredArtifactCard: View {
             await imageModel.load(ref, access: access)
         }
         .onDisappear { copying?.cancel(); copying = nil; imageModel.cancel() }
-        .sheet(isPresented: Binding(get: { preview != nil }, set: {
+        .sheet(isPresented: Binding(get: { previewModel.projection(for: ref, access: access).preview != nil }, set: {
             if !$0 {
-                preview = nil
+                previewModel.close()
             }
         })) {
-            if let preview {
-                AskArtifactPreviewView(bundle: preview, access: access, close: { self.preview = nil })
+            if let preview = previewModel.projection(for: ref, access: access).preview {
+                AskArtifactPreviewView(bundle: preview.bundle, access: access, close: { previewModel.close() }, source: preview.source)
             }
         }
     }
@@ -153,26 +157,30 @@ struct AskArtifactPreviewView: View {
     let bundle: AskArtifactBundle
     let access: AskArtifactAccess
     let close: () -> Void
+    let source: AskArtifactPreviewSource
     @State private var error: String?
     @StateObject private var imageModel = AskArtifactImageModel()
 
     @MainActor init(bundle: AskArtifactBundle, access: AskArtifactAccess, close: @escaping () -> Void,
-                    imageModel: AskArtifactImageModel? = nil) {
+                    imageModel: AskArtifactImageModel? = nil, source: AskArtifactPreviewSource? = nil) {
         self.bundle = bundle; self.access = access; self.close = close
+        self.source = source ?? .init(ref: bundle.manifest.ref, access: access)
         _imageModel = StateObject(wrappedValue: imageModel ?? AskArtifactImageModel())
     }
 
     var body: some View {
-        let projection = imageModel.projection(for: bundle.manifest.ref, access: access)
+        let available = source.ref == bundle.manifest.ref && source.isCurrent(with: access)
         return VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text((bundle.manifest.entry as NSString).lastPathComponent).font(.headline)
+                if available { Text((bundle.manifest.entry as NSString).lastPathComponent).font(.headline) }
                 Spacer()
                 Button(L("ask.artifact.close"), action: close)
             }
-            if bundle.manifest.ref.mediaType == "text/html" {
-                if access.htmlEnabled {
-                    AskArtifactWebView(ref: bundle.manifest.ref, access: access, error: $error)
+            if !available {
+                Text(AskArtifactError.denied.localizedDescription)
+            } else if bundle.manifest.ref.mediaType == "text/html" {
+                if access.htmlEnabled && source.access.htmlEnabled {
+                    AskArtifactWebView(ref: bundle.manifest.ref, access: source.access, error: $error)
                 } else {
                     Text(AskArtifactError.previewDisabled.localizedDescription)
                 }
@@ -189,6 +197,7 @@ struct AskArtifactPreviewView: View {
                         Text(AskArtifactError.unsupported.localizedDescription)
                     }
                 } else if bundle.manifest.ref.mediaType.hasPrefix("image/") {
+                    let projection = imageModel.projection(for: bundle.manifest.ref, access: source.access)
                     if let image = projection.image {
                         Image(nsImage: image).resizable().scaledToFit()
                     } else if projection.busy {
@@ -200,17 +209,23 @@ struct AskArtifactPreviewView: View {
                     Text(AskArtifactError.unsupported.localizedDescription)
                 }
             }
-            if let error {
+            if available, let error {
                 Text(error).foregroundStyle(StudioTheme.danger).lineLimit(8).textSelection(.enabled)
             }
         }
         .padding(20)
         .frame(width: 760, height: 560)
         .task(id: access.imageTaskID(for: bundle.manifest.ref)) {
-            guard bundle.manifest.ref.mediaType.hasPrefix("image/") else { return }
-            await imageModel.load(bundle.manifest.ref, access: access)
+            await Self.loadImage(bundle.manifest.ref, source: source, access: access, model: imageModel)
         }
         .onDisappear { imageModel.cancel() }
+    }
+
+    /// A queued image continuation must still own the original preview before source preparation.
+    @MainActor static func loadImage(_ ref: AskArtifactRef, source: AskArtifactPreviewSource,
+                                     access: AskArtifactAccess, model: AskArtifactImageModel) async {
+        guard source.ref == ref, source.isCurrent(with: access), ref.mediaType.hasPrefix("image/") else { return }
+        await model.load(ref, access: source.access)
     }
 }
 
