@@ -832,35 +832,10 @@ extension AskPluginResultsView {
         return CGSize(width: max(1, (image.width * scale).rounded()), height: max(1, (image.height * scale).rounded()))
     }
 
-    /// Images already read, so redrawing the launcher does not read the file again. A
-    /// script that writes the same file each run gets its new picture: the key has the date.
-    private static let images: NSCache<NSString, NSImage> = {
-        let cache = NSCache<NSString, NSImage>()
-        cache.countLimit = 8
-        return cache
-    }()
-
-    static func loadImage(_ url: URL) -> NSImage? {
-        let modified = (try? url.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate
-        let key = (url.path + "|" + String(modified?.timeIntervalSinceReferenceDate ?? 0)) as NSString
-        if let known = images.object(forKey: key) { return known }
-        guard let image = NSImage(contentsOf: url) else { return nil }
-        images.setObject(image, forKey: key)
-        return image
-    }
-
     /// A workflow's image, at its own size or scaled down to fit, centred.
     private func imageCard(_ image: AskPluginImage, dimmed: Bool) -> some View {
         let size = Self.imageSize(image)
-        return Group {
-            if let picture = Self.loadImage(image.url) {
-                Image(nsImage: picture).resizable().interpolation(.high)
-                    .frame(width: size.width, height: size.height)
-                    .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-            } else {
-                Image(systemName: "photo").font(.system(size: 28)).foregroundStyle(StudioTheme.textTertiary)
-            }
-        }
+        return AskWorkflowImageView(image: image, size: size)
         .frame(maxWidth: .infinity, minHeight: size.height, maxHeight: size.height)
         .opacity(dimmed ? 0.5 : 1)
         .accessibilityElement()

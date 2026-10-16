@@ -28,6 +28,7 @@ public enum MediaHelperCommand {
     }
 
     private static func decode(_ request: MediaRequest, directory: URL) throws -> MediaResponse {
+        if request.operation.isWorkflowImage { return try MediaWorkflowDecoder.decode(request, directory: directory) }
         if request.preview != nil { return try MediaPreviewDecoder.decode(request, directory: directory) }
         return try MediaDecoder.decode(request, input: directory.appendingPathComponent("input"))
     }

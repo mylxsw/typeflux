@@ -226,10 +226,11 @@ struct AskPluginItem: Equatable, Sendable, Identifiable {
 }
 
 /// An image to show as a result: a file on this Mac and its size in points.
-struct AskPluginImage: Equatable, Sendable {
+struct AskPluginImage: Equatable, Sendable, Hashable {
     var url: URL
     var width: Double
     var height: Double
+    var digest: String? = nil
 }
 
 /// A plugin's result, shown as a text card. Plugins that only act (open a search)

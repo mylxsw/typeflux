@@ -52,7 +52,10 @@ extension AskConversationModel {
                 (launcher || (self.selectedId == selection && !(selection.map(self.isDeletedConversation) ?? false)))
         })
     }
-    func setLauncherImagesVisible(_ visible: Bool) { launcherImageScope.setVisible(visible); objectWillChange.send() }
+    func setLauncherImagesVisible(_ visible: Bool) {
+        if !visible { workflowImageCopyTask?.cancel() }
+        launcherImageScope.setVisible(visible); objectWillChange.send()
+    }
 }
 
 @MainActor final class AskContextImageModel: ObservableObject, AskImageScopeObserver {
