@@ -69,6 +69,7 @@ identity_supports_restricted_entitlements() {
 verify_stable_signature() {
   local signature_details
   local entitlements
+  local helper_entitlements
 
   signature_details="$(codesign -dvv "$APP_DIR" 2>&1)"
   if [[ "$signature_details" == *"Signature=adhoc"* ]]; then
@@ -87,6 +88,13 @@ verify_stable_signature() {
     echo "Error: dev app still carries Sign In with Apple entitlement without an Apple Development signing identity." >&2
     exit 1
   fi
+
+  helper_entitlements="$(codesign -d --entitlements :- "$APP_DIR/Contents/Helpers/TypefluxMediaHelper" 2>/dev/null || true)"
+  if [[ -n "$helper_entitlements" ]]; then
+    echo "Error: media helper inherited app entitlements and may be terminated at launch." >&2
+    exit 1
+  fi
+  codesign --verify --deep --strict "$APP_DIR"
 }
 
 install_bundled_models() {
@@ -271,7 +279,8 @@ if command -v codesign >/dev/null 2>&1; then
   if [[ -f "$semantic_helper" ]]; then
     codesign --force --sign "$TYPEFLUX_DEV_CODESIGN_IDENTITY" --options runtime "$semantic_helper"
   fi
-  codesign --force --deep --sign "$TYPEFLUX_DEV_CODESIGN_IDENTITY" \
+  # Deep signing would copy the app's restricted entitlements onto the helpers.
+  codesign --force --sign "$TYPEFLUX_DEV_CODESIGN_IDENTITY" \
     --entitlements "$entitlements_to_use" "$APP_DIR"
   verify_stable_signature
   echo "Signed with stable identity: $TYPEFLUX_DEV_CODESIGN_IDENTITY"
