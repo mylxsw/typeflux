@@ -352,8 +352,7 @@ final class AskConversationModel: ObservableObject {
 
     var onShowConversation: (() -> Void)?
     var onOpenSettings: ((StudioSection) -> Void)?
-    var onRecoverConversationStorage: (@MainActor () async -> Void)?
-    private(set) var isRecoveringConversationStorage = false
+    var onOpenFeedback: (() -> Void)?
     /// Opens the usage guide, searching for the text when it is not empty; set by the app.
     var onOpenHelp: ((String) -> Void)?
     /// Starts a screenshot, going straight to a follow-up when there is one; set by the app,
@@ -738,15 +737,6 @@ final class AskConversationModel: ObservableObject {
                 if self.error == L("ask.cache.failed") { self.error = nil }
             } catch is CancellationError {} catch { self.error = L("ask.cache.failed") }
         }
-    }
-
-    func retryConversationStorage() async {
-        guard !isRecoveringConversationStorage else { return }
-        isRecoveringConversationStorage = true
-        defer { isRecoveringConversationStorage = false }
-        await onRecoverConversationStorage?()
-        persistDrafts()
-        await draftSave?.value
     }
 
     func pullToRefreshHistory() async {

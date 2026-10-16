@@ -987,10 +987,10 @@ struct AskConversationView: View {
             AskBanner(
                 text: error,
                 tone: .warning,
-                actionTitle: storageFailure ? L("settings.services.recover")
+                actionTitle: storageFailure ? L("feedback.direct.title")
                     : (model.selectionLoadFailed || !model.hasRecoveryNotice ? L("ask.retry") : nil),
                 action: {
-                    if storageFailure { Task { await model.retryConversationStorage() } }
+                    if storageFailure { model.onOpenFeedback?() }
                     else if model.selectionLoadFailed { model.retrySelection() }
                     else { model.resume() }
                 },

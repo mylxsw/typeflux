@@ -319,18 +319,15 @@ struct AskTestFixture {
 @Suite("Ask conversations", .exclusiveUIState)
 @MainActor
 struct AskConversationTests {
-    @Test func storageRecoveryRetriesTheCacheWithoutASelectedConversation() async throws {
+    @Test func successfulDraftSaveClearsStorageWarningWithoutASelectedConversation() async throws {
         let fixture = try AskTestFixture(localOnly: true)
         defer { fixture.model.resetSession() }
         fixture.model.owner = AskRoutedAPI.localOwner
         fixture.model.draft.text = "Keep this question"
         fixture.model.error = L("ask.cache.failed")
-        var recoveries = 0
-        fixture.model.onRecoverConversationStorage = { recoveries += 1 }
+        fixture.model.persistDrafts()
+        try await fixture.wait { fixture.model.error == nil }
 
-        await fixture.model.retryConversationStorage()
-
-        #expect(recoveries == 1)
         #expect(fixture.model.error == nil)
         #expect(fixture.model.draft.text == "Keep this question")
         #expect(try await fixture.cache.draft(key: "launcher", owner: AskRoutedAPI.localOwner) != nil)

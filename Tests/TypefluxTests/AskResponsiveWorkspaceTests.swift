@@ -11,16 +11,20 @@ import Testing
 @Suite("Ask responsive workspace", .serialized, .exclusiveUIState)
 @MainActor
 struct AskResponsiveWorkspaceTests {
-    @Test func storageWarningCanRecoverAndImageRecoveryButtonIsAbsent() async throws {
+    @Test func storageWarningOffersFeedbackAndImageRecoveryButtonIsAbsent() async throws {
         let session = PreviewSession()
         defer { session.restore() }
         let host = try await makeHost(scene: "empty")
         defer { host.close() }
         #expect(find(label: L("imagegen.recovery.title"), in: host.window) == nil)
 
+        var feedbackOpened = false
+        host.fixture.model.onOpenFeedback = { feedbackOpened = true }
         host.fixture.model.error = L("ask.cache.failed")
         try await settle(host.window)
-        _ = try element(label: L("settings.services.recover"), in: host.window)
+        try click(try element(label: L("feedback.direct.title"), in: host.window), in: host.window)
+        #expect(feedbackOpened)
+        #expect(find(label: L("settings.services.recover"), in: host.window) == nil)
     }
 
     private static let sizes: [NSSize] = [
