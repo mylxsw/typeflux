@@ -1,5 +1,6 @@
 import CoreGraphics
 import Foundation
+import TypefluxMediaProtocol
 
 /// Live frames are joined after the wheel and picture settle. Captures start in manual mode;
 /// automatic scrolling is an explicit action, and mouse input returns control to the user.
@@ -53,6 +54,14 @@ final class ScrollCaptureSession: ScrollCapturing {
     private let now: () -> Date
     private let schedule: @MainActor (TimeInterval, @escaping @MainActor () -> Void) -> () -> Void
     private let openAccessibilitySettings: () -> Void
+    private let registration: (any ScrollFrameRegistering)?
+    private static let analysisAdmission = AskToolPixelBudget(limit: 2)
+    private let inbox = ScrollFrameInbox()
+    private var observers: [NSObjectProtocol] = []
+    private var finishing = false
+    private var started = false
+    private var inputsStopped = false
+    private(set) var finishTask: Task<Void, Never>?
     /// Reduces a captured image to a frame to join; slow, so it runs off the main thread.
     private let analyze: @Sendable (CGImage) -> ScrollFrame?
 
@@ -81,7 +90,7 @@ final class ScrollCaptureSession: ScrollCapturing {
          driver: any ScrollDriving,
          monitor: any ScrollUserActivityMonitoring,
          presenter: any ScrollCapturePresenting,
-         estimator: (any ScrollOffsetEstimating)? = VisionScrollOffsetEstimator(),
+         estimator: (any ScrollFrameRegistering)? = VisionScrollOffsetEstimator(),
          maxPixels: Int = ScrollStitcher.defaultMaxPixels,
          now: @escaping () -> Date = Date.init,
          schedule: @escaping @MainActor (TimeInterval, @escaping @MainActor () -> Void) -> ()
@@ -100,11 +109,18 @@ final class ScrollCaptureSession: ScrollCapturing {
         self.schedule = schedule
         self.openAccessibilitySettings = openAccessibilitySettings
         self.analyze = analyze
-        stitcher = DirectionalScrollStitcher(maxPixels: maxPixels, estimator: estimator)
+        registration = estimator
+        stitcher = DirectionalScrollStitcher(maxPixels: maxPixels)
+        for name in [Notification.Name.authDidLogout, .authDidLogin, .authTokenDidRefresh] {
+            observers.append(NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.cancel() }
+            })
+        }
     }
 
     func start(onFinish: @escaping (ScrollCaptureResult) -> Void) {
-        guard !isActive else { return }
+        guard !started else { return }
+        started = true
         isActive = true
         self.onFinish = onFinish
         presenter.present(region, actions: ScrollCaptureActions(
@@ -117,12 +133,16 @@ final class ScrollCaptureSession: ScrollCapturing {
         monitor.start { [weak self] activity in self?.userActivity(activity) }
         publish()
         stopTicking = schedule(Self.tickInterval) { [weak self] in self?.tick() }
-        let source = source, region = region
+        let source = source, region = region, inbox = inbox
         startTask = Task { [weak self] in
             do {
                 try await source.start(region, onFrame: { [weak self] image in
-                    Task { @MainActor [weak self] in self?.receive(image) }
+                    guard inbox.offer(image) else { return }
+                    Task { @MainActor [weak self] in
+                        if let image = inbox.take() { self?.receive(image) }
+                    }
                 }, onError: { [weak self] _ in
+                    guard inbox.fail() else { return }
                     Task { @MainActor [weak self] in self?.streamStopped() }
                 })
             } catch {
@@ -134,20 +154,21 @@ final class ScrollCaptureSession: ScrollCapturing {
     func cancel() {
         guard isActive else { return }
         stop()
+        stitcher = DirectionalScrollStitcher(maxPixels: stitcher.maxPixelBudget)
         deliver(.cancelled)
     }
 
     // MARK: Frames
 
     func receive(_ image: CGImage) {
-        guard isActive, !awaitingScrollAfterUndo else { return }
+        guard isActive, !finishing, !awaitingScrollAfterUndo, Self.accepts(image) else { return }
         let time = now()
         pending = PendingFrame(image: image, arrived: time, since: pending?.since ?? time)
     }
 
     /// Joins a frame once the picture holds still, and sends the next automatic step.
     func tick() {
-        guard isActive, analysis == nil else { return }
+        guard isActive, !finishing, analysis == nil else { return }
         if stitcher.isEmpty, let pending {
             self.pending = nil
             startAnalysis(of: pending.image)
@@ -174,7 +195,7 @@ final class ScrollCaptureSession: ScrollCapturing {
     /// The next automatic step, once the last one's frame is joined. Frames may still be coming
     /// (a blinking caret, a spinner, a video); they do not hold scrolling up.
     private func stepIfReady() {
-        guard isActive, state.status == .scrolling, step == nil, analysis == nil, !stitcher.isEmpty else { return }
+        guard isActive, !finishing, state.status == .scrolling, step == nil, analysis == nil, !stitcher.isEmpty else { return }
         stitcher.lockAxisForAutomatic()
         sendStep(.forward, points: stepPoints)
     }
@@ -182,20 +203,24 @@ final class ScrollCaptureSession: ScrollCapturing {
     /// Reduces the image to a frame and joins it, both off the main thread, on a copy of the
     /// stitcher. The result is dropped when the stitcher changed in the meantime (an undo).
     private func startAnalysis(of image: CGImage) {
+        guard let slot = try? Self.analysisAdmission.acquire(bytes: 1) else { return }
         analyzing = image
-        let analyze = analyze, copy = stitcher, version = stitcherVersion
+        let analyze = analyze, copy = stitcher, version = stitcherVersion, registration = registration
         // In pixels; the step's own distance is usually exactly how far the content moved.
-        let expected = step.map { Int(($0.kind == .forward ? $0.points : -$0.points) * max(region.scale, 1)) }
+        let expected = step.flatMap { Self.expectedShift(($0.kind == .forward ? $0.points : -$0.points) * max(region.scale, 1)) }
         analysis = Task { [weak self] in
-            let result = await Task.detached(priority: .userInitiated) { () -> (
+            let work = Task.detached(priority: .userInitiated) { () -> (
                 ScrollStitcher.Outcome,
                 DirectionalScrollStitcher
             )? in
-                guard let frame = analyze(image) else { return nil }
+                defer { withExtendedLifetime(slot) {} }
+                guard !Task.isCancelled, let frame = analyze(image) else { return nil }
                 var stitcher = copy
-                let outcome = stitcher.add(frame, expectedShift: expected)
+                guard let outcome = try? await stitcher.addPreparingOffsets(frame, expectedShift: expected,
+                    registration: registration), !Task.isCancelled else { return nil }
                 return (outcome, stitcher)
-            }.value
+            }
+            let result = await withTaskCancellationHandler { await work.value } onCancel: { work.cancel() }
             guard let self else { return }
             analysis = nil
             analyzing = nil
@@ -203,7 +228,7 @@ final class ScrollCaptureSession: ScrollCapturing {
             if let (outcome, stitcher) = result, version == stitcherVersion {
                 self.stitcher = stitcher
                 stitcherVersion += 1
-                handle(outcome)
+                if !finishing { handle(outcome) }
             }
             stepIfReady()
         }
@@ -268,7 +293,7 @@ final class ScrollCaptureSession: ScrollCapturing {
     // MARK: Controls
 
     func togglePause() {
-        guard isActive else { return }
+        guard isActive, !finishing else { return }
         switch state.status {
         case .scrolling:
             state.status = .paused
@@ -301,12 +326,13 @@ final class ScrollCaptureSession: ScrollCapturing {
     /// Drops the newest segment. While scrolling automatically, scrolls back by as much, so the
     /// next frame lines up with the one before.
     func undo() {
-        guard isActive else { return }
+        guard isActive, !finishing else { return }
         let removed = stitcher.segments.last.map {
             stitcher.axis == .horizontal ? $0.image.width : $0.height
         } ?? 0
         guard stitcher.removeLastSegment() else { return }
         stitcherVersion += 1
+        analysis?.cancel()
         pending = nil
         analyzing = nil
         failures = 0
@@ -321,7 +347,7 @@ final class ScrollCaptureSession: ScrollCapturing {
     }
 
     func userActivity(_ activity: ScrollUserActivity) {
-        guard isActive else { return }
+        guard isActive, !finishing else { return }
         if activity == .scrolled {
             lastScroll = now()
             awaitingScrollAfterUndo = false
@@ -343,24 +369,54 @@ final class ScrollCaptureSession: ScrollCapturing {
         publish()
     }
 
-    /// ↩: joins what is still waiting, then ends with the image.
+    /// Stop capture immediately, collect the in-flight analysis once, then drain only the final frame.
+    /// No registration or image assembly runs synchronously on the UI actor.
     func finish(_ ending: ScrollCaptureEnding) {
-        guard isActive else { return }
-        if ending == .user {
-            for image in [analyzing, pending?.image].compactMap(\.self) where !stitcher.isFull {
-                if let frame = analyze(image) {
-                    _ = stitcher.add(frame)
+        guard isActive, !finishing else { return }
+        finishing = true
+        stopInputs()
+        let existing = analysis, final = ending == .user ? pending?.image : nil
+        pending = nil
+        if ending != .user { analysis?.cancel(); stitcherVersion += 1 }
+        finishTask = Task { [weak self] in
+            await existing?.value
+            guard !Task.isCancelled, let context = self?.finalContext() else { return }
+            let (copy, analyze, registration, version, slot) = context
+            let work = Task.detached(priority: .userInitiated) { () -> CGImage? in
+                defer { withExtendedLifetime(slot) {} }
+                var value = copy
+                if !Task.isCancelled, let final, !value.isFull, let frame = analyze(final) {
+                    _ = try? await value.addPreparingOffsets(frame, registration: registration)
                 }
+                guard !Task.isCancelled else { return nil }
+                return value.makeImage()
             }
-            stitcherVersion += 1
-            pending = nil
+            let image = await withTaskCancellationHandler { await work.value } onCancel: { work.cancel() }
+            guard let self, isActive, !Task.isCancelled, version == stitcherVersion else { return }
+            finishTask = nil
+            stop()
+            deliver(image.map { .finished($0, ending) } ?? .failed)
         }
-        stop()
-        deliver(stitcher.makeImage().map { .finished($0, ending) } ?? .failed)
+    }
+
+    private func finalContext() -> (DirectionalScrollStitcher, @Sendable (CGImage) -> ScrollFrame?,
+        (any ScrollFrameRegistering)?, Int, AskToolPixelBudget.Lease)? {
+        guard isActive else { return nil }
+        guard let slot = try? Self.analysisAdmission.acquire(bytes: 1) else { stop(); deliver(.failed); return nil }
+        return (stitcher, analyze, registration, stitcherVersion, slot)
+    }
+
+    static func accepts(_ image: CGImage) -> Bool {
+        (try? MediaRegistrationInput(width: image.width, height: image.height).validate()) != nil
+    }
+
+    static func expectedShift(_ value: CGFloat) -> Int? {
+        guard value.isFinite, abs(value) <= 16384 else { return nil }
+        return Int(value)
     }
 
     private func streamStopped() {
-        guard isActive else { return }
+        guard isActive, !finishing else { return }
         if stitcher.isEmpty {
             stop()
             deliver(.failed)
@@ -371,17 +427,41 @@ final class ScrollCaptureSession: ScrollCapturing {
 
     private func stop() {
         isActive = false
+        stitcherVersion += 1
+        analysis?.cancel()
+        finishTask?.cancel()
+        stopInputs()
+        presenter.dismiss()
+        pending = nil
+        lastScroll = nil
+        analyzing = nil
+        step = nil
+    }
+
+    private func stopInputs() {
+        guard !inputsStopped else { return }
+        inputsStopped = true
+        inbox.close()
         startTask?.cancel()
         stopTicking?()
         stopTicking = nil
         source.stop()
         monitor.stop()
         driver.end()
-        presenter.dismiss()
-        pending = nil
-        lastScroll = nil
-        analyzing = nil
-        step = nil
+    }
+
+    deinit {
+        analysis?.cancel(); finishTask?.cancel(); startTask?.cancel(); inbox.close()
+        observers.forEach(NotificationCenter.default.removeObserver)
+        if !inputsStopped {
+            source.stop()
+            let monitor = monitor, driver = driver, presenter = presenter, stopTicking = stopTicking
+            let cleanup = { @MainActor in
+                stopTicking?(); monitor.stop(); driver.end(); presenter.dismiss()
+            }
+            if Thread.isMainThread { MainActor.assumeIsolated { cleanup() } }
+            else { Task { @MainActor in cleanup() } }
+        }
     }
 
     private func deliver(_ result: ScrollCaptureResult) {

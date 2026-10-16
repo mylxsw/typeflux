@@ -1,6 +1,7 @@
 import CoreGraphics
 import Foundation
 
+/// Pure synchronous candidate fixture seam; production native preparation is async.
 /// Finds how far the content moved between two frames, as candidates the stitcher checks row by row.
 protocol ScrollOffsetEstimating: Sendable {
     /// Vertical shifts in pixels of `current` against `previous`; positive when the content moved up.
@@ -107,7 +108,7 @@ struct ScrollStitcher: @unchecked Sendable {
 
     /// - Parameter expectedShift: how far the content was just scrolled, in pixels, when known; one
     ///   more candidate, checked like the others.
-    mutating func add(_ frame: ScrollFrame, expectedShift: Int? = nil) -> Outcome {
+    mutating func add(_ frame: ScrollFrame, expectedShift: Int? = nil, proposedShifts: [Int] = []) -> Outcome {
         guard let last = records.last else { return start(with: frame) }
         guard frame.width == width, frame.height == frameHeight else { return .unaligned }
         let previous = last.reference, current = frame.signature
@@ -116,7 +117,7 @@ struct ScrollStitcher: @unchecked Sendable {
         let fixed = fixedRowsKnown ? (header: headerHeight, footer: footerHeight)
             : Self.fixedRows(previous, current)
         let middle = fixed.header ..< frameHeight - fixed.footer
-        let shifts = candidateShifts(previous: previous, current: current, frame: frame, middle: middle)
+        let shifts = Array(proposedShifts.prefix(2)) + candidateShifts(previous: previous, current: current, frame: frame, middle: middle)
             + (expectedShift.map { [$0] } ?? [])
         // Before the bars are known both may widen; after, only the top, for this comparison alone:
         // a header that follows the content (an editor's sticky scroll) changes from frame to frame.
@@ -128,6 +129,19 @@ struct ScrollStitcher: @unchecked Sendable {
         let suspicious = best.ratio < Self.confidentMatchRatio || best.isAmbiguous
         return append(frame, shift: best.shift, header: bars.header,
                       footer: fixedRowsKnown ? footerHeight : bars.footer, suspicious: suspicious)
+    }
+
+    /// A bounded crop of the exact reference used by the subsequent pure overlap check.
+    func registrationPair(for frame: ScrollFrame) -> (CGImage, CGImage)? {
+        guard !isFull, frame.width == width, frame.height == frameHeight,
+              let last = records.last, last.reference.hashes != frame.signature.hashes,
+              let referenceImage else { return nil }
+        let fixed = fixedRowsKnown ? (header: headerHeight, footer: footerHeight)
+            : Self.fixedRows(last.reference, frame.signature)
+        let rect = CGRect(x: 0, y: fixed.header, width: width, height: frameHeight - fixed.header - fixed.footer)
+        guard let before = referenceImage.cropping(to: rect), let after = frame.image.cropping(to: rect)
+        else { return nil }
+        return (before, after)
     }
 
     private mutating func start(with frame: ScrollFrame) -> Outcome {
@@ -370,6 +384,7 @@ struct ScrollStitcher: @unchecked Sendable {
     /// and how far apart they are on average.
     static func evaluate(shift: Int, previous: ScrollFrameSignature, current: ScrollFrameSignature,
                          middle: Range<Int>) -> Candidate? {
+        guard shift > -middle.count, shift < middle.count else { return nil }
         let overlap = middle.count - abs(shift)
         guard overlap >= max(1, middle.count / minimumOverlapDivisor) else { return nil }
         let rows = max(0, -shift) ..< max(0, -shift) + overlap

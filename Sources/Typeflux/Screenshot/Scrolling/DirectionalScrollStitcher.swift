@@ -36,6 +36,8 @@ struct DirectionalScrollStitcher: @unchecked Sendable {
         joined = ScrollStitcher(maxPixels: maxPixels, estimator: estimator)
     }
 
+    var maxPixelBudget: Int { joined.maxPixels }
+
     var isEmpty: Bool {
         joined.isEmpty
     }
@@ -71,7 +73,7 @@ struct DirectionalScrollStitcher: @unchecked Sendable {
         }
     }
 
-    mutating func add(_ frame: ScrollFrame, expectedShift: Int? = nil) -> ScrollStitcher.Outcome {
+    mutating func add(_ frame: ScrollFrame, expectedShift: Int? = nil, verticalShifts: [Int] = [], horizontalShifts: [Int] = []) -> ScrollStitcher.Outcome {
         if isEmpty {
             first = frame
             let outcome = joined.add(frame)
@@ -80,7 +82,7 @@ struct DirectionalScrollStitcher: @unchecked Sendable {
         }
         if let axis {
             guard let normalized = normalized(frame, for: axis) else { return .unaligned }
-            let outcome = joined.add(normalized, expectedShift: expectedShift)
+            let outcome = joined.add(normalized, expectedShift: expectedShift, proposedShifts: axis == .vertical ? verticalShifts : horizontalShifts)
             refreshPreview()
             return outcome
         }
@@ -88,7 +90,7 @@ struct DirectionalScrollStitcher: @unchecked Sendable {
         // A valid forward overlap chooses the direction. An idle, reverse or unaligned frame
         // leaves the choice open, including tiny wheel movements before a horizontal scroll.
         var vertical = joined
-        let outcome = vertical.add(frame, expectedShift: expectedShift)
+        let outcome = vertical.add(frame, expectedShift: expectedShift, proposedShifts: verticalShifts)
         if first?.signature.hashes == frame.signature.hashes {
             return .unchanged
         }
@@ -103,7 +105,7 @@ struct DirectionalScrollStitcher: @unchecked Sendable {
            let after = normalized(frame, for: .horizontal) {
             var horizontal = ScrollStitcher(maxPixels: joined.maxPixels, estimator: estimator)
             _ = horizontal.add(before)
-            let horizontalOutcome = horizontal.add(after)
+            let horizontalOutcome = horizontal.add(after, proposedShifts: horizontalShifts)
             if accepts(horizontalOutcome) {
                 axis = .horizontal
                 joined = horizontal
@@ -117,6 +119,33 @@ struct DirectionalScrollStitcher: @unchecked Sendable {
             return .unchanged
         }
         return outcome
+    }
+
+    /// Native proposals are prepared asynchronously on an owned copy, never in synchronous getters.
+    mutating func addPreparingOffsets(_ frame: ScrollFrame, expectedShift: Int? = nil,
+                                     registration: (any ScrollFrameRegistering)?) async throws -> ScrollStitcher.Outcome {
+        try Task.checkCancellation()
+        var vertical: [Int] = [], horizontal: [Int] = []
+        if let registration {
+            func proposals(_ pair: (CGImage, CGImage)?) async throws -> [Int] {
+                guard let pair else { return [] }
+                // A native failure only removes this candidate source; hash/row checks remain mandatory.
+                let values = (try? await registration.verticalShifts(from: pair.0, to: pair.1)) ?? []
+                try Task.checkCancellation()
+                return Array(values.prefix(2)).filter { $0 > -pair.0.height && $0 < pair.0.height }
+            }
+            if axis != .horizontal { vertical = try await proposals(joined.registrationPair(for: frame)) }
+            if axis == .horizontal, let after = normalized(frame, for: .horizontal) {
+                horizontal = try await proposals(joined.registrationPair(for: after))
+            } else if axis == nil, let first, first.signature.hashes != frame.signature.hashes,
+                      let before = normalized(first, for: .horizontal), let after = normalized(frame, for: .horizontal) {
+                var candidate = ScrollStitcher(maxPixels: joined.maxPixels)
+                _ = candidate.add(before)
+                horizontal = try await proposals(candidate.registrationPair(for: after))
+            }
+        }
+        try Task.checkCancellation()
+        return add(frame, expectedShift: expectedShift, verticalShifts: vertical, horizontalShifts: horizontal)
     }
 
     private func normalized(_ frame: ScrollFrame, for axis: ScrollCaptureAxis) -> ScrollFrame? {

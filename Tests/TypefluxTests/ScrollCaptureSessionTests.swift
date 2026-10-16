@@ -14,11 +14,13 @@ final class ScrollCaptureSessionTests: XCTestCase {
         private(set) var started: [ScrollCaptureRegion] = []
         private(set) var stops = 0
         var onError: (@Sendable (Error) -> Void)?
+        var onFrame: (@Sendable (CGImage) -> Void)?
 
-        func start(_ region: ScrollCaptureRegion, onFrame _: @escaping @Sendable (CGImage) -> Void,
+        func start(_ region: ScrollCaptureRegion, onFrame: @escaping @Sendable (CGImage) -> Void,
                    onError: @escaping @Sendable (Error) -> Void) async throws {
             started.append(region)
             self.onError = onError
+            self.onFrame = onFrame
             if let startError {
                 throw startError
             }
@@ -103,10 +105,11 @@ final class ScrollCaptureSessionTests: XCTestCase {
                                              scale: 2, rect: CGRect(x: 100, y: 50, width: 48, height: 125))
 
     private func makeSession(maxPixels: Int = ScrollStitcher.defaultMaxPixels,
+                             estimator: (any ScrollFrameRegistering)? = nil,
                              analyze: @escaping @Sendable (CGImage) -> ScrollFrame? = { ScrollFrame(image: $0) })
         -> ScrollCaptureSession {
         ScrollCaptureSession(
-            region: region, source: source, driver: driver, monitor: monitor, presenter: presenter, estimator: nil,
+            region: region, source: source, driver: driver, monitor: monitor, presenter: presenter, estimator: estimator,
             maxPixels: maxPixels, now: { [unowned self] in clock },
             schedule: { [unowned self] _, action in
                 tickAction = action
@@ -130,6 +133,7 @@ final class ScrollCaptureSessionTests: XCTestCase {
     private func tick(_ session: ScrollCaptureSession) async {
         session.tick()
         await session.analysis?.value
+        await session.finishTask?.value
     }
 
     private func advance(_ seconds: TimeInterval) {
@@ -193,6 +197,7 @@ final class ScrollCaptureSessionTests: XCTestCase {
         XCTAssertTrue(results.isEmpty)
         await timeOut(session)
 
+        await session.finishTask?.value
         let (image, ending) = try XCTUnwrap(finishedImage)
         XCTAssertEqual(ending, .reachedEnd)
         XCTAssertEqual(Fixtures.bytes(of: image), page.expected(lastOffset: 300, scrollingHeight: 250))
@@ -231,6 +236,7 @@ final class ScrollCaptureSessionTests: XCTestCase {
         await timeOut(session)
         await timeOut(session)
 
+        await session.finishTask?.value
         let (image, ending) = try XCTUnwrap(finishedImage)
         XCTAssertEqual(ending, .cannotScroll)
         XCTAssertEqual(image.height, 250)
@@ -343,7 +349,9 @@ final class ScrollCaptureSessionTests: XCTestCase {
         XCTAssertTrue(driver.scrolls.isEmpty)
         XCTAssertTrue(driver.begins.isEmpty)
         presenter.actions?.finish()
+        await session.finishTask?.value
 
+        await session.finishTask?.value
         let (image, ending) = try XCTUnwrap(finishedImage)
         XCTAssertEqual(ending, .user)
         XCTAssertEqual(Fixtures.bytes(of: image), page.expected(lastOffset: 200, scrollingHeight: 250))
@@ -357,6 +365,7 @@ final class ScrollCaptureSessionTests: XCTestCase {
 
         session.receive(frame(100))
         presenter.actions?.finish()
+        await session.finishTask?.value
 
         XCTAssertEqual(try XCTUnwrap(finishedImage).0.height, 350)
         // Late input after the end does nothing.
@@ -386,6 +395,7 @@ final class ScrollCaptureSessionTests: XCTestCase {
         XCTAssertTrue(session.isActive)
         XCTAssertEqual(session.stitcher.segments.count, 2)
         presenter.actions?.finish()
+        await session.finishTask?.value
         XCTAssertEqual(try XCTUnwrap(finishedImage).0.height, 350)
     }
 
@@ -434,6 +444,7 @@ final class ScrollCaptureSessionTests: XCTestCase {
         XCTAssertEqual(driver.axes.last, .horizontal)
         XCTAssertEqual(session.state.pixelSize.width, 350)
         presenter.actions?.finish()
+        await session.finishTask?.value
         XCTAssertEqual(try XCTUnwrap(finishedImage).0.width, 350)
     }
 
@@ -463,6 +474,7 @@ final class ScrollCaptureSessionTests: XCTestCase {
         session.tick()
         presenter.actions?.togglePause()
         await session.analysis?.value
+        await session.finishTask?.value
         XCTAssertEqual(session.state.axis, .horizontal)
         XCTAssertEqual(session.state.pixelSize.width, 350)
         XCTAssertEqual(driver.axes, [.horizontal])
@@ -581,6 +593,7 @@ final class ScrollCaptureSessionTests: XCTestCase {
 
         await settle(session, 240)
 
+        await session.finishTask?.value
         let (image, ending) = try XCTUnwrap(finishedImage)
         XCTAssertEqual(ending, .reachedLimit)
         XCTAssertEqual(image.height, 400)
@@ -595,6 +608,7 @@ final class ScrollCaptureSessionTests: XCTestCase {
         await Task.yield()
         await Task.yield()
 
+        await session.finishTask?.value
         XCTAssertEqual(try XCTUnwrap(finishedImage).1, .interrupted)
     }
 
@@ -634,6 +648,7 @@ final class ScrollCaptureSessionTests: XCTestCase {
         XCTAssertEqual(driver.ends, 1)
         XCTAssertEqual(presenter.dismissals, 1)
         presenter.actions?.finish()
+        await session.finishTask?.value
         XCTAssertEqual(results.count, 1)
     }
 
@@ -683,6 +698,7 @@ final class ScrollCaptureSessionTests: XCTestCase {
 
         XCTAssertEqual(driver.scrolls.count, steps, "No step and no timeout while analyzing")
         await session.analysis?.value
+        await session.finishTask?.value
         XCTAssertEqual(session.state.pixelSize.height, 400)
         XCTAssertTrue(results.isEmpty)
     }
@@ -698,9 +714,11 @@ final class ScrollCaptureSessionTests: XCTestCase {
         XCTAssertNotNil(session.analysis)
 
         presenter.actions?.finish()
+        await session.finishTask?.value
 
         XCTAssertEqual(try XCTUnwrap(finishedImage).0.height, 350)
         await session.analysis?.value
+        await session.finishTask?.value
         XCTAssertEqual(results.count, 1, "The late analysis is dropped")
     }
 
@@ -718,6 +736,7 @@ final class ScrollCaptureSessionTests: XCTestCase {
         session.receive(frame(150))
 
         await session.analysis?.value
+        await session.finishTask?.value
 
         XCTAssertEqual(session.state.pixelSize.height, 400)
         XCTAssertEqual(driver.scrolls.count, 2, "The next step goes out anyway")
@@ -725,5 +744,109 @@ final class ScrollCaptureSessionTests: XCTestCase {
         advance(ScrollCaptureSession.stepTimeout)
         await tick(session)
         XCTAssertEqual(driver.scrolls.count, 3, "Nothing new arrived after the step: it timed out")
+    }
+    func testStreamDeliveryCoalescesFramesAndIgnoresCallbacksAfterStop() async {
+        let session = makeSession(); await start(session)
+        source.onFrame?(frame(0)); source.onFrame?(frame(100))
+        try? await Task.sleep(for: .milliseconds(20))
+        await tick(session)
+        XCTAssertEqual(session.stitcher.height, 250)
+        XCTAssertEqual(session.stitcher.makeImage().flatMap { ScrollFrame(image: $0)?.signature.hashes }, ScrollFrame(image: frame(100))?.signature.hashes)
+        session.cancel()
+        source.onFrame?(frame(150)); source.onError?(StreamFailure())
+        try? await Task.sleep(for: .milliseconds(20)); await tick(session)
+        XCTAssertTrue(session.stitcher.isEmpty)
+        XCTAssertEqual(results.count, 1)
+    }
+
+    func testFinalDrainWaitsWithoutExtraScrollAndRejectsDuplicateFinish() async throws {
+        let registration = ScrollSessionRegistrationGate()
+        let session = makeSession(estimator: registration)
+        await start(session); await settle(session, 0)
+        presenter.actions?.togglePause(); await tick(session)
+        let steps = driver.scrolls.count
+        session.receive(frame(100)); advance(ScrollCaptureSession.quietInterval); session.tick()
+        await registration.waitForCall()
+        session.receive(frame(180))
+        session.finish(.user); session.finish(.user)
+        XCTAssertTrue(results.isEmpty)
+        XCTAssertEqual(source.stops, 1)
+        session.tick(); session.togglePause(); session.undo()
+        XCTAssertEqual(driver.scrolls.count, steps)
+        await registration.release()
+        await session.finishTask?.value
+        XCTAssertEqual(try XCTUnwrap(finishedImage).0.height, 430)
+        XCTAssertEqual(results.count, 1)
+        XCTAssertEqual(source.stops, 1, "Stop is not replayed by final export")
+        XCTAssertEqual(driver.scrolls.count, steps)
+    }
+
+    func testAccountRevocationDuringFinalDrainNeverExportsLatePixels() async {
+        let registration = ScrollSessionRegistrationGate()
+        let session = makeSession(estimator: registration)
+        await start(session); await settle(session, 0)
+        session.receive(frame(100)); advance(ScrollCaptureSession.quietInterval); session.tick()
+        await registration.waitForCall()
+        session.finish(.user)
+        NotificationCenter.default.post(name: .authDidLogout, object: nil)
+        XCTAssertFalse(session.isActive)
+        await registration.release(); await session.analysis?.value; await session.finishTask?.value
+        XCTAssertEqual(results.count, 1)
+        guard case .cancelled? = results.last else { return XCTFail("Revoked export completed") }
+        XCTAssertNil(finishedImage)
+    }
+
+    func testUndoCancelsRegistrationAndDropsItsLateCandidate() async {
+        let registration = ScrollSessionRegistrationGate()
+        await registration.release()
+        let session = makeSession(estimator: registration)
+        await start(session); await settle(session, 0); await settle(session, 100)
+        await registration.hold()
+        session.receive(frame(180)); advance(ScrollCaptureSession.quietInterval); session.tick()
+        await registration.waitForCall()
+        session.undo()
+        XCTAssertEqual(session.state.pixelSize.height, 250)
+        await registration.release(); await session.analysis?.value
+        XCTAssertEqual(session.state.pixelSize.height, 250)
+        session.cancel()
+    }
+
+    func testBoundsAndOwnerReleaseCancelWorkWithoutRetainingSession() async {
+        XCTAssertNil(ScrollCaptureSession.expectedShift(.infinity))
+        XCTAssertNil(ScrollCaptureSession.expectedShift(CGFloat(Int.max)))
+        XCTAssertEqual(ScrollCaptureSession.expectedShift(-120.5), -120)
+        XCTAssertFalse(ScrollCaptureSession.accepts(ScrollCaptureFixtures.solid(width: 16385, height: 1, gray: 255)))
+        let registration = ScrollSessionRegistrationGate()
+        var session: ScrollCaptureSession? = makeSession(estimator: registration)
+        await start(session!); await settle(session!, 0)
+        session!.receive(frame(100)); advance(ScrollCaptureSession.quietInterval); session!.tick()
+        await registration.waitForCall()
+        let work = session!.analysis
+        weak var released = session
+        session = nil
+        XCTAssertNil(released)
+        XCTAssertEqual(source.stops, 1); XCTAssertEqual(presenter.dismissals, 1)
+        await registration.release(); await work?.value
+        XCTAssertTrue(results.isEmpty)
+    }
+
+}
+
+
+private actor ScrollSessionRegistrationGate: ScrollFrameRegistering {
+    private var waiting: CheckedContinuation<[Int], Never>?
+    private var blocked = true
+    func verticalShifts(from previous: CGImage, to current: CGImage) async throws -> [Int] {
+        guard blocked else { return [] }
+        return await withCheckedContinuation { waiting = $0 }
+    }
+    func release() { blocked = false; waiting?.resume(returning: []); waiting = nil }
+    func hold() { blocked = true }
+    func waitForCall() async {
+        for _ in 0..<500 {
+            if waiting != nil { return }
+            try? await Task.sleep(for: .milliseconds(5))
+        }
+        XCTFail("Registration was not reached")
     }
 }

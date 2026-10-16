@@ -83,7 +83,10 @@ final class ScrollCaptureOverlayController: ScrollCapturePresenting {
         barView = bar
         layOutBar(for: ScrollCaptureViewState())
 
-        for panel in dimPanels + [outline, preview, barPanel] { panel.orderFrontRegardless() }
+        for panel in dimPanels + [outline, preview, barPanel] {
+            panel.onHide = actions.cancel
+            panel.orderFrontRegardless()
+        }
         barPanel.makeKey()
         barPanel.makeFirstResponder(bar)
     }
@@ -100,7 +103,9 @@ final class ScrollCaptureOverlayController: ScrollCapturePresenting {
     }
 
     func dismiss() {
-        for panel in dimPanels + [outlinePanel, previewPanel, barPanel].compactMap({ $0 }) {
+        let panels = dimPanels + [outlinePanel, previewPanel, barPanel].compactMap { $0 }
+        panels.forEach { $0.onHide = nil }
+        for panel in panels {
             panel.orderOut(nil)
             panel.contentView = nil
         }
