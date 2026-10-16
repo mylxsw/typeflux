@@ -1,0 +1,17 @@
+{
+  "covered": 30,
+  "executable_added": 31,
+  "percent": 96.77,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+      "covered": 30,
+      "executable_added": 31,
+      "percent": 96.77,
+      "uncovered": [
+        308
+      ],
+      "instrumented": true
+    }
+  ]
+}
