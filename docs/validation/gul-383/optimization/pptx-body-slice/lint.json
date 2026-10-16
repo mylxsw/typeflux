@@ -1,0 +1,14 @@
+{
+  "exit_code": 0,
+  "wall_seconds": 0.45439129101578146,
+  "files": [
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileContentWorker.swift",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFilePolicy.swift",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Jobs.swift",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticIndexDiagnostics.swift",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticPresentationText.swift",
+    "Tests/TypefluxTests/SemanticPresentationTextTests.swift",
+    "Tests/TypefluxTests/SemanticWordTextTests.swift"
+  ],
+  "diagnostics": []
+}

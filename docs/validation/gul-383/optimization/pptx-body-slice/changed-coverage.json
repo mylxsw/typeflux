@@ -1,0 +1,85 @@
+{
+  "baseline": "388dad547e52f4e5262d7e646cad7d723a40186a",
+  "denominator": "Added/modified executable Swift lines in Sources/Typeflux, including new files, intersected with final LLVM LCOV DA records. Tests, helper wrapper and unchanged vendor code excluded; helper reported separately.",
+  "executable": 171,
+  "covered": 171,
+  "percent": 100.0,
+  "files": {
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileContentWorker.swift": {
+      "executable": 4,
+      "covered": 4,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFilePolicy.swift": {
+      "executable": 0,
+      "covered": 0,
+      "percent": null,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Jobs.swift": {
+      "executable": 1,
+      "covered": 1,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticIndexDiagnostics.swift": {
+      "executable": 2,
+      "covered": 2,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticPresentationText.swift": {
+      "executable": 164,
+      "covered": 164,
+      "percent": 100.0,
+      "uncovered": []
+    }
+  },
+  "groups": {
+    "application": {
+      "executable": 3,
+      "covered": 3,
+      "percent": 100.0,
+      "files": {
+        "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFilePolicy.swift": {
+          "executable": 0,
+          "covered": 0,
+          "percent": null,
+          "uncovered": []
+        },
+        "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Jobs.swift": {
+          "executable": 1,
+          "covered": 1,
+          "percent": 100.0,
+          "uncovered": []
+        },
+        "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticIndexDiagnostics.swift": {
+          "executable": 2,
+          "covered": 2,
+          "percent": 100.0,
+          "uncovered": []
+        }
+      }
+    },
+    "shared_reader": {
+      "executable": 168,
+      "covered": 168,
+      "percent": 100.0,
+      "files": {
+        "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileContentWorker.swift": {
+          "executable": 4,
+          "covered": 4,
+          "percent": 100.0,
+          "uncovered": []
+        },
+        "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticPresentationText.swift": {
+          "executable": 164,
+          "covered": 164,
+          "percent": 100.0,
+          "uncovered": []
+        }
+      }
+    }
+  }
+}

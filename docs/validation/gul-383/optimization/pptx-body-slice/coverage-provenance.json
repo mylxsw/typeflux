@@ -1,0 +1,134 @@
+{
+  "baseline": "388dad547e52f4e5262d7e646cad7d723a40186a",
+  "configuration": "Instrumented Debug",
+  "hardware": "Mac16,10\n17179869184",
+  "toolchain": "Apple Swift version 6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)\nTarget: arm64-apple-macosx26.0",
+  "selected_methods": 68,
+  "retry_methods": 7,
+  "initial_failed_methods": 6,
+  "initial_test_issues": 38,
+  "test_retries": 1,
+  "initial_command_timing": {
+    "wall_seconds": 358.6786748750019,
+    "exit_code": 2
+  },
+  "first_build_seconds": 305.76,
+  "retry_build_seconds": 74.27,
+  "discovery_build_seconds": 337.79,
+  "retry_discovery_build_seconds": 100.57,
+  "full_command": {
+    "wall_seconds": 110.29788600001484,
+    "exit_code": 0
+  },
+  "command": {
+    "command": [
+      "make",
+      "coverage",
+      "SUITE=SemanticPresentationTextTests"
+    ],
+    "environment": {
+      "TYPEFLUX_GUL405_TEST_FILES": "<repo>/docs/validation/gul-383/optimization/pptx-body-slice/test-files.json",
+      "TYPEFLUX_GUL405_PPTX_EVIDENCE": "<repo>/docs/validation/gul-383/optimization/pptx-body-slice",
+      "TYPEFLUX_COVERAGE_SCRATCH": "<repo>/.build"
+    },
+    "wrapper": "docs/validation/gul-383/optimization/html-body-slice/coverage-swift.sh"
+  },
+  "frozen_source_hashes_match": true,
+  "binary_sha256": {
+    "reader": "8266bbb36a568f1c043504b7dd00cdab35ee78407ba55b4819a92b89bb652776",
+    "tests": "1bb4dd33ab0a1f90b471665aee08e107b20458e07a10370eddd2b2b0aadeb32a"
+  },
+  "profile_sha256": "90e5ebad815f0b481e8d24f9c2f06ecc47007b2636d368b5577f32a29df9f3b2",
+  "lcov_sha256_before_path_normalization": "33ca2e1d56ff2ad46904d489d537b212de3cdf8566ec2879efb4c3fb0c1bc924",
+  "tool_sha256": {
+    "scripts/test_groups.py": "488dbe8cec3f3528adb4ef265bb5d8e3cf5c13867581fb5acb5dc19eb281af46",
+    "scripts/coverage.sh": "1a18ada556b3875baf54f389ae48f5bceaf2c699a37f8638ebd16d7255e89095",
+    "docs/validation/gul-383/optimization/changed_coverage.py": "dd9efb30a427617a614235a0c65f86b2cb5ab6dd7c28b857031a91545db135ac",
+    "docs/validation/gul-383/optimization/html-body-slice/coverage-swift.sh": "42967efaf9199510c5f13f9219641be7b87a08eb2a781fc8b4200bfe1da8996f",
+    "docs/validation/gul-383/optimization/pptx-body-slice/test-files.json": "6658f80da3d5fb08e845d94a58f1d8c316560900e8e1b73c62ba1403b20c6f79",
+    "docs/validation/gul-383/optimization/pptx-body-slice/pptx_resource_probe.py": "68a6689e6935fa9c667ecb2cd4c2ade2ff5971fbe4757d0beb51d48da47cf797"
+  },
+  "synthetic_fixture": {
+    "bytes": 2341,
+    "sha256": "ce8d6e31386ede010dcbe2fe13651cfe1dc1397988086dbbabae8f30af78a49e",
+    "members": [
+      {
+        "name": "[Content_Types].xml",
+        "compressed": 221,
+        "expanded": 651,
+        "method": 8
+      },
+      {
+        "name": "_rels/.rels",
+        "compressed": 138,
+        "expanded": 245,
+        "method": 8
+      },
+      {
+        "name": "ppt/_rels/presentation.xml.rels",
+        "compressed": 220,
+        "expanded": 495,
+        "method": 8
+      },
+      {
+        "name": "ppt/presentation.xml",
+        "compressed": 161,
+        "expanded": 282,
+        "method": 8
+      },
+      {
+        "name": "ppt/slides/slide10.xml",
+        "compressed": 173,
+        "expanded": 297,
+        "method": 8
+      },
+      {
+        "name": "ppt/slides/slide2.xml",
+        "compressed": 390,
+        "expanded": 816,
+        "method": 8
+      }
+    ]
+  },
+  "new_real_model_or_ui_evaluation": false,
+  "unchanged_model_sha256": "2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135",
+  "coverage_note": "Changed executable LLVM DA lines only; application and shared reader/dispatch reported separately. Initial full-scope and PPTX-only retry profiles are merged; resource-probe profiles are separate and excluded. Media/inference helper targets have no changed source lines.",
+  "normalized_lcov_sha256": "16b0439c321a1947d901703b23db27c749588da330c33230fc9a1a2715916105",
+  "log_gzip_sha256": "6207ec9268a8893eb524348a5e60812cffce9c45fc4d2b22b40a168bd385ddd0",
+  "initial_passed_methods": 62,
+  "unique_methods_verified_across_runs": 68,
+  "retry_passed_methods": 7,
+  "unchanged_other_suite_methods_passed": 61,
+  "build_failures": 0,
+  "initial_failure_log_gzip_sha256": "15159e319d8f71a7388cc1eca0fc680e9d37dfc1d386eedcc0d8dfc13bbcf76c",
+  "initial_raw_console_sha256": "323b61a71a3e7ecfbbe12a015065582ad83bff953377d62752335d67a30b0597",
+  "log_note": "Initial failure descriptions contain invalid UTF-8; normalized compressed raw bytes retained, summaries decode with replacement. Failed run raw profiles preserved and explicitly merged; no tests repeated for log/profile export recovery.",
+  "initial_profile_sha256": "e8f6926114c6f6a22809a5248ebaa8baae74499e816e7ec3f3b848d0c41275dc",
+  "retry_profile_sha256": "156a4f1ac212656cde4c85554af7af83945e641e4f689121615da310eb24593e",
+  "native_child_default_profile_included_in_coverage": false,
+  "profile_export_command": [
+    "xcrun llvm-profdata merge -sparse <initial profraw files> -o .build/pptx-initial.profdata",
+    "xcrun llvm-profdata merge -sparse <retry profraw files> -o .build/pptx-retry.profdata",
+    "xcrun llvm-profdata merge -sparse .build/pptx-initial.profdata .build/pptx-retry.profdata -o .build/pptx-final.profdata",
+    "xcrun llvm-cov export .build/arm64-apple-macosx/debug/TypefluxPackageTests.xctest/Contents/MacOS/TypefluxPackageTests --instr-profile=.build/pptx-final.profdata --format=lcov <changed Swift source paths>",
+    "python3 docs/validation/gul-383/optimization/changed_coverage.py --base 388dad547e52f4e5262d7e646cad7d723a40186a --lcov <export> --output <changed-coverage.json>"
+  ],
+  "resource_summary": {
+    "wall_seconds": 300.0728849999723,
+    "worker_exit_code": 0,
+    "error": null,
+    "samples": 2660,
+    "missing_identifier": 0,
+    "milliseconds": {
+      "p50": 2.0805419771932065,
+      "p95": 3.4897919977083802,
+      "p99": 3.5727500217035413
+    },
+    "peak_rss_bytes": 60637184,
+    "scope": "Debug instrumented production file-index-worker, nice 10, sequential repeated extraction of the same synthetic PPTX body, 100 ms between requests. No embedding, background scheduler, UI input, GPU counters or long-term thermal acceptance measured. RSS is ps resident pages; CPU percent is ps lifetime average, 100 percent per core."
+  },
+  "resource_raw_gzip_sha256": "e923fd2084f35cd887b1c09cec990cd6be195459e149991b38c0811bd9a8734c",
+  "source_tool_binary_hashes_rechecked_after_resource_probe": true,
+  "frozen_files": 125,
+  "normalized_coverage_recomputed_unchanged": true
+}

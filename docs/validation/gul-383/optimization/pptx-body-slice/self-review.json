@@ -1,0 +1,49 @@
+{
+  "status": "No unresolved blocking findings in the declared PPTX body subset after focused validation and resource short run",
+  "functional_closure": "Held descriptor to presentation-list relationships, shape/table body, 32KiB logical page/offset cursor, persistent checkpoint, vector publication and body-hit evidence. Both native child and real ZIP fixtures exercised; long-slide and cross-slide store restart preserve committed vectors.",
+  "boundaries_errors": "Empty/long Unicode slides, scalar-invalid offsets, presentation-list ordering against lexical ZIP order, malformed XML/CRC/missing relationship, referenced external relationship, escaping target, duplicate relationship IDs, ZIP encryption and ZIP64 have fixed outcomes and explicit retry/version repair.",
+  "resources_concurrency": "No new tasks, locks or retained handles. ZIP inflater/streams remain locally owned; held descriptors and native children use existing defer/deinit/stop ownership. The foreground probe waits for its exact child and no run-owned work remains after delivery.",
+  "security": "Archive paths select ZIP data only; external URLs, DTD entities, embedded objects/macros/images and link commands are not loaded/executed. Scope and post-read cancellation/version/permission checks gate publication.",
+  "consistency": "PPTX extension-aware rediscovery, per-format recipe and diagnostics are additive; compatible vector/model space unchanged. No UI/localization changes or native-location claim.",
+  "fixed_findings": [
+    "Restricted body matching to ordinary text-shape/table paths",
+    "Changed synthetic slide filenames so presentation order contradicts lexicographic ZIP order",
+    "Preserved EINVAL for mid-scalar cursor offsets",
+    "Enabled Foundation namespace-prefix reporting after six PPTX methods failed; seven-method PPTX retry passed",
+    "Removed stale unsupported-PPTX DOCX assertion and matched existing explicit failure-retry behavior"
+  ],
+  "validation": {
+    "initial_passed": 62,
+    "initial_selected": 68,
+    "initial_failed": 6,
+    "initial_issues": 38,
+    "retry_suite_passed": 7,
+    "retry_suite_selected": 7,
+    "other_initial_methods_passed_without_repeat": 61,
+    "application_changed_lines": "3/3",
+    "shared_reader_changed_lines": "168/168",
+    "lint_exit": 0,
+    "diff_check_exit": 0
+  },
+  "remaining": "XLSX strings/cached values, mixed-page and screenshot OCR/geometry, audio/video sampling and recovery, two-entry location/open fallback, per-category partial/retry, resumable checked downloads, real-model and native UI/end-to-end acceptance remain GUL405 scope; legacy binary Office explicitly unsupported.",
+  "no_claims": [
+    "No new model Recall/MRR or UI latency result",
+    "No complete PowerPoint rendering/custom-show order/native player positioning",
+    "No long-term resource stability",
+    "No full GUL405 completion, merge or GUL406 launch"
+  ],
+  "resource_validation": {
+    "wall_seconds": 300.0728849999723,
+    "worker_exit_code": 0,
+    "error": null,
+    "samples": 2660,
+    "missing_identifier": 0,
+    "milliseconds": {
+      "p50": 2.0805419771932065,
+      "p95": 3.4897919977083802,
+      "p99": 3.5727500217035413
+    },
+    "peak_rss_bytes": 60637184,
+    "scope": "Debug instrumented production file-index-worker, nice 10, sequential repeated extraction of the same synthetic PPTX body, 100 ms between requests. No embedding, background scheduler, UI input, GPU counters or long-term thermal acceptance measured. RSS is ps resident pages; CPU percent is ps lifetime average, 100 percent per core."
+  }
+}
