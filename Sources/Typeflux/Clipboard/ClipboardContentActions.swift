@@ -7,6 +7,7 @@ final class SystemClipboardContentActions: ClipboardContentActing {
     private let fileManager: FileManager
     private let downloadsDirectory: URL?
     private let imageWorker: MediaWorker
+    private let textWorker: MediaWorker
     private let textRecognizer: (any ImageTextRecognizing)?
 
     init(
@@ -14,13 +15,15 @@ final class SystemClipboardContentActions: ClipboardContentActing {
         fileManager: FileManager = .default,
         downloadsDirectory: URL? = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first,
         textRecognizer: (any ImageTextRecognizing)? = nil,
-        imageWorker: MediaWorker = .previews
+        imageWorker: MediaWorker = .previews,
+        textWorker: MediaWorker = .clipboardOCR
     ) {
         self.pasteboard = pasteboard
         self.fileManager = fileManager
         self.downloadsDirectory = downloadsDirectory
         self.textRecognizer = textRecognizer
         self.imageWorker = imageWorker
+        self.textWorker = textWorker
     }
 
     func prepareImage(_ entry: ClipboardEntry) async throws -> AskWorkflowImage.Clipboard? {
@@ -87,6 +90,6 @@ final class SystemClipboardContentActions: ClipboardContentActing {
 
     func recognizeText(in imageURL: URL) async throws -> String? {
         if let textRecognizer { return try await textRecognizer.recognizeText(in: .url(imageURL)).string }
-        return try await ClipboardTextRecognizer().recognize(imageURL)
+        return try await ClipboardTextRecognizer(worker: textWorker).recognize(imageURL)
     }
 }

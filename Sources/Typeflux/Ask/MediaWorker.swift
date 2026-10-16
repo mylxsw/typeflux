@@ -11,7 +11,7 @@ final class MediaWorker: @unchecked Sendable {
     static let clipboardThumbnails = MediaWorker(timeout: 3, requiresLifecycle: true)
     static let frameRegistration = MediaWorker(timeout: 3, requiresLifecycle: true)
     static let textRecognition = MediaWorker(timeout: 30, requiresLifecycle: true)
-    static let clipboardOCR = MediaWorker(timeout: 30)
+    static let clipboardOCR = MediaWorker(timeout: 30, requiresLifecycle: true)
     static let clipboardMetadata = MediaWorker(timeout: 10)
     enum Input { case file(URL), data(Data) }
     typealias Runner = @Sendable (ManagedProcess.Request, @escaping @Sendable () -> Bool) throws -> ManagedProcess.Result
@@ -97,7 +97,13 @@ final class MediaWorker: @unchecked Sendable {
             guard result.termination == .exited(0), !result.outputTruncated,
                   result.stdout.utf8.count <= MediaLimits.responseBytes else { lease.infrastructureFailed = true; throw MediaFailure.unavailable }
             let response = try JSONDecoder().decode(MediaResponse.self, from: Data(result.stdout.utf8))
-            try response.validate(for: request)
+            do { try response.validate(for: request) }
+            catch {
+                // A successful envelope with an invalid payload is a protocol fault,
+                // even when a bounds validator reports tooLarge. Typed refusals are not.
+                if response.failure == nil { lease.infrastructureFailed = true }
+                throw error
+            }
             try check(cancelled)
             let value = try extract(response, fd)
             try check(cancelled)

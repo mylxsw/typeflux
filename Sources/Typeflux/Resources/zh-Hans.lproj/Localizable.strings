@@ -5736,3 +5736,4 @@
 "settings.services.clipboardThumbnails" = "剪贴板缩略图";
 "settings.services.frameRegistration" = "滚动截图配准";
 "settings.services.textRecognition" = "截图文字识别";
+"settings.services.clipboardOCR" = "剪贴板图片文字识别";

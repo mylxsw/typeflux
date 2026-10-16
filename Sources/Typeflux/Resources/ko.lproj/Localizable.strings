@@ -5622,3 +5622,4 @@
 "settings.services.clipboardThumbnails" = "클립보드 썸네일";
 "settings.services.frameRegistration" = "스크롤 스크린샷 정렬";
 "settings.services.textRecognition" = "스크린샷 텍스트 인식";
+"settings.services.clipboardOCR" = "클립보드 이미지 텍스트";
