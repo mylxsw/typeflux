@@ -1,0 +1,43 @@
+{
+  "covered": 28,
+  "executable_added": 31,
+  "percent": 90.32,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowImage.swift",
+      "covered": 1,
+      "executable_added": 1,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Clipboard/ClipboardContentActing.swift",
+      "covered": 12,
+      "executable_added": 12,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Clipboard/ClipboardContentAction.swift",
+      "covered": 15,
+      "executable_added": 15,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Clipboard/ClipboardContentActions.swift",
+      "covered": 0,
+      "executable_added": 3,
+      "percent": 0.0,
+      "uncovered": [
+        34,
+        35,
+        36
+      ],
+      "instrumented": true
+    }
+  ]
+}

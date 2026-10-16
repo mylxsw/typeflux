@@ -31,6 +31,10 @@ final class SystemClipboardContentActions: ClipboardContentActing {
         return try await AskWorkflowImage.clipboard(URL(fileURLWithPath: path), worker: imageWorker, preserveOriginalPNG: true)
     }
 
+    @MainActor func imagePreparation(for entry: ClipboardEntry) -> ClipboardImagePreparation {
+        .make(for: entry, worker: imageWorker)
+    }
+
     var pasteboardRevision: Int? { pasteboard.changeCount }
 
     @discardableResult

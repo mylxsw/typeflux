@@ -7,6 +7,7 @@ protocol ClipboardContentActing: AnyObject {
     @discardableResult
     func writeToPasteboard(_ entry: ClipboardEntry, asPlainText: Bool, image: AskWorkflowImage.Clipboard?) -> Bool
     func prepareImage(_ entry: ClipboardEntry) async throws -> AskWorkflowImage.Clipboard?
+    @MainActor func imagePreparation(for entry: ClipboardEntry) -> ClipboardImagePreparation
     /// Sends ⌘V to the frontmost app.
     func sendPasteShortcut()
     func revealInFinder(_ urls: [URL])
@@ -20,12 +21,31 @@ protocol ClipboardContentActing: AnyObject {
 
 extension ClipboardContentActing {
     var pasteboardRevision: Int? { nil }
+    @MainActor func imagePreparation(for entry: ClipboardEntry) -> ClipboardImagePreparation {
+        .init(prepare: { try await self.prepareImage(entry) })
+    }
     @MainActor func textRecognition(in imageURL: URL) -> ClipboardTextRecognition {
         .init(recognize: { try await self.recognizeText(in: imageURL) })
     }
     func prepareImage(_ entry: ClipboardEntry) async throws -> AskWorkflowImage.Clipboard? {
         guard entry.filePaths.isEmpty, let path = entry.imagePath else { return nil }
         return try await AskWorkflowImage.clipboard(URL(fileURLWithPath: path), preserveOriginalPNG: true)
+    }
+}
+
+/// Binds native availability at the explicit copy request, independently of copy permission.
+@MainActor struct ClipboardImagePreparation {
+    let prepare: () async throws -> AskWorkflowImage.Clipboard?
+    var isCurrent: () -> Bool = { true }
+
+    static func make(for entry: ClipboardEntry, worker: MediaWorker,
+                     readSource: @escaping @Sendable (URL) throws -> Data = { try AskWorkflowImage.read($0) }) -> Self {
+        guard entry.filePaths.isEmpty, let path = entry.imagePath else { return .init(prepare: { nil }) }
+        let authorization = worker.authorization(), url = URL(fileURLWithPath: path)
+        return .init(prepare: {
+            try await AskWorkflowImage.clipboard(url, worker: worker, preserveOriginalPNG: true,
+                authorization: authorization, readSource: readSource)
+        }, isCurrent: { worker.permits(authorization) })
     }
 }
 
