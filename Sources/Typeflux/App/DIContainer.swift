@@ -23,6 +23,7 @@ final class DIContainer {
     let mediaWorkers = MediaWorker.shared
     let mediaPreviewWorkers = MediaWorker.previews
     let clipboardThumbnailWorkers = MediaWorker.clipboardThumbnails
+    let clipboardMetadataWorkers = MediaWorker.clipboardMetadata
     let localInferenceWorkers = WhisperWorkerPool.shared
     let noteStore: RecoveringAskNoteStore
     let wordBookStore: RecoveringAskWordBookStore
