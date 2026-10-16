@@ -293,6 +293,8 @@ final class AppCoordinator {
     }
 
     func prepareForTermination() async {
+        workflowController?.clipboardAction.preventNewWork()
+        di.askConversationWindowController?.model.clipboardAction.preventNewWork()
         moduleStartup?.cancel()
         moduleStartup = nil
         di.moduleRegistry.preventNewWork()
@@ -312,6 +314,8 @@ final class AppCoordinator {
     }
 
     func stop() {
+        workflowController?.clipboardAction.preventNewWork()
+        di.askConversationWindowController?.model.clipboardAction.preventNewWork()
         moduleStartup?.cancel()
         moduleStartup = nil
         di.moduleRegistry.preventNewWork()

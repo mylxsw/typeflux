@@ -2,7 +2,7 @@ import Foundation
 
 extension AskConversationModel {
     /// Resolves a live entry again so deleted records and missing files cannot be applied from stale results.
-    func applyLauncherClipboard(id: String, paste: Bool) -> PluginActionOutcome {
+    func applyLauncherClipboard(id: String, paste: Bool, completed: @escaping @MainActor () -> Void = {}) -> PluginActionOutcome {
         guard let entry = clipboardEntries().first(where: { $0.id == id }) else {
             confirm(L("ask.plugin.clip.unavailable"))
             return .stay
@@ -21,21 +21,18 @@ extension AskConversationModel {
             copyPluginText(text)
             return .stay
         }
-        guard clipboardContentActions.writeToPasteboard(entry, asPlainText: false) else {
-            confirm(L("ask.plugin.clip.unavailable"))
-            return .stay
-        }
-        guard paste else {
-            confirm(L("ask.plugin.copied"))
-            return .stay
-        }
-        finishPluginResult()
-        let actions = clipboardContentActions
-        Task {
-            // Let the source app take keyboard focus back after the launcher closes.
-            try? await Task.sleep(for: .milliseconds(150))
-            actions.sendPasteShortcut()
-        }
-        return .close
+        let access = contextImageAccess(launcher: true), account = session(), generation = plugins.resultGeneration
+        clipboardAction.start(entry: entry, plainText: false, paste: paste, actions: clipboardContentActions,
+            authorized: { [weak self] in
+                guard let self else { return false }
+                let live = self.session()
+                return account?.owner == live?.owner && account?.token == live?.token && self.clipboardEntries().contains(entry)
+            }, beforeCommit: { [weak self] in access.allows() && self?.plugins.resultGeneration == generation },
+            committed: { [weak self] in
+                guard let self else { return }
+                if paste { self.finishPluginResult(); completed() }
+                else { self.confirm(L("ask.plugin.copied")) }
+            }, failed: { [weak self] in self?.confirm(L("ask.plugin.clip.unavailable")) })
+        return .stay
     }
 }
