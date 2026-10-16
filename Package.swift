@@ -22,6 +22,8 @@ let package = Package(
     ],
     products: [
         .library(name: "TypefluxKit", targets: ["Typeflux"]),
+        .library(name: "TypefluxMediaWorkerKit", targets: ["TypefluxMediaRuntime"]),
+        .executable(name: "TypefluxMediaHelper", targets: ["TypefluxMediaHelper"]),
         .library(name: "TypefluxInferenceWorkerKit", targets: ["TypefluxInferenceRuntime"]),
         .executable(name: "Typeflux", targets: ["TypefluxCLI"]),
         .executable(name: "TypefluxInferenceHelper", targets: ["TypefluxInferenceHelper"])
@@ -36,6 +38,9 @@ let package = Package(
         .package(url: "https://github.com/doggy8088/opencc-swift.git", branch: "main")
     ],
     targets: [
+        .target(name: "TypefluxMediaProtocol"),
+        .target(name: "TypefluxMediaRuntime", dependencies: ["TypefluxMediaProtocol"]),
+        .executableTarget(name: "TypefluxMediaHelper", dependencies: ["TypefluxMediaRuntime"]),
         .target(name: "TypefluxInferenceProtocol"),
         .target(name: "TypefluxInferenceRuntime", dependencies: [
             "TypefluxInferenceProtocol", .product(name: "WhisperKit", package: "WhisperKit")
@@ -51,6 +56,7 @@ let package = Package(
             dependencies: [
                 "TypefluxAudioSafety",
                 "TypefluxInferenceProtocol",
+                "TypefluxMediaProtocol",
                 .product(name: "TypefluxChat", package: "TypefluxChat"),
                 .product(name: "Yams", package: "Yams"),
                 .product(name: "Markdown", package: "swift-markdown"),
@@ -80,7 +86,7 @@ let package = Package(
         ),
         .testTarget(
             name: focusedTestFiles == nil ? "TypefluxTests" : "TypefluxFocusedTests",
-            dependencies: ["Typeflux", "TypefluxInferenceRuntime"],
+            dependencies: ["Typeflux", "TypefluxInferenceRuntime", "TypefluxMediaRuntime"],
             path: "Tests/TypefluxTests",
             exclude: focusedTestFiles.map { selected in allTestFiles.filter { !selected.contains($0) } } ?? [],
             sources: focusedTestFiles

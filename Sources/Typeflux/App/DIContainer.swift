@@ -20,6 +20,7 @@ final class DIContainer {
     let clipboardHistoryStore: ClipboardHistoryStore
     let moduleRegistry: ModuleRegistry
     let nativeSystemCommands = NativeSystemWorker.shared
+    let mediaWorkers = MediaWorker.shared
     let localInferenceWorkers = WhisperWorkerPool.shared
     let noteStore: RecoveringAskNoteStore
     let wordBookStore: RecoveringAskWordBookStore

@@ -41,7 +41,7 @@ final class AskConversationModel: ObservableObject {
     @Published var launcherHistoryMode = false
     @Published var launcherHistoryIndex = 0
     @Published var launcherHistoryFillID: UUID?
-    @Published var launcherPresentationID = UUID()
+    @Published var launcherPresentationID = UUID() { didSet { cancelAttachmentWork(launcher: true) } }
     var launcherExecutedInput: String?
     /// Files and folders the launcher can open; tests supply their own.
     var fileIndex: any AskFileSearching = AskFileIndex.shared
@@ -278,6 +278,7 @@ final class AskConversationModel: ObservableObject {
     @Published var launcherAttachmentNotice: String?
     /// Loads in flight per draft key (`visionDraftKey`); sending waits for them.
     @Published var attachmentLoads: [String: Int] = [:]
+    let attachmentWork = AskAttachmentWork()
     /// Skills, MCP servers, notes and local mode for slash commands; the window controller fills it in.
     var commandSources = AskCommandSources()
     /// Bumped by the "/search" command; the window opens its search palette.
@@ -387,7 +388,7 @@ final class AskConversationModel: ObservableObject {
     // Local consent for the latest submission, retained for retries but never restored from history.
     private var screenshotConsent: [String: String] = [:]
     var captureGeneration = UUID()
-    var selectionGeneration = UUID()
+    var selectionGeneration = UUID() { didSet { cancelAttachmentWork(launcher: false) } }
     private var selectionObservation: Task<Void, Never>?
     private var draftSave: Task<Void, Never>?
     private var draftSaveConversationID: String?
@@ -539,6 +540,7 @@ final class AskConversationModel: ObservableObject {
     }
 
     func resetSession() {
+        cancelAttachmentWork()
         notebookTask?.cancel()
         notebookReadTask?.cancel()
         wordBookTask?.cancel()

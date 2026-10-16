@@ -1,0 +1,165 @@
+{
+  "base": "e34406bf9aa016ae9ab50d95cf11187877e27c3b",
+  "covered": 416,
+  "executable_added": 422,
+  "percent": 98.58,
+  "initial_profile_files": [
+    "Sources/Typeflux/App/AppCoordinator.swift",
+    "Sources/Typeflux/App/DIContainer.swift",
+    "Sources/Typeflux/Ask/AskConversationModel+Attachments.swift",
+    "Sources/Typeflux/Ask/AskConversationModel.swift",
+    "Sources/Typeflux/Ask/AskConversationWindowController.swift"
+  ],
+  "initial_test_binary_sha256": "2aa47e561fc0a913a919f56bb168c9d27fc3e18920e6262cb2b065543c3c7018",
+  "final_test_binary_sha256": "3dd73e37da5dc309568b8f813e9011a6ae2e3dec1de35759b258323a2c5a8cfd",
+  "final_helper_sha256": "cf7a7232bb858c98cd2727226afaa79cdbaa2ee09f16e817aa58f7e81df09fe7",
+  "final_profile_count": 7,
+  "files": [
+    {
+      "file": "Sources/Typeflux/App/AppCoordinator.swift",
+      "covered": 0,
+      "executable_added": 3,
+      "percent": 0.0,
+      "uncovered": [
+        301,
+        304,
+        314
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/App/DIContainer.swift",
+      "covered": 0,
+      "executable_added": 1,
+      "percent": 0.0,
+      "uncovered": [
+        23
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskAttachment.swift",
+      "covered": 21,
+      "executable_added": 21,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskConversationModel+Attachments.swift",
+      "covered": 40,
+      "executable_added": 41,
+      "percent": 97.56,
+      "uncovered": [
+        107
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskConversationModel.swift",
+      "covered": 4,
+      "executable_added": 4,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskConversationWindowController.swift",
+      "covered": 0,
+      "executable_added": 1,
+      "percent": 0.0,
+      "uncovered": [
+        510
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "covered": 134,
+      "executable_added": 134,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Resources/en.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    },
+    {
+      "file": "Sources/Typeflux/Resources/ja.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    },
+    {
+      "file": "Sources/Typeflux/Resources/ko.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    },
+    {
+      "file": "Sources/Typeflux/Resources/zh-Hans.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    },
+    {
+      "file": "Sources/Typeflux/Resources/zh-Hant.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    },
+    {
+      "file": "Sources/TypefluxMediaHelper/TypefluxMediaHelper.swift",
+      "covered": 6,
+      "executable_added": 6,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/TypefluxMediaProtocol/MediaJPEG.swift",
+      "covered": 53,
+      "executable_added": 53,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/TypefluxMediaProtocol/MediaProtocol.swift",
+      "covered": 42,
+      "executable_added": 42,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/TypefluxMediaRuntime/MediaDecoder.swift",
+      "covered": 100,
+      "executable_added": 100,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/TypefluxMediaRuntime/MediaHelperCommand.swift",
+      "covered": 16,
+      "executable_added": 16,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    }
+  ]
+}
