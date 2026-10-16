@@ -195,7 +195,7 @@ struct SemanticSearchRankingTests {
         ) == nil)
     }
 
-    @Test func partialLexicalOverlapNeverDemotesAnEquallySimilarPassage() throws {
+    @Test func `partial lexical overlap never demotes an equally similar passage`() throws {
         let ranking = SemanticSearchRanking("orchard irrigation maintenance")
         let absent = ranking.evidence("Workers inspect the pump"),
             partial = ranking.evidence("Workers inspect irrigation equipment")
@@ -298,7 +298,7 @@ struct SemanticSearchRankingTests {
 }
 
 extension SemanticSearchRankingTests {
-    @Test func lexicalTimestampsRejectNonfiniteNegativeAndIntegerOverflowValues() throws {
+    @Test func `lexical timestamps reject nonfinite negative and integer overflow values`() throws {
         let root = try semanticFixture()
         defer { try? FileManager.default.removeItem(at: root) }
         let store = try SemanticFileStore(url: root.appendingPathComponent("index.sqlite"))
@@ -316,5 +316,40 @@ extension SemanticSearchRankingTests {
             let hit = try #require(hits.first { $0.name == "time-\(index).wav" })
             #expect(hit.evidence?.time == value.1)
         }
+    }
+}
+
+extension SemanticSearchRankingTests {
+    @Test func `format requests exclude incidental content mentions`() {
+        for (query, expected) in [
+            ("play the recording of thunder", SemanticMediaPriority.audio),
+            ("photos of a red train", .image), ("Which video shows the pier?", .video),
+            ("from the document about tides", .document), ("请找海浪录音", .audio),
+            ("玻璃桥的视频在哪里？", .video)
+        ] {
+            #expect(SemanticSearchRanking(query).preferredModality == expected)
+        }
+        for query in ["Does the website publish the recording after the lecture?",
+                      "People described a photo while discussing the schedule",
+                      "文中提到录音设备在星期五维修"] {
+            #expect(SemanticSearchRanking(query).preferredModality == nil)
+        }
+    }
+
+    @Test func `stronger raw evidence keeps its order across script distributions`() throws {
+        let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
+        let store = try SemanticFileStore(url: root.appendingPathComponent("index.sqlite"))
+        func add(_ name: String, _ text: String, _ cosine: Float) throws {
+            var vector = semanticVector(); vector[0] = cosine; vector[1] = sqrt(1 - cosine * cosine)
+            try store.replace(path: root.path + "/" + name + ".txt", modified: Date(), bytes: 1,
+                              chunks: [.init(text: text, page: nil)], vectors: [vector])
+        }
+        try add("strong", "第一段材料", 0.90)
+        try add("weak", "Second passage", 0.75)
+        for index in 0 ..< 12 {
+            try add("filler-\(index)", "其他语料", 0.1)
+        }
+        #expect(try query(store, root, "unseen description").first?.name == "strong.txt")
+        #expect(try query(store, root, "不相同的描述").first?.name == "strong.txt")
     }
 }

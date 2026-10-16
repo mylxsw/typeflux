@@ -15,8 +15,6 @@ final class SemanticVectorReader: @unchecked Sendable {
         let modality: SemanticMediaPriority
         var eligibilityGeneration = -1
         var allowed = false
-        var queryEpoch = -1
-        var maxima = SIMD8<Double>(repeating: -.infinity)
         init(path: String, modified: Date, version: String?) {
             self.path = path; self.modified = modified; self.version = version; modality = SemanticMediaPriority
                 .of(path)
@@ -55,7 +53,6 @@ final class SemanticVectorReader: @unchecked Sendable {
 
     private var eligibility: Eligibility?
     private var eligibilityGeneration = 0
-    private var queryEpoch = 0
     private let lock = NSLock()
     private var database: OpaquePointer?
     private var pages: [Int64: Page] = [:]
@@ -374,8 +371,6 @@ extension SemanticVectorReader {
             for candidate in lexical {
                 offer(Scored(id: candidate.id, hit: candidate.hit, bucket: candidate.bucket))
             }
-            var calibration = SemanticScoreCalibration()
-            queryEpoch &+= 1
             var peak: (String, Double)?, runnerUp: (String, Double)?
             let key = Eligibility(scope: scope, type: type, fileExtension: query.fileExtension, folder: query.folder)
             if eligibility != key {
@@ -383,7 +378,7 @@ extension SemanticVectorReader {
             }
             var scratch: [Float] = []
             // Retain one Float32 scalar per row (4 MiB per million rows), then rank using the
-            // completed calibration. Pruning on uncalibrated scores could discard a later winner.
+            // final distinct-file confidence, then rank. Each page contributes scores exactly once.
             var scoredPages: [(Int64, [Float])] = []
             for number in revisions.keys.sorted() {
                 let page = try page(number, cancelled: cancelled)
@@ -405,13 +400,6 @@ extension SemanticVectorReader {
                         row.file.eligibilityGeneration = eligibilityGeneration
                     }
                     guard row.file.allowed else { continue }
-                    if row.file.queryEpoch != queryEpoch {
-                        row.file.queryEpoch = queryEpoch; row.file.maxima = SIMD8(repeating: -.infinity)
-                    }
-                    if cosine > row.file.maxima[row.bucket.rawValue] {
-                        row.file.maxima[row.bucket.rawValue] = cosine
-                        calibration.observe(path: row.file.path, bucket: row.bucket, cosine: cosine)
-                    }
                     // Distinct-file maxima prevent a long book's repeated chunks from defining confidence.
                     if peak?.0 == row.file.path {
                         peak = (row.file.path, max(peak!.1, cosine))
@@ -449,8 +437,7 @@ extension SemanticVectorReader {
                     )
                     else { continue }
                     if !lexical.identifier, !(lexical.coverage == 1 && lexical.phrase) {
-                        score += calibration.adjustment(row.bucket, cosine: cosine) + ranking
-                            .scriptAdjustment(row.bucket)
+                        score += ranking.scriptAdjustment(row.bucket)
                     }
                     guard score >= floors[row.bucket.rawValue] else { continue }
                     if let old = branches[row.bucket]?[row.file.path], old.hit.score > score
