@@ -13,7 +13,9 @@ struct AskImageRecoveryCard: View {
     @State private var choosingModel = false
     @State private var previewing = false
     /// Decoded once per screenshot; the card re-renders while a resume streams.
-    @State private var thumbnail: NSImage?
+    @StateObject private var imageModel = AskContextImageModel()
+    @Environment(\.askContextImageAccess) private var imageAccess
+    private var thumbnail: NSImage? { imageModel.displayed(screenshot?.image, access: imageAccess) }
 
     private var busy: Bool { model.recoveringImage == target }
     private var reference: String { model.modelReference(launcher: false) }
@@ -55,7 +57,10 @@ struct AskImageRecoveryCard: View {
         .background(AskTheme.raisedSurface, in: RoundedRectangle(cornerRadius: AskMetrics.recoveryCardCorner, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: AskMetrics.recoveryCardCorner, style: .continuous)
             .strokeBorder(AskTheme.border))
-        .task(id: screenshot?.id) { thumbnail = screenshot?.image.flatMap(AskImage.decode) }
+        .task(id: AskContextImageModel.Identity(source: screenshot?.image, epoch: imageAccess.epoch)) {
+            await imageModel.load(screenshot?.image, access: imageAccess)
+        }
+        .onDisappear { imageModel.cancel(); previewing = false }
     }
 
     /// The screenshot is the subject of the card, so it is shown, not described;

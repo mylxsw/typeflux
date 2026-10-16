@@ -274,6 +274,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             launcherOpeningTop = AskLauncherPlacement.top(on: frame, anchor: anchor)
         }
         // Take keyboard focus without activating the app and raising its other windows.
+        model.setLauncherImagesVisible(true)
         panel.makeKeyAndOrderFront(nil)
         // Select after focus: AppKit may restore the editor's previous source
         // when it becomes first responder. Do this only on a fresh opening.
@@ -410,6 +411,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     }
 
     func dismissLauncher() {
+        model.setLauncherImagesVisible(false)
         filePreview.dismissNow()
         launcherHeightAnimator.stop()
         // Menus and hover cards are child panels; close them with the launcher so

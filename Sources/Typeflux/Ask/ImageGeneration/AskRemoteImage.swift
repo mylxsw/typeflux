@@ -47,12 +47,14 @@ struct AskRemoteImageLoader: Sendable {
 }
 
 /// Bounded, weak view registrations allow revocation to clear already displayed pixels too.
-@MainActor final class AskRemoteImageScope {
-    private struct Observer { weak var model: AskRemoteImageModel? }
+@MainActor protocol AskImageScopeObserver: AnyObject { func cancel() }
+
+@MainActor final class AskImagePresentationScope {
+    private struct Observer { weak var model: (any AskImageScopeObserver)? }
     private var observers: [UUID: Observer] = [:]
     private(set) var epoch = UUID()
     private(set) var visible = true
-    func register(_ model: AskRemoteImageModel, epoch: UUID) throws -> UUID {
+    func register(_ model: any AskImageScopeObserver, epoch: UUID) throws -> UUID {
         observers = observers.filter { $0.value.model != nil }
         guard visible, self.epoch == epoch, observers.count < 16 else { throw MediaFailure.unavailable }
         let id = UUID(); observers[id] = Observer(model: model); return id
@@ -69,7 +71,10 @@ struct AskRemoteImageLoader: Sendable {
     }
 }
 
-struct AskRemoteImageAccess {
+typealias AskRemoteImageScope = AskImagePresentationScope
+typealias AskRemoteImageAccess = AskImagePresentationAccess
+
+struct AskImagePresentationAccess {
     var scope: AskRemoteImageScope?
     var epoch: UUID?
     var authorize: @MainActor () -> Bool = { false }
@@ -96,13 +101,15 @@ extension AskConversationModel {
                 self.selectionGeneration == generation && !self.isDeletedConversation(conversation)
         })
     }
-    func invalidateRemoteImages() { remoteImageScope.invalidate(); objectWillChange.send() }
+    func invalidateRemoteImages() {
+        remoteImageScope.invalidate(); conversationImageScope.invalidate(); launcherImageScope.invalidate(); objectWillChange.send()
+    }
     func setRemoteImagesVisible(_ visible: Bool) {
-        remoteImageScope.setVisible(visible); objectWillChange.send()
+        remoteImageScope.setVisible(visible); conversationImageScope.setVisible(visible); objectWillChange.send()
     }
 }
 
-@MainActor final class AskRemoteImageModel: ObservableObject {
+@MainActor final class AskRemoteImageModel: ObservableObject, AskImageScopeObserver {
     @Published private(set) var source: AskGeneratedImage?
     @Published private(set) var image: NSImage?
     @Published private(set) var unavailable = false

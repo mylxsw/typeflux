@@ -1,0 +1,94 @@
+{
+  "covered": 149,
+  "executable_added": 160,
+  "percent": 93.12,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Ask/AskAttachmentStrip.swift",
+      "covered": 6,
+      "executable_added": 6,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskComposerViews.swift",
+      "covered": 9,
+      "executable_added": 15,
+      "percent": 60.0,
+      "uncovered": [
+        1486,
+        1986,
+        1987,
+        1988,
+        2497,
+        2498
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskContextImage.swift",
+      "covered": 103,
+      "executable_added": 103,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskConversationModel.swift",
+      "covered": 10,
+      "executable_added": 11,
+      "percent": 90.91,
+      "uncovered": [
+        1803
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskConversationViews.swift",
+      "covered": 8,
+      "executable_added": 11,
+      "percent": 72.73,
+      "uncovered": [
+        1663,
+        1665,
+        1666
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskConversationWindowController.swift",
+      "covered": 2,
+      "executable_added": 2,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskImageRecoveryViews.swift",
+      "covered": 6,
+      "executable_added": 6,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskMessageProvenance.swift",
+      "covered": 0,
+      "executable_added": 1,
+      "percent": 0.0,
+      "uncovered": [
+        89
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/ImageGeneration/AskRemoteImage.swift",
+      "covered": 5,
+      "executable_added": 5,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    }
+  ]
+}

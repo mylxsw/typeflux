@@ -41,7 +41,7 @@ final class AskConversationModel: ObservableObject {
     @Published var launcherHistoryMode = false
     @Published var launcherHistoryIndex = 0
     @Published var launcherHistoryFillID: UUID?
-    @Published var launcherPresentationID = UUID() { didSet { cancelAttachmentWork(launcher: true) } }
+    @Published var launcherPresentationID = UUID() { didSet { cancelAttachmentWork(launcher: true); launcherImageScope.invalidate() } }
     var launcherExecutedInput: String?
     /// Files and folders the launcher can open; tests supply their own.
     var fileIndex: any AskFileSearching = AskFileIndex.shared
@@ -388,14 +388,17 @@ final class AskConversationModel: ObservableObject {
     // Local consent for the latest submission, retained for retries but never restored from history.
     private var screenshotConsent: [String: String] = [:]
     var captureGeneration = UUID()
+    let launcherImageScope = AskImagePresentationScope()
+    let conversationImageScope = AskImagePresentationScope()
     let remoteImageScope = AskRemoteImageScope()
-    var selectionGeneration = UUID() { didSet { cancelAttachmentWork(launcher: false); remoteImageScope.invalidate() } }
+    var selectionGeneration = UUID() { didSet { cancelAttachmentWork(launcher: false); remoteImageScope.invalidate(); conversationImageScope.invalidate() } }
     private var selectionObservation: Task<Void, Never>?
     private var draftSave: Task<Void, Never>?
     private var draftSaveConversationID: String?
     private var deletedConversationIDs: Set<String> = []
     /// Temporary conversations being kept; ending them meanwhile would delete what the user saved.
     private var keepingTemporaryIDs: Set<String> = []
+    private var imageAuthObserver: AnyCancellable?
     private var authObserver: AnyCancellable?
     private var modelObserver: AnyCancellable?
     private var memoryObserver: AnyCancellable?
@@ -430,6 +433,10 @@ final class AskConversationModel: ObservableObject {
         authObserver = NotificationCenter.default.publisher(for: .authDidLogout).sink { [weak self] _ in
             Task { @MainActor in self?.resetSession() }
         }
+        imageAuthObserver = NotificationCenter.default.publisher(for: .authDidLogin)
+            .merge(with: NotificationCenter.default.publisher(for: .authTokenDidRefresh)).sink { [weak self] _ in
+                Task { @MainActor in self?.invalidateRemoteImages() }
+            }
         notesObserver = NotificationCenter.default.publisher(for: .askNotesDidChange).sink { [weak self] _ in
             Task { @MainActor in
                 guard let self else { return }
@@ -541,6 +548,7 @@ final class AskConversationModel: ObservableObject {
     }
 
     func resetSession() {
+        launcherImageScope.invalidate(); conversationImageScope.invalidate()
         cancelAttachmentWork()
         notebookTask?.cancel()
         notebookReadTask?.cancel()
@@ -1723,7 +1731,7 @@ final class AskConversationModel: ObservableObject {
             try tools.deleteArtifacts(ownerId: current.account, conversationId: id)
             try workflowAuthoring?.remove(id)
             deletedConversationIDs.insert(id)
-            if selectedId == id { remoteImageScope.invalidate() }
+            if selectedId == id { remoteImageScope.invalidate(); conversationImageScope.invalidate() }
             titleTasks[id]?.cancel(); titleTasks[id] = nil; titleRetryAfter[id] = nil
             // Drain a writer already inside the cache before deleting its draft.
             // New writers check the tombstone immediately before saving.
@@ -1792,7 +1800,7 @@ final class AskConversationModel: ObservableObject {
         screenshotConsent[id] = nil; permissionModes[id] = nil; cloudApprovals[id] = nil
         titleTasks[id]?.cancel(); titleTasks[id] = nil; titleRetryAfter[id] = nil
         deletedConversationIDs.insert(id)
-        if selectedId == id { remoteImageScope.invalidate() }
+        if selectedId == id { remoteImageScope.invalidate(); conversationImageScope.invalidate() }
         if controllingConversationId == id { controllingConversationId = nil; onControlChanged?(false) }
         if selectedId == id {
             selectionObservation?.cancel(); selectionObservation = nil
