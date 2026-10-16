@@ -44,7 +44,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
     private let idle: @Sendable () -> Bool
     private let makeMediaEncoder: @Sendable (URL, URL, URL) -> any SemanticMediaEmbedding
     private let models: any SemanticModelHandling
-    private let makeReader: @Sendable () -> any AskFileReading
+    private let readers: SemanticFileReaders
     private let makeEncoder: @Sendable (URL, URL) -> any SemanticEmbedding
     private let makeQuery: @Sendable (URL, URL) -> any SemanticQueryEmbedding
     private var observers: [AnyCancellable] = []
@@ -88,7 +88,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
              SemanticEmbeddingWorker(helper: $0, model: $1, indexing: true, projector: $2,
                                      timeout: 90, startupTimeout: 180)
          },
-         makeReader: @escaping @Sendable () -> any AskFileReading = { AskFileReader() },
+         makeReader: (@Sendable () -> any AskFileReading)? = nil,
          makeEncoder: @escaping @Sendable (URL, URL) -> any SemanticEmbedding = { SemanticEmbeddingWorker(
              helper: $0,
              model: $1,
@@ -102,7 +102,8 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
         self.supported = supported; self.watcher = watcher; self.access = access
         self.lowPowerMode = lowPowerMode; self.thermalConstrained = thermalConstrained
         self.mediaModels = mediaModels; self.idle = idle; self.makeMediaEncoder = makeMediaEncoder
-        self.models = models; self.makeReader = makeReader; self.makeEncoder = makeEncoder; self.makeQuery = makeQuery
+        self.models = models; self.readers = SemanticFileReaders(makeReader: makeReader)
+        self.makeEncoder = makeEncoder; self.makeQuery = makeQuery
         self.preferences = settings.semanticFileSearch
         guard automaticStart else { return }
         self.observers
@@ -189,6 +190,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
         currentProcessingPath = nil
         fingerprint = key
         token.cancel(); token = AskSearchCancellation()
+        readers.stop()
         let token = token
         let previous = work
         work?.cancel(); rescan?.cancel(); watcher.stop()
@@ -219,7 +221,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
                 guard let self, !token.isCancelled, !Task.isCancelled else { return }
                 scope = prepared.0; blocked = prepared.0.blockedInScope
                 store = try? prepared.1.get()
-                queryValidator = SemanticFileValidator(reader: makeReader())
+                queryValidator = SemanticFileValidator(reader: readers.validation.scope())
                 if let database = store {
                     await updateCounts(database)
                 }
@@ -312,14 +314,17 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
         self.beginIndexing(database, scope: scope, token: token, paths: paths)
     }
 
-    deinit { token.cancel(); work?.cancel(); download?.cancel(); rescan?.cancel(); warmup?.cancel() }
+    deinit { token.cancel(); readers.stop(); work?.cancel(); download?.cancel(); rescan?.cancel(); warmup?.cancel() }
 }
 
 extension SemanticFileSearchService {
     /// Do not retain the service while media waits for user idle time.
     private func beginIndexing(_ database: SemanticFileStore, scope: AskFileScope, token: AskSearchCancellation,
                                paths: [String]? = nil) {
-        let makeReader = makeReader, makeEncoder = makeEncoder, mediaModels = mediaModels
+        let makeEncoder = makeEncoder, mediaModels = mediaModels
+        // Capture scopes before scheduling: an obsolete detached job must never
+        // mint a new reader generation after a newer service transition.
+        let reader = readers.indexing.scope(), priorityReader = readers.priority.scope()
         let makeMediaEncoder = makeMediaEncoder, helper = helper, model = modelURL
         let projector = mediaModelURL, idle = idle, pauseGate = pauseGate
         let reportDownload: @Sendable (Double?) -> Void = { [weak self] fraction in
@@ -355,7 +360,7 @@ extension SemanticFileSearchService {
         self.work = Task { [weak self] in
             do {
                 let result = try await Task.detached(priority: .utility) {
-                    let reader = makeReader(), priorityReader = makeReader()
+                    defer { reader.stop(); priorityReader.stop() }
                     let encoder = makeEncoder(helper, model)
                     let media = SemanticMediaWorker(helper: helper, model: model, projector: projector,
                         models: mediaModels, makeEncoder: makeMediaEncoder, progress: reportDownload)
@@ -453,6 +458,7 @@ extension SemanticFileSearchService {
         _ = setEnabled(false)
         preferences = settings.semanticFileSearch
         token.cancel(); work?.cancel(); rescan?.cancel(); download?.cancel(); watcher.stop()
+        readers.stop()
         warmup?.cancel(); warmup = nil
         queryWorker?.stop(); queryWorker = nil
         await work?.value; await download?.value
