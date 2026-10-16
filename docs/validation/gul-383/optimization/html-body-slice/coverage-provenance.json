@@ -1,0 +1,68 @@
+{
+  "baseline": "3d29741d9352c047f5fdb06507187b1becd16626",
+  "source_fingerprints_match_frozen_validation": true,
+  "binary_sha256": "56bfd9c9a509c4e6beaaa3bf9354c1f13e9d4d327794bb43eeb22811e9819e10",
+  "native_reader_binary_sha256": "c940c23372ae405fa4faa479caded82da027a3bcfe05e934f13ea9d93a286b78",
+  "profile_sha256": "2429e35f4b5a1189fb93c94f8f39e1c7259be4720d7e4f6a72b651114dd010bc",
+  "hardware": "Mac16,10 arm64, 16 GiB RAM",
+  "configuration": "Instrumented Debug",
+  "toolchain": "Apple Swift version 6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)\nTarget: arm64-apple-macosx26.0\n",
+  "selected_test_methods": 48,
+  "xctest_methods_passed": 9,
+  "swift_testing_methods_passed": 39,
+  "functional_failures": 0,
+  "first_build_seconds": 279.22,
+  "build_and_discovery_seconds": 325.09,
+  "runner_wall_seconds": 344.73,
+  "full_command_output_span_seconds": 352.22,
+  "wall_time_note": "Full command span uses initial redirected-log creation to final report output. Shell/process spawn overhead was not separately timed. Runner total includes preparation/build/discovery/startup/tests.",
+  "failed_builds": 0,
+  "failed_test_retries": 0,
+  "tool_sha256": {
+    "docs/validation/gul-383/optimization/html-body-slice/coverage-swift.sh": "42967efaf9199510c5f13f9219641be7b87a08eb2a781fc8b4200bfe1da8996f",
+    "docs/validation/gul-383/optimization/html-body-slice/test-files.json": "ee5f12a8761f98b875e73a88434620cb4fcbcac476e2bc29ec87565a58388df8",
+    "docs/validation/gul-383/optimization/html-body-slice/html_resource_probe.py": "e47c40174fc4b630ddbfc3c7c2e98c0bfa28d38ebd628f05d10a001af851cd1b",
+    "scripts/test_groups.py": "488dbe8cec3f3528adb4ef265bb5d8e3cf5c13867581fb5acb5dc19eb281af46",
+    "scripts/coverage.sh": "1a18ada556b3875baf54f389ae48f5bceaf2c699a37f8638ebd16d7255e89095",
+    "docs/validation/gul-383/optimization/changed_coverage.py": "dd9efb30a427617a614235a0c65f86b2cb5ab6dd7c28b857031a91545db135ac"
+  },
+  "fixture_sha256": {
+    "synthetic-body.html": "cdd6310a11da36488f7d3131588e25cccd5ee8478a9b161470275139b5878c6f",
+    "synthetic-invoice.pdf": "0ad2ca47799a7d21b8c5d5e80cbaf3ed3c987b23cd6ce18332a5bcf73ba0f888"
+  },
+  "test_source_sha256": {
+    "ExclusiveUIStateTrait.swift": "e96343047efb4c960147d063a39cc0a81adee8d6c47084fe6cf3be55e254b910",
+    "SemanticPDFOCRTests.swift": "a183947f7702c834023df8a33aef400637c2e12519506e356e34c1029fdf05cb",
+    "SemanticSearchSnippetTests.swift": "3390b0a294d8acbfed1d4128c44f0a5c967b5365316029b089f26798a3eaf725",
+    "SemanticFileSearchTests.swift": "1e0640f48438a010ad08bc8199ac8db3126c18e3b256cf0a68c25f6c43763268",
+    "SemanticIndexRecoveryTests.swift": "62048043c78771f3d432461bcda6ed791cb37a311e7b6342605fc5eed07cd396",
+    "SemanticLexicalSearchTests.swift": "e4a935c1f303f1d8d20dea9a99b3e2ad301de62d422b6db1788885de4c8a785b",
+    "SemanticIndexDiagnosticsTests.swift": "f0f907cd2397ffd89507a4474cd8eae3c5d1a323e383aa5a5aad479876cc3672",
+    "SemanticFileValidatorTests.swift": "15fa45d7049a59ec37c5c3458f7189f0ea378f4e4a997088f203ddbaf602fc4d",
+    "SemanticReaderOwnershipTests.swift": "03e69dc3965fa453f70a6e63d331dec77383849fbc11bac9f4c5208b3f423b23",
+    "SemanticSearchRankingTests.swift": "4d530bf72c82c34d200e81675cd72b8247245849a1dd5c2fa8bcc5821340e2dc",
+    "SemanticWordTextTests.swift": "fb0acd4c000356471de61b58ddc33e6aba0c2e92f001e111c836b6060ffe3590",
+    "SemanticScanAdmissionTests.swift": "340bff62199622c4d9cc61b01bb42b0793f5e4edd70fc3fdd69e26d775296c14",
+    "SemanticDiscoveryPauseTests.swift": "fb794e3b6b6803bc9fa30c80f921ec34353e1727ddff1206b04abf3b4e3ef460",
+    "SemanticFileServiceTests.swift": "4abe646652a72ce5879c0a40b0444eb983efdd502640824af83b0d05c6e1eb6a",
+    "SettingsBehaviorTestSupport.swift": "84fe09962dbf801bd3e85e2cd7dd89949c56bb3808d28a5180a0ef63cad27cae",
+    "SemanticFailureURLProtocol.swift": "3b812c72519d42cd49a2220f5416d14519a18d3d9d87ad3fb344d13ee4b9462c",
+    "SemanticHTMLTextTests.swift": "3bd0089d03c528cf7c739b8a8c41ef10bb0291de2f60fb2444ab126313890cf3"
+  },
+  "log_path_normalization": "Runtime checkout root replaced with <repo> in compressed log; LCOV source paths made repository-relative. Raw counter values and line mappings unchanged.",
+  "resource_summary": {
+    "wall_seconds": 300.09386941604316,
+    "worker_exit_code": 0,
+    "error": null,
+    "samples": 2711,
+    "missing_identifier": 0,
+    "milliseconds": {
+      "p50": 1.1395830078981817,
+      "p95": 1.5790839679539204,
+      "p99": 2.2067500394769013
+    },
+    "peak_rss_bytes": 59736064,
+    "scope": "Debug instrumented production file-index-worker, nice 10, sequential repeated extraction of the same synthetic HTML body, 100 ms between requests. No embedding, background scheduler, UI input, GPU counters or long-term thermal acceptance measured. RSS is ps resident pages; CPU percent is ps lifetime average, 100 percent per core."
+  },
+  "resource_raw_gzip_sha256": "ec55456dcb999fa64f6f8dc9a38142bbfd891465ef4819d2a5aec869905faaf4"
+}

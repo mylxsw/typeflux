@@ -1,0 +1,16 @@
+{
+  "full_touched_file_exit": 2,
+  "preexisting_violations": 28,
+  "changed_line_violations": [],
+  "scope": [
+    "Sources/Typeflux/Ask/Local/AskLocalWebTools.swift",
+    "Sources/Typeflux/Ask/Local/AskOfflineHTML.swift",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticIndexDiagnostics.swift",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFilePolicy.swift",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticHTMLText.swift",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileContentWorker.swift",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Jobs.swift",
+    "Tests/TypefluxTests/SemanticHTMLTextTests.swift",
+    "Tests/TypefluxTests/SemanticWordTextTests.swift"
+  ]
+}

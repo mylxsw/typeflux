@@ -1,0 +1,70 @@
+{
+  "baseline": "3d29741d9352c047f5fdb06507187b1becd16626",
+  "denominator": "Added/modified executable Swift lines in Sources/Typeflux, including new files, intersected with final LLVM LCOV DA records. Tests, helper wrapper and unchanged vendor code excluded; helper reported separately.",
+  "executable": 188,
+  "covered": 183,
+  "percent": 97.34,
+  "files": {
+    "Sources/Typeflux/Ask/Local/AskLocalWebTools.swift": {
+      "executable": 2,
+      "covered": 2,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/Local/AskOfflineHTML.swift": {
+      "executable": 16,
+      "covered": 16,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileContentWorker.swift": {
+      "executable": 9,
+      "covered": 9,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFilePolicy.swift": {
+      "executable": 0,
+      "covered": 0,
+      "percent": null,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Jobs.swift": {
+      "executable": 1,
+      "covered": 1,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticHTMLText.swift": {
+      "executable": 159,
+      "covered": 154,
+      "percent": 96.86,
+      "uncovered": [
+        97,
+        144,
+        145,
+        169,
+        170
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticIndexDiagnostics.swift": {
+      "executable": 1,
+      "covered": 1,
+      "percent": 100.0,
+      "uncovered": []
+    }
+  },
+  "groups": {
+    "application": {
+      "covered": 4,
+      "executable": 4,
+      "percent": 100.0
+    },
+    "shared_content_reader": {
+      "covered": 179,
+      "executable": 184,
+      "percent": 97.28
+    }
+  },
+  "native_media_inference_helper_changed_executable_lines": 0
+}

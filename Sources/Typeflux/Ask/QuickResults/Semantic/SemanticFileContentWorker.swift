@@ -63,10 +63,16 @@ extension AskFileWorkerCommand {
             } else if cursor.page + 1 < pdf.pageCount {
                 result.nextCursor = .init(page: cursor.page + 1)
             }
-        } else if (request.path as NSString).pathExtension.lowercased() == "docx" {
+        } else if ["docx", "html", "htm"].contains((request.path as NSString).pathExtension.lowercased()) {
             do {
-                let batch = try SemanticWordText.read(descriptor: descriptor,
-                                                      size: Int64(opened.st_size), cursor: cursor)
+                let batch: AskFileReadResponse
+                if (request.path as NSString).pathExtension.lowercased() == "docx" {
+                    batch = try SemanticWordText.read(descriptor: descriptor,
+                        size: Int64(opened.st_size), cursor: cursor)
+                } else {
+                    batch = try SemanticHTMLText.read(descriptor: descriptor,
+                        size: Int64(opened.st_size), cursor: cursor)
+                }
                 result.pages = batch.pages
                 result.nextCursor = batch.nextCursor
             } catch let error as SemanticDocumentError { return .init(error: error.code) } catch {
