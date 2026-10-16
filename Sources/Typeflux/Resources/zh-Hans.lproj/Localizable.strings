@@ -5666,7 +5666,7 @@
 "activity.window.recent" = "最近完成";
 "activity.window.emptyActive" = "当前没有后台任务";
 "activity.window.emptyRecent" = "本次运行还没有完成的任务";
-"activity.window.indicator" = "在菜单栏图标显示状态点";
+"activity.window.indicator" = "在菜单栏图标上显示任务状态";
 "activity.window.notifications" = "耗时下载完成后发送通知";
 "activity.window.finished" = "已完成 · %@";
 "activity.window.justNow" = "刚刚";

@@ -222,13 +222,11 @@ final class StatusBarController: NSObject {
         )?.withSymbolConfiguration(symbolConfig)
         image?.size = IconLayout.imageSize
         image?.isTemplate = true
-        let thickness = NSStatusBar.system.thickness
-        statusItem?.length = StatusItemActivityIndicator.length(for: indicator, thickness: thickness)
-        button.image = indicator == .none ? image
-            : image.map { StatusItemActivityIndicator.paddedIcon($0, thickness: thickness) }
+        button.image = image
         button.imageScaling = .scaleProportionallyDown
         button.contentTintColor = nil
-        activityIndicator.apply(indicator, to: button)
+        activityIndicator.apply(indicator, to: button, symbol: StudioTheme.Symbol.brand,
+                                configuration: symbolConfig, size: IconLayout.imageSize)
     }
 
     /// "Ready, 2 background tasks in progress, a background task needs your attention".

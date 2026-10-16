@@ -2,7 +2,7 @@ import Combine
 import Foundation
 
 /// Gathers the background work of every source into one ordered list for the
-/// menu bar dot, the menu section and the background tasks window.
+/// menu bar icon, the menu section and the background tasks window.
 @MainActor
 final class BackgroundActivityCenter: ObservableObject {
     static let recentLimit = 20
