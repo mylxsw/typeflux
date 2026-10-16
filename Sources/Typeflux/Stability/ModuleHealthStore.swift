@@ -12,6 +12,7 @@ final class ModuleHealthStore: @unchecked Sendable {
         var version = 1
         var attempts = 0
         var quarantined = false
+        var automaticRecoveryUsed: Bool? = nil
     }
 
     private let lock = NSLock()
@@ -36,11 +37,14 @@ final class ModuleHealthStore: @unchecked Sendable {
 
     /// Called only inside the supervisor's bounded detached factory task.
     /// Persist before entering potentially crashing native initialization.
-    func reserve() throws {
+    func reserve(automaticRecovery: Bool = false) throws {
         try lock.withLock {
             loadIfNeeded()
             guard writable, var next = record else { throw ModuleFailure.healthPersistence }
             if healthLock.withLock({ stable }) { next = Record() }
+            if automaticRecovery, next.quarantined, next.automaticRecoveryUsed != true {
+                next = Record(automaticRecoveryUsed: true)
+            }
             guard !next.quarantined, next.attempts < 4 else { throw ModuleFailure.quarantined }
             next.attempts += 1
             next.quarantined = next.attempts == 4

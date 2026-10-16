@@ -30,6 +30,36 @@ struct ModuleHealthStoreTests {
         #expect(object?["attempts"] as? Int == 1)
     }
 
+    @Test func automaticRecoveryGetsOneMoreBudgetAndStopsAfterRepeatedFailure() throws {
+        let root = location(), url = root.appendingPathComponent("notebook.json")
+        defer { try? FileManager.default.removeItem(at: root) }
+        for _ in 0..<4 { try ModuleHealthStore(url: url).reserve() }
+
+        let recovery = ModuleHealthStore(url: url)
+        try recovery.reserve(automaticRecovery: true)
+        var record = try JSONDecoder().decode(ModuleHealthStore.Record.self, from: Data(contentsOf: url))
+        #expect(record.attempts == 1)
+        #expect(record.automaticRecoveryUsed == true)
+
+        for _ in 0..<3 { try ModuleHealthStore(url: url).reserve(automaticRecovery: true) }
+        #expect(throws: ModuleFailure.quarantined) {
+            try ModuleHealthStore(url: url).reserve(automaticRecovery: true)
+        }
+        record = try JSONDecoder().decode(ModuleHealthStore.Record.self, from: Data(contentsOf: url))
+        #expect(record.attempts == 4)
+        #expect(record.automaticRecoveryUsed == true)
+
+        let cleanURL = root.appendingPathComponent("wordBook.json")
+        for _ in 0..<4 { try ModuleHealthStore(url: cleanURL).reserve() }
+        let healthy = ModuleHealthStore(url: cleanURL)
+        try healthy.reserve(automaticRecovery: true)
+        healthy.succeeded()
+        healthy.cleanStop()
+        record = try JSONDecoder().decode(ModuleHealthStore.Record.self, from: Data(contentsOf: cleanURL))
+        #expect(record.attempts == 0)
+        #expect(record.automaticRecoveryUsed == nil)
+    }
+
     @Test func cleanStopAndObservedStabilityRestoreBudgetButFailureDoesNot() throws {
         let root = location(), clock = HealthClock()
         let url = root.appendingPathComponent("wordBook.json")
@@ -66,7 +96,7 @@ struct ModuleHealthStoreTests {
             let store = ModuleHealthStore(url: url)
             #expect(throws: ModuleFailure.healthPersistence) { try store.reserve() }
             #expect(try Data(contentsOf: url) == data, "Automatic recovery must retain damaged metadata")
-            #expect(throws: ModuleFailure.healthPersistence) { try store.reserve() }
+            #expect(throws: ModuleFailure.healthPersistence) { try store.reserve(automaticRecovery: true) }
             try store.reset()
             try store.reserve()
         }
@@ -146,6 +176,33 @@ struct ModuleHealthStoreTests {
 @Suite("Storage module registry wiring", .exclusiveUIState)
 @MainActor
 struct StorageModuleRegistryTests {
+    @Test func quarantinedLegacyStorageStartsWithoutUserAction() async throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("storage-registry-" + UUID().uuidString)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let legacy = Data(#"{"version":1,"attempts":4,"quarantined":true}"#.utf8)
+        for file in ["notebook.json", "wordBook.json", "conversations.json"] {
+            try legacy.write(to: root.appendingPathComponent(file))
+        }
+
+        let storage = StorageModules(healthDirectory: root,
+            conversationFactory: { try AskConversationCache(url: root.appendingPathComponent("cache.db")) },
+            wordBookFactory: { SQLiteAskWordBookStore(url: root.appendingPathComponent("words.db")) },
+            noteFactory: { SQLiteAskNoteStore(url: root.appendingPathComponent("notes.db")) })
+        #expect(await storage.registry.startAll().isEmpty)
+        #expect(try await storage.notes.count(.all) == 0)
+        #expect(try await storage.words.count(.all) == 0)
+        #expect(try await storage.conversations.list(owner: "test").isEmpty)
+
+        for file in ["notebook.json", "wordBook.json", "conversations.json"] {
+            let record = try JSONDecoder().decode(ModuleHealthStore.Record.self,
+                from: Data(contentsOf: root.appendingPathComponent(file)))
+            #expect(record.attempts == 1)
+            #expect(record.automaticRecoveryUsed == true)
+        }
+        await storage.registry.shutdown()
+    }
+
     @Test func threeFacadesUseIndependentFactoriesAndPersistentLifecycle() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent("storage-registry-" + UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }

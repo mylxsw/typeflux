@@ -202,6 +202,7 @@ actor ModuleSupervisor<Service: Sendable> {
         state = .starting
         let current = generation
         let resetHealth = resetHealthOnNextStart
+        let automaticPersistentRecovery = policy.automaticallyRecoverPersistentQuarantine
         resetHealthOnNextStart = false
         startup = Task.detached { [factory, admission, healthStore] in
             let result: Result<Service, any Error>
@@ -209,7 +210,7 @@ actor ModuleSupervisor<Service: Sendable> {
                 try Task.checkCancellation()
                 guard admission.permitsWork else { throw ModuleFailure.disabled }
                 if resetHealth { try healthStore?.reset() }
-                try healthStore?.reserve()
+                try healthStore?.reserve(automaticRecovery: automaticPersistentRecovery)
                 try Task.checkCancellation()
                 guard admission.permitsWork else { throw ModuleFailure.disabled }
                 result = .success(try await factory())
