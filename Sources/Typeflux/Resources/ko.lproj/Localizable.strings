@@ -5627,3 +5627,5 @@
 
 "settings.services.recordingTimeline" = "녹화 타임라인 및 포스터";
 "settings.services.recordingExport" = "녹화 인코딩";
+
+"settings.services.nativeSystem" = "네이티브 시스템 명령";

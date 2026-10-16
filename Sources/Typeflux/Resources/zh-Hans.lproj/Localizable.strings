@@ -5741,3 +5741,5 @@
 
 "settings.services.recordingTimeline" = "录屏时间轴与海报";
 "settings.services.recordingExport" = "录屏编码";
+
+"settings.services.nativeSystem" = "原生系统命令";

@@ -1,0 +1,106 @@
+{
+  "covered": 161,
+  "executable_added": 163,
+  "percent": 98.77,
+  "files": [
+    {
+      "file": "Sources/Typeflux/App/DIContainer.swift",
+      "covered": 0,
+      "executable_added": 2,
+      "percent": 0.0,
+      "uncovered": [
+        161,
+        162
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "covered": 2,
+      "executable_added": 2,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/System/NativeSystemWorker.swift",
+      "covered": 65,
+      "executable_added": 65,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Resources/en.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    },
+    {
+      "file": "Sources/Typeflux/Resources/ja.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    },
+    {
+      "file": "Sources/Typeflux/Resources/ko.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    },
+    {
+      "file": "Sources/Typeflux/Resources/zh-Hans.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    },
+    {
+      "file": "Sources/Typeflux/Resources/zh-Hant.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    },
+    {
+      "file": "Sources/Typeflux/Stability/MediaExtractionModule.swift",
+      "covered": 1,
+      "executable_added": 1,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Stability/ModuleHealthStore.swift",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Stability/ModuleWorkerGate.swift",
+      "covered": 30,
+      "executable_added": 30,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Stability/NativeSystemModule.swift",
+      "covered": 63,
+      "executable_added": 63,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    }
+  ]
+}

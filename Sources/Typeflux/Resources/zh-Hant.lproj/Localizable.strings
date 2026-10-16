@@ -5661,3 +5661,5 @@
 
 "settings.services.recordingTimeline" = "錄影時間軸與海報";
 "settings.services.recordingExport" = "錄影編碼";
+
+"settings.services.nativeSystem" = "原生系統命令";

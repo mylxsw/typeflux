@@ -5627,3 +5627,5 @@
 
 "settings.services.recordingTimeline" = "録画タイムラインとポスター";
 "settings.services.recordingExport" = "録画エンコード";
+
+"settings.services.nativeSystem" = "ネイティブシステムコマンド";

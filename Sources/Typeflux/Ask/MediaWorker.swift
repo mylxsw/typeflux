@@ -19,7 +19,7 @@ final class MediaWorker: @unchecked Sendable {
     private var active: [UUID: MediaLease] = [:]
     private var disabled = false
     private let requiresLifecycle: Bool
-    private var lifecycle: MediaExtractionGate?
+    private var lifecycle: ModuleWorkerGate?
     private var retirement: CheckedContinuation<Void, Never>?
     private var budget = ModuleRecoveryBudget()
     private let executable: URL
@@ -120,7 +120,7 @@ final class MediaWorker: @unchecked Sendable {
                   body: (MediaLease, URL, TimeInterval, Runner, @escaping @Sendable () -> Bool) throws -> T) throws -> T {
         let lease = MediaLease()
         lease.retained = retaining
-        let gate: MediaExtractionGate?, generation: UUID?
+        let gate: ModuleWorkerGate?, generation: UUID?
         (gate, generation) = try lock.withLock {
             guard !disabled, active.count < 2, active[id] == nil, !isCancelled() else { throw MediaFailure.unavailable }
             if requiresLifecycle && lifecycle == nil { throw MediaFailure.unavailable }
@@ -162,7 +162,7 @@ final class MediaWorker: @unchecked Sendable {
 
     /// Binding is one-time and precedes any work; factories reuse this pool,
     /// never replace it while cancelled host work or children remain owned.
-    func bind(_ gate: MediaExtractionGate) -> Bool {
+    func bind(_ gate: ModuleWorkerGate) -> Bool {
         lock.withLock {
             guard lifecycle == nil, active.isEmpty, !disabled else { return false }
             lifecycle = gate; return true
