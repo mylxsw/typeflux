@@ -158,7 +158,7 @@ private actor NativeIconCalls {
 
     func testLauncherPrefetchesVersionedFilesAndFoldersAndClearsThemOnHide() async throws {
         let calls = NativeIconCalls(), pixels = raster(), revision = Date(timeIntervalSince1970: 1_000)
-        let cache = AskLauncherIconCache(fileCapacity: 3, decode: { _ in
+        let cache = AskLauncherIconCache(fileCapacity: 3, immediateLookup: { _, _ in nil }, decode: { _ in
             await calls.called()
             return .init(images: [pixels], numbers: [], pages: 0)
         })
@@ -207,6 +207,65 @@ private actor NativeIconCalls {
         _ = try await cache.load(second, revision: revision)
         XCTAssertNil(cache.cached(first, revision: revision))
         XCTAssertNotNil(cache.cached(second, revision: revision))
+    }
+
+    func testLauncherPreparesEveryVisibleIconBeforePublishingRows() async throws {
+        let calls = NativeIconCalls(), pixels = raster(), revision = Date(timeIntervalSince1970: 1_000)
+        var lookedUp: [(String, Bool)] = []
+        let cache = AskLauncherIconCache(immediateLookup: { icon, folder in
+            lookedUp.append((icon.value, folder))
+            return NSImage(cgImage: pixels, size: .init(width: 56, height: 56))
+        }, decode: { _ in
+            await calls.called()
+            throw MediaFailure.unavailable
+        })
+        let apps = (0..<8).map { MediaNativeIcon(kind: .file, value: "/Applications/App\($0).app") }
+        let pane = MediaNativeIcon(kind: .file, value: "/System/Library/Settings/Network.appex")
+        cache.prefetch(apps + [pane])
+        for icon in apps + [pane] { XCTAssertNotNil(cache.cached(icon)) }
+
+        let hits = (0..<9).map { index in
+            AskFileHit(path: "/tmp/report\(index).pdf", name: "report\(index).pdf", kind: .file,
+                       modified: revision, score: 1)
+        } + [AskFileHit(path: "/tmp/Reports", name: "Reports", kind: .folder,
+                        modified: revision, score: 0.5)]
+        cache.prefetchFiles(hits)
+        for hit in hits {
+            XCTAssertNotNil(cache.cached(.init(kind: .file, value: hit.path), revision: revision))
+        }
+        XCTAssertTrue(lookedUp.contains { $0.0 == "/tmp/Reports" && $0.1 })
+        XCTAssertEqual(lookedUp.count, apps.count + 1 + hits.count)
+        let childCalls = await calls.count
+        XCTAssertEqual(childCalls, 0)
+    }
+
+    func testLauncherDrawsPreparedApplicationIconOnFirstFrame() async throws {
+        _ = NSApplication.shared
+        let pixels = raster(), calls = NativeIconCalls(), scope = AskImagePresentationScope()
+        let icon = MediaNativeIcon(kind: .file, value: "/Applications/Immediate.app")
+        let cache = AskLauncherIconCache(immediateLookup: { _, _ in
+            NSImage(cgImage: pixels, size: .init(width: 56, height: 56))
+        }, decode: { _ in
+            await calls.called()
+            throw MediaFailure.unavailable
+        })
+        cache.prefetch([icon])
+        let access = AskImagePresentationAccess(scope: scope, epoch: scope.epoch, authorize: { true })
+        let view = NSHostingView(rootView: AskNativeIconView(icon: icon)
+            .frame(width: 56, height: 56)
+            .environment(\.askLauncherIconCache, cache)
+            .environment(\.askContextImageAccess, access))
+        let window = NSWindow(contentRect: .init(x: 100, y: 100, width: 56, height: 56),
+                              styleMask: [.titled], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false; window.contentView = view; window.orderFront(nil)
+        defer { window.contentView = nil; window.close() }
+        view.layoutSubtreeIfNeeded()
+        let bitmap = try XCTUnwrap(view.bitmapImageRepForCachingDisplay(in: view.bounds))
+        view.cacheDisplay(in: view.bounds, to: bitmap)
+        let center = try XCTUnwrap(bitmap.colorAt(x: bitmap.pixelsWide / 2, y: bitmap.pixelsHigh / 2))
+        XCTAssertGreaterThan(center.usingColorSpace(.deviceRGB)?.blueComponent ?? 0, 0.7)
+        let childCalls = await calls.count
+        XCTAssertEqual(childCalls, 0)
     }
 
     func testClosingLauncherDoesNotRepopulatePrivateIconCacheFromLateDecode() async throws {

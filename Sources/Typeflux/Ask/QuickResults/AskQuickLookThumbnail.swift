@@ -55,7 +55,8 @@ struct AskQuickLookThumbnailView: View {
                 return try await decode(url, .init(width: edge, height: edge))
             })) { image in
                 if let image { Image(nsImage: image).resizable().interpolation(.high).scaledToFit() }
-                else { AskNativeIconView(icon: .init(kind: .file, value: url.path), revision: modified) }
+                else { AskNativeIconView(icon: .init(kind: .file, value: url.path), revision: modified,
+                                         folder: url.hasDirectoryPath) }
             }
             .id(Identity(url: url, modified: modified, edge: edge, epoch: access.epoch, generation: generation))
             .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))

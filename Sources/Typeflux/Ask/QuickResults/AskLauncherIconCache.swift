@@ -1,6 +1,7 @@
 import AppKit
 import SwiftUI
 import TypefluxMediaProtocol
+import UniformTypeIdentifiers
 
 /// Application icons survive launcher sessions. File and folder icons are kept
 /// only while the launcher is visible and are versioned by the search index.
@@ -37,16 +38,19 @@ final class AskLauncherIconCache {
     private let capacity: Int
     private let fileCapacity: Int
     private let lifetime: TimeInterval
+    private let immediateLookup: @MainActor (MediaNativeIcon, Bool) -> NSImage?
 
     init(capacity: Int = 64, fileCapacity: Int = 48, lifetime: TimeInterval = 300,
+         immediateLookup: @escaping @MainActor (MediaNativeIcon, Bool) -> NSImage? = AskLauncherIconCache.systemIcon,
          decode: @escaping AskNativeIconDecoding = { try await AskFinderIcon.decode($0) }) {
         self.capacity = capacity; self.fileCapacity = fileCapacity
-        self.lifetime = lifetime; self.decode = decode
+        self.lifetime = lifetime; self.immediateLookup = immediateLookup; self.decode = decode
     }
 
     nonisolated static func eligible(_ icon: MediaNativeIcon) -> Bool {
         icon.kind == .application ||
-            (icon.kind == .file && URL(fileURLWithPath: icon.value).pathExtension.lowercased() == "app")
+            (icon.kind == .file && ["app", "appex", "prefpane"].contains(
+                URL(fileURLWithPath: icon.value).pathExtension.lowercased()))
     }
 
     func cached(_ icon: MediaNativeIcon, revision: Date? = nil) -> AskFilePreviewPDF.Result? {
@@ -64,6 +68,46 @@ final class AskLauncherIconCache {
 
     nonisolated static func eligible(_ icon: MediaNativeIcon, revision: Date?) -> Bool {
         eligible(icon) || (revision != nil && icon.kind == .file && icon.value.hasPrefix("/"))
+    }
+
+    /// Resolve the visible search row before publication. Application bundles
+    /// keep their exact icon; documents use their system type icon, so reading a
+    /// slow or malformed file never blocks the launcher.
+    func immediate(_ icon: MediaNativeIcon, revision: Date? = nil, folder: Bool = false) -> AskFilePreviewPDF.Result? {
+        guard Self.eligible(icon, revision: revision) else { return nil }
+        if let result = cached(icon, revision: revision) { return result }
+        guard (try? icon.validate()) != nil, let image = immediateLookup(icon, folder),
+              let result = Self.rasterized(image) else { return nil }
+        remember(result, for: Key(icon, revision: revision))
+        return result
+    }
+
+    private static func systemIcon(_ icon: MediaNativeIcon, folder: Bool) -> NSImage? {
+        switch icon.kind {
+        case .application:
+            guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: icon.value) else { return nil }
+            return NSWorkspace.shared.icon(forFile: url.path)
+        case .file:
+            if eligible(icon) { return NSWorkspace.shared.icon(forFile: icon.value) }
+            if folder { return NSWorkspace.shared.icon(for: .folder) }
+            let type = UTType(filenameExtension: URL(fileURLWithPath: icon.value).pathExtension) ?? .data
+            return NSWorkspace.shared.icon(for: type)
+        case .fileExtension, .type:
+            return nil
+        }
+    }
+
+    private static func rasterized(_ image: NSImage) -> AskFilePreviewPDF.Result? {
+        var bounds = CGRect(x: 0, y: 0, width: 56, height: 56)
+        guard let source = image.cgImage(forProposedRect: &bounds, context: nil, hints: nil),
+              let context = CGContext(data: nil, width: 56, height: 56, bitsPerComponent: 8, bytesPerRow: 224,
+                  space: CGColorSpaceCreateDeviceRGB(),
+                  bitmapInfo: CGBitmapInfo.byteOrder32Big.rawValue | CGImageAlphaInfo.premultipliedLast.rawValue)
+        else { return nil }
+        context.interpolationQuality = .high
+        context.draw(source, in: bounds)
+        guard let raster = context.makeImage() else { return nil }
+        return .init(images: [raster], numbers: [], pages: 0)
     }
 
     func load(_ icon: MediaNativeIcon, revision: Date? = nil) async throws -> AskFilePreviewPDF.Result {
@@ -91,14 +135,7 @@ final class AskLauncherIconCache {
                       image.width > 0, image.height > 0, image.width <= 56, image.height <= 56 else {
                     throw MediaFailure.invalidProtocol
                 }
-                entries[key] = Entry(result: result, expires: Date().addingTimeInterval(lifetime))
-                if key.isPrivate {
-                    fileOrder.removeAll { $0 == key }; fileOrder.append(key)
-                    while fileOrder.count > fileCapacity { entries[fileOrder.removeFirst()] = nil }
-                } else {
-                    applicationOrder.removeAll { $0 == key }; applicationOrder.append(key)
-                    while applicationOrder.count > capacity { entries[applicationOrder.removeFirst()] = nil }
-                }
+                remember(result, for: key)
                 release(key, client: client)
                 return result
             } catch {
@@ -112,27 +149,29 @@ final class AskLauncherIconCache {
 
     /// Replace stale-query prefetches. Visible rows sharing a request keep it alive.
     func prefetch(_ icons: [MediaNativeIcon]) {
-        let ordered = Array(icons.filter(Self.eligible).prefix(3)).map { Key($0) }
+        let ordered = Array(icons.filter(Self.eligible).prefix(12)).map { Key($0) }
         updatePrefetch(ordered, privateFiles: false)
     }
 
     func prefetchFiles(_ hits: [AskFileHit]) {
-        // A folder is often visible below the file group; start one promptly.
-        let firstFolder = hits.first(where: \.isFolder)
-        let ordered = (Array(hits.prefix(4)) + [firstFolder].compactMap { $0 })
-            .map { Key(.init(kind: .file, value: $0.path), revision: $0.modified) }
+        // File mode can show more rows than mixed search; include the first folders.
+        let folders = Array(hits.filter(\.isFolder).prefix(3))
+        let candidates = Array(hits.prefix(12)) + folders
+        let ordered = candidates.map { Key(.init(kind: .file, value: $0.path), revision: $0.modified) }
+        let folderKeys = Set(folders.map { Key(.init(kind: .file, value: $0.path), revision: $0.modified) })
         var seen: Set<Key> = []
-        updatePrefetch(ordered.filter { seen.insert($0).inserted }, privateFiles: true)
+        updatePrefetch(ordered.filter { seen.insert($0).inserted }, privateFiles: true, folders: folderKeys)
     }
 
-    private func updatePrefetch(_ ordered: [Key], privateFiles: Bool) {
+    private func updatePrefetch(_ ordered: [Key], privateFiles: Bool, folders: Set<Key> = []) {
         let wanted = Set(ordered)
         let previous = privateFiles ? filePrefetch : applicationPrefetch
         for key in previous.subtracting(wanted) {
             prefetchTasks[key]?.task.cancel(); prefetchTasks[key] = nil
         }
         if privateFiles { filePrefetch = wanted } else { applicationPrefetch = wanted }
-        for key in ordered where cached(key.icon, revision: key.revision) == nil && prefetchTasks[key] == nil {
+        for key in ordered where immediate(key.icon, revision: key.revision, folder: folders.contains(key)) == nil
+            && prefetchTasks[key] == nil {
             let id = UUID()
             let task = Task { [weak self] in
                 _ = try? await self?.load(key.icon, revision: key.revision)
@@ -171,6 +210,17 @@ final class AskLauncherIconCache {
         guard var current = pending[key], current.clients.remove(client) != nil else { return }
         if current.clients.isEmpty { pending[key] = nil; current.task.cancel() }
         else { pending[key] = current }
+    }
+
+    private func remember(_ result: AskFilePreviewPDF.Result, for key: Key) {
+        entries[key] = Entry(result: result, expires: Date().addingTimeInterval(lifetime))
+        if key.isPrivate {
+            fileOrder.removeAll { $0 == key }; fileOrder.append(key)
+            while fileOrder.count > fileCapacity { entries[fileOrder.removeFirst()] = nil }
+        } else {
+            applicationOrder.removeAll { $0 == key }; applicationOrder.append(key)
+            while applicationOrder.count > capacity { entries[applicationOrder.removeFirst()] = nil }
+        }
     }
 }
 

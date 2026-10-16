@@ -57,6 +57,7 @@ extension EnvironmentValues {
 struct AskNativeIconImage<Content: View>: View {
     let icon: MediaNativeIcon?
     var revision: Date?
+    var folder = false
     var decode: AskNativeIconDecoding?
     @ViewBuilder var content: (NSImage?) -> Content
     @Environment(\.askContextImageAccess) private var access
@@ -68,7 +69,7 @@ struct AskNativeIconImage<Content: View>: View {
         let selectedDecode = decode ?? environmentDecode
         let useCache = decode == nil
         let cached = access.allows() && useCache ? icon.flatMap {
-            iconCache?.cached($0, revision: revision)?.images.first
+            iconCache?.immediate($0, revision: revision, folder: folder)?.images.first
         }.map { NSImage(cgImage: $0, size: .zero) } : nil
         return AskContextImage(source: icon.map { $0.kind.rawValue + ":" + $0.value },
             model: AskContextImageModel(maximumEdge: 56, decode: { _ in
@@ -97,9 +98,10 @@ struct AskNativeIconView: View {
     let icon: MediaNativeIcon
     var symbol = "doc"
     var revision: Date?
+    var folder = false
     var decode: AskNativeIconDecoding?
     var body: some View {
-        AskNativeIconImage(icon: icon, revision: revision, decode: decode) { image in
+        AskNativeIconImage(icon: icon, revision: revision, folder: folder, decode: decode) { image in
             if let image { Image(nsImage: image).resizable().interpolation(.high).scaledToFit() }
             else { Image(systemName: symbol).resizable().scaledToFit().padding(3).foregroundStyle(StudioTheme.textTertiary) }
         }
