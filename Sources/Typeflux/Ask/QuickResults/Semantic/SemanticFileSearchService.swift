@@ -140,6 +140,13 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
         if !deferInitialStart { self.start() }
     }
 
+    /// Checks ownership at actor boundaries; this cannot undo work already entered
+    /// off actor, or substitute for filesystem/source validation inside a worker.
+    private func ownsLifecycle(_ lifecycle: AskSearchCancellation, fingerprint: String) -> Bool {
+        token === lifecycle && !lifecycle.isCancelled && !removing &&
+            self.fingerprint == fingerprint && settingsFingerprint == fingerprint
+    }
+
     private var backgroundPaused: Bool {
         self.busy || self.manuallyPaused || self.lowPowerMode() || self.thermalConstrained()
     }
@@ -174,6 +181,10 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
 
     private func refreshPause() {
         let paused = self.backgroundPaused
+        // Foreground/thermal pressure can always stop old work; only its original
+        // current scope may resume it or publish a phase transition.
+        if paused { pauseGate.setPaused(true) }
+        guard let fingerprint, ownsLifecycle(token, fingerprint: fingerprint) else { return }
         self.pauseGate.setPaused(paused)
         if paused {
             if self.phase == .indexing { self.pausedIndexing = true; self.phase = .paused }
@@ -241,7 +252,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
         self.work = Task { [weak self] in
             await previous?.value
             await previousDownload?.value
-            guard !Task.isCancelled, !token.isCancelled else { return }
+            guard !Task.isCancelled, self?.ownsLifecycle(token, fingerprint: key) == true else { return }
             do {
                 let prepared = try await Task.detached(priority: .utility) {
                     guard !token.isCancelled else { throw CancellationError() }
@@ -251,21 +262,21 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
                     }
                     return (scope, database)
                 }.value
-                guard let self, !token.isCancelled, !Task.isCancelled else { return }
+                guard let self, !Task.isCancelled, self.ownsLifecycle(token, fingerprint: key) else { return }
                 scope = prepared.0; blocked = prepared.0.blockedInScope
                 store = try? prepared.1.get()
                 queryValidator = SemanticFileValidator(reader: readers.validation.scope(generation: readerAuthorization?.validation))
                 if let database = store {
                     await updateCounts(database, lifecycle: token)
                 }
-                guard !token.isCancelled, !Task.isCancelled else { return }
+                guard !Task.isCancelled, ownsLifecycle(token, fingerprint: key) else { return }
                 guard FileManager.default.fileExists(atPath: model.path) else {
                     modelReady = false; phase = .modelRequired; return
                 }
                 try await Task.detached(priority: .utility) {
                     try models.verify(model, cancelled: { token.isCancelled })
                 }.value
-                guard !token.isCancelled, !Task.isCancelled else { return }
+                guard !Task.isCancelled, ownsLifecycle(token, fingerprint: key) else { return }
                 modelReady = true
                 let database = try prepared.1.get()
                 guard FileManager.default.isExecutableFile(atPath: helper.path) else { phase = .failed; return }
@@ -290,12 +301,11 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
                 let retryDirectories = savedEventID != nil ? try database.failedDirectories() : []
                 watcher.start(paths: prepared.0.roots, since: watchEventID) { [weak self] changes, last in
                     Task { @MainActor in
-                        guard !token.isCancelled else { return }
-                        self?.receiveChanges(changes, eventID: last)
+                        self?.receiveChanges(changes, eventID: last, lifecycle: token, fingerprint: key)
                     }
                 }
                 if self.backgroundPaused {
-                    guard !token.isCancelled, !Task.isCancelled else { return }
+                    guard !Task.isCancelled, ownsLifecycle(token, fingerprint: key) else { return }
                     self.phase = .paused
                     return
                 }
@@ -309,7 +319,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
                                    processedEventID: savedEventID)
 
             } catch {
-                guard let self, !token.isCancelled, !Task.isCancelled else { return }
+                guard let self, !Task.isCancelled, self.ownsLifecycle(token, fingerprint: key) else { return }
                 if case SemanticMediaFailure.unavailable = error { self.mediaFailed = true }
                 if case SemanticFileStore.Failure.invalidVector = error {
                     self.modelReady = false
@@ -387,8 +397,9 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
         }
     }
 
-    private func receiveChanges(_ changes: [AskFileChange], eventID: UInt64) {
-        guard let scope else { return }
+    private func receiveChanges(_ changes: [AskFileChange], eventID: UInt64,
+                                lifecycle: AskSearchCancellation, fingerprint: String) {
+        guard ownsLifecycle(lifecycle, fingerprint: fingerprint), let scope else { return }
         pendingEventID = max(pendingEventID, eventID)
         let plan = SemanticFileChangePlan.make(changes, scope: scope, indexDirectory: directory.path)
         if plan.fullScan {
@@ -406,18 +417,21 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
     }
 
     private func scheduleReconcile() {
+        guard let fingerprint, ownsLifecycle(token, fingerprint: fingerprint) else { return }
+        let lifecycle = token
         guard self.phase != .indexing, !self.backgroundPaused,
               self.dirty || !self.pendingPaths.isEmpty || !self.pendingDirectories.isEmpty ||
               self.pendingEventID > self.committedEventID else { return }
         self.rescan?.cancel()
         self.rescan = Task { [weak self] in
             do { try await Task.sleep(for: .milliseconds(150)) } catch { return }
-            self?.reconcilePending()
+            guard !Task.isCancelled else { return }
+            self?.reconcilePending(lifecycle: lifecycle, fingerprint: fingerprint)
         }
     }
 
-    private func reconcilePending() {
-        guard !self.backgroundPaused, self.phase == .ready || self.phase == .failed,
+    private func reconcilePending(lifecycle: AskSearchCancellation, fingerprint: String) {
+        guard ownsLifecycle(lifecycle, fingerprint: fingerprint), !self.backgroundPaused, self.phase == .ready || self.phase == .failed,
               readerAuthorization?.allowsIndexing(in: readers) == true,
               let database = self.store, let scope = self.scope else { return }
         if self.dirty {
@@ -451,6 +465,8 @@ extension SemanticFileSearchService {
                                paths: [String]? = nil, directories: [String] = [],
                                scanStartEventID: UInt64? = nil, prunePending: Bool = false,
                                processedEventID: UInt64? = nil) {
+        let fingerprint = settingsFingerprint
+        guard ownsLifecycle(token, fingerprint: fingerprint) else { return }
         let makeEncoder = makeEncoder, mediaModels = mediaModels, embeddingOwners = embeddingOwners
         let embeddingAuthorization = embeddingAuthorization
         // Capture scopes before scheduling: an obsolete detached job must never
@@ -502,6 +518,7 @@ extension SemanticFileSearchService {
                                                        priorityReader: priorityReader,
                                                        cancelled: { token.isCancelled }, progress: reportProgress,
                                                        discovered: {
+                                                           guard !token.isCancelled else { throw CancellationError() }
                                                            if let scanStartEventID {
                                                                try database.saveEventID(scanStartEventID, scope: scope,
                                                                                         volumeSignature: volumeSignature)
@@ -509,7 +526,7 @@ extension SemanticFileSearchService {
                                                        },
                                                        current: reportCurrent)
                 }.value
-                guard let self, !token.isCancelled, !Task.isCancelled else { return }
+                guard let self, !Task.isCancelled, ownsLifecycle(token, fingerprint: fingerprint), indexAttempt === attempt else { return }
                 if let processedEventID {
                     try database.saveEventID(processedEventID, scope: scope,
                                              volumeSignature: volumeSignature)
@@ -523,11 +540,11 @@ extension SemanticFileSearchService {
                 self.skipped = result.skipped
                 while let refresh = self.countRefresh {
                     await refresh.value
-                    guard !token.isCancelled, !Task.isCancelled, indexAttempt === attempt else { return }
+                    guard !Task.isCancelled, ownsLifecycle(token, fingerprint: fingerprint), indexAttempt === attempt else { return }
                 }
-                guard !token.isCancelled, !Task.isCancelled, indexAttempt === attempt else { return }
+                guard !Task.isCancelled, ownsLifecycle(token, fingerprint: fingerprint), indexAttempt === attempt else { return }
                 await self.updateCounts(database, lifecycle: token, attempt: attempt)
-                guard !token.isCancelled, !Task.isCancelled, indexAttempt === attempt else { return }
+                guard !Task.isCancelled, ownsLifecycle(token, fingerprint: fingerprint), indexAttempt === attempt else { return }
                 self.mediaDownload = nil
                 self.indexProgress = nil
                 self.currentProcessingPath = nil
@@ -540,7 +557,7 @@ extension SemanticFileSearchService {
                 }
                 self.scheduleReconcile()
             } catch {
-                guard let self, !token.isCancelled, !Task.isCancelled else { return }
+                guard let self, !Task.isCancelled, ownsLifecycle(token, fingerprint: fingerprint), indexAttempt === attempt else { return }
                 self.pendingPaths.formUnion(paths ?? [])
                 self.pendingDirectories.formUnion(directories)
                 if let latest = delivery.finish(attempt) {
