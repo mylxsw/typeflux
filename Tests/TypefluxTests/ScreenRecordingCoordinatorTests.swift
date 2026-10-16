@@ -93,13 +93,14 @@ struct ScreenRecordingCoordinatorTests {
         var borders: [ScreenRecordingTarget?] = []
         let model: ScreenRecordingCoordinator
         init(exportFails: Bool = false, authorize: @escaping (ScreenRecordingOptions) async throws -> Void = { _ in },
-             wait: @escaping () async throws -> Void = {}, playback: ClipboardAudioPlayback? = nil) {
+             wait: @escaping () async throws -> Void = {}, playback: ClipboardAudioPlayback? = nil,
+             exporter: (any ScreenRecordingExporting)? = nil) {
             model = ScreenRecordingCoordinator(
                 permission: permission,
                 capture: capture,
                 overlay: overlay,
                 engine: engine,
-                exporter: Exporter(fails: exportFails),
+                exporter: exporter ?? Exporter(fails: exportFails),
                 files: ScreenRecordingFiles(root: root.appendingPathComponent("sessions")),
                 defaults: UserDefaults(suiteName: suite)!,
                 saveDirectory: { [root] in root.appendingPathComponent("saved") },

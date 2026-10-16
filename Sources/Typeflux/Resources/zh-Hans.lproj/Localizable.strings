@@ -5698,3 +5698,6 @@
 
 "recording.timelineLoading" = "正在准备时间轴…";
 "recording.timelineUnavailable" = "时间轴音频不可用";
+
+"recording.publicationUnknown" = "无法确认文件发布结果。原始录屏和生成文件已保留；再次导出前请检查目标位置。";
+"recording.publicationUnavailable" = "暂时无法发布文件，原始录屏和生成文件已保留。";

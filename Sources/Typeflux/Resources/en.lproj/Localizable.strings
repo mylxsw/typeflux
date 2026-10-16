@@ -5698,3 +5698,6 @@
 
 "recording.timelineLoading" = "Preparing timeline…";
 "recording.timelineUnavailable" = "Timeline audio unavailable";
+
+"recording.publicationUnknown" = "Publication could not be confirmed. The original recording and generated output are retained. Check the destination before exporting again.";
+"recording.publicationUnavailable" = "Publication is unavailable. The original recording and generated output are retained.";

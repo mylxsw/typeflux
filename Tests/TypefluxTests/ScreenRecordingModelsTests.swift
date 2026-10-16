@@ -3,7 +3,7 @@ import Foundation
 import Testing
 @testable import Typeflux
 
-@Suite("Screen recording models")
+@Suite("Screen recording models", .exclusiveUIState)
 struct ScreenRecordingModelsTests {
     @Test func `timeline removes multiple pauses and rejects late samples`() throws {
         var time = ScreenRecordingTimeline()
@@ -130,7 +130,7 @@ struct ScreenRecordingModelsTests {
         #expect(try ScreenRecordingTrim(start: 5, end: 35).validated(duration: 60, format: .gif).duration.seconds == 30)
     }
 
-    @Test func `publication never overwrites and recovery is scoped`() throws {
+    @Test @MainActor func `publication never overwrites and recovery is scoped`() async throws {
         let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
         let files = ScreenRecordingFiles(root: root.appendingPathComponent("sessions"))
@@ -140,8 +140,8 @@ struct ScreenRecordingModelsTests {
         try Data([1, 2, 3]).write(to: source)
         #expect(files.recoverableSources().map { $0.resolvingSymlinksInPath() } == [source.resolvingSymlinksInPath()])
         let destination = root.appendingPathComponent("saved")
-        let first = try files.publish(source, in: destination, format: .mp4, date: Date(timeIntervalSince1970: 0))
-        let second = try files.publish(source, in: destination, format: .mp4, date: Date(timeIntervalSince1970: 0))
+        let first = try await files.preparePublication(source, in: destination, format: .mp4, date: Date(timeIntervalSince1970: 0)).commit { true }
+        let second = try await files.preparePublication(source, in: destination, format: .mp4, date: Date(timeIntervalSince1970: 0)).commit { true }
         #expect(first != second)
         #expect(second.lastPathComponent.contains("(2)"))
         #expect(try Data(contentsOf: first) == Data([1, 2, 3]))

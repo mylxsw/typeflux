@@ -5584,3 +5584,6 @@
 
 "recording.timelineLoading" = "タイムラインを準備中…";
 "recording.timelineUnavailable" = "タイムラインの音声を利用できません";
+
+"recording.publicationUnknown" = "ファイルの保存結果を確認できません。元の録画と生成ファイルは保持されています。再度書き出す前に保存先を確認してください。";
+"recording.publicationUnavailable" = "ファイルを保存できません。元の録画と生成ファイルは保持されています。";

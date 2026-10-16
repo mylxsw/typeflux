@@ -54,6 +54,7 @@ final class ScreenRecordingCoordinator: ObservableObject {
         engine.audioLevel
     }
 
+    private static let exportAdmissions = AskToolPixelBudget(limit: 2)
     private var mediaTask: Task<Void, Never>?
     var loadTimeline: @Sendable (URL) async throws -> ScreenRecordingPreviewMedia = { try await ScreenRecordingPreviewMedia.load($0) }
     private var deviceTask: Task<Void, Never>?
@@ -139,7 +140,7 @@ final class ScreenRecordingCoordinator: ObservableObject {
             }
         }
     }
-    deinit { accountObservers.forEach(NotificationCenter.default.removeObserver); mediaTask?.cancel() }
+    deinit { accountObservers.forEach(NotificationCenter.default.removeObserver); pendingTask?.cancel(); mediaTask?.cancel() }
 }
 
 extension ScreenRecordingCoordinator {
@@ -389,6 +390,13 @@ extension ScreenRecordingCoordinator {
         guard state == .preview, previewAuthorized, let sourceURL, let sessionDirectory else { return }
         let trim = ScreenRecordingTrim(start: trimStart, end: trimEnd)
         guard trimIsValid else { error = ScreenRecordingFailure.invalidRange.localizedDescription; return }
+        let admission: AskToolPixelBudget.Lease
+        let original: ClipboardPlaybackSource
+        do {
+            original = try ClipboardPlaybackSource(sourceURL, limit: ScreenRecordingPublication.maximumBytes)
+            admission = try Self.exportAdmissions.acquire(bytes: 1)
+        }
+        catch { self.error = L("recording.publicationUnavailable"); return }
         pendingTask?.cancel()
         playback.stop()
         state = .exporting
@@ -398,38 +406,43 @@ extension ScreenRecordingCoordinator {
         let output = sessionDirectory.appendingPathComponent(UUID().uuidString + "." + format.rawValue)
         let destination = directory ?? outputDirectory ?? saveDirectory()
         let name = ScreenRecordingLayout.fileName(fileName)
-        let token = generation
+        let token = generation, epoch = previewScope.epoch
         pendingTask = Task { [weak self, exporter, files] in
+            defer { withExtendedLifetime(admission) {} }
+            let updates = ScreenRecordingProgressBuffer()
+            let monitor = Task { @MainActor [weak self] in
+                while !Task.isCancelled {
+                    if let self, generation == token, previewAuthorized, state == .exporting { progress = updates.latest }
+                    else { break }
+                    try? await Task.sleep(for: .milliseconds(200))
+                }
+            }
             do {
-                try await exporter
-                    .export(source: sourceURL, destination: output, format: format, trim: trim) { [weak self] value in
-                        Task { @MainActor in
-                            guard let self, self.generation == token, self.state == .exporting else { return }
-                            self.progress = value
-                        }
-                    }
+                try await exporter.export(source: sourceURL, destination: output, format: format, trim: trim) { updates.offer($0) }
+                monitor.cancel(); await monitor.value
                 try Task.checkCancellation()
-                guard let owner = self, owner.generation == token, owner.previewAuthorized else { throw CancellationError() }
-                let published = try await Task.detached { try files.publish(
-                    output,
-                    in: destination,
-                    format: format,
-                    name: name,
-                    destinationURL: destinationURL
-                ) }
-                .value
-                guard let self, generation == token, previewAuthorized, !Task.isCancelled else { throw CancellationError() }
-                await completeExport(published, copy: copy, session: sessionDirectory, token: token)
+                try original.check()
+                guard self?.generation == token, self?.previewAuthorized == true, self?.previewScope.epoch == epoch else { throw CancellationError() }
+                let prepared = try await files.preparePublication(output, in: destination, format: format,
+                    name: name, destinationURL: destinationURL)
+                let published = try prepared.commit { [weak self] in
+                    guard let self else { return false }
+                    return generation == token && previewAuthorized && previewScope.epoch == epoch && state == .exporting
+                        && self.sourceURL == sourceURL && (try? original.check()) != nil
+                }
+                guard let self else { return }
+                await completeExport(published, copy: copy, session: sessionDirectory, token: token, discardSession: prepared.mayDiscardSession)
             } catch {
+                monitor.cancel(); await monitor.value
                 guard let self, generation == token else { return }
-                try? FileManager.default.removeItem(at: output)
+                // Preserve generated/partial bytes and any uncertain publication receipt.
                 self.error = error is CancellationError ? nil : error.localizedDescription
                 state = .preview
             }
         }
     }
 
-    private func completeExport(_ published: URL, copy: Bool, session: URL, token: Int) async {
+    private func completeExport(_ published: URL, copy: Bool, session: URL, token: Int, discardSession: Bool) async {
         savedURL = published
         if copy {
             copyPublishedFile(published)
@@ -439,7 +452,8 @@ extension ScreenRecordingCoordinator {
         await mediaTask?.value
         guard generation == token, previewAuthorized else { return }
         sourceURL = nil
-        files.discard(session)
+        // Earlier failed/unknown attempts remain recoverable, even after a later successful export.
+        if discardSession { files.discard(session) }
         sessionDirectory = nil
         state = .completed
     }
