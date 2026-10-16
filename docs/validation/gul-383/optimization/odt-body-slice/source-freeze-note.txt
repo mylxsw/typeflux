@@ -1,0 +1,1 @@
+All functional product and test code was frozen before the focused command. During dependency checkout, before product compilation or test execution, one ZIP stream comment was clarified to describe its actual NUL/DTD gate; the frozen hash was updated. No executable change was made during validation.

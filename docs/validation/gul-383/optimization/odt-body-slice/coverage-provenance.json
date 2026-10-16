@@ -1,0 +1,86 @@
+{
+  "baseline": "1a451e1dc341c6a14a1ebcc2ba01af0bd5ae2125",
+  "configuration": "Instrumented Debug",
+  "hardware": "Mac16,10\n17179869184",
+  "toolchain": "Apple Swift version 6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)\nTarget: arm64-apple-macosx26.0",
+  "selected_methods": 61,
+  "passed_methods": 61,
+  "xctest_methods": 9,
+  "swift_testing_methods": 52,
+  "first_build_seconds": 312.42,
+  "discovery_build_seconds": 344.13,
+  "runner_seconds": 358.29,
+  "full_command": {
+    "wall_seconds": 362.37973291700473,
+    "exit_code": 0,
+    "command": [
+      "make",
+      "coverage",
+      "SUITE=SemanticODTTextTests SemanticRTFTextTests SemanticHTMLTextTests SemanticWordTextTests SemanticPDFOCRTests SemanticFilePolicyTests SemanticFileStoreTests SemanticFileContentTests SemanticFileIndexerTests SemanticIndexDiagnosticsTests SemanticReaderOwnershipTests SemanticScanAdmissionTests SemanticDiscoveryPauseTests"
+    ]
+  },
+  "build_failures": 0,
+  "test_failures": 0,
+  "test_retries": 0,
+  "frozen_source_hashes_match": true,
+  "binary_sha256": {
+    "reader": "5b9873cfe156e04aff76c44af6cbca0f239a0b672572ee9a0f8efd89befd0179",
+    "tests": "61b20fbf1a807083949cfafac82ab6446b23308ee7583084fd26b8cbd43803c5"
+  },
+  "profile_sha256": "bee3c2d6a61397b6cb3ef7ea326d584aef69da291efacafbe94ddc32defe1c7b",
+  "lcov_sha256_before_path_normalization": "6a8f0c353a122718ebfc716cbd83adc3425b3119e5c7a495dd94475c5fe3647c",
+  "tool_sha256": {
+    "scripts/test_groups.py": "488dbe8cec3f3528adb4ef265bb5d8e3cf5c13867581fb5acb5dc19eb281af46",
+    "scripts/coverage.sh": "1a18ada556b3875baf54f389ae48f5bceaf2c699a37f8638ebd16d7255e89095",
+    "docs/validation/gul-383/optimization/changed_coverage.py": "dd9efb30a427617a614235a0c65f86b2cb5ab6dd7c28b857031a91545db135ac",
+    "docs/validation/gul-383/optimization/html-body-slice/coverage-swift.sh": "42967efaf9199510c5f13f9219641be7b87a08eb2a781fc8b4200bfe1da8996f",
+    "docs/validation/gul-383/optimization/odt-body-slice/test-files.json": "61ee82113fbe33b2d667abcfc8e4d53226cd146df1f6415eda9e7df0100acfa6",
+    "docs/validation/gul-383/optimization/odt-body-slice/odt_resource_probe.py": "4d70fe19c56c7d6af45853cd43ca0856af81b4e53be85aab0fe0e03ae590c648"
+  },
+  "unchanged_model_sha256": "2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135",
+  "new_real_model_or_ui_evaluation": false,
+  "coverage_note": "Changed executable LLVM DA lines only, not branch/project-wide coverage. Application and shared reader/dispatch reported separately. CDATA delegate lines 128-130 have no test-process counts; the real child-process ODT test asserts CDATA table output, but its stopped worker does not flush coverage. Resource-probe counters are not added to the focused-test numerator. Media/inference helper targets have no changed source lines.",
+  "synthetic_fixture": {
+    "sha256": "4f9779bdeb63517900375911953dce32184bfebf4bcca12730f32f2054124a18",
+    "bytes": 1199,
+    "members": [
+      {
+        "name": "mimetype",
+        "compressed": 39,
+        "expanded": 39,
+        "method": 0
+      },
+      {
+        "name": "content.xml",
+        "compressed": 518,
+        "expanded": 1213,
+        "method": 8
+      },
+      {
+        "name": "META-INF/manifest.xml",
+        "compressed": 156,
+        "expanded": 270,
+        "method": 8
+      }
+    ]
+  },
+  "normalized_lcov_sha256": "7825c0348810b761071ab6a10bd3e0117be141f5cd6ff51c44937286045491ce",
+  "log_gzip_sha256": "4a1f9379057e9c7b239000cc67b4642e37ed399a3df09c968b41e5ef00504f46",
+  "log_path_normalization": "Runtime checkout/home prefixes removed from deliverable logs. LCOV SF paths made repository-relative and changed-line counts independently recomputed unchanged.",
+  "resource_summary": {
+    "wall_seconds": 300.04787995800143,
+    "worker_exit_code": 0,
+    "error": null,
+    "samples": 2704,
+    "missing_identifier": 0,
+    "milliseconds": {
+      "p50": 1.1772919679060578,
+      "p95": 2.356291050091386,
+      "p99": 2.4245420354418457
+    },
+    "peak_rss_bytes": 60096512,
+    "scope": "Debug instrumented production file-index-worker, nice 10, sequential repeated extraction of the same synthetic ODT body, 100 ms between requests. No embedding, background scheduler, UI input, GPU counters or long-term thermal acceptance measured. RSS is ps resident pages; CPU percent is ps lifetime average, 100 percent per core."
+  },
+  "resource_raw_gzip_sha256": "4d60e66a31a2a72498994949d1f7108343ef9fcc181bf9d5e7ab255530b822eb",
+  "source_tool_binary_hashes_rechecked_after_resource_probe": true
+}

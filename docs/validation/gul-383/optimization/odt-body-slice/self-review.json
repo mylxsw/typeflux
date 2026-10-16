@@ -1,0 +1,36 @@
+{
+  "status": "Passed focused validation, resource short run and final source/tool/binary fingerprint checks; no blocking self-review findings within this slice",
+  "functional_closure": "ODT held descriptor to streamed paragraphs/tables, 32KiB continuation, persistent index/vector checkpoint and tail body hit verified with real synthetic packages; DOCX/RTF/HTML/PDF callers retained.",
+  "boundaries_errors": "Empty/long Unicode bodies, invalid offsets, corrupt ZIP/XML/CRC, missing member, manifest encryption, DTD and ZIP64 exercise stable failures and version repair. The declared common-body subset and deferred format/rendering scope are explicit.",
+  "resources_concurrency": "No new asynchronous work, locks, filesystem extraction or persistent streams. Worker retains existing deadline/ownership. Descriptor closure and zlib disposal remain existing defer/deinit owners. Native children are stopped by test owners; probe waits its exact child.",
+  "security": "No external URLs/relationships or DTD entities resolved. Macro/embedded objects remain data. Existing scope, file-version and permission checks gate publication; post-read cancel/replace/revoke tests publish no chunks/vectors.",
+  "consistency": "Extension-aware rediscovery and distinct ODT recipe preserve compatible vectors; diagnostics include ODT. No UI/localization changes. Legacy binary Office/ZIP64/encryption/PPTX/XLSX limits and remaining GUL405 scope recorded.",
+  "fixed_before_validation": [
+    "Made mimetype the first uncompressed ODT member in synthetic fixtures",
+    "Used a fresh Process for each ZIP fixture command",
+    "Matched the existing password-required failure reason",
+    "Removed the stale DOCX test exclusion of ODT",
+    "Corrected short variable names and long lines from preliminary strict lint"
+  ],
+  "validation": "61/61 focused coverage methods pass without build/test failure or retry. App 2/2; shared reader 119/122. CDATA counter gap disclosed. Strict touched-file lint and diff check pass.",
+  "no_claims": [
+    "No new real-model Recall/MRR evaluation",
+    "No native UI or input-to-result timing",
+    "No full Office support or long-term resource stability",
+    "No full GUL405 completion, merge or GUL406 launch"
+  ],
+  "resource_validation": {
+    "wall_seconds": 300.04787995800143,
+    "worker_exit_code": 0,
+    "error": null,
+    "samples": 2704,
+    "missing_identifier": 0,
+    "milliseconds": {
+      "p50": 1.1772919679060578,
+      "p95": 2.356291050091386,
+      "p99": 2.4245420354418457
+    },
+    "peak_rss_bytes": 60096512,
+    "scope": "Debug instrumented production file-index-worker, nice 10, sequential repeated extraction of the same synthetic ODT body, 100 ms between requests. No embedding, background scheduler, UI input, GPU counters or long-term thermal acceptance measured. RSS is ps resident pages; CPU percent is ps lifetime average, 100 percent per core."
+  }
+}

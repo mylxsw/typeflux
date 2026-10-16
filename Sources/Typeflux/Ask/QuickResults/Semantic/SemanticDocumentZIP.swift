@@ -32,7 +32,7 @@ enum SemanticDocumentZIP {
 
     // ZIP's comment length is a 16-bit field; this is a format bound, not a document quota.
     // swiftlint:disable:next cyclomatic_complexity
-    static func body(_ descriptor: Int32, size: Int64) throws -> Member {
+    static func body(_ descriptor: Int32, size: Int64, path: String = "word/document.xml") throws -> Member {
         guard size >= 22 else { throw SemanticDocumentError() }
         let tail = try bytes(descriptor, at: max(0, size - 65557), count: Int(min(size, 65557)))
         guard let end = stride(from: tail.count - 22, through: 0, by: -1).first(where: {
@@ -54,7 +54,7 @@ enum SemanticDocumentZIP {
             guard next <= directoryEnd else { throw SemanticDocumentError() }
             let name = try bytes(descriptor, at: offset + 46, count: nameSize)
             offset = next
-            guard name == Data("word/document.xml".utf8) else { continue }
+            guard name == Data(path.utf8) else { continue }
             guard member == nil else { throw SemanticDocumentError() }
             guard header.u16(8) & 0x41 == 0 else { throw SemanticDocumentError(EAUTH) }
             let method = Int(header.u16(10))
@@ -159,7 +159,7 @@ final class SemanticDocumentStream: InputStream {
                       position == input.count, compressedRead == member.compressed
                 else { throw SemanticDocumentError() }
             }
-            // DOCX XML must be UTF-8. Reject DTDs before XMLParser can expand any entities,
+            // Reject NUL-containing XML encodings and DTDs before XMLParser can expand any entities,
             // including declarations split across input buffers. No relationship is dereferenced.
             let scan = scanTail + Data(bytes: buffer, count: produced)
             guard !scan.contains(0), scan.range(of: Data("<!DOCTYPE".utf8)) == nil,

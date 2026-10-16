@@ -1,0 +1,105 @@
+{
+  "baseline": "1a451e1dc341c6a14a1ebcc2ba01af0bd5ae2125",
+  "denominator": "Added/modified executable Swift lines in Sources/Typeflux, including new files, intersected with final LLVM LCOV DA records. Tests, helper wrapper and unchanged vendor code excluded; helper reported separately.",
+  "executable": 124,
+  "covered": 121,
+  "percent": 97.58,
+  "files": {
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticDocumentZIP.swift": {
+      "executable": 3,
+      "covered": 3,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileContentWorker.swift": {
+      "executable": 5,
+      "covered": 5,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFilePolicy.swift": {
+      "executable": 0,
+      "covered": 0,
+      "percent": null,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Jobs.swift": {
+      "executable": 1,
+      "covered": 1,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticIndexDiagnostics.swift": {
+      "executable": 1,
+      "covered": 1,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticODTText.swift": {
+      "executable": 114,
+      "covered": 111,
+      "percent": 97.37,
+      "uncovered": [
+        128,
+        129,
+        130
+      ]
+    }
+  },
+  "groups": {
+    "application": {
+      "executable": 2,
+      "covered": 2,
+      "percent": 100.0,
+      "files": {
+        "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFilePolicy.swift": {
+          "executable": 0,
+          "covered": 0,
+          "percent": null,
+          "uncovered": []
+        },
+        "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Jobs.swift": {
+          "executable": 1,
+          "covered": 1,
+          "percent": 100.0,
+          "uncovered": []
+        },
+        "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticIndexDiagnostics.swift": {
+          "executable": 1,
+          "covered": 1,
+          "percent": 100.0,
+          "uncovered": []
+        }
+      }
+    },
+    "shared_reader": {
+      "executable": 122,
+      "covered": 119,
+      "percent": 97.54,
+      "files": {
+        "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticDocumentZIP.swift": {
+          "executable": 3,
+          "covered": 3,
+          "percent": 100.0,
+          "uncovered": []
+        },
+        "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileContentWorker.swift": {
+          "executable": 5,
+          "covered": 5,
+          "percent": 100.0,
+          "uncovered": []
+        },
+        "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticODTText.swift": {
+          "executable": 114,
+          "covered": 111,
+          "percent": 97.37,
+          "uncovered": [
+            128,
+            129,
+            130
+          ]
+        }
+      }
+    }
+  }
+}
