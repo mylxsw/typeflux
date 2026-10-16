@@ -57,6 +57,13 @@ extension ClipboardContentActing {
 
     static func make(in url: URL, worker: MediaWorker,
                      textRecognizer: (any ImageTextRecognizing)? = nil) -> Self {
+        // Production injects this native facade; arbitrary custom/actor owners stay independent.
+        if let native = textRecognizer as? VisionImageTextRecognizer {
+            let authorization = native.worker.authorization()
+            return .init(recognize: {
+                try await native.recognizeText(in: .url(url), authorization: authorization).string
+            }, isCurrent: { native.worker.permits(authorization) })
+        }
         if let textRecognizer {
             return .init(recognize: { try await textRecognizer.recognizeText(in: .url(url)).string })
         }

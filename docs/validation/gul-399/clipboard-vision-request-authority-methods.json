@@ -1,0 +1,61 @@
+{
+  "baseline": "1f57541f80c3848c86ffbca0d3f42dc06fcf271f",
+  "methods": [
+    "TypefluxTests.ClipboardOCRIsolationTests/testDuplicateAndOwnerReleaseKeepLateOCRFromCommitting",
+    "TypefluxTests.MediaWorkerTests/testBundledAndSwiftPMHelperLocations",
+    "TypefluxTests.MediaWorkerTests/testCancellationBeforeAndAfterDispatchRejectsLateResult",
+    "TypefluxTests.MediaWorkerTests/testCopiedInputIsPrivateAndRemovedOnlyAfterConfirmedCollection",
+    "TypefluxTests.MediaWorkerTests/testMalformedInputFailureDoesNotPoisonOtherAttachments",
+    "TypefluxTests.MediaWorkerTests/testOversizedDataFileMissingFileAndFIFORefusedBeforeSpawn",
+    "TypefluxTests.MediaWorkerTests/testProtocolIdentityFailureAndCooldownNeverReplay",
+    "TypefluxTests.MediaWorkerTests/testShutdownCancelsRunningChildAndRejectsNewWork",
+    "TypefluxTests.MediaWorkerTests/testTwoRetainedChildrenBoundAdmissionAndShutdownFences",
+    "TypefluxTests.SharedOCRIsolationTests/testProtocolRejectsBoundsUTF16OverlapAndMixedResponses",
+    "TypefluxTests.SharedOCRIsolationTests/testUnicodeExactGeometrySurvivesSerializationAndTilingWithoutEstimation",
+    "TypefluxTests.TextRecognitionModuleTests/testCorruptRecordRequiresExplicitResetWithoutRecognitionReplay",
+    "TypefluxTests.TextRecognitionModuleTests/testIndependentPersistentBudgetsFaultsDisableAndQuit",
+    "TypefluxTests.ClipboardActionAuthorityTests/canceledEnteredNativeKeepsActionSlotUntilPhysicalCollection()",
+    "TypefluxTests.ClipboardActionAuthorityTests/customActorFactoryRemainsIndependentAndBlankCommitsOnce()",
+    "TypefluxTests.ClipboardActionAuthorityTests/deniedOrMissingSourceCannotDispatchNativeOrCommit()",
+    "TypefluxTests.ClipboardActionAuthorityTests/finalSourceAuthorizationCannotBlessRetiredValidText()",
+    "TypefluxTests.ClipboardActionAuthorityTests/preReadyActionBindsBeforeTaskAndNeverReplaysWhenReady()",
+    "TypefluxTests.ClipboardActionAuthorityTests/readyActionCannotRecaptureAfterSynchronousRevocation()",
+    "TypefluxTests.ClipboardVisionRequestAuthorityTests/accountNotificationCancelsHeldNativeWithoutReplayOrEarlyAdmissionRelease()",
+    "TypefluxTests.ClipboardVisionRequestAuthorityTests/canceledPreparationOrNativeRetainsBothSlotsUntilPhysicalReturn(_:)",
+    "TypefluxTests.ClipboardVisionRequestAuthorityTests/originalSourceAndAccountStillFenceCompletedRecognitionAndBlankRemainsNil()",
+    "TypefluxTests.ClipboardVisionRequestAuthorityTests/preReadyInjectedNativeRequestCannotUpgradeWhenRegistryStarts()",
+    "TypefluxTests.ClipboardVisionRequestAuthorityTests/readyRequestRetainsOriginalNativeGenerationBeforeQueuedEntry()",
+    "TypefluxTests.ClipboardVisionRequestAuthorityTests/validRecognitionCannotCommitAfterFinalPermissionRevokesOriginalNativeGrant()",
+    "TypefluxTests.TextPreparationAuthorityTests/cancelledPreparationRetainsBothAdmissionsUntilReturn(_:)",
+    "TypefluxTests.TextPreparationAuthorityTests/failedPreparationDoesNotSpendNativeHealthOrRetainAdmission()",
+    "TypefluxTests.TextPreparationAuthorityTests/freshPrivatePixelsPreserveExactTextAndGeometryContracts()",
+    "TypefluxTests.TextPreparationAuthorityTests/heldPreparationCannotAdoptRecoveredGeneration(_:)",
+    "TypefluxTests.TextPreparationAuthorityTests/preReadyAndPrecancelledCallsDoNotPrepareSources()"
+  ],
+  "distinct_methods": 30,
+  "first_functional_pass": true,
+  "mapping": {
+    "ClipboardVisionRequestAuthorityTests": "Exact factory and actual startText with direct native injection; queued original stamp, native-domain independence, final validity, cancel/collection, source/account/blank semantics",
+    "ClipboardActionAuthorityTests": "Default OCR branch and independent actor/fallback contracts",
+    "TextPreparationAuthorityTests": "Private raw pixels/file preparation, exact geometry and physical collection",
+    "TextRecognitionModuleTests": "Two explicit private fake health persistence/budget methods",
+    "SharedOCRIsolationTests": "Two explicit pure protocol/Unicode geometry methods",
+    "ClipboardOCRIsolationTests": "One explicit private owner-release/duplicate sink method",
+    "MediaWorkerTests": "Eight explicit fake/pure worker methods excluding real helper"
+  },
+  "excluded": [
+    "All SystemClipboardContentActions and production AppCoordinator/DI object instantiation: pasteboard/Downloads/home defaults",
+    "All AskConversationModel/AskTestFixture/account/window/app tests",
+    "TextRecognitionModule production/native-helper/health-view fixtures",
+    "SharedOCR raw-engine/helper/translation/panel/launcher methods",
+    "Clipboard OCR real child/helper/encoding/named-pasteboard fixtures",
+    "MediaWorker real-helper/image/PDF/crash script method",
+    "All provider/network/paid/model/capture/audio/TCC/full-suite execution"
+  ],
+  "limitations": [
+    "Production factory logic exercised, System bridge/production objects unhit",
+    "Only direct native type is bound; arbitrary wrappers retain owner contract",
+    "Zero native preparation counter does not imply zero outer synchronous source metadata",
+    "No all-source-callback/all-UI-epoch/FS-permission transaction proof"
+  ]
+}
