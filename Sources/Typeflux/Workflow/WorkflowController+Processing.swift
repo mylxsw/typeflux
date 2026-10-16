@@ -442,7 +442,6 @@ extension WorkflowController {
     func finishRecordingAndProcess(
         recordingStoppedAt: Date,
         startupContext: RecordingStartupContext? = nil,
-        bypassPersonaRewrite: Bool = false,
         personaSnapshot: DictationPersonaSnapshot? = nil
     ) async {
         do {
@@ -470,9 +469,8 @@ extension WorkflowController {
             let selectionAwaitStartedAt = Date()
             let selectionSnapshot = await selectionTask?.value ?? TextSelectionSnapshot()
             selectionTask = nil
-            let capturedInputContext = await inputContextTask?.value
+            let inputContext = await inputContextTask?.value
             inputContextTask = nil
-            let inputContext = bypassPersonaRewrite ? nil : capturedInputContext
             NetworkDebugLogger.logMessage(
                 "[Ask Timing] context tasks completed in \(Self.formatDurationSince(selectionAwaitStartedAt))"
             )
@@ -578,10 +576,7 @@ extension WorkflowController {
                 ? askContextText(from: selectionSnapshot, inputContext: inputContext)
                 : nil
             currentSelectedText = selectedText
-            if bypassPersonaRewrite {
-                NetworkDebugLogger.logMessage("[Workflow] quick input enabled; bypassing persona rewrite")
-            }
-            let activePersonaProfile = recordingIntent == .askSelection || bypassPersonaRewrite
+            let activePersonaProfile = recordingIntent == .askSelection
                 ? nil
                 : (personaSnapshot.map { $0.persona }
                     ?? activePersona(selectionSnapshot: selectionSnapshot, inputContext: inputContext))

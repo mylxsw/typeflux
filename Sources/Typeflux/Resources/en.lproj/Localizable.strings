@@ -143,6 +143,10 @@
 "settings.output.opencc.config.s2hk" = "Simplified → Traditional (Hong Kong)";
 "settings.output.opencc.config.t2s" = "Traditional → Simplified";
 "settings.audio" = "Audio";
+"settings.general.app.title" = "App";
+"settings.general.voiceTrigger.title" = "Voice Input Triggers";
+"settings.general.memory.title" = "Memory and Vocabulary";
+"settings.general.screenshot.title" = "Screenshots";
 "settings.microphone.title" = "Microphone";
 "settings.microphone.subtitle" = "Pick the device used for dictation. Automatic follows the current macOS default input, but prefers the Mac's built-in or a wired microphone over a Bluetooth headset so the first words are not lost.";
 "settings.microphone.automatic" = "Automatic";
@@ -160,7 +164,6 @@
 "settings.mute.title" = "Mute During Recording";
 "settings.mute.subtitle" = "Temporarily mute the system output while recording to reduce feedback or system sounds leaking into the microphone.";
 "settings.permissions" = "Permissions";
-"settings.other" = "Other Settings";
 "settings.advanced" = "Advanced";
 "settings.advanced.button" = "Advanced Settings";
 "settings.advanced.soundEffects.title" = "Enable sound effects";
@@ -366,7 +369,6 @@
 "modelDomain.llm.subtitle" = "Large language model";
 
 "overlay.recording.listening" = "Listening";
-"overlay.recording.quickInputHint" = "Quick input mode";
 "overlay.recording.personaHint" = "This request will be processed with the %@ persona";
 "overlay.ask.guidance" = "Ask anything about the selected text";
 "overlay.processing.transcribing" = "Thinking";
@@ -806,8 +808,6 @@
 "settings.shortcuts.activation.title" = "Voice Input";
 "settings.shortcuts.activation.subtitle" = "Use one shortcut to start voice input. Hold to talk, or tap quickly to lock the recording session. If text is selected, the transcript replaces that selection directly.";
 "settings.shortcuts.activation.footnote" = "";
-"settings.shortcuts.quickInput.title" = "Quick Input";
-"settings.shortcuts.quickInput.subtitle" = "When enabled, hold-to-talk inserts the speech-to-text transcript directly without applying a persona. Quick taps still lock recording and use the current persona workflow.";
 "settings.shortcuts.ask.title" = "Ask Anything";
 "settings.shortcuts.ask.subtitle" = "Double-tap Fn to start recording and ask anything. Answers appear in a popup. If text is selected, explicit edit requests can also rewrite it directly.";
 "settings.shortcuts.ask.footnote" = "";
@@ -4690,7 +4690,6 @@
 
 "settings.pane.appearance" = "Appearance";
 
-"settings.inputAndCapture.title" = "Input and Capture";
 
 // Launcher file preview
 "launcher.search.preview" = "Preview files";

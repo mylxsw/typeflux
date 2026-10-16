@@ -22,6 +22,27 @@ final class LocalizationResourceTests: XCTestCase {
         }
     }
 
+    func testGeneralSettingsSectionTitlesExistAndQuickInputCopyIsGoneInEveryLanguage() throws {
+        for language in AppLanguage.allCases {
+            let bundle = try localizationBundle(for: language)
+            let tableURL = try XCTUnwrap(bundle.url(forResource: "Localizable", withExtension: "strings"))
+            let table = try XCTUnwrap(PropertyListSerialization.propertyList(from: Data(contentsOf: tableURL),
+                                                                             options: [],
+                                                                             format: nil) as? [String: String])
+            for key in ["settings.general.app.title", "settings.general.voiceTrigger.title",
+                        "settings.general.memory.title", "settings.general.screenshot.title"] {
+                XCTAssertFalse(try XCTUnwrap(table[key], "Missing \(key) in \(language.rawValue)").isEmpty)
+            }
+            for key in ["settings.shortcuts.quickInput.title", "settings.shortcuts.quickInput.subtitle",
+                        "overlay.recording.quickInputHint", "settings.inputAndCapture.title"] {
+                XCTAssertNil(table[key], "\(key) should be removed from \(language.rawValue)")
+            }
+            if language == .simplifiedChinese {
+                XCTAssertEqual(table["settings.general.memory.title"], "记忆与词汇")
+            }
+        }
+    }
+
     func testKeywordShortcutGuidanceExistsInEveryLanguage() throws {
         let keys = ["hotkeys.keyword.add", "hotkeys.keyword.empty", "hotkeys.keyword.sheet.addTitle",
                     "hotkeys.keyword.sheet.editTitle", "hotkeys.keyword.sheet.hint",

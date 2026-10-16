@@ -48,37 +48,59 @@ struct AskLauncherPositionSettingsTests {
         #expect(settings.askLauncherAnchors.isEmpty)
     }
 
-    @Test func settingsPageChangesAndResetsThePosition() throws {
+    @Test func launcherGeneralPaneChangesThePosition() throws {
         let settings = try store()
-        let viewModel = StudioViewModel(settingsStore: settings, historyStore: LauncherPositionHistoryStore(),
-                                        initialSection: .settings)
-        #expect(viewModel.askLauncherPosition == .center)
-        #expect(!viewModel.hasRememberedLauncherPositions)
+        let view = LauncherSettingsView(settings: settings)
 
-        viewModel.setAskLauncherPosition(.lastPosition)
+        view.setLauncherPosition(.lastPosition)
         #expect(settings.askLauncherPosition == .lastPosition)
         // The launcher is moved while the page is open.
         settings.askLauncherAnchors["built-in"] = .init(left: 10, fromTop: 10)
-        viewModel.refreshAskLauncherPositions()
-        #expect(viewModel.hasRememberedLauncherPositions)
-
-        viewModel.resetAskLauncherPositions()
+        view.resetLauncherPositions()
         #expect(settings.askLauncherAnchors.isEmpty)
-        #expect(!viewModel.hasRememberedLauncherPositions)
-        #expect(viewModel.askLauncherPosition == .lastPosition)
+        #expect(settings.askLauncherPosition == .lastPosition)
 
         settings.askLauncherAnchors["built-in"] = .init(left: 10, fromTop: 10)
-        viewModel.setAskLauncherPosition(.center)
+        view.setLauncherPosition(.center)
+        #expect(settings.askLauncherPosition == .center)
         #expect(settings.askLauncherAnchors.isEmpty)
-        #expect(!viewModel.hasRememberedLauncherPositions)
+    }
+
+    @Test func launcherGeneralPaneShowsAndResetsRememberedPositions() async throws {
+        try await SettingsBehaviorTestSupport.withFixture { settings in
+            settings.askLauncherPosition = .lastPosition
+            settings.askLauncherAnchors["built-in"] = .init(left: 40, fromTop: 120)
+            try await SettingsBehaviorTestSupport.withWindow(LauncherSettingsView(settings: settings, pane: .basics),
+                                                              width: 900, height: 900) { window, _ in
+                #expect(SettingsBehaviorTestSupport.contains(L("settings.shortcuts.launcherPosition.title"), in: window))
+                #expect(SettingsBehaviorTestSupport.contains(L("launcher.inputSource.title"), in: window))
+                try SettingsBehaviorTestSupport.button(L("settings.shortcuts.launcherPosition.reset"), in: window).press()
+                try await SettingsBehaviorTestSupport.wait { settings.askLauncherAnchors.isEmpty }
+                #expect(settings.askLauncherPosition == .lastPosition)
+            }
+        }
+    }
+
+    @Test func settingsGeneralTabNoLongerShowsTheLauncherPosition() async throws {
+        try await SettingsBehaviorTestSupport.withFixture { settings in
+            let model = StudioViewModel(settingsStore: settings, historyStore: LauncherPositionHistoryStore(),
+                                        initialSection: .settings)
+            try await SettingsBehaviorTestSupport.withWindow(StudioView(viewModel: model),
+                                                              width: 1100, height: 1000) { window, _ in
+                try await SettingsBehaviorTestSupport.wait {
+                    SettingsBehaviorTestSupport.contains(L("settings.launchAtLogin.title"), in: window)
+                }
+                #expect(!SettingsBehaviorTestSupport.contains(L("settings.shortcuts.launcherPosition.title"), in: window))
+            }
+        }
     }
 }
 
-/// Opt-in render of the shortcuts page with the position setting (set TYPEFLUX_ASK_SNAPSHOTS).
+/// Opt-in render of the launcher general pane with the position setting (set TYPEFLUX_ASK_SNAPSHOTS).
 @Suite("Ask launcher position snapshots", .serialized, .exclusiveUIState)
 @MainActor
 struct AskLauncherPositionVisualTests {
-    @Test func renderShortcutSettings() async throws {
+    @Test func renderLauncherGeneralPane() async throws {
         guard let directory = ProcessInfo.processInfo.environment["TYPEFLUX_ASK_SNAPSHOTS"] else { return }
         let root = URL(fileURLWithPath: directory)
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
@@ -91,9 +113,9 @@ struct AskLauncherPositionVisualTests {
             settings.askLauncherPosition = .lastPosition
             settings.askLauncherAnchors["built-in"] = .init(left: 40, fromTop: 120)
             let model = StudioViewModel(settingsStore: settings, historyStore: LauncherPositionHistoryStore(),
-                                        initialSection: .settings)
-            let size = CGSize(width: 1100, height: 2100)
-            let host = NSHostingView(rootView: StudioView(viewModel: model).frame(width: size.width, height: size.height)
+                                        initialSection: .launcher)
+            let size = CGSize(width: 1100, height: 1200)
+            let host = NSHostingView(rootView: StudioView(viewModel: model, launcherPane: .basics).frame(width: size.width, height: size.height)
                 .preferredColorScheme(scheme))
             host.frame = NSRect(origin: .zero, size: size)
             let window = NSWindow(contentRect: host.frame, styleMask: [.borderless], backing: .buffered, defer: false)

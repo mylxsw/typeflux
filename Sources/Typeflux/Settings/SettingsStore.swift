@@ -533,14 +533,6 @@ final class SettingsStore {
         }
     }
 
-    var quickInputEnabled: Bool {
-        get { defaults.object(forKey: "voiceInput.quickInput.enabled") as? Bool ?? false }
-        set {
-            defaults.set(newValue, forKey: "voiceInput.quickInput.enabled")
-            NotificationCenter.default.post(name: .hotkeySettingsDidChange, object: self)
-        }
-    }
-
     var activePersonaID: String {
         get { defaults.string(forKey: "persona.activeID") ?? "" }
         set { defaults.set(newValue, forKey: "persona.activeID") }

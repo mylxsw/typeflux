@@ -20,6 +20,8 @@ struct LauncherSettingsView: View {
     @State var quickNumberConversionsEnabled = true
     @State var inputHistoryEnabled = true
     @State var inputHistoryLimit = 100
+    @State var launcherPosition: AskLauncherPosition = .center
+    @State var hasRememberedLauncherPositions = false
     @State private var confirmingClearInputHistory = false
 
     var body: some View {
@@ -55,6 +57,8 @@ struct LauncherSettingsView: View {
     @ViewBuilder private var basicsPane: some View {
         TFPaneHeader(systemImage: pane.symbol, title: pane.title)
         TFFormSection {
+            launcherPositionRow
+            TFDivider.formWithIcon
             TFFormRow(title: L("launcher.inputSource.title"), detail: L("launcher.inputSource.detail"), icon: "keyboard") {
                 TFPopUpButton(title: L("launcher.inputSource.title"),
                               options: inputSourceOptions.map { TFOption($0.value, $0.label) },
@@ -93,8 +97,33 @@ struct LauncherSettingsView: View {
         }
     }
 
+    /// Where ⌥Space opens the launcher: always centred, or where it was last dragged.
+    private var launcherPositionRow: some View {
+        TFFormRow(
+            title: L("settings.shortcuts.launcherPosition.title"),
+            detail: L(launcherPosition == .center
+                ? "settings.shortcuts.launcherPosition.center.subtitle"
+                : "settings.shortcuts.launcherPosition.last.subtitle"),
+            icon: "macwindow"
+        ) {
+            if launcherPosition == .lastPosition {
+                TFButton(title: L("settings.shortcuts.launcherPosition.reset"), kind: .link) {
+                    resetLauncherPositions()
+                }
+                .disabled(!hasRememberedLauncherPositions)
+            }
+            TFSegmentedControl(
+                options: [TFOption(AskLauncherPosition.center, L("settings.shortcuts.launcherPosition.center")),
+                          TFOption(.lastPosition, L("settings.shortcuts.launcherPosition.last"))],
+                selection: Binding(get: { launcherPosition }, set: setLauncherPosition)
+            )
+            .accessibilityIdentifier("launcher.settings.position")
+        }
+    }
+
     func reload() {
         reloadInputSources()
+        reloadLauncherPosition()
         quickCalculatorEnabled = settings.askQuickCalculatorEnabled
         quickNumberConversionsEnabled = settings.askQuickNumberConversionsEnabled
         inputHistoryEnabled = settings.askLauncherInputHistoryEnabled
@@ -113,6 +142,23 @@ struct LauncherSettingsView: View {
             options.append((label: L("launcher.inputSource.unavailable"), value: inputSourceID))
         }
         return options
+    }
+
+    /// The launcher remembers positions while settings are open; check again when they are shown.
+    func reloadLauncherPosition() {
+        launcherPosition = settings.askLauncherPosition
+        hasRememberedLauncherPositions = !settings.askLauncherAnchors.isEmpty
+    }
+
+    func setLauncherPosition(_ position: AskLauncherPosition) {
+        settings.askLauncherPosition = position
+        reloadLauncherPosition()
+    }
+
+    /// Forgets where the launcher was left on every screen; it opens centred until moved again.
+    func resetLauncherPositions() {
+        settings.askLauncherAnchors = [:]
+        reloadLauncherPosition()
     }
 
     func setInputSource(_ sourceID: String) {
