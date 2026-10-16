@@ -1,0 +1,33 @@
+{
+  "base": "d5219a877261b095056e83eeefa8bb3f4bbc5002",
+  "denominator": "Added/modified test harness lines intersected with LLVM DA executable lines; all lines of the new test helper included. Line coverage only.",
+  "covered": 83,
+  "executable": 83,
+  "percent": 100.0,
+  "files": {
+    "Tests/TypefluxTests/SemanticOCRPreviewTests.swift": {
+      "covered": 6,
+      "executable": 6,
+      "uncovered": []
+    },
+    "Tests/TypefluxTests/SemanticOCRPreviewTests+Snapshots.swift": {
+      "covered": 77,
+      "executable": 77,
+      "uncovered": []
+    }
+  },
+  "repair_production_lines": {
+    "application": 0,
+    "shared_media": 0
+  },
+  "prior_slice_production_coverage_reused": {
+    "application": {
+      "covered": 46,
+      "executable": 46
+    },
+    "shared_media": {
+      "covered": 54,
+      "executable": 54
+    }
+  }
+}

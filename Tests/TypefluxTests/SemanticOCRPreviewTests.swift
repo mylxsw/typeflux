@@ -114,6 +114,7 @@ struct SemanticOCRPreviewTests {
                 .write(to: output.appendingPathComponent(rotated ? "rotated-boxes.json" : "boxes.json"))
         }
         if !rotated {
+            try verifyHistoricalSnapshots()
             try await snapshot(content, hit: hit, name: "ocr")
         }
         let target = root.appendingPathComponent("snapshot")
@@ -187,14 +188,15 @@ struct SemanticOCRPreviewTests {
                 defer { panel.orderOut(nil); panel.close() }
                 try await Task.sleep(for: .milliseconds(50))
                 host.layoutSubtreeIfNeeded()
+                host.displayIfNeeded()
                 let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
                 host.cacheDisplay(in: host.bounds, to: bitmap)
                 let png = try #require(bitmap.representation(using: .png, properties: [:]))
-                #expect(png.count > 1000)
+                let label = "\(name)-\(entry)-\(appearance == .aqua ? "light" : "dark")"
+                try verifyPreviewSnapshot(png, highlighted: content.imageTextLocated == true, label: label)
+                if label == "ocr-files-dark" { try verifyBlankPreviewIsRejected(bitmap) }
                 if let folder = ProcessInfo.processInfo.environment["TYPEFLUX_OCR_PREVIEW_EVIDENCE"] {
-                    try png
-                        .write(to: URL(fileURLWithPath: folder)
-                            .appendingPathComponent("\(name)-\(entry)-\(appearance == .aqua ? "light" : "dark").png"))
+                    try png.write(to: URL(fileURLWithPath: folder).appendingPathComponent(label + ".png"))
                 }
             }
         }

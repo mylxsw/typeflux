@@ -1,0 +1,9 @@
+{
+  "command": [
+    "make",
+    "coverage",
+    "FILTER=SemanticOCRPreviewTests/.*persisted"
+  ],
+  "wall_seconds": 329.28743333299644,
+  "exit_code": 0
+}

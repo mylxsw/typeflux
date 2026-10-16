@@ -1,0 +1,56 @@
+{
+  "baseline_head": "d5219a877261b095056e83eeefa8bb3f4bbc5002",
+  "final_head": "Recorded in the PR and final issue comment to avoid a self-referential hash.",
+  "tools": {
+    "swift": "Apple Swift version 6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)\nTarget: arm64-apple-macosx26.0",
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t26.6.2\nBuildVersion:\t\t25G83",
+    "xcode": "Xcode 27.1\nBuild version 27A9275",
+    "hardware": "Mac16,10",
+    "memory_bytes": 17179869184
+  },
+  "same_tools_as_original": {
+    "swift": true,
+    "os": true,
+    "xcode": true,
+    "hardware": true,
+    "memory_bytes": true
+  },
+  "build": "Debug, LLVM coverage, jobs=4, native SwiftPM, private APFS clone relocated and rebuilt. No cached passing results.",
+  "source_audit": {
+    "original_frozen_count": 159,
+    "unchanged_original_frozen_count": 158,
+    "changed_original_frozen_files": [
+      "Tests/TypefluxTests/SemanticOCRPreviewTests.swift"
+    ],
+    "new_test_file": "Tests/TypefluxTests/SemanticOCRPreviewTests+Snapshots.swift",
+    "production_and_package_diff_empty": true,
+    "unchanged_original_evidence_files": 39
+  },
+  "coverage_command": {
+    "command": [
+      "make",
+      "coverage",
+      "FILTER=SemanticOCRPreviewTests/.*persisted"
+    ],
+    "wall_seconds": 329.28743333299644,
+    "exit_code": 0
+  },
+  "build_seconds": [
+    278.2
+  ],
+  "preparation_discovery_seconds": 307.22,
+  "test_execution_seconds": 11.65,
+  "coverage_test_retries": 0,
+  "passed_methods": 1,
+  "passed_parameter_cases": 2,
+  "sha256_binaries": {
+    ".build/ocr-preview/arm64-apple-macosx/debug/Typeflux": "0c2ce0fca09cab45e5090efa48a046f755de6926dbe95c737d246d563d452ea9",
+    ".build/ocr-preview/arm64-apple-macosx/debug/TypefluxMediaHelper": "64e338186ae655649ef156bb81a3388d2fc7dd207e59192e7b8aa4cfe173c2c7",
+    ".build/ocr-preview/arm64-apple-macosx/debug/TypefluxPackageTests.xctest/Contents/MacOS/TypefluxPackageTests": "8fd31949b1a652aaf19707d27d2b82709fb75d8ee25d716a88c359ddbd730690"
+  },
+  "raw_profdata_sha256": "2fd229a8cfddf70a457e3b0d9a7099acfa65e5795dc941096ba67d6a16e1a91d",
+  "embedding": "Deterministic fixture vectors. No embedding weights loaded.",
+  "ocr": "Real local Apple Vision on synthetic PNG/EXIF-6 JPEG and exported production-view PNG crops; OS-managed model.",
+  "scope": "Native production views and persistent OCR hit; no physical-input or full launcher-controller acceptance.",
+  "historical_artifact_audit": "archive-audit.json; archived files contain text/highlight. Exact reported viewing discrepancy remains unexplained."
+}

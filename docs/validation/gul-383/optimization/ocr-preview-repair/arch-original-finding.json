@@ -1,0 +1,8 @@
+{
+  "head": "d5219a877261b095056e83eeefa8bb3f4bbc5002",
+  "developer_artifact": "docs/validation/gul-383/optimization/ocr-preview-slice/ocr-files-dark.png",
+  "independent_artifact": "ocr-files-dark.png",
+  "finding": "File-plugin dark native production-view snapshot shows blank white raster with no text/highlight, reproduced independently. PNG byte-count assertion insufficient.",
+  "independent_sha256": "c87c56a7f4aeb3d6093b99824f6dcd9dfc350f692b9ada10434e231e4f62c6fc",
+  "product_vs_capture": "not determined; same-PR narrow fix required"
+}
