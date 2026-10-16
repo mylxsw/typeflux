@@ -15,6 +15,38 @@ private final class InterleavingEncoder: SemanticEmbedding {
 
 @Suite("Live document fairness on the durable queue", .serialized)
 struct SemanticIndexFairnessTests {
+    @Test func enabledBudgetDoesNotDrainTheEntireDocumentBacklogBeforeAnotherMediaSegment() throws {
+        let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
+        let store = try SemanticFileStore(url: root.appendingPathComponent("index.sqlite"))
+        let reader = SemanticMediaFixtureReader(root: root.path), media = SemanticFixtureMediaEncoder()
+        reader.names = ["video.mov"]; reader.pieces = 2
+        let long = root.appendingPathComponent("long.txt"), gate = SemanticIndexPauseGate(),
+            encoder = InterleavingEncoder()
+        var calls = 0, observed = false
+        encoder.before = { _ in calls += 1; gate.enqueueDocuments([long.path]) }
+        media.before = { _ in
+            if media.calls == 1 {
+                try String(repeating: "project body ", count: 20000).write(to: long, atomically: true, encoding: .utf8)
+                gate.enqueueDocuments([long.path])
+            } else {
+                #expect(try store.job(long.path)?.state == .partial)
+                #expect(calls <= 2)
+                observed = true
+            }
+        }
+        var policy = SemanticWorkBudget.Policy(); policy.quantum = 1000; policy.documentBatches = 2
+        let budget = SemanticWorkBudget(policy: policy, enabled: true, state: { .init() })
+        _ = try budget.perform(cancelled: { false }) {
+            try SemanticFileIndexer.run(scope: semanticScope(root.path), store: store, reader: reader,
+                                        encoder: encoder, media: media, documents: { gate.takeDocuments() },
+                                        priorityReader: AskFileReader(),
+                                        cancelled: { false }, progress: { _ in })
+        }
+        #expect(observed && calls > 2)
+        #expect(try store.job(long.path)?.state == .done)
+        #expect(try store.lock.withLock { try store.count("work_queue") } == 0)
+    }
+
     @Test(arguments: [false, true])
     func `continuous events do not drain one long document before the next`(targeted: Bool) throws {
         let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }

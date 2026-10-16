@@ -24,11 +24,12 @@ final class SemanticFileStore: @unchecked Sendable {
     var database: OpaquePointer?
     private var lexicalReader: SemanticLexicalReader?
     private var vectorReader: SemanticVectorReader?
+    var activeRunID: String?
     let url: URL
 
     // Keep schema migration and reader startup in one initialization failure boundary.
     // swiftlint:disable:next function_body_length
-    init(url: URL, profile: String = SemanticFilePolicy.profile) throws {
+    init(url: URL, profile: String = SemanticFilePolicy.profile, cancelled: () -> Bool = { false }) throws {
         self.url = url
         try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true,
                                                 attributes: [.posixPermissions: 0o700])
@@ -42,51 +43,55 @@ final class SemanticFileStore: @unchecked Sendable {
             sqlite3_close(database); database = nil; throw Failure.database
         }
         do {
-            try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)
-            sqlite3_busy_timeout(database, 1000)
-            try sql("PRAGMA journal_mode=WAL; PRAGMA secure_delete=ON; PRAGMA foreign_keys=ON;")
-            try sql(
-                """
-                CREATE TABLE IF NOT EXISTS profile(value TEXT NOT NULL);
-                CREATE TABLE IF NOT EXISTS files(path TEXT PRIMARY KEY, modified REAL NOT NULL, bytes INTEGER NOT NULL);
-                """
-            )
-            try sql(
-                """
-                CREATE TABLE IF NOT EXISTS chunks(id INTEGER PRIMARY KEY, path TEXT NOT NULL REFERENCES files(path) ON DELETE CASCADE, text TEXT NOT NULL, page INTEGER, vector BLOB NOT NULL);
-                """
-            )
-            try sql(
-                """
-                CREATE INDEX IF NOT EXISTS chunk_paths ON chunks(path);
-                CREATE VIRTUAL TABLE IF NOT EXISTS lexical USING fts5(terms);
-                """
-            )
-            try sql(
-                """
-                CREATE TRIGGER IF NOT EXISTS remove_lexical AFTER DELETE ON chunks BEGIN DELETE FROM lexical WHERE rowid=old.id;
-                END;
-                """
-            )
-            try prepareContentSchema()
-            try prepareJobSchema()
-            try prepareDiscoverySchema()
-            try prepareMediaJobSchema()
-            let existing = try statement("SELECT value FROM profile")
-            let old = sqlite3_step(existing) == SQLITE_ROW ? string(existing, 0) : nil
-            sqlite3_finalize(existing)
-            if old != profile {
-                try sql("""
-                    BEGIN IMMEDIATE; DELETE FROM files; DELETE FROM lexical; DELETE FROM jobs; DELETE FROM media_jobs; DELETE FROM work_queue; DELETE FROM discovery; DELETE FROM scan_directories; DELETE FROM scan_scope; DELETE FROM profile;
+            try SemanticSQLiteCancellation.read(database!, cancelled: cancelled, background: true) {
+                try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)
+                sqlite3_busy_timeout(database, 1000)
+                try sql("PRAGMA journal_mode=WAL; PRAGMA secure_delete=ON; PRAGMA foreign_keys=ON;")
+                try sql(
+                    """
+                    CREATE TABLE IF NOT EXISTS profile(value TEXT NOT NULL);
+                    CREATE TABLE IF NOT EXISTS files(path TEXT PRIMARY KEY, modified REAL NOT NULL, bytes INTEGER NOT NULL);
                     """
                 )
-                do { try execute("INSERT INTO profile VALUES(?)", [profile]); try sql("COMMIT;") } catch {
-                    try? sql("ROLLBACK"); throw error
+                try sql(
+                    """
+                    CREATE TABLE IF NOT EXISTS chunks(id INTEGER PRIMARY KEY, path TEXT NOT NULL REFERENCES files(path) ON DELETE CASCADE, text TEXT NOT NULL, page INTEGER, vector BLOB NOT NULL);
+                    """
+                )
+                try sql(
+                    """
+                    CREATE INDEX IF NOT EXISTS chunk_paths ON chunks(path);
+                    CREATE VIRTUAL TABLE IF NOT EXISTS lexical USING fts5(terms);
+                    """
+                )
+                try sql(
+                    """
+                    CREATE TRIGGER IF NOT EXISTS remove_lexical AFTER DELETE ON chunks BEGIN DELETE FROM lexical WHERE rowid=old.id;
+                    END;
+                    """
+                )
+                try prepareContentSchema()
+                try prepareJobSchema()
+                try prepareDiscoverySchema()
+                try prepareDiagnosticsSchema()
+                try prepareMediaJobSchema()
+                let existing = try statement("SELECT value FROM profile")
+                let old = sqlite3_step(existing) == SQLITE_ROW ? string(existing, 0) : nil
+                sqlite3_finalize(existing)
+                try prepareSearchSchema()
+                try prepareTotalsSchema()
+                try sql(
+                    "CREATE TABLE IF NOT EXISTS profile_reset(id INTEGER PRIMARY KEY CHECK(id=1),target TEXT NOT NULL)"
+                )
+                if old == nil {
+                    try execute("INSERT INTO profile VALUES(?)", [profile])
+                } else if old != profile {
+                    // The old embedding space is withheld immediately; cleanup runs in cancellable batches.
+                    try execute("INSERT OR REPLACE INTO profile_reset VALUES(1,?)", [profile])
                 }
+                lexicalReader = try SemanticLexicalReader(url: url)
+                vectorReader = try SemanticVectorReader(url: url)
             }
-            try prepareSearchSchema()
-            lexicalReader = try SemanticLexicalReader(url: url)
-            vectorReader = try SemanticVectorReader(url: url)
         } catch { sqlite3_close(database); database = nil; throw error }
     }
 
@@ -96,9 +101,8 @@ final class SemanticFileStore: @unchecked Sendable {
         try lock.withLock {
             let stmt =
                 try statement("""
-                    SELECT f.modified,f.bytes,COALESCE(j.state,'done') FROM files f LEFT JOIN jobs j ON j.path=f.path WHERE f.path=?
-                    """
-                )
+                SELECT f.modified,f.bytes,COALESCE(j.state,'done') FROM files f LEFT JOIN jobs j ON j.path=f.path WHERE f.path=?
+                """)
             defer { sqlite3_finalize(stmt) }
             self.bind(stmt, [path])
             return sqlite3_step(stmt) == SQLITE_ROW && sqlite3_column_double(stmt, 0) == modified.timeIntervalSince1970
@@ -129,10 +133,7 @@ final class SemanticFileStore: @unchecked Sendable {
                          SemanticScoreCalibration.script(chunk.text)]
                     )
                     let id = sqlite3_last_insert_rowid(database)
-                    try execute(
-                        "INSERT INTO lexical(rowid,terms) VALUES(?,?)",
-                        [id, SemanticFilePolicy.terms(chunk.text)]
-                    )
+                    try writeLexical(id, text: chunk.text)
                 }
                 try self.sql("COMMIT")
             } catch { try? self.sql("ROLLBACK"); throw error }
@@ -179,32 +180,28 @@ final class SemanticFileStore: @unchecked Sendable {
         try lock.withLock {
             try self
                 .sql("""
-                    DELETE FROM files; DELETE FROM jobs; DELETE FROM media_jobs; DELETE FROM work_queue; DELETE FROM discovery; DELETE FROM scan_directories; DELETE FROM scan_scope; PRAGMA wal_checkpoint(TRUNCATE); VACUUM;
-                    """
-                )
+                DELETE FROM files; DELETE FROM jobs; DELETE FROM media_jobs; DELETE FROM work_queue; DELETE FROM discovery; DELETE FROM scan_directories; DELETE FROM scan_scope; DELETE FROM scan_roots; DELETE FROM scan_cursors; DELETE FROM scan_requests; PRAGMA wal_checkpoint(TRUNCATE); VACUUM;
+                """)
         }
     }
 
     func counts() throws -> Counts {
         try lock.withLock {
-            let stmt = try statement("""
-                SELECT path FROM files WHERE EXISTS(SELECT 1 FROM chunks WHERE chunks.path=files.path)
-                """)
+            let stmt = try statement("SELECT documents,images,audio,videos,chunks FROM index_totals WHERE id=1")
             defer { sqlite3_finalize(stmt) }
-            var result = Counts()
-            var step = sqlite3_step(stmt)
-            while step == SQLITE_ROW {
-                switch SemanticMediaPriority.of(self.string(stmt, 0)) {
-                case .document: result.documents += 1
-                case .image: result.images += 1
-                case .audio: result.audio += 1
-                case .video: result.videos += 1
-                }
-                step = sqlite3_step(stmt)
-            }
-            guard step == SQLITE_DONE else { throw Failure.database }
-            result.chunks = try self.count("chunks")
-            return result
+            guard sqlite3_step(stmt) == SQLITE_ROW else { throw Failure.database }
+            return Counts(documents: Int(sqlite3_column_int64(stmt, 0)), images: Int(sqlite3_column_int64(stmt, 1)),
+                          audio: Int(sqlite3_column_int64(stmt, 2)), videos: Int(sqlite3_column_int64(stmt, 3)),
+                          chunks: Int(sqlite3_column_int64(stmt, 4)))
+        }
+    }
+
+    func hasPublishedContent() throws -> Bool {
+        try lock.withLock {
+            let row = try statement("SELECT EXISTS(SELECT 1 FROM chunks LIMIT 1)")
+            defer { sqlite3_finalize(row) }
+            guard sqlite3_step(row) == SQLITE_ROW else { throw Failure.database }
+            return sqlite3_column_int(row, 0) != 0
         }
     }
 

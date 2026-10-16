@@ -7,17 +7,38 @@ extension SemanticFileIndexer {
                            store: SemanticFileStore, reader: AskFileReading, media: any SemanticMediaEmbedding,
                            cancelled: () -> Bool, waitForIdle: () throws -> Void) throws -> Bool {
         try waitForIdle()
-        let scratch = URL(fileURLWithPath: AskFileScope.canonical(FileManager.default.temporaryDirectory.path))
-            .appendingPathComponent("typeflux-media-" + UUID().uuidString)
+        let generation = try store.beginMediaJob(path: path, metadata: metadata)
+        try store.removeOrphanMediaCache(cancelled: cancelled)
+        let resume = try store.mediaCursor(path: path, generation: generation)
+        let scratch = store.url.deletingLastPathComponent().appendingPathComponent(
+            ".typeflux-media-cache",
+            isDirectory: true
+        )
+        .appendingPathComponent(generation)
         try FileManager.default.createDirectory(at: scratch, withIntermediateDirectories: true,
                                                 attributes: [.posixPermissions: 0o700])
-        defer { try? FileManager.default.removeItem(at: scratch) }
-        let generation = try store.beginMediaJob(path: path, metadata: metadata)
+        // Preserve the verified snapshot on pause/cancellation. A successful publication removes it.
+        let initialInterruptions = SemanticWorkBudget.current?.statistics.interruptions ?? 0
+        var committedScratch = false
+        defer {
+            let interrupted = (SemanticWorkBudget.current?.statistics.interruptions ?? 0) > initialInterruptions
+            if committedScratch || (!cancelled() && !interrupted) {
+                try? FileManager.default.removeItem(at: scratch)
+            }
+        }
+        try store.record(.vectorReusedSegments, count: resume.nextOrdinal)
         var ordinal = 0
         var failure: Error?, final: AskFileReadResponse?
-        try reader.stream(.init(operation: .media, path: path, scope: scope, scratch: scratch.path),
-                          isCancelled: cancelled) { response in
+        try store.setStage(.extracting)
+        try store.record(.extractionBatches)
+        try reader.stream(
+            .init(operation: .media, path: path, scope: scope, scratch: scratch.path, paced: true, mediaCursor: resume),
+            isCancelled: cancelled
+        ) { response in
             if let input = response.media {
+                if let supplied = response.mediaOrdinal {
+                    ordinal = supplied
+                }
                 do {
                     guard (input.path as NSString).deletingLastPathComponent == scratch.path else {
                         throw AskFileReadError.protocolError
@@ -25,15 +46,21 @@ extension SemanticFileIndexer {
                     try waitForIdle()
                     defer { ordinal += 1 }
                     if try store.hasMediaSegment(path: path, generation: generation, ordinal: ordinal) {
+                        try store.record(.vectorReusedSegments)
                         try? FileManager.default.removeItem(atPath: input.path)
                         return !cancelled()
                     }
                     let vector: [Float]
+                    try store.setStage(.encoding)
+                    try store.record(.encodingRequests)
                     do {
                         vector = try media.embed(input, cancelled: cancelled)
+                    } catch is SemanticWorkBudget.Interrupted {
+                        throw SemanticWorkBudget.Interrupted()
                     } catch let error as SemanticMediaInputError {
                         throw error
                     } catch { throw SemanticMediaFailure.unavailable(error) }
+                    try store.record(.vectorsInferred)
                     try store.saveMediaSegment(
                         path: path,
                         generation: generation,
@@ -46,6 +73,7 @@ extension SemanticFileIndexer {
             }
             if response.more != true {
                 final = response
+                ordinal = response.mediaSegments ?? ordinal
             }
             return !cancelled()
         }
@@ -79,6 +107,7 @@ extension SemanticFileIndexer {
         if !committed {
             try store.failJob(path, reason: "inconsistent-media-segments")
         }
+        committedScratch = committed
         return committed
     }
 }

@@ -19,6 +19,15 @@ for doc in labels.documents where doc.kind == "image" {
         context.closePath(); context.fillPath()
     }
     switch doc.shape! {
+    case "square": context.fill(CGRect(x: 106, y: 106, width: 300, height: 300))
+    case "rectangle": context.fill(CGRect(x: 56, y: 166, width: 400, height: 180))
+    case "ellipse": context.fillEllipse(in: CGRect(x: 56, y: 166, width: 400, height: 180))
+    case "pentagon", "hexagon":
+        let count = doc.shape == "pentagon" ? 5 : 6
+        polygon((0..<count).map { index in
+            let angle = Double.pi / 2 + Double(index) * 2 * Double.pi / Double(count)
+            return CGPoint(x: 256 + 185*cos(angle), y: 256 + 185*sin(angle))
+        })
     case "circle": context.fillEllipse(in: CGRect(x: 76, y: 76, width: 360, height: 360))
     case "triangle": polygon([.init(x: 256, y: 436), .init(x: 76, y: 96), .init(x: 436, y: 96)])
     case "diamond": polygon([.init(x: 256, y: 436), .init(x: 436, y: 256), .init(x: 256, y: 76), .init(x: 76, y: 256)])

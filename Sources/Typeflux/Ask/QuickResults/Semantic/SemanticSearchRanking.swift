@@ -9,14 +9,18 @@ struct SemanticSearchRanking {
         var identifier: Bool
     }
 
+    let originalText: String
     let text: String
     let terms: [String]
     let identifiers: [String]
     let quoted: [String]
+    let prefersCJK: Bool
     let preferredModality: SemanticMediaPriority?
     var semanticFloor: Double = 0.45
 
     init(_ text: String) {
+        prefersCJK = SemanticScoreCalibration.script(text) == 1
+        originalText = text
         self.text = Self.normalize(text)
         terms = Array(SemanticFilePolicy.searchTerms(text).prefix(64))
         let normalized = Self.normalize(text)
@@ -82,7 +86,7 @@ struct SemanticSearchRanking {
     }
 
     func confident(peak: Double, runnerUp: Double?, completeLexical: Bool) -> Bool {
-        completeLexical || peak >= 0.675 || (runnerUp.map { peak >= semanticFloor && peak - $0 >= 0.04 } ?? false)
+        completeLexical || peak >= 0.70 || (runnerUp.map { peak >= semanticFloor && peak - $0 >= 0.04 } ?? false)
     }
 
     func lexicalAccepted(_ evidence: Evidence) -> Bool {
@@ -113,13 +117,23 @@ struct SemanticSearchRanking {
         // The generated-speech calibration changes ordering only, never answerability.
         guard lexicalAccepted(evidence) || (cosine ?? 0) >= semanticFloor else { return nil }
         if evidence.identifier {
+            return 3.0 + (cosine ?? 0) * 0.01
+        }
+        if evidence.coverage == 1 && evidence.phrase {
+            // Preserve the exact body phrase contract independently of soft semantic tuning.
             return 1.0 + (cosine ?? 0) * 0.01
         }
-        let lexical = 0.30 * evidence.coverage * evidence.coverage + (evidence.phrase ? 0.12 : 0)
-            + (evidence.coverage == 1 ? 0.35 : 0)
-            - (evidence.coverage > 0 && evidence.coverage < 1 ? 0.18 : 0)
-        return 0.55 * (cosine ?? 0) + lexical + (preferredModality == modality ? 0.04 : 0)
-            + (embedding == .audio || (embedding == nil && modality == .audio) ? 0.025 : 0)
+        // Partial lexical evidence never subtracts score at equal cosine. Explicit media intent
+        // retains its context preference; ordinary queries use a small script tie-break only.
+        let lexical = (evidence.phrase ? 0.12 : 0) + (evidence.coverage == 1 ? 0.10 : 0)
+        let matchingMedia = preferredModality == modality || (preferredModality == .audio && embedding == .audio)
+            || (preferredModality == .image && embedding == .image)
+        return 0.55 * (cosine ?? 0) + lexical + (matchingMedia ? 0.10 : 0)
+    }
+
+    func scriptAdjustment(_ bucket: SemanticScoreCalibration.Bucket) -> Double {
+        guard preferredModality == nil, bucket == .text || bucket == .cjkText else { return 0 }
+        return prefersCJK == (bucket == .cjkText) ? 0.025 : 0
     }
 
     static func allowed(_ path: String, query: AskSearchQuery, type: AskFileType, scope: AskFileScope) -> Bool {

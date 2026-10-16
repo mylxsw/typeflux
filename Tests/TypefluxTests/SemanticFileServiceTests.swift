@@ -6,6 +6,7 @@ import Testing
 @testable import Typeflux
 
 final class SemanticFixtureModels: SemanticModelHandling, @unchecked Sendable {
+    let fetchStarted = AskSearchCancellation()
     var failure = false
     var status = 200
     var delay: Duration = .zero
@@ -32,6 +33,7 @@ final class SemanticFixtureModels: SemanticModelHandling, @unchecked Sendable {
     }
 
     func fetch(progress: @escaping @Sendable (Int64) -> Void) async throws -> (URL, URLResponse) {
+        fetchStarted.cancel()
         progress(100)
         try await Task.sleep(for: delay)
         let copy = source.deletingLastPathComponent().appendingPathComponent(UUID().uuidString)
@@ -191,7 +193,7 @@ struct SemanticFileServiceTests {
         #expect(throws: CancellationError.self) { try SemanticModel.verify(models.source, cancelled: { true }) }
     }
 
-    @Test func automaticSettingsWatcherAndPowerChangesKeepLifecycleCoherent() async throws {
+    @Test func `automatic settings watcher and power changes keep lifecycle coherent`() async throws {
         let (fixture, root, reader, models) = try fixture()
         defer { try? FileManager.default.removeItem(at: root) }
         try FileManager.default.copyItem(at: models.source, to: fixture.modelURL)
@@ -199,10 +201,12 @@ struct SemanticFileServiceTests {
         let constrained = AskSearchCancellation(), overheated = AskSearchCancellation()
         let updated = AskSearchCancellation()
         let service = SemanticFileSearchService(settings: fixture.settings, directory: root,
-            helper: URL(fileURLWithPath: "/usr/bin/true"), supported: true, watcher: watcher,
-            access: { true }, lowPowerMode: { constrained.isCancelled },
-            thermalConstrained: { overheated.isCancelled }, models: models,
-            makeReader: { reader }, makeEncoder: { _, _ in encoder }, makeQuery: { _, _ in SemanticFixtureQuery() })
+                                                helper: URL(fileURLWithPath: "/usr/bin/true"), supported: true,
+                                                watcher: watcher,
+                                                access: { true }, lowPowerMode: { constrained.isCancelled },
+                                                thermalConstrained: { overheated.isCancelled }, models: models,
+                                                makeReader: { reader }, makeEncoder: { _, _ in encoder },
+                                                makeQuery: { _, _ in SemanticFixtureQuery() })
         fixture.settings.semanticFileSearch = .init(enabled: true)
         try await Self.wait { service.phase == .ready }
         #expect(watcher.started == [root.path])
@@ -213,16 +217,19 @@ struct SemanticFileServiceTests {
         try await Self.wait { service.phase == .ready }
         constrained.cancel()
         NotificationCenter.default.post(name: .NSProcessInfoPowerStateDidChange, object: ProcessInfo.processInfo)
-        try await Self.wait { service.phase == .paused }
+        #expect(service.phase == .ready, "Low Power Mode uses the slower work budget")
         #expect(service.isEnabled)
         #expect(await service.search("报销流程", type: .all, limit: 10).map(\.path) == [reader.path])
         let calls = encoder.calls
         reader.modified = reader.modified.addingTimeInterval(1)
         watcher.change?([.init(path: reader.path, rescan: false)], 2)
-        try await Task.sleep(for: .milliseconds(2_250))
-        #expect(encoder.calls == calls, "Low Power Mode must not resume background indexing")
+        try await Task.sleep(for: .milliseconds(2250))
+        #expect(encoder.calls > calls, "Low Power Mode still makes useful checkpointed progress")
         overheated.cancel()
-        NotificationCenter.default.post(name: ProcessInfo.thermalStateDidChangeNotification, object: ProcessInfo.processInfo)
+        NotificationCenter.default.post(
+            name: ProcessInfo.thermalStateDidChangeNotification,
+            object: ProcessInfo.processInfo
+        )
         try await Self.wait { service.phase == .paused }
         #expect(service.isEnabled, "thermal pressure preserves lexical content search")
         fixture.settings.semanticFileSearch = .init(enabled: false)
@@ -231,7 +238,7 @@ struct SemanticFileServiceTests {
         await service.clear(removeModel: true)
     }
 
-    @Test func irrelevantEventsDoNotRescanAndChangedFilesUseTargetedReconciliation() async throws {
+    @Test func `irrelevant events do not rescan and changed files use targeted reconciliation`() async throws {
         let (original, root, reader, models) = try fixture()
         defer { try? FileManager.default.removeItem(at: root) }
         try FileManager.default.copyItem(at: models.source, to: original.modelURL)
@@ -240,9 +247,13 @@ struct SemanticFileServiceTests {
         original.settings.askLauncherSearchSettings = names
         let watcher = SemanticFixtureWatcher(), encoder = SemanticFixtureEncoder()
         let service = SemanticFileSearchService(settings: original.settings, directory: root,
-            helper: URL(fileURLWithPath: "/usr/bin/true"), supported: true, watcher: watcher,
-            access: { true }, lowPowerMode: { false }, thermalConstrained: { false }, models: models,
-            makeReader: { reader }, makeEncoder: { _, _ in encoder }, makeQuery: { _, _ in SemanticFixtureQuery() })
+                                                helper: URL(fileURLWithPath: "/usr/bin/true"), supported: true,
+                                                watcher: watcher,
+                                                access: { true }, lowPowerMode: { false },
+                                                thermalConstrained: { false },
+                                                models: models,
+                                                makeReader: { reader }, makeEncoder: { _, _ in encoder },
+                                                makeQuery: { _, _ in SemanticFixtureQuery() })
         #expect(service.setEnabled(true))
         try await Self.wait { service.phase == .ready }
         let initialCrawls = reader.directoryReads
@@ -256,7 +267,7 @@ struct SemanticFileServiceTests {
             .init(path: root.path + "/Library/ignored.md", rescan: false, isDirectory: false),
             .init(path: root.path + "/unrelated.json", rescan: false, isDirectory: false)
         ], 1)
-        try await Task.sleep(for: .milliseconds(2_250))
+        try await Task.sleep(for: .milliseconds(2250))
         #expect(service.phase == .ready && reader.directoryReads == initialCrawls)
         reader.modified = reader.modified.addingTimeInterval(1)
         watcher.change?([.init(path: reader.path, rescan: false, isDirectory: false)], 2)
@@ -265,7 +276,7 @@ struct SemanticFileServiceTests {
         await service.clear(removeModel: true)
     }
 
-    @Test func corruptIndexCanBeClearedWithoutRemovingVerifiedModel() async throws {
+    @Test func `corrupt index can be cleared without removing verified model`() async throws {
         let (service, root, _, models) = try fixture()
         defer { try? FileManager.default.removeItem(at: root) }
         try FileManager.default.copyItem(at: models.source, to: service.modelURL)
@@ -282,23 +293,33 @@ struct SemanticFileServiceTests {
         await service.clear(removeModel: true)
     }
 
-    @Test func downloadFailuresAndEarlyCancellationReleaseSession() async throws {
+    @Test func `download failures and early cancellation release session`() async throws {
         let config = URLSessionConfiguration.ephemeral
         config.protocolClasses = [SemanticFailureURLProtocol.self]
-        let downloader = SemanticModelDownload(url: URL(string: "https://semantic.test/model")!, configuration: config, progress: { _ in })
+        let downloader = try SemanticModelDownload(
+            url: #require(URL(string: "https://semantic.test/model")),
+            configuration: config,
+            progress: { _ in }
+        )
         await #expect(throws: (any Error).self) { try await downloader.fetch() }
         await #expect(throws: (any Error).self) { try await downloader.fetch() }
-        let cancelled = SemanticModelDownload(url: URL(string: "https://semantic.test/model")!, configuration: config, progress: { _ in })
+        let cancelled = try SemanticModelDownload(
+            url: #require(URL(string: "https://semantic.test/model")),
+            configuration: config,
+            progress: { _ in }
+        )
         let task = Task { try await cancelled.fetch() }
         task.cancel()
         await #expect(throws: CancellationError.self) { try await task.value }
     }
 
-    @Test func liveModelDownloadWhenExplicitlyRequested() async throws {
+    @Test func `live model download when explicitly requested`() async throws {
         guard ProcessInfo.processInfo.environment["TYPEFLUX_SEMANTIC_LIVE_DOWNLOAD"] == "1" else { return }
         let progress = AskSearchCancellation()
         let (temporary, response) = try await SemanticModelFiles().fetch { received in
-            if received > 0, received < SemanticModel.bytes { progress.cancel() }
+            if received > 0, received < SemanticModel.bytes {
+                progress.cancel()
+            }
         }
         defer { try? FileManager.default.removeItem(at: temporary) }
         #expect((response as? HTTPURLResponse)?.statusCode == 200)
@@ -332,7 +353,7 @@ struct SemanticFileServiceTests {
         }
     }
 
-    @Test func nativeControlsUseInlineSetupAndManagement() async throws {
+    @Test func `native controls use inline setup and management`() async throws {
         typealias Support = SettingsBehaviorTestSupport
         let (unsupported, unsupportedRoot, _, _) = try fixture(supported: false)
         let (service, root, _, _) = try fixture()
@@ -385,7 +406,7 @@ struct SemanticFileServiceTests {
         await service.clear(removeModel: true)
     }
 
-    @Test func foldersEditedDuringRebuildAreNotRestored() async throws {
+    @Test func `folders edited during rebuild are not restored`() async throws {
         let (service, root, _, _) = try fixture()
         defer { try? FileManager.default.removeItem(at: root) }
         #expect(service.setEnabled(true))
@@ -401,12 +422,13 @@ struct SemanticFileServiceTests {
         names.fileRoots = []
         service.settings.askLauncherSearchSettings = names
         await rebuild.value
-        #expect(!service.settings.semanticFileSearch.enabled && service.settings.askLauncherSearchSettings.fileRoots.isEmpty)
+        #expect(!service.settings.semanticFileSearch.enabled && service.settings.askLauncherSearchSettings.fileRoots
+            .isEmpty)
         #expect(service.phase == .off)
         await service.clear(removeModel: true)
     }
 
-    @Test func nativeManagementConfirmsClearingAndModelRemovalInline() async throws {
+    @Test func `native management confirms clearing and model removal inline`() async throws {
         typealias Support = SettingsBehaviorTestSupport
         let (service, root, _, _) = try fixture()
         defer { try? FileManager.default.removeItem(at: root) }
@@ -441,5 +463,4 @@ struct SemanticFileServiceTests {
         #expect(!FileManager.default.fileExists(atPath: service.modelURL.path))
         #expect(service.storage().index == 0 && service.storage().model == 0)
     }
-
 }

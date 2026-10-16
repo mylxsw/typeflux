@@ -40,6 +40,56 @@ struct SemanticFileSearchVisualTests {
         return size
     }
 
+    @Test func `diagnostics render and copy fixed codes and counts without document data`() async throws {
+        let language = AppLocalization.shared.language
+        defer { AppLocalization.shared.setLanguage(language) }
+        _ = NSApplication.shared
+        let attribute = NSAccessibility.Attribute(rawValue: "AXEnhancedUserInterface")
+        let previous = NSApp.accessibilityAttributeValue(attribute)
+        NSApp.accessibilitySetValue(true, forAttribute: attribute)
+        defer { NSApp.accessibilitySetValue(previous ?? false, forAttribute: attribute) }
+        let diagnostics = SemanticIndexDiagnostics(id: "diagnostic-fixture", reason: .filesystem, stage: .encoding,
+                                                   started: Date(timeIntervalSince1970: 100),
+                                                   configurationGeneration: "opaque-generation",
+                                                   modelGeneration: "pinned-model",
+                                                   extractionGeneration: "recipe-v4", applicationVersion: "test",
+                                                   counters: [
+                                                       "metadataReused": 19,
+                                                       "vectorsInferred": 1
+                                                   ])
+        let pasteboard = NSPasteboard.withUniqueName()
+        defer { pasteboard.releaseGlobally() }
+        AppLocalization.shared.setLanguage(.simplifiedChinese)
+        try await Self.render(
+            SemanticIndexDiagnosticsView(diagnostics: diagnostics, expanded: true, pasteboard: pasteboard)
+                .padding(20),
+            width: 520,
+            name: "diagnostics-expanded"
+        )
+        let host = NSHostingView(rootView: SemanticIndexDiagnosticsView(
+            diagnostics: diagnostics,
+            expanded: true,
+            pasteboard: pasteboard
+        ))
+        let window = NSWindow(
+            contentRect: .init(x: 0, y: 0, width: 520, height: 600),
+            styleMask: .borderless,
+            backing: .buffered,
+            defer: false
+        )
+        window.isReleasedWhenClosed = false; window.contentView = host; window.orderFront(nil)
+        defer { window.close() }
+        try await Task.sleep(for: .milliseconds(100)); host.layoutSubtreeIfNeeded()
+        try await SettingsBehaviorTestSupport.wait {
+            SettingsBehaviorTestSupport.elements(in: host).contains { $0.label == L("semantic.diagnostics.copy") }
+        }
+        let button = try SettingsBehaviorTestSupport.button(L("semantic.diagnostics.copy"), in: host)
+        try button.press()
+        let copied = try #require(pasteboard.string(forType: .string))
+        #expect(copied.contains("opaque-generation") && copied.contains("metadataReused"))
+        #expect(!copied.contains("/Users/") && !copied.contains(".txt"))
+    }
+
     @Test func `native settings card renders off ready and unsupported states`() async throws {
         let language = AppLocalization.shared.language
         AppLocalization.shared.setLanguage(.simplifiedChinese)
@@ -104,14 +154,14 @@ struct SemanticFileSearchVisualTests {
         defer { AppLocalization.shared.setLanguage(language) }
         let status = SemanticFileSearchStatus.of(.init(
             phase: .paused, enabled: true, filesEnabled: true, modelReady: true,
-            files: 27_347, indexProgress: {
+            files: 27347, indexProgress: {
                 var summary = SemanticFileIndexer.Summary()
-                summary.scanned = 59_000
-                summary.discovered = 17_262
+                summary.scanned = 59000
+                summary.discovered = 17262
                 return summary
             }()
         ))
-        #expect(status.progress == .pausedScanning(59_000, 17_262))
+        #expect(status.progress == .pausedScanning(59000, 17262))
         let detail = try #require(status.progress)
         let view = VStack(alignment: .leading, spacing: 8) {
             SemanticStatusLine(status: status)

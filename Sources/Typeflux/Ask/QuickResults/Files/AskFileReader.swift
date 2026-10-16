@@ -10,11 +10,12 @@ protocol AskFileReading: AnyObject {
 extension AskFileReading {
     func stream(_ request: AskFileReadRequest, isCancelled: () -> Bool,
                 receive: (AskFileReadResponse) -> Bool) throws {
-        _ = receive(try read(request, isCancelled: isCancelled))
+        _ = try receive(read(request, isCancelled: isCancelled))
     }
 
     func resolve(_ path: String, blocked: [String]) throws -> String {
-        try read(AskFileReadRequest(operation: .resolve, path: path, blocked: blocked), isCancelled: { false }).path ?? path
+        try read(AskFileReadRequest(operation: .resolve, path: path, blocked: blocked), isCancelled: { false })
+            .path ?? path
     }
 }
 
@@ -44,7 +45,9 @@ final class AskFileReader: AskFileReading {
     deinit { stop() }
 
     /// Read on the reader's serial owner, like stream() and stop().
-    var isRunning: Bool { process?.isRunning == true }
+    var isRunning: Bool {
+        process?.isRunning == true
+    }
 
     static var executableURL: URL {
         let bundle = Bundle(for: AskFileWorkerBundle.self)
@@ -64,6 +67,8 @@ final class AskFileReader: AskFileReading {
             result.pages = response.pages ?? result.pages
             result.version = response.version ?? result.version
             result.nextCursor = response.nextCursor
+            result.directoryCursor = response.directoryCursor
+            result.inspected = response.inspected
             result.embeddings = response.embeddings ?? result.embeddings
             result.semanticTiming = response.semanticTiming ?? result.semanticTiming
             result.truncated = response.truncated ?? result.truncated
@@ -78,11 +83,16 @@ final class AskFileReader: AskFileReading {
         return result
     }
 
-    /// Each frame/pipe transfer resets the idle deadline; a large advancing directory has no total deadline.
+    // Each frame/pipe transfer resets the idle deadline; a large advancing directory has no total deadline.
+    // Keep resource ownership, cancellation and state checks in one operation.
+    // swiftlint:disable:next function_body_length cyclomatic_complexity
     func stream(_ request: AskFileReadRequest, isCancelled: () -> Bool = { false },
                 receive: (AskFileReadResponse) -> Bool) throws {
         do {
-            if isCancelled() { throw AskFileReadError.cancelled }
+            try SemanticWorkBudget.current?.checkpoint(cancelled: isCancelled)
+            if isCancelled() {
+                throw AskFileReadError.cancelled
+            }
             let starting = process == nil
             if starting {
                 SemanticSearchTrace.current?.mark("helper-launch")
@@ -94,9 +104,20 @@ final class AskFileReader: AskFileReading {
             try data.withUnsafeBytes { bytes in
                 var offset = 0
                 while offset < bytes.count {
-                    try wait(input.fileDescriptor, events: Int16(POLLOUT), deadline: deadline, isCancelled: isCancelled)
-                    let count = Darwin.write(input.fileDescriptor, bytes.baseAddress!.advanced(by: offset), bytes.count - offset)
-                    if count < 0, errno == EAGAIN || errno == EINTR { continue }
+                    try wait(
+                        input.fileDescriptor,
+                        events: Int16(POLLOUT),
+                        deadline: &deadline,
+                        isCancelled: isCancelled
+                    )
+                    let count = Darwin.write(
+                        input.fileDescriptor,
+                        bytes.baseAddress!.advanced(by: offset),
+                        bytes.count - offset
+                    )
+                    if count < 0, errno == EAGAIN || errno == EINTR {
+                        continue
+                    }
                     guard count > 0 else { throw AskFileReadError.unavailable }
                     offset += count
                 }
@@ -106,15 +127,45 @@ final class AskFileReader: AskFileReading {
                     let line = buffer[..<end]
                     let response = try JSONDecoder().decode(AskFileReadResponse.self, from: line)
                     buffer.removeSubrange(...end)
-                    if !receive(response) { stop(); return }
-                    if response.more != true { return }
+                    if !receive(response) {
+                        stop(); return
+                    }
+                    if response.more != true {
+                        return
+                    }
                     deadline = ProcessInfo.processInfo.systemUptime + timeout
+                    if request.paced == true {
+                        let next = Data("continue\n".utf8)
+                        try next.withUnsafeBytes { bytes in
+                            var offset = 0
+                            while offset < bytes.count {
+                                try wait(
+                                    input.fileDescriptor,
+                                    events: Int16(POLLOUT),
+                                    deadline: &deadline,
+                                    isCancelled: isCancelled
+                                )
+                                let count = Darwin.write(
+                                    input.fileDescriptor,
+                                    bytes.baseAddress!.advanced(by: offset),
+                                    bytes.count - offset
+                                )
+                                if count < 0, errno == EAGAIN || errno == EINTR {
+                                    continue
+                                }
+                                guard count > 0 else { throw AskFileReadError.unavailable }
+                                offset += count
+                            }
+                        }
+                    }
                     continue
                 }
-                try wait(output.fileDescriptor, events: Int16(POLLIN), deadline: deadline, isCancelled: isCancelled)
+                try wait(output.fileDescriptor, events: Int16(POLLIN), deadline: &deadline, isCancelled: isCancelled)
                 var bytes = [UInt8](repeating: 0, count: 65536)
                 let count = Darwin.read(output.fileDescriptor, &bytes, bytes.count)
-                if count < 0, errno == EAGAIN || errno == EINTR { continue }
+                if count < 0, errno == EAGAIN || errno == EINTR {
+                    continue
+                }
                 guard count > 0 else { throw AskFileReadError.unavailable }
                 deadline = ProcessInfo.processInfo.systemUptime + timeout
                 buffer.append(contentsOf: bytes.prefix(count))
@@ -126,26 +177,48 @@ final class AskFileReader: AskFileReading {
         }
     }
 
-    private func wait(_ descriptor: Int32, events: Int16, deadline: TimeInterval, isCancelled: () -> Bool) throws {
+    private func wait(_ descriptor: Int32, events: Int16, deadline: inout TimeInterval,
+                      isCancelled: () -> Bool) throws {
         while true {
-            if isCancelled() { throw AskFileReadError.cancelled }
+            deadline += try SemanticWorkBudget.current?.checkpoint(child: process, cancelled: isCancelled) ?? 0
+            if isCancelled() {
+                throw AskFileReadError.cancelled
+            }
             let remaining = deadline - ProcessInfo.processInfo.systemUptime
             guard remaining > 0 else { throw AskFileReadError.timeout }
             var item = pollfd(fd: descriptor, events: events, revents: 0)
-            let result = poll(&item, 1, Int32(min(50, max(1, remaining * 1000))))
-            if result < 0, errno == EINTR { continue }
+            let result = poll(
+                &item,
+                1,
+                Int32(min(SemanticWorkBudget.current == nil ? 50 : 10, max(1, remaining * 1000)))
+            )
+            if result < 0, errno == EINTR {
+                continue
+            }
             guard result >= 0 else { throw AskFileReadError.unavailable }
-            if item.revents & events != 0 { return }
-            if item.revents & Int16(POLLHUP | POLLERR | POLLNVAL) != 0 { throw AskFileReadError.unavailable }
+            if item.revents & events != 0 {
+                return
+            }
+            if item.revents & Int16(POLLHUP | POLLERR | POLLNVAL) != 0 {
+                throw AskFileReadError.unavailable
+            }
         }
     }
 
     private func start() throws {
         let process = Process()
-        if let qualityOfService { process.qualityOfService = qualityOfService }
+        if let qualityOfService {
+            process.qualityOfService = qualityOfService
+        }
         let incoming = Pipe(), outgoing = Pipe()
         process.executableURL = executable ?? Self.executableURL
         process.arguments = arguments
+        if arguments.contains("--background") {
+            process.environment = ProcessInfo.processInfo.environment.merging([
+                "VECLIB_MAXIMUM_THREADS": "1",
+                "OMP_NUM_THREADS": "1"
+            ]) { _, new in new }
+        }
         process.standardInput = incoming
         process.standardOutput = outgoing
         process.standardError = FileHandle.nullDevice
@@ -155,7 +228,7 @@ final class AskFileReader: AskFileReading {
         output = outgoing.fileHandleForReading
         try? incoming.fileHandleForReading.close()
         try? outgoing.fileHandleForWriting.close()
-        for handle in [input, output].compactMap({ $0 }) {
+        for handle in [input, output].compactMap(\.self) {
             _ = fcntl(handle.fileDescriptor, F_SETFL, O_NONBLOCK)
             _ = fcntl(handle.fileDescriptor, F_SETNOSIGPIPE, 1)
         }
@@ -163,7 +236,9 @@ final class AskFileReader: AskFileReading {
 
     func stop() {
         // Process owns reaping. Never waitUntilExit here: an uninterruptible kernel read may outlive SIGKILL.
-        if let process, process.isRunning { kill(process.processIdentifier, SIGKILL) }
+        if let process, process.isRunning {
+            kill(process.processIdentifier, SIGKILL)
+        }
         process = nil
         try? input?.close()
         try? output?.close()

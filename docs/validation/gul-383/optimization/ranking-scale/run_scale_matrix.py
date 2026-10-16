@@ -43,7 +43,7 @@ env.update(TYPEFLUX_TEST_FILES=json.dumps(['ExclusiveUIStateTrait.swift', 'Seman
     'AskConversationTests.swift', 'AskAppSearchTests.swift', 'AskFileSearchTestSupport.swift', 'SettingsBehaviorTestSupport.swift']),
     TYPEFLUX_SEMANTIC_NATIVE_BENCH_MODEL=str(root / '.build/semantic/embeddinggemma-2-Q8_0.gguf'),
     TYPEFLUX_SEMANTIC_CONTENTION_MODEL=str(root / '.build/semantic/embeddinggemma-2-Q8_0.gguf'),
-    TYPEFLUX_SEMANTIC_LABEL=args.label, TYPEFLUX_SEMANTIC_SCALE=str(args.size), TYPEFLUX_SEMANTIC_RANKING_COMPARISON='1')
+    TYPEFLUX_SEMANTIC_LABEL=(args.label + ("-" + args.tag if args.mode == "ranking" and args.tag else "")), TYPEFLUX_SEMANTIC_SCALE=str(args.size), TYPEFLUX_SEMANTIC_RANKING_COMPARISON='1')
 if args.deny_document:
     env['TYPEFLUX_SEMANTIC_DENY_DOCUMENT'] = '1'
 if args.real_noise:
@@ -120,7 +120,7 @@ if code == 0:
     else:
         if not re.search(r'Test run with [1-9][0-9]* tests?', transcript):
             validation_error = 'No Swift Testing execution summary was found'
-        outputs = [folder / f'{args.mode}-{args.label}-{args.size}{suffix}.json'] if args.mode != 'ranking' else [folder / f'ranking-{args.label}-{fixture}.json' for fixture in ['final-holdout', 'unseen-query']]
+        outputs = [folder / f'{args.mode}-{args.label}-{args.size}{suffix}.json'] if args.mode != 'ranking' else [folder / ('ranking-' + env['TYPEFLUX_SEMANTIC_LABEL'] + '-' + fixture + '.json') for fixture in ['final-holdout', 'unseen-query', 'rework-frozen']]
         for output in outputs:
             if not output.exists() or output.stat().st_mtime < started_wall - 1:
                 validation_error = 'The selected benchmark did not write a fresh result artifact'

@@ -14,6 +14,7 @@ enum SemanticFileIndexer {
         var priority: SemanticMediaPriority = .document
         var waitingForIdle = false
         var priorityUpdates = 0
+        var diagnostics: SemanticIndexDiagnostics?
     }
 
     enum Failure: Error { case inference(Error) }
@@ -23,20 +24,24 @@ enum SemanticFileIndexer {
     static func run(scope: AskFileScope, store: SemanticFileStore, reader: AskFileReading,
                     encoder: SemanticEmbedding, media: (any SemanticMediaEmbedding)? = nil,
                     idle: () -> Bool = { true }, paused: () -> Bool = { false },
-                    documents: () -> SemanticIndexPauseGate.DocumentWork = { .init() },
+                    documents: () throws -> SemanticIndexPauseGate.DocumentWork = { .init() },
                     priorityReader: AskFileReading? = nil,
                     cancelled: () -> Bool, progress: (Summary) -> Void,
                     current: (String?) -> Void = { _ in }) throws -> Summary {
         var summary = Summary()
+        try maintainSearch(store: store, paused: paused, cancelled: cancelled, summary: summary, progress: progress)
         try discover(scope: scope, store: store, reader: reader, paused: paused,
                      cancelled: cancelled, summary: &summary, progress: progress)
         summary.total = summary.discovered
         progress(summary)
+        try waitWhilePaused(paused, cancelled: cancelled)
+        // A confirmed walk defines pruning; extraction/encoding failures cannot erase its scope proof.
+        // Finish it before consuming another subtree scan, whose discovery snapshot is independent.
+        try store.pruneDiscovered(cancelled: cancelled)
         try drainWork(scope: scope, store: store, reader: reader, encoder: encoder, media: media,
                       idle: idle, paused: paused, documents: documents, priorityReader: priorityReader,
                       cancelled: cancelled, summary: &summary, progress: progress, current: current)
         try waitWhilePaused(paused, cancelled: cancelled)
-        try store.pruneDiscovered(cancelled: cancelled)
         progress(summary)
         return summary
     }
@@ -46,13 +51,14 @@ enum SemanticFileIndexer {
     static func reconcile(paths: [String], scope: AskFileScope, store: SemanticFileStore, reader: AskFileReading,
                           encoder: SemanticEmbedding, media: (any SemanticMediaEmbedding)? = nil,
                           idle: () -> Bool = { true }, paused: () -> Bool = { false },
-                          documents: () -> SemanticIndexPauseGate.DocumentWork = { .init() },
+                          documents: () throws -> SemanticIndexPauseGate.DocumentWork = { .init() },
                           priorityReader: AskFileReading? = nil,
                           cancelled: () -> Bool, progress: (Summary) -> Void,
                           current: (String?) -> Void = { _ in }) throws -> Summary {
         let paths = Array(Set(paths)).sorted()
         _ = try store.discover(paths.map { ($0, SemanticMediaPriority.of($0)) })
         var summary = Summary()
+        try maintainSearch(store: store, paused: paused, cancelled: cancelled, summary: summary, progress: progress)
         summary.total = try store.lock.withLock { try store.count("work_queue") }
         progress(summary)
         try drainWork(scope: scope, store: store, reader: reader, encoder: encoder, media: media,
@@ -66,23 +72,30 @@ enum SemanticFileIndexer {
     private static func drainWork(scope: AskFileScope, store: SemanticFileStore, reader: AskFileReading,
                                   encoder: SemanticEmbedding, media: (any SemanticMediaEmbedding)?,
                                   idle: () -> Bool, paused: () -> Bool,
-                                  documents: () -> SemanticIndexPauseGate.DocumentWork,
+                                  documents: () throws -> SemanticIndexPauseGate.DocumentWork,
                                   priorityReader: AskFileReading?, cancelled: () -> Bool,
                                   summary: inout Summary, progress: (Summary) -> Void,
                                   current: (String?) -> Void) throws {
-        for priority in SemanticMediaPriority.allCases {
-            summary.priority = priority
-            if priority == .image {
-                encoder.release()
-            }
+        // Prefer bounded document bursts at each segment boundary. A continuing document stream
+        // must not indefinitely postpone every image, audio or video checkpoint.
+        while true {
+            summary.priority = .document
             progress(summary)
-            if priority == .document {
-                try drainDocuments(scope: scope, store: store, reader: reader, encoder: encoder,
-                                   paused: paused, documents: documents, cancelled: cancelled,
-                                   updates: false, summary: &summary, progress: progress, current: current)
-                continue
+            try drainDocuments(scope: scope, store: store, reader: reader, encoder: encoder,
+                               paused: paused, documents: documents, cancelled: cancelled,
+                               updates: false, summary: &summary, progress: progress, current: current)
+            encoder.release()
+            if SemanticWorkBudget.current?.enabled == true, try store.nextWork(.document) != nil {
+                // Priority updates are tracked separately, so the initial fixed denominator no
+                // longer describes interleaved work accurately.
+                summary.total = nil
             }
-            while let path = try store.nextWork(priority) {
+            var advanced = false
+            for priority in [SemanticMediaPriority.image, .audio, .video] {
+                summary.priority = priority
+                guard let path = try store.nextWork(priority) else { continue }
+                advanced = true
+                progress(summary)
                 try waitWhilePaused(paused, cancelled: cancelled)
                 current(path)
                 defer { current(nil) }
@@ -108,6 +121,7 @@ enum SemanticFileIndexer {
                                                  progress: progress,
                                                  current: current
                                              )
+                                             current(path)
                                          })
                 } catch {
                     store.recordInterruptedWork(path, elapsed: ProcessInfo.processInfo.systemUptime - started)
@@ -125,6 +139,9 @@ enum SemanticFileIndexer {
                 }
                 progress(summary)
             }
+            if !advanced, try store.nextWork(.document) == nil {
+                break
+            }
         }
     }
 
@@ -134,28 +151,38 @@ enum SemanticFileIndexer {
                         media: (any SemanticMediaEmbedding)?,
                         cancelled: () -> Bool, checkpoint: () throws -> Void,
                         waitForIdle: () throws -> Void) throws -> SemanticFileStore.JobState {
-        do {
-            return try index(path, scope: scope, store: store, reader: reader, encoder: encoder, media: media,
-                             cancelled: cancelled, checkpoint: checkpoint, waitForIdle: waitForIdle)
-        } catch {
-            if cancelled() {
-                throw CancellationError()
+        while true {
+            do {
+                return try autoreleasepool {
+                    try index(path, scope: scope, store: store, reader: reader, encoder: encoder, media: media,
+                              cancelled: cancelled, checkpoint: checkpoint, waitForIdle: waitForIdle)
+                }
+            } catch is SemanticWorkBudget.Interrupted {
+                encoder.release(); media?.release()
+                try store.setStage(.waiting)
+                try SemanticWorkBudget.current?.checkpoint(cancelled: cancelled)
+                continue
+            } catch {
+                if cancelled() {
+                    throw CancellationError()
+                }
+                if error is SemanticFileStore.Failure {
+                    throw error
+                }
+                if case let Failure.inference(cause) = error {
+                    try store.failJob(path, reason: "encoding-failed"); throw cause
+                }
+                if error is SemanticMediaFailure {
+                    try store.failJob(path, reason: "media-encoding-failed"); throw error
+                }
+                try store.failJob(path, reason: error is AskFileReadError ? "reader-failed" : "extraction-failed")
+                return .skipped
             }
-            if error is SemanticFileStore.Failure {
-                throw error
-            }
-            if case let Failure.inference(cause) = error {
-                try store.failJob(path, reason: "encoding-failed"); throw cause
-            }
-            if error is SemanticMediaFailure {
-                try store.failJob(path, reason: "media-encoding-failed"); throw error
-            }
-            try store.failJob(path, reason: error is AskFileReadError ? "reader-failed" : "extraction-failed")
-            return .skipped
         }
     }
 
     static func waitWhilePaused(_ paused: () -> Bool, cancelled: () -> Bool) throws {
+        try SemanticWorkBudget.current?.checkpoint(cancelled: cancelled)
         while paused() {
             if cancelled() {
                 throw CancellationError()
@@ -164,6 +191,16 @@ enum SemanticFileIndexer {
         }
         if cancelled() {
             throw CancellationError()
+        }
+    }
+
+    private static func maintainSearch(store: SemanticFileStore, paused: () -> Bool, cancelled: () -> Bool,
+                                       summary: Summary, progress: (Summary) -> Void) throws {
+        while true {
+            try waitWhilePaused(paused, cancelled: cancelled)
+            guard try store.maintainSearchBatch(cancelled: cancelled) else { return }
+            try store.setStage(.migration)
+            progress(summary)
         }
     }
 }

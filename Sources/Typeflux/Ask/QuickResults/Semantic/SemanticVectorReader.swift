@@ -1,9 +1,12 @@
+// swiftlint:disable file_length
+// Connection/cache and lifecycle ownership remain private to this implementation.
 import Accelerate
 import Foundation
 import SQLite3
 
-/// Search owns a read connection and immutable 256-row pages. A committed dirty page is replaced atomically;
-/// deleted IDs and same-ID replacements cannot survive the revision check. No index-writer lock is acquired.
+// Search owns a read connection and immutable 256-row pages. A committed dirty page is replaced atomically;
+// deleted IDs and same-ID replacements cannot survive the revision check. No index-writer lock is acquired.
+// swiftlint:disable:next type_body_length
 final class SemanticVectorReader: @unchecked Sendable {
     private final class File {
         let path: String
@@ -56,19 +59,37 @@ final class SemanticVectorReader: @unchecked Sendable {
     private let lock = NSLock()
     private var database: OpaquePointer?
     private var pages: [Int64: Page] = [:]
+    private var revisions: [Int64: Int64] = [:]
+    private var cachedBytes = 0
+    private let cacheLimit: Int
+    private var pressureSource: DispatchSourceMemoryPressure?
+    private var recoveringUntil: TimeInterval = 0
+    private var nextPressureRead: TimeInterval = 0
+    private var cacheAllowed = true
+    var residentBytes: Int {
+        lock.withLock { cachedBytes }
+    }
+
     private(set) var loadedPages = 0
 
-    init(url: URL) throws {
+    init(url: URL, cacheLimit: Int = 256 * 1024 * 1024) throws {
+        self.cacheLimit = max(0, cacheLimit)
         guard sqlite3_open_v2(url.path, &database, SQLITE_OPEN_READONLY | SQLITE_OPEN_FULLMUTEX, nil) == SQLITE_OK
         else {
             sqlite3_close(database); database = nil; throw SemanticFileStore.Failure.database
         }
         sqlite3_busy_timeout(database, 50)
+        let source = DispatchSource.makeMemoryPressureSource(
+            eventMask: [.warning, .critical],
+            queue: .global(qos: .utility)
+        )
+        source.setEventHandler { [weak self] in self?.releaseMemory() }
+        pressureSource = source; source.resume()
     }
 
-    deinit { sqlite3_close(database) }
+    deinit { pressureSource?.cancel(); sqlite3_close(database) }
     func close() {
-        lock.withLock { pages.removeAll(); sqlite3_close(database); database = nil }
+        lock.withLock { pages.removeAll(); cachedBytes = 0; sqlite3_close(database); database = nil }
     }
 
     private func statement(_ sql: String) throws -> OpaquePointer {
@@ -89,21 +110,85 @@ final class SemanticVectorReader: @unchecked Sendable {
         sqlite3_column_text(row, column).map { String(cString: $0) } ?? ""
     }
 
-    private func refresh(cancelled: () -> Bool) throws {
-        let revisions = try statement("SELECT page,revision FROM vector_pages")
-        defer { sqlite3_finalize(revisions) }
-        var next = pages, files: [String: File] = [:]
-        var step = sqlite3_step(revisions)
-        while step == SQLITE_ROW {
-            guard !cancelled() else { throw CancellationError() }
-            let number = sqlite3_column_int64(revisions, 0), revision = sqlite3_column_int64(revisions, 1)
-            if next[number]?.revision != revision {
-                next[number] = try load(number, revision: revision, files: &files, cancelled: cancelled)
-            }
-            step = sqlite3_step(revisions)
+    func releaseMemory() {
+        lock.withLock {
+            pages.removeAll(); cachedBytes = 0
+            recoveringUntil = ProcessInfo.processInfo.systemUptime + 5
+            cacheAllowed = false; nextPressureRead = 0
         }
-        guard step == SQLITE_DONE else { throw SemanticFileStore.Failure.database }
-        pages = next
+    }
+
+    private func canCache() -> Bool {
+        let now = ProcessInfo.processInfo.systemUptime
+        if now >= nextPressureRead {
+            nextPressureRead = now + 1
+            if let pressure = SemanticWorkBudget.currentPressure(), pressure > 0 {
+                pages.removeAll(); cachedBytes = 0; recoveringUntil = now + 5
+            }
+            cacheAllowed = now >= recoveringUntil
+        }
+        return cacheAllowed
+    }
+
+    private func pageSize(_ page: Page) -> Int {
+        // Include retained array capacity and conservatively charge a complete file object plus
+        // string-storage headers per row, even when multiple rows actually share that object.
+        page.values.capacity * MemoryLayout<UInt16>.stride
+            + page.rows.capacity * MemoryLayout<Row>.stride
+            + page.rows.reduce(0) { $0 + 256 + $1.file.path.utf8.count + ($1.file.version?.utf8.count ?? 0) }
+    }
+
+    private func page(_ number: Int64, cancelled: () -> Bool) throws -> Page {
+        guard let revision = revisions[number] else { throw SemanticFileStore.Failure.database }
+        if let cached = pages[number], cached.revision == revision {
+            return cached
+        }
+        var files: [String: File] = [:]
+        let value = try load(number, revision: revision, files: &files, cancelled: cancelled)
+        let size = pageSize(value)
+        if canCache(), size <= cacheLimit {
+            while cachedBytes + size > cacheLimit, let victim = pages.keys.min(),
+                  let old = pages.removeValue(forKey: victim) {
+                cachedBytes -= pageSize(old)
+            }
+            pages[number] = value; cachedBytes += size
+        }
+        return value
+    }
+
+    private func refresh(cancelled: () -> Bool) throws {
+        guard let database else { throw SemanticFileStore.Failure.database }
+        try SemanticSQLiteCancellation.read(database, cancelled: cancelled) {
+            let state = try statement("SELECT page_done FROM search_migration WHERE id=1")
+            let complete = sqlite3_step(state) == SQLITE_ROW && sqlite3_column_int(state, 0) != 0
+            sqlite3_finalize(state)
+            // Only an interrupted legacy backfill needs this fallback; ordinary opens enumerate
+            // the small page table, never the chunks. Its VM work is cancellable before row one.
+            let rows = try statement(complete ? "SELECT page,revision FROM vector_pages" : """
+            SELECT c.id/256,COALESCE(v.revision,0) FROM chunks c
+                LEFT JOIN vector_pages v ON v.page=c.id/256 GROUP BY c.id/256
+            """)
+            defer { sqlite3_finalize(rows) }
+            var next: [Int64: Int64] = [:], step = sqlite3_step(rows)
+            while step == SQLITE_ROW {
+                guard !cancelled() else { throw CancellationError() }
+                next[sqlite3_column_int64(rows, 0)] = sqlite3_column_int64(rows, 1)
+                step = sqlite3_step(rows)
+            }
+            guard step == SQLITE_DONE else { throw SemanticFileStore.Failure.database }
+            for number in Array(pages.keys) where next[number] != pages[number]?.revision {
+                if let old = pages.removeValue(forKey: number) {
+                    cachedBytes -= pageSize(old)
+                }
+            }
+            revisions = next
+        }
+    }
+
+    private func resettingProfile() throws -> Bool {
+        let row = try statement("SELECT 1 FROM profile_reset LIMIT 1")
+        defer { sqlite3_finalize(row) }
+        return sqlite3_step(row) == SQLITE_ROW
     }
 
     // swiftlint:disable:next function_body_length
@@ -198,7 +283,18 @@ final class SemanticVectorReader: @unchecked Sendable {
         try lock.withLock {
             try sql("BEGIN")
             defer { try? sql("ROLLBACK") }
+            if try resettingProfile() {
+                return
+            }
             try refresh(cancelled: cancelled)
+            guard canCache() else { return }
+            for number in revisions.keys.sorted() {
+                try SemanticWorkBudget.current?.checkpoint(cancelled: cancelled)
+                if cachedBytes >= max(0, cacheLimit - 256 * (SemanticFilePolicy.dimension * 2 + 256)) {
+                    break
+                }
+                _ = try page(number, cancelled: cancelled)
+            }
         }
     }
 
@@ -242,6 +338,9 @@ extension SemanticVectorReader {
             guard !cancelled() else { throw CancellationError() }
             try sql("BEGIN")
             defer { try? sql("ROLLBACK") }
+            if try resettingProfile() {
+                return []
+            }
             let start = ProcessInfo.processInfo.systemUptime
             try refresh(cancelled: cancelled)
             SemanticSearchTrace.current?.measure(
@@ -285,11 +384,12 @@ extension SemanticVectorReader {
             var scratch: [Float] = []
             // Retain one Float32 scalar per row (4 MiB per million rows), then rank using the
             // completed calibration. Pruning on uncalibrated scores could discard a later winner.
-            var scoredPages: [(Page, [Float])] = []
-            for page in pages.values {
+            var scoredPages: [(Int64, [Float])] = []
+            for number in revisions.keys.sorted() {
+                let page = try page(number, cancelled: cancelled)
                 guard !cancelled() else { throw CancellationError() }
                 let scores = try Self.scores(page.values, vector: vector, scratch: &scratch)
-                scoredPages.append((page, scores))
+                scoredPages.append((number, scores))
                 for (index, row) in page.rows.enumerated() {
                     let cosine = Double(scores[index])
                     guard cosine.isFinite else { continue }
@@ -325,7 +425,17 @@ extension SemanticVectorReader {
                     }
                 }
             }
-            for (page, scores) in scoredPages {
+            for (number, scores) in scoredPages {
+                let page = try page(number, cancelled: cancelled)
+                for row in page.rows where row.file.eligibilityGeneration != eligibilityGeneration {
+                    row.file.allowed = SemanticSearchRanking.allowed(
+                        row.file.path,
+                        query: query,
+                        type: type,
+                        scope: scope
+                    )
+                    row.file.eligibilityGeneration = eligibilityGeneration
+                }
                 guard !cancelled() else { throw CancellationError() }
                 for (index, row) in page.rows.enumerated() where row.file.allowed {
                     let cosine = Double(scores[index])
@@ -338,8 +448,9 @@ extension SemanticVectorReader {
                         embedding: row.embedding
                     )
                     else { continue }
-                    if !lexical.identifier {
-                        score += calibration.adjustment(row.bucket, cosine: cosine)
+                    if !lexical.identifier, !(lexical.coverage == 1 && lexical.phrase) {
+                        score += calibration.adjustment(row.bucket, cosine: cosine) + ranking
+                            .scriptAdjustment(row.bucket)
                     }
                     guard score >= floors[row.bucket.rawValue] else { continue }
                     if let old = branches[row.bucket]?[row.file.path], old.hit.score > score
@@ -373,9 +484,19 @@ extension SemanticVectorReader {
                 }
                 best[candidate.hit.path] = candidate
             }
-            return try best.values.sorted {
+            let sorted = best.values.sorted {
                 $0.hit.score == $1.hit.score ? $0.hit.path < $1.hit.path : $0.hit.score > $1.hit.score
-            }.prefix(maximum).map { candidate in
+            }
+            var ordered = sorted
+            if maximum >= 5, ranking.preferredModality == nil, ranking.identifiers.isEmpty, ranking.quoted.isEmpty {
+                var counts: [SemanticScoreCalibration.Bucket: Int] = [:], head: [Scored] = []
+                for candidate in sorted where head.count < 5 && (counts[candidate.bucket] ?? 0) < 2 {
+                    head.append(candidate); counts[candidate.bucket, default: 0] += 1
+                }
+                let ids = Set(head.map(\.id))
+                ordered = head + sorted.filter { !ids.contains($0.id) }
+            }
+            return try ordered.prefix(maximum).map { candidate in
                 let id = candidate.id, value = candidate.hit
                 let row = try statement("SELECT text FROM chunks WHERE id=?")
                 defer { sqlite3_finalize(row) }

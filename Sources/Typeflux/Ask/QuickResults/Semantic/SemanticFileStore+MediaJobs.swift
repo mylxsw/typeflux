@@ -13,6 +13,7 @@ extension SemanticFileStore {
                 ordinal INTEGER NOT NULL,kind TEXT NOT NULL,time REAL,vector BLOB NOT NULL,
                 PRIMARY KEY(path,ordinal));
             """)
+            try sql("CREATE INDEX IF NOT EXISTS media_generation ON media_jobs(generation)")
             try addColumn("media_jobs", name: "recipe", declaration: "TEXT NOT NULL DEFAULT ''")
             try addColumn("media_segments", name: "end_time", declaration: "REAL")
         }
@@ -28,9 +29,9 @@ extension SemanticFileStore {
             sqlite3_finalize(row)
             if let old {
                 try execute("""
-                    UPDATE jobs SET attempts=attempts+CASE WHEN state='failed' THEN 1 ELSE 0 END,
-                        state='partial',reason=NULL WHERE path=? AND generation=?
-                    """, [path, old])
+                UPDATE jobs SET attempts=attempts+CASE WHEN state='failed' THEN 1 ELSE 0 END,
+                    state='partial',reason=NULL WHERE path=? AND generation=?
+                """, [path, old])
                 return old
             }
             return try transaction {
@@ -41,10 +42,15 @@ extension SemanticFileStore {
                     [path, Self.version(metadata), generation, Self.mediaProvenance]
                 )
                 try execute("""
-                    INSERT OR REPLACE INTO jobs(path,version,generation,state,cursor,recipe) VALUES(?,?,?,'partial',?,?)
-                    """,
-                    [path, Self.version(metadata), generation, "{\"page\":0,\"offset\":0}", Self.mediaProvenance]
-                )
+                            INSERT OR REPLACE INTO jobs(path,version,generation,state,cursor,recipe) VALUES(?,?,?,'partial',?,?)
+                            """,
+                            [
+                                path,
+                                Self.version(metadata),
+                                generation,
+                                "{\"page\":0,\"offset\":0}",
+                                Self.mediaProvenance
+                            ])
                 return generation
             }
         }
@@ -54,9 +60,8 @@ extension SemanticFileStore {
         try lock.withLock {
             let row =
                 try statement("""
-                    SELECT 1 FROM media_segments s JOIN media_jobs j ON j.path=s.path WHERE s.path=? AND j.generation=? AND ordinal=?
-                    """
-                )
+                SELECT 1 FROM media_segments s JOIN media_jobs j ON j.path=s.path WHERE s.path=? AND j.generation=? AND ordinal=?
+                """)
             defer { sqlite3_finalize(row) }
             bind(row, [path, generation, ordinal])
             let step = sqlite3_step(row)
@@ -100,9 +105,8 @@ extension SemanticFileStore {
         try lock.withLock {
             let row =
                 try statement("""
-                    SELECT count(*) FROM media_segments s JOIN media_jobs j ON j.path=s.path WHERE s.path=? AND j.generation=?
-                    """
-                )
+                SELECT count(*) FROM media_segments s JOIN media_jobs j ON j.path=s.path WHERE s.path=? AND j.generation=?
+                """)
             defer { sqlite3_finalize(row) }
             bind(row, [path, generation])
             guard sqlite3_step(row) == SQLITE_ROW, segments > 0, sqlite3_column_int64(row, 0) == segments,
@@ -123,6 +127,7 @@ extension SemanticFileStore {
                     FROM media_segments WHERE path=? ORDER BY ordinal
                 """, [generation, SemanticMediaPriority.of(path) == .video ? "video" : "image",
                       SemanticMediaPriority.of(path) == .video ? "video-frame" : "image", Self.mediaProvenance, path])
+                try recordLocked(.vectorsPublished, count: segments)
                 try execute("DELETE FROM media_jobs WHERE path=?", [path])
                 return true
             }
@@ -150,6 +155,61 @@ extension SemanticFileStore {
             return sqlite3_step(legacy) == SQLITE_ROW
                 && sqlite3_column_double(legacy, 0) == metadata.modified?.timeIntervalSince1970
                 && sqlite3_column_int64(legacy, 1) == metadata.fileSize
+        }
+    }
+}
+
+extension SemanticFileStore {
+    func mediaCursor(path: String, generation: String) throws -> SemanticMediaCursor {
+        try lock.withLock {
+            let row = try statement("""
+            SELECT COUNT(*),COALESCE(MAX(ordinal)+1,0),COALESCE(SUM(kind='image'),0),COALESCE(MAX(CASE WHEN kind='audio' THEN end_time ELSE 0 END),0),COALESCE(SUM(kind='audio' AND end_time IS NULL),0)
+            FROM media_segments s JOIN media_jobs j ON j.path=s.path WHERE s.path=? AND j.generation=?
+            """)
+            defer { sqlite3_finalize(row) }; bind(row, [path, generation])
+            guard sqlite3_step(row) == SQLITE_ROW else { throw Failure.database }
+            let count = Int(sqlite3_column_int64(row, 0)), next = Int(sqlite3_column_int64(row, 1))
+            guard count == next else { throw Failure.database }
+            if sqlite3_column_int64(row, 4) > 0 {
+                return .init()
+            }
+            let images = Int(sqlite3_column_int64(row, 2))
+            return .init(
+                nextOrdinal: next,
+                videoFrames: images,
+                imageDone: images > 0,
+                audioUntil: sqlite3_column_double(row, 3)
+            )
+        }
+    }
+}
+
+extension SemanticFileStore {
+    func removeOrphanMediaCache(cancelled: () -> Bool) throws {
+        let cache = url.deletingLastPathComponent().appendingPathComponent(".typeflux-media-cache")
+        guard let walk = FileManager.default.enumerator(
+            at: cache,
+            includingPropertiesForKeys: [.isDirectoryKey, .isSymbolicLinkKey],
+            options: [.skipsSubdirectoryDescendants]
+        ) else { return }
+        var inspected = 0
+        for case let folder as URL in walk {
+            try SemanticWorkBudget.current?.checkpoint(cancelled: cancelled)
+            let generation = folder.lastPathComponent
+            guard UUID(uuidString: generation) != nil else { continue }
+            let keep = try lock.withLock {
+                let row = try statement("SELECT 1 FROM media_jobs WHERE generation=? LIMIT 1")
+                defer { sqlite3_finalize(row) }; bind(row, [generation])
+                let step = sqlite3_step(row)
+                guard step == SQLITE_ROW || step == SQLITE_DONE else { throw Failure.database }
+                return step == SQLITE_ROW
+            }
+            if !keep {
+                try FileManager.default.removeItem(at: folder); inspected += 1
+            }
+            if inspected >= 16 {
+                break
+            }
         }
     }
 }

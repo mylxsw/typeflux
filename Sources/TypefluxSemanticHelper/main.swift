@@ -20,16 +20,19 @@ final class Encoder {
     let batch: OpaquePointer
     var media: OpaquePointer?
 
-    init(path: String, projector: String? = nil) throws {
+    init(path: String, projector: String? = nil, background: Bool = false) throws {
         llama_log_set({ _, _, _ in }, nil)
         llama_backend_init()
         mtmd_helper_log_set({ _, _, _ in }, nil)
         var modelParams = llama_model_default_params()
-        modelParams.n_gpu_layers = 999
+        modelParams.n_gpu_layers = background ? 0 : 999
         guard let model = llama_model_load_from_file(path, modelParams) else { throw Failure.inference }
         var params = llama_context_default_params()
         params.n_ctx = 2048; params.n_batch = 2048; params.n_ubatch = 2048
         params.n_seq_max = 8; params.kv_unified = true
+        if background {
+            params.n_threads = 1; params.n_threads_batch = 1; params.offload_kqv = false; params.op_offload = false
+        }
         params.embeddings = true; params.pooling_type = LLAMA_POOLING_TYPE_MEAN
         guard let context = llama_init_from_model(model, params) else {
             llama_model_free(model); throw Failure.inference
@@ -43,7 +46,11 @@ final class Encoder {
         var media: OpaquePointer?
         if let projector {
             var options = mtmd_context_params_default()
-            options.use_gpu = true; options.print_timings = false; options.warmup = false
+            options.use_gpu = !background
+            if background {
+                options.n_threads = 1
+            }
+            options.print_timings = false; options.warmup = false
             options.image_min_tokens = 1; options.image_max_tokens = 280
             media = mtmd_init_from_file(projector, model, options)
             guard media != nil else {
@@ -165,27 +172,36 @@ final class Encoder {
 }
 
 do {
-    guard (2 ... 3).contains(CommandLine.arguments.count) else { exit(64) }
+    let arguments = CommandLine.arguments.dropFirst().filter { $0 != "--background" }
+    let background = CommandLine.arguments.contains("--background")
+    guard (1 ... 2).contains(arguments.count) else { exit(64) }
     let loading = ProcessInfo.processInfo.systemUptime
-    let encoder = try Encoder(path: CommandLine.arguments[1],
-                              projector: CommandLine.arguments.count == 3 ? CommandLine.arguments[2] : nil)
+    let encoder = try Encoder(path: arguments[arguments.startIndex],
+                              projector: arguments
+                                  .count == 2 ? arguments[arguments.index(after: arguments.startIndex)] : nil,
+                              background: background)
     var loadMilliseconds: Double? = (ProcessInfo.processInfo.systemUptime - loading) * 1000
     while let line = readLine() {
-        let started = ProcessInfo.processInfo.systemUptime
-        var response: Response
-        do {
-            guard line.utf8.count <= 32768 else { throw Failure.invalidInput }
-            let request = try JSONDecoder().decode(Request.self, from: Data(line.utf8))
-            if let media = request.media {
-                response = try Response(embeddings: [encoder.embedMedia(media)])
-            } else {
-                guard let texts = request.texts, (1 ... 16).contains(texts.count) else { throw Failure.invalidInput }
-                response = try Response(embeddings: encoder.embed(texts))
-            }
-        } catch Failure.inference { response = Response(error: EIO) } catch { response = Response(error: EINVAL) }
-        response.semanticTiming = Timing(modelLoadMilliseconds: loadMilliseconds,
-                                         encodingMilliseconds: (ProcessInfo.processInfo.systemUptime - started) * 1000)
-        loadMilliseconds = nil
-        try FileHandle.standardOutput.write(contentsOf: JSONEncoder().encode(response) + Data([10]))
+        // Long-lived helpers must not retain Foundation JSON/pipe temporaries between requests.
+        try autoreleasepool {
+            let started = ProcessInfo.processInfo.systemUptime
+            var response: Response
+            do {
+                guard line.utf8.count <= 32768 else { throw Failure.invalidInput }
+                let request = try JSONDecoder().decode(Request.self, from: Data(line.utf8))
+                if let media = request.media {
+                    response = try Response(embeddings: [encoder.embedMedia(media)])
+                } else {
+                    guard let texts = request.texts,
+                          (1 ... 16).contains(texts.count) else { throw Failure.invalidInput }
+                    response = try Response(embeddings: encoder.embed(texts))
+                }
+            } catch Failure.inference { response = Response(error: EIO) } catch { response = Response(error: EINVAL) }
+            response.semanticTiming = Timing(modelLoadMilliseconds: loadMilliseconds,
+                                             encodingMilliseconds: (ProcessInfo.processInfo.systemUptime - started) *
+                                                 1000)
+            loadMilliseconds = nil
+            try FileHandle.standardOutput.write(contentsOf: JSONEncoder().encode(response) + Data([10]))
+        }
     }
 } catch { exit(1) }

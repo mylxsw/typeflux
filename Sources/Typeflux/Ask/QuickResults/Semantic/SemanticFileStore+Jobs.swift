@@ -101,6 +101,7 @@ extension SemanticFileStore {
                 if existing.state == .failed {
                     try execute("UPDATE jobs SET state='partial',reason=NULL,attempts=attempts+1 WHERE path=?", [path])
                     existing.state = .partial; existing.reason = nil; existing.attempts += 1
+                    try recordLocked(.retries)
                 }
                 return existing
             }
@@ -141,9 +142,9 @@ extension SemanticFileStore {
                           chunk.startOffset as Any, chunk.endOffset as Any,
                           chunk.page == nil ? "text" : "pdf-text", Self.documentProvenance,
                           SemanticScoreCalibration.script(chunk.text)])
-                    try execute("INSERT INTO lexical(rowid,terms) VALUES(?,?)",
-                                [sqlite3_last_insert_rowid(database), SemanticFilePolicy.terms(chunk.text)])
+                    try writeLexical(sqlite3_last_insert_rowid(database), text: chunk.text)
                 }
+                try recordLocked(.ftsChunks, count: chunks.count)
                 let data = try JSONEncoder().encode(next ?? job.cursor)
                 try execute("UPDATE jobs SET cursor=?,extracted=?,state='partial',reason=NULL WHERE path=?",
                             [String(data: data, encoding: .utf8) ?? "", next == nil ? 1 : 0, job.path])
@@ -156,7 +157,10 @@ extension SemanticFileStore {
         try lock.withLock {
             let row =
                 try statement(
-                    "SELECT id,text FROM chunks WHERE path=? AND generation=? AND length(vector)=0 ORDER BY id LIMIT 8"
+                    """
+                    SELECT c.id,c.text FROM vector_pending p JOIN chunks c ON c.id=p.id
+                    WHERE p.path=? AND p.generation=? ORDER BY p.id LIMIT 8
+                    """
                 )
             defer { sqlite3_finalize(row) }
             bind(row, [job.path, job.generation])
@@ -182,6 +186,7 @@ extension SemanticFileStore {
                         "UPDATE chunks SET vector=? WHERE id=? AND path=? AND generation=? AND length(vector)=0",
                         [vector.withUnsafeBytes { Data($0) }, item.id, job.path, job.generation]
                     )
+                    try recordLocked(.vectorsPublished, count: Int(sqlite3_changes(database)))
                 }
                 return true
             }
@@ -192,9 +197,12 @@ extension SemanticFileStore {
         try lock.withLock {
             guard let current = try readJob(job.path), current.generation == job.generation else { return .skipped }
             guard current.extracted else { return .partial }
-            let row = try statement("SELECT count(*),sum(length(vector)=0) FROM chunks WHERE path=? AND generation=?")
+            let row = try statement("""
+            SELECT EXISTS(SELECT 1 FROM chunks WHERE path=? AND generation=? LIMIT 1),
+                EXISTS(SELECT 1 FROM vector_pending WHERE path=? AND generation=? LIMIT 1)
+            """)
             defer { sqlite3_finalize(row) }
-            bind(row, [job.path, job.generation])
+            bind(row, [job.path, job.generation, job.path, job.generation])
             guard sqlite3_step(row) == SQLITE_ROW else { throw Failure.database }
             guard sqlite3_column_int64(row, 1) == 0 else { return .partial }
             let empty = sqlite3_column_int64(row, 0) == 0
@@ -213,6 +221,7 @@ extension SemanticFileStore {
     func failJob(_ path: String, reason: String) throws {
         try lock.withLock {
             try execute("UPDATE jobs SET state='failed',reason=? WHERE path=?", [reason, path])
+            try recordLocked(.failures)
         }
     }
 
@@ -263,9 +272,9 @@ extension SemanticFileStore {
         try lock.withLock {
             try transaction {
                 try execute("""
-                    UPDATE jobs SET processing_seconds=COALESCE(processing_seconds,0)+?,
-                        completed_at=CASE WHEN ? THEN NULL ELSE ? END WHERE path=?
-                    """, [max(0, elapsed), more ? 1 : 0, Date().timeIntervalSince1970, path])
+                UPDATE jobs SET processing_seconds=COALESCE(processing_seconds,0)+?,
+                    completed_at=CASE WHEN ? THEN NULL ELSE ? END WHERE path=?
+                """, [max(0, elapsed), more ? 1 : 0, Date().timeIntervalSince1970, path])
                 if more {
                     try execute(
                         "UPDATE work_queue SET turn=(SELECT COALESCE(max(turn),0)+1 FROM work_queue) WHERE path=?",

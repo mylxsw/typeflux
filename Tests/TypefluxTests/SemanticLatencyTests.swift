@@ -161,6 +161,7 @@ struct SemanticLatencyTests {
         COMMIT;
         """, nil, nil, nil) == SQLITE_OK)
         #expect(try store.counts().chunks == 100_000)
+        try prepareNativeSearchGeneration(database)
         let service = SemanticFileSearchService(settings: settings, directory: root, supported: true,
                                                 watcher: SemanticBenchmarkWatcher(), access: { true },
                                                 automaticStart: false,
@@ -392,12 +393,13 @@ struct SemanticNativeBenchmarkData {
         INSERT INTO lexical(rowid,terms) SELECT id,'\(SemanticFilePolicy.terms(noiseText))' FROM chunks WHERE id>2;
         COMMIT;
         """, nil, nil, nil) == SQLITE_OK)
+        try prepareNativeSearchGeneration(database)
         let service = SemanticFileSearchService(settings: settings, directory: root, supported: true,
                                                 watcher: SemanticBenchmarkWatcher(), access: { true },
                                                 automaticStart: false,
                                                 lowPowerMode: { false }, thermalConstrained: { false },
                                                 makeEncoder: makeEncoder)
-        service.pause(true)
+        // Let budgeted startup finish before pausing; a real pause also holds schema preparation.
         try #require(service.setEnabled(true))
         return Self(root: root, document: document, store: store, scope: scope, service: service,
                     names: SemanticBenchmarkNames(), backgroundVector: background,
@@ -413,5 +415,23 @@ struct SemanticNativeBenchmarkData {
         try? store.destroy()
         defaults.removePersistentDomain(forName: suite)
         try? FileManager.default.removeItem(at: root)
+    }
+}
+
+/// Raw scale fixtures deliberately bypass the application writer; mirror the generated FTS table
+/// outside every measured boundary. The baseline has no shadow table and remains unchanged.
+func prepareNativeSearchGeneration(_ database: OpaquePointer?) throws {
+    var row: OpaquePointer?
+    try #require(sqlite3_prepare_v2(database, "SELECT 1 FROM sqlite_master WHERE name='lexical_v4'", -1, &row, nil) ==
+        SQLITE_OK)
+    let exists = sqlite3_step(row) == SQLITE_ROW; sqlite3_finalize(row)
+    if exists {
+        try #require(sqlite3_exec(database, """
+        BEGIN IMMEDIATE;
+        DELETE FROM lexical_v4 WHERE rowid IN (SELECT id FROM search_dirty);
+        INSERT INTO lexical_v4(rowid,terms) SELECT c.id,l.terms FROM search_dirty d JOIN chunks c ON c.id=d.id JOIN lexical l ON l.rowid=c.id;
+        DELETE FROM search_dirty;
+        COMMIT;
+        """, nil, nil, nil) == SQLITE_OK)
     }
 }

@@ -53,7 +53,10 @@ final class SemanticMediaFixtureReader: AskFileReading, @unchecked Sendable {
         if changeAfter {
             modified = modified.addingTimeInterval(1)
         }
-        _ = receive(finalFailure ? .init(error: EILSEQ) : .init(fileSize: 20, modified: modifiedByName[current] ?? modified))
+        _ = receive(finalFailure ? .init(error: EILSEQ) : .init(
+            fileSize: 20,
+            modified: modifiedByName[current] ?? modified
+        ))
     }
 }
 
@@ -71,6 +74,20 @@ final class SemanticFixtureMediaEncoder: SemanticMediaEmbedding, @unchecked Send
 
 @Suite("Document-first idle media indexing", .serialized)
 struct SemanticMediaIndexTests {
+    @Test func `queued images do not starve audio and video`() throws {
+        let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
+        let reader = SemanticMediaFixtureReader(root: root.path)
+        reader.names = (0 ..< 10).map { "image-\($0).png" } + ["audio.wav", "video.mov"]
+        let store = try SemanticFileStore(url: root.appendingPathComponent("index.sqlite"))
+        let encoder = SemanticFixtureEncoder(), media = SemanticFixtureMediaEncoder()
+        var order: [String] = []
+        media.before = { _ in order.append(reader.current) }
+        _ = try SemanticFileIndexer.run(scope: semanticScope(root.path), store: store, reader: reader, encoder: encoder,
+                                        media: media, cancelled: { false }, progress: { _ in })
+        #expect(order.prefix(3) == ["image-0.png", "audio.wav", "video.mov"])
+        #expect(try store.counts().files == 12)
+    }
+
     @Test func `real file worker commits image audio and video`() async throws {
         let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
         let image = root.appendingPathComponent("image.png")
@@ -165,7 +182,7 @@ struct SemanticMediaIndexTests {
         #expect(priorityReader.directoryReads == (rescan ? 1 : 0))
     }
 
-    @Test func `cancellation during media never publishes partial vectors and cleans scratch`() throws {
+    @Test func `cancellation keeps a private snapshot and never publishes partial vectors`() throws {
         let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
         let reader = SemanticMediaFixtureReader(root: root.path); reader.names = ["video.mov"]; reader.pieces = 2
         let store = try SemanticFileStore(url: root.appendingPathComponent("index.sqlite"))
@@ -181,7 +198,7 @@ struct SemanticMediaIndexTests {
         }
         #expect(try store.unchanged(path: path, modified: previous, bytes: 20))
         #expect(try store.counts().chunks == 1)
-        #expect(try !FileManager.default.fileExists(atPath: #require(reader.scratch)))
+        #expect(try FileManager.default.fileExists(atPath: #require(reader.scratch)))
         // Completed private segments survive restart, while committed content stays unchanged.
         let reopened = try SemanticFileStore(url: store.url)
         #expect(try reopened.job(path)?.state == .partial)
@@ -192,6 +209,7 @@ struct SemanticMediaIndexTests {
                                         progress: { _ in })
         #expect(media.calls == calls + 1, "the already completed first segment is reused")
         #expect(try reopened.job(path)?.state == .done)
+        #expect(try !FileManager.default.fileExists(atPath: #require(reader.scratch)))
     }
 
     @Test func `unreadable media skips one file and model failure remains an error`() throws {
@@ -262,24 +280,26 @@ struct SemanticMediaIndexTests {
         }
         #expect(reader.scratch == nil)
     }
-    @Test func decoderFailureRetainsCompletedSegmentsAcrossRestart() throws {
+
+    @Test func `decoder failure retains completed segments across restart`() throws {
         let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
         let reader = SemanticMediaFixtureReader(root: root.path)
         reader.names = ["audio.wav"]; reader.pieces = 2; reader.finalFailure = true
         let media = SemanticFixtureMediaEncoder(), url = root.appendingPathComponent("index.sqlite")
         let store = try SemanticFileStore(url: url), path = root.path + "/audio.wav"
         let failed = try SemanticFileIndexer.run(scope: semanticScope(root.path), store: store, reader: reader,
-            encoder: SemanticFixtureEncoder(), media: media, cancelled: { false }, progress: { _ in })
+                                                 encoder: SemanticFixtureEncoder(), media: media, cancelled: { false },
+                                                 progress: { _ in })
         #expect(failed.skipped == 1 && media.calls == 2)
         #expect(try store.job(path)?.state == .failed && store.job(path)?.reason == "media-extraction-failed")
         #expect(try store.counts().files == 0)
         reader.finalFailure = false
         let reopened = try SemanticFileStore(url: url)
         let result = try SemanticFileIndexer.run(scope: semanticScope(root.path), store: reopened, reader: reader,
-            encoder: SemanticFixtureEncoder(), media: media, cancelled: { false }, progress: { _ in })
+                                                 encoder: SemanticFixtureEncoder(), media: media, cancelled: { false },
+                                                 progress: { _ in })
         #expect(result.files == 1 && media.calls == 2)
         #expect(try reopened.counts().chunks == 2)
         #expect(try reopened.job(path)?.state == .done && reopened.job(path)?.attempts == 1)
     }
-
 }

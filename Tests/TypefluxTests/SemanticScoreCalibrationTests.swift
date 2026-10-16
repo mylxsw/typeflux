@@ -85,6 +85,7 @@ struct SemanticScoreCalibrationTests {
         #expect(try scripts() == [1, 1])
         try execute("UPDATE chunks SET search_script=0; UPDATE search_recipe SET value='unicode-v2'")
         let migrated = try SemanticFileStore(url: store.url)
+        while try migrated.maintainSearchBatch(cancelled: { false }) {}
         #expect(try scripts() == [1, 1])
         #expect(try migrated.counts().chunks == 2)
         #expect(try migrated.search(vector: semanticVector(), text: "unseen", query: .init("unseen"), type: .all,

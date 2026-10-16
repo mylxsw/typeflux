@@ -179,6 +179,8 @@ struct SemanticSearchRankingTests {
 
     @Test func `ambiguous low similarity refuses answers without breaking a clear semantic match`() {
         let ranking = SemanticSearchRanking("unseen question")
+        #expect(!ranking.confident(peak: 0.69, runnerUp: 0.68, completeLexical: false))
+        #expect(ranking.confident(peak: 0.70, runnerUp: 0.69, completeLexical: false))
         #expect(!ranking.confident(peak: 0.60, runnerUp: 0.59, completeLexical: false))
         #expect(!ranking.confident(peak: 0.66, runnerUp: 0.65, completeLexical: false))
         #expect(ranking.confident(peak: 0.66, runnerUp: 0.60, completeLexical: false))
@@ -191,6 +193,18 @@ struct SemanticSearchRankingTests {
             evidence: .init(coverage: 0, phrase: false, identifier: false),
             modality: .document
         ) == nil)
+    }
+
+    @Test func partialLexicalOverlapNeverDemotesAnEquallySimilarPassage() throws {
+        let ranking = SemanticSearchRanking("orchard irrigation maintenance")
+        let absent = ranking.evidence("Workers inspect the pump"),
+            partial = ranking.evidence("Workers inspect irrigation equipment")
+        #expect(absent.coverage == 0 && partial.coverage > 0 && partial.coverage < 1)
+        let unrelated = try #require(ranking.score(cosine: 0.8, evidence: absent, modality: .document))
+        let overlapping = try #require(ranking.score(cosine: 0.8, evidence: partial, modality: .document))
+        #expect(overlapping >= unrelated)
+        let audio = try #require(ranking.score(cosine: 0.8, evidence: absent, modality: .audio))
+        #expect(unrelated == audio, "An ordinary query does not silently prefer a media type")
     }
 
     @Test func `confidence includes low-scoring files and repeated book chunks do not change the answer`() throws {
@@ -224,7 +238,7 @@ struct SemanticSearchRankingTests {
                                    input: .init(kind: .audio, path: path, time: 30, endTime: 60),
                                    vector: semanticVector())
         #expect(try store.commitMediaJob(path: path, generation: generation, metadata: metadata, segments: 1))
-        let hit = try #require(query(store, root, "semantic paraphrase", limit: 1).first)
+        let hit = try #require(query(store, root, "audio semantic paraphrase", limit: 1).first)
         #expect(hit.name == "z.mov" && hit.evidence?.time == 30)
     }
 
