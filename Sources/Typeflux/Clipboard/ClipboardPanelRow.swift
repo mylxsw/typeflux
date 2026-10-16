@@ -257,34 +257,26 @@ struct ClipboardThumbnailView: View {
     let maxPixelSize: CGFloat
     let placeholder: String
     var contentMode: ContentMode = .fill
-    @State private var image: NSImage?
-    /// The file `image` shows; a size change for the same file keeps it visible while reloading.
-    @State private var imagePath: String?
+    @Environment(\.askContextImageAccess) private var access
+    @Environment(\.clipboardThumbnailDecoder) private var decode
 
     var body: some View {
-        ZStack {
-            AskTheme.raisedSurface
-            if let image {
-                Image(nsImage: image).resizable().aspectRatio(contentMode: contentMode)
-            } else {
-                Image(systemName: placeholder).foregroundStyle(.tertiary)
+        let url = self.url, edge = maxPixelSize, decode = self.decode
+        return AskContextImage(source: url?.absoluteString,
+            model: AskContextImageModel(maximumEdge: edge.isFinite && edge >= 1 && edge <= 900 ? Int(edge) : 1, decode: { _ in
+                guard let url else { throw CancellationError() }
+                return try await decode(url, edge)
+            })) { image in
+                ZStack {
+                    AskTheme.raisedSurface
+                    if let image { Image(nsImage: image).resizable().aspectRatio(contentMode: contentMode) }
+                    else { Image(systemName: placeholder).foregroundStyle(.tertiary) }
+                }
             }
-        }
-        // A selected row asks for a larger size of the same file; reload it at that size.
-        .task(id: "\(url?.path ?? "")#\(Int(maxPixelSize))") {
-            guard let url else { return }
-            if imagePath != url.path { image = nil }
-            let provider = ClipboardThumbnailProvider.shared
-            var loaded = provider.cachedThumbnail(for: url, maxPixelSize: maxPixelSize)
-            if loaded == nil {
-                loaded = await provider.thumbnail(for: url, maxPixelSize: maxPixelSize)
-            }
-            if let loaded {
-                image = loaded
-                imagePath = url.path
-            }
-        }
+            .id(Identity(url: url, edge: edge.isFinite ? edge : -1, epoch: access.epoch))
     }
+    private struct Identity: Hashable { let url: URL?; let edge: CGFloat; let epoch: UUID? }
+
 }
 
 /// The first page of a copied PDF, enlarged on the selected row.

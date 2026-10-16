@@ -6,6 +6,7 @@ import TypefluxMediaProtocol
 final class MediaWorker: @unchecked Sendable {
     static let shared = MediaWorker()
     static let previews = MediaWorker(timeout: 3)
+    static let clipboardThumbnails = MediaWorker(timeout: 3)
     enum Input { case file(URL), data(Data) }
     typealias Runner = @Sendable (ManagedProcess.Request, @escaping @Sendable () -> Bool) throws -> ManagedProcess.Result
     private let lock = NSLock()
