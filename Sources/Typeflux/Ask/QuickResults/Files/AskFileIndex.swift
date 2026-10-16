@@ -106,7 +106,7 @@ final class AskFileIndex: AskFileSearching, @unchecked Sendable {
     init(configuration: @escaping () -> (enabled: Bool, settings: AskLauncherSearchSettings) = AskFileIndex.storedConfiguration,
          fullDiskAccess: @escaping () -> Bool = { AskFullDiskAccess.isGranted() },
          snapshotURL: URL = AskFileIndex.defaultSnapshotURL, defaults: UserDefaults = .standard,
-         home: String = NSHomeDirectory(), makeReader: @escaping () -> AskFileReading = { AskFileReader() },
+         home: String = NSHomeDirectory(), makeReader: (() -> AskFileReading)? = nil,
          makeWatcher: @escaping () -> AskFileWatching = { AskFSEventsWatcher() },
          searchCandidates: AskFileSearchCandidates = AskFileSearchCandidates()) {
         self.configuration = configuration
@@ -115,6 +115,8 @@ final class AskFileIndex: AskFileSearching, @unchecked Sendable {
         self.defaults = defaults
         self.home = home
         self.makeWatcher = makeWatcher
+        let ownership = AskFileReaderOwnership()
+        let makeReader = makeReader ?? { AskFileReader(ownership: ownership) }
         self.makeReader = makeReader
         self.searchCandidates = searchCandidates
         reader = makeReader()

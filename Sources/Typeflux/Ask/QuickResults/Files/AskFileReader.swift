@@ -27,18 +27,23 @@ final class AskFileReader: AskFileReading {
     private let timeout: TimeInterval
     private let startupTimeout: TimeInterval
     private let qualityOfService: QualityOfService?
-    private var process: Process?
+    private var process: AskFileReaderProcess?
+    private let ownership: AskFileReaderOwnership
+    private let reaper: OwnedProcessReaper
+    private var streaming = false
     private var input: FileHandle?
     private var output: FileHandle?
     private var buffer = Data()
 
     init(executable: URL? = nil, arguments: [String] = ["file-index-worker"],
-         timeout: TimeInterval = 5, startupTimeout: TimeInterval? = nil, qualityOfService: QualityOfService? = nil) {
+         timeout: TimeInterval = 5, startupTimeout: TimeInterval? = nil, qualityOfService: QualityOfService? = nil,
+         ownership: AskFileReaderOwnership = AskFileReaderOwnership(), reaper: OwnedProcessReaper = .shared) {
         self.executable = executable
         self.arguments = arguments
         self.timeout = timeout
         self.startupTimeout = startupTimeout ?? (executable == nil ? max(30, timeout) : timeout)
         self.qualityOfService = qualityOfService
+        self.ownership = ownership; self.reaper = reaper
     }
 
     deinit { stop() }
@@ -81,14 +86,19 @@ final class AskFileReader: AskFileReading {
     /// Each frame/pipe transfer resets the idle deadline; a large advancing directory has no total deadline.
     func stream(_ request: AskFileReadRequest, isCancelled: () -> Bool = { false },
                 receive: (AskFileReadResponse) -> Bool) throws {
+        guard !streaming else { throw AskFileReadError.unavailable }
+        streaming = true
+        var activity: UUID?
+        defer { if let activity { ownership.end(activity) }; streaming = false }
         do {
             if isCancelled() { throw AskFileReadError.cancelled }
             let starting = process == nil
             if starting {
                 SemanticSearchTrace.current?.mark("helper-launch")
-                try start()
+                try start(isCancelled: isCancelled)
             }
-            guard let input, let output else { throw AskFileReadError.unavailable }
+            guard let input, let output, let process else { throw AskFileReadError.unavailable }
+            try ownership.begin(process.id); activity = process.id
             var deadline = ProcessInfo.processInfo.systemUptime + (starting ? startupTimeout : timeout)
             let data = try JSONEncoder().encode(request) + Data([10])
             try data.withUnsafeBytes { bytes in
@@ -107,6 +117,7 @@ final class AskFileReader: AskFileReading {
                     let response = try JSONDecoder().decode(AskFileReadResponse.self, from: line)
                     buffer.removeSubrange(...end)
                     if !receive(response) { stop(); return }
+                    guard self.process === process, !isCancelled() else { throw AskFileReadError.cancelled }
                     if response.more != true { return }
                     deadline = ProcessInfo.processInfo.systemUptime + timeout
                     continue
@@ -140,16 +151,11 @@ final class AskFileReader: AskFileReading {
         }
     }
 
-    private func start() throws {
-        let process = Process()
-        if let qualityOfService { process.qualityOfService = qualityOfService }
+    private func start(isCancelled: () -> Bool) throws {
         let incoming = Pipe(), outgoing = Pipe()
-        process.executableURL = executable ?? Self.executableURL
-        process.arguments = arguments
-        process.standardInput = incoming
-        process.standardOutput = outgoing
-        process.standardError = FileHandle.nullDevice
-        try process.run()
+        let process = try AskFileReaderProcess(executable: executable ?? Self.executableURL, arguments: arguments,
+            input: incoming.fileHandleForReading.fileDescriptor, output: outgoing.fileHandleForWriting.fileDescriptor,
+            qualityOfService: qualityOfService, ownership: ownership, reaper: reaper, isCancelled: isCancelled)
         self.process = process
         input = incoming.fileHandleForWriting
         output = outgoing.fileHandleForReading
@@ -162,8 +168,8 @@ final class AskFileReader: AskFileReading {
     }
 
     func stop() {
-        // Process owns reaping. Never waitUntilExit here: an uninterruptible kernel read may outlive SIGKILL.
-        if let process, process.isRunning { kill(process.processIdentifier, SIGKILL) }
+        // Collection is asynchronous; the lineage stays occupied through host completion.
+        process?.stop()
         process = nil
         try? input?.close()
         try? output?.close()
