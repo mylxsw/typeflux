@@ -100,6 +100,18 @@ private final class PlaybackReaper: @unchecked Sendable {
         }
         host.stop(); await task.value; XCTAssertEqual(engine.loads, 1); XCTAssertEqual(engine.stops, 1)
     }
+    func testChildLifetimeAndWatchdogDoNotRestartAnEngine() async throws {
+        let (host, child) = try sockets(), engine = SilentPlaybackEngine()
+        var ticks = 0
+        let server = MediaPlaybackServer(engine: engine, lifetime: .zero, watchdog: { ticks += 1 })
+        await server.serve(socket: child, input: URL(fileURLWithPath: "/private/unused"))
+        XCTAssertEqual(engine.loads, 0); XCTAssertEqual(engine.stops, 1); XCTAssertEqual(ticks, 0); host.stop()
+        let (second, peer) = try sockets(), next = SilentPlaybackEngine()
+        let task = Task { await MediaPlaybackServer(engine: next, watchdog: { ticks += 1 }).serve(socket: peer, input: URL(fileURLWithPath: "/private/unused")) }
+        _ = try await exchange(.init(id: UUID(), sequence: 1, kind: .load), socket: second)
+        XCTAssertGreaterThanOrEqual(ticks, 2); second.stop(); await task.value
+        XCTAssertEqual(next.loads, 1); XCTAssertEqual(next.stops, 1)
+    }
     func testServerRejectsReplayWrongIdentityAndNativeFailureWithoutRestart() async throws {
         for mode in 0..<4 {
             let (host, child) = try sockets(), engine = SilentPlaybackEngine(), id = UUID()
@@ -154,6 +166,19 @@ private final class PlaybackReaper: @unchecked Sendable {
         for reaper in reapers { XCTAssertFalse(FileManager.default.fileExists(atPath: try XCTUnwrap(reaper.path))) }
         do { _ = try await ClipboardPlaybackProcess.open(file, pool: pool); XCTFail("Shutdown admitted") } catch {}
         await pool.shutdown()
+    }
+    func testReapedChildrenCannotFreeAdmissionWhileHostExchangesRemainBlocked() async throws {
+        let pool = ClipboardPlaybackPool()
+        let (_, first) = try pool.reserve(), (_, second) = try pool.reserve()
+        let barriers = [ClipboardPlaybackRetirement(first), ClipboardPlaybackRetirement(second)]
+        for (barrier, lease) in zip(barriers, [first, second]) {
+            try barrier.beginRequest(); lease.started(); lease.reaped(); barrier.processReturned()
+            XCTAssertThrowsError(try barrier.beginRequest(), "No request may start after process retirement")
+        }
+        XCTAssertEqual(pool.activeCount, 2); XCTAssertThrowsError(try pool.reserve())
+        barriers[0].endRequest(); try await wait { pool.activeCount == 1 }
+        barriers[1].endRequest(); try await wait { pool.activeCount == 0 }
+        barriers[1].processReturned(); await pool.shutdown()
     }
     func testInvalidSourceLimitsAndCancellationRefuseBeforeLaunch() async throws {
         let (root, file) = try fixture(); defer { try? FileManager.default.removeItem(at: root) }

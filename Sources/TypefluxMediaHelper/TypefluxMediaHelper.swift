@@ -9,9 +9,9 @@ enum TypefluxMediaHelper {
         if CommandLine.arguments.count == 4, CommandLine.arguments[1] == "--audio-playback",
            CommandLine.arguments[2] == "100", let container = MediaAVContainer(rawValue: CommandLine.arguments[3]) {
             // Persistent file playback uses a private inherited socket, not stdout/stdin.
-            alarm(UInt32(MediaPlaybackMessage.lifetime + 10))
+            alarm(12)
             if let socket = try? MediaPlaybackSocket(owning: 100) {
-                let server = MediaPlaybackServer(engine: MediaAVPlaybackEngine())
+                let server = MediaPlaybackServer(engine: MediaAVPlaybackEngine(), watchdog: { _ = alarm(12) })
                 await server.serve(socket: socket, input: URL(fileURLWithPath: FileManager.default.currentDirectoryPath).appendingPathComponent("audio." + container.rawValue))
             }
             return

@@ -168,7 +168,6 @@ final class WorkflowController {
     var pendingRecordingStartID: UUID?
     var suppressActivationTapUntil: Date?
     var recordingUsesAuxiliary = false
-    var recordingAllowsQuickInput = true
     var recordingPersonaSnapshot: DictationPersonaSnapshot?
     var recordingGestureDecision: RecordingGestureDecision?
     var recordingMode: RecordingMode = .holdToTalk
@@ -664,8 +663,7 @@ final class WorkflowController {
         startLocked: Bool,
         hotkeyDetectedAt: Date = Date(),
         hotkeyUptime: TimeInterval? = nil,
-        auxiliary: Bool = false,
-        allowsQuickInput: Bool = true
+        auxiliary: Bool = false
     ) {
         if routeComposerVoice(.press(intent: intent, locked: startLocked, auxiliary: auxiliary, uptime: hotkeyUptime)) { return }
         RecordingStartupLatencyTrace.shared.mark("workflow.press_began.\(intent.traceName)")
@@ -714,7 +712,6 @@ final class WorkflowController {
         }
 
         recordingUsesAuxiliary = auxiliary
-        recordingAllowsQuickInput = allowsQuickInput
         recordingPersonaSnapshot = nil
         prepareRecordingGesture(intent: intent, startLocked: startLocked, auxiliary: auxiliary)
         hotkeyPressedAt = startLocked ? nil : (hotkeyUptime ?? monotonicNow())
@@ -1003,19 +1000,11 @@ final class WorkflowController {
 
     func recordingHintPresentation(
         intent: RecordingIntent,
-        recordingMode: RecordingMode,
         appName: String?,
         bundleIdentifier: String?
     ) -> RecordingHintPresentation {
         if intent == .askSelection {
             return RecordingHintPresentation(text: L("overlay.ask.guidance"), autoHideAfter: nil)
-        }
-
-        if shouldUseQuickInput(recordingMode: recordingMode, recordingIntent: intent) {
-            return RecordingHintPresentation(
-                text: L("overlay.recording.quickInputHint"),
-                autoHideAfter: Self.recordingHintAutoHideDelay
-            )
         }
 
         guard let persona = recordingPersona(
@@ -1033,14 +1022,10 @@ final class WorkflowController {
 
     func shouldOptimizeTypefluxASR(
         intent: RecordingIntent,
-        recordingMode: RecordingMode,
         appName: String?,
         bundleIdentifier: String?
     ) -> Bool {
         guard intent == .dictation else { return true }
-        if shouldUseQuickInput(recordingMode: recordingMode, recordingIntent: intent) {
-            return true
-        }
         guard let persona = recordingPersona(
             appName: appName,
             bundleIdentifier: bundleIdentifier
@@ -1056,7 +1041,6 @@ final class WorkflowController {
         let frontmostApplicationContext = Self.frontmostApplicationContext(includeIcon: false)
         return recordingHintPresentation(
             intent: recordingIntent,
-            recordingMode: recordingMode,
             appName: frontmostApplicationContext.appName,
             bundleIdentifier: frontmostApplicationContext.bundleIdentifier
         )
@@ -1178,7 +1162,6 @@ final class WorkflowController {
             let usesLivePreview = canUseRealtimeTranscription && shouldUseLiveTranscriptionPreview()
             let optimizeASR = shouldOptimizeTypefluxASR(
                 intent: effectiveIntent,
-                recordingMode: recordingMode,
                 appName: frontmostApplicationContext.appName,
                 bundleIdentifier: frontmostApplicationContext.bundleIdentifier
             )
@@ -1393,12 +1376,6 @@ final class WorkflowController {
         finishRecordingFromCurrentMode()
     }
 
-    func shouldUseQuickInput(recordingMode: RecordingMode, recordingIntent: RecordingIntent) -> Bool {
-        recordingAllowsQuickInput && !recordingUsesAuxiliary && settingsStore.quickInputEnabled
-            && recordingIntent == .dictation
-            && recordingMode == .holdToTalk
-    }
-
     func finishRecordingFromCurrentMode() {
         if routeComposerVoice(.stop) { return }
         guard isRecording else { return }
@@ -1415,10 +1392,6 @@ final class WorkflowController {
             return
         }
 
-        let useQuickInput = shouldUseQuickInput(
-            recordingMode: recordingMode,
-            recordingIntent: recordingIntent
-        )
         if recordingPersonaSnapshot == nil {
             let context = Self.frontmostApplicationContext(includeIcon: false)
             snapshotRecordingPersona(appName: context.appName, bundleIdentifier: context.bundleIdentifier)
@@ -1459,7 +1432,6 @@ final class WorkflowController {
             await finishRecordingAndProcess(
                 recordingStoppedAt: recordingStoppedAt,
                 startupContext: startupContext,
-                bypassPersonaRewrite: useQuickInput,
                 personaSnapshot: personaSnapshot
             )
         }

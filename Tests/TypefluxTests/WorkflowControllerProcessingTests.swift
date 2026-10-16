@@ -591,42 +591,7 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         XCTAssertFalse(WorkflowController.shouldRewriteTranscript(personaPrompt: nil, inputContext: nil))
     }
 
-    func testQuickInputOnlyAppliesToHoldToTalkDictation() {
-        let controller = makeWorkflowController(configureSettings: { settingsStore in
-            settingsStore.quickInputEnabled = true
-        })
-
-        XCTAssertTrue(controller.shouldUseQuickInput(recordingMode: .holdToTalk, recordingIntent: .dictation))
-        XCTAssertFalse(controller.shouldUseQuickInput(recordingMode: .locked, recordingIntent: .dictation))
-        XCTAssertFalse(controller.shouldUseQuickInput(recordingMode: .holdToTalk, recordingIntent: .askSelection))
-
-        controller.recordingAllowsQuickInput = false
-        XCTAssertFalse(controller.shouldUseQuickInput(recordingMode: .holdToTalk, recordingIntent: .dictation))
-    }
-
-    func testQuickInputIsDisabledByDefault() {
-        let controller = makeWorkflowController()
-
-        XCTAssertFalse(controller.shouldUseQuickInput(recordingMode: .holdToTalk, recordingIntent: .dictation))
-    }
-
-    func testRecordingHintUsesQuickInputModeWhenQuickInputApplies() {
-        let controller = makeWorkflowController(configureSettings: { settingsStore in
-            settingsStore.quickInputEnabled = true
-        })
-
-        let hint = controller.recordingHintPresentation(
-            intent: .dictation,
-            recordingMode: .holdToTalk,
-            appName: nil,
-            bundleIdentifier: nil
-        )
-
-        XCTAssertEqual(hint.text, L("overlay.recording.quickInputHint"))
-        XCTAssertEqual(hint.autoHideAfter, WorkflowController.recordingHintAutoHideDelay)
-    }
-
-    func testRecordingHintUsesPersonaNameWhenQuickInputDoesNotApply() {
+    func testRecordingHintUsesPersonaName() {
         let persona = PersonaProfile(name: "Meeting Notes", prompt: "Clean up dictation.")
         let controller = makeWorkflowController(configureSettings: { settingsStore in
             settingsStore.personaRewriteEnabled = true
@@ -636,27 +601,6 @@ final class WorkflowControllerProcessingTests: XCTestCase {
 
         let hint = controller.recordingHintPresentation(
             intent: .dictation,
-            recordingMode: .locked,
-            appName: nil,
-            bundleIdentifier: nil
-        )
-
-        XCTAssertEqual(hint.text, L("overlay.recording.personaHint", persona.name))
-        XCTAssertEqual(hint.autoHideAfter, WorkflowController.recordingHintAutoHideDelay)
-    }
-
-    func testRecordingHintUsesPersonaNameForLockedRecordingWhenQuickInputIsEnabled() {
-        let persona = PersonaProfile(name: "Meeting Notes", prompt: "Clean up dictation.")
-        let controller = makeWorkflowController(configureSettings: { settingsStore in
-            settingsStore.quickInputEnabled = true
-            settingsStore.personaRewriteEnabled = true
-            settingsStore.personas = settingsStore.personas + [persona]
-            settingsStore.activePersonaID = persona.id.uuidString
-        })
-
-        let hint = controller.recordingHintPresentation(
-            intent: .dictation,
-            recordingMode: .locked,
             appName: nil,
             bundleIdentifier: nil
         )
@@ -672,7 +616,6 @@ final class WorkflowControllerProcessingTests: XCTestCase {
 
         let hint = controller.recordingHintPresentation(
             intent: .dictation,
-            recordingMode: .locked,
             appName: nil,
             bundleIdentifier: nil
         )
@@ -682,13 +625,10 @@ final class WorkflowControllerProcessingTests: XCTestCase {
     }
 
     func testRecordingHintKeepsAskAnythingGuidanceBehavior() {
-        let controller = makeWorkflowController(configureSettings: { settingsStore in
-            settingsStore.quickInputEnabled = true
-        })
+        let controller = makeWorkflowController()
 
         let hint = controller.recordingHintPresentation(
             intent: .askSelection,
-            recordingMode: .holdToTalk,
             appName: nil,
             bundleIdentifier: nil
         )
@@ -2520,7 +2460,7 @@ final class WorkflowControllerProcessingTests: XCTestCase {
         XCTAssertEqual(choice.reason, .raw)
     }
 
-    func testQuickInputHoldToTalkBypassesPersonaRewriteAfterTranscription() async throws {
+    func testFinishedRecordingAlwaysAppliesPersonaRewriteAfterTranscription() async throws {
         let audioURL = try writeSilentTestAudio(duration: 1.0)
         defer { try? FileManager.default.removeItem(at: audioURL) }
 
@@ -2536,31 +2476,27 @@ final class WorkflowControllerProcessingTests: XCTestCase {
             historyStore: historyStore,
             configureSettings: { settingsStore in
                 self.configureReadyLLM(settingsStore: settingsStore)
-                settingsStore.quickInputEnabled = true
                 settingsStore.applyPersonaSelection(settingsStore.personas[0].id)
             }
         )
         controller.latestRecordingPreviewText = "preview transcript"
         controller.isAudioRecorderStarted = true
 
-        await controller.finishRecordingAndProcess(
-            recordingStoppedAt: Date(),
-            bypassPersonaRewrite: true
-        )
+        await controller.finishRecordingAndProcess(recordingStoppedAt: Date())
         await waitUntil {
-            textInjector.insertedTexts == ["raw transcript"]
+            textInjector.insertedTexts == ["persona rewrite"]
         }
 
         XCTAssertEqual(audioRecorder.stopCallCount, 1)
-        XCTAssertEqual(textInjector.insertedTexts, ["raw transcript"])
-        XCTAssertEqual(llmService.streamRewriteCallCount, 0)
+        XCTAssertEqual(textInjector.insertedTexts, ["persona rewrite"])
+        XCTAssertEqual(llmService.streamRewriteCallCount, 1)
         let savedRecord = historyStore.list().last
-        XCTAssertEqual(savedRecord?.mode, .dictation)
-        XCTAssertNil(savedRecord?.personaPrompt)
-        XCTAssertNil(savedRecord?.personaResultText)
+        XCTAssertEqual(savedRecord?.mode, .personaRewrite)
+        XCTAssertNotNil(savedRecord?.personaPrompt)
+        XCTAssertEqual(savedRecord?.personaResultText, "persona rewrite")
     }
 
-    func testQuickInputLockedRecordingStillAppliesPersonaRewrite() async {
+    func testLockedRecordingAppliesPersonaRewrite() async {
         let textInjector = MockProcessingTextInjector()
         let historyStore = MockProcessingHistoryStore()
         let llmService = CountingProcessingLLMService(rewriteText: "persona rewrite")
@@ -2571,7 +2507,6 @@ final class WorkflowControllerProcessingTests: XCTestCase {
             historyStore: historyStore,
             configureSettings: { settingsStore in
                 self.configureReadyLLM(settingsStore: settingsStore)
-                settingsStore.quickInputEnabled = true
                 settingsStore.applyPersonaSelection(settingsStore.personas[0].id)
             }
         )
@@ -3261,24 +3196,6 @@ final class WorkflowControllerProcessingTests: XCTestCase {
 
         XCTAssertFalse(controller.shouldOptimizeTypefluxASR(
             intent: .dictation,
-            recordingMode: .locked,
-            appName: nil,
-            bundleIdentifier: nil
-        ))
-    }
-
-    func testTypefluxASROptimizeIsEnabledForQuickInput() {
-        let persona = PersonaProfile(name: "Meeting Notes", prompt: "Clean up dictation.")
-        let controller = makeWorkflowController(configureSettings: { settingsStore in
-            settingsStore.quickInputEnabled = true
-            settingsStore.personaRewriteEnabled = true
-            settingsStore.personas += [persona]
-            settingsStore.activePersonaID = persona.id.uuidString
-        })
-
-        XCTAssertTrue(controller.shouldOptimizeTypefluxASR(
-            intent: .dictation,
-            recordingMode: .holdToTalk,
             appName: nil,
             bundleIdentifier: nil
         ))
@@ -3291,7 +3208,6 @@ final class WorkflowControllerProcessingTests: XCTestCase {
 
         XCTAssertTrue(controller.shouldOptimizeTypefluxASR(
             intent: .dictation,
-            recordingMode: .locked,
             appName: nil,
             bundleIdentifier: nil
         ))
@@ -4183,7 +4099,6 @@ extension WorkflowControllerProcessingTests {
     func testAuxiliaryPromotionKeepsMicrophoneRunningAndSnapshotsPersona() async {
         let audioRecorder = MockProcessingAudioRecorder()
         let controller = makeWorkflowController(audioRecorder: audioRecorder)
-        controller.settingsStore.quickInputEnabled = true
         controller.settingsStore.applyPersonaSelection(SettingsStore.defaultPersonaID)
         controller.settingsStore.savePersonaAppBinding(appIdentifier: "com.test", personaID: SettingsStore.defaultPersonaID)
         let decision = RecordingGestureDecision()
@@ -4200,7 +4115,6 @@ extension WorkflowControllerProcessingTests {
         XCTAssertTrue(controller.recordingUsesAuxiliary)
         XCTAssertEqual(audioRecorder.startCallCount, 1)
         XCTAssertEqual(audioRecorder.stopCallCount, 0)
-        XCTAssertFalse(controller.shouldUseQuickInput(recordingMode: .holdToTalk, recordingIntent: .dictation))
         XCTAssertEqual(controller.recordingPersonaSnapshot?.persona?.id, SettingsStore.englishPersonaID)
         let prompt = controller.recordingPersonaSnapshot?.prompt
         controller.settingsStore.auxiliaryPersonaID = SettingsStore.defaultPersonaID.uuidString
@@ -4302,11 +4216,8 @@ extension WorkflowControllerProcessingTests {
     }
 
     @MainActor
-    func testComposerRewritesWithFrozenMainOrAuxiliaryPersonaAndQuickInputPolicy() async throws {
-        for (auxiliary, locked, quickInput, expectsRewrite) in [
-            (false, true, false, true), (true, false, true, true),
-            (false, false, true, false), (false, true, true, true)
-        ] {
+    func testComposerRewritesWithFrozenMainOrAuxiliaryPersonaForEveryGesture() async throws {
+        for (auxiliary, locked) in [(false, true), (true, false), (false, false), (true, true)] {
             let llm = CountingProcessingLLMService(rewriteText: "rewritten speech")
             let main = PersonaProfile(name: "Main", prompt: "Main prompt")
             let aux = PersonaProfile(name: "Auxiliary", prompt: "Auxiliary prompt")
@@ -4317,7 +4228,6 @@ extension WorkflowControllerProcessingTests {
                     $0.personas += [main, aux]
                     $0.applyPersonaSelection(main.id)
                     $0.auxiliaryPersonaID = aux.id.uuidString
-                    $0.quickInputEnabled = quickInput
                     $0.activationHotkey = nil
                     $0.auxiliaryHotkey = nil
                     self.configureReadyLLM(settingsStore: $0)
@@ -4332,10 +4242,10 @@ extension WorkflowControllerProcessingTests {
             controller.settingsStore.personaRewriteEnabled = false
             controller.settingsStore.auxiliaryPersonaID = SettingsStore.defaultPersonaID.uuidString
             let result = try await service.transcribe()
-            XCTAssertEqual(result, expectsRewrite ? "rewritten speech" : "raw speech")
-            XCTAssertEqual(llm.streamRewriteCallCount, expectsRewrite ? 1 : 0)
-            XCTAssertEqual(llm.requests.first?.personaPrompt, expectsRewrite ? frozenPrompt : nil)
-            XCTAssertEqual(llm.requests.first?.personaID, expectsRewrite ? expected.id : nil)
+            XCTAssertEqual(result, "rewritten speech")
+            XCTAssertEqual(llm.streamRewriteCallCount, 1)
+            XCTAssertEqual(llm.requests.first?.personaPrompt, frozenPrompt)
+            XCTAssertEqual(llm.requests.first?.personaID, expected.id)
             XCTAssertEqual(controller.appState.status, .idle)
         }
     }
@@ -4365,22 +4275,24 @@ extension WorkflowControllerProcessingTests {
     }
 
     @MainActor
-    func testComposerQuickInputExplicitlyDisablesMultimodalPersona() async throws {
+    func testComposerHoldToTalkPassesPersonaToMultimodalTranscriber() async throws {
         let transcriber = PersonaAwareComposerTranscriber(appliesPersona: true)
         let llm = CountingProcessingLLMService(rewriteText: "unexpected")
         let controller = makeWorkflowController(sttTranscriber: transcriber, llmService: llm,
             configureSettings: {
                 $0.sttProvider = .multimodalLLM
                 $0.applyPersonaSelection(SettingsStore.defaultPersonaID)
-                $0.quickInputEnabled = true
                 $0.activationHotkey = nil
             }, hasPaidCloudSubscription: { true })
         let service = WorkflowComposerRecording(controller, isAppBundle: { true })
         service.handleHotkey(.prepare(auxiliary: false, locked: false))
         try await service.start()
-        _ = try await service.transcribe()
+        let prompt = controller.recordingPersonaSnapshot?.prompt
+        let result = try await service.transcribe()
         XCTAssertTrue(transcriber.sawContext)
-        XCTAssertNil(transcriber.prompt)
+        XCTAssertNotNil(prompt)
+        XCTAssertEqual(transcriber.prompt, prompt)
+        XCTAssertEqual(result, "integrated rewrite")
         XCTAssertEqual(llm.streamRewriteCallCount, 0)
     }
 

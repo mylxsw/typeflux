@@ -72,6 +72,7 @@ final class ClipboardPlaybackProcess: ClipboardPlaybackClient, @unchecked Sendab
     typealias Runner = MediaWorker.Runner
     private let socket: MediaPlaybackSocket
     private let lease: MediaLease
+    private let retirement: ClipboardPlaybackRetirement
     private let source: ClipboardPlaybackSource
     private let pool: ClipboardPlaybackPool
     private let id = UUID()
@@ -81,7 +82,7 @@ final class ClipboardPlaybackProcess: ClipboardPlaybackClient, @unchecked Sendab
     private let timeout: Double
     private init(socket: MediaPlaybackSocket, lease: MediaLease, source: ClipboardPlaybackSource,
                  pool: ClipboardPlaybackPool, poolID: UUID, timeout: Double) {
-        self.socket = socket; self.lease = lease; self.source = source; self.pool = pool; self.poolID = poolID; self.timeout = timeout
+        self.socket = socket; self.lease = lease; self.retirement = ClipboardPlaybackRetirement(lease); self.source = source; self.pool = pool; self.poolID = poolID; self.timeout = timeout
     }
     /// Admission precedes any detached copy, spawn or socket operation.
     static func open(_ url: URL, pool: ClipboardPlaybackPool = .shared,
@@ -110,9 +111,11 @@ final class ClipboardPlaybackProcess: ClipboardPlaybackClient, @unchecked Sendab
                     guard fcntl(inherited.value, F_SETFD, FD_CLOEXEC) == 0 else { throw MediaFailure.unavailable }
                     let client = ClipboardPlaybackProcess(socket: socket, lease: lease, source: source, pool: pool, poolID: key, timeout: timeout)
                     pool.attach(key) { socket.stop(); lease.cancel() }
-                    // The process task owns the lease independently of the view/client.
+                    // A host filesystem check can ignore cancellation even after the child exits.
+                    // Keep admission until both process collection and every host exchange return.
+                    let retirement = client.retirement
                     Task.detached(priority: .utility) {
-                        defer { inherited.closeOnce(); lease.returned() }
+                        defer { inherited.closeOnce(); retirement.processReturned() }
                         let fd = Darwin.open(directory.path, O_RDONLY | O_DIRECTORY | O_CLOEXEC)
                         guard fd >= 0 else { pool.failed(key); socket.stop(); return }
                         defer { close(fd) }
@@ -140,9 +143,10 @@ final class ClipboardPlaybackProcess: ClipboardPlaybackClient, @unchecked Sendab
     func request(_ kind: MediaPlaybackMessage.Kind, fraction: Double? = nil) async throws -> MediaPlaybackState {
         let number = try lock.withLock {
             guard !busy, !lease.cancelled, !socket.isStopped else { throw MediaFailure.unavailable }
+            try retirement.beginRequest()
             busy = true; sequence += 1; return sequence
         }
-        defer { lock.withLock { busy = false } }
+        defer { lock.withLock { busy = false }; retirement.endRequest() }
         return try await withTaskCancellationHandler {
             do {
                 let result = try await Task.detached(priority: .utility) { [self] in
@@ -173,4 +177,29 @@ private final class PlaybackDescriptor: @unchecked Sendable {
     init(_ value: Int32) { self.value = value }
     func closeOnce() { lock.withLock { if !closed { closed = true; close(value) } } }
     deinit { closeOnce() }
+}
+
+/// Reaping alone cannot release a slot occupied by an uncooperative host file check.
+final class ClipboardPlaybackRetirement: @unchecked Sendable {
+    private let lock = NSLock()
+    private let lease: MediaLease
+    private var requests = 0
+    private var returned = false
+    private var released = false
+    init(_ lease: MediaLease) { self.lease = lease }
+    func beginRequest() throws {
+        try lock.withLock {
+            guard !returned else { throw MediaFailure.unavailable }
+            requests += 1
+        }
+    }
+    func endRequest() { lock.withLock { requests -= 1 }; finish() }
+    func processReturned() { lock.withLock { returned = true }; finish() }
+    private func finish() {
+        let ready = lock.withLock {
+            guard returned, requests == 0, !released else { return false }
+            released = true; return true
+        }
+        if ready { lease.returned() }
+    }
 }

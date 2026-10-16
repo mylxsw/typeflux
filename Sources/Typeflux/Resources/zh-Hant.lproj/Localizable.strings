@@ -135,6 +135,10 @@
 "settings.language.title" = "介面語言";
 "settings.language.subtitle" = "選擇 Typeflux 介面的顯示語言。";
 "settings.audio" = "音訊";
+"settings.general.app.title" = "應用程式";
+"settings.general.voiceTrigger.title" = "語音輸入方式";
+"settings.general.memory.title" = "記憶與詞彙";
+"settings.general.screenshot.title" = "截圖";
 "settings.microphone.title" = "麥克風";
 "settings.microphone.subtitle" = "選擇聽寫使用的輸入裝置。自動模式會跟隨目前 macOS 預設輸入裝置；若預設裝置是藍牙耳機，則改用 Mac 內建或有線麥克風，避免開頭漏字。";
 "settings.microphone.automatic" = "自動";
@@ -152,7 +156,6 @@
 "settings.mute.title" = "錄音時靜音";
 "settings.mute.subtitle" = "錄音期間暫時靜音系統輸出，減少回聲或系統聲音進入麥克風。";
 "settings.permissions" = "權限";
-"settings.other" = "其他設定";
 "settings.advanced" = "進階";
 "settings.advanced.button" = "進階設定";
 "settings.advanced.soundEffects.title" = "啟用音效";
@@ -364,7 +367,6 @@
 "modelDomain.llm.subtitle" = "文字生成與改寫";
 
 "overlay.recording.listening" = "正在聆聽";
-"overlay.recording.quickInputHint" = "快速錄入模式";
 "overlay.recording.personaHint" = "本次請求將使用%@人設進行處理";
 "overlay.ask.guidance" = "你可以詢問任何問題";
 "overlay.processing.transcribing" = "思考中";
@@ -804,8 +806,6 @@
 "settings.shortcuts.activation.title" = "語音輸入";
 "settings.shortcuts.activation.subtitle" = "使用一組快捷鍵開始語音輸入。可按住說話，也可快速輕觸後鎖定錄音。若目前已有選取內容，識別結果會直接覆蓋該選取範圍。";
 "settings.shortcuts.activation.footnote" = "";
-"settings.shortcuts.quickInput.title" = "快速錄入";
-"settings.shortcuts.quickInput.subtitle" = "開啟後，按住快捷鍵說話並放開時會直接插入語音轉文字結果，不套用人設。快速輕觸鎖定錄音仍會依照目前人設流程處理。";
 "settings.shortcuts.ask.title" = "隨便問";
 "settings.shortcuts.ask.subtitle" = "連按兩次 Fn 即可開始錄音提問，回答會在視窗中展示。若有選取文字，明確的編輯請求也可以直接改寫選取範圍。";
 "settings.shortcuts.ask.footnote" = "";
@@ -814,7 +814,6 @@
 "settings.shortcuts.launcherPosition.last" = "記住上次位置";
 "settings.shortcuts.launcherPosition.center.subtitle" = "在滑鼠所在螢幕的正中開啟。拖動只影響這一次。";
 "settings.shortcuts.launcherPosition.last.subtitle" = "在這塊螢幕上次放下的位置開啟。拖動頂部邊緣或空白處即可移動。";
-"settings.shortcuts.launcherPosition.reset" = "恢復置中";
 "settings.shortcuts.persona.title" = "人設切換器";
 "settings.shortcuts.persona.subtitle" = "打開置中的選擇器；如果目前有選取文字，也可以直接把所選人設套用到這段文字。";
 "settings.shortcuts.persona.footnote" = "";
@@ -4675,7 +4674,6 @@
 
 "settings.pane.appearance" = "外觀";
 
-"settings.inputAndCapture.title" = "輸入與截圖";
 
 // Launcher file preview
 "launcher.search.preview" = "預覽檔案";

@@ -23,7 +23,6 @@ final class SettingsViewModelHotkeyTests: XCTestCase {
             viewModel.askHotkey?.signature,
             HotkeyBinding.defaultAsk.signature
         )
-        XCTAssertFalse(viewModel.quickInputEnabled)
 
         settingsStore.activationHotkey = .rightCommandActivation
         settingsStore.askHotkey = .rightCommandAsk
@@ -33,22 +32,6 @@ final class SettingsViewModelHotkeyTests: XCTestCase {
             activation: .rightCommandActivation,
             ask: .rightCommandAsk
         )
-    }
-
-    func testQuickInputPersistsThroughViewModel() throws {
-        let suiteName = "SettingsViewModelHotkeyTests.quickInput.\(UUID().uuidString)"
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
-        let settingsStore = SettingsStore(defaults: defaults)
-        let viewModel = StudioViewModel(
-            settingsStore: settingsStore,
-            historyStore: HotkeyTestHistoryStore(),
-            initialSection: .settings
-        )
-
-        viewModel.setQuickInputEnabled(true)
-
-        XCTAssertTrue(viewModel.quickInputEnabled)
-        XCTAssertTrue(settingsStore.quickInputEnabled)
     }
 
     private func waitForHotkeys(

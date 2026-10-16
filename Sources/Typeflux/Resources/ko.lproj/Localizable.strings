@@ -143,6 +143,10 @@
 "settings.output.opencc.config.s2hk" = "간체 → 번체 (홍콩)";
 "settings.output.opencc.config.t2s" = "번체 → 간체";
 "settings.audio" = "오디오";
+"settings.general.app.title" = "앱";
+"settings.general.voiceTrigger.title" = "음성 입력 방식";
+"settings.general.memory.title" = "메모리 및 어휘";
+"settings.general.screenshot.title" = "스크린샷";
 "settings.microphone.title" = "마이크";
 "settings.microphone.subtitle" = "받아쓰기에 사용되는 장치를 선택하세요. 자동은 현재 macOS 기본 입력을 따르지만, 첫 단어가 잘리지 않도록 블루투스 헤드셋 대신 Mac 내장 또는 유선 마이크를 사용합니다.";
 "settings.microphone.automatic" = "자동";
@@ -160,7 +164,6 @@
 "settings.mute.title" = "녹음 중 음소거";
 "settings.mute.subtitle" = "녹음하는 동안 일시적으로 시스템 출력을 음소거하여 피드백이나 시스템 사운드가 마이크에 새는 것을 줄입니다.";
 "settings.permissions" = "권한";
-"settings.other" = "기타 설정";
 "settings.advanced" = "고급";
 "settings.advanced.button" = "고급 설정";
 "settings.advanced.soundEffects.title" = "음향 효과 활성화";
@@ -362,7 +365,6 @@
 "modelDomain.llm.subtitle" = "대규모 언어 모델";
 
 "overlay.recording.listening" = "듣기";
-"overlay.recording.quickInputHint" = "빠른 입력 모드";
 "overlay.recording.personaHint" = "이번 요청은 %@ 페르소나로 처리됩니다";
 "overlay.ask.guidance" = "선택한 텍스트에 관해 무엇이든 물어보세요";
 "overlay.processing.transcribing" = "생각 중";
@@ -797,8 +799,6 @@
 "settings.shortcuts.activation.title" = "음성 입력";
 "settings.shortcuts.activation.subtitle" = "하나의 단축키를 사용하여 음성 입력을 시작하세요. 길게 눌러 말하거나 빠르게 탭하여 녹음 세션을 잠급니다. 텍스트를 선택하면 스크립트가 해당 선택 항목을 직접 대체합니다.";
 "settings.shortcuts.activation.footnote" = "";
-"settings.shortcuts.quickInput.title" = "빠른 입력";
-"settings.shortcuts.quickInput.subtitle" = "활성화하면 길게 눌러 말한 뒤 놓을 때 페르소나를 적용하지 않고 음성-텍스트 변환 결과를 바로 삽입합니다. 빠르게 탭해 녹음을 잠그는 경우에는 현재 페르소나 흐름을 그대로 사용합니다.";
 "settings.shortcuts.ask.title" = "무엇이든 물어보세요";
 "settings.shortcuts.ask.subtitle" = "Fn을 두 번 누르면 녹음이 시작되고 무엇이든 물어볼 수 있습니다. 답변이 팝업으로 나타납니다. 텍스트를 선택한 경우 명시적 편집 요청을 통해 직접 다시 작성할 수도 있습니다.";
 "settings.shortcuts.ask.footnote" = "";
@@ -807,7 +807,6 @@
 "settings.shortcuts.launcherPosition.last" = "마지막 위치 기억";
 "settings.shortcuts.launcherPosition.center.subtitle" = "포인터가 있는 화면 가운데에 열립니다. 드래그는 이번에만 적용됩니다.";
 "settings.shortcuts.launcherPosition.last.subtitle" = "그 화면에서 마지막으로 둔 위치에 열립니다. 위쪽 가장자리나 빈 곳을 드래그해 옮기세요.";
-"settings.shortcuts.launcherPosition.reset" = "가운데로";
 "settings.shortcuts.persona.title" = "페르소나 스위처";
 "settings.shortcuts.persona.subtitle" = "중앙 선택 도구를 엽니다. 선택한 텍스트를 사용하면 해당 선택 항목에 페르소나를 직접 적용할 수도 있습니다.";
 "settings.shortcuts.persona.footnote" = "";
@@ -4668,7 +4667,6 @@
 
 "settings.pane.appearance" = "외관";
 
-"settings.inputAndCapture.title" = "입력 및 캡처";
 
 // Clipboard snippets
 "clipboard.tab.clipboard" = "클립보드";

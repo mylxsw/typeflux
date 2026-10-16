@@ -12,15 +12,23 @@ import TypefluxMediaProtocol
 /// the host requests one bounded snapshot, with an acknowledgement for each explicit command.
 @MainActor public final class MediaPlaybackServer {
     private let engine: any MediaPlaybackEngine
-    public init(engine: any MediaPlaybackEngine) { self.engine = engine }
+    private let watchdog: @MainActor () -> Void
+    private let lifetime: Duration
+    public init(engine: any MediaPlaybackEngine, lifetime: Duration = .seconds(MediaPlaybackMessage.lifetime),
+                watchdog: @escaping @MainActor () -> Void = {}) {
+        self.engine = engine; self.lifetime = lifetime; self.watchdog = watchdog
+    }
     public func serve(socket: MediaPlaybackSocket, input: URL) async {
         defer { engine.stop(); socket.stop() }
         var session: UUID?, sequence = 1
+        let expires = ContinuousClock.now.advanced(by: lifetime)
         do {
-            while !socket.isStopped {
+            while !socket.isStopped, ContinuousClock.now < expires {
+                watchdog()
                 let request = try await Task.detached { try socket.receive(deadline: .now.advanced(by: .seconds(10))) }.value
                 try request.validate()
-                guard request.sequence == sequence, request.kind != .reply,
+                watchdog()
+                guard ContinuousClock.now < expires, request.sequence == sequence, request.kind != .reply,
                       session == nil ? request.kind == .load : (request.id == session && request.kind != .load)
                 else { throw MediaFailure.invalidProtocol }
                 if session == nil { session = request.id; try await engine.load(input) }

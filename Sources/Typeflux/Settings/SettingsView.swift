@@ -896,11 +896,84 @@ struct StudioView: View {
         }
     }
 
+    /// General settings, grouped by what each setting affects: the app itself, how voice input
+    /// starts, the microphone, the text it produces, what it remembers and where screenshots go.
     private var generalSettingsPage: some View {
         VStack(alignment: .leading, spacing: TFMetrics.sectionSpacing) {
-            TFFormSection {
+            TFFormSection(title: L("settings.general.app.title")) {
                 settingSwitch(L("settings.launchAtLogin.title"), detail: L("settings.launchAtLogin.subtitle"),
                               isOn: Binding(get: { viewModel.launchAtLogin }, set: viewModel.setLaunchAtLogin))
+                TFDivider.form
+                settingSwitch(L("settings.advanced.autoUpdate.title"), detail: L("settings.advanced.autoUpdate.subtitle"),
+                              isOn: Binding(get: { viewModel.autoUpdateEnabled }, set: viewModel.setAutoUpdateEnabled))
+                TFDivider.form
+                settingSwitch(L("settings.analyticsSharing.title"), detail: L("settings.analyticsSharing.subtitle"),
+                              isOn: Binding(get: { viewModel.analyticsSharingEnabled },
+                                            set: viewModel.setAnalyticsSharingEnabled))
+            }
+
+            TFFormSection(title: L("settings.general.voiceTrigger.title")) {
+                settingSwitch(L("settings.instantVoiceInput.title"), detail: L("settings.instantVoiceInput.subtitle"),
+                              badge: "Beta",
+                              isOn: Binding(get: { viewModel.instantVoiceInputEnabled },
+                                            set: viewModel.setInstantVoiceInputEnabled))
+                TFDivider.form
+                settingSwitch(L("settings.mouseVoice.title"), detail: L("settings.mouseVoice.subtitle"), badge: "Beta",
+                              isOn: Binding(get: { viewModel.mouseVoiceInputEnabled },
+                                            set: viewModel.setMouseVoiceInputEnabled))
+                if viewModel.mouseVoiceInputEnabled {
+                    TFDivider.form
+                    TFFormRow(title: L("settings.mouseVoice.activation.title"),
+                              detail: L("settings.mouseVoice.activation.subtitle")) {
+                        TFPopUpButton(
+                            title: L("settings.mouseVoice.activation.title"),
+                            options: MouseVoiceActivationStyle.allCases.map { TFOption($0, $0.displayName) },
+                            selection: Binding(get: { viewModel.mouseVoiceActivationStyle },
+                                               set: viewModel.setMouseVoiceActivationStyle),
+                            width: TFMetrics.formControlWidth
+                        )
+                    }
+                }
+            }
+
+            TFFormSection(title: L("settings.audio")) {
+                TFFormRow(title: L("settings.microphone.title"), detail: L("settings.microphone.subtitle")) {
+                    TFPopUpButton(
+                        title: L("settings.microphone.title"),
+                        options: [TFOption(AudioDeviceManager.automaticDeviceID, L("settings.microphone.automatic"))]
+                            + viewModel.availableMicrophones.map { TFOption($0.id, $0.name) },
+                        selection: Binding(get: { viewModel.preferredMicrophoneID },
+                                           set: viewModel.setPreferredMicrophoneID),
+                        width: TFMetrics.formControlWidth
+                    )
+                    TFButton(title: L("common.refresh"), systemImage: "arrow.clockwise", iconOnly: true) {
+                        viewModel.refreshAvailableMicrophones()
+                    }
+                }
+                TFDivider.form
+                settingSwitch(L("settings.mute.title"), detail: L("settings.mute.subtitle"),
+                              isOn: Binding(get: { viewModel.muteSystemOutputDuringRecording },
+                                            set: viewModel.setMuteSystemOutputDuringRecording))
+                /*
+                  Sound effects are temporarily disabled until there is time to optimize them.
+                  Keep this setting UI for a future reintroduction.
+                 StudioSettingRow(
+                     title: L("settings.advanced.soundEffects.title"),
+                     subtitle: L("settings.advanced.soundEffects.subtitle")
+                 ) {
+                     Toggle(
+                         "",
+                         isOn: Binding(
+                             get: { viewModel.soundEffectsEnabled },
+                             set: viewModel.setSoundEffectsEnabled
+                         )
+                     )
+                     .labelsHidden()
+                     .toggleStyle(.switch)
+                 }
+
+                 Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
+                 */
             }
 
             if viewModel.isTextTransformationAvailable {
@@ -925,83 +998,7 @@ struct StudioView: View {
                 }
             }
 
-            TFFormSection(title: L("settings.inputAndCapture.title")) {
-                TFFormRow(title: L("settings.shortcuts.quickInput.title"),
-                          detail: L("settings.shortcuts.quickInput.subtitle"), badge: "Beta") {
-                    TFSwitch(title: L("settings.shortcuts.quickInput.title"),
-                             isOn: Binding(get: { viewModel.quickInputEnabled }, set: viewModel.setQuickInputEnabled))
-                        .accessibilityIdentifier("settings.quickInput")
-                }
-                TFDivider.form
-                launcherPositionSetting
-                TFDivider.form
-                screenshotSaveLocationSetting
-            }
-
-            TFFormSection(title: L("settings.audio")) {
-                TFFormRow(title: L("settings.microphone.title"), detail: L("settings.microphone.subtitle")) {
-                    TFPopUpButton(
-                        title: L("settings.microphone.title"),
-                        options: [TFOption(AudioDeviceManager.automaticDeviceID, L("settings.microphone.automatic"))]
-                            + viewModel.availableMicrophones.map { TFOption($0.id, $0.name) },
-                        selection: Binding(get: { viewModel.preferredMicrophoneID },
-                                           set: viewModel.setPreferredMicrophoneID),
-                        width: TFMetrics.formControlWidth
-                    )
-                    TFButton(title: L("common.refresh"), systemImage: "arrow.clockwise", iconOnly: true) {
-                        viewModel.refreshAvailableMicrophones()
-                    }
-                }
-                TFDivider.form
-                settingSwitch(L("settings.instantVoiceInput.title"), detail: L("settings.instantVoiceInput.subtitle"),
-                              badge: "Beta",
-                              isOn: Binding(get: { viewModel.instantVoiceInputEnabled },
-                                            set: viewModel.setInstantVoiceInputEnabled))
-                TFDivider.form
-                settingSwitch(L("settings.mouseVoice.title"), detail: L("settings.mouseVoice.subtitle"), badge: "Beta",
-                              isOn: Binding(get: { viewModel.mouseVoiceInputEnabled },
-                                            set: viewModel.setMouseVoiceInputEnabled))
-                if viewModel.mouseVoiceInputEnabled {
-                    TFDivider.form
-                    TFFormRow(title: L("settings.mouseVoice.activation.title"),
-                              detail: L("settings.mouseVoice.activation.subtitle")) {
-                        TFPopUpButton(
-                            title: L("settings.mouseVoice.activation.title"),
-                            options: MouseVoiceActivationStyle.allCases.map { TFOption($0, $0.displayName) },
-                            selection: Binding(get: { viewModel.mouseVoiceActivationStyle },
-                                               set: viewModel.setMouseVoiceActivationStyle),
-                            width: TFMetrics.formControlWidth
-                        )
-                    }
-                }
-                TFDivider.form
-                settingSwitch(L("settings.mute.title"), detail: L("settings.mute.subtitle"),
-                              isOn: Binding(get: { viewModel.muteSystemOutputDuringRecording },
-                                            set: viewModel.setMuteSystemOutputDuringRecording))
-            }
-
-            TFFormSection(title: L("settings.other")) {
-                /*
-                  Sound effects are temporarily disabled until there is time to optimize them.
-                  Keep this setting UI for a future reintroduction.
-                 StudioSettingRow(
-                     title: L("settings.advanced.soundEffects.title"),
-                     subtitle: L("settings.advanced.soundEffects.subtitle")
-                 ) {
-                     Toggle(
-                         "",
-                         isOn: Binding(
-                             get: { viewModel.soundEffectsEnabled },
-                             set: viewModel.setSoundEffectsEnabled
-                         )
-                     )
-                     .labelsHidden()
-                     .toggleStyle(.switch)
-                 }
-
-                 Divider().overlay(StudioTheme.border.opacity(StudioTheme.Opacity.divider))
-                 */
-
+            TFFormSection(title: L("settings.general.memory.title")) {
                 settingSwitch(L("settings.advanced.autoVocabulary.title"),
                               detail: L("settings.advanced.autoVocabulary.subtitle"),
                               isOn: Binding(get: { viewModel.automaticVocabularyCollectionEnabled },
@@ -1021,13 +1018,10 @@ struct StudioView: View {
                 settingSwitch(L("settings.advanced.globalSoul.title"), detail: L("settings.advanced.globalSoul.subtitle"),
                               isOn: Binding(get: { viewModel.globalSoulMemoryEnabled },
                                             set: viewModel.setGlobalSoulMemoryEnabled))
-                TFDivider.form
-                settingSwitch(L("settings.advanced.autoUpdate.title"), detail: L("settings.advanced.autoUpdate.subtitle"),
-                              isOn: Binding(get: { viewModel.autoUpdateEnabled }, set: viewModel.setAutoUpdateEnabled))
-                TFDivider.form
-                settingSwitch(L("settings.analyticsSharing.title"), detail: L("settings.analyticsSharing.subtitle"),
-                              isOn: Binding(get: { viewModel.analyticsSharingEnabled },
-                                            set: viewModel.setAnalyticsSharingEnabled))
+            }
+
+            TFFormSection(title: L("settings.general.screenshot.title")) {
+                screenshotSaveLocationSetting
             }
         }
     }
@@ -1542,29 +1536,6 @@ struct StudioView: View {
                 viewModel.chooseScreenshotSaveDirectory()
             }
         }
-    }
-
-    /// Where ⌥Space opens the launcher: always centred, or where it was last dragged.
-    private var launcherPositionSetting: some View {
-        TFFormRow(
-            title: L("settings.shortcuts.launcherPosition.title"),
-            detail: L(viewModel.askLauncherPosition == .center
-                ? "settings.shortcuts.launcherPosition.center.subtitle"
-                : "settings.shortcuts.launcherPosition.last.subtitle")
-        ) {
-            if viewModel.askLauncherPosition == .lastPosition {
-                TFButton(title: L("settings.shortcuts.launcherPosition.reset"), kind: .link) {
-                    viewModel.resetAskLauncherPositions()
-                }
-                .disabled(!viewModel.hasRememberedLauncherPositions)
-            }
-            TFSegmentedControl(
-                options: [TFOption(AskLauncherPosition.center, L("settings.shortcuts.launcherPosition.center")),
-                          TFOption(.lastPosition, L("settings.shortcuts.launcherPosition.last"))],
-                selection: Binding(get: { viewModel.askLauncherPosition }, set: viewModel.setAskLauncherPosition)
-            )
-        }
-        .onAppear { viewModel.refreshAskLauncherPositions() }
     }
 
     private var filteredVocabularyEntries: [VocabularyEntry] {
