@@ -3,6 +3,7 @@ import TypefluxMediaProtocol
 
 /// Bounded local presentation only. Original encoded content stays with its draft/message.
 enum AskContextImageDecoder {
+    typealias InputReader = @Sendable (String) throws -> (Data, MediaImageType)
     static let maximumEncodedBytes = 16 * 1024 * 1024
     private static let admission = AskToolPixelBudget(limit: 2)
     static func input(_ value: String) throws -> (Data, MediaImageType) {
@@ -14,18 +15,27 @@ enum AskContextImageDecoder {
         }
         return (data, type)
     }
-    static func decode(_ value: String, worker: MediaWorker = .previews) async throws -> AskFilePreviewPDF.Result {
+    static func decode(_ value: String, worker: MediaWorker = .previews,
+                       authorization original: MediaWorker.Authorization? = nil,
+                       readInput: @escaping InputReader = { try input($0) }) async throws -> AskFilePreviewPDF.Result {
         try Task.checkCancellation()
+        let authorization = original ?? worker.authorization()
+        guard worker.permits(authorization) else { throw MediaFailure.unavailable }
         let slot = try admission.acquire(bytes: 1)
         defer { withExtendedLifetime(slot) {} }
         let cancellation = AskSearchCancellation()
         return try await withTaskCancellationHandler {
             try Task.checkCancellation()
-            return try await Task.detached(priority: .utility) {
-                if cancellation.isCancelled { throw CancellationError() }
-                let (data, type) = try input(value)
-                return try MediaPreviewDisplay.renderImage(data, type: type, cancellation: cancellation, worker: worker)
+            let result = try await Task.detached(priority: .utility) {
+                guard !cancellation.isCancelled, worker.permits(authorization) else { throw CancellationError() }
+                let (data, type) = try readInput(value)
+                guard !cancellation.isCancelled, worker.permits(authorization) else { throw CancellationError() }
+                return try MediaPreviewDisplay.renderImage(data, type: type, cancellation: cancellation, worker: worker,
+                                                           authorization: authorization)
             }.value
+            try Task.checkCancellation()
+            guard worker.permits(authorization) else { throw MediaFailure.unavailable }
+            return result
         } onCancel: { cancellation.cancel() }
     }
 }
@@ -73,10 +83,15 @@ extension AskConversationModel {
     private var operation: Task<AskFilePreviewPDF.Result, Error>?
     private var pixels: AskToolPixelBudget.Lease?
     private let budget: AskToolPixelBudget
-    private let decode: Decoder
+    private let decode: Decoder?
+    private let worker: MediaWorker
+    private let readInput: AskContextImageDecoder.InputReader
     private let maximumEdge: Int
-    init(budget: AskToolPixelBudget = .shared, maximumEdge: Int = 1600, decode: @escaping Decoder = { try await AskContextImageDecoder.decode($0) }) {
+    init(budget: AskToolPixelBudget = .shared, maximumEdge: Int = 1600, worker: MediaWorker = .previews,
+         readInput: @escaping AskContextImageDecoder.InputReader = { try AskContextImageDecoder.input($0) },
+         decode: Decoder? = nil) {
         self.budget = budget; self.decode = decode; self.maximumEdge = min(1600, max(1, maximumEdge))
+        self.worker = worker; self.readInput = readInput
     }
     func displayed(_ value: String?, access: AskImagePresentationAccess) -> NSImage? {
         guard access.allows(), originalAccess?.allows() == true, epoch == access.epoch, source == value else { return nil }
@@ -98,16 +113,19 @@ extension AskConversationModel {
             guard value.utf8.count <= AskContextImageDecoder.maximumEncodedBytes,
                   let scope = access.scope, let epoch = access.epoch else { throw MediaFailure.unavailable }
             self.scope = scope; registration = try scope.register(self, epoch: epoch)
+            let authorization = decode == nil ? worker.authorization() : nil
             let reservation = try budget.acquire(bytes: maximumEdge * maximumEdge * 4)
-            let task = Task { [decode] in
+            let task = Task { [decode, worker, readInput] in
                 defer { withExtendedLifetime(reservation) {} }
-                return try await decode(value)
+                if let decode { return try await decode(value) }
+                return try await AskContextImageDecoder.decode(value, worker: worker, authorization: authorization, readInput: readInput)
             }
             operation = task
             let result = try await withTaskCancellationHandler { try await task.value } onCancel: { task.cancel() }
             try Task.checkCancellation()
             guard generation == current else { return }
             guard access.allows() else { cancel(); return }
+            if let authorization, !worker.permits(authorization) { throw MediaFailure.unavailable }
             guard result.images.count == 1, let raster = result.images.first,
                   raster.width > 0, raster.height > 0, raster.width <= maximumEdge, raster.height <= maximumEdge else {
                 throw MediaFailure.invalidProtocol
