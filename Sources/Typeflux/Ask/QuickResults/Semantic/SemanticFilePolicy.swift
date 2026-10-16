@@ -31,7 +31,9 @@ enum SemanticFilePolicy {
         return false
     }
 
-    static let documentExtensions: Set<String> = ["txt", "md", "markdown", "rst", "csv", "tsv", "pdf", "docx"]
+    static let documentExtensions: Set<String> = [
+        "txt", "md", "markdown", "rst", "csv", "tsv", "pdf", "docx", "html", "htm"
+    ]
     static let extensions = documentExtensions.union(SemanticMediaPriority.extensions)
     /// Per-request extraction budget, never a file-size or total-chunk quota.
     static let contentBatchBytes = 32 * 1024
@@ -164,7 +166,7 @@ enum SemanticFilePolicy {
     }
 }
 
-/// UTF-8 offset in the file, or in a PDF page's extracted text. Page is zero based in cursors.
+/// UTF-8 offset in plain source or extracted logical body/page text. Page is zero based in cursors.
 struct SemanticContentCursor: Codable, Equatable, Sendable {
     var page = 0
     var offset: Int64 = 0

@@ -1,0 +1,9 @@
+{
+  "Sources/Typeflux/Ask/Local/AskLocalWebTools.swift": "c8c32d415ae65f6edeb46f5538c20c05919d9a9107d99981f4063897e66707c6",
+  "Sources/Typeflux/Ask/Local/AskOfflineHTML.swift": "4ebfcb9e67e7ab468cd8fbf4bd3d63e8ed3b9d01b6d31fa6d4d0ff7be3f6d4db",
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticIndexDiagnostics.swift": "dc6fc71f9820bc5f0c19b52e9838aaf3e7236574df7238246eea79f8d9de8e42",
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFilePolicy.swift": "de6f4bd754bbd67a836ce04763560a3ee26a755366f0700118c66b2e73ba6b15",
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticHTMLText.swift": "157b36a2b14f8b09935f39023824a60fcd6d00f88bd051427a5250f5b96b57ed",
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileContentWorker.swift": "e4c2e2f9e488618d2f84c9d62b1ac64ebb7ceab15aa7387ef83a7933bc82f00f",
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Jobs.swift": "3aeebe4e2e14a7a59ba5a0e2e91f7b7d344bd320cee7ac2629566056235879ed"
+}
