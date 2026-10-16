@@ -144,6 +144,8 @@ trap 'cleanup 143' TERM
 
 python3 "$ROOT_DIR/scripts/check_dev_app_conflicts.py" "$APP_DIR"
 
+bash "$ROOT_DIR/scripts/stop_dev_app.sh" "$APP_DIR"
+
 # Keep development-only commands and defaults while optimizing the launcher.
 swift build --package-path "$ROOT_DIR" -c "$BUILD_CONFIGURATION" -Xswiftc -DDEBUG
 
@@ -272,6 +274,8 @@ fi
 #   TYPEFLUX_DEV_CODESIGN_IDENTITY="Apple Development: Your Name (...)" ./scripts/run_dev_attached.sh
 if command -v codesign >/dev/null 2>&1; then
   codesign --force --sign "$TYPEFLUX_DEV_CODESIGN_IDENTITY" --options runtime \
+    "$APP_DIR/Contents/Helpers/swift-transformers_Hub.bundle"
+  codesign --force --sign "$TYPEFLUX_DEV_CODESIGN_IDENTITY" --options runtime \
     "$APP_DIR/Contents/Helpers/TypefluxInferenceHelper"
   codesign --force --sign "$TYPEFLUX_DEV_CODESIGN_IDENTITY" --options runtime \
     "$APP_DIR/Contents/Helpers/TypefluxMediaHelper"
@@ -294,12 +298,6 @@ if [[ "$use_apple_sign_in_entitlements" == true ]]; then
 else
   echo "Warning: Sign In with Apple is disabled for this dev build."
   echo "Warning: To enable it, provide TYPEFLUX_DEV_PROVISIONING_PROFILE with a matching macOS provisioning profile that includes the Sign In with Apple capability."
-fi
-
-if pgrep -f "$APP_EXEC" >/dev/null 2>&1; then
-  echo "Typeflux is already running from $APP_EXEC, stopping the previous instance first..."
-  pkill -f "$APP_EXEC" >/dev/null 2>&1 || true
-  sleep 1
 fi
 
 python3 "$ROOT_DIR/scripts/check_dev_app_conflicts.py" "$APP_DIR"

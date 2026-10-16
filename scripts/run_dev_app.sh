@@ -10,8 +10,8 @@ case "$BUILD_CONFIGURATION" in
   *) echo "Error: TYPEFLUX_DEV_BUILD_CONFIGURATION must be debug or release." >&2; exit 1 ;;
 esac
 
-# Kill any running instance before rebuilding, so the binary copy succeeds.
-pkill -f "Typeflux Dev.app/Contents/MacOS/Typeflux" 2>/dev/null || true
+# Stop the app before replacing its binary so local storage can close cleanly.
+bash "$ROOT_DIR/scripts/stop_dev_app.sh" "$APP_DIR"
 python3 "$ROOT_DIR/scripts/check_dev_app_conflicts.py" "$APP_DIR"
 
 profile_supports_apple_sign_in() {
@@ -256,6 +256,8 @@ fi
 #   TYPEFLUX_DEV_PROVISIONING_PROFILE="/path/to/profile.provisionprofile" \
 #   TYPEFLUX_DEV_CODESIGN_IDENTITY="Apple Development: Your Name (...)" ./scripts/run_dev_app.sh
 if command -v codesign >/dev/null 2>&1; then
+  codesign --force --sign "$TYPEFLUX_DEV_CODESIGN_IDENTITY" --options runtime \
+    "$APP_DIR/Contents/Helpers/swift-transformers_Hub.bundle"
   codesign --force --sign "$TYPEFLUX_DEV_CODESIGN_IDENTITY" --options runtime \
     "$APP_DIR/Contents/Helpers/TypefluxInferenceHelper"
   codesign --force --sign "$TYPEFLUX_DEV_CODESIGN_IDENTITY" --options runtime \
