@@ -1,0 +1,10 @@
+{
+  "command": [
+    "make",
+    "coverage",
+    "FILTER=SemanticPDFOCRTests|SemanticSearchSnippetTests|SemanticIndexRecoveryTests/.*(pdf single page|mutation during inference|generations reject|compatible migration|fts precedes)"
+  ],
+  "wall_seconds": 59.11625012505101,
+  "exit_code": 2,
+  "build_seconds": []
+}

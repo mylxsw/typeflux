@@ -1,0 +1,37 @@
+{
+  "baseline": "f4d549b53679d2b783ac6ce37d1ed8496cb277f1",
+  "denominator": "Added/modified executable Swift lines in Sources/Typeflux, including new files, intersected with final LLVM LCOV DA records. Tests, helper wrapper and unchanged vendor code excluded; helper reported separately.",
+  "executable": 71,
+  "covered": 71,
+  "percent": 100.0,
+  "files": {
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Jobs.swift": {
+      "executable": 10,
+      "covered": 10,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticPDFText.swift": {
+      "executable": 61,
+      "covered": 61,
+      "percent": 100.0,
+      "uncovered": []
+    }
+  },
+  "application": {
+    "executable": 10,
+    "covered": 10,
+    "percent": 100.0,
+    "uncovered": []
+  },
+  "shared_reader": {
+    "executable": 61,
+    "covered": 61,
+    "percent": 100.0,
+    "uncovered": []
+  },
+  "inference_media_helpers": {
+    "changed_executable": 0,
+    "percent": null
+  }
+}

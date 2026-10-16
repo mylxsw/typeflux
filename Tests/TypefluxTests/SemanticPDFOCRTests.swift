@@ -22,9 +22,10 @@ private final class OCRReader: AskFileReading {
 }
 
 @Suite("Scanned PDF content and compatible upgrade", .serialized)
+// swiftlint:disable:next type_body_length
 struct SemanticPDFOCRTests {
-    private func draw(_ text: String, in context: CGContext, y: CGFloat) {
-        context.textPosition = CGPoint(x: 30, y: y)
+    private func draw(_ text: String, in context: CGContext, y position: CGFloat) {
+        context.textPosition = CGPoint(x: 30, y: position)
         let value = NSAttributedString(string: text, attributes: [
             NSAttributedString.Key(kCTFontAttributeName as String): CTFontCreateWithName(
                 "Helvetica" as CFString,
@@ -36,7 +37,7 @@ struct SemanticPDFOCRTests {
         CTLineDraw(CTLineCreateWithAttributedString(value), context)
     }
 
-    private func fixture(_ root: URL) throws -> URL {
+    private func fixture(_ root: URL, nativeBody: Bool = false) throws -> URL {
         let url = root.appendingPathComponent("invoice.pdf")
         var box = CGRect(x: 0, y: 0, width: 800, height: 600)
         let pdf = try #require(CGContext(url as CFURL, mediaBox: &box, nil))
@@ -52,8 +53,14 @@ struct SemanticPDFOCRTests {
         draw("Payment due after approval", in: bitmap, y: 260)
         pdf.beginPDFPage(nil)
         try pdf.draw(#require(bitmap.makeImage()), in: box)
-        // Sparse native page numbering must not prevent recognition of the raster body.
+        // A realistic native header must not prevent recognition of the raster body.
+        draw("Typeflux Finance Department - Monthly Accounts", in: pdf, y: 550)
         draw("2", in: pdf, y: 40)
+        if nativeBody {
+            draw("Native reimbursement policy and approval", in: pdf, y: 420)
+            draw("Submit complete receipts with the request", in: pdf, y: 330)
+            draw("Finance reviews all payment information", in: pdf, y: 240)
+        }
         pdf.endPDFPage(); pdf.closePDF()
         return url
     }
@@ -85,6 +92,7 @@ struct SemanticPDFOCRTests {
             cursor: native.nextCursor
         ))
         #expect(scan.error == nil)
+        #expect(scan.pages?.first?.text.hasPrefix("Typeflux Finance Department") == true)
         #expect(scan.pages?.first?.text.contains("INV-739204") == true)
         #expect(scan.pages?.first?.segmentKind == "pdf-ocr")
         #expect(scan.pages?.first?.page == 2 && scan.pages?.first?.offset == 0)
@@ -107,7 +115,10 @@ struct SemanticPDFOCRTests {
         #expect(finished.pages == [])
     }
 
-    @Test func `PDF upgrade queues finished jobs reuses native vectors and resumes at scanned page`() throws {
+    @Test(arguments: [SemanticFileStore.documentProvenance,
+                      SemanticFileStore.documentProvenance + ";pdf-vision-accurate-auto-2400-sparse8-v1"])
+    // swiftlint:disable:next function_body_length
+    func `PDF upgrade queues finished jobs reuses native vectors and resumes at scanned page`(oldRecipe: String) throws {
         let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
         let file = try fixture(root), url = root.appendingPathComponent("index.sqlite")
         let metadata = AskFileWorkerCommand.handle(.init(operation: .content, path: file.path,
@@ -128,11 +139,11 @@ struct SemanticPDFOCRTests {
         try store.lock.withLock {
             try store.execute(
                 "UPDATE jobs SET recipe=? WHERE path=?",
-                [SemanticFileStore.documentProvenance, file.path]
+                [oldRecipe, file.path]
             )
             try store.execute(
                 "UPDATE chunks SET provenance=? WHERE path=?",
-                [SemanticFileStore.documentProvenance, file.path]
+                [oldRecipe, file.path]
             )
         }
         store = try SemanticFileStore(url: url)
@@ -153,6 +164,8 @@ struct SemanticPDFOCRTests {
         let evidence = try #require(hits.first?.evidence)
         #expect(evidence.text.contains("INV-739204") && evidence.page == 2)
         #expect(evidence.segmentKind == "pdf-ocr" && evidence.chunkID != nil)
+        #expect(evidence.startOffset == 0 && evidence.endOffset != nil)
+        #expect(try store.job(file.path)?.version == SemanticFileStore.version(metadata))
         let nativeHits = try store.lexicalSearch(text: "reimbursement", query: .init("reimbursement"), type: .pdf,
                                                  scope: semanticScope(root.path), limit: 5, cancelled: { false })
         #expect(nativeHits.first?.evidence?.chunkID == id)
@@ -260,6 +273,54 @@ struct SemanticPDFOCRTests {
         let empty = try SemanticPDFText.extract(blank, recognize: { _ in [] })
         #expect(empty.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
     }
+
+    @Test func `healthy native body over an image keeps original text without invoking OCR`() throws {
+        let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
+        let document = try #require(PDFDocument(url: fixture(root, nativeBody: true)))
+        let page = try #require(document.page(at: 1))
+        let native = try SemanticPDFText.extract(page, recognize: { _ in
+            Issue.record("Sufficient native body text must keep the fast path"); return []
+        })
+        #expect(native.kind == "pdf-text" && native.text == page.string)
+    }
+
+    // swiftlint:disable line_length
+    @Test(arguments: [false, true])
+    func `nested form image resources cannot be hidden by a native header`(inherited: Bool) throws {
+        // A minimal PDF with a Form XObject containing another Form and a raster image.
+        // The cycle is an unused resource, so resource traversal must terminate without rendering it.
+        let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
+        let content = "BT /F1 14 Tf 20 570 Td (Long native finance department header) Tj ET /Outer Do"
+        func stream(_ dictionary: String, _ body: String) -> String {
+            "<< \(dictionary) /Length \(body.utf8.count) >>\nstream\n\(body)\nendstream"
+        }
+        let resources = "/Resources << /Font << /F1 4 0 R >> /XObject << /Outer 6 0 R >> >>"
+        let objects = [
+            "<< /Type /Catalog /Pages 2 0 R >>",
+            "<< /Type /Pages /Count 1 /Kids [3 0 R] \(inherited ? resources : "") >>",
+            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 800 600] \(inherited ? "" : resources) /Contents 5 0 R >>",
+            "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+            stream("", content),
+            stream("/Type /XObject /Subtype /Form /BBox [0 0 800 600] /Resources << /XObject << /Inner 7 0 R >> >>", "/Inner Do"),
+            stream("/Type /XObject /Subtype /Form /BBox [0 0 800 600] /Resources << /XObject << /Image 8 0 R /Cycle 6 0 R >> >>", "q 800 0 0 400 0 100 cm /Image Do Q"),
+            stream("/Type /XObject /Subtype /Image /Width 1 /Height 1 /ColorSpace /DeviceGray /BitsPerComponent 8 /Filter /ASCIIHexDecode", "ff>")
+        ]
+        var data = "%PDF-1.4\n", offsets: [Int] = [0]
+        for (index, object) in objects.enumerated() {
+            offsets.append(data.utf8.count); data += "\(index + 1) 0 obj\n\(object)\nendobj\n"
+        }
+        let xref = data.utf8.count
+        data += "xref\n0 \(objects.count + 1)\n0000000000 65535 f \n"
+        for offset in offsets.dropFirst() { data += String(format: "%010d 00000 n \n", offset) }
+        data += "trailer\n<< /Size \(objects.count + 1) /Root 1 0 R >>\nstartxref\n\(xref)\n%%EOF\n"
+        let document = try #require(PDFDocument(data: Data(data.utf8)))
+        let page = try #require(document.page(at: 0))
+        let result = try SemanticPDFText.extract(page, recognize: { _ in ["FORM-INVOICE-48291"] })
+        #expect(result.kind == "pdf-ocr" && result.text.contains("FORM-INVOICE-48291"))
+        #expect(result.text.hasPrefix("Long native finance department header"))
+    }
+
+    // swiftlint:enable line_length
 
     @Test(arguments: [EAUTH, EIO, EILSEQ])
     func `fixed extraction failures persist and retry without leaking content`(error: Int32) throws {
