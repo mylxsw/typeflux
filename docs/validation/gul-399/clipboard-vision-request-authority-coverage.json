@@ -1,0 +1,15 @@
+{
+  "covered": 7,
+  "executable_added": 7,
+  "percent": 100.0,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Clipboard/ClipboardContentActing.swift",
+      "covered": 7,
+      "executable_added": 7,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    }
+  ]
+}
