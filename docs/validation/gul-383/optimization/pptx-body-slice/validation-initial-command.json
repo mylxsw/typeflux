@@ -1,0 +1,13 @@
+{
+  "command": [
+    "make",
+    "coverage",
+    "SUITE=SemanticPresentationTextTests SemanticODTTextTests SemanticRTFTextTests SemanticHTMLTextTests SemanticWordTextTests SemanticPDFOCRTests SemanticFilePolicyTests SemanticFileStoreTests SemanticFileContentTests SemanticFileIndexerTests SemanticIndexDiagnosticsTests SemanticReaderOwnershipTests SemanticScanAdmissionTests SemanticDiscoveryPauseTests"
+  ],
+  "environment": {
+    "TYPEFLUX_GUL405_TEST_FILES": "<repo>/docs/validation/gul-383/optimization/pptx-body-slice/test-files.json",
+    "TYPEFLUX_GUL405_PPTX_EVIDENCE": "<repo>/docs/validation/gul-383/optimization/pptx-body-slice",
+    "TYPEFLUX_COVERAGE_SCRATCH": "<repo>/.build"
+  },
+  "wrapper": "docs/validation/gul-383/optimization/html-body-slice/coverage-swift.sh"
+}

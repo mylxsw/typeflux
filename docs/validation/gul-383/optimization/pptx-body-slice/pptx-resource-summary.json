@@ -1,0 +1,14 @@
+{
+  "wall_seconds": 300.0728849999723,
+  "worker_exit_code": 0,
+  "error": null,
+  "samples": 2660,
+  "missing_identifier": 0,
+  "milliseconds": {
+    "p50": 2.0805419771932065,
+    "p95": 3.4897919977083802,
+    "p99": 3.5727500217035413
+  },
+  "peak_rss_bytes": 60637184,
+  "scope": "Debug instrumented production file-index-worker, nice 10, sequential repeated extraction of the same synthetic PPTX body, 100 ms between requests. No embedding, background scheduler, UI input, GPU counters or long-term thermal acceptance measured. RSS is ps resident pages; CPU percent is ps lifetime average, 100 percent per core."
+}

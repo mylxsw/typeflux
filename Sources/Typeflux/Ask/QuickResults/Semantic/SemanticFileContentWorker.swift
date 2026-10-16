@@ -63,12 +63,15 @@ extension AskFileWorkerCommand {
             } else if cursor.page + 1 < pdf.pageCount {
                 result.nextCursor = .init(page: cursor.page + 1)
             }
-        } else if ["docx", "html", "htm", "rtf", "odt"]
+        } else if ["docx", "html", "htm", "rtf", "odt", "pptx"]
             .contains((request.path as NSString).pathExtension.lowercased()) {
             do {
                 let batch: AskFileReadResponse
                 if (request.path as NSString).pathExtension.lowercased() == "docx" {
                     batch = try SemanticWordText.read(descriptor: descriptor,
+                        size: Int64(opened.st_size), cursor: cursor)
+                } else if (request.path as NSString).pathExtension.lowercased() == "pptx" {
+                    batch = try SemanticPresentationText.read(descriptor: descriptor,
                         size: Int64(opened.st_size), cursor: cursor)
                 } else if (request.path as NSString).pathExtension.lowercased() == "odt" {
                     batch = try SemanticODTText.read(descriptor: descriptor,
