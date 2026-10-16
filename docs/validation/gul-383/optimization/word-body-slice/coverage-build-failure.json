@@ -1,0 +1,10 @@
+{
+  "command": [
+    "make",
+    "coverage",
+    "SUITE=SemanticWordTextTests SemanticPDFOCRTests SemanticFilePolicyTests SemanticFileStoreTests SemanticFileContentTests SemanticFileIndexerTests SemanticIndexDiagnosticsTests SemanticReaderOwnershipTests SemanticScanAdmissionTests SemanticDiscoveryPauseTests"
+  ],
+  "wall_seconds": 280.3215200830018,
+  "exit_code": 2,
+  "scope": "13 reviewed test/fixture files; explicit ten suites; one focused coverage pass"
+}

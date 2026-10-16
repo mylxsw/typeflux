@@ -1,0 +1,17 @@
+{
+  "wall_seconds": 300.1538064160268,
+  "worker_exit_code": 0,
+  "error": null,
+  "samples": 2553,
+  "missing_identifier": 0,
+  "milliseconds": {
+    "p50": 0.9796249796636403,
+    "p95": 1.5079999575391412,
+    "p99": 1.9442079938016832
+  },
+  "peak_rss_bytes": 59834368,
+  "scope": "Debug instrumented production file-index-worker, nice 10, sequential repeated extraction of the same synthetic DOCX body, 100 ms between requests. No embedding, background scheduler, UI input, GPU counters or long-term thermal acceptance measured. RSS is ps resident pages; CPU percent is ps lifetime average, 100 percent per core.",
+  "command": "LLVM_PROFILE_FILE=\"$PWD/.build/gul405-word-resource-%p.profraw\" python3 docs/validation/gul-383/optimization/word-body-slice/document_resource_probe.py --binary .build/arm64-apple-macosx/debug/Typeflux --fixture docs/validation/gul-383/optimization/word-body-slice/synthetic-body.docx --seconds 300 --output docs/validation/gul-383/optimization/word-body-slice/document-resources.json",
+  "first_rss_bytes": 58933248,
+  "last_rss_bytes": 17203200
+}

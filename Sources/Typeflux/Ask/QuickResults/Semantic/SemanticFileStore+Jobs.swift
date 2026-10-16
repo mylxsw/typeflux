@@ -114,7 +114,8 @@ extension SemanticFileStore {
             let generation = UUID().uuidString
             return try transaction {
                 let existing = try readJob(path)
-                let upgradePDF = recipe != Self.documentProvenance && existing?.recipe == Self.documentProvenance
+                let upgradePDF = (path as NSString).pathExtension.lowercased() == "pdf"
+                    && existing?.recipe == Self.documentProvenance
                     && existing?.version == version
                 if !upgradePDF {
                     try execute("DELETE FROM files WHERE path=?", [path])
@@ -139,13 +140,17 @@ extension SemanticFileStore {
     static let documentProvenance = "model=\(SemanticModel.sha256);projector=none;prompt=title-text-v1;sampling=none;chunk=utf8-scalar1200-overlap40-batch32k-v2"
 
     static func documentRecipe(_ path: String) -> String {
-        (path as NSString).pathExtension.lowercased() == "pdf"
-            ? documentProvenance + ";" + SemanticPDFText.recipe : documentProvenance
+        switch (path as NSString).pathExtension.lowercased() {
+        case "pdf": return documentProvenance + ";" + SemanticPDFText.recipe
+        case "docx": return documentProvenance + ";" + SemanticWordText.recipe
+        default: return documentProvenance
+        }
     }
 
     /// Only a same-version, same-input PDF upgrade may reuse an old vector. No model-space change occurs.
     private func adoptPDFChunk(_ chunk: SemanticChunk, job: Job) throws -> Bool {
-        guard job.recipe == Self.documentRecipe(job.path), job.recipe != Self.documentProvenance else { return false }
+        guard (job.path as NSString).pathExtension.lowercased() == "pdf",
+              job.recipe == Self.documentRecipe(job.path), job.recipe != Self.documentProvenance else { return false }
         let row = try statement("""
         SELECT id FROM chunks WHERE path=? AND generation<>? AND provenance=? AND text=?
         AND page=? AND start_offset=? AND end_offset=? AND length(vector)=? LIMIT 1

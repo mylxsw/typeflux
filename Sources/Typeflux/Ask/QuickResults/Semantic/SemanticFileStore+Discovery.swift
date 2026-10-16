@@ -20,7 +20,8 @@ extension SemanticFileStore {
 
     static func discoveryKey(_ scope: AskFileScope) throws -> String {
         let groups = [scope.roots, scope.excludedPaths, scope.excludedFolderNames.sorted(),
-                      scope.excludedExtensions.sorted(), scope.blocked, [String(scope.includeHidden)]]
+                      scope.excludedExtensions.sorted(), scope.blocked, [String(scope.includeHidden)],
+                      SemanticFilePolicy.extensions.sorted()]
         return String(data: try JSONEncoder().encode(groups), encoding: .utf8) ?? ""
     }
 
@@ -77,7 +78,8 @@ extension SemanticFileStore {
             let bounds = roots ?? ["/"]
             let key = try scope.map {
                 let groups = [$0.roots, $0.excludedPaths, $0.excludedFolderNames.sorted(),
-                              $0.excludedExtensions.sorted(), $0.blocked, [String($0.includeHidden)], bounds]
+                              $0.excludedExtensions.sorted(), $0.blocked, [String($0.includeHidden)], bounds,
+                              SemanticFilePolicy.extensions.sorted()]
                 let encoded = try JSONEncoder().encode(groups)
                 return String(data: encoded, encoding: .utf8) ?? ""
             } ?? ""

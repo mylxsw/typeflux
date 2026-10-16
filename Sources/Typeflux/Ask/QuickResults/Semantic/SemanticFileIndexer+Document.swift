@@ -76,6 +76,7 @@ extension SemanticFileIndexer {
                     try store.skipUnavailable(path, reason: reason)
                 } else {
                     let reason = contents.error == EAUTH ? "password-required"
+                        : contents.error == ENOTSUP ? "unsupported-document"
                         : contents.error == EIO && (path as NSString).pathExtension.lowercased() == "pdf"
                         ? "pdf-ocr-failed" : "unreadable-content"
                     try store.failJob(path, reason: reason)

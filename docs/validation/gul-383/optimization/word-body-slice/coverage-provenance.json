@@ -1,0 +1,29 @@
+{
+  "source_fingerprints_match_frozen_validation": true,
+  "baseline": "29e4817385eba9ae3522bf50334a58885eaeb4de",
+  "binary_sha256": "3b72158a84abc4f4045f605fc5b4ffeccf3859c2369cd796424efaef1a8299fd",
+  "profile_sha256": "870edb3dc1312ead716ac9f1bb43634dda0b49464c9a392dd35398e7bc787c8f",
+  "native_reader_binary_sha256": "54476b5fd47f85575f62c9019533e03672f6d1e0b9082699155b09973d2ea3bd",
+  "hardware": "Mac16,10 arm64, 16 GiB RAM",
+  "toolchain": "Apple Swift version 6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)\nTarget: arm64-apple-macosx26.0\n",
+  "configuration": "Instrumented Debug",
+  "selected_test_methods": 42,
+  "xctest_methods_passed": 9,
+  "swift_testing_methods_passed": 33,
+  "functional_failures": 0,
+  "native_media_inference_helper_changed_line_denominator": 0,
+  "tool_sha256": {
+    "docs/validation/gul-383/optimization/word-body-slice/coverage-swift.sh": "42967efaf9199510c5f13f9219641be7b87a08eb2a781fc8b4200bfe1da8996f",
+    "docs/validation/gul-383/optimization/word-body-slice/test-files.json": "0bf1f13d2577db9427ff78ecf204cb126180ddd6555c1116e85715e3aa12aaa2",
+    "docs/validation/gul-383/optimization/word-body-slice/document_resource_probe.py": "f97a1d20522a02a8003ebe98b97675abe2d92321b2642a4bac20e7c603d35436",
+    "scripts/test_groups.py": "488dbe8cec3f3528adb4ef265bb5d8e3cf5c13867581fb5acb5dc19eb281af46",
+    "scripts/coverage.sh": "1a18ada556b3875baf54f389ae48f5bceaf2c699a37f8638ebd16d7255e89095",
+    "docs/validation/gul-383/optimization/changed_coverage.py": "dd9efb30a427617a614235a0c65f86b2cb5ab6dd7c28b857031a91545db135ac"
+  },
+  "lcov_scope": "Exact exported LLVM records for the eight changed product Swift files; unchanged files are omitted. DA records within each retained file are intact.",
+  "fixture_sha256": {
+    "synthetic-body.docx": "2d0d541827701dbe17995f50cc812145b92a205c2057a03dcdea43c4d94b5b96",
+    "synthetic-invoice.pdf": "ee1f8421b5141c2d82e9e4e1a82760686eca503a9f1c111e6faa084458698084"
+  },
+  "base_includes_pr595_merge": true
+}
