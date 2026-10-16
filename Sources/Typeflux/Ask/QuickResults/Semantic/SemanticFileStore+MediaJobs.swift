@@ -13,6 +13,19 @@ extension SemanticFileStore {
                 ordinal INTEGER NOT NULL,kind TEXT NOT NULL,time REAL,vector BLOB NOT NULL,
                 PRIMARY KEY(path,ordinal));
             """)
+            try sql("""
+            CREATE TABLE IF NOT EXISTS media_text(
+                path TEXT NOT NULL REFERENCES media_jobs(path) ON DELETE CASCADE,
+                start_offset INTEGER NOT NULL,end_offset INTEGER NOT NULL,text TEXT NOT NULL,vector BLOB NOT NULL,
+                PRIMARY KEY(path,start_offset));
+            """)
+            try execute("""
+            INSERT OR IGNORE INTO work_queue(path,priority)
+            SELECT j.path,1 FROM files j LEFT JOIN jobs job ON job.path=j.path
+            WHERE COALESCE(job.recipe,'')<>? AND EXISTS(
+                SELECT 1 FROM chunks c WHERE c.path=j.path AND c.modality='image')
+            AND (lower(substr(j.path,-4)) IN ('.png','.jpg') OR lower(substr(j.path,-5))='.jpeg')
+            """, [Self.mediaRecipe("upgrade.png")])
             try sql("CREATE INDEX IF NOT EXISTS media_generation ON media_jobs(generation)")
             try addColumn("media_jobs", name: "recipe", declaration: "TEXT NOT NULL DEFAULT ''")
             try addColumn("media_segments", name: "end_time", declaration: "REAL")
@@ -24,7 +37,7 @@ extension SemanticFileStore {
             let row = try statement("SELECT generation,version,recipe FROM media_jobs WHERE path=?")
             bind(row, [path])
             let matched = sqlite3_step(row) == SQLITE_ROW && string(row, 1) == Self
-                .version(metadata) && string(row, 2) == Self.mediaProvenance
+                .version(metadata) && string(row, 2) == Self.mediaRecipe(path)
             let old = matched ? string(row, 0) : nil
             sqlite3_finalize(row)
             if let old {
@@ -39,7 +52,7 @@ extension SemanticFileStore {
                 try execute("DELETE FROM media_jobs WHERE path=?", [path])
                 try execute(
                     "INSERT INTO media_jobs(path,version,generation,recipe) VALUES(?,?,?,?)",
-                    [path, Self.version(metadata), generation, Self.mediaProvenance]
+                    [path, Self.version(metadata), generation, Self.mediaRecipe(path)]
                 )
                 try execute("""
                             INSERT OR REPLACE INTO jobs(path,version,generation,state,cursor,recipe) VALUES(?,?,?,'partial',?,?)
@@ -49,8 +62,17 @@ extension SemanticFileStore {
                                 Self.version(metadata),
                                 generation,
                                 "{\"page\":0,\"offset\":0}",
-                                Self.mediaProvenance
+                                Self.mediaRecipe(path)
                             ])
+                if SemanticMediaPriority.of(path) == .image, metadata.version != nil {
+                    // Reuse only a verified same-version visual input with the exact model/projector recipe.
+                    try execute("""
+                    INSERT INTO media_segments(path,ordinal,kind,vector)
+                    SELECT c.path,0,'image',c.vector FROM chunks c JOIN files f ON f.path=c.path
+                    WHERE c.path=? AND f.version=? AND c.modality='image' AND c.provenance=?
+                    AND length(c.vector)=? LIMIT 1
+                    """, [path, metadata.version ?? "", Self.mediaProvenance, SemanticFilePolicy.dimension * 4])
+                }
                 return generation
             }
         }
@@ -128,6 +150,24 @@ extension SemanticFileStore {
                 """, [generation, SemanticMediaPriority.of(path) == .video ? "video" : "image",
                       SemanticMediaPriority.of(path) == .video ? "video-frame" : "image", Self.mediaProvenance, path])
                 try recordLocked(.vectorsPublished, count: segments)
+                let text =
+                    try statement(
+                        "SELECT text,start_offset,end_offset,vector FROM media_text WHERE path=? ORDER BY start_offset"
+                    )
+                defer { sqlite3_finalize(text) }; bind(text, [path])
+                while sqlite3_step(text) == SQLITE_ROW {
+                    try execute("""
+                    INSERT INTO chunks(path,text,vector,generation,start_offset,end_offset,modality,segment_kind,provenance)
+                    VALUES(?,?,?,?,?,?,'text','image-ocr',?)
+                    """, [path, string(text, 0), Data(bytes: sqlite3_column_blob(text, 3)!,
+                                                      count: Int(sqlite3_column_bytes(text, 3))), generation,
+                          sqlite3_column_int64(text, 1), sqlite3_column_int64(text, 2), Self.imageRecipe])
+                    try writeLexical(sqlite3_last_insert_rowid(database), text: string(text, 0))
+                }
+                try execute("""
+                UPDATE jobs SET recipe=?,reason=CASE WHEN ? AND NOT EXISTS(
+                    SELECT 1 FROM media_text WHERE path=?) THEN 'image-no-text' ELSE NULL END WHERE path=?
+                """, [Self.mediaRecipe(path), Self.mediaRecipe(path) != Self.mediaProvenance ? 1 : 0, path, path])
                 try execute("DELETE FROM media_jobs WHERE path=?", [path])
                 return true
             }
@@ -138,10 +178,11 @@ extension SemanticFileStore {
         try lock.withLock {
             let row = try statement("""
             SELECT version FROM files WHERE path=? AND NOT EXISTS(
-                SELECT 1 FROM chunks c WHERE c.path=files.path AND (c.provenance IS NULL OR c.provenance<>?))
+                SELECT 1 FROM chunks c WHERE c.path=files.path AND (c.provenance IS NULL OR c.provenance NOT IN (?,?)))
+                AND EXISTS(SELECT 1 FROM jobs j WHERE j.path=files.path AND j.recipe=? AND j.state='done')
             """)
             defer { sqlite3_finalize(row) }
-            bind(row, [path, Self.mediaProvenance])
+            bind(row, [path, Self.mediaProvenance, Self.imageRecipe, Self.mediaRecipe(path)])
             if sqlite3_step(row) != SQLITE_ROW {
                 return false
             }

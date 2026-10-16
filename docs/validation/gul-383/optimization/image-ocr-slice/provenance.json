@@ -1,0 +1,29 @@
+{
+  "base": "3675c7309744523b10d5d4c651726f4d319d5c31",
+  "final_head": "Recorded in PR and issue delivery to avoid a self-referential commit hash.",
+  "hardware": "Mac16,10",
+  "memory_bytes": 17179869184,
+  "swift": "Apple Swift version 6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)\nTarget: arm64-apple-macosx26.0",
+  "os": "ProductName:\t\tmacOS\nProductVersion:\t\t26.6.2\nBuildVersion:\t\t25G83",
+  "xcode": "Xcode 27.1\nBuild version 27A9275",
+  "build": "Debug LLVM coverage, native SwiftPM, jobs=4",
+  "embedding": "Deterministic unit vectors only; no real embedding or projector weights loaded.",
+  "ocr": "Actual local Apple Vision on synthetic PNG/JPEG; native model is OS-managed (OS/tool versions above).",
+  "frozen_files": 106,
+  "matching_prior_freeze": 93,
+  "prior_frozen_files": 98,
+  "sha256": {
+    ".build/image-ocr/arm64-apple-macosx/debug/Typeflux": "1d9b656e7b2eacd43558e77b8b399c00f5bd5b9c17291aaad91a7fbb7fc6728c",
+    ".build/image-ocr/arm64-apple-macosx/debug/TypefluxPackageTests.xctest/Contents/MacOS/TypefluxPackageTests": "55f4a7f9b22aca35e22185ad14f1204688541c3911bcd8c85721178bf39d21c9",
+    "docs/validation/gul-383/optimization/image-ocr-slice/merged.profdata": "061733202cfae54fc1dbb365659dcb4cba729bf7820197b44fc9335e3b41a8da",
+    "docs/validation/gul-383/optimization/image-ocr-slice/coverage-all-methods.profdata": "387617692ef1a5ca45e7ba29203e28d0bc43f32598e39efd85de9219321d80db",
+    "docs/validation/gul-383/optimization/image-ocr-slice/synthetic-error.png": "64ac930bf325bbe52cbdc5752322538d30d7b87a87667bb940917b3c05f2d253",
+    "docs/validation/gul-383/optimization/image-ocr-slice/synthetic-error.jpeg": "33161fefd6667897b377ff83a1b50356b0d6a0a25fc32c1dd5758735227f1a3f",
+    "docs/validation/gul-383/optimization/image-ocr-slice/ocr-png.json": "d4409fa22ab53750f358fe0111acdb777f709146e0ac65b1e349bb18813c1614",
+    "docs/validation/gul-383/optimization/image-ocr-slice/ocr-jpeg.json": "d4409fa22ab53750f358fe0111acdb777f709146e0ac65b1e349bb18813c1614",
+    "Package.resolved": "faf33527478681a0b411242554c3f5908665f8e884af8234181a6d08bef01c5d",
+    "scripts/coverage.sh": "1a18ada556b3875baf54f389ae48f5bceaf2c699a37f8638ebd16d7255e89095",
+    "scripts/test_groups.py": "488dbe8cec3f3528adb4ef265bb5d8e3cf5c13867581fb5acb5dc19eb281af46",
+    "docs/validation/gul-383/optimization/changed_coverage.py": "dd9efb30a427617a614235a0c65f86b2cb5ab6dd7c28b857031a91545db135ac"
+  }
+}

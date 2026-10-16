@@ -1,0 +1,26 @@
+{
+  "frozen_source_verified": 106,
+  "swiftlint": {
+    "command": [
+      "swiftlint",
+      "lint",
+      "--quiet",
+      "--strict",
+      "--baseline",
+      ".swiftlint-baseline.json",
+      "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer+Document.swift",
+      "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer+Media.swift",
+      "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+MediaJobs.swift",
+      "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticMediaExtractor.swift",
+      "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticVectorReader.swift",
+      "Tests/TypefluxTests/SemanticMediaIndexTests.swift",
+      "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticImageText.swift",
+      "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+ImageText.swift",
+      "Tests/TypefluxTests/SemanticImageOCRTests.swift"
+    ],
+    "exit_code": 0
+  },
+  "diff_check": {
+    "exit_code": 0
+  }
+}

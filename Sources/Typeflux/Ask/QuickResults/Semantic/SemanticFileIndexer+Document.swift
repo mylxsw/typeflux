@@ -27,7 +27,8 @@ extension SemanticFileIndexer {
             }
             guard let media else { return .skipped }
             return try indexMedia(path, metadata: metadata, scope: scope, store: store, reader: reader,
-                                  media: media, cancelled: cancelled, waitForIdle: waitForIdle) ? .done : .skipped
+                                  encoder: encoder, media: media, cancelled: cancelled, waitForIdle: waitForIdle) ?
+                .done : .skipped
         }
         let job = try store.prepareDocument(path: path, metadata: metadata)
         if job.state == .done || job.state == .skipped {

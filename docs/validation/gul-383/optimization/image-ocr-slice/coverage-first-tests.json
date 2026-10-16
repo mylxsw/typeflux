@@ -1,0 +1,9 @@
+{
+  "command": [
+    "make",
+    "coverage",
+    "SUITE=SemanticImageOCRTests SemanticMediaIndexTests SemanticSearchSnippetTests"
+  ],
+  "wall_seconds": 295.2236548750079,
+  "exit_code": 2
+}

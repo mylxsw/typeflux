@@ -205,8 +205,10 @@ final class SemanticVectorReader: @unchecked Sendable {
             guard !cancelled() else { throw CancellationError() }
             let path = string(row, 1)
             let media = SemanticMediaPriority.of(path) != .document
+            let imageText = SemanticMediaPriority.of(path) == .image && string(row, 10) == "text"
+                && string(row, 9) == SemanticFileStore.imageRecipe
             if sqlite3_column_bytes(row, 6) == SemanticFilePolicy.dimension * 4,
-               !media || string(row, 9) == SemanticFileStore.mediaProvenance,
+               !media || imageText || string(row, 9) == SemanticFileStore.mediaProvenance,
                let raw = sqlite3_column_blob(row, 6) {
                 let vector = UnsafeBufferPointer(
                     start: raw.assumingMemoryBound(to: Float.self),
@@ -237,9 +239,11 @@ final class SemanticVectorReader: @unchecked Sendable {
                                     end: sqlite3_column_type(row, 5) == SQLITE_NULL ? nil : sqlite3_column_int64(
                                         row,
                                         5
-                                    ), embedding: string(row, 10) == "audio" ? .audio : (media ? .image : nil),
+                                    ),
+                                    embedding: string(row, 10) == "audio" ? .audio :
+                                        (media && !imageText ? .image : nil),
                                     bucket: .init(
-                                        modality: file.modality,
+                                        modality: imageText ? .document : file.modality,
                                         embedding: string(row, 10) == "audio" ? .audio : nil,
                                         script: Int(sqlite3_column_int(row, 11))
                                     )))
