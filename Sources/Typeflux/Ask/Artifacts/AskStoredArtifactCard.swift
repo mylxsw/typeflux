@@ -6,6 +6,54 @@ struct AskArtifactAccess {
     var load: (AskArtifactRef) throws -> AskArtifactBundle = { _ in throw AskArtifactError.unavailable }
     var validate: (AskArtifactRef) throws -> Void = { _ in throw AskArtifactError.unavailable }
     var htmlEnabled = false
+    var imageSource: AskArtifactImageSource?
+
+    struct ImageTaskID: Equatable {
+        var ref: AskArtifactRef
+        var source: AskArtifactImageSource.Identity?
+    }
+    func imageTaskID(for ref: AskArtifactRef) -> ImageTaskID { .init(ref: ref, source: imageSource?.identity) }
+
+    /// Bind once without reading artifacts. Delegates still perform full filesystem/grant validation.
+    @MainActor static func boundImages(
+        context: @escaping @MainActor () -> AskArtifactImageSource.Identity?,
+        load: @escaping (AskArtifactRef, String) throws -> AskArtifactBundle,
+        validate: @escaping (AskArtifactRef, String) throws -> Void, htmlEnabled: Bool = false
+    ) -> Self {
+        let source = AskArtifactImageSource(identity: context() ?? .unavailable, current: context)
+        return .init(load: { ref in
+            guard source.allows(ref) else { throw AskArtifactError.denied }
+            return try load(ref, source.identity.owner)
+        }, validate: { ref in
+            guard source.allows(ref) else { throw AskArtifactError.denied }
+            try validate(ref, source.identity.owner)
+        }, htmlEnabled: htmlEnabled, imageSource: source)
+    }
+}
+
+/// Memory-only account/selection binding. This never substitutes for artifact filesystem validation.
+struct AskArtifactImageSource {
+    struct Identity: Hashable {
+        var owner: String
+        var conversation: String?
+        var selection: UUID
+        private var credential: String
+        init(owner: String, token: String, conversation: String?, selection: UUID) {
+            self.owner = owner; credential = token; self.conversation = conversation; self.selection = selection
+        }
+        // Stable absence is always denied; it never creates a new task identity on body recomputation.
+        static let unavailable = Identity(owner: "", token: "", conversation: nil,
+            selection: UUID(uuid: (0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)))
+    }
+    let identity: Identity
+    let allows: @MainActor (AskArtifactRef) -> Bool
+
+    init(identity: Identity, current: @escaping @MainActor () -> Identity?) {
+        self.identity = identity
+        allows = { ref in
+            !identity.owner.isEmpty && ref.ownerId == identity.owner && ref.conversationId == identity.conversation && current() == identity
+        }
+    }
 }
 
 extension EnvironmentValues {
@@ -25,7 +73,7 @@ struct AskStoredArtifactCard: View {
     }
 
     var body: some View {
-        let projection = imageModel.projection(for: ref)
+        let projection = imageModel.projection(for: ref, access: access)
         return VStack(alignment: .leading, spacing: 7) {
             if let thumbnail = projection.image {
                 Image(nsImage: thumbnail).resizable().scaledToFit().frame(maxHeight: 260)
@@ -62,8 +110,9 @@ struct AskStoredArtifactCard: View {
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(AskTheme.monoSurface, in: RoundedRectangle(cornerRadius: 10))
-        .task(id: ref) {
-            copying?.cancel(); copying = nil; imageModel.cancel()
+        .task(id: access.imageTaskID(for: ref)) {
+            guard !Task.isCancelled else { return }
+            copying?.cancel(); copying = nil
             guard ref.mediaType.hasPrefix("image/") else { return }
             await imageModel.load(ref, access: access)
         }
@@ -114,7 +163,7 @@ struct AskArtifactPreviewView: View {
     }
 
     var body: some View {
-        let projection = imageModel.projection(for: bundle.manifest.ref)
+        let projection = imageModel.projection(for: bundle.manifest.ref, access: access)
         return VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text((bundle.manifest.entry as NSString).lastPathComponent).font(.headline)
@@ -157,7 +206,7 @@ struct AskArtifactPreviewView: View {
         }
         .padding(20)
         .frame(width: 760, height: 560)
-        .task(id: bundle.manifest.ref) {
+        .task(id: access.imageTaskID(for: bundle.manifest.ref)) {
             guard bundle.manifest.ref.mediaType.hasPrefix("image/") else { return }
             await imageModel.load(bundle.manifest.ref, access: access)
         }
