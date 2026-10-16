@@ -65,6 +65,7 @@ struct AskBrowserFaviconTests {
         ] {
             #expect(AskBrowserFaviconCache.faviconURL(for: text) == nil)
         }
+        #expect(AskBrowserFaviconCache.faviconURL(for: "https://example.test/" + String(repeating: "x", count: 16 * 1024)) == nil)
         let fallback = URL(fileURLWithPath: "/Browser.app")
         var entry = AskBrowserSearchEntry(id: "tab", kind: .tab, browser: .chrome, title: "Site",
                                           url: "https://example.com/page", target: .init(browser: .chrome,
@@ -94,9 +95,9 @@ struct AskBrowserFaviconTests {
         #expect(await second.value === image)
         #expect(await cache.image(url) === image)
         #expect(cache.cached(url) === image)
-        let pixels = try #require(image.representations.first?.pixelsWide)
+        let pixels = image.width
         #expect((26 ... 56).contains(pixels))
-        #expect(image.size == NSSize(width: 26, height: 26))
+        #expect(image.height <= 56)
         #expect(await loader.calls == 1)
     }
 
@@ -157,6 +158,8 @@ struct AskBrowserFaviconTests {
     @Test func `download uses short timeout size limit and handles offline failure`() async throws {
         let url = try #require(URL(string: "https://example.com/favicon.ico"))
         let transport = BrowserFaviconTestTransport()
+        #expect(await AskBrowserFaviconCache.load(URL(string: "https://example.com/private?token=value")!, transport: transport) == nil)
+        #expect(await transport.request == nil)
         #expect(await AskBrowserFaviconCache.load(url, transport: transport) == Data("icon".utf8))
         #expect(await transport.request?.url == url)
         #expect(await transport.request?.timeoutInterval == 3)
@@ -169,11 +172,12 @@ struct AskBrowserFaviconTests {
         let data = try png(), url = try #require(URL(string: "https://example.com/favicon.ico"))
         let loader = BrowserFaviconTestLoader(data: data, delay: .milliseconds(30))
         let cache = AskBrowserFaviconCache(loader: { await loader.load($0) })
-        _ = await cache.image(url)
         for site in try [url, #require(URL(string: "https://missing.test/favicon.ico"))] {
+            let scope = AskImagePresentationScope()
+            let access = AskImagePresentationAccess(scope: scope, epoch: scope.epoch, authorize: { true })
             let view = NSHostingView(rootView: AskBrowserFaviconView(url: site, fallback: nil,
                                                                      symbol: "rectangle.on.rectangle", filled: true,
-                                                                     cache: cache))
+                                                                     cache: cache).environment(\.askContextImageAccess, access))
             let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 28, height: 28),
                                   styleMask: .borderless, backing: .buffered, defer: false)
             window.isReleasedWhenClosed = false
@@ -185,7 +189,7 @@ struct AskBrowserFaviconTests {
             view.cacheDisplay(in: view.bounds, to: bitmap)
             #expect(bitmap.pixelsWide > 0 && bitmap.pixelsHigh > 0)
             #expect(view.fittingSize == NSSize(width: 28, height: 28))
-            try await AskQuickSearchSessionTests.wait { cache.cached(site) != nil }
+            try await AskQuickSearchSessionTests.wait { cache.cached(site, access: access) != nil }
         }
     }
 }

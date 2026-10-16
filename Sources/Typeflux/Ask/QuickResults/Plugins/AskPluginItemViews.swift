@@ -74,13 +74,16 @@ struct AskPluginItemIcon: View {
     var icon: AskPluginItem.Icon?
     var symbol: String
     var filled: Bool
+    @Environment(\.askIconGeneration) private var generation
 
     var body: some View {
         Group {
             if case let .websiteIcon(url, fallback) = icon {
-                AskBrowserFaviconView(url: url, fallback: fallback, symbol: symbol, filled: filled)
+                AskBrowserFaviconView(url: url, fallback: fallback, symbol: symbol, filled: filled).id(generation)
             } else if case let .fileIcon(url) = icon {
                 AskFileIconView(url: url, thumbnail: false).frame(width: 26, height: 26)
+            } else if case let .image(url) = icon {
+                AskSmallFileIcon(url: url, symbol: symbol, filled: filled)
             } else if let image = icon.flatMap(Self.image) {
                 Image(nsImage: image).resizable().interpolation(.high).scaledToFit()
                     .frame(width: 26, height: 26)
@@ -103,14 +106,15 @@ struct AskPluginItemIcon: View {
         return name
     }
 
-    private static let cache = NSCache<NSString, NSImage>()
+    private static let cache: NSCache<NSString, NSImage> = {
+        let cache = NSCache<NSString, NSImage>(); cache.countLimit = 128; return cache
+    }()
 
     /// The image for a file icon; nil for symbols and for files that are not images.
     static func image(_ icon: AskPluginItem.Icon) -> NSImage? {
         let key: String
         switch icon {
-        case .symbol, .websiteIcon: return nil
-        case let .image(url): key = "image:" + url.path
+        case .symbol, .websiteIcon, .image: return nil
         case let .fileIcon(url): key = "file:" + url.path
         case let .fileType(type): key = "type:" + type
         }
@@ -118,8 +122,7 @@ struct AskPluginItemIcon: View {
             return cached
         }
         let image: NSImage? = switch icon {
-        case .symbol, .websiteIcon: nil
-        case let .image(url): NSImage(contentsOf: url)
+        case .symbol, .websiteIcon, .image: nil
         case let .fileIcon(url):
             FileManager.default.fileExists(atPath: url.path) ? NSWorkspace.shared.icon(forFile: url.path) : nil
         case let .fileType(type): UTType(type).map { NSWorkspace.shared.icon(for: $0) }

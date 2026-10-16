@@ -1,0 +1,77 @@
+{
+  "covered": 159,
+  "executable_added": 162,
+  "percent": 98.15,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Ask/AskComposerViews.swift",
+      "covered": 0,
+      "executable_added": 1,
+      "percent": 0.0,
+      "uncovered": [
+        1138
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskContextImage.swift",
+      "covered": 4,
+      "executable_added": 4,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/AskSmallIcon.swift",
+      "covered": 57,
+      "executable_added": 57,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Browser/AskBrowserFaviconCache.swift",
+      "covered": 68,
+      "executable_added": 68,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Browser/AskBrowserFaviconView.swift",
+      "covered": 20,
+      "executable_added": 20,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/AskPluginItemViews.swift",
+      "covered": 7,
+      "executable_added": 8,
+      "percent": 87.5,
+      "uncovered": [
+        82
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPDF.swift",
+      "covered": 3,
+      "executable_added": 3,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Settings/WorkflowEditor/AskWorkflowEditorComponents.swift",
+      "covered": 0,
+      "executable_added": 1,
+      "percent": 0.0,
+      "uncovered": [
+        375
+      ],
+      "instrumented": true
+    }
+  ]
+}

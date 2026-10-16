@@ -60,7 +60,7 @@ extension AskConversationModel {
 
 @MainActor final class AskContextImageModel: ObservableObject, AskImageScopeObserver {
     typealias Decoder = @Sendable (String) async throws -> AskFilePreviewPDF.Result
-    struct Identity: Equatable { let source: String?; let epoch: UUID? }
+    struct Identity: Hashable { let source: String?; let epoch: UUID? }
     @Published private(set) var image: NSImage?
     @Published private(set) var unavailable = false
     private var source: String?
@@ -73,8 +73,9 @@ extension AskConversationModel {
     private var pixels: AskToolPixelBudget.Lease?
     private let budget: AskToolPixelBudget
     private let decode: Decoder
-    init(budget: AskToolPixelBudget = .shared, decode: @escaping Decoder = { try await AskContextImageDecoder.decode($0) }) {
-        self.budget = budget; self.decode = decode
+    private let maximumEdge: Int
+    init(budget: AskToolPixelBudget = .shared, maximumEdge: Int = 1600, decode: @escaping Decoder = { try await AskContextImageDecoder.decode($0) }) {
+        self.budget = budget; self.decode = decode; self.maximumEdge = min(1600, max(1, maximumEdge))
     }
     func displayed(_ value: String?, access: AskImagePresentationAccess) -> NSImage? {
         guard access.allows(), originalAccess?.allows() == true, epoch == access.epoch, source == value else { return nil }
@@ -96,7 +97,7 @@ extension AskConversationModel {
             guard value.utf8.count <= AskContextImageDecoder.maximumEncodedBytes,
                   let scope = access.scope, let epoch = access.epoch else { throw MediaFailure.unavailable }
             self.scope = scope; registration = try scope.register(self, epoch: epoch)
-            let reservation = try budget.acquire(bytes: 1600 * 1600 * 4)
+            let reservation = try budget.acquire(bytes: maximumEdge * maximumEdge * 4)
             let task = Task { [decode] in
                 defer { withExtendedLifetime(reservation) {} }
                 return try await decode(value)
@@ -107,7 +108,7 @@ extension AskConversationModel {
             guard generation == current else { return }
             guard access.allows() else { cancel(); return }
             guard result.images.count == 1, let raster = result.images.first,
-                  raster.width > 0, raster.height > 0, raster.width <= 1600, raster.height <= 1600 else {
+                  raster.width > 0, raster.height > 0, raster.width <= maximumEdge, raster.height <= maximumEdge else {
                 throw MediaFailure.invalidProtocol
             }
             pixels = reservation; image = NSImage(cgImage: raster, size: .zero); operation = nil
