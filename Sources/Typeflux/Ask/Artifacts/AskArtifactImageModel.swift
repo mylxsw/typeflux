@@ -40,6 +40,13 @@ enum AskArtifactPresentation {
     @Published private(set) var image: NSImage?
     @Published private(set) var error: String?
     @Published private(set) var busy = false
+    struct Projection {
+        var image: NSImage?
+        var error: String?
+        var busy: Bool
+    }
+    private var source: AskArtifactRef?
+    private var imageSource: AskArtifactRef?
     private var generation = UUID()
     private let decode: Decoder?
     private let worker: MediaWorker
@@ -65,16 +72,23 @@ enum AskArtifactPresentation {
         await perform(ref, access: access, copying: true)
     }
 
+    /// A source projection only. Filesystem access remains explicit in load/copy.
+    func projection(for ref: AskArtifactRef) -> Projection {
+        guard source == ref else { return .init(image: nil, error: nil, busy: false) }
+        return .init(image: imageSource == ref ? image : nil, error: error, busy: busy)
+    }
+
     func cancel() {
-        generation = UUID(); image = nil; error = nil; busy = false
+        generation = UUID(); source = nil; imageSource = nil; image = nil; error = nil; busy = false
     }
 
     private func perform(_ ref: AskArtifactRef, access: AskArtifactAccess, copying: Bool) async {
         guard !Task.isCancelled else { return }
         let authorization = decode == nil ? worker.authorization() : nil
         let current = UUID(); generation = current
+        source = ref
         busy = true; error = nil
-        if !copying { image = nil }
+        if !copying { imageSource = nil; image = nil }
         defer { if generation == current { busy = false } }
         do {
             try Task.checkCancellation()
@@ -105,12 +119,12 @@ enum AskArtifactPresentation {
             // An entered copy cannot be undone, but its callback may retire this attempt.
             try Task.checkCancellation()
             guard generation == current else { return }
-            image = NSImage(cgImage: pixels, size: .zero)
+            imageSource = ref; image = NSImage(cgImage: pixels, size: .zero)
         } catch {
             guard generation == current else { return }
             if Task.isCancelled || error is CancellationError { return }
             let failure = (error as? AskArtifactError) ?? .unavailable
-            if failure == .denied || failure == .expired { image = nil }
+            if failure == .denied || failure == .expired { imageSource = nil; image = nil }
             self.error = failure.localizedDescription
         }
     }

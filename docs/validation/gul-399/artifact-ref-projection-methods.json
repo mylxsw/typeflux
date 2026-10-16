@@ -1,0 +1,100 @@
+{
+  "baseline": "745f4ec099b7ce542e632df8e37486482ad96dec",
+  "distinct_passing_methods": 28,
+  "one_shot_all_pass": false,
+  "initial": {
+    "methods": [
+      "TypefluxTests.AskArtifactImageTests/testAdmissionRejectsThirdConversionBeforeDispatchAndReleasesAfterCancellation",
+      "TypefluxTests.AskArtifactImageTests/testCancellationAndDuplicateCopyDoNotMutatePasteboard",
+      "TypefluxTests.AskArtifactImageTests/testCancellationReachesOwnedWorkerAndCannotPublish",
+      "TypefluxTests.AskArtifactImageTests/testFailuresKeepSavedArtifactAndExposeOnlySafeErrors",
+      "TypefluxTests.AskArtifactImageTests/testLoadAndCopyRevalidateAndPreserveOriginalEncodedBytes",
+      "TypefluxTests.AskArtifactImageTests/testLoadedImageIsClearedWhenAccessExpiresBeforeCopy",
+      "TypefluxTests.AskArtifactImageTests/testOldSelectionAndUncooperativeDecoderCannotOverwriteNewSnapshot",
+      "TypefluxTests.AskArtifactImageTests/testRevocationAfterDecodePreventsDisplayAndClipboardMutation",
+      "TypefluxTests.ArtifactImageAttemptOwnershipTests/canceledCallbackErrorsCannotRestoreFailureAndTaskCancellationStopsSource()",
+      "TypefluxTests.ArtifactImageAttemptOwnershipTests/collectedOldResultOrErrorCannotClearNewBusyOrPublishedState(oldFails:)",
+      "TypefluxTests.ArtifactImageAttemptOwnershipTests/enteredCopyEffectIsKeptButRetiredCompletionCannotPublish(taskCancellation:)",
+      "TypefluxTests.ArtifactImageAttemptOwnershipTests/retiringAttemptAfterSuccessfulDecodePreventsPublicationAndCopy(copying:)",
+      "TypefluxTests.ArtifactImageAttemptOwnershipTests/retiringAttemptInsideInitialValidationPreventsSourceAndDecode(copying:)",
+      "TypefluxTests.ArtifactImageAttemptOwnershipTests/retiringAttemptInsideSourceLoadPreventsDecodeAndAllowsFreshExplicitCopy()",
+      "TypefluxTests.ArtifactImageAuthorityTests/canceledNativeCallsKeepCapacityUntilActualReturnAndNeverWrite()",
+      "TypefluxTests.ArtifactImageAuthorityTests/cancellationInsideSourceValidationCannotEnterReadOrWrite()",
+      "TypefluxTests.ArtifactImageAuthorityTests/customActorRemainsIndependentAndCanceledEntryPreservesNewSnapshot()",
+      "TypefluxTests.ArtifactImageAuthorityTests/directPresentationRetainsPreReadyRetiredAndForeignStamps()",
+      "TypefluxTests.ArtifactImageAuthorityTests/finalValidNativeCompletionThenRevocationCannotPublishOrCopy()",
+      "TypefluxTests.ArtifactImageAuthorityTests/originalModelStampPrecedesSourceLoadAndRevocationCannotReachNativeOrWrite()",
+      "TypefluxTests.ArtifactImageAuthorityTests/preReadyModelDoesNotLoadOrCopyAndNeedsExplicitFreshOperation()",
+      "TypefluxTests.ArtifactRefProjectionTests/busyAndFailureBelongOnlyToCurrentAttemptReference()",
+      "TypefluxTests.ArtifactRefProjectionTests/canceledEntryPreservesOwnedProjectionAndCancelClearsBothIdentities()",
+      "TypefluxTests.ArtifactRefProjectionTests/collectedOldResultCannotChangeFreshProjection(_:)",
+      "TypefluxTests.ArtifactRefProjectionTests/copyingDifferentReferenceCannotProjectRetainedPixelsAsNewSource()",
+      "TypefluxTests.ArtifactRefProjectionTests/getterRequiresEntireOriginalReferenceAndPerformsNoPreparation()",
+      "TypefluxTests.ArtifactRefProjectionTests/initialDeniedAndExpiredFailuresRemainKeyedWithoutSourceReads()"
+    ],
+    "distinct_methods": 27,
+    "all_passed_first_functional_run": true,
+    "coverage": {
+      "covered": 9,
+      "executable_added": 19,
+      "percent": 47.37,
+      "files": [
+        {
+          "file": "Sources/Typeflux/Ask/Artifacts/AskArtifactImageModel.swift",
+          "covered": 9,
+          "executable_added": 9,
+          "percent": 100.0,
+          "uncovered": [],
+          "instrumented": true
+        },
+        {
+          "file": "Sources/Typeflux/Ask/Artifacts/AskStoredArtifactCard.swift",
+          "covered": 0,
+          "executable_added": 10,
+          "percent": 0.0,
+          "uncovered": [
+            28,
+            29,
+            30,
+            55,
+            58,
+            117,
+            118,
+            143,
+            145,
+            148
+          ],
+          "instrumented": true
+        }
+      ]
+    }
+  },
+  "final": {
+    "methods": [
+      "TypefluxTests.ArtifactRefProjectionTests/viewValueConstructionNeverLoadsValidatesDecodesOrWrites()"
+    ],
+    "distinct_methods": 1,
+    "all_passed_first_functional_run": true,
+    "note": "Added pure SwiftUI body-value no-preparation test only; initial 27 not rerun, product Sources unchanged"
+  },
+  "mapping": {
+    "ArtifactRefProjectionTests": "Exact complete-ref memory projection, no preparation getter/body, old/fresh task and copy source identities",
+    "ArtifactImageAuthorityTests": "Private native lifecycle and actual collection, custom actor independence",
+    "ArtifactImageAttemptOwnershipTests": "Private callbacks/attempt/write sinks",
+    "AskArtifactImageTests": "Eight explicit private/custom decode/write sink/admission methods"
+  },
+  "excluded": [
+    "MIMEAllowlistAndChildRejectsMislabeledImage actual codec",
+    "ClipboardWritesDeclaredOriginalRepresentationWithoutDecoding actual named pasteboard",
+    "RealHelperReturnsRawPixelsAndRedactsFailuresWithoutChangingOriginal",
+    "PreviewAndCardRenderLoadingReadyAndUnavailableStates window/encoding",
+    "All System clipboard/Conversation-model/AskTestFixture/home/Downloads/app/account-default objects",
+    "All actual provider/network/paid/model/capture/audio/TCC/full-suite execution"
+  ],
+  "limitations": [
+    "Exact-ref prerequisite, no account/source memory authority or stale-denied fix yet",
+    "Value-only SwiftUI body construction, no host/layout/render/window or visual proof",
+    "Current separate local dialog/web errors and preview bundle state remain outside model projection",
+    "Final profiles from changed test binary only; initial evidence excluded"
+  ]
+}

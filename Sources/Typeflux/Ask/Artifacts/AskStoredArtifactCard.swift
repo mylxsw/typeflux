@@ -25,8 +25,9 @@ struct AskStoredArtifactCard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 7) {
-            if let thumbnail = imageModel.image {
+        let projection = imageModel.projection(for: ref)
+        return VStack(alignment: .leading, spacing: 7) {
+            if let thumbnail = projection.image {
                 Image(nsImage: thumbnail).resizable().scaledToFit().frame(maxHeight: 260)
                     .accessibilityLabel(L("imagegen.preview"))
             }
@@ -51,10 +52,10 @@ struct AskStoredArtifactCard: View {
                     Button(L("imagegen.copy")) {
                         copying?.cancel()
                         copying = Task { await imageModel.copy(ref, access: access) }
-                    }.disabled(imageModel.busy)
+                    }.disabled(projection.busy)
                 }
             }
-            if let error = error ?? imageModel.error {
+            if let error = error ?? projection.error {
                 Text(error).foregroundStyle(StudioTheme.danger).font(.system(size: 12))
             }
         }
@@ -113,7 +114,8 @@ struct AskArtifactPreviewView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        let projection = imageModel.projection(for: bundle.manifest.ref)
+        return VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text((bundle.manifest.entry as NSString).lastPathComponent).font(.headline)
                 Spacer()
@@ -138,12 +140,12 @@ struct AskArtifactPreviewView: View {
                         Text(AskArtifactError.unsupported.localizedDescription)
                     }
                 } else if bundle.manifest.ref.mediaType.hasPrefix("image/") {
-                    if let image = imageModel.image {
+                    if let image = projection.image {
                         Image(nsImage: image).resizable().scaledToFit()
-                    } else if imageModel.busy {
+                    } else if projection.busy {
                         ProgressView()
                     } else {
-                        Text(imageModel.error ?? AskArtifactError.unsupported.localizedDescription)
+                        Text(projection.error ?? AskArtifactError.unsupported.localizedDescription)
                     }
                 } else {
                     Text(AskArtifactError.unsupported.localizedDescription)
