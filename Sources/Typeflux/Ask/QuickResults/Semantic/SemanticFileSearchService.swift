@@ -275,6 +275,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
                 let prepared = try await Task.detached(priority: .utility) {
                     guard !token.isCancelled else { throw CancellationError() }
                     let scope = SemanticFilePolicy.scope(names: names, fullDiskAccess: access())
+                    guard !token.isCancelled else { throw CancellationError() }
                     let database = Result {
                         try SemanticFileStore(url: directory.appendingPathComponent("semantic-files.sqlite"))
                     }

@@ -33,6 +33,8 @@ enum SemanticFileIndexer {
                      cancelled: cancelled, summary: &summary, progress: progress)
         summary.total = summary.discovered
         progress(summary)
+        // Progress can revoke the original scope before its discovery receipt.
+        if cancelled() { throw CancellationError() }
         try discovered()
         try drainWork(scope: scope, store: store, reader: reader, encoder: encoder, media: media,
                       idle: idle, paused: paused, documents: documents, priorityReader: priorityReader,
@@ -53,8 +55,9 @@ enum SemanticFileIndexer {
                           cancelled: () -> Bool, progress: (Summary) -> Void,
                           directories: [String] = [], prunePending: Bool = false,
                           current: (String?) -> Void = { _ in }) throws -> Summary {
-        let paths = Array(Set(paths)).sorted()
-        _ = try store.discover(paths.map { ($0, SemanticMediaPriority.of($0)) })
+        let entries = Array(Set(paths)).sorted().map { ($0, SemanticMediaPriority.of($0)) }
+        if cancelled() { throw CancellationError() }
+        _ = try store.discover(entries)
         var summary = Summary()
         for directory in Set(directories).sorted() {
             try waitWhilePaused(paused, cancelled: cancelled)

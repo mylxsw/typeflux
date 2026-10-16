@@ -7,6 +7,8 @@ extension SemanticFileIndexer {
     static func discover(scope: AskFileScope, store: SemanticFileStore, reader: AskFileReading,
                          paused: () -> Bool, cancelled: () -> Bool, summary: inout Summary,
                          progress: (Summary) -> Void, preparing: Bool = true) throws {
+        // A queued or standalone scan may be revoked before preparation begins.
+        if cancelled() { throw CancellationError() }
         if preparing { try store.beginDiscovery(scope: scope) }
         while let path = try store.nextDirectory() {
             try waitWhilePaused(paused, cancelled: cancelled)
