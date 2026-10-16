@@ -5,40 +5,54 @@ import TypefluxMediaProtocol
 /// No original-image parser runs in the host. Slots include uncooperative filesystem work.
 enum AskSmallIconDecoder {
     enum Input: Sendable { case file(URL), data(Data) }
+    typealias InputReader = @Sendable (Input) throws -> Data
     static let fileLimit = 4 * 1024 * 1024
     private static let admission = AskToolPixelBudget(limit: 2)
-    static func decode(_ input: Input, worker: MediaWorker = .previews) async throws -> CGImage {
+    static func decode(_ input: Input, worker: MediaWorker = .previews,
+                       authorization original: MediaWorker.Authorization? = nil,
+                       readInput: @escaping InputReader = { try read($0) }) async throws -> CGImage {
         try Task.checkCancellation()
+        let authorization = original ?? worker.authorization()
+        guard worker.permits(authorization) else { throw MediaFailure.unavailable }
         let slot = try admission.acquire(bytes: 1), cancellation = AskSearchCancellation()
+        let cancelled: @Sendable () -> Bool = { cancellation.isCancelled || !worker.permits(authorization) }
         defer { withExtendedLifetime(slot) {} }
         return try await withTaskCancellationHandler {
             let image = try await Task.detached(priority: .utility) {
-                if cancellation.isCancelled { throw CancellationError() }
-                let bytes: Data
-                switch input {
-                case let .data(data):
-                    guard !data.isEmpty, data.count <= 262_144 else { throw MediaFailure.tooLarge }
-                    bytes = data
-                case let .file(url):
-                    guard url.isFileURL else { throw MediaFailure.unreadable }
-                    let fd = open(url.path, O_RDONLY | O_NONBLOCK | O_CLOEXEC)
-                    guard fd >= 0 else { throw MediaFailure.unreadable }
-                    let handle = FileHandle(fileDescriptor: fd, closeOnDealloc: true)
-                    defer { try? handle.close() }
-                    var info = stat()
-                    guard fstat(fd, &info) == 0, info.st_mode & S_IFMT == S_IFREG,
-                          info.st_size > 0, info.st_size <= fileLimit else { throw MediaFailure.tooLarge }
-                    bytes = try handle.read(upToCount: fileLimit + 1) ?? Data()
-                    guard !bytes.isEmpty, bytes.count <= fileLimit else { throw MediaFailure.tooLarge }
-                }
-                let result = try MediaPreviewDisplay.renderImage(bytes, type: nil, cancellation: cancellation, worker: worker, edge: 56)
+                if cancelled() { throw CancellationError() }
+                let bytes = try readInput(input)
+                if cancelled() { throw CancellationError() }
+                let result = try MediaPreviewDisplay.renderImage(bytes, type: nil, cancellation: cancellation, worker: worker,
+                                                               edge: 56, authorization: authorization)
                 guard result.images.count == 1, let image = result.images.first,
                       image.width <= 56, image.height <= 56 else { throw MediaFailure.invalidProtocol }
                 return image
             }.value
             try Task.checkCancellation()
+            guard worker.permits(authorization) else { throw MediaFailure.unavailable }
             return image
         } onCancel: { cancellation.cancel() }
+    }
+
+    /// Bounded source preparation; this does not parse an image format or retain its source FD.
+    static func read(_ input: Input) throws -> Data {
+        switch input {
+        case let .data(data):
+            guard !data.isEmpty, data.count <= 262_144 else { throw MediaFailure.tooLarge }
+            return data
+        case let .file(url):
+            guard url.isFileURL else { throw MediaFailure.unreadable }
+            let fd = open(url.path, O_RDONLY | O_NONBLOCK | O_CLOEXEC)
+            guard fd >= 0 else { throw MediaFailure.unreadable }
+            let handle = FileHandle(fileDescriptor: fd, closeOnDealloc: true)
+            defer { try? handle.close() }
+            var info = stat()
+            guard fstat(fd, &info) == 0, info.st_mode & S_IFMT == S_IFREG,
+                  info.st_size > 0, info.st_size <= fileLimit else { throw MediaFailure.tooLarge }
+            let bytes = try handle.read(upToCount: fileLimit + 1) ?? Data()
+            guard !bytes.isEmpty, bytes.count <= fileLimit else { throw MediaFailure.tooLarge }
+            return bytes
+        }
     }
 }
 
