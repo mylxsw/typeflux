@@ -141,9 +141,10 @@ private actor RemoteGate {
         let scope = AskRemoteImageScope()
         let model = AskRemoteImageModel(loader: .init(transport: RemoteTransport { _, _ in throw URLError(.timedOut) }))
         await model.load(asset, access: access(scope)); XCTAssertTrue(model.unavailable); XCTAssertNil(model.image)
-        await model.load(asset, access: .init()); XCTAssertFalse(model.unavailable)
+        await model.load(asset, access: .init()); XCTAssertTrue(model.unavailable)
         let cancelled = Task { withUnsafeCurrentTask { $0?.cancel() }; await model.load(asset, access: access(scope)) }
-        await cancelled.value; XCTAssertFalse(model.unavailable)
+        await cancelled.value; XCTAssertTrue(model.unavailable)
+        scope.invalidate(); XCTAssertFalse(model.unavailable)
     }
 
     func testObserverCapPrunesReleasedViewsAndRejectsStaleEpoch() throws {

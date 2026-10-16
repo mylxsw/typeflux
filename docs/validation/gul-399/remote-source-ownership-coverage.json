@@ -1,0 +1,17 @@
+{
+  "covered": 20,
+  "executable_added": 21,
+  "percent": 95.24,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Ask/ImageGeneration/AskRemoteImage.swift",
+      "covered": 20,
+      "executable_added": 21,
+      "percent": 95.24,
+      "uncovered": [
+        218
+      ],
+      "instrumented": true
+    }
+  ]
+}

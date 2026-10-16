@@ -142,6 +142,7 @@ extension AskConversationModel {
     private var generation = UUID()
     private var registration: UUID?
     private weak var scope: AskRemoteImageScope?
+    private var originalAccess: AskRemoteImageAccess?
     private var operation: Task<AskFilePreviewPDF.Result, Error>?
     private var pixels: AskToolPixelBudget.Lease?
     private let budget: AskToolPixelBudget
@@ -149,18 +150,31 @@ extension AskConversationModel {
     init(loader: AskRemoteImageLoader = .init(), budget: AskToolPixelBudget = .shared) {
         self.loader = loader; self.budget = budget
     }
+    func displayed(_ asset: AskGeneratedImage, access: AskRemoteImageAccess) -> NSImage? {
+        guard source == asset, scope === access.scope, originalAccess?.epoch == access.epoch,
+              originalAccess?.allows() == true, access.allows() else { return nil }
+        return image
+    }
     func cancel() {
         generation = UUID(); operation?.cancel(); operation = nil
         if let registration { scope?.remove(registration) }
-        registration = nil; scope = nil; source = nil; image = nil; pixels = nil; unavailable = false
+        registration = nil; scope = nil; originalAccess = nil; source = nil; image = nil; pixels = nil; unavailable = false
     }
     func load(_ asset: AskGeneratedImage, access: AskRemoteImageAccess) async {
+        guard !Task.isCancelled else { return }
+        let allowed = access.allows()
+        guard !Task.isCancelled else { return }
+        guard allowed else {
+            // A stale denied invocation cannot revoke a different, still-authorized projection.
+            if originalAccess?.allows() != true { cancel() }
+            return
+        }
         cancel()
         let current = generation
-        source = asset
+        source = asset; originalAccess = access
         do {
             try Task.checkCancellation()
-            guard access.allows(), let scope = access.scope, let epoch = access.epoch else { throw MediaFailure.unavailable }
+            guard let scope = access.scope, let epoch = access.epoch else { throw MediaFailure.unavailable }
             self.scope = scope; registration = try scope.register(self, epoch: epoch)
             let authorization = loader.authorization()
             let reservation = try budget.acquire(bytes: 1600 * 1600 * 4)
@@ -179,8 +193,10 @@ extension AskConversationModel {
             operation = nil
         } catch {
             guard current == generation else { return }
-            cancel()
-            unavailable = !Task.isCancelled && access.allows()
+            if !Task.isCancelled && access.allows() {
+                // Keep ownership of the failed presentation until an explicit replacement or revocation.
+                operation = nil; pixels = nil; image = nil; unavailable = true
+            } else { cancel() }
         }
     }
 }
@@ -199,7 +215,7 @@ struct AskRemoteImageView: View {
         ZStack {
             if access.allows(), let url = AskRemoteImageLoader.eligible(asset) {
                 Link(destination: url) {
-                    if model.source == asset, let image = model.image {
+                    if let image = model.displayed(asset, access: access) {
                         Image(nsImage: image).resizable().scaledToFit().frame(maxWidth: 480, maxHeight: 360)
                     } else if model.unavailable || !enabled {
                         Label(L("ask.preview"), systemImage: "photo")
