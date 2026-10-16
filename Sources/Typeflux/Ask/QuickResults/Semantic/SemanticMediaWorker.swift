@@ -71,6 +71,9 @@ final class SemanticMediaWorker: SemanticMediaEmbedding {
     func embed(_ input: SemanticMediaInput, cancelled originalCancelled: () -> Bool) throws -> [Float] {
         guard embeddingOwners.media.permits(authorization) else { throw AskFileReadError.unavailable }
         @Sendable func cancelled() -> Bool { originalCancelled() || !embeddingOwners.media.permits(authorization) }
+        // Check at this boundary even when a custom model/encoder ignores its
+        // cancellation callback. An entered operation still owns its cleanup.
+        if cancelled() { throw CancellationError() }
         if encoder == nil {
             do { try models.verify(projector, cancelled: { cancelled() }) } catch {
                 if cancelled() { throw CancellationError() }
@@ -79,7 +82,10 @@ final class SemanticMediaWorker: SemanticMediaEmbedding {
             if cancelled() { throw CancellationError() }
             encoder = makeEncoder(helper, model, projector)
         }
-        return try encoder!.embed(input, cancelled: cancelled)
+        if cancelled() { throw CancellationError() }
+        let result = try encoder!.embed(input, cancelled: cancelled)
+        if cancelled() { throw CancellationError() }
+        return result
     }
 
     private final class Transfer: @unchecked Sendable {
@@ -95,6 +101,8 @@ final class SemanticMediaWorker: SemanticMediaEmbedding {
         let transfer = Transfer(), models = models, progress = progress
         progress(0)
         defer { progress(nil) }
+        // The synchronous progress sink may revoke the original scope.
+        if cancelled() { throw CancellationError() }
         let task = Task.detached {
             let result: Result<(URL, URLResponse), Error>
             do {
