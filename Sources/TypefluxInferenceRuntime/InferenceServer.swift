@@ -27,8 +27,10 @@ public final class InferenceServer: Sendable {
                     guard !prepared, let configuration = request.configuration else {
                         throw InferenceFailure.protocolViolation
                     }
-                    reply.modelPath = try await engine.prepare(configuration)
-                    prepared = true
+                    do {
+                        reply.modelPath = try await engine.prepare(configuration)
+                        prepared = true
+                    } catch { reply.kind = .failed }
                 case .transcribe:
                     guard prepared else { throw InferenceFailure.protocolViolation }
                     let mailbox = InferenceProgressMailbox()

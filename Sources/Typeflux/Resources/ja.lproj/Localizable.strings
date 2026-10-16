@@ -5629,3 +5629,5 @@
 "settings.services.recordingExport" = "録画エンコード";
 
 "settings.services.nativeSystem" = "ネイティブシステムコマンド";
+
+"settings.services.whisperInference" = "ローカル Whisper 文字起こし";

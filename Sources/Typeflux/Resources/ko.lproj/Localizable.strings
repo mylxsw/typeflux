@@ -5629,3 +5629,5 @@
 "settings.services.recordingExport" = "녹화 인코딩";
 
 "settings.services.nativeSystem" = "네이티브 시스템 명령";
+
+"settings.services.whisperInference" = "로컬 Whisper 전사";

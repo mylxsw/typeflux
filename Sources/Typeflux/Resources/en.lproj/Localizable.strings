@@ -5743,3 +5743,5 @@
 "settings.services.recordingExport" = "Recording encoding";
 
 "settings.services.nativeSystem" = "Native system commands";
+
+"settings.services.whisperInference" = "Local Whisper inference";

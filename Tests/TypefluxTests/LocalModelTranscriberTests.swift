@@ -20,12 +20,12 @@ final class LocalModelTranscriberTests: XCTestCase {
 
     func testWhisperModelDeletionWaitsForItsWorkerLease() throws {
         let root = makeTemporaryApplicationSupportURL()
-        let manager = LocalModelManager(applicationSupportURL: root)
+        let pool = WhisperWorkerPool()
+        let manager = LocalModelManager(inferenceWorkers: pool, applicationSupportURL: root)
         let directory = root.appendingPathComponent("Typeflux/LocalModels/whisperLocal")
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let sentinel = directory.appendingPathComponent("keep")
         try Data("model".utf8).write(to: sentinel)
-        let pool = WhisperWorkerPool.shared
         let lease = try pool.reserve(paths: [directory.appendingPathComponent("models/base").path], stop: {})
         XCTAssertThrowsError(try manager.deleteModelFiles(.whisperLocal))
         XCTAssertTrue(FileManager.default.fileExists(atPath: sentinel.path))
@@ -55,6 +55,28 @@ final class LocalModelTranscriberTests: XCTestCase {
         settings.localSTTModel = .senseVoiceSmall
         await transcriber.prepareForRecording()
         XCTAssertTrue(factory.createdTranscribers[1].stopped)
+    }
+
+    func testNextExplicitCallReplacesUnavailableCachedWhisperWithoutReplay() async throws {
+        let suite = "WhisperRecovery-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let settings = SettingsStore(defaults: defaults)
+        settings.localSTTModel = .whisperLocal
+        settings.localSTTModelIdentifier = "whisperkit-base"
+        settings.localSTTAutoSetup = false
+        let manager = FakeLocalSTTModelManager(preparedInfo: .init(storagePath: "/fixture", sourceDisplayName: "fixture"))
+        let factory = FakeWhisperKitTranscriberFactory()
+        let transcriber = LocalModelTranscriber(settingsStore: settings, modelManager: manager,
+            whisperKitTranscriberFactory: factory.makeTranscriber(modelName:modelFolder:))
+        let audio = try makeTestWAVFile()
+        _ = try await transcriber.transcribe(audioFile: audio)
+        XCTAssertEqual(factory.createdTranscribers.count, 1)
+        factory.createdTranscribers[0].stop()
+        XCTAssertEqual(factory.createdTranscribers.count, 1)
+        _ = try await transcriber.transcribe(audioFile: audio)
+        XCTAssertEqual(factory.createdTranscribers.count, 2)
+        XCTAssertFalse(factory.createdTranscribers[1].stopped)
     }
 
     func testWhisperKitTranscriberUsesAutomaticLanguageDetection() {
@@ -1817,6 +1839,7 @@ private final class FakeWhisperKitTranscriber: LocalWhisperKitTranscribing {
     let modelFolder: String
     private(set) var profiles: [TranscriptionProfile] = []
     private(set) var stopped = false
+    var isAvailableForReuse: Bool { !stopped }
     func stop() { stopped = true }
 
     init(modelName: String, modelFolder: String) {

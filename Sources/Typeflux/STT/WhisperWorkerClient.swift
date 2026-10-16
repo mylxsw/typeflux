@@ -66,6 +66,7 @@ final class WhisperWorkerClient: @unchecked Sendable {
             var started = false
             let marker = WhisperLaunchMarker()
             do {
+                guard retirement.permits, !Task.isCancelled else { throw InferenceFailure.cancelled }
                 guard directory >= 0 else { throw InferenceFailure.unavailable }
                 let result = try await run(ManagedProcess.Request(
                     executable: executable.path, arguments: ["--ipc-fd", "100"],
@@ -76,8 +77,18 @@ final class WhisperWorkerClient: @unchecked Sendable {
                     immediateCleanupOnExit: true, onReaped: { retirement.reaped() },
                     ipcDescriptor: inherited.descriptor))
                 started = marker.started
-                retirement.completed(failed: result.termination != .cancelled && result.termination != .exited(0))
-            } catch { started = marker.started; retirement.completed(failed: !socket.isStopped) }
+                if !socket.isStopped, result.termination != .cancelled,
+                   result.termination != .exited(0) || result.outputTruncated { retirement.markFailed() }
+                retirement.completed()
+            } catch {
+                started = marker.started
+                if !socket.isStopped {
+                    let code = error as NSError
+                    retirement.markFailed(configuration: code.domain == NSPOSIXErrorDomain
+                        && [Int(EACCES), Int(EPERM), Int(ENOENT), Int(ENOEXEC)].contains(code.code))
+                }
+                retirement.completed()
+            }
             if !started { retirement.reaped() }
         }
         control.install(process)
@@ -86,18 +97,20 @@ final class WhisperWorkerClient: @unchecked Sendable {
     deinit { stop() }
 
     func stop() { control.stop() }
+    var canReuse: Bool { !socket.isStopped && retirement.canReuse }
 
     func request(_ request: InferenceMessage,
                  onUpdate: @escaping @Sendable (String) async -> Void = { _ in }) async throws -> InferenceMessage {
         try admit()
         defer { finishRequest() }
+        try request.validate()
         return try await exchange(request, onUpdate: onUpdate)
     }
 
     private func admit() throws {
         try lock.withLock {
             guard !busy else { throw InferenceFailure.busy }
-            guard !socket.isStopped else { throw InferenceFailure.unavailable }
+            guard !socket.isStopped, retirement.permits else { throw InferenceFailure.unavailable }
             try retirement.beginHostWork()
             busy = true
         }
@@ -113,25 +126,37 @@ final class WhisperWorkerClient: @unchecked Sendable {
         return try await withTaskCancellationHandler {
             do {
                 try Task.checkCancellation()
+                guard retirement.permits else { throw InferenceFailure.cancelled }
                 let deadline = ContinuousClock.now.advanced(by: .seconds(timeout))
                 try await blocking { try self.socket.send(request, deadline: deadline) }
                 var sequence = request.kind == .transcribe ? 1 : 0
                 while true {
                     let reply = try await blocking { try self.socket.receive(deadline: deadline) }
                     try Task.checkCancellation()
-                    guard !socket.isStopped, reply.id == request.id, reply.sequence == sequence else { throw InferenceFailure.protocolViolation }
+                    guard !socket.isStopped, retirement.permits else { throw InferenceFailure.cancelled }
+                    guard reply.id == request.id, reply.sequence == sequence,
+                          reply.configuration == nil, reply.audioPath == nil, reply.prompt == nil,
+                          reply.language == nil, !reply.lowEnergy else { throw InferenceFailure.protocolViolation }
                     switch reply.kind {
                     case .progress where request.kind == .transcribe:
+                        guard reply.modelPath == nil else { throw InferenceFailure.protocolViolation }
                         sequence += 1
                         await onUpdate(reply.text ?? "")
-                    case .final where request.kind == .transcribe: return reply
-                    case .ready where request.kind == .prepare || request.kind == .probe: return reply
-                    case .failed: throw InferenceFailure.engineFailed
+                    case .final where request.kind == .transcribe:
+                        guard reply.modelPath == nil else { throw InferenceFailure.protocolViolation }
+                        retirement.succeeded(); return reply
+                    case .ready where request.kind == .prepare || request.kind == .probe:
+                        guard reply.text == nil else { throw InferenceFailure.protocolViolation }
+                        retirement.succeeded(); return reply
+                    case .failed:
+                        guard reply.text == nil, reply.modelPath == nil else { throw InferenceFailure.protocolViolation }
+                        throw InferenceFailure.engineFailed
                     default: throw InferenceFailure.protocolViolation
                     }
                 }
             } catch {
-                if !Task.isCancelled, error as? InferenceFailure != .cancelled { retirement.markFailed() }
+                if !Task.isCancelled, error as? InferenceFailure != .cancelled,
+                   error as? InferenceFailure != .engineFailed { retirement.markFailed() }
                 stop()
                 throw (error as? InferenceFailure) ?? InferenceFailure.unavailable
             }
@@ -148,16 +173,18 @@ final class WhisperWorkerClient: @unchecked Sendable {
             let destination = scratch.appendingPathComponent(UUID().uuidString).appendingPathExtension(audio.pathExtension)
             // Keep a private recording copy so caller cleanup cannot remove a child's
             // input. Failed/cancelled requests retain it until actual process reaping.
-            try await blocking { try self.copyAudio(audio, destination) }
             var message = InferenceMessage(kind: .transcribe)
             message.audioPath = destination.path
             message.lowEnergy = lowEnergy; message.prompt = prompt; message.language = language
+            try message.validate()
+            try await blocking { try self.copyAudio(audio, destination) }
             let reply = try await exchange(message, onUpdate: onUpdate)
             // Final consumer delivery belongs to this request too: a stopped child
             // must not release the model/input leases while its consumer still runs.
+            guard retirement.permits else { throw InferenceFailure.cancelled }
             try await deliverFinal(reply.text ?? "")
             try Task.checkCancellation()
-            guard !socket.isStopped else { throw InferenceFailure.cancelled }
+            guard !socket.isStopped, retirement.permits else { throw InferenceFailure.cancelled }
             try? FileManager.default.removeItem(at: destination)
             return reply.text ?? ""
         } onCancel: { self.stop() }
@@ -199,14 +226,14 @@ private final class WhisperWorkerRetirement: @unchecked Sendable {
     private let id: UUID
     private let scratch: URL
     private var collected = false
-    private var result: Bool?
+    private var returned = false
     private var released = false
     private var failure = false
     private var hostActivities = 0
     init(pool: WhisperWorkerPool, id: UUID, scratch: URL) { self.pool = pool; self.id = id; self.scratch = scratch }
     func beginHostWork() throws {
         try lock.withLock {
-            guard !collected, result == nil, !released else { throw InferenceFailure.unavailable }
+            guard !collected, !returned, !released else { throw InferenceFailure.unavailable }
             hostActivities += 1
         }
     }
@@ -214,19 +241,22 @@ private final class WhisperWorkerRetirement: @unchecked Sendable {
         lock.withLock { hostActivities -= 1 }
         finish()
     }
-    func markFailed() {
+    var permits: Bool { pool.permits(id) }
+    var canReuse: Bool { lock.withLock { !collected && !returned && !released } && permits }
+    func succeeded() { pool.succeeded(id) }
+    func markFailed(configuration: Bool = false) {
         let first = lock.withLock { let first = !failure; failure = true; return first }
-        if first { pool.recordFailure() }
+        if first { pool.recordFailure(id, configuration: configuration) }
     }
     func reaped() { lock.withLock { collected = true }; finish() }
-    func completed(failed: Bool) { if failed { markFailed() }; lock.withLock { result = failed }; finish() }
+    func completed() { lock.withLock { returned = true }; finish() }
     private func finish() {
-        let failed: Bool? = lock.withLock {
-            guard collected, let result, !released, hostActivities == 0 else { return nil }
+        let ready = lock.withLock {
+            guard collected, returned, !released, hostActivities == 0 else { return false }
             released = true
-            return result || failure
+            return true
         }
-        guard failed != nil else { return }
+        guard ready else { return }
         // Never block the global process reaper on filesystem cleanup.
         DispatchQueue.global(qos: .utility).async { [self] in
             try? FileManager.default.removeItem(at: scratch)

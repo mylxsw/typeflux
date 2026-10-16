@@ -129,6 +129,7 @@ final class LocalModelManager: LocalSTTModelManaging {
     typealias RemoteFileDownloader = @Sendable (URL, URL, (@Sendable (Int64, Int64?) -> Void)?) async throws -> Void
 
     private let fileManager: FileManager
+    private let inferenceWorkers: WhisperWorkerPool
     private let sherpaOnnxInstaller: SherpaOnnxModelInstalling
     private let whisperKitPreparerFactory: WhisperKitPreparerFactory
     private let localWhisperKitPreparerFactory: LocalWhisperKitPreparerFactory
@@ -146,6 +147,7 @@ final class LocalModelManager: LocalSTTModelManaging {
 
     init(
         fileManager: FileManager = .default,
+        inferenceWorkers: WhisperWorkerPool = .shared,
         sherpaOnnxInstaller: SherpaOnnxModelInstalling? = nil,
         applicationSupportURL: URL? = nil,
         whisperKitPreparerFactory: @escaping WhisperKitPreparerFactory =
@@ -183,6 +185,7 @@ final class LocalModelManager: LocalSTTModelManaging {
         analyticsReporter: AnalyticsEventReporting = NoopAnalyticsEventReporter.shared
     ) {
         self.fileManager = fileManager
+        self.inferenceWorkers = inferenceWorkers
         self.whisperKitPreparerFactory = whisperKitPreparerFactory
         self.localWhisperKitPreparerFactory = localWhisperKitPreparerFactory
         self.remoteFileLoader = remoteFileLoader
@@ -325,7 +328,7 @@ final class LocalModelManager: LocalSTTModelManaging {
                     autoSetup: configuration.autoSetup
                 ))
                 if !isPreparedStoragePathValid(attemptedPath, for: configuration.model),
-                   (try? WhisperWorkerPool.shared.checkUnused(URL(fileURLWithPath: attemptedPath))) != nil {
+                   (try? inferenceWorkers.checkUnused(URL(fileURLWithPath: attemptedPath))) != nil {
                     try? fileManager.removeItem(at: URL(fileURLWithPath: attemptedPath, isDirectory: true))
                 }
                 if cancelled { break }
@@ -612,7 +615,7 @@ final class LocalModelManager: LocalSTTModelManaging {
 
     func deleteModelFiles(_ model: LocalSTTModel) throws {
         let resourceURL = resourceDirectoryURL(for: model)
-        try WhisperWorkerPool.shared.checkUnused(resourceURL)
+        try inferenceWorkers.checkUnused(resourceURL)
         if fileManager.fileExists(atPath: resourceURL.path) {
             try fileManager.removeItem(at: resourceURL)
         }

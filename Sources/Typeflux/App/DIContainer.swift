@@ -21,6 +21,7 @@ final class DIContainer {
     let moduleRegistry: ModuleRegistry
     let mediaModules: MediaExtractionModules
     let nativeSystemModule: NativeSystemModule
+    let whisperInferenceModule: WhisperInferenceModule
     let nativeSystemCommands = NativeSystemWorker.shared
     let mediaWorkers = MediaWorker.shared
     let mediaPreviewWorkers = MediaWorker.previews
@@ -159,7 +160,8 @@ final class DIContainer {
         conversationCache = storage.conversations
         mediaModules = MediaExtractionModules(healthDirectory: moduleHealthDirectory)
         nativeSystemModule = NativeSystemModule(worker: nativeSystemCommands, healthDirectory: moduleHealthDirectory)
-        moduleRegistry = ModuleRegistry(storage.registry.registrations + mediaModules.registrations + [nativeSystemModule.registration])
+        whisperInferenceModule = WhisperInferenceModule(pool: localInferenceWorkers, healthDirectory: moduleHealthDirectory)
+        moduleRegistry = ModuleRegistry(storage.registry.registrations + mediaModules.registrations + [nativeSystemModule.registration, whisperInferenceModule.registration])
         modelLibrary = AskModelLibrary(defaults: settingsStore.defaults)
         let screenCapturePermission = ScreenCapturePermission.live
         self.screenCapturePermission = screenCapturePermission

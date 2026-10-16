@@ -5663,3 +5663,5 @@
 "settings.services.recordingExport" = "錄影編碼";
 
 "settings.services.nativeSystem" = "原生系統命令";
+
+"settings.services.whisperInference" = "本機 Whisper 轉寫";
