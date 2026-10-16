@@ -80,9 +80,11 @@ enum AskArtifactPresentation {
             try Task.checkCancellation()
             try access.validate(ref)
             try Task.checkCancellation()
+            guard generation == current else { return }
             if let authorization, !worker.permits(authorization) { throw AskArtifactError.unavailable }
             let bundle = try access.load(ref)
             try Task.checkCancellation()
+            guard generation == current else { return }
             if let authorization, !worker.permits(authorization) { throw AskArtifactError.unavailable }
             guard bundle.manifest.ref == ref, let data = bundle.files[bundle.manifest.entry],
                   MediaImageType(rawValue: ref.mediaType) != nil,
@@ -96,9 +98,13 @@ enum AskArtifactPresentation {
             // Account, conversation, grant or expiry may have changed during decoding.
             try access.validate(ref)
             try Task.checkCancellation()
+            guard generation == current else { return }
             if let authorization, !worker.permits(authorization) { throw AskArtifactError.unavailable }
             guard let pixels = result.images.first else { throw AskArtifactError.corrupt }
             if copying, !write(data, ref.mediaType) { throw AskArtifactError.unavailable }
+            // An entered copy cannot be undone, but its callback may retire this attempt.
+            try Task.checkCancellation()
+            guard generation == current else { return }
             image = NSImage(cgImage: pixels, size: .zero)
         } catch {
             guard generation == current else { return }

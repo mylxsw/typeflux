@@ -1,0 +1,43 @@
+{
+  "baseline": "c056cfece5d6b55a1644aec51cc8840524809ed2",
+  "methods": [
+    "TypefluxTests.AskArtifactImageTests/testAdmissionRejectsThirdConversionBeforeDispatchAndReleasesAfterCancellation",
+    "TypefluxTests.AskArtifactImageTests/testCancellationAndDuplicateCopyDoNotMutatePasteboard",
+    "TypefluxTests.AskArtifactImageTests/testCancellationReachesOwnedWorkerAndCannotPublish",
+    "TypefluxTests.AskArtifactImageTests/testFailuresKeepSavedArtifactAndExposeOnlySafeErrors",
+    "TypefluxTests.AskArtifactImageTests/testLoadAndCopyRevalidateAndPreserveOriginalEncodedBytes",
+    "TypefluxTests.AskArtifactImageTests/testLoadedImageIsClearedWhenAccessExpiresBeforeCopy",
+    "TypefluxTests.AskArtifactImageTests/testOldSelectionAndUncooperativeDecoderCannotOverwriteNewSnapshot",
+    "TypefluxTests.AskArtifactImageTests/testRevocationAfterDecodePreventsDisplayAndClipboardMutation",
+    "TypefluxTests.MediaWorkerTests/testBundledAndSwiftPMHelperLocations",
+    "TypefluxTests.MediaWorkerTests/testCancellationBeforeAndAfterDispatchRejectsLateResult",
+    "TypefluxTests.MediaWorkerTests/testCopiedInputIsPrivateAndRemovedOnlyAfterConfirmedCollection",
+    "TypefluxTests.MediaWorkerTests/testMalformedInputFailureDoesNotPoisonOtherAttachments",
+    "TypefluxTests.MediaWorkerTests/testOversizedDataFileMissingFileAndFIFORefusedBeforeSpawn",
+    "TypefluxTests.MediaWorkerTests/testProtocolIdentityFailureAndCooldownNeverReplay",
+    "TypefluxTests.MediaWorkerTests/testShutdownCancelsRunningChildAndRejectsNewWork",
+    "TypefluxTests.MediaWorkerTests/testTwoRetainedChildrenBoundAdmissionAndShutdownFences",
+    "TypefluxTests.ArtifactImageAttemptOwnershipTests/canceledCallbackErrorsCannotRestoreFailureAndTaskCancellationStopsSource()",
+    "TypefluxTests.ArtifactImageAttemptOwnershipTests/collectedOldResultOrErrorCannotClearNewBusyOrPublishedState(oldFails:)",
+    "TypefluxTests.ArtifactImageAttemptOwnershipTests/enteredCopyEffectIsKeptButRetiredCompletionCannotPublish(taskCancellation:)",
+    "TypefluxTests.ArtifactImageAttemptOwnershipTests/retiringAttemptAfterSuccessfulDecodePreventsPublicationAndCopy(copying:)",
+    "TypefluxTests.ArtifactImageAttemptOwnershipTests/retiringAttemptInsideInitialValidationPreventsSourceAndDecode(copying:)",
+    "TypefluxTests.ArtifactImageAttemptOwnershipTests/retiringAttemptInsideSourceLoadPreventsDecodeAndAllowsFreshExplicitCopy()",
+    "TypefluxTests.ArtifactImageAuthorityTests/canceledNativeCallsKeepCapacityUntilActualReturnAndNeverWrite()",
+    "TypefluxTests.ArtifactImageAuthorityTests/cancellationInsideSourceValidationCannotEnterReadOrWrite()",
+    "TypefluxTests.ArtifactImageAuthorityTests/customActorRemainsIndependentAndCanceledEntryPreservesNewSnapshot()",
+    "TypefluxTests.ArtifactImageAuthorityTests/directPresentationRetainsPreReadyRetiredAndForeignStamps()",
+    "TypefluxTests.ArtifactImageAuthorityTests/finalValidNativeCompletionThenRevocationCannotPublishOrCopy()",
+    "TypefluxTests.ArtifactImageAuthorityTests/originalModelStampPrecedesSourceLoadAndRevocationCannotReachNativeOrWrite()",
+    "TypefluxTests.ArtifactImageAuthorityTests/preReadyModelDoesNotLoadOrCopyAndNeedsExplicitFreshOperation()"
+  ],
+  "result": "29/29 distinct methods passed on first functional run: 16 XCTest in two suites + 13 Swift Testing in two suites. Six new methods include ten cases.",
+  "distinct_passing_methods": 29,
+  "exclusions": [
+    "AskArtifactImageTests MIMEAllowlistAndChildRejectsMislabeledImage, ClipboardWritesDeclaredOriginalRepresentationWithoutDecoding, RealHelperReturnsRawPixelsAndRedactsFailuresWithoutChangingOriginal, PreviewAndCardRenderLoadingReadyAndUnavailableStates: actual codecs/helper/pasteboard/window",
+    "MediaWorkerTests testRealHelperImagePDFMalformedAndCrashHangFixtures: actual helper/codec",
+    "All AskConversationModel/AskTestFixture production objects: eager SystemClipboardContentActions pasteboard/Downloads/app-index defaults",
+    "Unrelated document indexing, permissions, resource matrices, real models/media, network, capture/audio and full suite"
+  ],
+  "fixtures": "Small actual AskArtifactImageModel with private Data/bundle/ref/digest, raw 2x2 CGImage, injected decoder and write sinks; existing fake native JSON/RGBA, private health stores, FIFO/sparse files. No actual helper is executed."
+}
