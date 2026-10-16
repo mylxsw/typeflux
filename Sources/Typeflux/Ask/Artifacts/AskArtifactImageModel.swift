@@ -47,6 +47,8 @@ enum AskArtifactPresentation {
     }
     private var source: AskArtifactRef?
     private var imageSource: AskArtifactRef?
+    private var originalSource: AskArtifactImageSource?
+    private var imageIdentity: AskArtifactImageSource.Identity?
     private var generation = UUID()
     private let decode: Decoder?
     private let worker: MediaWorker
@@ -73,32 +75,49 @@ enum AskArtifactPresentation {
     }
 
     /// A source projection only. Filesystem access remains explicit in load/copy.
-    func projection(for ref: AskArtifactRef) -> Projection {
-        guard source == ref else { return .init(image: nil, error: nil, busy: false) }
-        return .init(image: imageSource == ref ? image : nil, error: error, busy: busy)
+    func projection(for ref: AskArtifactRef, access: AskArtifactAccess = .init()) -> Projection {
+        let empty = Projection(image: nil, error: nil, busy: false), current = generation
+        guard source == ref, originalSource?.identity == access.imageSource?.identity else { return empty }
+        let fresh = access.imageSource?.allows(ref) ?? true
+        guard !Task.isCancelled, generation == current else { return empty }
+        // Sample the retained owner last: fresh access cannot bless retired pixels.
+        let original = originalSource?.allows(ref) ?? true
+        guard !Task.isCancelled, generation == current else { return empty }
+        guard fresh && original else { return .init(image: nil, error: AskArtifactError.denied.localizedDescription, busy: false) }
+        return .init(image: imageSource == ref && imageIdentity == originalSource?.identity ? image : nil, error: error, busy: busy)
     }
 
     func cancel() {
-        generation = UUID(); source = nil; imageSource = nil; image = nil; error = nil; busy = false
+        generation = UUID(); source = nil; imageSource = nil; originalSource = nil; imageIdentity = nil
+        image = nil; error = nil; busy = false
     }
 
     private func perform(_ ref: AskArtifactRef, access: AskArtifactAccess, copying: Bool) async {
         guard !Task.isCancelled else { return }
         let authorization = decode == nil ? worker.authorization() : nil
+        let entry = generation
+        let permitted = access.imageSource?.allows(ref) ?? true
+        guard !Task.isCancelled, generation == entry else { return }
+        if !permitted, let source {
+            let owned = originalSource?.allows(source) ?? true
+            guard !Task.isCancelled, generation == entry else { return }
+            if owned { return }
+        }
         let current = UUID(); generation = current
-        source = ref
+        source = ref; originalSource = access.imageSource
         busy = true; error = nil
         if !copying { imageSource = nil; image = nil }
         defer { if generation == current { busy = false } }
         do {
             try Task.checkCancellation()
+            guard permitted else { throw AskArtifactError.denied }
             try access.validate(ref)
             try Task.checkCancellation()
-            guard generation == current else { return }
+            guard owns(ref, current: current) else { return }
             if let authorization, !worker.permits(authorization) { throw AskArtifactError.unavailable }
             let bundle = try access.load(ref)
             try Task.checkCancellation()
-            guard generation == current else { return }
+            guard owns(ref, current: current) else { return }
             if let authorization, !worker.permits(authorization) { throw AskArtifactError.unavailable }
             guard bundle.manifest.ref == ref, let data = bundle.files[bundle.manifest.entry],
                   MediaImageType(rawValue: ref.mediaType) != nil,
@@ -108,18 +127,18 @@ enum AskArtifactPresentation {
             if let decode { result = try await decode(data, ref.mediaType) }
             else { result = try await AskArtifactPresentation.image(data, mediaType: ref.mediaType, worker: worker, authorization: authorization) }
             try Task.checkCancellation()
-            guard generation == current else { return }
+            guard owns(ref, current: current) else { return }
             // Account, conversation, grant or expiry may have changed during decoding.
             try access.validate(ref)
             try Task.checkCancellation()
-            guard generation == current else { return }
+            guard owns(ref, current: current) else { return }
             if let authorization, !worker.permits(authorization) { throw AskArtifactError.unavailable }
             guard let pixels = result.images.first else { throw AskArtifactError.corrupt }
             if copying, !write(data, ref.mediaType) { throw AskArtifactError.unavailable }
             // An entered copy cannot be undone, but its callback may retire this attempt.
             try Task.checkCancellation()
-            guard generation == current else { return }
-            imageSource = ref; image = NSImage(cgImage: pixels, size: .zero)
+            guard owns(ref, current: current) else { return }
+            imageSource = ref; imageIdentity = originalSource?.identity; image = NSImage(cgImage: pixels, size: .zero)
         } catch {
             guard generation == current else { return }
             if Task.isCancelled || error is CancellationError { return }
@@ -127,6 +146,12 @@ enum AskArtifactPresentation {
             if failure == .denied || failure == .expired { imageSource = nil; image = nil }
             self.error = failure.localizedDescription
         }
+    }
+
+    private func owns(_ ref: AskArtifactRef, current: UUID) -> Bool {
+        guard !Task.isCancelled, generation == current else { return false }
+        let permitted = originalSource?.allows(ref) ?? true
+        return !Task.isCancelled && generation == current && permitted
     }
 }
 

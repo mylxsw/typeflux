@@ -1,0 +1,46 @@
+{
+  "covered": 57,
+  "executable_added": 70,
+  "percent": 81.43,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Ask/Artifacts/AskArtifactImageModel.swift",
+      "covered": 33,
+      "executable_added": 33,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/Artifacts/AskStoredArtifactCard.swift",
+      "covered": 24,
+      "executable_added": 26,
+      "percent": 92.31,
+      "uncovered": [
+        114,
+        115
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskConversationModel.swift",
+      "covered": 0,
+      "executable_added": 11,
+      "percent": 0.0,
+      "uncovered": [
+        1633,
+        1634,
+        1635,
+        1636,
+        1637,
+        1638,
+        1639,
+        1640,
+        1641,
+        1642,
+        1643
+      ],
+      "instrumented": true
+    }
+  ]
+}

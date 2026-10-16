@@ -1630,16 +1630,17 @@ final class AskConversationModel: ObservableObject {
     }
 
     var artifactAccess: AskArtifactAccess {
-        .init(load: { [weak self] ref in
-            guard let self, let current = self.session(), self.selectedId == ref.conversationId else {
-                throw AskArtifactError.denied
-            }
-            return try self.tools.loadArtifact(ref, ownerId: current.owner, conversationId: ref.conversationId)
-        }, validate: { [weak self] ref in
-            guard let self, let current = self.session(), self.selectedId == ref.conversationId else {
-                throw AskArtifactError.denied
-            }
-            try self.tools.validateArtifact(ref, ownerId: current.owner, conversationId: ref.conversationId)
+        .boundImages(context: { [weak self] in
+            guard let self, !(self.selectedId.map(self.isDeletedConversation) ?? false) else { return nil }
+            let live = self.session()
+            return .init(owner: live?.owner ?? "", token: live?.token ?? "", conversation: self.selectedId,
+                         selection: self.selectionGeneration)
+        }, load: { [weak self] ref, owner in
+            guard let self else { throw AskArtifactError.denied }
+            return try self.tools.loadArtifact(ref, ownerId: owner, conversationId: ref.conversationId)
+        }, validate: { [weak self] ref, owner in
+            guard let self else { throw AskArtifactError.denied }
+            try self.tools.validateArtifact(ref, ownerId: owner, conversationId: ref.conversationId)
         }, htmlEnabled: tools.artifactPreviewEnabled)
     }
 
