@@ -1,6 +1,6 @@
 {
   "archive": "evidence-history.tar.gz",
-  "sha256": "a89856d3612cc0b87d24cc7116b481828ad69720a0a4eb043fa65407c3e84ac7",
+  "sha256": "fed6d6ba2dc047dcfcca1290e26e42a9b0c111450ef9fa166b6c5f2621bda3dd",
   "files": [
     {
       "path": ".gitattributes",
@@ -19,8 +19,8 @@
     },
     {
       "path": "README.md",
-      "sha256": "a71dcc093a869f7a6ac4d735e8f4f7e53daab9ba32784f13bbef3ed182828b3f",
-      "bytes": 7614
+      "sha256": "ee944fefd347a65831efeb1a1c635f6959ecab28a661bd3273934d95620114a9",
+      "bytes": 8177
     },
     {
       "path": "__pycache__/analyze_current_matrix.cpython-314.pyc",
@@ -439,8 +439,8 @@
     },
     {
       "path": "closeout-main-audit.json",
-      "sha256": "e319de520a0a337dcd3cca1d840846f7385883b309489099eed1eb72bc984e41",
-      "bytes": 6461
+      "sha256": "ddc590300d3049064c6f142798b18d96e19bb410a1f89bf02e975791dd57cf35",
+      "bytes": 6716
     },
     {
       "path": "closeout-resource-build.json",
@@ -449,8 +449,8 @@
     },
     {
       "path": "closeout-resource-build.log",
-      "sha256": "9e53c423edabe925458475ec3ba49b542454be8bf1dab0c3c0cff8256d5d0545",
-      "bytes": 70584
+      "sha256": "972dafaa2f4c6e88fb5b179365dfeffd702e9d0d44c2d32dc66b54287fd8dbc3",
+      "bytes": 67911
     },
     {
       "path": "closeout-resource-command.json",
@@ -464,13 +464,18 @@
     },
     {
       "path": "closeout-summary.json",
-      "sha256": "0008b936d5ac3c3a91f21079b217c9f688519c44cc4652ee69abfae7f7d7ec6e",
+      "sha256": "cd41743b49957857d2783ed7195376888e367e064335642e00847b4404ead31d",
       "bytes": 22295
     },
     {
       "path": "closeout-tests-self-review.json",
       "sha256": "49acfe210185e0aa5ff3e372ef947a37e9690d7e41b7a2c04d6478b3559091a8",
       "bytes": 1360
+    },
+    {
+      "path": "closeout-worker-fingerprint.json",
+      "sha256": "c50233e58fe2928478aa851c2381e502a162e7d38a9c49749eb519d2cb2da7d7",
+      "bytes": 368
     },
     {
       "path": "compare_mixed_calibration-before-monotonic-fix.py",
@@ -954,8 +959,8 @@
     },
     {
       "path": "evidence-redaction.json",
-      "sha256": "0419e88880b3a84e5f3d56e27d85dbe6ccb9d4745837de72e02656dd4cad307b",
-      "bytes": 25505
+      "sha256": "a35a69aec2bd4666e2560bdc2d2692d014f153566dbc8c1554ceb346756d3c40",
+      "bytes": 56468
     },
     {
       "path": "evidence-script-checks.json",
@@ -1069,8 +1074,8 @@
     },
     {
       "path": "final-release-build-after-historical1265.log",
-      "sha256": "baabd488a97723026a7e3e524d1d4451972474d7fc7bacfe39b8d5770b1eb5ac",
-      "bytes": 64712
+      "sha256": "5c00bda2cb3192aad06e8a2adeff922f2d624c35dfdb1be97d7786c448ccb635",
+      "bytes": 62039
     },
     {
       "path": "final-release-build-after-source8bc.json",
@@ -1079,8 +1084,8 @@
     },
     {
       "path": "final-release-build-after-source8bc.log",
-      "sha256": "a956fdd0af830dad1126988cfc60d4fd573f73a2b5a82754f903f09ed3646dff",
-      "bytes": 88724
+      "sha256": "f85886eac33d1c43e2742072823d6cde38bb0b0b135c516b170e4ea0440b49ba",
+      "bytes": 83279
     },
     {
       "path": "final-release-build-after.json",
@@ -1089,8 +1094,8 @@
     },
     {
       "path": "final-release-build-after.log",
-      "sha256": "dc5fca57b0ccf800180e32481d82ed182cd6ab948befb6ffe2898f2ec726b23d",
-      "bytes": 93670
+      "sha256": "97ba86aa731ebf582bfaefbbb8fba61d29a26d2f5f4e07f88b6158deabda1a95",
+      "bytes": 88225
     },
     {
       "path": "final-release-build-before-historical1265.json",
@@ -1334,8 +1339,8 @@
     },
     {
       "path": "matrix-contention-after-10000-final-current/command.log",
-      "sha256": "54a3a0afbddc0143d7f554359c5f91a58073401042c9afc7f265486e34b83bf1",
-      "bytes": 929
+      "sha256": "90d300408bdf8fef706a2343a65aaffed6e6a2e4575f8744a29bd5fd84ddd8cf",
+      "bytes": 830
     },
     {
       "path": "matrix-contention-after-10000-final-current/resources.json",
@@ -1349,8 +1354,8 @@
     },
     {
       "path": "matrix-contention-after-10000-final-ui/command.log",
-      "sha256": "2fa3eea445cfa1c55e06e980724872cbff698e32ae6dc93eb6044eedace0b7cc",
-      "bytes": 926
+      "sha256": "f2545d040205826dad73ef1d2241e67b25ac19a33fa8be850db7f95bcdd7d43f",
+      "bytes": 827
     },
     {
       "path": "matrix-contention-after-10000-final-ui/resources.json",
@@ -1364,8 +1369,8 @@
     },
     {
       "path": "matrix-contention-after-100000-final-ui/command.log",
-      "sha256": "7fc21d8fa19a3f2e4dc81939425ac2f88d6da895fc5d35e5878c6c051dfd8bc0",
-      "bytes": 928
+      "sha256": "7dbddef7538dece8b843ea8d4f9cbbf5fbb076e4ce4cf4916793d2ded72639f9",
+      "bytes": 829
     },
     {
       "path": "matrix-contention-after-100000-final-ui/resources.json",
@@ -1379,8 +1384,8 @@
     },
     {
       "path": "matrix-contention-before-10000-final/command.log",
-      "sha256": "84ab83d9ff4fd43a984fbe2d73734572a96d5dfa713a3a4aedc4079d8dd5a711",
-      "bytes": 949
+      "sha256": "083259ab51b938a913877dca32457f7e7d535c07386a5ed637bbf65c7bb67972",
+      "bytes": 850
     },
     {
       "path": "matrix-contention-before-10000-final/resources.json",
@@ -1394,8 +1399,8 @@
     },
     {
       "path": "matrix-contention-before-100000-final-ui/command.log",
-      "sha256": "7fb6254e188e2cc16a27c3fcddcc314e1f7263c4566ce36c5a10ab943b64637b",
-      "bytes": 949
+      "sha256": "1ee942c52802fa3d3846b4b009656a960a11f362bba366817a4359d92e2fe132",
+      "bytes": 850
     },
     {
       "path": "matrix-contention-before-100000-final-ui/resources.json",
@@ -1419,8 +1424,8 @@
     },
     {
       "path": "matrix-native-after-10000-final/command.log",
-      "sha256": "6745407b359465d2065b5289ae046f797775b73f67ac28603fd9a5ba4f71d518",
-      "bytes": 924
+      "sha256": "9b0c4cb10a225b15b7a3c4353d002ace1d3b01af0c7a8015ae90131049842c2c",
+      "bytes": 825
     },
     {
       "path": "matrix-native-after-10000-final/resources.json",
@@ -1434,8 +1439,8 @@
     },
     {
       "path": "matrix-native-after-10000-final-coldfts/command.log",
-      "sha256": "07326bd44d6b73e10c74c66d8c7b95e67a107265c5216bb14db48e6f6c547408",
-      "bytes": 925
+      "sha256": "0f141b415653a901311277c3a7824426bed563911cc2d13c98727fee569eddc1",
+      "bytes": 826
     },
     {
       "path": "matrix-native-after-10000-final-coldfts/resources.json",
@@ -1449,8 +1454,8 @@
     },
     {
       "path": "matrix-native-after-10000-final-current/command.log",
-      "sha256": "3811eaa298842b5086261dd6b8c8be57c68b1757f726c5d829a875445bba0a69",
-      "bytes": 925
+      "sha256": "f76ef492a54583bd14d2667a0718104bfb147d68de2a06b4800122ed17bcbe22",
+      "bytes": 826
     },
     {
       "path": "matrix-native-after-10000-final-current/resources.json",
@@ -1464,8 +1469,8 @@
     },
     {
       "path": "matrix-native-after-10000-final-current-coldfts/command.log",
-      "sha256": "9dff12e317c3d0b6fbd40ace0f1cff1963657b583071ffd254f0e4b3481618c7",
-      "bytes": 925
+      "sha256": "7aea81e5718c74718da142704cf001733ce9e3095d450ca2a91b31f0810be471",
+      "bytes": 826
     },
     {
       "path": "matrix-native-after-10000-final-current-coldfts/resources.json",
@@ -1479,8 +1484,8 @@
     },
     {
       "path": "matrix-native-after-10000-final-current-real/command.log",
-      "sha256": "551ce77f37f5c7c0beafd2ec3750263fb3faebdbf2d7732ddab54835f2202ba6",
-      "bytes": 924
+      "sha256": "dc6dcca168d45f43372f0f17cf91c37425e17aa9373cf044967c962848b18027",
+      "bytes": 825
     },
     {
       "path": "matrix-native-after-10000-final-current-real/resources.json",
@@ -1494,8 +1499,8 @@
     },
     {
       "path": "matrix-native-after-10000-final-real/command.log",
-      "sha256": "b195de92b98bdf28617c85202f52a979d817930100913fd09a75ef85eb8802f6",
-      "bytes": 1806
+      "sha256": "fbd55a74349fa7c6ddcfae292b9df06339569c790450cd99bcfd93a5894be241",
+      "bytes": 1707
     },
     {
       "path": "matrix-native-after-10000-final-real/resources.json",
@@ -1509,8 +1514,8 @@
     },
     {
       "path": "matrix-native-after-10000-final-ui/command.log",
-      "sha256": "519c240d79064aa0b009884a5943335019e7f4e2d3bcf92e791ab61484721d71",
-      "bytes": 926
+      "sha256": "f88e4a9b30a6e49d527fd77a74eae9e932c0f29149d428255f02571a54eefb42",
+      "bytes": 827
     },
     {
       "path": "matrix-native-after-10000-final-ui/resources.json",
@@ -1524,8 +1529,8 @@
     },
     {
       "path": "matrix-native-after-10000-final-ui-coldfts/command.log",
-      "sha256": "e96f9311222944e1321ae32366d24105d08c1763952503976bde1bfad6349498",
-      "bytes": 925
+      "sha256": "c98a6733ed661f813215b6be31e679f4e240b8a9ab7f3d222c7a18085b826363",
+      "bytes": 826
     },
     {
       "path": "matrix-native-after-10000-final-ui-coldfts/resources.json",
@@ -1539,8 +1544,8 @@
     },
     {
       "path": "matrix-native-after-10000-final-ui-real/command.log",
-      "sha256": "10d04de6103c0170892764b3f7ea2e67fb91fe11f5b34351493a152baa53cc4c",
-      "bytes": 924
+      "sha256": "0cbeda7d4a48977d0717a83f44c36cafd435381a08d45947bf97765413f1deb8",
+      "bytes": 825
     },
     {
       "path": "matrix-native-after-10000-final-ui-real/resources.json",
@@ -1554,8 +1559,8 @@
     },
     {
       "path": "matrix-native-after-10000-metadata-trace/command.log",
-      "sha256": "5bd2d9dde70fb42a90986860a6019368becfcece10009b5d85cf493d95ce21e2",
-      "bytes": 925
+      "sha256": "f3216cb8b4d030e4a65fa8290ec39fc617e00e6879ae7163b460d9785a646365",
+      "bytes": 826
     },
     {
       "path": "matrix-native-after-10000-metadata-trace/resources.json",
@@ -1569,8 +1574,8 @@
     },
     {
       "path": "matrix-native-after-100000-final-current/command.log",
-      "sha256": "170613e589b4c03940e382422d44c1815313492f97b1ca3d824ff6ce3b1d1deb",
-      "bytes": 925
+      "sha256": "01f139b233977662cba2159236459f5811440f7aae3e749a2f0ebedf91912a72",
+      "bytes": 826
     },
     {
       "path": "matrix-native-after-100000-final-current/resources.json",
@@ -1584,8 +1589,8 @@
     },
     {
       "path": "matrix-native-after-100000-final-ui-coldfts/command.log",
-      "sha256": "0173df9f4735878b3278b6bc8babb22ba9b2a890a8fa0147eef1e912eb6d2ed7",
-      "bytes": 924
+      "sha256": "85e2633dc299c400e38774f3fbe01de1dd0609fe260a78515a91a8cde0a3e56f",
+      "bytes": 825
     },
     {
       "path": "matrix-native-after-100000-final-ui-coldfts/resources.json",
@@ -1599,8 +1604,8 @@
     },
     {
       "path": "matrix-native-after-100000-final-ui-gate/command.log",
-      "sha256": "7e8770aa611c90a1c2950a70e6fcf8dbafe21459c87f00fd8a692849d24abe5b",
-      "bytes": 924
+      "sha256": "33bc01f1780f173ca44f85ffd7c7bc7aa67567f4d7c8e321a5a9b19a14050862",
+      "bytes": 825
     },
     {
       "path": "matrix-native-after-100000-final-ui-gate/resources.json",
@@ -1614,8 +1619,8 @@
     },
     {
       "path": "matrix-native-after-100000-final-ui-real/command.log",
-      "sha256": "4472e54f9d0b7cdddf3fb949e59acb27c1d7be8f82f59cc779fc7d108cb4347c",
-      "bytes": 924
+      "sha256": "7d28add885c94429353a4f48fb9263cd76ff84365b34ee5cba7da2b54891d11d",
+      "bytes": 825
     },
     {
       "path": "matrix-native-after-100000-final-ui-real/resources.json",
@@ -1639,8 +1644,8 @@
     },
     {
       "path": "matrix-native-before-10000-final/command.log",
-      "sha256": "cb82ed3d5884f106509fd99307eca96f406fb9bb5f08f29d2448694fa4b021ed",
-      "bytes": 946
+      "sha256": "fe73438ac56e06bfab2ba91c81361851ac3dc262d65367d39bb36c69fae4ddbb",
+      "bytes": 847
     },
     {
       "path": "matrix-native-before-10000-final/resources.json",
@@ -1654,8 +1659,8 @@
     },
     {
       "path": "matrix-native-before-10000-final-coldfts/command.log",
-      "sha256": "de3746c75c07368c592766d23b95625db6cadd56214a5e894358edf1f8bd164c",
-      "bytes": 944
+      "sha256": "b7f4fb0e9814c642ee94dd488de1b00d1094461e4a7bbec8487b9de15b0b7289",
+      "bytes": 845
     },
     {
       "path": "matrix-native-before-10000-final-coldfts/resources.json",
@@ -1669,8 +1674,8 @@
     },
     {
       "path": "matrix-native-before-10000-final-real/command.log",
-      "sha256": "8ca637acb896455b28da730c91e03c6db904f2c52beeb6a793d359cc26410a4e",
-      "bytes": 947
+      "sha256": "0e281ad901c88e83c1602d0fc67b0f0eb3cd9f34fc481cdf7b4032557e96a8a9",
+      "bytes": 848
     },
     {
       "path": "matrix-native-before-10000-final-real/resources.json",
@@ -1684,8 +1689,8 @@
     },
     {
       "path": "matrix-native-before-100000-final-current/command.log",
-      "sha256": "a242b672d3f1715c258027ae298417bd06a166bc06946ee4484de2484f7a2394",
-      "bytes": 946
+      "sha256": "0d155db894f10339969b709fa0b2268172b68b33669c0a08dbafae6967957dbb",
+      "bytes": 847
     },
     {
       "path": "matrix-native-before-100000-final-current/resources.json",
@@ -1699,8 +1704,8 @@
     },
     {
       "path": "matrix-native-before-100000-final-ui-coldfts/command.log",
-      "sha256": "c2ad9a0c40a34c69eba508a79d88a3b42f6bceedf8d2a68b8d0ee9c7c1250436",
-      "bytes": 944
+      "sha256": "dcab42144d2001d76244dbec44aa018b38a46823e8a225ed8ffc3448faf7b9fc",
+      "bytes": 845
     },
     {
       "path": "matrix-native-before-100000-final-ui-coldfts/resources.json",
@@ -1714,8 +1719,8 @@
     },
     {
       "path": "matrix-native-before-100000-final-ui-real/command.log",
-      "sha256": "66308a5d3f0c6111d6b207cf1d172d8dced650372ecd57749100fde1da64b629",
-      "bytes": 945
+      "sha256": "388240145810fcaa689e6ebb9d35272b1585905331aa3c2cf692b45b13ea01e1",
+      "bytes": 846
     },
     {
       "path": "matrix-native-before-100000-final-ui-real/resources.json",
@@ -1729,8 +1734,8 @@
     },
     {
       "path": "matrix-native-before-1000000-final-ui/command.log",
-      "sha256": "c3be209682d69d84eca47f46754a208adfbee936ceb8f0c8b0cce06d8eac9982",
-      "bytes": 947
+      "sha256": "1b1b465f42b81efd9f48f285f1edc96de086d1a8abcf887db91fb1bdc018f551",
+      "bytes": 848
     },
     {
       "path": "matrix-native-before-1000000-final-ui/resources.json",
@@ -2689,8 +2694,8 @@
     },
     {
       "path": "prelint-release-build-after.log",
-      "sha256": "279b10e9a37af86ae328976d6fb1fe13055f48dfbf47275265e1aa0234b1fa3e",
-      "bytes": 88327
+      "sha256": "6d191055fe0c6349887f7af981e15c2afa76113fbf6c27234be8f93aeac6148b",
+      "bytes": 82882
     },
     {
       "path": "prelint-release-build-before.json",
@@ -2699,8 +2704,8 @@
     },
     {
       "path": "prelint-release-build-before.log",
-      "sha256": "b3c55cf44790398e38ea538c07a2c170723de6e2105e6d007b73f050a5372c22",
-      "bytes": 22111
+      "sha256": "0704b913f0c0901a0827357cf948ce293d12b86a63f946b05bc55e1e39973042",
+      "bytes": 20725
     },
     {
       "path": "prelong-release-build-after.json",
@@ -2709,8 +2714,8 @@
     },
     {
       "path": "prelong-release-build-after.log",
-      "sha256": "9773d4024696748219668d001a6861c0c99d378fc0b251bcf80e320492855097",
-      "bytes": 58728
+      "sha256": "910458b067df78060ea012d02d0e063713b4e56ea981757e0e51161bc14ea581",
+      "bytes": 55956
     },
     {
       "path": "prelong-release-build-before.json",
@@ -3234,8 +3239,8 @@
     },
     {
       "path": "resource-after-closeout-300/command.log",
-      "sha256": "4f63615d3b75c48abe184fbd55bb3ff6b4723754df60bb9f080a05ef8101b46b",
-      "bytes": 925
+      "sha256": "20617f1535fe4c7328e726d1f2262c24d594e88491956ec20b8215aa0d09eb2d",
+      "bytes": 826
     },
     {
       "path": "resource-after-closeout-300/index-off-probe.log",
@@ -3284,8 +3289,8 @@
     },
     {
       "path": "resource-after-final/command.log",
-      "sha256": "467d81e3568045fbafba484ae547b597186b205a02ae9afdee2ffdafa059577f",
-      "bytes": 927
+      "sha256": "dbb0d83cc9525eb1bf77705c1b2db7a27da68e4e810ce6aace811e5ac128bc8d",
+      "bytes": 828
     },
     {
       "path": "resource-after-final/database-observations.json",
@@ -3349,8 +3354,8 @@
     },
     {
       "path": "resource-after-rework/command.log",
-      "sha256": "2fb4bfdd8fd979c5c182eeb3b20268e55962c0d366b4bf4ae5a77c89eb070c6d",
-      "bytes": 926
+      "sha256": "a612f8294131bf88366c71d5c72076697c5827164efcb1da9da92f8dc823e62e",
+      "bytes": 827
     },
     {
       "path": "resource-after-rework/database-observations.json",
@@ -3404,8 +3409,8 @@
     },
     {
       "path": "resource-after-rework-failed-finish-launching/command.log",
-      "sha256": "5bad5d50ed1dbdd5792a4b8805e0da57230c95ede3f80b7aef85fd0660dfcc9f",
-      "bytes": 1179
+      "sha256": "259ceb48a5874e0a493b3fbd456d3b79da471bb3af4b0bd550788110672fcf53",
+      "bytes": 1080
     },
     {
       "path": "resource-after-rework-failed-finish-launching/resources.json",
@@ -3419,8 +3424,8 @@
     },
     {
       "path": "resource-after-rework-failed-no-event-pump/command.log",
-      "sha256": "774f517de48900db785f0d833239eb8c0094f24cba18f7a760ccc33ac48de9bf",
-      "bytes": 1809
+      "sha256": "794ea2e6474104f63c196580af6f25dbd96dd7ad7ba1151908a0fea24f684145",
+      "bytes": 1710
     },
     {
       "path": "resource-after-rework-failed-no-event-pump/native-resource-incomplete.json",
@@ -3439,8 +3444,8 @@
     },
     {
       "path": "resource-after-rework-failed-test-pump-exit/command.log",
-      "sha256": "5ea35daa9b985ed6373176ef8b7ad8dbd070f89b27cb5e0d6c01aa0a79b7407b",
-      "bytes": 1179
+      "sha256": "6d98fce3dbfade8cb69c6855f439b722c0edad08b5bc7848b401d6e58ab93eff",
+      "bytes": 1080
     },
     {
       "path": "resource-after-rework-failed-test-pump-exit/resources.json",
@@ -3489,8 +3494,8 @@
     },
     {
       "path": "rework-command-history/gul404-closeout-resource.log",
-      "sha256": "90bdae2ba9e6e2e93e010d1d56c64af3fe4ece06219c1182a3e49b8db60b0e62",
-      "bytes": 1032
+      "sha256": "e7c0d6f9ca1369f5b43b47ac81c1b470dbd3fdbea583a84718042ab94fcddb05",
+      "bytes": 933
     },
     {
       "path": "rework-command-history/gul404-current-lint.json",
@@ -3499,13 +3504,13 @@
     },
     {
       "path": "rework-command-history/gul404-current-lint.log",
-      "sha256": "611afc04cac5fce56d85e7b79d5fae57c1ec6afa318eec371019d88643aff804",
-      "bytes": 2745
+      "sha256": "a614d43bbaaed74b5c33550a5757e3f087df4e8126f00176dc40a00b0582ec28",
+      "bytes": 1953
     },
     {
       "path": "rework-command-history/gul404-current-quality.log",
-      "sha256": "d3578f197a73f466ed6f5d0887d5ed0e722414972f9aca521728e06caad126c1",
-      "bytes": 3810
+      "sha256": "c17ed5fbe5299235c1192e052ee2e0af8305bbd973f5705e1d23f7768d19c864",
+      "bytes": 3414
     },
     {
       "path": "rework-command-history/gul404-development-abstention-v2.json",
@@ -3584,8 +3589,8 @@
     },
     {
       "path": "rework-command-history/gul404-development-baseline-build.log",
-      "sha256": "104f723e2e6a55371bddba1b73b36c8f967772fe4d589d2b193cf62e75e68070",
-      "bytes": 22112
+      "sha256": "d370227d84bcb8f74ac643e1e93c73955e48255804198d84c80ce918eee23c64",
+      "bytes": 20726
     },
     {
       "path": "rework-command-history/gul404-development-baseline-replay.json",
@@ -3594,8 +3599,8 @@
     },
     {
       "path": "rework-command-history/gul404-development-baseline-replay.log",
-      "sha256": "03d8af2802a9da6d9ea6cc033599a280a2eb9bb6337d2bfa7ba8fca5e7ee60bc",
-      "bytes": 950
+      "sha256": "630d7141aa0ceed5c18751950f5cb53f7ae7c8ce63273ea98985ed53aa444442",
+      "bytes": 851
     },
     {
       "path": "rework-command-history/gul404-development-boilerplate-v9.json",
@@ -3714,8 +3719,8 @@
     },
     {
       "path": "rework-command-history/gul404-final-current-matrix.log",
-      "sha256": "a711c525f3cfbead85babc4a855a589ede286ff5ca6d38d4b2991d8edd2a9078",
-      "bytes": 7226
+      "sha256": "5438cfc45b5e50e950cb06a3e0c16151478186e6bb7e94a05efb9cd2e9147f62",
+      "bytes": 6632
     },
     {
       "path": "rework-command-history/gul404-final-format.json",
@@ -3724,8 +3729,8 @@
     },
     {
       "path": "rework-command-history/gul404-final-format.log",
-      "sha256": "e50b41aa8630a954e16fbdf20862652eee78f6e94f464fe1eb6fcac2e262f580",
-      "bytes": 574
+      "sha256": "3249cf24dee735353b458c2d4115d1a0205e87f2b92da7ebc60b6e82e1fb8130",
+      "bytes": 376
     },
     {
       "path": "rework-command-history/gul404-final-home-build.json",
@@ -3739,18 +3744,18 @@
     },
     {
       "path": "rework-command-history/gul404-final-lint.log",
-      "sha256": "a20f054058900ce59636441319d1acd1c241da8f4acfe97df5bf2feee447be6b",
-      "bytes": 1359
+      "sha256": "c766de5bc5716b32e280a5d70991d17fa0a7a05b092db1dde8d74ed780a4892e",
+      "bytes": 963
     },
     {
       "path": "rework-command-history/gul404-final-ui-gate.log",
-      "sha256": "5a0fc0e5ea11dd87fc9a808a570e862b1820033f069b091a7e733da286186b99",
-      "bytes": 1234
+      "sha256": "3058bef44363822fa0ce654aa567d046d6f6370b5e8b9e7d701b94edd8473b62",
+      "bytes": 1135
     },
     {
       "path": "rework-command-history/gul404-final-ui-matrix.log",
-      "sha256": "d67ae7677bbb25cdb36259360818fe44144537a2e9a837fc47e7dca4566800eb",
-      "bytes": 13545
+      "sha256": "35d3fb02ad0bad3a9d75ebdc0d122f4511cc8363bf361c35f768f39b2e2ea4ca",
+      "bytes": 12456
     },
     {
       "path": "rework-command-history/gul404-final2-capture.json",
@@ -3764,8 +3769,8 @@
     },
     {
       "path": "rework-command-history/gul404-final2-coverage.log",
-      "sha256": "95339f408b59efd0809c078d992897c09ad49d43a8cce97c7799c558e04f3814",
-      "bytes": 441565
+      "sha256": "496e02cae4dfbef8207fc0e654d377656be14cffb079ccbc6432dfd7d80beb95",
+      "bytes": 404539
     },
     {
       "path": "rework-command-history/gul404-final2-helper-build.json",
@@ -3809,8 +3814,8 @@
     },
     {
       "path": "rework-command-history/gul404-final2-retry.log",
-      "sha256": "4458e01fc0bab45be8d71ec026968a2e29ba810e6ebc1f6349562e940fc4339f",
-      "bytes": 276755
+      "sha256": "194dddd43d866c5e9e5f40792e46d3625482add072d6bdf5764930fd9d250cad",
+      "bytes": 276260
     },
     {
       "path": "rework-command-history/gul404-final3-capture.log",
@@ -3824,8 +3829,8 @@
     },
     {
       "path": "rework-command-history/gul404-home-ui-coverage-initial.log",
-      "sha256": "2b5e65daf8c8da3e62e64ae6e5a982f4f532edc49c2f38ebdba933a3ce8c37cd",
-      "bytes": 1198141
+      "sha256": "681c9799c324624d5e5f1c91b6cfc2d01721390cc2d1bbf81d6f9680dc2f6cd9",
+      "bytes": 1084192
     },
     {
       "path": "rework-command-history/gul404-home-ui-coverage-retry.json",
@@ -3834,8 +3839,8 @@
     },
     {
       "path": "rework-command-history/gul404-home-ui-coverage-retry.log",
-      "sha256": "8585a632c28de486e8323c6110b6f0807bd887cf97dcdffbcfee06be5e77b03b",
-      "bytes": 415769
+      "sha256": "b4d365c507af3bce8626a68f7d71144135d1c37b138bdee9a69c8836c76f58b7",
+      "bytes": 406067
     },
     {
       "path": "rework-command-history/gul404-home-ui-coverage.json",
@@ -3844,8 +3849,8 @@
     },
     {
       "path": "rework-command-history/gul404-home-ui-coverage.log",
-      "sha256": "2b5e65daf8c8da3e62e64ae6e5a982f4f532edc49c2f38ebdba933a3ce8c37cd",
-      "bytes": 1198141
+      "sha256": "681c9799c324624d5e5f1c91b6cfc2d01721390cc2d1bbf81d6f9680dc2f6cd9",
+      "bytes": 1084192
     },
     {
       "path": "rework-command-history/gul404-independent-probe-build.json",
@@ -3879,13 +3884,13 @@
     },
     {
       "path": "rework-command-history/gul404-lint-final-coverage.log",
-      "sha256": "d50ece20717c2267def2f74cf2a618f5b6adf61883ac968cb443488366ccc482",
-      "bytes": 305645
+      "sha256": "38ed6f3b6a42044a24f9463ea81e53fc9e20fb8fdc7030312b34c2dd6621b4c1",
+      "bytes": 305051
     },
     {
       "path": "rework-command-history/gul404-main-integration-coverage.log",
-      "sha256": "4d99cdd9ac4ba0b405f96454034335b508d0b700c6b39c0089968bc38fcb0764",
-      "bytes": 676255
+      "sha256": "b6a413eede6ce3bc2d7a3c7537aa452d7c07b3328a627ef930bcddf4d0d13f2a",
+      "bytes": 602995
     },
     {
       "path": "rework-command-history/gul404-main-integration-format.json",
@@ -3894,18 +3899,18 @@
     },
     {
       "path": "rework-command-history/gul404-main-integration-format.log",
-      "sha256": "1eca25b3078cc43c25bf5c41cb1d3187788221bf09de243ec1be6a759989b921",
-      "bytes": 573
+      "sha256": "3ce8c956882d8ea74218e16129e3ab8cdad86c97c206f8dec7544c2721f1c325",
+      "bytes": 375
     },
     {
       "path": "rework-command-history/gul404-main-integration-retry.log",
-      "sha256": "a34c2fcca818cae185cc774cb76466b7c8e2c8e4ec528661d12422200d2b4b47",
-      "bytes": 1336020
+      "sha256": "d1921831f345f78f40ed09dcdc894a1e245497f6f22fbf011b3c1b34709c92e3",
+      "bytes": 1233852
     },
     {
       "path": "rework-command-history/gul404-metadata-priority-coverage.log",
-      "sha256": "b8b8e7ecf330011e521a943749a07b19524e9962b086e2d8a4fc795fe2d2b9fa",
-      "bytes": 389582
+      "sha256": "0e3c28663abc4d0b66973f0d6f3ee21852359b3c84682149efc25f856179c7aa",
+      "bytes": 381068
     },
     {
       "path": "rework-command-history/gul404-metadata-priority-format.json",
@@ -3914,8 +3919,8 @@
     },
     {
       "path": "rework-command-history/gul404-metadata-priority-format.log",
-      "sha256": "67ba245b77863d61d1faa46716a9474d1067d5b41fa5d965514062a2785ad69f",
-      "bytes": 572
+      "sha256": "ecad847ce32a591a3e83a68e4bb51fd49e5112d3f9c5c59f46457cc2e15d985d",
+      "bytes": 374
     },
     {
       "path": "rework-command-history/gul404-metadata-priority-lint.json",
@@ -3939,8 +3944,8 @@
     },
     {
       "path": "rework-command-history/gul404-metadata-recovery-format-final.log",
-      "sha256": "54521d24e86405b1cb4cd1e84fa3576c0c6afbcb50344d4b4b5e465afc01578f",
-      "bytes": 572
+      "sha256": "2f81b6d19edbac28414919cb8171cddf9fa5d50e62b53b0c4f61951c4c847c7e",
+      "bytes": 374
     },
     {
       "path": "rework-command-history/gul404-metadata-recovery-format-retry.json",
@@ -3949,8 +3954,8 @@
     },
     {
       "path": "rework-command-history/gul404-metadata-recovery-format-retry.log",
-      "sha256": "dfb999d320ae170e7d9738a3ca13e90ea06da10a446c77654ee839dea792a7d7",
-      "bytes": 572
+      "sha256": "278832ee65caf53dc48b5363546e6dae90f6d70b49df9e4e20937dae02ce607a",
+      "bytes": 374
     },
     {
       "path": "rework-command-history/gul404-metadata-recovery-format.json",
@@ -3959,8 +3964,8 @@
     },
     {
       "path": "rework-command-history/gul404-metadata-recovery-format.log",
-      "sha256": "3d4aa0915d0223c3976712994c6d54c5c9ebc2307836f54b7bb359866192430d",
-      "bytes": 572
+      "sha256": "457a842b0a0630ca587ab71f11c3e6a2124b632a771073d4f21340bdded5742c",
+      "bytes": 374
     },
     {
       "path": "rework-command-history/gul404-metadata-recovery-lint-final.json",
@@ -3989,13 +3994,13 @@
     },
     {
       "path": "rework-command-history/gul404-metadata-recovery-lint.log",
-      "sha256": "7f26af5a47f99fa5602541efd58b56d3bef0db70b4b087439a5066cb6d71e4a8",
-      "bytes": 899
+      "sha256": "2b84be1226dcbbd47d903465432e6ea01263e25bddfb15f5b3cc5d9408cff202",
+      "bytes": 602
     },
     {
       "path": "rework-command-history/gul404-metadata-recovery-retry.log",
-      "sha256": "b681666e8b0c3fbaddd766f0a27b97ae887c9072c7ae8acc972e9638ba56fb59",
-      "bytes": 309117
+      "sha256": "d1bf023a7eecf1ca53092edcbdc19b32a4d9356243a296f37e411335eaf675fa",
+      "bytes": 308523
     },
     {
       "path": "rework-command-history/gul404-metadata-trace-build.json",
@@ -4004,8 +4009,8 @@
     },
     {
       "path": "rework-command-history/gul404-metadata-trace-build.log",
-      "sha256": "d5dc1d0597613df1dea97346b764d1178e77ffb7790c40986cce09682f661e7f",
-      "bytes": 87631
+      "sha256": "d70c48c14e20798630d517144f155c4717b3f9b7e7ade431d73429055595e6a5",
+      "bytes": 82186
     },
     {
       "path": "rework-command-history/gul404-original-media-prepare.json",
@@ -4069,38 +4074,38 @@
     },
     {
       "path": "rework-command-history/gul404-ranking-v9-coverage.log",
-      "sha256": "ee8f647b1f1479dc62f4470f462f57473d646242752032db30d7ee77af1bc237",
-      "bytes": 316923
+      "sha256": "a0d56fe11436d2600ef51dea2ffaa59ad0bd4b93b6e1a31e6f5a9e280cea048b",
+      "bytes": 316230
     },
     {
       "path": "rework-command-history/gul404-rework-baseline-release-build.log",
-      "sha256": "0787a1139ec3aa6f8a5e3dd199b92dcbd6c000ad158b678e4096497230f768a8",
-      "bytes": 22273
+      "sha256": "1f73adba3459262c67080432f481280422bec00c7b4a094b21e835fcd9af7bd6",
+      "bytes": 20887
     },
     {
       "path": "rework-command-history/gul404-rework-build-2.log",
-      "sha256": "7b617e75f92328d5e5fcffb967250be340cc09e6d39e9827d12c09d50fd66d3e",
-      "bytes": 38198
+      "sha256": "ca45ac9b4a3a0265141ce2b03ce647bf775a5ecb54066dcc88914ed3db1d3d26",
+      "bytes": 26738
     },
     {
       "path": "rework-command-history/gul404-rework-build-3.log",
-      "sha256": "7e981fda3e9a409691ee625ee029c32a6caaccf4742cad5efdd384c8d4f8d0f1",
-      "bytes": 59593
+      "sha256": "1350d82a326da9ee0475eea5fbb72dca8b51b692f52eaf79108c09d005a208ab",
+      "bytes": 45567
     },
     {
       "path": "rework-command-history/gul404-rework-build-4.log",
-      "sha256": "e481ff9b8681c473daa3dd5fd194c6d0659d525adad879fc006ea3b25cc4c1ed",
-      "bytes": 24074
+      "sha256": "8bddf4087da0c363ac53fe629ff012fd5289049c17792d3aca1facda26ea932f",
+      "bytes": 21401
     },
     {
       "path": "rework-command-history/gul404-rework-build-5.log",
-      "sha256": "58d50f11adfdbdf340d1f097bcb26bcc1802c21a7c8c77325081b587272b47ed",
-      "bytes": 5234
+      "sha256": "9dae678b9673cd713095c3e3b3c49baa7db88a2b27f1aa8d46525e81ac645ad3",
+      "bytes": 4838
     },
     {
       "path": "rework-command-history/gul404-rework-build.log",
-      "sha256": "837a59ae2ccb3ed8ed45389015734b50280507e3b2faf418f2ca315840e154ee",
-      "bytes": 38287
+      "sha256": "cef3bcac6223faccf66b16894b32ddd1dbdd40aba3ef3fa5e8613874c32f8440",
+      "bytes": 27817
     },
     {
       "path": "rework-command-history/gul404-rework-changed-lint.json",
@@ -4114,23 +4119,23 @@
     },
     {
       "path": "rework-command-history/gul404-rework-coverage-crash-final.log",
-      "sha256": "e8c1fc04760745d75f103b268ffe65f8b6de7aaa9ebff81834f8bda84a4f41af",
-      "bytes": 268544
+      "sha256": "b9b3277eccf74abb86edfa28b6be49292cbbb693159e9e27ed581da8b720e7b4",
+      "bytes": 268346
     },
     {
       "path": "rework-command-history/gul404-rework-coverage-initial-failed.log",
-      "sha256": "4ba8cbec5af24b7664be6083bb90404fdd693a531048d14082d397c96cbed789",
-      "bytes": 372311
+      "sha256": "e45416561492fd4f1ad648fcc73d48312cc795ebbcca22b34a3a3f95ea270c22",
+      "bytes": 343403
     },
     {
       "path": "rework-command-history/gul404-rework-coverage-monitor-callers.log",
-      "sha256": "3a986bfcde3ad42a614d2a06220066b839833dbff81618e144db9ee0fec91eab",
-      "bytes": 270560
+      "sha256": "6fa466bf73dbc40a9bc459ffa1e55f6315fab77cdf9104662c99f8802fd2cbbe",
+      "bytes": 270362
     },
     {
       "path": "rework-command-history/gul404-rework-coverage-preparation-failed.log",
-      "sha256": "54072993ee1d7e1696e45eb232c59985a23570e603b1f76875ebc5c5e25128ed",
-      "bytes": 9644
+      "sha256": "da7be3c5983c63e07e58269e9648ecef6022ac671bdda693a0709aa30e16d591",
+      "bytes": 8555
     },
     {
       "path": "rework-command-history/gul404-rework-coverage-recovery.log",
@@ -4139,18 +4144,18 @@
     },
     {
       "path": "rework-command-history/gul404-rework-coverage-retry.log",
-      "sha256": "4997e143145525c31d7eaceae93596ca71faeb1207d8362eeb5ce6e3b0f07e57",
-      "bytes": 37086
+      "sha256": "bcb83e52e11017a34b73f7d4351a3626169acacecbb5bb43c8a5ba1c9b29264e",
+      "bytes": 35601
     },
     {
       "path": "rework-command-history/gul404-rework-coverage-third.log",
-      "sha256": "b398a542270c5ad4d01374daf6cfe8ef79eaf4dced183a6f05abc07cc75de7e3",
-      "bytes": 303217
+      "sha256": "3eb6bcc7a95bf230cdd8b45129c4a9e1bda33bc473b6e8693ce6826d082768ec",
+      "bytes": 299950
     },
     {
       "path": "rework-command-history/gul404-rework-final-lint.log",
-      "sha256": "5531a7db83915e389f9e48267d2da7831aefbf5691981c10e0bd48d6ae5b7153",
-      "bytes": 4424
+      "sha256": "4159c37ee4e938b61c99a1334052682fffee383f2f77303339b7c50637860cf1",
+      "bytes": 3038
     },
     {
       "path": "rework-command-history/gul404-rework-format-2.log",
@@ -4159,23 +4164,23 @@
     },
     {
       "path": "rework-command-history/gul404-rework-format-3.log",
-      "sha256": "e2672ca36d7529af3ecbeb30fcaaed0a88dbc3bc64c33a465c328ae6d67ea318",
-      "bytes": 574
+      "sha256": "e24d2cffa402a4e845efbcdd43e9ea1430aaf8ac075115f1b7164b05f545ae1c",
+      "bytes": 376
     },
     {
       "path": "rework-command-history/gul404-rework-format-final.log",
-      "sha256": "c7b2430720d1032a2912d8e1592056ca3c1338ed80d6feec8b20a8cd9adef049",
-      "bytes": 573
+      "sha256": "cb6459527ca08e10ba48a0bc037e576632b6de1430bfafe38f2705792d53f385",
+      "bytes": 375
     },
     {
       "path": "rework-command-history/gul404-rework-format-retry.log",
-      "sha256": "2ce72a38df4dad2a8b145070f69649d8d65714a1b4f240ccdd2277d5e8a60c00",
-      "bytes": 573
+      "sha256": "b777d4f47c72a0a3fec051e76eba10bf9858b49fae87c3f74a93a753bbd241ae",
+      "bytes": 375
     },
     {
       "path": "rework-command-history/gul404-rework-format.log",
-      "sha256": "3041aae66e5c86276f5ab81827503c41bd271f1c0e052a57bde4fc2ad10b6295",
-      "bytes": 399
+      "sha256": "d617e30439414db2b8dce0d67876d82e5a8c730d527f123327ac20c841bf3fee",
+      "bytes": 201
     },
     {
       "path": "rework-command-history/gul404-rework-helper-build.json",
@@ -4224,8 +4229,8 @@
     },
     {
       "path": "rework-command-history/gul404-rework-helper-coverage-gpu.log",
-      "sha256": "ee8b0ed1ed4187af3aacfb348dd63e891e0b3bc1660b7902e2ba244b6b77fedc",
-      "bytes": 399
+      "sha256": "edc2268445773ef730579a066a811668a174c213b90ceca808e8542f5e000a02",
+      "bytes": 300
     },
     {
       "path": "rework-command-history/gul404-rework-helper-reference.json",
@@ -4259,23 +4264,23 @@
     },
     {
       "path": "rework-command-history/gul404-rework-release-build.log",
-      "sha256": "7066f85a100fac2a849d679dd97a88316c20ec90bb573abdf32b28d39ad4a824",
-      "bytes": 80380
+      "sha256": "1c7c1a8b76634976cbbeaacdc7b06aa5f710796334d4269b9ac9ee73ddd2e35a",
+      "bytes": 75529
     },
     {
       "path": "rework-command-history/gul404-rework-resource-driver-build-2.log",
-      "sha256": "c45fb8e7d86e24b18e2adf9ec585c928e77c6c89c5ff03432f255b0337e21712",
-      "bytes": 59461
+      "sha256": "fd054b79039206fc262d847542ca3b79c3e7a2c1bbfea621e6c08855e7959d68",
+      "bytes": 56986
     },
     {
       "path": "rework-command-history/gul404-rework-resource-driver-build.log",
-      "sha256": "165995cf00fb226c64652ecc43e205fe055f055063f5c96576567a4fc41c51ef",
-      "bytes": 59633
+      "sha256": "1e56c075a31b8d395754356623991ea064d596d9432c61d078fdf6965632a396",
+      "bytes": 57158
     },
     {
       "path": "rework-command-history/gul404-rework-resource-standalone-build.log",
-      "sha256": "92dd427ad6b5bafd0af3c135ebc2f342fe94553061afc36695ca10e9d1515f69",
-      "bytes": 59544
+      "sha256": "bf6649b77a183caf85e2304bd7c2ab970be813ae7a683ff007ed09b6d08ea48f",
+      "bytes": 57069
     },
     {
       "path": "rework-command-history/gul404-rework-test-build-2.json",
@@ -4284,8 +4289,8 @@
     },
     {
       "path": "rework-command-history/gul404-rework-test-build-2.log",
-      "sha256": "ff7b5fb7ba0ffe5093ea96e812b718e6dfda1f48f824eeac1fca5b3deccbef10",
-      "bytes": 3625
+      "sha256": "311894060c865625e26a7326a198b3d6fa6e5af25338c52640eaad225c691288",
+      "bytes": 3427
     },
     {
       "path": "rework-command-history/gul404-rework-test-build-3.json",
@@ -4294,8 +4299,8 @@
     },
     {
       "path": "rework-command-history/gul404-rework-test-build-3.log",
-      "sha256": "e267431306c6d6ed8bd6a8750675512c9e02fba3f1b1bc0d526bae7d9652693b",
-      "bytes": 65676
+      "sha256": "0cb6077a830b98c4593907cda50b5c79665614e4096dc00da60e4d892757c567",
+      "bytes": 59043
     },
     {
       "path": "rework-command-history/gul404-rework-test-build-4.json",
@@ -4304,8 +4309,8 @@
     },
     {
       "path": "rework-command-history/gul404-rework-test-build-4.log",
-      "sha256": "73898e267813949f2825679bf483e365bd0c18509876d797cebfc937b1fa25dc",
-      "bytes": 25545
+      "sha256": "20e7923e861d567ad15c38549c11e0ba9927aea60e5697dc795a67cef722750c",
+      "bytes": 22476
     },
     {
       "path": "rework-command-history/gul404-rework-test-build-5.json",
@@ -4314,8 +4319,8 @@
     },
     {
       "path": "rework-command-history/gul404-rework-test-build-5.log",
-      "sha256": "e8e8a751bd3c0a250bf88c3e23209fde935497212d4f99dc77581b191346d9bb",
-      "bytes": 595442
+      "sha256": "272682e141687b94db34a786c2f0f992ea9b24cb19fddd5352f6115525805296",
+      "bytes": 551189
     },
     {
       "path": "rework-command-history/gul404-rework-test-build-6.json",
@@ -4324,8 +4329,8 @@
     },
     {
       "path": "rework-command-history/gul404-rework-test-build-6.log",
-      "sha256": "ba3e2607594e67f4da90ce8d0475660371ce6f7f7218dc75549db946fa029c74",
-      "bytes": 151019
+      "sha256": "06d0d2e25de4d1a140e13ca2e4541212212e8794b6ab4c6120797f5b47d6bc46",
+      "bytes": 138545
     },
     {
       "path": "rework-command-history/gul404-rework-test-build-7.json",
@@ -4334,13 +4339,13 @@
     },
     {
       "path": "rework-command-history/gul404-rework-test-build-7.log",
-      "sha256": "b29bb9bbd455484bfea8d3765237f8453b2e73784c5410b387fa302acfd4efa5",
-      "bytes": 80360
+      "sha256": "468b932a51548aab3b82d02110b5b2fe64a685439e8d3d021e3e48402c45219b",
+      "bytes": 73529
     },
     {
       "path": "rework-command-history/gul404-rework-test-build.log",
-      "sha256": "4c7382b04c1e6c1dd5b99a5b6ddb57eaf9fa977ea5a7e363c0769c2b76a4f7e5",
-      "bytes": 1188830
+      "sha256": "9bc040654eee7d177e7771d396145fc3ad1058bd5826e61e5ee0c1e04ef73103",
+      "bytes": 1065575
     },
     {
       "path": "rework-command-history/gul404-rusage-preflight.json",
@@ -4349,8 +4354,8 @@
     },
     {
       "path": "rework-command-history/gul404-rusage-preflight.log",
-      "sha256": "ff99f4cf39837d22bc7b72e3034f5e0089da2bb90020d646280bfdfd3c9299b4",
-      "bytes": 387
+      "sha256": "57ad5e83569bf0a7b0c548c860cbcd33054d1dcf6c09b29c3d26a73f40bfaf24",
+      "bytes": 288
     },
     {
       "path": "rework-command-history/gul404-rusage-retry.json",
@@ -5628,6 +5633,6 @@
       "bytes": 10001
     }
   ],
-  "scope": "Complete sanitized ranking-scale evidence snapshot, including every retained success, failure and cancelled partial result. No model weights, binaries, build caches or default.profraw. Extract into a separate directory to inspect historical files without overwriting current reports.",
+  "scope": "Sanitized complete evidence snapshot including ignored command logs, successes, failures and cancelled partials. Models, binaries, caches and default.profraw excluded. Current closeout documents remain authoritative; extract into a separate directory.",
   "wall_seconds": 1.301024749991484
 }
