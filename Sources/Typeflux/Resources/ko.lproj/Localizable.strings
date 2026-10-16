@@ -5569,3 +5569,10 @@
 "screenshot.mosaic.unavailable" = "텍스트 감지를 사용할 수 없습니다. 미완료 마스크는 전체 영역을 가립니다.";
 
 "clipboard.audio.unavailable" = "오디오를 재생할 수 없습니다. 미리보기를 닫았다 다시 열어 불러오세요.";
+
+// Isolated clipboard video playback
+"clipboard.video.unavailable" = "동영상을 사용할 수 없습니다";
+"clipboard.video.play" = "재생";
+"clipboard.video.pause" = "일시 정지";
+"clipboard.video.position" = "재생 위치";
+"clipboard.video.volume" = "음량";

@@ -1,3 +1,4 @@
+import AppKit
 import Combine
 import Foundation
 import TypefluxMediaProtocol
@@ -13,6 +14,10 @@ import TypefluxMediaProtocol
     @Published private(set) var progress: Double = 0
     @Published private(set) var elapsed: TimeInterval = 0
     @Published private(set) var duration: TimeInterval = 0
+    @Published private(set) var image: NSImage?
+    @Published private(set) var volume: Double = 1
+    private let video: Bool
+    private let budget: AskToolPixelBudget
     private let open: Open
     private var operation: Task<Void, Never>?
     private var client: (any ClipboardPlaybackClient)?
@@ -23,7 +28,10 @@ import TypefluxMediaProtocol
     private var registration: UUID?
     private var pendingLoad: (URL, AskImagePresentationAccess)?
     private var command: (MediaPlaybackMessage.Kind, Double?)?
-    init(open: @escaping Open = { try await ClipboardPlaybackProcess.open($0) }) { self.open = open }
+    init(video: Bool = false, budget: AskToolPixelBudget = .shared, open: Open? = nil) {
+        self.video = video; self.budget = budget
+        self.open = open ?? { try await ClipboardPlaybackProcess.open($0, video: video) }
+    }
     deinit { operation?.cancel(); client?.stop() }
 
     func load(_ url: URL, access: AskImagePresentationAccess) {
@@ -39,14 +47,19 @@ import TypefluxMediaProtocol
             guard let scope = access.scope, let epoch = access.epoch else { return }
             self.scope = scope; registration = try scope.register(self, epoch: epoch)
         } catch { isBusy = false; failed = true; return }
-        operation = Task { [weak self, open] in
+        operation = Task { [weak self, open, video, budget] in
             defer { self?.operationFinished() }
             var owned: (any ClipboardPlaybackClient)?
             defer { owned?.stop() }
             do {
+                // Reserve incoming transport and construction pixels before dispatch, and retain through
+                // uncooperative work even after the view has cleared its own reference.
+                let reservation = video ? try budget.acquire(bytes: MediaPlaybackFrame.maximumBytes * 2) : nil
+                defer { withExtendedLifetime(reservation) {} }
                 let client = try await open(url); owned = client
                 guard !Task.isCancelled, self?.permits(current) == true else { return }
                 self?.client = client
+                if let reservation { try client.retainPixels(reservation) }
                 var next: (MediaPlaybackMessage.Kind, Double?) = (.load, nil)
                 while !Task.isCancelled {
                     guard self?.permits(current) == true else { self?.stop(); return }
@@ -56,9 +69,12 @@ import TypefluxMediaProtocol
                     try Task.checkCancellation()
                     try state.validate()
                     guard self?.permits(current) == true else { self?.stop(); return }
+                    guard state.video == video, !video || state.frame != nil else { throw MediaFailure.invalidProtocol }
+                    let image = try Self.image(state, budget: budget)
+                    self?.image = image
                     self?.apply(state)
                     if next.0 != .status { self?.isBusy = false }
-                    try await Task.sleep(for: .milliseconds(250))
+                    try await Task.sleep(for: .milliseconds(video && state.phase == .playing ? 33 : 250))
                     guard self?.permits(current) == true else { self?.stop(); return }
                     next = self?.takeCommand() ?? (.status, nil)
                 }
@@ -79,12 +95,43 @@ import TypefluxMediaProtocol
     private func takeCommand() -> (MediaPlaybackMessage.Kind, Double?)? { defer { command = nil }; return command }
     private func apply(_ state: MediaPlaybackState) {
         isLoaded = true; isPlaying = state.phase == .playing
+        volume = state.volume
         duration = state.duration; elapsed = state.elapsed; progress = elapsed / duration
     }
     func toggle() { submit(isPlaying ? .pause : .play, fraction: nil) }
+    var interactionID: UUID { generation }
+    func seek(to fraction: Double, interactionID: UUID) {
+        guard interactionID == generation else { return }
+        seek(to: fraction)
+    }
+    func setVolume(_ value: Double, interactionID: UUID) {
+        guard interactionID == generation else { return }
+        setVolume(value)
+    }
     func seek(to fraction: Double) {
         guard fraction.isFinite else { return }
         submit(.seek, fraction: min(1, max(0, fraction)))
+    }
+    func setVolume(_ value: Double) {
+        guard video, value.isFinite else { return }
+        submit(.volume, fraction: min(1, max(0, value)))
+    }
+    private static func image(_ state: MediaPlaybackState, budget: AskToolPixelBudget) throws -> NSImage? {
+        guard let frame = state.frame else {
+            guard state.pixels == nil else { throw MediaFailure.invalidProtocol }; return nil
+        }
+        guard let pixels = state.pixels, pixels.count == frame.bytes else { throw MediaFailure.invalidProtocol }
+        let reservation = try budget.acquire(bytes: frame.bytes)
+        guard let provider = CGDataProvider(data: pixels as CFData),
+              let cg = CGImage(width: frame.width, height: frame.height, bitsPerComponent: 8, bitsPerPixel: 32,
+                bytesPerRow: frame.stride, space: CGColorSpaceCreateDeviceRGB(),
+                bitmapInfo: [.byteOrder32Big, CGBitmapInfo(rawValue: CGImageAlphaInfo.premultipliedLast.rawValue)],
+                provider: provider, decode: nil, shouldInterpolate: true, intent: .defaultIntent)
+        else { throw MediaFailure.invalidProtocol }
+        let image = ClipboardVideoImage(size: NSSize(width: frame.width, height: frame.height))
+        image.reservation = reservation
+        image.addRepresentation(NSBitmapImageRep(cgImage: cg))
+        return image
     }
     private func submit(_ kind: MediaPlaybackMessage.Kind, fraction: Double?) {
         guard isLoaded, !isBusy, command == nil, originalAccess?.allows() == true else { return }
@@ -93,7 +140,7 @@ import TypefluxMediaProtocol
     private func clear() {
         client?.stop(); client = nil; command = nil
         isLoaded = false; isPlaying = false; isBusy = false; failed = false
-        progress = 0; elapsed = 0; duration = 0
+        progress = 0; elapsed = 0; duration = 0; volume = 1; image = nil
     }
     func cancel() { stop() }
     func stop() {
@@ -101,4 +148,10 @@ import TypefluxMediaProtocol
         if let registration { scope?.remove(registration) }
         registration = nil; scope = nil
     }
+}
+
+/// A separate reservation follows each actual displayed image, even if SwiftUI retains
+/// old frames. Exhaustion stops presentation rather than growing a hidden frame history.
+private final class ClipboardVideoImage: NSImage {
+    var reservation: AskToolPixelBudget.Lease?
 }

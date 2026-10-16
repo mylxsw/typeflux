@@ -5683,3 +5683,10 @@
 "screenshot.mosaic.unavailable" = "文字检测不可用；未完成检测的遮罩继续覆盖整个区域。";
 
 "clipboard.audio.unavailable" = "音频播放不可用。关闭并重新打开预览可重新加载。";
+
+// Isolated clipboard video playback
+"clipboard.video.unavailable" = "视频暂不可用";
+"clipboard.video.play" = "播放";
+"clipboard.video.pause" = "暂停";
+"clipboard.video.position" = "播放位置";
+"clipboard.video.volume" = "音量";

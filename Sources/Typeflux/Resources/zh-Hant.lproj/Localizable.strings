@@ -5603,3 +5603,10 @@
 "screenshot.mosaic.unavailable" = "文字偵測無法使用；尚未完成偵測的遮罩繼續覆蓋整個區域。";
 
 "clipboard.audio.unavailable" = "音訊播放無法使用。關閉並重新開啟預覽可重新載入。";
+
+// Isolated clipboard video playback
+"clipboard.video.unavailable" = "影片暫不可用";
+"clipboard.video.play" = "播放";
+"clipboard.video.pause" = "暫停";
+"clipboard.video.position" = "播放位置";
+"clipboard.video.volume" = "音量";

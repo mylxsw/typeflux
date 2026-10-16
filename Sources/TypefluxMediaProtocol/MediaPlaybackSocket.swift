@@ -54,6 +54,20 @@ public final class MediaPlaybackSocket: @unchecked Sendable {
         return message
     }
 
+    /// Pixel payload follows its validated JSON descriptor. The next command cannot start
+    /// until this payload has been consumed, so no intermediate frames accumulate.
+    public func sendPixels(_ pixels: Data, deadline: ContinuousClock.Instant) throws {
+        guard !pixels.isEmpty, pixels.count <= MediaPlaybackFrame.maximumBytes else { throw MediaFailure.invalidProtocol }
+        var data = pixels
+        try transfer(&data, writing: true, deadline: deadline)
+    }
+    public func receivePixels(count: Int, deadline: ContinuousClock.Instant) throws -> Data {
+        guard count > 0, count <= MediaPlaybackFrame.maximumBytes else { throw MediaFailure.invalidProtocol }
+        var data = Data(count: count)
+        try transfer(&data, writing: false, deadline: deadline)
+        return data
+    }
+
     private func transfer(_ data: inout Data, writing: Bool, deadline: ContinuousClock.Instant) throws {
         try data.withUnsafeMutableBytes { buffer in
             var offset = 0

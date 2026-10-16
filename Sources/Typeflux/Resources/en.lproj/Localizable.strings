@@ -5683,3 +5683,10 @@
 "screenshot.mosaic.unavailable" = "Text detection unavailable; unfinished masks cover the whole area.";
 
 "clipboard.audio.unavailable" = "Audio playback is unavailable. Close and reopen this preview to load it again.";
+
+// Isolated clipboard video playback
+"clipboard.video.unavailable" = "Video unavailable";
+"clipboard.video.play" = "Play";
+"clipboard.video.pause" = "Pause";
+"clipboard.video.position" = "Playback position";
+"clipboard.video.volume" = "Volume";

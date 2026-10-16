@@ -5569,3 +5569,10 @@
 "screenshot.mosaic.unavailable" = "文字を検出できません。未検出のマスクは領域全体を覆います。";
 
 "clipboard.audio.unavailable" = "音声を再生できません。プレビューを閉じて開き直すと再読み込みできます。";
+
+// Isolated clipboard video playback
+"clipboard.video.unavailable" = "動画を利用できません";
+"clipboard.video.play" = "再生";
+"clipboard.video.pause" = "一時停止";
+"clipboard.video.position" = "再生位置";
+"clipboard.video.volume" = "音量";
