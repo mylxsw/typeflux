@@ -162,8 +162,7 @@ struct AskQuickResultsView: View {
     }
 
     private func browserRow(_ entry: AskBrowserSearchEntry, row: AskQuickResults.Row, highlighted: Bool) -> some View {
-        let icon = NSWorkspace.shared.urlForApplication(withBundleIdentifier: entry.browser.bundleID).map(AskPluginItem.Icon.fileIcon)
-        return AskPluginItemRow(item: entry.item(settings: .init(), icon: icon), symbol: entry.kind == .tab ? "rectangle.on.rectangle" : "bookmark",
+        return AskPluginItemRow(item: entry.item(settings: .init()), symbol: entry.kind == .tab ? "rectangle.on.rectangle" : "bookmark",
                                selected: highlighted, emphasized: true, height: Self.appHeight) { onRun(row, true) }
     }
 

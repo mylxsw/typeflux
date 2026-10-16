@@ -152,19 +152,20 @@ struct ClipboardPanelRow: View, Equatable {
 /// kind's tile when the source is unknown, as for records captured before sources were kept.
 struct ClipboardEntryLeadingIcon: View {
     let entry: ClipboardEntry
-    var iconProvider = ClipboardAppIconProvider.shared
 
     var body: some View {
-        if let icon = iconProvider.icon(for: entry) {
-            Image(nsImage: icon)
-                .resizable()
-                .interpolation(.high)
-                .scaledToFit()
-                .frame(width: 28, height: 28)
-                .frame(width: 32, height: 32)
-                .help(entry.kind == .voice ? "Typeflux" : entry.sourceAppName ?? "")
-        } else {
-            ClipboardEntryTile(entry: entry)
+        AskNativeIconImage(icon: ClipboardAppIconProvider.target(for: entry)) { icon in
+            if let icon {
+                Image(nsImage: icon)
+                    .resizable()
+                    .interpolation(.high)
+                    .scaledToFit()
+                    .frame(width: 28, height: 28)
+                    .frame(width: 32, height: 32)
+                    .help(entry.kind == .voice ? "Typeflux" : entry.sourceAppName ?? "")
+            } else {
+                ClipboardEntryTile(entry: entry)
+            }
         }
     }
 }
