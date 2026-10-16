@@ -112,4 +112,29 @@ struct SemanticMetadataRecoveryTests {
         #expect(control.reads == 2 && query.calls == 1, "a cold recovery cannot restart either budget")
         await service.clear(removeModel: true)
     }
+
+    @Test func `voice priority interrupts metadata recovery and clearing priority permits future recovery`(
+    ) async throws {
+        let control = SemanticMetadataRecoveryControl(), query = SemanticQueryProbe()
+        let (service, root, reader, _) = try await SemanticRealtimeSearchTests().fixture(query: query, makeReader: {
+            SemanticRecoveringReader(reader: $0, control: control)
+        })
+        defer { try? FileManager.default.removeItem(at: root) }
+        service.pause(true); service.prepareForSearch()
+        try await SemanticFileServiceTests.wait { service.queryState == .idle && query.warmed == 1 }
+        control.arm(blockRecovery: true)
+        let task = Task { await service.search("如何取回差旅垫付费用", type: .all, limit: 5) }
+        try await SemanticFileServiceTests.wait { control.reads == 2 }
+        let start = ProcessInfo.processInfo.systemUptime
+        service.setForegroundBusy(true)
+        #expect(await task.value.isEmpty)
+        #expect(ProcessInfo.processInfo.systemUptime - start < 0.3)
+        #expect(control.reads == 2)
+        service.setForegroundBusy(false); service.prepareForSearch()
+        try await SemanticFileServiceTests.wait { service.queryState == .idle && query.warmed == 2 }
+        control.arm()
+        #expect(await service.search("如何取回差旅垫付费用", type: .all, limit: 5).map(\.path) == [reader.path])
+        #expect(control.reads == 2 && query.calls == 2)
+        await service.clear(removeModel: true)
+    }
 }

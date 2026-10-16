@@ -68,6 +68,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
     private var prewarmRequested = false
     private var queryGeneration = 0
     private var queryValidator: SemanticFileValidator?
+    private var permissionRecoveryEpoch = AskSearchCancellation()
     private var queryWorker: (any SemanticQueryEmbedding)?
     private var fingerprint: String?
     private var busy = false
@@ -178,6 +179,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
     }
 
     private func refreshPause() {
+        _ = currentPermissionRecovery()
         let paused = backgroundPaused
         pauseGate.setPaused(paused)
         if paused {
@@ -198,6 +200,15 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
             phase = .indexing
             beginIndexing(store, scope: scope, token: token)
         }
+    }
+
+    private func currentPermissionRecovery() -> AskSearchCancellation {
+        if busy || thermalConstrained() {
+            permissionRecoveryEpoch.cancel()
+        } else if permissionRecoveryEpoch.isCancelled {
+            permissionRecoveryEpoch = AskSearchCancellation()
+        }
+        return permissionRecoveryEpoch
     }
 
     func start(force: Bool = false) {
@@ -733,6 +744,7 @@ extension SemanticFileSearchService {
         guard limit > 0, isEnabled, let query = SemanticFilePolicy.query(text, type: type),
               let store, let scope, let queryValidator else { return [] }
         let lifecycle = token, cancellation = AskSearchCancellation()
+        let recoveryEpoch = currentPermissionRecovery()
         let access = access
         let trace = SemanticSearchTrace.current ?? .init()
         queryGeneration += 1
@@ -779,12 +791,15 @@ extension SemanticFileSearchService {
                                                                  cancelled: cancelled)
                         // A pure semantic result gets one startup-budget recovery with fresh
                         // permissions. An exhausted FTS budget still returns immediately.
-                        if vector != nil, valid.hits.isEmpty, valid.canRecover, !permissionRecoveryStarted.isCancelled,
+                        if vector != nil, valid.hits.isEmpty, valid.canRecover, !recoveryEpoch.isCancelled,
+                           !permissionRecoveryStarted.isCancelled,
                            !cancelled() {
                             permissionRecoveryStarted.cancel()
                             trace.mark("metadata-recovery")
                             valid = queryValidator.validateBatch(hits, scope: currentScope, limit: min(100, limit),
-                                                                 recovering: true, cancelled: cancelled)
+                                                                 recovering: true,
+                                                                 cancelled: { cancelled() || recoveryEpoch.isCancelled
+                                                                 })
                         }
                         if !valid.complete {
                             permissionBudgetExpired.cancel()
