@@ -70,12 +70,7 @@ struct AskBrowserSearchPlugin: AskLauncherPlugin {
         try Task.checkCancellation()
         let query = request.origin == .selection ? "" : request.text
         let entries = AskBrowserSearchEntry.search(snapshot.entries, query: query, limit: 100)
-        var items = await MainActor.run {
-            entries.map { entry in
-                let app = NSWorkspace.shared.urlForApplication(withBundleIdentifier: entry.browser.bundleID)
-                return entry.item(settings: preferences, icon: app.map(AskPluginItem.Icon.fileIcon))
-            }
-        }
+        var items = entries.map { $0.item(settings: preferences) }
         if items.isEmpty {
             items.append(notice(query.isEmpty ? "ask.browser.empty" : "ask.browser.noMatch"))
         }

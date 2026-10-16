@@ -1,0 +1,111 @@
+{
+  "covered": 96,
+  "executable_added": 99,
+  "percent": 96.97,
+  "attribution": "Final correction profiles only for AskBrowserFaviconView.swift; initial matching binary/profiles for all other production files, unchanged since initial pass. No cross-layout merges.",
+  "files": [
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/AskQuickResultsView.swift",
+      "covered": 1,
+      "executable_added": 1,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile_set": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Browser/AskBrowserFaviconView.swift",
+      "covered": 15,
+      "executable_added": 15,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile_set": "final"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Browser/AskBrowserSearchEntry.swift",
+      "covered": 7,
+      "executable_added": 7,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile_set": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Browser/AskBrowserSearchPlugin.swift",
+      "covered": 1,
+      "executable_added": 1,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile_set": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/AskLauncherPlugin.swift",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": true,
+      "profile_set": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/AskPluginItemViews.swift",
+      "covered": 4,
+      "executable_added": 4,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile_set": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Clipboard/ClipboardAppIconProvider.swift",
+      "covered": 13,
+      "executable_added": 13,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile_set": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Clipboard/ClipboardPanelRow.swift",
+      "covered": 12,
+      "executable_added": 12,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile_set": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Settings/ClipboardDataSettingsViews.swift",
+      "covered": 14,
+      "executable_added": 14,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile_set": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Settings/SettingsImageSession.swift",
+      "covered": 29,
+      "executable_added": 29,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile_set": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Settings/SettingsWindowController.swift",
+      "covered": 0,
+      "executable_added": 3,
+      "percent": 0.0,
+      "uncovered": [
+        100,
+        111,
+        112
+      ],
+      "instrumented": true,
+      "profile_set": "initial"
+    }
+  ]
+}

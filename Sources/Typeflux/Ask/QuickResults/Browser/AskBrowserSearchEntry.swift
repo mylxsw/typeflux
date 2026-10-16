@@ -56,10 +56,11 @@ struct AskBrowserSearchEntry: Equatable, Sendable, Identifiable {
         } else {
             return .init(id: id, title: title, subtitle: subtitle, valid: false)
         }
+        let icon = icon ?? .application(browser.bundleID)
         let rowIcon: AskPluginItem.Icon = if kind == .tab, let siteIcon = AskBrowserFaviconCache.faviconURL(for: url) {
-            .websiteIcon(siteIcon, fallback: Self.fileIconURL(icon))
+            .websiteIcon(siteIcon, fallback: Self.fileIconURL(icon), application: Self.applicationID(icon))
         } else {
-            icon ?? .symbol(kind == .tab ? "rectangle.on.rectangle" : "bookmark")
+            icon
         }
         return .init(id: id, title: title.isEmpty ? url : title, subtitle: subtitle,
                      icon: rowIcon, actions: [
@@ -67,6 +68,11 @@ struct AskBrowserSearchEntry: Equatable, Sendable, Identifiable {
                                symbol: "arrow.up.forward.app", shortcut: .enter),
                          .init(kind: .copy(url), title: L("ask.browser.copy"), symbol: "link", shortcut: .commandC)
                      ])
+    }
+
+    private static func applicationID(_ icon: AskPluginItem.Icon) -> String? {
+        if case let .application(bundleID) = icon { return bundleID }
+        return nil
     }
 
     private static func fileIconURL(_ icon: AskPluginItem.Icon?) -> URL? {

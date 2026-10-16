@@ -77,7 +77,7 @@ struct AskBrowserFaviconTests {
         ))
         #expect(try entry.item(settings: .init()).icon == .websiteIcon(
             #require(URL(string: "https://example.com/favicon.ico")),
-            fallback: nil
+            fallback: nil, application: entry.browser.bundleID
         ))
         entry.kind = .bookmark; entry.target = nil
         #expect(entry.item(settings: .init(), icon: .fileIcon(fallback)).icon == .fileIcon(fallback))

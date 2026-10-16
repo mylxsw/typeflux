@@ -4,15 +4,17 @@ import TypefluxMediaProtocol
 struct AskBrowserFaviconView: View {
     var url: URL
     var fallback: URL?
+    var application: String? = nil
     var symbol: String
     var filled: Bool
     var cache = AskBrowserFaviconCache.shared
     @State private var settingsChanged = false
     @Environment(\.askContextImageAccess) private var access
+    @Environment(\.askNativeIconDecoder) private var nativeDecode
 
     var body: some View {
         Group {
-            if settingsChanged { fallbackIcon }
+            if settingsChanged { AskPluginItemIcon(icon: nil, symbol: symbol, filled: filled) }
             else { preparedIcon }
         }
         .frame(width: 28, height: 28)
@@ -23,20 +25,30 @@ struct AskBrowserFaviconView: View {
     }
 
     private var preparedIcon: some View {
-        AskContextImage(source: url.absoluteString, model: AskContextImageModel(maximumEdge: 56, decode: { _ in
-            guard let image = await cache.image(url, access: access) else { throw MediaFailure.unavailable }
-            return .init(images: [image], numbers: [], pages: 0)
+        let target = fallbackTarget
+        return AskContextImage(source: url.absoluteString, model: AskContextImageModel(maximumEdge: 56, decode: { _ in
+            if let image = await cache.image(url, access: access) {
+                return .init(images: [image], numbers: [], pages: 0)
+            }
+            try Task.checkCancellation()
+            guard await access.allows(), let target else { throw MediaFailure.unavailable }
+            return try await nativeDecode(target)
         })) { image in
             if let image {
                 Image(nsImage: image).resizable().interpolation(.high).scaledToFit()
                     .frame(width: 26, height: 26)
                     .background(Color.white, in: RoundedRectangle(cornerRadius: 5))
-            } else { fallbackIcon }
+            } else { AskPluginItemIcon(icon: nil, symbol: symbol, filled: filled) }
         }
-        .id(AskContextImageModel.Identity(source: url.absoluteString, epoch: access.epoch))
+        .id(Identity(url: url, fallback: target, epoch: access.epoch))
     }
 
-    private var fallbackIcon: some View {
-        AskPluginItemIcon(icon: fallback.map(AskPluginItem.Icon.fileIcon), symbol: symbol, filled: filled)
+    private struct Identity: Hashable { let url: URL; let fallback: MediaNativeIcon?; let epoch: UUID? }
+
+    /// One owned preparation chooses favicon or application, rather than creating a native
+    /// fallback task each time the favicon's loading/failure view changes.
+    private var fallbackTarget: MediaNativeIcon? {
+        if let fallback, fallback.isFileURL { return .init(kind: .file, value: fallback.path) }
+        return application.map { .init(kind: .application, value: $0) }
     }
 }
