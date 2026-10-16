@@ -6,9 +6,10 @@ import TypefluxMediaProtocol
 
 public enum MediaTextDecoder {
     public static func decode(_ request: MediaRequest, directory: URL,
-                              recognize: (CGImage) throws -> MediaTextRecognition = recognize) throws -> MediaResponse {
+                              recognize: (CGImage) throws -> MediaTextRecognition = recognize,
+                              geometry: (CGImage) throws -> MediaTextGeometry = geometry) throws -> MediaResponse {
         try request.validate()
-        guard request.operation == .recognizeText else { throw MediaFailure.invalidProtocol }
+        guard request.operation == .recognizeText || request.operation == .textGeometry else { throw MediaFailure.invalidProtocol }
         let input = try FileHandle(forReadingFrom: directory.appendingPathComponent("input"))
         defer { try? input.close() }
         let limit = request.textInput?.byteCount ?? MediaOCRResult.inputBytes
@@ -37,10 +38,20 @@ public enum MediaTextDecoder {
             image = value
         }
         var response = MediaResponse(id: request.id)
-        response.recognition = try recognize(image)
+        if request.operation == .textGeometry { response.geometry = try geometry(image) }
+        else { response.recognition = try recognize(image) }
         try response.validate(for: request)
         guard try JSONEncoder().encode(response).count <= MediaOCRResult.responseBytes else { throw MediaFailure.tooLarge }
         return response
+    }
+    public static func geometry(_ image: CGImage) throws -> MediaTextGeometry {
+        let request = VNDetectTextRectanglesRequest()
+        try VNImageRequestHandler(cgImage: image).perform([request])
+        let observations = request.results ?? []
+        guard observations.count <= 1024 else { throw MediaFailure.tooLarge }
+        let result = MediaTextGeometry(boxes: observations.map(\.boundingBox))
+        try result.validate()
+        return result
     }
     public static func recognize(_ image: CGImage) throws -> MediaTextRecognition {
         let request = VNRecognizeTextRequest()

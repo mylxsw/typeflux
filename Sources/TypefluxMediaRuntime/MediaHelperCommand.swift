@@ -32,7 +32,7 @@ public enum MediaHelperCommand {
 
     private static func decode(_ request: MediaRequest, directory: URL) throws -> MediaResponse {
         guard request.operation != .clipboardMedia, request.operation != .nativeIcon, request.operation != .quickLook else { throw MediaFailure.invalidProtocol }
-        if request.operation == .recognizeText { return try MediaTextDecoder.decode(request, directory: directory) }
+        if request.operation == .recognizeText || request.operation == .textGeometry { return try MediaTextDecoder.decode(request, directory: directory) }
         if request.operation == .clipboardOCR { return try MediaOCRDecoder.decode(request, directory: directory) }
         if request.operation.isWorkflowImage { return try MediaWorkflowDecoder.decode(request, directory: directory) }
         if request.preview != nil { return try MediaPreviewDecoder.decode(request, directory: directory) }

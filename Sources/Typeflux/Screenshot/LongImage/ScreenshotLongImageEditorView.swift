@@ -257,6 +257,7 @@ final class ScreenshotLongImageEditorController: ScreenshotLongImagePresenting {
             frame: ScreenCaptureGeometry.flipped(screen, primaryDisplayHeight: primaryDisplayHeight()),
             becomesKey: true
         )
+        panel.onHide = { [weak view] in view?.releaseImage() }
         panel.contentView = view
         panel.orderFrontRegardless()
         panel.makeKey()

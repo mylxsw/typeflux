@@ -127,6 +127,32 @@ struct ScreenshotAnnotationEditor {
     /// Finds the lines of text inside a rectangle, in points, for mosaics that only cover text.
     var locateText: (CGRect) -> [CGRect] = { _ in [] }
 
+    struct GeometryRequest {
+        let id = UUID()
+        let annotationID: UUID
+        let mosaic: ScreenshotMosaic
+        let scope: ScreenshotMosaic.Scope
+    }
+    var preparesMosaicGeometry = false
+    private(set) var geometryRequest: GeometryRequest?
+
+    mutating func cancelGeometry() { geometryRequest = nil }
+
+    mutating func completeGeometry(_ id: UUID, geometry: ScreenshotTextGeometry) {
+        guard let request = geometryRequest, request.id == id,
+              var annotation = document.annotation(id: request.annotationID), annotation.mosaic == request.mosaic else { return }
+        geometryRequest = nil
+        var mosaic = request.mosaic
+        mosaic.textHeight = geometry.height
+        if request.scope == .text, mosaic.shape.coversArea {
+            let shape = mosaic.maskPath
+            let runs = geometry.lines.filter { shape.contains(CGPoint(x: $0.midX, y: $0.midY)) }
+            if !runs.isEmpty { mosaic.textRuns = runs; mosaic.textHeight = runs.map(\.height).max() }
+        }
+        annotation.kind = .mosaic(mosaic)
+        document.update(annotation, recordingUndo: false)
+    }
+
     var isDragging: Bool { drag != nil }
 
     var selected: ScreenshotAnnotation? {
@@ -255,7 +281,7 @@ struct ScreenshotAnnotationEditor {
             }
             guard var finished = draft, Self.isWorthKeeping(finished) else { return draft != nil }
             if let mosaic = finished.mosaic {
-                finished.kind = .mosaic(finishedMosaic(mosaic, scope: toolStyles.mosaicScope))
+                finished.kind = .mosaic(finishedMosaic(mosaic, scope: toolStyles.mosaicScope, annotationID: finished.id))
             }
             if case let .path(points) = finished.kind, finished.style.smoothed {
                 finished.kind = .path(ScreenshotStrokeSmoothing.smoothed(points))
@@ -638,7 +664,7 @@ struct ScreenshotAnnotationEditor {
             return
         }
         var changed = annotation
-        changed.kind = .mosaic(finishedMosaic(mosaic, scope: scope))
+        changed.kind = .mosaic(finishedMosaic(mosaic, scope: scope, annotationID: annotation.id))
         updateSelected(changed)
     }
 
@@ -649,9 +675,15 @@ struct ScreenshotAnnotationEditor {
 
     /// Measures the text under a mosaic and, with the text scope, keeps only its lines; with no text
     /// found it covers the whole shape, so nothing is left uncovered by mistake.
-    private func finishedMosaic(_ mosaic: ScreenshotMosaic, scope: ScreenshotMosaic.Scope) -> ScreenshotMosaic {
+    private mutating func finishedMosaic(_ mosaic: ScreenshotMosaic, scope: ScreenshotMosaic.Scope, annotationID: UUID) -> ScreenshotMosaic {
         var mosaic = mosaic
         mosaic.textRuns = nil
+        if preparesMosaicGeometry {
+            // Until preparation succeeds, cover the whole shape with conservative block sizing.
+            mosaic.textHeight = mosaic.frame.height
+            geometryRequest = GeometryRequest(annotationID: annotationID, mosaic: mosaic, scope: scope)
+            return mosaic
+        }
         if scope == .text, mosaic.shape.coversArea {
             let shape = mosaic.maskPath
             let runs = locateText(mosaic.frame).filter { shape.contains(CGPoint(x: $0.midX, y: $0.midY)) }

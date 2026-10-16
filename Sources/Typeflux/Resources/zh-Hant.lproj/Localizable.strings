@@ -5598,3 +5598,6 @@
 "activity.accessibility.attention" = "有背景任務需要處理";
 "activity.accessibility.separator" = "，";
 "screenshot.sensitive.failed" = "無法檢查敏感資訊，請檢查圖片並手動遮蓋隱私內容。";
+
+"screenshot.mosaic.preparing" = "正在偵測文字；尚未完成偵測的遮罩覆蓋整個區域。";
+"screenshot.mosaic.unavailable" = "文字偵測無法使用；尚未完成偵測的遮罩繼續覆蓋整個區域。";

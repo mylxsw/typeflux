@@ -73,6 +73,7 @@ final class ScreenshotOverlayView: NSView {
     /// The field for typing a text annotation, while one is typed.
     private(set) var textField: NSTextField?
     private var textOrigin: CGPoint = .zero
+    let mosaicPreparation = ScreenshotMosaicPreparation()
     private let textMeasurer: (any ScreenshotTextHeightMeasuring)?
     /// Finds sensitive text once a region is chosen and keeps the panel that suggests mosaics.
     let sensitiveInfo: ScreenshotSensitiveInfoController
@@ -111,8 +112,8 @@ final class ScreenshotOverlayView: NSView {
         addSubview(canvas)
         chrome.autoresizingMask = [.width, .height]
         addSubview(chrome)
-        editor.measureTextHeight = { [weak self] mosaic in self?.measureTextHeight(under: mosaic) }
-        editor.locateText = { [weak self] rect in self?.textLines(in: rect) ?? [] }
+        editor.preparesMosaicGeometry = textMeasurer != nil
+        mosaicPreparation.onChange = { [weak self] in self?.refresh() }
         toolbarModel.onAction = { [weak self] action in self?.perform(action) }
         connectSensitiveInfo()
         refresh()
@@ -135,6 +136,8 @@ final class ScreenshotOverlayView: NSView {
 
     /// Lets go of the frozen image as soon as the overlay closes.
     func releaseImage() {
+        mosaicPreparation.retire()
+        editor.cancelGeometry()
         sensitiveInfo.cancel()
         imageLayer.contents = nil
         canvas.releaseImage()
@@ -204,6 +207,7 @@ final class ScreenshotOverlayView: NSView {
             }
         }
         if selection.mouseDown(at: point, clickCount: clickCount) == .confirmed, let rect = selection.rect {
+            mosaicPreparation.cancel(); editor.cancelGeometry()
             onEvent?(self, .finish(.copy, rect, editor.document.annotations))
             return
         }
@@ -389,6 +393,7 @@ final class ScreenshotOverlayView: NSView {
     func finish(_ action: ScreenshotOutputAction) {
         endTextEditing()
         guard let rect = selection.rect, !selection.isDragging, !editor.isDragging else { return }
+        mosaicPreparation.cancel(); editor.cancelGeometry()
         onEvent?(self, .finish(action, rect, editor.document.annotations))
     }
 
@@ -520,31 +525,19 @@ final class ScreenshotOverlayView: NSView {
 
     // MARK: Mosaic
 
-    /// The lines of text inside `rect`, in points, read from the frozen image inside the region.
-    private func textLines(in rect: CGRect) -> [CGRect] {
-        guard let textMeasurer, let crop = selection.rect else { return [] }
-        let region = rect.intersection(crop)
-        guard !region.isNull,
-              let pixels = ScreenCaptureGeometry.pixelRect(for: region, displayFrame: bounds,
-                                                           imageSize: display.pixelSize),
-              let piece = display.image.cropping(to: pixels) else { return [] }
-        let scale = max(CGFloat(display.image.width) / max(bounds.width, 1), 1)
-        return textMeasurer.textLines(in: piece).map { line in
-            CGRect(x: pixels.minX / scale + line.minX / scale, y: pixels.minY / scale + line.minY / scale,
-                   width: line.width / scale, height: line.height / scale)
-        }
-    }
-
-    /// The text height under a new mosaic, in points, from the frozen image inside the region.
-    private func measureTextHeight(under mosaic: ScreenshotMosaic) -> CGFloat? {
-        guard let textMeasurer, let crop = selection.rect else { return nil }
-        let region = mosaic.frame.intersection(crop)
-        guard !region.isNull,
-              let pixels = ScreenCaptureGeometry.pixelRect(for: region, displayFrame: bounds,
-                                                           imageSize: display.pixelSize),
-              let piece = display.image.cropping(to: pixels),
-              let height = textMeasurer.tallestLineHeight(in: piece) else { return nil }
-        return height / max(CGFloat(display.image.height) / max(bounds.height, 1), 1)
+    private func prepareMosaicGeometry() {
+        guard let textMeasurer else { return }
+        let crop: CGRect? = selection.rect
+        let image = display.image, bounds = self.bounds
+        mosaicPreparation.update(editor: editor, region: crop, prepare: { mosaic in
+            guard let crop else { throw CancellationError() }
+            return try await ScreenshotMosaicPreparation.prepare(mosaic, crop: crop, image: image,
+                bounds: bounds, measurer: textMeasurer)
+        }, commit: { [weak self] id, geometry in
+            guard let self else { return }
+            self.editor.completeGeometry(id, geometry: geometry)
+            self.refresh()
+        })
     }
 
     // MARK: Drawing
@@ -573,6 +566,7 @@ final class ScreenshotOverlayView: NSView {
     }
 
     func refresh() {
+        prepareMosaicGeometry()
         CATransaction.begin()
         CATransaction.setDisableActions(true)
         let path = CGMutablePath()
@@ -609,7 +603,8 @@ final class ScreenshotOverlayView: NSView {
                                                        canScrollCapture: canScrollCapture,
                                                        showsMoreMenu: showsMoreMenu,
                                                        canShowSensitivePanel: sensitiveInfo.hasFindings,
-                                                       showsSensitivePanel: sensitiveInfo.isPanelShown)
+                                                       showsSensitivePanel: sensitiveInfo.isPanelShown,
+                                                       mosaicPreparation: mosaicPreparation.state)
         toolbarModel.state = state
         guard let rect = selection.rect, !selection.isDragging else {
             toolbar?.isHidden = true

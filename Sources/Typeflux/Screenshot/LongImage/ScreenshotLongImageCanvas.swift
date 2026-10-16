@@ -24,6 +24,7 @@ final class ScreenshotLongImageCanvas: NSView {
     private(set) var isPickingColor = false
     private(set) var showsMoreMenu = false
     private let canvas: ScreenshotAnnotationCanvasView
+    let mosaicPreparation = ScreenshotMosaicPreparation()
     private let textMeasurer: (any ScreenshotTextHeightMeasuring)?
     /// The field for typing a text annotation, while one is typed.
     private(set) var textField: NSTextField?
@@ -52,8 +53,8 @@ final class ScreenshotLongImageCanvas: NSView {
         wantsLayer = true
         canvas.autoresizingMask = [.width, .height]
         addSubview(canvas)
-        editor.measureTextHeight = { [weak self] mosaic in self?.measureTextHeight(under: mosaic) }
-        editor.locateText = { [weak self] rect in self?.textLines(in: rect) ?? [] }
+        editor.preparesMosaicGeometry = textMeasurer != nil
+        mosaicPreparation.onChange = { [weak self] in self?.refresh() }
         connectSensitiveInfo()
         refresh()
     }
@@ -66,6 +67,8 @@ final class ScreenshotLongImageCanvas: NSView {
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
 
     func releaseImage() {
+        mosaicPreparation.retire()
+        editor.cancelGeometry()
         sensitiveInfo.cancel()
         canvas.releaseImage()
     }
@@ -259,6 +262,7 @@ final class ScreenshotLongImageCanvas: NSView {
     private func finish(_ action: ScreenshotOutputAction) {
         endTextEditing()
         guard !editor.isDragging else { return }
+        mosaicPreparation.cancel(); editor.cancelGeometry()
         onEvent?(.finish(action, editor.document.annotations))
     }
 
@@ -317,34 +321,25 @@ final class ScreenshotLongImageCanvas: NSView {
 
     // MARK: Mosaic
 
-    /// The lines of text inside `rect`, in the image's points.
-    private func textLines(in rect: CGRect) -> [CGRect] {
-        let region = rect.intersection(bounds)
-        let size = ScreenPixelSize(width: image.width, height: image.height)
-        guard let textMeasurer, !region.isNull,
-              let pixels = ScreenCaptureGeometry.pixelRect(for: region, displayFrame: bounds, imageSize: size),
-              let piece = image.cropping(to: pixels) else { return [] }
-        return textMeasurer.textLines(in: piece).map { line in
-            CGRect(x: (pixels.minX + line.minX) / scale, y: (pixels.minY + line.minY) / scale,
-                   width: line.width / scale, height: line.height / scale)
-        }
-    }
-
-    /// The text height under a new mosaic, in points.
-    private func measureTextHeight(under mosaic: ScreenshotMosaic) -> CGFloat? {
-        let region = mosaic.frame.intersection(bounds)
-        guard let textMeasurer, !region.isNull,
-              let pixels = ScreenCaptureGeometry.pixelRect(
-                  for: region, displayFrame: bounds, imageSize: ScreenPixelSize(width: image.width, height: image.height)
-              ),
-              let piece = image.cropping(to: pixels),
-              let height = textMeasurer.tallestLineHeight(in: piece) else { return nil }
-        return height / scale
+    private func prepareMosaicGeometry() {
+        guard let textMeasurer else { return }
+        let crop: CGRect? = bounds
+        let image = image, bounds = self.bounds
+        mosaicPreparation.update(editor: editor, region: crop, prepare: { mosaic in
+            guard let crop else { throw CancellationError() }
+            return try await ScreenshotMosaicPreparation.prepare(mosaic, crop: crop, image: image,
+                bounds: bounds, measurer: textMeasurer)
+        }, commit: { [weak self] id, geometry in
+            guard let self else { return }
+            self.editor.completeGeometry(id, geometry: geometry)
+            self.refresh()
+        })
     }
 
     // MARK: State
 
     func refresh() {
+        prepareMosaicGeometry()
         let selected = editor.editingTextID == nil ? editor.selected : nil
         canvas.model = ScreenshotAnnotationCanvasView.Model(crop: bounds, annotations: editor.visibleAnnotations,
                                                             selection: selected?.frame,
@@ -361,7 +356,8 @@ final class ScreenshotLongImageCanvas: NSView {
                                            isPickingColor: isPickingColor, showsScrollCapture: false, showsPin: false,
                                            showsMoreMenu: showsMoreMenu,
                                            canShowSensitivePanel: sensitiveInfo.hasFindings,
-                                           showsSensitivePanel: sensitiveInfo.isPanelShown)
+                                           showsSensitivePanel: sensitiveInfo.isPanelShown,
+                                                       mosaicPreparation: mosaicPreparation.state)
     }
 
     /// The eyedropper's click: the color of the image under the pointer becomes the color.

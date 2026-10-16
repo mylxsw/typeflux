@@ -5564,3 +5564,6 @@
 "activity.accessibility.attention" = "확인이 필요한 백그라운드 작업이 있습니다";
 "activity.accessibility.separator" = ", ";
 "screenshot.sensitive.failed" = "민감한 정보를 확인하지 못했습니다. 이미지를 검토하고 개인 정보를 직접 가려 주세요.";
+
+"screenshot.mosaic.preparing" = "텍스트 감지 중입니다. 감지가 끝나지 않은 마스크는 전체 영역을 가립니다.";
+"screenshot.mosaic.unavailable" = "텍스트 감지를 사용할 수 없습니다. 미완료 마스크는 전체 영역을 가립니다.";

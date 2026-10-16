@@ -15,7 +15,7 @@ public enum MediaFailure: String, Error, Codable, Sendable {
 }
 
 public struct MediaRequest: Codable, Sendable {
-    public enum Operation: String, Codable, Sendable { case recognizeText, clipboardOCR, copyClipboardImage, clipboardMedia, quickLook, nativeIcon, image, pdf, inspectWorkflowImage, copyWorkflowImage, validateGeneratedImage, normalizeImage, previewImage, previewPDF, previewVideo, previewAudio
+    public enum Operation: String, Codable, Sendable { case textGeometry, recognizeText, clipboardOCR, copyClipboardImage, clipboardMedia, quickLook, nativeIcon, image, pdf, inspectWorkflowImage, copyWorkflowImage, validateGeneratedImage, normalizeImage, previewImage, previewPDF, previewVideo, previewAudio
         public var isWorkflowImage: Bool { self == .inspectWorkflowImage || self == .copyWorkflowImage || self == .copyClipboardImage }
         public var isAV: Bool { self == .previewVideo || self == .previewAudio }
     }
@@ -30,8 +30,9 @@ public struct MediaRequest: Codable, Sendable {
     public var textInput: MediaTextInput?
     public init(id: UUID = UUID(), operation: Operation) { self.id = id; self.operation = operation }
     public func validate() throws {
-        guard operation == .recognizeText || textInput == nil else { throw MediaFailure.invalidProtocol }
+        guard operation == .recognizeText || operation == .textGeometry || textInput == nil else { throw MediaFailure.invalidProtocol }
         try textInput?.validate()
+        if operation == .textGeometry, textInput == nil { throw MediaFailure.invalidProtocol }
         guard (operation == .clipboardMedia) == (clipboard != nil) else { throw MediaFailure.invalidProtocol }
         if let clipboard { try clipboard.validate() }
         guard (operation == .normalizeImage) == (normalization != nil) else { throw MediaFailure.invalidProtocol }
@@ -81,6 +82,7 @@ public struct MediaResponse: Codable, Sendable {
     public var clipboard: MediaClipboardResult?
     public var ocr: MediaOCRResult?
     public var recognition: MediaTextRecognition?
+    public var geometry: MediaTextGeometry?
     public init(id: UUID, items: [MediaItem] = [], failure: MediaFailure? = nil) {
         self.id = id; self.items = items; self.failure = failure
     }
@@ -90,9 +92,17 @@ public struct MediaResponse: Codable, Sendable {
         try request.validate()
         guard version == 1, id == request.id else { throw MediaFailure.invalidProtocol }
         if let failure {
-            guard items.isEmpty, preview == nil, normalization == nil, generatedImage == nil, workflowImage == nil, clipboard == nil, ocr == nil, recognition == nil else { throw MediaFailure.invalidProtocol }
+            guard items.isEmpty, preview == nil, normalization == nil, generatedImage == nil, workflowImage == nil, clipboard == nil, ocr == nil, recognition == nil, geometry == nil else { throw MediaFailure.invalidProtocol }
             throw failure
         }
+        if request.operation == .textGeometry {
+            guard items.isEmpty, preview == nil, normalization == nil, generatedImage == nil,
+                  workflowImage == nil, clipboard == nil, ocr == nil, recognition == nil, let geometry
+            else { throw MediaFailure.invalidProtocol }
+            try geometry.validate()
+            return
+        }
+        guard geometry == nil else { throw MediaFailure.invalidProtocol }
         if request.operation == .recognizeText {
             guard items.isEmpty, preview == nil, normalization == nil, generatedImage == nil,
                   workflowImage == nil, clipboard == nil, ocr == nil, let recognition else { throw MediaFailure.invalidProtocol }
