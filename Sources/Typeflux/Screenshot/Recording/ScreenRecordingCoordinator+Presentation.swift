@@ -62,7 +62,7 @@ extension ScreenRecordingCoordinator {
     }
 
     var canExport: Bool {
-        state == .preview && trimIsValid
+        state == .preview && canUsePreview && trimIsValid
     }
 
     var devicePermissionURL: URL? {
@@ -99,19 +99,19 @@ extension ScreenRecordingCoordinator {
     }
 
     func setTrimStart(_ seconds: Double) {
-        guard state == .preview, seconds.isFinite else { return }
+        guard state == .preview, canUsePreview, seconds.isFinite else { return }
         trimStart = min(max(0, seconds), max(0, trimEnd - min(0.5, duration)))
         seek(trimStart)
     }
 
     func setTrimEnd(_ seconds: Double) {
-        guard state == .preview, seconds.isFinite else { return }
+        guard state == .preview, canUsePreview, seconds.isFinite else { return }
         trimEnd = max(min(duration, seconds), min(duration, trimStart + min(0.5, duration)))
         seek(trimEnd)
     }
 
     func resetTrim() {
-        guard state == .preview else { return }
+        guard state == .preview, canUsePreview else { return }
         trimStart = 0
         trimEnd = duration
         seek(0)

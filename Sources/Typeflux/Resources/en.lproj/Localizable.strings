@@ -5690,3 +5690,8 @@
 "clipboard.video.pause" = "Pause";
 "clipboard.video.position" = "Playback position";
 "clipboard.video.volume" = "Volume";
+
+/* Isolated recording preview */
+"recording.previewUnavailable" = "Preview unavailable. The original recording is retained.";
+"recording.revealOriginal" = "Show original recording in Finder";
+"recording.reloadPreview" = "Reload preview";

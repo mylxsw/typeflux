@@ -5690,3 +5690,8 @@
 "clipboard.video.pause" = "暂停";
 "clipboard.video.position" = "播放位置";
 "clipboard.video.volume" = "音量";
+
+/* Isolated recording preview */
+"recording.previewUnavailable" = "预览暂不可用，原始录屏已保留。";
+"recording.revealOriginal" = "在 Finder 中显示原始录屏";
+"recording.reloadPreview" = "重新加载预览";

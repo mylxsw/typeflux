@@ -5576,3 +5576,8 @@
 "clipboard.video.pause" = "일시 정지";
 "clipboard.video.position" = "재생 위치";
 "clipboard.video.volume" = "음량";
+
+/* Isolated recording preview */
+"recording.previewUnavailable" = "미리보기를 사용할 수 없습니다. 원본 녹화는 보존됩니다.";
+"recording.revealOriginal" = "Finder에서 원본 녹화 보기";
+"recording.reloadPreview" = "미리보기 다시 불러오기";

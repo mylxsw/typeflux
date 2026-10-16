@@ -89,10 +89,11 @@ struct ScreenRecordingCoordinatorTests {
         let capture = FakeScreenCapturer(.success(ScreenSnapshot(displays: [], windows: [])))
         var presentations = 0
         var dismissals = 0
+        var copiedURL: URL?
         var borders: [ScreenRecordingTarget?] = []
         let model: ScreenRecordingCoordinator
         init(exportFails: Bool = false, authorize: @escaping (ScreenRecordingOptions) async throws -> Void = { _ in },
-             wait: @escaping () async throws -> Void = {}) {
+             wait: @escaping () async throws -> Void = {}, playback: ClipboardAudioPlayback? = nil) {
             model = ScreenRecordingCoordinator(
                 permission: permission,
                 capture: capture,
@@ -117,10 +118,16 @@ struct ScreenRecordingCoordinatorTests {
                         )
                     ]
                 },
-                waitSecond: wait
+                waitSecond: wait, playback: playback ?? ClipboardAudioPlayback(video: true, open: { url in
+                    try await ClipboardPlaybackProcess.open(url, video: true, recording: true, run: { request, _ in
+                        var request = request; request.timeout = 10
+                        return try ManagedProcess().runBlocking(request, isCancelled: { false })
+                    })
+                })
             )
             model.present = { [weak self] _ in self?.presentations += 1 }
             model.dismiss = { [weak self] in self?.dismissals += 1 }
+            model.copyPublishedFile = { [weak self] in self?.copiedURL = $0 }
             model.showBorder = { [weak self] target in self?.borders.append(target) }
         }
 
@@ -137,6 +144,11 @@ struct ScreenRecordingCoordinatorTests {
             await model.pendingTask?.value
             UserDefaults(suiteName: suite)?.removePersistentDomain(forName: suite)
             try? FileManager.default.removeItem(at: root)
+        }
+
+        func waitForPlayback(_ predicate: () -> Bool) async throws {
+            for _ in 0..<300 { if predicate() { return }; try await Task.sleep(for: .milliseconds(10)) }
+            #expect(predicate())
         }
     }
 
@@ -211,7 +223,7 @@ struct ScreenRecordingCoordinatorTests {
         #expect(fixture.engine.stops == 1)
         #expect(fixture.model.state == .preview)
         #expect(fixture.model.duration > 1)
-        #expect(fixture.model.player != nil)
+        #expect(fixture.model.playback.isLoaded)
         fixture.model.seek(0.2)
         fixture.model.trimStart = 0.2
         fixture.model.trimEnd = 0.8

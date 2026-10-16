@@ -53,12 +53,15 @@ import TypefluxMediaProtocol
     private var ended = false
     private var endObserver: NSObjectProtocol?
     private let video: Bool
+    private let recording: Bool
+    private var rangeEnd: Double?
     private var frames: MediaVideoFrames?
-    public init(video: Bool = false) { self.video = video }
+    public init(video: Bool = false, recording: Bool = false) { self.video = video; self.recording = recording }
     public func load(_ url: URL) async throws {
         guard player == nil else { throw MediaFailure.invalidProtocol }
         let values = try url.resourceValues(forKeys: [.isRegularFileKey, .fileSizeKey])
-        guard values.isRegularFile == true, let bytes = values.fileSize, bytes > 0, bytes <= 512 * 1024 * 1024 else { throw MediaFailure.tooLarge }
+        guard values.isRegularFile == true, let bytes = values.fileSize, bytes > 0,
+              bytes <= (recording ? 8 * 1024 * 1024 * 1024 : 512 * 1024 * 1024) else { throw MediaFailure.tooLarge }
         // A private single-file lease must never resolve another local file or remote media.
         let asset = AVURLAsset(url: url, options: [AVURLAssetReferenceRestrictionsKey: AVAssetReferenceRestrictions.forbidAll.rawValue])
         let seconds = try await asset.load(.duration).seconds
@@ -82,15 +85,31 @@ import TypefluxMediaProtocol
     public func perform(_ command: MediaPlaybackMessage) async throws -> MediaPlaybackState {
         try command.validate()
         guard let player, player.currentItem?.status == .readyToPlay, player.error == nil else { throw MediaFailure.unreadable }
+        var refresh = [.loadVideo, .seek, .seekPaused].contains(command.kind)
         switch command.kind {
+        case .playRange:
+            guard recording, let range = command.range, range.end <= duration else { throw MediaFailure.invalidProtocol }
+            player.pause()
+            player.currentItem?.forwardPlaybackEndTime = CMTime(seconds: range.end, preferredTimescale: 600)
+            rangeEnd = range.end
+            let current = player.currentTime().seconds
+            if ended || current < range.start || current >= range.end {
+                guard await player.seek(to: CMTime(seconds: range.start, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero) else { throw MediaFailure.unavailable }
+                refresh = true
+            }
+            ended = false; player.play()
         case .play:
+            player.currentItem?.forwardPlaybackEndTime = .invalid; rangeEnd = nil
             if ended || player.currentTime().seconds >= duration {
                 guard await player.seek(to: .zero, toleranceBefore: .zero, toleranceAfter: .zero) else { throw MediaFailure.unavailable }
+                refresh = true
                 ended = false
             }
             player.play()
         case .pause: player.pause()
-        case .seek:
+        case .seek, .seekPaused:
+            if command.kind == .seekPaused { player.pause() }
+            player.currentItem?.forwardPlaybackEndTime = .invalid; rangeEnd = nil
             guard let fraction = command.fraction else { throw MediaFailure.invalidProtocol }
             guard await player.seek(to: CMTime(seconds: fraction * duration, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero) else { throw MediaFailure.unavailable }
             ended = fraction == 1
@@ -104,12 +123,11 @@ import TypefluxMediaProtocol
         }
         let time = player.currentTime().seconds
         guard time.isFinite else { throw MediaFailure.unreadable }
-        let elapsed = ended ? duration : min(duration, max(0, time))
-        var state = MediaPlaybackState(phase: elapsed >= duration ? .ended : player.rate == 0 ? .paused : .playing,
+        let elapsed = ended ? (rangeEnd ?? duration) : min(duration, max(0, time))
+        var state = MediaPlaybackState(phase: elapsed >= duration ? .ended : ended || player.rate == 0 ? .paused : .playing,
                                        elapsed: elapsed, duration: duration)
         state.video = video; state.volume = Double(player.volume)
         if let frames {
-            let refresh = [.loadVideo, .seek].contains(command.kind) || (command.kind == .play && elapsed < 0.1)
             let frame = try await frames.snapshot(at: CMTime(seconds: min(elapsed, max(0, duration - 0.001)), preferredTimescale: 600), refresh: refresh)
             guard let frame else { throw MediaFailure.unavailable }
             state.frame = frame.0; state.pixels = frame.1
