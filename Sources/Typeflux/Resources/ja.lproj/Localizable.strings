@@ -5687,3 +5687,5 @@
 "settings.services.semanticQueryInference" = "セマンティッククエリ推論";
 "settings.services.semanticIndexInference" = "セマンティック文書推論";
 "settings.services.semanticMediaInference" = "セマンティックメディア推論";
+
+"ask.preview.textLocationUnavailable" = "テキストの位置を特定できません";

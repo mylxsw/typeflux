@@ -5687,3 +5687,5 @@
 "settings.services.semanticQueryInference" = "시맨틱 쿼리 추론";
 "settings.services.semanticIndexInference" = "시맨틱 문서 추론";
 "settings.services.semanticMediaInference" = "시맨틱 미디어 추론";
+
+"ask.preview.textLocationUnavailable" = "텍스트 위치를 찾을 수 없습니다";

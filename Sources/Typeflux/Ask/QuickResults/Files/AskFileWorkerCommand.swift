@@ -231,7 +231,8 @@ public enum AskFileWorkerCommand {
               AskFilePreviewPolicy.isResidentRegularFile(mode: opened.st_mode, flags: opened.st_flags)
         else { return AskFileReadResponse(error: EINVAL) }
         var result = AskFileReadResponse(fileSize: Int64(opened.st_size), modified:
-            Date(timeIntervalSince1970: Double(opened.st_mtimespec.tv_sec) + Double(opened.st_mtimespec.tv_nsec) / 1e9))
+            Date(timeIntervalSince1970: Double(opened.st_mtimespec.tv_sec)
+                + Double(opened.st_mtimespec.tv_nsec) / 1e9), version: contentVersion(opened))
         guard request.readText else {
             if AskFilePreviewPolicy.kind(path: request.path) == .image,
                let source = CGImageSourceCreateWithURL(URL(fileURLWithPath: request.path) as CFURL,

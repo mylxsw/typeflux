@@ -5801,3 +5801,5 @@
 "settings.services.semanticQueryInference" = "语义查询推理";
 "settings.services.semanticIndexInference" = "语义文档推理";
 "settings.services.semanticMediaInference" = "语义媒体推理";
+
+"ask.preview.textLocationUnavailable" = "无法定位文字区域";

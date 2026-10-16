@@ -1,0 +1,966 @@
+{
+  "command": "swiftlint lint --quiet --strict --config .swiftlint.yml --reporter json <changed Swift files>",
+  "current_exit": 2,
+  "base_exit": 2,
+  "base_warnings": 53,
+  "current_warnings": 53,
+  "additional_file_rule_counts": {},
+  "current": [
+    {
+      "character": 13,
+      "file": "Sources/Typeflux/Ask/QuickResults/Files/AskFileWorkerCommand.swift",
+      "line": 111,
+      "reason": "Function should have complexity 10 or less; currently complexity is 18",
+      "rule_id": "cyclomatic_complexity",
+      "severity": "Error",
+      "type": "Cyclomatic Complexity"
+    },
+    {
+      "character": 13,
+      "file": "Sources/Typeflux/Ask/QuickResults/Files/AskFileWorkerCommand.swift",
+      "line": 208,
+      "reason": "Function should have complexity 10 or less; currently complexity is 11",
+      "rule_id": "cyclomatic_complexity",
+      "severity": "Error",
+      "type": "Cyclomatic Complexity"
+    },
+    {
+      "character": 20,
+      "file": "Sources/Typeflux/Ask/QuickResults/Files/AskFileWorkerCommand.swift",
+      "line": 111,
+      "reason": "Function body should span 50 lines or less excluding comments and whitespace: currently spans 76 lines",
+      "rule_id": "function_body_length",
+      "severity": "Error",
+      "type": "Function Body Length"
+    },
+    {
+      "character": 30,
+      "file": "Sources/Typeflux/Ask/QuickResults/Files/AskFileWorkerCommand.swift",
+      "line": 296,
+      "reason": "Prefer failable `String(bytes:encoding:)` initializer when converting `Data` to `String`",
+      "rule_id": "optional_data_string_conversion",
+      "severity": "Error",
+      "type": "Optional Data -> String Conversion"
+    },
+    {
+      "character": 13,
+      "file": "Sources/TypefluxMediaRuntime/MediaPreviewDecoder.swift",
+      "line": 51,
+      "reason": "Variable name 'w' should be between 3 and 40 characters long",
+      "rule_id": "identifier_name",
+      "severity": "Error",
+      "type": "Identifier Name"
+    },
+    {
+      "character": 51,
+      "file": "Sources/TypefluxMediaRuntime/MediaPreviewDecoder.swift",
+      "line": 51,
+      "reason": "Variable name 'h' should be between 3 and 40 characters long",
+      "rule_id": "identifier_name",
+      "severity": "Error",
+      "type": "Identifier Name"
+    },
+    {
+      "character": 20,
+      "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPDF.swift",
+      "line": 40,
+      "reason": "Function should have 5 parameters or less: it currently has 7",
+      "rule_id": "function_parameter_count",
+      "severity": "Error",
+      "type": "Function Parameter Count"
+    },
+    {
+      "character": 13,
+      "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPDF.swift",
+      "line": 102,
+      "reason": "Variable name 'fd' should be between 3 and 40 characters long",
+      "rule_id": "identifier_name",
+      "severity": "Error",
+      "type": "Identifier Name"
+    },
+    {
+      "character": 1,
+      "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPDF.swift",
+      "line": 52,
+      "reason": "Line should be 120 characters or less; currently it has 135 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 1,
+      "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPDF.swift",
+      "line": 53,
+      "reason": "Line should be 120 characters or less; currently it has 139 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 1,
+      "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPDF.swift",
+      "line": 61,
+      "reason": "Line should be 120 characters or less; currently it has 126 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 1,
+      "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPDF.swift",
+      "line": 73,
+      "reason": "Line should be 120 characters or less; currently it has 137 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 1,
+      "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPDF.swift",
+      "line": 80,
+      "reason": "Line should be 120 characters or less; currently it has 131 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 1,
+      "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPDF.swift",
+      "line": 110,
+      "reason": "Line should be 120 characters or less; currently it has 144 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 108,
+      "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPDF.swift",
+      "line": 80,
+      "reason": "Trailing closure syntax should not be used when passing more than one closure argument",
+      "rule_id": "multiple_closures_with_trailing_closure",
+      "severity": "Error",
+      "type": "Multiple Closures with Trailing Closure"
+    },
+    {
+      "character": 5,
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "line": 148,
+      "reason": "Function should have complexity 10 or less; currently complexity is 11",
+      "rule_id": "cyclomatic_complexity",
+      "severity": "Error",
+      "type": "Cyclomatic Complexity"
+    },
+    {
+      "character": 5,
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "line": 230,
+      "reason": "Function should have complexity 10 or less; currently complexity is 19",
+      "rule_id": "cyclomatic_complexity",
+      "severity": "Error",
+      "type": "Cyclomatic Complexity"
+    },
+    {
+      "character": 5,
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "line": 84,
+      "reason": "Function body should span 50 lines or less excluding comments and whitespace: currently spans 56 lines",
+      "rule_id": "function_body_length",
+      "severity": "Error",
+      "type": "Function Body Length"
+    },
+    {
+      "character": 13,
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "line": 108,
+      "reason": "Variable name 'fd' should be between 3 and 40 characters long",
+      "rule_id": "identifier_name",
+      "severity": "Error",
+      "type": "Identifier Name"
+    },
+    {
+      "character": 17,
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "line": 238,
+      "reason": "Variable name 'fd' should be between 3 and 40 characters long",
+      "rule_id": "identifier_name",
+      "severity": "Error",
+      "type": "Identifier Name"
+    },
+    {
+      "character": 1,
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "line": 17,
+      "reason": "Line should be 120 characters or less; currently it has 121 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 1,
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "line": 50,
+      "reason": "Line should be 120 characters or less; currently it has 127 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 1,
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "line": 99,
+      "reason": "Line should be 120 characters or less; currently it has 166 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 1,
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "line": 106,
+      "reason": "Line should be 200 characters or less; currently it has 700 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 1,
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "line": 112,
+      "reason": "Line should be 120 characters or less; currently it has 140 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 1,
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "line": 113,
+      "reason": "Line should be 200 characters or less; currently it has 424 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 1,
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "line": 122,
+      "reason": "Line should be 120 characters or less; currently it has 154 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 1,
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "line": 127,
+      "reason": "Line should be 120 characters or less; currently it has 146 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 1,
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "line": 141,
+      "reason": "Line should be 120 characters or less; currently it has 123 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 1,
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "line": 189,
+      "reason": "Line should be 120 characters or less; currently it has 126 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 1,
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "line": 208,
+      "reason": "Line should be 120 characters or less; currently it has 123 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 55,
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "line": 118,
+      "reason": "Else and catch should be on the same line, one space after the previous declaration",
+      "rule_id": "statement_position",
+      "severity": "Error",
+      "type": "Statement Position"
+    },
+    {
+      "character": 54,
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "line": 129,
+      "reason": "Else and catch should be on the same line, one space after the previous declaration",
+      "rule_id": "statement_position",
+      "severity": "Error",
+      "type": "Statement Position"
+    },
+    {
+      "character": 126,
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "line": 189,
+      "reason": "Else and catch should be on the same line, one space after the previous declaration",
+      "rule_id": "statement_position",
+      "severity": "Error",
+      "type": "Statement Position"
+    },
+    {
+      "character": 88,
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "line": 324,
+      "reason": "Else and catch should be on the same line, one space after the previous declaration",
+      "rule_id": "statement_position",
+      "severity": "Error",
+      "type": "Statement Position"
+    },
+    {
+      "character": 1,
+      "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewRenderer.swift",
+      "line": 75,
+      "reason": "Line should be 120 characters or less; currently it has 121 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 12,
+      "file": "Sources/TypefluxMediaProtocol/MediaPreview.swift",
+      "line": 55,
+      "reason": "Function should have complexity 10 or less; currently complexity is 15",
+      "rule_id": "cyclomatic_complexity",
+      "severity": "Error",
+      "type": "Cyclomatic Complexity"
+    },
+    {
+      "character": 1,
+      "file": "Sources/TypefluxMediaProtocol/MediaPreview.swift",
+      "line": 16,
+      "reason": "Line should be 120 characters or less; currently it has 166 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 1,
+      "file": "Sources/TypefluxMediaProtocol/MediaPreview.swift",
+      "line": 68,
+      "reason": "Line should be 120 characters or less; currently it has 129 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 1,
+      "file": "Sources/TypefluxMediaProtocol/MediaPreview.swift",
+      "line": 80,
+      "reason": "Line should be 120 characters or less; currently it has 122 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 1,
+      "file": "Sources/TypefluxMediaProtocol/MediaPreview.swift",
+      "line": 81,
+      "reason": "Line should be 120 characters or less; currently it has 157 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 1,
+      "file": "Sources/TypefluxMediaProtocol/MediaPreview.swift",
+      "line": 125,
+      "reason": "Line should be 120 characters or less; currently it has 143 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 1,
+      "file": "Sources/TypefluxMediaProtocol/MediaPreview.swift",
+      "line": 129,
+      "reason": "Line should be 120 characters or less; currently it has 149 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 23,
+      "file": "Sources/TypefluxMediaProtocol/MediaPreview.swift",
+      "line": 112,
+      "reason": "Case statements should vertically aligned with their closing brace",
+      "rule_id": "switch_case_alignment",
+      "severity": "Error",
+      "type": "Switch and Case Statement Alignment"
+    },
+    {
+      "character": 48,
+      "file": "Sources/TypefluxMediaProtocol/MediaPreview.swift",
+      "line": 112,
+      "reason": "Case statements should vertically aligned with their closing brace",
+      "rule_id": "switch_case_alignment",
+      "severity": "Error",
+      "type": "Switch and Case Statement Alignment"
+    },
+    {
+      "character": 75,
+      "file": "Sources/TypefluxMediaProtocol/MediaPreview.swift",
+      "line": 112,
+      "reason": "Case statements should vertically aligned with their closing brace",
+      "rule_id": "switch_case_alignment",
+      "severity": "Error",
+      "type": "Switch and Case Statement Alignment"
+    },
+    {
+      "character": 5,
+      "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewController.swift",
+      "line": 103,
+      "reason": "Function should have complexity 10 or less; currently complexity is 15",
+      "rule_id": "cyclomatic_complexity",
+      "severity": "Error",
+      "type": "Cyclomatic Complexity"
+    },
+    {
+      "character": 5,
+      "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewController.swift",
+      "line": 103,
+      "reason": "Function body should span 50 lines or less excluding comments and whitespace: currently spans 57 lines",
+      "rule_id": "function_body_length",
+      "severity": "Error",
+      "type": "Function Body Length"
+    },
+    {
+      "character": 1,
+      "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewController.swift",
+      "line": 86,
+      "reason": "Line should be 120 characters or less; currently it has 131 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 1,
+      "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewController.swift",
+      "line": 87,
+      "reason": "Line should be 120 characters or less; currently it has 142 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 1,
+      "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewController.swift",
+      "line": 89,
+      "reason": "Line should be 120 characters or less; currently it has 147 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 1,
+      "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewController.swift",
+      "line": 106,
+      "reason": "Line should be 120 characters or less; currently it has 123 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 7,
+      "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewController.swift",
+      "line": 17,
+      "reason": "Class body should span 250 lines or less excluding comments and whitespace: currently spans 265 lines",
+      "rule_id": "type_body_length",
+      "severity": "Error",
+      "type": "Type Body Length"
+    }
+  ],
+  "base": [
+    {
+      "character": 1,
+      "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewRenderer.swift",
+      "line": 73,
+      "reason": "Line should be 120 characters or less; currently it has 121 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 12,
+      "file": "Sources/TypefluxMediaProtocol/MediaPreview.swift",
+      "line": 52,
+      "reason": "Function should have complexity 10 or less; currently complexity is 13",
+      "rule_id": "cyclomatic_complexity",
+      "severity": "Error",
+      "type": "Cyclomatic Complexity"
+    },
+    {
+      "character": 1,
+      "file": "Sources/TypefluxMediaProtocol/MediaPreview.swift",
+      "line": 16,
+      "reason": "Line should be 120 characters or less; currently it has 166 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 1,
+      "file": "Sources/TypefluxMediaProtocol/MediaPreview.swift",
+      "line": 60,
+      "reason": "Line should be 120 characters or less; currently it has 129 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 1,
+      "file": "Sources/TypefluxMediaProtocol/MediaPreview.swift",
+      "line": 72,
+      "reason": "Line should be 120 characters or less; currently it has 122 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 1,
+      "file": "Sources/TypefluxMediaProtocol/MediaPreview.swift",
+      "line": 73,
+      "reason": "Line should be 120 characters or less; currently it has 157 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 1,
+      "file": "Sources/TypefluxMediaProtocol/MediaPreview.swift",
+      "line": 117,
+      "reason": "Line should be 120 characters or less; currently it has 143 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 1,
+      "file": "Sources/TypefluxMediaProtocol/MediaPreview.swift",
+      "line": 121,
+      "reason": "Line should be 120 characters or less; currently it has 149 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 23,
+      "file": "Sources/TypefluxMediaProtocol/MediaPreview.swift",
+      "line": 104,
+      "reason": "Case statements should vertically aligned with their closing brace",
+      "rule_id": "switch_case_alignment",
+      "severity": "Error",
+      "type": "Switch and Case Statement Alignment"
+    },
+    {
+      "character": 48,
+      "file": "Sources/TypefluxMediaProtocol/MediaPreview.swift",
+      "line": 104,
+      "reason": "Case statements should vertically aligned with their closing brace",
+      "rule_id": "switch_case_alignment",
+      "severity": "Error",
+      "type": "Switch and Case Statement Alignment"
+    },
+    {
+      "character": 75,
+      "file": "Sources/TypefluxMediaProtocol/MediaPreview.swift",
+      "line": 104,
+      "reason": "Case statements should vertically aligned with their closing brace",
+      "rule_id": "switch_case_alignment",
+      "severity": "Error",
+      "type": "Switch and Case Statement Alignment"
+    },
+    {
+      "character": 13,
+      "file": "Sources/TypefluxMediaRuntime/MediaPreviewDecoder.swift",
+      "line": 40,
+      "reason": "Variable name 'w' should be between 3 and 40 characters long",
+      "rule_id": "identifier_name",
+      "severity": "Error",
+      "type": "Identifier Name"
+    },
+    {
+      "character": 51,
+      "file": "Sources/TypefluxMediaRuntime/MediaPreviewDecoder.swift",
+      "line": 40,
+      "reason": "Variable name 'h' should be between 3 and 40 characters long",
+      "rule_id": "identifier_name",
+      "severity": "Error",
+      "type": "Identifier Name"
+    },
+    {
+      "character": 20,
+      "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPDF.swift",
+      "line": 39,
+      "reason": "Function should have 5 parameters or less: it currently has 7",
+      "rule_id": "function_parameter_count",
+      "severity": "Error",
+      "type": "Function Parameter Count"
+    },
+    {
+      "character": 13,
+      "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPDF.swift",
+      "line": 98,
+      "reason": "Variable name 'fd' should be between 3 and 40 characters long",
+      "rule_id": "identifier_name",
+      "severity": "Error",
+      "type": "Identifier Name"
+    },
+    {
+      "character": 1,
+      "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPDF.swift",
+      "line": 49,
+      "reason": "Line should be 120 characters or less; currently it has 135 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 1,
+      "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPDF.swift",
+      "line": 50,
+      "reason": "Line should be 120 characters or less; currently it has 121 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 1,
+      "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPDF.swift",
+      "line": 58,
+      "reason": "Line should be 120 characters or less; currently it has 126 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 1,
+      "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPDF.swift",
+      "line": 70,
+      "reason": "Line should be 120 characters or less; currently it has 137 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 1,
+      "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPDF.swift",
+      "line": 77,
+      "reason": "Line should be 120 characters or less; currently it has 131 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 1,
+      "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPDF.swift",
+      "line": 106,
+      "reason": "Line should be 120 characters or less; currently it has 144 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 108,
+      "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPDF.swift",
+      "line": 77,
+      "reason": "Trailing closure syntax should not be used when passing more than one closure argument",
+      "rule_id": "multiple_closures_with_trailing_closure",
+      "severity": "Error",
+      "type": "Multiple Closures with Trailing Closure"
+    },
+    {
+      "character": 13,
+      "file": "Sources/Typeflux/Ask/QuickResults/Files/AskFileWorkerCommand.swift",
+      "line": 111,
+      "reason": "Function should have complexity 10 or less; currently complexity is 18",
+      "rule_id": "cyclomatic_complexity",
+      "severity": "Error",
+      "type": "Cyclomatic Complexity"
+    },
+    {
+      "character": 13,
+      "file": "Sources/Typeflux/Ask/QuickResults/Files/AskFileWorkerCommand.swift",
+      "line": 208,
+      "reason": "Function should have complexity 10 or less; currently complexity is 11",
+      "rule_id": "cyclomatic_complexity",
+      "severity": "Error",
+      "type": "Cyclomatic Complexity"
+    },
+    {
+      "character": 20,
+      "file": "Sources/Typeflux/Ask/QuickResults/Files/AskFileWorkerCommand.swift",
+      "line": 111,
+      "reason": "Function body should span 50 lines or less excluding comments and whitespace: currently spans 76 lines",
+      "rule_id": "function_body_length",
+      "severity": "Error",
+      "type": "Function Body Length"
+    },
+    {
+      "character": 30,
+      "file": "Sources/Typeflux/Ask/QuickResults/Files/AskFileWorkerCommand.swift",
+      "line": 295,
+      "reason": "Prefer failable `String(bytes:encoding:)` initializer when converting `Data` to `String`",
+      "rule_id": "optional_data_string_conversion",
+      "severity": "Error",
+      "type": "Optional Data -> String Conversion"
+    },
+    {
+      "character": 5,
+      "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewController.swift",
+      "line": 103,
+      "reason": "Function should have complexity 10 or less; currently complexity is 14",
+      "rule_id": "cyclomatic_complexity",
+      "severity": "Error",
+      "type": "Cyclomatic Complexity"
+    },
+    {
+      "character": 5,
+      "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewController.swift",
+      "line": 103,
+      "reason": "Function body should span 50 lines or less excluding comments and whitespace: currently spans 54 lines",
+      "rule_id": "function_body_length",
+      "severity": "Error",
+      "type": "Function Body Length"
+    },
+    {
+      "character": 1,
+      "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewController.swift",
+      "line": 86,
+      "reason": "Line should be 120 characters or less; currently it has 131 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 1,
+      "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewController.swift",
+      "line": 87,
+      "reason": "Line should be 120 characters or less; currently it has 142 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 1,
+      "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewController.swift",
+      "line": 89,
+      "reason": "Line should be 120 characters or less; currently it has 147 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 1,
+      "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewController.swift",
+      "line": 106,
+      "reason": "Line should be 120 characters or less; currently it has 123 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 7,
+      "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewController.swift",
+      "line": 17,
+      "reason": "Class body should span 250 lines or less excluding comments and whitespace: currently spans 262 lines",
+      "rule_id": "type_body_length",
+      "severity": "Error",
+      "type": "Type Body Length"
+    },
+    {
+      "character": 5,
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "line": 148,
+      "reason": "Function should have complexity 10 or less; currently complexity is 11",
+      "rule_id": "cyclomatic_complexity",
+      "severity": "Error",
+      "type": "Cyclomatic Complexity"
+    },
+    {
+      "character": 5,
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "line": 230,
+      "reason": "Function should have complexity 10 or less; currently complexity is 17",
+      "rule_id": "cyclomatic_complexity",
+      "severity": "Error",
+      "type": "Cyclomatic Complexity"
+    },
+    {
+      "character": 5,
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "line": 84,
+      "reason": "Function body should span 50 lines or less excluding comments and whitespace: currently spans 56 lines",
+      "rule_id": "function_body_length",
+      "severity": "Error",
+      "type": "Function Body Length"
+    },
+    {
+      "character": 13,
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "line": 108,
+      "reason": "Variable name 'fd' should be between 3 and 40 characters long",
+      "rule_id": "identifier_name",
+      "severity": "Error",
+      "type": "Identifier Name"
+    },
+    {
+      "character": 17,
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "line": 238,
+      "reason": "Variable name 'fd' should be between 3 and 40 characters long",
+      "rule_id": "identifier_name",
+      "severity": "Error",
+      "type": "Identifier Name"
+    },
+    {
+      "character": 1,
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "line": 17,
+      "reason": "Line should be 120 characters or less; currently it has 121 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 1,
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "line": 50,
+      "reason": "Line should be 120 characters or less; currently it has 127 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 1,
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "line": 99,
+      "reason": "Line should be 120 characters or less; currently it has 166 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 1,
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "line": 106,
+      "reason": "Line should be 200 characters or less; currently it has 700 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 1,
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "line": 112,
+      "reason": "Line should be 120 characters or less; currently it has 140 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 1,
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "line": 113,
+      "reason": "Line should be 200 characters or less; currently it has 424 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 1,
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "line": 122,
+      "reason": "Line should be 120 characters or less; currently it has 154 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 1,
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "line": 127,
+      "reason": "Line should be 120 characters or less; currently it has 146 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 1,
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "line": 141,
+      "reason": "Line should be 120 characters or less; currently it has 123 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 1,
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "line": 189,
+      "reason": "Line should be 120 characters or less; currently it has 126 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 1,
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "line": 208,
+      "reason": "Line should be 120 characters or less; currently it has 123 characters",
+      "rule_id": "line_length",
+      "severity": "Error",
+      "type": "Line Length"
+    },
+    {
+      "character": 55,
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "line": 118,
+      "reason": "Else and catch should be on the same line, one space after the previous declaration",
+      "rule_id": "statement_position",
+      "severity": "Error",
+      "type": "Statement Position"
+    },
+    {
+      "character": 54,
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "line": 129,
+      "reason": "Else and catch should be on the same line, one space after the previous declaration",
+      "rule_id": "statement_position",
+      "severity": "Error",
+      "type": "Statement Position"
+    },
+    {
+      "character": 126,
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "line": 189,
+      "reason": "Else and catch should be on the same line, one space after the previous declaration",
+      "rule_id": "statement_position",
+      "severity": "Error",
+      "type": "Statement Position"
+    },
+    {
+      "character": 88,
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "line": 312,
+      "reason": "Else and catch should be on the same line, one space after the previous declaration",
+      "rule_id": "statement_position",
+      "severity": "Error",
+      "type": "Statement Position"
+    }
+  ]
+}

@@ -13,6 +13,7 @@ struct AskFilePreviewContent {
     var waveform: [Float] = []
     var fileSize: Int64 = 0
     var imageSize: CGSize?
+    var imageTextLocated: Bool?
 
     var cost: Int {
         images.reduce(text.utf8.count + waveform.count * 4) { total, image in

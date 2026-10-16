@@ -85,6 +85,7 @@ struct AskFilePreviewView: View {
                     Image(nsImage: image).resizable().scaledToFit().padding(8)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
+                textLocationFallback(content)
                 if content.kind == .video {
                     Text(AskFilePreviewContent.time(content.duration) + " · " + L("ask.preview.noAutoplay"))
                         .font(.system(size: 10)).padding(7).background(.ultraThinMaterial, in: Capsule()).padding(10)
@@ -115,6 +116,13 @@ struct AskFilePreviewView: View {
             }
         case .table: table(content)
         case .audio: audio(content)
+        }
+    }
+
+    @ViewBuilder private func textLocationFallback(_ content: AskFilePreviewContent) -> some View {
+        if content.imageTextLocated == false {
+            Text(L("ask.preview.textLocationUnavailable"))
+                .font(.system(size: 10)).padding(7).background(.ultraThinMaterial, in: Capsule()).padding(10)
         }
     }
 

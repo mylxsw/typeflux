@@ -16,9 +16,20 @@ public enum MediaPreviewDecoder {
         var response = MediaResponse(id: request.id)
         if request.operation == .previewImage {
             let image = try image(data, options: options)
-            let raster = try write(image, index: 0, page: nil, directory: directory)
+            let geometry = options.passage.map { passage in
+                (try? MediaPreviewOCR.locate(image, passage: passage)) ?? MediaTextGeometry(boxes: [])
+            }
+            let context = try context(width: image.width, height: image.height)
+            context.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
+            context.setFillColor(CGColor(srgbRed: 1, green: 0.8, blue: 0.05, alpha: 0.38))
+            for box in geometry?.boxes ?? [] {
+                context.fill(CGRect(x: box.minX * Double(image.width), y: box.minY * Double(image.height),
+                                    width: box.width * Double(image.width), height: box.height * Double(image.height)))
+            }
+            let raster = try write(context, index: 0, page: nil, directory: directory)
             response.preview = .init(rasters: [raster])
             response.preview?.imageType = options.imageType
+            response.preview?.textGeometry = geometry
         } else {
             response.preview = try pdf(data, options: options, directory: directory)
         }
