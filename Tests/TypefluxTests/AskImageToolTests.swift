@@ -10,8 +10,9 @@ actor ImageGeneratorStub: AskImageGenerating {
     }
 
     func generate(_: AskImageRequest, configuration _: AskImageConfiguration,
-                  key _: String) async throws -> AskImageGenerationResult {
+                  key _: String, retention: AskImageGenerationRetention) async throws -> AskImageGenerationResult {
         calls += 1
+        try retention.response(Data("stub provider response".utf8))
         return result
     }
 }
@@ -35,7 +36,7 @@ final class AskImageToolTests: XCTestCase {
         let defaults = UserDefaults(suiteName: UUID().uuidString)!
         tools = AskLocalTools(registry: MCPRegistry(settingsStore: .init(defaults: defaults)), artifactStore: store)
         tools.imageConfigurationOverride = { self.config.map { ($0, self.key) } }
-        generator = try ImageGeneratorStub([AskGeneratedImageData(data: AskImageGenerationTests.picture())])
+        generator = try ImageGeneratorStub([AskGeneratedImageData(data: AskImageGenerationTests.picture(), mediaType: "image/png", width: 8, height: 6)])
         tools.imageGenerator = generator
         tools.bindExecution(ownerId: "owner", conversationId: "conversation", runId: "run")
     }
@@ -157,6 +158,107 @@ final class AskImageToolTests: XCTestCase {
         let calls = await generator.calls
         XCTAssertEqual(calls, 1)
         XCTAssertFalse(FileManager.default.fileExists(atPath: store.storageURL.path))
+        let root = AskImageGenerationRetention.root(for: store)
+        let ids = try FileManager.default.contentsOfDirectory(atPath: root.path)
+        let retained = try AskImageGenerationRetention.load(rootURL: root, id: XCTUnwrap(ids.first),
+            scope: .init(ownerId: "owner", conversationId: "conversation", runId: "run"), callId: call.id)
+        XCTAssertNotNil(retained["response.json"])
+    }
+
+    func testDecoderUnavailableExportsOriginalBinaryAndPersistsIncompleteReceiptWithoutReplay() async throws {
+        config = .preset(.openAI)
+        let bytes = try AskImageGenerationTests.picture()
+        let response = try JSONSerialization.data(withJSONObject: ["id": "paid", "usage": ["count": 1],
+            "data": [["b64_json": bytes.base64EncodedString()]]])
+        let transport = ImageTransportStub { _, _ in response }
+        tools.imageGenerator = AskImageGenerationService(transport: transport, validate: { _ in throw AskImageError.invalidResponse })
+        let binding = try await tools.approvalBinding(for: call, conversationId: "conversation")
+        let output = try await tools.executeApproved(call, conversationId: "conversation", binding: binding, authorize: {})
+        XCTAssertTrue(output.isError)
+        XCTAssertEqual(output.outcome?.status, "unknown", "A provider response alone does not verify the complete image result")
+        XCTAssertNil(output.outcome?.effectVerified)
+        let receipt = try JSONDecoder().decode(AskGeneratedImageReceipt.self, from: Data(output.content.utf8))
+        XCTAssertEqual(receipt.incomplete, true)
+        let ref = try XCTUnwrap(receipt.generatedImages.first)
+        XCTAssertEqual(ref.mediaType, "application/octet-stream")
+        var delivery = AskToolResultRequest(runId: "run", deviceId: "device", toolCallId: call.id, content: "", isError: false)
+        delivery.record(output)
+        let group = AskActivityGroup(id: "group", messages: [.init(id: "a", role: "assistant", text: "", toolCalls: [call], createdAt: Date())])
+        for request in [delivery, delivery.forPeer(nil)] {
+            let message = request.message(step: 1, now: Date())
+            XCTAssertTrue(message.isError == true)
+            XCTAssertEqual(AskActivity.outputs(group, results: [message]).storedArtifacts, [ref])
+        }
+        XCTAssertNil(AskGeneratedImageReceipt.parse("not a receipt"))
+        let bundle = try tools.loadArtifact(ref, ownerId: "owner", conversationId: "conversation")
+        let exported = base.appendingPathComponent("saved.bin")
+        try AskArtifactExport.write(bundle, to: exported)
+        XCTAssertEqual(try Data(contentsOf: exported), bytes)
+        let retained = try AskImageGenerationRetention.load(rootURL: AskImageGenerationRetention.root(for: store),
+            id: XCTUnwrap(receipt.recoveryID), scope: .init(ownerId: "owner", conversationId: "conversation", runId: "run"), callId: call.id)
+        XCTAssertEqual(retained["response.json"], response)
+        do { _ = try await tools.executeApproved(call, conversationId: "conversation", binding: binding, authorize: {}); XCTFail() }
+        catch {}
+        let requests = await transport.requests
+        XCTAssertEqual(requests.count, 1)
+        XCTAssertFalse(output.content.contains(bytes.base64EncodedString()))
+    }
+
+    func testArtifactPublicationFailureKeepsPaidOutputInPrivateJournal() async throws {
+        config = .preset(.openAI)
+        let bytes = try AskImageGenerationTests.picture()
+        let response = try JSONSerialization.data(withJSONObject: ["data": [["b64_json": bytes.base64EncodedString()]]])
+        tools.imageGenerator = AskImageGenerationService(transport: ImageTransportStub { _, _ in response }, validate: {
+            .init(data: $0, mediaType: "image/png", width: 8, height: 6)
+        })
+        try FileManager.default.createDirectory(at: base, withIntermediateDirectories: true)
+        try Data("not a directory".utf8).write(to: store.storageURL)
+        let binding = try await tools.approvalBinding(for: call, conversationId: "conversation")
+        let output = try await tools.executeApproved(call, conversationId: "conversation", binding: binding, authorize: {})
+        XCTAssertTrue(output.isError)
+        let receipt = try JSONDecoder().decode(AskGeneratedImageReceipt.self, from: Data(output.content.utf8))
+        XCTAssertTrue(receipt.generatedImages.isEmpty)
+        let retained = try AskImageGenerationRetention.load(rootURL: AskImageGenerationRetention.root(for: store),
+            id: XCTUnwrap(receipt.recoveryID), scope: .init(ownerId: "owner", conversationId: "conversation", runId: "run"), callId: call.id)
+        XCTAssertEqual(retained["response.json"], response)
+    }
+
+    func testUnknownPaidOutcomeHasPrivateIdentityAndNeverRetries() async throws {
+        let transport = ImageTransportStub { _, _ in throw URLError(.networkConnectionLost) }
+        tools.imageGenerator = AskImageGenerationService(transport: transport)
+        let binding = try await tools.approvalBinding(for: call, conversationId: "conversation")
+        let output = try await tools.executeApproved(call, conversationId: "conversation", binding: binding, authorize: {})
+        XCTAssertTrue(output.isError)
+        XCTAssertEqual(output.outcome?.status, "unknown")
+        XCTAssertNil(output.outcome?.effectVerified)
+        let receipt = try JSONDecoder().decode(AskGeneratedImageReceipt.self, from: Data(output.content.utf8))
+        XCTAssertTrue(receipt.generatedImages.isEmpty)
+        XCTAssertTrue(receipt.notice.contains("unknown"))
+        let retained = try AskImageGenerationRetention.load(rootURL: AskImageGenerationRetention.root(for: store),
+            id: XCTUnwrap(receipt.recoveryID), scope: .init(ownerId: "owner", conversationId: "conversation", runId: "run"), callId: call.id)
+        XCTAssertNotNil(retained["request.json"])
+        XCTAssertNil(retained["response.json"])
+        let requests = await transport.requests
+        XCTAssertEqual(requests.count, 1)
+    }
+
+    func testCancelledGeneratedOutputStaysPrivateAndCannotBeReplayed() async throws {
+        config = .preset(.openAI)
+        let bytes = try AskImageGenerationTests.picture()
+        let response = try JSONSerialization.data(withJSONObject: ["data": [["b64_json": bytes.base64EncodedString()]]])
+        tools.imageGenerator = AskImageGenerationService(transport: ImageTransportStub { _, _ in response }, validate: { _ in
+            withUnsafeCurrentTask { $0?.cancel() }
+            throw CancellationError()
+        })
+        let binding = try await tools.approvalBinding(for: call, conversationId: "conversation")
+        let task = Task { try await self.tools.executeApproved(self.call, conversationId: "conversation", binding: binding, authorize: {}) }
+        do { _ = try await task.value; XCTFail() } catch is CancellationError {}
+        XCTAssertFalse(FileManager.default.fileExists(atPath: store.storageURL.path))
+        let root = AskImageGenerationRetention.root(for: store)
+        let ids = try FileManager.default.contentsOfDirectory(atPath: root.path)
+        let retained = try AskImageGenerationRetention.load(rootURL: root, id: XCTUnwrap(ids.first),
+            scope: .init(ownerId: "owner", conversationId: "conversation", runId: "run"), callId: call.id)
+        XCTAssertEqual(retained["response.json"], response)
     }
 
     func testCloudConversationApprovalReceiptAndDeletionWithRealImageTool() async throws {
