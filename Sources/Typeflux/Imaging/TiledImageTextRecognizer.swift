@@ -10,9 +10,27 @@ struct TiledImageTextRecognizer: ImageTextRecognizing {
     var base: any ImageTextRecognizing
     var bandHeight = ImageTiling.textBandHeight
     var overlap = ImageTiling.textBandOverlap
+    var crop: @Sendable (CGImage, CGRect) -> CGImage? = { $0.cropping(to: $1) }
 
     func recognizeText(in source: ImageTextSource) async throws -> RecognizedText {
         try Task.checkCancellation()
+        // Production bases are the native facade. Custom/actor bases retain their own contract.
+        let native = base as? VisionImageTextRecognizer
+        let authorization = native?.worker.authorization()
+        func check() throws {
+            try Task.checkCancellation()
+            if let native, let authorization, !native.worker.permits(authorization) { throw MediaFailure.unavailable }
+        }
+        func read(_ source: ImageTextSource) async throws -> RecognizedText {
+            try check()
+            let result: RecognizedText
+            if let native, let authorization {
+                result = try await native.recognizeText(in: source, authorization: authorization)
+            } else { result = try await base.recognizeText(in: source) }
+            try check()
+            return result
+        }
+        try check()
         let slot = try Self.admission.acquire(bytes: 1)
         defer { withExtendedLifetime(slot) {} }
         if case let .image(image) = source {
@@ -20,7 +38,7 @@ struct TiledImageTextRecognizer: ImageTextRecognizing {
             else { throw MediaFailure.tooLarge }
         }
         guard case let .image(image) = source, image.height > bandHeight else {
-            return try await base.recognizeText(in: source)
+            return try await read(source)
         }
         guard bandHeight > 0, bandHeight <= 65536, overlap >= 0, overlap < bandHeight else { throw MediaFailure.invalidProtocol }
         guard (image.height - overlap + bandHeight - overlap - 1) / (bandHeight - overlap) <= 32 else { throw MediaFailure.tooLarge }
@@ -28,18 +46,21 @@ struct TiledImageTextRecognizer: ImageTextRecognizing {
         guard bands.count <= 32 else { throw MediaFailure.tooLarge }
         var bytes = 0, count = 0
         var results: [(band: ImageTiling.Band, text: RecognizedText)] = []
+        let crop = self.crop
         for band in bands {
-            try Task.checkCancellation()
+            try check()
             let rect = CGRect(x: 0, y: band.start, width: image.width, height: band.height)
-            guard let piece = image.cropping(to: rect) else { throw ImageTilingError.unreadable }
-            let text = try await base.recognizeText(in: .image(piece))
-            try Task.checkCancellation()
+            guard let piece = crop(image, rect) else { throw ImageTilingError.unreadable }
+            let text = try await read(.image(piece))
             bytes += text.lines.reduce(0) { $0 + $1.text.utf8.count }
             count += text.lines.count
             guard bytes <= 1024 * 1024, count <= 4096 else { throw MediaFailure.tooLarge }
             results.append((band, text))
         }
-        return ImageTiling.merge(results, imageSize: CGSize(width: image.width, height: image.height))
+        try check()
+        let result = ImageTiling.merge(results, imageSize: CGSize(width: image.width, height: image.height))
+        try check()
+        return result
     }
 }
 

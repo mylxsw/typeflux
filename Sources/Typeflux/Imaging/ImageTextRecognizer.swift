@@ -20,7 +20,12 @@ struct VisionImageTextRecognizer: ImageTextRecognizing {
     var readPixels: @Sendable (CGImage, MediaTextInput) throws -> Data = { try Self.pixels($0, shape: $1) }
 
     func recognizeText(in source: ImageTextSource) async throws -> RecognizedText {
-        let response = try await perform(source, operation: .recognizeText)
+        try await recognizeText(in: source, authorization: worker.authorization())
+    }
+
+    /// Internal bands retain the enclosing batch's original native generation.
+    func recognizeText(in source: ImageTextSource, authorization: MediaWorker.Authorization) async throws -> RecognizedText {
+        let response = try await perform(source, operation: .recognizeText, authorization: authorization)
         guard let result = response.recognition else { throw MediaFailure.invalidProtocol }
         return Self.materialize(result)
     }
@@ -31,9 +36,10 @@ struct VisionImageTextRecognizer: ImageTextRecognizing {
         return result
     }
 
-    private func perform(_ source: ImageTextSource, operation: MediaRequest.Operation) async throws -> MediaResponse {
+    private func perform(_ source: ImageTextSource, operation: MediaRequest.Operation,
+                         authorization original: MediaWorker.Authorization? = nil) async throws -> MediaResponse {
         try Task.checkCancellation()
-        let authorization = worker.authorization()
+        let authorization = original ?? worker.authorization()
         guard worker.permits(authorization) else { throw MediaFailure.unavailable }
         let slot = try Self.admission.acquire(bytes: 1)
         defer { withExtendedLifetime(slot) {} }
