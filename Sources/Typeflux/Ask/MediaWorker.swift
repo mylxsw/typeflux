@@ -4,7 +4,7 @@ import TypefluxMediaProtocol
 
 /// A bounded, independent fault domain for disposable media decoders.
 final class MediaWorker: @unchecked Sendable {
-    static let shared = MediaWorker()
+    static let shared = MediaWorker(requiresLifecycle: true)
     static let recordingExport = MediaWorker(timeout: 600)
     static let recordingTimeline = MediaWorker(timeout: 30)
     static let previews = MediaWorker(timeout: 3)
@@ -18,15 +18,19 @@ final class MediaWorker: @unchecked Sendable {
     private let lock = NSLock()
     private var active: [UUID: MediaLease] = [:]
     private var disabled = false
+    private let requiresLifecycle: Bool
+    private var lifecycle: MediaExtractionGate?
+    private var retirement: CheckedContinuation<Void, Never>?
     private var budget = ModuleRecoveryBudget()
     private let executable: URL
     private let timeout: TimeInterval
     private let run: Runner
     private let uptime: @Sendable () -> TimeInterval
 
-    init(executable: URL = MediaWorker.helperURL, timeout: TimeInterval = 30,
+    init(executable: URL = MediaWorker.helperURL, timeout: TimeInterval = 30, requiresLifecycle: Bool = false,
          uptime: @escaping @Sendable () -> TimeInterval = { ProcessInfo.processInfo.systemUptime },
          run: @escaping Runner = { try ManagedProcess().runBlocking($0, isCancelled: $1) }) {
+        self.requiresLifecycle = requiresLifecycle
         self.executable = executable; self.timeout = timeout; self.uptime = uptime; self.run = run
     }
 
@@ -81,17 +85,27 @@ final class MediaWorker: @unchecked Sendable {
                 stopOnOutputLimit: true, preserveWhitespace: true, onStarted: { lease.started() },
                 stdin: encoded, stderrLimit: 1024,
                 onReaped: { lease.reaped() })
-            let result = try run(process, cancelled)
+            let result: ManagedProcess.Result
+            do { result = try run(process, cancelled) }
+            catch {
+                lease.infrastructureFailed = true
+                let code = error as NSError
+                lease.configurationFailure = code.domain == NSPOSIXErrorDomain && [Int(EACCES), Int(EPERM), Int(ENOENT), Int(ENOEXEC)].contains(code.code)
+                throw error
+            }
             try check(cancelled)
             guard result.termination == .exited(0), !result.outputTruncated,
-                  result.stdout.utf8.count <= MediaLimits.responseBytes else { throw MediaFailure.unavailable }
+                  result.stdout.utf8.count <= MediaLimits.responseBytes else { lease.infrastructureFailed = true; throw MediaFailure.unavailable }
             let response = try JSONDecoder().decode(MediaResponse.self, from: Data(result.stdout.utf8))
             try response.validate(for: request)
             try check(cancelled)
             let value = try extract(response, fd)
             try check(cancelled)
             return value
-        } catch { throw error }
+        } catch {
+            if error is DecodingError || (error as? MediaFailure) == .invalidProtocol { lease.infrastructureFailed = true }
+            throw error
+        }
         }
     }
 
@@ -100,22 +114,71 @@ final class MediaWorker: @unchecked Sendable {
                   body: (MediaLease, URL, TimeInterval, Runner, @escaping @Sendable () -> Bool) throws -> T) throws -> T {
         let lease = MediaLease()
         lease.retained = retaining
-        try lock.withLock {
-            guard !disabled, budget.permitsAttempt(at: uptime()), active.count < 2,
-                  !isCancelled() else { throw MediaFailure.unavailable }
+        let gate: MediaExtractionGate?, generation: UUID?
+        (gate, generation) = try lock.withLock {
+            guard !disabled, active.count < 2, active[id] == nil, !isCancelled() else { throw MediaFailure.unavailable }
+            if requiresLifecycle && lifecycle == nil { throw MediaFailure.unavailable }
+            let generation = try lifecycle?.admit()
+            if lifecycle == nil, !budget.permitsAttempt(at: uptime()) { throw MediaFailure.unavailable }
             active[id] = lease
+            return (lifecycle, generation)
         }
-        lease.cleanup = { [self] in lock.withLock { active[id] = nil } }
+        gate?.changed()
+        lease.cleanup = { [self] in
+            let waiter = lock.withLock {
+                active[id] = nil
+                guard active.isEmpty else { return Optional<CheckedContinuation<Void, Never>>.none }
+                let waiter = retirement; retirement = nil; return waiter
+            }
+            gate?.changed()
+            waiter?.resume()
+        }
         defer { lease.returned() }
-        let cancelled: @Sendable () -> Bool = { lease.cancelled || isCancelled() }
+        let cancelled: @Sendable () -> Bool = {
+            lease.cancelled || isCancelled() || (gate != nil && !gate!.permits(generation))
+        }
         do {
             try check(cancelled)
-            return try body(lease, executable, timeout, run, cancelled)
+            let value = try body(lease, executable, timeout, run, cancelled)
+            try check(cancelled)
+            gate?.succeeded(generation)
+            return value
         } catch {
-            if !cancelled(), (error as? MediaFailure) != .unreadable, (error as? MediaFailure) != .tooLarge {
-                lock.withLock { budget.failed(at: uptime()) }
+            if !cancelled() {
+                if let gate, lease.infrastructureFailed { gate.failed(generation, configuration: lease.configurationFailure) }
+                else if gate == nil, (error as? MediaFailure) != .unreadable, (error as? MediaFailure) != .tooLarge {
+                    lock.withLock { budget.failed(at: uptime()) }
+                }
             }
             throw error
+        }
+    }
+
+    /// Binding is one-time and precedes any work; factories reuse this pool,
+    /// never replace it while cancelled host work or children remain owned.
+    func bind(_ gate: MediaExtractionGate) -> Bool {
+        lock.withLock {
+            guard lifecycle == nil, active.isEmpty, !disabled else { return false }
+            lifecycle = gate; return true
+        }
+    }
+
+    func checkReadiness() throws {
+        guard lock.withLock({ !disabled && active.isEmpty }), FileManager.default.isExecutableFile(atPath: executable.path)
+        else { throw ModuleFailure.unavailable }
+    }
+
+    func retireManaged() async {
+        await withCheckedContinuation { continuation in
+            let done = lock.withLock {
+                guard !active.isEmpty else { return true }
+                // Exactly one supervisor cleanup owns this continuation. Its
+                // cancellation never releases admission before actual collection.
+                retirement = continuation
+                active.values.forEach { $0.cancel() }
+                return false
+            }
+            if done { continuation.resume() }
         }
     }
 
@@ -163,7 +226,7 @@ final class MediaWorker: @unchecked Sendable {
     }
 
     func preventNewWork() {
-        let leases = lock.withLock { disabled = true; return Array(active.values) }
+        let leases = lock.withLock { disabled = true; lifecycle?.admission.shutdown(); return Array(active.values) }
         leases.forEach { $0.cancel() }
     }
 
@@ -182,6 +245,9 @@ final class MediaWorker: @unchecked Sendable {
 final class MediaLease: @unchecked Sendable {
     private let lock = NSLock()
     private var stopped = false, launched = false, collected = false, finished = false, cleaned = false
+    // Written/read only by the owning synchronous host operation.
+    var infrastructureFailed = false
+    var configurationFailure = false
     var directory: URL?
     var retained: AnyObject?
     var cleanup: (@Sendable () -> Void)?

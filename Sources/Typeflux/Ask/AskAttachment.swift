@@ -121,16 +121,16 @@ enum AskAttachmentLoader {
     ]
 
     /// Loads one source. A PDF without text becomes one image per page.
-    static func load(_ source: AskAttachmentSource, isCancelled: @escaping @Sendable () -> Bool = { false }) throws -> [AskAttachment] {
+    static func load(_ source: AskAttachmentSource, worker: MediaWorker = .shared, isCancelled: @escaping @Sendable () -> Bool = { false }) throws -> [AskAttachment] {
         switch source {
         case let .image(data, name):
-            return [try image(data: data, name: name, byteSize: data.count, isCancelled: isCancelled)]
+            return [try image(data: data, name: name, byteSize: data.count, worker: worker, isCancelled: isCancelled)]
         case let .file(url):
-            return try file(url, isCancelled: isCancelled)
+            return try file(url, worker: worker, isCancelled: isCancelled)
         }
     }
 
-    static func file(_ url: URL, isCancelled: @escaping @Sendable () -> Bool = { false }) throws -> [AskAttachment] {
+    static func file(_ url: URL, worker: MediaWorker = .shared, isCancelled: @escaping @Sendable () -> Bool = { false }) throws -> [AskAttachment] {
         let name = url.lastPathComponent
         let values = try? url.resourceValues(forKeys: [.isDirectoryKey, .fileSizeKey, .contentTypeKey])
         if values?.isDirectory == true {
@@ -141,11 +141,11 @@ enum AskAttachmentLoader {
         let ext = url.pathExtension.lowercased()
         if type?.conforms(to: .pdf) == true || ext == "pdf" {
             guard size <= AskAttachmentLimits.maximumPDFBytes else { throw AskAttachmentError.tooLarge(name) }
-            return try pdf(url, name: name, byteSize: size, isCancelled: isCancelled)
+            return try pdf(url, name: name, byteSize: size, worker: worker, isCancelled: isCancelled)
         }
         if type?.conforms(to: .image) == true {
             guard size <= AskAttachmentLimits.maximumImageFileBytes else { throw AskAttachmentError.tooLarge(name) }
-            return try media(.image, source: .file(url), name: name, byteSize: size, isCancelled: isCancelled)
+            return try media(.image, source: .file(url), name: name, byteSize: size, worker: worker, isCancelled: isCancelled)
         }
         if textExtensions.contains(ext) || type?.conforms(to: .text) == true || type?.conforms(to: .sourceCode) == true {
             guard size <= AskAttachmentLimits.maximumTextFileBytes else { throw AskAttachmentError.tooLarge(name) }
@@ -176,19 +176,19 @@ enum AskAttachmentLoader {
     }
 
     static func pdf(_ url: URL, name: String, byteSize: Int,
-                    isCancelled: @escaping @Sendable () -> Bool = { false }) throws -> [AskAttachment] {
-        try media(.pdf, source: .file(url), name: name, byteSize: byteSize, isCancelled: isCancelled)
+                    worker: MediaWorker = .shared, isCancelled: @escaping @Sendable () -> Bool = { false }) throws -> [AskAttachment] {
+        try media(.pdf, source: .file(url), name: name, byteSize: byteSize, worker: worker, isCancelled: isCancelled)
     }
 
     static func image(data: Data, name: String, byteSize: Int,
-                      isCancelled: @escaping @Sendable () -> Bool = { false }) throws -> AskAttachment {
-        try media(.image, source: .data(data), name: name, byteSize: byteSize, isCancelled: isCancelled)[0]
+                      worker: MediaWorker = .shared, isCancelled: @escaping @Sendable () -> Bool = { false }) throws -> AskAttachment {
+        try media(.image, source: .data(data), name: name, byteSize: byteSize, worker: worker, isCancelled: isCancelled)[0]
     }
 
     private static func media(_ operation: MediaRequest.Operation, source: MediaWorker.Input,
-                              name: String, byteSize: Int, isCancelled: @escaping @Sendable () -> Bool) throws -> [AskAttachment] {
+                              name: String, byteSize: Int, worker: MediaWorker = .shared, isCancelled: @escaping @Sendable () -> Bool) throws -> [AskAttachment] {
         do {
-            return try MediaWorker.shared.decode(operation, input: source, isCancelled: isCancelled).items.map { item in
+            return try worker.decode(operation, input: source, isCancelled: isCancelled).items.map { item in
                 AskAttachment(kind: item.image == nil ? .file : .image,
                               name: item.page.map { L("ask.attach.pdfPage", name, $0) } ?? name,
                               byteSize: byteSize, image: item.image, text: item.text,

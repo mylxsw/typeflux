@@ -11,9 +11,10 @@ final class ModuleHandle<Service: Sendable>: Sendable {
          factory: @escaping @Sendable () async throws -> Service,
          cleanup: @escaping @Sendable (Service) async -> Void = { _ in },
          classify: @escaping @Sendable (any Error) -> ModuleFailureDisposition = { _ in .recover },
+         externalOperations: @escaping @Sendable () -> Int = { 0 },
          uptime: @escaping @Sendable () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }) {
         supervisor = ModuleSupervisor(policy: policy, healthStore: healthStore, factory: factory, cleanup: cleanup,
-                                      classify: classify, uptime: uptime)
+                                      classify: classify, externalOperations: externalOperations, uptime: uptime)
     }
 
     var health: ModuleHealthChannel { supervisor.healthChannel }

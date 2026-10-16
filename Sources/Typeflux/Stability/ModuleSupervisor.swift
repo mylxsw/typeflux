@@ -20,6 +20,7 @@ actor ModuleSupervisor<Service: Sendable> {
     private let factory: @Sendable () async throws -> Service
     private let cleanup: @Sendable (Service) async -> Void
     private let classify: @Sendable (any Error) -> ModuleFailureDisposition
+    private let externalOperations: @Sendable () -> Int
     private let uptime: @Sendable () -> TimeInterval
     private var budget = ModuleRecoveryBudget()
     private var state: ModuleState = .stopped
@@ -42,7 +43,9 @@ actor ModuleSupervisor<Service: Sendable> {
          factory: @escaping @Sendable () async throws -> Service,
          cleanup: @escaping @Sendable (Service) async -> Void = { _ in },
          classify: @escaping @Sendable (any Error) -> ModuleFailureDisposition = { _ in .recover },
+         externalOperations: @escaping @Sendable () -> Int = { 0 },
          uptime: @escaping @Sendable () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }) {
+        self.externalOperations = externalOperations
         self.healthStore = healthStore
         self.policy = policy
         self.factory = factory
@@ -53,11 +56,20 @@ actor ModuleSupervisor<Service: Sendable> {
 
     func health() -> ModuleHealth {
         ModuleHealth(state: admission.permitsWork ? state : .disabled, generation: generation,
-                     pendingStarts: waiters.count, activeOperations: operations.count,
+                     pendingStarts: waiters.count, activeOperations: operations.count + externalOperations(),
                      hasLifecycleWork: startup != nil || cleaning != nil, failure: failure)
     }
 
     private func publishHealth() { healthChannel.publish(health()) }
+
+    /// A typed pool fences delivery synchronously, then reports its generation
+    /// through one coalescing observer. Cleanup must await that pool's leases.
+    func externalActivity(failedGeneration: UUID?, disposition: ModuleFailureDisposition = .recover) {
+        if let failedGeneration, failedGeneration == generation, state == .ready {
+            failed(ModuleFailure.unavailable, disposition: disposition)
+        }
+        publishHealth()
+    }
 
     private func acquire() async throws -> ModuleLease<Service> {
         defer { publishHealth() }
