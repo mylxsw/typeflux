@@ -258,7 +258,6 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         model.quickSearch.setVisible(true)
         model.refreshQuickApps()
         Task { [model] in await model.refreshLauncherWorkflows() }
-        Task { [model] in await model.loadCachedHistoryIfNeeded() }
         if NSWorkspace.shared.frontmostApplication?.processIdentifier != ProcessInfo.processInfo.processIdentifier {
             tools?.targetApplication = NSWorkspace.shared.frontmostApplication
         }
@@ -334,7 +333,6 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         model.quickSearch.setVisible(launcher?.isVisible == true)
         model.refreshQuickApps()
         Task { [model] in await model.refreshLauncherWorkflows() }
-        Task { [model] in await model.loadCachedHistoryIfNeeded() }
         let panel = launcherPanel()
         panel.contentView?.layoutSubtreeIfNeeded()
         launcherEditor = findEditor(in: panel.contentView)

@@ -224,7 +224,6 @@ struct AskPluginItem: Equatable, Sendable, Identifiable {
     var excerpt: String?
     /// File-mode results retain their real selection and content-match location for the side preview.
     var fileHit: AskFileHit?
-    var loading = false
 }
 
 /// An image to show as a result: a file on this Mac and its size in points.

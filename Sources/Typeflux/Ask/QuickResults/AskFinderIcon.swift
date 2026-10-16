@@ -2,19 +2,30 @@ import SwiftUI
 import TypefluxMediaProtocol
 
 enum AskFinderIcon {
-    private static let admission = AskToolPixelBudget(limit: 2)
+    private static let admission = AskNativeIconAdmission(limit: 2)
     static func decode(_ icon: MediaNativeIcon, edge: Int = 56, worker: MediaWorker = .previews) async throws -> AskFilePreviewPDF.Result {
         try Task.checkCancellation()
         try icon.validate()
         guard (1...112).contains(edge) else { throw MediaFailure.tooLarge }
-        let slot = try admission.acquire(bytes: 1), cancellation = AskSearchCancellation()
+        let slot = try await admission.acquire(), cancellation = AskSearchCancellation()
         defer { withExtendedLifetime(slot) {} }
         return try await withTaskCancellationHandler {
-            let result = try await Task.detached(priority: .utility) {
-                try MediaPreviewDisplay.renderIcon(icon, edge: edge, cancellation: cancellation, worker: worker)
-            }.value
-            try Task.checkCancellation()
-            return result
+            // Other previews share the worker's two child slots. Wait briefly for
+            // those slots too, while preserving the child's failure as a failure.
+            let deadline = ContinuousClock.now.advanced(by: .seconds(3))
+            while true {
+                try Task.checkCancellation()
+                if worker.activeCount >= 2 {
+                    guard ContinuousClock.now < deadline else { throw MediaFailure.unavailable }
+                    try await Task.sleep(for: .milliseconds(20))
+                    continue
+                }
+                let result = try await Task.detached(priority: .utility) {
+                    try MediaPreviewDisplay.renderIcon(icon, edge: edge, cancellation: cancellation, worker: worker)
+                }.value
+                try Task.checkCancellation()
+                return result
+            }
         } onCancel: { cancellation.cancel() }
     }
 
@@ -41,21 +52,33 @@ extension EnvironmentValues {
     }
 }
 
-/// View-owned native icons have no path-only or application-lifetime bitmap cache.
+/// Native icons remain scoped to visible views. Launcher searches also reuse
+/// bounded application icons and temporarily cache versioned file icons.
 struct AskNativeIconImage<Content: View>: View {
     let icon: MediaNativeIcon?
     var revision: Date?
+    var folder = false
     var decode: AskNativeIconDecoding?
     @ViewBuilder var content: (NSImage?) -> Content
     @Environment(\.askContextImageAccess) private var access
     @Environment(\.askIconGeneration) private var generation
     @Environment(\.askNativeIconDecoder) private var environmentDecode
+    @Environment(\.askLauncherIconCache) private var launcherCache
     var body: some View {
-        AskContextImage(source: icon.map { $0.kind.rawValue + ":" + $0.value },
+        let iconCache = launcherCache
+        let selectedDecode = decode ?? environmentDecode
+        let useCache = decode == nil
+        let cached = access.allows() && useCache ? icon.flatMap {
+            iconCache?.immediate($0, revision: revision, folder: folder)?.images.first
+        }.map { NSImage(cgImage: $0, size: .zero) } : nil
+        return AskContextImage(source: icon.map { $0.kind.rawValue + ":" + $0.value },
             model: AskContextImageModel(maximumEdge: 56, decode: { _ in
                 guard let icon else { throw MediaFailure.unavailable }
-                return try await (decode ?? environmentDecode)(icon)
-            }), content: content)
+                if useCache, let iconCache, AskLauncherIconCache.eligible(icon, revision: revision) {
+                    return try await iconCache.load(icon, revision: revision)
+                }
+                return try await selectedDecode(icon)
+            }), content: { image in content(image ?? cached) })
         .id(Identity(icon: icon, epoch: access.epoch, generation: generation, revision: revision))
     }
     private struct Identity: Hashable {
@@ -75,9 +98,10 @@ struct AskNativeIconView: View {
     let icon: MediaNativeIcon
     var symbol = "doc"
     var revision: Date?
+    var folder = false
     var decode: AskNativeIconDecoding?
     var body: some View {
-        AskNativeIconImage(icon: icon, revision: revision, decode: decode) { image in
+        AskNativeIconImage(icon: icon, revision: revision, folder: folder, decode: decode) { image in
             if let image { Image(nsImage: image).resizable().interpolation(.high).scaledToFit() }
             else { Image(systemName: symbol).resizable().scaledToFit().padding(3).foregroundStyle(StudioTheme.textTertiary) }
         }

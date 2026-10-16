@@ -4670,7 +4670,7 @@
 "ask.settings.windowMode.detail" = "下次開啟啟動器時生效。";
 "ask.settings.windowMode.selected" = "已選取";
 
-"ask.home.section.apps" = "最近使用的應用程式";
+"ask.home.section.apps" = "應用程式";
 
 "settings.pane.appearance" = "外觀";
 
@@ -5139,6 +5139,7 @@
 "semantic.resume" = "繼續";
 "semantic.cancelDownload" = "取消下載";
 "semantic.rebuild" = "重新建立索引";
+"semantic.rescan" = "重新掃描";
 "semantic.clear" = "清空內容索引…";
 "semantic.remove" = "刪除模型…";
 "semantic.storage.help" = "這裡的操作只影響內容索引。原有檔案名稱索引獨立保留。";
@@ -5424,7 +5425,6 @@
 
 "ask.translation.stack.ready" = "按 Return 開始翻譯";
 
-"semantic.searching" = "正在搜尋檔案內容…";
 
 "semantic.media.downloading" = "正在下載媒體編碼器…";
 
@@ -5698,3 +5698,25 @@
 "semantic.wait.memory" = "記憶體壓力下已暫停";
 "semantic.wait.thermal" = "熱壓力下已暫停";
 "semantic.wait.recovery" = "等待資源壓力穩定後繼續";
+"settings.services.clipboardThumbnails" = "剪貼簿縮圖";
+"settings.services.frameRegistration" = "捲動截圖對齊";
+"settings.services.textRecognition" = "截圖文字辨識";
+"settings.services.clipboardOCR" = "剪貼簿圖片文字辨識";
+"settings.services.clipboardMetadata" = "剪貼簿媒體資訊";
+
+"settings.services.recordingTimeline" = "錄影時間軸與海報";
+"settings.services.recordingExport" = "錄影編碼";
+
+"settings.services.nativeSystem" = "原生系統命令";
+
+"settings.services.whisperInference" = "本機 Whisper 轉寫";
+
+"settings.services.mediaPlayback" = "媒體播放";
+
+"settings.services.fileIndex" = "檔案索引";
+"settings.services.semanticValidation" = "語義檔案驗證";
+"settings.services.semanticIndexReading" = "語義內容讀取";
+"settings.services.semanticPriorityReading" = "語義優先讀取";
+"settings.services.semanticQueryInference" = "語義查詢推理";
+"settings.services.semanticIndexInference" = "語義文件推理";
+"settings.services.semanticMediaInference" = "語義媒體推理";

@@ -2,6 +2,12 @@ import CoreGraphics
 import Darwin
 import Foundation
 
+protocol SemanticBudgetChild: AnyObject {
+    func suspend() -> Bool
+    func resume() -> Bool
+}
+extension Process: SemanticBudgetChild {}
+
 /// One owner executes background work. Owned CPU children are time-sliced during pipe I/O as well
 /// as between checkpoints. Query/voice work uses separate workers and never inherits this task local.
 final class SemanticWorkBudget: @unchecked Sendable {
@@ -138,7 +144,7 @@ final class SemanticWorkBudget: @unchecked Sendable {
     /// Keep resource ownership, cancellation and state checks in one operation.
     @discardableResult
     // swiftlint:disable:next cyclomatic_complexity function_body_length
-    func checkpoint(child: Process? = nil, cancelled: () -> Bool) throws -> TimeInterval {
+    func checkpoint(child: (any SemanticBudgetChild)? = nil, cancelled: () -> Bool) throws -> TimeInterval {
         guard !cancelled() else { throw CancellationError() }
         guard enabled else { return 0 }
         let started = clock()

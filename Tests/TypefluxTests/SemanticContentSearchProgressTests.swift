@@ -1,5 +1,7 @@
+import AppKit
 import Foundation
 import Testing
+import TypefluxMediaProtocol
 @testable import Typeflux
 
 actor SemanticGatedSearch: SemanticFileSearching {
@@ -12,10 +14,10 @@ actor SemanticGatedSearch: SemanticFileSearching {
     }
 }
 
-@Suite("Pending content search feedback", .serialized, .exclusiveUIState)
+@Suite("Content search without progress rows", .serialized, .exclusiveUIState)
 @MainActor
 struct SemanticContentSearchProgressTests {
-    @Test func mixedSearchShowsProgressUntilContentArrivesWithoutChangingTheChosenName() async throws {
+    @Test func mixedSearchKeepsTheChosenNameWhileContentArrives() async throws {
         let files = AskTestFileIndex([("/work/report.md", .file, 0)])
         let hit = AskFileHit(path: "/work/guide.pdf", name: "guide.pdf", kind: .file,
                              modified: Date(), score: 0.7, evidence: .init(text: "report details", page: 4))
@@ -37,24 +39,34 @@ struct SemanticContentSearchProgressTests {
         #expect(session.results == nil)
     }
 
-    @Test func fileModeProgressIsNotSelectableAndLateContentPreservesSelection() async throws {
+    @Test func fileModeShowsResultsWithoutProgressAndPreservesSelection() async throws {
         let files = AskTestFileIndex([("/work/report-a.md", .file, 0), ("/work/report-b.pdf", .file, 1)])
         let hit = AskFileHit(path: "/work/report-b.pdf", name: "report-b.pdf", kind: .file,
                              modified: Date(), score: 0.7, evidence: .init(text: "matching paragraph", page: 4))
         let semantic = SemanticGatedSearch(hits: [hit])
         let plugin = AskFileSearchPlugin(index: { files }, settings: { .init() }, semantic: { semantic })
         let session = AskPluginSession(plugins: [plugin]) { AskFileSearchPlugin.keywords }
+        let context = try #require(CGContext(data: nil, width: 56, height: 56, bitsPerComponent: 8,
+                                             bytesPerRow: 224, space: CGColorSpaceCreateDeviceRGB(),
+                                             bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+        let pixels = try #require(context.makeImage())
+        let iconCache = AskLauncherIconCache(decode: { _ in
+            .init(images: [pixels], numbers: [], pages: 0)
+        })
+        session.launcherIconCache = iconCache
         defer { _ = session.deactivate() }
         session.enter(AskFileSearchPlugin.keywords[0])
         session.update(text: "report", selection: nil, language: .english)
-        try await AskQuickSearchSessionTests.wait { session.partial?.items.first?.loading == true }
-        #expect(session.partial?.items.first?.valid == false)
-        #expect(!session.selectItem(0))
-        #expect(session.selectItem(2))
+        try await AskQuickSearchSessionTests.wait { session.partial?.items.count == 2 }
+        let firstFile = try #require(session.partial?.items.first?.fileHit)
+        try await AskQuickSearchSessionTests.wait {
+            iconCache.cached(.init(kind: .file, value: firstFile.path), revision: firstFile.modified) != nil
+        }
+        #expect(session.partial?.items.map(\.title) == ["report-a.md", "report-b.pdf"])
+        #expect(session.selectItem(1))
         #expect(session.partial?.selected?.fileHit?.path == hit.path)
         #expect(session.moveSelection(-1)); #expect(session.moveSelection(1))
         try await AskQuickSearchSessionTests.wait { session.output != nil }
-        #expect(session.output?.items.contains(where: \.loading) == false)
         #expect(session.output?.selected?.id == hit.path)
         #expect(session.output?.selected?.fileHit?.evidence?.page == 4)
     }

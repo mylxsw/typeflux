@@ -276,7 +276,26 @@ struct SemanticFileServiceTests {
         await service.clear(removeModel: true)
     }
 
-    @Test func `corrupt index can be cleared without removing verified model`() async throws {
+    @Test func completedDiscoverySkipsRestartWalkAndManualRescanWalksAgain() async throws {
+        let (service, root, reader, models) = try fixture()
+        defer { try? FileManager.default.removeItem(at: root) }
+        try FileManager.default.copyItem(at: models.source, to: service.modelURL)
+        #expect(service.setEnabled(true))
+        try await Self.wait { service.phase == .ready }
+        let initialReads = reader.directoryReads
+        #expect(initialReads > 0 && service.indexedCounts.files == 1)
+
+        service.start(force: true)
+        try await Self.wait { service.phase == .ready }
+        #expect(reader.directoryReads == initialReads)
+
+        service.rescanAll()
+        try await Self.wait { service.phase == .ready && reader.directoryReads > initialReads }
+        #expect(service.indexedCounts.files == 1)
+        await service.clear(removeModel: true)
+    }
+
+    @Test func corruptIndexCanBeClearedWithoutRemovingVerifiedModel() async throws {
         let (service, root, _, models) = try fixture()
         defer { try? FileManager.default.removeItem(at: root) }
         try FileManager.default.copyItem(at: models.source, to: service.modelURL)
@@ -394,12 +413,13 @@ struct SemanticFileServiceTests {
                 var phases: [SemanticFileSearchService.Phase] = []
                 let watch = service.$phase.sink { phases.append($0) }
                 defer { watch.cancel() }
-                try await Self.ready { Support.contains(L("semantic.rebuild"), in: host) }
-                try Support.button(L("semantic.rebuild"), in: host).press()
+                try await Self.ready { Support.contains(L("semantic.rescan"), in: host) }
+                try Support.button(L("semantic.rescan"), in: host).press()
                 try await Self.ready {
-                    phases.contains(.off) && service.phase == .ready && service.files == 1
+                    phases.contains(.indexing) && service.phase == .ready && service.files == 1
                         && service.preferences.enabled
                 }
+                #expect(!phases.contains(.off), "rescan keeps the existing content index available")
                 #expect(window.attachedSheet == nil)
             }
         }

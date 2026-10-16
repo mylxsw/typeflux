@@ -42,29 +42,40 @@ final class SemanticMediaWorker: SemanticMediaEmbedding {
     private let model: URL
     private let projector: URL
     private let models: any SemanticModelHandling
-    private let makeEncoder: @Sendable (URL, URL, URL) -> any SemanticMediaEmbedding
+    private let makeEncoder: Factory
+    private let embeddingOwners: SemanticEmbeddingOwners
+    private let authorization: SemanticEmbeddingOwnership.Authorization
     private let progress: @Sendable (Double?) -> Void
     private var encoder: (any SemanticMediaEmbedding)?
 
     typealias Factory = @Sendable (URL, URL, URL) -> any SemanticMediaEmbedding
-    static let defaultEncoder: Factory = {
-        SemanticEmbeddingWorker(helper: $0, model: $1, indexing: true, projector: $2,
-                                timeout: 90, startupTimeout: 180)
-    }
 
     init(
         helper: URL,
         model: URL,
         projector: URL,
         models: any SemanticModelHandling = SemanticMediaModelFiles(),
-        makeEncoder: @escaping Factory = SemanticMediaWorker.defaultEncoder,
-        progress: @escaping @Sendable (Double?) -> Void = { _ in }
+        makeEncoder: Factory? = nil,
+        progress: @escaping @Sendable (Double?) -> Void = { _ in },
+        embeddingOwners: SemanticEmbeddingOwners = SemanticEmbeddingOwners(),
+        authorization: SemanticEmbeddingOwnership.Authorization? = nil
     ) {
         self.helper = helper; self.model = model; self.projector = projector
-        self.models = models; self.makeEncoder = makeEncoder; self.progress = progress
+        self.models = models; self.progress = progress; self.embeddingOwners = embeddingOwners
+        let authorization = authorization ?? embeddingOwners.media.authorization()
+        self.authorization = authorization
+        self.makeEncoder = makeEncoder ?? { helper, model, projector in
+            SemanticEmbeddingWorker(helper: helper, model: model, indexing: true, projector: projector,
+                                    timeout: 90, startupTimeout: 180, ownership: embeddingOwners.media, authorization: authorization)
+        }
     }
 
-    func embed(_ input: SemanticMediaInput, cancelled: () -> Bool) throws -> [Float] {
+    func embed(_ input: SemanticMediaInput, cancelled originalCancelled: () -> Bool) throws -> [Float] {
+        guard embeddingOwners.media.permits(authorization) else { throw AskFileReadError.unavailable }
+        @Sendable func cancelled() -> Bool { originalCancelled() || !embeddingOwners.media.permits(authorization) }
+        // Check at this boundary even when a custom model/encoder ignores its
+        // cancellation callback. An entered operation still owns its cleanup.
+        if cancelled() { throw CancellationError() }
         if encoder == nil {
             do { try models.verify(projector, cancelled: { cancelled() }) } catch {
                 if cancelled() {
@@ -77,7 +88,10 @@ final class SemanticMediaWorker: SemanticMediaEmbedding {
             }
             encoder = makeEncoder(helper, model, projector)
         }
-        return try encoder!.embed(input, cancelled: cancelled)
+        if cancelled() { throw CancellationError() }
+        let result = try encoder!.embed(input, cancelled: cancelled)
+        if cancelled() { throw CancellationError() }
+        return result
     }
 
     func release() {
@@ -91,9 +105,14 @@ final class SemanticMediaWorker: SemanticMediaEmbedding {
     }
 
     private func download(cancelled: () -> Bool) throws {
+        if cancelled() { throw CancellationError() }
+        let mutation = try embeddingOwners.mutation(.projector)
+        defer { mutation.finish() }
         let transfer = Transfer(), models = models, progress = progress
         progress(0)
         defer { progress(nil) }
+        // The synchronous progress sink may revoke the original scope.
+        if cancelled() { throw CancellationError() }
         let task = Task.detached {
             let result: Result<(URL, URLResponse), Error>
             do {

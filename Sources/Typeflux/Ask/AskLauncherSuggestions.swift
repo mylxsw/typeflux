@@ -39,9 +39,8 @@ struct AskSuggestion: Equatable, Identifiable {
 }
 
 /// The launcher's home under its editor: a hairline, then the sections of
-/// `AskLauncherHome` — actions for what the user is looking at, conversations
-/// to continue, and keyword chips. ↑/↓ move between rows (the chip row is one
-/// stop, ←/→ move along it), Return runs the highlight and ⌘1…⌘9 run a row.
+/// `AskLauncherHome` — applications shown before the user types. ↑/↓ move
+/// between rows, Return opens the highlight and ⌘1…⌘9 open a row.
 struct AskLauncherSuggestions: View {
     @Environment(\.colorScheme) private var colorScheme
     var sections: [AskLauncherHome.Section]
@@ -83,7 +82,7 @@ struct AskLauncherSuggestions: View {
         return 1 + listPadding * 2 + content
     }
 
-    /// Keep complete app rows between the top section and the single keyword row.
+    /// Show as many complete application rows as fit in the launcher.
     static func fitting(_ sections: [AskLauncherHome.Section], height: CGFloat) -> [AskLauncherHome.Section] {
         let fixed = sections.filter { if case .applications = $0 { false } else { true } }
         let space = height - Self.height(for: fixed) - (fixed.isEmpty ? 1 + listPadding * 2 : 0) - headerHeight
@@ -94,13 +93,12 @@ struct AskLauncherSuggestions: View {
         }
     }
 
-    /// A typical home (three rows — a selection's actions or the recent conversations —
-    /// and the chips), for placing the panel before its context has arrived.
+    /// A typical application home, for placing the panel before its list arrives.
     static let typicalHeight: CGFloat = {
         let rows = (0 ..< 3).map {
-            AskLauncherHome.Row(id: "\($0)", title: "", symbol: "", tint: .accent, action: .ask(""))
+            AskLauncherHome.Row(id: "\($0)", title: "", symbol: "", tint: .neutral, action: .ask(""))
         }
-        return height(for: [.context(title: "", subtitle: nil, rows: rows), .keywords(chips: [], teaching: true)])
+        return height(for: [.applications(rows: rows)])
     }()
 
     /// What the bottom bar says Return does for the highlighted item, with ⌘K

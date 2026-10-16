@@ -4685,7 +4685,7 @@
 "ask.settings.windowMode.detail" = "Applies the next time you open the launcher.";
 "ask.settings.windowMode.selected" = "Selected";
 
-"ask.home.section.apps" = "Recent apps";
+"ask.home.section.apps" = "Applications";
 
 "settings.pane.appearance" = "Appearance";
 
@@ -5154,6 +5154,7 @@
 "semantic.resume" = "Resume";
 "semantic.cancelDownload" = "Cancel Download";
 "semantic.rebuild" = "Rebuild Index";
+"semantic.rescan" = "Rescan";
 "semantic.clear" = "Clear Content Index…";
 "semantic.remove" = "Delete Model…";
 "semantic.storage.help" = "These actions only affect the content index. The file name index is kept separately.";
@@ -5505,7 +5506,6 @@
 
 "ask.translation.stack.ready" = "Press Return to translate";
 
-"semantic.searching" = "Searching file contents…";
 
 "semantic.media.downloading" = "Downloading media encoders…";
 
@@ -5778,3 +5778,25 @@
 "semantic.wait.memory" = "Paused for memory pressure";
 "semantic.wait.thermal" = "Paused for thermal pressure";
 "semantic.wait.recovery" = "Waiting for resource pressure to settle";
+"settings.services.clipboardThumbnails" = "Clipboard thumbnails";
+"settings.services.frameRegistration" = "Scrolling screenshot alignment";
+"settings.services.textRecognition" = "Screenshot text recognition";
+"settings.services.clipboardOCR" = "Clipboard image text";
+"settings.services.clipboardMetadata" = "Clipboard media information";
+
+"settings.services.recordingTimeline" = "Recording timeline and posters";
+"settings.services.recordingExport" = "Recording encoding";
+
+"settings.services.nativeSystem" = "Native system commands";
+
+"settings.services.whisperInference" = "Local Whisper inference";
+
+"settings.services.mediaPlayback" = "Media playback";
+
+"settings.services.fileIndex" = "File indexing";
+"settings.services.semanticValidation" = "Semantic file validation";
+"settings.services.semanticIndexReading" = "Semantic content reading";
+"settings.services.semanticPriorityReading" = "Semantic priority reading";
+"settings.services.semanticQueryInference" = "Semantic query inference";
+"settings.services.semanticIndexInference" = "Semantic document inference";
+"settings.services.semanticMediaInference" = "Semantic media inference";

@@ -13,6 +13,7 @@ extension SettingsStore {
         }
         set {
             if let data = try? JSONEncoder().encode(newValue) {
+                revokeSemanticScope(before: semanticScopeFingerprint(enabled: newValue.enabled))
                 defaults.set(data, forKey: "ask.search.semantic")
             }
             NotificationCenter.default.post(name: .askLauncherSearchSettingsDidChange, object: self)

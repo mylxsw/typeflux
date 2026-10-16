@@ -1149,6 +1149,7 @@ struct AskComposer: View {
     var body: some View {
         card
             .environment(\.askContextImageAccess, imageAccess)
+            .environment(\.askLauncherIconCache, launcher ? model.launcherIconCache : nil)
             .environment(\.askIconGeneration, model.plugins.resultGeneration)
             .task(id: AskContextImageModel.Identity(source: screenshotSource, epoch: imageAccess.epoch)) {
                 await screenshotImage.load(screenshotSource, access: imageAccess)
@@ -1267,6 +1268,9 @@ struct AskComposer: View {
             .onReceive(NotificationCenter.default.publisher(for: AskAppIndex.didChange)) { notification in
                 if (notification.object as AnyObject?) === model.appIndex {
                     homeAppsRevision += 1
+                    model.launcherIconCache.prefetch(model.appIndex.recentApplications(limit: AskLauncherHome.maximumHomeApplications).map {
+                        .init(kind: .file, value: $0.url.path)
+                    })
                     refreshQuickResults(resetActions: false)
                 }
             }

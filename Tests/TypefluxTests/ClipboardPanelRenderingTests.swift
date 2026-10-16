@@ -145,11 +145,12 @@ final class ClipboardPanelRenderingTests: XCTestCase {
     func testThumbnailsUseValidatedPixelsWithoutPathCache() async throws {
         let png = directory.appendingPathComponent("thumb.png")
         try ClipboardTestSupport.imageData(width: 300, height: 200).write(to: png)
-        let image = try await ClipboardThumbnailProvider.decode(png, edge: 64)
+        let worker = MediaWorker(timeout: 3)
+        let image = try await ClipboardThumbnailProvider.decode(png, edge: 64, worker: worker)
         XCTAssertEqual(image.images.count, 1)
         XCTAssertLessThanOrEqual(image.images.first?.width ?? 999, 64)
         do {
-            _ = try await ClipboardThumbnailProvider.decode(directory.appendingPathComponent("none.png"), edge: 64)
+            _ = try await ClipboardThumbnailProvider.decode(directory.appendingPathComponent("none.png"), edge: 64, worker: worker)
             XCTFail("Missing image accepted")
         } catch {}
     }

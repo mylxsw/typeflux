@@ -69,10 +69,12 @@ final class SemanticIndexEvents: @unchecked Sendable {
     @discardableResult
     func append(_ changes: [AskFileChange], scope: AskFileScope, directory: String,
                 eventID: UInt64? = nil, cancelled: () -> Bool) throws -> Bool {
+        guard !cancelled() else { throw CancellationError() }
         var changed = false
         for start in stride(from: 0, to: changes.count, by: Self.batchSize) {
-            let plan = SemanticFileChangePlan.make(Array(changes[start ..< min(start + Self.batchSize, changes.count)]),
+            var plan = SemanticFileChangePlan.make(Array(changes[start ..< min(start + Self.batchSize, changes.count)]),
                                                    scope: scope, indexDirectory: directory)
+            if plan.fullScan { plan.subtrees = Set(scope.roots) }
             guard !plan.files.isEmpty || !plan.subtrees.isEmpty else { continue }
             try lock.withLock {
                 guard let database else { throw SemanticFileStore.Failure.database }
@@ -95,6 +97,7 @@ final class SemanticIndexEvents: @unchecked Sendable {
         // Ignored artifact events must not write another cursor update and create an event loop.
         // On a clean stop the watcher is stopped before close() persists the final ignored cursor.
         try lock.withLock {
+            guard !cancelled() else { throw CancellationError() }
             if let eventID {
                 lastSeenEventID = max(lastSeenEventID, eventID)
             }
@@ -155,12 +158,14 @@ final class SemanticIndexEvents: @unchecked Sendable {
 
     /// Acknowledge only after the main index has committed its durable queue. Revision guards retain
     /// another event for the same path received during transfer; crash replay is idempotent.
-    func transfer(to store: SemanticFileStore) throws {
+    func transfer(to store: SemanticFileStore, cancelled: () -> Bool = { false }) throws {
+        guard !cancelled() else { throw CancellationError() }
         let batch = try lock
             .withLock { try rows("SELECT path,subtree,revision,root FROM events ORDER BY revision,path LIMIT 128") }
         guard !batch.isEmpty else { return }
-        try store.acceptEvents(batch)
+        try store.acceptEvents(batch, cancelled: cancelled)
         try lock.withLock {
+            guard !cancelled() else { throw CancellationError() }
             try execute("BEGIN IMMEDIATE")
             do {
                 for entry in batch {

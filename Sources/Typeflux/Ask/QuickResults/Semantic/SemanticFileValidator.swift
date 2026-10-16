@@ -96,7 +96,8 @@ final class SemanticFileValidator: @unchecked Sendable {
                     warm = false
                     SemanticSearchTrace.current?.mark(cancelled() ? "metadata-cancelled" :
                         (stopped() ? "metadata-deadline" : "metadata-read-failed"))
-                    if stopped() {
+                    if stopped() || (error as? AskFileReadError) == .unavailable ||
+                        (error as? AskFileReadError) == .cancelled {
                         return result(valid, complete: false)
                     }
                 }

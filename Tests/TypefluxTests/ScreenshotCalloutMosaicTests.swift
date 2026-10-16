@@ -355,7 +355,7 @@ final class ScreenshotCalloutMosaicTests: XCTestCase {
                                                                                      height: 0.25)],
                                                            imageWidth: 200, imageHeight: 100),
                        [CGRect(x: 20, y: 25, width: 100, height: 25)], "Flipped to a top-left origin")
-        let geometry = try await VisionTextHeightMeasurer().geometry(in: ScreenCaptureTestSupport.image(width: 200, height: 200))
+        let geometry = try await VisionTextHeightMeasurer(recognizer: .init(worker: MediaWorker(timeout: 30))).geometry(in: ScreenCaptureTestSupport.image(width: 200, height: 200))
         XCTAssertTrue(geometry.lines.isEmpty, "No text in a gray square")
     }
 }

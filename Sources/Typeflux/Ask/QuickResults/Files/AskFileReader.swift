@@ -2,12 +2,14 @@ import Darwin
 import Foundation
 
 protocol AskFileReading: AnyObject {
+    func stop()
     func read(_ request: AskFileReadRequest, isCancelled: () -> Bool) throws -> AskFileReadResponse
     func stream(_ request: AskFileReadRequest, isCancelled: () -> Bool,
                 receive: (AskFileReadResponse) -> Bool) throws
 }
 
 extension AskFileReading {
+    func stop() {}
     func stream(_ request: AskFileReadRequest, isCancelled: () -> Bool,
                 receive: (AskFileReadResponse) -> Bool) throws {
         _ = try receive(read(request, isCancelled: isCancelled))
@@ -28,18 +30,23 @@ final class AskFileReader: AskFileReading {
     private let timeout: TimeInterval
     private let startupTimeout: TimeInterval
     private let qualityOfService: QualityOfService?
-    private var process: Process?
+    private var process: AskFileReaderProcess?
+    private let ownership: AskFileReaderOwnership
+    private let reaper: OwnedProcessReaper
+    private var streaming = false
     private var input: FileHandle?
     private var output: FileHandle?
     private var buffer = Data()
 
     init(executable: URL? = nil, arguments: [String] = ["file-index-worker"],
-         timeout: TimeInterval = 5, startupTimeout: TimeInterval? = nil, qualityOfService: QualityOfService? = nil) {
+         timeout: TimeInterval = 5, startupTimeout: TimeInterval? = nil, qualityOfService: QualityOfService? = nil,
+         ownership: AskFileReaderOwnership = AskFileReaderOwnership(), reaper: OwnedProcessReaper = .shared) {
         self.executable = executable
         self.arguments = arguments
         self.timeout = timeout
         self.startupTimeout = startupTimeout ?? (executable == nil ? max(30, timeout) : timeout)
         self.qualityOfService = qualityOfService
+        self.ownership = ownership; self.reaper = reaper
     }
 
     deinit { stop() }
@@ -88,17 +95,23 @@ final class AskFileReader: AskFileReading {
     // swiftlint:disable:next function_body_length cyclomatic_complexity
     func stream(_ request: AskFileReadRequest, isCancelled: () -> Bool = { false },
                 receive: (AskFileReadResponse) -> Bool) throws {
+        guard !streaming else { throw AskFileReadError.unavailable }
+        guard ownership.permitsWork else { throw AskFileReadError.unavailable }
+        streaming = true
+        var activity: UUID?
+        var launched = false
+        func cancelled() -> Bool { isCancelled() || !ownership.permitsWork || (activity.map { !ownership.permits($0) } ?? false) }
+        defer { if let activity { ownership.end(activity) }; streaming = false }
         do {
-            try SemanticWorkBudget.current?.checkpoint(cancelled: isCancelled)
-            if isCancelled() {
-                throw AskFileReadError.cancelled
-            }
+            try SemanticWorkBudget.current?.checkpoint(cancelled: cancelled)
+            if cancelled() { throw AskFileReadError.cancelled }
             let starting = process == nil
             if starting {
                 SemanticSearchTrace.current?.mark("helper-launch")
-                try start()
+                try start(isCancelled: cancelled)
             }
-            guard let input, let output else { throw AskFileReadError.unavailable }
+            guard let input, let output, let process else { throw AskFileReadError.unavailable }
+            try ownership.begin(process.id); activity = process.id; launched = true
             var deadline = ProcessInfo.processInfo.systemUptime + (starting ? startupTimeout : timeout)
             let data = try JSONEncoder().encode(request) + Data([10])
             try data.withUnsafeBytes { bytes in
@@ -108,7 +121,7 @@ final class AskFileReader: AskFileReading {
                         input.fileDescriptor,
                         events: Int16(POLLOUT),
                         deadline: &deadline,
-                        isCancelled: isCancelled
+                        isCancelled: cancelled
                     )
                     let count = Darwin.write(
                         input.fileDescriptor,
@@ -127,12 +140,11 @@ final class AskFileReader: AskFileReading {
                     let line = buffer[..<end]
                     let response = try JSONDecoder().decode(AskFileReadResponse.self, from: line)
                     buffer.removeSubrange(...end)
-                    if !receive(response) {
-                        stop(); return
-                    }
-                    if response.more != true {
-                        return
-                    }
+                    if cancelled() { throw AskFileReadError.cancelled }
+                    let keepReading = receive(response)
+                    guard self.process === process, !cancelled() else { throw AskFileReadError.cancelled }
+                    if !keepReading { stop(); return }
+                    if response.more != true { ownership.succeeded(); return }
                     deadline = ProcessInfo.processInfo.systemUptime + timeout
                     if request.paced == true {
                         let next = Data("continue\n".utf8)
@@ -143,7 +155,7 @@ final class AskFileReader: AskFileReading {
                                     input.fileDescriptor,
                                     events: Int16(POLLOUT),
                                     deadline: &deadline,
-                                    isCancelled: isCancelled
+                                    isCancelled: cancelled
                                 )
                                 let count = Darwin.write(
                                     input.fileDescriptor,
@@ -160,7 +172,7 @@ final class AskFileReader: AskFileReading {
                     }
                     continue
                 }
-                try wait(output.fileDescriptor, events: Int16(POLLIN), deadline: &deadline, isCancelled: isCancelled)
+                try wait(output.fileDescriptor, events: Int16(POLLIN), deadline: &deadline, isCancelled: cancelled)
                 var bytes = [UInt8](repeating: 0, count: 65536)
                 let count = Darwin.read(output.fileDescriptor, &bytes, bytes.count)
                 if count < 0, errno == EAGAIN || errno == EINTR {
@@ -172,6 +184,14 @@ final class AskFileReader: AskFileReading {
                 guard buffer.count <= 8 * 1024 * 1024 else { throw AskFileReadError.protocolError }
             }
         } catch {
+            let ns = error as NSError
+            if !cancelled() {
+                if ns.domain == NSPOSIXErrorDomain && [EACCES, EPERM, ENOENT, ENOEXEC].contains(Int32(ns.code)) {
+                    ownership.failed(configuration: true)
+                } else if launched, !(error is CancellationError), !(error is SemanticWorkBudget.Interrupted), (error as? AskFileReadError) != .cancelled {
+                    ownership.failed(configuration: false)
+                }
+            }
             stop()
             throw error
         }
@@ -205,24 +225,11 @@ final class AskFileReader: AskFileReading {
         }
     }
 
-    private func start() throws {
-        let process = Process()
-        if let qualityOfService {
-            process.qualityOfService = qualityOfService
-        }
+    private func start(isCancelled: () -> Bool) throws {
         let incoming = Pipe(), outgoing = Pipe()
-        process.executableURL = executable ?? Self.executableURL
-        process.arguments = arguments
-        if arguments.contains("--background") {
-            process.environment = ProcessInfo.processInfo.environment.merging([
-                "VECLIB_MAXIMUM_THREADS": "1",
-                "OMP_NUM_THREADS": "1"
-            ]) { _, new in new }
-        }
-        process.standardInput = incoming
-        process.standardOutput = outgoing
-        process.standardError = FileHandle.nullDevice
-        try process.run()
+        let process = try AskFileReaderProcess(executable: executable ?? Self.executableURL, arguments: arguments,
+            input: incoming.fileHandleForReading.fileDescriptor, output: outgoing.fileHandleForWriting.fileDescriptor,
+            qualityOfService: qualityOfService, ownership: ownership, reaper: reaper, isCancelled: isCancelled)
         self.process = process
         input = incoming.fileHandleForWriting
         output = outgoing.fileHandleForReading
@@ -235,10 +242,8 @@ final class AskFileReader: AskFileReading {
     }
 
     func stop() {
-        // Process owns reaping. Never waitUntilExit here: an uninterruptible kernel read may outlive SIGKILL.
-        if let process, process.isRunning {
-            kill(process.processIdentifier, SIGKILL)
-        }
+        // Collection is asynchronous; the lineage stays occupied through host completion.
+        process?.stop()
         process = nil
         try? input?.close()
         try? output?.close()

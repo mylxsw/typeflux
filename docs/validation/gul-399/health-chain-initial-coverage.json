@@ -1,0 +1,362 @@
+{
+  "covered": 1482,
+  "executable_added": 1501,
+  "percent": 98.73,
+  "files": [
+    {
+      "file": "Sources/Typeflux/App/AppCoordinator.swift",
+      "covered": 0,
+      "executable_added": 3,
+      "percent": 0.0,
+      "uncovered": [
+        28,
+        29,
+        30
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/App/DIContainer.swift",
+      "covered": 0,
+      "executable_added": 8,
+      "percent": 0.0,
+      "uncovered": [
+        165,
+        166,
+        167,
+        168,
+        169,
+        170,
+        171,
+        172
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "covered": 9,
+      "executable_added": 9,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Files/AskFileIndex.swift",
+      "covered": 69,
+      "executable_added": 70,
+      "percent": 98.57,
+      "uncovered": [
+        62
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Files/AskFileReader.swift",
+      "covered": 36,
+      "executable_added": 36,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Files/AskFileReaderOwnership.swift",
+      "covered": 149,
+      "executable_added": 150,
+      "percent": 99.33,
+      "uncovered": [
+        79
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/System/NativeSystemWorker.swift",
+      "covered": 65,
+      "executable_added": 65,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPDF.swift",
+      "covered": 2,
+      "executable_added": 2,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticEmbeddingOwnership.swift",
+      "covered": 99,
+      "executable_added": 99,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticEmbeddingWorker.swift",
+      "covered": 45,
+      "executable_added": 45,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileReaders.swift",
+      "covered": 146,
+      "executable_added": 146,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+      "covered": 149,
+      "executable_added": 150,
+      "percent": 99.33,
+      "uncovered": [
+        181
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileValidator.swift",
+      "covered": 2,
+      "executable_added": 2,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticIndexProgressDelivery.swift",
+      "covered": 54,
+      "executable_added": 54,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticMediaWorker.swift",
+      "covered": 14,
+      "executable_added": 14,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Clipboard/ClipboardContentActions.swift",
+      "covered": 2,
+      "executable_added": 2,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Clipboard/ClipboardPlaybackClient.swift",
+      "covered": 114,
+      "executable_added": 116,
+      "percent": 98.28,
+      "uncovered": [
+        123,
+        124
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Resources/en.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    },
+    {
+      "file": "Sources/Typeflux/Resources/ja.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    },
+    {
+      "file": "Sources/Typeflux/Resources/ko.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    },
+    {
+      "file": "Sources/Typeflux/Resources/zh-Hans.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    },
+    {
+      "file": "Sources/Typeflux/Resources/zh-Hant.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    },
+    {
+      "file": "Sources/Typeflux/STT/LocalModelManager.swift",
+      "covered": 2,
+      "executable_added": 3,
+      "percent": 66.67,
+      "uncovered": [
+        331
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/STT/LocalModelTranscriber.swift",
+      "covered": 1,
+      "executable_added": 3,
+      "percent": 33.33,
+      "uncovered": [
+        17,
+        18
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/STT/WhisperKitTranscriber.swift",
+      "covered": 20,
+      "executable_added": 20,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/STT/WhisperWorkerClient.swift",
+      "covered": 91,
+      "executable_added": 91,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/STT/WhisperWorkerPool.swift",
+      "covered": 64,
+      "executable_added": 64,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Screenshot/Recording/ScreenRecordingEncoder.swift",
+      "covered": 25,
+      "executable_added": 25,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Screenshot/Recording/ScreenRecordingPreviewMedia.swift",
+      "covered": 2,
+      "executable_added": 2,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Stability/FileIndexModule.swift",
+      "covered": 31,
+      "executable_added": 31,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Stability/MediaExtractionModule.swift",
+      "covered": 31,
+      "executable_added": 31,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Stability/ModuleHealthStore.swift",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Stability/ModuleWorkerGate.swift",
+      "covered": 30,
+      "executable_added": 30,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Stability/NativeSystemModule.swift",
+      "covered": 63,
+      "executable_added": 63,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Stability/PlaybackModule.swift",
+      "covered": 25,
+      "executable_added": 25,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Stability/SemanticModelModules.swift",
+      "covered": 50,
+      "executable_added": 50,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Stability/SemanticReaderModules.swift",
+      "covered": 50,
+      "executable_added": 50,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Stability/WhisperInferenceModule.swift",
+      "covered": 25,
+      "executable_added": 25,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/TypefluxInferenceRuntime/InferenceServer.swift",
+      "covered": 4,
+      "executable_added": 4,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/TypefluxMediaProtocol/MediaPlayback.swift",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/TypefluxMediaRuntime/MediaPlaybackServer.swift",
+      "covered": 13,
+      "executable_added": 13,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    }
+  ]
+}

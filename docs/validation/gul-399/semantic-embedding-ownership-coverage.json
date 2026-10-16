@@ -1,0 +1,33 @@
+{
+  "covered": 77,
+  "executable_added": 77,
+  "percent": 100.0,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticEmbeddingOwnership.swift",
+      "covered": 27,
+      "executable_added": 27,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticEmbeddingWorker.swift",
+      "covered": 30,
+      "executable_added": 30,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+      "covered": 20,
+      "executable_added": 20,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    }
+  ],
+  "base": "104f8e57d650bf7e9663cbf0a3c86857a8d1765a",
+  "profiles": "3 fresh host profiles, one final binary; app worker object included; no child coverage claim"
+}

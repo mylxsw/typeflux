@@ -88,6 +88,8 @@ final class SemanticFileStore: @unchecked Sendable {
                 } else if old != profile {
                     // The old embedding space is withheld immediately; cleanup runs in cancellable batches.
                     try execute("INSERT OR REPLACE INTO profile_reset VALUES(1,?)", [profile])
+                    // A completed walk for the old model space cannot skip rebuilding the new space.
+                    try sql("DELETE FROM scan_checkpoint")
                 }
                 lexicalReader = try SemanticLexicalReader(url: url)
                 vectorReader = try SemanticVectorReader(url: url)
@@ -180,7 +182,7 @@ final class SemanticFileStore: @unchecked Sendable {
         try lock.withLock {
             try self
                 .sql("""
-                DELETE FROM files; DELETE FROM jobs; DELETE FROM media_jobs; DELETE FROM work_queue; DELETE FROM discovery; DELETE FROM scan_directories; DELETE FROM scan_scope; DELETE FROM scan_roots; DELETE FROM scan_cursors; DELETE FROM scan_requests; PRAGMA wal_checkpoint(TRUNCATE); VACUUM;
+                DELETE FROM files; DELETE FROM jobs; DELETE FROM media_jobs; DELETE FROM work_queue; DELETE FROM discovery; DELETE FROM scan_directories; DELETE FROM scan_scope; DELETE FROM scan_checkpoint; DELETE FROM scan_roots; DELETE FROM scan_cursors; DELETE FROM scan_requests; PRAGMA wal_checkpoint(TRUNCATE); VACUUM;
                 """)
         }
     }

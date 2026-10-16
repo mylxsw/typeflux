@@ -17,44 +17,111 @@ extension ClipboardPlaybackClient {
 
 /// Independent playback admission. Cancelled children keep their slot and input until reaped.
 final class ClipboardPlaybackPool: @unchecked Sendable {
-    static let shared = ClipboardPlaybackPool()
+    static let shared = ClipboardPlaybackPool(requiresLifecycle: true)
+    private struct Entry {
+        let lease: MediaLease
+        let generation: UUID?
+        var stop: (@Sendable () -> Void)?
+        var pixels: AskToolPixelBudget.Lease?
+    }
     private let lock = NSLock()
-    private var entries: [UUID: (MediaLease, (@Sendable () -> Void)?, AskToolPixelBudget.Lease?)] = [:]
+    private var entries: [UUID: Entry] = [:]
     private var failedIDs = Set<UUID>()
     private var disabled = false
     private var budget = ModuleRecoveryBudget()
+    private var lifecycle: ModuleWorkerGate?
+    private var waiter: CheckedContinuation<Void, Never>?
+    private let requiresLifecycle: Bool
+    private let executable: URL
+    private let uptime: @Sendable () -> TimeInterval
+    init(executable: URL = MediaWorker.helperURL, requiresLifecycle: Bool = false,
+         uptime: @escaping @Sendable () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }) {
+        self.executable = executable; self.requiresLifecycle = requiresLifecycle; self.uptime = uptime
+    }
     func reserve() throws -> (UUID, MediaLease) {
-        try lock.withLock {
-            guard !disabled, entries.count < 2, budget.permitsAttempt(at: ProcessInfo.processInfo.systemUptime) else { throw MediaFailure.unavailable }
+        let result = try lock.withLock {
+            guard !disabled, entries.count < 2 else { throw MediaFailure.unavailable }
+            let generation: UUID?
+            if let lifecycle {
+                guard let value = try? lifecycle.admit() else { throw MediaFailure.unavailable }
+                generation = value
+            } else {
+                guard !requiresLifecycle, budget.permitsAttempt(at: uptime()) else { throw MediaFailure.unavailable }
+                generation = nil
+            }
             let id = UUID(), lease = MediaLease()
-            entries[id] = (lease, nil, nil)
-            lease.cleanup = { [self] in lock.withLock { entries[id] = nil; failedIDs.remove(id) } }
+            entries[id] = Entry(lease: lease, generation: generation)
+            lease.cleanup = { [self] in
+                let done = lock.withLock {
+                    entries[id] = nil; failedIDs.remove(id)
+                    guard entries.isEmpty else { return Optional<CheckedContinuation<Void, Never>>.none }
+                    let done = waiter; waiter = nil; return done
+                }
+                lock.withLock { lifecycle }?.changed(); done?.resume()
+            }
             return (id, lease)
+        }
+        lock.withLock { lifecycle }?.changed(); return result
+    }
+    func permits(_ id: UUID) -> Bool {
+        lock.withLock {
+            guard !disabled, let entry = entries[id], !entry.lease.cancelled else { return false }
+            return lifecycle.map { $0.permits(entry.generation) } ?? !requiresLifecycle
         }
     }
     func attach(_ id: UUID, stop: @escaping @Sendable () -> Void) {
-        let cancelled = lock.withLock {
-            guard let entry = entries[id] else { return true }
-            entries[id] = (entry.0, stop, entry.2)
-            return disabled || entry.0.cancelled
-        }
-        if cancelled { stop() }
+        lock.withLock { entries[id]?.stop = stop }
+        if !permits(id) { stop() }
     }
     func retainPixels(_ id: UUID, reservation: AskToolPixelBudget.Lease) throws {
+        guard permits(id) else { throw MediaFailure.unavailable }
         try lock.withLock {
-            guard let entry = entries[id], !entry.0.cancelled, entry.2 == nil else { throw MediaFailure.unavailable }
-            entries[id] = (entry.0, entry.1, reservation)
+            guard let entry = entries[id], !entry.lease.cancelled, entry.pixels == nil else { throw MediaFailure.unavailable }
+            entries[id]?.pixels = reservation
         }
     }
-    func failed(_ id: UUID) {
+    func failed(_ id: UUID, configuration: Bool = false) {
         lock.withLock {
-            guard entries[id] != nil, failedIDs.insert(id).inserted else { return }
-            budget.failed(at: ProcessInfo.processInfo.systemUptime)
+            guard !disabled, let entry = entries[id], !entry.lease.cancelled, failedIDs.insert(id).inserted else { return }
+            if let lifecycle { lifecycle.failed(entry.generation, configuration: configuration) }
+            else { budget.failed(at: uptime()) }
+        }
+    }
+    func succeeded(_ id: UUID) {
+        lock.withLock {
+            guard !disabled, let entry = entries[id], !entry.lease.cancelled else { return }
+            if let lifecycle { lifecycle.succeeded(entry.generation) }
+            else { budget.succeeded(at: uptime()) }
+        }
+    }
+    func bind(_ gate: ModuleWorkerGate) -> Bool {
+        lock.withLock {
+            guard lifecycle == nil, entries.isEmpty, !disabled else { return false }
+            lifecycle = gate; return true
+        }
+    }
+    func checkReadiness() async throws {
+        let path = executable.path
+        let available = await Task.detached(priority: .utility) { FileManager.default.isExecutableFile(atPath: path) }.value
+        guard available, lock.withLock({ !disabled && entries.isEmpty }) else { throw ModuleFailure.unavailable }
+    }
+    func stopOwned() {
+        let values = lock.withLock { Array(entries.values) }
+        values.forEach { $0.lease.cancel(); $0.stop?() }
+    }
+    func retireManaged() async {
+        stopOwned()
+        await withCheckedContinuation { continuation in
+            let done = lock.withLock {
+                guard !entries.isEmpty else { return true }
+                waiter = continuation; return false
+            }
+            if done { continuation.resume() }
         }
     }
     func preventNewWork() {
-        let values = lock.withLock { disabled = true; return Array(entries.values) }
-        values.forEach { $0.0.cancel(); $0.1?() }
+        lock.withLock { disabled = true; lifecycle?.admission.shutdown() }
+        stopOwned()
     }
     func shutdown() async {
         preventNewWork()
@@ -63,6 +130,9 @@ final class ClipboardPlaybackPool: @unchecked Sendable {
     }
     var activeCount: Int { lock.withLock { entries.count } }
 }
+
+/// A failed acknowledgement can follow partial native effects; it never permits replay.
+enum ClipboardPlaybackFailure: Error { case unconfirmed }
 
 struct ClipboardPlaybackSource: Equatable, Sendable {
     let url: URL
@@ -98,7 +168,7 @@ final class ClipboardPlaybackProcess: ClipboardPlaybackClient, @unchecked Sendab
     private let video: Bool
     private init(socket: MediaPlaybackSocket, lease: MediaLease, source: ClipboardPlaybackSource,
                  pool: ClipboardPlaybackPool, poolID: UUID, timeout: Double, video: Bool) {
-        self.socket = socket; self.lease = lease; self.retirement = ClipboardPlaybackRetirement(lease); self.source = source; self.pool = pool; self.poolID = poolID; self.timeout = timeout; self.video = video
+        self.socket = socket; self.lease = lease; self.retirement = ClipboardPlaybackRetirement(lease, opening: true); self.source = source; self.pool = pool; self.poolID = poolID; self.timeout = timeout; self.video = video
     }
     /// Admission precedes any detached copy, spawn or socket operation.
     static func open(_ url: URL, video: Bool = false, recording: Bool = false, pool: ClipboardPlaybackPool = .shared,
@@ -111,7 +181,7 @@ final class ClipboardPlaybackProcess: ClipboardPlaybackClient, @unchecked Sendab
         return try await withTaskCancellationHandler {
             let client = try await Task.detached(priority: .utility) {
                 do {
-                    if lease.cancelled { throw CancellationError() }
+                    if !pool.permits(key) { throw CancellationError() }
                     let limit = recording ? 8 * 1024 * 1024 * 1024 : 512 * 1024 * 1024
                     let source = try ClipboardPlaybackSource(url, limit: limit)
                     let directory = FileManager.default.temporaryDirectory.appendingPathComponent("typeflux-playback-" + key.uuidString)
@@ -120,7 +190,7 @@ final class ClipboardPlaybackProcess: ClipboardPlaybackClient, @unchecked Sendab
                     try MediaWorker.copy(.file(url), to: directory.appendingPathComponent("audio." + container.rawValue),
                                          limit: limit, cancelled: { lease.cancelled })
                     try source.check()
-                    if lease.cancelled { throw CancellationError() }
+                    if !pool.permits(key) { throw CancellationError() }
                     var pair: [Int32] = [-1, -1]
                     guard socketpair(AF_UNIX, SOCK_STREAM, 0, &pair) == 0 else { throw MediaFailure.unavailable }
                     let inherited = PlaybackDescriptor(pair[1])
@@ -134,24 +204,33 @@ final class ClipboardPlaybackProcess: ClipboardPlaybackClient, @unchecked Sendab
                     Task.detached(priority: .utility) {
                         defer { inherited.closeOnce(); retirement.processReturned() }
                         let fd = Darwin.open(directory.path, O_RDONLY | O_DIRECTORY | O_CLOEXEC)
-                        guard fd >= 0 else { pool.failed(key); socket.stop(); return }
+                        guard fd >= 0 else { pool.failed(key, configuration: true); socket.stop(); return }
                         defer { close(fd) }
                         do {
-                            _ = try run(.init(executable: executable.path,
+                            guard pool.permits(key) else { socket.stop(); return }
+                            let result = try run(.init(executable: executable.path,
                                 arguments: [recording ? "--recording-playback" : video ? "--video-playback" : "--audio-playback", "100", container.rawValue],
                                 environment: ["PATH": "/usr/bin:/bin", "LANG": "en_US.UTF-8"],
                                 directoryDescriptor: fd, timeout: MediaPlaybackMessage.lifetime,
                                 outputLimit: 1024, stopOnOutputLimit: true,
                                 onStarted: { lease.started(); inherited.closeOnce() }, stderrLimit: 1024,
                                 immediateCleanupOnExit: true, onReaped: { lease.reaped() }, ipcDescriptor: inherited.value), { lease.cancelled })
-                        } catch { /* A failed request reports one sanitized failure, without restarting. */ }
-                        if !lease.cancelled { pool.failed(key) }
-                        socket.stop()
+                            if result.termination != .cancelled,
+                               result.termination != .exited(0) || result.outputTruncated { pool.failed(key); socket.stop() }
+                        } catch {
+                            let code = error as NSError
+                            pool.failed(key, configuration: code.domain == NSPOSIXErrorDomain
+                                && [Int(EACCES), Int(EPERM), Int(ENOENT), Int(ENOEXEC)].contains(code.code))
+                            socket.stop()
+                        }
+                        // A clean EOF may still have a final failed acknowledgement buffered.
+                        // Let the request consume it rather than discarding it on process exit.
                     }
                     return client
                 } catch { lease.returned(); throw error }
             }.value
-            if Task.isCancelled { client.stop(); throw CancellationError() }
+            defer { client.retirement.endRequest() }
+            if Task.isCancelled || !pool.permits(key) { client.stop(); throw CancellationError() }
             return client
         } onCancel: { lease.cancel() }
     }
@@ -162,32 +241,43 @@ final class ClipboardPlaybackProcess: ClipboardPlaybackClient, @unchecked Sendab
         try await request(kind, fraction: fraction, range: nil)
     }
     func request(_ kind: MediaPlaybackMessage.Kind, fraction: Double?, range: MediaPlaybackRange?) async throws -> MediaPlaybackState {
-        let number = try lock.withLock {
-            guard !busy, !lease.cancelled, !socket.isStopped else { throw MediaFailure.unavailable }
+        let message = try lock.withLock {
+            guard !busy, !lease.cancelled, !socket.isStopped, pool.permits(poolID) else { throw MediaFailure.unavailable }
+            guard kind != .reply, kind != .failed else { throw MediaFailure.invalidProtocol }
+            let request = MediaPlaybackMessage(id: id, sequence: sequence + 1,
+                kind: video && kind == .load ? .loadVideo : kind, fraction: fraction, range: range)
+            try request.validate()
             try retirement.beginRequest()
-            busy = true; sequence += 1; return sequence
+            busy = true; sequence += 1; return request
         }
         defer { lock.withLock { busy = false }; retirement.endRequest() }
         return try await withTaskCancellationHandler {
             do {
                 let result = try await Task.detached(priority: .utility) { [self] in
                     try source.check()
-                    let request = MediaPlaybackMessage(id: id, sequence: number, kind: video && kind == .load ? .loadVideo : kind, fraction: fraction, range: range)
+                    guard pool.permits(poolID) else { throw CancellationError() }
                     let deadline = ContinuousClock.now.advanced(by: .seconds(kind == .load ? 10 : timeout))
-                    try socket.send(request, deadline: deadline)
-                    let response = try socket.receive(deadline: deadline)
-                    guard response.id == id, response.sequence == number, response.kind == .reply, var state = response.state, state.video == video else { throw MediaFailure.invalidProtocol }
-                    if let frame = state.frame { state.pixels = try socket.receivePixels(count: frame.bytes, deadline: deadline) }
+                    let state: MediaPlaybackState
+                    do {
+                        try socket.send(message, deadline: deadline)
+                        let response = try socket.receive(deadline: deadline)
+                        guard response.id == id, response.sequence == message.sequence else { throw MediaFailure.invalidProtocol }
+                        if response.kind == .failed { throw ClipboardPlaybackFailure.unconfirmed }
+                        guard response.kind == .reply, var value = response.state, value.video == video else { throw MediaFailure.invalidProtocol }
+                        if let frame = value.frame { value.pixels = try socket.receivePixels(count: frame.bytes, deadline: deadline) }
+                        state = value
+                    } catch {
+                        if !(error is ClipboardPlaybackFailure) { pool.failed(poolID) }
+                        throw error
+                    }
                     try source.check()
                     return state
                 }.value
                 try Task.checkCancellation()
-                guard !lease.cancelled else { throw CancellationError() }
+                guard pool.permits(poolID) else { throw CancellationError() }
+                pool.succeeded(poolID)
                 return result
-            } catch {
-                if !lease.cancelled, !Task.isCancelled, (error as? MediaFailure) != .unreadable { pool.failed(poolID) }
-                stop(); throw error
-            }
+            } catch { stop(); throw error }
         } onCancel: { self.stop() }
     }
 }
@@ -208,7 +298,7 @@ final class ClipboardPlaybackRetirement: @unchecked Sendable {
     private var requests = 0
     private var returned = false
     private var released = false
-    init(_ lease: MediaLease) { self.lease = lease }
+    init(_ lease: MediaLease, opening: Bool = false) { self.lease = lease; requests = opening ? 1 : 0 }
     func beginRequest() throws {
         try lock.withLock {
             guard !returned else { throw MediaFailure.unavailable }

@@ -7,12 +7,13 @@ extension SemanticFileIndexer {
     static func discover(scope: AskFileScope, store: SemanticFileStore, reader: AskFileReading,
                          roots: [String]? = nil,
                          paused: () -> Bool, cancelled: () -> Bool, summary: inout Summary,
-                         progress: (Summary) -> Void) throws {
+                         progress: (Summary) -> Void, preparing: Bool = true) throws {
+        if cancelled() { throw CancellationError() }
         try store.setStage(roots == nil ? .scanning : .incremental)
         if roots != nil {
             try store.record(.subtreeScans)
         }
-        try store.beginDiscovery(scope: scope, roots: roots)
+        if preparing { try store.beginDiscovery(scope: scope, roots: roots) }
         while let path = try store.nextDirectory() {
             try waitWhilePaused(paused, cancelled: cancelled)
             var failed = false, writeFailure: Error?

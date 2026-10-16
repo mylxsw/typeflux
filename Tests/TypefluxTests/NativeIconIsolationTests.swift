@@ -111,10 +111,176 @@ private actor NativeIconCalls {
         let second = Task { try await AskFinderIcon.decode(icon, worker: worker) }
         for _ in 0..<200 where block.count < 2 { try await Task.sleep(for: .milliseconds(5)) }
         XCTAssertEqual(block.count, 2); first.cancel(); second.cancel()
-        do { _ = try await AskFinderIcon.decode(icon, worker: worker); XCTFail("Cancelled slots reused") } catch {}
+        let third = Task { try await AskFinderIcon.decode(icon, worker: worker) }
+        try await Task.sleep(for: .milliseconds(50))
         XCTAssertEqual(block.count, 2); block.gate.signal(); block.gate.signal()
         _ = try? await first.value; _ = try? await second.value
+        for _ in 0..<200 where block.count < 3 { try await Task.sleep(for: .milliseconds(5)) }
+        XCTAssertEqual(block.count, 3)
+        block.gate.signal(); _ = try? await third.value
         XCTAssertEqual(worker.activeCount, 0)
+    }
+
+    func testCancelledQueuedIconNeverStarts() async throws {
+        let admission = AskNativeIconAdmission(limit: 1)
+        var first: AskNativeIconAdmission.Permit? = try await admission.acquire()
+        let queued = Task { try await admission.acquire() }
+        try await Task.sleep(for: .milliseconds(10))
+        queued.cancel()
+        do { _ = try await queued.value; XCTFail("Cancelled request acquired a slot") }
+        catch is CancellationError {}
+        first = nil
+        let next = try await admission.acquire()
+        withExtendedLifetime(next) {}
+    }
+
+    func testLauncherCachesAndCoalescesApplicationIcons() async throws {
+        let calls = NativeIconCalls(), pixels = raster()
+        let cache = AskLauncherIconCache(decode: { _ in
+            await calls.called()
+            try await Task.sleep(for: .milliseconds(30))
+            return .init(images: [pixels], numbers: [], pages: 0)
+        })
+        let icon = MediaNativeIcon(kind: .file, value: "/Applications/Fixture.app")
+        async let first = cache.load(icon)
+        async let second = cache.load(icon)
+        _ = try await (first, second)
+        let afterParallel = await calls.count
+        XCTAssertEqual(afterParallel, 1)
+        XCTAssertEqual(cache.cached(icon)?.images.first?.width, 56)
+        _ = try await cache.load(icon)
+        let afterCache = await calls.count
+        XCTAssertEqual(afterCache, 1)
+        cache.clear()
+        XCTAssertNil(cache.cached(icon))
+        XCTAssertFalse(AskLauncherIconCache.eligible(.init(kind: .file, value: "/private/secret.pdf")))
+    }
+
+    func testLauncherPrefetchesVersionedFilesAndFoldersAndClearsThemOnHide() async throws {
+        let calls = NativeIconCalls(), pixels = raster(), revision = Date(timeIntervalSince1970: 1_000)
+        let cache = AskLauncherIconCache(fileCapacity: 3, immediateLookup: { _, _ in nil }, decode: { _ in
+            await calls.called()
+            return .init(images: [pixels], numbers: [], pages: 0)
+        })
+        let app = MediaNativeIcon(kind: .file, value: "/Applications/Fixture.app")
+        let file = MediaNativeIcon(kind: .file, value: "/tmp/invoice.pdf")
+        let folder = MediaNativeIcon(kind: .file, value: "/tmp/Receipts")
+        let hits = [
+            AskFileHit(path: file.value, name: "invoice.pdf", kind: .file, modified: revision, score: 1),
+            AskFileHit(path: folder.value, name: "Receipts", kind: .folder, modified: revision, score: 0.9)
+        ]
+        _ = try await cache.load(app)
+        cache.prefetchFiles(hits)
+        for _ in 0..<100 where cache.cached(file, revision: revision) == nil ||
+            cache.cached(folder, revision: revision) == nil {
+            try await Task.sleep(for: .milliseconds(5))
+        }
+        XCTAssertNotNil(cache.cached(file, revision: revision))
+        XCTAssertNotNil(cache.cached(folder, revision: revision))
+        let prefetched = await calls.count
+        XCTAssertEqual(prefetched, 3)
+        _ = try await cache.load(file, revision: revision)
+        let reused = await calls.count
+        XCTAssertEqual(reused, 3)
+
+        let changed = revision.addingTimeInterval(1)
+        XCTAssertNil(cache.cached(file, revision: changed))
+        _ = try await cache.load(file, revision: changed)
+        let reloaded = await calls.count
+        XCTAssertEqual(reloaded, 4)
+        cache.clearFiles()
+        XCTAssertNil(cache.cached(file, revision: changed))
+        XCTAssertNil(cache.cached(folder, revision: revision))
+        XCTAssertNotNil(cache.cached(app), "Application icons survive launcher sessions")
+        XCTAssertFalse(AskLauncherIconCache.eligible(file, revision: nil))
+        XCTAssertTrue(AskLauncherIconCache.eligible(file, revision: revision))
+    }
+
+    func testLauncherFileIconCacheHasSeparateSizeBound() async throws {
+        let pixels = raster(), revision = Date(timeIntervalSince1970: 1_000)
+        let cache = AskLauncherIconCache(fileCapacity: 1, decode: { _ in
+            .init(images: [pixels], numbers: [], pages: 0)
+        })
+        let first = MediaNativeIcon(kind: .file, value: "/tmp/first.txt")
+        let second = MediaNativeIcon(kind: .file, value: "/tmp/second.txt")
+        _ = try await cache.load(first, revision: revision)
+        _ = try await cache.load(second, revision: revision)
+        XCTAssertNil(cache.cached(first, revision: revision))
+        XCTAssertNotNil(cache.cached(second, revision: revision))
+    }
+
+    func testLauncherPreparesEveryVisibleIconBeforePublishingRows() async throws {
+        let calls = NativeIconCalls(), pixels = raster(), revision = Date(timeIntervalSince1970: 1_000)
+        var lookedUp: [(String, Bool)] = []
+        let cache = AskLauncherIconCache(immediateLookup: { icon, folder in
+            lookedUp.append((icon.value, folder))
+            return NSImage(cgImage: pixels, size: .init(width: 56, height: 56))
+        }, decode: { _ in
+            await calls.called()
+            throw MediaFailure.unavailable
+        })
+        let apps = (0..<8).map { MediaNativeIcon(kind: .file, value: "/Applications/App\($0).app") }
+        let pane = MediaNativeIcon(kind: .file, value: "/System/Library/Settings/Network.appex")
+        cache.prefetch(apps + [pane])
+        for icon in apps + [pane] { XCTAssertNotNil(cache.cached(icon)) }
+
+        let hits = (0..<9).map { index in
+            AskFileHit(path: "/tmp/report\(index).pdf", name: "report\(index).pdf", kind: .file,
+                       modified: revision, score: 1)
+        } + [AskFileHit(path: "/tmp/Reports", name: "Reports", kind: .folder,
+                        modified: revision, score: 0.5)]
+        cache.prefetchFiles(hits)
+        for hit in hits {
+            XCTAssertNotNil(cache.cached(.init(kind: .file, value: hit.path), revision: revision))
+        }
+        XCTAssertTrue(lookedUp.contains { $0.0 == "/tmp/Reports" && $0.1 })
+        XCTAssertEqual(lookedUp.count, apps.count + 1 + hits.count)
+        let childCalls = await calls.count
+        XCTAssertEqual(childCalls, 0)
+    }
+
+    func testLauncherDrawsPreparedApplicationIconOnFirstFrame() async throws {
+        _ = NSApplication.shared
+        let pixels = raster(), calls = NativeIconCalls(), scope = AskImagePresentationScope()
+        let icon = MediaNativeIcon(kind: .file, value: "/Applications/Immediate.app")
+        let cache = AskLauncherIconCache(immediateLookup: { _, _ in
+            NSImage(cgImage: pixels, size: .init(width: 56, height: 56))
+        }, decode: { _ in
+            await calls.called()
+            throw MediaFailure.unavailable
+        })
+        cache.prefetch([icon])
+        let access = AskImagePresentationAccess(scope: scope, epoch: scope.epoch, authorize: { true })
+        let view = NSHostingView(rootView: AskNativeIconView(icon: icon)
+            .frame(width: 56, height: 56)
+            .environment(\.askLauncherIconCache, cache)
+            .environment(\.askContextImageAccess, access))
+        let window = NSWindow(contentRect: .init(x: 100, y: 100, width: 56, height: 56),
+                              styleMask: [.titled], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false; window.contentView = view; window.orderFront(nil)
+        defer { window.contentView = nil; window.close() }
+        view.layoutSubtreeIfNeeded()
+        let bitmap = try XCTUnwrap(view.bitmapImageRepForCachingDisplay(in: view.bounds))
+        view.cacheDisplay(in: view.bounds, to: bitmap)
+        let center = try XCTUnwrap(bitmap.colorAt(x: bitmap.pixelsWide / 2, y: bitmap.pixelsHigh / 2))
+        XCTAssertGreaterThan(center.usingColorSpace(.deviceRGB)?.blueComponent ?? 0, 0.7)
+        let childCalls = await calls.count
+        XCTAssertEqual(childCalls, 0)
+    }
+
+    func testClosingLauncherDoesNotRepopulatePrivateIconCacheFromLateDecode() async throws {
+        let pixels = raster(), revision = Date(timeIntervalSince1970: 1_000)
+        let cache = AskLauncherIconCache(decode: { _ in
+            try await Task.sleep(for: .milliseconds(100))
+            return .init(images: [pixels], numbers: [], pages: 0)
+        })
+        let icon = MediaNativeIcon(kind: .file, value: "/tmp/private.txt")
+        let loading = Task { try await cache.load(icon, revision: revision) }
+        try await Task.sleep(for: .milliseconds(10))
+        cache.clearFiles()
+        do { _ = try await loading.value; XCTFail("Closed launcher accepted a late private icon") }
+        catch is CancellationError {}
+        XCTAssertNil(cache.cached(icon, revision: revision))
     }
 
     func testDefaultLegacyCacheDoesNotPrefetchOrCacheNativeIcons() async {

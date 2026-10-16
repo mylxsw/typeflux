@@ -27,6 +27,7 @@ enum SemanticFileIndexer {
                     documents: () throws -> SemanticIndexPauseGate.DocumentWork = { .init() },
                     priorityReader: AskFileReading? = nil,
                     cancelled: () -> Bool, progress: (Summary) -> Void,
+                    discovered: () throws -> Void = {},
                     current: (String?) -> Void = { _ in }) throws -> Summary {
         var summary = Summary()
         try maintainSearch(store: store, paused: paused, cancelled: cancelled, summary: summary, progress: progress)
@@ -34,6 +35,9 @@ enum SemanticFileIndexer {
                      cancelled: cancelled, summary: &summary, progress: progress)
         summary.total = summary.discovered
         progress(summary)
+        // Progress can revoke the original scope before its discovery receipt.
+        if cancelled() { throw CancellationError() }
+        try discovered()
         try waitWhilePaused(paused, cancelled: cancelled)
         // A confirmed walk defines pruning; extraction/encoding failures cannot erase its scope proof.
         // Finish it before consuming another subtree scan, whose discovery snapshot is independent.
@@ -54,16 +58,26 @@ enum SemanticFileIndexer {
                           documents: () throws -> SemanticIndexPauseGate.DocumentWork = { .init() },
                           priorityReader: AskFileReading? = nil,
                           cancelled: () -> Bool, progress: (Summary) -> Void,
+                          directories: [String] = [], prunePending: Bool = false,
                           current: (String?) -> Void = { _ in }) throws -> Summary {
-        let paths = Array(Set(paths)).sorted()
-        _ = try store.discover(paths.map { ($0, SemanticMediaPriority.of($0)) })
+        let entries = Array(Set(paths)).sorted().map { ($0, SemanticMediaPriority.of($0)) }
+        if cancelled() { throw CancellationError() }
+        _ = try store.discover(entries)
         var summary = Summary()
         try maintainSearch(store: store, paused: paused, cancelled: cancelled, summary: summary, progress: progress)
+        for directory in Set(directories).sorted() {
+            try waitWhilePaused(paused, cancelled: cancelled)
+            try store.beginSubtree(directory)
+            try discover(scope: scope, store: store, reader: reader, roots: [directory], paused: paused,
+                         cancelled: cancelled, summary: &summary, progress: progress, preparing: false)
+            try store.pruneSubtree(directory, cancelled: cancelled)
+        }
         summary.total = try store.lock.withLock { try store.count("work_queue") }
         progress(summary)
         try drainWork(scope: scope, store: store, reader: reader, encoder: encoder, media: media,
                       idle: idle, paused: paused, documents: documents, priorityReader: priorityReader,
                       cancelled: cancelled, summary: &summary, progress: progress, current: current)
+        if prunePending { try store.pruneDiscovered(cancelled: cancelled) }
         return summary
     }
 

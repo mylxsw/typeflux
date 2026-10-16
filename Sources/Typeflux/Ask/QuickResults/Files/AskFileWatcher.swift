@@ -10,6 +10,7 @@ struct AskFileChange: Equatable, Sendable {
     var isDirectory: Bool?
     /// A directory was created, removed, or renamed, so its children may have changed.
     var structureChanged = false
+    var renamed = false
 }
 
 /// Watches folders for changes. The real one is FSEvents; tests drive the index directly.
@@ -52,7 +53,9 @@ final class AskFSEventsWatcher: AskFileWatching {
             for index in 0 ..< min(count, list.count) {
                 let flag = Int(flags[index])
                 let rescan = flag & (kFSEventStreamEventFlagMustScanSubDirs | kFSEventStreamEventFlagUserDropped
-                    | kFSEventStreamEventFlagKernelDropped | kFSEventStreamEventFlagRootChanged) != 0
+                    | kFSEventStreamEventFlagKernelDropped | kFSEventStreamEventFlagRootChanged
+                    | kFSEventStreamEventFlagEventIdsWrapped | kFSEventStreamEventFlagMount
+                    | kFSEventStreamEventFlagUnmount) != 0
                 if flag & kFSEventStreamEventFlagHistoryDone == 0 {
                     let directory: Bool? = if flag & kFSEventStreamEventFlagItemIsDir != 0 {
                         true
@@ -64,7 +67,8 @@ final class AskFSEventsWatcher: AskFileWatching {
                     let structureChanged = flag & (kFSEventStreamEventFlagItemCreated
                         | kFSEventStreamEventFlagItemRemoved | kFSEventStreamEventFlagItemRenamed) != 0
                     changes.append(AskFileChange(path: list[index], rescan: rescan,
-                                                 isDirectory: directory, structureChanged: structureChanged))
+                                                 isDirectory: directory, structureChanged: structureChanged,
+                                                 renamed: flag & kFSEventStreamEventFlagItemRenamed != 0))
                 }
                 last = max(last, ids[index])
                 if let size = watcher.maximumBatchSize, changes.count >= size {
@@ -94,7 +98,21 @@ final class AskFSEventsWatcher: AskFileWatching {
     }
 
     /// The newest event id on this Mac, to save with an index built from scratch.
-    static var currentEventID: UInt64 {
-        UInt64(FSEventsGetCurrentEventId())
+    static var currentEventID: UInt64 { UInt64(FSEventsGetCurrentEventId()) }
+
+    /// A changed stream UUID means saved event IDs cannot cover a watched volume.
+    static func historySignature(paths: [String]) -> String? {
+        var parts: [String] = []
+        for path in paths.sorted() {
+            var info = stat()
+            guard lstat(path, &info) == 0 else {
+                parts.append(path + ":missing")
+                continue
+            }
+            guard let uuid = FSEventsCopyUUIDForDevice(info.st_dev),
+                  let value = CFUUIDCreateString(nil, uuid) else { return nil }
+            parts.append(path + ":" + String(info.st_dev) + ":" + String(describing: value))
+        }
+        return parts.joined(separator: "\u{0}")
     }
 }

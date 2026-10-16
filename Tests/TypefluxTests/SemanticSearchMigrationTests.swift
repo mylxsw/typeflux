@@ -143,7 +143,10 @@ struct SemanticSearchMigrationTests {
         try legacy(url, root: root.path, count: 513)
         let old = try SemanticFileStore(url: url)
         while try old.maintainSearchBatch(cancelled: { false }) {}
+        let scope = semanticScope(root.path)
+        try old.saveEventID(100, scope: scope, volumeSignature: "migration-fixture-volume")
         let reset = try SemanticFileStore(url: url, profile: "replacement-space")
+        #expect(try reset.completedEventID(scope: scope, volumeSignature: "migration-fixture-volume") == nil)
         #expect(try reset.search(vector: semanticVector(), text: "legacy", query: .init("legacy"), type: .all,
                                  scope: semanticScope(root.path), limit: 5, cancelled: { false }).isEmpty)
         #expect(try reset.maintainSearchBatch(cancelled: { false }))

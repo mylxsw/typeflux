@@ -32,6 +32,7 @@ final class AskConversationModel: ObservableObject {
     let voiceInput = AskVoiceInput()
     /// Applications the launcher can open; tests supply their own list.
     let quickSearch = AskQuickSearchSession()
+    let launcherIconCache = AskLauncherIconCache()
     var browserSearch: any AskBrowserSearching = AskBrowserSearchService()
     var systemCommandRunner = AskSystemCommandRunner()
     var confirmSystemCommand: (AskSystemCommand) -> Bool = AskSystemCommandConfirmation.confirm
@@ -122,6 +123,7 @@ final class AskConversationModel: ObservableObject {
         }
         connectWordBook(to: session)
         connectNotes(to: session)
+        session.launcherIconCache = launcherIconCache
         session.onActivate = { [weak self] keyword in self?.keywordUsage.record(keyword) }
         session.onRunInput = { [weak self] keyword, text, title in
             self?.recordLauncherInput(destination: .keyword, label: title, text: text, keyword: keyword.keyword)
@@ -423,6 +425,7 @@ final class AskConversationModel: ObservableObject {
         self.modelLibrary = modelLibrary ?? .shared
         self.api = api; self.cache = AskTemporaryCache(base: cache); self.tools = tools; self.capture = capture
         self.deviceId = deviceId; self.session = session; self.defaults = defaults
+        quickSearch.launcherIconCache = launcherIconCache
         memoryInvalidations = MemoryInvalidationStore(defaults: defaults)
         // Only DI-supplied, trusted advertisements may enable reuse. Conversation metadata is inert.
         approvalReuseEnabled = AskHarnessContract(version: 1, capabilities: [AskHarnessCapability.scopedApproval.rawValue])
@@ -555,6 +558,7 @@ final class AskConversationModel: ObservableObject {
 
     func resetSession() {
         releaseLauncherScreenshot()
+        launcherIconCache.clear()
         workflowImageCopyTask?.cancel()
         launcherImageScope.invalidate(); conversationImageScope.invalidate()
         cancelAttachmentWork()

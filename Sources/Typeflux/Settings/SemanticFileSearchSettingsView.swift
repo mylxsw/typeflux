@@ -128,6 +128,10 @@ struct SemanticFileSearchSettingsView: View {
             }
             HStack(spacing: TFMetrics.toolbarSpacing) {
                 lifecycleButton
+                if service.phase != .ready && service.phase != .off {
+                    Self.link(L("semantic.rescan")) { service.rescanAll() }
+                        .disabled(!filesEnabled || !service.modelReady)
+                }
                 Self.link(L("semantic.details.open")) { showProcessingDetails = true }
                 Self.destructiveLink(L("semantic.clear")) { confirmation = .index }
                 Self.destructiveLink(L("semantic.remove")) { confirmation = .model }
@@ -191,7 +195,7 @@ struct SemanticFileSearchSettingsView: View {
                 }
             }.disabled(!active)
         case .ready, .off:
-            Self.link(L("semantic.rebuild")) { Task { await service.rebuild() } }
+            Self.link(L("semantic.rescan")) { service.rescanAll() }
                 .disabled(!active || !service.modelReady)
         }
     }

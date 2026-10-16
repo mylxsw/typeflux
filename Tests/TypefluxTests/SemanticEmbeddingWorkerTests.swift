@@ -117,7 +117,7 @@ struct SemanticEmbeddingWorkerTests {
         worker.stop()
     }
 
-    @Test func `only latest pending query runs and helper restart is bounded`() async throws {
+    @Test func `only latest pending query runs and failed inference is not replayed`() async throws {
         let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
         let calls = root.appendingPathComponent("calls"), marker = root.appendingPathComponent("restarted")
         let vector = try String(decoding: JSONEncoder().encode([semanticVector()]), as: UTF8.self)
@@ -138,10 +138,14 @@ struct SemanticEmbeddingWorkerTests {
         let lifecycle = AskSearchCancellation()
         let launched = AskSearchCancellation()
         let trace = SemanticSearchTrace(sink: { if $0.stage == "helper-launch" { launched.cancel() } })
-        let recovered = try await SemanticSearchTrace.$current.withValue(trace) {
-            try await worker.query("recover", lifecycle: lifecycle)
+        await #expect(throws: (any Error).self) {
+            try await SemanticSearchTrace.$current.withValue(trace) {
+                try await worker.query("recover", lifecycle: lifecycle)
+            }
         }
-        #expect(recovered == semanticVector() && launched.isCancelled)
+        #expect(launched.isCancelled && !FileManager.default.fileExists(atPath: calls.path))
+        // Only a new explicit caller operation can restart the helper.
+        #expect(try await worker.query("explicit", lifecycle: lifecycle) == semanticVector())
         #expect(FileManager.default.fileExists(atPath: marker.path))
         let active = Task { try await worker.query("active", lifecycle: lifecycle) }
         let deadline = ContinuousClock.now + .seconds(3)

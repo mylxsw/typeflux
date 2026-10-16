@@ -107,7 +107,7 @@ extension SemanticFileStore {
             "scan_scope",
             "scan_roots",
             "scan_cursors",
-            "scan_requests"
+            "scan_requests", "scan_checkpoint"
         ] {
             // Row-limited deletion keeps even a single book with a million chunks interruptible.
             try sql("DELETE FROM \(table) WHERE rowid IN (SELECT rowid FROM \(table) LIMIT 128)")

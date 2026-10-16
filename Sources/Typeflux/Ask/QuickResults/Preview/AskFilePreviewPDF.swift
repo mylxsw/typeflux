@@ -99,8 +99,8 @@ enum MediaPreviewDisplay {
         var info = stat()
         guard fstat(fd, &info) == 0, info.st_mode & S_IFMT == S_IFREG, info.st_nlink == 1,
               info.st_size == raster.bytes else { throw MediaFailure.invalidProtocol }
-        let bytes = try handle.read(upToCount: raster.bytes + 1) ?? Data()
-        guard bytes.count == raster.bytes else { throw MediaFailure.invalidProtocol }
+        // The child promised this exact raw output; an unreadable payload is a protocol failure.
+        guard let bytes = try? handle.read(upToCount: raster.bytes + 1), bytes.count == raster.bytes else { throw MediaFailure.invalidProtocol }
         return bytes
     }
 }

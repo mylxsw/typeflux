@@ -207,7 +207,8 @@ struct AskFileIconView: View {
                 thumbnailView
             } else {
                 AskNativeIconView(icon: .init(kind: .file, value: url.path),
-                    symbol: url.hasDirectoryPath ? "folder" : "doc", revision: modified)
+                    symbol: url.hasDirectoryPath ? "folder" : "doc", revision: modified,
+                    folder: url.hasDirectoryPath)
             }
         }.accessibilityHidden(true)
     }

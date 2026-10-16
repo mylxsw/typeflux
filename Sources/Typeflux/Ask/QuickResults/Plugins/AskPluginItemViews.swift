@@ -23,7 +23,8 @@ struct AskPluginItemRow: View {
     var body: some View {
         Button(action: onPick) {
             HStack(spacing: 11) {
-                AskPluginItemIcon(icon: item.icon, symbol: symbol, filled: filled)
+                AskPluginItemIcon(icon: item.icon, symbol: symbol, filled: filled,
+                                  revision: item.fileHit?.modified)
                 VStack(alignment: .leading, spacing: item.excerpt == nil ? 1 : 2) {
                     HStack(spacing: 6) {
                         Text(item.title).font(.system(size: 13.5, weight: .semibold)).lineLimit(1)
@@ -74,6 +75,7 @@ struct AskPluginItemIcon: View {
     var icon: AskPluginItem.Icon?
     var symbol: String
     var filled: Bool
+    var revision: Date? = nil
     @Environment(\.askIconGeneration) private var generation
 
     var body: some View {
@@ -83,7 +85,7 @@ struct AskPluginItemIcon: View {
             } else if case let .application(bundleID) = icon {
                 AskNativeIconView(icon: .init(kind: .application, value: bundleID), symbol: symbol).frame(width: 26, height: 26)
             } else if case let .fileIcon(url) = icon {
-                AskFileIconView(url: url, thumbnail: false).frame(width: 26, height: 26)
+                AskFileIconView(url: url, thumbnail: false, modified: revision).frame(width: 26, height: 26)
             } else if case let .image(url) = icon {
                 AskSmallFileIcon(url: url, symbol: symbol, filled: filled)
             } else if case let .fileType(type) = icon {

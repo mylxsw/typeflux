@@ -112,7 +112,14 @@ struct SemanticBudgetLifecycleTests {
             #expect(service?.setEnabled(true) == true)
             try await SemanticFileServiceTests.wait { encoder.entered.isCancelled }
             try await SemanticFileServiceTests.wait { service?.indexProgress != nil }
-            try await Task.sleep(for: .milliseconds(50))
+            // Main coalesces progress/count notifications. Explicitly deliver a new priority
+            // snapshot after SQL is blocked, instead of relying on a scheduling race.
+            let delivery = try #require(service.flatMap { Mirror(reflecting: $0).descendant("progressDelivery") as? SemanticIndexProgressDelivery })
+            let attempt = try #require(service.flatMap { Mirror(reflecting: $0).descendant("indexAttempt") as? SemanticIndexProgressDelivery.Source })
+            delivery.offer(.summary(.init(priorityUpdates: 99)), from: attempt)
+            try await SemanticFileServiceTests.wait {
+                service.flatMap { Mirror(reflecting: $0).descendant("countRefresh") as? Task<Void, Never> } != nil
+            }
             counts = try #require(service.flatMap { Mirror(reflecting: $0).descendant("countRefresh") as? Task<
                 Void,
                 Never

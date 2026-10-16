@@ -40,6 +40,13 @@ final class WhisperKitTranscriber: Transcriber, @unchecked Sendable {
 
     deinit { owner.stop() }
     func stop() { handle.preventNewWork(); owner.stop() }
+    var isAvailableForReuse: Bool {
+        guard owner.canReuse else { return false }
+        switch handle.health.current?.state {
+        case .degraded, .recovering, .circuitOpen, .disabled: return false
+        default: return true
+        }
+    }
     var resolvedModelFolderPath: String? { resolvedPath.get() ?? modelFolder }
 
     func transcribe(audioFile: AudioFile) async throws -> String {
@@ -51,16 +58,17 @@ final class WhisperKitTranscriber: Transcriber, @unchecked Sendable {
         let language = TranscriptionLanguageHints.preferredWhisperLanguageCode(preferredLanguages: Locale.preferredLanguages)
         let owner = self.owner
         do { return try await handle.perform { client in
-            let text = try await client.transcribe(audio: audioFile.fileURL, lowEnergy: profile == .lowEnergyRetry,
-                                                  prompt: prompt, language: language) {
+            try await client.transcribe(audio: audioFile.fileURL, lowEnergy: profile == .lowEnergyRetry,
+                                        prompt: prompt, language: language, deliverFinal: { text in
+                try Task.checkCancellation()
+                guard owner.permitsWork else { throw CancellationError() }
+                await onUpdate(TranscriptionSnapshot(text: text, isFinal: true))
+                try Task.checkCancellation()
+                guard owner.permitsWork else { throw CancellationError() }
+            }) {
                 guard !Task.isCancelled, owner.permitsWork else { return }
                 await onUpdate(TranscriptionSnapshot(text: $0, isFinal: false))
             }
-            try Task.checkCancellation()
-            guard owner.permitsWork else { throw CancellationError() }
-            await onUpdate(TranscriptionSnapshot(text: text, isFinal: true))
-            try Task.checkCancellation()
-            return text
         } } catch {
             if Task.isCancelled { throw CancellationError() }
             throw LocalInferenceUnavailable()
@@ -69,7 +77,11 @@ final class WhisperKitTranscriber: Transcriber, @unchecked Sendable {
 
     func prepare(onProgress: ((Double, String) -> Void)? = nil) async throws {
         onProgress?(0.1, L("localSTT.prepare.whisperInitializing", modelName))
-        do { try await handle.start() } catch {
+        do {
+            try await handle.perform { client in
+                guard client.canReuse else { throw InferenceFailure.unavailable }
+            }
+        } catch {
             if Task.isCancelled { throw CancellationError() }
             throw LocalInferenceUnavailable()
         }

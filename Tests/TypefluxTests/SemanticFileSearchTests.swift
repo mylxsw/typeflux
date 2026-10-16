@@ -327,6 +327,27 @@ final class SemanticFixtureEncoder: SemanticEmbedding, @unchecked Sendable {
 
 @Suite("Semantic incremental indexing")
 struct SemanticFileIndexerTests {
+    @Test func changedDirectoryPrunesOnlyItsTreeAndDiscoversNewFiles() throws {
+        let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
+        let folder = root.path + "/changed", old = folder + "/old.md"
+        let added = folder + "/new.md", sibling = root.path + "/sibling.md"
+        let reader = SemanticFixtureReader(path: added), encoder = SemanticFixtureEncoder()
+        reader.directoryEntries = [.init(path: added, kind: .file, modified: reader.modified)]
+        let store = try SemanticFileStore(url: root.appendingPathComponent("index.sqlite"))
+        for path in [old, sibling] {
+            try store.replace(path: path, modified: reader.modified, bytes: 20,
+                              chunks: [.init(text: "old", page: nil)], vectors: [semanticVector()])
+        }
+        let result = try SemanticFileIndexer.reconcile(paths: [], scope: semanticScope(root.path),
+            store: store, reader: reader, encoder: encoder, cancelled: { false }, progress: { _ in },
+            directories: [folder])
+        #expect(result.files == 1 && reader.directoryReads == 1 && encoder.calls == 1)
+        #expect(try store.counts().files == 2)
+        #expect(try store.unchanged(path: sibling, modified: reader.modified, bytes: 20))
+        #expect(try !store.unchanged(path: old, modified: reader.modified, bytes: 20))
+        #expect(try store.unchanged(path: added, modified: reader.modified, bytes: 20))
+    }
+
     @Test func changedFileReconcilesWithoutCrawlingOrReembeddingItsNeighbors() throws {
         let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
         let first = root.path + "/first.md", second = root.path + "/second.md"

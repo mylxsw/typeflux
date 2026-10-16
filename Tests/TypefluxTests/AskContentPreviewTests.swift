@@ -136,7 +136,7 @@ struct AskContentPreviewTests {
         #expect(frame.startTime == 1 && frame.images.count == 1)
     }
 
-    @Test func contentSearchProgressIsAQuietNonSelectableRow() async throws {
+    @Test func contentSearchDoesNotAddAProgressRow() async throws {
         let language = AppLocalization.shared.language
         AppLocalization.shared.setLanguage(.simplifiedChinese)
         defer { AppLocalization.shared.setLanguage(language) }
@@ -146,8 +146,6 @@ struct AskContentPreviewTests {
         let rows = results.rows, height = AskQuickResultsView.height(for: results)
         results.searchingContent = true
         #expect(results.rows == rows)
-        #expect(AskQuickResultsView.height(for: results) == height + 30)
-        try await SemanticFileSearchVisualTests.render(AskQuickResultsView(results: results, question: "policy",
-            thumbnails: false, onRun: { _, _ in }, onHighlight: { _ in }), width: 680, name: "content-search-pending")
+        #expect(AskQuickResultsView.height(for: results) == height)
     }
 }

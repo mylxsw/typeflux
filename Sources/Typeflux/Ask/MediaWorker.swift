@@ -5,21 +5,21 @@ import TypefluxMediaProtocol
 /// A bounded, independent fault domain for disposable media decoders.
 final class MediaWorker: @unchecked Sendable {
     static let shared = MediaWorker(requiresLifecycle: true)
-    static let recordingExport = MediaWorker(timeout: 600)
-    static let recordingTimeline = MediaWorker(timeout: 30)
+    static let recordingExport = MediaWorker(timeout: 600, requiresLifecycle: true)
+    static let recordingTimeline = MediaWorker(timeout: 30, requiresLifecycle: true)
     static let previews = MediaWorker(timeout: 3, requiresLifecycle: true)
-    static let clipboardThumbnails = MediaWorker(timeout: 3)
-    static let frameRegistration = MediaWorker(timeout: 3)
-    static let textRecognition = MediaWorker(timeout: 30)
-    static let clipboardOCR = MediaWorker(timeout: 30)
-    static let clipboardMetadata = MediaWorker(timeout: 10)
+    static let clipboardThumbnails = MediaWorker(timeout: 3, requiresLifecycle: true)
+    static let frameRegistration = MediaWorker(timeout: 3, requiresLifecycle: true)
+    static let textRecognition = MediaWorker(timeout: 30, requiresLifecycle: true)
+    static let clipboardOCR = MediaWorker(timeout: 30, requiresLifecycle: true)
+    static let clipboardMetadata = MediaWorker(timeout: 10, requiresLifecycle: true)
     enum Input { case file(URL), data(Data) }
     typealias Runner = @Sendable (ManagedProcess.Request, @escaping @Sendable () -> Bool) throws -> ManagedProcess.Result
     private let lock = NSLock()
     private var active: [UUID: MediaLease] = [:]
     private var disabled = false
     private let requiresLifecycle: Bool
-    private var lifecycle: MediaExtractionGate?
+    private var lifecycle: ModuleWorkerGate?
     private var retirement: CheckedContinuation<Void, Never>?
     private var budget = ModuleRecoveryBudget()
     private let executable: URL
@@ -97,7 +97,13 @@ final class MediaWorker: @unchecked Sendable {
             guard result.termination == .exited(0), !result.outputTruncated,
                   result.stdout.utf8.count <= MediaLimits.responseBytes else { lease.infrastructureFailed = true; throw MediaFailure.unavailable }
             let response = try JSONDecoder().decode(MediaResponse.self, from: Data(result.stdout.utf8))
-            try response.validate(for: request)
+            do { try response.validate(for: request) }
+            catch {
+                // A successful envelope with an invalid payload is a protocol fault,
+                // even when a bounds validator reports tooLarge. Typed refusals are not.
+                if response.failure == nil { lease.infrastructureFailed = true }
+                throw error
+            }
             try check(cancelled)
             let value = try extract(response, fd)
             try check(cancelled)
@@ -114,7 +120,7 @@ final class MediaWorker: @unchecked Sendable {
                   body: (MediaLease, URL, TimeInterval, Runner, @escaping @Sendable () -> Bool) throws -> T) throws -> T {
         let lease = MediaLease()
         lease.retained = retaining
-        let gate: MediaExtractionGate?, generation: UUID?
+        let gate: ModuleWorkerGate?, generation: UUID?
         (gate, generation) = try lock.withLock {
             guard !disabled, active.count < 2, active[id] == nil, !isCancelled() else { throw MediaFailure.unavailable }
             if requiresLifecycle && lifecycle == nil { throw MediaFailure.unavailable }
@@ -156,7 +162,7 @@ final class MediaWorker: @unchecked Sendable {
 
     /// Binding is one-time and precedes any work; factories reuse this pool,
     /// never replace it while cancelled host work or children remain owned.
-    func bind(_ gate: MediaExtractionGate) -> Bool {
+    func bind(_ gate: ModuleWorkerGate) -> Bool {
         lock.withLock {
             guard lifecycle == nil, active.isEmpty, !disabled else { return false }
             lifecycle = gate; return true

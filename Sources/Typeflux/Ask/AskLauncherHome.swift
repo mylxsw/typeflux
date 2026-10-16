@@ -1,7 +1,6 @@
 import Foundation
 
-/// What the launcher offers before anything is typed: conversations to resume,
-/// recently used applications, and the keywords the user reaches for most.
+/// The applications the launcher offers before anything is typed.
 /// Pure, so every case can be tested without a window.
 enum AskLauncherHome {
     /// What a row does when it is chosen.
@@ -76,32 +75,14 @@ enum AskLauncherHome {
     }
 
     static let maximumChips = 6
-    static let maximumRecentConversations = 2
-    static let maximumRecentApplications = 3
+    static let maximumHomeApplications = 12
 
     static func build(_ context: Context) -> [Section] {
-        var sections: [Section] = []
-        let recent = recentRows(context, budget: maximumRecentConversations)
-        if !recent.isEmpty { sections.append(.recent(rows: recent)) }
-        let apps = context.applications.filter { $0.kind == .application }.prefix(maximumRecentApplications).map {
+        let apps = context.applications.filter { $0.kind == .application }.prefix(maximumHomeApplications).map {
             Row(id: "application." + $0.id, title: $0.name, symbol: "app", tint: .neutral,
                 action: .application($0))
         }
-        if !apps.isEmpty { sections.append(.applications(rows: apps)) }
-        let (chips, teaching) = self.chips(context)
-        if !chips.isEmpty { sections.append(.keywords(chips: chips, teaching: teaching)) }
-        return sections
-    }
-
-    // MARK: - Recent conversations
-
-    private static func recentRows(_ context: Context, budget: Int) -> [Row] {
-        context.conversations
-            .filter { !$0.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-            .sorted { $0.updatedAt > $1.updatedAt }
-            .prefix(budget)
-            .map { Row(id: "conversation." + $0.id, title: $0.title, detail: nil, symbol: "arrow.uturn.backward",
-                       tint: .neutral, date: $0.updatedAt, action: .conversation(id: $0.id)) }
+        return apps.isEmpty ? [] : [.applications(rows: apps)]
     }
 
     // MARK: - Keywords

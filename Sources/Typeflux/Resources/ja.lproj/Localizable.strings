@@ -4663,7 +4663,7 @@
 "ask.settings.windowMode.detail" = "次回ランチャーを開くと反映されます。";
 "ask.settings.windowMode.selected" = "選択済み";
 
-"ask.home.section.apps" = "最近使ったアプリ";
+"ask.home.section.apps" = "アプリ";
 
 "settings.pane.appearance" = "外観";
 
@@ -5105,6 +5105,7 @@
 "semantic.resume" = "再開";
 "semantic.cancelDownload" = "ダウンロードをキャンセル";
 "semantic.rebuild" = "索引を再作成";
+"semantic.rescan" = "再スキャン";
 "semantic.clear" = "内容索引を消去…";
 "semantic.remove" = "モデルを削除…";
 "semantic.storage.help" = "ここでの操作は内容索引のみに影響します。ファイル名索引は別に保持されます。";
@@ -5390,7 +5391,6 @@
 
 "ask.translation.stack.ready" = "Returnキーを押して翻訳";
 
-"semantic.searching" = "ファイルの内容を検索中…";
 
 "semantic.media.downloading" = "メディアエンコーダーをダウンロード中…";
 
@@ -5664,3 +5664,25 @@
 "semantic.wait.memory" = "メモリ負荷で一時停止中";
 "semantic.wait.thermal" = "熱負荷で一時停止中";
 "semantic.wait.recovery" = "リソース負荷の安定待ち";
+"settings.services.clipboardThumbnails" = "クリップボードのサムネイル";
+"settings.services.frameRegistration" = "スクロールスクリーンショットの位置合わせ";
+"settings.services.textRecognition" = "スクリーンショットの文字認識";
+"settings.services.clipboardOCR" = "クリップボード画像の文字認識";
+"settings.services.clipboardMetadata" = "クリップボードのメディア情報";
+
+"settings.services.recordingTimeline" = "録画タイムラインとポスター";
+"settings.services.recordingExport" = "録画エンコード";
+
+"settings.services.nativeSystem" = "ネイティブシステムコマンド";
+
+"settings.services.whisperInference" = "ローカル Whisper 文字起こし";
+
+"settings.services.mediaPlayback" = "メディア再生";
+
+"settings.services.fileIndex" = "ファイル索引";
+"settings.services.semanticValidation" = "セマンティックファイル検証";
+"settings.services.semanticIndexReading" = "セマンティックコンテンツ読み取り";
+"settings.services.semanticPriorityReading" = "セマンティック優先読み取り";
+"settings.services.semanticQueryInference" = "セマンティッククエリ推論";
+"settings.services.semanticIndexInference" = "セマンティック文書推論";
+"settings.services.semanticMediaInference" = "セマンティックメディア推論";

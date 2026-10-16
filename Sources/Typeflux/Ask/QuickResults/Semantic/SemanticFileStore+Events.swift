@@ -7,11 +7,13 @@ extension SemanticFileStore {
         var revision: Int64
     }
 
-    func acceptEvents(_ events: [SemanticIndexEvents.Entry]) throws {
+    func acceptEvents(_ events: [SemanticIndexEvents.Entry], cancelled: () -> Bool = { false }) throws {
         try lock.withLock {
+            guard !cancelled() else { throw CancellationError() }
             try transaction {
                 try sql("UPDATE scan_clock SET value=value+1")
                 for event in events {
+                    guard !cancelled() else { throw CancellationError() }
                     if event.subtree {
                         try enqueueSubtree(event.path, root: event.root)
                     } else {
@@ -24,6 +26,7 @@ extension SemanticFileStore {
                     }
                 }
                 try recordLocked(.eventTasks, count: events.count)
+                guard !cancelled() else { throw CancellationError() }
             }
         }
     }

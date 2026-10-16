@@ -59,6 +59,7 @@ final class AskPluginSession: ObservableObject {
     /// A keyword was entered, typed or chosen: the launcher counts it to offer it later.
     var onActivate: (@MainActor (AskKeyword) -> Void)?
     var onRunInput: (@MainActor (AskKeyword, String, String) -> Void)?
+    var launcherIconCache: AskLauncherIconCache?
     /// A result shown this long counts as looked up when keyword mode ends.
     var settleDelay: TimeInterval = 1.5
     var clock: () -> Date = Date.init
@@ -335,6 +336,9 @@ final class AskPluginSession: ObservableObject {
                    shown.wordBook?.key == key, let starred = shown.starred {
                     partial = partial.starring(starred)
                 }
+                if AskFileSearchPlugin.showsFileResults(for: plugin.id) {
+                    self.launcherIconCache?.prefetchFiles(partial.items.compactMap(\.fileHit))
+                }
                 self.set(\.partial, partial)
                 SemanticSearchTrace.current?.mark("file-partial-published")
             }
@@ -358,6 +362,9 @@ final class AskPluginSession: ObservableObject {
             }
             set(\.previous, nil)
             adopt(output.variables)
+            if AskFileSearchPlugin.showsFileResults(for: plugin.id) {
+                launcherIconCache?.prefetchFiles(output.items.compactMap(\.fileHit))
+            }
             set(\.phase, .done(plan, output))
             shownAt = clock()
             if output.recordsAtOnce, let lookup = output.wordBook { recordWordBook?(lookup) }

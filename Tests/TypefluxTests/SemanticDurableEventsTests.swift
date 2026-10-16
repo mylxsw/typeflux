@@ -90,4 +90,24 @@ struct SemanticDurableEventsTests {
         }
         #expect(try journal.eventID == prior && (journal.queueStatistics().entries) == 0)
     }
+    @Test func cancelledTransferPreservesJournalAndTheCommittedIndexQueue() throws {
+        let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
+        let journal = try SemanticIndexEvents(url: root.appendingPathComponent("events.sqlite"))
+        let store = try SemanticFileStore(url: root.appendingPathComponent("index.sqlite"))
+        try journal.append([.init(path: root.path + "/document.txt", rescan: false)],
+            scope: semanticScope(root.path), directory: root.path + "/state", cancelled: { false })
+        #expect(throws: CancellationError.self) { try journal.transfer(to: store, cancelled: { true }) }
+        #expect(try journal.pending())
+        #expect(try store.nextWork(.document) == nil)
+        try journal.transfer(to: store)
+        #expect(try !journal.pending())
+        #expect(try store.nextWork(.document) == root.path + "/document.txt")
+        let prior = journal.eventID
+        #expect(throws: CancellationError.self) {
+            try journal.append([], scope: semanticScope(root.path), directory: root.path + "/state",
+                               eventID: prior + 1, cancelled: { true })
+        }
+        #expect(journal.eventID == prior)
+    }
+
 }

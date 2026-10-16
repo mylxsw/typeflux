@@ -4685,7 +4685,7 @@
 "ask.settings.windowMode.detail" = "下次打开启动器时生效。";
 "ask.settings.windowMode.selected" = "已选择";
 
-"ask.home.section.apps" = "最近使用的应用";
+"ask.home.section.apps" = "应用";
 
 "settings.pane.appearance" = "外观";
 
@@ -5154,6 +5154,7 @@
 "semantic.resume" = "继续";
 "semantic.cancelDownload" = "取消下载";
 "semantic.rebuild" = "重新建立索引";
+"semantic.rescan" = "重新扫描";
 "semantic.clear" = "清空内容索引…";
 "semantic.remove" = "删除模型…";
 "semantic.storage.help" = "这里的操作只影响内容索引。原有文件名索引独立保留。";
@@ -5505,7 +5506,6 @@
 
 "ask.translation.stack.ready" = "按 Return 开始翻译";
 
-"semantic.searching" = "正在检索文件内容…";
 
 "semantic.media.downloading" = "正在下载媒体编码器…";
 
@@ -5778,3 +5778,25 @@
 "semantic.wait.memory" = "内存压力下已暂停";
 "semantic.wait.thermal" = "热压力下已暂停";
 "semantic.wait.recovery" = "等待资源压力稳定后继续";
+"settings.services.clipboardThumbnails" = "剪贴板缩略图";
+"settings.services.frameRegistration" = "滚动截图配准";
+"settings.services.textRecognition" = "截图文字识别";
+"settings.services.clipboardOCR" = "剪贴板图片文字识别";
+"settings.services.clipboardMetadata" = "剪贴板媒体信息";
+
+"settings.services.recordingTimeline" = "录屏时间轴与海报";
+"settings.services.recordingExport" = "录屏编码";
+
+"settings.services.nativeSystem" = "原生系统命令";
+
+"settings.services.whisperInference" = "本地 Whisper 转写";
+
+"settings.services.mediaPlayback" = "媒体播放";
+
+"settings.services.fileIndex" = "文件索引";
+"settings.services.semanticValidation" = "语义文件校验";
+"settings.services.semanticIndexReading" = "语义内容读取";
+"settings.services.semanticPriorityReading" = "语义优先读取";
+"settings.services.semanticQueryInference" = "语义查询推理";
+"settings.services.semanticIndexInference" = "语义文档推理";
+"settings.services.semanticMediaInference" = "语义媒体推理";

@@ -4663,7 +4663,7 @@
 "ask.settings.windowMode.detail" = "다음에 실행기를 열 때 적용됩니다.";
 "ask.settings.windowMode.selected" = "선택됨";
 
-"ask.home.section.apps" = "최근 사용한 앱";
+"ask.home.section.apps" = "앱";
 
 "settings.pane.appearance" = "외관";
 
@@ -5105,6 +5105,7 @@
 "semantic.resume" = "계속";
 "semantic.cancelDownload" = "다운로드 취소";
 "semantic.rebuild" = "색인 다시 만들기";
+"semantic.rescan" = "다시 스캔";
 "semantic.clear" = "내용 색인 지우기…";
 "semantic.remove" = "모델 삭제…";
 "semantic.storage.help" = "이 작업은 내용 색인에만 영향을 줍니다. 파일 이름 색인은 별도로 유지됩니다.";
@@ -5390,7 +5391,6 @@
 
 "ask.translation.stack.ready" = "Return 키를 눌러 번역하세요";
 
-"semantic.searching" = "파일 내용 검색 중…";
 
 "semantic.media.downloading" = "미디어 인코더 다운로드 중…";
 
@@ -5664,3 +5664,25 @@
 "semantic.wait.memory" = "메모리 압력으로 일시 정지됨";
 "semantic.wait.thermal" = "열 압력으로 일시 정지됨";
 "semantic.wait.recovery" = "리소스 압력 안정 대기";
+"settings.services.clipboardThumbnails" = "클립보드 썸네일";
+"settings.services.frameRegistration" = "스크롤 스크린샷 정렬";
+"settings.services.textRecognition" = "스크린샷 텍스트 인식";
+"settings.services.clipboardOCR" = "클립보드 이미지 텍스트";
+"settings.services.clipboardMetadata" = "클립보드 미디어 정보";
+
+"settings.services.recordingTimeline" = "녹화 타임라인 및 포스터";
+"settings.services.recordingExport" = "녹화 인코딩";
+
+"settings.services.nativeSystem" = "네이티브 시스템 명령";
+
+"settings.services.whisperInference" = "로컬 Whisper 전사";
+
+"settings.services.mediaPlayback" = "미디어 재생";
+
+"settings.services.fileIndex" = "파일 인덱싱";
+"settings.services.semanticValidation" = "시맨틱 파일 검증";
+"settings.services.semanticIndexReading" = "시맨틱 콘텐츠 읽기";
+"settings.services.semanticPriorityReading" = "시맨틱 우선 읽기";
+"settings.services.semanticQueryInference" = "시맨틱 쿼리 추론";
+"settings.services.semanticIndexInference" = "시맨틱 문서 추론";
+"settings.services.semanticMediaInference" = "시맨틱 미디어 추론";

@@ -56,16 +56,9 @@ struct AskSemanticFileSearchPlugin: AskLauncherPlugin {
         guard SemanticFilePolicy.query(text) != nil else {
             return output([AskFileSearchPlugin.notice(L("semantic.keyword.query"), symbol: symbol)], request: request)
         }
-        let pending = AskPluginItem(
-            id: "semantic.searching",
-            title: L("semantic.searching"),
-            valid: false,
-            loading: true
-        )
-        await progress(output([pending], request: request))
         let hits = await service.search(text, type: .all, limit: settings().limit) { hits in
             guard !Task.isCancelled, !hits.isEmpty else { return }
-            progress(output([pending] + hits.map(AskFileSearchPlugin.item), request: request))
+            progress(output(hits.map(AskFileSearchPlugin.item), request: request))
         }
         try Task.checkCancellation()
         let items = hits.isEmpty

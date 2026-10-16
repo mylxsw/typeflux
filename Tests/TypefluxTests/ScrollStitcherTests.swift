@@ -615,7 +615,7 @@ final class VisionScrollOffsetEstimatorTests: XCTestCase {
         let before = page.frameImage(offset: 0, scrollingHeight: 400)
         let after = page.frameImage(offset: 120, scrollingHeight: 400)
 
-        let shifts = try await VisionScrollOffsetEstimator().verticalShifts(from: before, to: after)
+        let shifts = try await VisionScrollOffsetEstimator(worker: MediaWorker(timeout: 3)).verticalShifts(from: before, to: after)
 
         XCTAssertTrue(shifts.contains(120), "Vision proposed \(shifts)")
         // The stitcher keeps the right one.
