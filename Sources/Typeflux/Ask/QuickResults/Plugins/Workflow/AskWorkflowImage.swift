@@ -11,9 +11,13 @@ enum AskWorkflowImage {
     enum Failure: Error, Equatable { case notFound(String), notImage, unavailable }
 
     static func resolve(_ stdout: String, folder: URL, cache: URL, home: String,
-                        worker: MediaWorker = .previews) async -> Result<AskPluginImage, Failure> {
+                        worker: MediaWorker = .previews,
+                        readSource: @escaping @Sendable (URL) throws -> Data = { try read($0) },
+                        hashData: @escaping @Sendable (Data) -> String = { hash($0) }) async -> Result<AskPluginImage, Failure> {
+        let authorization = worker.authorization()
         do {
-            return .success(try await work { cancellation in
+            return .success(try await work(isCancelled: { !worker.permits(authorization) }) { cancellation in
+                let cancelled: @Sendable () -> Bool = { cancellation.isCancelled || !worker.permits(authorization) }
                 guard stdout.utf8.count <= maximumDataBytes * 2 else { throw Failure.notImage }
                 let text = stdout.trimmingCharacters(in: .whitespacesAndNewlines)
                 let data: Data, source: URL?
@@ -25,13 +29,16 @@ enum AskWorkflowImage {
                     let path = line.hasPrefix("file://") ? URL(string: line)?.path ?? line : line
                     guard !path.isEmpty, let url = AskWorkflowActionRunner.file(path, folder: folder, home: home),
                           FileManager.default.fileExists(atPath: url.path) else { throw Failure.notFound(line) }
-                    data = try read(url); source = url
+                    data = try readSource(url); source = url
                 }
-                let response = try worker.decode(.inspectWorkflowImage, input: .data(data), isCancelled: { cancellation.isCancelled })
+                if cancelled() { throw CancellationError() }
+                let response = try worker.perform(.inspectWorkflowImage, input: .data(data), authorization: authorization,
+                    isCancelled: cancelled) { response, _ in response }
                 guard let metadata = response.workflowImage else { throw MediaFailure.invalidProtocol }
-                if cancellation.isCancelled { throw CancellationError() }
-                let digest = hash(data)
-                let url = try source ?? save(data, digest: digest, type: metadata.format, cache: cache)
+                if cancelled() { throw CancellationError() }
+                let digest = hashData(data)
+                if cancelled() { throw CancellationError() }
+                let url = try source ?? save(data, digest: digest, type: metadata.format, cache: cache, isCancelled: cancelled)
                 return AskPluginImage(url: url, width: Double(metadata.width) / Double(metadata.scale),
                                       height: Double(metadata.height) / Double(metadata.scale), digest: digest)
             })
@@ -49,11 +56,15 @@ enum AskWorkflowImage {
         return data
     }
 
-    static func render(_ image: AskPluginImage, worker: MediaWorker = .previews) async throws -> AskFilePreviewPDF.Result {
-        try await work { cancellation in
-            let data = try read(image.url)
+    static func render(_ image: AskPluginImage, worker: MediaWorker = .previews,
+                       readSource: @escaping @Sendable (URL) throws -> Data = { try read($0) }) async throws -> AskFilePreviewPDF.Result {
+        let authorization = worker.authorization()
+        return try await work(isCancelled: { !worker.permits(authorization) }) { cancellation in
+            let data = try readSource(image.url)
             guard image.digest == nil || hash(data) == image.digest else { throw MediaFailure.unreadable }
-            return try MediaPreviewDisplay.renderImage(data, type: nil, cancellation: cancellation, worker: worker)
+            if cancellation.isCancelled || !worker.permits(authorization) { throw CancellationError() }
+            return try MediaPreviewDisplay.renderImage(data, type: nil, cancellation: cancellation, worker: worker,
+                                                       authorization: authorization)
         }
     }
 
@@ -63,16 +74,23 @@ enum AskWorkflowImage {
         let reservation: AskToolPixelBudget.Lease
         var sourceRevision: ClipboardImageRevision?
     }
-    static func clipboard(_ url: URL, digest: String? = nil, worker: MediaWorker = .previews, preserveOriginalPNG: Bool = false) async throws -> Clipboard {
+    static func clipboard(_ url: URL, digest: String? = nil, worker: MediaWorker = .previews, preserveOriginalPNG: Bool = false,
+                          readSource: @escaping @Sendable (URL) throws -> Data = { try read($0) }) async throws -> Clipboard {
+        let authorization = worker.authorization()
+        guard worker.permits(authorization) else { throw MediaFailure.unavailable }
         let reservation = try clipboardBudget.acquire(bytes: MediaWorkflowImage.copyBytes)
-        return try await work { cancellation in
+        return try await work(isCancelled: { !worker.permits(authorization) }) { cancellation in
+            let cancelled: @Sendable () -> Bool = { cancellation.isCancelled || !worker.permits(authorization) }
             let revision = try preserveOriginalPNG ? ClipboardImageRevision(url) : nil
-            let data = try read(url)
+            let data = try readSource(url)
             if preserveOriginalPNG, data.count > ClipboardCaptureRules.maximumImageBytes { throw MediaFailure.tooLarge }
             guard digest == nil || hash(data) == digest else { throw MediaFailure.unreadable }
-            return try worker.perform(preserveOriginalPNG ? .copyClipboardImage : .copyWorkflowImage, input: .data(data), isCancelled: { cancellation.isCancelled }) { response, fd in
+            if cancelled() { throw CancellationError() }
+            return try worker.perform(preserveOriginalPNG ? .copyClipboardImage : .copyWorkflowImage, input: .data(data),
+                authorization: authorization, isCancelled: cancelled) { response, fd in
                 guard let metadata = response.workflowImage, let pngSize = metadata.pngBytes, let tiffSize = metadata.tiffBytes else { throw MediaFailure.invalidProtocol }
                 let directory = AskSecureDirectory(descriptor: dup(fd))
+                if cancelled() { throw CancellationError() }
                 let png = try directory.readFile("clipboard-png", limit: pngSize)
                 let tiff = try directory.readFile("clipboard-tiff", limit: tiffSize)
                 guard png.count == pngSize, tiff.count == tiffSize,
@@ -84,18 +102,21 @@ enum AskWorkflowImage {
         }
     }
 
-    static func work<T: Sendable>(_ operation: @escaping @Sendable (AskSearchCancellation) throws -> T) async throws -> T {
+    static func work<T: Sendable>(isCancelled: @escaping @Sendable () -> Bool = { false },
+                                  _ operation: @escaping @Sendable (AskSearchCancellation) throws -> T) async throws -> T {
         try Task.checkCancellation()
+        if isCancelled() { throw CancellationError() }
         let slot = try admission.acquire(bytes: 1)
         defer { withExtendedLifetime(slot) {} }
         let cancellation = AskSearchCancellation()
         return try await withTaskCancellationHandler {
             try Task.checkCancellation()
             let result = try await Task.detached(priority: .utility) {
-                if cancellation.isCancelled { throw CancellationError() }
+                if cancellation.isCancelled || isCancelled() { throw CancellationError() }
                 return try operation(cancellation)
             }.value
             try Task.checkCancellation()
+            if isCancelled() { throw CancellationError() }
             return result
         } onCancel: { cancellation.cancel() }
     }
@@ -112,9 +133,12 @@ enum AskWorkflowImage {
         guard !data.isEmpty, data.count <= maximumDataBytes else { throw MediaFailure.tooLarge }
         return data
     }
-    private static func save(_ data: Data, digest: String, type: MediaWorkflowFormat, cache: URL) throws -> URL {
+    private static func save(_ data: Data, digest: String, type: MediaWorkflowFormat, cache: URL,
+                             isCancelled: @Sendable () -> Bool) throws -> URL {
+        if isCancelled() { throw CancellationError() }
         let directory = try AskSecureDirectory.openRoot(cache.appendingPathComponent("images"))
         try directory.lock()
+        if isCancelled() { throw CancellationError() }
         let name = String(digest.prefix(24)) + "." + type.fileExtension
         let entries = directory.entries(limit: 129)
         if entries.contains(name) {
@@ -129,6 +153,7 @@ enum AskWorkflowImage {
                 size += Int(info.st_size)
             }
             guard size <= 256 * 1024 * 1024 else { throw MediaFailure.unavailable }
+            if isCancelled() { throw CancellationError() }
             try directory.createFile(name, data: data)
         }
         return try directory.url.appendingPathComponent(name)

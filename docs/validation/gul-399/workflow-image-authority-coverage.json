@@ -1,0 +1,23 @@
+{
+  "covered": 44,
+  "executable_added": 44,
+  "percent": 100.0,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowImage.swift",
+      "covered": 39,
+      "executable_added": 39,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPDF.swift",
+      "covered": 5,
+      "executable_added": 5,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    }
+  ]
+}

@@ -51,10 +51,12 @@ enum MediaPreviewDisplay {
     }
 
     static func renderImage(_ data: Data, type: MediaImageType?, cancellation: AskSearchCancellation,
-                            worker: MediaWorker = .previews, edge: Int = 1600) throws -> AskFilePreviewPDF.Result {
+                            worker: MediaWorker = .previews, edge: Int = 1600,
+                            authorization: MediaWorker.Authorization? = nil) throws -> AskFilePreviewPDF.Result {
         guard (1...1600).contains(edge) else { throw MediaFailure.tooLarge }
         let options = MediaPreviewOptions(width: edge, height: edge, imageType: type)
-        return try decode(.data(data), operation: .previewImage, options: options, cancellation: cancellation, worker: worker)
+        return try decode(.data(data), operation: .previewImage, options: options, cancellation: cancellation, worker: worker,
+                          authorization: authorization)
     }
 
     static func renderIcon(_ icon: MediaNativeIcon, edge: Int, cancellation: AskSearchCancellation,
@@ -69,9 +71,10 @@ enum MediaPreviewDisplay {
     }
 
     private static func decode(_ input: MediaWorker.Input, operation: MediaRequest.Operation, options: MediaPreviewOptions,
-                               cancellation: AskSearchCancellation, worker: MediaWorker, icon: MediaNativeIcon? = nil, quickLook: MediaQuickLook? = nil) throws -> AskFilePreviewPDF.Result {
+                               cancellation: AskSearchCancellation, worker: MediaWorker, icon: MediaNativeIcon? = nil,
+                               quickLook: MediaQuickLook? = nil, authorization: MediaWorker.Authorization? = nil) throws -> AskFilePreviewPDF.Result {
         return try worker.perform(operation, input: input, preview: options, icon: icon, quickLook: quickLook,
-                                  isCancelled: { cancellation.isCancelled }) { response, directory in
+                                  authorization: authorization, isCancelled: { cancellation.isCancelled }) { response, directory in
             guard let result = response.preview else { throw MediaFailure.invalidProtocol }
             let images = try result.rasters.enumerated().map { index, raster in
                 if cancellation.isCancelled { throw CancellationError() }
