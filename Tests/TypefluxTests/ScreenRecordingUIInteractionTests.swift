@@ -236,22 +236,46 @@ struct ScreenRecordingUIInteractionTests {
     }
 
     @Test func `saved and recovery toasts keep owned windows and file actions`() async throws {
+        _ = NSApplication.shared
         NSApp.accessibilitySetValue(true, forAttribute: .init(rawValue: "AXEnhancedUserInterface"))
         defer { NSApp.accessibilitySetValue(false, forAttribute: .init(rawValue: "AXEnhancedUserInterface")) }
         let fixture = ScreenRecordingCoordinatorTests.Fixture()
+        fixture.model.loadTimeline = { _ in .init(audio: .absent) }
         await fixture.recording()
         fixture.model.stop(); await fixture.model.pendingTask?.value
         let source = try #require(fixture.model.sourceURL)
         let toast = ScreenRecordingToastController()
         toast.showRecovery(source, open: {}, discard: {})
+        await toast.model.task?.value
         let panel = try #require(toast.panel)
         #expect(ScreenshotCaptureWindowPolicy.excludes(panel))
         #expect(panel.isVisible)
         toast.hide()
-        toast.showSaved(source, thumbnail: ScreenshotSnapshotSupport.sampleScreen(), duration: 1.2)
-        try await Task.sleep(for: .milliseconds(120))
-        try press(L("recording.copy"), in: #require(toast.panel))
-        #expect(NSPasteboard.general.readObjects(forClasses: [NSURL.self])?.first as? URL == source)
+        var copied: URL?
+        toast.copyFile = { copied = $0 }
+        toast.showSaved(source, thumbnail: AskAttachmentFixture.image(width: 160, height: 100), duration: 1.2)
+        await toast.model.task?.value
+        let savedPanel = try #require(toast.panel)
+        #expect(toast.model.ready)
+        func copyButton() -> SettingsBehaviorTestSupport.Element? {
+            SettingsBehaviorTestSupport.elements(in: savedPanel).first {
+                ($0.label == L("recording.copy") || $0.value("accessibilityTitle") as? String == L("recording.copy")) &&
+                    $0.object.responds(to: NSSelectorFromString("accessibilityPerformPress"))
+            }
+        }
+        do { try await SettingsBehaviorTestSupport.wait { copyButton() != nil } }
+        catch {
+            print("Toast accessibility tree:", SettingsBehaviorTestSupport.elements(in: savedPanel).map {
+                [$0.role, $0.label, $0.value("accessibilityTitle") as? String ?? ""]
+            })
+            throw error
+        }
+        let copy = try #require(copyButton())
+        try copy.press()
+        // SwiftUI may schedule the button action after accessibilityPerformPress returns.
+        try await SettingsBehaviorTestSupport.wait { copied != nil }
+        await toast.model.actionTask?.value
+        #expect(copied == source)
         toast.hide()
         #expect(toast.panel == nil)
         await fixture.clean()

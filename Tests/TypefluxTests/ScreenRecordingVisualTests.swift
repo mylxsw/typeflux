@@ -98,9 +98,11 @@ struct ScreenRecordingVisualTests {
             #require(gif.cgImage),
             name: "recording-gif-editor-\(style.rawValue)-\(dark ? "dark" : "light")"
         )
+        let toastModel = ScreenRecordingToastModel()
+        toastModel.start(try #require(fixture.model.sourceURL), thumbnail: AskAttachmentFixture.image(width: 160, height: 100))
+        await toastModel.task?.value
         let toast = try await ScreenshotSnapshotSupport.bitmap(
-            of: ScreenRecordingToastView(url: fixture.root.appendingPathComponent("Demo.mp4"),
-                                         thumbnail: fixture.model.media.thumbnails.first, duration: 13.4,
+            of: ScreenRecordingToastView(model: toastModel, duration: 13.4,
                                          recovery: false, close: {}).frame(
                 width: 440,
                 height: 116

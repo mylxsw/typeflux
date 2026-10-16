@@ -1,6 +1,5 @@
 import AppKit
 import AVFoundation
-import ImageIO
 import TypefluxMediaProtocol
 
 struct ScreenRecordingPreviewMedia: @unchecked Sendable {
@@ -19,16 +18,8 @@ struct ScreenRecordingPreviewMedia: @unchecked Sendable {
         }
     }
 
-    static func thumbnail(_ url: URL) throws -> CGImage {
-        if url.pathExtension.lowercased() == "gif", let source = CGImageSourceCreateWithURL(url as CFURL, nil),
-           let image = CGImageSourceCreateImageAtIndex(source, 0, nil) {
-            return image
-        }
-        let generator = AVAssetImageGenerator(asset: AVURLAsset(url: url))
-        generator.appliesPreferredTrackTransform = true
-        generator.maximumSize = CGSize(width: 200, height: 120)
-        defer { generator.cancelAllCGImageGeneration() }
-        return try generator.copyCGImage(at: .zero, actualTime: nil)
+    static func thumbnail(_ url: URL) async throws -> CGImage {
+        try await ScreenRecordingTimelineLoader.shared.thumbnail(url)
     }
 
     static func load(_ url: URL) async throws -> Self {

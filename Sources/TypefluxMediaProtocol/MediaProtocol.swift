@@ -15,7 +15,8 @@ public enum MediaFailure: String, Error, Codable, Sendable {
 }
 
 public struct MediaRequest: Codable, Sendable {
-    public enum Operation: String, Codable, Sendable { case recordingTimeline, registerFrames, textGeometry, recognizeText, clipboardOCR, copyClipboardImage, clipboardMedia, quickLook, nativeIcon, image, pdf, inspectWorkflowImage, copyWorkflowImage, validateGeneratedImage, normalizeImage, previewImage, previewPDF, previewVideo, previewAudio
+    public enum Operation: String, Codable, Sendable { case recordingPosterGIF, recordingPosterVideo, recordingTimeline, registerFrames, textGeometry, recognizeText, clipboardOCR, copyClipboardImage, clipboardMedia, quickLook, nativeIcon, image, pdf, inspectWorkflowImage, copyWorkflowImage, validateGeneratedImage, normalizeImage, previewImage, previewPDF, previewVideo, previewAudio
+        public var isRecordingPoster: Bool { self == .recordingPosterGIF || self == .recordingPosterVideo }
         public var isWorkflowImage: Bool { self == .inspectWorkflowImage || self == .copyWorkflowImage || self == .copyClipboardImage }
         public var isAV: Bool { self == .previewVideo || self == .previewAudio }
     }
@@ -44,9 +45,13 @@ public struct MediaRequest: Codable, Sendable {
         guard (operation == .quickLook) == (quickLook != nil) else { throw MediaFailure.invalidProtocol }
         if let quickLook { try quickLook.validate() }
         guard version == 1 else { throw MediaFailure.invalidProtocol }
-        if operation == .quickLook || operation == .nativeIcon || operation == .previewImage || operation == .previewPDF || operation.isAV {
+        if operation.isRecordingPoster || operation == .quickLook || operation == .nativeIcon || operation == .previewImage || operation == .previewPDF || operation.isAV {
             guard let preview else { throw MediaFailure.invalidProtocol }
             try preview.validate()
+            if operation.isRecordingPoster {
+                guard preview.width == 200, preview.height == 120, preview.page == nil, preview.passage == nil,
+                      preview.start == nil, preview.container == nil, preview.imageType == nil else { throw MediaFailure.invalidProtocol }
+            }
             if operation == .nativeIcon {
                 guard preview.width <= 112, preview.height <= 112, preview.page == nil, preview.passage == nil,
                       preview.start == nil, preview.container == nil, preview.imageType == nil else { throw MediaFailure.invalidProtocol }
