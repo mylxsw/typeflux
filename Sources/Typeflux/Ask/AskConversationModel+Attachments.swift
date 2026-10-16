@@ -18,6 +18,8 @@ extension AskConversationModel {
     /// the draft that was on screen when they arrived. A draft the user left in
     /// the meantime is not touched.
     func addAttachments(_ sources: [AskAttachmentSource], launcher: Bool,
+                        worker: MediaWorker = .shared,
+                        readMetadata: @escaping AskAttachmentLoader.MetadataReader = AskAttachmentLoader.metadata,
                         load: (@Sendable ([AskAttachmentSource]) -> AskAttachmentBatch)? = nil) {
         guard !sources.isEmpty else { return }
         guard attachmentWork.count < 2 else {
@@ -32,8 +34,10 @@ extension AskConversationModel {
         let sourceCount = sources.count
         attachmentLoads[key, default: 0] += 1
         let boundedSources = Array(sources.prefix(AskAttachmentLimits.maximumItems + AskAttachmentLimits.maximumFolders))
+        let authorization = load == nil ? worker.authorization() : nil
         let work = Task.detached(priority: .userInitiated) {
-            load?(boundedSources) ?? AskAttachmentBatch.load(boundedSources, isCancelled: { Task.isCancelled })
+            load?(boundedSources) ?? AskAttachmentBatch.load(boundedSources, worker: worker, authorization: authorization,
+                                                          readMetadata: readMetadata, isCancelled: { Task.isCancelled })
         }
         attachmentWork.insert(id, launcher: launcher, cancel: { work.cancel() })
         Task { [weak self] in
@@ -97,12 +101,17 @@ struct AskAttachmentBatch: Equatable, Sendable {
     var items: [AskAttachment] = []
     var failure: AskAttachmentError?
 
-    static func load(_ sources: [AskAttachmentSource], isCancelled: @escaping @Sendable () -> Bool = { false }) -> AskAttachmentBatch {
+    static func load(_ sources: [AskAttachmentSource], worker: MediaWorker = .shared,
+                     authorization original: MediaWorker.Authorization? = nil,
+                     readMetadata: AskAttachmentLoader.MetadataReader = AskAttachmentLoader.metadata,
+                     isCancelled: @escaping @Sendable () -> Bool = { false }) -> AskAttachmentBatch {
+        let authorization = original ?? worker.authorization()
         var batch = AskAttachmentBatch()
         for source in sources {
             if isCancelled() { break }
             do {
-                for item in try AskAttachmentLoader.load(source, isCancelled: isCancelled) {
+                for item in try AskAttachmentLoader.load(source, worker: worker, authorization: authorization,
+                                                         readMetadata: readMetadata, isCancelled: isCancelled) {
                     if let refusal = AskDraft.refusal(for: item, in: batch.items, screenshot: false) {
                         batch.failure = batch.failure ?? refusal
                     } else { batch.items.append(item) }
