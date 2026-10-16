@@ -7,7 +7,11 @@ struct AskRemoteImageLoader: Sendable {
     static let maximumBytes = 16 * 1024 * 1024
     private static let admission = AskToolPixelBudget(limit: 2)
     var transport: any AskImageTransport = AskImageHTTP(maximumRedirects: 3)
-    var decode: Decoder = { try await decodePixels($0) }
+    var decode: Decoder? = nil
+    var worker: MediaWorker = .previews
+
+    /// Custom decoders keep their own contract; default presentation retains its native epoch.
+    func authorization() -> MediaWorker.Authorization? { decode == nil ? worker.authorization() : nil }
 
     static func eligible(_ image: AskGeneratedImage) -> URL? {
         guard !image.assetId.isEmpty, image.assetId.utf8.count <= 1024,
@@ -15,18 +19,25 @@ struct AskRemoteImageLoader: Sendable {
         return image.safeURL
     }
 
-    func load(_ image: AskGeneratedImage) async throws -> AskFilePreviewPDF.Result {
+    func load(_ image: AskGeneratedImage, authorization original: MediaWorker.Authorization? = nil) async throws -> AskFilePreviewPDF.Result {
         try Task.checkCancellation()
         guard let url = Self.eligible(image) else { throw MediaFailure.unreadable }
+        let authorization = decode == nil ? (original ?? worker.authorization()) : nil
+        let current: @Sendable () -> Bool = { [worker] in authorization.map { worker.permits($0) } ?? true }
+        guard current() else { throw MediaFailure.unavailable }
         let slot = try Self.admission.acquire(bytes: 1)
         defer { withExtendedLifetime(slot) {} }
         var request = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 15)
         request.httpMethod = "GET"
         let data = try await transport.send(request, limit: Self.maximumBytes)
         try Task.checkCancellation()
+        guard current() else { throw MediaFailure.unavailable }
         guard !data.isEmpty, data.count <= Self.maximumBytes else { throw MediaFailure.unreadable }
-        let result = try await decode(data)
+        let result: AskFilePreviewPDF.Result
+        if let decode { result = try await decode(data) }
+        else { result = try await Self.decodePixels(data, worker: worker, authorization: authorization) }
         try Task.checkCancellation()
+        guard current() else { throw MediaFailure.unavailable }
         guard result.images.count == 1, let pixels = result.images.first,
               pixels.width > 0, pixels.height > 0, pixels.width <= 1600, pixels.height <= 1600 else {
             throw MediaFailure.invalidProtocol
@@ -35,13 +46,26 @@ struct AskRemoteImageLoader: Sendable {
     }
 
     static func decodePixels(_ data: Data) async throws -> AskFilePreviewPDF.Result {
+        try await decodePixels(data, worker: .previews, authorization: nil)
+    }
+
+    static func decodePixels(_ data: Data, worker: MediaWorker,
+                             authorization: MediaWorker.Authorization? = nil) async throws -> AskFilePreviewPDF.Result {
+        try Task.checkCancellation()
+        let authorization = authorization ?? worker.authorization()
+        guard worker.permits(authorization) else { throw MediaFailure.unavailable }
         let cancellation = AskSearchCancellation()
         return try await withTaskCancellationHandler {
             try Task.checkCancellation()
-            return try await Task.detached(priority: .utility) {
+            let result = try await Task.detached(priority: .utility) {
+                if cancellation.isCancelled || !worker.permits(authorization) { throw CancellationError() }
                 // Type is detected only inside the media child. HTTP headers confer no validation proof.
-                try MediaPreviewDisplay.renderImage(data, type: nil, cancellation: cancellation)
+                return try MediaPreviewDisplay.renderImage(data, type: nil, cancellation: cancellation, worker: worker,
+                                                           authorization: authorization)
             }.value
+            try Task.checkCancellation()
+            guard worker.permits(authorization) else { throw MediaFailure.unavailable }
+            return result
         } onCancel: { cancellation.cancel() }
     }
 }
@@ -138,16 +162,18 @@ extension AskConversationModel {
             try Task.checkCancellation()
             guard access.allows(), let scope = access.scope, let epoch = access.epoch else { throw MediaFailure.unavailable }
             self.scope = scope; registration = try scope.register(self, epoch: epoch)
+            let authorization = loader.authorization()
             let reservation = try budget.acquire(bytes: 1600 * 1600 * 4)
             let task = Task { [loader] in
                 defer { withExtendedLifetime(reservation) {} }
-                return try await loader.load(asset)
+                return try await loader.load(asset, authorization: authorization)
             }
             operation = task
             let result = try await withTaskCancellationHandler { try await task.value } onCancel: { task.cancel() }
             try Task.checkCancellation()
             guard current == generation else { return }
             guard access.allows() else { cancel(); return }
+            if let authorization, !loader.worker.permits(authorization) { throw MediaFailure.unavailable }
             pixels = reservation
             image = NSImage(cgImage: result.images[0], size: .zero)
             operation = nil
