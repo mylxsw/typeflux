@@ -814,7 +814,6 @@
 "settings.shortcuts.launcherPosition.last" = "記住上次位置";
 "settings.shortcuts.launcherPosition.center.subtitle" = "在滑鼠所在螢幕的正中開啟。拖動只影響這一次。";
 "settings.shortcuts.launcherPosition.last.subtitle" = "在這塊螢幕上次放下的位置開啟。拖動頂部邊緣或空白處即可移動。";
-"settings.shortcuts.launcherPosition.reset" = "恢復置中";
 "settings.shortcuts.persona.title" = "人設切換器";
 "settings.shortcuts.persona.subtitle" = "打開置中的選擇器；如果目前有選取文字，也可以直接把所選人設套用到這段文字。";
 "settings.shortcuts.persona.footnote" = "";

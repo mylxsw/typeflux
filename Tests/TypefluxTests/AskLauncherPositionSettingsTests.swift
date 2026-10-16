@@ -54,19 +54,14 @@ struct AskLauncherPositionSettingsTests {
 
         view.setLauncherPosition(.lastPosition)
         #expect(settings.askLauncherPosition == .lastPosition)
-        // The launcher is moved while the page is open.
-        settings.askLauncherAnchors["built-in"] = .init(left: 10, fromTop: 10)
-        view.resetLauncherPositions()
-        #expect(settings.askLauncherAnchors.isEmpty)
-        #expect(settings.askLauncherPosition == .lastPosition)
-
+        // The launcher is moved while the page is open; choosing centre forgets it.
         settings.askLauncherAnchors["built-in"] = .init(left: 10, fromTop: 10)
         view.setLauncherPosition(.center)
         #expect(settings.askLauncherPosition == .center)
         #expect(settings.askLauncherAnchors.isEmpty)
     }
 
-    @Test func launcherGeneralPaneShowsAndResetsRememberedPositions() async throws {
+    @Test func launcherGeneralPaneShowsOnlyThePositionChoice() async throws {
         try await SettingsBehaviorTestSupport.withFixture { settings in
             settings.askLauncherPosition = .lastPosition
             settings.askLauncherAnchors["built-in"] = .init(left: 40, fromTop: 120)
@@ -74,9 +69,14 @@ struct AskLauncherPositionSettingsTests {
                                                               width: 900, height: 900) { window, _ in
                 #expect(SettingsBehaviorTestSupport.contains(L("settings.shortcuts.launcherPosition.title"), in: window))
                 #expect(SettingsBehaviorTestSupport.contains(L("launcher.inputSource.title"), in: window))
-                try SettingsBehaviorTestSupport.button(L("settings.shortcuts.launcherPosition.reset"), in: window).press()
-                try await SettingsBehaviorTestSupport.wait { settings.askLauncherAnchors.isEmpty }
-                #expect(settings.askLauncherPosition == .lastPosition)
+                #expect(SettingsBehaviorTestSupport.contains(L("settings.shortcuts.launcherPosition.center"), in: window))
+                #expect(SettingsBehaviorTestSupport.contains(L("settings.shortcuts.launcherPosition.last"), in: window))
+                // No separate "Center again" link beside the choice.
+                #expect(!SettingsBehaviorTestSupport.elements(in: window).contains {
+                    $0.role == NSAccessibility.Role.link.rawValue
+                        || ($0.role == NSAccessibility.Role.button.rawValue && $0.label == "Center again")
+                })
+                #expect(settings.askLauncherAnchors["built-in"] == .init(left: 40, fromTop: 120))
             }
         }
     }

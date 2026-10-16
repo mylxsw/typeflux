@@ -21,7 +21,6 @@ struct LauncherSettingsView: View {
     @State var inputHistoryEnabled = true
     @State var inputHistoryLimit = 100
     @State var launcherPosition: AskLauncherPosition = .center
-    @State var hasRememberedLauncherPositions = false
     @State private var confirmingClearInputHistory = false
 
     var body: some View {
@@ -106,12 +105,6 @@ struct LauncherSettingsView: View {
                 : "settings.shortcuts.launcherPosition.last.subtitle"),
             icon: "macwindow"
         ) {
-            if launcherPosition == .lastPosition {
-                TFButton(title: L("settings.shortcuts.launcherPosition.reset"), kind: .link) {
-                    resetLauncherPositions()
-                }
-                .disabled(!hasRememberedLauncherPositions)
-            }
             TFSegmentedControl(
                 options: [TFOption(AskLauncherPosition.center, L("settings.shortcuts.launcherPosition.center")),
                           TFOption(.lastPosition, L("settings.shortcuts.launcherPosition.last"))],
@@ -144,20 +137,16 @@ struct LauncherSettingsView: View {
         return options
     }
 
-    /// The launcher remembers positions while settings are open; check again when they are shown.
+    /// Loads the stored choice without animating the segment thumb from its default on open.
     func reloadLauncherPosition() {
-        launcherPosition = settings.askLauncherPosition
-        hasRememberedLauncherPositions = !settings.askLauncherAnchors.isEmpty
+        var transaction = Transaction()
+        transaction.disablesAnimations = true
+        withTransaction(transaction) { launcherPosition = settings.askLauncherPosition }
     }
 
+    /// Choosing "Always center" also forgets every remembered position.
     func setLauncherPosition(_ position: AskLauncherPosition) {
         settings.askLauncherPosition = position
-        reloadLauncherPosition()
-    }
-
-    /// Forgets where the launcher was left on every screen; it opens centred until moved again.
-    func resetLauncherPositions() {
-        settings.askLauncherAnchors = [:]
         reloadLauncherPosition()
     }
 

@@ -34,7 +34,8 @@ final class LocalizationResourceTests: XCTestCase {
                 XCTAssertFalse(try XCTUnwrap(table[key], "Missing \(key) in \(language.rawValue)").isEmpty)
             }
             for key in ["settings.shortcuts.quickInput.title", "settings.shortcuts.quickInput.subtitle",
-                        "overlay.recording.quickInputHint", "settings.inputAndCapture.title"] {
+                        "overlay.recording.quickInputHint", "settings.inputAndCapture.title",
+                        "settings.shortcuts.launcherPosition.reset"] {
                 XCTAssertNil(table[key], "\(key) should be removed from \(language.rawValue)")
             }
             if language == .simplifiedChinese {

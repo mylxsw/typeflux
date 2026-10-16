@@ -807,7 +807,6 @@
 "settings.shortcuts.launcherPosition.last" = "마지막 위치 기억";
 "settings.shortcuts.launcherPosition.center.subtitle" = "포인터가 있는 화면 가운데에 열립니다. 드래그는 이번에만 적용됩니다.";
 "settings.shortcuts.launcherPosition.last.subtitle" = "그 화면에서 마지막으로 둔 위치에 열립니다. 위쪽 가장자리나 빈 곳을 드래그해 옮기세요.";
-"settings.shortcuts.launcherPosition.reset" = "가운데로";
 "settings.shortcuts.persona.title" = "페르소나 스위처";
 "settings.shortcuts.persona.subtitle" = "중앙 선택 도구를 엽니다. 선택한 텍스트를 사용하면 해당 선택 항목에 페르소나를 직접 적용할 수도 있습니다.";
 "settings.shortcuts.persona.footnote" = "";
