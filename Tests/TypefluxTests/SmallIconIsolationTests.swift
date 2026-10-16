@@ -177,13 +177,14 @@ private final class SmallIconBlocking: @unchecked Sendable {
         let root = try AskAttachmentFixture.directory(); defer { try? FileManager.default.removeItem(at: root) }
         let file = root.appendingPathComponent("icon.png"); try png().write(to: file)
         let scope = AskImagePresentationScope(), access = AskImagePresentationAccess(scope: scope, epoch: scope.epoch, authorize: { true })
-        let bytes = ico(png()), cache = AskBrowserFaviconCache(loader: { _ in bytes })
+        let bytes = ico(png()), cache = AskBrowserFaviconCache(loader: { _ in bytes }, decode: { try await AskSmallIconDecoder.decode(.data($0), worker: MediaWorker(timeout: 3)) })
         let url = URL(string: "https://synthetic.test/favicon.ico")!
         func content(_ generation: Int) -> some View {
             VStack(alignment: .leading, spacing: 18) {
                 Text("Isolated optional icons").font(.headline).foregroundColor(.black)
                 HStack(spacing: 12) {
                     AskPluginItemIcon(icon: .image(file), symbol: "doc", filled: false)
+                        .environment(\.askSmallIconDecoder, { try await AskSmallIconDecoder.decode(.file($0), worker: MediaWorker(timeout: 3)) })
                     Text("Workflow file icon").foregroundColor(.black)
                 }
                 HStack(spacing: 12) {

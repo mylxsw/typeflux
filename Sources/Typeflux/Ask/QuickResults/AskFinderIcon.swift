@@ -18,9 +18,9 @@ enum AskFinderIcon {
         } onCancel: { cancellation.cancel() }
     }
 
-    @MainActor static func image(for url: URL, scale: CGFloat = 2) async -> NSImage? {
+    @MainActor static func image(for url: URL, scale: CGFloat = 2, worker: MediaWorker = .previews) async -> NSImage? {
         guard url.isFileURL, scale.isFinite, scale > 0, scale <= 4,
-              let result = try? await decode(.init(kind: .file, value: url.path), edge: Int(ceil(28 * scale))),
+              let result = try? await decode(.init(kind: .file, value: url.path), edge: Int(ceil(28 * scale)), worker: worker),
               let image = result.images.first else { return nil }
         let representation = NSBitmapImageRep(cgImage: image)
         representation.size = NSSize(width: 28, height: 28)

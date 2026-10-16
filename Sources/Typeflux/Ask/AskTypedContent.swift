@@ -25,11 +25,12 @@ enum AskTypedContent {
         return String(decoding: value.utf8.prefix(bytes), as: UTF8.self).replacingOccurrences(of: "\u{fffd}", with: "")
     }
 
-    static func output(from result: MCPToolsCallResult) async -> AskLocalToolOutput {
+    static func output(from result: MCPToolsCallResult,
+                       normalize: @Sendable (Data, MediaImageType) async throws -> String = { try await AskToolImageNormalizer.image($0, type: $1) }) async -> AskLocalToolOutput {
         var blocks = result.content.map(\.raw)
         if let value = result.structuredContent { blocks.append(json(["type": "structured_content", "value": object(value)])) }
         if let value = result.metadata { blocks.append(json(["type": "mcp_metadata", "value": object(value)])) }
-        let outcome = await prepare(.init(status: result.isError == true ? "unknown" : "ok", content: blocks))
+        let outcome = await prepare(.init(status: result.isError == true ? "unknown" : "ok", content: blocks), normalize: normalize)
         let projection = project(outcome)
         let legacyImage = projection.images.first
         // A legacy peer must never interpret a partial multi-image result as complete.
@@ -99,7 +100,8 @@ enum AskTypedContent {
     }
 
     /// Prepare only a bounded recent window. Older/unavailable images stay explicitly incomplete.
-    static func prepareHistory(_ messages: [AskMessage]) async -> [AskMessage] {
+    static func prepareHistory(_ messages: [AskMessage],
+                               normalize: @Sendable (Data, MediaImageType) async throws -> String = { try await AskToolImageNormalizer.image($0, type: $1) }) async -> [AskMessage] {
         var result = messages, remaining = 8, bytes = 0
         for index in result.indices { result[index].harness?.outcome?.preparedImages = [:] }
         for index in messages.indices.suffix(12).reversed() {
@@ -108,7 +110,7 @@ enum AskTypedContent {
                   let content = bounded(outcome).content else { continue }
             let count = content.filter { object($0)["type"] as? String == "image" }.count
             guard count > 0 else { continue }
-            var prepared = await prepare(outcome, limit: remaining)
+            var prepared = await prepare(outcome, limit: remaining, normalize: normalize)
             remaining -= min(4, count)
             let size = project(prepared).images.reduce(0) { $0 + $1.utf8.count }
             if bytes + size > 2_000_000 { prepared.preparedImages = [:] }

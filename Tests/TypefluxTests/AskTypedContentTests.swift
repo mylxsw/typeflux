@@ -20,7 +20,7 @@ final class AskTypedContentTests: XCTestCase {
         let value = try JSONDecoder().decode(MCPToolsCallResult.self,from:Data(raw.utf8))
         XCTAssertEqual(try JSONSerialization.jsonObject(with:JSONEncoder().encode(value)) as? NSDictionary, try JSONSerialization.jsonObject(with:Data(raw.utf8)) as? NSDictionary)
         let structured = try JSONDecoder().decode(MCPToolsCallResult.self,from:Data(#"{"structuredContent":{"count":1}}"#.utf8))
-        let output = await AskTypedContent.output(from:structured)
+        let output = await AskTypedContent.output(from:structured, normalize: { try await AskToolImageNormalizer(worker: MediaWorker(timeout: 3)).normalize($0, type: $1) })
         XCTAssertTrue(output.content.contains("Structured content"));XCTAssertFalse(output.isError)
         XCTAssertEqual(output.outcome?.content?.count,1)
     }
@@ -47,7 +47,7 @@ final class AskTypedContentTests: XCTestCase {
     }
 
     func testAllBlocksSurviveAndUnsupportedIsVisible() async throws {
-        let output = await AskTypedContent.output(from:try Self.result())
+        let output = await AskTypedContent.output(from:try Self.result(), normalize: { try await AskToolImageNormalizer(worker: MediaWorker(timeout: 3)).normalize($0, type: $1) })
         let outcome = try XCTUnwrap(output.outcome)
         XCTAssertEqual(outcome.content?.count,7)
         XCTAssertEqual(AskTypedContent.project(outcome).images.count,2)
@@ -119,7 +119,7 @@ final class AskTypedContentTests: XCTestCase {
         receipt.harness = nil
         receipt.record(.init(content: "screenshot", image: "legacy-image"))
         XCTAssertEqual(receipt.message(step: 1, now: Date()).resultImages, ["legacy-image"])
-        let huge = await AskTypedContent.output(from: .init(content: [.init(type: "text", text: String(repeating: "x", count: 700000))], isError: false))
+        let huge = await AskTypedContent.output(from: .init(content: [.init(type: "text", text: String(repeating: "x", count: 700000))], isError: false), normalize: { try await AskToolImageNormalizer(worker: MediaWorker(timeout: 3)).normalize($0, type: $1) })
         receipt.record(huge)
         let reopened = try AskCoding.decoder().decode(AskToolResultRequest.self, from: AskCoding.encoder().encode(receipt))
         XCTAssertEqual(reopened.harness?.outcome?.truncated, true)

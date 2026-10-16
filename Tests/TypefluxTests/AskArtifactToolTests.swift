@@ -184,13 +184,13 @@ import XCTest
         let png = try XCTUnwrap(AskArtifactActions.pngData(picture))
         let destination = fixture.base.appendingPathComponent("screenshot.png")
         try AskArtifactActions.exportImage(picture, to: destination)
-        let exported = try await AskArtifactPresentation.image(Data(contentsOf: destination), mediaType: "image/png")
+        let exported = try await AskArtifactPresentation.image(Data(contentsOf: destination), mediaType: "image/png", worker: MediaWorker(timeout: 3))
         XCTAssertEqual(exported.images.count, 1)
         XCTAssertThrowsError(try AskArtifactActions.exportImage(picture, to: fixture.base.appendingPathComponent("missing/file.png")))
-        let rendered = try await AskArtifactPresentation.image(png, mediaType: "image/png")
+        let rendered = try await AskArtifactPresentation.image(png, mediaType: "image/png", worker: MediaWorker(timeout: 3))
         let thumbnail = try XCTUnwrap(rendered.images.first)
         XCTAssertLessThanOrEqual(thumbnail.width, 1600)
-        do { _ = try await AskArtifactPresentation.image(Data("not an image".utf8), mediaType: "image/png"); XCTFail("Invalid image") } catch {}
+        do { _ = try await AskArtifactPresentation.image(Data("not an image".utf8), mediaType: "image/png", worker: MediaWorker(timeout: 3)); XCTFail("Invalid image") } catch {}
         let cases = [("long.txt", Data(String(repeating: "text\n", count: 7000).utf8)),
                      ("bad.txt", Data([0xFF])), ("binary.zip", Data([1, 2, 3])),
                      ("image.png", png), ("bad.png", Data()), ("index.html", Data("<h1>disabled</h1>".utf8)),

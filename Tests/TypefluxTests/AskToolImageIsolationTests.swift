@@ -26,7 +26,7 @@ final class AskToolImageIsolationTests: XCTestCase {
         XCTAssertEqual(decoded.status, original.status)
         XCTAssertEqual(AskTypedContent.object(decoded.content![0]) as NSDictionary, AskTypedContent.object(original.content![0]) as NSDictionary)
         XCTAssertTrue(AskTypedContent.project(decoded).images.isEmpty)
-        let prepared = await AskTypedContent.prepare(decoded)
+        let prepared = await AskTypedContent.prepare(decoded, normalize: { try await AskToolImageNormalizer(worker: MediaWorker(timeout: 3)).normalize($0, type: $1) })
         XCTAssertEqual(AskTypedContent.project(prepared).images.count, 1)
         XCTAssertEqual(AskTypedContent.object(prepared.content![0]) as NSDictionary, AskTypedContent.object(original.content![0]) as NSDictionary)
         var changed = prepared; changed.content = [try block("aGVsbG8=")]
@@ -125,7 +125,7 @@ final class AskToolImageIsolationTests: XCTestCase {
         let messages = (0..<15).map { i in
             AskMessage(id: "\(i)", role: "tool", text: "", createdAt: Date(), harness: .init(version: 1, outcome: .init(status: "ok", content: [raw])))
         }
-        let prepared = await AskTypedContent.prepareHistory(messages)
+        let prepared = await AskTypedContent.prepareHistory(messages, normalize: { try await AskToolImageNormalizer(worker: MediaWorker(timeout: 3)).normalize($0, type: $1) })
         XCTAssertEqual(prepared.filter { !$0.resultImages.isEmpty }.count, 8)
         XCTAssertTrue(prepared[0].resultImages.isEmpty)
         XCTAssertEqual(prepared[0].retainedResultImages.count, 1)

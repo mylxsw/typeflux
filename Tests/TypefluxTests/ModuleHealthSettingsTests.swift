@@ -166,7 +166,7 @@ struct ModuleHealthSettingsTests {
                     #expect(L(fresh.statusKey(.notebook)) != fresh.statusKey(.notebook))
                     fresh.stopObserving()
                 }
-                for key in ["title", "conversations", "wordBook", "notebook", "mediaExtraction", "recover", "hint", "stopped", "recovering",
+                for key in ["title", "conversations", "wordBook", "notebook", "mediaExtraction", "mediaPreviews", "recover", "hint", "stopped", "recovering",
                             "ready", "coolingDown", "unavailable", "disabled", "quarantined", "observationFailed", "requested", "wait", "busy"] {
                     #expect(L("settings.services." + key) != "settings.services." + key)
                 }

@@ -171,7 +171,7 @@ struct AskLauncherHeaderVisualTests {
                 captured(fixture)
                 fixture.model.launcherDraft.selection = "first line\nsecond line"
                 let draft = Binding(get: { fixture.model.launcherDraft }, set: { fixture.model.launcherDraft = $0 })
-                let raw = try await AskContextImageDecoder.decode(try #require(fixture.model.launcherDraft.screenshot))
+                let raw = try await AskContextImageDecoder.decode(try #require(fixture.model.launcherDraft.screenshot), worker: MediaWorker(timeout: 3))
                 let thumbnail = NSImage(cgImage: try #require(raw.images.first), size: .zero)
                 let panel = AskLauncherContextPanel(draft: draft, thumbnail: thumbnail, screenshotState: .attached,
                                                     restored: true, capturing: false, screenshotCapturing: false,

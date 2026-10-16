@@ -152,20 +152,20 @@ private final class WorkflowImageBlockingFixture: @unchecked Sendable {
     func testCacheIsBoundedPrivateAndCannotOverwriteCorruptExistingOutput() async throws {
         let root = try AskAttachmentFixture.directory(); defer { try? FileManager.default.removeItem(at: root) }
         let value = "data:image/png;base64," + png().base64EncodedString(), cache = root.appendingPathComponent("cache")
-        let first = try await AskWorkflowImage.resolve(value, folder: root, cache: cache, home: "/").get()
+        let first = try await AskWorkflowImage.resolve(value, folder: root, cache: cache, home: "/", worker: MediaWorker(timeout: 3)).get()
         let directory = first.url.deletingLastPathComponent()
         let permissions = try FileManager.default.attributesOfItem(atPath: first.url.path)[.posixPermissions] as? NSNumber
         XCTAssertEqual(permissions?.intValue, 0o600)
-        let again = try await AskWorkflowImage.resolve(value, folder: root, cache: cache, home: "/").get()
+        let again = try await AskWorkflowImage.resolve(value, folder: root, cache: cache, home: "/", worker: MediaWorker(timeout: 3)).get()
         XCTAssertEqual(first, again)
-        _ = try await AskWorkflowImage.resolve("data:image/png;base64," + png(41, 20).base64EncodedString(), folder: root, cache: cache, home: "/").get()
+        _ = try await AskWorkflowImage.resolve("data:image/png;base64," + png(41, 20).base64EncodedString(), folder: root, cache: cache, home: "/", worker: MediaWorker(timeout: 3)).get()
         try Data([7]).write(to: first.url)
-        let corrupt = await AskWorkflowImage.resolve(value, folder: root, cache: cache, home: "/")
+        let corrupt = await AskWorkflowImage.resolve(value, folder: root, cache: cache, home: "/", worker: MediaWorker(timeout: 3))
         XCTAssertEqual(corrupt, .failure(.notImage)); XCTAssertEqual(try Data(contentsOf: first.url), Data([7]))
         try FileManager.default.removeItem(at: first.url)
         for entry in try FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil) { try FileManager.default.removeItem(at: entry) }
         for n in 0..<128 { try Data().write(to: directory.appendingPathComponent("entry-\(n)")) }
-        let full = await AskWorkflowImage.resolve(value, folder: root, cache: cache, home: "/")
+        let full = await AskWorkflowImage.resolve(value, folder: root, cache: cache, home: "/", worker: MediaWorker(timeout: 3))
         XCTAssertEqual(full, .failure(.unavailable)); XCTAssertEqual(try FileManager.default.contentsOfDirectory(atPath: directory.path).count, 128)
     }
 
@@ -306,14 +306,14 @@ private final class WorkflowImageBlockingFixture: @unchecked Sendable {
             let file = try FileHandle(forWritingTo: directory.appendingPathComponent("large-\(n)"))
             try file.truncate(atOffset: UInt64(MediaWorkflowImage.inputBytes)); try file.close()
         }
-        let result = await AskWorkflowImage.resolve("data:image/png;base64," + png().base64EncodedString(), folder: root, cache: cache, home: "/")
+        let result = await AskWorkflowImage.resolve("data:image/png;base64," + png().base64EncodedString(), folder: root, cache: cache, home: "/", worker: MediaWorker(timeout: 3))
         XCTAssertEqual(result, .failure(.unavailable)); XCTAssertEqual(secure.entries(limit: 20).count, 13)
     }
 
     func testEditorPreparationOwnsItsViewAndLeavesOriginalRunOutput() async throws {
         let root = try AskAttachmentFixture.directory(); defer { try? FileManager.default.removeItem(at: root) }
         let original = png(80, 40); try original.write(to: root.appendingPathComponent("result.png"))
-        let view = NSHostingView(rootView: AskWorkflowImageEditorPreview(name: "result.png", folder: root).frame(width: 300, height: 180).background(Color.white))
+        let view = NSHostingView(rootView: AskWorkflowImageEditorPreview(name: "result.png", folder: root, worker: MediaWorker(timeout: 3)).frame(width: 300, height: 180).background(Color.white))
         let window = NSWindow(contentRect: .init(x: 50, y: 50, width: 300, height: 180), styleMask: [.titled], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false; window.contentView = view; window.orderFront(nil)
         defer { window.contentView = nil; window.close() }
@@ -325,7 +325,7 @@ private final class WorkflowImageBlockingFixture: @unchecked Sendable {
             try await Task.sleep(for: .milliseconds(10))
         }
         XCTAssertTrue(ready)
-        view.rootView = AskWorkflowImageEditorPreview(name: "missing.png", folder: root).frame(width: 300, height: 180).background(Color.white)
+        view.rootView = AskWorkflowImageEditorPreview(name: "missing.png", folder: root, worker: MediaWorker(timeout: 3)).frame(width: 300, height: 180).background(Color.white)
         try await Task.sleep(for: .milliseconds(100))
         XCTAssertEqual(try Data(contentsOf: root.appendingPathComponent("result.png")), original)
     }
@@ -333,11 +333,11 @@ private final class WorkflowImageBlockingFixture: @unchecked Sendable {
     func testWorkflowViewShowsRawPixelsAndClearsOnScopeInvalidation() async throws {
         let root = try AskAttachmentFixture.directory(); defer { try? FileManager.default.removeItem(at: root) }
         let file = root.appendingPathComponent("synthetic.png"), original = png(320, 180); try original.write(to: file)
-        let image = try await AskWorkflowImage.resolve(file.path, folder: root, cache: root, home: "/").get()
+        let image = try await AskWorkflowImage.resolve(file.path, folder: root, cache: root, home: "/", worker: MediaWorker(timeout: 3)).get()
         let scope = AskImagePresentationScope()
         let view = NSHostingView(rootView: VStack(spacing: 16) {
             Text("Workflow image result").font(.headline).foregroundColor(.black)
-            AskWorkflowImageView(image: image, size: .init(width: 320, height: 180))
+            AskWorkflowImageView(image: image, size: .init(width: 320, height: 180), worker: MediaWorker(timeout: 3))
             Text("Original file retained • No script replay").foregroundColor(.black)
         }.padding(24).frame(width: 440, height: 300).background(Color.white)
             .environment(\.askContextImageAccess, .init(scope: scope, epoch: scope.epoch, authorize: { true })))

@@ -13,9 +13,9 @@ enum AskFilePreviewPDF {
         var waveform: [Float] = []
     }
     static func render(_ url: URL, pixels: CGSize, evidence: AskFileHit.Evidence?,
-                       cancellation: AskSearchCancellation) throws -> Result {
+                       cancellation: AskSearchCancellation, worker: MediaWorker = .previews) throws -> Result {
         try MediaPreviewDisplay.render(url, pixels: pixels, pdf: true, evidence: evidence,
-                                       cancellation: cancellation)
+                                       cancellation: cancellation, worker: worker)
     }
     static func ranges(in text: String, passage: String) -> [NSRange] {
         MediaPreviewText.ranges(in: text, passage: passage)

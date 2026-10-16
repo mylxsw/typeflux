@@ -33,7 +33,7 @@ final class AskImageGenerationTests: XCTestCase {
 
     func testLocalImageDataCoexistsWithPersistedConversationImage() async throws {
         let bytes = try Self.picture()
-        let local = try await AskGeneratedImageValidator.shared.validate(bytes)
+        let local = try await AskGeneratedImageValidator(worker: MediaWorker(timeout: 3)).validate(bytes)
         let generated = AskImageGenerationResult(images: [local])
         XCTAssertEqual(generated.images.first?.data, bytes)
         XCTAssertEqual(generated.images.first?.mediaType, "image/png")
@@ -63,14 +63,14 @@ final class AskImageGenerationTests: XCTestCase {
             }
             return png
         }
-        _ = try await AskImageGenerationService(transport: transport).generate(
+        _ = try await AskImageGenerationService(transport: transport, validate: { try await AskGeneratedImageValidator(worker: MediaWorker(timeout: 3)).validate($0) }).generate(
             request,
             configuration: .preset(.bailian),
             key: "key"
         )
         request.deadline = Date().addingTimeInterval(-1)
         do {
-            _ = try await AskImageGenerationService(transport: transport).generate(
+            _ = try await AskImageGenerationService(transport: transport, validate: { try await AskGeneratedImageValidator(worker: MediaWorker(timeout: 3)).validate($0) }).generate(
                 request,
                 configuration: .preset(.bailian),
                 key: "key"
@@ -208,7 +208,7 @@ final class AskImageGenerationTests: XCTestCase {
                 }
                 return try JSONSerialization.data(withJSONObject: response)
             }
-            let result = try await AskImageGenerationService(transport: transport).generate(
+            let result = try await AskImageGenerationService(transport: transport, validate: { try await AskGeneratedImageValidator(worker: MediaWorker(timeout: 3)).validate($0) }).generate(
                 input(),
                 configuration: .preset(provider),
                 key: "key"
@@ -225,7 +225,7 @@ final class AskImageGenerationTests: XCTestCase {
                 XCTAssertNil(requests[1].value(forHTTPHeaderField: "x-goog-api-key"))
             }
         }
-        let jpeg = try await AskGeneratedImageValidator.shared.validate(Self.picture(.jpeg))
+        let jpeg = try await AskGeneratedImageValidator(worker: MediaWorker(timeout: 3)).validate(Self.picture(.jpeg))
         XCTAssertEqual(jpeg.mediaType, "image/jpeg")
         XCTAssertEqual(jpeg.fileExtension, "jpg")
     }
@@ -239,7 +239,7 @@ final class AskImageGenerationTests: XCTestCase {
             let data = try JSONSerialization.data(withJSONObject: body)
             let transport = ImageTransportStub { _, _ in data }
             do {
-                let result = try await AskImageGenerationService(transport: transport).generate(
+                let result = try await AskImageGenerationService(transport: transport, validate: { try await AskGeneratedImageValidator(worker: MediaWorker(timeout: 3)).validate($0) }).generate(
                     input(),
                     configuration: .preset(.openAI),
                     key: "key"
@@ -251,7 +251,7 @@ final class AskImageGenerationTests: XCTestCase {
             XCTAssertEqual(count, 1)
         }
         let transport = ImageTransportStub { _, _ in throw URLError(.timedOut) }
-        do { _ = try await AskImageGenerationService(transport: transport).generate(
+        do { _ = try await AskImageGenerationService(transport: transport, validate: { try await AskGeneratedImageValidator(worker: MediaWorker(timeout: 3)).validate($0) }).generate(
             input(),
             configuration: .preset(.openAI),
             key: "key"
@@ -287,7 +287,7 @@ final class AskImageGenerationTests: XCTestCase {
                 }
                 return png
             }
-            let result = try await AskImageGenerationService(transport: transport).generate(
+            let result = try await AskImageGenerationService(transport: transport, validate: { try await AskGeneratedImageValidator(worker: MediaWorker(timeout: 3)).validate($0) }).generate(
                 input(),
                 configuration: .preset(.bailian),
                 key: "key"
@@ -310,7 +310,7 @@ final class AskImageGenerationTests: XCTestCase {
                 throw failure
             }
             do {
-                let result = try await AskImageGenerationService(transport: transport).generate(
+                let result = try await AskImageGenerationService(transport: transport, validate: { try await AskGeneratedImageValidator(worker: MediaWorker(timeout: 3)).validate($0) }).generate(
                     input(),
                     configuration: .preset(.bailian),
                     key: "key"

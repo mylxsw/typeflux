@@ -117,7 +117,7 @@ private final class CopyActionsFixture: ClipboardContentActing {
     func testOversizedOrRemovedFileListsNeverClearPasteboard() {
         let board = NSPasteboard(name: .init(UUID().uuidString)); defer { board.releaseGlobally() }
         board.setString("keep", forType: .string)
-        let actions = SystemClipboardContentActions(pasteboard: board)
+        let actions = SystemClipboardContentActions(pasteboard: board, imageWorker: MediaWorker(timeout: 3))
         for paths in [["/missing-private-fixture"], Array(repeating: "/fixture", count: 1001), [String(repeating: "x", count: 1_048_577)]] {
             XCTAssertFalse(actions.writeToPasteboard(ClipboardTestSupport.entry(.files, filePaths: paths), asPlainText: true, image: nil))
             XCTAssertEqual(board.string(forType: .string), "keep")
@@ -144,7 +144,7 @@ private final class CopyActionsFixture: ClipboardContentActing {
         try png.write(to: url)
         let board = NSPasteboard(name: .init(UUID().uuidString)); defer { board.releaseGlobally() }
         board.setString("untouched", forType: .string)
-        let actions = SystemClipboardContentActions(pasteboard: board)
+        let actions = SystemClipboardContentActions(pasteboard: board, imageWorker: MediaWorker(timeout: 3))
         let entry = ClipboardTestSupport.entry(.image, imagePath: url.path)
         let image = try await actions.prepareImage(entry)
         XCTAssertEqual(image?.png, png)
@@ -161,7 +161,7 @@ private final class CopyActionsFixture: ClipboardContentActing {
         defer { try? FileManager.default.removeItem(at: root) }
         let board = NSPasteboard(name: .init(UUID().uuidString)); defer { board.releaseGlobally() }
         board.setString("keep", forType: .string)
-        let actions = SystemClipboardContentActions(pasteboard: board)
+        let actions = SystemClipboardContentActions(pasteboard: board, imageWorker: MediaWorker(timeout: 3))
         for data in [Data([1, 2]), Data(repeating: 0, count: ClipboardCaptureRules.maximumImageBytes + 1)] {
             try data.write(to: url)
             do { _ = try await actions.prepareImage(ClipboardTestSupport.entry(.image, imagePath: url.path)); XCTFail("Accepted invalid input") } catch {}

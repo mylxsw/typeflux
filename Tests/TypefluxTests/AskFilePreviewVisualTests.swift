@@ -185,20 +185,21 @@ struct AskFilePreviewVisualTests {
             .audio
         )] {
             var hit = previewHit(url.lastPathComponent); hit.path = url.path
+            print("Preview fixture metadata: \(kind)")
             let info = try await AskFilePreviewRenderer.metadata(hit, readText: kind.readsText)
             #expect(info.fileSize ?? 0 > 0)
             let result = try await AskFilePreviewRenderer.generate(
                 hit,
                 kind: kind,
                 pixels: .init(width: 360, height: 400),
-                info: info
-            )
+                info: info,
+              worker: MediaWorker(timeout: 3))
             #expect(result.kind == kind)
             if kind == .pdf {
                 #expect(result.images.count == 3); #expect(result.pageCount == 5)
                 let thumbnail = try await AskFilePreviewRenderer.generate(hit, kind: .document,
                                                                           pixels: .init(width: 360, height: 400),
-                                                                          info: info)
+                                                                          info: info, worker: MediaWorker(timeout: 3))
                 #expect(thumbnail.images.count == 1)
             }
             if kind ==
@@ -214,7 +215,7 @@ struct AskFilePreviewVisualTests {
             }
         }
         await #expect(throws: AskFileReadError.self) {
-            try await AskFilePreviewRenderer.generate(previewHit(), kind: .text, pixels: .zero, info: .init())
+            try await AskFilePreviewRenderer.generate(previewHit(), kind: .text, pixels: .zero, info: .init(), worker: MediaWorker(timeout: 3))
         }
     }
 
@@ -256,13 +257,13 @@ struct AskFilePreviewVisualTests {
             hit,
             kind: .video,
             pixels: .init(width: 128, height: 128),
-            info: .init()
-        )
+            info: .init(),
+          worker: MediaWorker(timeout: 3))
         #expect(result.images.count == 1); #expect(result.duration >= 1)
         for kind in [AskFilePreviewKind.pdf, .video, .audio, .document] {
             await #expect(throws: (any Error).self) {
                 try await AskFilePreviewRenderer.generate(previewHit("missing." + kind.rawValue), kind: kind,
-                                                          pixels: .init(width: 100, height: 100), info: .init())
+                                                          pixels: .init(width: 100, height: 100), info: .init(), worker: MediaWorker(timeout: 3))
             }
         }
     }
@@ -300,7 +301,7 @@ struct AskFilePreviewVisualTests {
         for kind in [AskFilePreviewKind.image, .pdf, .document, .audio, .video] {
             let task = Task {
                 try await AskFilePreviewRenderer.generate(previewHit("missing.png"), kind: kind,
-                                                          pixels: .init(width: 100, height: 100), info: .init())
+                                                          pixels: .init(width: 100, height: 100), info: .init(), worker: MediaWorker(timeout: 3))
             }
             task.cancel()
             await #expect(throws: (any Error).self) { try await task.value }

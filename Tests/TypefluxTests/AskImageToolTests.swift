@@ -225,7 +225,7 @@ final class AskImageToolTests: XCTestCase {
 
     func testUnknownPaidOutcomeHasPrivateIdentityAndNeverRetries() async throws {
         let transport = ImageTransportStub { _, _ in throw URLError(.networkConnectionLost) }
-        tools.imageGenerator = AskImageGenerationService(transport: transport)
+        tools.imageGenerator = AskImageGenerationService(transport: transport, validate: { try await AskGeneratedImageValidator(worker: MediaWorker(timeout: 3)).validate($0) })
         let binding = try await tools.approvalBinding(for: call, conversationId: "conversation")
         let output = try await tools.executeApproved(call, conversationId: "conversation", binding: binding, authorize: {})
         XCTAssertTrue(output.isError)

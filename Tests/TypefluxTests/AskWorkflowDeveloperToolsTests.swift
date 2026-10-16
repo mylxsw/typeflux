@@ -65,7 +65,7 @@ struct AskWorkflowDeveloperToolsTests {
         let folder = try #require(fixture.store.workflow("local.qr")?.folder)
         let resolved = await AskWorkflowImage.resolve(result.stdout, folder: folder,
                                                 cache: fixture.home.appendingPathComponent("qr-cache"),
-                                                home: fixture.home.path)
+                                                home: fixture.home.path, worker: MediaWorker(timeout: 3))
         guard case let .success(image) = resolved
         else { Issue.record("Not a displayable QR image: \(resolved)"); return }
         #expect(image.width >= 200 && image.height == image.width)

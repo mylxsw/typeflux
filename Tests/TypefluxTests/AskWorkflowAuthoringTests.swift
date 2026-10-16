@@ -112,7 +112,7 @@ struct AskWorkflowAuthoringTests {
         #expect(fixture.store.workflows.isEmpty && !session.isRunning)
         #expect(preview.result.input.query == "input" && preview.manifest.output.display == .image)
         let image = await AskWorkflowImage.resolve("result.png", folder: preview.folder,
-            cache: fixture.home.appendingPathComponent("images"), home: fixture.home.path)
+            cache: fixture.home.appendingPathComponent("images"), home: fixture.home.path, worker: MediaWorker(timeout: 3))
         guard case .success = image else { Issue.record("Preview image must remain readable"); return }
         let saved = try session.save()
         #expect(!FileManager.default.fileExists(atPath: saved.folder.appendingPathComponent("result.png").path))

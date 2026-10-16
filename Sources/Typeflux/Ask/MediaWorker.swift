@@ -7,7 +7,7 @@ final class MediaWorker: @unchecked Sendable {
     static let shared = MediaWorker(requiresLifecycle: true)
     static let recordingExport = MediaWorker(timeout: 600)
     static let recordingTimeline = MediaWorker(timeout: 30)
-    static let previews = MediaWorker(timeout: 3)
+    static let previews = MediaWorker(timeout: 3, requiresLifecycle: true)
     static let clipboardThumbnails = MediaWorker(timeout: 3)
     static let frameRegistration = MediaWorker(timeout: 3)
     static let textRecognition = MediaWorker(timeout: 30)

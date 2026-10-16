@@ -172,7 +172,7 @@ private actor QuickLookCalls {
         XCTAssertLessThanOrEqual(image.width, 112); XCTAssertLessThanOrEqual(image.height, 112)
         XCTAssertEqual(worker.activeCount, 0); XCTAssertEqual(try Data(contentsOf: input), original)
         var hit = previewHit("fixture.png"); hit.path = input.path
-        let document = try await AskFilePreviewRenderer.generate(hit, kind: .document, pixels: .init(width: 120, height: 80), info: .init())
+        let document = try await AskFilePreviewRenderer.generate(hit, kind: .document, pixels: .init(width: 120, height: 80), info: .init(), worker: MediaWorker(timeout: 3))
         XCTAssertEqual(document.kind, .document); XCTAssertEqual(document.images.count, 1)
         await worker.shutdown()
     }

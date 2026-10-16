@@ -51,10 +51,10 @@ private actor NativeIconCalls {
             do { _ = try await AskFinderIcon.decode(.init(kind: .type, value: "public.folder"), edge: edge, worker: worker); XCTFail() } catch {}
         }
         for scale in [CGFloat.nan, .infinity, 0, -1, 5] {
-            let image = await AskFinderIcon.image(for: URL(fileURLWithPath: "/tmp"), scale: scale)
+            let image = await AskFinderIcon.image(for: URL(fileURLWithPath: "/tmp"), scale: scale, worker: MediaWorker(timeout: 3))
             XCTAssertNil(image)
         }
-        let remote = await AskFinderIcon.image(for: URL(string: "https://example.test")!); XCTAssertNil(remote)
+        let remote = await AskFinderIcon.image(for: URL(string: "https://example.test")!, worker: MediaWorker(timeout: 3)); XCTAssertNil(remote)
         let cancelled = Task { withUnsafeCurrentTask { $0?.cancel() }; return try await AskFinderIcon.decode(.init(kind: .type, value: "public.folder"), worker: worker) }
         do { _ = try await cancelled.value; XCTFail() } catch {}
     }

@@ -5617,3 +5617,5 @@
 "recording.encodingUnconfirmed" = "녹화 내보내기 결과를 확인할 수 없습니다. 원본과 생성된 파일은 보존됩니다. 자동 재시도하지 않았습니다.";
 
 "settings.services.mediaExtraction" = "첨부 미디어 추출";
+
+"settings.services.mediaPreviews" = "미디어 미리보기";

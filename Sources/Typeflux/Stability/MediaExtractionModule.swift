@@ -3,15 +3,20 @@ import Foundation
 /// Adapts one existing disposable extraction pool. Typed requests stay in the
 /// pool; the supervisor manages readiness and recovery, never request replay.
 final class MediaExtractionModule: @unchecked Sendable {
+    enum Domain: String, Sendable {
+        case mediaExtraction, mediaPreviews
+        var id: ModuleID { self == .mediaExtraction ? .mediaExtraction : .mediaPreviews }
+    }
     let module: ModuleHandle<MediaWorker>
+    private let domain: Domain
     private let worker: MediaWorker
     private let gate: MediaExtractionGate
     private let observation: Task<Void, Never>
 
-    init(worker: MediaWorker, healthDirectory: URL, policy: ModulePolicy = .init(),
+    init(worker: MediaWorker, healthDirectory: URL, domain: Domain = .mediaExtraction, policy: ModulePolicy = .init(),
          uptime: @escaping @Sendable () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }) {
-        self.worker = worker
-        let store = ModuleHealthStore(url: healthDirectory.appendingPathComponent("mediaExtraction.json"), uptime: uptime)
+        self.worker = worker; self.domain = domain
+        let store = ModuleHealthStore(url: healthDirectory.appendingPathComponent(domain.rawValue + ".json"), uptime: uptime)
         let module = ModuleHandle<MediaWorker>(policy: policy, healthStore: store,
             factory: { try worker.checkReadiness(); return worker },
             cleanup: { await $0.retireManaged() }, classify: { _ in .waitForExplicitRetry },
@@ -29,7 +34,7 @@ final class MediaExtractionModule: @unchecked Sendable {
         }
     }
 
-    var registration: ModuleRegistration { .init(.mediaExtraction, handle: module) }
+    var registration: ModuleRegistration { .init(domain.id, handle: module) }
 
     deinit {
         gate.finish()

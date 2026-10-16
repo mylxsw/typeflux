@@ -270,7 +270,7 @@ struct AskHarnessUITests {
     }
 
     @Test func artifactsCopyAsImagesAndEncodeAsPNG() async throws {
-        let result = try await AskContextImageDecoder.decode(image)
+        let result = try await AskContextImageDecoder.decode(image, worker: MediaWorker(timeout: 3))
         let picture = NSImage(cgImage: try #require(result.images.first), size: .zero)
         let pasteboard = NSPasteboard(name: .init("ask-artifact-\(UUID().uuidString)"))
         defer { pasteboard.releaseGlobally() }

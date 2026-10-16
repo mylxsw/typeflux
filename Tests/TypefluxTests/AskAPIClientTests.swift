@@ -235,7 +235,7 @@ struct AskAPIClientTests {
             let api = AskAPIClient(executor: CloudRequestExecutor(selector: selector, session: stub),
                                    trustedPeer: enabled ? AskTypedContent.advertisement : nil, enabledCapabilities: enabled ? [.typedContent] : [])
             var receipt = AskToolResultRequest(runId: "run", deviceId: "device", toolCallId: "call", content: "", isError: false)
-            receipt.record(await AskTypedContent.output(from: try AskTypedContentTests.result()))
+            receipt.record(await AskTypedContent.output(from: try AskTypedContentTests.result(), normalize: { try await AskToolImageNormalizer(worker: MediaWorker(timeout: 3)).normalize($0, type: $1) }))
             let oldMessage = AskMessage(id: "stored", role: "tool", text: receipt.content, image: receipt.image, toolCallId: "call", isError: true, createdAt: Date())
             let c = AskConversation(id: "c", title: "t", revision: 2, updatedAt: Date(), messages: [oldMessage])
             await stub.configure(payload: Data("{\"code\":\"OK\",\"data\":".utf8) + (try AskCoding.encoder().encode(c)) + Data("}".utf8))

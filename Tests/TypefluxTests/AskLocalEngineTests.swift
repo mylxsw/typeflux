@@ -163,11 +163,12 @@ final class AskLocalEngineTests: XCTestCase {
     }
 
     func testTypedResultThroughLocalRunAndReopen() async throws {
-        let engine = AskLocalEngine(directory: directory, webTools: AskLocalWebTools(resolve: { _ in [] }), typedContentEnabled: true)
+        let engine = AskLocalEngine(directory: directory, webTools: AskLocalWebTools(resolve: { _ in [] }), typedContentEnabled: true,
+            prepareImages: { await AskTypedContent.prepareHistory($0, normalize: { try await AskToolImageNormalizer(worker: MediaWorker(timeout: 3)).normalize($0, type: $1) }) })
         let id = UUID().uuidString.lowercased()
         var c = try await engine.send(conversationId: id, request: request(), token: "")
         c = try await answer(engine, c, calls: [call("browser", #"{"action":"read"}"#, id: "typed")])
-        let output = await AskTypedContent.output(from: try AskTypedContentTests.result())
+        let output = await AskTypedContent.output(from: try AskTypedContentTests.result(), normalize: { try await AskToolImageNormalizer(worker: MediaWorker(timeout: 3)).normalize($0, type: $1) })
         var receipt = AskToolResultRequest(runId: c.run!.id, deviceId: device, toolCallId: "typed", content: "", isError: false)
         receipt.record(output)
         c = try await engine.result(conversationId: id, request: receipt, token: "")

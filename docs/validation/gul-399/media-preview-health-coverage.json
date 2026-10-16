@@ -1,0 +1,166 @@
+{
+  "covered": 33,
+  "executable_added": 36,
+  "percent": 91.67,
+  "files": [
+    {
+      "file": "Sources/Typeflux/App/DIContainer.swift",
+      "covered": 0,
+      "executable_added": 3,
+      "percent": 0.0,
+      "uncovered": [
+        162,
+        163,
+        164
+      ],
+      "instrumented": true,
+      "evidence": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskTypedContent.swift",
+      "covered": 4,
+      "executable_added": 4,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "evidence": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": true,
+      "evidence": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/AskFinderIcon.swift",
+      "covered": 2,
+      "executable_added": 2,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "evidence": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/AskSmallIcon.swift",
+      "covered": 4,
+      "executable_added": 4,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "evidence": "final + supplemental (same binary)"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowImageView.swift",
+      "covered": 5,
+      "executable_added": 5,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "evidence": "final + supplemental (same binary)"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewLoader.swift",
+      "covered": 1,
+      "executable_added": 1,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "evidence": "final + supplemental (same binary)"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPDF.swift",
+      "covered": 2,
+      "executable_added": 2,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "evidence": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewRenderer.swift",
+      "covered": 6,
+      "executable_added": 6,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "evidence": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Clipboard/ClipboardContentActions.swift",
+      "covered": 5,
+      "executable_added": 5,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "evidence": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Resources/en.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false,
+      "evidence": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Resources/ja.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false,
+      "evidence": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Resources/ko.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false,
+      "evidence": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Resources/zh-Hans.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false,
+      "evidence": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Resources/zh-Hant.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false,
+      "evidence": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Stability/MediaExtractionModule.swift",
+      "covered": 4,
+      "executable_added": 4,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "evidence": "initial"
+    },
+    {
+      "file": "Sources/Typeflux/Stability/ModuleHealthStore.swift",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": true,
+      "evidence": "initial"
+    }
+  ],
+  "base": "c0b9510f5338c703836b99f28704c9ec00a8949c",
+  "note": "Per-file matching binaries/profiles; production source hashes identical; no cross-layout profile merge."
+}
