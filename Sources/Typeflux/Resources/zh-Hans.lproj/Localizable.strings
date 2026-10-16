@@ -5679,3 +5679,4 @@
 "activity.accessibility" = "%d 个后台任务进行中";
 "activity.accessibility.attention" = "有后台任务需要处理";
 "activity.accessibility.separator" = "，";
+"screenshot.sensitive.failed" = "无法检查敏感信息，请检查图片并手动遮盖隐私内容。";

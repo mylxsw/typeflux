@@ -1,0 +1,147 @@
+{
+  "covered": 129,
+  "executable_added": 143,
+  "percent": 90.21,
+  "files": [
+    {
+      "file": "Sources/Typeflux/App/AppCoordinator.swift",
+      "covered": 0,
+      "executable_added": 4,
+      "percent": 0.0,
+      "uncovered": [
+        296,
+        297,
+        317,
+        318
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskComposerViews.swift",
+      "covered": 0,
+      "executable_added": 4,
+      "percent": 0.0,
+      "uncovered": [
+        807,
+        808,
+        809,
+        810
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskContextImage.swift",
+      "covered": 0,
+      "executable_added": 1,
+      "percent": 0.0,
+      "uncovered": [
+        56
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskConversationModel+Clipboard.swift",
+      "covered": 14,
+      "executable_added": 14,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskConversationModel.swift",
+      "covered": 2,
+      "executable_added": 2,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowImage.swift",
+      "covered": 6,
+      "executable_added": 6,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Clipboard/ClipboardContentActing.swift",
+      "covered": 5,
+      "executable_added": 5,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Clipboard/ClipboardContentAction.swift",
+      "covered": 55,
+      "executable_added": 57,
+      "percent": 96.49,
+      "uncovered": [
+        54,
+        55
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Clipboard/ClipboardContentActions.swift",
+      "covered": 7,
+      "executable_added": 8,
+      "percent": 87.5,
+      "uncovered": [
+        23
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Workflow/WorkflowController+History.swift",
+      "covered": 26,
+      "executable_added": 26,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Workflow/WorkflowController.swift",
+      "covered": 2,
+      "executable_added": 4,
+      "percent": 50.0,
+      "uncovered": [
+        477,
+        478
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/TypefluxMediaProtocol/MediaProtocol.swift",
+      "covered": 2,
+      "executable_added": 2,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/TypefluxMediaProtocol/MediaWorkflowImage.swift",
+      "covered": 3,
+      "executable_added": 3,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/TypefluxMediaRuntime/MediaDecoder.swift",
+      "covered": 1,
+      "executable_added": 1,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/TypefluxMediaRuntime/MediaWorkflowDecoder.swift",
+      "covered": 6,
+      "executable_added": 6,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    }
+  ]
+}

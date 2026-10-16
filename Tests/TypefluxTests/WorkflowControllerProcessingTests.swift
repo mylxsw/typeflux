@@ -4709,11 +4709,14 @@ private final class MockClipboardContentActions: ClipboardContentActing, @unchec
     var revealed: [[URL]] = []
     var savedURL: URL?
     var recognizedText: String?
+    var recognition: (() async throws -> String?)?
 
     var writes: [(title: String, plainText: Bool)] { lock.withLock { storedWrites } }
     var pasteShortcutCount: Int { lock.withLock { storedPasteShortcutCount } }
 
-    func writeToPasteboard(_ entry: ClipboardEntry, asPlainText: Bool) -> Bool {
+    func prepareImage(_ entry: ClipboardEntry) async throws -> AskWorkflowImage.Clipboard? { nil }
+
+    func writeToPasteboard(_ entry: ClipboardEntry, asPlainText: Bool, image: AskWorkflowImage.Clipboard?) -> Bool {
         lock.withLock { storedWrites.append((entry.title, asPlainText)) }
         return writeSucceeds
     }
@@ -4730,8 +4733,9 @@ private final class MockClipboardContentActions: ClipboardContentActing, @unchec
         savedURL
     }
 
-    func recognizeText(in _: URL) async -> String? {
-        recognizedText
+    func recognizeText(in _: URL) async throws -> String? {
+        if let recognition { return try await recognition() }
+        return recognizedText
     }
 }
 
@@ -4823,12 +4827,13 @@ extension WorkflowControllerProcessingTests {
         XCTAssertEqual(harness.presenter.dismissCount, 1)
     }
 
-    func testPastingFilesWritesThePasteboardThenSendsPaste() async {
+    @MainActor func testPastingFilesWritesThePasteboardThenSendsPaste() async {
         let harness = makeClipboardPanelHarness(configure: seed)
         harness.controller.handleHistoryPickerRequested()
 
         harness.model.perform(.paste, at: harness.index(of: "report.pdf"))
 
+        await waitUntil { harness.actions.writes.count == 1 }
         XCTAssertFalse(harness.controller.isHistoryPickerPresented)
         XCTAssertEqual(harness.actions.writes.map(\.plainText), [false])
         await waitUntil { harness.actions.pasteShortcutCount == 1 }
@@ -4836,24 +4841,27 @@ extension WorkflowControllerProcessingTests {
         XCTAssertTrue(harness.textInjector.insertedTexts.isEmpty)
     }
 
-    func testPastingFilePathsAsPlainText() async {
+    @MainActor func testPastingFilePathsAsPlainText() async {
         let harness = makeClipboardPanelHarness(configure: seed)
         harness.controller.handleHistoryPickerRequested()
         harness.model.perform(.pastePlainText, at: harness.index(of: "report.pdf"))
+        await waitUntil { harness.actions.writes.count == 1 }
         XCTAssertEqual(harness.actions.writes.map(\.plainText), [true])
         await waitUntil { harness.actions.pasteShortcutCount == 1 }
     }
 
-    func testFailedPasteboardWriteDoesNotSendPaste() async {
+    @MainActor func testFailedPasteboardWriteDoesNotSendPaste() async {
         let harness = makeClipboardPanelHarness(configure: seed)
         harness.actions.writeSucceeds = false
         harness.controller.handleHistoryPickerRequested()
         harness.model.perform(.paste, at: harness.index(of: "report.pdf"))
         try? await Task.sleep(for: .milliseconds(50))
         XCTAssertEqual(harness.actions.pasteShortcutCount, 0)
+        XCTAssertTrue(harness.controller.isHistoryPickerPresented)
+        XCTAssertEqual(harness.model.notice, L("ask.plugin.clip.unavailable"))
     }
 
-    func testPastingCopiedTextInsertsIt() async {
+    @MainActor func testPastingCopiedTextInsertsIt() async {
         let harness = makeClipboardPanelHarness(configure: seed)
         harness.controller.handleHistoryPickerRequested()
         harness.model.perform(.paste, at: harness.index(of: "copied text"))
@@ -4862,17 +4870,18 @@ extension WorkflowControllerProcessingTests {
         XCTAssertEqual(harness.textInjector.insertedTexts, ["copied text"])
     }
 
-    func testCopyingAnImageWritesThePasteboardWithoutPasting() async {
+    @MainActor func testCopyingAnImageWritesThePasteboardWithoutPasting() async {
         let harness = makeClipboardPanelHarness(configure: seed)
         harness.controller.handleHistoryPickerRequested()
         harness.model.perform(.copy, at: harness.index(of: L("clipboard.entry.image")))
+        await waitUntil { harness.actions.writes.count == 1 }
         XCTAssertFalse(harness.controller.isHistoryPickerPresented)
         XCTAssertEqual(harness.actions.writes.count, 1)
         try? await Task.sleep(for: .milliseconds(50))
         XCTAssertEqual(harness.actions.pasteShortcutCount, 0)
     }
 
-    func testFailedImageCopyKeepsThePanelOpen() {
+    @MainActor func testFailedImageCopyKeepsThePanelOpen() {
         let harness = makeClipboardPanelHarness(configure: seed)
         harness.actions.writeSucceeds = false
         harness.controller.handleHistoryPickerRequested()
@@ -4929,8 +4938,14 @@ extension WorkflowControllerProcessingTests {
         XCTAssertFalse(harness.controller.isHistoryPickerPresented)
     }
 
-    func testCopyImageTextCopiesRecognizedText() async {
-        let harness = makeClipboardPanelHarness(configure: seed)
+    @MainActor func testCopyImageTextCopiesRecognizedText() async throws {
+        let root = ClipboardTestSupport.temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let file = ClipboardTestSupport.makeFile(named: "image.png", in: root)
+        let harness = makeClipboardPanelHarness { store in
+            seed(store)
+            if let index = store.storedItems.firstIndex(where: { $0.payload == .image }) { store.storedItems[index].imagePath = file.path }
+        }
         harness.controller.handleHistoryPickerRequested()
         let image = harness.index(of: L("clipboard.entry.image"))
 
@@ -4943,6 +4958,27 @@ extension WorkflowControllerProcessingTests {
         harness.model.perform(.copyImageText, at: image)
         await waitUntil { harness.clipboard.storedText == "Hello" }
         XCTAssertEqual(harness.model.notice, L("clipboard.notice.imageTextCopied"))
+    }
+
+    @MainActor func testHistoryOCRFailureAndDeletionNeverWrite() async throws {
+        let root = ClipboardTestSupport.temporaryDirectory()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let file = ClipboardTestSupport.makeFile(named: "image.png", in: root)
+        let harness = makeClipboardPanelHarness { store in
+            seed(store)
+            if let index = store.storedItems.firstIndex(where: { $0.payload == .image }) { store.storedItems[index].imagePath = file.path }
+        }
+        harness.controller.handleHistoryPickerRequested()
+        let image = harness.index(of: L("clipboard.entry.image"))
+        harness.actions.recognition = { throw NSError(domain: "fixture", code: 1) }
+        harness.model.perform(.copyImageText, at: image)
+        await waitUntil { harness.model.notice != nil }
+        XCTAssertEqual(harness.model.notice, L("ask.plugin.clip.unavailable"))
+        XCTAssertNil(harness.clipboard.storedText)
+        harness.actions.recognition = { harness.store.storedItems.removeAll(); return "late" }
+        harness.model.perform(.copyImageText, at: image)
+        await waitUntil { !harness.controller.clipboardAction.isRunning }
+        XCTAssertNil(harness.clipboard.storedText)
     }
 
     func testRetryIgnoresClipboardEntries() {

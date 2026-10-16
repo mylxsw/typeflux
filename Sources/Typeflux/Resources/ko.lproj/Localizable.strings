@@ -5565,3 +5565,4 @@
 "activity.accessibility" = "%d개의 백그라운드 작업 진행 중";
 "activity.accessibility.attention" = "확인이 필요한 백그라운드 작업이 있습니다";
 "activity.accessibility.separator" = ", ";
+"screenshot.sensitive.failed" = "민감한 정보를 확인하지 못했습니다. 이미지를 검토하고 개인 정보를 직접 가려 주세요.";

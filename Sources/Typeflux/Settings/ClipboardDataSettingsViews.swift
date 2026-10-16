@@ -8,9 +8,11 @@ struct ClipboardIgnoredAppsSection: View {
     var body: some View {
         TFFormSection(title: L("clipboard.settings.section.ignored")) {
             ForEach(model.ignoredApps, id: \.id) { app in
-                TFFormRow(title: app.name, icon: "app.dashed", image: appIcon(app.bundleID)) {
-                    TFButton(title: L("clipboard.settings.ignored.remove"), systemImage: "minus", kind: .plain,
-                             size: .small, iconOnly: true) { model.removeIgnoredApp(app.bundleID) }
+                AskNativeIconImage(icon: ClipboardAppIconProvider.target(bundleID: app.bundleID)) { image in
+                    TFFormRow(title: app.name, icon: "app.dashed", image: image) {
+                        TFButton(title: L("clipboard.settings.ignored.remove"), systemImage: "minus", kind: .plain,
+                                 size: .small, iconOnly: true) { model.removeIgnoredApp(app.bundleID) }
+                    }
                 }
                 TFDivider.formWithIcon
             }
@@ -85,13 +87,15 @@ struct ClipboardUsageSection: View {
     }
 
     private func row(_ app: ClipboardUsage.App, largest: Int64) -> some View {
-        TFFormRow(title: appName(app),
-                  valueText: L("clipboard.settings.usage.row",
-                            ByteCountFormatter.string(fromByteCount: app.bytes, countStyle: .file), app.itemCount),
-                  icon: "app.dashed", image: appIcon(app.bundleID)) {
-            TFMeter(value: Double(app.bytes), total: Double(max(largest, 1)))
-            TFButton(title: L("clipboard.settings.usage.deleteApp.help"), systemImage: "trash", kind: .plain,
-                     size: .small, iconOnly: true) { pendingDelete = app }
+        AskNativeIconImage(icon: ClipboardAppIconProvider.target(bundleID: app.bundleID)) { image in
+            TFFormRow(title: appName(app),
+                      valueText: L("clipboard.settings.usage.row",
+                                ByteCountFormatter.string(fromByteCount: app.bytes, countStyle: .file), app.itemCount),
+                      icon: "app.dashed", image: image) {
+                TFMeter(value: Double(app.bytes), total: Double(max(largest, 1)))
+                TFButton(title: L("clipboard.settings.usage.deleteApp.help"), systemImage: "trash", kind: .plain,
+                         size: .small, iconOnly: true) { pendingDelete = app }
+            }
         }
     }
 
@@ -105,9 +109,4 @@ struct ClipboardUsageSection: View {
         let database = directory.appendingPathComponent("clipboard.sqlite")
         NSWorkspace.shared.activateFileViewerSelecting([database])
     }
-}
-
-/// The icon of an installed app; rows fall back to a generic tile without one.
-private func appIcon(_ bundleID: String?) -> NSImage? {
-    ClipboardAppIconProvider.shared.icon(forBundleID: bundleID)
 }

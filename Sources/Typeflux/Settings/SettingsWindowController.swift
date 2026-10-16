@@ -97,10 +97,7 @@ final class SettingsWindowController: NSObject {
         let moduleHealth = ModuleHealthSettingsModel(registry: moduleRegistry)
         moduleHealthModel = moduleHealth
         let view = StudioView(viewModel: viewModel, launcherPane: launcherPane ?? .basics, moduleHealth: moduleHealth)
-        let hosting = TransparentSettingsHostingView(rootView: view)
-        hosting.sizingOptions = []
-
-        let window = NSWindow(
+        let window = SettingsImageWindow(
             contentRect: NSRect(
                 x: 0,
                 y: 0,
@@ -111,6 +108,8 @@ final class SettingsWindowController: NSObject {
             backing: .buffered,
             defer: false
         )
+        let hosting = TransparentSettingsHostingView(rootView: SettingsImageContent(session: window.images, content: view))
+        hosting.sizingOptions = []
         window.title = L("window.voiceStudio")
         window.center()
         window.titlebarAppearsTransparent = true

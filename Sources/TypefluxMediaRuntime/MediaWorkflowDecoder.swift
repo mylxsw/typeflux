@@ -21,14 +21,17 @@ public enum MediaWorkflowDecoder {
         guard dpi.isFinite else { throw MediaFailure.unreadable }
         var metadata = MediaWorkflowImage(format: format, width: width, height: height, scale: dpi >= 144 ? 2 : 1)
         do { try metadata.validate(copying: false) } catch { throw MediaFailure.tooLarge }
-        if request.operation == .copyWorkflowImage {
-            guard width <= 8192, height <= 8192, width <= 16_777_216 / height,
+        if request.operation != .inspectWorkflowImage {
+            let clipboard = request.operation == .copyClipboardImage
+            guard !clipboard || (format == .png && data.count <= 10 * 1024 * 1024) else { throw MediaFailure.unreadable }
+            guard width <= (clipboard ? 16384 : 8192), height <= (clipboard ? 16384 : 8192), width <= (clipboard ? 16_000_000 : 16_777_216) / height,
                   let image = CGImageSourceCreateThumbnailAtIndex(source, 0, [
                     kCGImageSourceCreateThumbnailFromImageAlways: true,
                     kCGImageSourceCreateThumbnailWithTransform: true,
                     kCGImageSourceThumbnailMaxPixelSize: max(width, height),
                 ] as CFDictionary) else { throw MediaFailure.tooLarge }
-            let png = try encode(image, type: "public.png", scale: metadata.scale), tiff = try encode(image, type: "public.tiff", scale: metadata.scale)
+            let png = try clipboard ? data : encode(image, type: "public.png", scale: metadata.scale)
+            let tiff = try encode(image, type: "public.tiff", scale: metadata.scale)
             guard png.count <= MediaWorkflowImage.copyBytes, tiff.count <= MediaWorkflowImage.copyBytes - png.count
             else { throw MediaFailure.tooLarge }
             try png.write(to: directory.appendingPathComponent("clipboard-png"), options: .withoutOverwriting)

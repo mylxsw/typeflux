@@ -804,6 +804,10 @@ struct AskComposer: View {
     }
 
     private func performPluginAction(_ action: AskPluginAction) {
+        if case let .pasteClipboard(id) = action.kind {
+            if model.applyLauncherClipboard(id: id, paste: true, completed: onDismiss) == .close { onDismiss() }
+            return
+        }
         if case let .copyImage(url) = action.kind {
             model.copyWorkflowImage(url, completed: onDismiss)
             return

@@ -6,13 +6,13 @@ final class SystemClipboardContentActions: ClipboardContentActing {
     private let pasteboard: NSPasteboard
     private let fileManager: FileManager
     private let downloadsDirectory: URL?
-    private let textRecognizer: any ImageTextRecognizing
+    private let textRecognizer: (any ImageTextRecognizing)?
 
     init(
         pasteboard: NSPasteboard = .general,
         fileManager: FileManager = .default,
         downloadsDirectory: URL? = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first,
-        textRecognizer: any ImageTextRecognizing = VisionImageTextRecognizer()
+        textRecognizer: (any ImageTextRecognizing)? = nil
     ) {
         self.pasteboard = pasteboard
         self.fileManager = fileManager
@@ -20,21 +20,24 @@ final class SystemClipboardContentActions: ClipboardContentActing {
         self.textRecognizer = textRecognizer
     }
 
+    var pasteboardRevision: Int? { pasteboard.changeCount }
+
     @discardableResult
-    func writeToPasteboard(_ entry: ClipboardEntry, asPlainText: Bool) -> Bool {
+    func writeToPasteboard(_ entry: ClipboardEntry, asPlainText: Bool, image: AskWorkflowImage.Clipboard?) -> Bool {
         if !entry.filePaths.isEmpty {
+            guard entry.filePaths.count <= ClipboardCaptureRules.maximumFileCount,
+                  entry.filePaths.reduce(0, { $0 + $1.utf8.count }) <= ClipboardCaptureRules.maximumTextBytes,
+                  entry.filePaths.allSatisfy({ !$0.contains("\0") && fileManager.fileExists(atPath: $0) }) else { return false }
             pasteboard.clearContents()
             if asPlainText {
                 return pasteboard.setString(entry.filePaths.joined(separator: "\n"), forType: .string)
             }
             return pasteboard.writeObjects(entry.fileURLs as [NSURL])
         }
-        guard let imagePath = entry.imagePath, let png = fileManager.contents(atPath: imagePath) else { return false }
+        guard let imagePath = entry.imagePath, let image,
+              image.sourceRevision?.matches(URL(fileURLWithPath: imagePath)) == true else { return false }
         let item = NSPasteboardItem()
-        item.setData(png, forType: .png)
-        if let tiff = NSImage(data: png)?.tiffRepresentation {
-            item.setData(tiff, forType: .tiff)
-        }
+        guard item.setData(image.png, forType: .png), item.setData(image.tiff, forType: .tiff) else { return false }
         pasteboard.clearContents()
         return pasteboard.writeObjects([item])
     }
@@ -74,12 +77,8 @@ final class SystemClipboardContentActions: ClipboardContentActing {
         }
     }
 
-    func recognizeText(in imageURL: URL) async -> String? {
-        do {
-            return try await textRecognizer.recognizeText(in: .url(imageURL)).string
-        } catch {
-            ErrorLogStore.shared.log("Clipboard text recognition failed: \(error.localizedDescription)")
-            return nil
-        }
+    func recognizeText(in imageURL: URL) async throws -> String? {
+        if let textRecognizer { return try await textRecognizer.recognizeText(in: .url(imageURL)).string }
+        return try await ClipboardTextRecognizer().recognize(imageURL)
     }
 }

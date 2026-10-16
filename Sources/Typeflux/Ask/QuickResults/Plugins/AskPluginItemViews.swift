@@ -78,8 +78,10 @@ struct AskPluginItemIcon: View {
 
     var body: some View {
         Group {
-            if case let .websiteIcon(url, fallback) = icon {
-                AskBrowserFaviconView(url: url, fallback: fallback, symbol: symbol, filled: filled).id(generation)
+            if case let .websiteIcon(url, fallback, application) = icon {
+                AskBrowserFaviconView(url: url, fallback: fallback, application: application, symbol: symbol, filled: filled).id(generation)
+            } else if case let .application(bundleID) = icon {
+                AskNativeIconView(icon: .init(kind: .application, value: bundleID), symbol: symbol).frame(width: 26, height: 26)
             } else if case let .fileIcon(url) = icon {
                 AskFileIconView(url: url, thumbnail: false).frame(width: 26, height: 26)
             } else if case let .image(url) = icon {

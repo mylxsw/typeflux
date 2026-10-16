@@ -22,6 +22,10 @@ final class DIContainer {
     let nativeSystemCommands = NativeSystemWorker.shared
     let mediaWorkers = MediaWorker.shared
     let mediaPreviewWorkers = MediaWorker.previews
+    let clipboardThumbnailWorkers = MediaWorker.clipboardThumbnails
+    let textRecognitionWorkers = MediaWorker.textRecognition
+    let clipboardOCRWorkers = MediaWorker.clipboardOCR
+    let clipboardMetadataWorkers = MediaWorker.clipboardMetadata
     let localInferenceWorkers = WhisperWorkerPool.shared
     let noteStore: RecoveringAskNoteStore
     let wordBookStore: RecoveringAskWordBookStore

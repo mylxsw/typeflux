@@ -1,5 +1,6 @@
 @testable import Typeflux
 import XCTest
+import TypefluxMediaRuntime
 
 final class ClipboardMediaInfoProviderTests: XCTestCase {
     private var directory: URL!
@@ -17,7 +18,7 @@ final class ClipboardMediaInfoProviderTests: XCTestCase {
     // MARK: - Accumulator
 
     func testAccumulatorKeepsThePeakOfEachBar() {
-        var accumulator = ClipboardWaveformAccumulator(bars: 4, expectedSamples: 8)
+        var accumulator = MediaClipboardWaveformAccumulator(bars: 4, expectedSamples: 8)
         accumulator.add([0.1, -0.2, 0.4, 0.3])
         accumulator.add([-0.8, 0.1, 0, 0.2])
         XCTAssertEqual(accumulator.peaks, [0.2, 0.4, 0.8, 0.2])
@@ -25,7 +26,7 @@ final class ClipboardMediaInfoProviderTests: XCTestCase {
     }
 
     func testAccumulatorPutsOverflowInTheLastBarAndKeepsSilenceFlat() {
-        var accumulator = ClipboardWaveformAccumulator(bars: 2, expectedSamples: 2)
+        var accumulator = MediaClipboardWaveformAccumulator(bars: 2, expectedSamples: 2)
         accumulator.add([0, 0, 0, 0])
         XCTAssertEqual(accumulator.levels(), [0, 0])
         accumulator.add([0.5])
@@ -33,7 +34,7 @@ final class ClipboardMediaInfoProviderTests: XCTestCase {
     }
 
     func testAccumulatorToleratesDegenerateSizes() {
-        var accumulator = ClipboardWaveformAccumulator(bars: 0, expectedSamples: 0)
+        var accumulator = MediaClipboardWaveformAccumulator(bars: 0, expectedSamples: 0)
         accumulator.add([0.3, -0.6])
         XCTAssertEqual(accumulator.levels(), [1])
     }
@@ -52,10 +53,6 @@ final class ClipboardMediaInfoProviderTests: XCTestCase {
         let task = Task { await provider.waveform(for: url, bars: 8) }
         task.cancel()
         _ = await task.value
-        // A cancelled decode may finish before it notices; either way the cache stays consistent.
-        if let cached = provider.cachedWaveform(for: url, bars: 8) {
-            XCTAssertEqual(cached.count, 8)
-        }
         let levels = await provider.waveform(for: url, bars: 8)
         XCTAssertEqual(levels?.count, 8)
     }
@@ -66,21 +63,15 @@ final class ClipboardMediaInfoProviderTests: XCTestCase {
         let url = try ClipboardTestSupport.makeAudioFile(named: "tone.wav", in: directory, seconds: 1)
         let provider = ClipboardMediaInfoProvider()
 
-        XCTAssertNil(provider.cachedInfo(for: url))
         let info = await provider.info(for: url, kind: .audio)
         XCTAssertEqual(info?.duration ?? 0, 1, accuracy: 0.05)
         XCTAssertNil(info?.pageCount)
-        XCTAssertEqual(provider.cachedInfo(for: url), info)
 
-        XCTAssertNil(provider.cachedWaveform(for: url, bars: 10))
         let waveform = await provider.waveform(for: url, bars: 10)
         let levels = try XCTUnwrap(waveform)
         XCTAssertEqual(levels.count, 10)
         XCTAssertEqual(levels.max() ?? 0, 1, accuracy: 0.001)
         XCTAssertLessThan(levels[0], levels[9], "The tone gets louder towards the end")
-        XCTAssertEqual(provider.cachedWaveform(for: url, bars: 10), levels)
-        XCTAssertEqual(provider.cachedWaveform(for: url, bars: 5)?.count, 5, "One decode serves every bar count")
-        XCTAssertNil(provider.cachedWaveform(for: url, bars: 0))
     }
 
     func testPDFPageCount() async {

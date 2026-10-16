@@ -28,29 +28,30 @@ final class SystemClipboardContentActionsTests: XCTestCase {
         let second = ClipboardTestSupport.makeFile(named: "b.txt", in: directory)
         let entry = ClipboardTestSupport.entry(.files, filePaths: [first.path, second.path])
 
-        XCTAssertTrue(actions.writeToPasteboard(entry, asPlainText: false))
+        XCTAssertTrue(actions.writeToPasteboard(entry, asPlainText: false, image: nil))
         let urls = try XCTUnwrap(pasteboard.readObjects(forClasses: [NSURL.self], options: nil) as? [URL])
         XCTAssertEqual(urls.map(\.lastPathComponent), ["a.pdf", "b.txt"])
 
-        XCTAssertTrue(actions.writeToPasteboard(entry, asPlainText: true))
+        XCTAssertTrue(actions.writeToPasteboard(entry, asPlainText: true, image: nil))
         XCTAssertEqual(pasteboard.string(forType: .string), "\(first.path)\n\(second.path)")
     }
 
-    func testWritesStoredImagesAsPNGAndTIFF() {
+    func testWritesStoredImagesAsPNGAndTIFF() async throws {
         let png = ClipboardTestSupport.imageData(width: 4, height: 4)
         let file = directory.appendingPathComponent("shot.png")
         FileManager.default.createFile(atPath: file.path, contents: png)
 
         let entry = ClipboardTestSupport.entry(.image, imagePath: file.path)
-        XCTAssertTrue(actions.writeToPasteboard(entry, asPlainText: false))
+        let prepared = try await actions.prepareImage(entry)
+        XCTAssertTrue(actions.writeToPasteboard(entry, asPlainText: false, image: prepared))
         XCTAssertEqual(pasteboard.data(forType: .png), png)
         XCTAssertNotNil(pasteboard.data(forType: .tiff))
     }
 
     func testWritingFailsWithoutContent() {
         let missing = ClipboardTestSupport.entry(.image, imagePath: "/missing.png")
-        XCTAssertFalse(actions.writeToPasteboard(missing, asPlainText: false))
-        XCTAssertFalse(actions.writeToPasteboard(ClipboardTestSupport.entry(.image), asPlainText: false))
+        XCTAssertFalse(actions.writeToPasteboard(missing, asPlainText: false, image: nil))
+        XCTAssertFalse(actions.writeToPasteboard(ClipboardTestSupport.entry(.image), asPlainText: false, image: nil))
     }
 
     func testSavesCopiesIntoDownloadsWithoutOverwriting() throws {
@@ -74,15 +75,15 @@ final class SystemClipboardContentActionsTests: XCTestCase {
         let png = ClipboardTestSupport.imageData(width: 900, height: 240, text: "TYPEFLUX")
         let file = directory.appendingPathComponent("text.png")
         try png.write(to: file)
-        let text = await actions.recognizeText(in: file)
+        let text = try await actions.recognizeText(in: file)
         XCTAssertEqual(text?.uppercased().contains("TYPEFLUX"), true)
 
         let blank = directory.appendingPathComponent("blank.png")
         try ClipboardTestSupport.imageData(width: 200, height: 200).write(to: blank)
-        let none = await actions.recognizeText(in: blank)
+        let none = try await actions.recognizeText(in: blank)
         XCTAssertNil(none)
 
-        let missing = await actions.recognizeText(in: directory.appendingPathComponent("missing.png"))
+        let missing = try? await actions.recognizeText(in: directory.appendingPathComponent("missing.png"))
         XCTAssertNil(missing)
     }
 }
@@ -95,16 +96,16 @@ final class SystemClipboardContentActionsRecognizerTests: XCTestCase {
         func recognizeText(in _: ImageTextSource) async throws -> RecognizedText { try result.get() }
     }
 
-    func testUsesTheInjectedRecognizer() async {
+    func testUsesTheInjectedRecognizer() async throws {
         let lines = [RecognizedText.Line(text: "Injected", confidence: 1, boundingBox: .zero)]
         let actions = SystemClipboardContentActions(textRecognizer: FixedRecognizer(result: .success(RecognizedText(lines: lines))))
-        let text = await actions.recognizeText(in: URL(fileURLWithPath: "/unused.png"))
+        let text = try await actions.recognizeText(in: URL(fileURLWithPath: "/unused.png"))
         XCTAssertEqual(text, "Injected")
     }
 
-    func testRecognitionFailuresBecomeNil() async {
+    func testRecognitionFailureIsDistinctFromEmptyText() async {
         let actions = SystemClipboardContentActions(textRecognizer: FixedRecognizer(result: .failure(UnreadableImage())))
-        let text = await actions.recognizeText(in: URL(fileURLWithPath: "/unused.png"))
-        XCTAssertNil(text)
+        do { _ = try await actions.recognizeText(in: URL(fileURLWithPath: "/unused.png")); XCTFail("Failure became empty text") }
+        catch { XCTAssertTrue(error is UnreadableImage) }
     }
 }

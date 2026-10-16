@@ -63,9 +63,14 @@ enum MediaPreviewDisplay {
                    cancellation: cancellation, worker: worker, icon: icon)
     }
 
+    static func renderQuickLook(_ target: MediaQuickLook, options: MediaPreviewOptions, cancellation: AskSearchCancellation,
+                                worker: MediaWorker = .previews) throws -> AskFilePreviewPDF.Result {
+        try decode(.data(Data()), operation: .quickLook, options: options, cancellation: cancellation, worker: worker, quickLook: target)
+    }
+
     private static func decode(_ input: MediaWorker.Input, operation: MediaRequest.Operation, options: MediaPreviewOptions,
-                               cancellation: AskSearchCancellation, worker: MediaWorker, icon: MediaNativeIcon? = nil) throws -> AskFilePreviewPDF.Result {
-        return try worker.perform(operation, input: input, preview: options, icon: icon,
+                               cancellation: AskSearchCancellation, worker: MediaWorker, icon: MediaNativeIcon? = nil, quickLook: MediaQuickLook? = nil) throws -> AskFilePreviewPDF.Result {
+        return try worker.perform(operation, input: input, preview: options, icon: icon, quickLook: quickLook,
                                   isCancelled: { cancellation.isCancelled }) { response, directory in
             guard let result = response.preview else { throw MediaFailure.invalidProtocol }
             let images = try result.rasters.enumerated().map { index, raster in
