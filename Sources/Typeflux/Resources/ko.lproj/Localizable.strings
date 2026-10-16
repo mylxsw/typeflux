@@ -5569,3 +5569,5 @@
 
 "screenshot.mosaic.preparing" = "텍스트 감지 중입니다. 감지가 끝나지 않은 마스크는 전체 영역을 가립니다.";
 "screenshot.mosaic.unavailable" = "텍스트 감지를 사용할 수 없습니다. 미완료 마스크는 전체 영역을 가립니다.";
+
+"clipboard.audio.unavailable" = "오디오를 재생할 수 없습니다. 미리보기를 닫았다 다시 열어 불러오세요.";

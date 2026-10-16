@@ -75,7 +75,7 @@ final class MediaWorker: @unchecked Sendable {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false,
                                                attributes: [.posixPermissions: 0o700])
         lease.directory = directory
-        try copy(input, to: directory.appendingPathComponent("input"),
+        try Self.copy(input, to: directory.appendingPathComponent("input"),
                  limit: operation == .registerFrames ? MediaRegistrationInput.pairBytes : (operation == .recognizeText || operation == .textGeometry) ? (textInput == nil ? MediaOCRResult.inputBytes : MediaTextInput.rawBytes) : operation == .clipboardOCR ? MediaOCRResult.inputBytes : operation.isWorkflowImage ? MediaWorkflowImage.inputBytes : operation == .validateGeneratedImage ? 16 * 1024 * 1024 : operation == .normalizeImage ? 10 * 1024 * 1024 : (operation.isAV || (clipboard != nil && clipboard?.kind != .pdf) ? MediaAVLimits.inputBytes : MediaLimits.inputBytes), cancelled: cancelled)
         try check(cancelled)
         let fd = open(directory.path, O_RDONLY | O_DIRECTORY | O_CLOEXEC)
@@ -110,7 +110,7 @@ final class MediaWorker: @unchecked Sendable {
         if cancelled() { throw CancellationError() }
     }
 
-    private func copy(_ input: Input, to target: URL, limit: Int, cancelled: () -> Bool) throws {
+    static func copy(_ input: Input, to target: URL, limit: Int, cancelled: () -> Bool) throws {
         switch input {
         case let .data(data):
             guard data.count <= limit else { throw MediaFailure.tooLarge }
@@ -129,7 +129,7 @@ final class MediaWorker: @unchecked Sendable {
             defer { close(output) }
             var buffer = [UInt8](repeating: 0, count: 65536), total = 0
             while true {
-                try check(cancelled)
+                if cancelled() { throw CancellationError() }
                 let count = read(fd, &buffer, buffer.count)
                 if count == 0 { break }
                 if count < 0 { if errno == EINTR { continue }; throw MediaFailure.unreadable }
@@ -138,7 +138,7 @@ final class MediaWorker: @unchecked Sendable {
                 try buffer.withUnsafeBytes { bytes in
                     var offset = 0
                     while offset < count {
-                        try check(cancelled)
+                        if cancelled() { throw CancellationError() }
                         let written = write(output, bytes.baseAddress!.advanced(by: offset), count - offset)
                         if written < 0, errno == EINTR { continue }
                         guard written > 0 else { throw MediaFailure.unavailable }
@@ -166,7 +166,7 @@ final class MediaWorker: @unchecked Sendable {
 
 /// Cleanup needs both host completion and actual child collection. The pool
 /// retains this lease when a child cannot be collected within the stop budget.
-private final class MediaLease: @unchecked Sendable {
+final class MediaLease: @unchecked Sendable {
     private let lock = NSLock()
     private var stopped = false, launched = false, collected = false, finished = false, cleaned = false
     var directory: URL?

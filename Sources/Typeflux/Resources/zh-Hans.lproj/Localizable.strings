@@ -5683,3 +5683,5 @@
 
 "screenshot.mosaic.preparing" = "正在检测文字；未完成检测的遮罩覆盖整个区域。";
 "screenshot.mosaic.unavailable" = "文字检测不可用；未完成检测的遮罩继续覆盖整个区域。";
+
+"clipboard.audio.unavailable" = "音频播放不可用。关闭并重新打开预览可重新加载。";
