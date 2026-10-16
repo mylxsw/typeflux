@@ -9,6 +9,12 @@ final class AskGeneratedImageValidator: @unchecked Sendable {
     private let worker: MediaWorker
     init(worker: MediaWorker = .previews) { self.worker = worker }
 
+    /// One received-output batch keeps its original native availability across all images.
+    func batch() -> @Sendable (Data) async throws -> AskGeneratedImageData {
+        let authorization = worker.authorization()
+        return { [self] in try await validate($0, authorization: authorization) }
+    }
+
     func validate(_ data: Data) async throws -> AskGeneratedImageData {
         try await validate(data, authorization: worker.authorization())
     }
