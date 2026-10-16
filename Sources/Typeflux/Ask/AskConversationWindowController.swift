@@ -476,6 +476,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         dockVisibility.windowDidShow(conversationWindow)
         if conversationWindow.isMiniaturized { conversationWindow.deminiaturize(nil) }
         NSApp.activate(ignoringOtherApps: true)
+        model.setRemoteImagesVisible(true)
         conversationWindow.makeKeyAndOrderFront(nil)
         focusEditor(in: conversationWindow)
         conversationRefreshTask = Task { await model.refreshHistory(); await model.loadSavedChatDrafts() }
@@ -500,6 +501,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             }
         }
         model.voiceInput.cancel()
+        model.setRemoteImagesVisible(false)
         sender.orderOut(nil)
         dockVisibility.windowDidHide(sender)
         return false
@@ -507,7 +509,7 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
 
     func windowWillClose(_ notification: Notification) {
         guard let window = notification.object as? NSWindow else { return }
-        if window === conversationWindow { model.cancelAttachmentWork(launcher: false) }
+        if window === conversationWindow { model.cancelAttachmentWork(launcher: false); model.setRemoteImagesVisible(false) }
         dockVisibility.windowDidHide(window)
     }
 
@@ -515,9 +517,10 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
         guard active else {
             let wasVisible = controlPanel?.isVisible == true
             controlPanel?.orderOut(nil)
-            if wasVisible { conversationWindow?.makeKeyAndOrderFront(nil) }
+            if wasVisible { model.setRemoteImagesVisible(true); conversationWindow?.makeKeyAndOrderFront(nil) }
             return
         }
+        model.setRemoteImagesVisible(false)
         conversationWindow?.orderOut(nil)
         if controlPanel == nil {
             let panel = AskFloatingPanel(contentRect: NSRect(x: 0, y: 0, width: 380, height: 60), styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: false)

@@ -90,16 +90,17 @@ struct AskConversationView: View {
                 previousResponder = nil
             }
         }
-        .onDisappear { showsGenerationRecovery = false }
+        .onDisappear { showsGenerationRecovery = false; model.setRemoteImagesVisible(false) }
         .onChange(of: model.selectionGeneration) { _ in showsGenerationRecovery = false }
-        .onChange(of: auth.isLoggedIn) { _ in showsGenerationRecovery = false }
-        .onChange(of: auth.userProfile?.id) { _ in showsGenerationRecovery = false }
+        .onChange(of: auth.isLoggedIn) { _ in showsGenerationRecovery = false; model.invalidateRemoteImages() }
+        .onChange(of: auth.userProfile?.id) { _ in showsGenerationRecovery = false; model.invalidateRemoteImages() }
         .sheet(isPresented: $showsGenerationRecovery) {
             if let access = model.generationRecoveryAccess {
                 AskGenerationRecoveryView(access: access, close: { showsGenerationRecovery = false })
             }
         }
         .tint(AskTheme.accent)
+        .environment(\.askRemoteImageAccess, model.remoteImageAccess)
         .environment(\.askArtifactAccess, model.artifactAccess)
         .environment(\.askTerminalAccess, model.terminalAccess)
         .onChange(of: model.draft) { _ in model.persistDrafts() }
