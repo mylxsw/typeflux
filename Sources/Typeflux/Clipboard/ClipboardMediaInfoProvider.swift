@@ -14,7 +14,12 @@ final class ClipboardMediaInfoProvider: @unchecked Sendable {
     static let waveformResolution = MediaClipboardOptions.buckets
     private static let admission = AskToolPixelBudget(limit: 2)
     private let worker: MediaWorker
-    init(worker: MediaWorker = .clipboardMetadata) { self.worker = worker }
+    typealias SourceReader = @Sendable (URL) throws -> Stamp
+    private let readSource: SourceReader
+    init(worker: MediaWorker = .clipboardMetadata,
+         readSource: @escaping SourceReader = { try Stamp($0) }) {
+        self.worker = worker; self.readSource = readSource
+    }
 
     struct Request: Hashable, Sendable {
         let url: URL
@@ -35,22 +40,28 @@ final class ClipboardMediaInfoProvider: @unchecked Sendable {
         try Task.checkCancellation()
         guard request.url.isFileURL, request.url.path.utf8.count <= 4096, !request.url.path.contains("\0") else { throw MediaFailure.invalidProtocol }
         try request.options.validate()
+        let authorization = worker.authorization()
+        guard worker.permits(authorization) else { throw MediaFailure.unavailable }
         let slot = try Self.admission.acquire(bytes: 1)
         defer { withExtendedLifetime(slot) {} }
-        let cancellation = AskSearchCancellation(), worker = self.worker
+        let cancellation = AskSearchCancellation(), worker = self.worker, readSource = self.readSource
+        let cancelled: @Sendable () -> Bool = { cancellation.isCancelled || !worker.permits(authorization) }
         return try await withTaskCancellationHandler {
             let result = try await Task.detached(priority: .utility) {
-                if cancellation.isCancelled { throw CancellationError() }
-                let before = try Stamp(request.url)
+                if cancelled() { throw CancellationError() }
+                let before = try readSource(request.url)
+                if cancelled() { throw CancellationError() }
                 let value = try worker.perform(.clipboardMedia, input: .file(request.url), clipboard: request.options,
-                    isCancelled: { cancellation.isCancelled }) { response, _ in
+                    authorization: authorization, isCancelled: cancelled) { response, _ in
                         guard let value = response.clipboard else { throw MediaFailure.invalidProtocol }
                         return value
                     }
-                guard before == (try Stamp(request.url)) else { throw MediaFailure.unreadable }
+                guard before == (try readSource(request.url)) else { throw MediaFailure.unreadable }
+                if cancelled() { throw CancellationError() }
                 return value
             }.value
             try Task.checkCancellation()
+            if cancelled() { throw CancellationError() }
             return result
         } onCancel: { cancellation.cancel() }
     }
@@ -82,7 +93,7 @@ final class ClipboardMediaInfoProvider: @unchecked Sendable {
             return levels[start..<min(end, levels.count)].max() ?? 0
         }
     }
-    private struct Stamp: Equatable {
+    struct Stamp: Equatable, Sendable {
         let device: dev_t; let inode: ino_t; let bytes: off_t
         let modified: Int; let modifiedNanos: Int; let changed: Int; let changedNanos: Int
         init(_ url: URL) throws {
