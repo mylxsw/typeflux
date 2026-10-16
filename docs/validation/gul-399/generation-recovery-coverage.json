@@ -1,0 +1,96 @@
+{
+  "covered": 182,
+  "executable_added": 196,
+  "percent": 92.86,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Ask/AskConversationViews.swift",
+      "covered": 9,
+      "executable_added": 17,
+      "percent": 52.94,
+      "uncovered": [
+        58,
+        98,
+        99,
+        100,
+        101,
+        330,
+        338,
+        339
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskLocalTools.swift",
+      "covered": 0,
+      "executable_added": 1,
+      "percent": 0.0,
+      "uncovered": [
+        51
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/ImageGeneration/AskGenerationRecovery.swift",
+      "covered": 109,
+      "executable_added": 109,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/ImageGeneration/AskGenerationRecoveryView.swift",
+      "covered": 64,
+      "executable_added": 69,
+      "percent": 92.75,
+      "uncovered": [
+        91,
+        92,
+        93,
+        94,
+        95
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Resources/en.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    },
+    {
+      "file": "Sources/Typeflux/Resources/ja.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    },
+    {
+      "file": "Sources/Typeflux/Resources/ko.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    },
+    {
+      "file": "Sources/Typeflux/Resources/zh-Hans.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    },
+    {
+      "file": "Sources/Typeflux/Resources/zh-Hant.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    }
+  ]
+}

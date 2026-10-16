@@ -5615,3 +5615,10 @@
 "localSTT.error.inferenceUnavailable" = "本地转写暂不可用，未重复提交本次请求。请稍后重试。";
 
 "ask.attach.busy" = "附件处理中，请稍后重试。";
+
+// Private generation output recovery
+"imagegen.recovery.title" = "恢复生图输出";
+"imagegen.recovery.detail" = "导出此会话保留的文件。文件未经校验，可能包含提示词或服务商链接。此操作不会重新生成、下载链接或改变原有的未知执行状态。记录保留至你删除会话。";
+"imagegen.recovery.empty" = "此会话没有可恢复的输出。";
+"imagegen.recovery.saved" = "文件已保存，私有原件和执行状态保持不变。";
+"imagegen.recovery.unavailable" = "恢复暂不可用或访问权限已变化。私有原件未删除。";

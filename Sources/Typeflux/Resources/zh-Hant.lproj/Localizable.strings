@@ -5535,3 +5535,10 @@
 "localSTT.error.inferenceUnavailable" = "本機轉寫暫時無法使用，未重複提交本次請求。請稍後再試。";
 
 "ask.attach.busy" = "附件處理中，請稍後再試。";
+
+// Private generation output recovery
+"imagegen.recovery.title" = "復原生圖輸出";
+"imagegen.recovery.detail" = "匯出此對話保留的檔案。檔案未經驗證，可能包含提示詞或服務商連結。此操作不會重新生成、下載連結或改變原有的未知執行狀態。記錄保留至你刪除對話。";
+"imagegen.recovery.empty" = "此對話沒有可復原的輸出。";
+"imagegen.recovery.saved" = "檔案已儲存，私有原件和執行狀態保持不變。";
+"imagegen.recovery.unavailable" = "復原暫不可用或存取權限已變更。私有原件未刪除。";

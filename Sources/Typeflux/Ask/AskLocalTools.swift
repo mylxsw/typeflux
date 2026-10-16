@@ -20,6 +20,7 @@ enum AskToolRisk: Int, Comparable, Sendable {
 
 @MainActor
 protocol AskToolExecuting {
+    var generationRecoveryRoot: URL? { get }
     func bindConversation(_ id: String)
     func bindExecution(ownerId: String, conversationId: String, runId: String)
     func setExecutionDeadline(_ deadline: Date?, conversationId: String)
@@ -47,6 +48,7 @@ protocol AskToolExecuting {
 }
 
 extension AskToolExecuting {
+    var generationRecoveryRoot: URL? { nil }
     func setExecutionDeadline(_: Date?, conversationId _: String) {}
     func deleteArtifacts(ownerId _: String, conversationId _: String) throws {}
     func cancelProjects(conversationId _: String?) {}
