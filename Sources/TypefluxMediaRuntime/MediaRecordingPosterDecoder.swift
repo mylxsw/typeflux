@@ -17,7 +17,7 @@ public enum MediaRecordingPosterDecoder {
         if gif {
             guard let source = CGImageSourceCreateWithURL(input as CFURL, [kCGImageSourceShouldCache: false] as CFDictionary),
                   CGImageSourceGetType(source) as String? == "com.compuserve.gif",
-                  (1...300).contains(CGImageSourceGetCount(source)),
+                  (1...301).contains(CGImageSourceGetCount(source)),
                   CGImageSourceGetStatusAtIndex(source, 0) == .statusComplete,
                   let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
                   let width = properties[kCGImagePropertyPixelWidth] as? NSNumber,

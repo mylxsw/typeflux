@@ -1,0 +1,13 @@
+{
+  "main": "af530bb4d084ab0fbeec3353d66fb32dfd5e89d7",
+  "feature": "cf486833",
+  "main_only_preserved": 430,
+  "feature_only_preserved": 13,
+  "shared": [
+    "Sources/Typeflux/Resources/en.lproj/Localizable.strings",
+    "Sources/Typeflux/Resources/ja.lproj/Localizable.strings",
+    "Sources/Typeflux/Resources/ko.lproj/Localizable.strings",
+    "Sources/Typeflux/Resources/zh-Hans.lproj/Localizable.strings",
+    "Sources/Typeflux/Resources/zh-Hant.lproj/Localizable.strings"
+  ]
+}
