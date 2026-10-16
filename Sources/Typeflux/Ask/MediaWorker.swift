@@ -9,7 +9,7 @@ final class MediaWorker: @unchecked Sendable {
     static let recordingTimeline = MediaWorker(timeout: 30)
     static let previews = MediaWorker(timeout: 3, requiresLifecycle: true)
     static let clipboardThumbnails = MediaWorker(timeout: 3, requiresLifecycle: true)
-    static let frameRegistration = MediaWorker(timeout: 3)
+    static let frameRegistration = MediaWorker(timeout: 3, requiresLifecycle: true)
     static let textRecognition = MediaWorker(timeout: 30)
     static let clipboardOCR = MediaWorker(timeout: 30)
     static let clipboardMetadata = MediaWorker(timeout: 10)

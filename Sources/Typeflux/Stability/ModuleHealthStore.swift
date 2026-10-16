@@ -1,7 +1,7 @@
 import Foundation
 
 enum ModuleID: String, Codable, CaseIterable, Sendable {
-    case conversations, wordBook, notebook, mediaExtraction, mediaPreviews, clipboardThumbnails
+    case conversations, wordBook, notebook, mediaExtraction, mediaPreviews, clipboardThumbnails, frameRegistration
 }
 
 /// One small file per fault domain. No user content, paths, errors or clock
