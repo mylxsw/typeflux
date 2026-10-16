@@ -257,6 +257,10 @@ extension AskOpenChatTests {
             window.makeKeyAndOrderFront(nil)
             defer { window.close(); f.model.resetSession() }
             try await Task.sleep(for: .milliseconds(200))
+            if text.hasPrefix("chat ") {
+                // Keyword detection changes the input before its plan is ready.
+                try await f.wait { f.model.plugins.isPlanCurrent }
+            }
             func find(_ view: NSView) -> AskComposerTextView.Editor? {
                 (view as? AskComposerTextView.Editor) ?? view.subviews.lazy.compactMap(find).first
             }

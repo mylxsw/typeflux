@@ -1,0 +1,175 @@
+{
+  "covered": 543,
+  "executable_added": 568,
+  "percent": 95.6,
+  "files": [
+    {
+      "file": "Sources/Typeflux/App/DIContainer.swift",
+      "covered": 0,
+      "executable_added": 2,
+      "percent": 0.0,
+      "uncovered": [
+        144,
+        145
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/App/ProcessCommandRunner.swift",
+      "covered": 34,
+      "executable_added": 34,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskConversationCache.swift",
+      "covered": 0,
+      "executable_added": 2,
+      "percent": 0.0,
+      "uncovered": [
+        66,
+        67
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskConversationWindowController.swift",
+      "covered": 1,
+      "executable_added": 1,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskConversationWindowServices.swift",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    },
+    {
+      "file": "Sources/Typeflux/Ask/Execution/ManagedProcess.swift",
+      "covered": 139,
+      "executable_added": 142,
+      "percent": 97.89,
+      "uncovered": [
+        132,
+        133,
+        134
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/Execution/OwnedProcessReaper.swift",
+      "covered": 46,
+      "executable_added": 46,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/System/AskSystemCommandRunner.swift",
+      "covered": 1,
+      "executable_added": 1,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowRunner.swift",
+      "covered": 36,
+      "executable_added": 37,
+      "percent": 97.3,
+      "uncovered": [
+        77
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/Recovery/RecoveringAskConversationCache.swift",
+      "covered": 95,
+      "executable_added": 99,
+      "percent": 95.96,
+      "uncovered": [
+        16,
+        17,
+        18,
+        77
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Clipboard/ClipboardCapture.swift",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Clipboard/ClipboardCaptureRules.swift",
+      "covered": 30,
+      "executable_added": 30,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Clipboard/ClipboardCaptureWorker.swift",
+      "covered": 60,
+      "executable_added": 72,
+      "percent": 83.33,
+      "uncovered": [
+        64,
+        89,
+        90,
+        91,
+        92,
+        93,
+        94,
+        95,
+        96,
+        103,
+        104,
+        105
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Clipboard/ClipboardMonitor.swift",
+      "covered": 49,
+      "executable_added": 50,
+      "percent": 98.0,
+      "uncovered": [
+        88
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Clipboard/ClipboardWorkBudget.swift",
+      "covered": 22,
+      "executable_added": 22,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Stability/ModuleRecoveryBudget.swift",
+      "covered": 30,
+      "executable_added": 30,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/TypefluxCLI/main.swift",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    }
+  ]
+}

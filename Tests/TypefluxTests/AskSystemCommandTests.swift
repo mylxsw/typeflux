@@ -120,6 +120,8 @@ struct AskSystemCommandTests {
         #expect(launcher.fixture.model.launcherDraft.text == draft)
         #expect(launcher.fixture.model.plugins.keyword == keyword)
         accepted = true
+        // This is a new user attempt, outside the launcher's duplicate-key guard.
+        try await Task.sleep(for: .milliseconds(300))
         try await launcher.press(36)
         try await launcher.fixture.wait { !process.calls.isEmpty }
         #expect(confirmations == [.displaySleep, .displaySleep])

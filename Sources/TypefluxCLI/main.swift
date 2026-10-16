@@ -9,6 +9,8 @@ struct TypefluxCLI {
         switch arguments.first {
         case "file-index-worker":
             exit(AskFileWorkerCommand.run())
+        case "clipboard-capture-worker":
+            exit(ClipboardCaptureWorkerCommand.run(arguments: Array(arguments.dropFirst())))
         #if DEBUG
         case "audio-capture-check":
             arguments.removeFirst()

@@ -5,7 +5,28 @@ import Testing
 @MainActor
 @Suite("Conversation workspace service wiring", .serialized, .exclusiveUIState)
 struct AskConversationWindowServicesTests {
-    @Test func workspaceCallbacksPersistNotesAndNavigateToTheOwnedWindows() async throws {
+    @Test func `launcher opens when conversation storage cannot be opened`() async throws {
+        try await SettingsBehaviorTestSupport.withFixture { settings in
+            let fixture = try Fixture(settings)
+            do {
+                let unavailable = RecoveringAskConversationCache(factory: { throw CocoaError(.fileReadNoPermission) })
+                let controller = try fixture.makeController(settings, cache: unavailable)
+                fixture.controller = controller
+                controller.showLauncher()
+                #expect(controller.launcherWindow?.isVisible == true)
+                controller.model.launcherDraft.text = "search remains usable"
+                #expect(controller.model.launcherDraft.text == "search remains usable")
+                await #expect(throws: (any Error).self) { _ = try await unavailable.list(owner: "owner") }
+                #expect(controller.launcherWindow?.isVisible == true)
+            } catch {
+                await fixture.close()
+                throw error
+            }
+            await fixture.close()
+        }
+    }
+
+    @Test func `workspace callbacks persist notes and navigate to the owned windows`() async throws {
         weak var releasedResults: AskResultWindowController?
         try await SettingsBehaviorTestSupport.withFixture { settings in
             let fixture = try Fixture(settings)
@@ -13,7 +34,9 @@ struct AskConversationWindowServicesTests {
             do {
                 let controller = try fixture.makeController(settings)
                 fixture.controller = controller
-                for task in controller.maintenanceTasks { await task.value }
+                for task in controller.maintenanceTasks {
+                    await task.value
+                }
                 #expect(controller.model.workflows === fixture.workflows)
                 #expect(controller.model.workflowAuthoring === fixture.tools.workflowAuthoring)
                 #expect(fixture.tools.notebook === fixture.notes)
@@ -125,12 +148,13 @@ struct AskConversationWindowServicesTests {
             }
         }
 
-        func makeController(_ settings: SettingsStore) throws -> AskConversationWindowController {
+        func makeController(_ settings: SettingsStore,
+                            cache override: (any AskCaching)? = nil) throws -> AskConversationWindowController {
             try AskConversationWindowController(
                 settings: settings, injector: ContextTextInjector(), registry: MCPRegistry(),
                 modelLibrary: AskModelLibrary(defaults: settings.defaults, automaticallyLoadsCatalog: false),
                 dockVisibility: DockVisibilityController(app: policy),
-                services: .init(tools: tools, cache: cache, api: api, capture: AskTestCapture(),
+                services: .init(tools: tools, cache: override ?? cache, api: api, capture: AskTestCapture(),
                                 session: { ("workspace-fixture", "fixture-token") }, workflows: workflows,
                                 wordBook: wordBook, notes: notes, wordBookWindow: wordBookWindow,
                                 notesWindow: notesWindow, resultWindow: results, frameAutosaveName: name)
@@ -139,14 +163,16 @@ struct AskConversationWindowServicesTests {
 
         func close() async {
             if let controller {
-                for task in controller.maintenanceTasks { task.cancel(); await task.value }
+                for task in controller.maintenanceTasks {
+                    task.cancel(); await task.value
+                }
                 controller.conversationRefreshTask?.cancel()
                 await controller.conversationRefreshTask?.value
                 controller.dismissLauncher()
                 controller.model.resetSession()
             }
             for window in [controller?.conversationWindow, controller?.controlWindow,
-                           notesWindow.window, wordBookWindow.window].compactMap({ $0 }) {
+                           notesWindow.window, wordBookWindow.window].compactMap(\.self) {
                 DockVisibilityController.shared.windowDidHide(window)
                 window.delegate = nil
                 window.setFrameAutosaveName("")
@@ -157,7 +183,9 @@ struct AskConversationWindowServicesTests {
             }
             NSWindow.removeFrame(usingName: name)
             NSWindow.removeFrame(usingName: "AskNotes.v2")
-            if let oldNotesFrame { UserDefaults.standard.set(oldNotesFrame, forKey: "NSWindow Frame AskNotes.v2") }
+            if let oldNotesFrame {
+                UserDefaults.standard.set(oldNotesFrame, forKey: "NSWindow Frame AskNotes.v2")
+            }
             try? FileManager.default.removeItem(at: root)
         }
     }

@@ -3,6 +3,36 @@ import AppKit
 import XCTest
 
 final class ClipboardCaptureRulesTests: XCTestCase {
+    func testEncodedImagesAreRejectedBeforeDecodingWhenOverBudget() {
+        XCTAssertNil(ClipboardCaptureRules.image(from: Data(
+            repeating: 0,
+            count: ClipboardCaptureRules.maximumEncodedImageBytes + 1
+        )))
+    }
+
+    func testPixelBudgetRejectsDecompressionBombDimensionsWithoutOverflow() {
+        XCTAssertTrue(ClipboardCaptureRules.acceptsDimensions(width: 4000, height: 4000))
+        XCTAssertFalse(ClipboardCaptureRules.acceptsDimensions(width: 4001, height: 4000))
+        XCTAssertFalse(ClipboardCaptureRules.acceptsDimensions(width: 0, height: 10))
+        XCTAssertFalse(ClipboardCaptureRules.acceptsDimensions(width: 10, height: 0))
+        XCTAssertFalse(ClipboardCaptureRules.acceptsDimensions(width: -1, height: 1))
+        XCTAssertFalse(ClipboardCaptureRules.acceptsDimensions(width: Int64.max, height: Int64.max))
+        XCTAssertFalse(ClipboardCaptureRules.acceptsDimensions(width: 1, height: 16385))
+        XCTAssertTrue(ClipboardCaptureRules.acceptsDimensions(width: 1, height: 16384))
+    }
+
+    func testFileCountAndCombinedURLBytesAreBounded() {
+        let url = URL(fileURLWithPath: "/a")
+        XCTAssertFalse(ClipboardCaptureRules.isWithinBudget(.init(fileURLs: Array(repeating: url, count: 1001))))
+        XCTAssertTrue(ClipboardCaptureRules.isWithinBudget(.init(fileURLs: Array(repeating: url, count: 1000))))
+        let long = URL(fileURLWithPath: "/" + String(repeating: "a", count: 1100))
+        XCTAssertFalse(ClipboardCaptureRules.isWithinBudget(.init(fileURLs: Array(repeating: long, count: 1000))))
+        XCTAssertFalse(ClipboardCaptureRules.isWithinBudget(.init(imageData: Data(
+            repeating: 0,
+            count: ClipboardCaptureRules.maximumEncodedImageBytes + 1
+        ))))
+    }
+
     func testTextIsCapturedAsIs() {
         let contents = PasteboardContents(types: ["public.utf8-plain-text"], string: "  hello\n")
         let capture = ClipboardCaptureRules.capture(from: contents)
@@ -28,8 +58,8 @@ final class ClipboardCaptureRulesTests: XCTestCase {
         XCTAssertFalse(ClipboardCaptureRules.shouldIgnore(types: ["public.utf8-plain-text"]))
     }
 
-    func testFileURLsWinOverTextAndImages() {
-        let urls = [URL(fileURLWithPath: "/tmp/a.pdf"), URL(string: "https://example.com")!]
+    func testFileURLsWinOverTextAndImages() throws {
+        let urls = try [URL(fileURLWithPath: "/tmp/a.pdf"), XCTUnwrap(URL(string: "https://example.com"))]
         let contents = PasteboardContents(string: "a.pdf", fileURLs: urls, imageData: ClipboardTestSupport.imageData())
         XCTAssertEqual(ClipboardCaptureRules.capture(from: contents), .files([URL(fileURLWithPath: "/tmp/a.pdf")]))
     }
