@@ -270,6 +270,8 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
             panel.setFrame(AskLauncherPlacement.preferredFrame(on: frame, anchor: anchor,
                            height: model.launcherIsCollapsed ? AskLauncherWindowMode.simpleHeight : launcherHeight),
                            display: false)
+            model.launcherViewport.show(panel.frame.height)
+            filePreview.visibleHeight = nil
             launcherOpeningTop = AskLauncherPlacement.top(on: frame, anchor: anchor)
         }
         // Take keyboard focus without activating the app and raising its other windows.
@@ -354,27 +356,63 @@ final class AskConversationWindowController: NSObject, NSWindowDelegate {
     /// Whether the panel is still moving toward its content's requested height.
     var launcherIsResizing: Bool { launcherHeightAnimator.isAnimating }
 
+    /// The launcher card's visible height, gutters included. While it animates the
+    /// panel may already be taller: it grows at once and shrinks when the motion lands.
+    var launcherVisibleHeight: CGFloat { model.launcherViewport.height ?? launcher?.frame.height ?? 0 }
+
     /// Follow the content height, keeping the editor at the opening top edge.
+    ///
+    /// The native panel changes size at most twice per motion: it grows to the
+    /// target at once, and shrinks to it after the card has. Between those, each
+    /// display frame only moves the card's clip (`AskLauncherViewport`), which
+    /// lays out one modifier. Resizing a transparent, shadowed, blurred window on
+    /// every frame and evaluating the whole composer for it made the motion stutter.
     private func updateLauncherHeight(_ requestedHeight: CGFloat) {
         launcherHeight = requestedHeight
         guard let launcher else { return }
         let screen = launcherScreen?.visibleFrame
         let height = min(requestedHeight, screen.map { max(1, $0.height - AskLauncherPlacement.screenMargin * 2) }
                          ?? requestedHeight)
-        launcherHeightAnimator.update(from: launcher.frame.height, to: height,
-                                      animated: launcher.isVisible && !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion,
+        let viewport = model.launcherViewport
+        let visible = viewport.height ?? launcher.frame.height
+        let animated = launcher.isVisible && !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+        if animated, height > launcher.frame.height { setLauncherPanelHeight(height) }
+        launcherHeightAnimator.update(from: visible, to: height, animated: animated,
                                       framesPerSecond: launcher.screen?.maximumFramesPerSecond ?? 60,
-                                      rate: model.launcherDraft.text.isEmpty ? 60 : 28) { [weak self, weak launcher] height in
-            guard let self, let launcher else { return }
-            CATransaction.begin()
-            CATransaction.setDisableActions(true)
-            launcher.setFrame(AskLauncherPlacement.resized(launcher.frame, height: height,
-                              top: self.launcherOpeningTop, screen: launcher.screen?.visibleFrame), display: false)
-            self.filePreview.updateFrame()
-            launcher.contentView?.layoutSubtreeIfNeeded()
-            launcher.displayIfNeeded()
-            CATransaction.commit()
+                                      rate: model.launcherDraft.text.isEmpty ? 60 : 28,
+                                      view: launcher.contentView) { [weak self] height in
+            self?.showLauncherCard(height: height)
         }
+        // Already there, or applied at once: the panel matches the card now.
+        if !launcherHeightAnimator.isAnimating { showLauncherCard(height: height) }
+    }
+
+    /// One frame of the card's motion; the panel follows once the motion lands.
+    private func showLauncherCard(height: CGFloat) {
+        guard let launcher else { return }
+        // On whole backing pixels, like the panel's own frame: no blurred edge, and
+        // the footer sits exactly where the card ends.
+        let scale = max(1, launcher.backingScaleFactor)
+        let height = (height * scale).rounded() / scale
+        model.launcherViewport.show(height)
+        if !launcherHeightAnimator.isAnimating { setLauncherPanelHeight(height) }
+        // The shadow of a transparent panel is drawn from its content.
+        launcher.invalidateShadow()
+        filePreview.visibleHeight = height
+        filePreview.updateFrame()
+    }
+
+    private func setLauncherPanelHeight(_ height: CGFloat) {
+        guard let launcher else { return }
+        let frame = AskLauncherPlacement.resized(launcher.frame, height: height, top: launcherOpeningTop,
+                                                 screen: launcher.screen?.visibleFrame)
+        guard frame != launcher.frame else { return }
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        launcher.setFrame(frame, display: false)
+        // Lay the card out against the new frame before it is drawn, so its top never moves.
+        launcher.contentView?.layoutSubtreeIfNeeded()
+        CATransaction.commit()
     }
 
     /// The screen the launcher is on, or the main one before it has been shown.

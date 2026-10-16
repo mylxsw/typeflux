@@ -271,7 +271,7 @@ final class AskQuickSearchSession: ObservableObject {
 
     private func commitResults() {
         guard appsReady || currentSettings.mode == .filesFirst else { return }
-        isSearching = !appsReady || fileResults == nil || !browserReady || !semanticReady
+        assign(\.isSearching, !appsReady || fileResults == nil || !browserReady || !semanticReady)
         let names = fileResults?.hits ?? retainedFiles
         var combined = SemanticFilePolicy.merge(names, semanticResults, limit: 48)
         // A late batch must not evict a row the user already chose.
@@ -290,11 +290,11 @@ final class AskQuickSearchSession: ObservableObject {
         launcherIconCache?.prefetchFiles(next?.files ?? [])
         next?.searchingContent = !semanticReady
         next?.keepChoice(from: results?.chosen == true ? results : previousChoice)
-        results = next ?? (isSearching ? AskQuickResults(apps: [], lead: false) : nil)
+        assign(\.results, next ?? (isSearching ? AskQuickResults(apps: [], lead: false) : nil))
         contentTrace.mark("mixed-published")
         // An empty application batch is not the final answer while files are
         // still searching. Do not flash Ask AI between two useful batches.
-        if next != nil || !isSearching { pendingResults = nil }
+        if next != nil || !isSearching { assign(\.pendingResults, nil) }
     }
 
     func recordRender() {
@@ -319,9 +319,16 @@ final class AskQuickSearchSession: ObservableObject {
         publication = nil
         apps.cancel()
         files.cancel()
-        isSearching = false
-        results?.searchingContent = false
-        pendingResults = nil
+        assign(\.isSearching, false)
+        if results?.searchingContent == true { results?.searchingContent = false }
+        assign(\.pendingResults, nil)
+    }
+
+    /// Publishes only a change: every write to a published property re-renders
+    /// the launcher, and a search often reaches the same state twice.
+    private func assign<Value: Equatable>(_ keyPath: ReferenceWritableKeyPath<AskQuickSearchSession, Value>,
+                                          _ value: Value) {
+        if self[keyPath: keyPath] != value { self[keyPath: keyPath] = value }
     }
 
     deinit { delay?.cancel(); browserTask?.cancel(); semanticTask?.cancel(); publication?.cancel() }

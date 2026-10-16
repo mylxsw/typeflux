@@ -16,6 +16,24 @@ extension AskQuickResultsView {
         }
     }
 
+    /// One list row with its position in `results.rows` and the heading above it.
+    struct ListItem {
+        var id: String
+        var row: AskQuickResults.Row
+        var index: Int
+        var section: Section?
+    }
+
+    /// The rows the list shows, resolved in one pass.
+    static func listItems(for results: AskQuickResults) -> [ListItem] {
+        results.rows.indices.compactMap { index in
+            let row = results.rows[index]
+            guard row != .askAI else { return nil }
+            return ListItem(id: results.identity(of: row), row: row, index: index,
+                            section: sectionStart(at: index, in: results.rows, results: results))
+        }
+    }
+
     /// The heading shown above the row at `index`: where a new kind of result begins.
     /// The best match, when there is one, has a heading of its own.
     static func sectionStart(at index: Int, in rows: [AskQuickResults.Row], results: AskQuickResults? = nil) -> Section? {

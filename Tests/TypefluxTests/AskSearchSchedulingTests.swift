@@ -5,7 +5,7 @@ import Testing
 @Suite("Search selection and cancellation")
 struct AskSearchSchedulingTests {
     @Test func aStationaryPointerDoesNotReplaceKeyboardSelectionAfterLayout() {
-        var pointer = AskSearchPointer(position: .init(x: 10, y: 20))
+        let pointer = AskSearchPointer(position: .init(x: 10, y: 20))
         let stationary = pointer.moved(to: .init(x: 10, y: 20))
         let moved = pointer.moved(to: .init(x: 10, y: 21))
         let layout = pointer.moved(to: .init(x: 10, y: 21))

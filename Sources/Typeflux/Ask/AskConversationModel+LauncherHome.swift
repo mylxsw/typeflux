@@ -6,14 +6,25 @@ extension AskConversationModel {
         AskLauncherHome.build(launcherHomeContext(now: now))
     }
 
-    func launcherHomeContext(now: Date = Date()) -> AskLauncherHome.Context {
+    /// The home as the open launcher shows it. Its renders share one read of
+    /// screen recording access per presentation: the home is rebuilt as the
+    /// input is cleared, and each read is synchronous TCC IPC. Opening the
+    /// launcher again, and every capture, read access afresh.
+    func presentedLauncherHome(now: Date = Date()) -> [AskLauncherHome.Section] {
+        AskLauncherHome.build(launcherHomeContext(now: now, permissions: launcherCapturePermissions))
+    }
+
+    func launcherHomeContext(now: Date = Date(), permissions shared: AskCapturePermissionSnapshot? = nil)
+        -> AskLauncherHome.Context {
         let draft = launcherDraft
         let language = AppLocalization.shared.language
         // One consistent read per capture plugin within this presentation snapshot. Repeated
         // keyword labels must not issue synchronous TCC IPC for every synonym and mode.
         // The next snapshot and actual capture plan still perform fresh permission checks.
         var permissions: [String: Bool] = [:]
+        let presentation = launcherPresentationID
         func granted(_ id: String, read: @Sendable () -> Bool) -> Bool {
+            if let shared { return shared.granted(id, presentation: presentation, read: read) }
             if let value = permissions[id] {
                 return value
             }
@@ -85,5 +96,23 @@ extension AskConversationModel {
     func openConversationFromLauncher(_ id: String) {
         onShowConversation?()
         Task { await select(id) }
+    }
+}
+
+/// Screen recording access as one presentation of the launcher shows it.
+@MainActor
+final class AskCapturePermissionSnapshot {
+    private var presentation: UUID?
+    private var values: [String: Bool] = [:]
+
+    func granted(_ id: String, presentation: UUID, read: () -> Bool) -> Bool {
+        if self.presentation != presentation {
+            self.presentation = presentation
+            values = [:]
+        }
+        if let value = values[id] { return value }
+        let value = read()
+        values[id] = value
+        return value
     }
 }
