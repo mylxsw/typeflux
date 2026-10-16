@@ -85,9 +85,8 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
     private let pauseGate = SemanticIndexPauseGate()
     private var pausedIndexing = false
     private var pausedReady = false
-    private var dirty = false
-    private var pendingPaths = Set<String>()
-    private var pendingDirectories = Set<String>()
+    private var pendingChanges = SemanticFileChangePlan()
+    private var documentSource: SemanticIndexPauseGate.Source?
     private var pendingEventID: UInt64 = 0
     private var committedEventID: UInt64 = 0
     private var volumeSignature: String?
@@ -231,7 +230,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
             readerAuthorization = readers.authorization()
             embeddingAuthorization = embeddingOwners.authorization()
         }
-        dirty = false; pendingPaths.removeAll(); pendingDirectories.removeAll(); _ = pauseGate.takeDocuments()
+        pendingChanges = .init()
         pausedIndexing = false; pausedReady = false
         pauseGate.setPaused(backgroundPaused)
         if fingerprint != key || !backgroundPaused {
@@ -244,6 +243,8 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
         cancelDownload()
         let previousDownload = download
         token.cancel(); token = AskSearchCancellation()
+        let documentSource = SemanticIndexPauseGate.Source(lifecycle: token)
+        self.documentSource = documentSource; pauseGate.begin(documentSource)
         readers.stop(); embeddingOwners.stop()
         let token = token
         let previous = work
@@ -413,16 +414,13 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
         guard ownsLifecycle(lifecycle, fingerprint: fingerprint) else { return }
         pendingEventID = max(pendingEventID, snapshot.eventID)
         let plan = snapshot.plan
-        if plan.fullScan {
-            self.dirty = true; self.pendingPaths.removeAll(); self.pendingDirectories.removeAll()
-        } else if !self.dirty {
-            self.pendingPaths.formUnion(plan.files)
-            self.pendingDirectories.formUnion(plan.directories)
-        }
+        pendingChanges.mergeForHandoff(plan)
         guard plan.fullScan || !plan.files.isEmpty || !plan.directories.isEmpty ||
             pendingEventID > committedEventID else { return }
-        if phase == .indexing || pausedIndexing {
-            pauseGate.enqueueDocuments(plan.files.filter { SemanticMediaPriority.of($0) == .document })
+        if phase == .indexing || pausedIndexing, let documentSource {
+            let overflowed = pauseGate.enqueueDocuments(
+                plan.files.filter { SemanticMediaPriority.of($0) == .document }, from: documentSource)
+            if overflowed { pendingChanges.mergeForHandoff(.init(fullScan: true)) }
         }
         scheduleReconcile()
     }
@@ -431,7 +429,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
         guard let fingerprint, ownsLifecycle(token, fingerprint: fingerprint) else { return }
         let lifecycle = token
         guard self.phase != .indexing, !self.backgroundPaused,
-              self.dirty || !self.pendingPaths.isEmpty || !self.pendingDirectories.isEmpty ||
+              pendingChanges.fullScan || !pendingChanges.files.isEmpty || !pendingChanges.directories.isEmpty ||
               self.pendingEventID > self.committedEventID else { return }
         self.rescan?.cancel()
         self.rescan = Task { [weak self] in
@@ -445,12 +443,12 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
         guard ownsLifecycle(lifecycle, fingerprint: fingerprint), !self.backgroundPaused, self.phase == .ready || self.phase == .failed,
               readerAuthorization?.allowsIndexing(in: readers) == true,
               let database = self.store, let scope = self.scope else { return }
-        if self.dirty {
+        if pendingChanges.fullScan {
             self.start(force: true, renewReaderAuthorization: false, fullScan: true)
             return
         }
-        let paths = self.pendingPaths.sorted()
-        let directories = self.pendingDirectories.sorted()
+        let paths = pendingChanges.files.sorted()
+        let directories = pendingChanges.directories.sorted()
         let eventID = self.pendingEventID
         if paths.isEmpty && directories.isEmpty {
             do {
@@ -459,15 +457,14 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
             } catch { self.phase = .failed }
             return
         }
-        self.pendingPaths.removeAll()
-        self.pendingDirectories.removeAll()
+        pendingChanges = .init()
         self.indexProgress = nil
         self.phase = .indexing
         self.beginIndexing(database, scope: scope, token: token, paths: paths,
                            directories: directories, processedEventID: eventID)
     }
 
-    deinit { watcherDelivery.invalidate(); downloadProgress.invalidate(); progressDelivery.invalidate(); countRefresh?.cancel(); token.cancel(); readers.stop(); embeddingOwners.stop(); work?.cancel(); download?.cancel(); rescan?.cancel(); warmup?.cancel() }
+    deinit { pauseGate.invalidate(); watcherDelivery.invalidate(); downloadProgress.invalidate(); progressDelivery.invalidate(); countRefresh?.cancel(); token.cancel(); readers.stop(); embeddingOwners.stop(); work?.cancel(); download?.cancel(); rescan?.cancel(); warmup?.cancel() }
 }
 
 extension SemanticFileSearchService {
@@ -477,7 +474,7 @@ extension SemanticFileSearchService {
                                scanStartEventID: UInt64? = nil, prunePending: Bool = false,
                                processedEventID: UInt64? = nil) {
         let fingerprint = settingsFingerprint
-        guard ownsLifecycle(token, fingerprint: fingerprint) else { return }
+        guard ownsLifecycle(token, fingerprint: fingerprint), let documentSource else { return }
         let makeEncoder = makeEncoder, mediaModels = mediaModels, embeddingOwners = embeddingOwners
         let embeddingAuthorization = embeddingAuthorization
         // Capture scopes before scheduling: an obsolete detached job must never
@@ -515,7 +512,7 @@ extension SemanticFileSearchService {
                         return try SemanticFileIndexer.reconcile(
                             paths: paths, scope: scope, store: database, reader: reader,
                             encoder: encoder, media: media, idle: { idle() && !pauseGate.isPaused },
-                            paused: { pauseGate.isPaused }, documents: { pauseGate.takeDocuments() },
+                            paused: { pauseGate.isPaused }, documents: { pauseGate.takeDocuments(from: documentSource) },
                             priorityReader: priorityReader,
                             cancelled: { token.isCancelled }, progress: reportProgress,
                             directories: directories, prunePending: prunePending, current: reportCurrent
@@ -525,7 +522,7 @@ extension SemanticFileSearchService {
                                                        encoder: encoder, media: media,
                                                        idle: { idle() && !pauseGate.isPaused },
                                                        paused: { pauseGate.isPaused },
-                                                       documents: { pauseGate.takeDocuments() },
+                                                       documents: { pauseGate.takeDocuments(from: documentSource) },
                                                        priorityReader: priorityReader,
                                                        cancelled: { token.isCancelled }, progress: reportProgress,
                                                        discovered: {
@@ -569,8 +566,7 @@ extension SemanticFileSearchService {
                 self.scheduleReconcile()
             } catch {
                 guard let self, !Task.isCancelled, ownsLifecycle(token, fingerprint: fingerprint), indexAttempt === attempt else { return }
-                self.pendingPaths.formUnion(paths ?? [])
-                self.pendingDirectories.formUnion(directories)
+                self.pendingChanges.mergeForHandoff(.init(files: Set(paths ?? []), directories: Set(directories)))
                 if let latest = delivery.finish(attempt) {
                     receiveIndexProgress(latest, database: database, lifecycle: token, attempt: attempt)
                 }
@@ -674,6 +670,7 @@ extension SemanticFileSearchService {
         preferences = settings.semanticFileSearch
         invalidateIndexProgress()
         watcherDelivery.invalidate()
+        pauseGate.invalidate(); documentSource = nil; pendingChanges = .init()
         token.cancel(); work?.cancel(); rescan?.cancel(); cancelDownload(); watcher.stop()
         readers.stop(); embeddingOwners.stop()
         warmup?.cancel(); warmup = nil

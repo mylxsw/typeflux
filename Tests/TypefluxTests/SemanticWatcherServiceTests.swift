@@ -11,14 +11,15 @@ private final class WatcherHistory: @unchecked Sendable {
 
 private final class WatcherWorkGate: @unchecked Sendable {
     private let condition = NSCondition()
-    private var held = false, entered = false
+    private var held = false, entered = false, failure = false
     var waiting: Bool { condition.withLock { held && entered } }
     func hold() { condition.withLock { held = true; entered = false } }
-    func release() { condition.withLock { held = false; condition.broadcast() } }
+    func release(failure: Bool = false) { condition.withLock { held = false; self.failure = failure; condition.broadcast() } }
     func wait(cancelled: () -> Bool) throws {
         condition.lock(); defer { condition.unlock() }; entered = true
         while held, !cancelled() { _ = condition.wait(until: Date().addingTimeInterval(0.01)) }
         if cancelled() { throw CancellationError() }
+        if failure { throw AskFileReadError.unavailable }
     }
 }
 
@@ -132,4 +133,82 @@ struct SemanticWatcherServiceTests {
         #expect(try store.completedEventID(scope: scope, volumeSignature: "private-fixture-volume") == 100)
         await service.clear(removeModel: true)
     }
+    @Test func pausedServiceBoundsCombinedFileAndDirectoryIntentsAcrossDeliveries() async throws {
+        let (service, root, watcher, queue, history, reader, _, store, scope) = try await fixture()
+        defer { reader.gate.release(); try? FileManager.default.removeItem(at: root) }
+        service.pause(true)
+        for batch in 0..<6 {
+            var changes = (0..<100).map {
+                AskFileChange(path: root.path + "/pending-\(batch)-\($0).md", rescan: false)
+            }
+            changes.append(.init(path: root.path + "/directory-\(batch)", rescan: false,
+                                 isDirectory: true, structureChanged: true))
+            watcher.change?(changes, UInt64(101 + batch)); queue.run()
+        }
+        #expect(service.phase == .paused && service.files == 1)
+        #expect(try store.completedEventID(scope: scope, volumeSignature: "private-fixture-volume") == 100)
+        history.advance(120); reader.gate.hold()
+        service.pause(false)
+        try await SemanticFileServiceTests.wait { reader.gate.waiting }
+        #expect(try store.completedEventID(scope: scope, volumeSignature: "private-fixture-volume") == nil)
+        reader.gate.release()
+        await service.prepareModelIfNeeded()
+        #expect(service.phase == .ready && service.files == 1)
+        #expect(try store.completedEventID(scope: scope, volumeSignature: "private-fixture-volume") == 120)
+        await service.clear(removeModel: true)
+    }
+
+    @Test func priorityOverflowKeepsDeletionCatchupAndReceiptAfterEnteredWork() async throws {
+        let (service, root, watcher, queue, history, reader, encoder, store, scope) = try await fixture()
+        defer { reader.gate.release(); encoder.gate.release(); try? FileManager.default.removeItem(at: root) }
+        let deleted = root.path + "/deleted.md"
+        try store.replace(path: deleted, modified: reader.base.modified, bytes: 10,
+                          chunks: [.init(text: "previously committed", page: nil)], vectors: [semanticVector()])
+        encoder.gate.hold(); reader.base.modified += 1
+        watcher.change?([.init(path: reader.base.path, rescan: false)], 101); queue.run()
+        try await SemanticFileServiceTests.wait { encoder.gate.waiting }
+        for batch in 0..<6 {
+            let changes = (0..<100).map {
+                AskFileChange(path: root.path + "/priority-\(batch)-\($0).md", rescan: false)
+            } + [.init(path: deleted, rescan: false)]
+            watcher.change?(changes, UInt64(102 + batch)); queue.run()
+        }
+        #expect(try store.completedEventID(scope: scope, volumeSignature: "private-fixture-volume") == 100)
+        history.advance(120); reader.gate.hold(); encoder.gate.release()
+        // The existing priority scan runs within the active indexer, not a producer restart.
+        try await SemanticFileServiceTests.wait { reader.gate.waiting }
+        #expect(service.phase == .indexing)
+        reader.gate.release()
+        try await SemanticFileServiceTests.wait {
+            service.phase == .ready && (try? store.completedEventID(scope: scope, volumeSignature: "private-fixture-volume")) == 120
+        }
+        #expect(try store.counts().files == 1)
+        #expect(try !store.unchanged(path: deleted, modified: reader.base.modified - 1, bytes: 10))
+        await service.clear(removeModel: true)
+    }
+
+    @Test func failedAttemptRestoresBoundedObligationsWithoutAutomaticRetry() async throws {
+        let (service, root, watcher, queue, history, reader, encoder, store, scope) = try await fixture()
+        defer { reader.gate.release(); encoder.gate.release(); try? FileManager.default.removeItem(at: root) }
+        encoder.gate.hold()
+        let original = (0..<300).map { AskFileChange(path: root.path + "/original-\($0).md", rescan: false) }
+        watcher.change?(original, 110); queue.run()
+        try await SemanticFileServiceTests.wait { encoder.gate.waiting }
+        let later = (0..<300).map { AskFileChange(path: root.path + "/later-\($0).md", rescan: false) }
+        watcher.change?(later, 111); queue.run()
+        encoder.gate.release(failure: true)
+        try await SemanticFileServiceTests.wait { service.phase == .failed }
+        #expect(try store.completedEventID(scope: scope, volumeSignature: "private-fixture-volume") == 100)
+        history.advance(140); reader.gate.hold(); encoder.gate.release()
+        // A fresh event is the existing explicit reconciliation trigger, not a health retry.
+        watcher.change?([], 130); queue.run()
+        try await SemanticFileServiceTests.wait { reader.gate.waiting }
+        #expect(try store.completedEventID(scope: scope, volumeSignature: "private-fixture-volume") == nil)
+        reader.gate.release()
+        await service.prepareModelIfNeeded()
+        #expect(service.phase == .ready && service.files == 1)
+        #expect(try store.completedEventID(scope: scope, volumeSignature: "private-fixture-volume") == 140)
+        await service.clear(removeModel: true)
+    }
+
 }
