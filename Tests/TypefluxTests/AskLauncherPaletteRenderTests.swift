@@ -4,33 +4,118 @@ import Testing
 @testable import Typeflux
 
 /// Footer controls rendered natively: switches show "on" with a tinted well,
-/// menus stay neutral under the launcher's accent tint.
+/// and the permission menu is drawn in its mode's colour, not the launcher's accent.
 @Suite("Launcher palette rendering", .serialized, .exclusiveUIState)
 @MainActor
 struct AskLauncherPaletteRenderTests {
     private struct Census {
-        var blue = 0, red = 0, grey = 0
+        var blue = 0, red = 0, grey = 0, green = 0, orange = 0
     }
 
-    @Test func `permission menu stays neutral under the accent tint`() async throws {
-        for mode in [AskPermissionMode.strict, .standard] {
-            let menu = AskPermissionModeMenu(mode: mode, compact: true, onSelect: { _ in }).tint(AskTheme.accent)
-            let census = try census(await render(menu, size: NSSize(width: 60, height: 30)))
-            #expect(census.blue == 0, "a menu must not look like a switch that is on")
-            #expect(census.grey > 0)
+    @Test func `permission menu label is drawn in its mode colour`() async throws {
+        func census(_ mode: AskPermissionMode, bare: Bool, _ appearance: NSAppearance.Name) async throws -> Census {
+            let menu = AskPermissionModeMenu(mode: mode, compact: true, bare: bare, onSelect: { _ in })
+                .tint(AskTheme.accent)
+            let size = NSSize(width: mode == .yolo ? 90 : 60, height: 30)
+            return try self.census(await render(menu, size: size, appearance: appearance))
         }
-        let yolo = AskPermissionModeMenu(mode: .yolo, compact: true, onSelect: { _ in }).tint(AskTheme.accent)
-        let census = try census(await render(yolo, size: NSSize(width: 90, height: 30)))
-        #expect(census.red > 0)
-        #expect(census.blue == 0)
+        for appearance in [NSAppearance.Name.aqua, .darkAqua] {
+            for bare in [false, true] {
+                let strict = try await census(.strict, bare: bare, appearance)
+                #expect(strict.green > 0 && strict.blue == 0 && strict.orange == 0, "strict is green")
+                let standard = try await census(.standard, bare: bare, appearance)
+                #expect(standard.blue > 0 && standard.green == 0 && standard.orange == 0, "standard is blue")
+                let yolo = try await census(.yolo, bare: bare, appearance)
+                #expect(yolo.orange > 0 && yolo.blue == 0 && yolo.green == 0, "YOLO is orange")
+            }
+        }
     }
 
-    @Test func `permission menu colours only yolo`() {
-        #expect(AskPermissionModeMenu.labelColor(.standard) == StudioTheme.textSecondary)
-        #expect(AskPermissionModeMenu.labelColor(.strict) == StudioTheme.textSecondary)
-        #expect(AskPermissionModeMenu.labelColor(.yolo) == StudioTheme.danger)
+    @Test func `permission modes each have their own colour`() {
+        #expect(AskPermissionModeMenu.tint(.strict) == StudioTheme.success)
+        #expect(AskPermissionModeMenu.tint(.standard) == StudioTheme.accent)
+        #expect(AskPermissionModeMenu.tint(.yolo) == StudioTheme.warning)
+        for mode in AskPermissionMode.allCases {
+            #expect(AskPermissionModeMenu.labelColor(mode) == AskPermissionModeMenu.tint(mode))
+        }
+        #expect(AskPermissionModeMenu.wellFill(.strict) == .clear)
         #expect(AskPermissionModeMenu.wellFill(.standard) == .clear)
-        #expect(AskPermissionModeMenu.wellFill(.yolo) == StudioTheme.danger.opacity(0.11))
+        #expect(AskPermissionModeMenu.wellFill(.yolo) == StudioTheme.warning.opacity(0.11))
+    }
+
+    @Test func `only the current mode gets a coloured menu image`() throws {
+        for mode in AskPermissionMode.allCases {
+            #expect(AskPermissionModeMenu.menuImage(mode, selected: false, dark: false) == nil,
+                    "other modes keep the menu's template symbol")
+        }
+        for dark in [false, true] {
+            let appearance = try #require(NSAppearance(named: dark ? .darkAqua : .aqua))
+            for mode in AskPermissionMode.allCases {
+                let image = try #require(AskPermissionModeMenu.menuImage(mode, selected: true, dark: dark))
+                #expect(!image.isTemplate, "a template image would be redrawn in the text colour")
+                #expect(image.accessibilityDescription == L("ask.mode.current"))
+                let census = try census(draw(image))
+                var expected = NSColor.clear
+                appearance.performAsCurrentDrawingAppearance {
+                    expected = NSColor(AskPermissionModeMenu.tint(mode)).usingColorSpace(.sRGB) ?? .clear
+                }
+                switch mode {
+                case .strict: #expect(census.green > 0 && census.blue == 0 && census.orange == 0)
+                case .standard: #expect(census.blue > 0 && census.green == 0 && census.orange == 0)
+                case .yolo: #expect(census.orange > 0 && census.blue == 0 && census.green == 0)
+                }
+                #expect(try dominant(draw(image)).isClose(to: expected),
+                        "resolved for the \(dark ? "dark" : "light") menu")
+            }
+        }
+    }
+
+    @Test func `the current mode's menu colour follows the appearance`() throws {
+        for mode in AskPermissionMode.allCases {
+            let light = try dominant(draw(#require(AskPermissionModeMenu.menuImage(mode, selected: true, dark: false))))
+            let dark = try dominant(draw(#require(AskPermissionModeMenu.menuImage(mode, selected: true, dark: true))))
+            #expect(!light.isClose(to: dark, tolerance: 0.04), "\(mode) uses its light and dark theme colours")
+        }
+    }
+
+    @Test func `the coloured menu image keeps the symbol's cut-out glyph`() throws {
+        for mode in AskPermissionMode.allCases {
+            let symbol = try #require(NSImage(systemSymbolName: mode.symbol, accessibilityDescription: nil))
+            let coloured = try #require(AskPermissionModeMenu.menuImage(mode, selected: true, dark: true))
+            #expect(coloured.size == symbol.size, "drawn at the size the menu gives its template symbols")
+            // Both drawn at the size a menu shows them, on a Retina-density backing store.
+            let plain = try draw(symbol, size: symbol.size, scale: 4)
+            let tinted = try draw(coloured, size: symbol.size, scale: 4)
+            var mismatched = 0, inked = 0
+            for x in 0 ..< plain.pixelsWide {
+                for y in 0 ..< plain.pixelsHigh {
+                    let a = plain.colorAt(x: x, y: y)?.alphaComponent ?? 0
+                    let b = tinted.colorAt(x: x, y: y)?.alphaComponent ?? 0
+                    if a > 0.5 { inked += 1 }
+                    if (a > 0.5) != (b > 0.5) { mismatched += 1 }
+                }
+            }
+            #expect(inked > 0)
+            #expect(mismatched * 50 < inked,
+                    "\(mode) is the same shape as its template symbol, glyph included: \(mismatched)/\(inked)")
+        }
+    }
+
+    @Test func `the mode submenu colours the current mode instead of a checkmark`() async throws {
+        let rows = AskCommandCatalog.submenu(.permissionMode, context: AskCommandContext(permissionMode: .yolo))
+            .map { AskCommandMatcher.Match(command: $0, score: 1, highlights: []) }
+        #expect(rows.map(\.command.selected) == [false, false, true])
+        var state = AskCommandPaletteState()
+        // The highlight rests on strict, which is not the current mode.
+        state.update(rows: rows, query: "")
+        #expect(state.highlighted == 0)
+        let height = AskCommandPaletteView.height(for: state, compact: true, maximumHeight: 400)
+        let palette = AskCommandPaletteView(state: state, compact: true, maximumHeight: 400,
+                                            onPick: { _ in }, onHighlight: { _ in }, onManage: nil)
+            .environment(\.askGlassMaterialOverride, .opaque)
+        let census = try census(await render(palette, size: NSSize(width: 520, height: height), appearance: .darkAqua))
+        #expect(census.orange > 0, "the current mode, YOLO, is drawn orange")
+        #expect(census.green == 0, "the highlighted but unselected strict row stays neutral")
     }
 
     @Test func `permission menus omit chevrons and the launcher shows only symbols`() {
@@ -221,12 +306,42 @@ struct AskLauncherPaletteRenderTests {
                     continue
                 }
                 let (red, blue) = (color.redComponent, color.blueComponent)
-                if blue - red > 0.2 { census.blue += 1 }
+                if blue - red > 0.2, blue > color.greenComponent { census.blue += 1 }
                 if red - blue > 0.3 { census.red += 1 }
                 if red < 0.7, abs(blue - red) < 0.08 { census.grey += 1 }
+                let green = color.greenComponent
+                if green - max(red, blue) > 0.15 { census.green += 1 }
+                if red - green > 0.15, green - blue > 0.15 { census.orange += 1 }
             }
         }
         return census
+    }
+
+    /// Draws `image` into `size` points on a backing store `scale` times denser.
+    private func draw(_ image: NSImage, size: NSSize = NSSize(width: 40, height: 40),
+                      scale: CGFloat = 1) throws -> NSBitmapImageRep {
+        let bitmap = try #require(NSBitmapImageRep(
+            bitmapDataPlanes: nil, pixelsWide: Int((size.width * scale).rounded()),
+            pixelsHigh: Int((size.height * scale).rounded()), bitsPerSample: 8, samplesPerPixel: 4,
+            hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0))
+        bitmap.size = size
+        NSGraphicsContext.saveGraphicsState()
+        NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: bitmap)
+        image.draw(in: NSRect(origin: .zero, size: size))
+        NSGraphicsContext.restoreGraphicsState()
+        return bitmap
+    }
+
+    /// The most opaque pixel, which sits on the symbol's stroke.
+    private func dominant(_ bitmap: NSBitmapImageRep) throws -> NSColor {
+        var best = NSColor.clear
+        for x in 0 ..< bitmap.pixelsWide {
+            for y in 0 ..< bitmap.pixelsHigh {
+                guard let color = bitmap.colorAt(x: x, y: y)?.usingColorSpace(.sRGB) else { continue }
+                if color.alphaComponent > best.alphaComponent { best = color }
+            }
+        }
+        return best
     }
 
     private func pixel(_ bitmap: NSBitmapImageRep, at point: (x: Int, y: Int)) throws -> NSColor {
@@ -256,5 +371,13 @@ struct AskLauncherPaletteRenderTests {
         let bitmap = try #require(hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds))
         hosting.cacheDisplay(in: hosting.bounds, to: bitmap)
         return bitmap
+    }
+}
+
+private extension NSColor {
+    func isClose(to other: NSColor, tolerance: CGFloat = 0.06) -> Bool {
+        abs(redComponent - other.redComponent) < tolerance
+            && abs(greenComponent - other.greenComponent) < tolerance
+            && abs(blueComponent - other.blueComponent) < tolerance
     }
 }
