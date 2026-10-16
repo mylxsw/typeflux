@@ -1,6 +1,6 @@
 import CoreGraphics
 import Foundation
-import Vision
+import TypefluxMediaProtocol
 
 enum ImageTextSource {
     case url(URL)
@@ -12,42 +12,53 @@ protocol ImageTextRecognizing {
     func recognizeText(in source: ImageTextSource) async throws -> RecognizedText
 }
 
-/// On-device text recognition with Vision: accurate, language-corrected and
-/// detecting the language automatically.
+/// Stable file/raw-pixel facade; Vision objects exist only in the disposable media child.
 struct VisionImageTextRecognizer: ImageTextRecognizing {
+    private static let admission = AskToolPixelBudget(limit: 2)
+    var worker: MediaWorker = .textRecognition
+
     func recognizeText(in source: ImageTextSource) async throws -> RecognizedText {
-        try await Task.detached(priority: .userInitiated) {
-            try Self.recognize(source)
-        }.value
+        try Task.checkCancellation()
+        let slot = try Self.admission.acquire(bytes: 1)
+        defer { withExtendedLifetime(slot) {} }
+        let cancelled = AskSearchCancellation(), input = UncheckedSendable(source), worker = self.worker
+        return try await withTaskCancellationHandler {
+            let result = try await Task.detached(priority: .userInitiated) {
+                if cancelled.isCancelled { throw CancellationError() }
+                let media: MediaWorker.Input, options: MediaTextInput?, revision: ClipboardImageRevision?
+                switch input.value {
+                case let .url(url):
+                    revision = try ClipboardImageRevision(url); media = .file(url); options = nil
+                case let .image(image):
+                    let shape = MediaTextInput(width: image.width, height: image.height)
+                    try shape.validate()
+                    guard let context = CGContext(data: nil, width: image.width, height: image.height,
+                        bitsPerComponent: 8, bytesPerRow: image.width * 4, space: CGColorSpaceCreateDeviceRGB(),
+                        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue), let bytes = context.data
+                    else { throw MediaFailure.unavailable }
+                    context.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
+                    media = .data(Data(bytes: bytes, count: shape.byteCount)); options = shape; revision = nil
+                }
+                let result = try worker.perform(.recognizeText, input: media, textInput: options,
+                    isCancelled: { cancelled.isCancelled }) { response, _ in
+                        guard let value = response.recognition else { throw MediaFailure.invalidProtocol }
+                        return value
+                    }
+                if case let .url(url) = input.value, revision?.matches(url) != true { throw MediaFailure.unreadable }
+                return result
+            }.value
+            try Task.checkCancellation()
+            return Self.materialize(result)
+        } onCancel: { cancelled.cancel() }
     }
 
-    /// Vision's own bounds for part of a line, which follow the glyphs exactly.
-    static func locator(for candidate: VNRecognizedText) -> RecognizedText.Line.RangeLocator {
-        let candidate = UncheckedSendable(candidate)
-        return { range in
-            let string = candidate.value.string
-            guard let swiftRange = Range(range, in: string),
-                  let box = try? candidate.value.boundingBox(for: swiftRange)?.boundingBox else { return nil }
-            return RecognizedText.topLeftBox(fromVision: box)
-        }
-    }
-
-    private static func recognize(_ source: ImageTextSource) throws -> RecognizedText {
-        let request = VNRecognizeTextRequest()
-        request.recognitionLevel = .accurate
-        request.usesLanguageCorrection = true
-        request.automaticallyDetectsLanguage = true
-        let handler: VNImageRequestHandler
-        switch source {
-        case let .url(url): handler = VNImageRequestHandler(url: url)
-        case let .image(image): handler = VNImageRequestHandler(cgImage: image)
-        }
-        try handler.perform([request])
-        return RecognizedText(lines: (request.results ?? []).compactMap { observation in
-            guard let candidate = observation.topCandidates(1).first else { return nil }
-            return RecognizedText.Line(text: candidate.string, confidence: candidate.confidence,
-                                       boundingBox: RecognizedText.topLeftBox(fromVision: observation.boundingBox),
-                                       locate: Self.locator(for: candidate))
+    static func materialize(_ result: MediaTextRecognition) -> RecognizedText {
+        RecognizedText(lines: result.lines.map { value in
+            let ranges = value.regions
+            var line = RecognizedText.Line(text: value.text, confidence: value.confidence, boundingBox: value.box,
+                locate: { range in ranges.first { $0.range == range }?.box })
+            line.sensitiveMatches = ranges.map { .init(kind: $0.kind, range: $0.range) }
+            return line
         })
     }
 }

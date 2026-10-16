@@ -8,6 +8,7 @@ final class AskTranslationPanelCoordinator: ScreenshotFollowUpHandling {
     let controller: AskTranslationPanelController
     private let injector: any TextInjector
     private let recognizer: any ImageTextRecognizing
+    private var authObservers: [NSObjectProtocol] = []
     private var entryTask: Task<Void, Never>?
     private var selectionTask: Task<Void, Never>?
     private var deliveryTask: Task<Void, Never>?
@@ -29,9 +30,15 @@ final class AskTranslationPanelCoordinator: ScreenshotFollowUpHandling {
         model.onInsert = { [weak self] text in self?.insert(text) }
         let hide = model.onDismiss
         model.onDismiss = { [weak self] in self?.cancelEntry(); hide() }
+        controller.onHide = { [weak self] in self?.retireScreenshot() }
+        for name in [Notification.Name.authDidLogin, .authDidLogout, .authTokenDidRefresh] {
+            authObservers.append(NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.retireScreenshot() }
+            })
+        }
     }
 
-    deinit { entryTask?.cancel(); selectionTask?.cancel(); deliveryTask?.cancel() }
+    deinit { authObservers.forEach(NotificationCenter.default.removeObserver); entryTask?.cancel(); selectionTask?.cancel(); deliveryTask?.cancel() }
 
     func handle(_ followUp: ScreenshotFollowUp, image: ScreenshotFollowUpImage) {
         if followUp == .translate {
@@ -181,6 +188,12 @@ final class AskTranslationPanelCoordinator: ScreenshotFollowUpHandling {
 
     func waitForDelivery() async {
         await deliveryTask?.value
+    }
+
+    private func retireScreenshot() {
+        guard model.source == .screenshot else { return }
+        cancelEntry()
+        model.clear()
     }
 
     private func cancelEntry() {

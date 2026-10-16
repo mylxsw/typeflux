@@ -15,7 +15,7 @@ public enum MediaFailure: String, Error, Codable, Sendable {
 }
 
 public struct MediaRequest: Codable, Sendable {
-    public enum Operation: String, Codable, Sendable { case clipboardOCR, copyClipboardImage, clipboardMedia, quickLook, nativeIcon, image, pdf, inspectWorkflowImage, copyWorkflowImage, validateGeneratedImage, normalizeImage, previewImage, previewPDF, previewVideo, previewAudio
+    public enum Operation: String, Codable, Sendable { case recognizeText, clipboardOCR, copyClipboardImage, clipboardMedia, quickLook, nativeIcon, image, pdf, inspectWorkflowImage, copyWorkflowImage, validateGeneratedImage, normalizeImage, previewImage, previewPDF, previewVideo, previewAudio
         public var isWorkflowImage: Bool { self == .inspectWorkflowImage || self == .copyWorkflowImage || self == .copyClipboardImage }
         public var isAV: Bool { self == .previewVideo || self == .previewAudio }
     }
@@ -27,8 +27,11 @@ public struct MediaRequest: Codable, Sendable {
     public var icon: MediaNativeIcon?
     public var quickLook: MediaQuickLook?
     public var clipboard: MediaClipboardOptions?
+    public var textInput: MediaTextInput?
     public init(id: UUID = UUID(), operation: Operation) { self.id = id; self.operation = operation }
     public func validate() throws {
+        guard operation == .recognizeText || textInput == nil else { throw MediaFailure.invalidProtocol }
+        try textInput?.validate()
         guard (operation == .clipboardMedia) == (clipboard != nil) else { throw MediaFailure.invalidProtocol }
         if let clipboard { try clipboard.validate() }
         guard (operation == .normalizeImage) == (normalization != nil) else { throw MediaFailure.invalidProtocol }
@@ -77,6 +80,7 @@ public struct MediaResponse: Codable, Sendable {
     public var preview: MediaPreviewResult?
     public var clipboard: MediaClipboardResult?
     public var ocr: MediaOCRResult?
+    public var recognition: MediaTextRecognition?
     public init(id: UUID, items: [MediaItem] = [], failure: MediaFailure? = nil) {
         self.id = id; self.items = items; self.failure = failure
     }
@@ -86,9 +90,16 @@ public struct MediaResponse: Codable, Sendable {
         try request.validate()
         guard version == 1, id == request.id else { throw MediaFailure.invalidProtocol }
         if let failure {
-            guard items.isEmpty, preview == nil, normalization == nil, generatedImage == nil, workflowImage == nil, clipboard == nil, ocr == nil else { throw MediaFailure.invalidProtocol }
+            guard items.isEmpty, preview == nil, normalization == nil, generatedImage == nil, workflowImage == nil, clipboard == nil, ocr == nil, recognition == nil else { throw MediaFailure.invalidProtocol }
             throw failure
         }
+        if request.operation == .recognizeText {
+            guard items.isEmpty, preview == nil, normalization == nil, generatedImage == nil,
+                  workflowImage == nil, clipboard == nil, ocr == nil, let recognition else { throw MediaFailure.invalidProtocol }
+            try recognition.validate()
+            return
+        }
+        guard recognition == nil else { throw MediaFailure.invalidProtocol }
         if request.operation == .clipboardOCR {
             guard items.isEmpty, preview == nil, normalization == nil, generatedImage == nil,
                   workflowImage == nil, clipboard == nil, let ocr else { throw MediaFailure.invalidProtocol }

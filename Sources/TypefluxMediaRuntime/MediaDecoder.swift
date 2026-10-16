@@ -25,7 +25,7 @@ public enum MediaDecoder {
             items = [try image(data)]
         case .pdf:
             items = try pdf(data)
-        case .clipboardOCR, .copyClipboardImage, .clipboardMedia, .quickLook, .nativeIcon, .previewImage, .previewPDF, .previewVideo, .previewAudio, .inspectWorkflowImage, .copyWorkflowImage:
+        case .recognizeText, .clipboardOCR, .copyClipboardImage, .clipboardMedia, .quickLook, .nativeIcon, .previewImage, .previewPDF, .previewVideo, .previewAudio, .inspectWorkflowImage, .copyWorkflowImage:
             throw MediaFailure.invalidProtocol
         }
         var response = MediaResponse(id: request.id, items: items)

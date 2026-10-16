@@ -147,7 +147,7 @@ final class ScreenshotRedactionSuggestionsTests: XCTestCase {
         cancelled.scan(ScreenCaptureTestSupport.image(width: 10, height: 10), scale: 1)
         cancelled.cancel()
         await cancelled.waitForScan()
-        XCTAssertEqual(cancelled.suggestions.status, .scanning, "A cancelled scan reports nothing")
+        XCTAssertEqual(cancelled.suggestions.status, .idle, "A cancelled scan clears private findings")
     }
 
     func testThePanelGoesBesideTheRegion() {
@@ -167,7 +167,7 @@ final class ScreenshotRedactionSuggestionsTests: XCTestCase {
         ).origin, CGPoint(x: 112, y: 0), "Taller than the display: from the top")
     }
 
-    func testTheVisionScannerReadsThenDetects() async {
+    func testTheVisionScannerReadsThenDetects() async throws {
         struct Reader: ImageTextRecognizing {
             var fails = false
             func recognizeText(in source: ImageTextSource) async throws -> RecognizedText {
@@ -178,10 +178,10 @@ final class ScreenshotRedactionSuggestionsTests: XCTestCase {
             }
         }
         let image = ScreenCaptureTestSupport.image(width: 10, height: 10)
-        let findings = await VisionSensitiveInfoScanner(recognizer: Reader()).scan(image)
+        let findings = try await VisionSensitiveInfoScanner(recognizer: Reader()).scan(image)
         XCTAssertEqual(findings.map(\.kind), [.email])
-        let none = await VisionSensitiveInfoScanner(recognizer: Reader(fails: true)).scan(image)
-        XCTAssertTrue(none.isEmpty)
+        do { _ = try await VisionSensitiveInfoScanner(recognizer: Reader(fails: true)).scan(image); XCTFail("Failure became no findings") }
+        catch {}
     }
 
     func testTheDocumentAddsAndRemovesSeveralAsOneStep() {
