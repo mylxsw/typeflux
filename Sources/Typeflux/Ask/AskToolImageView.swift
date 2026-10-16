@@ -8,29 +8,45 @@ import TypefluxMediaProtocol
     @Published private(set) var unavailable = false
     private var generation = UUID()
     typealias Decoder = AskArtifactImageModel.Decoder
+    typealias InputReader = @MainActor (String) throws -> (Data, MediaImageType)
     private let budget: AskToolPixelBudget
     private var pixelsLease: AskToolPixelBudget.Lease?
-    private let decode: Decoder
-    init(budget: AskToolPixelBudget = .shared, decode: @escaping Decoder = { try await AskArtifactPresentation.image($0, mediaType: $1) }) {
+    private let decode: Decoder?
+    private let worker: MediaWorker
+    private let readInput: InputReader
+    init(budget: AskToolPixelBudget = .shared, worker: MediaWorker = .previews,
+         readInput: @escaping InputReader = { try AskToolImageModel.input($0) }, decode: Decoder? = nil) {
         self.budget = budget
-        self.decode = decode
+        self.decode = decode; self.worker = worker; self.readInput = readInput
+    }
+    static func input(_ url: String) throws -> (Data, MediaImageType) {
+        guard url.utf8.count <= 16 * 1024 * 1024, let comma = url.firstIndex(of: ","),
+              url.hasPrefix("data:"), url[..<comma].hasSuffix(";base64"),
+              let type = MediaImageType(rawValue: String(url[url.index(url.startIndex, offsetBy: 5)..<comma].dropLast(7))),
+              let data = Data(base64Encoded: String(url[url.index(after: comma)...]))
+        else { throw MediaFailure.unreadable }
+        return (data, type)
     }
     func cancel() { generation = UUID(); source = nil; image = nil; pixelsLease = nil; unavailable = false }
     func load(_ url: String) async {
+        guard !Task.isCancelled else { return }
+        let authorization = decode == nil ? worker.authorization() : nil
         cancel()
         source = url
         let current = generation
         do {
             try Task.checkCancellation()
+            if let authorization, !worker.permits(authorization) { throw MediaFailure.unavailable }
             let reservation = try budget.acquire(bytes: 1600 * 1600 * 4)
-            guard url.utf8.count <= 16 * 1024 * 1024, let comma = url.firstIndex(of: ","),
-                  url.hasPrefix("data:"), url[..<comma].hasSuffix(";base64"),
-                  let type = MediaImageType(rawValue: String(url[url.index(url.startIndex, offsetBy: 5)..<comma].dropLast(7))),
-                  let data = Data(base64Encoded: String(url[url.index(after: comma)...]))
-            else { throw MediaFailure.unreadable }
-            let result = try await decode(data, type.rawValue)
+            let (data, type) = try readInput(url)
+            try Task.checkCancellation()
+            if let authorization, !worker.permits(authorization) { throw MediaFailure.unavailable }
+            let result: AskFilePreviewPDF.Result
+            if let decode { result = try await decode(data, type.rawValue) }
+            else { result = try await AskArtifactPresentation.image(data, mediaType: type.rawValue, worker: worker, authorization: authorization) }
             try Task.checkCancellation()
             guard generation == current else { return }
+            if let authorization, !worker.permits(authorization) { throw MediaFailure.unavailable }
             guard let pixels = result.images.first, pixels.width <= 1600, pixels.height <= 1600 else { throw MediaFailure.unreadable }
             pixelsLease = reservation
             image = NSImage(cgImage: pixels, size: .zero)
