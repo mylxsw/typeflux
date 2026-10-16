@@ -135,6 +135,10 @@
 "settings.language.title" = "界面语言";
 "settings.language.subtitle" = "选择 Typeflux 界面的显示语言。";
 "settings.audio" = "音频";
+"settings.general.app.title" = "应用";
+"settings.general.voiceTrigger.title" = "语音输入方式";
+"settings.general.memory.title" = "记忆与词汇";
+"settings.general.screenshot.title" = "截图";
 "settings.microphone.title" = "麦克风";
 "settings.microphone.subtitle" = "选择听写使用的输入设备。自动模式会跟随当前 macOS 默认输入设备；若默认设备是蓝牙耳机，则改用 Mac 自带或有线麦克风，避免开头丢字。";
 "settings.microphone.automatic" = "自动";
@@ -152,7 +156,6 @@
 "settings.mute.title" = "录音时静音";
 "settings.mute.subtitle" = "录音期间临时静音系统输出，减少回声或系统声音串入麦克风。";
 "settings.permissions" = "权限";
-"settings.other" = "其它设置";
 "settings.advanced" = "高级";
 "settings.advanced.button" = "高级设置";
 "settings.advanced.soundEffects.title" = "启用声音特效";
@@ -366,7 +369,6 @@
 "modelDomain.llm.subtitle" = "文本生成与改写";
 
 "overlay.recording.listening" = "正在聆听";
-"overlay.recording.quickInputHint" = "快速录入模式";
 "overlay.recording.personaHint" = "本次请求将使用%@人设进行处理";
 "overlay.ask.guidance" = "你可以询问任何问题";
 "overlay.processing.transcribing" = "思考中";
@@ -806,8 +808,6 @@
 "settings.shortcuts.activation.title" = "语音输入";
 "settings.shortcuts.activation.subtitle" = "使用一个快捷键开始语音输入。可按住说话，也可快速轻触后锁定录音。若当前已有选区，识别结果会直接覆盖该选区。";
 "settings.shortcuts.activation.footnote" = "";
-"settings.shortcuts.quickInput.title" = "快速录入";
-"settings.shortcuts.quickInput.subtitle" = "开启后，按住快捷键说话并松开时会直接插入语音转文本结果，不应用人设。快速轻触锁定录音仍按当前人设流程处理。";
 "settings.shortcuts.ask.title" = "随便问";
 "settings.shortcuts.ask.subtitle" = "连按两次 Fn 即可开始录音提问，回答会在弹窗中展示。若有选中文字，明确的编辑请求也可以直接改写选区。";
 "settings.shortcuts.ask.footnote" = "";
@@ -816,7 +816,6 @@
 "settings.shortcuts.launcherPosition.last" = "记住上次位置";
 "settings.shortcuts.launcherPosition.center.subtitle" = "在鼠标所在屏幕的正中打开。拖动只影响这一次。";
 "settings.shortcuts.launcherPosition.last.subtitle" = "在这块屏幕上次放下的位置打开。拖动顶部边缘或空白处即可移动。";
-"settings.shortcuts.launcherPosition.reset" = "恢复居中";
 "settings.shortcuts.persona.title" = "人设切换器";
 "settings.shortcuts.persona.subtitle" = "打开居中选择器；如果当前存在选中文本，也可以直接将所选人设应用到这段文本。";
 "settings.shortcuts.persona.footnote" = "";
@@ -4690,7 +4689,6 @@
 
 "settings.pane.appearance" = "外观";
 
-"settings.inputAndCapture.title" = "输入与截屏";
 
 // Launcher file preview
 "launcher.search.preview" = "预览文件";

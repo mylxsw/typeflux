@@ -39,7 +39,7 @@ struct HotkeySettingsViewTests {
         }
     }
 
-    @Test func `settings tabs separate shortcut bindings from input and capture controls`() async throws {
+    @Test func `settings tabs separate shortcut bindings from general controls`() async throws {
         try await SettingsBehaviorTestSupport.withFixture { store in
             let model = StudioViewModel(settingsStore: store, historyStore: SQLiteHistoryStore(
                 baseDir: FileManager.default.temporaryDirectory.appendingPathComponent("hotkeys-tabs-\(UUID())")
@@ -53,20 +53,19 @@ struct HotkeySettingsViewTests {
                             $0.value("accessibilityIdentifier") as? String == identifier
                         })
                     }
-                    let controlTitles = ["settings.inputAndCapture.title", "settings.shortcuts.quickInput.title",
-                                         "settings.shortcuts.launcherPosition.title", "settings.shortcuts.screenshot.saveLocation.title"]
+                    let controlTitles = ["settings.general.app.title", "settings.general.voiceTrigger.title",
+                                         "settings.general.screenshot.title", "settings.shortcuts.screenshot.saveLocation.title"]
                     for title in controlTitles {
                         #expect(SettingsBehaviorTestSupport.contains(L(title), in: window))
                     }
+                    // The launcher position lives on the launcher's own general pane now.
+                    #expect(!SettingsBehaviorTestSupport.contains(L("settings.shortcuts.launcherPosition.title"), in: window))
                     #expect(!SettingsBehaviorTestSupport.contains(L("settings.activationHotkey"), in: window))
                     #expect(!SettingsBehaviorTestSupport.elements(in: window).contains {
                         ($0.value("accessibilityIdentifier") as? String ?? "").hasPrefix("hotkeys.binding.")
                     })
                     try SettingsBehaviorTestSupport.snapshot(try #require(window.contentView),
-                                                             name: "settings-input-capture-\(Int(width))")
-                    let quickInput = store.quickInputEnabled
-                    try element("settings.quickInput").press()
-                    try await SettingsBehaviorTestSupport.wait { store.quickInputEnabled != quickInput }
+                                                             name: "settings-general-\(Int(width))")
                     try element("studio.settings.tab.hotkeys").press()
                     try await SettingsBehaviorTestSupport.wait {
                         SettingsBehaviorTestSupport.contains(BuiltInHotkey.activation.title, in: window)
@@ -92,7 +91,7 @@ struct HotkeySettingsViewTests {
                     }
                     try element("studio.settings.tab.general").press()
                     try await SettingsBehaviorTestSupport.wait {
-                        SettingsBehaviorTestSupport.contains(L("settings.inputAndCapture.title"), in: window)
+                        SettingsBehaviorTestSupport.contains(L("settings.general.app.title"), in: window)
                     }
                     try element("studio.settings.tab.hotkeys").press()
                     try await SettingsBehaviorTestSupport.wait {

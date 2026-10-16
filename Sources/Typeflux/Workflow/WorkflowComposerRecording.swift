@@ -59,7 +59,6 @@ final class WorkflowComposerRecording: AskVoiceRecording {
         prepared = true
         audioStartedAt = nil
         workflow.recordingUsesAuxiliary = auxiliary
-        workflow.recordingAllowsQuickInput = true
         workflow.recordingPersonaSnapshot = nil
         workflow.recordingIntent = .dictation
         workflow.recordingMode = locked ? .locked : .holdToTalk
@@ -128,11 +127,9 @@ final class WorkflowComposerRecording: AskVoiceRecording {
     /// Audio kept for a realtime recogniser that is still connecting.
     static let maximumRelayedAudio: TimeInterval = 30
 
-    /// The persona prompt the transcript is rewritten with; quick input skips it.
+    /// The persona prompt the transcript is rewritten with.
     private var personaPrompt: String? {
-        guard let workflow else { return nil }
-        let quickInput = workflow.shouldUseQuickInput(recordingMode: workflow.recordingMode, recordingIntent: .dictation)
-        return quickInput ? nil : workflow.recordingPersonaSnapshot?.prompt
+        workflow?.recordingPersonaSnapshot?.prompt
     }
 
     private func startRealtime(relay: RecordingStartupAudioBufferRelay) async {
@@ -200,9 +197,6 @@ final class WorkflowComposerRecording: AskVoiceRecording {
         guard let workflow, started else { throw CancellationError() }
         handleHotkey(.finish)
         settlePersona()
-        let useQuickInput = workflow.shouldUseQuickInput(
-            recordingMode: workflow.recordingMode, recordingIntent: .dictation
-        )
         let persona = workflow.recordingPersonaSnapshot
         // The same tail capture as normal dictation preserves final consonants.
         try await Task.sleep(for: WorkflowController.recordingTailCaptureDuration)
@@ -230,7 +224,7 @@ final class WorkflowComposerRecording: AskVoiceRecording {
             throw MessageError(message: L("workflow.recording.tooShort"))
         }
         workflow.appState.setStatus(.processing)
-        let personaContext = TranscriptionPersonaContext(prompt: useQuickInput ? nil : persona?.prompt)
+        let personaContext = TranscriptionPersonaContext(prompt: persona?.prompt)
         let text = try await TranscriptionPersonaContext.$current.withValue(personaContext) {
             try await recognize(file: file, session: pending.session, pump: pending.pump,
                                 optimize: !WorkflowController.hasRewritePersona(personaContext.prompt))

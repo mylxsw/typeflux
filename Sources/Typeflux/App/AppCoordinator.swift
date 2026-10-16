@@ -203,8 +203,7 @@ final class AppCoordinator {
         mouseVoiceInputController.onRecordingRequested = { [weak workflowController] mode in
             workflowController?.handlePressBegan(
                 intent: .dictation,
-                startLocked: mode == .locked,
-                allowsQuickInput: false
+                startLocked: mode == .locked
             )
         }
         mouseVoiceInputController.onRecordingReleaseRequested = { [weak workflowController] in
