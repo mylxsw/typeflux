@@ -1,0 +1,1 @@
+{"chunks":10000,"label":"before","wall_seconds":1214.0503349589999,"exit_code":1,"command":["/usr/bin/swift","test","--configuration","release","--jobs","4","--filter","SemanticNativeLatencyTests|SemanticNativeContentionTests"]}

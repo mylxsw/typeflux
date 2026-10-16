@@ -1,0 +1,11 @@
+{
+  "denominator": "Added/modified executable Swift helper-wrapper lines vs 262135bc intersected with LLVM LCOV DA records; app and vendor runtime excluded.",
+  "executable": 43,
+  "covered": 40,
+  "uncovered": [
+    71,
+    72,
+    73
+  ],
+  "percent": 93.02
+}

@@ -1,0 +1,6 @@
+run-*.json linguist-generated=true
+native-*.json linguist-generated=true
+contention-*.json linguist-generated=true
+*-vectors.json linguist-generated=true
+*.log linguist-generated=true
+*.lcov.gz linguist-generated=true

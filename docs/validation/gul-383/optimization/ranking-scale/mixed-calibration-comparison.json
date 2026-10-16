@@ -1,0 +1,8063 @@
+{
+  "corpus_documents": 102,
+  "queries": 256,
+  "parameters": {
+    "semantic_floor": 0.45,
+    "absolute": 0.675,
+    "margin": 0.04,
+    "audio_offset": 0.05,
+    "shared_observations": 4
+  },
+  "selection": "Fixed parameters from development calibration. Compare full mixed corpus; no held-out query results read. Original scan/media_timestamp groups remain unsupported failures in the 200-query production oracle report.",
+  "methods": {
+    "rrf": {
+      "groups": {
+        "lexical": {
+          "n": 25,
+          "correct": 25,
+          "rr": 25.0,
+          "false_positive": 0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "false_positive_rate": 0.0
+        },
+        "identifier": {
+          "n": 25,
+          "correct": 25,
+          "rr": 25.0,
+          "false_positive": 0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "false_positive_rate": 0.0
+        },
+        "chinese_short": {
+          "n": 25,
+          "correct": 25,
+          "rr": 24.5,
+          "false_positive": 0,
+          "recall_at_5": 1.0,
+          "mrr": 0.98,
+          "false_positive_rate": 0.0
+        },
+        "cross_language": {
+          "n": 25,
+          "correct": 10,
+          "rr": 4.416666666666666,
+          "false_positive": 0,
+          "recall_at_5": 0.4,
+          "mrr": 0.17666666666666664,
+          "false_positive_rate": 0.0
+        },
+        "long_tail": {
+          "n": 25,
+          "correct": 25,
+          "rr": 25.0,
+          "false_positive": 0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "false_positive_rate": 0.0
+        },
+        "no_answer": {
+          "n": 25,
+          "correct": 0,
+          "rr": 0,
+          "false_positive": 0,
+          "recall_at_5": 0.0,
+          "mrr": 0.0,
+          "false_positive_rate": 0.0
+        },
+        "audio_topic": {
+          "n": 25,
+          "correct": 18,
+          "rr": 5.183333333333334,
+          "false_positive": 0,
+          "recall_at_5": 0.72,
+          "mrr": 0.20733333333333334,
+          "false_positive_rate": 0.0
+        },
+        "audio_paraphrase": {
+          "n": 25,
+          "correct": 25,
+          "rr": 22.75,
+          "false_positive": 0,
+          "recall_at_5": 1.0,
+          "mrr": 0.91,
+          "false_positive_rate": 0.0
+        },
+        "audio_cross_language": {
+          "n": 25,
+          "correct": 23,
+          "rr": 15.5,
+          "false_positive": 0,
+          "recall_at_5": 0.92,
+          "mrr": 0.62,
+          "false_positive_rate": 0.0
+        },
+        "media_no_answer": {
+          "n": 25,
+          "correct": 0,
+          "rr": 0,
+          "false_positive": 1,
+          "recall_at_5": 0.0,
+          "mrr": 0.0,
+          "false_positive_rate": 0.04
+        },
+        "image": {
+          "n": 6,
+          "correct": 6,
+          "rr": 4.666666666666667,
+          "false_positive": 0,
+          "recall_at_5": 1.0,
+          "mrr": 0.7777777777777778,
+          "false_positive_rate": 0.0
+        }
+      },
+      "rows": [
+        {
+          "id": "lexical-00",
+          "group": "lexical",
+          "hits": [
+            "en-00",
+            "tail-00",
+            "en-04",
+            "en-10",
+            "en-06"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-00",
+          "group": "identifier",
+          "hits": [
+            "en-00"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-00",
+          "group": "chinese_short",
+          "hits": [
+            "zh-00",
+            "tail-00",
+            "en-00",
+            "zh-12",
+            "zh-10"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-00",
+          "group": "cross_language",
+          "hits": [
+            "zh-00",
+            "tail-00",
+            "en-00",
+            "zh-12",
+            "zh-10"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "long_tail-00",
+          "group": "long_tail",
+          "hits": [
+            "tail-00"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-00",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-01",
+          "group": "lexical",
+          "hits": [
+            "en-01",
+            "tail-01",
+            "en-07",
+            "en-05",
+            "en-02"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-01",
+          "group": "identifier",
+          "hits": [
+            "en-01"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-01",
+          "group": "chinese_short",
+          "hits": [
+            "zh-01",
+            "en-01",
+            "tail-01",
+            "zh-20",
+            "zh-18"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-01",
+          "group": "cross_language",
+          "hits": [
+            "en-01",
+            "tail-01",
+            "en-07",
+            "en-05",
+            "en-02"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-01",
+          "group": "long_tail",
+          "hits": [
+            "tail-01"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-01",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-02",
+          "group": "lexical",
+          "hits": [
+            "en-02",
+            "tail-02",
+            "en-07",
+            "en-06",
+            "en-05"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-02",
+          "group": "identifier",
+          "hits": [
+            "en-02"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-02",
+          "group": "chinese_short",
+          "hits": [
+            "zh-02",
+            "en-02",
+            "zh-19",
+            "tail-02",
+            "tail-06"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-02",
+          "group": "cross_language",
+          "hits": [
+            "zh-02",
+            "en-02",
+            "zh-19",
+            "tail-02",
+            "tail-06"
+          ],
+          "rank": 2
+        },
+        {
+          "id": "long_tail-02",
+          "group": "long_tail",
+          "hits": [
+            "tail-02"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-02",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-03",
+          "group": "lexical",
+          "hits": [
+            "en-03",
+            "tail-03",
+            "en-00",
+            "en-04",
+            "en-02"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-03",
+          "group": "identifier",
+          "hits": [
+            "en-03"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-03",
+          "group": "chinese_short",
+          "hits": [
+            "zh-03",
+            "en-03",
+            "tail-03",
+            "zh-10",
+            "zh-00"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-03",
+          "group": "cross_language",
+          "hits": [
+            "en-03",
+            "tail-03",
+            "en-00",
+            "en-04",
+            "en-02"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-03",
+          "group": "long_tail",
+          "hits": [
+            "tail-03"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-03",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-04",
+          "group": "lexical",
+          "hits": [
+            "en-04",
+            "tail-04",
+            "en-00",
+            "en-02",
+            "en-06"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-04",
+          "group": "identifier",
+          "hits": [
+            "en-04"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-04",
+          "group": "chinese_short",
+          "hits": [
+            "zh-04",
+            "zh-19",
+            "zh-13",
+            "zh-21",
+            "en-21"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-04",
+          "group": "cross_language",
+          "hits": [
+            "zh-04",
+            "zh-19",
+            "zh-13",
+            "zh-21",
+            "en-21"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-04",
+          "group": "long_tail",
+          "hits": [
+            "tail-04"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-04",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-05",
+          "group": "lexical",
+          "hits": [
+            "en-05",
+            "tail-05",
+            "en-00",
+            "en-10",
+            "en-08"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-05",
+          "group": "identifier",
+          "hits": [
+            "en-05"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-05",
+          "group": "chinese_short",
+          "hits": [
+            "zh-05",
+            "en-05",
+            "tail-05",
+            "zh-11",
+            "clip-05"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-05",
+          "group": "cross_language",
+          "hits": [
+            "en-05",
+            "tail-05",
+            "en-00",
+            "en-10",
+            "en-08"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-05",
+          "group": "long_tail",
+          "hits": [
+            "tail-05"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-05",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-06",
+          "group": "lexical",
+          "hits": [
+            "en-06",
+            "en-02",
+            "en-00",
+            "tail-06",
+            "en-10"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-06",
+          "group": "identifier",
+          "hits": [
+            "en-06"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-06",
+          "group": "chinese_short",
+          "hits": [
+            "zh-06",
+            "en-06",
+            "clip-06",
+            "zh-13",
+            "tail-06"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-06",
+          "group": "cross_language",
+          "hits": [
+            "zh-06",
+            "en-06",
+            "clip-06",
+            "zh-13",
+            "tail-06"
+          ],
+          "rank": 2
+        },
+        {
+          "id": "long_tail-06",
+          "group": "long_tail",
+          "hits": [
+            "tail-06"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-06",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-07",
+          "group": "lexical",
+          "hits": [
+            "en-07",
+            "tail-07",
+            "en-00",
+            "en-14",
+            "en-10"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-07",
+          "group": "identifier",
+          "hits": [
+            "en-07"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-07",
+          "group": "chinese_short",
+          "hits": [
+            "zh-07",
+            "en-07",
+            "tail-07",
+            "zh-19",
+            "zh-01"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-07",
+          "group": "cross_language",
+          "hits": [
+            "en-07",
+            "tail-07",
+            "en-00",
+            "en-14",
+            "en-10"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-07",
+          "group": "long_tail",
+          "hits": [
+            "tail-07"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-07",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-08",
+          "group": "lexical",
+          "hits": [
+            "en-08",
+            "en-04",
+            "tail-08",
+            "en-10",
+            "en-00"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-08",
+          "group": "identifier",
+          "hits": [
+            "en-08"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-08",
+          "group": "chinese_short",
+          "hits": [
+            "zh-08",
+            "en-08",
+            "zh-10",
+            "tail-08",
+            "zh-00"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-08",
+          "group": "cross_language",
+          "hits": [
+            "zh-08",
+            "en-08",
+            "zh-10",
+            "tail-08",
+            "zh-00"
+          ],
+          "rank": 2
+        },
+        {
+          "id": "long_tail-08",
+          "group": "long_tail",
+          "hits": [
+            "tail-08"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-08",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-09",
+          "group": "lexical",
+          "hits": [
+            "en-09",
+            "tail-09",
+            "en-07",
+            "en-04",
+            "en-08"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-09",
+          "group": "identifier",
+          "hits": [
+            "en-09"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-09",
+          "group": "chinese_short",
+          "hits": [
+            "zh-09",
+            "clip-09",
+            "en-09",
+            "tail-09",
+            "zh-18"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-09",
+          "group": "cross_language",
+          "hits": [
+            "en-09",
+            "tail-09",
+            "en-07",
+            "en-04",
+            "en-08"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-09",
+          "group": "long_tail",
+          "hits": [
+            "tail-09"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-09",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-10",
+          "group": "lexical",
+          "hits": [
+            "en-10",
+            "en-05",
+            "en-04",
+            "tail-10",
+            "en-08"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-10",
+          "group": "identifier",
+          "hits": [
+            "en-10"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-10",
+          "group": "chinese_short",
+          "hits": [
+            "zh-10",
+            "zh-23",
+            "zh-11",
+            "en-06",
+            "zh-00"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-10",
+          "group": "cross_language",
+          "hits": [
+            "zh-10",
+            "zh-23",
+            "zh-11",
+            "en-06",
+            "zh-00"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-10",
+          "group": "long_tail",
+          "hits": [
+            "tail-10"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-10",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-11",
+          "group": "lexical",
+          "hits": [
+            "en-11",
+            "en-00",
+            "en-05",
+            "tail-11",
+            "en-04"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-11",
+          "group": "identifier",
+          "hits": [
+            "en-11"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-11",
+          "group": "chinese_short",
+          "hits": [
+            "zh-11",
+            "tail-11",
+            "en-11",
+            "en-21",
+            "zh-21"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-11",
+          "group": "cross_language",
+          "hits": [
+            "en-11",
+            "en-00",
+            "en-05",
+            "tail-11",
+            "en-04"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-11",
+          "group": "long_tail",
+          "hits": [
+            "tail-11"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-11",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-12",
+          "group": "lexical",
+          "hits": [
+            "en-12",
+            "en-00",
+            "tail-12",
+            "en-04",
+            "en-05"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-12",
+          "group": "identifier",
+          "hits": [
+            "en-12"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-12",
+          "group": "chinese_short",
+          "hits": [
+            "zh-12",
+            "tail-12",
+            "clip-12",
+            "en-12",
+            "zh-00"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-12",
+          "group": "cross_language",
+          "hits": [
+            "zh-12",
+            "tail-12",
+            "clip-12",
+            "en-12",
+            "zh-00"
+          ],
+          "rank": 4
+        },
+        {
+          "id": "long_tail-12",
+          "group": "long_tail",
+          "hits": [
+            "tail-12"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-12",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-13",
+          "group": "lexical",
+          "hits": [
+            "en-13",
+            "en-06",
+            "en-00",
+            "tail-13",
+            "en-05"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-13",
+          "group": "identifier",
+          "hits": [
+            "en-13"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-13",
+          "group": "chinese_short",
+          "hits": [
+            "zh-13",
+            "en-13",
+            "tail-13",
+            "clip-13",
+            "zh-12"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-13",
+          "group": "cross_language",
+          "hits": [
+            "en-13",
+            "en-06",
+            "en-00",
+            "tail-13",
+            "en-05"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-13",
+          "group": "long_tail",
+          "hits": [
+            "tail-13"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-13",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-14",
+          "group": "lexical",
+          "hits": [
+            "en-14",
+            "tail-14",
+            "en-07",
+            "en-00",
+            "en-10"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-14",
+          "group": "identifier",
+          "hits": [
+            "en-14"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-14",
+          "group": "chinese_short",
+          "hits": [
+            "zh-14",
+            "en-14",
+            "clip-14",
+            "zh-23",
+            "tail-14"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-14",
+          "group": "cross_language",
+          "hits": [
+            "zh-14",
+            "en-14",
+            "clip-14",
+            "zh-23",
+            "tail-14"
+          ],
+          "rank": 2
+        },
+        {
+          "id": "long_tail-14",
+          "group": "long_tail",
+          "hits": [
+            "tail-14"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-14",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-15",
+          "group": "lexical",
+          "hits": [
+            "en-15",
+            "en-00",
+            "en-10",
+            "tail-15",
+            "en-07"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-15",
+          "group": "identifier",
+          "hits": [
+            "en-15"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-15",
+          "group": "chinese_short",
+          "hits": [
+            "zh-15",
+            "tail-15",
+            "en-15",
+            "clip-15",
+            "zh-08"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-15",
+          "group": "cross_language",
+          "hits": [
+            "en-15",
+            "en-00",
+            "en-10",
+            "tail-15",
+            "en-07"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-15",
+          "group": "long_tail",
+          "hits": [
+            "tail-15"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-15",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-16",
+          "group": "lexical",
+          "hits": [
+            "en-16",
+            "en-04",
+            "en-07",
+            "tail-16",
+            "en-10"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-16",
+          "group": "identifier",
+          "hits": [
+            "en-16"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-16",
+          "group": "chinese_short",
+          "hits": [
+            "zh-16",
+            "en-16",
+            "tail-16",
+            "clip-16",
+            "zh-19"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-16",
+          "group": "cross_language",
+          "hits": [
+            "zh-16",
+            "en-16",
+            "tail-16",
+            "clip-16",
+            "zh-19"
+          ],
+          "rank": 2
+        },
+        {
+          "id": "long_tail-16",
+          "group": "long_tail",
+          "hits": [
+            "tail-16"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-16",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-17",
+          "group": "lexical",
+          "hits": [
+            "en-17",
+            "en-10",
+            "en-00",
+            "en-04",
+            "en-20"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-17",
+          "group": "identifier",
+          "hits": [
+            "en-17"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-17",
+          "group": "chinese_short",
+          "hits": [
+            "zh-17",
+            "en-17",
+            "zh-19",
+            "tail-17",
+            "zh-20"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-17",
+          "group": "cross_language",
+          "hits": [
+            "en-17",
+            "en-10",
+            "en-00",
+            "en-04",
+            "en-20"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-17",
+          "group": "long_tail",
+          "hits": [
+            "tail-17"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-17",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-18",
+          "group": "lexical",
+          "hits": [
+            "en-18",
+            "en-09",
+            "tail-18",
+            "en-00",
+            "en-07"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-18",
+          "group": "identifier",
+          "hits": [
+            "en-18"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-18",
+          "group": "chinese_short",
+          "hits": [
+            "zh-09",
+            "zh-18",
+            "en-18",
+            "tail-18",
+            "en-09"
+          ],
+          "rank": 2
+        },
+        {
+          "id": "cross_language-18",
+          "group": "cross_language",
+          "hits": [
+            "zh-09",
+            "zh-18",
+            "en-18",
+            "tail-18",
+            "en-09"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "long_tail-18",
+          "group": "long_tail",
+          "hits": [
+            "tail-18"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-18",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-19",
+          "group": "lexical",
+          "hits": [
+            "en-19",
+            "en-02",
+            "en-07",
+            "en-00",
+            "en-10"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-19",
+          "group": "identifier",
+          "hits": [
+            "en-19"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-19",
+          "group": "chinese_short",
+          "hits": [
+            "zh-19",
+            "tail-19",
+            "en-19",
+            "zh-04",
+            "zh-13"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-19",
+          "group": "cross_language",
+          "hits": [
+            "en-19",
+            "en-02",
+            "en-07",
+            "en-00",
+            "en-10"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-19",
+          "group": "long_tail",
+          "hits": [
+            "tail-19"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-19",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-20",
+          "group": "lexical",
+          "hits": [
+            "en-20",
+            "en-05",
+            "en-04",
+            "en-01",
+            "en-07"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-20",
+          "group": "identifier",
+          "hits": [
+            "en-20"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-20",
+          "group": "chinese_short",
+          "hits": [
+            "zh-20",
+            "en-20",
+            "tail-20",
+            "en-05",
+            "zh-19"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-20",
+          "group": "cross_language",
+          "hits": [
+            "zh-20",
+            "en-20",
+            "tail-20",
+            "en-05",
+            "zh-19"
+          ],
+          "rank": 2
+        },
+        {
+          "id": "long_tail-20",
+          "group": "long_tail",
+          "hits": [
+            "tail-20"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-20",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-21",
+          "group": "lexical",
+          "hits": [
+            "en-21",
+            "en-00",
+            "en-04",
+            "en-11",
+            "en-10"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-21",
+          "group": "identifier",
+          "hits": [
+            "en-21"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-21",
+          "group": "chinese_short",
+          "hits": [
+            "zh-21",
+            "en-21",
+            "clip-21",
+            "tail-21",
+            "zh-11"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-21",
+          "group": "cross_language",
+          "hits": [
+            "en-21",
+            "en-00",
+            "en-04",
+            "en-11",
+            "en-10"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-21",
+          "group": "long_tail",
+          "hits": [
+            "tail-21"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-21",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-22",
+          "group": "lexical",
+          "hits": [
+            "en-22",
+            "en-00",
+            "en-04",
+            "en-10",
+            "en-14"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-22",
+          "group": "identifier",
+          "hits": [
+            "en-22"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-22",
+          "group": "chinese_short",
+          "hits": [
+            "zh-22",
+            "zh-00",
+            "zh-06",
+            "zh-23",
+            "clip-06"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-22",
+          "group": "cross_language",
+          "hits": [
+            "zh-22",
+            "zh-00",
+            "zh-06",
+            "zh-23",
+            "clip-06"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-22",
+          "group": "long_tail",
+          "hits": [
+            "tail-22"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-22",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-23",
+          "group": "lexical",
+          "hits": [
+            "en-23",
+            "en-07",
+            "en-00",
+            "en-04",
+            "en-14"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-23",
+          "group": "identifier",
+          "hits": [
+            "en-23"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-23",
+          "group": "chinese_short",
+          "hits": [
+            "zh-23",
+            "tail-23",
+            "en-23",
+            "zh-14",
+            "zh-18"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-23",
+          "group": "cross_language",
+          "hits": [
+            "en-23",
+            "en-07",
+            "en-00",
+            "en-04",
+            "en-14"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-23",
+          "group": "long_tail",
+          "hits": [
+            "tail-23"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-23",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-24",
+          "group": "lexical",
+          "hits": [
+            "en-24",
+            "en-00",
+            "en-10",
+            "en-07",
+            "en-04"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-24",
+          "group": "identifier",
+          "hits": [
+            "en-24"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-24",
+          "group": "chinese_short",
+          "hits": [
+            "zh-24",
+            "en-24",
+            "tail-24",
+            "zh-11",
+            "clip-24"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-24",
+          "group": "cross_language",
+          "hits": [
+            "zh-24",
+            "en-24",
+            "tail-24",
+            "zh-11",
+            "clip-24"
+          ],
+          "rank": 2
+        },
+        {
+          "id": "long_tail-24",
+          "group": "long_tail",
+          "hits": [
+            "tail-24"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-24",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "audio_topic-00",
+          "group": "audio_topic",
+          "hits": [
+            "en-00",
+            "tail-00",
+            "clip-00",
+            "clip-10",
+            "zh-00"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "audio_paraphrase-00",
+          "group": "audio_paraphrase",
+          "hits": [
+            "tail-00",
+            "clip-00",
+            "clip-12",
+            "en-00",
+            "clip-22"
+          ],
+          "rank": 2
+        },
+        {
+          "id": "audio_cross_language-00",
+          "group": "audio_cross_language",
+          "hits": [
+            "tail-00",
+            "zh-00",
+            "en-00",
+            "zh-12",
+            "zh-13"
+          ],
+          "rank": null
+        },
+        {
+          "id": "audio_topic-01",
+          "group": "audio_topic",
+          "hits": [
+            "en-01",
+            "tail-01",
+            "zh-01",
+            "clip-01",
+            "clip-21"
+          ],
+          "rank": 4
+        },
+        {
+          "id": "audio_paraphrase-01",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-01",
+            "zh-01",
+            "en-01",
+            "tail-01",
+            "en-20"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-01",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-01",
+            "zh-01",
+            "tail-01",
+            "en-01",
+            "zh-20"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-02",
+          "group": "audio_topic",
+          "hits": [
+            "en-02",
+            "tail-02",
+            "clip-02",
+            "zh-02",
+            "tail-06"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "audio_paraphrase-02",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-02",
+            "tail-02",
+            "zh-02",
+            "en-02",
+            "clip-06"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-02",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-02",
+            "zh-02",
+            "tail-02",
+            "en-02",
+            "zh-19"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-03",
+          "group": "audio_topic",
+          "hits": [
+            "en-03",
+            "tail-03",
+            "zh-03",
+            "clip-03",
+            "tail-00"
+          ],
+          "rank": 4
+        },
+        {
+          "id": "audio_paraphrase-03",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-03",
+            "tail-03",
+            "en-03",
+            "zh-03",
+            "clip-15"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-03",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-03",
+            "zh-03",
+            "tail-03",
+            "en-03",
+            "zh-08"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-04",
+          "group": "audio_topic",
+          "hits": [
+            "en-04",
+            "tail-04",
+            "en-21",
+            "zh-04",
+            "tail-21"
+          ],
+          "rank": null
+        },
+        {
+          "id": "audio_paraphrase-04",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-04",
+            "en-04",
+            "tail-04",
+            "zh-04",
+            "clip-16"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-04",
+          "group": "audio_cross_language",
+          "hits": [
+            "zh-04",
+            "clip-04",
+            "en-04",
+            "tail-04",
+            "zh-13"
+          ],
+          "rank": 2
+        },
+        {
+          "id": "audio_topic-05",
+          "group": "audio_topic",
+          "hits": [
+            "en-05",
+            "tail-05",
+            "en-20",
+            "tail-20",
+            "zh-05"
+          ],
+          "rank": null
+        },
+        {
+          "id": "audio_paraphrase-05",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-05",
+            "zh-05",
+            "tail-05",
+            "en-05",
+            "tail-20"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-05",
+          "group": "audio_cross_language",
+          "hits": [
+            "zh-05",
+            "clip-05",
+            "en-05",
+            "tail-05",
+            "zh-20"
+          ],
+          "rank": 2
+        },
+        {
+          "id": "audio_topic-06",
+          "group": "audio_topic",
+          "hits": [
+            "en-06",
+            "tail-06",
+            "clip-06",
+            "zh-06",
+            "clip-02"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "audio_paraphrase-06",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-06",
+            "en-02",
+            "en-06",
+            "clip-02",
+            "en-13"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-06",
+          "group": "audio_cross_language",
+          "hits": [
+            "zh-06",
+            "zh-02",
+            "clip-06",
+            "clip-02",
+            "tail-02"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "audio_topic-07",
+          "group": "audio_topic",
+          "hits": [
+            "en-07",
+            "tail-07",
+            "zh-07",
+            "red",
+            "blue"
+          ],
+          "rank": null
+        },
+        {
+          "id": "audio_paraphrase-07",
+          "group": "audio_paraphrase",
+          "hits": [
+            "zh-07",
+            "en-07",
+            "tail-07",
+            "clip-07",
+            "en-11"
+          ],
+          "rank": 4
+        },
+        {
+          "id": "audio_cross_language-07",
+          "group": "audio_cross_language",
+          "hits": [
+            "zh-07",
+            "en-07",
+            "tail-07",
+            "zh-19",
+            "zh-11"
+          ],
+          "rank": null
+        },
+        {
+          "id": "audio_topic-08",
+          "group": "audio_topic",
+          "hits": [
+            "en-08",
+            "tail-08",
+            "zh-08",
+            "clip-04",
+            "clip-08"
+          ],
+          "rank": 5
+        },
+        {
+          "id": "audio_paraphrase-08",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-08",
+            "en-08",
+            "tail-08",
+            "zh-08",
+            "en-14"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-08",
+          "group": "audio_cross_language",
+          "hits": [
+            "zh-08",
+            "clip-08",
+            "en-08",
+            "tail-08",
+            "zh-23"
+          ],
+          "rank": 2
+        },
+        {
+          "id": "audio_topic-09",
+          "group": "audio_topic",
+          "hits": [
+            "en-09",
+            "tail-09",
+            "clip-09",
+            "zh-09",
+            "en-08"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "audio_paraphrase-09",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-09",
+            "en-09",
+            "tail-09",
+            "zh-09",
+            "en-04"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-09",
+          "group": "audio_cross_language",
+          "hits": [
+            "zh-09",
+            "clip-09",
+            "en-09",
+            "tail-09",
+            "zh-18"
+          ],
+          "rank": 2
+        },
+        {
+          "id": "audio_topic-10",
+          "group": "audio_topic",
+          "hits": [
+            "en-10",
+            "tail-10",
+            "clip-10",
+            "clip-11",
+            "en-05"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "audio_paraphrase-10",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-10",
+            "tail-10",
+            "en-10",
+            "zh-10",
+            "clip-03"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-10",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-10",
+            "zh-10",
+            "tail-10",
+            "en-10",
+            "zh-13"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-11",
+          "group": "audio_topic",
+          "hits": [
+            "en-11",
+            "tail-11",
+            "clip-11",
+            "zh-11",
+            "en-21"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "audio_paraphrase-11",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-11",
+            "en-11",
+            "tail-11",
+            "zh-11",
+            "en-21"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-11",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-11",
+            "zh-11",
+            "en-11",
+            "tail-11",
+            "zh-02"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-12",
+          "group": "audio_topic",
+          "hits": [
+            "tail-12",
+            "en-12",
+            "clip-12",
+            "zh-12",
+            "clip-00"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "audio_paraphrase-12",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-12",
+            "tail-12",
+            "en-12",
+            "clip-13",
+            "zh-12"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-12",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-12",
+            "zh-12",
+            "tail-12",
+            "en-12",
+            "zh-13"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-13",
+          "group": "audio_topic",
+          "hits": [
+            "en-13",
+            "tail-13",
+            "clip-06",
+            "tail-06",
+            "en-06"
+          ],
+          "rank": null
+        },
+        {
+          "id": "audio_paraphrase-13",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-13",
+            "en-13",
+            "tail-13",
+            "clip-12",
+            "zh-13"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-13",
+          "group": "audio_cross_language",
+          "hits": [
+            "zh-13",
+            "clip-13",
+            "en-13",
+            "tail-13",
+            "clip-12"
+          ],
+          "rank": 2
+        },
+        {
+          "id": "audio_topic-14",
+          "group": "audio_topic",
+          "hits": [
+            "en-14",
+            "tail-14",
+            "clip-14",
+            "zh-14",
+            "clip-06"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "audio_paraphrase-14",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-04",
+            "clip-14",
+            "tail-04",
+            "zh-14",
+            "tail-23"
+          ],
+          "rank": 2
+        },
+        {
+          "id": "audio_cross_language-14",
+          "group": "audio_cross_language",
+          "hits": [
+            "zh-14",
+            "clip-14",
+            "en-14",
+            "tail-14",
+            "zh-23"
+          ],
+          "rank": 2
+        },
+        {
+          "id": "audio_topic-15",
+          "group": "audio_topic",
+          "hits": [
+            "en-15",
+            "tail-15",
+            "clip-15",
+            "zh-15",
+            "clip-08"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "audio_paraphrase-15",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-15",
+            "en-15",
+            "tail-15",
+            "clip-08",
+            "en-08"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-15",
+          "group": "audio_cross_language",
+          "hits": [
+            "zh-15",
+            "clip-15",
+            "tail-15",
+            "en-15",
+            "en-08"
+          ],
+          "rank": 2
+        },
+        {
+          "id": "audio_topic-16",
+          "group": "audio_topic",
+          "hits": [
+            "en-16",
+            "tail-16",
+            "zh-16",
+            "clip-16",
+            "en-04"
+          ],
+          "rank": 4
+        },
+        {
+          "id": "audio_paraphrase-16",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-16",
+            "tail-16",
+            "zh-16",
+            "en-16",
+            "en-04"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-16",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-16",
+            "zh-16",
+            "tail-16",
+            "en-16",
+            "en-21"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-17",
+          "group": "audio_topic",
+          "hits": [
+            "en-17",
+            "tail-17",
+            "zh-17",
+            "tail-20",
+            "clip-17"
+          ],
+          "rank": 5
+        },
+        {
+          "id": "audio_paraphrase-17",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-17",
+            "en-17",
+            "tail-17",
+            "zh-17",
+            "en-19"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-17",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-17",
+            "zh-17",
+            "en-17",
+            "tail-17",
+            "zh-19"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-18",
+          "group": "audio_topic",
+          "hits": [
+            "en-18",
+            "tail-18",
+            "en-09",
+            "tail-09",
+            "zh-18"
+          ],
+          "rank": null
+        },
+        {
+          "id": "audio_paraphrase-18",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-18",
+            "en-18",
+            "tail-18",
+            "zh-18",
+            "clip-09"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-18",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-18",
+            "zh-18",
+            "en-18",
+            "tail-18",
+            "zh-09"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-19",
+          "group": "audio_topic",
+          "hits": [
+            "tail-19",
+            "en-19",
+            "zh-19",
+            "en-21",
+            "en-11"
+          ],
+          "rank": null
+        },
+        {
+          "id": "audio_paraphrase-19",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-19",
+            "en-19",
+            "zh-19",
+            "tail-19",
+            "en-21"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-19",
+          "group": "audio_cross_language",
+          "hits": [
+            "zh-19",
+            "en-19",
+            "clip-19",
+            "zh-04",
+            "tail-19"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "audio_topic-20",
+          "group": "audio_topic",
+          "hits": [
+            "en-20",
+            "tail-20",
+            "zh-20",
+            "en-05",
+            "clip-20"
+          ],
+          "rank": 5
+        },
+        {
+          "id": "audio_paraphrase-20",
+          "group": "audio_paraphrase",
+          "hits": [
+            "tail-20",
+            "clip-20",
+            "en-20",
+            "zh-20",
+            "tail-04"
+          ],
+          "rank": 2
+        },
+        {
+          "id": "audio_cross_language-20",
+          "group": "audio_cross_language",
+          "hits": [
+            "zh-20",
+            "clip-20",
+            "tail-20",
+            "en-20",
+            "zh-01"
+          ],
+          "rank": 2
+        },
+        {
+          "id": "audio_topic-21",
+          "group": "audio_topic",
+          "hits": [
+            "en-21",
+            "tail-21",
+            "en-11",
+            "tail-11",
+            "clip-11"
+          ],
+          "rank": null
+        },
+        {
+          "id": "audio_paraphrase-21",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-21",
+            "en-21",
+            "tail-21",
+            "zh-21",
+            "clip-16"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-21",
+          "group": "audio_cross_language",
+          "hits": [
+            "zh-21",
+            "clip-21",
+            "en-21",
+            "tail-21",
+            "zh-16"
+          ],
+          "rank": 2
+        },
+        {
+          "id": "audio_topic-22",
+          "group": "audio_topic",
+          "hits": [
+            "tail-22",
+            "en-22",
+            "clip-22",
+            "zh-00",
+            "en-00"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "audio_paraphrase-22",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-22",
+            "tail-22",
+            "en-22",
+            "zh-22",
+            "tail-00"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-22",
+          "group": "audio_cross_language",
+          "hits": [
+            "zh-22",
+            "clip-22",
+            "en-22",
+            "zh-00",
+            "tail-22"
+          ],
+          "rank": 2
+        },
+        {
+          "id": "audio_topic-23",
+          "group": "audio_topic",
+          "hits": [
+            "en-23",
+            "tail-23",
+            "zh-23",
+            "clip-23",
+            "clip-09"
+          ],
+          "rank": 4
+        },
+        {
+          "id": "audio_paraphrase-23",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-23",
+            "tail-23",
+            "en-23",
+            "zh-23",
+            "tail-04"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-23",
+          "group": "audio_cross_language",
+          "hits": [
+            "zh-23",
+            "tail-23",
+            "clip-23",
+            "en-23",
+            "clip-14"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "audio_topic-24",
+          "group": "audio_topic",
+          "hits": [
+            "en-24",
+            "tail-24",
+            "zh-24",
+            "clip-24",
+            "tail-22"
+          ],
+          "rank": 4
+        },
+        {
+          "id": "audio_paraphrase-24",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-24",
+            "zh-24",
+            "en-24",
+            "tail-24",
+            "clip-00"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-24",
+          "group": "audio_cross_language",
+          "hits": [
+            "zh-24",
+            "clip-24",
+            "en-24",
+            "tail-24",
+            "zh-00"
+          ],
+          "rank": 2
+        },
+        {
+          "id": "media_no_answer-00",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-01",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-02",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-03",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-04",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-05",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-06",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-07",
+          "group": "media_no_answer",
+          "hits": [
+            "clip-06",
+            "tail-07",
+            "clip-07",
+            "tail-06",
+            "en-07"
+          ],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-08",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-09",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-10",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-11",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-12",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-13",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-14",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-15",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-16",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-17",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-18",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-19",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-20",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-21",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-22",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-23",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-24",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "image_red-0",
+          "group": "image",
+          "hits": [
+            "red",
+            "blue",
+            "en-08",
+            "clip-08",
+            "en-21"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "image_red-1",
+          "group": "image",
+          "hits": [
+            "red",
+            "blue",
+            "en-01",
+            "tail-09",
+            "en-20"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "image_red-2",
+          "group": "image",
+          "hits": [
+            "red",
+            "blue",
+            "en-01",
+            "en-08",
+            "en-21"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "image_blue-0",
+          "group": "image",
+          "hits": [
+            "en-08",
+            "tail-08",
+            "blue",
+            "clip-08",
+            "red"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "image_blue-1",
+          "group": "image",
+          "hits": [
+            "en-08",
+            "tail-08",
+            "blue",
+            "clip-08",
+            "zh-08"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "image_blue-2",
+          "group": "image",
+          "hits": [
+            "blue",
+            "clip-08",
+            "red",
+            "en-08",
+            "tail-08"
+          ],
+          "rank": 1
+        }
+      ]
+    },
+    "coverage-fusion": {
+      "groups": {
+        "lexical": {
+          "n": 25,
+          "correct": 25,
+          "rr": 25.0,
+          "false_positive": 0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "false_positive_rate": 0.0
+        },
+        "identifier": {
+          "n": 25,
+          "correct": 25,
+          "rr": 25.0,
+          "false_positive": 0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "false_positive_rate": 0.0
+        },
+        "chinese_short": {
+          "n": 25,
+          "correct": 25,
+          "rr": 25.0,
+          "false_positive": 0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "false_positive_rate": 0.0
+        },
+        "cross_language": {
+          "n": 25,
+          "correct": 9,
+          "rr": 2.65,
+          "false_positive": 0,
+          "recall_at_5": 0.36,
+          "mrr": 0.106,
+          "false_positive_rate": 0.0
+        },
+        "long_tail": {
+          "n": 25,
+          "correct": 25,
+          "rr": 25.0,
+          "false_positive": 0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "false_positive_rate": 0.0
+        },
+        "no_answer": {
+          "n": 25,
+          "correct": 0,
+          "rr": 0,
+          "false_positive": 0,
+          "recall_at_5": 0.0,
+          "mrr": 0.0,
+          "false_positive_rate": 0.0
+        },
+        "audio_topic": {
+          "n": 25,
+          "correct": 23,
+          "rr": 7.249999999999998,
+          "false_positive": 0,
+          "recall_at_5": 0.92,
+          "mrr": 0.2899999999999999,
+          "false_positive_rate": 0.0
+        },
+        "audio_paraphrase": {
+          "n": 25,
+          "correct": 25,
+          "rr": 24.5,
+          "false_positive": 0,
+          "recall_at_5": 1.0,
+          "mrr": 0.98,
+          "false_positive_rate": 0.0
+        },
+        "audio_cross_language": {
+          "n": 25,
+          "correct": 25,
+          "rr": 24.25,
+          "false_positive": 0,
+          "recall_at_5": 1.0,
+          "mrr": 0.97,
+          "false_positive_rate": 0.0
+        },
+        "media_no_answer": {
+          "n": 25,
+          "correct": 0,
+          "rr": 0,
+          "false_positive": 1,
+          "recall_at_5": 0.0,
+          "mrr": 0.0,
+          "false_positive_rate": 0.04
+        },
+        "image": {
+          "n": 6,
+          "correct": 6,
+          "rr": 5.5,
+          "false_positive": 0,
+          "recall_at_5": 1.0,
+          "mrr": 0.9166666666666666,
+          "false_positive_rate": 0.0
+        }
+      },
+      "rows": [
+        {
+          "id": "lexical-00",
+          "group": "lexical",
+          "hits": [
+            "en-00",
+            "clip-00",
+            "clip-22",
+            "clip-10",
+            "clip-16"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-00",
+          "group": "identifier",
+          "hits": [
+            "en-00"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-00",
+          "group": "chinese_short",
+          "hits": [
+            "zh-00",
+            "clip-00",
+            "clip-10",
+            "clip-12",
+            "clip-06"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-00",
+          "group": "cross_language",
+          "hits": [
+            "zh-00",
+            "clip-00",
+            "clip-10",
+            "clip-12",
+            "clip-06"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-00",
+          "group": "long_tail",
+          "hits": [
+            "tail-00"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-00",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-01",
+          "group": "lexical",
+          "hits": [
+            "en-01",
+            "clip-01",
+            "clip-07",
+            "zh-01",
+            "clip-20"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-01",
+          "group": "identifier",
+          "hits": [
+            "en-01"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-01",
+          "group": "chinese_short",
+          "hits": [
+            "zh-01",
+            "en-01",
+            "tail-01",
+            "clip-21",
+            "clip-14"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-01",
+          "group": "cross_language",
+          "hits": [
+            "en-01",
+            "clip-01",
+            "clip-07",
+            "zh-01",
+            "clip-20"
+          ],
+          "rank": 4
+        },
+        {
+          "id": "long_tail-01",
+          "group": "long_tail",
+          "hits": [
+            "tail-01"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-01",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-02",
+          "group": "lexical",
+          "hits": [
+            "en-02",
+            "clip-02",
+            "clip-07",
+            "clip-18",
+            "clip-14"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-02",
+          "group": "identifier",
+          "hits": [
+            "en-02"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-02",
+          "group": "chinese_short",
+          "hits": [
+            "zh-02",
+            "clip-02",
+            "clip-06",
+            "clip-14",
+            "clip-07"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-02",
+          "group": "cross_language",
+          "hits": [
+            "zh-02",
+            "clip-02",
+            "clip-06",
+            "clip-14",
+            "clip-07"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-02",
+          "group": "long_tail",
+          "hits": [
+            "tail-02"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-02",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-03",
+          "group": "lexical",
+          "hits": [
+            "en-03",
+            "clip-03",
+            "clip-02",
+            "clip-23",
+            "clip-00"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-03",
+          "group": "identifier",
+          "hits": [
+            "en-03"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-03",
+          "group": "chinese_short",
+          "hits": [
+            "zh-03",
+            "clip-03",
+            "en-03",
+            "tail-03",
+            "clip-02"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-03",
+          "group": "cross_language",
+          "hits": [
+            "en-03",
+            "clip-03",
+            "clip-02",
+            "clip-23",
+            "clip-00"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-03",
+          "group": "long_tail",
+          "hits": [
+            "tail-03"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-03",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-04",
+          "group": "lexical",
+          "hits": [
+            "en-04",
+            "clip-19",
+            "clip-18",
+            "clip-07",
+            "clip-00"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-04",
+          "group": "identifier",
+          "hits": [
+            "en-04"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-04",
+          "group": "chinese_short",
+          "hits": [
+            "zh-04",
+            "clip-12",
+            "clip-21",
+            "clip-13",
+            "clip-00"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-04",
+          "group": "cross_language",
+          "hits": [
+            "zh-04",
+            "clip-12",
+            "clip-21",
+            "clip-13",
+            "clip-00"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-04",
+          "group": "long_tail",
+          "hits": [
+            "tail-04"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-04",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-05",
+          "group": "lexical",
+          "hits": [
+            "en-05",
+            "clip-05",
+            "clip-20",
+            "clip-11",
+            "clip-19"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-05",
+          "group": "identifier",
+          "hits": [
+            "en-05"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-05",
+          "group": "chinese_short",
+          "hits": [
+            "zh-05",
+            "clip-05",
+            "en-05",
+            "tail-05",
+            "clip-11"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-05",
+          "group": "cross_language",
+          "hits": [
+            "en-05",
+            "clip-05",
+            "clip-20",
+            "clip-11",
+            "clip-19"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-05",
+          "group": "long_tail",
+          "hits": [
+            "tail-05"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-05",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-06",
+          "group": "lexical",
+          "hits": [
+            "en-06",
+            "clip-06",
+            "clip-02",
+            "clip-07",
+            "clip-14"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-06",
+          "group": "identifier",
+          "hits": [
+            "en-06"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-06",
+          "group": "chinese_short",
+          "hits": [
+            "zh-06",
+            "clip-06",
+            "clip-02",
+            "clip-14",
+            "clip-16"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-06",
+          "group": "cross_language",
+          "hits": [
+            "zh-06",
+            "clip-06",
+            "clip-02",
+            "clip-14",
+            "clip-16"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-06",
+          "group": "long_tail",
+          "hits": [
+            "tail-06"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-06",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-07",
+          "group": "lexical",
+          "hits": [
+            "en-07",
+            "clip-07",
+            "zh-07",
+            "clip-14",
+            "clip-19"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-07",
+          "group": "identifier",
+          "hits": [
+            "en-07"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-07",
+          "group": "chinese_short",
+          "hits": [
+            "zh-07",
+            "en-07",
+            "clip-21",
+            "clip-14",
+            "tail-07"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-07",
+          "group": "cross_language",
+          "hits": [
+            "en-07",
+            "clip-07",
+            "zh-07",
+            "clip-14",
+            "clip-19"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "long_tail-07",
+          "group": "long_tail",
+          "hits": [
+            "tail-07"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-07",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-08",
+          "group": "lexical",
+          "hits": [
+            "en-08",
+            "clip-08",
+            "clip-14",
+            "clip-04",
+            "clip-20"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-08",
+          "group": "identifier",
+          "hits": [
+            "en-08"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-08",
+          "group": "chinese_short",
+          "hits": [
+            "zh-08",
+            "clip-04",
+            "clip-10",
+            "en-08",
+            "clip-08"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-08",
+          "group": "cross_language",
+          "hits": [
+            "zh-08",
+            "clip-04",
+            "clip-10",
+            "en-08",
+            "clip-08"
+          ],
+          "rank": 4
+        },
+        {
+          "id": "long_tail-08",
+          "group": "long_tail",
+          "hits": [
+            "tail-08"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-08",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-09",
+          "group": "lexical",
+          "hits": [
+            "en-09",
+            "clip-09",
+            "clip-18",
+            "clip-07",
+            "zh-09"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-09",
+          "group": "identifier",
+          "hits": [
+            "en-09"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-09",
+          "group": "chinese_short",
+          "hits": [
+            "zh-09",
+            "clip-09",
+            "en-09",
+            "tail-09",
+            "zh-18"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-09",
+          "group": "cross_language",
+          "hits": [
+            "en-09",
+            "clip-09",
+            "clip-18",
+            "clip-07",
+            "zh-09"
+          ],
+          "rank": 5
+        },
+        {
+          "id": "long_tail-09",
+          "group": "long_tail",
+          "hits": [
+            "tail-09"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-09",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-10",
+          "group": "lexical",
+          "hits": [
+            "en-10",
+            "clip-10",
+            "clip-19",
+            "clip-07",
+            "clip-08"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-10",
+          "group": "identifier",
+          "hits": [
+            "en-10"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-10",
+          "group": "chinese_short",
+          "hits": [
+            "zh-10",
+            "clip-10",
+            "clip-06",
+            "zh-23",
+            "zh-11"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-10",
+          "group": "cross_language",
+          "hits": [
+            "zh-10",
+            "clip-10",
+            "clip-06",
+            "zh-23",
+            "zh-11"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-10",
+          "group": "long_tail",
+          "hits": [
+            "tail-10"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-10",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-11",
+          "group": "lexical",
+          "hits": [
+            "en-11",
+            "clip-11",
+            "clip-07",
+            "clip-13",
+            "clip-18"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-11",
+          "group": "identifier",
+          "hits": [
+            "en-11"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-11",
+          "group": "chinese_short",
+          "hits": [
+            "zh-11",
+            "clip-11",
+            "tail-11",
+            "en-11",
+            "en-21"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-11",
+          "group": "cross_language",
+          "hits": [
+            "en-11",
+            "clip-11",
+            "clip-07",
+            "clip-13",
+            "clip-18"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-11",
+          "group": "long_tail",
+          "hits": [
+            "tail-11"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-11",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-12",
+          "group": "lexical",
+          "hits": [
+            "en-12",
+            "clip-12",
+            "clip-13",
+            "clip-00",
+            "clip-14"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-12",
+          "group": "identifier",
+          "hits": [
+            "en-12"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-12",
+          "group": "chinese_short",
+          "hits": [
+            "zh-12",
+            "clip-12",
+            "tail-12",
+            "en-12",
+            "zh-00"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-12",
+          "group": "cross_language",
+          "hits": [
+            "zh-12",
+            "clip-12",
+            "tail-12",
+            "en-12",
+            "zh-00"
+          ],
+          "rank": 4
+        },
+        {
+          "id": "long_tail-12",
+          "group": "long_tail",
+          "hits": [
+            "tail-12"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-12",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-13",
+          "group": "lexical",
+          "hits": [
+            "en-13",
+            "clip-13",
+            "clip-06",
+            "clip-02",
+            "clip-07"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-13",
+          "group": "identifier",
+          "hits": [
+            "en-13"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-13",
+          "group": "chinese_short",
+          "hits": [
+            "zh-13",
+            "clip-13",
+            "clip-12",
+            "en-13",
+            "tail-13"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-13",
+          "group": "cross_language",
+          "hits": [
+            "en-13",
+            "clip-13",
+            "clip-06",
+            "clip-02",
+            "clip-07"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-13",
+          "group": "long_tail",
+          "hits": [
+            "tail-13"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-13",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-14",
+          "group": "lexical",
+          "hits": [
+            "en-14",
+            "clip-14",
+            "clip-23",
+            "clip-22",
+            "clip-18"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-14",
+          "group": "identifier",
+          "hits": [
+            "en-14"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-14",
+          "group": "chinese_short",
+          "hits": [
+            "zh-14",
+            "clip-14",
+            "clip-12",
+            "clip-06",
+            "clip-10"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-14",
+          "group": "cross_language",
+          "hits": [
+            "zh-14",
+            "clip-14",
+            "clip-12",
+            "clip-06",
+            "clip-10"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-14",
+          "group": "long_tail",
+          "hits": [
+            "tail-14"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-14",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-15",
+          "group": "lexical",
+          "hits": [
+            "en-15",
+            "clip-15",
+            "clip-18",
+            "clip-08",
+            "clip-07"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-15",
+          "group": "identifier",
+          "hits": [
+            "en-15"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-15",
+          "group": "chinese_short",
+          "hits": [
+            "zh-15",
+            "clip-15",
+            "clip-08",
+            "tail-15",
+            "en-15"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-15",
+          "group": "cross_language",
+          "hits": [
+            "en-15",
+            "clip-15",
+            "clip-18",
+            "clip-08",
+            "clip-07"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-15",
+          "group": "long_tail",
+          "hits": [
+            "tail-15"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-15",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-16",
+          "group": "lexical",
+          "hits": [
+            "en-16",
+            "clip-16",
+            "clip-18",
+            "clip-07",
+            "clip-19"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-16",
+          "group": "identifier",
+          "hits": [
+            "en-16"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-16",
+          "group": "chinese_short",
+          "hits": [
+            "zh-16",
+            "clip-16",
+            "en-16",
+            "clip-04",
+            "tail-16"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-16",
+          "group": "cross_language",
+          "hits": [
+            "zh-16",
+            "clip-16",
+            "en-16",
+            "clip-04",
+            "tail-16"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "long_tail-16",
+          "group": "long_tail",
+          "hits": [
+            "tail-16"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-16",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-17",
+          "group": "lexical",
+          "hits": [
+            "en-17",
+            "clip-17",
+            "clip-18",
+            "clip-07",
+            "clip-19"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-17",
+          "group": "identifier",
+          "hits": [
+            "en-17"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-17",
+          "group": "chinese_short",
+          "hits": [
+            "zh-17",
+            "clip-17",
+            "en-17",
+            "clip-07",
+            "zh-19"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-17",
+          "group": "cross_language",
+          "hits": [
+            "en-17",
+            "clip-17",
+            "clip-18",
+            "clip-07",
+            "clip-19"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-17",
+          "group": "long_tail",
+          "hits": [
+            "tail-17"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-17",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-18",
+          "group": "lexical",
+          "hits": [
+            "en-18",
+            "en-09",
+            "clip-18",
+            "clip-09",
+            "clip-14"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-18",
+          "group": "identifier",
+          "hits": [
+            "en-18"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-18",
+          "group": "chinese_short",
+          "hits": [
+            "zh-18",
+            "zh-09",
+            "clip-09",
+            "clip-18",
+            "clip-14"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-18",
+          "group": "cross_language",
+          "hits": [
+            "zh-18",
+            "zh-09",
+            "clip-09",
+            "clip-18",
+            "clip-14"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-18",
+          "group": "long_tail",
+          "hits": [
+            "tail-18"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-18",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-19",
+          "group": "lexical",
+          "hits": [
+            "en-19",
+            "clip-19",
+            "zh-19",
+            "clip-07",
+            "clip-02"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-19",
+          "group": "identifier",
+          "hits": [
+            "en-19"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-19",
+          "group": "chinese_short",
+          "hits": [
+            "zh-19",
+            "tail-19",
+            "en-19",
+            "clip-19",
+            "clip-11"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-19",
+          "group": "cross_language",
+          "hits": [
+            "en-19",
+            "clip-19",
+            "zh-19",
+            "clip-07",
+            "clip-02"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "long_tail-19",
+          "group": "long_tail",
+          "hits": [
+            "tail-19"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-19",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-20",
+          "group": "lexical",
+          "hits": [
+            "en-20",
+            "clip-20",
+            "zh-20",
+            "clip-08",
+            "clip-07"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-20",
+          "group": "identifier",
+          "hits": [
+            "en-20"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-20",
+          "group": "chinese_short",
+          "hits": [
+            "zh-20",
+            "en-20",
+            "clip-20",
+            "tail-20",
+            "clip-05"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-20",
+          "group": "cross_language",
+          "hits": [
+            "zh-20",
+            "en-20",
+            "clip-20",
+            "tail-20",
+            "clip-05"
+          ],
+          "rank": 2
+        },
+        {
+          "id": "long_tail-20",
+          "group": "long_tail",
+          "hits": [
+            "tail-20"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-20",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-21",
+          "group": "lexical",
+          "hits": [
+            "en-21",
+            "clip-11",
+            "clip-07",
+            "clip-16",
+            "clip-18"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-21",
+          "group": "identifier",
+          "hits": [
+            "en-21"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-21",
+          "group": "chinese_short",
+          "hits": [
+            "zh-21",
+            "clip-21",
+            "en-21",
+            "tail-21",
+            "clip-16"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-21",
+          "group": "cross_language",
+          "hits": [
+            "en-21",
+            "clip-11",
+            "clip-07",
+            "clip-16",
+            "clip-18"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-21",
+          "group": "long_tail",
+          "hits": [
+            "tail-21"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-21",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-22",
+          "group": "lexical",
+          "hits": [
+            "en-22",
+            "clip-22",
+            "clip-00",
+            "clip-23",
+            "clip-18"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-22",
+          "group": "identifier",
+          "hits": [
+            "en-22"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-22",
+          "group": "chinese_short",
+          "hits": [
+            "zh-22",
+            "clip-06",
+            "zh-00",
+            "clip-15",
+            "clip-00"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-22",
+          "group": "cross_language",
+          "hits": [
+            "zh-22",
+            "clip-06",
+            "zh-00",
+            "clip-15",
+            "clip-00"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-22",
+          "group": "long_tail",
+          "hits": [
+            "tail-22"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-22",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-23",
+          "group": "lexical",
+          "hits": [
+            "en-23",
+            "clip-23",
+            "clip-18",
+            "clip-14",
+            "clip-07"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-23",
+          "group": "identifier",
+          "hits": [
+            "en-23"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-23",
+          "group": "chinese_short",
+          "hits": [
+            "zh-23",
+            "clip-23",
+            "clip-09",
+            "tail-23",
+            "clip-14"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-23",
+          "group": "cross_language",
+          "hits": [
+            "en-23",
+            "clip-23",
+            "clip-18",
+            "clip-14",
+            "clip-07"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-23",
+          "group": "long_tail",
+          "hits": [
+            "tail-23"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-23",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-24",
+          "group": "lexical",
+          "hits": [
+            "en-24",
+            "clip-24",
+            "clip-22",
+            "clip-15",
+            "clip-07"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-24",
+          "group": "identifier",
+          "hits": [
+            "en-24"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-24",
+          "group": "chinese_short",
+          "hits": [
+            "zh-24",
+            "clip-24",
+            "clip-00",
+            "clip-11",
+            "en-24"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-24",
+          "group": "cross_language",
+          "hits": [
+            "zh-24",
+            "clip-24",
+            "clip-00",
+            "clip-11",
+            "en-24"
+          ],
+          "rank": 5
+        },
+        {
+          "id": "long_tail-24",
+          "group": "long_tail",
+          "hits": [
+            "tail-24"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-24",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "audio_topic-00",
+          "group": "audio_topic",
+          "hits": [
+            "tail-00",
+            "en-00",
+            "clip-00",
+            "clip-10",
+            "clip-12"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "audio_paraphrase-00",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-00",
+            "clip-12",
+            "clip-22",
+            "clip-24",
+            "clip-10"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-00",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-00",
+            "clip-12",
+            "clip-13",
+            "tail-00",
+            "clip-24"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-01",
+          "group": "audio_topic",
+          "hits": [
+            "en-01",
+            "tail-01",
+            "clip-01",
+            "clip-21",
+            "clip-14"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "audio_paraphrase-01",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-01",
+            "zh-01",
+            "en-01",
+            "tail-01",
+            "clip-20"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-01",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-01",
+            "zh-01",
+            "tail-01",
+            "en-01",
+            "clip-20"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-02",
+          "group": "audio_topic",
+          "hits": [
+            "en-02",
+            "tail-02",
+            "clip-02",
+            "clip-06",
+            "clip-14"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "audio_paraphrase-02",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-02",
+            "clip-06",
+            "tail-02",
+            "zh-02",
+            "en-02"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-02",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-02",
+            "zh-02",
+            "tail-02",
+            "en-02",
+            "clip-06"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-03",
+          "group": "audio_topic",
+          "hits": [
+            "tail-03",
+            "en-03",
+            "clip-03",
+            "clip-02",
+            "clip-00"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "audio_paraphrase-03",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-03",
+            "clip-15",
+            "clip-09",
+            "clip-11",
+            "clip-08"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-03",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-03",
+            "zh-03",
+            "tail-03",
+            "en-03",
+            "clip-15"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-04",
+          "group": "audio_topic",
+          "hits": [
+            "tail-04",
+            "en-04",
+            "clip-00",
+            "clip-14",
+            "clip-16"
+          ],
+          "rank": null
+        },
+        {
+          "id": "audio_paraphrase-04",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-04",
+            "clip-16",
+            "clip-11",
+            "en-04",
+            "clip-17"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-04",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-04",
+            "zh-04",
+            "clip-12",
+            "en-04",
+            "tail-04"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-05",
+          "group": "audio_topic",
+          "hits": [
+            "tail-05",
+            "en-05",
+            "clip-05",
+            "clip-11",
+            "clip-20"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "audio_paraphrase-05",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-05",
+            "zh-05",
+            "tail-05",
+            "en-05",
+            "clip-20"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-05",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-05",
+            "zh-05",
+            "clip-20",
+            "en-05",
+            "tail-05"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-06",
+          "group": "audio_topic",
+          "hits": [
+            "en-06",
+            "tail-06",
+            "clip-06",
+            "clip-02",
+            "clip-16"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "audio_paraphrase-06",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-06",
+            "clip-02",
+            "clip-16",
+            "clip-12",
+            "clip-13"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-06",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-06",
+            "clip-02",
+            "zh-06",
+            "zh-02",
+            "clip-07"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-07",
+          "group": "audio_topic",
+          "hits": [
+            "en-07",
+            "tail-07",
+            "clip-14",
+            "clip-07",
+            "clip-21"
+          ],
+          "rank": 4
+        },
+        {
+          "id": "audio_paraphrase-07",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-07",
+            "clip-14",
+            "clip-11",
+            "clip-02",
+            "clip-08"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-07",
+          "group": "audio_cross_language",
+          "hits": [
+            "zh-07",
+            "en-07",
+            "tail-07",
+            "clip-07",
+            "clip-16"
+          ],
+          "rank": 4
+        },
+        {
+          "id": "audio_topic-08",
+          "group": "audio_topic",
+          "hits": [
+            "en-08",
+            "tail-08",
+            "clip-04",
+            "clip-08",
+            "clip-14"
+          ],
+          "rank": 4
+        },
+        {
+          "id": "audio_paraphrase-08",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-08",
+            "clip-04",
+            "clip-14",
+            "en-08",
+            "clip-15"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-08",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-08",
+            "zh-08",
+            "en-08",
+            "tail-08",
+            "clip-14"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-09",
+          "group": "audio_topic",
+          "hits": [
+            "en-09",
+            "tail-09",
+            "clip-09",
+            "clip-08",
+            "clip-14"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "audio_paraphrase-09",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-09",
+            "clip-14",
+            "en-09",
+            "clip-11",
+            "clip-07"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-09",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-09",
+            "zh-09",
+            "en-09",
+            "tail-09",
+            "clip-07"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-10",
+          "group": "audio_topic",
+          "hits": [
+            "tail-10",
+            "en-10",
+            "clip-10",
+            "clip-11",
+            "clip-04"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "audio_paraphrase-10",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-10",
+            "clip-03",
+            "clip-06",
+            "clip-13",
+            "clip-08"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-10",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-10",
+            "zh-10",
+            "tail-10",
+            "clip-06",
+            "en-10"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-11",
+          "group": "audio_topic",
+          "hits": [
+            "tail-11",
+            "en-11",
+            "clip-11",
+            "clip-05",
+            "clip-13"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "audio_paraphrase-11",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-11",
+            "en-11",
+            "tail-11",
+            "clip-08",
+            "clip-06"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-11",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-11",
+            "zh-11",
+            "en-11",
+            "tail-11",
+            "clip-02"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-12",
+          "group": "audio_topic",
+          "hits": [
+            "tail-12",
+            "en-12",
+            "clip-12",
+            "clip-00",
+            "clip-13"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "audio_paraphrase-12",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-12",
+            "clip-13",
+            "clip-05",
+            "clip-14",
+            "tail-12"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-12",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-12",
+            "clip-13",
+            "zh-12",
+            "tail-12",
+            "en-12"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-13",
+          "group": "audio_topic",
+          "hits": [
+            "tail-13",
+            "en-13",
+            "clip-06",
+            "clip-13",
+            "clip-02"
+          ],
+          "rank": 4
+        },
+        {
+          "id": "audio_paraphrase-13",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-13",
+            "clip-12",
+            "clip-14",
+            "clip-00",
+            "clip-05"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-13",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-13",
+            "zh-13",
+            "clip-12",
+            "clip-00",
+            "en-13"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-14",
+          "group": "audio_topic",
+          "hits": [
+            "en-14",
+            "tail-14",
+            "clip-14",
+            "clip-06",
+            "clip-23"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "audio_paraphrase-14",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-04",
+            "clip-14",
+            "clip-08",
+            "clip-09",
+            "clip-16"
+          ],
+          "rank": 2
+        },
+        {
+          "id": "audio_cross_language-14",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-14",
+            "zh-14",
+            "clip-16",
+            "clip-04",
+            "clip-02"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-15",
+          "group": "audio_topic",
+          "hits": [
+            "tail-15",
+            "en-15",
+            "clip-15",
+            "clip-08",
+            "clip-06"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "audio_paraphrase-15",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-15",
+            "clip-08",
+            "clip-03",
+            "en-15",
+            "tail-15"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-15",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-15",
+            "zh-15",
+            "clip-08",
+            "clip-03",
+            "tail-15"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-16",
+          "group": "audio_topic",
+          "hits": [
+            "en-16",
+            "tail-16",
+            "clip-16",
+            "clip-04",
+            "zh-16"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "audio_paraphrase-16",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-16",
+            "clip-06",
+            "clip-04",
+            "tail-16",
+            "zh-16"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-16",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-16",
+            "zh-16",
+            "tail-16",
+            "clip-21",
+            "en-16"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-17",
+          "group": "audio_topic",
+          "hits": [
+            "en-17",
+            "tail-17",
+            "clip-17",
+            "clip-20",
+            "clip-14"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "audio_paraphrase-17",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-17",
+            "en-17",
+            "clip-16",
+            "clip-24",
+            "clip-00"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-17",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-17",
+            "clip-04",
+            "zh-17",
+            "clip-07",
+            "clip-16"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-18",
+          "group": "audio_topic",
+          "hits": [
+            "en-18",
+            "tail-18",
+            "en-09",
+            "tail-09",
+            "clip-09"
+          ],
+          "rank": null
+        },
+        {
+          "id": "audio_paraphrase-18",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-18",
+            "clip-09",
+            "clip-19",
+            "clip-14",
+            "clip-02"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-18",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-18",
+            "zh-18",
+            "clip-09",
+            "en-18",
+            "tail-18"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-19",
+          "group": "audio_topic",
+          "hits": [
+            "tail-19",
+            "en-19",
+            "zh-19",
+            "clip-19",
+            "clip-02"
+          ],
+          "rank": 4
+        },
+        {
+          "id": "audio_paraphrase-19",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-19",
+            "clip-18",
+            "clip-16",
+            "en-19",
+            "clip-21"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-19",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-19",
+            "zh-19",
+            "en-19",
+            "zh-04",
+            "tail-19"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-20",
+          "group": "audio_topic",
+          "hits": [
+            "en-20",
+            "tail-20",
+            "clip-20",
+            "zh-20",
+            "clip-05"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "audio_paraphrase-20",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-20",
+            "tail-20",
+            "en-20",
+            "clip-05",
+            "clip-17"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-20",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-20",
+            "zh-20",
+            "tail-20",
+            "en-20",
+            "clip-05"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-21",
+          "group": "audio_topic",
+          "hits": [
+            "en-21",
+            "tail-21",
+            "clip-11",
+            "clip-21",
+            "clip-06"
+          ],
+          "rank": 4
+        },
+        {
+          "id": "audio_paraphrase-21",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-21",
+            "clip-16",
+            "en-21",
+            "clip-18",
+            "tail-21"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-21",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-21",
+            "zh-21",
+            "clip-16",
+            "en-21",
+            "clip-18"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-22",
+          "group": "audio_topic",
+          "hits": [
+            "tail-22",
+            "en-22",
+            "clip-22",
+            "clip-00",
+            "clip-23"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "audio_paraphrase-22",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-22",
+            "clip-00",
+            "tail-22",
+            "en-22",
+            "clip-15"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-22",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-22",
+            "zh-22",
+            "clip-00",
+            "en-22",
+            "clip-23"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-23",
+          "group": "audio_topic",
+          "hits": [
+            "tail-23",
+            "en-23",
+            "clip-23",
+            "clip-09",
+            "clip-14"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "audio_paraphrase-23",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-23",
+            "tail-23",
+            "clip-22",
+            "clip-07",
+            "en-23"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-23",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-23",
+            "clip-14",
+            "zh-23",
+            "clip-08",
+            "tail-23"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-24",
+          "group": "audio_topic",
+          "hits": [
+            "en-24",
+            "tail-24",
+            "clip-24",
+            "zh-24",
+            "clip-22"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "audio_paraphrase-24",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-24",
+            "clip-00",
+            "clip-22",
+            "zh-24",
+            "en-24"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-24",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-24",
+            "zh-24",
+            "en-24",
+            "tail-24",
+            "clip-00"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "media_no_answer-00",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-01",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-02",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-03",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-04",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-05",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-06",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-07",
+          "group": "media_no_answer",
+          "hits": [
+            "clip-06",
+            "clip-07",
+            "clip-16",
+            "clip-08",
+            "clip-21"
+          ],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-08",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-09",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-10",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-11",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-12",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-13",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-14",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-15",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-16",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-17",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-18",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-19",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-20",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-21",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-22",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-23",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-24",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "image_red-0",
+          "group": "image",
+          "hits": [
+            "red",
+            "clip-08",
+            "clip-21",
+            "clip-11",
+            "blue"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "image_red-1",
+          "group": "image",
+          "hits": [
+            "red",
+            "blue",
+            "clip-08",
+            "clip-21",
+            "clip-06"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "image_red-2",
+          "group": "image",
+          "hits": [
+            "red",
+            "blue",
+            "clip-08",
+            "clip-21",
+            "clip-11"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "image_blue-0",
+          "group": "image",
+          "hits": [
+            "clip-08",
+            "blue",
+            "clip-21",
+            "clip-05",
+            "clip-11"
+          ],
+          "rank": 2
+        },
+        {
+          "id": "image_blue-1",
+          "group": "image",
+          "hits": [
+            "blue",
+            "clip-08",
+            "red",
+            "clip-21",
+            "clip-06"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "image_blue-2",
+          "group": "image",
+          "hits": [
+            "blue",
+            "clip-08",
+            "red",
+            "clip-21",
+            "clip-11"
+          ],
+          "rank": 1
+        }
+      ]
+    },
+    "script-modality-centered": {
+      "groups": {
+        "lexical": {
+          "n": 25,
+          "correct": 25,
+          "rr": 25.0,
+          "false_positive": 0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "false_positive_rate": 0.0
+        },
+        "identifier": {
+          "n": 25,
+          "correct": 25,
+          "rr": 25.0,
+          "false_positive": 0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "false_positive_rate": 0.0
+        },
+        "chinese_short": {
+          "n": 25,
+          "correct": 25,
+          "rr": 25.0,
+          "false_positive": 0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "false_positive_rate": 0.0
+        },
+        "cross_language": {
+          "n": 25,
+          "correct": 3,
+          "rr": 0.65,
+          "false_positive": 0,
+          "recall_at_5": 0.12,
+          "mrr": 0.026000000000000002,
+          "false_positive_rate": 0.0
+        },
+        "long_tail": {
+          "n": 25,
+          "correct": 25,
+          "rr": 25.0,
+          "false_positive": 0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "false_positive_rate": 0.0
+        },
+        "no_answer": {
+          "n": 25,
+          "correct": 0,
+          "rr": 0,
+          "false_positive": 0,
+          "recall_at_5": 0.0,
+          "mrr": 0.0,
+          "false_positive_rate": 0.0
+        },
+        "audio_topic": {
+          "n": 25,
+          "correct": 23,
+          "rr": 7.333333333333331,
+          "false_positive": 0,
+          "recall_at_5": 0.92,
+          "mrr": 0.2933333333333332,
+          "false_positive_rate": 0.0
+        },
+        "audio_paraphrase": {
+          "n": 25,
+          "correct": 25,
+          "rr": 24.5,
+          "false_positive": 0,
+          "recall_at_5": 1.0,
+          "mrr": 0.98,
+          "false_positive_rate": 0.0
+        },
+        "audio_cross_language": {
+          "n": 25,
+          "correct": 25,
+          "rr": 25.0,
+          "false_positive": 0,
+          "recall_at_5": 1.0,
+          "mrr": 1.0,
+          "false_positive_rate": 0.0
+        },
+        "media_no_answer": {
+          "n": 25,
+          "correct": 0,
+          "rr": 0,
+          "false_positive": 1,
+          "recall_at_5": 0.0,
+          "mrr": 0.0,
+          "false_positive_rate": 0.04
+        },
+        "image": {
+          "n": 6,
+          "correct": 6,
+          "rr": 4.333333333333333,
+          "false_positive": 0,
+          "recall_at_5": 1.0,
+          "mrr": 0.7222222222222222,
+          "false_positive_rate": 0.0
+        }
+      },
+      "rows": [
+        {
+          "id": "lexical-00",
+          "group": "lexical",
+          "hits": [
+            "en-00",
+            "clip-00",
+            "clip-22",
+            "clip-10",
+            "clip-16"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-00",
+          "group": "identifier",
+          "hits": [
+            "en-00"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-00",
+          "group": "chinese_short",
+          "hits": [
+            "zh-00",
+            "clip-00",
+            "clip-10",
+            "clip-12",
+            "clip-06"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-00",
+          "group": "cross_language",
+          "hits": [
+            "zh-00",
+            "clip-00",
+            "clip-10",
+            "clip-12",
+            "clip-06"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-00",
+          "group": "long_tail",
+          "hits": [
+            "tail-00"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-00",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-01",
+          "group": "lexical",
+          "hits": [
+            "en-01",
+            "clip-01",
+            "clip-07",
+            "clip-20",
+            "zh-01"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-01",
+          "group": "identifier",
+          "hits": [
+            "en-01"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-01",
+          "group": "chinese_short",
+          "hits": [
+            "zh-01",
+            "clip-21",
+            "en-01",
+            "clip-14",
+            "clip-01"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-01",
+          "group": "cross_language",
+          "hits": [
+            "en-01",
+            "clip-01",
+            "clip-07",
+            "clip-20",
+            "zh-01"
+          ],
+          "rank": 5
+        },
+        {
+          "id": "long_tail-01",
+          "group": "long_tail",
+          "hits": [
+            "tail-01"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-01",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-02",
+          "group": "lexical",
+          "hits": [
+            "en-02",
+            "clip-02",
+            "clip-07",
+            "clip-18",
+            "clip-14"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-02",
+          "group": "identifier",
+          "hits": [
+            "en-02"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-02",
+          "group": "chinese_short",
+          "hits": [
+            "zh-02",
+            "clip-02",
+            "clip-06",
+            "clip-14",
+            "clip-07"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-02",
+          "group": "cross_language",
+          "hits": [
+            "zh-02",
+            "clip-02",
+            "clip-06",
+            "clip-14",
+            "clip-07"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-02",
+          "group": "long_tail",
+          "hits": [
+            "tail-02"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-02",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-03",
+          "group": "lexical",
+          "hits": [
+            "en-03",
+            "clip-03",
+            "clip-02",
+            "clip-23",
+            "clip-00"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-03",
+          "group": "identifier",
+          "hits": [
+            "en-03"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-03",
+          "group": "chinese_short",
+          "hits": [
+            "zh-03",
+            "clip-03",
+            "clip-02",
+            "clip-10",
+            "clip-00"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-03",
+          "group": "cross_language",
+          "hits": [
+            "en-03",
+            "clip-03",
+            "clip-02",
+            "clip-23",
+            "clip-00"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-03",
+          "group": "long_tail",
+          "hits": [
+            "tail-03"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-03",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-04",
+          "group": "lexical",
+          "hits": [
+            "en-04",
+            "clip-19",
+            "clip-18",
+            "clip-07",
+            "clip-00"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-04",
+          "group": "identifier",
+          "hits": [
+            "en-04"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-04",
+          "group": "chinese_short",
+          "hits": [
+            "zh-04",
+            "clip-12",
+            "clip-21",
+            "clip-13",
+            "clip-00"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-04",
+          "group": "cross_language",
+          "hits": [
+            "zh-04",
+            "clip-12",
+            "clip-21",
+            "clip-13",
+            "clip-00"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-04",
+          "group": "long_tail",
+          "hits": [
+            "tail-04"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-04",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-05",
+          "group": "lexical",
+          "hits": [
+            "en-05",
+            "clip-05",
+            "clip-20",
+            "clip-11",
+            "clip-19"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-05",
+          "group": "identifier",
+          "hits": [
+            "en-05"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-05",
+          "group": "chinese_short",
+          "hits": [
+            "zh-05",
+            "clip-05",
+            "clip-11",
+            "en-05",
+            "tail-05"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-05",
+          "group": "cross_language",
+          "hits": [
+            "en-05",
+            "clip-05",
+            "clip-20",
+            "clip-11",
+            "clip-19"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-05",
+          "group": "long_tail",
+          "hits": [
+            "tail-05"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-05",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-06",
+          "group": "lexical",
+          "hits": [
+            "en-06",
+            "clip-06",
+            "clip-02",
+            "clip-07",
+            "clip-14"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-06",
+          "group": "identifier",
+          "hits": [
+            "en-06"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-06",
+          "group": "chinese_short",
+          "hits": [
+            "zh-06",
+            "clip-06",
+            "clip-02",
+            "clip-14",
+            "clip-16"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-06",
+          "group": "cross_language",
+          "hits": [
+            "zh-06",
+            "clip-06",
+            "clip-02",
+            "clip-14",
+            "clip-16"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-06",
+          "group": "long_tail",
+          "hits": [
+            "tail-06"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-06",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-07",
+          "group": "lexical",
+          "hits": [
+            "en-07",
+            "clip-07",
+            "clip-14",
+            "clip-19",
+            "clip-18"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-07",
+          "group": "identifier",
+          "hits": [
+            "en-07"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-07",
+          "group": "chinese_short",
+          "hits": [
+            "zh-07",
+            "clip-21",
+            "clip-14",
+            "clip-12",
+            "clip-07"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-07",
+          "group": "cross_language",
+          "hits": [
+            "en-07",
+            "clip-07",
+            "clip-14",
+            "clip-19",
+            "clip-18"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-07",
+          "group": "long_tail",
+          "hits": [
+            "tail-07"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-07",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-08",
+          "group": "lexical",
+          "hits": [
+            "en-08",
+            "clip-08",
+            "clip-14",
+            "clip-04",
+            "clip-20"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-08",
+          "group": "identifier",
+          "hits": [
+            "en-08"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-08",
+          "group": "chinese_short",
+          "hits": [
+            "zh-08",
+            "clip-04",
+            "clip-10",
+            "clip-08",
+            "clip-14"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-08",
+          "group": "cross_language",
+          "hits": [
+            "zh-08",
+            "clip-04",
+            "clip-10",
+            "clip-08",
+            "clip-14"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-08",
+          "group": "long_tail",
+          "hits": [
+            "tail-08"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-08",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-09",
+          "group": "lexical",
+          "hits": [
+            "en-09",
+            "clip-09",
+            "clip-18",
+            "clip-07",
+            "clip-14"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-09",
+          "group": "identifier",
+          "hits": [
+            "en-09"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-09",
+          "group": "chinese_short",
+          "hits": [
+            "zh-09",
+            "clip-09",
+            "en-09",
+            "clip-08",
+            "clip-18"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-09",
+          "group": "cross_language",
+          "hits": [
+            "en-09",
+            "clip-09",
+            "clip-18",
+            "clip-07",
+            "clip-14"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-09",
+          "group": "long_tail",
+          "hits": [
+            "tail-09"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-09",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-10",
+          "group": "lexical",
+          "hits": [
+            "en-10",
+            "clip-10",
+            "clip-19",
+            "clip-07",
+            "clip-08"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-10",
+          "group": "identifier",
+          "hits": [
+            "en-10"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-10",
+          "group": "chinese_short",
+          "hits": [
+            "zh-10",
+            "clip-10",
+            "clip-06",
+            "clip-08",
+            "clip-15"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-10",
+          "group": "cross_language",
+          "hits": [
+            "zh-10",
+            "clip-10",
+            "clip-06",
+            "clip-08",
+            "clip-15"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-10",
+          "group": "long_tail",
+          "hits": [
+            "tail-10"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-10",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-11",
+          "group": "lexical",
+          "hits": [
+            "en-11",
+            "clip-11",
+            "clip-07",
+            "clip-13",
+            "clip-18"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-11",
+          "group": "identifier",
+          "hits": [
+            "en-11"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-11",
+          "group": "chinese_short",
+          "hits": [
+            "zh-11",
+            "clip-11",
+            "clip-24",
+            "tail-11",
+            "en-11"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-11",
+          "group": "cross_language",
+          "hits": [
+            "en-11",
+            "clip-11",
+            "clip-07",
+            "clip-13",
+            "clip-18"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-11",
+          "group": "long_tail",
+          "hits": [
+            "tail-11"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-11",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-12",
+          "group": "lexical",
+          "hits": [
+            "en-12",
+            "clip-12",
+            "clip-13",
+            "clip-00",
+            "clip-14"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-12",
+          "group": "identifier",
+          "hits": [
+            "en-12"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-12",
+          "group": "chinese_short",
+          "hits": [
+            "zh-12",
+            "clip-12",
+            "clip-00",
+            "clip-06",
+            "clip-13"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-12",
+          "group": "cross_language",
+          "hits": [
+            "zh-12",
+            "clip-12",
+            "clip-00",
+            "clip-06",
+            "clip-13"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-12",
+          "group": "long_tail",
+          "hits": [
+            "tail-12"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-12",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-13",
+          "group": "lexical",
+          "hits": [
+            "en-13",
+            "clip-13",
+            "clip-06",
+            "clip-02",
+            "clip-07"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-13",
+          "group": "identifier",
+          "hits": [
+            "en-13"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-13",
+          "group": "chinese_short",
+          "hits": [
+            "zh-13",
+            "clip-13",
+            "clip-12",
+            "clip-06",
+            "en-13"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-13",
+          "group": "cross_language",
+          "hits": [
+            "en-13",
+            "clip-13",
+            "clip-06",
+            "clip-02",
+            "clip-07"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-13",
+          "group": "long_tail",
+          "hits": [
+            "tail-13"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-13",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-14",
+          "group": "lexical",
+          "hits": [
+            "en-14",
+            "clip-14",
+            "clip-23",
+            "clip-22",
+            "clip-18"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-14",
+          "group": "identifier",
+          "hits": [
+            "en-14"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-14",
+          "group": "chinese_short",
+          "hits": [
+            "zh-14",
+            "clip-14",
+            "clip-12",
+            "clip-06",
+            "clip-10"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-14",
+          "group": "cross_language",
+          "hits": [
+            "zh-14",
+            "clip-14",
+            "clip-12",
+            "clip-06",
+            "clip-10"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-14",
+          "group": "long_tail",
+          "hits": [
+            "tail-14"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-14",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-15",
+          "group": "lexical",
+          "hits": [
+            "en-15",
+            "clip-15",
+            "clip-18",
+            "clip-08",
+            "clip-07"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-15",
+          "group": "identifier",
+          "hits": [
+            "en-15"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-15",
+          "group": "chinese_short",
+          "hits": [
+            "zh-15",
+            "clip-15",
+            "clip-08",
+            "clip-14",
+            "clip-03"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-15",
+          "group": "cross_language",
+          "hits": [
+            "en-15",
+            "clip-15",
+            "clip-18",
+            "clip-08",
+            "clip-07"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-15",
+          "group": "long_tail",
+          "hits": [
+            "tail-15"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-15",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-16",
+          "group": "lexical",
+          "hits": [
+            "en-16",
+            "clip-16",
+            "clip-18",
+            "clip-07",
+            "clip-19"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-16",
+          "group": "identifier",
+          "hits": [
+            "en-16"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-16",
+          "group": "chinese_short",
+          "hits": [
+            "zh-16",
+            "clip-16",
+            "clip-04",
+            "clip-11",
+            "clip-05"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-16",
+          "group": "cross_language",
+          "hits": [
+            "zh-16",
+            "clip-16",
+            "clip-04",
+            "clip-11",
+            "clip-05"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-16",
+          "group": "long_tail",
+          "hits": [
+            "tail-16"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-16",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-17",
+          "group": "lexical",
+          "hits": [
+            "en-17",
+            "clip-17",
+            "clip-18",
+            "clip-07",
+            "clip-19"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-17",
+          "group": "identifier",
+          "hits": [
+            "en-17"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-17",
+          "group": "chinese_short",
+          "hits": [
+            "zh-17",
+            "clip-17",
+            "clip-07",
+            "clip-20",
+            "clip-00"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-17",
+          "group": "cross_language",
+          "hits": [
+            "en-17",
+            "clip-17",
+            "clip-18",
+            "clip-07",
+            "clip-19"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-17",
+          "group": "long_tail",
+          "hits": [
+            "tail-17"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-17",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-18",
+          "group": "lexical",
+          "hits": [
+            "en-18",
+            "en-09",
+            "clip-18",
+            "clip-09",
+            "clip-14"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-18",
+          "group": "identifier",
+          "hits": [
+            "en-18"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-18",
+          "group": "chinese_short",
+          "hits": [
+            "zh-18",
+            "zh-09",
+            "clip-09",
+            "clip-18",
+            "clip-14"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-18",
+          "group": "cross_language",
+          "hits": [
+            "zh-18",
+            "zh-09",
+            "clip-09",
+            "clip-18",
+            "clip-14"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-18",
+          "group": "long_tail",
+          "hits": [
+            "tail-18"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-18",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-19",
+          "group": "lexical",
+          "hits": [
+            "en-19",
+            "clip-19",
+            "clip-07",
+            "clip-02",
+            "zh-19"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-19",
+          "group": "identifier",
+          "hits": [
+            "en-19"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-19",
+          "group": "chinese_short",
+          "hits": [
+            "zh-19",
+            "clip-19",
+            "clip-11",
+            "clip-02",
+            "clip-21"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-19",
+          "group": "cross_language",
+          "hits": [
+            "en-19",
+            "clip-19",
+            "clip-07",
+            "clip-02",
+            "zh-19"
+          ],
+          "rank": 5
+        },
+        {
+          "id": "long_tail-19",
+          "group": "long_tail",
+          "hits": [
+            "tail-19"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-19",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-20",
+          "group": "lexical",
+          "hits": [
+            "en-20",
+            "clip-20",
+            "zh-20",
+            "clip-08",
+            "clip-07"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-20",
+          "group": "identifier",
+          "hits": [
+            "en-20"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-20",
+          "group": "chinese_short",
+          "hits": [
+            "zh-20",
+            "clip-20",
+            "clip-05",
+            "en-20",
+            "tail-20"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-20",
+          "group": "cross_language",
+          "hits": [
+            "zh-20",
+            "clip-20",
+            "clip-05",
+            "en-20",
+            "tail-20"
+          ],
+          "rank": 4
+        },
+        {
+          "id": "long_tail-20",
+          "group": "long_tail",
+          "hits": [
+            "tail-20"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-20",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-21",
+          "group": "lexical",
+          "hits": [
+            "en-21",
+            "clip-11",
+            "clip-07",
+            "clip-16",
+            "clip-18"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-21",
+          "group": "identifier",
+          "hits": [
+            "en-21"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-21",
+          "group": "chinese_short",
+          "hits": [
+            "zh-21",
+            "clip-21",
+            "clip-16",
+            "clip-11",
+            "en-21"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-21",
+          "group": "cross_language",
+          "hits": [
+            "en-21",
+            "clip-11",
+            "clip-07",
+            "clip-16",
+            "clip-18"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-21",
+          "group": "long_tail",
+          "hits": [
+            "tail-21"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-21",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-22",
+          "group": "lexical",
+          "hits": [
+            "en-22",
+            "clip-22",
+            "clip-00",
+            "clip-23",
+            "clip-18"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-22",
+          "group": "identifier",
+          "hits": [
+            "en-22"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-22",
+          "group": "chinese_short",
+          "hits": [
+            "zh-22",
+            "clip-06",
+            "clip-15",
+            "clip-00",
+            "clip-22"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-22",
+          "group": "cross_language",
+          "hits": [
+            "zh-22",
+            "clip-06",
+            "clip-15",
+            "clip-00",
+            "clip-22"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-22",
+          "group": "long_tail",
+          "hits": [
+            "tail-22"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-22",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-23",
+          "group": "lexical",
+          "hits": [
+            "en-23",
+            "clip-23",
+            "clip-18",
+            "clip-14",
+            "clip-07"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-23",
+          "group": "identifier",
+          "hits": [
+            "en-23"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-23",
+          "group": "chinese_short",
+          "hits": [
+            "zh-23",
+            "clip-23",
+            "clip-09",
+            "clip-14",
+            "clip-07"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-23",
+          "group": "cross_language",
+          "hits": [
+            "en-23",
+            "clip-23",
+            "clip-18",
+            "clip-14",
+            "clip-07"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-23",
+          "group": "long_tail",
+          "hits": [
+            "tail-23"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-23",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "lexical-24",
+          "group": "lexical",
+          "hits": [
+            "en-24",
+            "clip-24",
+            "clip-22",
+            "clip-15",
+            "clip-07"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "identifier-24",
+          "group": "identifier",
+          "hits": [
+            "en-24"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "chinese_short-24",
+          "group": "chinese_short",
+          "hits": [
+            "zh-24",
+            "clip-24",
+            "clip-00",
+            "clip-11",
+            "clip-13"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "cross_language-24",
+          "group": "cross_language",
+          "hits": [
+            "zh-24",
+            "clip-24",
+            "clip-00",
+            "clip-11",
+            "clip-13"
+          ],
+          "rank": null
+        },
+        {
+          "id": "long_tail-24",
+          "group": "long_tail",
+          "hits": [
+            "tail-24"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "no_answer-24",
+          "group": "no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "audio_topic-00",
+          "group": "audio_topic",
+          "hits": [
+            "tail-00",
+            "en-00",
+            "clip-00",
+            "clip-10",
+            "clip-12"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "audio_paraphrase-00",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-00",
+            "clip-12",
+            "tail-00",
+            "clip-22",
+            "clip-24"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-00",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-00",
+            "clip-12",
+            "clip-13",
+            "clip-24",
+            "clip-10"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-01",
+          "group": "audio_topic",
+          "hits": [
+            "en-01",
+            "tail-01",
+            "clip-01",
+            "clip-21",
+            "clip-14"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "audio_paraphrase-01",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-01",
+            "zh-01",
+            "en-01",
+            "tail-01",
+            "clip-20"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-01",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-01",
+            "zh-01",
+            "tail-01",
+            "en-01",
+            "clip-20"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-02",
+          "group": "audio_topic",
+          "hits": [
+            "en-02",
+            "tail-02",
+            "clip-02",
+            "clip-06",
+            "clip-14"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "audio_paraphrase-02",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-02",
+            "clip-06",
+            "zh-02",
+            "tail-02",
+            "en-02"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-02",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-02",
+            "zh-02",
+            "tail-02",
+            "clip-06",
+            "en-02"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-03",
+          "group": "audio_topic",
+          "hits": [
+            "tail-03",
+            "en-03",
+            "clip-03",
+            "clip-02",
+            "clip-00"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "audio_paraphrase-03",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-03",
+            "clip-15",
+            "clip-09",
+            "clip-11",
+            "clip-08"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-03",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-03",
+            "clip-15",
+            "clip-08",
+            "clip-16",
+            "zh-03"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-04",
+          "group": "audio_topic",
+          "hits": [
+            "tail-04",
+            "en-04",
+            "clip-00",
+            "clip-14",
+            "clip-16"
+          ],
+          "rank": null
+        },
+        {
+          "id": "audio_paraphrase-04",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-04",
+            "clip-16",
+            "clip-11",
+            "clip-17",
+            "en-04"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-04",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-04",
+            "clip-12",
+            "zh-04",
+            "clip-16",
+            "clip-13"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-05",
+          "group": "audio_topic",
+          "hits": [
+            "tail-05",
+            "en-05",
+            "clip-05",
+            "clip-11",
+            "clip-20"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "audio_paraphrase-05",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-05",
+            "zh-05",
+            "tail-05",
+            "en-05",
+            "clip-20"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-05",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-05",
+            "clip-20",
+            "zh-05",
+            "clip-02",
+            "clip-08"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-06",
+          "group": "audio_topic",
+          "hits": [
+            "en-06",
+            "tail-06",
+            "clip-06",
+            "clip-02",
+            "clip-16"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "audio_paraphrase-06",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-06",
+            "clip-02",
+            "clip-16",
+            "clip-12",
+            "clip-13"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-06",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-06",
+            "clip-02",
+            "zh-06",
+            "clip-07",
+            "clip-11"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-07",
+          "group": "audio_topic",
+          "hits": [
+            "en-07",
+            "tail-07",
+            "clip-14",
+            "clip-07",
+            "clip-21"
+          ],
+          "rank": 4
+        },
+        {
+          "id": "audio_paraphrase-07",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-07",
+            "clip-14",
+            "clip-11",
+            "clip-02",
+            "clip-08"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-07",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-07",
+            "zh-07",
+            "en-07",
+            "clip-16",
+            "tail-07"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-08",
+          "group": "audio_topic",
+          "hits": [
+            "en-08",
+            "tail-08",
+            "clip-04",
+            "clip-08",
+            "clip-14"
+          ],
+          "rank": 4
+        },
+        {
+          "id": "audio_paraphrase-08",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-08",
+            "clip-04",
+            "clip-14",
+            "clip-15",
+            "clip-20"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-08",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-08",
+            "zh-08",
+            "clip-14",
+            "clip-04",
+            "en-08"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-09",
+          "group": "audio_topic",
+          "hits": [
+            "en-09",
+            "tail-09",
+            "clip-09",
+            "clip-08",
+            "clip-14"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "audio_paraphrase-09",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-09",
+            "clip-14",
+            "clip-11",
+            "clip-07",
+            "clip-18"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-09",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-09",
+            "clip-07",
+            "clip-14",
+            "zh-09",
+            "en-09"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-10",
+          "group": "audio_topic",
+          "hits": [
+            "tail-10",
+            "en-10",
+            "clip-10",
+            "clip-11",
+            "clip-04"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "audio_paraphrase-10",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-10",
+            "clip-03",
+            "clip-06",
+            "clip-13",
+            "zh-10"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-10",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-10",
+            "zh-10",
+            "clip-06",
+            "tail-10",
+            "clip-13"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-11",
+          "group": "audio_topic",
+          "hits": [
+            "tail-11",
+            "en-11",
+            "clip-11",
+            "clip-05",
+            "clip-13"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "audio_paraphrase-11",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-11",
+            "clip-08",
+            "clip-06",
+            "en-11",
+            "clip-03"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-11",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-11",
+            "clip-02",
+            "en-11",
+            "tail-11",
+            "clip-16"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-12",
+          "group": "audio_topic",
+          "hits": [
+            "tail-12",
+            "en-12",
+            "clip-12",
+            "clip-00",
+            "clip-13"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "audio_paraphrase-12",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-12",
+            "clip-13",
+            "clip-05",
+            "clip-14",
+            "tail-12"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-12",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-12",
+            "clip-13",
+            "clip-05",
+            "clip-16",
+            "tail-12"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-13",
+          "group": "audio_topic",
+          "hits": [
+            "tail-13",
+            "en-13",
+            "clip-06",
+            "clip-13",
+            "clip-02"
+          ],
+          "rank": 4
+        },
+        {
+          "id": "audio_paraphrase-13",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-13",
+            "clip-12",
+            "clip-14",
+            "clip-00",
+            "clip-05"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-13",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-13",
+            "clip-12",
+            "zh-13",
+            "clip-00",
+            "en-13"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-14",
+          "group": "audio_topic",
+          "hits": [
+            "en-14",
+            "tail-14",
+            "clip-14",
+            "clip-06",
+            "clip-23"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "audio_paraphrase-14",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-04",
+            "clip-14",
+            "clip-08",
+            "clip-09",
+            "clip-16"
+          ],
+          "rank": 2
+        },
+        {
+          "id": "audio_cross_language-14",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-14",
+            "zh-14",
+            "clip-16",
+            "clip-04",
+            "clip-02"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-15",
+          "group": "audio_topic",
+          "hits": [
+            "tail-15",
+            "en-15",
+            "clip-15",
+            "clip-08",
+            "clip-06"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "audio_paraphrase-15",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-15",
+            "clip-08",
+            "clip-03",
+            "en-15",
+            "clip-14"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-15",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-15",
+            "clip-08",
+            "clip-03",
+            "zh-15",
+            "tail-15"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-16",
+          "group": "audio_topic",
+          "hits": [
+            "en-16",
+            "tail-16",
+            "clip-16",
+            "clip-04",
+            "zh-16"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "audio_paraphrase-16",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-16",
+            "clip-06",
+            "zh-16",
+            "clip-04",
+            "tail-16"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-16",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-16",
+            "zh-16",
+            "clip-21",
+            "clip-00",
+            "tail-16"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-17",
+          "group": "audio_topic",
+          "hits": [
+            "en-17",
+            "tail-17",
+            "clip-17",
+            "clip-20",
+            "clip-14"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "audio_paraphrase-17",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-17",
+            "clip-16",
+            "clip-24",
+            "clip-00",
+            "en-17"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-17",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-17",
+            "clip-04",
+            "clip-07",
+            "clip-16",
+            "clip-08"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-18",
+          "group": "audio_topic",
+          "hits": [
+            "en-18",
+            "tail-18",
+            "en-09",
+            "tail-09",
+            "clip-09"
+          ],
+          "rank": null
+        },
+        {
+          "id": "audio_paraphrase-18",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-18",
+            "clip-09",
+            "clip-19",
+            "clip-14",
+            "clip-02"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-18",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-18",
+            "clip-09",
+            "zh-18",
+            "en-18",
+            "tail-18"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-19",
+          "group": "audio_topic",
+          "hits": [
+            "tail-19",
+            "en-19",
+            "clip-19",
+            "zh-19",
+            "clip-02"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "audio_paraphrase-19",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-19",
+            "clip-18",
+            "clip-16",
+            "clip-21",
+            "zh-19"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-19",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-19",
+            "zh-19",
+            "en-19",
+            "clip-18",
+            "clip-21"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-20",
+          "group": "audio_topic",
+          "hits": [
+            "en-20",
+            "tail-20",
+            "clip-20",
+            "zh-20",
+            "clip-05"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "audio_paraphrase-20",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-20",
+            "tail-20",
+            "clip-05",
+            "clip-17",
+            "zh-20"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-20",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-20",
+            "zh-20",
+            "tail-20",
+            "clip-05",
+            "en-20"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-21",
+          "group": "audio_topic",
+          "hits": [
+            "en-21",
+            "tail-21",
+            "clip-11",
+            "clip-21",
+            "clip-06"
+          ],
+          "rank": 4
+        },
+        {
+          "id": "audio_paraphrase-21",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-21",
+            "clip-16",
+            "clip-18",
+            "en-21",
+            "clip-06"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-21",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-21",
+            "clip-16",
+            "clip-18",
+            "en-21",
+            "tail-21"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-22",
+          "group": "audio_topic",
+          "hits": [
+            "tail-22",
+            "en-22",
+            "clip-22",
+            "clip-00",
+            "clip-23"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "audio_paraphrase-22",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-22",
+            "clip-00",
+            "clip-15",
+            "tail-22",
+            "en-22"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-22",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-22",
+            "zh-22",
+            "clip-00",
+            "clip-23",
+            "clip-08"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-23",
+          "group": "audio_topic",
+          "hits": [
+            "tail-23",
+            "en-23",
+            "clip-23",
+            "clip-09",
+            "clip-14"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "audio_paraphrase-23",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-23",
+            "clip-22",
+            "tail-23",
+            "clip-07",
+            "zh-23"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-23",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-23",
+            "clip-14",
+            "clip-08",
+            "clip-07",
+            "zh-23"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_topic-24",
+          "group": "audio_topic",
+          "hits": [
+            "en-24",
+            "tail-24",
+            "clip-24",
+            "clip-22",
+            "clip-10"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "audio_paraphrase-24",
+          "group": "audio_paraphrase",
+          "hits": [
+            "clip-24",
+            "clip-00",
+            "zh-24",
+            "clip-22",
+            "en-24"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "audio_cross_language-24",
+          "group": "audio_cross_language",
+          "hits": [
+            "clip-24",
+            "en-24",
+            "zh-24",
+            "clip-00",
+            "tail-24"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "media_no_answer-00",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-01",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-02",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-03",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-04",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-05",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-06",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-07",
+          "group": "media_no_answer",
+          "hits": [
+            "clip-06",
+            "clip-07",
+            "clip-16",
+            "clip-08",
+            "clip-21"
+          ],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-08",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-09",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-10",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-11",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-12",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-13",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-14",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-15",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-16",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-17",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-18",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-19",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-20",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-21",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-22",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-23",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "media_no_answer-24",
+          "group": "media_no_answer",
+          "hits": [],
+          "rank": null
+        },
+        {
+          "id": "image_red-0",
+          "group": "image",
+          "hits": [
+            "clip-08",
+            "clip-21",
+            "red",
+            "clip-11",
+            "clip-07"
+          ],
+          "rank": 3
+        },
+        {
+          "id": "image_red-1",
+          "group": "image",
+          "hits": [
+            "red",
+            "clip-08",
+            "clip-21",
+            "clip-06",
+            "clip-07"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "image_red-2",
+          "group": "image",
+          "hits": [
+            "red",
+            "clip-08",
+            "blue",
+            "clip-21",
+            "clip-11"
+          ],
+          "rank": 1
+        },
+        {
+          "id": "image_blue-0",
+          "group": "image",
+          "hits": [
+            "clip-08",
+            "blue",
+            "clip-21",
+            "clip-05",
+            "clip-11"
+          ],
+          "rank": 2
+        },
+        {
+          "id": "image_blue-1",
+          "group": "image",
+          "hits": [
+            "clip-08",
+            "blue",
+            "clip-21",
+            "clip-06",
+            "clip-05"
+          ],
+          "rank": 2
+        },
+        {
+          "id": "image_blue-2",
+          "group": "image",
+          "hits": [
+            "blue",
+            "clip-08",
+            "clip-21",
+            "clip-11",
+            "red"
+          ],
+          "rank": 1
+        }
+      ]
+    }
+  }
+}

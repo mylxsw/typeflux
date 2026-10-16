@@ -1,0 +1,13 @@
+{
+  "retained": {
+    "TypefluxPackageTests": {
+      "bytes": 259066040,
+      "sha256": "0492e016b76933e64f0cb248d3a64ce56d2a83fc2edccecdc244b1db7031ee2f"
+    },
+    "default.profdata": {
+      "bytes": 103720,
+      "sha256": "f981de2c40db43d42c8d1d66942cf7222fec2bfaf5fde4cfac89623a5af008b1"
+    }
+  },
+  "cleanup": "Remove only this task-owned 3.8GiB coverage-native scratch after preserving final executable+merged profile. Production restored to prior validated byte-identical source; no extra unit pass is needed for the rejected experiment."
+}

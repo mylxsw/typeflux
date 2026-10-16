@@ -1,0 +1,27 @@
+{
+  "runs": [
+    {
+      "partial_penalty": 0.0,
+      "command": [
+        "python3",
+        "docs/validation/gul-383/optimization/ranking-scale/compare_variance.py"
+      ],
+      "wall_seconds": 1.491779875010252,
+      "exit_code": 1,
+      "expected_exit_code": 1
+    },
+    {
+      "partial_penalty": 0.18,
+      "command": [
+        "python3",
+        "docs/validation/gul-383/optimization/ranking-scale/compare_variance.py"
+      ],
+      "wall_seconds": 1.4910880830138922,
+      "exit_code": 0,
+      "expected_exit_code": 0
+    }
+  ],
+  "production_development_metrics_equal_prior": true,
+  "production_source_hash_drift": [],
+  "decision": "Reject zero partial-coverage penalty on development data; restore byte-identical production. No heldout rerun and no new unit coverage pass: production and existing validated tests unchanged. Initial unretained exploratory run hit empty-eligible max(); writer now preserves all failed trial rows before returning nonzero. Its exact initial wall time was not recorded."
+}

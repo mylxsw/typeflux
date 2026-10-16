@@ -1,0 +1,143 @@
+{
+  "completed": [
+    {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "docs/validation/gul-383/optimization/ranking-scale/run_scale_matrix.py",
+        "--checkout",
+        ".build/baseline-code",
+        "--label",
+        "before",
+        "--mode",
+        "native",
+        "--size",
+        "10000",
+        "--scenario",
+        "hot-new-semantic",
+        "--tag",
+        "real-noise",
+        "--real-noise"
+      ],
+      "label": "before",
+      "size": 10000,
+      "exit_code": 0,
+      "complete_capture": true
+    },
+    {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "docs/validation/gul-383/optimization/ranking-scale/run_scale_matrix.py",
+        "--checkout",
+        ".",
+        "--label",
+        "after",
+        "--mode",
+        "native",
+        "--size",
+        "10000",
+        "--scenario",
+        "hot-new-semantic",
+        "--tag",
+        "real-noise",
+        "--real-noise"
+      ],
+      "label": "after",
+      "size": 10000,
+      "exit_code": 0,
+      "complete_capture": true
+    },
+    {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "docs/validation/gul-383/optimization/ranking-scale/run_scale_matrix.py",
+        "--checkout",
+        ".build/baseline-code",
+        "--label",
+        "before",
+        "--mode",
+        "native",
+        "--size",
+        "100000",
+        "--scenario",
+        "hot-new-semantic",
+        "--tag",
+        "real-noise",
+        "--real-noise"
+      ],
+      "label": "before",
+      "size": 100000,
+      "exit_code": 0,
+      "complete_capture": true
+    },
+    {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "docs/validation/gul-383/optimization/ranking-scale/run_scale_matrix.py",
+        "--checkout",
+        ".",
+        "--label",
+        "after",
+        "--mode",
+        "native",
+        "--size",
+        "100000",
+        "--scenario",
+        "hot-new-semantic",
+        "--tag",
+        "real-noise",
+        "--real-noise"
+      ],
+      "label": "after",
+      "size": 100000,
+      "exit_code": 0,
+      "complete_capture": true
+    },
+    {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "docs/validation/gul-383/optimization/ranking-scale/run_scale_matrix.py",
+        "--checkout",
+        ".build/baseline-code",
+        "--label",
+        "before",
+        "--mode",
+        "native",
+        "--size",
+        "1000000",
+        "--scenario",
+        "hot-new-semantic",
+        "--tag",
+        "real-noise",
+        "--real-noise"
+      ],
+      "label": "before",
+      "size": 1000000,
+      "exit_code": 0,
+      "complete_capture": true
+    },
+    {
+      "command": [
+        "/opt/homebrew/opt/python@3.14/bin/python3.14",
+        "docs/validation/gul-383/optimization/ranking-scale/run_scale_matrix.py",
+        "--checkout",
+        ".",
+        "--label",
+        "after",
+        "--mode",
+        "native",
+        "--size",
+        "1000000",
+        "--scenario",
+        "hot-new-semantic",
+        "--tag",
+        "real-noise",
+        "--real-noise"
+      ],
+      "label": "after",
+      "size": 1000000,
+      "exit_code": 0,
+      "complete_capture": true
+    }
+  ],
+  "wall_seconds": 1993.9281444999506
+}

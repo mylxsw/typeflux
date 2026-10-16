@@ -1,0 +1,1292 @@
+{
+  "media_documents" : 27,
+  "model_sha256" : "2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135",
+  "projector_sha256" : "c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f",
+  "queries" : 106,
+  "rows" : [
+    {
+      "group" : "audio_topic",
+      "hits" : [
+        "tail-00",
+        "en-00",
+        "clip-00",
+        "zh-00",
+        "clip-10"
+      ],
+      "id" : "audio_topic-00",
+      "location_correct" : true,
+      "rank" : 3
+    },
+    {
+      "group" : "audio_paraphrase",
+      "hits" : [
+        "tail-00",
+        "clip-00",
+        "clip-12",
+        "en-00",
+        "zh-00"
+      ],
+      "id" : "audio_paraphrase-00",
+      "location_correct" : true,
+      "rank" : 2
+    },
+    {
+      "group" : "audio_cross_language",
+      "hits" : [
+        "tail-00",
+        "clip-00",
+        "en-00",
+        "zh-00",
+        "clip-12"
+      ],
+      "id" : "audio_cross_language-00",
+      "location_correct" : true,
+      "rank" : 2
+    },
+    {
+      "group" : "audio_topic",
+      "hits" : [
+        "en-01",
+        "tail-01",
+        "clip-01",
+        "zh-01",
+        "clip-21"
+      ],
+      "id" : "audio_topic-01",
+      "location_correct" : true,
+      "rank" : 3
+    },
+    {
+      "group" : "audio_paraphrase",
+      "hits" : [
+        "clip-01",
+        "zh-01",
+        "en-01",
+        "tail-01",
+        "clip-20"
+      ],
+      "id" : "audio_paraphrase-01",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "group" : "audio_cross_language",
+      "hits" : [
+        "clip-01",
+        "zh-01",
+        "tail-01",
+        "en-01",
+        "clip-20"
+      ],
+      "id" : "audio_cross_language-01",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "group" : "audio_topic",
+      "hits" : [
+        "en-02",
+        "tail-02",
+        "clip-02",
+        "zh-02",
+        "clip-06"
+      ],
+      "id" : "audio_topic-02",
+      "location_correct" : true,
+      "rank" : 3
+    },
+    {
+      "group" : "audio_paraphrase",
+      "hits" : [
+        "clip-02",
+        "tail-02",
+        "en-02",
+        "zh-02",
+        "clip-06"
+      ],
+      "id" : "audio_paraphrase-02",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "group" : "audio_cross_language",
+      "hits" : [
+        "clip-02",
+        "zh-02",
+        "tail-02",
+        "en-02",
+        "clip-06"
+      ],
+      "id" : "audio_cross_language-02",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "group" : "audio_topic",
+      "hits" : [
+        "tail-03",
+        "en-03",
+        "clip-03",
+        "zh-03",
+        "clip-02"
+      ],
+      "id" : "audio_topic-03",
+      "location_correct" : true,
+      "rank" : 3
+    },
+    {
+      "group" : "audio_paraphrase",
+      "hits" : [
+        "clip-03",
+        "tail-03",
+        "en-03",
+        "zh-03",
+        "clip-15"
+      ],
+      "id" : "audio_paraphrase-03",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "group" : "audio_cross_language",
+      "hits" : [
+        "clip-03",
+        "zh-03",
+        "tail-03",
+        "en-03",
+        "clip-15"
+      ],
+      "id" : "audio_cross_language-03",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "group" : "audio_topic",
+      "hits" : [
+        "tail-04",
+        "en-04",
+        "clip-00",
+        "clip-14",
+        "clip-16"
+      ],
+      "id" : "audio_topic-04",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "group" : "audio_paraphrase",
+      "hits" : [
+        "clip-04",
+        "en-04",
+        "zh-04",
+        "tail-04",
+        "clip-16"
+      ],
+      "id" : "audio_paraphrase-04",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "group" : "audio_cross_language",
+      "hits" : [
+        "clip-04",
+        "zh-04",
+        "en-04",
+        "tail-04",
+        "clip-12"
+      ],
+      "id" : "audio_cross_language-04",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "group" : "audio_topic",
+      "hits" : [
+        "tail-05",
+        "en-05",
+        "clip-05",
+        "clip-11",
+        "zh-05"
+      ],
+      "id" : "audio_topic-05",
+      "location_correct" : true,
+      "rank" : 3
+    },
+    {
+      "group" : "audio_paraphrase",
+      "hits" : [
+        "clip-05",
+        "zh-05",
+        "tail-05",
+        "en-05",
+        "clip-20"
+      ],
+      "id" : "audio_paraphrase-05",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "group" : "audio_cross_language",
+      "hits" : [
+        "clip-05",
+        "zh-05",
+        "en-05",
+        "tail-05",
+        "clip-20"
+      ],
+      "id" : "audio_cross_language-05",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "group" : "audio_topic",
+      "hits" : [
+        "en-06",
+        "tail-06",
+        "clip-06",
+        "zh-06",
+        "clip-02"
+      ],
+      "id" : "audio_topic-06",
+      "location_correct" : true,
+      "rank" : 3
+    },
+    {
+      "group" : "audio_paraphrase",
+      "hits" : [
+        "clip-06",
+        "clip-02",
+        "clip-16",
+        "clip-12",
+        "zh-06"
+      ],
+      "id" : "audio_paraphrase-06",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "group" : "audio_cross_language",
+      "hits" : [
+        "clip-06",
+        "clip-02",
+        "zh-06",
+        "tail-02",
+        "en-06"
+      ],
+      "id" : "audio_cross_language-06",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "group" : "audio_topic",
+      "hits" : [
+        "en-07",
+        "tail-07",
+        "zh-07",
+        "clip-14",
+        "clip-07"
+      ],
+      "id" : "audio_topic-07",
+      "location_correct" : true,
+      "rank" : 5
+    },
+    {
+      "group" : "audio_paraphrase",
+      "hits" : [
+        "clip-07",
+        "zh-07",
+        "clip-14",
+        "en-07",
+        "tail-07"
+      ],
+      "id" : "audio_paraphrase-07",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "group" : "audio_cross_language",
+      "hits" : [
+        "zh-07",
+        "en-07",
+        "tail-07",
+        "clip-07",
+        "clip-16"
+      ],
+      "id" : "audio_cross_language-07",
+      "location_correct" : true,
+      "rank" : 4
+    },
+    {
+      "group" : "audio_topic",
+      "hits" : [
+        "en-08",
+        "tail-08",
+        "zh-08",
+        "clip-04",
+        "clip-08"
+      ],
+      "id" : "audio_topic-08",
+      "location_correct" : true,
+      "rank" : 5
+    },
+    {
+      "group" : "audio_paraphrase",
+      "hits" : [
+        "clip-08",
+        "en-08",
+        "zh-08",
+        "tail-08",
+        "clip-04"
+      ],
+      "id" : "audio_paraphrase-08",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "group" : "audio_cross_language",
+      "hits" : [
+        "clip-08",
+        "en-08",
+        "zh-08",
+        "tail-08",
+        "clip-14"
+      ],
+      "id" : "audio_cross_language-08",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "group" : "audio_topic",
+      "hits" : [
+        "en-09",
+        "tail-09",
+        "clip-09",
+        "zh-09",
+        "clip-08"
+      ],
+      "id" : "audio_topic-09",
+      "location_correct" : true,
+      "rank" : 3
+    },
+    {
+      "group" : "audio_paraphrase",
+      "hits" : [
+        "clip-09",
+        "en-09",
+        "zh-09",
+        "tail-09",
+        "clip-14"
+      ],
+      "id" : "audio_paraphrase-09",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "group" : "audio_cross_language",
+      "hits" : [
+        "clip-09",
+        "en-09",
+        "zh-09",
+        "tail-09",
+        "clip-07"
+      ],
+      "id" : "audio_cross_language-09",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "group" : "audio_topic",
+      "hits" : [
+        "tail-10",
+        "en-10",
+        "clip-10",
+        "clip-11",
+        "clip-04"
+      ],
+      "id" : "audio_topic-10",
+      "location_correct" : true,
+      "rank" : 3
+    },
+    {
+      "group" : "audio_paraphrase",
+      "hits" : [
+        "clip-10",
+        "tail-10",
+        "zh-10",
+        "en-10",
+        "clip-03"
+      ],
+      "id" : "audio_paraphrase-10",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "group" : "audio_cross_language",
+      "hits" : [
+        "clip-10",
+        "zh-10",
+        "tail-10",
+        "en-10",
+        "clip-06"
+      ],
+      "id" : "audio_cross_language-10",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "group" : "audio_topic",
+      "hits" : [
+        "tail-11",
+        "en-11",
+        "clip-11",
+        "zh-11",
+        "clip-05"
+      ],
+      "id" : "audio_topic-11",
+      "location_correct" : true,
+      "rank" : 3
+    },
+    {
+      "group" : "audio_paraphrase",
+      "hits" : [
+        "clip-11",
+        "en-11",
+        "zh-11",
+        "tail-11",
+        "clip-08"
+      ],
+      "id" : "audio_paraphrase-11",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "group" : "audio_cross_language",
+      "hits" : [
+        "clip-11",
+        "en-11",
+        "tail-11",
+        "zh-11",
+        "clip-02"
+      ],
+      "id" : "audio_cross_language-11",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "group" : "audio_topic",
+      "hits" : [
+        "tail-12",
+        "en-12",
+        "clip-12",
+        "zh-12",
+        "clip-00"
+      ],
+      "id" : "audio_topic-12",
+      "location_correct" : true,
+      "rank" : 3
+    },
+    {
+      "group" : "audio_paraphrase",
+      "hits" : [
+        "clip-12",
+        "tail-12",
+        "en-12",
+        "zh-12",
+        "clip-13"
+      ],
+      "id" : "audio_paraphrase-12",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "group" : "audio_cross_language",
+      "hits" : [
+        "clip-12",
+        "tail-12",
+        "en-12",
+        "zh-12",
+        "clip-13"
+      ],
+      "id" : "audio_cross_language-12",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "group" : "audio_topic",
+      "hits" : [
+        "tail-13",
+        "en-13",
+        "clip-06",
+        "clip-13",
+        "zh-13"
+      ],
+      "id" : "audio_topic-13",
+      "location_correct" : true,
+      "rank" : 4
+    },
+    {
+      "group" : "audio_paraphrase",
+      "hits" : [
+        "clip-13",
+        "en-13",
+        "tail-13",
+        "clip-12",
+        "zh-13"
+      ],
+      "id" : "audio_paraphrase-13",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "group" : "audio_cross_language",
+      "hits" : [
+        "clip-13",
+        "zh-13",
+        "en-13",
+        "tail-13",
+        "clip-12"
+      ],
+      "id" : "audio_cross_language-13",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "group" : "audio_topic",
+      "hits" : [
+        "en-14",
+        "tail-14",
+        "clip-14",
+        "zh-14",
+        "clip-06"
+      ],
+      "id" : "audio_topic-14",
+      "location_correct" : true,
+      "rank" : 3
+    },
+    {
+      "group" : "audio_paraphrase",
+      "hits" : [
+        "clip-04",
+        "clip-14",
+        "zh-14",
+        "tail-04",
+        "clip-08"
+      ],
+      "id" : "audio_paraphrase-14",
+      "location_correct" : true,
+      "rank" : 2
+    },
+    {
+      "group" : "audio_cross_language",
+      "hits" : [
+        "clip-14",
+        "zh-14",
+        "en-14",
+        "tail-14",
+        "clip-16"
+      ],
+      "id" : "audio_cross_language-14",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "group" : "audio_topic",
+      "hits" : [
+        "tail-15",
+        "en-15",
+        "clip-15",
+        "zh-15",
+        "clip-08"
+      ],
+      "id" : "audio_topic-15",
+      "location_correct" : true,
+      "rank" : 3
+    },
+    {
+      "group" : "audio_paraphrase",
+      "hits" : [
+        "clip-15",
+        "en-15",
+        "tail-15",
+        "clip-08",
+        "zh-15"
+      ],
+      "id" : "audio_paraphrase-15",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "group" : "audio_cross_language",
+      "hits" : [
+        "clip-15",
+        "zh-15",
+        "tail-15",
+        "en-15",
+        "clip-08"
+      ],
+      "id" : "audio_cross_language-15",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "group" : "audio_topic",
+      "hits" : [
+        "en-16",
+        "tail-16",
+        "zh-16",
+        "clip-16",
+        "clip-04"
+      ],
+      "id" : "audio_topic-16",
+      "location_correct" : true,
+      "rank" : 4
+    },
+    {
+      "group" : "audio_paraphrase",
+      "hits" : [
+        "clip-16",
+        "zh-16",
+        "tail-16",
+        "en-16",
+        "clip-06"
+      ],
+      "id" : "audio_paraphrase-16",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "group" : "audio_cross_language",
+      "hits" : [
+        "clip-16",
+        "zh-16",
+        "tail-16",
+        "en-16",
+        "en-21"
+      ],
+      "id" : "audio_cross_language-16",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "group" : "audio_topic",
+      "hits" : [
+        "en-17",
+        "tail-17",
+        "clip-17",
+        "zh-17",
+        "clip-20"
+      ],
+      "id" : "audio_topic-17",
+      "location_correct" : true,
+      "rank" : 3
+    },
+    {
+      "group" : "audio_paraphrase",
+      "hits" : [
+        "clip-17",
+        "en-17",
+        "tail-17",
+        "zh-17",
+        "clip-16"
+      ],
+      "id" : "audio_paraphrase-17",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "group" : "audio_cross_language",
+      "hits" : [
+        "clip-17",
+        "zh-17",
+        "en-17",
+        "tail-17",
+        "clip-04"
+      ],
+      "id" : "audio_cross_language-17",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "group" : "audio_topic",
+      "hits" : [
+        "en-18",
+        "tail-18",
+        "en-09",
+        "tail-09",
+        "clip-09"
+      ],
+      "id" : "audio_topic-18",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "group" : "audio_paraphrase",
+      "hits" : [
+        "clip-18",
+        "en-18",
+        "zh-18",
+        "tail-18",
+        "clip-09"
+      ],
+      "id" : "audio_paraphrase-18",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "group" : "audio_cross_language",
+      "hits" : [
+        "clip-18",
+        "en-18",
+        "zh-18",
+        "tail-18",
+        "clip-09"
+      ],
+      "id" : "audio_cross_language-18",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "group" : "audio_topic",
+      "hits" : [
+        "tail-19",
+        "en-19",
+        "zh-19",
+        "clip-19",
+        "clip-02"
+      ],
+      "id" : "audio_topic-19",
+      "location_correct" : true,
+      "rank" : 4
+    },
+    {
+      "group" : "audio_paraphrase",
+      "hits" : [
+        "clip-19",
+        "zh-19",
+        "en-19",
+        "clip-18",
+        "tail-19"
+      ],
+      "id" : "audio_paraphrase-19",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "group" : "audio_cross_language",
+      "hits" : [
+        "clip-19",
+        "zh-19",
+        "en-19",
+        "tail-19",
+        "zh-04"
+      ],
+      "id" : "audio_cross_language-19",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "group" : "audio_topic",
+      "hits" : [
+        "en-20",
+        "tail-20",
+        "zh-20",
+        "clip-20",
+        "clip-05"
+      ],
+      "id" : "audio_topic-20",
+      "location_correct" : true,
+      "rank" : 4
+    },
+    {
+      "group" : "audio_paraphrase",
+      "hits" : [
+        "clip-20",
+        "tail-20",
+        "en-20",
+        "zh-20",
+        "clip-05"
+      ],
+      "id" : "audio_paraphrase-20",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "group" : "audio_cross_language",
+      "hits" : [
+        "clip-20",
+        "tail-20",
+        "zh-20",
+        "en-20",
+        "clip-05"
+      ],
+      "id" : "audio_cross_language-20",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "group" : "audio_topic",
+      "hits" : [
+        "en-21",
+        "tail-21",
+        "clip-11",
+        "clip-21",
+        "zh-11"
+      ],
+      "id" : "audio_topic-21",
+      "location_correct" : true,
+      "rank" : 4
+    },
+    {
+      "group" : "audio_paraphrase",
+      "hits" : [
+        "clip-21",
+        "en-21",
+        "tail-21",
+        "zh-21",
+        "clip-16"
+      ],
+      "id" : "audio_paraphrase-21",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "group" : "audio_cross_language",
+      "hits" : [
+        "clip-21",
+        "en-21",
+        "tail-21",
+        "zh-21",
+        "clip-16"
+      ],
+      "id" : "audio_cross_language-21",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "group" : "audio_topic",
+      "hits" : [
+        "tail-22",
+        "en-22",
+        "clip-22",
+        "zh-00",
+        "zh-22"
+      ],
+      "id" : "audio_topic-22",
+      "location_correct" : true,
+      "rank" : 3
+    },
+    {
+      "group" : "audio_paraphrase",
+      "hits" : [
+        "tail-22",
+        "en-22",
+        "zh-22",
+        "clip-22",
+        "zh-00"
+      ],
+      "id" : "audio_paraphrase-22",
+      "location_correct" : true,
+      "rank" : 4
+    },
+    {
+      "group" : "audio_cross_language",
+      "hits" : [
+        "clip-22",
+        "zh-22",
+        "en-22",
+        "tail-22",
+        "clip-00"
+      ],
+      "id" : "audio_cross_language-22",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "group" : "audio_topic",
+      "hits" : [
+        "tail-23",
+        "en-23",
+        "clip-23",
+        "clip-09",
+        "zh-23"
+      ],
+      "id" : "audio_topic-23",
+      "location_correct" : true,
+      "rank" : 3
+    },
+    {
+      "group" : "audio_paraphrase",
+      "hits" : [
+        "clip-23",
+        "tail-23",
+        "zh-23",
+        "en-23",
+        "clip-22"
+      ],
+      "id" : "audio_paraphrase-23",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "group" : "audio_cross_language",
+      "hits" : [
+        "clip-23",
+        "clip-14",
+        "zh-23",
+        "tail-23",
+        "en-23"
+      ],
+      "id" : "audio_cross_language-23",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "group" : "audio_topic",
+      "hits" : [
+        "en-24",
+        "tail-24",
+        "clip-24",
+        "zh-24",
+        "clip-22"
+      ],
+      "id" : "audio_topic-24",
+      "location_correct" : true,
+      "rank" : 3
+    },
+    {
+      "group" : "audio_paraphrase",
+      "hits" : [
+        "clip-24",
+        "zh-24",
+        "en-24",
+        "tail-24",
+        "clip-00"
+      ],
+      "id" : "audio_paraphrase-24",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "group" : "audio_cross_language",
+      "hits" : [
+        "clip-24",
+        "en-24",
+        "zh-24",
+        "tail-24",
+        "clip-00"
+      ],
+      "id" : "audio_cross_language-24",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-00",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-01",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-02",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-03",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-04",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-05",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-06",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "group" : "media_no_answer",
+      "hits" : [
+        "clip-06",
+        "clip-07",
+        "tail-07",
+        "clip-16",
+        "tail-06"
+      ],
+      "id" : "media_no_answer-07",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-08",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-09",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-10",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-11",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-12",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-13",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-14",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-15",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-16",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-17",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-18",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-19",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-20",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-21",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-22",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-23",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "group" : "media_no_answer",
+      "hits" : [
+
+      ],
+      "id" : "media_no_answer-24",
+      "location_correct" : false,
+      "rank" : null
+    },
+    {
+      "group" : "image",
+      "hits" : [
+        "clip-08",
+        "red",
+        "clip-21",
+        "clip-11",
+        "clip-07"
+      ],
+      "id" : "image_red-0",
+      "location_correct" : true,
+      "rank" : 2
+    },
+    {
+      "group" : "image",
+      "hits" : [
+        "red",
+        "clip-08",
+        "clip-21",
+        "blue",
+        "clip-06"
+      ],
+      "id" : "image_red-1",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "group" : "image",
+      "hits" : [
+        "red",
+        "blue",
+        "clip-08",
+        "clip-21",
+        "clip-11"
+      ],
+      "id" : "image_red-2",
+      "location_correct" : true,
+      "rank" : 1
+    },
+    {
+      "group" : "image",
+      "hits" : [
+        "clip-08",
+        "blue",
+        "zh-08",
+        "clip-21",
+        "clip-05"
+      ],
+      "id" : "image_blue-0",
+      "location_correct" : true,
+      "rank" : 2
+    },
+    {
+      "group" : "image",
+      "hits" : [
+        "clip-08",
+        "blue",
+        "zh-08",
+        "red",
+        "clip-21"
+      ],
+      "id" : "image_blue-1",
+      "location_correct" : true,
+      "rank" : 2
+    },
+    {
+      "group" : "image",
+      "hits" : [
+        "blue",
+        "clip-08",
+        "en-08",
+        "zh-08",
+        "red"
+      ],
+      "id" : "image_blue-2",
+      "location_correct" : true,
+      "rank" : 1
+    }
+  ],
+  "scope" : "Real captured image\/audio\/text vectors through production staging\/provenance, Float16 snapshot and ranking. Each source clip has one labelled segment starting at zero. File extraction\/permissions\/UI are not measured in this replay.",
+  "text_documents" : 75
+}

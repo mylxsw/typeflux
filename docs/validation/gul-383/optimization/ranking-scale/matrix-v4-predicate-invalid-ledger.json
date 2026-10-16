@@ -1,0 +1,56 @@
+{
+  "plan": [
+    [
+      "after",
+      "native",
+      100000
+    ],
+    [
+      "after",
+      "native",
+      10000
+    ],
+    [
+      "after",
+      "contention",
+      100000
+    ],
+    [
+      "before",
+      "native",
+      1000000
+    ],
+    [
+      "after",
+      "native",
+      1000000
+    ],
+    [
+      "before",
+      "contention",
+      1000000
+    ],
+    [
+      "after",
+      "contention",
+      1000000
+    ]
+  ],
+  "completed": [
+    {
+      "label": "after",
+      "mode": "native",
+      "size": 100000,
+      "exit_code": 1,
+      "complete_capture": true
+    },
+    {
+      "label": "after",
+      "mode": "native",
+      "size": 10000,
+      "exit_code": 1,
+      "complete_capture": false
+    }
+  ],
+  "wall_seconds": 667.6353932499769
+}

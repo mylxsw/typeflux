@@ -1,0 +1,47 @@
+{
+  "hardware": "Apple M4",
+  "memory_bytes": 17179869184,
+  "os": "26.6.2",
+  "swift": "Apple Swift version 6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)\nTarget: arm64-apple-macosx26.0",
+  "baseline": "262135bcebc1e3694ddc02ce6e2b15086a10dd23",
+  "host_exclusive": false,
+  "model_sha256": "2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135",
+  "cases": [
+    10000,
+    100000,
+    1000000
+  ],
+  "samples_per_warm_scenario": 100,
+  "cold_definition": "Ten fresh service/helper openings per entry. Model verification/reopen occurs outside the timed edit; OS file/shader caches may be warm.",
+  "corpus": "Controlled load: 1 real model document embedding plus repeated orthogonal constructed noise in two files. Production real noncached query embeddings, native composer and real permission worker. This is not a representative million-document quality corpus.",
+  "measurement_boundary": "Committed NSTextView input to validated publication, and to forced layout/display plus rendered accessibility observation. No compositor/GPU presentation fence.",
+  "initial_build_cancelled": {
+    "seconds": 37.72030545899179,
+    "reason": "Dependency resolution stopped before compilation to avoid overlapping benchmark CPU load."
+  },
+  "orchestration_pause": {
+    "unix": 1792099170.31477,
+    "pid": 72183,
+    "reason": "Pause the size-loop owner only; current 10k Swift test child continues. Build/coverage will run after this child exits, then the loop resumes. Command wall includes the explicit pause."
+  },
+  "package_resolved_sha256": "faf33527478681a0b411242554c3f5908665f8e884af8234181a6d08bef01c5d",
+  "helper_before_sha256": "8387df2952b8f35569b1a46ba12920d844985caced14bdfb7a094739929910db",
+  "helper_after_sha256": "1ac53aae1ee878b8fec6826d6277a5b180a64ee7493ca88bff79f17d4554f12e",
+  "samples_per_cold_entry": 10,
+  "query_cache_warmup": "Round zero is cache fill; reuse has 99 samples at 10k/100k and 19 at 1m. The first aborted 1m attempt used 100 warm rounds and retains its partial rows.",
+  "swiftlint_version": "0.65.1",
+  "repository_swift_pin": "6.3.1",
+  "compiler_difference": "Measured host Swift 6.4; repository pins 6.3.1. No Swift 6.3.1 run was performed.",
+  "benchmark_service_policy_overrides": {
+    "low_power_mode": false,
+    "thermal_constrained": false,
+    "supported": true,
+    "full_disk_access_scope": true
+  },
+  "override_scope": "Controlled temporary fixture roots only. Actual metadata child revalidates each file. Policy gates and revocation have separate focused tests; these timings are not thermal/low-power policy validation.",
+  "samples_per_warm_scenario_by_scale": {
+    "10000": 100,
+    "100000": 100,
+    "1000000": 20
+  }
+}

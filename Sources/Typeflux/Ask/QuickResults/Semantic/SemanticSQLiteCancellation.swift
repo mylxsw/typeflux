@@ -1,0 +1,29 @@
+import Foundation
+import SQLite3
+
+/// Readers own their connection lock. Poll cancellation inside SQLite sorting/scanning, including
+/// the work before the first row. The callback is removed before the caller rolls back its read transaction.
+enum SemanticSQLiteCancellation {
+    static func read<Value>(_ database: OpaquePointer, cancelled: () -> Bool,
+                            operation: () throws -> Value) throws -> Value {
+        guard !cancelled() else { throw CancellationError() }
+        return try withoutActuallyEscaping(cancelled) { check in
+            var predicate = check
+            return try withUnsafeMutablePointer(to: &predicate) { pointer in
+                sqlite3_progress_handler(database, 1000, { context in
+                    guard let context else { return 0 }
+                    return context.assumingMemoryBound(to: (() -> Bool).self).pointee() ? 1 : 0
+                }, UnsafeMutableRawPointer(pointer))
+                defer { sqlite3_progress_handler(database, 0, nil, nil) }
+                do {
+                    let value = try operation()
+                    guard !check() else { throw CancellationError() }
+                    return value
+                } catch {
+                    if check() { throw CancellationError() }
+                    throw error
+                }
+            }
+        }
+    }
+}

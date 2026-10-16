@@ -1,0 +1,14 @@
+{
+  "command": [
+    "make",
+    "coverage",
+    "SUITE=SemanticSearchRankingTests"
+  ],
+  "wall_seconds": 329.78218083299,
+  "exit_code": 0,
+  "source_files": [
+    "ExclusiveUIStateTrait.swift",
+    "SemanticFileSearchTests.swift",
+    "SemanticSearchRankingTests.swift"
+  ]
+}

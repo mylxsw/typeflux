@@ -1,0 +1,332 @@
+{
+  "scope": "Final-source hot real-model supplement only; no replacement of the primary matrix.",
+  "reports": [
+    {
+      "chunks": 10000,
+      "entry": "mixed",
+      "before": {
+        "n": 100,
+        "unavailable": 0,
+        "p50": 150.075667,
+        "p95": 168.521917,
+        "p99": 195.417208
+      },
+      "intermediate": {
+        "n": 100,
+        "unavailable": 0,
+        "p50": 144.083458,
+        "p95": 146.499916,
+        "p99": 148.91275
+      },
+      "final": {
+        "n": 100,
+        "unavailable": 0,
+        "p50": 152.039083,
+        "p95": 185.40875,
+        "p99": 206.975709
+      },
+      "final_test_exit_code": 0,
+      "target_p95_ms": 300,
+      "passed": true
+    },
+    {
+      "chunks": 10000,
+      "entry": "file-mode",
+      "before": {
+        "n": 100,
+        "unavailable": 0,
+        "p50": 124.752209,
+        "p95": 129.855833,
+        "p99": 137.416417
+      },
+      "intermediate": {
+        "n": 100,
+        "unavailable": 0,
+        "p50": 115.34225,
+        "p95": 118.786458,
+        "p99": 119.429167
+      },
+      "final": {
+        "n": 100,
+        "unavailable": 0,
+        "p50": 117.349291,
+        "p95": 151.225709,
+        "p99": 156.549333
+      },
+      "final_test_exit_code": 0,
+      "target_p95_ms": 300,
+      "passed": true
+    },
+    {
+      "chunks": 10000,
+      "resources_before_intermediate_final": [
+        {
+          "wall_seconds": 164.73586629203055,
+          "exit_code": 0,
+          "peak_rss_bytes_by_process_name": {
+            "swiftpm-testing-helper": 499269632,
+            "TypefluxSemanticHelper": 508821504,
+            "Typeflux": 21430272
+          },
+          "external_cpu_peak": 473.9
+        },
+        {
+          "wall_seconds": 160.61969633301487,
+          "exit_code": 0,
+          "peak_rss_bytes_by_process_name": {
+            "swiftpm-testing-helper": 502202368,
+            "TypefluxSemanticHelper": 510148608,
+            "Typeflux": 21315584
+          },
+          "external_cpu_peak": 0
+        },
+        {
+          "wall_seconds": 220.5633213330293,
+          "exit_code": 0,
+          "peak_rss_bytes_by_process_name": {
+            "swiftpm-testing-helper": 531283968,
+            "TypefluxSemanticHelper": 509542400,
+            "Typeflux": 21397504
+          },
+          "external_cpu_peak": 891.7
+        }
+      ],
+      "final_binary_sha256": "4a937baf4e2e743f5f4f715d7a26fcee91cb7eb141ac87ed5a93e1d8f28e8599",
+      "final_production_sources_sha256": {
+        "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFilePolicy.swift": "0a9e7959d0fb6a562b6aeaa2ba46d3421667464a9d4a28074218d927f4efd6a8",
+        "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift": "39e2135de96aca9b69b8b8bd1a37297b1dd03c8e3c559eadf9a2a94c01d56060",
+        "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Discovery.swift": "ef09d10891484ef8b3fe2eb50d6764bba80f662c6543f7341b2dd59d99023409",
+        "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Jobs.swift": "f9d9cac3b33bb74707ce5da2378593cdf4b63b9dc7efa437a6fe735dbad0d5ba",
+        "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+MediaJobs.swift": "2cd9469059b636152d73d326beb38ede896ee4be5f0a9d5eba05877a8ce90fd7",
+        "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+SearchSchema.swift": "c2de0d597c48ac2b1d75eb247121201d6587146660913e879fc4b5ac03b1164e",
+        "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore.swift": "f43f4820aee96fbbb661c8be32dc3e695c31373889d7f56f04bf08d517e626be",
+        "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileValidator.swift": "e94836b6e779971d3e0352c361fbe1e26f4d6830a61996c09cf03faeec799d47",
+        "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticLexicalReader.swift": "23e66e04f5493f92fe32eb66c40fb96eecd6c72f54ab24d70e94622d105d41d1",
+        "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticScoreCalibration.swift": "4202dd6b2d9fea677ae972c4cfc54d4051e778ee33afa1fe8e391b38417b8ecb",
+        "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSearchRanking.swift": "38cecb38ce4ab3a1a0ab6cc1ed810d5cf4fb99364af523a1db45af44cdfd92da",
+        "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticVectorReader.swift": "c849b6d28eae75a47cc0720fad75ab47fa0a8188b7e88b44c8fc73412f29d323",
+        "Sources/TypefluxSemanticHelper/main.swift": "717ffa1200119dcb16eb132490e69c39034ff8e0da9533fad2505ebb9763bc79",
+        "Sources/Typeflux/Ask/QuickResults/AskQuickSearchSession.swift": "2453104bd6d42cf7277396f093cb60314ae99c40ff8a08244ea7008670e9beea",
+        "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSQLiteCancellation.swift": "c4d95924f0d90b1c0223dce7a5c4c5e1774cc3a6601817067872179066338369"
+      }
+    },
+    {
+      "chunks": 100000,
+      "entry": "mixed",
+      "before": {
+        "n": 100,
+        "unavailable": 0,
+        "p50": 254.673959,
+        "p95": 348.492042,
+        "p99": 478.877917
+      },
+      "intermediate": {
+        "n": 100,
+        "unavailable": 0,
+        "p50": 224.26,
+        "p95": 249.025042,
+        "p99": 316.475709
+      },
+      "final": {
+        "n": 100,
+        "unavailable": 0,
+        "p50": 200.367,
+        "p95": 221.287875,
+        "p99": 242.372625
+      },
+      "final_test_exit_code": 0,
+      "target_p95_ms": 300,
+      "passed": true
+    },
+    {
+      "chunks": 100000,
+      "entry": "file-mode",
+      "before": {
+        "n": 100,
+        "unavailable": 0,
+        "p50": 236.520042,
+        "p95": 540.092583,
+        "p99": 2262.923042
+      },
+      "intermediate": {
+        "n": 100,
+        "unavailable": 0,
+        "p50": 160.275,
+        "p95": 208.360375,
+        "p99": 216.918291
+      },
+      "final": {
+        "n": 100,
+        "unavailable": 0,
+        "p50": 173.231,
+        "p95": 195.55675,
+        "p99": 207.982417
+      },
+      "final_test_exit_code": 0,
+      "target_p95_ms": 300,
+      "passed": true
+    },
+    {
+      "chunks": 100000,
+      "resources_before_intermediate_final": [
+        {
+          "wall_seconds": 205.64846716704778,
+          "exit_code": 0,
+          "peak_rss_bytes_by_process_name": {
+            "swiftpm-testing-helper": 640909312,
+            "TypefluxSemanticHelper": 512081920,
+            "Typeflux": 21413888
+          },
+          "external_cpu_peak": 391.1
+        },
+        {
+          "wall_seconds": 231.62950325000565,
+          "exit_code": 0,
+          "peak_rss_bytes_by_process_name": {
+            "swiftpm-testing-helper": 803012608,
+            "TypefluxSemanticHelper": 513736704,
+            "Typeflux": 21413888
+          },
+          "external_cpu_peak": 806.3
+        },
+        {
+          "wall_seconds": 206.97075029200641,
+          "exit_code": 0,
+          "peak_rss_bytes_by_process_name": {
+            "swiftpm-testing-helper": 809041920,
+            "TypefluxSemanticHelper": 511557632,
+            "Typeflux": 21282816
+          },
+          "external_cpu_peak": 601.4
+        }
+      ],
+      "final_binary_sha256": "4a937baf4e2e743f5f4f715d7a26fcee91cb7eb141ac87ed5a93e1d8f28e8599",
+      "final_production_sources_sha256": {
+        "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFilePolicy.swift": "0a9e7959d0fb6a562b6aeaa2ba46d3421667464a9d4a28074218d927f4efd6a8",
+        "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift": "39e2135de96aca9b69b8b8bd1a37297b1dd03c8e3c559eadf9a2a94c01d56060",
+        "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Discovery.swift": "ef09d10891484ef8b3fe2eb50d6764bba80f662c6543f7341b2dd59d99023409",
+        "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Jobs.swift": "f9d9cac3b33bb74707ce5da2378593cdf4b63b9dc7efa437a6fe735dbad0d5ba",
+        "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+MediaJobs.swift": "2cd9469059b636152d73d326beb38ede896ee4be5f0a9d5eba05877a8ce90fd7",
+        "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+SearchSchema.swift": "c2de0d597c48ac2b1d75eb247121201d6587146660913e879fc4b5ac03b1164e",
+        "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore.swift": "f43f4820aee96fbbb661c8be32dc3e695c31373889d7f56f04bf08d517e626be",
+        "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileValidator.swift": "e94836b6e779971d3e0352c361fbe1e26f4d6830a61996c09cf03faeec799d47",
+        "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticLexicalReader.swift": "23e66e04f5493f92fe32eb66c40fb96eecd6c72f54ab24d70e94622d105d41d1",
+        "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticScoreCalibration.swift": "4202dd6b2d9fea677ae972c4cfc54d4051e778ee33afa1fe8e391b38417b8ecb",
+        "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSearchRanking.swift": "38cecb38ce4ab3a1a0ab6cc1ed810d5cf4fb99364af523a1db45af44cdfd92da",
+        "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticVectorReader.swift": "c849b6d28eae75a47cc0720fad75ab47fa0a8188b7e88b44c8fc73412f29d323",
+        "Sources/TypefluxSemanticHelper/main.swift": "717ffa1200119dcb16eb132490e69c39034ff8e0da9533fad2505ebb9763bc79",
+        "Sources/Typeflux/Ask/QuickResults/AskQuickSearchSession.swift": "2453104bd6d42cf7277396f093cb60314ae99c40ff8a08244ea7008670e9beea",
+        "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSQLiteCancellation.swift": "c4d95924f0d90b1c0223dce7a5c4c5e1774cc3a6601817067872179066338369"
+      }
+    },
+    {
+      "chunks": 1000000,
+      "entry": "mixed",
+      "before": {
+        "n": 20,
+        "unavailable": 0,
+        "p50": 7428.367917,
+        "p95": 27446.335834,
+        "p99": 35473.831084
+      },
+      "intermediate": {
+        "n": 20,
+        "unavailable": 0,
+        "p50": 780.309125,
+        "p95": 871.698292,
+        "p99": 1262.90925
+      },
+      "final": {
+        "n": 20,
+        "unavailable": 0,
+        "p50": 362.881542,
+        "p95": 377.910041,
+        "p99": 932.576167
+      },
+      "final_test_exit_code": 0,
+      "target_p95_ms": 300,
+      "passed": false
+    },
+    {
+      "chunks": 1000000,
+      "entry": "file-mode",
+      "before": {
+        "n": 20,
+        "unavailable": 0,
+        "p50": 1689.0619590000001,
+        "p95": 4317.804833,
+        "p99": 14417.390916
+      },
+      "intermediate": {
+        "n": 20,
+        "unavailable": 0,
+        "p50": 626.044708,
+        "p95": 814.221333,
+        "p99": 823.293083
+      },
+      "final": {
+        "n": 20,
+        "unavailable": 0,
+        "p50": 481.887917,
+        "p95": 823.063333,
+        "p99": 1320.780875
+      },
+      "final_test_exit_code": 0,
+      "target_p95_ms": 300,
+      "passed": false
+    },
+    {
+      "chunks": 1000000,
+      "resources_before_intermediate_final": [
+        {
+          "wall_seconds": 719.909175791021,
+          "exit_code": 0,
+          "peak_rss_bytes_by_process_name": {
+            "swiftpm-testing-helper": 599310336,
+            "TypefluxSemanticHelper": 507232256,
+            "Typeflux": 20725760
+          },
+          "external_cpu_peak": 907.3
+        },
+        {
+          "wall_seconds": 509.673944457958,
+          "exit_code": 0,
+          "peak_rss_bytes_by_process_name": {
+            "swiftpm-testing-helper": 2305753088,
+            "TypefluxSemanticHelper": 509116416,
+            "Typeflux": 20676608
+          },
+          "external_cpu_peak": 394.0
+        },
+        {
+          "wall_seconds": 433.7935484169866,
+          "exit_code": 0,
+          "peak_rss_bytes_by_process_name": {
+            "swiftpm-testing-helper": 2344878080,
+            "TypefluxSemanticHelper": 507265024,
+            "Typeflux": 20742144
+          },
+          "external_cpu_peak": 905.5
+        }
+      ],
+      "final_binary_sha256": "4a937baf4e2e743f5f4f715d7a26fcee91cb7eb141ac87ed5a93e1d8f28e8599",
+      "final_production_sources_sha256": {
+        "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFilePolicy.swift": "0a9e7959d0fb6a562b6aeaa2ba46d3421667464a9d4a28074218d927f4efd6a8",
+        "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift": "39e2135de96aca9b69b8b8bd1a37297b1dd03c8e3c559eadf9a2a94c01d56060",
+        "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Discovery.swift": "ef09d10891484ef8b3fe2eb50d6764bba80f662c6543f7341b2dd59d99023409",
+        "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Jobs.swift": "f9d9cac3b33bb74707ce5da2378593cdf4b63b9dc7efa437a6fe735dbad0d5ba",
+        "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+MediaJobs.swift": "2cd9469059b636152d73d326beb38ede896ee4be5f0a9d5eba05877a8ce90fd7",
+        "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+SearchSchema.swift": "c2de0d597c48ac2b1d75eb247121201d6587146660913e879fc4b5ac03b1164e",
+        "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore.swift": "f43f4820aee96fbbb661c8be32dc3e695c31373889d7f56f04bf08d517e626be",
+        "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileValidator.swift": "e94836b6e779971d3e0352c361fbe1e26f4d6830a61996c09cf03faeec799d47",
+        "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticLexicalReader.swift": "23e66e04f5493f92fe32eb66c40fb96eecd6c72f54ab24d70e94622d105d41d1",
+        "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticScoreCalibration.swift": "4202dd6b2d9fea677ae972c4cfc54d4051e778ee33afa1fe8e391b38417b8ecb",
+        "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSearchRanking.swift": "38cecb38ce4ab3a1a0ab6cc1ed810d5cf4fb99364af523a1db45af44cdfd92da",
+        "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticVectorReader.swift": "c849b6d28eae75a47cc0720fad75ab47fa0a8188b7e88b44c8fc73412f29d323",
+        "Sources/TypefluxSemanticHelper/main.swift": "717ffa1200119dcb16eb132490e69c39034ff8e0da9533fad2505ebb9763bc79",
+        "Sources/Typeflux/Ask/QuickResults/AskQuickSearchSession.swift": "2453104bd6d42cf7277396f093cb60314ae99c40ff8a08244ea7008670e9beea",
+        "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSQLiteCancellation.swift": "c4d95924f0d90b1c0223dce7a5c4c5e1774cc3a6601817067872179066338369"
+      }
+    }
+  ]
+}

@@ -1,0 +1,780 @@
+{
+  "scope": [
+    "Sources/Typeflux/Ask/QuickResults/AskQuickSearchSession.swift",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFilePolicy.swift",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Jobs.swift",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+SearchSchema.swift",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore.swift",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileValidator.swift",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticLexicalReader.swift",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSQLiteCancellation.swift",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticScoreCalibration.swift",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSearchRanking.swift",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticVectorReader.swift",
+    "Sources/TypefluxSemanticHelper/main.swift",
+    "Tests/TypefluxTests/SemanticCalibratedEvaluationTests.swift",
+    "Tests/TypefluxTests/SemanticFileValidatorTests.swift",
+    "Tests/TypefluxTests/SemanticHybridSearchTests.swift",
+    "Tests/TypefluxTests/SemanticLatencyTests.swift",
+    "Tests/TypefluxTests/SemanticNativeContentionTests.swift",
+    "Tests/TypefluxTests/SemanticNativeLatencyTests.swift",
+    "Tests/TypefluxTests/SemanticPreparationServiceTests.swift",
+    "Tests/TypefluxTests/SemanticRankingComparisonTests.swift",
+    "Tests/TypefluxTests/SemanticSQLiteCancellationTests.swift",
+    "Tests/TypefluxTests/SemanticScoreCalibrationTests.swift",
+    "Tests/TypefluxTests/SemanticSearchRankingTests.swift"
+  ],
+  "current": {
+    "command": [
+      "swiftlint",
+      "lint",
+      "--strict",
+      "--quiet",
+      "--no-cache",
+      "--reporter",
+      "json",
+      "Sources/Typeflux/Ask/QuickResults/AskQuickSearchSession.swift",
+      "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFilePolicy.swift",
+      "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+      "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Jobs.swift",
+      "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+SearchSchema.swift",
+      "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore.swift",
+      "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileValidator.swift",
+      "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticLexicalReader.swift",
+      "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSQLiteCancellation.swift",
+      "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticScoreCalibration.swift",
+      "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSearchRanking.swift",
+      "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticVectorReader.swift",
+      "Sources/TypefluxSemanticHelper/main.swift",
+      "Tests/TypefluxTests/SemanticCalibratedEvaluationTests.swift",
+      "Tests/TypefluxTests/SemanticFileValidatorTests.swift",
+      "Tests/TypefluxTests/SemanticHybridSearchTests.swift",
+      "Tests/TypefluxTests/SemanticLatencyTests.swift",
+      "Tests/TypefluxTests/SemanticNativeContentionTests.swift",
+      "Tests/TypefluxTests/SemanticNativeLatencyTests.swift",
+      "Tests/TypefluxTests/SemanticPreparationServiceTests.swift",
+      "Tests/TypefluxTests/SemanticRankingComparisonTests.swift",
+      "Tests/TypefluxTests/SemanticSQLiteCancellationTests.swift",
+      "Tests/TypefluxTests/SemanticScoreCalibrationTests.swift",
+      "Tests/TypefluxTests/SemanticSearchRankingTests.swift"
+    ],
+    "exit_code": 2,
+    "wall_seconds": 0.21428166702389717,
+    "diagnostics": [
+      {
+        "character": 5,
+        "file": "Sources/Typeflux/Ask/QuickResults/AskQuickSearchSession.swift",
+        "line": 67,
+        "reason": "Function body should span 50 lines or less excluding comments and whitespace: currently spans 78 lines",
+        "rule_id": "function_body_length",
+        "severity": "Error",
+        "type": "Function Body Length"
+      },
+      {
+        "character": 13,
+        "file": "Sources/Typeflux/Ask/QuickResults/AskQuickSearchSession.swift",
+        "line": 169,
+        "reason": "Function should have 5 parameters or less: it currently has 6",
+        "rule_id": "function_parameter_count",
+        "severity": "Error",
+        "type": "Function Parameter Count"
+      },
+      {
+        "character": 1,
+        "file": "Sources/Typeflux/Ask/QuickResults/AskQuickSearchSession.swift",
+        "line": 77,
+        "reason": "Line should be 120 characters or less; currently it has 124 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Sources/Typeflux/Ask/QuickResults/AskQuickSearchSession.swift",
+        "line": 110,
+        "reason": "Line should be 120 characters or less; currently it has 129 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Sources/Typeflux/Ask/QuickResults/AskQuickSearchSession.swift",
+        "line": 115,
+        "reason": "Line should be 120 characters or less; currently it has 130 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Sources/Typeflux/Ask/QuickResults/AskQuickSearchSession.swift",
+        "line": 128,
+        "reason": "Line should be 120 characters or less; currently it has 137 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Sources/Typeflux/Ask/QuickResults/AskQuickSearchSession.swift",
+        "line": 139,
+        "reason": "Line should be 120 characters or less; currently it has 130 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Sources/Typeflux/Ask/QuickResults/AskQuickSearchSession.swift",
+        "line": 208,
+        "reason": "Line should be 120 characters or less; currently it has 121 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Sources/Typeflux/Ask/QuickResults/AskQuickSearchSession.swift",
+        "line": 210,
+        "reason": "Line should be 120 characters or less; currently it has 131 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 7,
+        "file": "Sources/Typeflux/Ask/QuickResults/AskQuickSearchSession.swift",
+        "line": 9,
+        "reason": "Class body should span 250 lines or less excluding comments and whitespace: currently spans 280 lines",
+        "rule_id": "type_body_length",
+        "severity": "Error",
+        "type": "Type Body Length"
+      },
+      {
+        "character": 13,
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+        "line": 318,
+        "reason": "Function should have complexity 10 or less; currently complexity is 12",
+        "rule_id": "cyclomatic_complexity",
+        "severity": "Error",
+        "type": "Cyclomatic Complexity"
+      },
+      {
+        "character": 1,
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+        "line": 642,
+        "reason": "File should contain 400 lines or less excluding comments and whitespaces: currently contains 606",
+        "rule_id": "file_length",
+        "severity": "Error",
+        "type": "File Length"
+      },
+      {
+        "character": 13,
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+        "line": 318,
+        "reason": "Function body should span 50 lines or less excluding comments and whitespace: currently spans 70 lines",
+        "rule_id": "function_body_length",
+        "severity": "Error",
+        "type": "Function Body Length"
+      },
+      {
+        "character": 91,
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+        "line": 160,
+        "reason": "Else and catch should be on the same line, one space after the previous declaration",
+        "rule_id": "statement_position",
+        "severity": "Error",
+        "type": "Statement Position"
+      },
+      {
+        "character": 7,
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+        "line": 5,
+        "reason": "Class body should span 250 lines or less excluding comments and whitespace: currently spans 291 lines",
+        "rule_id": "type_body_length",
+        "severity": "Error",
+        "type": "Type Body Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticHybridSearchTests.swift",
+        "line": 133,
+        "reason": "Line should be 120 characters or less; currently it has 122 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticHybridSearchTests.swift",
+        "line": 134,
+        "reason": "Line should be 120 characters or less; currently it has 129 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticHybridSearchTests.swift",
+        "line": 163,
+        "reason": "Line should be 120 characters or less; currently it has 121 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 11,
+        "file": "Tests/TypefluxTests/SemanticNativeLatencyTests.swift",
+        "line": 20,
+        "reason": "Function should have complexity 10 or less; currently complexity is 21",
+        "rule_id": "cyclomatic_complexity",
+        "severity": "Error",
+        "type": "Cyclomatic Complexity"
+      },
+      {
+        "character": 11,
+        "file": "Tests/TypefluxTests/SemanticNativeLatencyTests.swift",
+        "line": 20,
+        "reason": "Function body should span 100 lines or less excluding comments and whitespace: currently spans 248 lines",
+        "rule_id": "function_body_length",
+        "severity": "Error",
+        "type": "Function Body Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticNativeLatencyTests.swift",
+        "line": 161,
+        "reason": "Line should be 120 characters or less; currently it has 123 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticNativeLatencyTests.swift",
+        "line": 261,
+        "reason": "Line should be 200 characters or less; currently it has 270 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticNativeLatencyTests.swift",
+        "line": 265,
+        "reason": "Line should be 200 characters or less; currently it has 245 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 11,
+        "file": "Tests/TypefluxTests/SemanticLatencyTests.swift",
+        "line": 91,
+        "reason": "Function should have complexity 10 or less; currently complexity is 12",
+        "rule_id": "cyclomatic_complexity",
+        "severity": "Error",
+        "type": "Cyclomatic Complexity"
+      },
+      {
+        "character": 11,
+        "file": "Tests/TypefluxTests/SemanticLatencyTests.swift",
+        "line": 91,
+        "reason": "Function body should span 100 lines or less excluding comments and whitespace: currently spans 207 lines",
+        "rule_id": "function_body_length",
+        "severity": "Error",
+        "type": "Function Body Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticLatencyTests.swift",
+        "line": 114,
+        "reason": "Line should be 120 characters or less; currently it has 138 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticLatencyTests.swift",
+        "line": 287,
+        "reason": "Line should be 120 characters or less; currently it has 123 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticLatencyTests.swift",
+        "line": 288,
+        "reason": "Line should be 200 characters or less; currently it has 222 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticLatencyTests.swift",
+        "line": 291,
+        "reason": "Line should be 120 characters or less; currently it has 160 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticLatencyTests.swift",
+        "line": 292,
+        "reason": "Line should be 120 characters or less; currently it has 125 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticLatencyTests.swift",
+        "line": 346,
+        "reason": "Line should be 120 characters or less; currently it has 145 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 11,
+        "file": "Tests/TypefluxTests/SemanticNativeContentionTests.swift",
+        "line": 79,
+        "reason": "Function should have complexity 10 or less; currently complexity is 20",
+        "rule_id": "cyclomatic_complexity",
+        "severity": "Error",
+        "type": "Cyclomatic Complexity"
+      },
+      {
+        "character": 11,
+        "file": "Tests/TypefluxTests/SemanticNativeContentionTests.swift",
+        "line": 79,
+        "reason": "Function body should span 100 lines or less excluding comments and whitespace: currently spans 272 lines",
+        "rule_id": "function_body_length",
+        "severity": "Error",
+        "type": "Function Body Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticNativeContentionTests.swift",
+        "line": 349,
+        "reason": "Line should be 200 characters or less; currently it has 305 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      }
+    ]
+  },
+  "baseline": {
+    "command": [
+      "swiftlint",
+      "lint",
+      "--strict",
+      "--quiet",
+      "--no-cache",
+      "--reporter",
+      "json",
+      "Sources/Typeflux/Ask/QuickResults/AskQuickSearchSession.swift",
+      "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFilePolicy.swift",
+      "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+      "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Jobs.swift",
+      "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore.swift",
+      "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileValidator.swift",
+      "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticLexicalReader.swift",
+      "Sources/TypefluxSemanticHelper/main.swift",
+      "Tests/TypefluxTests/SemanticHybridSearchTests.swift",
+      "Tests/TypefluxTests/SemanticLatencyTests.swift",
+      "Tests/TypefluxTests/SemanticNativeContentionTests.swift",
+      "Tests/TypefluxTests/SemanticNativeLatencyTests.swift"
+    ],
+    "exit_code": 2,
+    "wall_seconds": 0.10454066697275266,
+    "diagnostics": [
+      {
+        "character": 11,
+        "file": "Tests/TypefluxTests/SemanticNativeLatencyTests.swift",
+        "line": 16,
+        "reason": "Function should have complexity 10 or less; currently complexity is 12",
+        "rule_id": "cyclomatic_complexity",
+        "severity": "Error",
+        "type": "Cyclomatic Complexity"
+      },
+      {
+        "character": 11,
+        "file": "Tests/TypefluxTests/SemanticNativeLatencyTests.swift",
+        "line": 16,
+        "reason": "Function body should span 100 lines or less excluding comments and whitespace: currently spans 116 lines",
+        "rule_id": "function_body_length",
+        "severity": "Error",
+        "type": "Function Body Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticNativeLatencyTests.swift",
+        "line": 51,
+        "reason": "Line should be 120 characters or less; currently it has 121 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticNativeLatencyTests.swift",
+        "line": 78,
+        "reason": "Line should be 120 characters or less; currently it has 123 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticNativeLatencyTests.swift",
+        "line": 127,
+        "reason": "Line should be 200 characters or less; currently it has 245 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticNativeLatencyTests.swift",
+        "line": 129,
+        "reason": "Line should be 120 characters or less; currently it has 156 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticNativeLatencyTests.swift",
+        "line": 131,
+        "reason": "Line should be 120 characters or less; currently it has 127 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 11,
+        "file": "Tests/TypefluxTests/SemanticNativeContentionTests.swift",
+        "line": 42,
+        "reason": "Function should have complexity 10 or less; currently complexity is 12",
+        "rule_id": "cyclomatic_complexity",
+        "severity": "Error",
+        "type": "Cyclomatic Complexity"
+      },
+      {
+        "character": 11,
+        "file": "Tests/TypefluxTests/SemanticNativeContentionTests.swift",
+        "line": 42,
+        "reason": "Function body should span 100 lines or less excluding comments and whitespace: currently spans 133 lines",
+        "rule_id": "function_body_length",
+        "severity": "Error",
+        "type": "Function Body Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticNativeContentionTests.swift",
+        "line": 73,
+        "reason": "Line should be 120 characters or less; currently it has 134 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticNativeContentionTests.swift",
+        "line": 154,
+        "reason": "Line should be 120 characters or less; currently it has 140 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticNativeContentionTests.swift",
+        "line": 155,
+        "reason": "Line should be 120 characters or less; currently it has 131 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticNativeContentionTests.swift",
+        "line": 157,
+        "reason": "Line should be 120 characters or less; currently it has 166 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticNativeContentionTests.swift",
+        "line": 175,
+        "reason": "Line should be 200 characters or less; currently it has 280 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticNativeContentionTests.swift",
+        "line": 177,
+        "reason": "Line should be 120 characters or less; currently it has 127 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticHybridSearchTests.swift",
+        "line": 133,
+        "reason": "Line should be 120 characters or less; currently it has 122 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticHybridSearchTests.swift",
+        "line": 134,
+        "reason": "Line should be 120 characters or less; currently it has 129 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticHybridSearchTests.swift",
+        "line": 163,
+        "reason": "Line should be 120 characters or less; currently it has 121 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 5,
+        "file": "Sources/Typeflux/Ask/QuickResults/AskQuickSearchSession.swift",
+        "line": 67,
+        "reason": "Function body should span 50 lines or less excluding comments and whitespace: currently spans 78 lines",
+        "rule_id": "function_body_length",
+        "severity": "Error",
+        "type": "Function Body Length"
+      },
+      {
+        "character": 13,
+        "file": "Sources/Typeflux/Ask/QuickResults/AskQuickSearchSession.swift",
+        "line": 169,
+        "reason": "Function should have 5 parameters or less: it currently has 6",
+        "rule_id": "function_parameter_count",
+        "severity": "Error",
+        "type": "Function Parameter Count"
+      },
+      {
+        "character": 1,
+        "file": "Sources/Typeflux/Ask/QuickResults/AskQuickSearchSession.swift",
+        "line": 77,
+        "reason": "Line should be 120 characters or less; currently it has 124 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Sources/Typeflux/Ask/QuickResults/AskQuickSearchSession.swift",
+        "line": 110,
+        "reason": "Line should be 120 characters or less; currently it has 129 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Sources/Typeflux/Ask/QuickResults/AskQuickSearchSession.swift",
+        "line": 115,
+        "reason": "Line should be 120 characters or less; currently it has 130 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Sources/Typeflux/Ask/QuickResults/AskQuickSearchSession.swift",
+        "line": 128,
+        "reason": "Line should be 120 characters or less; currently it has 137 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Sources/Typeflux/Ask/QuickResults/AskQuickSearchSession.swift",
+        "line": 139,
+        "reason": "Line should be 120 characters or less; currently it has 130 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Sources/Typeflux/Ask/QuickResults/AskQuickSearchSession.swift",
+        "line": 208,
+        "reason": "Line should be 120 characters or less; currently it has 121 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Sources/Typeflux/Ask/QuickResults/AskQuickSearchSession.swift",
+        "line": 210,
+        "reason": "Line should be 120 characters or less; currently it has 131 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 7,
+        "file": "Sources/Typeflux/Ask/QuickResults/AskQuickSearchSession.swift",
+        "line": 9,
+        "reason": "Class body should span 250 lines or less excluding comments and whitespace: currently spans 280 lines",
+        "rule_id": "type_body_length",
+        "severity": "Error",
+        "type": "Type Body Length"
+      },
+      {
+        "character": 11,
+        "file": "Tests/TypefluxTests/SemanticLatencyTests.swift",
+        "line": 91,
+        "reason": "Function should have complexity 10 or less; currently complexity is 12",
+        "rule_id": "cyclomatic_complexity",
+        "severity": "Error",
+        "type": "Cyclomatic Complexity"
+      },
+      {
+        "character": 11,
+        "file": "Tests/TypefluxTests/SemanticLatencyTests.swift",
+        "line": 91,
+        "reason": "Function body should span 100 lines or less excluding comments and whitespace: currently spans 191 lines",
+        "rule_id": "function_body_length",
+        "severity": "Error",
+        "type": "Function Body Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticLatencyTests.swift",
+        "line": 114,
+        "reason": "Line should be 120 characters or less; currently it has 138 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticLatencyTests.swift",
+        "line": 269,
+        "reason": "Line should be 120 characters or less; currently it has 123 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticLatencyTests.swift",
+        "line": 270,
+        "reason": "Line should be 200 characters or less; currently it has 222 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticLatencyTests.swift",
+        "line": 273,
+        "reason": "Line should be 120 characters or less; currently it has 160 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticLatencyTests.swift",
+        "line": 274,
+        "reason": "Line should be 120 characters or less; currently it has 125 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 1,
+        "file": "Tests/TypefluxTests/SemanticLatencyTests.swift",
+        "line": 316,
+        "reason": "Line should be 120 characters or less; currently it has 145 characters",
+        "rule_id": "line_length",
+        "severity": "Error",
+        "type": "Line Length"
+      },
+      {
+        "character": 7,
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore.swift",
+        "line": 9,
+        "reason": "Class body should span 250 lines or less excluding comments and whitespace: currently spans 339 lines",
+        "rule_id": "type_body_length",
+        "severity": "Error",
+        "type": "Type Body Length"
+      },
+      {
+        "character": 13,
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+        "line": 318,
+        "reason": "Function should have complexity 10 or less; currently complexity is 12",
+        "rule_id": "cyclomatic_complexity",
+        "severity": "Error",
+        "type": "Cyclomatic Complexity"
+      },
+      {
+        "character": 1,
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+        "line": 626,
+        "reason": "File should contain 400 lines or less excluding comments and whitespaces: currently contains 590",
+        "rule_id": "file_length",
+        "severity": "Error",
+        "type": "File Length"
+      },
+      {
+        "character": 13,
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+        "line": 318,
+        "reason": "Function body should span 50 lines or less excluding comments and whitespace: currently spans 70 lines",
+        "rule_id": "function_body_length",
+        "severity": "Error",
+        "type": "Function Body Length"
+      },
+      {
+        "character": 91,
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+        "line": 160,
+        "reason": "Else and catch should be on the same line, one space after the previous declaration",
+        "rule_id": "statement_position",
+        "severity": "Error",
+        "type": "Statement Position"
+      },
+      {
+        "character": 7,
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+        "line": 5,
+        "reason": "Class body should span 250 lines or less excluding comments and whitespace: currently spans 291 lines",
+        "rule_id": "type_body_length",
+        "severity": "Error",
+        "type": "Type Body Length"
+      }
+    ]
+  },
+  "introduced": [],
+  "comparison": "Diagnostic counts by actual HEAD file/rule/severity. New files have no baseline. Existing repository violations are retained; this is not a clean lint result."
+}

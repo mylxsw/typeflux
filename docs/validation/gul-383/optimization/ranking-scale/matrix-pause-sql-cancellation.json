@@ -1,0 +1,7 @@
+{
+  "owner_pid": 47819,
+  "unix": 1792110304.0141308,
+  "reason": "Pause loop owner only; current baseline contention child continues to completion. Add SQLite VM cancellation before collecting remaining final matrices.",
+  "ended_unix": 1792110707.9503481,
+  "outcome": "Current baseline contention child completed successfully (440 rows); loop owner then terminated at the phase boundary before launching another case."
+}

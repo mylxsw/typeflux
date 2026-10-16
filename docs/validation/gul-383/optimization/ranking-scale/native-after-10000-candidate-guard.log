@@ -1,0 +1,23 @@
+Building for production...
+[Computing dependencies]
+[Using on-disk description]
+[1 / 4]
+[1 / 5] TypefluxChat
+[1 / 5] Markdown
+[1 / 5] Hub
+[1 / 6] ArgmaxCore
+[1 / 5] ArgmaxCore
+[1 / 7] NIOEmbedded
+[1 / 5] NIOPosix
+[1 / 4] Typeflux_Typeflux
+[1 / 3] cmark-gfm
+[1 / 3] CNIOBoringSSL
+Build complete! (10.62 secs)
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite "Native composer semantic latency" started.
+◇ Test "measure committed native input to body publication and drawing when requested" started.
+✔ Test "measure committed native input to body publication and drawing when requested" passed after 150.241 seconds.
+✔ Suite "Native composer semantic latency" passed after 150.241 seconds.
+✔ Test run with 1 test in 1 suite passed after 150.241 seconds.

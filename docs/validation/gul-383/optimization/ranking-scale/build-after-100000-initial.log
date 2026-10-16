@@ -1,0 +1,385 @@
+Updating https://github.com/doggy8088/opencc-swift.git
+Updated https://github.com/doggy8088/opencc-swift.git (1.72s)
+Updating https://github.com/apple/swift-argument-parser.git
+Updating https://github.com/apple/swift-numerics.git
+Updating https://github.com/apple/swift-http-types.git
+Updating https://github.com/apple/swift-log.git
+Updating https://github.com/apple/swift-nio-transport-services.git
+Updating https://github.com/apple/swift-async-algorithms.git
+Updating https://github.com/ibireme/yyjson.git
+Updated https://github.com/apple/swift-http-types.git (1.71s)
+Updating https://github.com/apple/swift-system.git
+Updated https://github.com/apple/swift-log.git (1.99s)
+Updated https://github.com/apple/swift-async-algorithms.git (1.99s)
+Updated https://github.com/ibireme/yyjson.git (1.99s)
+Updating https://github.com/apple/swift-algorithms.git
+Updating https://github.com/swiftlang/swift-cmark.git
+Updating https://github.com/apple/swift-nio.git
+Updated https://github.com/apple/swift-argument-parser.git (2.18s)
+Updated https://github.com/apple/swift-nio-transport-services.git (2.19s)
+Updated https://github.com/apple/swift-numerics.git (2.19s)
+Updating https://github.com/huggingface/swift-transformers.git
+Updating https://github.com/apple/swift-certificates.git
+Updating https://github.com/apple/swift-collections.git
+Updated https://github.com/apple/swift-algorithms.git (1.85s)
+Updating https://github.com/apple/swift-asn1.git
+Updated https://github.com/apple/swift-system.git (2.17s)
+Updating https://github.com/swift-server/swift-service-lifecycle.git
+Updated https://github.com/huggingface/swift-transformers.git (1.96s)
+Updating https://github.com/apple/swift-nio-http2.git
+Updated https://github.com/apple/swift-collections.git (2.42s)
+Updated https://github.com/apple/swift-certificates.git (2.43s)
+Updating https://github.com/argmaxinc/WhisperKit.git
+Updating https://github.com/apple/swift-nio-extras.git
+Updated https://github.com/swiftlang/swift-cmark.git (3.16s)
+Updating https://github.com/apple/swift-nio-ssl.git
+Updated https://github.com/apple/swift-nio.git (3.23s)
+Updating https://github.com/jpsim/Yams.git
+Updated https://github.com/apple/swift-asn1.git (1.86s)
+Updating https://github.com/apple/swift-http-structured-headers.git
+Updated https://github.com/swift-server/swift-service-lifecycle.git (2.09s)
+Updating https://github.com/apple/swift-markdown.git
+Updated https://github.com/apple/swift-nio-http2.git (2.00s)
+Updating https://github.com/huggingface/swift-jinja.git
+Updated https://github.com/argmaxinc/WhisperKit.git (2.05s)
+Updating https://github.com/grpc/grpc-swift.git
+Updated https://github.com/apple/swift-nio-extras.git (2.22s)
+Updating https://github.com/apple/swift-atomics.git
+Updated https://github.com/jpsim/Yams.git (1.96s)
+Updating https://github.com/apple/swift-crypto.git
+Updated https://github.com/apple/swift-http-structured-headers.git (1.74s)
+Updating https://github.com/apple/swift-protobuf.git
+Updated https://github.com/apple/swift-nio-ssl.git (2.35s)
+Updated https://github.com/huggingface/swift-jinja.git (1.61s)
+Updated https://github.com/apple/swift-atomics.git (1.90s)
+Updated https://github.com/apple/swift-markdown.git (2.79s)
+Updated https://github.com/apple/swift-crypto.git (1.97s)
+Updated https://github.com/grpc/grpc-swift.git (2.82s)
+Updated https://github.com/apple/swift-protobuf.git (2.28s)
+Computing version for https://github.com/grpc/grpc-swift.git
+Computed https://github.com/grpc/grpc-swift.git at 1.27.5 (10.61s)
+Computing version for https://github.com/apple/swift-protobuf.git
+Computed https://github.com/apple/swift-protobuf.git at 1.36.1 (0.70s)
+Computing version for https://github.com/argmaxinc/WhisperKit.git
+Computed https://github.com/argmaxinc/WhisperKit.git at 0.18.0 (0.66s)
+Computing version for https://github.com/apple/swift-markdown.git
+Computed https://github.com/apple/swift-markdown.git at 0.7.3 (0.72s)
+Computing version for https://github.com/jpsim/Yams.git
+Computed https://github.com/jpsim/Yams.git at 6.2.2 (0.59s)
+Computing version for https://github.com/apple/swift-nio-ssl.git
+Computed https://github.com/apple/swift-nio-ssl.git at 2.36.1 (0.70s)
+Computing version for https://github.com/apple/swift-log.git
+Computed https://github.com/apple/swift-log.git at 1.12.0 (0.67s)
+Computing version for https://github.com/apple/swift-atomics.git
+Computed https://github.com/apple/swift-atomics.git at 1.3.0 (0.65s)
+Computing version for https://github.com/apple/swift-collections.git
+Computed https://github.com/apple/swift-collections.git at 1.4.1 (0.66s)
+Computing version for https://github.com/apple/swift-nio-extras.git
+Computed https://github.com/apple/swift-nio-extras.git at 1.33.0 (0.65s)
+Computing version for https://github.com/apple/swift-nio-transport-services.git
+Computed https://github.com/apple/swift-nio-transport-services.git at 1.26.0 (0.58s)
+Computing version for https://github.com/apple/swift-nio-http2.git
+Computed https://github.com/apple/swift-nio-http2.git at 1.42.0 (0.60s)
+Computing version for https://github.com/apple/swift-nio.git
+Computed https://github.com/apple/swift-nio.git at 2.97.1 (0.68s)
+Computing version for https://github.com/apple/swift-argument-parser.git
+Computed https://github.com/apple/swift-argument-parser.git at 1.7.1 (0.61s)
+Computing version for https://github.com/huggingface/swift-transformers.git
+Computed https://github.com/huggingface/swift-transformers.git at 1.1.9 (0.67s)
+Computing version for https://github.com/swiftlang/swift-cmark.git
+Computed https://github.com/swiftlang/swift-cmark.git at 0.7.1 (0.65s)
+Computing version for https://github.com/apple/swift-async-algorithms.git
+Computed https://github.com/apple/swift-async-algorithms.git at 1.1.3 (0.70s)
+Computing version for https://github.com/swift-server/swift-service-lifecycle.git
+Computed https://github.com/swift-server/swift-service-lifecycle.git at 2.11.0 (0.59s)
+Computing version for https://github.com/apple/swift-asn1.git
+Computed https://github.com/apple/swift-asn1.git at 1.7.0 (0.77s)
+Computing version for https://github.com/apple/swift-certificates.git
+Computed https://github.com/apple/swift-certificates.git at 1.19.1 (0.73s)
+Computing version for https://github.com/apple/swift-algorithms.git
+Computed https://github.com/apple/swift-algorithms.git at 1.2.1 (0.63s)
+Computing version for https://github.com/apple/swift-http-structured-headers.git
+Computed https://github.com/apple/swift-http-structured-headers.git at 1.6.0 (0.64s)
+Computing version for https://github.com/apple/swift-http-types.git
+Computed https://github.com/apple/swift-http-types.git at 1.5.1 (0.56s)
+Computing version for https://github.com/apple/swift-system.git
+Computed https://github.com/apple/swift-system.git at 1.6.4 (0.60s)
+Computing version for https://github.com/ibireme/yyjson.git
+Computed https://github.com/ibireme/yyjson.git at 0.12.0 (0.71s)
+Computing version for https://github.com/apple/swift-crypto.git
+Computed https://github.com/apple/swift-crypto.git at 4.3.1 (0.78s)
+Computing version for https://github.com/huggingface/swift-jinja.git
+Computed https://github.com/huggingface/swift-jinja.git at 2.3.5 (0.56s)
+Computing version for https://github.com/apple/swift-numerics.git
+Computed https://github.com/apple/swift-numerics.git at 1.1.1 (0.56s)
+Creating working copy for https://github.com/apple/swift-argument-parser.git
+Working copy of https://github.com/apple/swift-argument-parser.git resolved at 1.7.1
+Creating working copy for https://github.com/apple/swift-http-structured-headers.git
+Working copy of https://github.com/apple/swift-http-structured-headers.git resolved at 1.6.0
+Creating working copy for https://github.com/apple/swift-system.git
+Working copy of https://github.com/apple/swift-system.git resolved at 1.6.4
+Creating working copy for https://github.com/apple/swift-nio-transport-services.git
+Working copy of https://github.com/apple/swift-nio-transport-services.git resolved at 1.26.0
+Creating working copy for https://github.com/apple/swift-nio.git
+Working copy of https://github.com/apple/swift-nio.git resolved at 2.97.1
+Creating working copy for https://github.com/apple/swift-certificates.git
+Working copy of https://github.com/apple/swift-certificates.git resolved at 1.19.1
+Creating working copy for https://github.com/apple/swift-collections.git
+Working copy of https://github.com/apple/swift-collections.git resolved at 1.4.1
+Creating working copy for https://github.com/apple/swift-protobuf.git
+Working copy of https://github.com/apple/swift-protobuf.git resolved at 1.36.1
+Building for production...
+[Computing dependencies]
+[Constructing description]
+[Pre-planning 1 / 1854]
+[Planning deferred tasks]
+[Constructing 4444 / 4543]
+[35 / 1195] _NIODataStructures
+[341 / 1195] Typeflux_Typeflux
+[391 / 1195] Typeflux_Typeflux
+[395 / 1195]
+[401 / 1207] _NIOBase64
+[403 / 1221] _NIODataStructures
+[405 / 1236] Yams
+[409 / 1329] InternalCollectionsUtilities
+[413 / 1334]
+[422 / 1374]
+[433 / 1378]
+[448 / 1378]
+[457 / 1378]
+[463 / 1378]
+[469 / 1378]
+[475 / 1378] _NIOBase64
+[485 / 1378]
+[489 / 1378]
+[501 / 1378]
+[507 / 1378]
+[512 / 1378]
+[514 / 1378]
+[519 / 1378]
+[524 / 1378]
+[526 / 1378] NIOConcurrencyHelpers
+[538 / 1378]
+[542 / 1378]
+[554 / 1378]
+[560 / 1378]
+[564 / 1378]
+[568 / 1378]
+[573 / 1378]
+[582 / 1378]
+[588 / 1378]
+[591 / 1378]
+[595 / 1378]
+[597 / 1378]
+[598 / 1378]
+[601 / 1378] OpenCCSwift
+[602 / 1378] Yams
+[602 / 1378] TypefluxChat
+[614 / 1378] CNIOBoringSSL
+[615 / 1378] Crypto
+[616 / 1378] CNIOBoringSSL
+[618 / 1378] CNIOBoringSSL
+[623 / 1378] CNIOBoringSSL
+[624 / 1378] CNIOBoringSSL
+[625 / 1378] CNIOBoringSSL
+[627 / 1378] CNIOBoringSSL
+[628 / 1378] CNIOBoringSSL
+[629 / 1378] Markdown
+[635 / 1378] CNIOBoringSSL
+[639 / 1378] CNIOBoringSSL
+[640 / 1378] CNIOBoringSSL
+[642 / 1378] Yams
+[646 / 1378] Yams
+[651 / 1378] CNIOBoringSSL
+[653 / 1378] CNIOBoringSSL
+[655 / 1378] CNIOBoringSSL
+[656 / 1378] CNIOBoringSSL
+[658 / 1378] CNIOBoringSSL
+[659 / 1378] CNIOBoringSSL
+[662 / 1378] CNIOBoringSSL
+[672 / 1378] CNIOBoringSSL
+[675 / 1378] CNIOBoringSSL
+[679 / 1378] CNIOBoringSSL
+[682 / 1378] CNIOBoringSSL
+[684 / 1378] CNIOBoringSSL
+[686 / 1378] CNIOBoringSSL
+[690 / 1378] CNIOBoringSSL
+[692 / 1378] CNIOBoringSSL
+[696 / 1378] CNIOBoringSSL
+[698 / 1378] CNIOBoringSSL
+[700 / 1378] CNIOBoringSSL
+[703 / 1378] CNIOBoringSSL
+[706 / 1378] CNIOBoringSSL
+[709 / 1378] CNIOBoringSSL
+[710 / 1378] CNIOBoringSSL
+[713 / 1378] CNIOBoringSSL
+[716 / 1378] CNIOBoringSSL
+[720 / 1378] CNIOBoringSSL
+[722 / 1378] CNIOBoringSSL
+[725 / 1378] CNIOBoringSSL
+[727 / 1378] CNIOBoringSSL
+[730 / 1378] CNIOBoringSSL
+[732 / 1378] CNIOBoringSSL
+[735 / 1378] CNIOBoringSSL
+[738 / 1378] CNIOBoringSSL
+[740 / 1378] CNIOBoringSSL
+[742 / 1378] CNIOBoringSSL
+[744 / 1378] CNIOBoringSSL
+[748 / 1378] CNIOBoringSSL
+[756 / 1378] CNIOBoringSSL
+[761 / 1378] CNIOBoringSSL
+[768 / 1378] CNIOBoringSSL
+[776 / 1378] CNIOBoringSSL
+[777 / 1378] CNIOBoringSSL
+[780 / 1378] CNIOBoringSSL
+[783 / 1378] CNIOBoringSSL
+[785 / 1378] CNIOBoringSSL
+[789 / 1378] CNIOBoringSSL
+[792 / 1378] CNIOBoringSSL
+[798 / 1378] CNIOBoringSSL
+[799 / 1378] CNIOBoringSSL
+[801 / 1378] CNIOBoringSSL
+[802 / 1378] CNIOBoringSSL
+[804 / 1378] CNIOBoringSSL
+[806 / 1378] CNIOBoringSSL
+[808 / 1378] CNIOBoringSSL
+[811 / 1378] CNIOBoringSSL
+[812 / 1378] CNIOBoringSSL
+[813 / 1378] CNIOBoringSSL
+[816 / 1378] CNIOBoringSSL
+[821 / 1378] CNIOBoringSSL
+[829 / 1378] CNIOBoringSSL
+[833 / 1378] CNIOBoringSSL
+[842 / 1378] CNIOBoringSSL
+[848 / 1378] CNIOBoringSSL
+[850 / 1378] CNIOBoringSSL
+[857 / 1378] CNIOBoringSSL
+[862 / 1378] CNIOBoringSSL
+[863 / 1378] CNIOBoringSSL
+[867 / 1378] CNIOBoringSSL
+[874 / 1378] CNIOBoringSSL
+[887 / 1378] CNIOBoringSSL
+[897 / 1378] CNIOBoringSSL
+[900 / 1378] CNIOBoringSSL
+[902 / 1378] CNIOBoringSSL
+[904 / 1378] CNIOBoringSSL
+[907 / 1378] CNIOBoringSSL
+[909 / 1378] CNIOBoringSSL
+[913 / 1378] CNIOBoringSSL
+[917 / 1378] CNIOBoringSSL
+[920 / 1378] CNIOBoringSSL
+[922 / 1378] CNIOBoringSSL
+[925 / 1378] CNIOBoringSSL
+[929 / 1378] CNIOBoringSSL
+[931 / 1378] CNIOBoringSSL
+[932 / 1378] CNIOBoringSSL
+[935 / 1378] CNIOBoringSSL
+[938 / 1378] CNIOBoringSSL
+[941 / 1378] CNIOBoringSSL
+[944 / 1378] CNIOBoringSSL
+[952 / 1378] CNIOBoringSSL
+[961 / 1378] CNIOBoringSSL
+[966 / 1378] CNIOBoringSSL
+[973 / 1378] CNIOBoringSSL
+[978 / 1378] CNIOBoringSSL
+[982 / 1378] CNIOBoringSSL
+[986 / 1378] CNIOBoringSSL
+[988 / 1378] CNIOBoringSSL
+[998 / 1378] CNIOBoringSSL
+[1008 / 1378] CNIOBoringSSL
+[1014 / 1378] CNIOBoringSSL
+[1016 / 1378] CNIOBoringSSL
+[1020 / 1378] CNIOBoringSSL
+[1023 / 1378] CNIOBoringSSL
+[1025 / 1378] CNIOBoringSSL
+[1029 / 1378]
+[1039 / 1378] cmark-gfm-extensions
+[1059 / 1381] cmark-gfm
+[1062 / 1381] cmark-gfm
+[1072 / 1381] cmark-gfm-extensions
+[1076 / 1381] cmark-gfm
+[1086 / 1381] cmark-gfm
+[1093 / 1381] cmark-gfm
+[1106 / 1381] cmark-gfm
+[1119 / 1381] _AtomicsShims
+[1129 / 1381] Crypto-product
+[1137 / 1391]
+[1142 / 1391] Crypto-product
+[1149 / 1429]
+[1154 / 1429] TypefluxAudioSafety
+[1167 / 1484]
+[1177 / 1484]
+[1181 / 1484]
+[1188 / 1484] CYaml
+[1198 / 1484]
+[1208 / 1484]
+[1218 / 1484]
+[1225 / 1484] CNIOPosix
+[1232 / 1494]
+[1246 / 1494]
+[1267 / 1504]
+[1276 / 1511]
+[1288 / 1522]
+[1298 / 1522] CNIOLLHTTP
+[1300 / 1522]
+[1306 / 1522]
+[1315 / 1522] CGRPCZlib
+[1322 / 1522] Atomics
+[1332 / 1522] TypefluxAudioSafety
+[1345 / 1526] ContainersPreview
+[1347 / 1526] ContainersPreview
+[1358 / 1528] NIOConcurrencyHelpers
+[1358 / 1528] OrderedCollections
+[1372 / 1530] DequeModule
+[1372 / 1530] Jinja
+[1377 / 1533] NIOCore
+[1385 / 1535] NIOEmbedded
+[1387 / 1537] NIOPosix
+[1394 / 1542] NIOEmbedded
+[1400 / 1542] Jinja
+[1407 / 1543] Hub
+[1412 / 1547] Hub
+[1420 / 1549] Tokenizers
+[1422 / 1550] ArgmaxCore
+[1428 / 1564]
+[1432 / 1564]
+[1433 / 1564]
+[1434 / 1564]
+[1436 / 1564]
+[1437 / 1564] ArgmaxCore
+[1443 / 1564] Tokenizers
+[1450 / 1565] NIOPosix
+[1457 / 1566] WhisperKit
+[1465 / 1584]
+[1479 / 1587]
+[1482 / 1588] NIOTLS
+[1487 / 1591]
+[1490 / 1592]
+[1491 / 1592]
+[1493 / 1592]
+[1494 / 1592] NIOTLS
+[1501 / 1593]
+[1508 / 1594]
+[1510 / 1597] NIOTransportServices
+[1515 / 1600]
+[1516 / 1600]
+[1523 / 1601]
+[1525 / 1602] NIOFoundationCompat
+[1532 / 1603] NIOTransportServices-product
+[1534 / 1604] NIOTransportServices-product
+[1540 / 1604] NIOExtras
+[1546 / 1604] NIOHPACK
+[1553 / 1605] NIOHTTP2
+[1555 / 1606] WhisperKit
+[1561 / 1606] NIOHTTP2
+[1568 / 1607] GRPC
+[1579 / 1617] GRPC
+[1585 / 1617] GRPC
+[1586 / 1618] GRPC
+[1586 / 1618] Typeflux
+[1598 / 1656]
+[1603 / 1656]
+[1613 / 1656]
+[1614 / 1656]
+[1622 / 1656]
+[1624 / 1656]

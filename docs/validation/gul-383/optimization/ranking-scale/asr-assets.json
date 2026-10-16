@@ -1,0 +1,30 @@
+{
+  "sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts/bin/sherpa-onnx-offline": {
+    "bytes": 6262240,
+    "sha256": "5e68bc8e10527e80127ccaaf9fb70e748c8201f15b8005c73b4d7ff56e99e00b"
+  },
+  "sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts/lib/libsherpa-onnx-c-api.dylib": {
+    "bytes": 8008088,
+    "sha256": "c2a2ef7d2202ab44db93f18ad203b323037f458e2adcd431b0b7db589b3d41be"
+  },
+  "sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts/lib/libonnxruntime.1.23.2.dylib": {
+    "bytes": 74902752,
+    "sha256": "6fee21a0dbcaa98fe082cb4f7ed07ec5def439df36198f47b61dc205e7d2a1fa"
+  },
+  "sherpa-onnx-v1.12.35-osx-universal2-shared-no-tts/lib/libonnxruntime.dylib": {
+    "bytes": 74902752,
+    "sha256": "6fee21a0dbcaa98fe082cb4f7ed07ec5def439df36198f47b61dc205e7d2a1fa"
+  },
+  "speech.wav": {
+    "bytes": 182314,
+    "sha256": "eab3aa4cfc3e85f5b2fd7d9ba9bd4ba62bed09a5e0742bbcbe10baa3408294bf"
+  },
+  "sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/model.int8.onnx": {
+    "bytes": 239233841,
+    "sha256": "c71f0ce00bec95b07744e116345e33d8cbbe08cef896382cf907bf4b51a2cd51"
+  },
+  "sherpa-onnx-sense-voice-zh-en-ja-ko-yue-2024-07-17/tokens.txt": {
+    "bytes": 315894,
+    "sha256": "f449eb28dc567533d7fa59be34e2abca8784f771850c78a47fb731a31429a1dc"
+  }
+}

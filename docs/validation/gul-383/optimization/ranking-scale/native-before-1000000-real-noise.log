@@ -1,0 +1,17 @@
+Building for production...
+[Computing dependencies]
+[Using on-disk description]
+[1 / 4]
+[1 / 5] WhisperKit
+[1 / 6] NIOTLS
+[1 / 4] CYaml
+[1 / 3] CNIOBoringSSL
+Build complete! (3.02 secs)
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite "Native composer semantic latency" started.
+◇ Test "measure committed native input to body publication and drawing when requested" started.
+✔ Test "measure committed native input to body publication and drawing when requested" passed after 684.109 seconds.
+✔ Suite "Native composer semantic latency" passed after 684.109 seconds.
+✔ Test run with 1 test in 1 suite passed after 684.109 seconds.

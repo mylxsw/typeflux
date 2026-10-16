@@ -1,0 +1,17 @@
+Building for production...
+[Computing dependencies]
+[Provisioning 8 / 93]
+[Using on-disk description]
+[1 / 4]
+[1 / 7] DequeModule
+[1 / 4] CYaml
+[1 / 3] CNIOBoringSSL
+Build complete! (2.41 secs)
+◇ Test run started.
+↳ Testing Library Version: 2084
+↳ Target Platform: arm64e-apple-macos14.0
+◇ Suite "Native input during real document inference" started.
+◇ Test "measure both entries during real indexing when requested" started.
+✔ Test "measure both entries during real indexing when requested" passed after 445.041 seconds.
+✔ Suite "Native input during real document inference" passed after 445.042 seconds.
+✔ Test run with 1 test in 1 suite passed after 445.043 seconds.
