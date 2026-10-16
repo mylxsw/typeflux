@@ -17,6 +17,7 @@ public enum MediaPreviewDecoder {
             let image = try image(data, options: options)
             let raster = try write(image, index: 0, page: nil, directory: directory)
             response.preview = .init(rasters: [raster])
+            response.preview?.imageType = options.imageType
         } else {
             response.preview = try pdf(data, options: options, directory: directory)
         }
@@ -27,6 +28,7 @@ public enum MediaPreviewDecoder {
     private static func image(_ data: Data, options: MediaPreviewOptions) throws -> CGImage {
         guard let source = CGImageSourceCreateWithData(data as CFData,
                     [kCGImageSourceShouldCache: false] as CFDictionary),
+              options.imageType == nil || CGImageSourceGetType(source) as String? == options.imageType?.identifier,
               let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
               let width = properties[kCGImagePropertyPixelWidth] as? Int,
               let height = properties[kCGImagePropertyPixelHeight] as? Int,

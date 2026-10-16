@@ -175,7 +175,7 @@ import XCTest
         }
     }
 
-    func testNativePreviewsHandleTruncationBinaryUnsupportedMimeAndBoundedImages() throws {
+    func testNativePreviewsHandleTruncationBinaryUnsupportedMimeAndBoundedImages() async throws {
         let (fixture, _, store) = try fixture(enabled: true)
         defer { fixture.cleanup() }
         let picture = NSImage(size: NSSize(width: 3200, height: 800), flipped: false) { rect in
@@ -184,11 +184,13 @@ import XCTest
         let png = try XCTUnwrap(AskArtifactActions.pngData(picture))
         let destination = fixture.base.appendingPathComponent("screenshot.png")
         try AskArtifactActions.exportImage(picture, to: destination)
-        XCTAssertNotNil(AskArtifactPresentation.image(try Data(contentsOf: destination)))
+        let exported = try await AskArtifactPresentation.image(Data(contentsOf: destination), mediaType: "image/png")
+        XCTAssertEqual(exported.images.count, 1)
         XCTAssertThrowsError(try AskArtifactActions.exportImage(picture, to: fixture.base.appendingPathComponent("missing/file.png")))
-        let thumbnail = try XCTUnwrap(AskArtifactPresentation.image(png))
-        XCTAssertLessThanOrEqual(thumbnail.size.width, 1600)
-        XCTAssertNil(AskArtifactPresentation.image(Data("not an image".utf8)))
+        let rendered = try await AskArtifactPresentation.image(png, mediaType: "image/png")
+        let thumbnail = try XCTUnwrap(rendered.images.first)
+        XCTAssertLessThanOrEqual(thumbnail.width, 1600)
+        do { _ = try await AskArtifactPresentation.image(Data("not an image".utf8), mediaType: "image/png"); XCTFail("Invalid image") } catch {}
         let cases = [("long.txt", Data(String(repeating: "text\n", count: 7000).utf8)),
                      ("bad.txt", Data([0xFF])), ("binary.zip", Data([1, 2, 3])),
                      ("image.png", png), ("bad.png", Data()), ("index.html", Data("<h1>disabled</h1>".utf8)),
