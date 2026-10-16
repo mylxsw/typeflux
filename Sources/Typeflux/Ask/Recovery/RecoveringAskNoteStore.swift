@@ -7,9 +7,9 @@ final class RecoveringAskNoteStore: AskNoteStoring {
 
     init(factory: @escaping @Sendable () throws -> any AskNoteStoring = {
         SQLiteAskNoteStore(url: SQLiteAskNoteStore.defaultURL())
-    }, policy: ModulePolicy = .init(),
+    }, policy: ModulePolicy = .init(), healthStore: ModuleHealthStore? = nil,
          uptime: @escaping @Sendable () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }) {
-        module = ModuleHandle(policy: policy, factory: {
+        module = ModuleHandle(policy: policy, healthStore: healthStore, factory: {
             let store = try factory()
             _ = try await store.count(.all)
             return store

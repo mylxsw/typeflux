@@ -1,0 +1,169 @@
+{
+  "baseline": "d68b035d",
+  "covered": 383,
+  "executable_added": 412,
+  "percent": 92.96,
+  "attribution": "Registry uses the final retry profile; every other production file is unchanged since the initial focused pass and uses its matching initial profile. No cross-layout profile merge.",
+  "files": [
+    {
+      "file": "Sources/Typeflux/App/AppCoordinator.swift",
+      "covered": 0,
+      "executable_added": 12,
+      "percent": 0.0,
+      "uncovered": [
+        27,
+        28,
+        295,
+        296,
+        297,
+        298,
+        299,
+        300,
+        303,
+        304,
+        305,
+        306
+      ],
+      "instrumented": true,
+      "profile": "initial-focused-pass"
+    },
+    {
+      "file": "Sources/Typeflux/App/AppTerminationBarrier.swift",
+      "covered": 10,
+      "executable_added": 10,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile": "initial-focused-pass"
+    },
+    {
+      "file": "Sources/Typeflux/App/DIContainer.swift",
+      "covered": 0,
+      "executable_added": 7,
+      "percent": 0.0,
+      "uncovered": [
+        126,
+        127,
+        128,
+        129,
+        130,
+        131,
+        132
+      ],
+      "instrumented": true,
+      "profile": "initial-focused-pass"
+    },
+    {
+      "file": "Sources/Typeflux/App/TypefluxApplication.swift",
+      "covered": 0,
+      "executable_added": 8,
+      "percent": 0.0,
+      "uncovered": [
+        20,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70
+      ],
+      "instrumented": true,
+      "profile": "initial-focused-pass"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/Recovery/RecoveringAskConversationCache.swift",
+      "covered": 1,
+      "executable_added": 1,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile": "initial-focused-pass"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/Recovery/RecoveringAskNoteStore.swift",
+      "covered": 1,
+      "executable_added": 2,
+      "percent": 50.0,
+      "uncovered": [
+        10
+      ],
+      "instrumented": true,
+      "profile": "initial-focused-pass"
+    },
+    {
+      "file": "Sources/Typeflux/Ask/Recovery/RecoveringAskWordBookStore.swift",
+      "covered": 1,
+      "executable_added": 2,
+      "percent": 50.0,
+      "uncovered": [
+        10
+      ],
+      "instrumented": true,
+      "profile": "initial-focused-pass"
+    },
+    {
+      "file": "Sources/Typeflux/Stability/ModuleHandle.swift",
+      "covered": 6,
+      "executable_added": 6,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile": "initial-focused-pass"
+    },
+    {
+      "file": "Sources/Typeflux/Stability/ModuleHealth.swift",
+      "covered": 8,
+      "executable_added": 8,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile": "initial-focused-pass"
+    },
+    {
+      "file": "Sources/Typeflux/Stability/ModuleHealthChannel.swift",
+      "covered": 25,
+      "executable_added": 25,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile": "initial-focused-pass"
+    },
+    {
+      "file": "Sources/Typeflux/Stability/ModuleHealthStore.swift",
+      "covered": 87,
+      "executable_added": 87,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile": "initial-focused-pass"
+    },
+    {
+      "file": "Sources/Typeflux/Stability/ModuleRegistry.swift",
+      "covered": 174,
+      "executable_added": 174,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile": "final-registry-retry"
+    },
+    {
+      "file": "Sources/Typeflux/Stability/ModuleSupervisor.swift",
+      "covered": 56,
+      "executable_added": 56,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile": "initial-focused-pass"
+    },
+    {
+      "file": "Sources/Typeflux/Stability/StorageModules.swift",
+      "covered": 14,
+      "executable_added": 14,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true,
+      "profile": "initial-focused-pass"
+    }
+  ]
+}

@@ -13,6 +13,8 @@ actor ModuleSupervisor<Service: Sendable> {
         let fail: (any Error) -> Void
     }
 
+    nonisolated let healthChannel = ModuleHealthChannel()
+    private let healthStore: ModuleHealthStore?
     nonisolated let admission = ModuleAdmission()
     private let policy: ModulePolicy
     private let factory: @Sendable () async throws -> Service
@@ -33,12 +35,15 @@ actor ModuleSupervisor<Service: Sendable> {
     private var waiters: [UUID: ModuleReply<ModuleLease<Service>>] = [:]
     private var needsRecovery = false
     private var automaticRetryAllowed = true
+    private var resetHealthOnNextStart = false
 
     init(policy: ModulePolicy = .init(),
+         healthStore: ModuleHealthStore? = nil,
          factory: @escaping @Sendable () async throws -> Service,
          cleanup: @escaping @Sendable (Service) async -> Void = { _ in },
          classify: @escaping @Sendable (any Error) -> ModuleFailureDisposition = { _ in .recover },
          uptime: @escaping @Sendable () -> TimeInterval = { ProcessInfo.processInfo.systemUptime }) {
+        self.healthStore = healthStore
         self.policy = policy
         self.factory = factory
         self.cleanup = cleanup
@@ -52,7 +57,10 @@ actor ModuleSupervisor<Service: Sendable> {
                      hasLifecycleWork: startup != nil || cleaning != nil, failure: failure)
     }
 
+    private func publishHealth() { healthChannel.publish(health()) }
+
     private func acquire() async throws -> ModuleLease<Service> {
+        defer { publishHealth() }
         try Task.checkCancellation()
         guard policy.isValid else { throw ModuleFailure.invalidPolicy }
         guard admission.permitsWork else { throw ModuleFailure.disabled }
@@ -75,6 +83,7 @@ actor ModuleSupervisor<Service: Sendable> {
     func perform<Value: Sendable>(
         _ operation: @escaping @Sendable (Service) async throws -> Value
     ) async throws -> Value {
+        defer { publishHealth() }
         let lease = try await acquire()
         try Task.checkCancellation()
         guard admission.permitsWork, state == .ready, lease.generation == generation else {
@@ -97,6 +106,7 @@ actor ModuleSupervisor<Service: Sendable> {
                 let timer = timer(after: policy.operationTimeout) { await self.expired(id) }
                 operations[id] = Operation(generation: current, task: task, timer: timer,
                                            fail: { reply.finish(.failure($0)) })
+                publishHealth()
             }
         } onCancel: {
             Task { await self.cancelOperation(id) }
@@ -104,6 +114,7 @@ actor ModuleSupervisor<Service: Sendable> {
     }
 
     func setEnabled(_ enabled: Bool) {
+        defer { publishHealth() }
         admission.setEnabled(enabled)
         if admission.permitsWork {
             if state == .disabled { state = .stopped }
@@ -113,14 +124,38 @@ actor ModuleSupervisor<Service: Sendable> {
     }
 
     func shutdown() {
+        defer { publishHealth() }
         admission.shutdown()
         stop()
     }
 
+    func startManaged() async throws {
+        try Task.checkCancellation()
+        guard admission.permitsWork else { throw ModuleFailure.disabled }
+        if state == .disabled { state = .stopped }
+        automaticRetryAllowed = true
+        try await perform { _ in () }
+    }
+
+    @discardableResult
+    func waitForRetirement() async -> Bool {
+        let deadline = ProcessInfo.processInfo.systemUptime + (policy.isValid ? policy.cleanupTimeout : 2)
+        while startup != nil || cleaning != nil || !operations.isEmpty {
+            guard ProcessInfo.processInfo.systemUptime < deadline else { return false }
+            do { try await Task.sleep(nanoseconds: 5_000_000) } catch { return false }
+        }
+        return true
+    }
+
     /// Explicit retry clears a configuration/permission hold, but respects the
     /// rolling failure budget and outstanding work. It never retries an action.
-    func retry() {
+    func retry(resetPersistentBudget: Bool = false) {
+        defer { publishHealth() }
         guard admission.permitsWork else { return }
+        if resetPersistentBudget {
+            guard state != .ready, startup == nil, cleaning == nil, operations.isEmpty else { return }
+            resetHealthOnNextStart = true
+        }
         automaticRetryAllowed = true
         retireIfPossible()
         if !needsRecovery, state != .ready, startup == nil, cleaning == nil { scheduleRecovery() }
@@ -133,13 +168,20 @@ actor ModuleSupervisor<Service: Sendable> {
     }
 
     private func launchFactory() {
+        defer { publishHealth() }
         recovery?.cancel()
         recovery = nil
         state = .starting
         let current = generation
-        startup = Task.detached { [factory, admission] in
+        let resetHealth = resetHealthOnNextStart
+        resetHealthOnNextStart = false
+        startup = Task.detached { [factory, admission, healthStore] in
             let result: Result<Service, any Error>
             do {
+                try Task.checkCancellation()
+                guard admission.permitsWork else { throw ModuleFailure.disabled }
+                if resetHealth { try healthStore?.reset() }
+                try healthStore?.reserve()
                 try Task.checkCancellation()
                 guard admission.permitsWork else { throw ModuleFailure.disabled }
                 result = .success(try await factory())
@@ -150,11 +192,13 @@ actor ModuleSupervisor<Service: Sendable> {
     }
 
     private func factoryCompleted(_ result: Result<Service, any Error>, generation current: UUID) {
+        defer { publishHealth() }
         startup = nil
         lifecycleTimer?.cancel()
         lifecycleTimer = nil
         guard current == generation, admission.permitsWork else {
             if case let .success(value) = result { service = value }
+            if current == generation { invalidate(with: ModuleFailure.disabled); state = .disabled }
             retireIfPossible()
             return
         }
@@ -164,24 +208,29 @@ actor ModuleSupervisor<Service: Sendable> {
             state = .ready
             failure = nil
             budget.succeeded(at: uptime())
+            healthStore?.succeeded()
             finishWaiters(.success(ModuleLease(service: value, generation: current)))
         case let .failure(error):
             finishWaiters(.failure(error))
-            failed(error, disposition: classify(error))
+            failed(error, disposition: (error as? ModuleFailure) == .quarantined || (error as? ModuleFailure) == .healthPersistence
+                   ? .waitForExplicitRetry : classify(error))
         }
     }
 
     private func factoryExpired(_ current: UUID) {
+        defer { publishHealth() }
         guard current == generation, startup != nil else { return }
         failed(ModuleFailure.startupTimeout, disposition: .recover)
     }
 
     private func completed<Value: Sendable>(_ id: UUID, generation current: UUID,
                                             result: Result<Value, any Error>, reply: ModuleReply<Value>) {
+        defer { publishHealth() }
         let operation = operations.removeValue(forKey: id)
         operation?.timer.cancel()
         guard current == generation, admission.permitsWork else {
             reply.finish(.failure(ModuleFailure.invalidated))
+            if current == generation { invalidate(with: ModuleFailure.disabled); state = .disabled }
             retireIfPossible()
             return
         }
@@ -193,17 +242,20 @@ actor ModuleSupervisor<Service: Sendable> {
             if disposition != .operationOnly { failed(error, disposition: disposition) }
         } else if delivered {
             budget.succeeded(at: uptime())
+            healthStore?.succeeded()
         }
         retireIfPossible()
     }
 
     private func expired(_ id: UUID) {
+        defer { publishHealth() }
         guard let operation = operations[id], operation.generation == generation, state == .ready else { return }
         operation.fail(ModuleFailure.operationTimeout)
         failed(ModuleFailure.operationTimeout, disposition: .recover)
     }
 
     private func cancelOperation(_ id: UUID) {
+        defer { publishHealth() }
         guard let operation = operations[id] else { return }
         operation.fail(CancellationError())
         operation.task.cancel()
@@ -212,10 +264,12 @@ actor ModuleSupervisor<Service: Sendable> {
     }
 
     private func cancelWaiter(_ id: UUID) {
+        defer { publishHealth() }
         waiters.removeValue(forKey: id)?.finish(.failure(CancellationError()))
     }
 
     private func failed(_ error: any Error, disposition: ModuleFailureDisposition) {
+        healthStore?.failed()
         budget.failed(at: uptime())
         automaticRetryAllowed = disposition != .waitForExplicitRetry
         invalidate(with: error)
@@ -254,8 +308,9 @@ actor ModuleSupervisor<Service: Sendable> {
             self.service = nil
             let id = UUID()
             cleanupID = id
-            cleaning = Task.detached { [cleanup] in
+            cleaning = Task.detached { [cleanup, healthStore] in
                 await cleanup(service)
+                healthStore?.cleanStop()
                 await self.cleanupCompleted(id)
             }
             lifecycleTimer = timer(after: policy.cleanupTimeout) { await self.cleanupExpired(id) }
@@ -266,6 +321,7 @@ actor ModuleSupervisor<Service: Sendable> {
     }
 
     private func cleanupExpired(_ id: UUID) {
+        defer { publishHealth() }
         guard cleaning != nil, cleanupID == id else { return }
         failure = .cleanupTimeout
         state = admission.permitsWork ? .degraded : .disabled
@@ -274,6 +330,7 @@ actor ModuleSupervisor<Service: Sendable> {
     }
 
     private func cleanupCompleted(_ id: UUID) {
+        defer { publishHealth() }
         guard cleanupID == id else { return }
         cleanupID = nil
         cleaning = nil
@@ -300,6 +357,7 @@ actor ModuleSupervisor<Service: Sendable> {
     }
 
     private func recover(_ current: UUID) {
+        defer { publishHealth() }
         recovery = nil
         guard admission.permitsWork, current == generation, !needsRecovery,
               startup == nil, cleaning == nil, operations.isEmpty, state != .ready,

@@ -15,7 +15,7 @@ struct ModuleHealth: Sendable {
 }
 
 enum ModuleFailure: Error, Equatable, Sendable {
-    case unavailable, overloaded, disabled, invalidPolicy
+    case unavailable, overloaded, disabled, invalidPolicy, quarantined, healthPersistence
     case startupTimeout, operationTimeout, cleanupTimeout, invalidated
 }
 
@@ -43,8 +43,16 @@ final class ModuleAdmission: @unchecked Sendable {
     private let lock = NSLock()
     private var enabled = true
     private var terminated = false
+    private var dependencies: [ModuleHealthChannel] = []
 
-    var permitsWork: Bool { lock.withLock { enabled && !terminated } }
+    var permitsWork: Bool {
+        let snapshot = lock.withLock { (enabled && !terminated, dependencies) }
+        return snapshot.0 && snapshot.1.allSatisfy { $0.current?.state == .ready }
+    }
+
+    func require(_ dependencies: [ModuleHealthChannel]) {
+        lock.withLock { self.dependencies = dependencies }
+    }
 
     func setEnabled(_ enabled: Bool) {
         lock.withLock { self.enabled = enabled && !terminated }

@@ -20,8 +20,12 @@ final class AppCoordinator {
         openFeedback: { [weak self] destination in self?.statusBarController?.showFeedback(destination) }
     )
 
+    private var moduleStartup: Task<Void, Never>?
+
     // swiftlint:disable:next function_body_length
     func start() {
+        moduleStartup?.cancel()
+        moduleStartup = Task { [di] in _ = await di.moduleRegistry.startAll() }
         di.analyticsReporter.reportFirstOpenIfNeeded()
         di.analyticsReporter.report(
             eventName: "app_launch",
@@ -288,13 +292,18 @@ final class AppCoordinator {
         await di.screenRecordingSessions.prepareForTermination()
     }
 
+    func prepareForTermination() async {
+        moduleStartup?.cancel()
+        moduleStartup = nil
+        di.moduleRegistry.preventNewWork()
+        await di.moduleRegistry.shutdown()
+    }
+
     func stop() {
-        di.noteStore.preventNewWork()
-        Task { await di.noteStore.shutdown() }
-        di.wordBookStore.preventNewWork()
-        Task { await di.wordBookStore.shutdown() }
-        di.conversationCache.preventNewWork()
-        Task { await di.conversationCache.shutdown() }
+        moduleStartup?.cancel()
+        moduleStartup = nil
+        di.moduleRegistry.preventNewWork()
+        Task { [di] in await di.moduleRegistry.shutdown() }
         if let authAnalyticsObserver { NotificationCenter.default.removeObserver(authAnalyticsObserver) }
         if let authLogoutObserver { NotificationCenter.default.removeObserver(authLogoutObserver) }
         if let authSubscriptionObserver { NotificationCenter.default.removeObserver(authSubscriptionObserver) }
