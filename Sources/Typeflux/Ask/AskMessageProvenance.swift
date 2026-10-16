@@ -86,11 +86,7 @@ struct AskMessageProvenanceView: View {
                 .help(L("ask.context.previewHint"))
                 .accessibilityIdentifier("ask.message.screenshot")
                 .popover(isPresented: $showImage) {
-                    if let image = AskImage.decode(url) {
-                        Image(nsImage: image).resizable().scaledToFit().frame(width: 650).padding()
-                    } else {
-                        Text(L("ask.image.previewUnavailable")).font(.system(size: 12)).padding()
-                    }
+                    AskContextImagePreview(source: url).frame(width: 650, height: 520).padding()
                 }
         }
     }

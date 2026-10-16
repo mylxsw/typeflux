@@ -100,6 +100,7 @@ struct AskConversationView: View {
             }
         }
         .tint(AskTheme.accent)
+        .environment(\.askContextImageAccess, model.contextImageAccess(launcher: false))
         .environment(\.askRemoteImageAccess, model.remoteImageAccess)
         .environment(\.askArtifactAccess, model.artifactAccess)
         .environment(\.askTerminalAccess, model.terminalAccess)
@@ -1630,6 +1631,9 @@ private struct AskSuggestionCard: View {
 struct AskSentFileChip: View {
     let attachment: AskAttachment
     @State private var previewing = false
+    @StateObject private var imageModel = AskContextImageModel()
+    @Environment(\.askContextImageAccess) private var imageAccess
+    private var thumbnail: NSImage? { imageModel.displayed(attachment.image, access: imageAccess) }
 
     var body: some View {
         Button {
@@ -1641,7 +1645,7 @@ struct AskSentFileChip: View {
         } label: {
             AskSentAttachmentChip(
                 title: [attachment.name, AskAttachmentStrip.caption(attachment)].compactMap { $0 }.joined(separator: " · "),
-                thumbnail: attachment.image.flatMap { AskAttachmentStrip.thumbnail(id: attachment.id, dataURL: $0) },
+                thumbnail: thumbnail,
                 systemImage: AskAttachmentStrip.symbol(attachment)
             )
             .frame(maxWidth: 260)
@@ -1649,11 +1653,17 @@ struct AskSentFileChip: View {
         .buttonStyle(.plain)
         .help(attachment.path ?? attachment.name)
         .popover(isPresented: $previewing) { preview }
+        .task(id: AskContextImageModel.Identity(source: attachment.image, epoch: imageAccess.epoch)) {
+            await imageModel.load(attachment.image, access: imageAccess)
+        }
+        .onDisappear { imageModel.cancel(); previewing = false }
     }
 
     @ViewBuilder private var preview: some View {
-        if let image = attachment.image.flatMap({ AskAttachmentStrip.thumbnail(id: attachment.id, dataURL: $0) }) {
+        if let image = thumbnail {
             Image(nsImage: image).resizable().scaledToFit().frame(maxWidth: 650, maxHeight: 520).padding()
+        } else if attachment.image != nil {
+            Text(L("ask.image.previewUnavailable")).padding()
         } else {
             ScrollView {
                 Text(String((attachment.text ?? "").prefix(20000)))
