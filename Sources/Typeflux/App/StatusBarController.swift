@@ -47,7 +47,6 @@ final class StatusBarController: NSObject {
     private let onRestorePinnedScreenshots: () -> Void
     private let onClosePinnedScreenshots: () -> Void
     private let activityCenter: BackgroundActivityCenter?
-    private let activityIndicator = StatusItemActivityIndicator()
     private(set) lazy var activityWindow: BackgroundActivityWindowController? = activityCenter.map {
         BackgroundActivityWindowController(center: $0, settingsStore: settingsStore)
     }
@@ -158,10 +157,6 @@ final class StatusBarController: NSObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in self?.activitiesDidChange() }
             .store(in: &cancellables)
-        activityCenter?.$indicatorEnabled
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] _ in self?.updateTitle() }
-            .store(in: &cancellables)
 
         appState.$status
             .receive(on: DispatchQueue.main)
@@ -211,7 +206,6 @@ final class StatusBarController: NSObject {
             L("menu.status.failed", message)
         }
 
-        let indicator = activityCenter?.indicator ?? .none
         let description = activityCenter.map { Self.accessibilityTitle(accessibilityTitle, center: $0) }
             ?? accessibilityTitle
 
@@ -225,8 +219,6 @@ final class StatusBarController: NSObject {
         button.image = image
         button.imageScaling = .scaleProportionallyDown
         button.contentTintColor = nil
-        activityIndicator.apply(indicator, to: button, symbol: StudioTheme.Symbol.brand,
-                                configuration: symbolConfig, size: IconLayout.imageSize)
     }
 
     /// "Ready, 2 background tasks in progress, a background task needs your attention".
@@ -241,8 +233,9 @@ final class StatusBarController: NSObject {
         return parts.joined(separator: L("activity.accessibility.separator"))
     }
 
-    var activityIndicatorState: BackgroundActivityIndicator {
-        activityIndicator.state
+    /// The menu bar button, for tests that check the icon.
+    var statusItemButton: NSStatusBarButton? {
+        statusItem?.button
     }
 
     private func activitiesDidChange() {

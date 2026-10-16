@@ -33,20 +33,6 @@ final class BackgroundActivityCenterTests: XCTestCase {
         XCTAssertEqual(sorted.map(\.id), ["b", "a", "c"])
     }
 
-    func testIndicatorShowsAttentionBeforeRunningAndNothingForRestingWork() {
-        XCTAssertEqual(BackgroundActivityIndicator.of([]), .none)
-        XCTAssertEqual(
-            BackgroundActivityIndicator.of([makeActivity("p", state: .paused), makeActivity("w", state: .waiting)]),
-            .none
-        )
-        XCTAssertEqual(BackgroundActivityIndicator.of([makeActivity("r"), makeActivity("p", state: .paused)]), .running)
-        XCTAssertEqual(
-            BackgroundActivityIndicator.of([makeActivity("r"), makeActivity("f", state: .failed)]),
-            .attention
-        )
-        XCTAssertEqual(BackgroundActivityIndicator.of([makeActivity("a", state: .attention)]), .attention)
-    }
-
     func testActivityFlagsFollowState() {
         XCTAssertTrue(makeActivity("a", state: .attention).isActive)
         XCTAssertTrue(makeActivity("a", state: .attention).needsUser)
@@ -168,7 +154,6 @@ final class BackgroundActivityCenterTests: XCTestCase {
         XCTAssertEqual(center.activities.map(\.id), ["approval", "download", "shared"])
         XCTAssertEqual(center.activity("shared")?.detail, "", "the first source to report an id owns it")
         XCTAssertEqual(center.activeCount, 3)
-        XCTAssertEqual(center.indicator, .attention)
 
         center.perform(.cancel, on: "shared")
         center.perform(.stop, on: "approval")
@@ -212,30 +197,19 @@ final class BackgroundActivityCenterTests: XCTestCase {
         XCTAssertEqual(publishes, 1)
     }
 
-    func testIndicatorSettingHidesTheDotAndPersists() throws {
+    func testNotificationSettingPersists() throws {
         let (settings, suite) = try makeSettings()
+        XCTAssertTrue(settings.backgroundActivityNotificationsEnabled, "notifications default to on")
         let center = BackgroundActivityCenter(settings: settings, notifications: NoopLocalNotificationService(),
                                               coalesceInterval: 0)
-        let source = FakeActivitySource()
-        center.register(source)
-        source.feed.publish([makeActivity("x")])
-        XCTAssertEqual(center.indicator, .running)
+        XCTAssertTrue(center.notificationsEnabled)
 
-        center.indicatorEnabled = false
         center.notificationsEnabled = false
 
-        XCTAssertEqual(center.indicator, .none)
         let reloaded = try SettingsStore(defaults: XCTUnwrap(UserDefaults(suiteName: suite)))
-        XCTAssertFalse(reloaded.backgroundActivityIndicatorEnabled)
         XCTAssertFalse(reloaded.backgroundActivityNotificationsEnabled)
         XCTAssertFalse(BackgroundActivityCenter(settings: reloaded, notifications: NoopLocalNotificationService())
-            .indicatorEnabled)
-    }
-
-    func testSettingsDefaultToOn() throws {
-        let (settings, _) = try makeSettings()
-        XCTAssertTrue(settings.backgroundActivityIndicatorEnabled)
-        XCTAssertTrue(settings.backgroundActivityNotificationsEnabled)
+            .notificationsEnabled)
     }
 
     func testRecentKeepsNewestFirstAndIsCapped() {

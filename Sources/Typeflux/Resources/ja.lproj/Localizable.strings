@@ -5553,7 +5553,6 @@
 "activity.window.recent" = "最近完了";
 "activity.window.emptyActive" = "現在バックグラウンドタスクはありません";
 "activity.window.emptyRecent" = "Typeflux の起動後に完了したタスクはありません";
-"activity.window.indicator" = "メニューバーのアイコンにタスクの状態を表示";
 "activity.window.notifications" = "長いダウンロードが完了したら通知";
 "activity.window.finished" = "完了 · %@";
 "activity.window.justNow" = "たった今";

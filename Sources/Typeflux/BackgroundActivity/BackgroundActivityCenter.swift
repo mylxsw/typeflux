@@ -2,7 +2,7 @@ import Combine
 import Foundation
 
 /// Gathers the background work of every source into one ordered list for the
-/// menu bar icon, the menu section and the background tasks window.
+/// menu section and the background tasks window.
 @MainActor
 final class BackgroundActivityCenter: ObservableObject {
     static let recentLimit = 20
@@ -11,20 +11,12 @@ final class BackgroundActivityCenter: ObservableObject {
 
     @Published private(set) var activities: [BackgroundActivity] = []
     @Published private(set) var recent: [BackgroundActivityCompletion] = []
-    @Published var indicatorEnabled: Bool {
-        didSet { settings.backgroundActivityIndicatorEnabled = indicatorEnabled }
-    }
-
     @Published var notificationsEnabled: Bool {
         didSet { settings.backgroundActivityNotificationsEnabled = notificationsEnabled }
     }
 
     /// Opens what an activity belongs to; set by the app once its windows exist.
     var onOpen: (BackgroundActivity.Route) -> Void = { _ in }
-
-    var indicator: BackgroundActivityIndicator {
-        indicatorEnabled ? .of(activities) : .none
-    }
 
     /// Activities using resources or waiting for the user.
     var activeCount: Int {
@@ -46,7 +38,6 @@ final class BackgroundActivityCenter: ObservableObject {
         self.settings = settings
         self.notifications = notifications
         self.coalesceInterval = coalesceInterval
-        indicatorEnabled = settings.backgroundActivityIndicatorEnabled
         notificationsEnabled = settings.backgroundActivityNotificationsEnabled
     }
 
