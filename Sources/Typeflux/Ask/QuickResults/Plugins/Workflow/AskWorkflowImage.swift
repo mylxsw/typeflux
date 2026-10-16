@@ -75,8 +75,9 @@ enum AskWorkflowImage {
         var sourceRevision: ClipboardImageRevision?
     }
     static func clipboard(_ url: URL, digest: String? = nil, worker: MediaWorker = .previews, preserveOriginalPNG: Bool = false,
+                          authorization original: MediaWorker.Authorization? = nil,
                           readSource: @escaping @Sendable (URL) throws -> Data = { try read($0) }) async throws -> Clipboard {
-        let authorization = worker.authorization()
+        let authorization = original ?? worker.authorization()
         guard worker.permits(authorization) else { throw MediaFailure.unavailable }
         let reservation = try clipboardBudget.acquire(bytes: MediaWorkflowImage.copyBytes)
         return try await work(isCancelled: { !worker.permits(authorization) }) { cancellation in

@@ -54,16 +54,24 @@ struct ClipboardImageRevision: Equatable, Sendable {
                committed: @escaping @MainActor () -> Void = {},
                failed: @escaping @MainActor () -> Void = {},
                delay: @escaping @MainActor () async -> Void = { try? await Task.sleep(for: .milliseconds(150)) }) -> Bool {
-        guard !disabled, task == nil, authorized(), beforeCommit() else { return false }
+        let current = generation
+        guard !Task.isCancelled, !disabled, task == nil, authorized(), beforeCommit(),
+              !Task.isCancelled, generation == current, !disabled, task == nil else { return false }
         observeAccount()
         self.committed = false
-        let current = generation
+        let preparation = actions.imagePreparation(for: entry)
         task = Task { [weak self] in
             defer { self?.task = nil }
             do {
-                let image = try await actions.prepareImage(entry)
-                guard !Task.isCancelled, self?.generation == current, authorized(), beforeCommit() else { return }
-                guard actions.writeToPasteboard(entry, asPlainText: plainText, image: image) else { failed(); return }
+                guard !Task.isCancelled, self?.generation == current else { return }
+                guard preparation.isCurrent() else { throw MediaFailure.unavailable }
+                let image = try await preparation.prepare()
+                guard !Task.isCancelled, self?.generation == current, authorized(), beforeCommit(),
+                      !Task.isCancelled, self?.generation == current else { return }
+                guard preparation.isCurrent() else { throw MediaFailure.unavailable }
+                let written = actions.writeToPasteboard(entry, asPlainText: plainText, image: image)
+                guard !Task.isCancelled, self?.generation == current else { return }
+                guard written else { failed(); return }
                 self?.committed = true
                 let revision = actions.pasteboardRevision
                 committed()
@@ -73,7 +81,8 @@ struct ClipboardImageRevision: Equatable, Sendable {
                       image?.sourceRevision == nil || image?.sourceRevision?.matches(URL(fileURLWithPath: entry.imagePath ?? "")) == true else { return }
                 actions.sendPasteShortcut()
             } catch {
-                if !Task.isCancelled, self?.generation == current, authorized(), beforeCommit() { failed() }
+                if !Task.isCancelled, self?.generation == current, authorized(), beforeCommit(),
+                   !Task.isCancelled, self?.generation == current { failed() }
             }
         }
         return true
