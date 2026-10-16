@@ -251,16 +251,17 @@ struct AskCodeSandbox: Sendable {
     }
 
     static func firstImage(_ changed: [(name: String, size: Int)], workspace: AskSecureDirectory,
-                           normalize: @Sendable (Data, MediaImageType) async throws -> String = {
-                               try await AskToolImageNormalizer.image($0, type: $1)
-                           }) async -> (url: String?, incomplete: Bool) {
+                           normalize: (@Sendable (Data, MediaImageType) async throws -> String)? = nil,
+                           normalizer: AskToolImageNormalizer = .shared,
+                           readFile: @Sendable (AskSecureDirectory, String, Int) throws -> Data = { try $0.readFile($1, limit: $2) }) async -> (url: String?, incomplete: Bool) {
+        let batch = normalizer.batch(using: normalize)
         // The program has finished. Decode at most four candidates, never rerun it.
         let images = changed.filter { ["png", "jpg", "jpeg"].contains(($0.name as NSString).pathExtension.lowercased()) }
         for file in images.prefix(4) {
-            guard !Task.isCancelled else { break }
-            if let data = try? workspace.readFile(file.name, limit: 10 * 1024 * 1024),
-               let url = try? await normalize(data, (file.name as NSString).pathExtension.lowercased() == "png" ? .png : .jpeg),
-               !Task.isCancelled, AskToolImageNormalizer.valid(url) { return (url, false) }
+            guard batch.isCurrent else { break }
+            if let data = try? readFile(workspace, file.name, 10 * 1024 * 1024), batch.isCurrent,
+               let url = try? await batch.normalize(data, (file.name as NSString).pathExtension.lowercased() == "png" ? .png : .jpeg),
+               batch.isCurrent, AskToolImageNormalizer.valid(url) { return (url, false) }
         }
         return (nil, !images.isEmpty)
     }

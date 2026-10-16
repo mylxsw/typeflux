@@ -4,11 +4,25 @@ import TypefluxMediaProtocol
 /// Bounds input ownership before starting background work. The worker retains its
 /// own slot/files until confirmed collection even when this caller is cancelled.
 final class AskToolImageNormalizer: @unchecked Sendable {
-    private static let shared = AskToolImageNormalizer()
+    static let shared = AskToolImageNormalizer()
     private let lock = NSLock()
     private var active = 0
     private let worker: MediaWorker
     init(worker: MediaWorker = .previews) { self.worker = worker }
+
+    struct Batch: Sendable {
+        let normalize: @Sendable (Data, MediaImageType) async throws -> String
+        let permits: @Sendable () -> Bool
+        var isCurrent: Bool { !Task.isCancelled && permits() }
+    }
+
+    /// Default native preparation shares one original stamp; custom readers own their contract.
+    func batch(using normalize: (@Sendable (Data, MediaImageType) async throws -> String)? = nil) -> Batch {
+        if let normalize { return Batch(normalize: normalize, permits: { true }) }
+        let authorization = worker.authorization()
+        return Batch(normalize: { [self] in try await self.normalize($0, type: $1, authorization: authorization) },
+                     permits: { [worker] in worker.permits(authorization) })
+    }
 
     static func valid(_ url: String) -> Bool {
         let prefix = "data:image/jpeg;base64,"

@@ -1,0 +1,31 @@
+{
+  "covered": 53,
+  "executable_added": 53,
+  "percent": 100.0,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Ask/AskCodeSandbox.swift",
+      "covered": 6,
+      "executable_added": 6,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskToolImageNormalizer.swift",
+      "covered": 7,
+      "executable_added": 7,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/AskTypedContent.swift",
+      "covered": 40,
+      "executable_added": 40,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    }
+  ]
+}
