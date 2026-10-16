@@ -1,6 +1,6 @@
 import AppKit
 import SwiftUI
-import UniformTypeIdentifiers
+import TypefluxMediaProtocol
 
 /// One row of a result list: icon, title, subtitle, and on the chosen row what
 /// Return does ("↩ Copy"). A soft accent wash marks keyboard focus without
@@ -84,9 +84,8 @@ struct AskPluginItemIcon: View {
                 AskFileIconView(url: url, thumbnail: false).frame(width: 26, height: 26)
             } else if case let .image(url) = icon {
                 AskSmallFileIcon(url: url, symbol: symbol, filled: filled)
-            } else if let image = icon.flatMap(Self.image) {
-                Image(nsImage: image).resizable().interpolation(.high).scaledToFit()
-                    .frame(width: 26, height: 26)
+            } else if case let .fileType(type) = icon {
+                AskNativeIconView(icon: .init(kind: .type, value: type), symbol: symbol).frame(width: 26, height: 26)
             } else {
                 Image(systemName: Self.symbolName(icon) ?? symbol)
                     .font(.system(size: 12.5, weight: .semibold))
@@ -106,30 +105,6 @@ struct AskPluginItemIcon: View {
         return name
     }
 
-    private static let cache: NSCache<NSString, NSImage> = {
-        let cache = NSCache<NSString, NSImage>(); cache.countLimit = 128; return cache
-    }()
-
-    /// The image for a file icon; nil for symbols and for files that are not images.
-    static func image(_ icon: AskPluginItem.Icon) -> NSImage? {
-        let key: String
-        switch icon {
-        case .symbol, .websiteIcon, .image: return nil
-        case let .fileIcon(url): key = "file:" + url.path
-        case let .fileType(type): key = "type:" + type
-        }
-        if let cached = cache.object(forKey: key as NSString) {
-            return cached
-        }
-        let image: NSImage? = switch icon {
-        case .symbol, .websiteIcon, .image: nil
-        case let .fileIcon(url):
-            FileManager.default.fileExists(atPath: url.path) ? NSWorkspace.shared.icon(forFile: url.path) : nil
-        case let .fileType(type): UTType(type).map { NSWorkspace.shared.icon(for: $0) }
-        }
-        if let image {
-            cache.setObject(image, forKey: key as NSString)
-        }
-        return image
-    }
+    /// Synchronous projections never invoke native icon lookup or image decoding.
+    static func image(_ icon: AskPluginItem.Icon) -> NSImage? { nil }
 }

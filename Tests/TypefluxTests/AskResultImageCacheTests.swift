@@ -43,7 +43,8 @@ struct AskResultImageCacheTests {
         try Data("Launcher icon".utf8).write(to: url)
         defer { try? FileManager.default.removeItem(at: url) }
         let cache = AskResultImageCache()
-        let image = try #require(await cache.image(.init(url: url, thumbnail: false, scale: 2)))
+        #expect(await cache.image(.init(url: url, thumbnail: false, scale: 2)) == nil, "Native icons are owned by scoped views, not this cache")
+        let image = try #require(await AskFinderIcon.image(for: url, scale: 2))
         #expect(image.representations.first?.pixelsWide == 56)
         #expect(image.size == NSSize(width: 28, height: 28))
     }

@@ -25,9 +25,11 @@ final class AskResultImageCache {
     private let cache = NSCache<NSString, NSImage>()
     private var pending: [Key: (task: Task<LoadedImage, Never>, clients: Set<UUID>)] = [:]
     private let loader: Loader
+    private let nativeIconsInViews: Bool
 
-    init(loader: @escaping Loader = AskResultImageCache.generate) {
-        self.loader = loader
+    init(loader: Loader? = nil) {
+        self.loader = loader ?? AskResultImageCache.generate
+        self.nativeIconsInViews = loader == nil
         cache.countLimit = 256
     }
 
@@ -40,13 +42,13 @@ final class AskResultImageCache {
     /// Start while search batches are being assembled, before SwiftUI creates rows.
     /// These consumers also keep useful loads alive when typing replaces a row.
     func prefetch(_ keys: [Key]) {
-        for key in Set(keys) where cached(key) == nil {
+        for key in Set(keys) where cached(key) == nil && (!nativeIconsInViews || (key.thumbnail && key.url.pathExtension.lowercased() != "app")) {
             Task { _ = await image(key) }
         }
     }
 
     func image(_ key: Key) async -> NSImage? {
-        guard !Task.isCancelled else { return nil }
+        guard !Task.isCancelled, !nativeIconsInViews || (key.thumbnail && key.url.pathExtension.lowercased() != "app") else { return nil }
         let original = key
         let key = await Self.resolved(key)
         guard !Task.isCancelled else { return nil }
@@ -103,7 +105,7 @@ final class AskResultImageCache {
 
     private static func generate(_ key: Key) async -> NSImage? {
         if !key.thumbnail || key.url.pathExtension.lowercased() == "app" {
-            return await AskFinderIcon.image(for: key.url, scale: key.scale)
+            return nil
         }
         let request = QLThumbnailGenerator.Request(fileAt: key.url, size: CGSize(width: 56, height: 56),
                                                    scale: key.scale, representationTypes: .all)

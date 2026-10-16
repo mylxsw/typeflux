@@ -70,7 +70,7 @@ public struct MediaPreviewResult: Codable, Sendable {
             return
         }
         guard !rasters.isEmpty, duration == nil, start == nil, waveform == nil else { throw MediaFailure.invalidProtocol }
-        if request.operation == .previewImage {
+        if request.operation == .previewImage || request.operation == .nativeIcon {
             guard rasters.count == 1, pages == 0, rasters[0].page == nil
             else { throw MediaFailure.invalidProtocol }
         } else {
@@ -102,5 +102,19 @@ public enum MediaImageType: String, Codable, Sendable {
     case png = "image/png", jpeg = "image/jpeg", gif = "image/gif"
     public var identifier: String {
         switch self { case .png: "public.png"; case .jpeg: "public.jpeg"; case .gif: "com.compuserve.gif" }
+    }
+}
+
+/// A native icon lookup, never an instruction to decode the file as image data.
+public struct MediaNativeIcon: Codable, Sendable, Hashable {
+    public enum Kind: String, Codable, Sendable { case file, type }
+    public var kind: Kind
+    public var value: String
+    public init(kind: Kind, value: String) { self.kind = kind; self.value = value }
+    public func validate() throws {
+        guard !value.isEmpty, !value.contains("\0"), value.utf8.count <= (kind == .file ? 4096 : 256),
+              kind != .file || value.hasPrefix("/"),
+              kind != .type || value.unicodeScalars.allSatisfy({ CharacterSet.alphanumerics.contains($0) || ".-".unicodeScalars.contains($0) })
+        else { throw MediaFailure.invalidProtocol }
     }
 }

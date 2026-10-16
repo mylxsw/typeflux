@@ -1,27 +1,52 @@
-import AppKit
+import SwiftUI
+import TypefluxMediaProtocol
 
-/// Finder icons do not need Quick Look. Rasterize only the list's display size:
-/// serializing every representation of an app icon can allocate tens of MB.
 enum AskFinderIcon {
+    private static let admission = AskToolPixelBudget(limit: 2)
+    static func decode(_ icon: MediaNativeIcon, edge: Int = 56, worker: MediaWorker = .previews) async throws -> AskFilePreviewPDF.Result {
+        try Task.checkCancellation()
+        try icon.validate()
+        guard (1...112).contains(edge) else { throw MediaFailure.tooLarge }
+        let slot = try admission.acquire(bytes: 1), cancellation = AskSearchCancellation()
+        defer { withExtendedLifetime(slot) {} }
+        return try await withTaskCancellationHandler {
+            let result = try await Task.detached(priority: .utility) {
+                try MediaPreviewDisplay.renderIcon(icon, edge: edge, cancellation: cancellation, worker: worker)
+            }.value
+            try Task.checkCancellation()
+            return result
+        } onCancel: { cancellation.cancel() }
+    }
+
     @MainActor static func image(for url: URL, scale: CGFloat = 2) async -> NSImage? {
-        guard !Task.isCancelled else { return nil }
-        let pixels = max(1, Int(ceil(28 * scale)))
-        let data = await Task.detached(priority: .userInitiated) {
-            let icon = NSWorkspace.shared.icon(forFile: url.path)
-            var rect = CGRect(x: 0, y: 0, width: pixels, height: pixels)
-            guard let source = icon.cgImage(forProposedRect: &rect, context: nil, hints: nil),
-                  let context = CGContext(data: nil, width: pixels, height: pixels,
-                                          bitsPerComponent: 8, bytesPerRow: 0,
-                                          space: CGColorSpaceCreateDeviceRGB(),
-                                          bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
-            else { return nil as Data? }
-            context.interpolationQuality = .high
-            context.draw(source, in: CGRect(x: 0, y: 0, width: pixels, height: pixels))
-            guard let image = context.makeImage() else { return nil }
-            return NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:])
-        }.value
-        guard !Task.isCancelled, let data, let image = NSImage(data: data) else { return nil }
-        image.size = NSSize(width: 28, height: 28)
-        return image
+        guard url.isFileURL, scale.isFinite, scale > 0, scale <= 4,
+              let result = try? await decode(.init(kind: .file, value: url.path), edge: Int(ceil(28 * scale))),
+              let image = result.images.first else { return nil }
+        let representation = NSBitmapImageRep(cgImage: image)
+        representation.size = NSSize(width: 28, height: 28)
+        let display = NSImage(size: representation.size)
+        display.addRepresentation(representation)
+        return display
+    }
+}
+
+/// View-owned native icons have no path-only or application-lifetime bitmap cache.
+struct AskNativeIconView: View {
+    let icon: MediaNativeIcon
+    var symbol = "doc"
+    var revision: Date?
+    var decode: @Sendable (MediaNativeIcon) async throws -> AskFilePreviewPDF.Result = { try await AskFinderIcon.decode($0) }
+    @Environment(\.askContextImageAccess) private var access
+    @Environment(\.askIconGeneration) private var generation
+    var body: some View {
+        AskContextImage(source: icon.kind.rawValue + ":" + icon.value,
+            model: AskContextImageModel(maximumEdge: 56, decode: { _ in try await decode(icon) })) { image in
+            if let image { Image(nsImage: image).resizable().interpolation(.high).scaledToFit() }
+            else { Image(systemName: symbol).resizable().scaledToFit().padding(3).foregroundStyle(StudioTheme.textTertiary) }
+        }
+        .id(Identity(icon: icon, epoch: access.epoch, generation: generation, revision: revision))
+    }
+    private struct Identity: Hashable {
+        let icon: MediaNativeIcon; let epoch: UUID?; let generation: Int; let revision: Date?
     }
 }
