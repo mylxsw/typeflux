@@ -122,6 +122,7 @@ History changes are broadcast via `NotificationCenter` using `.historyStoreDidCh
 - `Audio/` — `AVFoundationAudioRecorder`, `AudioDeviceManager`, audio format handling
 - `TextInjection/` — `AXTextInjector` uses Accessibility API; falls back to clipboard paste
 - `Clipboard/` — system clipboard read/write, plus the clipboard panel opened by the history hotkey: `ClipboardMonitor` records copies into `ClipboardHistoryStore`, `ClipboardFeed` merges them with voice history, and `ClipboardPanelController` shows `ClipboardPanelModel` in a non-activating key panel. `ClipboardCaptureSuppression` keeps Typeflux's own selection probes out of the history.
+- `BackgroundActivity/` — the menu bar's background tasks: `BackgroundActivityCenter` merges what each `BackgroundActivitySource` reports (speech model, content search and Ollama model downloads, the file name and content indexes, agent runs) for the task section at the top of the status menu, the dot beside the menu bar icon (`StatusItemActivityIndicator`) and the background tasks window. New long-running work reports through a source rather than its own menu item
 - `Settings/` — `SettingsStore` plus settings UI views
 - `History/` — history models, stores, export
 - `Stats/` — `UsageStatsStore` with backfill logic

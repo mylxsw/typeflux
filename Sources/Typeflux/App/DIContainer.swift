@@ -33,6 +33,7 @@ final class DIContainer {
     let sttRouter: STTRouter
     let notificationService: LocalNotificationSending
     let ollamaModelManager: OllamaLocalModelManager
+    let ollamaPullActivity: OllamaPullActivitySource
     let localModelManager: LocalModelManager
     let bundledModelAutoSetup: BundledModelAutoSetup
     let autoModelDownloadService: AutoModelDownloadService
@@ -120,6 +121,19 @@ final class DIContainer {
         }
     }()
 
+    /// Background work shown in the menu bar: model downloads, indexing and agent runs.
+    lazy var backgroundActivityCenter: BackgroundActivityCenter = {
+        let center = BackgroundActivityCenter(settings: settingsStore, notifications: notificationService)
+        center.register(SpeechModelDownloadActivitySource())
+        center.register(ollamaPullActivity)
+        center.register(FileIndexActivitySource())
+        center.register(ContentIndexActivitySource(service: SemanticFileSearchService.shared))
+        if let model = askConversationWindowController?.model {
+            center.register(AgentRunActivitySource(model: model))
+        }
+        return center
+    }()
+
     // swiftlint:disable:next function_body_length
     init(conversationCacheFactory: @escaping @Sendable () throws -> any AskCaching = {
         try AskConversationCache(url: AskConversationCache.defaultURL())
@@ -178,7 +192,9 @@ final class DIContainer {
             defaults: settingsStore.defaults,
             reporter: analyticsReporter
         )
-        ollamaModelManager = OllamaLocalModelManager(analyticsReporter: analyticsReporter)
+        ollamaPullActivity = OllamaPullActivitySource()
+        ollamaModelManager = OllamaLocalModelManager(analyticsReporter: analyticsReporter,
+                                                     pullReporter: ollamaPullActivity)
         llmAgentService = LLMAgentRouter(
             settingsStore: settingsStore,
             remote: OpenAICompatibleAgentService(settingsStore: settingsStore),

@@ -141,25 +141,8 @@ final class StatusBarMenuSupportTests: XCTestCase {
         XCTAssertLessThanOrEqual(StatusBarController.IconLayout.pointSize, 16)
     }
 
-    func testLocalModelDownloadTitleIncludesModelAndProgress() {
-        let title = StatusBarMenuSupport.localModelDownloadTitle(
-            for: .downloading(model: .qwen3ASR, progress: 0.42)
-        )
-
-        XCTAssertEqual(title, L("menu.downloadingLocalModelNamed", LocalSTTModel.qwen3ASR.displayName, 42))
-        XCTAssertNil(StatusBarMenuSupport.localModelDownloadTitle(for: .idle))
-    }
-
-    func testLocalModelDownloadTitleIncludesFailureState() {
-        let title = StatusBarMenuSupport.localModelDownloadTitle(
-            for: .failed(model: .senseVoiceSmall, message: "Network unavailable")
-        )
-
-        XCTAssertEqual(title, L("menu.localModelDownloadFailedNamed", LocalSTTModel.senseVoiceSmall.displayName))
-    }
-
     @MainActor
-    func testStatusBarMenuReadsSharedLocalModelDownloadProgress() throws {
+    func testSpeechModelDownloadIsNoLongerListedInTheVoiceInputMenu() throws {
         if ProcessInfo.processInfo.environment["CI"] == "true" {
             throw XCTSkip("Status bar menu test requires a GUI WindowServer session.")
         }
@@ -180,10 +163,8 @@ final class StatusBarMenuSupportTests: XCTestCase {
         LocalModelDownloadProgressCenter.shared.reportDownloading(model: .whisperLocal, progress: 0.35)
         RunLoop.main.run(until: Date().addingTimeInterval(0.05))
 
-        let title = L("menu.downloadingLocalModelNamed", LocalSTTModel.whisperLocal.displayName, 35)
         let voiceMenu = try XCTUnwrap(controller.menu?.items.first { $0.title == L("menu.voiceInput") }?.submenu)
-        XCTAssertTrue(voiceMenu.items.contains { $0.title == title })
-        XCTAssertFalse(controller.menu?.items.contains { $0.title == title } ?? true)
+        XCTAssertFalse(voiceMenu.items.contains { !$0.isEnabled && !$0.isSeparatorItem })
     }
 
     @MainActor

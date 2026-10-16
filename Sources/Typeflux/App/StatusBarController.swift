@@ -46,6 +46,21 @@ final class StatusBarController: NSObject {
     private let pinnedScreenshots: () -> (count: Int, clickThrough: Int)
     private let onRestorePinnedScreenshots: () -> Void
     private let onClosePinnedScreenshots: () -> Void
+    private let activityCenter: BackgroundActivityCenter?
+    private let activityIndicator = StatusItemActivityIndicator()
+    private(set) lazy var activityWindow: BackgroundActivityWindowController? = activityCenter.map {
+        BackgroundActivityWindowController(center: $0, settingsStore: settingsStore)
+    }
+
+    /// The tasks the open (or next) menu shows.
+    private(set) var menuActivityLayout = BackgroundActivityMenuLayout(activities: [])
+    /// The status menu while it is open; other refreshes may replace `menu` meanwhile.
+    private weak var openMenu: NSMenu?
+    private var isMenuOpen: Bool {
+        openMenu != nil
+    }
+
+    private var activityRebuildPending = false
 
     private var statusItem: NSStatusItem?
     private(set) var menu: NSMenu?
@@ -54,7 +69,6 @@ final class StatusBarController: NSObject {
     private var historyObserver: NSObjectProtocol?
     private var personaSelectionObserver: NSObjectProtocol?
     private var autoUpdateStateObserver: NSObjectProtocol?
-    private var localModelDownloadProgressObserver: NSObjectProtocol?
 
     init(
         appState: AppStateStore,
@@ -74,7 +88,8 @@ final class StatusBarController: NSObject {
         onScreenRecording: @escaping () -> Void = {},
         pinnedScreenshots: @escaping () -> (count: Int, clickThrough: Int) = { (0, 0) },
         onRestorePinnedScreenshots: @escaping () -> Void = {},
-        onClosePinnedScreenshots: @escaping () -> Void = {}
+        onClosePinnedScreenshots: @escaping () -> Void = {},
+        activityCenter: BackgroundActivityCenter? = nil
     ) {
         self.appState = appState
         self.settingsStore = settingsStore
@@ -94,6 +109,7 @@ final class StatusBarController: NSObject {
         self.pinnedScreenshots = pinnedScreenshots
         self.onRestorePinnedScreenshots = onRestorePinnedScreenshots
         self.onClosePinnedScreenshots = onClosePinnedScreenshots
+        self.activityCenter = activityCenter
         AppLocalization.shared.setLanguage(settingsStore.appLanguage)
     }
 
@@ -137,15 +153,15 @@ final class StatusBarController: NSObject {
                 self?.rebuildMenu()
             }
         }
-        localModelDownloadProgressObserver = NotificationCenter.default.addObserver(
-            forName: .localModelDownloadProgressDidChange,
-            object: nil,
-            queue: .main
-        ) { [weak self] _ in
-            Task { @MainActor [weak self] in
-                self?.rebuildMenu()
-            }
-        }
+        // Published values arrive before they are stored; read them on the next main queue turn.
+        activityCenter?.$activities
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.activitiesDidChange() }
+            .store(in: &cancellables)
+        activityCenter?.$indicatorEnabled
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.updateTitle() }
+            .store(in: &cancellables)
 
         appState.$status
             .receive(on: DispatchQueue.main)
@@ -178,10 +194,6 @@ final class StatusBarController: NSObject {
             NotificationCenter.default.removeObserver(autoUpdateStateObserver)
         }
         autoUpdateStateObserver = nil
-        if let localModelDownloadProgressObserver {
-            NotificationCenter.default.removeObserver(localModelDownloadProgressObserver)
-        }
-        localModelDownloadProgressObserver = nil
         cancellables.removeAll()
     }
 
@@ -199,16 +211,81 @@ final class StatusBarController: NSObject {
             L("menu.status.failed", message)
         }
 
+        let indicator = activityCenter?.indicator ?? .none
+        let description = activityCenter.map { Self.accessibilityTitle(accessibilityTitle, center: $0) }
+            ?? accessibilityTitle
+
         button.title = ""
         let image = NSImage(
             systemSymbolName: StudioTheme.Symbol.brand,
-            accessibilityDescription: accessibilityTitle
+            accessibilityDescription: description
         )?.withSymbolConfiguration(symbolConfig)
         image?.size = IconLayout.imageSize
         image?.isTemplate = true
-        button.image = image
+        let thickness = NSStatusBar.system.thickness
+        statusItem?.length = StatusItemActivityIndicator.length(for: indicator, thickness: thickness)
+        button.image = indicator == .none ? image
+            : image.map { StatusItemActivityIndicator.paddedIcon($0, thickness: thickness) }
         button.imageScaling = .scaleProportionallyDown
         button.contentTintColor = nil
+        activityIndicator.apply(indicator, to: button)
+    }
+
+    /// "Ready, 2 background tasks in progress, a background task needs your attention".
+    static func accessibilityTitle(_ status: String, center: BackgroundActivityCenter) -> String {
+        var parts = [status]
+        if center.activeCount > 0 {
+            parts.append(L("activity.accessibility", center.activeCount))
+        }
+        if center.activities.contains(where: \.needsUser) {
+            parts.append(L("activity.accessibility.attention"))
+        }
+        return parts.joined(separator: L("activity.accessibility.separator"))
+    }
+
+    var activityIndicatorState: BackgroundActivityIndicator {
+        activityIndicator.state
+    }
+
+    private func activitiesDidChange() {
+        updateTitle()
+        guard let activityCenter else { return }
+        let layout = BackgroundActivityMenuLayout(activities: activityCenter.activities)
+        guard layout.rows != menuActivityLayout.rows || layout.hiddenCount != menuActivityLayout.hiddenCount
+        else { return }
+        // Rebuilding an open menu changes its height under the pointer; wait until it closes.
+        if isMenuOpen {
+            activityRebuildPending = true
+        } else {
+            rebuildMenu()
+        }
+    }
+
+    /// Opens the background tasks window.
+    func showBackgroundActivity() {
+        activityWindow?.show()
+    }
+
+    private func addActivitySection(to menu: NSMenu) {
+        guard let activityCenter else { return }
+        menuActivityLayout = BackgroundActivityMenuLayout(activities: activityCenter.activities)
+        guard !menuActivityLayout.isEmpty else { return }
+        menu.addItem(BackgroundActivityMenuSection.menuItem(
+            center: activityCenter,
+            layout: menuActivityLayout,
+            perform: { [weak self, weak activityCenter] action, id in
+                // Opening something leaves the menu; row buttons such as pause keep it open.
+                if action == .open {
+                    self?.openMenu?.cancelTracking()
+                }
+                activityCenter?.perform(action, on: id)
+            },
+            showAll: { [weak self] in
+                self?.openMenu?.cancelTracking()
+                self?.showBackgroundActivity()
+            }
+        ))
+        menu.addItem(NSMenuItem.separator())
     }
 
     private func rebuildMenu() {
@@ -217,6 +294,7 @@ final class StatusBarController: NSObject {
         menu.showsStateColumn = false
         menu.delegate = self
 
+        addActivitySection(to: menu)
         menu.addItem(makeItem(title: L("menu.openVoiceStudio"), action: #selector(openAskConversations)))
         let toolboxItem = NSMenuItem(title: L("menu.toolbox"), action: nil, keyEquivalent: "")
         toolboxItem.submenu = buildToolboxMenu()
@@ -287,10 +365,6 @@ final class StatusBarController: NSObject {
             textTransformationItem.tag = MenuTag.textTransformation
             textTransformationItem.submenu = buildTextTransformationMenu()
             menu.addItem(textTransformationItem)
-        }
-        if let downloadItem = makeLocalModelDownloadMenuItem() {
-            menu.addItem(NSMenuItem.separator())
-            menu.addItem(downloadItem)
         }
         return menu
     }
@@ -413,22 +487,6 @@ final class StatusBarController: NSObject {
 
         menu.addItem(NSMenuItem.separator())
         menu.addItem(makeItem(title: L("menu.personas.edit"), action: #selector(openPersonas)))
-    }
-
-    /// Returns a menu item showing local model download progress, or nil when there is nothing to display.
-    private func makeLocalModelDownloadMenuItem() -> NSMenuItem? {
-        if let title = StatusBarMenuSupport.localModelDownloadTitle(
-            for: LocalModelDownloadProgressCenter.shared.status
-        ) {
-            let item = NSMenuItem(
-                title: title,
-                action: nil,
-                keyEquivalent: ""
-            )
-            item.isEnabled = false
-            return item
-        }
-        return nil
     }
 
     private func makeItem(title: String, action: Selector, keyEquivalent: String = "") -> NSMenuItem {
@@ -672,6 +730,9 @@ final class StatusBarController: NSObject {
 
 extension StatusBarController: NSMenuDelegate {
     func menuWillOpen(_ menu: NSMenu) {
+        if menu === self.menu {
+            openMenu = menu
+        }
         // The shortcut may have changed in Settings since the menu was built.
         if let item = menu.item(withTag: MenuTag.screenshot) {
             applyScreenshotShortcut(to: item)
@@ -694,6 +755,15 @@ extension StatusBarController: NSMenuDelegate {
             populateTextTransformationMenu(menu)
         }
     }
+
+    func menuDidClose(_ menu: NSMenu) {
+        guard menu === openMenu else { return }
+        openMenu = nil
+        if activityRebuildPending {
+            activityRebuildPending = false
+            rebuildMenu()
+        }
+    }
 }
 
 enum StatusBarMenuSupport {
@@ -710,18 +780,6 @@ enum StatusBarMenuSupport {
             .intersection([.command, .option, .control, .shift])
         guard !flags.isEmpty else { return nil }
         return (key.lowercased(), flags)
-    }
-
-    static func localModelDownloadTitle(for status: LocalModelDownloadProgressStatus) -> String? {
-        switch status {
-        case .idle:
-            return nil
-        case let .downloading(model, progress):
-            let percent = Int((progress * 100).rounded())
-            return L("menu.downloadingLocalModelNamed", model.displayName, percent)
-        case let .failed(model, _):
-            return L("menu.localModelDownloadFailedNamed", model.displayName)
-        }
     }
 
     static func recentTranscriptionRecords(from records: [HistoryRecord], limit: Int = 10) -> [HistoryRecord] {
@@ -753,6 +811,11 @@ enum StatusBarMenuSupport {
 
 /// Opening a particular settings page, for links from the usage guide.
 extension StatusBarController {
+    /// Opens the speech recognition models page.
+    func showSpeechModels() {
+        openStudio(.models, modelDomain: .stt)
+    }
+
     /// Opens one pane of Settings, such as Shortcuts.
     func showAppSettings(_ pane: AppSettingsPane) {
         openStudio(.settings)
