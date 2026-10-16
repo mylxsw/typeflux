@@ -1,0 +1,24 @@
+[
+  {
+    "command": [
+      "swiftlint",
+      "lint",
+      "--strict",
+      "--quiet",
+      "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticPDFText.swift",
+      "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Jobs.swift",
+      "Tests/TypefluxTests/SemanticPDFOCRTests.swift"
+    ],
+    "exit_code": 0,
+    "output": ""
+  },
+  {
+    "command": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "exit_code": 0,
+    "output": ""
+  }
+]

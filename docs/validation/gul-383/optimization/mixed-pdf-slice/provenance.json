@@ -1,0 +1,47 @@
+{
+  "base": "f4d549b53679d2b783ac6ce37d1ed8496cb277f1",
+  "final_head": "Recorded in PR and final issue delivery; frozen source verified after validation.",
+  "source_hashes_verified": true,
+  "frozen_files": 98,
+  "hardware": "Mac16,10",
+  "memory_bytes": 17179869184,
+  "swift": "Apple Swift version 6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)\nTarget: arm64-apple-macosx26.0",
+  "build": "Debug with LLVM coverage; native SwiftPM",
+  "tests": "16/16 in 3 suites passed; no failed-test retry",
+  "build_retry_count": 1,
+  "timing": {
+    "command": [
+      "make",
+      "coverage",
+      "FILTER=SemanticPDFOCRTests|SemanticSearchSnippetTests|SemanticIndexRecoveryTests/.*(pdf single page|mutation during inference|generations reject|compatible migration|fts precedes)"
+    ],
+    "wall_seconds": 283.10171283298405,
+    "exit_code": 0,
+    "build_seconds": [
+      "243.72"
+    ]
+  },
+  "first_build_failure": {
+    "command": [
+      "make",
+      "coverage",
+      "FILTER=SemanticPDFOCRTests|SemanticSearchSnippetTests|SemanticIndexRecoveryTests/.*(pdf single page|mutation during inference|generations reject|compatible migration|fts precedes)"
+    ],
+    "wall_seconds": 59.11625012505101,
+    "exit_code": 2,
+    "build_seconds": []
+  },
+  "sha256": {
+    ".build/arm64-apple-macosx/debug/Typeflux": "ef0bac0a54490f1d7e37d73dcaea8e816a68aa8674fd49f1edf4d55dbecba9b3",
+    ".build/arm64-apple-macosx/debug/TypefluxPackageTests.xctest/Contents/MacOS/TypefluxPackageTests": "706fa92ae71e018b467797f5f6f9144876d20be00d6a2125421b5bef0e6d2518",
+    ".build/arm64-apple-macosx/debug/codecov/default.profdata": "475e075a3a5eb45248c0a3ced336c0a440cc8996213d5a8243c7778bdbfb4a0e",
+    "docs/validation/gul-383/optimization/mixed-pdf-slice/synthetic-invoice.pdf": "b91053a34fb0d56e54bedc5badbb2793491d7bf1eefab4cfc9dbb79e51eba3a2",
+    "docs/validation/gul-383/optimization/mixed-pdf-slice/native-ocr-result.json": "c8c706859685b88e09b022e4e16b83dadb4a755759cd73a0b97d242554bc745d",
+    "Package.resolved": "faf33527478681a0b411242554c3f5908665f8e884af8234181a6d08bef01c5d",
+    "scripts/coverage.sh": "1a18ada556b3875baf54f389ae48f5bceaf2c699a37f8638ebd16d7255e89095",
+    "scripts/test_groups.py": "488dbe8cec3f3528adb4ef265bb5d8e3cf5c13867581fb5acb5dc19eb281af46",
+    "docs/validation/gul-383/optimization/changed_coverage.py": "dd9efb30a427617a614235a0c65f86b2cb5ab6dd7c28b857031a91545db135ac",
+    "docs/validation/gul-383/optimization/mixed-pdf-slice/coverage-swift.sh": "42967efaf9199510c5f13f9219641be7b87a08eb2a781fc8b4200bfe1da8996f",
+    "docs/validation/gul-383/optimization/mixed-pdf-slice/test-files.json": "b7a44d1ef4f8e3ab59a369943bdc198a78922be99296420e0709c0dee6d5d3e9"
+  }
+}

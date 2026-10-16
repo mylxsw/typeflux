@@ -1,0 +1,11 @@
+{
+  "baseline": "f4d549b53679d2b783ac6ce37d1ed8496cb277f1",
+  "previous_freeze_files": 98,
+  "matching_previous_files": 95,
+  "changed_previous_files": [
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticPDFText.swift",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Jobs.swift",
+    "Tests/TypefluxTests/SemanticPDFOCRTests.swift"
+  ],
+  "evidence_reuse": "Prior merged Office, model, ownership, budget and ranking evidence is historical only. This run revalidates PDF OCR, migration, checkpoints and publication safety with a focused filter."
+}

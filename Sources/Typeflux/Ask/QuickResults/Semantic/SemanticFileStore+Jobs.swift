@@ -45,11 +45,11 @@ extension SemanticFileStore {
             try addColumn("jobs", name: "recipe", declaration: "TEXT NOT NULL DEFAULT ''")
             try addColumn("jobs", name: "processing_seconds", declaration: "REAL")
             try addColumn("jobs", name: "completed_at", declaration: "REAL")
-            // A completed discovery must not hide PDFs whose previously blank pages now support OCR.
+            // Revisit older PDF extraction recipes even after discovery has completed.
             try execute("""
             INSERT OR IGNORE INTO work_queue(path,priority)
-            SELECT path,0 FROM jobs WHERE recipe=? AND lower(substr(path,-4))='.pdf'
-            """, [Self.documentProvenance])
+            SELECT path,0 FROM jobs WHERE recipe<>? AND lower(substr(path,-4))='.pdf'
+            """, [Self.documentRecipe("upgrade.pdf")])
         }
     }
 
@@ -115,7 +115,8 @@ extension SemanticFileStore {
             return try transaction {
                 let existing = try readJob(path)
                 let upgradePDF = (path as NSString).pathExtension.lowercased() == "pdf"
-                    && existing?.recipe == Self.documentProvenance
+                    && (existing?.recipe == Self.documentProvenance
+                        || existing?.recipe.hasPrefix(Self.documentProvenance + ";pdf-") == true)
                     && existing?.version == version
                 if !upgradePDF {
                     try execute("DELETE FROM files WHERE path=?", [path])
@@ -157,11 +158,14 @@ extension SemanticFileStore {
         guard (job.path as NSString).pathExtension.lowercased() == "pdf",
               job.recipe == Self.documentRecipe(job.path), job.recipe != Self.documentProvenance else { return false }
         let row = try statement("""
-        SELECT id FROM chunks WHERE path=? AND generation<>? AND provenance=? AND text=?
+        SELECT id FROM chunks WHERE path=? AND generation<>?
+        AND (provenance=? OR substr(provenance,1,?)=?) AND text=?
         AND page=? AND start_offset=? AND end_offset=? AND length(vector)=? LIMIT 1
         """)
         defer { sqlite3_finalize(row) }
-        bind(row, [job.path, job.generation, Self.documentProvenance, chunk.text, chunk.page as Any,
+        let prefix = Self.documentProvenance + ";pdf-"
+        bind(row, [job.path, job.generation, Self.documentProvenance, prefix.count, prefix,
+                   chunk.text, chunk.page as Any,
                    chunk.startOffset as Any, chunk.endOffset as Any, SemanticFilePolicy.dimension * 4])
         let step = sqlite3_step(row)
         guard step == SQLITE_ROW || step == SQLITE_DONE else { throw Failure.database }
