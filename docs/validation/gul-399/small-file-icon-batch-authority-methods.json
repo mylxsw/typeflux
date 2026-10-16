@@ -1,0 +1,45 @@
+{
+  "baseline": "f629bfab7bf62bbf917423e90af916b6b5486c62",
+  "methods": [
+    "TypefluxTests.SmallIconIsolationTests/testInputAndOutputLimitsRefuseBeforeNativeWork",
+    "TypefluxTests.SmallIconIsolationTests/testSmallPixelBudgetIsReservedBeforeDecodeAndReleasedOnRevocation",
+    "TypefluxTests.ContextImageAuthorityTests/canceledEnteredNativeWorkRetainsCapacityAndRejectsLatePixels()",
+    "TypefluxTests.ContextImageAuthorityTests/canceledPreparationsRetainBothSlotsAndModelPixelsUntilReturn()",
+    "TypefluxTests.ContextImageAuthorityTests/customActorDecoderRemainsIndependentAndMalformedDefaultInputDoesNotPoisonHealth()",
+    "TypefluxTests.ContextImageAuthorityTests/heldDefaultModelInputCannotAdoptRecovery()",
+    "TypefluxTests.ContextImageAuthorityTests/modelFinalNativeCheckRejectsRevocationAfterDecoderReturns()",
+    "TypefluxTests.ContextImageAuthorityTests/preReadyAndCanceledWorkCannotParseOrReplayAfterReadiness()",
+    "TypefluxTests.ContextImageSourceOwnershipTests/callbacksInvalidatingEntryOriginalOrDeduplicationCannotAuthorizeMoreWork()",
+    "TypefluxTests.ContextImageSourceOwnershipTests/canceledBeforeOrInsideEntryAccessCannotReplaceOwnedState()",
+    "TypefluxTests.ContextImageSourceOwnershipTests/failedIdentityNeverRetriesFromFreshAccessGettersOrBodyLikeReloads()",
+    "TypefluxTests.ContextImageSourceOwnershipTests/heldOldSuccessOrFailureCannotClearReplacementAndKeepsPixelLease()",
+    "TypefluxTests.ContextImageSourceOwnershipTests/projectionRetainsOriginalAccessAndRejectsCallbackInvalidation()",
+    "TypefluxTests.ContextImageSourceOwnershipTests/staleDeniedSameEpochAndForeignScopeCannotClearSuccessOrFailure()",
+    "TypefluxTests.ContextImageSourceOwnershipTests/terminalCallbacksCannotPublishPixelsOrRestoreOldFailure(_:)",
+    "TypefluxTests.SmallFileIconBatchAuthorityTests/canceledPreparationOrNativeWorkRetainsSlotsAndPixelsUntilReturn(_:)",
+    "TypefluxTests.SmallFileIconBatchAuthorityTests/customActorAndLegacyEnvironmentRemainIndependentOfUnreadyNativeWorker()",
+    "TypefluxTests.SmallFileIconBatchAuthorityTests/defaultOuterBindingRunsInAcceptedCallerBeforeQueuedDecoderTask()",
+    "TypefluxTests.SmallFileIconBatchAuthorityTests/heldDefaultPreparationAndFrozenBatchKeepOriginalManagedGeneration()",
+    "TypefluxTests.SmallFileIconBatchAuthorityTests/oldUncooperativeResultCannotReplaceFreshSelection()",
+    "TypefluxTests.SmallFileIconBatchAuthorityTests/preReadyAndCanceledDefaultModelCannotPrepareOrReplayFailedIdentity()",
+    "TypefluxTests.SmallFileIconBatchAuthorityTests/validNativeResultThenTerminalRevocationCannotPublishButCompletedPixelsSurviveLaterHealth()",
+    "TypefluxTests.SmallIconAuthorityTests/boundedDefaultReaderPreservesPrivateBytesAndRejectsInvalidSources()",
+    "TypefluxTests.SmallIconAuthorityTests/canceledNativeCallsKeepCapacityAndRejectValidLateReplies()",
+    "TypefluxTests.SmallIconAuthorityTests/canceledPreparationsKeepBothSlotsUntilPhysicalReturn(file:)",
+    "TypefluxTests.SmallIconAuthorityTests/heldOriginalPreparationCannotAdoptRecoveredGeneration(file:)",
+    "TypefluxTests.SmallIconAuthorityTests/unavailableCanceledAndRetiredRequestsCannotPrepareOrReplay()",
+    "TypefluxTests.SmallIconAuthorityTests/validNativeReplyThenOriginalRevocationIsNotAReusableResult()"
+  ],
+  "result": "28/28 distinct methods, first functional pass (2 XCTest + 26 SwiftTesting). New suite 7 methods / 8 parameter cases.",
+  "selection": "All selected bodies and called helpers reviewed. No full suite.",
+  "excluded": [
+    "SmallIconIsolationTests.testDecoderAdmissionRetainsCancelledNativeWorkUntilReturn: png() actually encodes despite injected runner",
+    "SmallIcon real-helper, FileAndFaviconViews, EditorLocalIconScope: codec/helper/window",
+    "Context real-helper/MIME-encoding/account/View/AttachmentRecovery/ConversationModel/AskTestFixture fixtures",
+    "Browser network/native-app-icon/OSQuickLook and System actions or pasteboard (including named) fixtures"
+  ],
+  "limits": [
+    "SwiftUI body value construction only; no task launcher/window/render/real icon execution",
+    "Standalone read-only clock/task-hash observation and managed recovery are separate fixtures; no exhaustive scheduling proof"
+  ]
+}
