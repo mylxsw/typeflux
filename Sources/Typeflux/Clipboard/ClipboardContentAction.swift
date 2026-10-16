@@ -93,29 +93,39 @@ struct ClipboardImageRevision: Equatable, Sendable {
                    authorized: @escaping @MainActor () -> Bool,
                    commit: @escaping @MainActor (String?) -> Void,
                    failed: @escaping @MainActor () -> Void) -> Bool {
-        guard !disabled, task == nil, authorized() else { return false }
-        observeAccount()
-        committed = false
         let current = generation
+        guard !Task.isCancelled, !disabled, task == nil, authorized(),
+              !Task.isCancelled, generation == current, !disabled, task == nil else { return false }
+        observeAccount()
         let recognition = actions.textRecognition(in: url)
+        guard !Task.isCancelled, generation == current, !disabled, task == nil else { return false }
         let originalRevision = Result {
-            guard recognition.isCurrent() else { throw MediaFailure.unavailable }
+            let available = recognition.isCurrent()
+            guard !Task.isCancelled, generation == current, !disabled, task == nil else { throw CancellationError() }
+            guard available else { throw MediaFailure.unavailable }
             return try ClipboardImageRevision(url)
         }
+        guard !Task.isCancelled, generation == current, !disabled, task == nil else { return false }
+        committed = false
         task = Task { [weak self] in
             defer { self?.task = nil }
             do {
+                guard !Task.isCancelled, self?.generation == current else { return }
                 let revision = try originalRevision.get()
                 let text = try await recognition.recognize()
-                guard !Task.isCancelled, self?.generation == current, authorized() else { return }
+                guard !Task.isCancelled, self?.generation == current, authorized(),
+                      !Task.isCancelled, self?.generation == current else { return }
                 guard revision.matches(url) else { throw MediaFailure.unreadable }
                 let result = MediaOCRResult(lines: text?.components(separatedBy: "\n") ?? [])
                 try result.validate()
-                guard recognition.isCurrent() else { throw MediaFailure.unavailable }
+                let available = recognition.isCurrent()
+                guard !Task.isCancelled, self?.generation == current else { return }
+                guard available else { throw MediaFailure.unavailable }
                 self?.committed = true
                 commit(result.text)
             } catch {
-                if !Task.isCancelled, self?.generation == current, authorized() { failed() }
+                if !Task.isCancelled, self?.generation == current, authorized(),
+                   !Task.isCancelled, self?.generation == current { failed() }
             }
         }
         return true
