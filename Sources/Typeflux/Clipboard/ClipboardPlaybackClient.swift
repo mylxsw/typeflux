@@ -5,13 +5,14 @@ import TypefluxMediaProtocol
 protocol ClipboardPlaybackClient: Sendable {
     func request(_ kind: MediaPlaybackMessage.Kind, fraction: Double?) async throws -> MediaPlaybackState
     func stop()
+    func retainPixels(_ reservation: AskToolPixelBudget.Lease) throws
 }
 
 /// Independent playback admission. Cancelled children keep their slot and input until reaped.
 final class ClipboardPlaybackPool: @unchecked Sendable {
     static let shared = ClipboardPlaybackPool()
     private let lock = NSLock()
-    private var entries: [UUID: (MediaLease, (@Sendable () -> Void)?)] = [:]
+    private var entries: [UUID: (MediaLease, (@Sendable () -> Void)?, AskToolPixelBudget.Lease?)] = [:]
     private var failedIDs = Set<UUID>()
     private var disabled = false
     private var budget = ModuleRecoveryBudget()
@@ -19,7 +20,7 @@ final class ClipboardPlaybackPool: @unchecked Sendable {
         try lock.withLock {
             guard !disabled, entries.count < 2, budget.permitsAttempt(at: ProcessInfo.processInfo.systemUptime) else { throw MediaFailure.unavailable }
             let id = UUID(), lease = MediaLease()
-            entries[id] = (lease, nil)
+            entries[id] = (lease, nil, nil)
             lease.cleanup = { [self] in lock.withLock { entries[id] = nil; failedIDs.remove(id) } }
             return (id, lease)
         }
@@ -27,10 +28,16 @@ final class ClipboardPlaybackPool: @unchecked Sendable {
     func attach(_ id: UUID, stop: @escaping @Sendable () -> Void) {
         let cancelled = lock.withLock {
             guard let entry = entries[id] else { return true }
-            entries[id] = (entry.0, stop)
+            entries[id] = (entry.0, stop, entry.2)
             return disabled || entry.0.cancelled
         }
         if cancelled { stop() }
+    }
+    func retainPixels(_ id: UUID, reservation: AskToolPixelBudget.Lease) throws {
+        try lock.withLock {
+            guard let entry = entries[id], !entry.0.cancelled, entry.2 == nil else { throw MediaFailure.unavailable }
+            entries[id] = (entry.0, entry.1, reservation)
+        }
     }
     func failed(_ id: UUID) {
         lock.withLock {
@@ -80,12 +87,13 @@ final class ClipboardPlaybackProcess: ClipboardPlaybackClient, @unchecked Sendab
     private let lock = NSLock()
     private var sequence = 0, busy = false
     private let timeout: Double
+    private let video: Bool
     private init(socket: MediaPlaybackSocket, lease: MediaLease, source: ClipboardPlaybackSource,
-                 pool: ClipboardPlaybackPool, poolID: UUID, timeout: Double) {
-        self.socket = socket; self.lease = lease; self.retirement = ClipboardPlaybackRetirement(lease); self.source = source; self.pool = pool; self.poolID = poolID; self.timeout = timeout
+                 pool: ClipboardPlaybackPool, poolID: UUID, timeout: Double, video: Bool) {
+        self.socket = socket; self.lease = lease; self.retirement = ClipboardPlaybackRetirement(lease); self.source = source; self.pool = pool; self.poolID = poolID; self.timeout = timeout; self.video = video
     }
     /// Admission precedes any detached copy, spawn or socket operation.
-    static func open(_ url: URL, pool: ClipboardPlaybackPool = .shared,
+    static func open(_ url: URL, video: Bool = false, pool: ClipboardPlaybackPool = .shared,
                      executable: URL = MediaWorker.helperURL, timeout: Double = 5,
                      run: @escaping Runner = { try ManagedProcess().runBlocking($0, isCancelled: $1) }) async throws -> ClipboardPlaybackProcess {
         guard timeout.isFinite, timeout > 0, timeout <= 10,
@@ -109,7 +117,7 @@ final class ClipboardPlaybackProcess: ClipboardPlaybackClient, @unchecked Sendab
                     let inherited = PlaybackDescriptor(pair[1])
                     let socket = try MediaPlaybackSocket(owning: pair[0])
                     guard fcntl(inherited.value, F_SETFD, FD_CLOEXEC) == 0 else { throw MediaFailure.unavailable }
-                    let client = ClipboardPlaybackProcess(socket: socket, lease: lease, source: source, pool: pool, poolID: key, timeout: timeout)
+                    let client = ClipboardPlaybackProcess(socket: socket, lease: lease, source: source, pool: pool, poolID: key, timeout: timeout, video: video)
                     pool.attach(key) { socket.stop(); lease.cancel() }
                     // A host filesystem check can ignore cancellation even after the child exits.
                     // Keep admission until both process collection and every host exchange return.
@@ -121,7 +129,7 @@ final class ClipboardPlaybackProcess: ClipboardPlaybackClient, @unchecked Sendab
                         defer { close(fd) }
                         do {
                             _ = try run(.init(executable: executable.path,
-                                arguments: ["--audio-playback", "100", container.rawValue],
+                                arguments: [video ? "--video-playback" : "--audio-playback", "100", container.rawValue],
                                 environment: ["PATH": "/usr/bin:/bin", "LANG": "en_US.UTF-8"],
                                 directoryDescriptor: fd, timeout: MediaPlaybackMessage.lifetime,
                                 outputLimit: 1024, stopOnOutputLimit: true,
@@ -140,6 +148,7 @@ final class ClipboardPlaybackProcess: ClipboardPlaybackClient, @unchecked Sendab
     }
     deinit { stop() }
     func stop() { socket.stop(); lease.cancel() }
+    func retainPixels(_ reservation: AskToolPixelBudget.Lease) throws { try pool.retainPixels(poolID, reservation: reservation) }
     func request(_ kind: MediaPlaybackMessage.Kind, fraction: Double? = nil) async throws -> MediaPlaybackState {
         let number = try lock.withLock {
             guard !busy, !lease.cancelled, !socket.isStopped else { throw MediaFailure.unavailable }
@@ -151,11 +160,12 @@ final class ClipboardPlaybackProcess: ClipboardPlaybackClient, @unchecked Sendab
             do {
                 let result = try await Task.detached(priority: .utility) { [self] in
                     try source.check()
-                    let request = MediaPlaybackMessage(id: id, sequence: number, kind: kind, fraction: fraction)
+                    let request = MediaPlaybackMessage(id: id, sequence: number, kind: video && kind == .load ? .loadVideo : kind, fraction: fraction)
                     let deadline = ContinuousClock.now.advanced(by: .seconds(kind == .load ? 10 : timeout))
                     try socket.send(request, deadline: deadline)
                     let response = try socket.receive(deadline: deadline)
-                    guard response.id == id, response.sequence == number, response.kind == .reply, let state = response.state else { throw MediaFailure.invalidProtocol }
+                    guard response.id == id, response.sequence == number, response.kind == .reply, var state = response.state, state.video == video else { throw MediaFailure.invalidProtocol }
+                    if let frame = state.frame { state.pixels = try socket.receivePixels(count: frame.bytes, deadline: deadline) }
                     try source.check()
                     return state
                 }.value

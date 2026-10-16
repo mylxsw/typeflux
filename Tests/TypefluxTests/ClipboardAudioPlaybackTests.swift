@@ -27,6 +27,7 @@ private final class SilentPlayback: ClipboardPlaybackClient, @unchecked Sendable
             return value
         }
     }
+    func retainPixels(_ reservation: AskToolPixelBudget.Lease) throws {} // No child in this injected client.
     func stop() { lock.withLock { stopped = true } }
 }
 private actor PlaybackOpening {

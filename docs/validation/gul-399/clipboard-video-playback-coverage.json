@@ -1,0 +1,143 @@
+{
+  "covered": 221,
+  "executable_added": 241,
+  "percent": 91.7,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Clipboard/ClipboardAudioPlayback.swift",
+      "covered": 46,
+      "executable_added": 47,
+      "percent": 97.87,
+      "uncovered": [
+        121
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Clipboard/ClipboardInlineMedia.swift",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Clipboard/ClipboardMediaPlayer.swift",
+      "covered": 36,
+      "executable_added": 52,
+      "percent": 69.23,
+      "uncovered": [
+        25,
+        26,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Clipboard/ClipboardPlaybackClient.swift",
+      "covered": 16,
+      "executable_added": 17,
+      "percent": 94.12,
+      "uncovered": [
+        151
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Resources/en.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    },
+    {
+      "file": "Sources/Typeflux/Resources/ja.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    },
+    {
+      "file": "Sources/Typeflux/Resources/ko.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    },
+    {
+      "file": "Sources/Typeflux/Resources/zh-Hans.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    },
+    {
+      "file": "Sources/Typeflux/Resources/zh-Hant.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    },
+    {
+      "file": "Sources/TypefluxMediaHelper/TypefluxMediaHelper.swift",
+      "covered": 2,
+      "executable_added": 2,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/TypefluxMediaProtocol/MediaPlayback.swift",
+      "covered": 16,
+      "executable_added": 16,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/TypefluxMediaProtocol/MediaPlaybackSocket.swift",
+      "covered": 11,
+      "executable_added": 11,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/TypefluxMediaRuntime/MediaPlaybackServer.swift",
+      "covered": 34,
+      "executable_added": 34,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/TypefluxMediaRuntime/MediaVideoFrames.swift",
+      "covered": 60,
+      "executable_added": 62,
+      "percent": 96.77,
+      "uncovered": [
+        57,
+        58
+      ],
+      "instrumented": true
+    }
+  ]
+}

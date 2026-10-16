@@ -1,4 +1,3 @@
-import AVKit
 import SwiftUI
 
 /// The content a media row shows in place of a title: image thumbnails, a video frame or an
@@ -187,31 +186,5 @@ struct ClipboardMissingThumbnail: View {
                 .font(.system(size: 14))
                 .foregroundStyle(.tertiary)
         }
-    }
-}
-
-/// An inline AVKit player for copied video files. Playback stops when the row collapses.
-struct ClipboardMediaPlayer: NSViewRepresentable {
-    let url: URL
-
-    func makeNSView(context _: Context) -> AVPlayerView {
-        let view = AVPlayerView()
-        view.controlsStyle = .inline
-        view.showsFullScreenToggleButton = false
-        view.videoGravity = .resizeAspect
-        view.player = AVPlayer(url: url)
-        return view
-    }
-
-    func updateNSView(_ view: AVPlayerView, context _: Context) {
-        if (view.player?.currentItem?.asset as? AVURLAsset)?.url != url {
-            view.player?.pause()
-            view.player = AVPlayer(url: url)
-        }
-    }
-
-    static func dismantleNSView(_ view: AVPlayerView, coordinator _: ()) {
-        view.player?.pause()
-        view.player = nil
     }
 }

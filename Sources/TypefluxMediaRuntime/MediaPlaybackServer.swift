@@ -29,13 +29,18 @@ import TypefluxMediaProtocol
                 try request.validate()
                 watchdog()
                 guard ContinuousClock.now < expires, request.sequence == sequence, request.kind != .reply,
-                      session == nil ? request.kind == .load : (request.id == session && request.kind != .load)
+                      session == nil ? [.load, .loadVideo].contains(request.kind) : (request.id == session && ![.load, .loadVideo].contains(request.kind))
                 else { throw MediaFailure.invalidProtocol }
                 if session == nil { session = request.id; try await engine.load(input) }
                 let state = try await engine.perform(request)
                 try state.validate()
+                guard state.frame?.bytes == state.pixels?.count else { throw MediaFailure.invalidProtocol }
                 let reply = MediaPlaybackMessage(id: request.id, sequence: sequence, kind: .reply, state: state)
-                try await Task.detached { try socket.send(reply, deadline: .now.advanced(by: .seconds(2))) }.value
+                try await Task.detached {
+                    let deadline = ContinuousClock.now.advanced(by: .seconds(2))
+                    try socket.send(reply, deadline: deadline)
+                    if let pixels = state.pixels { try socket.sendPixels(pixels, deadline: deadline) }
+                }.value
                 sequence += 1
             }
         } catch { /* Never log private file paths, native diagnostics or media. */ }
@@ -47,7 +52,9 @@ import TypefluxMediaProtocol
     private var duration: Double = 0
     private var ended = false
     private var endObserver: NSObjectProtocol?
-    public init() {}
+    private let video: Bool
+    private var frames: MediaVideoFrames?
+    public init(video: Bool = false) { self.video = video }
     public func load(_ url: URL) async throws {
         guard player == nil else { throw MediaFailure.invalidProtocol }
         let values = try url.resourceValues(forKeys: [.isRegularFileKey, .fileSizeKey])
@@ -55,11 +62,14 @@ import TypefluxMediaProtocol
         // A private single-file lease must never resolve another local file or remote media.
         let asset = AVURLAsset(url: url, options: [AVURLAssetReferenceRestrictionsKey: AVAssetReferenceRestrictions.forbidAll.rawValue])
         let seconds = try await asset.load(.duration).seconds
-        guard seconds.isFinite, seconds > 0, seconds <= 86_400,
-              !(try await asset.loadTracks(withMediaType: .audio)).isEmpty,
-              (try await asset.loadTracks(withMediaType: .video)).isEmpty else { throw MediaFailure.unreadable }
+        guard seconds.isFinite, seconds > 0, seconds <= 86_400 else { throw MediaFailure.unreadable }
+        let tracks = try await asset.loadTracks(withMediaType: .video)
+        let audio = try await asset.loadTracks(withMediaType: .audio)
+        guard video ? tracks.count == 1 : (tracks.isEmpty && !audio.isEmpty)
+        else { throw MediaFailure.unreadable }
         duration = seconds
         let item = AVPlayerItem(asset: asset)
+        if video { frames = try await MediaVideoFrames(item: item, track: tracks[0], duration: seconds) }
         let value = AVPlayer(playerItem: item)
         // Loading is silent. Status failures are checked before every acknowledged control.
         player = value
@@ -70,30 +80,44 @@ import TypefluxMediaProtocol
         guard item.status == .readyToPlay else { throw MediaFailure.unreadable }
     }
     public func perform(_ command: MediaPlaybackMessage) async throws -> MediaPlaybackState {
+        try command.validate()
         guard let player, player.currentItem?.status == .readyToPlay, player.error == nil else { throw MediaFailure.unreadable }
         switch command.kind {
         case .play:
             if ended || player.currentTime().seconds >= duration {
-                guard await player.seek(to: .zero) else { throw MediaFailure.unavailable }
+                guard await player.seek(to: .zero, toleranceBefore: .zero, toleranceAfter: .zero) else { throw MediaFailure.unavailable }
                 ended = false
             }
             player.play()
         case .pause: player.pause()
         case .seek:
             guard let fraction = command.fraction else { throw MediaFailure.invalidProtocol }
-            guard await player.seek(to: CMTime(seconds: fraction * duration, preferredTimescale: 600)) else { throw MediaFailure.unavailable }
+            guard await player.seek(to: CMTime(seconds: fraction * duration, preferredTimescale: 600), toleranceBefore: .zero, toleranceAfter: .zero) else { throw MediaFailure.unavailable }
             ended = fraction == 1
-        case .load, .status: break
+        case .volume:
+            guard video, let fraction = command.fraction else { throw MediaFailure.invalidProtocol }
+            player.volume = Float(fraction)
+        case .load, .loadVideo:
+            guard (command.kind == .loadVideo) == video else { throw MediaFailure.invalidProtocol }
+        case .status: break
         case .reply: throw MediaFailure.invalidProtocol
         }
         let time = player.currentTime().seconds
         guard time.isFinite else { throw MediaFailure.unreadable }
         let elapsed = ended ? duration : min(duration, max(0, time))
-        return .init(phase: elapsed >= duration ? .ended : player.rate == 0 ? .paused : .playing,
-                     elapsed: elapsed, duration: duration)
+        var state = MediaPlaybackState(phase: elapsed >= duration ? .ended : player.rate == 0 ? .paused : .playing,
+                                       elapsed: elapsed, duration: duration)
+        state.video = video; state.volume = Double(player.volume)
+        if let frames {
+            let refresh = [.loadVideo, .seek].contains(command.kind) || (command.kind == .play && elapsed < 0.1)
+            let frame = try await frames.snapshot(at: CMTime(seconds: min(elapsed, max(0, duration - 0.001)), preferredTimescale: 600), refresh: refresh)
+            guard let frame else { throw MediaFailure.unavailable }
+            state.frame = frame.0; state.pixels = frame.1
+        }
+        return state
     }
     public func stop() {
-        player?.pause(); player?.replaceCurrentItem(with: nil); player = nil
+        player?.pause(); player?.replaceCurrentItem(with: nil); player = nil; frames = nil
         if let endObserver { NotificationCenter.default.removeObserver(endObserver) }
         endObserver = nil; ended = false
     }
