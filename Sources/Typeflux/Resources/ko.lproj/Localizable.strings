@@ -5124,6 +5124,7 @@
 "semantic.about" = "모델 및 라이선스 정보";
 "semantic.result" = "내용 일치";
 "semantic.page" = "%d페이지";
+"semantic.sheet" = "시트 %d";
 
 // Launcher selected-text switch and preview.
 "ask.context.selection.enabled" = "사용 중";

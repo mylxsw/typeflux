@@ -58,7 +58,8 @@ extension SemanticFileStore {
                   Self.documentProvenance + ";" + SemanticPDFText.recipe + ";"
                       + SemanticWordText.recipe + ";" + SemanticHTMLText.recipe + ";"
                       + SemanticRTFText.recipe + ";" + SemanticODTText.recipe + ";"
-                      + SemanticPresentationText.recipe + ";" + Self.mediaProvenance,
+                      + SemanticPresentationText.recipe + ";" + SemanticSpreadsheetText.recipe + ";"
+                      + Self.mediaProvenance,
                   version + " (" + build + ")"])
             activeRunID = id
             try execute(

@@ -1,0 +1,9 @@
+{
+  "command": [
+    "make",
+    "coverage",
+    "SUITE=SemanticSpreadsheetTextTests"
+  ],
+  "wall_seconds": 144.40358654101146,
+  "exit_code": 0
+}

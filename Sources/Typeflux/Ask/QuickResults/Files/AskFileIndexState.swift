@@ -63,6 +63,9 @@ struct AskFileHit: Equatable, Sendable, Identifiable {
         var endOffset: Int64?
         var chunkID: Int64?
         var segmentKind: String?
+
+        /// The stored ordinal denotes a sheet for spreadsheets and a page for paged documents.
+        var pageLocalizationKey: String { segmentKind == "xlsx-sheet" ? "semantic.sheet" : "semantic.page" }
     }
     var path: String
     var name: String

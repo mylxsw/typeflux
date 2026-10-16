@@ -14,7 +14,7 @@ extension AskQuickResultsView {
                 fileTrailing(file, highlighted: highlighted)
             }
             Text(AskLauncherSearchSettings.abbreviate(file.folder)
-                + (evidence.page.map { " · " + L("semantic.page", $0) } ?? ""))
+                + (evidence.page.map { " · " + L(evidence.pageLocalizationKey, $0) } ?? ""))
                 .font(.system(size: 11.5)).foregroundStyle(StudioTheme.textTertiary)
                 .lineLimit(1).truncationMode(.middle)
             Text(AskFileSearchPlugin.passage(evidence.text)).font(.system(size: 12))

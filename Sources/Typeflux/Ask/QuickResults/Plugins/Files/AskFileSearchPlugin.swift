@@ -165,7 +165,7 @@ struct AskFileSearchPlugin: AskLauncherPlugin {
         }
         // A content match names the page it came from and shows the passage on its own line.
         let subtitle = hit.evidence.map { evidence in
-            let page = evidence.page.map { " · " + L("semantic.page", $0) } ?? ""
+            let page = evidence.page.map { " · " + L(evidence.pageLocalizationKey, $0) } ?? ""
             let time = evidence.time.map { " · " + String(format: "%d:%02d", Int($0) / 60, Int($0) % 60) } ?? ""
             return place + page + time
         }
