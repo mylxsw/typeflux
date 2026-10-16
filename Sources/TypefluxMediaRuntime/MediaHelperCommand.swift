@@ -20,7 +20,8 @@ public enum MediaHelperCommand {
             let request = try read(input)
             let response: MediaResponse
             do {
-                if request.operation == .recordingTimeline { response = try await MediaRecordingTimelineDecoder.decode(request, directory: directory) }
+                if request.operation.isRecordingPoster { response = try await MediaRecordingPosterDecoder.decode(request, directory: directory) }
+                else if request.operation == .recordingTimeline { response = try await MediaRecordingTimelineDecoder.decode(request, directory: directory) }
                 else if request.operation == .clipboardMedia { response = try await MediaClipboardDecoder.decode(request, directory: directory) }
                 else if request.operation == .quickLook { response = try await MediaQuickLookDecoder.decode(request, directory: directory) }
                 else if request.operation == .nativeIcon { response = try await MediaNativeIconDecoder.decode(request, directory: directory) }
@@ -32,7 +33,7 @@ public enum MediaHelperCommand {
     }
 
     private static func decode(_ request: MediaRequest, directory: URL) throws -> MediaResponse {
-        guard request.operation != .recordingTimeline, request.operation != .clipboardMedia, request.operation != .nativeIcon, request.operation != .quickLook else { throw MediaFailure.invalidProtocol }
+        guard !request.operation.isRecordingPoster, request.operation != .recordingTimeline, request.operation != .clipboardMedia, request.operation != .nativeIcon, request.operation != .quickLook else { throw MediaFailure.invalidProtocol }
         if request.operation == .registerFrames { return try MediaRegistrationDecoder.decode(request, directory: directory) }
         if request.operation == .recognizeText || request.operation == .textGeometry { return try MediaTextDecoder.decode(request, directory: directory) }
         if request.operation == .clipboardOCR { return try MediaOCRDecoder.decode(request, directory: directory) }

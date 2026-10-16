@@ -36,6 +36,36 @@ final class ScreenRecordingTimelineLoader: @unchecked Sendable {
             return result
         } onCancel: { cancellation.cancel() }
     }
+    static func inspect(_ url: URL) async throws -> ClipboardPlaybackSource {
+        try Task.checkCancellation()
+        let slot = try slots.acquire(bytes: 1)
+        defer { withExtendedLifetime(slot) {} }
+        let result = try await Task.detached { try ClipboardPlaybackSource(url, limit: MediaRecordingTimeline.inputBytes) }.value
+        try Task.checkCancellation()
+        return result
+    }
+    func thumbnail(_ url: URL) async throws -> CGImage {
+        try Task.checkCancellation()
+        let gif = url.pathExtension.lowercased() == "gif"
+        guard gif || ["mov", "mp4", "m4v"].contains(url.pathExtension.lowercased()) else { throw MediaFailure.unreadable }
+        let ownership = try Ownership(slot: Self.slots.acquire(bytes: 1), pixels: budget.acquire(bytes: 200 * 120 * 8))
+        let cancellation = AskSearchCancellation(), worker = self.worker
+        return try await withTaskCancellationHandler {
+            let result = try await Task.detached(priority: .utility) {
+                let source = try ClipboardPlaybackSource(url, limit: gif ? MediaLimits.inputBytes : MediaRecordingTimeline.inputBytes)
+                let result = try worker.perform(gif ? .recordingPosterGIF : .recordingPosterVideo, input: .file(url),
+                    preview: .init(width: 200, height: 120), retaining: ownership,
+                    isCancelled: { cancellation.isCancelled }) { response, directory in
+                        guard let raster = response.preview?.rasters.first else { throw MediaFailure.invalidProtocol }
+                        return try Self.image(raster, bytes: MediaPreviewDisplay.read(raster, index: 0, directory: directory), lease: ownership.pixels)
+                    }
+                try source.check()
+                return result
+            }.value
+            try Task.checkCancellation()
+            return result
+        } onCancel: { cancellation.cancel() }
+    }
     private final class Ownership: @unchecked Sendable {
         let slot: AskToolPixelBudget.Lease
         let pixels: AskToolPixelBudget.Lease
