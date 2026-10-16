@@ -1,6 +1,8 @@
 # GUL-399: clipboard thumbnail lifecycle and persistent health
 
-This increment is based on PR #560 (`2b84f9591cd6d5f7e482d1bfc6cde97fed7e59dc`), not main. At validation, #559 and #560 were open drafts. Main had advanced to `66d18f5c26177dc3d5dfb2a83d84ee982c1b48ff` (semantic indexing display, menu-bar activity changes, conversation recovery UI); those concurrent changes are not in this feature tree. A read-only merge-tree of the parent and main was clean. Existing PR bases are preserved; no GitHub merge or CI wait was performed.
+This PR targets main directly at `6f838412bde3a8215b3974ea96c7eb99afd312fc`. During delivery, #559 merged at `88fa78b5cd0f161ea5113412ebc8d4b136679f5f`; the member retargeted #560 to main and merged it at `6f838412`. Its `2b84f959` implementation is an ancestor of main. The feature was first tested on #560, then locally integrated with actual main and validated afresh. No GitHub PR was merged by this agent; no CI wait occurred.
+
+The merge preserved 32 main-only and 9 feature-only paths byte-for-byte. The only five shared paths were localization tables: all main values, intentional removals, and the one feature addition per language were checked. No executable conflict/resolution changes. Main's semantic indexing/details/pause, menu-bar color removal, and conversation storage recovery UI remain intact. `clipboard-thumbnail-health-tree-audit.json` records the inventory.
 
 ## Behavior and audit
 
@@ -18,13 +20,13 @@ Settings adds five localized labels and the existing state/recovery control. Scr
 
 ## Focused validation
 
-Implementation and self-review preceded functional tests. One build, one functional pass; no compile/test failures or retries.
+Implementation and self-review preceded functional tests. One feature build/pass and one fresh main-integration build/pass; no compile/test failures or correction retries. The 68 methods are distinct methods, not 136.
 
-- Direct instrumented native build: **220.07 s** (Swift's inner build reported 216.48 s).
+- Direct instrumented native builds: feature **220.07 s**, final integration **251.90 s** (inner builds 216.48/251.52 s).
 - Prebuilt native inventory: **4.571 s**; no discovery rebuild or direct xctest execution. Initially 67 matched methods, then the source-verified `StorageModuleRegistryTests` compatibility suite added its one method before execution.
-- Focused test command: **68/68 distinct methods passed**, 48 XCTest + 20 Swift Testing, **33.36 s** wall time (XCTest 8.277 s; Swift Testing 0.429 s).
+- Focused test command: **68/68 distinct methods passed**, 48 XCTest + 20 Swift Testing, feature **33.36 s**, final integration **17.85 s** wall time. Final XCTest 8.170 s; Swift Testing 0.510 s. Both 68/68 passed.
 - Packaging: **2/2 passed**, unittest reported **0.225 s**. No new copied-helper probe: helper/protocol/packaging unchanged; real managed image/PDF, native icon/Quick Look and existing child-fault paths ran in the selected suites.
-- Tracked build/inventory/test/unittest durations total **258.226 s**, excluding packaging interpreter startup, audit, profile archival/extraction and screenshot inspection. Compiler emitted existing unrelated Sendable/AppKit deprecation warnings; no new functional warning was treated as a passing test.
+- Tracked build/inventory/test/unittest durations total **527.976 s**, excluding packaging interpreter startup, audit, profile archival/extraction and screenshot inspection. Compiler emitted existing unrelated Sendable/AppKit deprecation warnings; no new functional warning was treated as a passing test.
 
 Scope mapping:
 
@@ -60,11 +62,11 @@ Both screenshot environment variables were supplied. No full suite, user clipboa
 
 Changed executable lines against the actual PR base: **20/22 = 90.91%**. The two uncovered lines are DI construction/registry composition (`DIContainer.swift:159–160`); the injected production composition itself is covered. LLVM attributed no executable added lines to the static worker/enum declarations. No claim of a test hitting every branch or a real application quit follows from line coverage.
 
-ONLY this pass's **25 fresh profiles** (3 host + 22 direct-helper) were used with ONE final binary set. Every raw profile was checked individually with llvm-profdata before the warning-free merge; no earlier passing result/profile or counter layout was reused. The inventory-only root `default.profraw` was excluded and archived separately. `__llvm_covmap` and `__llvm_prf_cnts` were verified. Helper was supplied as llvm-cov `--object`; there are no changed helper lines. Production source hashes still matched the archived build after extraction.
+ONLY the final integration pass's **25 fresh profiles** (3 host + 22 direct-helper) were used with ONE final binary set. Every raw profile was checked individually with llvm-profdata before the warning-free merge; no earlier passing result/profile or counter layout was reused. The inventory-only root `default.profraw` was excluded and archived separately. `__llvm_covmap` and `__llvm_prf_cnts` were verified. Helper was supplied as llvm-cov `--object`; there are no changed helper lines. Production source hashes still matched the archived build after extraction.
 
-Local matching evidence: `.build/clipboard-health-validation/final` (not a runtime artifact delivery).
+Earlier feature profiles/binaries are archived separately in `final` and excluded from final coverage. Local matching final evidence: `.build/clipboard-health-validation/integration` (not a runtime artifact delivery).
 
-- XCTest SHA-256: `d87c58c75796972e93101b4c2c888b1cdef252313e6e0f741d96ef80eec6f0db`
+- XCTest SHA-256: `4a74e5ca85a6680c52fd2ff429cb4d62e3b7fc593bd357c8c9b7d1e5214bec28`
 - Helper SHA-256: `25072bcc62620da339441bbbf1c05d19f20e5c0fbb641b95eafc70fe5e1f09d2`
 - App/helper `LC_BUILD_VERSION` minimum macOS 13; this is not macOS 13/Intel hardware validation.
 
