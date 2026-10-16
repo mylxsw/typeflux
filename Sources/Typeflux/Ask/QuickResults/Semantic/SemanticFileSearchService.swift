@@ -56,6 +56,16 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
     private var download: Task<Void, Never>?
     private var rescan: Task<Void, Never>?
     private var countRefresh: Task<Void, Never>?
+    private var countRefreshID: UUID?
+    private struct CountRefreshRequest {
+        let database: SemanticFileStore
+        let lifecycle: AskSearchCancellation
+        let attempt: SemanticIndexProgressDelivery.Source
+    }
+    private var pendingCountRefresh: CountRefreshRequest?
+    private let progressDelivery: SemanticIndexProgressDelivery
+    private let countSnapshot: @Sendable (SemanticFileStore) throws -> SemanticFileStore.Counts
+    private var indexAttempt: SemanticIndexProgressDelivery.Source?
     private var lastCountRefresh = Date.distantPast
     private var token = AskSearchCancellation()
     private var store: SemanticFileStore?
@@ -93,7 +103,10 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
          makeEncoder: (@Sendable (URL, URL) -> any SemanticEmbedding)? = nil,
          makeQuery: (@Sendable (URL, URL) -> any SemanticQueryEmbedding)? = nil,
          embeddingOwners: SemanticEmbeddingOwners? = nil,
-         requiresReaderLifecycle: Bool = false, requiresModelLifecycle: Bool = false, deferInitialStart: Bool = false) {
+         requiresReaderLifecycle: Bool = false, requiresModelLifecycle: Bool = false, deferInitialStart: Bool = false,
+         progressDelivery: SemanticIndexProgressDelivery = SemanticIndexProgressDelivery(),
+         countSnapshot: @escaping @Sendable (SemanticFileStore) throws -> SemanticFileStore.Counts = { try $0.counts() }) {
+        self.progressDelivery = progressDelivery; self.countSnapshot = countSnapshot
         self.settings = settings; self.directory = directory; self.helper = helper
         self.supported = supported; self.watcher = watcher; self.access = access
         self.lowPowerMode = lowPowerMode; self.thermalConstrained = thermalConstrained
@@ -198,6 +211,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
         }
         currentProcessingPath = nil
         fingerprint = key
+        invalidateIndexProgress()
         token.cancel(); token = AskSearchCancellation()
         readers.stop(); embeddingOwners.stop()
         let token = token
@@ -232,7 +246,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
                 store = try? prepared.1.get()
                 queryValidator = SemanticFileValidator(reader: readers.validation.scope(generation: readerAuthorization?.validation))
                 if let database = store {
-                    await updateCounts(database)
+                    await updateCounts(database, lifecycle: token)
                 }
                 guard !token.isCancelled, !Task.isCancelled else { return }
                 guard FileManager.default.fileExists(atPath: model.path) else {
@@ -274,12 +288,71 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
         }
     }
 
-    private func updateCounts(_ database: SemanticFileStore) async {
-        if let counts = try? await Task.detached(priority: .utility, operation: { try database.counts() }).value {
-            guard !self.removing, self.store === database else { return }
-            if self.files != counts.files { self.files = counts.files }
-            if self.chunks != counts.chunks { self.chunks = counts.chunks }
-            if self.indexedCounts != counts { self.indexedCounts = counts }
+    private func invalidateIndexProgress() {
+        progressDelivery.invalidate(); indexAttempt = nil
+        // Keep the active read's handle until it actually returns; replacement scopes
+        // may retain one latest request, never launch parallel refresh readers.
+        countRefresh?.cancel(); pendingCountRefresh = nil
+    }
+
+    private func updateCounts(_ database: SemanticFileStore, lifecycle: AskSearchCancellation,
+                              attempt: SemanticIndexProgressDelivery.Source? = nil) async {
+        guard !Task.isCancelled, !lifecycle.isCancelled, fingerprint == settingsFingerprint else { return }
+        let cancellation = AskSearchCancellation(), countSnapshot = countSnapshot
+        let counts = await withTaskCancellationHandler {
+            try? await Task.detached(priority: .utility) {
+                guard !lifecycle.isCancelled, !cancellation.isCancelled else { throw CancellationError() }
+                return try countSnapshot(database)
+            }.value
+        } onCancel: { cancellation.cancel() }
+        if let counts {
+            guard !Task.isCancelled, !lifecycle.isCancelled, !removing, store === database,
+                  fingerprint == settingsFingerprint,
+                  attempt == nil || indexAttempt === attempt else { return }
+            if files != counts.files { files = counts.files }
+            if chunks != counts.chunks { chunks = counts.chunks }
+            if indexedCounts != counts { indexedCounts = counts }
+        }
+    }
+
+    private func receiveIndexProgress(_ snapshot: SemanticIndexProgressDelivery.Snapshot,
+                                      database: SemanticFileStore, lifecycle: AskSearchCancellation,
+                                      attempt: SemanticIndexProgressDelivery.Source) {
+        guard !lifecycle.isCancelled, indexAttempt === attempt, !removing,
+              fingerprint == settingsFingerprint, phase == .indexing || pausedIndexing else { return }
+        if snapshot.hasDownload { mediaDownload = snapshot.download }
+        if snapshot.hasPath, snapshot.path == nil || phase == .indexing {
+            currentProcessingPath = snapshot.path
+        }
+        guard let summary = snapshot.summary else { return }
+        let priorityChanged = indexProgress?.priorityUpdates != summary.priorityUpdates
+        indexProgress = summary
+        files = max(files, summary.files); skipped = summary.skipped
+        requestCountRefresh(database, lifecycle: lifecycle, attempt: attempt, priorityChanged: priorityChanged)
+    }
+
+    private func requestCountRefresh(_ database: SemanticFileStore, lifecycle: AskSearchCancellation,
+                                     attempt: SemanticIndexProgressDelivery.Source, priorityChanged: Bool) {
+        guard priorityChanged || Date().timeIntervalSince(lastCountRefresh) >= 3 else { return }
+        let request = CountRefreshRequest(database: database, lifecycle: lifecycle, attempt: attempt)
+        if countRefresh != nil { pendingCountRefresh = request; return }
+        startCountRefresh(request)
+    }
+
+    private func startCountRefresh(_ request: CountRefreshRequest) {
+        lastCountRefresh = Date()
+        let id = UUID()
+        countRefreshID = id
+        countRefresh = Task { [weak self] in
+            guard let self else { return }
+            await updateCounts(request.database, lifecycle: request.lifecycle, attempt: request.attempt)
+            guard countRefreshID == id else { return }
+            countRefresh = nil; countRefreshID = nil
+            let next = pendingCountRefresh
+            pendingCountRefresh = nil
+            if let next, !next.lifecycle.isCancelled, indexAttempt === next.attempt {
+                startCountRefresh(next)
+            }
         }
     }
 
@@ -325,7 +398,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
         self.beginIndexing(database, scope: scope, token: token, paths: paths)
     }
 
-    deinit { token.cancel(); readers.stop(); embeddingOwners.stop(); work?.cancel(); download?.cancel(); rescan?.cancel(); warmup?.cancel() }
+    deinit { progressDelivery.invalidate(); countRefresh?.cancel(); token.cancel(); readers.stop(); embeddingOwners.stop(); work?.cancel(); download?.cancel(); rescan?.cancel(); warmup?.cancel() }
 }
 
 extension SemanticFileSearchService {
@@ -344,36 +417,15 @@ extension SemanticFileSearchService {
         }
         let helper = helper, model = modelURL
         let projector = mediaModelURL, idle = idle, pauseGate = pauseGate
-        let reportDownload: @Sendable (Double?) -> Void = { [weak self] fraction in
-            Task { @MainActor [weak self] in
-                guard let self, !token.isCancelled else { return }
-                self.mediaDownload = fraction
-            }
+        invalidateIndexProgress()
+        let delivery = progressDelivery, attempt = SemanticIndexProgressDelivery.Source()
+        indexAttempt = attempt
+        delivery.begin(attempt) { [weak self] snapshot in
+            self?.receiveIndexProgress(snapshot, database: database, lifecycle: token, attempt: attempt)
         }
-        let reportProgress: @Sendable (SemanticFileIndexer.Summary) -> Void = { [weak self] summary in
-            Task { @MainActor [weak self] in
-                guard let self, !token.isCancelled else { return }
-                let priorityChanged = indexProgress?.priorityUpdates != summary.priorityUpdates
-                indexProgress = summary
-                files = max(files, summary.files); skipped = summary.skipped
-                if countRefresh == nil, priorityChanged || Date().timeIntervalSince(lastCountRefresh) >= 3 {
-                    lastCountRefresh = Date()
-                    countRefresh = Task { [weak self] in
-                        guard let self else { return }
-                        await self.updateCounts(database)
-                        self.countRefresh = nil
-                    }
-                }
-            }
-        }
-        let reportCurrent: @Sendable (String?) -> Void = { [weak self] path in
-            Task { @MainActor [weak self] in
-                guard let self, !token.isCancelled, self.phase == .indexing else { return }
-                if self.currentProcessingPath != path {
-                    self.currentProcessingPath = path
-                }
-            }
-        }
+        let reportDownload: @Sendable (Double?) -> Void = { delivery.offer(.download($0), from: attempt) }
+        let reportProgress: @Sendable (SemanticFileIndexer.Summary) -> Void = { delivery.offer(.summary($0), from: attempt) }
+        let reportCurrent: @Sendable (String?) -> Void = { delivery.offer(.path($0), from: attempt) }
         self.work = Task { [weak self] in
             do {
                 let result = try await Task.detached(priority: .utility) {
@@ -404,10 +456,18 @@ extension SemanticFileSearchService {
                                                        current: reportCurrent)
                 }.value
                 guard let self, !token.isCancelled, !Task.isCancelled else { return }
+                if let latest = delivery.finish(attempt) {
+                    receiveIndexProgress(latest, database: database, lifecycle: token, attempt: attempt)
+                }
                 self.skipped = result.skipped
-                await self.countRefresh?.value
-                await self.updateCounts(database)
-                guard !token.isCancelled, !Task.isCancelled else { return }
+                while let refresh = self.countRefresh {
+                    await refresh.value
+                    guard !token.isCancelled, !Task.isCancelled, indexAttempt === attempt else { return }
+                }
+                guard !token.isCancelled, !Task.isCancelled, indexAttempt === attempt else { return }
+                await self.updateCounts(database, lifecycle: token, attempt: attempt)
+                guard !token.isCancelled, !Task.isCancelled, indexAttempt === attempt else { return }
+                self.mediaDownload = nil
                 self.indexProgress = nil
                 self.currentProcessingPath = nil
                 if self.backgroundPaused {
@@ -420,8 +480,12 @@ extension SemanticFileSearchService {
                 self.scheduleReconcile()
             } catch {
                 guard let self, !token.isCancelled, !Task.isCancelled else { return }
+                if let latest = delivery.finish(attempt) {
+                    receiveIndexProgress(latest, database: database, lifecycle: token, attempt: attempt)
+                }
                 if case SemanticMediaFailure.unavailable = error { self.mediaFailed = true }
                 if case SemanticFileStore.Failure.invalidVector = error { self.modelReady = false }
+                self.mediaDownload = nil
                 self.currentProcessingPath = nil
                 self.phase = .failed
             }
@@ -490,11 +554,12 @@ extension SemanticFileSearchService {
         removing = true
         _ = setEnabled(false)
         preferences = settings.semanticFileSearch
+        invalidateIndexProgress()
         token.cancel(); work?.cancel(); rescan?.cancel(); download?.cancel(); watcher.stop()
         readers.stop(); embeddingOwners.stop()
         warmup?.cancel(); warmup = nil
         queryWorker?.stop(); queryWorker = nil
-        await work?.value; await download?.value
+        await work?.value; await download?.value; await countRefresh?.value
         let database = store, directory = directory, model = modelURL, projector = mediaModelURL
         let embeddingOwners = embeddingOwners
         do {
