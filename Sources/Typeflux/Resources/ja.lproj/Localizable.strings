@@ -5567,3 +5567,5 @@
 
 "screenshot.mosaic.preparing" = "文字を検出中です。未検出のマスクは領域全体を覆います。";
 "screenshot.mosaic.unavailable" = "文字を検出できません。未検出のマスクは領域全体を覆います。";
+
+"clipboard.audio.unavailable" = "音声を再生できません。プレビューを閉じて開き直すと再読み込みできます。";

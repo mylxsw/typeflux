@@ -55,14 +55,19 @@ struct ClipboardWaveformView: View {
 struct ClipboardAudioPlayerView: View {
     let url: URL
     let duration: TimeInterval?
-    @StateObject private var playback = ClipboardAudioPlayback()
+    @Environment(\.askContextImageAccess) private var access
+    @StateObject private var playback: ClipboardAudioPlayback
+    init(url: URL, duration: TimeInterval?, playback: ClipboardAudioPlayback? = nil) {
+        self.url = url; self.duration = duration
+        _playback = StateObject(wrappedValue: playback ?? ClipboardAudioPlayback())
+    }
 
     var body: some View {
         HStack(spacing: 8) {
             Button {
                 playback.toggle()
             } label: {
-                Image(systemName: playback.isPlaying ? "pause.fill" : "play.fill")
+                Image(systemName: playback.failed ? "exclamationmark.triangle" : playback.isPlaying ? "pause.fill" : "play.fill")
                     .font(.system(size: 11))
                     .foregroundStyle(StudioTheme.textPrimary)
                     .frame(width: 30, height: 30)
@@ -70,6 +75,8 @@ struct ClipboardAudioPlayerView: View {
                     .contentShape(Circle())
             }
             .buttonStyle(.plain)
+            .disabled(!playback.isLoaded || playback.isBusy)
+            .help(playback.failed ? L("clipboard.audio.unavailable") : "")
             ClipboardWaveformView(url: url, bars: 90, progress: playback.progress, onSeek: playback.seek(to:))
                 .frame(height: 28)
             Text(verbatim: timeLabel)
@@ -81,8 +88,7 @@ struct ClipboardAudioPlayerView: View {
         .frame(maxWidth: .infinity)
         .frame(height: 48)
         .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 7, style: .continuous))
-        .onAppear { playback.load(url, duration: duration) }
-        .onChange(of: duration) { playback.updateDuration($0) }
+        .task(id: ClipboardAudioPlayback.Identity(url: url, epoch: access.epoch)) { playback.load(url, access: access) }
         .onDisappear { playback.stop() }
     }
 

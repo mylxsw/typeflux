@@ -1,0 +1,165 @@
+{
+  "covered": 408,
+  "executable_added": 419,
+  "percent": 97.37,
+  "files": [
+    {
+      "file": "Sources/Typeflux/App/AppCoordinator.swift",
+      "covered": 0,
+      "executable_added": 3,
+      "percent": 0.0,
+      "uncovered": [
+        318,
+        328,
+        347
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/App/DIContainer.swift",
+      "covered": 0,
+      "executable_added": 1,
+      "percent": 0.0,
+      "uncovered": [
+        26
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/MediaWorker.swift",
+      "covered": 4,
+      "executable_added": 4,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Clipboard/ClipboardAudioPlayback.swift",
+      "covered": 71,
+      "executable_added": 71,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Clipboard/ClipboardPanelController.swift",
+      "covered": 3,
+      "executable_added": 3,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Clipboard/ClipboardPlaybackClient.swift",
+      "covered": 162,
+      "executable_added": 162,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Clipboard/ClipboardWaveformView.swift",
+      "covered": 8,
+      "executable_added": 8,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Resources/en.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    },
+    {
+      "file": "Sources/Typeflux/Resources/ja.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    },
+    {
+      "file": "Sources/Typeflux/Resources/ko.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    },
+    {
+      "file": "Sources/Typeflux/Resources/zh-Hans.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    },
+    {
+      "file": "Sources/Typeflux/Resources/zh-Hant.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    },
+    {
+      "file": "Sources/TypefluxMediaHelper/TypefluxMediaHelper.swift",
+      "covered": 10,
+      "executable_added": 10,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/TypefluxMediaProtocol/MediaPlayback.swift",
+      "covered": 22,
+      "executable_added": 22,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/TypefluxMediaProtocol/MediaPlaybackSocket.swift",
+      "covered": 58,
+      "executable_added": 58,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/TypefluxMediaRuntime/MediaPlaybackServer.swift",
+      "covered": 70,
+      "executable_added": 77,
+      "percent": 90.91,
+      "uncovered": [
+        67,
+        68,
+        76,
+        77,
+        78,
+        79,
+        80
+      ],
+      "instrumented": true
+    }
+  ],
+  "validation": {
+    "base": "f1a7a48a65b9d7f52804ae4e3b22e951303d3b14",
+    "focused_methods": 33,
+    "profiles": [
+      "XCTest7414783934430361394_0.64295.profraw",
+      "Swift Testing7414783934430361394_0.64506.profraw",
+      "XCTest7414783934430361394_0.64286.profraw",
+      "bundled-64858.profraw",
+      "helper-64309.profraw"
+    ],
+    "binary_sha256": {
+      "tests": "82badce36ba57cc346286ad9c0e5a4325474e1e67414564724667c537bafda02",
+      "helper": "85d5a12a8c0dae28d3c1928b1a45886f75f88fa5e40b9f0be8459f4d10ecc7e0"
+    },
+    "attribution": "Only fresh integration-build profiles; each individually validated. No earlier feature profiles or counter layouts merged."
+  }
+}

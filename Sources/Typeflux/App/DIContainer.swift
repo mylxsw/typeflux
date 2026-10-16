@@ -23,6 +23,7 @@ final class DIContainer {
     let mediaWorkers = MediaWorker.shared
     let mediaPreviewWorkers = MediaWorker.previews
     let clipboardThumbnailWorkers = MediaWorker.clipboardThumbnails
+    let clipboardPlaybackWorkers = ClipboardPlaybackPool.shared
     let frameRegistrationWorkers = MediaWorker.frameRegistration
     let textRecognitionWorkers = MediaWorker.textRecognition
     let clipboardOCRWorkers = MediaWorker.clipboardOCR

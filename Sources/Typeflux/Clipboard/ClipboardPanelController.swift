@@ -19,6 +19,7 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
     private var focusRequest = 0
     private var quickLookURLs: [URL] = []
     private var previewObservation: AnyCancellable?
+    private var selectionObservation: AnyCancellable?
     private var entryObservation: AnyCancellable?
     private var privacyObservers: [NSObjectProtocol] = []
     let thumbnails = ClipboardThumbnailSession()
@@ -66,6 +67,7 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
         previewObservation = nil
         self.model = model
         thumbnails.begin(model)
+        selectionObservation = model.$selectedIndex.dropFirst().removeDuplicates().sink { [weak self] _ in self?.thumbnails.changed() }
         entryObservation = model.$entries.dropFirst().sink { [weak self] _ in self?.thumbnails.changed() }
         focusRequest += 1
         layout.setWidth(ClipboardPanelView.size(showsPreview: model.showsPreview).width)
@@ -108,7 +110,7 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
     }
 
     func dismiss() {
-        thumbnails.end(); entryObservation = nil
+        thumbnails.end(); entryObservation = nil; selectionObservation = nil
         previewWidthAnimator.stop()
         previewObservation = nil
         closeQuickLook()
@@ -148,7 +150,7 @@ final class ClipboardPanelController: NSObject, @preconcurrency ClipboardPanelPr
             defer: false
         )
         panel.quickLookController = self
-        panel.onHide = { [weak self] in self?.thumbnails.end(); self?.entryObservation = nil }
+        panel.onHide = { [weak self] in self?.thumbnails.end(); self?.entryObservation = nil; self?.selectionObservation = nil }
         panel.level = .floating
         panel.isOpaque = false
         panel.backgroundColor = .clear
