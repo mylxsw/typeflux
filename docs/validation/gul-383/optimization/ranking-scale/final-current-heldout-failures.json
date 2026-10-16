@@ -1,0 +1,2211 @@
+{
+  "scope": "Authoritative final Release Swift ranking; all1000 held-out rows and original denominators retained. Every missing positive, false positive and row regression is included. Captured cosine is diagnostic replay, not a new end-to-end measurement. Sources are synthetic. No tuning on these labels.",
+  "rows": [
+    {
+      "fixture": "final-holdout",
+      "id": "final_cross_language-05",
+      "group": "cross_language",
+      "query": "How do visitors register to consult the records?",
+      "expected": [
+        "final-zh-05"
+      ],
+      "before_rank": 3,
+      "after_rank": 4,
+      "missing_positive": false,
+      "row_regression": true,
+      "false_positive": false,
+      "hits": [
+        "final-audio-05",
+        "final-en-05",
+        "final-en-00",
+        "final-zh-05",
+        "final-audio-07"
+      ],
+      "location_correct": true,
+      "raw_peak": 0.7903040833491592,
+      "raw_distinct_source_margin": 0.04787120395677391,
+      "raw_top_sources": [
+        {
+          "id": "final-audio-05",
+          "cosine": 0.7903040833491592,
+          "kind": "audio"
+        },
+        {
+          "id": "final-en-05",
+          "cosine": 0.7424328793923853,
+          "kind": "text"
+        },
+        {
+          "id": "final-zh-05",
+          "cosine": 0.7259547120548827,
+          "kind": "text"
+        },
+        {
+          "id": "final-en-00",
+          "cosine": 0.7129036670866467,
+          "kind": "text"
+        },
+        {
+          "id": "final-audio-07",
+          "cosine": 0.7054458465635884,
+          "kind": "audio"
+        }
+      ],
+      "target_sources": [
+        {
+          "id": "final-zh-05",
+          "kind": "text",
+          "text": "\u6863\u6848\u8bf4\u660e\u3002\u7814\u7a76\u4eba\u5458\u987b\u5728\u63a5\u5f85\u5904\u7ec8\u7aef\u767b\u8bb0\u6765\u8bbf\u3002"
+        }
+      ],
+      "returned_sources": [
+        {
+          "id": "final-audio-05",
+          "kind": "audio",
+          "text": "Researchers register their visit at the reception terminal."
+        },
+        {
+          "id": "final-en-05",
+          "kind": "text",
+          "text": "Archive Access. Researchers register their visit at the reception terminal. Reference VH-7305."
+        },
+        {
+          "id": "final-en-00",
+          "kind": "text",
+          "text": "Museum Tour. Collect guided-tour tickets at the north kiosk. Reference VH-7300."
+        },
+        {
+          "id": "final-zh-05",
+          "kind": "text",
+          "text": "\u6863\u6848\u8bf4\u660e\u3002\u7814\u7a76\u4eba\u5458\u987b\u5728\u63a5\u5f85\u5904\u7ec8\u7aef\u767b\u8bb0\u6765\u8bbf\u3002"
+        },
+        {
+          "id": "final-audio-07",
+          "kind": "audio",
+          "text": "Group visits require advance booking through the garden office."
+        }
+      ],
+      "observation": "Chinese labelled archive source moves3\u21924 behind equivalent English/audio and an English ticket record; this is an exact-source ordering loss, not absent extraction.",
+      "historical_source1265_observation": "The English equivalent and audio precede the labelled Chinese original; an unrelated English museum record also precedes it. The exact-source label remains rank 4. This is ordering regression, not a missing extraction."
+    },
+    {
+      "fixture": "final-holdout",
+      "id": "final_cross_language-07",
+      "group": "cross_language",
+      "query": "Who handles advance reservations for groups?",
+      "expected": [
+        "final-zh-07"
+      ],
+      "before_rank": 3,
+      "after_rank": 4,
+      "missing_positive": false,
+      "row_regression": true,
+      "false_positive": false,
+      "hits": [
+        "final-audio-07",
+        "final-en-07",
+        "final-en-23",
+        "final-zh-07",
+        "final-audio-15"
+      ],
+      "location_correct": true,
+      "raw_peak": 0.7555582231899848,
+      "raw_distinct_source_margin": 0.06999109222690736,
+      "raw_top_sources": [
+        {
+          "id": "final-audio-07",
+          "cosine": 0.7555582231899848,
+          "kind": "audio"
+        },
+        {
+          "id": "final-en-07",
+          "cosine": 0.6855671309630774,
+          "kind": "text"
+        },
+        {
+          "id": "final-zh-07",
+          "cosine": 0.677248137575884,
+          "kind": "text"
+        },
+        {
+          "id": "final-audio-15",
+          "cosine": 0.6413444730810659,
+          "kind": "audio"
+        },
+        {
+          "id": "final-audio-10",
+          "cosine": 0.6400406007904926,
+          "kind": "audio"
+        }
+      ],
+      "target_sources": [
+        {
+          "id": "final-zh-07",
+          "kind": "text",
+          "text": "\u6e29\u5ba4\u8bf4\u660e\u3002\u56e2\u4f53\u53c2\u89c2\u987b\u63d0\u524d\u5411\u56ed\u533a\u529e\u516c\u5ba4\u9884\u7ea6\u3002"
+        }
+      ],
+      "returned_sources": [
+        {
+          "id": "final-audio-07",
+          "kind": "audio",
+          "text": "Group visits require advance booking through the garden office."
+        },
+        {
+          "id": "final-en-07",
+          "kind": "text",
+          "text": "Greenhouse Visits. Group visits require advance booking through the garden office. Reference VH-7307."
+        },
+        {
+          "id": "final-en-23",
+          "kind": "text",
+          "text": "Repair Cafe Intake. Attach a description of the fault before leaving an item at the intake desk. Reference VH-7323."
+        },
+        {
+          "id": "final-zh-07",
+          "kind": "text",
+          "text": "\u6e29\u5ba4\u8bf4\u660e\u3002\u56e2\u4f53\u53c2\u89c2\u987b\u63d0\u524d\u5411\u56ed\u533a\u529e\u516c\u5ba4\u9884\u7ea6\u3002"
+        },
+        {
+          "id": "final-audio-15",
+          "kind": "audio",
+          "text": "Tripods can be borrowed from the equipment desk on club nights."
+        }
+      ],
+      "observation": "Chinese labelled group-booking source moves3\u21924 behind equivalent audio/English and another reservation record. Recall/location stay correct.",
+      "historical_source1265_observation": null
+    },
+    {
+      "fixture": "final-holdout",
+      "id": "final_cross_language-16",
+      "group": "cross_language",
+      "query": "\u53bb\u6e56\u8fb9\u4f11\u606f\u4ead\u5e94\u8be5\u6cbf\u4ec0\u4e48\u989c\u8272\u7684\u6807\u8bb0\u8d70\uff1f",
+      "expected": [
+        "final-en-16"
+      ],
+      "before_rank": 3,
+      "after_rank": 4,
+      "missing_positive": false,
+      "row_regression": true,
+      "false_positive": false,
+      "hits": [
+        "final-zh-16",
+        "final-audio-16",
+        "final-zh-14",
+        "final-en-16",
+        "final-en-03"
+      ],
+      "location_correct": true,
+      "raw_peak": 0.8335993171567779,
+      "raw_distinct_source_margin": 0.07031633197331655,
+      "raw_top_sources": [
+        {
+          "id": "final-zh-16",
+          "cosine": 0.8335993171567779,
+          "kind": "text"
+        },
+        {
+          "id": "final-audio-16",
+          "cosine": 0.7632829851834614,
+          "kind": "audio"
+        },
+        {
+          "id": "final-en-16",
+          "cosine": 0.7200936219635861,
+          "kind": "text"
+        },
+        {
+          "id": "final-zh-14",
+          "cosine": 0.6882742053359554,
+          "kind": "text"
+        },
+        {
+          "id": "final-zh-21",
+          "cosine": 0.6856194521184571,
+          "kind": "text"
+        }
+      ],
+      "target_sources": [
+        {
+          "id": "final-en-16",
+          "kind": "text",
+          "text": "Woodland Route. Follow the orange markers to reach the lakeside shelter. Reference VH-7316."
+        }
+      ],
+      "returned_sources": [
+        {
+          "id": "final-zh-16",
+          "kind": "text",
+          "text": "\u6797\u95f4\u6b65\u9053\u8bf4\u660e\u3002\u6cbf\u6a59\u8272\u6807\u8bb0\u884c\u8d70\u53ef\u62b5\u8fbe\u6e56\u8fb9\u4f11\u606f\u4ead\u3002"
+        },
+        {
+          "id": "final-audio-16",
+          "kind": "audio",
+          "text": "Follow the orange markers to reach the lakeside shelter."
+        },
+        {
+          "id": "final-zh-14",
+          "kind": "text",
+          "text": "\u96c6\u5e02\u8bf4\u660e\u3002\u5931\u7269\u4fdd\u7ba1\u5728\u55b7\u6cc9\u65c1\u7684\u54a8\u8be2\u4ead\u3002"
+        },
+        {
+          "id": "final-en-16",
+          "kind": "text",
+          "text": "Woodland Route. Follow the orange markers to reach the lakeside shelter. Reference VH-7316."
+        },
+        {
+          "id": "final-en-03",
+          "kind": "text",
+          "text": "Campground Quiet. Quiet hours begin at ten in the evening. Reference VH-7303."
+        }
+      ],
+      "observation": "Chinese query returns its Chinese/audio equivalents and another Chinese record before the required English trail source (3\u21924). Same-language relevance cannot replace the frozen English label.",
+      "historical_source1265_observation": null
+    },
+    {
+      "fixture": "final-holdout",
+      "id": "final_semantic_paraphrase-16",
+      "group": "semantic_paraphrase",
+      "query": "Which trail markings lead to the shelter by the lake?",
+      "expected": [
+        "final-en-16"
+      ],
+      "before_rank": 1,
+      "after_rank": 2,
+      "missing_positive": false,
+      "row_regression": true,
+      "false_positive": false,
+      "hits": [
+        "final-audio-16",
+        "final-en-16",
+        "final-zh-16",
+        "final-en-03",
+        "final-zh-14"
+      ],
+      "location_correct": true,
+      "raw_peak": 0.8208166178154918,
+      "raw_distinct_source_margin": 0.05735102140451476,
+      "raw_top_sources": [
+        {
+          "id": "final-audio-16",
+          "cosine": 0.8208166178154918,
+          "kind": "audio"
+        },
+        {
+          "id": "final-zh-16",
+          "cosine": 0.763465596410977,
+          "kind": "text"
+        },
+        {
+          "id": "final-en-16",
+          "cosine": 0.7490459074765462,
+          "kind": "text"
+        },
+        {
+          "id": "final-en-03",
+          "cosine": 0.6535870291002336,
+          "kind": "text"
+        },
+        {
+          "id": "final-en-10",
+          "cosine": 0.6487775801444495,
+          "kind": "text"
+        }
+      ],
+      "target_sources": [
+        {
+          "id": "final-en-16",
+          "kind": "text",
+          "text": "Woodland Route. Follow the orange markers to reach the lakeside shelter. Reference VH-7316."
+        }
+      ],
+      "returned_sources": [
+        {
+          "id": "final-audio-16",
+          "kind": "audio",
+          "text": "Follow the orange markers to reach the lakeside shelter."
+        },
+        {
+          "id": "final-en-16",
+          "kind": "text",
+          "text": "Woodland Route. Follow the orange markers to reach the lakeside shelter. Reference VH-7316."
+        },
+        {
+          "id": "final-zh-16",
+          "kind": "text",
+          "text": "\u6797\u95f4\u6b65\u9053\u8bf4\u660e\u3002\u6cbf\u6a59\u8272\u6807\u8bb0\u884c\u8d70\u53ef\u62b5\u8fbe\u6e56\u8fb9\u4f11\u606f\u4ead\u3002"
+        },
+        {
+          "id": "final-en-03",
+          "kind": "text",
+          "text": "Campground Quiet. Quiet hours begin at ten in the evening. Reference VH-7303."
+        },
+        {
+          "id": "final-zh-14",
+          "kind": "text",
+          "text": "\u96c6\u5e02\u8bf4\u660e\u3002\u5931\u7269\u4fdd\u7ba1\u5728\u55b7\u6cc9\u65c1\u7684\u54a8\u8be2\u4ead\u3002"
+        }
+      ],
+      "observation": "Equivalent spoken trail instructions have stronger raw similarity and precede the required English text (1\u21922).",
+      "historical_source1265_observation": null
+    },
+    {
+      "fixture": "unseen-query",
+      "id": "unseen_no_answer-01",
+      "group": "no_answer",
+      "query": "Why does a quartz oscillator exhibit piezoelectric resonance?",
+      "expected": [],
+      "before_rank": null,
+      "after_rank": null,
+      "missing_positive": false,
+      "row_regression": false,
+      "false_positive": true,
+      "hits": [
+        "final-en-03",
+        "final-audio-03",
+        "final-en-15",
+        "final-audio-00",
+        "final-image-yellow-circle"
+      ],
+      "location_correct": false,
+      "raw_peak": 0.5721684894019234,
+      "raw_distinct_source_margin": 0.04438720767237381,
+      "raw_top_sources": [
+        {
+          "id": "final-audio-03",
+          "cosine": 0.5721684894019234,
+          "kind": "audio"
+        },
+        {
+          "id": "final-en-03",
+          "cosine": 0.5277812817295496,
+          "kind": "text"
+        },
+        {
+          "id": "final-audio-00",
+          "cosine": 0.5180616535070101,
+          "kind": "audio"
+        },
+        {
+          "id": "final-audio-04",
+          "cosine": 0.5170420564946178,
+          "kind": "audio"
+        },
+        {
+          "id": "final-audio-01",
+          "cosine": 0.5170131972372918,
+          "kind": "audio"
+        }
+      ],
+      "target_sources": [],
+      "returned_sources": [
+        {
+          "id": "final-en-03",
+          "kind": "text",
+          "text": "Campground Quiet. Quiet hours begin at ten in the evening. Reference VH-7303."
+        },
+        {
+          "id": "final-audio-03",
+          "kind": "audio",
+          "text": "Quiet hours begin at ten in the evening."
+        },
+        {
+          "id": "final-en-15",
+          "kind": "text",
+          "text": "Photo Club Equipment. Tripods can be borrowed from the equipment desk on club nights. Reference VH-7315."
+        },
+        {
+          "id": "final-audio-00",
+          "kind": "audio",
+          "text": "Collect guided-tour tickets at the north kiosk."
+        },
+        {
+          "id": "final-image-yellow-circle",
+          "kind": "image",
+          "text": "yellow circle"
+        }
+      ],
+      "observation": "No quartz-resonance answer exists. Peak0.57217 with distinct-file margin0.04439 passes the existing0.45/0.04 weak gate; technical-looking nearest neighbors are not answer evidence. This remains1/25 (4%).",
+      "historical_source1265_observation": "The corpus has no piezoelectric-resonance answer. Related technical/general records survive absolute and margin confidence checks. The labelled no-answer failure remains 1/25 for this cohort."
+    },
+    {
+      "fixture": "unseen-query",
+      "id": "unseen_cross_language-02",
+      "group": "cross_language",
+      "query": "\u66f4\u8863\u533a\u57df\u8fb9\u4e0a\u54ea\u4e2a\u5bb9\u5668\u7528\u6765\u6536\u6e7f\u6bdb\u5dfe\uff1f",
+      "expected": [
+        "final-en-02"
+      ],
+      "before_rank": 3,
+      "after_rank": 4,
+      "missing_positive": false,
+      "row_regression": true,
+      "false_positive": false,
+      "hits": [
+        "final-zh-02",
+        "final-audio-02",
+        "final-zh-19",
+        "final-en-02",
+        "final-en-11"
+      ],
+      "location_correct": true,
+      "raw_peak": 0.7809835101873558,
+      "raw_distinct_source_margin": 0.014662807783892173,
+      "raw_top_sources": [
+        {
+          "id": "final-zh-02",
+          "cosine": 0.7809835101873558,
+          "kind": "text"
+        },
+        {
+          "id": "final-audio-02",
+          "cosine": 0.7663207024034636,
+          "kind": "audio"
+        },
+        {
+          "id": "final-en-02",
+          "cosine": 0.7496741508188608,
+          "kind": "text"
+        },
+        {
+          "id": "final-zh-19",
+          "cosine": 0.7067799651231846,
+          "kind": "text"
+        },
+        {
+          "id": "final-zh-11",
+          "cosine": 0.7005129188885382,
+          "kind": "text"
+        }
+      ],
+      "target_sources": [
+        {
+          "id": "final-en-02",
+          "kind": "text",
+          "text": "Pool Towels. Return used towels to the basket beside the changing rooms. Reference VH-7302."
+        }
+      ],
+      "returned_sources": [
+        {
+          "id": "final-zh-02",
+          "kind": "text",
+          "text": "\u6cf3\u6c60\u8bf4\u660e\u3002\u7528\u8fc7\u7684\u6bdb\u5dfe\u653e\u56de\u66f4\u8863\u5ba4\u65c1\u7684\u7bee\u5b50\u3002"
+        },
+        {
+          "id": "final-audio-02",
+          "kind": "audio",
+          "text": "Return used towels to the basket beside the changing rooms."
+        },
+        {
+          "id": "final-zh-19",
+          "kind": "text",
+          "text": "\u7403\u9986\u8bf4\u660e\u3002\u50a8\u7269\u67dc\u4ee3\u5e01\u53ef\u5411\u524d\u53f0\u9886\u53d6\u3002"
+        },
+        {
+          "id": "final-en-02",
+          "kind": "text",
+          "text": "Pool Towels. Return used towels to the basket beside the changing rooms. Reference VH-7302."
+        },
+        {
+          "id": "final-en-11",
+          "kind": "text",
+          "text": "Workshop Equipment. Safety goggles are stored in the cabinet beside the entrance. Reference VH-7311."
+        }
+      ],
+      "observation": "The required English wet-towel source moves3\u21924 behind Chinese/audio equivalents and another Chinese record.",
+      "historical_source1265_observation": null
+    },
+    {
+      "fixture": "unseen-query",
+      "id": "unseen_cross_language-08",
+      "group": "cross_language",
+      "query": "\u53bb\u6d77\u5c9b\u7684\u65c5\u5ba2\u9700\u8981\u4ece\u51e0\u53f7\u7801\u5934\u767b\u8239\uff1f",
+      "expected": [
+        "final-en-08"
+      ],
+      "before_rank": 3,
+      "after_rank": 4,
+      "missing_positive": false,
+      "row_regression": true,
+      "false_positive": false,
+      "hits": [
+        "final-zh-08",
+        "final-audio-08",
+        "final-zh-00",
+        "final-en-08",
+        "final-audio-00"
+      ],
+      "location_correct": true,
+      "raw_peak": 0.8179983068341075,
+      "raw_distinct_source_margin": 0.0817305163132519,
+      "raw_top_sources": [
+        {
+          "id": "final-zh-08",
+          "cosine": 0.8179983068341075,
+          "kind": "text"
+        },
+        {
+          "id": "final-audio-08",
+          "cosine": 0.7362677905208556,
+          "kind": "audio"
+        },
+        {
+          "id": "final-en-08",
+          "cosine": 0.7058494641672027,
+          "kind": "text"
+        },
+        {
+          "id": "final-zh-00",
+          "cosine": 0.6701702763945433,
+          "kind": "text"
+        },
+        {
+          "id": "final-zh-16",
+          "cosine": 0.6592566270350451,
+          "kind": "text"
+        }
+      ],
+      "target_sources": [
+        {
+          "id": "final-en-08",
+          "kind": "text",
+          "text": "Ferry Boarding. Passengers board the island ferry from pier four. Reference VH-7308."
+        }
+      ],
+      "returned_sources": [
+        {
+          "id": "final-zh-08",
+          "kind": "text",
+          "text": "\u6e21\u8f6e\u8bf4\u660e\u3002\u524d\u5f80\u6d77\u5c9b\u7684\u4e58\u5ba2\u4ece\u56db\u53f7\u7801\u5934\u4e0a\u8239\u3002"
+        },
+        {
+          "id": "final-audio-08",
+          "kind": "audio",
+          "text": "Passengers board the island ferry from pier four."
+        },
+        {
+          "id": "final-zh-00",
+          "kind": "text",
+          "text": "\u5bfc\u89c8\u8bf4\u660e\u3002\u5bfc\u89c8\u7968\u5728\u5317\u4fa7\u552e\u7968\u4ead\u9886\u53d6\u3002"
+        },
+        {
+          "id": "final-en-08",
+          "kind": "text",
+          "text": "Ferry Boarding. Passengers board the island ferry from pier four. Reference VH-7308."
+        },
+        {
+          "id": "final-audio-00",
+          "kind": "audio",
+          "text": "Collect guided-tour tickets at the north kiosk."
+        }
+      ],
+      "observation": "The required English ferry source moves3\u21924 behind Chinese/audio equivalents and another Chinese record.",
+      "historical_source1265_observation": null
+    },
+    {
+      "fixture": "unseen-query",
+      "id": "unseen_cross_language-10",
+      "group": "cross_language",
+      "query": "\u7b2c\u4e00\u6b21\u6765\u5e2e\u5fd9\u7684\u52a8\u7269\u6536\u5bb9\u5fd7\u613f\u8005\u54ea\u5929\u4e0a\u5348\u63a5\u53d7\u4ecb\u7ecd\uff1f",
+      "expected": [
+        "final-en-10"
+      ],
+      "before_rank": 3,
+      "after_rank": 4,
+      "missing_positive": false,
+      "row_regression": true,
+      "false_positive": false,
+      "hits": [
+        "final-zh-10",
+        "final-audio-10",
+        "final-zh-07",
+        "final-en-10",
+        "final-audio-04"
+      ],
+      "location_correct": true,
+      "raw_peak": 0.7513741224237803,
+      "raw_distinct_source_margin": 0.03882802838013,
+      "raw_top_sources": [
+        {
+          "id": "final-zh-10",
+          "cosine": 0.7513741224237803,
+          "kind": "text"
+        },
+        {
+          "id": "final-audio-10",
+          "cosine": 0.7125460940436503,
+          "kind": "audio"
+        },
+        {
+          "id": "final-en-10",
+          "cosine": 0.6689432866874774,
+          "kind": "text"
+        },
+        {
+          "id": "final-zh-07",
+          "cosine": 0.6260687587302217,
+          "kind": "text"
+        },
+        {
+          "id": "final-zh-04",
+          "cosine": 0.6107289324225548,
+          "kind": "text"
+        }
+      ],
+      "target_sources": [
+        {
+          "id": "final-en-10",
+          "kind": "text",
+          "text": "Shelter Orientation. New volunteers attend orientation on Saturday mornings. Reference VH-7310."
+        }
+      ],
+      "returned_sources": [
+        {
+          "id": "final-zh-10",
+          "kind": "text",
+          "text": "\u6536\u5bb9\u6240\u8bf4\u660e\u3002\u65b0\u5fd7\u613f\u8005\u5728\u5468\u516d\u4e0a\u5348\u53c2\u52a0\u5165\u95e8\u8bf4\u660e\u4f1a\u3002"
+        },
+        {
+          "id": "final-audio-10",
+          "kind": "audio",
+          "text": "New volunteers attend orientation on Saturday mornings."
+        },
+        {
+          "id": "final-zh-07",
+          "kind": "text",
+          "text": "\u6e29\u5ba4\u8bf4\u660e\u3002\u56e2\u4f53\u53c2\u89c2\u987b\u63d0\u524d\u5411\u56ed\u533a\u529e\u516c\u5ba4\u9884\u7ea6\u3002"
+        },
+        {
+          "id": "final-en-10",
+          "kind": "text",
+          "text": "Shelter Orientation. New volunteers attend orientation on Saturday mornings. Reference VH-7310."
+        },
+        {
+          "id": "final-audio-04",
+          "kind": "audio",
+          "text": "Collect reserved loaves from the side counter after eight in the morning."
+        }
+      ],
+      "observation": "The required English volunteer-induction source moves3\u21924 behind Chinese/audio equivalents and another Chinese record.",
+      "historical_source1265_observation": null
+    },
+    {
+      "fixture": "unseen-query",
+      "id": "unseen_semantic_paraphrase-12",
+      "group": "semantic_paraphrase",
+      "query": "Is next Tuesday the collection day for finished pottery?",
+      "expected": [
+        "final-en-12"
+      ],
+      "before_rank": 1,
+      "after_rank": 2,
+      "missing_positive": false,
+      "row_regression": true,
+      "false_positive": false,
+      "hits": [
+        "final-audio-12",
+        "final-en-12",
+        "final-en-22",
+        "final-zh-12",
+        "final-audio-22"
+      ],
+      "location_correct": true,
+      "raw_peak": 0.867292572428913,
+      "raw_distinct_source_margin": 0.06688418730421375,
+      "raw_top_sources": [
+        {
+          "id": "final-audio-12",
+          "cosine": 0.867292572428913,
+          "kind": "audio"
+        },
+        {
+          "id": "final-en-12",
+          "cosine": 0.8004083851246993,
+          "kind": "text"
+        },
+        {
+          "id": "final-zh-12",
+          "cosine": 0.6994101312220083,
+          "kind": "text"
+        },
+        {
+          "id": "final-audio-22",
+          "cosine": 0.6678301763907943,
+          "kind": "audio"
+        },
+        {
+          "id": "final-en-22",
+          "cosine": 0.6651806950509283,
+          "kind": "text"
+        }
+      ],
+      "target_sources": [
+        {
+          "id": "final-en-12",
+          "kind": "text",
+          "text": "Ceramics Collection. Finished pottery can be collected on the following Tuesday. Reference VH-7312."
+        }
+      ],
+      "returned_sources": [
+        {
+          "id": "final-audio-12",
+          "kind": "audio",
+          "text": "Finished pottery can be collected on the following Tuesday."
+        },
+        {
+          "id": "final-en-12",
+          "kind": "text",
+          "text": "Ceramics Collection. Finished pottery can be collected on the following Tuesday. Reference VH-7312."
+        },
+        {
+          "id": "final-en-22",
+          "kind": "text",
+          "text": "Astronomy Club Meetings. The telescope session list is posted on the noticeboard every Monday. Reference VH-7322."
+        },
+        {
+          "id": "final-zh-12",
+          "kind": "text",
+          "text": "\u9676\u827a\u8bf4\u660e\u3002\u70e7\u5236\u5b8c\u6210\u7684\u9676\u5668\u53ef\u5728\u4e0b\u4e00\u5468\u4e8c\u9886\u53d6\u3002"
+        },
+        {
+          "id": "final-audio-22",
+          "kind": "audio",
+          "text": "The telescope session list is posted on the noticeboard every Monday."
+        }
+      ],
+      "observation": "The equivalent pottery-collection recording precedes the English text (1\u21922); body recall is restored but exact-source reciprocal rank declines.",
+      "historical_source1265_observation": null
+    },
+    {
+      "fixture": "unseen-query",
+      "id": "unseen_semantic_paraphrase-14",
+      "group": "semantic_paraphrase",
+      "query": "Where near the fountain are recovered belongings stored?",
+      "expected": [
+        "final-en-14"
+      ],
+      "before_rank": 1,
+      "after_rank": 2,
+      "missing_positive": false,
+      "row_regression": true,
+      "false_positive": false,
+      "hits": [
+        "final-audio-14",
+        "final-en-14",
+        "final-zh-14",
+        "final-en-11",
+        "final-audio-21"
+      ],
+      "location_correct": true,
+      "raw_peak": 0.866717372174882,
+      "raw_distinct_source_margin": 0.07085223862900503,
+      "raw_top_sources": [
+        {
+          "id": "final-audio-14",
+          "cosine": 0.866717372174882,
+          "kind": "audio"
+        },
+        {
+          "id": "final-en-14",
+          "cosine": 0.795865133545877,
+          "kind": "text"
+        },
+        {
+          "id": "final-zh-14",
+          "cosine": 0.7673273591710718,
+          "kind": "text"
+        },
+        {
+          "id": "final-en-11",
+          "cosine": 0.7109454532108821,
+          "kind": "text"
+        },
+        {
+          "id": "final-audio-21",
+          "cosine": 0.7058215802190565,
+          "kind": "audio"
+        }
+      ],
+      "target_sources": [
+        {
+          "id": "final-en-14",
+          "kind": "text",
+          "text": "Market Lost Property. Lost items are kept at the information booth near the fountain. Reference VH-7314."
+        }
+      ],
+      "returned_sources": [
+        {
+          "id": "final-audio-14",
+          "kind": "audio",
+          "text": "Lost items are kept at the information booth near the fountain."
+        },
+        {
+          "id": "final-en-14",
+          "kind": "text",
+          "text": "Market Lost Property. Lost items are kept at the information booth near the fountain. Reference VH-7314."
+        },
+        {
+          "id": "final-zh-14",
+          "kind": "text",
+          "text": "\u96c6\u5e02\u8bf4\u660e\u3002\u5931\u7269\u4fdd\u7ba1\u5728\u55b7\u6cc9\u65c1\u7684\u54a8\u8be2\u4ead\u3002"
+        },
+        {
+          "id": "final-en-11",
+          "kind": "text",
+          "text": "Workshop Equipment. Safety goggles are stored in the cabinet beside the entrance. Reference VH-7311."
+        },
+        {
+          "id": "final-audio-21",
+          "kind": "audio",
+          "text": "Reserved paddles are collected from the rack beside the office."
+        }
+      ],
+      "observation": "The equivalent lost-property recording precedes the English text (1\u21922).",
+      "historical_source1265_observation": null
+    },
+    {
+      "fixture": "unseen-query",
+      "id": "unseen_cross_language-16",
+      "group": "cross_language",
+      "query": "\u60f3\u8d70\u5230\u6e56\u8fb9\u6b47\u811a\u7684\u4ead\u5b50\uff0c\u5e94\u5bfb\u627e\u54ea\u79cd\u989c\u8272\u7684\u8def\u6807\uff1f",
+      "expected": [
+        "final-en-16"
+      ],
+      "before_rank": 3,
+      "after_rank": 4,
+      "missing_positive": false,
+      "row_regression": true,
+      "false_positive": false,
+      "hits": [
+        "final-zh-16",
+        "final-zh-14",
+        "final-audio-16",
+        "final-en-16",
+        "final-en-00"
+      ],
+      "location_correct": true,
+      "raw_peak": 0.7857897311497506,
+      "raw_distinct_source_margin": 0.06612245793290861,
+      "raw_top_sources": [
+        {
+          "id": "final-zh-16",
+          "cosine": 0.7857897311497506,
+          "kind": "text"
+        },
+        {
+          "id": "final-audio-16",
+          "cosine": 0.719667273216842,
+          "kind": "audio"
+        },
+        {
+          "id": "final-en-16",
+          "cosine": 0.7092485664527309,
+          "kind": "text"
+        },
+        {
+          "id": "final-zh-14",
+          "cosine": 0.6766515654598015,
+          "kind": "text"
+        },
+        {
+          "id": "final-zh-21",
+          "cosine": 0.6675786196606766,
+          "kind": "text"
+        }
+      ],
+      "target_sources": [
+        {
+          "id": "final-en-16",
+          "kind": "text",
+          "text": "Woodland Route. Follow the orange markers to reach the lakeside shelter. Reference VH-7316."
+        }
+      ],
+      "returned_sources": [
+        {
+          "id": "final-zh-16",
+          "kind": "text",
+          "text": "\u6797\u95f4\u6b65\u9053\u8bf4\u660e\u3002\u6cbf\u6a59\u8272\u6807\u8bb0\u884c\u8d70\u53ef\u62b5\u8fbe\u6e56\u8fb9\u4f11\u606f\u4ead\u3002"
+        },
+        {
+          "id": "final-zh-14",
+          "kind": "text",
+          "text": "\u96c6\u5e02\u8bf4\u660e\u3002\u5931\u7269\u4fdd\u7ba1\u5728\u55b7\u6cc9\u65c1\u7684\u54a8\u8be2\u4ead\u3002"
+        },
+        {
+          "id": "final-audio-16",
+          "kind": "audio",
+          "text": "Follow the orange markers to reach the lakeside shelter."
+        },
+        {
+          "id": "final-en-16",
+          "kind": "text",
+          "text": "Woodland Route. Follow the orange markers to reach the lakeside shelter. Reference VH-7316."
+        },
+        {
+          "id": "final-en-00",
+          "kind": "text",
+          "text": "Museum Tour. Collect guided-tour tickets at the north kiosk. Reference VH-7300."
+        }
+      ],
+      "observation": "The required English lakeside-trail source moves3\u21924 behind Chinese equivalents/nearby shelter material and audio.",
+      "historical_source1265_observation": null
+    },
+    {
+      "fixture": "unseen-query",
+      "id": "unseen_semantic_paraphrase-16",
+      "group": "semantic_paraphrase",
+      "query": "What colour signs show the path to the lakeside rest shelter?",
+      "expected": [
+        "final-en-16"
+      ],
+      "before_rank": 1,
+      "after_rank": 2,
+      "missing_positive": false,
+      "row_regression": true,
+      "false_positive": false,
+      "hits": [
+        "final-audio-16",
+        "final-en-16",
+        "final-zh-16",
+        "final-en-03",
+        "final-zh-14"
+      ],
+      "location_correct": true,
+      "raw_peak": 0.8040905268088189,
+      "raw_distinct_source_margin": 0.030667829078871,
+      "raw_top_sources": [
+        {
+          "id": "final-audio-16",
+          "cosine": 0.8040905268088189,
+          "kind": "audio"
+        },
+        {
+          "id": "final-zh-16",
+          "cosine": 0.7734226977299479,
+          "kind": "text"
+        },
+        {
+          "id": "final-en-16",
+          "cosine": 0.7497840354928063,
+          "kind": "text"
+        },
+        {
+          "id": "final-en-03",
+          "cosine": 0.661552366319115,
+          "kind": "text"
+        },
+        {
+          "id": "final-en-21",
+          "cosine": 0.6560875658767028,
+          "kind": "text"
+        }
+      ],
+      "target_sources": [
+        {
+          "id": "final-en-16",
+          "kind": "text",
+          "text": "Woodland Route. Follow the orange markers to reach the lakeside shelter. Reference VH-7316."
+        }
+      ],
+      "returned_sources": [
+        {
+          "id": "final-audio-16",
+          "kind": "audio",
+          "text": "Follow the orange markers to reach the lakeside shelter."
+        },
+        {
+          "id": "final-en-16",
+          "kind": "text",
+          "text": "Woodland Route. Follow the orange markers to reach the lakeside shelter. Reference VH-7316."
+        },
+        {
+          "id": "final-zh-16",
+          "kind": "text",
+          "text": "\u6797\u95f4\u6b65\u9053\u8bf4\u660e\u3002\u6cbf\u6a59\u8272\u6807\u8bb0\u884c\u8d70\u53ef\u62b5\u8fbe\u6e56\u8fb9\u4f11\u606f\u4ead\u3002"
+        },
+        {
+          "id": "final-en-03",
+          "kind": "text",
+          "text": "Campground Quiet. Quiet hours begin at ten in the evening. Reference VH-7303."
+        },
+        {
+          "id": "final-zh-14",
+          "kind": "text",
+          "text": "\u96c6\u5e02\u8bf4\u660e\u3002\u5931\u7269\u4fdd\u7ba1\u5728\u55b7\u6cc9\u65c1\u7684\u54a8\u8be2\u4ead\u3002"
+        }
+      ],
+      "observation": "The equivalent lakeside-trail recording precedes the English text (1\u21922). Together with pottery/lost-property this lowers groupMRR1.00\u21920.94.",
+      "historical_source1265_observation": null
+    },
+    {
+      "fixture": "rework-frozen",
+      "id": "fresh-semantic_paraphrase-00",
+      "group": "semantic_paraphrase",
+      "query": "What packaging is required when bringing unused seeds back?",
+      "expected": [
+        "fresh-en-00"
+      ],
+      "before_rank": 1,
+      "after_rank": 2,
+      "missing_positive": false,
+      "row_regression": true,
+      "false_positive": false,
+      "hits": [
+        "fresh-audio-00",
+        "fresh-en-00",
+        "fresh-zh-00",
+        "fresh-foil-16",
+        "fresh-zh-22"
+      ],
+      "location_correct": true,
+      "raw_peak": 0.8686151880668375,
+      "raw_distinct_source_margin": 0.05431048146031181,
+      "raw_top_sources": [
+        {
+          "id": "fresh-audio-00",
+          "cosine": 0.8686151880668375,
+          "kind": "audio"
+        },
+        {
+          "id": "fresh-en-00",
+          "cosine": 0.8143047066065257,
+          "kind": "text"
+        },
+        {
+          "id": "fresh-zh-00",
+          "cosine": 0.7770071172592502,
+          "kind": "text"
+        },
+        {
+          "id": "fresh-foil-16",
+          "cosine": 0.6901705821212457,
+          "kind": "text"
+        },
+        {
+          "id": "fresh-foil-10",
+          "cosine": 0.6897414002106736,
+          "kind": "text"
+        }
+      ],
+      "target_sources": [
+        {
+          "id": "fresh-en-00",
+          "kind": "text",
+          "text": "Seed Returns. Unused seeds are returned in sealed paper envelopes. Reference AZ-8400."
+        }
+      ],
+      "returned_sources": [
+        {
+          "id": "fresh-audio-00",
+          "kind": "audio",
+          "text": "Unused seeds are returned in sealed paper envelopes."
+        },
+        {
+          "id": "fresh-en-00",
+          "kind": "text",
+          "text": "Seed Returns. Unused seeds are returned in sealed paper envelopes. Reference AZ-8400."
+        },
+        {
+          "id": "fresh-zh-00",
+          "kind": "text",
+          "text": "\u79cd\u5b50\u5c01\u88c5\u3002\u5269\u4f59\u79cd\u5b50\u5e94\u88c5\u5165\u5bc6\u5c01\u7eb8\u4fe1\u5c01\u540e\u5f52\u8fd8\u3002"
+        },
+        {
+          "id": "fresh-foil-16",
+          "kind": "text",
+          "text": "Fictional catalog record 16. The indigo crate contains sealed glass components assigned to test rack 136."
+        },
+        {
+          "id": "fresh-zh-22",
+          "kind": "text",
+          "text": "\u7fbd\u7403\u56de\u6536\u3002\u635f\u574f\u7684\u7fbd\u6bdb\u7403\u653e\u5165\u4e09\u53f7\u573a\u5730\u65c1\u7684\u7eb8\u677f\u56de\u6536\u7bb1\u3002"
+        }
+      ],
+      "observation": "The equivalent seed-return recording precedes the required English text (1\u21922).",
+      "historical_source1265_observation": null
+    },
+    {
+      "fixture": "rework-frozen",
+      "id": "fresh-cross_language-03",
+      "group": "cross_language",
+      "query": "Where can a technician find an additional microphone?",
+      "expected": [
+        "fresh-zh-03"
+      ],
+      "before_rank": 3,
+      "after_rank": 4,
+      "missing_positive": false,
+      "row_regression": true,
+      "false_positive": false,
+      "hits": [
+        "fresh-en-03",
+        "fresh-en-07",
+        "fresh-audio-03",
+        "fresh-zh-03",
+        "fresh-audio-07"
+      ],
+      "location_correct": true,
+      "raw_peak": 0.7329112790347775,
+      "raw_distinct_source_margin": 0.004883648204412783,
+      "raw_top_sources": [
+        {
+          "id": "fresh-en-03",
+          "cosine": 0.7329112790347775,
+          "kind": "text"
+        },
+        {
+          "id": "fresh-audio-03",
+          "cosine": 0.7280276308303647,
+          "kind": "audio"
+        },
+        {
+          "id": "fresh-zh-03",
+          "cosine": 0.704004426763519,
+          "kind": "text"
+        },
+        {
+          "id": "fresh-en-07",
+          "cosine": 0.6948245996076201,
+          "kind": "text"
+        },
+        {
+          "id": "fresh-audio-07",
+          "cosine": 0.6810001918212423,
+          "kind": "audio"
+        }
+      ],
+      "target_sources": [
+        {
+          "id": "fresh-zh-03",
+          "kind": "text",
+          "text": "\u8bdd\u7b52\u5b58\u653e\u3002\u5907\u7528\u8bdd\u7b52\u5b58\u653e\u5728\u63a7\u5236\u5ba4\u65c1\u7684\u94f6\u8272\u67dc\u5b50\u91cc\u3002"
+        }
+      ],
+      "returned_sources": [
+        {
+          "id": "fresh-en-03",
+          "kind": "text",
+          "text": "Studio Microphones. Spare microphones are stored in the silver cabinet beside the control room. Reference AZ-8403."
+        },
+        {
+          "id": "fresh-en-07",
+          "kind": "text",
+          "text": "Repair Cafe. Visitors bring replacement batteries themselves to the repair cafe. Reference AZ-8407."
+        },
+        {
+          "id": "fresh-audio-03",
+          "kind": "audio",
+          "text": "Spare microphones are stored in the silver cabinet beside the control room."
+        },
+        {
+          "id": "fresh-zh-03",
+          "kind": "text",
+          "text": "\u8bdd\u7b52\u5b58\u653e\u3002\u5907\u7528\u8bdd\u7b52\u5b58\u653e\u5728\u63a7\u5236\u5ba4\u65c1\u7684\u94f6\u8272\u67dc\u5b50\u91cc\u3002"
+        },
+        {
+          "id": "fresh-audio-07",
+          "kind": "audio",
+          "text": "Visitors bring replacement batteries themselves to the repair cafe."
+        }
+      ],
+      "observation": "The required Chinese spare-microphone source moves3\u21924 behind equivalent English/audio plus another English microphone record.",
+      "historical_source1265_observation": null
+    },
+    {
+      "fixture": "rework-frozen",
+      "id": "fresh-semantic_paraphrase-17",
+      "group": "semantic_paraphrase",
+      "query": "\u96e8\u91cf\u8ba1\u4e2d\u7684\u79ef\u6c34\u5e94\u5728\u4ec0\u4e48\u65f6\u5019\u6e05\u7a7a\uff1f",
+      "expected": [
+        "fresh-zh-17"
+      ],
+      "before_rank": 1,
+      "after_rank": 2,
+      "missing_positive": false,
+      "row_regression": true,
+      "false_positive": false,
+      "hits": [
+        "fresh-audio-17",
+        "fresh-zh-17",
+        "fresh-en-17",
+        "fresh-zh-06",
+        "fresh-audio-08"
+      ],
+      "location_correct": true,
+      "raw_peak": 0.7702498522961094,
+      "raw_distinct_source_margin": 0.025292545131947453,
+      "raw_top_sources": [
+        {
+          "id": "fresh-audio-17",
+          "cosine": 0.7702498522961094,
+          "kind": "audio"
+        },
+        {
+          "id": "fresh-en-17",
+          "cosine": 0.744957307164162,
+          "kind": "text"
+        },
+        {
+          "id": "fresh-zh-17",
+          "cosine": 0.7041976687848946,
+          "kind": "text"
+        },
+        {
+          "id": "fresh-zh-06",
+          "cosine": 0.6387989651445942,
+          "kind": "text"
+        },
+        {
+          "id": "fresh-zh-08",
+          "cosine": 0.634756986576595,
+          "kind": "text"
+        }
+      ],
+      "target_sources": [
+        {
+          "id": "fresh-zh-17",
+          "kind": "text",
+          "text": "\u96e8\u91cf\u8bb0\u5f55\u3002\u65e5\u51fa\u65f6\u5f55\u5165\u8bfb\u6570\u4e4b\u540e\u518d\u5012\u7a7a\u96e8\u91cf\u8ba1\u3002"
+        }
+      ],
+      "returned_sources": [
+        {
+          "id": "fresh-audio-17",
+          "kind": "audio",
+          "text": "The rainfall gauge is emptied after the reading is entered at sunrise."
+        },
+        {
+          "id": "fresh-zh-17",
+          "kind": "text",
+          "text": "\u96e8\u91cf\u8bb0\u5f55\u3002\u65e5\u51fa\u65f6\u5f55\u5165\u8bfb\u6570\u4e4b\u540e\u518d\u5012\u7a7a\u96e8\u91cf\u8ba1\u3002"
+        },
+        {
+          "id": "fresh-en-17",
+          "kind": "text",
+          "text": "Rainwater Gauge. The rainfall gauge is emptied after the reading is entered at sunrise. Reference AZ-8417."
+        },
+        {
+          "id": "fresh-zh-06",
+          "kind": "text",
+          "text": "\u8239\u95f8\u7b49\u5019\u3002\u5212\u8247\u8005\u987b\u5728\u767d\u7ebf\u540e\u7b49\u5019\uff0c\u76f4\u81f3\u8239\u95f8\u4fe1\u53f7\u53d8\u7eff\u3002"
+        },
+        {
+          "id": "fresh-audio-08",
+          "kind": "audio",
+          "text": "The bee observation balcony is closed during strong winds."
+        }
+      ],
+      "observation": "The equivalent rain-gauge recording precedes the required Chinese text (1\u21922).",
+      "historical_source1265_observation": "The equivalent English rain-gauge source now precedes the required Chinese source. The Chinese answer is present at rank 2; exact-source MRR declines."
+    },
+    {
+      "fixture": "rework-frozen",
+      "id": "fresh-no_answer-18",
+      "group": "no_answer",
+      "query": "What number opens the imaginary vault beneath Saturn?",
+      "expected": [],
+      "before_rank": null,
+      "after_rank": null,
+      "missing_positive": false,
+      "row_regression": false,
+      "false_positive": true,
+      "hits": [
+        "fresh-foil-17",
+        "fresh-foil-14",
+        "fresh-audio-16",
+        "fresh-zh-16",
+        "fresh-zh-19"
+      ],
+      "location_correct": false,
+      "raw_peak": 0.7069660416645627,
+      "raw_distinct_source_margin": 0.008901498426363674,
+      "raw_top_sources": [
+        {
+          "id": "fresh-foil-17",
+          "cosine": 0.7069660416645627,
+          "kind": "text"
+        },
+        {
+          "id": "fresh-foil-14",
+          "cosine": 0.698064543238199,
+          "kind": "text"
+        },
+        {
+          "id": "fresh-foil-16",
+          "cosine": 0.6960112156731548,
+          "kind": "text"
+        },
+        {
+          "id": "fresh-foil-11",
+          "cosine": 0.6956806297583223,
+          "kind": "text"
+        },
+        {
+          "id": "fresh-foil-07",
+          "cosine": 0.6947596477726743,
+          "kind": "text"
+        }
+      ],
+      "target_sources": [],
+      "returned_sources": [
+        {
+          "id": "fresh-foil-17",
+          "kind": "text",
+          "text": "Fictional catalog record 17. The indigo crate contains sealed glass components assigned to test rack 137."
+        },
+        {
+          "id": "fresh-foil-14",
+          "kind": "text",
+          "text": "Fictional catalog record 14. The indigo crate contains sealed glass components assigned to test rack 134."
+        },
+        {
+          "id": "fresh-audio-16",
+          "kind": "audio",
+          "text": "Marionettes hang from numbered hooks inside the velvet-lined cupboard."
+        },
+        {
+          "id": "fresh-zh-16",
+          "kind": "text",
+          "text": "\u6728\u5076\u5b58\u653e\u3002\u63d0\u7ebf\u6728\u5076\u60ac\u6302\u5728\u5929\u9e45\u7ed2\u886c\u91cc\u67dc\u4e2d\u7684\u7f16\u53f7\u6302\u94a9\u4e0a\u3002"
+        },
+        {
+          "id": "fresh-zh-19",
+          "kind": "text",
+          "text": "\u5e06\u8239\u65d7\u53f7\u3002\u6761\u7eb9\u4e09\u89d2\u65d7\u8868\u793a\u521d\u5b66\u8005\u8239\u53ea\u5fc5\u987b\u8fd4\u56de\u4e0b\u6c34\u5761\u9053\u3002"
+        }
+      ],
+      "observation": "The imaginary Saturn-vault query has no answer. Generic office foils peak0.70697, enough for the0.70 absolute gate despite only0.00890 margin.",
+      "historical_source1265_observation": "The impossible Saturn-vault query returns generic foil records and audio despite no labelled answer. Their high captured cosine defeats the absolute-confidence rule; retain this false positive."
+    },
+    {
+      "fixture": "rework-frozen",
+      "id": "fresh-cross_language-23",
+      "group": "cross_language",
+      "query": "What protective material is wrapped around bells for transport?",
+      "expected": [
+        "fresh-zh-23"
+      ],
+      "before_rank": 3,
+      "after_rank": 4,
+      "missing_positive": false,
+      "row_regression": true,
+      "false_positive": false,
+      "hits": [
+        "fresh-audio-23",
+        "fresh-en-23",
+        "fresh-en-04",
+        "fresh-zh-23",
+        "fresh-audio-04"
+      ],
+      "location_correct": true,
+      "raw_peak": 0.8385967503726152,
+      "raw_distinct_source_margin": 0.07349307969174246,
+      "raw_top_sources": [
+        {
+          "id": "fresh-audio-23",
+          "cosine": 0.8385967503726152,
+          "kind": "audio"
+        },
+        {
+          "id": "fresh-en-23",
+          "cosine": 0.7651036706808727,
+          "kind": "text"
+        },
+        {
+          "id": "fresh-zh-23",
+          "cosine": 0.6979630908323603,
+          "kind": "text"
+        },
+        {
+          "id": "fresh-audio-04",
+          "cosine": 0.6936639558746442,
+          "kind": "audio"
+        },
+        {
+          "id": "fresh-en-04",
+          "cosine": 0.6805072273791563,
+          "kind": "text"
+        }
+      ],
+      "target_sources": [
+        {
+          "id": "fresh-zh-23",
+          "kind": "text",
+          "text": "\u624b\u94c3\u5305\u88c5\u3002\u7ec3\u4e60\u624b\u94c3\u987b\u5148\u7528\u6bdb\u6be1\u5305\u597d\uff0c\u518d\u653e\u5165\u8fd0\u8f93\u7bb1\u3002"
+        }
+      ],
+      "returned_sources": [
+        {
+          "id": "fresh-audio-23",
+          "kind": "audio",
+          "text": "Practice bells are wrapped in felt before being put into the transport chest."
+        },
+        {
+          "id": "fresh-en-23",
+          "kind": "text",
+          "text": "Bell Practice. Practice bells are wrapped in felt before being put into the transport chest. Reference AZ-8423."
+        },
+        {
+          "id": "fresh-en-04",
+          "kind": "text",
+          "text": "Climbing Ropes. Ropes with a frayed outer sleeve are placed in the inspection basket. Reference AZ-8404."
+        },
+        {
+          "id": "fresh-zh-23",
+          "kind": "text",
+          "text": "\u624b\u94c3\u5305\u88c5\u3002\u7ec3\u4e60\u624b\u94c3\u987b\u5148\u7528\u6bdb\u6be1\u5305\u597d\uff0c\u518d\u653e\u5165\u8fd0\u8f93\u7bb1\u3002"
+        },
+        {
+          "id": "fresh-audio-04",
+          "kind": "audio",
+          "text": "Ropes with a frayed outer sleeve are placed in the inspection basket."
+        }
+      ],
+      "observation": "The Chinese bell-transport source moves3\u21924 behind equivalent audio/English and another English record.",
+      "historical_source1265_observation": null
+    },
+    {
+      "fixture": "rework-frozen",
+      "id": "fresh-no_answer-24",
+      "group": "no_answer",
+      "query": "What is the serial code of the fictional time reversal machine?",
+      "expected": [],
+      "before_rank": null,
+      "after_rank": null,
+      "missing_positive": false,
+      "row_regression": false,
+      "false_positive": true,
+      "hits": [
+        "fresh-foil-17",
+        "fresh-foil-13",
+        "fresh-audio-05",
+        "fresh-audio-07",
+        "fresh-zh-12"
+      ],
+      "location_correct": false,
+      "raw_peak": 0.7059825449614264,
+      "raw_distinct_source_margin": 0.005402618035620699,
+      "raw_top_sources": [
+        {
+          "id": "fresh-foil-17",
+          "cosine": 0.7059825449614264,
+          "kind": "text"
+        },
+        {
+          "id": "fresh-foil-13",
+          "cosine": 0.7005799269258057,
+          "kind": "text"
+        },
+        {
+          "id": "fresh-foil-21",
+          "cosine": 0.6994089802146988,
+          "kind": "text"
+        },
+        {
+          "id": "fresh-foil-11",
+          "cosine": 0.6983210699316194,
+          "kind": "text"
+        },
+        {
+          "id": "fresh-foil-00",
+          "cosine": 0.6958589515505097,
+          "kind": "text"
+        }
+      ],
+      "target_sources": [],
+      "returned_sources": [
+        {
+          "id": "fresh-foil-17",
+          "kind": "text",
+          "text": "Fictional catalog record 17. The indigo crate contains sealed glass components assigned to test rack 137."
+        },
+        {
+          "id": "fresh-foil-13",
+          "kind": "text",
+          "text": "Fictional catalog record 13. The indigo crate contains sealed glass components assigned to test rack 133."
+        },
+        {
+          "id": "fresh-audio-05",
+          "kind": "audio",
+          "text": "The club lends digital chess clocks for a refundable five coin deposit."
+        },
+        {
+          "id": "fresh-audio-07",
+          "kind": "audio",
+          "text": "Visitors bring replacement batteries themselves to the repair cafe."
+        },
+        {
+          "id": "fresh-zh-12",
+          "kind": "text",
+          "text": "\u7535\u53f0\u547c\u53f7\u3002\u4e1a\u4f59\u65e0\u7ebf\u7535\u64cd\u4f5c\u5458\u5728\u6bcf\u6b21\u5171\u7528\u65f6\u6bb5\u5f00\u59cb\u65f6\u5148\u62a5\u547c\u53f7\u3002"
+        }
+      ],
+      "observation": "The fictional time-reversal code has no answer. Generic office foils peak0.70598 and margin0.00540; absolute confidence accepts them. With the Saturn sample this remains2/25 (8%).",
+      "historical_source1265_observation": "The fictional time-reversal serial-code query returns generic foil records and audio. Unsupported identifier-like semantic similarity is accepted without literal answer evidence; together these negatives make this cohort 2/25 (8%)."
+    },
+    {
+      "fixture": "rework-final2",
+      "id": "final2-audio_semantic-01",
+      "group": "audio_semantic",
+      "query": "audio recording: What should a navigation compass be separated from?",
+      "expected": [
+        "final2-audio-01"
+      ],
+      "before_rank": 2,
+      "after_rank": null,
+      "missing_positive": true,
+      "row_regression": true,
+      "false_positive": false,
+      "hits": [],
+      "location_correct": false,
+      "raw_peak": 0.6985576592102746,
+      "raw_distinct_source_margin": 0.006393137297965978,
+      "raw_top_sources": [
+        {
+          "id": "final2-en-01",
+          "cosine": 0.6985576592102746,
+          "kind": "text"
+        },
+        {
+          "id": "final2-audio-01",
+          "cosine": 0.6921645219123086,
+          "kind": "audio"
+        },
+        {
+          "id": "final2-zh-01",
+          "cosine": 0.6448506927107963,
+          "kind": "text"
+        },
+        {
+          "id": "final2-en-20",
+          "cosine": 0.622433642390876,
+          "kind": "text"
+        },
+        {
+          "id": "final2-en-11",
+          "cosine": 0.6161199227833892,
+          "kind": "text"
+        }
+      ],
+      "target_sources": [
+        {
+          "id": "final2-audio-01",
+          "kind": "audio",
+          "text": "Compasses are kept away from magnetic cabinet doors."
+        }
+      ],
+      "returned_sources": [],
+      "observation": "Real generated compass-care speech is present but the query is rejected: peak0.69856 and margin0.00639 satisfy neither0.70 absolute nor0.04 margin. Retained missing positive; audio recall24/25.",
+      "historical_source1265_observation": "The source is an actual generated speech recording encoded on the CPU backend. The explicit-audio query is rejected by final confidence filtering and returns no results. Baseline rank 2 becomes a missing positive; this keeps audio Recall@5 at 24/25."
+    },
+    {
+      "fixture": "rework-final2",
+      "id": "final2-semantic_paraphrase-05",
+      "group": "semantic_paraphrase",
+      "query": "What happens to the telescope optics before shutting the dome?",
+      "expected": [
+        "final2-en-05"
+      ],
+      "before_rank": 1,
+      "after_rank": 2,
+      "missing_positive": false,
+      "row_regression": true,
+      "false_positive": false,
+      "hits": [
+        "final2-audio-05",
+        "final2-en-05",
+        "final2-zh-05",
+        "final2-en-01",
+        "final2-audio-12"
+      ],
+      "location_correct": true,
+      "raw_peak": 0.8406871948690258,
+      "raw_distinct_source_margin": 0.09599849966577101,
+      "raw_top_sources": [
+        {
+          "id": "final2-audio-05",
+          "cosine": 0.8406871948690258,
+          "kind": "audio"
+        },
+        {
+          "id": "final2-zh-05",
+          "cosine": 0.7446886952032548,
+          "kind": "text"
+        },
+        {
+          "id": "final2-en-05",
+          "cosine": 0.7437080624042397,
+          "kind": "text"
+        },
+        {
+          "id": "final2-audio-12",
+          "cosine": 0.6351405761876308,
+          "kind": "audio"
+        },
+        {
+          "id": "final2-audio-20",
+          "cosine": 0.6290273582901867,
+          "kind": "audio"
+        }
+      ],
+      "target_sources": [
+        {
+          "id": "final2-en-05",
+          "kind": "text",
+          "text": "Telescope Covers. Telescope lenses receive fitted caps before the dome closes. Reference NQ-6205."
+        }
+      ],
+      "returned_sources": [
+        {
+          "id": "final2-audio-05",
+          "kind": "audio",
+          "text": "Telescope lenses receive fitted caps before the dome closes."
+        },
+        {
+          "id": "final2-en-05",
+          "kind": "text",
+          "text": "Telescope Covers. Telescope lenses receive fitted caps before the dome closes. Reference NQ-6205."
+        },
+        {
+          "id": "final2-zh-05",
+          "kind": "text",
+          "text": "\u955c\u5934\u906e\u76d6\u3002\u5929\u6587\u53f0\u7a79\u9876\u5173\u95ed\u524d\u5e94\u7ed9\u671b\u8fdc\u955c\u955c\u5934\u76d6\u4e0a\u914d\u5957\u76d6\u5b50\u3002"
+        },
+        {
+          "id": "final2-en-01",
+          "kind": "text",
+          "text": "Compass Care. Compasses are kept away from magnetic cabinet doors. Reference NQ-6201."
+        },
+        {
+          "id": "final2-audio-12",
+          "kind": "audio",
+          "text": "Visitors inspect rare stamps through mounted magnifying lenses."
+        }
+      ],
+      "observation": "The equivalent telescope-care recording precedes the required English text (1\u21922).",
+      "historical_source1265_observation": null
+    },
+    {
+      "fixture": "rework-final2",
+      "id": "final2-cross_language-06",
+      "group": "cross_language",
+      "query": "\u7528\u4ec0\u4e48\u6750\u6599\u4fee\u5730\u56fe\u53c8\u4e0d\u4f1a\u6c38\u4e45\u7c98\u4f4f\uff1f",
+      "expected": [
+        "final2-en-06"
+      ],
+      "before_rank": 3,
+      "after_rank": 4,
+      "missing_positive": false,
+      "row_regression": true,
+      "false_positive": false,
+      "hits": [
+        "final2-zh-06",
+        "final2-zh-13",
+        "final2-audio-06",
+        "final2-en-06",
+        "final2-en-13"
+      ],
+      "location_correct": true,
+      "raw_peak": 0.7850379992200418,
+      "raw_distinct_source_margin": 0.06235028143533705,
+      "raw_top_sources": [
+        {
+          "id": "final2-zh-06",
+          "cosine": 0.7850379992200418,
+          "kind": "text"
+        },
+        {
+          "id": "final2-audio-06",
+          "cosine": 0.7226877177847048,
+          "kind": "audio"
+        },
+        {
+          "id": "final2-en-06",
+          "cosine": 0.7192136010301459,
+          "kind": "text"
+        },
+        {
+          "id": "final2-zh-13",
+          "cosine": 0.6784856913010021,
+          "kind": "text"
+        },
+        {
+          "id": "final2-zh-23",
+          "cosine": 0.6658609118403245,
+          "kind": "text"
+        }
+      ],
+      "target_sources": [
+        {
+          "id": "final2-en-06",
+          "kind": "text",
+          "text": "Map Repairs. Torn maps are repaired using reversible archival tape. Reference NQ-6206."
+        }
+      ],
+      "returned_sources": [
+        {
+          "id": "final2-zh-06",
+          "kind": "text",
+          "text": "\u5730\u56fe\u4fee\u8865\u3002\u7834\u635f\u5730\u56fe\u4f7f\u7528\u53ef\u79fb\u9664\u7684\u6863\u6848\u80f6\u5e26\u4fee\u8865\u3002"
+        },
+        {
+          "id": "final2-zh-13",
+          "kind": "text",
+          "text": "\u9676\u6ce5\u4fdd\u5b58\u3002\u672a\u4f7f\u7528\u7684\u96d5\u5851\u9676\u6ce5\u8fc7\u591c\u65f6\u7528\u6e7f\u4e9a\u9ebb\u5e03\u5305\u88f9\u3002"
+        },
+        {
+          "id": "final2-audio-06",
+          "kind": "audio",
+          "text": "Torn maps are repaired using reversible archival tape."
+        },
+        {
+          "id": "final2-en-06",
+          "kind": "text",
+          "text": "Map Repairs. Torn maps are repaired using reversible archival tape. Reference NQ-6206."
+        },
+        {
+          "id": "final2-en-13",
+          "kind": "text",
+          "text": "Clay Storage. Unused sculpting clay is wrapped in damp linen overnight. Reference NQ-6213."
+        }
+      ],
+      "observation": "The required English map-repair text moves3\u21924 behind Chinese map/clay passages and the equivalent recording.",
+      "historical_source1265_observation": null
+    },
+    {
+      "fixture": "rework-final2",
+      "id": "final2-semantic_paraphrase-09",
+      "group": "semantic_paraphrase",
+      "query": "What preparation is required for lantern wicks before the march?",
+      "expected": [
+        "final2-en-09"
+      ],
+      "before_rank": 1,
+      "after_rank": 2,
+      "missing_positive": false,
+      "row_regression": true,
+      "false_positive": false,
+      "hits": [
+        "final2-audio-09",
+        "final2-en-09",
+        "final2-en-20",
+        "final2-zh-09",
+        "final2-audio-20"
+      ],
+      "location_correct": true,
+      "raw_peak": 0.8491969769511037,
+      "raw_distinct_source_margin": 0.07611229881624149,
+      "raw_top_sources": [
+        {
+          "id": "final2-audio-09",
+          "cosine": 0.8491969769511037,
+          "kind": "audio"
+        },
+        {
+          "id": "final2-en-09",
+          "cosine": 0.7730846781348623,
+          "kind": "text"
+        },
+        {
+          "id": "final2-zh-09",
+          "cosine": 0.7120289547247518,
+          "kind": "text"
+        },
+        {
+          "id": "final2-en-20",
+          "cosine": 0.6815834377037862,
+          "kind": "text"
+        },
+        {
+          "id": "final2-audio-20",
+          "cosine": 0.680208894914461,
+          "kind": "audio"
+        }
+      ],
+      "target_sources": [
+        {
+          "id": "final2-en-09",
+          "kind": "text",
+          "text": "Lantern Check. Lantern wicks are trimmed before the evening procession. Reference NQ-6209."
+        }
+      ],
+      "returned_sources": [
+        {
+          "id": "final2-audio-09",
+          "kind": "audio",
+          "text": "Lantern wicks are trimmed before the evening procession."
+        },
+        {
+          "id": "final2-en-09",
+          "kind": "text",
+          "text": "Lantern Check. Lantern wicks are trimmed before the evening procession. Reference NQ-6209."
+        },
+        {
+          "id": "final2-en-20",
+          "kind": "text",
+          "text": "Harbor Flags. Harbor signal flags are lowered before the lighthouse lamp starts. Reference NQ-6220."
+        },
+        {
+          "id": "final2-zh-09",
+          "kind": "text",
+          "text": "\u706f\u82af\u4fee\u526a\u3002\u591c\u95f4\u5de1\u6e38\u5f00\u59cb\u524d\u8981\u4fee\u526a\u706f\u7b3c\u7684\u706f\u82af\u3002"
+        },
+        {
+          "id": "final2-audio-20",
+          "kind": "audio",
+          "text": "Harbor signal flags are lowered before the lighthouse lamp starts."
+        }
+      ],
+      "observation": "The equivalent lantern-preparation recording precedes the required English text (1\u21922).",
+      "historical_source1265_observation": null
+    },
+    {
+      "fixture": "rework-final2",
+      "id": "final2-cross_language-12",
+      "group": "cross_language",
+      "query": "\u770b\u73cd\u8d35\u90ae\u7968\u7684\u7ec6\u8282\u8981\u7528\u4ec0\u4e48\uff1f",
+      "expected": [
+        "final2-en-12"
+      ],
+      "before_rank": 2,
+      "after_rank": 3,
+      "missing_positive": false,
+      "row_regression": true,
+      "false_positive": false,
+      "hits": [
+        "final2-zh-12",
+        "final2-zh-10",
+        "final2-en-12",
+        "final2-audio-12",
+        "final2-en-10"
+      ],
+      "location_correct": true,
+      "raw_peak": 0.7747140477585679,
+      "raw_distinct_source_margin": 0.046625846638568835,
+      "raw_top_sources": [
+        {
+          "id": "final2-zh-12",
+          "cosine": 0.7747140477585679,
+          "kind": "text"
+        },
+        {
+          "id": "final2-en-12",
+          "cosine": 0.7280882011199991,
+          "kind": "text"
+        },
+        {
+          "id": "final2-zh-10",
+          "cosine": 0.6994147455910114,
+          "kind": "text"
+        },
+        {
+          "id": "final2-audio-12",
+          "cosine": 0.6975013357010758,
+          "kind": "audio"
+        },
+        {
+          "id": "final2-zh-04",
+          "cosine": 0.671023454450404,
+          "kind": "text"
+        }
+      ],
+      "target_sources": [
+        {
+          "id": "final2-en-12",
+          "kind": "text",
+          "text": "Stamp Viewing. Visitors inspect rare stamps through mounted magnifying lenses. Reference NQ-6212."
+        }
+      ],
+      "returned_sources": [
+        {
+          "id": "final2-zh-12",
+          "kind": "text",
+          "text": "\u90ae\u7968\u89c2\u8d4f\u3002\u8bbf\u5ba2\u901a\u8fc7\u56fa\u5b9a\u7684\u653e\u5927\u955c\u89c2\u770b\u73cd\u8d35\u90ae\u7968\u3002"
+        },
+        {
+          "id": "final2-zh-10",
+          "kind": "text",
+          "text": "\u8d1d\u58f3\u6807\u6ce8\u3002\u8d1d\u58f3\u6807\u672c\u7528\u94c5\u7b14\u6807\u7b7e\u800c\u4e0d\u662f\u58a8\u6c34\u505a\u6807\u8bb0\u3002"
+        },
+        {
+          "id": "final2-en-12",
+          "kind": "text",
+          "text": "Stamp Viewing. Visitors inspect rare stamps through mounted magnifying lenses. Reference NQ-6212."
+        },
+        {
+          "id": "final2-audio-12",
+          "kind": "audio",
+          "text": "Visitors inspect rare stamps through mounted magnifying lenses."
+        },
+        {
+          "id": "final2-en-10",
+          "kind": "text",
+          "text": "Specimen Labels. Shell specimens receive pencil labels rather than ink marks. Reference NQ-6210."
+        }
+      ],
+      "observation": "The required English stamp-viewing text moves2\u21923 behind its Chinese equivalent and another Chinese optical-aid record.",
+      "historical_source1265_observation": null
+    },
+    {
+      "fixture": "rework-final3",
+      "id": "final3-semantic_paraphrase-08",
+      "group": "semantic_paraphrase",
+      "query": "What identification is added to donated boxes before sorting?",
+      "expected": [
+        "final3-en-08"
+      ],
+      "before_rank": 1,
+      "after_rank": 2,
+      "missing_positive": false,
+      "row_regression": true,
+      "false_positive": false,
+      "hits": [
+        "final3-audio-08",
+        "final3-en-08",
+        "final3-zh-08",
+        "final3-en-00",
+        "final3-audio-00"
+      ],
+      "location_correct": true,
+      "raw_peak": 0.8564112487917191,
+      "raw_distinct_source_margin": 0.054274264082944224,
+      "raw_top_sources": [
+        {
+          "id": "final3-audio-08",
+          "cosine": 0.8564112487917191,
+          "kind": "audio"
+        },
+        {
+          "id": "final3-en-08",
+          "cosine": 0.8021369847087749,
+          "kind": "text"
+        },
+        {
+          "id": "final3-zh-08",
+          "cosine": 0.7476500897945414,
+          "kind": "text"
+        },
+        {
+          "id": "final3-en-00",
+          "cosine": 0.694703117927151,
+          "kind": "text"
+        },
+        {
+          "id": "final3-en-02",
+          "cosine": 0.6792735171207298,
+          "kind": "text"
+        }
+      ],
+      "target_sources": [
+        {
+          "id": "final3-en-08",
+          "kind": "text",
+          "text": "Donation labels. Donation boxes receive dated paper labels before entering the sorting room. Reference VX-8108."
+        }
+      ],
+      "returned_sources": [
+        {
+          "id": "final3-audio-08",
+          "kind": "audio",
+          "text": "Donation boxes receive dated paper labels before entering the sorting room."
+        },
+        {
+          "id": "final3-en-08",
+          "kind": "text",
+          "text": "Donation labels. Donation boxes receive dated paper labels before entering the sorting room. Reference VX-8108."
+        },
+        {
+          "id": "final3-zh-08",
+          "kind": "text",
+          "text": "\u6350\u7bb1\u6807\u7b7e\u3002\u6350\u8d60\u7bb1\u8fdb\u5165\u5206\u62e3\u5ba4\u524d\u8d34\u4e0a\u5199\u6709\u65e5\u671f\u7684\u7eb8\u6807\u7b7e\u3002"
+        },
+        {
+          "id": "final3-en-00",
+          "kind": "text",
+          "text": "Seed packets. Seed packets are sorted into tin boxes by harvest season. Reference VX-8100."
+        },
+        {
+          "id": "final3-audio-00",
+          "kind": "audio",
+          "text": "Seed packets are sorted into tin boxes by harvest season."
+        }
+      ],
+      "observation": "New frozen set: equivalent donation-label recording precedes the required English text (1\u21922). GroupMRR still improves0.9133\u21920.96; row loss is retained.",
+      "historical_source1265_observation": null
+    },
+    {
+      "fixture": "rework-final3",
+      "id": "final3-cross_language-20",
+      "group": "cross_language",
+      "query": "\u6cbe\u6ce5\u7684\u91ce\u5916\u9774\u4e0a\u667e\u67b6\u524d\u600e\u6837\u6e05\u7406\uff1f",
+      "expected": [
+        "final3-en-20"
+      ],
+      "before_rank": 3,
+      "after_rank": 4,
+      "missing_positive": false,
+      "row_regression": true,
+      "false_positive": false,
+      "hits": [
+        "final3-zh-20",
+        "final3-audio-20",
+        "final3-zh-24",
+        "final3-en-20",
+        "final3-en-04"
+      ],
+      "location_correct": true,
+      "raw_peak": 0.8237118897505042,
+      "raw_distinct_source_margin": 0.04572086793249819,
+      "raw_top_sources": [
+        {
+          "id": "final3-zh-20",
+          "cosine": 0.8237118897505042,
+          "kind": "text"
+        },
+        {
+          "id": "final3-audio-20",
+          "cosine": 0.7779910218180061,
+          "kind": "audio"
+        },
+        {
+          "id": "final3-en-20",
+          "cosine": 0.7370885953848357,
+          "kind": "text"
+        },
+        {
+          "id": "final3-zh-24",
+          "cosine": 0.7054155479446049,
+          "kind": "text"
+        },
+        {
+          "id": "final3-zh-04",
+          "cosine": 0.6966859866573561,
+          "kind": "text"
+        }
+      ],
+      "target_sources": [
+        {
+          "id": "final3-en-20",
+          "kind": "text",
+          "text": "Marsh boots. Marsh boots are brushed outside before being placed on the drying rack. Reference VX-8120."
+        }
+      ],
+      "returned_sources": [
+        {
+          "id": "final3-zh-20",
+          "kind": "text",
+          "text": "\u6e7f\u5730\u9774\u6e05\u7406\u3002\u6e7f\u5730\u9774\u5148\u5728\u5ba4\u5916\u5237\u51c0\u518d\u653e\u4e0a\u667e\u67b6\u3002"
+        },
+        {
+          "id": "final3-audio-20",
+          "kind": "audio",
+          "text": "Marsh boots are brushed outside before being placed on the drying rack."
+        },
+        {
+          "id": "final3-zh-24",
+          "kind": "text",
+          "text": "\u501f\u4f1e\u667e\u5e72\u3002\u501f\u51fa\u7684\u96e8\u4f1e\u6491\u5f00\u653e\u5728\u5e26\u9876\u5ead\u9662\u667e\u5e72\u540e\u518d\u5165\u5e93\u3002"
+        },
+        {
+          "id": "final3-en-20",
+          "kind": "text",
+          "text": "Marsh boots. Marsh boots are brushed outside before being placed on the drying rack. Reference VX-8120."
+        },
+        {
+          "id": "final3-en-04",
+          "kind": "text",
+          "text": "Greenhouse shoes. Visitors exchange outdoor shoes for washable slippers at the greenhouse door. Reference VX-8104."
+        }
+      ],
+      "observation": "New frozen set: required English boot-cleaning text moves3\u21924 behind Chinese/audio equivalents and another Chinese record. Group recall/location improve but this row declines.",
+      "historical_source1265_observation": null
+    },
+    {
+      "fixture": "rework-final3",
+      "id": "final3-semantic_paraphrase-21",
+      "group": "semantic_paraphrase",
+      "query": "How are food boxes stored so air can circulate inside them?",
+      "expected": [
+        "final3-en-21"
+      ],
+      "before_rank": 1,
+      "after_rank": 2,
+      "missing_positive": false,
+      "row_regression": true,
+      "false_positive": false,
+      "hits": [
+        "final3-audio-21",
+        "final3-en-21",
+        "final3-zh-21",
+        "final3-en-00",
+        "final3-audio-08"
+      ],
+      "location_correct": true,
+      "raw_peak": 0.7930106337245875,
+      "raw_distinct_source_margin": 0.056359317362060235,
+      "raw_top_sources": [
+        {
+          "id": "final3-audio-21",
+          "cosine": 0.7930106337245875,
+          "kind": "audio"
+        },
+        {
+          "id": "final3-en-21",
+          "cosine": 0.7366513163625272,
+          "kind": "text"
+        },
+        {
+          "id": "final3-zh-21",
+          "cosine": 0.7323311239108687,
+          "kind": "text"
+        },
+        {
+          "id": "final3-en-00",
+          "cosine": 0.67745649207492,
+          "kind": "text"
+        },
+        {
+          "id": "final3-en-13",
+          "cosine": 0.6739393386004678,
+          "kind": "text"
+        }
+      ],
+      "target_sources": [
+        {
+          "id": "final3-en-21",
+          "kind": "text",
+          "text": "Lunch containers. Reusable lunch containers are stored with lids separate to allow air circulation. Reference VX-8121."
+        }
+      ],
+      "returned_sources": [
+        {
+          "id": "final3-audio-21",
+          "kind": "audio",
+          "text": "Reusable lunch containers are stored with lids separate to allow air circulation."
+        },
+        {
+          "id": "final3-en-21",
+          "kind": "text",
+          "text": "Lunch containers. Reusable lunch containers are stored with lids separate to allow air circulation. Reference VX-8121."
+        },
+        {
+          "id": "final3-zh-21",
+          "kind": "text",
+          "text": "\u9910\u76d2\u901a\u98ce\u3002\u53ef\u91cd\u590d\u4f7f\u7528\u7684\u9910\u76d2\u5b58\u653e\u65f6\u76d2\u76d6\u5206\u5f00\u653e\u4ee5\u4fbf\u901a\u98ce\u3002"
+        },
+        {
+          "id": "final3-en-00",
+          "kind": "text",
+          "text": "Seed packets. Seed packets are sorted into tin boxes by harvest season. Reference VX-8100."
+        },
+        {
+          "id": "final3-audio-08",
+          "kind": "audio",
+          "text": "Donation boxes receive dated paper labels before entering the sorting room."
+        }
+      ],
+      "observation": "New frozen set: equivalent lunch-container recording precedes the required English text (1\u21922). No parameters were changed from this result.",
+      "historical_source1265_observation": null
+    }
+  ]
+}

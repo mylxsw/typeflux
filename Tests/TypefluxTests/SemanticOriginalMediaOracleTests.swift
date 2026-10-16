@@ -19,6 +19,12 @@ struct SemanticOriginalMediaOracleTests {
             try FileManager.default.copyItem(at: file, to: corpus.appendingPathComponent(file.lastPathComponent))
         }
         let fixture = try SemanticSearchEvaluationTests().fixture()
+        let supported = fixture.documents.filter { ["text", "long_tail", "audio", "video"].contains($0.kind) }
+        for document in supported {
+            let ext = document.kind == "video" ? ".mov" : (document.kind == "audio" ? ".wav" : ".txt")
+            try #require(FileManager.default.fileExists(atPath: corpus.path + "/" + document.id + ext),
+                         "Every already-supported original source must have an actual fixture")
+        }
         let store = try SemanticFileStore(url: root.appendingPathComponent("index.sqlite"))
         let modelURL = URL(fileURLWithPath: model), helperURL = URL(fileURLWithPath: helper)
         try SemanticModel.verify(modelURL)
@@ -42,6 +48,7 @@ struct SemanticOriginalMediaOracleTests {
         let indexingStarted = ProcessInfo.processInfo.systemUptime
         let result = try SemanticFileIndexer.run(scope: scope, store: store, reader: reader, encoder: encoder,
                                                  media: media, cancelled: { false }, progress: { _ in })
+        try #require(result.files == supported.count, "Every supported fixture must finish indexing")
         let indexSeconds = ProcessInfo.processInfo.systemUptime - indexingStarted
         encoder.release(); media.release()
         let queryEncoder = SemanticEmbeddingWorker(helper: helperURL, model: modelURL)
@@ -57,7 +64,7 @@ struct SemanticOriginalMediaOracleTests {
             var location = false
             if let rank {
                 let expected = fixture.documents.first { $0.id == ids[rank] }
-                if expected?.kind == "video" {
+                if expected?.kind == "video" || expected?.kind == "audio" {
                     let original = try JSONSerialization
                         .jsonObject(with: Data(contentsOf: SemanticSearchEvaluationTests.repository
                                 .appendingPathComponent(
@@ -84,7 +91,7 @@ struct SemanticOriginalMediaOracleTests {
             "chunks": store.counts().chunks,
             "source_backend": cpuSources ? "cpu-one-thread" : "gpu",
             "query_backend": "gpu",
-            "scope": "Real native extraction, actual MOV/PCM speech and pinned embeddings through the production indexer/store. Controlled unpaced encoder to isolate quality; not production background resource or UI evidence. Original 175-positive denominator retained, including 25 unsupported scanned PDF failures. Timestamp correctness means the original speech start lies within the returned 30-second window."
+            "scope": "Real native extraction, actual MOV/PCM and WAV speech and pinned embeddings through the production indexer/store. Controlled unpaced encoder to isolate quality; not production background resource or UI evidence. Original 175-positive denominator retained, including 25 unsupported scanned PDF failures. Timestamp correctness means the original speech start lies within the returned 30-second window."
         ]
         let label = env["TYPEFLUX_SEMANTIC_LABEL"] ?? "after"
         try JSONSerialization.data(withJSONObject: report, options: [.prettyPrinted, .sortedKeys])

@@ -1,0 +1,32 @@
+{
+  "scope": "Per-row inspection of final Release returned/target sources and raw captured similarity. Explanations are diagnostic ordering/confidence observations, not extraction/UI reruns or causal user-incident findings. No parameter tuning on these labels.",
+  "notes": {
+    "final_cross_language-05": "Chinese labelled archive source moves3\u21924 behind equivalent English/audio and an English ticket record; this is an exact-source ordering loss, not absent extraction.",
+    "final_cross_language-07": "Chinese labelled group-booking source moves3\u21924 behind equivalent audio/English and another reservation record. Recall/location stay correct.",
+    "final_cross_language-16": "Chinese query returns its Chinese/audio equivalents and another Chinese record before the required English trail source (3\u21924). Same-language relevance cannot replace the frozen English label.",
+    "final_semantic_paraphrase-16": "Equivalent spoken trail instructions have stronger raw similarity and precede the required English text (1\u21922).",
+    "unseen_no_answer-01": "No quartz-resonance answer exists. Peak0.57217 with distinct-file margin0.04439 passes the existing0.45/0.04 weak gate; technical-looking nearest neighbors are not answer evidence. This remains1/25 (4%).",
+    "unseen_cross_language-02": "The required English wet-towel source moves3\u21924 behind Chinese/audio equivalents and another Chinese record.",
+    "unseen_cross_language-08": "The required English ferry source moves3\u21924 behind Chinese/audio equivalents and another Chinese record.",
+    "unseen_cross_language-10": "The required English volunteer-induction source moves3\u21924 behind Chinese/audio equivalents and another Chinese record.",
+    "unseen_semantic_paraphrase-12": "The equivalent pottery-collection recording precedes the English text (1\u21922); body recall is restored but exact-source reciprocal rank declines.",
+    "unseen_semantic_paraphrase-14": "The equivalent lost-property recording precedes the English text (1\u21922).",
+    "unseen_cross_language-16": "The required English lakeside-trail source moves3\u21924 behind Chinese equivalents/nearby shelter material and audio.",
+    "unseen_semantic_paraphrase-16": "The equivalent lakeside-trail recording precedes the English text (1\u21922). Together with pottery/lost-property this lowers groupMRR1.00\u21920.94.",
+    "fresh-semantic_paraphrase-00": "The equivalent seed-return recording precedes the required English text (1\u21922).",
+    "fresh-cross_language-03": "The required Chinese spare-microphone source moves3\u21924 behind equivalent English/audio plus another English microphone record.",
+    "fresh-semantic_paraphrase-17": "The equivalent rain-gauge recording precedes the required Chinese text (1\u21922).",
+    "fresh-no_answer-18": "The imaginary Saturn-vault query has no answer. Generic office foils peak0.70697, enough for the0.70 absolute gate despite only0.00890 margin.",
+    "fresh-cross_language-23": "The Chinese bell-transport source moves3\u21924 behind equivalent audio/English and another English record.",
+    "fresh-no_answer-24": "The fictional time-reversal code has no answer. Generic office foils peak0.70598 and margin0.00540; absolute confidence accepts them. With the Saturn sample this remains2/25 (8%).",
+    "final2-audio_semantic-01": "Real generated compass-care speech is present but the query is rejected: peak0.69856 and margin0.00639 satisfy neither0.70 absolute nor0.04 margin. Retained missing positive; audio recall24/25.",
+    "final2-semantic_paraphrase-05": "The equivalent telescope-care recording precedes the required English text (1\u21922).",
+    "final2-cross_language-06": "The required English map-repair text moves3\u21924 behind Chinese map/clay passages and the equivalent recording.",
+    "final2-semantic_paraphrase-09": "The equivalent lantern-preparation recording precedes the required English text (1\u21922).",
+    "final2-cross_language-12": "The required English stamp-viewing text moves2\u21923 behind its Chinese equivalent and another Chinese optical-aid record.",
+    "final3-semantic_paraphrase-08": "New frozen set: equivalent donation-label recording precedes the required English text (1\u21922). GroupMRR still improves0.9133\u21920.96; row loss is retained.",
+    "final3-cross_language-20": "New frozen set: required English boot-cleaning text moves3\u21924 behind Chinese/audio equivalents and another Chinese record. Group recall/location improve but this row declines.",
+    "final3-semantic_paraphrase-21": "New frozen set: equivalent lunch-container recording precedes the required English text (1\u21922). No parameters were changed from this result."
+  },
+  "inference": "The present answerable compass query has lower peak cosine than two unanswerable office-foil queries. Therefore a single global absolute threshold cannot simultaneously rescue that answer and reject both false positives; this arithmetic observation does not rule out richer relevance evidence. Existing labelled negatives and all original denominators remain."
+}

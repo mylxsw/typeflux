@@ -1,0 +1,17 @@
+{
+  "source_commit": "6a9c18d79561b49d8c5339754193c6a06ee79374",
+  "condition_seconds": 300,
+  "files": {
+    ".build/semantic/TypefluxSemanticHelper": "7a81bd83814276fd1495a9f2bc3c98d56d808fa48987297001e117269616c2ea",
+    ".build/semantic/embeddinggemma-2-Q8_0.gguf": "2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135",
+    ".build/semantic/mmproj-embeddinggemma-2-Q8_0.gguf": "c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f",
+    ".build/SemanticNativeResponseProbe.app/Contents/MacOS/SemanticNativeResponseProbe": "79ea041d6c8bed82d9c9f5f728a50cfdcac317a7d96cedea763131f50ad042f7",
+    "Tests/TypefluxTests/SemanticResourceBudgetTests.swift": "d16e1156aca5e9093566a221419d86338bfb9bbd839c420f7c1f8ac05ca890c3",
+    "docs/validation/gul-383/optimization/ranking-scale/native_response_probe.swift": "f1521f70b8ceadd7af33560c909e70d811eea9de012d9979fe844f56c0a237fa",
+    "docs/validation/gul-383/optimization/ranking-scale/rework_resource_runner.py": "8f506963c2b4c8c29c885d98760baab83182d02dcc32dba0c1813b93a8d2a792",
+    "docs/validation/gul-383/optimization/ranking-scale/darwin_process_metrics.py": "c99e21b5c94022d3d17ca0505c986e8169d1aeafa1b4b6c7cb60b1ebbd698b7d",
+    ".build/out/Products/Release/TypefluxFocusedTests.xctest/Contents/MacOS/TypefluxFocusedTests": "0e1064c0c7088b2e889fdbae8949f1f04501d9527b5b4826a772768164a9ecc0"
+  },
+  "production_manifest_sha256": "fdf873c9b185fb6e0322f8c49ddd5a68a8329fb925ab13ed7130116a021f4747",
+  "scope": "Final-source prebuilt Release, actual production work budget. Same300-second mixed-file arrival plan per OFF/ON condition and independent own-window WindowServer event-ID probe. No physicalHID/monitor scanout or query-result compositor claim. No owned build, other UI or model benchmark overlaps. Shared external activity sampled, not controlled. Historical1265 long tails retained separately."
+}

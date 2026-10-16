@@ -10,8 +10,8 @@
         "tail-00",
         "en-00",
         "clip-00",
-        "zh-00",
-        "clip-10"
+        "clip-10",
+        "zh-00"
       ],
       "id" : "audio_topic-00",
       "location_correct" : true,
@@ -21,66 +21,66 @@
       "group" : "audio_paraphrase",
       "hits" : [
         "tail-00",
+        "en-00",
         "clip-00",
         "clip-12",
-        "en-00",
         "zh-00"
       ],
       "id" : "audio_paraphrase-00",
       "location_correct" : true,
-      "rank" : 2
+      "rank" : 3
     },
     {
       "group" : "audio_cross_language",
       "hits" : [
-        "tail-00",
-        "clip-00",
-        "en-00",
         "zh-00",
-        "clip-12"
+        "tail-00",
+        "zh-12",
+        "en-00",
+        "clip-00"
       ],
       "id" : "audio_cross_language-00",
       "location_correct" : true,
-      "rank" : 2
+      "rank" : 5
     },
     {
       "group" : "audio_topic",
       "hits" : [
         "en-01",
         "tail-01",
-        "clip-01",
         "zh-01",
+        "clip-01",
         "clip-21"
       ],
       "id" : "audio_topic-01",
       "location_correct" : true,
-      "rank" : 3
+      "rank" : 4
     },
     {
       "group" : "audio_paraphrase",
       "hits" : [
-        "clip-01",
-        "zh-01",
         "en-01",
         "tail-01",
+        "clip-01",
+        "zh-01",
         "clip-20"
       ],
       "id" : "audio_paraphrase-01",
       "location_correct" : true,
-      "rank" : 1
+      "rank" : 3
     },
     {
       "group" : "audio_cross_language",
       "hits" : [
-        "clip-01",
         "zh-01",
+        "clip-01",
         "tail-01",
         "en-01",
-        "clip-20"
+        "zh-20"
       ],
       "id" : "audio_cross_language-01",
       "location_correct" : true,
-      "rank" : 1
+      "rank" : 2
     },
     {
       "group" : "audio_topic",
@@ -111,28 +111,28 @@
     {
       "group" : "audio_cross_language",
       "hits" : [
-        "clip-02",
         "zh-02",
+        "clip-02",
         "tail-02",
         "en-02",
-        "clip-06"
+        "zh-19"
       ],
       "id" : "audio_cross_language-02",
       "location_correct" : true,
-      "rank" : 1
+      "rank" : 2
     },
     {
       "group" : "audio_topic",
       "hits" : [
         "tail-03",
         "en-03",
-        "clip-03",
         "zh-03",
+        "clip-03",
         "clip-02"
       ],
       "id" : "audio_topic-03",
       "location_correct" : true,
-      "rank" : 3
+      "rank" : 4
     },
     {
       "group" : "audio_paraphrase",
@@ -150,24 +150,24 @@
     {
       "group" : "audio_cross_language",
       "hits" : [
-        "clip-03",
         "zh-03",
+        "clip-03",
+        "zh-08",
         "tail-03",
-        "en-03",
-        "clip-15"
+        "en-03"
       ],
       "id" : "audio_cross_language-03",
       "location_correct" : true,
-      "rank" : 1
+      "rank" : 2
     },
     {
       "group" : "audio_topic",
       "hits" : [
         "tail-04",
         "en-04",
+        "zh-04",
         "clip-00",
-        "clip-14",
-        "clip-16"
+        "zh-19"
       ],
       "id" : "audio_topic-04",
       "location_correct" : false,
@@ -176,67 +176,67 @@
     {
       "group" : "audio_paraphrase",
       "hits" : [
-        "clip-04",
         "en-04",
-        "zh-04",
         "tail-04",
+        "clip-04",
+        "zh-04",
         "clip-16"
       ],
       "id" : "audio_paraphrase-04",
       "location_correct" : true,
-      "rank" : 1
+      "rank" : 3
     },
     {
       "group" : "audio_cross_language",
       "hits" : [
-        "clip-04",
         "zh-04",
+        "clip-04",
         "en-04",
         "tail-04",
-        "clip-12"
+        "zh-13"
       ],
       "id" : "audio_cross_language-04",
       "location_correct" : true,
-      "rank" : 1
+      "rank" : 2
     },
     {
       "group" : "audio_topic",
       "hits" : [
         "tail-05",
         "en-05",
-        "clip-05",
-        "clip-11",
-        "zh-05"
+        "zh-05",
+        "zh-20",
+        "clip-05"
       ],
       "id" : "audio_topic-05",
       "location_correct" : true,
-      "rank" : 3
+      "rank" : 5
     },
     {
       "group" : "audio_paraphrase",
       "hits" : [
-        "clip-05",
-        "zh-05",
         "tail-05",
+        "clip-05",
         "en-05",
+        "zh-05",
         "clip-20"
       ],
       "id" : "audio_paraphrase-05",
       "location_correct" : true,
-      "rank" : 1
+      "rank" : 2
     },
     {
       "group" : "audio_cross_language",
       "hits" : [
-        "clip-05",
         "zh-05",
+        "clip-05",
+        "zh-20",
         "en-05",
-        "tail-05",
-        "clip-20"
+        "tail-05"
       ],
       "id" : "audio_cross_language-05",
       "location_correct" : true,
-      "rank" : 1
+      "rank" : 2
     },
     {
       "group" : "audio_topic",
@@ -254,28 +254,24 @@
     {
       "group" : "audio_paraphrase",
       "hits" : [
-        "clip-06",
-        "clip-02",
-        "clip-16",
-        "clip-12",
-        "zh-06"
+
       ],
       "id" : "audio_paraphrase-06",
-      "location_correct" : true,
-      "rank" : 1
+      "location_correct" : false,
+      "rank" : null
     },
     {
       "group" : "audio_cross_language",
       "hits" : [
+        "zh-06",
+        "zh-02",
         "clip-06",
         "clip-02",
-        "zh-06",
-        "tail-02",
-        "en-06"
+        "tail-02"
       ],
       "id" : "audio_cross_language-06",
       "location_correct" : true,
-      "rank" : 1
+      "rank" : 3
     },
     {
       "group" : "audio_topic",
@@ -283,25 +279,25 @@
         "en-07",
         "tail-07",
         "zh-07",
-        "clip-14",
-        "clip-07"
+        "red",
+        "blue"
       ],
       "id" : "audio_topic-07",
-      "location_correct" : true,
-      "rank" : 5
+      "location_correct" : false,
+      "rank" : null
     },
     {
       "group" : "audio_paraphrase",
       "hits" : [
-        "clip-07",
-        "zh-07",
-        "clip-14",
         "en-07",
-        "tail-07"
+        "tail-07",
+        "zh-07",
+        "clip-07",
+        "zh-14"
       ],
       "id" : "audio_paraphrase-07",
       "location_correct" : true,
-      "rank" : 1
+      "rank" : 4
     },
     {
       "group" : "audio_cross_language",
@@ -309,12 +305,12 @@
         "zh-07",
         "en-07",
         "tail-07",
-        "clip-07",
-        "clip-16"
+        "zh-19",
+        "clip-07"
       ],
       "id" : "audio_cross_language-07",
       "location_correct" : true,
-      "rank" : 4
+      "rank" : 5
     },
     {
       "group" : "audio_topic",
@@ -332,28 +328,28 @@
     {
       "group" : "audio_paraphrase",
       "hits" : [
-        "clip-08",
         "en-08",
-        "zh-08",
+        "clip-08",
         "tail-08",
+        "zh-08",
         "clip-04"
       ],
       "id" : "audio_paraphrase-08",
       "location_correct" : true,
-      "rank" : 1
+      "rank" : 2
     },
     {
       "group" : "audio_cross_language",
       "hits" : [
+        "zh-08",
         "clip-08",
         "en-08",
-        "zh-08",
         "tail-08",
-        "clip-14"
+        "zh-23"
       ],
       "id" : "audio_cross_language-08",
       "location_correct" : true,
-      "rank" : 1
+      "rank" : 2
     },
     {
       "group" : "audio_topic",
@@ -371,28 +367,28 @@
     {
       "group" : "audio_paraphrase",
       "hits" : [
-        "clip-09",
         "en-09",
-        "zh-09",
+        "clip-09",
         "tail-09",
+        "zh-09",
         "clip-14"
       ],
       "id" : "audio_paraphrase-09",
       "location_correct" : true,
-      "rank" : 1
+      "rank" : 2
     },
     {
       "group" : "audio_cross_language",
       "hits" : [
+        "zh-09",
         "clip-09",
         "en-09",
-        "zh-09",
-        "tail-09",
-        "clip-07"
+        "zh-18",
+        "tail-09"
       ],
       "id" : "audio_cross_language-09",
       "location_correct" : true,
-      "rank" : 1
+      "rank" : 2
     },
     {
       "group" : "audio_topic",
@@ -401,7 +397,7 @@
         "en-10",
         "clip-10",
         "clip-11",
-        "clip-04"
+        "zh-10"
       ],
       "id" : "audio_topic-10",
       "location_correct" : true,
@@ -412,8 +408,8 @@
       "hits" : [
         "clip-10",
         "tail-10",
-        "zh-10",
         "en-10",
+        "zh-10",
         "clip-03"
       ],
       "id" : "audio_paraphrase-10",
@@ -423,15 +419,15 @@
     {
       "group" : "audio_cross_language",
       "hits" : [
-        "clip-10",
         "zh-10",
+        "clip-10",
         "tail-10",
         "en-10",
-        "clip-06"
+        "zh-13"
       ],
       "id" : "audio_cross_language-10",
       "location_correct" : true,
-      "rank" : 1
+      "rank" : 2
     },
     {
       "group" : "audio_topic",
@@ -449,28 +445,28 @@
     {
       "group" : "audio_paraphrase",
       "hits" : [
-        "clip-11",
         "en-11",
-        "zh-11",
+        "clip-11",
         "tail-11",
+        "zh-11",
         "clip-08"
       ],
       "id" : "audio_paraphrase-11",
       "location_correct" : true,
-      "rank" : 1
+      "rank" : 2
     },
     {
       "group" : "audio_cross_language",
       "hits" : [
+        "zh-11",
         "clip-11",
         "en-11",
         "tail-11",
-        "zh-11",
-        "clip-02"
+        "zh-02"
       ],
       "id" : "audio_cross_language-11",
       "location_correct" : true,
-      "rank" : 1
+      "rank" : 2
     },
     {
       "group" : "audio_topic",
@@ -491,8 +487,8 @@
         "clip-12",
         "tail-12",
         "en-12",
-        "zh-12",
-        "clip-13"
+        "clip-13",
+        "zh-12"
       ],
       "id" : "audio_paraphrase-12",
       "location_correct" : true,
@@ -501,15 +497,15 @@
     {
       "group" : "audio_cross_language",
       "hits" : [
+        "zh-12",
         "clip-12",
         "tail-12",
         "en-12",
-        "zh-12",
-        "clip-13"
+        "zh-13"
       ],
       "id" : "audio_cross_language-12",
       "location_correct" : true,
-      "rank" : 1
+      "rank" : 2
     },
     {
       "group" : "audio_topic",
@@ -540,15 +536,15 @@
     {
       "group" : "audio_cross_language",
       "hits" : [
-        "clip-13",
         "zh-13",
+        "clip-13",
         "en-13",
-        "tail-13",
-        "clip-12"
+        "zh-12",
+        "tail-13"
       ],
       "id" : "audio_cross_language-13",
       "location_correct" : true,
-      "rank" : 1
+      "rank" : 2
     },
     {
       "group" : "audio_topic",
@@ -566,28 +562,28 @@
     {
       "group" : "audio_paraphrase",
       "hits" : [
+        "tail-04",
+        "tail-23",
         "clip-04",
         "clip-14",
-        "zh-14",
-        "tail-04",
-        "clip-08"
+        "zh-14"
       ],
       "id" : "audio_paraphrase-14",
       "location_correct" : true,
-      "rank" : 2
+      "rank" : 4
     },
     {
       "group" : "audio_cross_language",
       "hits" : [
-        "clip-14",
         "zh-14",
+        "zh-23",
+        "clip-14",
         "en-14",
-        "tail-14",
-        "clip-16"
+        "tail-14"
       ],
       "id" : "audio_cross_language-14",
       "location_correct" : true,
-      "rank" : 1
+      "rank" : 3
     },
     {
       "group" : "audio_topic",
@@ -605,28 +601,28 @@
     {
       "group" : "audio_paraphrase",
       "hits" : [
-        "clip-15",
         "en-15",
+        "clip-15",
         "tail-15",
         "clip-08",
         "zh-15"
       ],
       "id" : "audio_paraphrase-15",
       "location_correct" : true,
-      "rank" : 1
+      "rank" : 2
     },
     {
       "group" : "audio_cross_language",
       "hits" : [
-        "clip-15",
         "zh-15",
+        "zh-08",
+        "clip-15",
         "tail-15",
-        "en-15",
-        "clip-08"
+        "en-15"
       ],
       "id" : "audio_cross_language-15",
       "location_correct" : true,
-      "rank" : 1
+      "rank" : 3
     },
     {
       "group" : "audio_topic",
@@ -644,41 +640,41 @@
     {
       "group" : "audio_paraphrase",
       "hits" : [
-        "clip-16",
-        "zh-16",
         "tail-16",
+        "clip-16",
         "en-16",
+        "zh-16",
         "clip-06"
       ],
       "id" : "audio_paraphrase-16",
       "location_correct" : true,
-      "rank" : 1
+      "rank" : 2
     },
     {
       "group" : "audio_cross_language",
       "hits" : [
-        "clip-16",
         "zh-16",
+        "clip-16",
         "tail-16",
-        "en-16",
-        "en-21"
+        "zh-04",
+        "en-16"
       ],
       "id" : "audio_cross_language-16",
       "location_correct" : true,
-      "rank" : 1
+      "rank" : 2
     },
     {
       "group" : "audio_topic",
       "hits" : [
         "en-17",
         "tail-17",
-        "clip-17",
         "zh-17",
-        "clip-20"
+        "clip-17",
+        "zh-20"
       ],
       "id" : "audio_topic-17",
       "location_correct" : true,
-      "rank" : 3
+      "rank" : 4
     },
     {
       "group" : "audio_paraphrase",
@@ -696,54 +692,54 @@
     {
       "group" : "audio_cross_language",
       "hits" : [
-        "clip-17",
         "zh-17",
+        "clip-17",
+        "zh-19",
         "en-17",
-        "tail-17",
-        "clip-04"
+        "tail-17"
       ],
       "id" : "audio_cross_language-17",
       "location_correct" : true,
-      "rank" : 1
+      "rank" : 2
     },
     {
       "group" : "audio_topic",
       "hits" : [
         "en-18",
         "tail-18",
-        "en-09",
-        "tail-09",
-        "clip-09"
+        "zh-18",
+        "clip-09",
+        "clip-18"
       ],
       "id" : "audio_topic-18",
-      "location_correct" : false,
-      "rank" : null
+      "location_correct" : true,
+      "rank" : 5
     },
     {
       "group" : "audio_paraphrase",
       "hits" : [
-        "clip-18",
         "en-18",
-        "zh-18",
+        "clip-18",
         "tail-18",
+        "zh-18",
         "clip-09"
       ],
       "id" : "audio_paraphrase-18",
       "location_correct" : true,
-      "rank" : 1
+      "rank" : 2
     },
     {
       "group" : "audio_cross_language",
       "hits" : [
-        "clip-18",
-        "en-18",
         "zh-18",
-        "tail-18",
-        "clip-09"
+        "clip-18",
+        "zh-09",
+        "en-18",
+        "tail-18"
       ],
       "id" : "audio_cross_language-18",
       "location_correct" : true,
-      "rank" : 1
+      "rank" : 2
     },
     {
       "group" : "audio_topic",
@@ -752,7 +748,7 @@
         "en-19",
         "zh-19",
         "clip-19",
-        "clip-02"
+        "zh-04"
       ],
       "id" : "audio_topic-19",
       "location_correct" : true,
@@ -761,28 +757,28 @@
     {
       "group" : "audio_paraphrase",
       "hits" : [
-        "clip-19",
-        "zh-19",
         "en-19",
-        "clip-18",
-        "tail-19"
+        "clip-19",
+        "tail-19",
+        "zh-19",
+        "clip-18"
       ],
       "id" : "audio_paraphrase-19",
       "location_correct" : true,
-      "rank" : 1
+      "rank" : 2
     },
     {
       "group" : "audio_cross_language",
       "hits" : [
-        "clip-19",
         "zh-19",
+        "zh-04",
         "en-19",
-        "tail-19",
-        "zh-04"
+        "clip-19",
+        "tail-19"
       ],
       "id" : "audio_cross_language-19",
       "location_correct" : true,
-      "rank" : 1
+      "rank" : 4
     },
     {
       "group" : "audio_topic",
@@ -800,28 +796,28 @@
     {
       "group" : "audio_paraphrase",
       "hits" : [
-        "clip-20",
         "tail-20",
         "en-20",
+        "clip-20",
         "zh-20",
         "clip-05"
       ],
       "id" : "audio_paraphrase-20",
       "location_correct" : true,
-      "rank" : 1
+      "rank" : 3
     },
     {
       "group" : "audio_cross_language",
       "hits" : [
+        "zh-20",
         "clip-20",
         "tail-20",
-        "zh-20",
         "en-20",
-        "clip-05"
+        "zh-01"
       ],
       "id" : "audio_cross_language-20",
       "location_correct" : true,
-      "rank" : 1
+      "rank" : 2
     },
     {
       "group" : "audio_topic",
@@ -829,38 +825,38 @@
         "en-21",
         "tail-21",
         "clip-11",
-        "clip-21",
-        "zh-11"
+        "zh-11",
+        "clip-21"
       ],
       "id" : "audio_topic-21",
       "location_correct" : true,
-      "rank" : 4
+      "rank" : 5
     },
     {
       "group" : "audio_paraphrase",
       "hits" : [
-        "clip-21",
         "en-21",
+        "clip-21",
         "tail-21",
         "zh-21",
         "clip-16"
       ],
       "id" : "audio_paraphrase-21",
       "location_correct" : true,
-      "rank" : 1
+      "rank" : 2
     },
     {
       "group" : "audio_cross_language",
       "hits" : [
+        "zh-21",
         "clip-21",
         "en-21",
-        "tail-21",
-        "zh-21",
-        "clip-16"
+        "zh-16",
+        "tail-21"
       ],
       "id" : "audio_cross_language-21",
       "location_correct" : true,
-      "rank" : 1
+      "rank" : 2
     },
     {
       "group" : "audio_topic",
@@ -880,86 +876,86 @@
       "hits" : [
         "tail-22",
         "en-22",
-        "zh-22",
         "clip-22",
+        "zh-22",
         "zh-00"
       ],
       "id" : "audio_paraphrase-22",
       "location_correct" : true,
-      "rank" : 4
+      "rank" : 3
     },
     {
       "group" : "audio_cross_language",
       "hits" : [
-        "clip-22",
         "zh-22",
+        "zh-00",
+        "clip-22",
         "en-22",
-        "tail-22",
-        "clip-00"
+        "tail-22"
       ],
       "id" : "audio_cross_language-22",
       "location_correct" : true,
-      "rank" : 1
+      "rank" : 3
     },
     {
       "group" : "audio_topic",
       "hits" : [
         "tail-23",
         "en-23",
+        "zh-23",
         "clip-23",
-        "clip-09",
-        "zh-23"
+        "clip-09"
       ],
       "id" : "audio_topic-23",
       "location_correct" : true,
-      "rank" : 3
+      "rank" : 4
     },
     {
       "group" : "audio_paraphrase",
       "hits" : [
-        "clip-23",
         "tail-23",
-        "zh-23",
+        "clip-23",
         "en-23",
+        "zh-23",
         "clip-22"
       ],
       "id" : "audio_paraphrase-23",
       "location_correct" : true,
-      "rank" : 1
+      "rank" : 2
     },
     {
       "group" : "audio_cross_language",
       "hits" : [
-        "clip-23",
-        "clip-14",
         "zh-23",
+        "zh-14",
         "tail-23",
+        "clip-23",
         "en-23"
       ],
       "id" : "audio_cross_language-23",
       "location_correct" : true,
-      "rank" : 1
+      "rank" : 4
     },
     {
       "group" : "audio_topic",
       "hits" : [
         "en-24",
         "tail-24",
-        "clip-24",
         "zh-24",
-        "clip-22"
+        "clip-24",
+        "zh-10"
       ],
       "id" : "audio_topic-24",
       "location_correct" : true,
-      "rank" : 3
+      "rank" : 4
     },
     {
       "group" : "audio_paraphrase",
       "hits" : [
         "clip-24",
-        "zh-24",
         "en-24",
         "tail-24",
+        "zh-24",
         "clip-00"
       ],
       "id" : "audio_paraphrase-24",
@@ -969,15 +965,15 @@
     {
       "group" : "audio_cross_language",
       "hits" : [
+        "zh-24",
         "clip-24",
         "en-24",
-        "zh-24",
         "tail-24",
-        "clip-00"
+        "zh-00"
       ],
       "id" : "audio_cross_language-24",
       "location_correct" : true,
-      "rank" : 1
+      "rank" : 2
     },
     {
       "group" : "media_no_answer",
@@ -1045,11 +1041,7 @@
     {
       "group" : "media_no_answer",
       "hits" : [
-        "clip-06",
-        "clip-07",
-        "tail-07",
-        "clip-16",
-        "tail-06"
+
       ],
       "id" : "media_no_answer-07",
       "location_correct" : false,
@@ -1211,24 +1203,24 @@
     {
       "group" : "image",
       "hits" : [
-        "clip-08",
         "red",
-        "clip-21",
-        "clip-11",
-        "clip-07"
+        "blue",
+        "en-08",
+        "en-21",
+        "clip-08"
       ],
       "id" : "image_red-0",
       "location_correct" : true,
-      "rank" : 2
+      "rank" : 1
     },
     {
       "group" : "image",
       "hits" : [
         "red",
-        "clip-08",
-        "clip-21",
         "blue",
-        "clip-06"
+        "en-01",
+        "tail-09",
+        "en-20"
       ],
       "id" : "image_red-1",
       "location_correct" : true,
@@ -1239,9 +1231,9 @@
       "hits" : [
         "red",
         "blue",
-        "clip-08",
-        "clip-21",
-        "clip-11"
+        "en-01",
+        "en-08",
+        "clip-08"
       ],
       "id" : "image_red-2",
       "location_correct" : true,
@@ -1250,36 +1242,36 @@
     {
       "group" : "image",
       "hits" : [
-        "clip-08",
         "blue",
-        "zh-08",
-        "clip-21",
-        "clip-05"
+        "en-08",
+        "clip-08",
+        "tail-08",
+        "red"
       ],
       "id" : "image_blue-0",
       "location_correct" : true,
-      "rank" : 2
+      "rank" : 1
     },
     {
       "group" : "image",
       "hits" : [
-        "clip-08",
         "blue",
-        "zh-08",
         "red",
-        "clip-21"
+        "clip-08",
+        "en-08",
+        "zh-08"
       ],
       "id" : "image_blue-1",
       "location_correct" : true,
-      "rank" : 2
+      "rank" : 1
     },
     {
       "group" : "image",
       "hits" : [
         "blue",
-        "clip-08",
         "en-08",
-        "zh-08",
+        "clip-08",
+        "tail-08",
         "red"
       ],
       "id" : "image_blue-2",

@@ -7,10 +7,10 @@
       "group" : "lexical",
       "hits" : [
         "en-00",
+        "tail-00",
         "zh-00",
         "zh-10",
-        "zh-16",
-        "zh-22"
+        "en-22"
       ],
       "id" : "lexical-00",
       "rank" : 1
@@ -27,10 +27,10 @@
       "group" : "chinese_short",
       "hits" : [
         "zh-00",
+        "zh-12",
         "tail-00",
         "en-00",
-        "tail-12",
-        "zh-12"
+        "zh-10"
       ],
       "id" : "chinese_short-00",
       "rank" : 1
@@ -39,13 +39,13 @@
       "group" : "cross_language",
       "hits" : [
         "zh-00",
+        "zh-12",
         "tail-00",
         "en-00",
-        "tail-12",
-        "zh-12"
+        "zh-10"
       ],
       "id" : "cross_language-00",
-      "rank" : 3
+      "rank" : 4
     },
     {
       "group" : "long_tail",
@@ -87,10 +87,10 @@
       "group" : "lexical",
       "hits" : [
         "en-01",
+        "tail-01",
         "zh-01",
-        "tail-07",
         "zh-20",
-        "zh-14"
+        "en-20"
       ],
       "id" : "lexical-01",
       "rank" : 1
@@ -108,9 +108,9 @@
       "hits" : [
         "zh-01",
         "en-01",
+        "zh-20",
         "tail-01",
-        "en-21",
-        "zh-20"
+        "zh-18"
       ],
       "id" : "chinese_short-01",
       "rank" : 1
@@ -119,13 +119,13 @@
       "group" : "cross_language",
       "hits" : [
         "en-01",
+        "tail-01",
         "zh-01",
-        "tail-07",
         "zh-20",
-        "zh-14"
+        "en-20"
       ],
       "id" : "cross_language-01",
-      "rank" : 2
+      "rank" : 3
     },
     {
       "group" : "long_tail",
@@ -149,8 +149,8 @@
         "en-01",
         "tail-01",
         "zh-01",
-        "en-20",
-        "zh-20"
+        "zh-20",
+        "en-20"
       ],
       "id" : "media_timestamp-01",
       "rank" : null
@@ -167,10 +167,10 @@
       "group" : "lexical",
       "hits" : [
         "en-02",
+        "tail-02",
         "zh-02",
         "zh-14",
-        "zh-19",
-        "tail-07"
+        "en-07"
       ],
       "id" : "lexical-02",
       "rank" : 1
@@ -187,10 +187,10 @@
       "group" : "chinese_short",
       "hits" : [
         "zh-02",
+        "zh-19",
         "en-02",
         "tail-02",
-        "tail-06",
-        "en-06"
+        "zh-23"
       ],
       "id" : "chinese_short-02",
       "rank" : 1
@@ -199,13 +199,13 @@
       "group" : "cross_language",
       "hits" : [
         "zh-02",
+        "zh-19",
         "en-02",
         "tail-02",
-        "tail-06",
-        "en-06"
+        "zh-23"
       ],
       "id" : "cross_language-02",
-      "rank" : 2
+      "rank" : 3
     },
     {
       "group" : "long_tail",
@@ -229,8 +229,8 @@
         "en-02",
         "tail-02",
         "zh-02",
-        "tail-06",
-        "en-06"
+        "zh-19",
+        "tail-06"
       ],
       "id" : "media_timestamp-02",
       "rank" : null
@@ -247,10 +247,10 @@
       "group" : "lexical",
       "hits" : [
         "en-03",
+        "tail-03",
         "zh-03",
-        "tail-07",
         "zh-23",
-        "tail-00"
+        "tail-07"
       ],
       "id" : "lexical-03",
       "rank" : 1
@@ -269,8 +269,8 @@
         "zh-03",
         "en-03",
         "tail-03",
-        "tail-00",
-        "zh-10"
+        "zh-10",
+        "zh-00"
       ],
       "id" : "chinese_short-03",
       "rank" : 1
@@ -279,13 +279,13 @@
       "group" : "cross_language",
       "hits" : [
         "en-03",
+        "tail-03",
         "zh-03",
-        "tail-07",
         "zh-23",
-        "tail-00"
+        "tail-07"
       ],
       "id" : "cross_language-03",
-      "rank" : 2
+      "rank" : 3
     },
     {
       "group" : "long_tail",
@@ -309,8 +309,8 @@
         "tail-03",
         "en-03",
         "zh-03",
-        "tail-00",
-        "tail-04"
+        "zh-17",
+        "tail-00"
       ],
       "id" : "media_timestamp-03",
       "rank" : null
@@ -327,10 +327,10 @@
       "group" : "lexical",
       "hits" : [
         "en-04",
+        "tail-04",
         "zh-19",
         "zh-04",
-        "tail-07",
-        "zh-14"
+        "en-21"
       ],
       "id" : "lexical-04",
       "rank" : 1
@@ -347,10 +347,10 @@
       "group" : "chinese_short",
       "hits" : [
         "zh-04",
+        "zh-19",
         "en-21",
         "en-04",
-        "zh-19",
-        "tail-21"
+        "zh-13"
       ],
       "id" : "chinese_short-04",
       "rank" : 1
@@ -359,13 +359,13 @@
       "group" : "cross_language",
       "hits" : [
         "zh-04",
+        "zh-19",
         "en-21",
         "en-04",
-        "zh-19",
-        "tail-21"
+        "zh-13"
       ],
       "id" : "cross_language-04",
-      "rank" : 3
+      "rank" : 4
     },
     {
       "group" : "long_tail",
@@ -407,10 +407,10 @@
       "group" : "lexical",
       "hits" : [
         "en-05",
+        "tail-05",
         "zh-05",
         "zh-20",
-        "tail-20",
-        "zh-23"
+        "en-20"
       ],
       "id" : "lexical-05",
       "rank" : 1
@@ -429,8 +429,8 @@
         "zh-05",
         "en-05",
         "tail-05",
-        "en-20",
-        "en-11"
+        "zh-11",
+        "zh-20"
       ],
       "id" : "chinese_short-05",
       "rank" : 1
@@ -439,13 +439,13 @@
       "group" : "cross_language",
       "hits" : [
         "en-05",
+        "tail-05",
         "zh-05",
         "zh-20",
-        "tail-20",
-        "zh-23"
+        "en-20"
       ],
       "id" : "cross_language-05",
-      "rank" : 2
+      "rank" : 3
     },
     {
       "group" : "long_tail",
@@ -487,10 +487,10 @@
       "group" : "lexical",
       "hits" : [
         "en-06",
+        "en-02",
         "zh-06",
         "zh-02",
-        "tail-02",
-        "zh-19"
+        "en-10"
       ],
       "id" : "lexical-06",
       "rank" : 1
@@ -507,10 +507,10 @@
       "group" : "chinese_short",
       "hits" : [
         "zh-06",
+        "zh-13",
         "en-06",
         "tail-06",
-        "en-21",
-        "en-13"
+        "zh-04"
       ],
       "id" : "chinese_short-06",
       "rank" : 1
@@ -519,13 +519,13 @@
       "group" : "cross_language",
       "hits" : [
         "zh-06",
+        "zh-13",
         "en-06",
         "tail-06",
-        "en-21",
-        "en-13"
+        "zh-04"
       ],
       "id" : "cross_language-06",
-      "rank" : 2
+      "rank" : 3
     },
     {
       "group" : "long_tail",
@@ -549,8 +549,8 @@
         "en-06",
         "tail-06",
         "zh-06",
-        "en-21",
-        "en-13"
+        "zh-13",
+        "en-21"
       ],
       "id" : "media_timestamp-06",
       "rank" : null
@@ -567,10 +567,10 @@
       "group" : "lexical",
       "hits" : [
         "en-07",
+        "tail-07",
         "zh-07",
         "zh-19",
-        "zh-01",
-        "zh-14"
+        "en-14"
       ],
       "id" : "lexical-07",
       "rank" : 1
@@ -587,10 +587,10 @@
       "group" : "chinese_short",
       "hits" : [
         "zh-07",
+        "zh-19",
         "en-07",
         "tail-07",
-        "en-19",
-        "zh-19"
+        "zh-01"
       ],
       "id" : "chinese_short-07",
       "rank" : 1
@@ -599,13 +599,13 @@
       "group" : "cross_language",
       "hits" : [
         "en-07",
+        "tail-07",
         "zh-07",
         "zh-19",
-        "zh-01",
-        "zh-14"
+        "en-14"
       ],
       "id" : "cross_language-07",
-      "rank" : 2
+      "rank" : 3
     },
     {
       "group" : "long_tail",
@@ -630,7 +630,7 @@
         "tail-07",
         "zh-07",
         "zh-01",
-        "zh-19"
+        "en-14"
       ],
       "id" : "media_timestamp-07",
       "rank" : null
@@ -647,10 +647,10 @@
       "group" : "lexical",
       "hits" : [
         "en-08",
+        "tail-08",
         "zh-08",
         "zh-14",
-        "zh-23",
-        "zh-10"
+        "en-10"
       ],
       "id" : "lexical-08",
       "rank" : 1
@@ -667,10 +667,10 @@
       "group" : "chinese_short",
       "hits" : [
         "zh-08",
+        "zh-10",
         "en-08",
         "tail-08",
-        "tail-10",
-        "tail-04"
+        "zh-00"
       ],
       "id" : "chinese_short-08",
       "rank" : 1
@@ -679,13 +679,13 @@
       "group" : "cross_language",
       "hits" : [
         "zh-08",
+        "zh-10",
         "en-08",
         "tail-08",
-        "tail-10",
-        "tail-04"
+        "zh-00"
       ],
       "id" : "cross_language-08",
-      "rank" : 2
+      "rank" : 3
     },
     {
       "group" : "long_tail",
@@ -709,8 +709,8 @@
         "en-08",
         "tail-08",
         "zh-08",
-        "tail-20",
-        "tail-04"
+        "zh-10",
+        "tail-20"
       ],
       "id" : "media_timestamp-08",
       "rank" : null
@@ -727,10 +727,10 @@
       "group" : "lexical",
       "hits" : [
         "en-09",
+        "tail-09",
         "zh-09",
         "zh-18",
-        "zh-14",
-        "zh-19"
+        "en-18"
       ],
       "id" : "lexical-09",
       "rank" : 1
@@ -747,10 +747,10 @@
       "group" : "chinese_short",
       "hits" : [
         "zh-09",
+        "zh-18",
         "en-09",
         "tail-09",
-        "zh-18",
-        "en-18"
+        "zh-19"
       ],
       "id" : "chinese_short-09",
       "rank" : 1
@@ -759,13 +759,13 @@
       "group" : "cross_language",
       "hits" : [
         "en-09",
+        "tail-09",
         "zh-09",
         "zh-18",
-        "zh-14",
-        "zh-19"
+        "en-18"
       ],
       "id" : "cross_language-09",
-      "rank" : 2
+      "rank" : 3
     },
     {
       "group" : "long_tail",
@@ -789,8 +789,8 @@
         "en-09",
         "tail-09",
         "zh-09",
-        "en-08",
-        "zh-18"
+        "zh-18",
+        "en-08"
       ],
       "id" : "media_timestamp-09",
       "rank" : null
@@ -807,10 +807,10 @@
       "group" : "lexical",
       "hits" : [
         "en-10",
+        "tail-10",
         "zh-10",
         "zh-23",
-        "zh-19",
-        "zh-16"
+        "en-05"
       ],
       "id" : "lexical-10",
       "rank" : 1
@@ -827,10 +827,10 @@
       "group" : "chinese_short",
       "hits" : [
         "zh-10",
+        "zh-23",
         "en-06",
         "en-10",
-        "tail-06",
-        "tail-10"
+        "zh-11"
       ],
       "id" : "chinese_short-10",
       "rank" : 1
@@ -839,13 +839,13 @@
       "group" : "cross_language",
       "hits" : [
         "zh-10",
+        "zh-23",
         "en-06",
         "en-10",
-        "tail-06",
-        "tail-10"
+        "zh-11"
       ],
       "id" : "cross_language-10",
-      "rank" : 3
+      "rank" : 4
     },
     {
       "group" : "long_tail",
@@ -869,8 +869,8 @@
         "tail-10",
         "en-10",
         "zh-10",
-        "en-05",
-        "tail-05"
+        "zh-23",
+        "en-05"
       ],
       "id" : "media_timestamp-10",
       "rank" : null
@@ -887,10 +887,10 @@
       "group" : "lexical",
       "hits" : [
         "en-11",
+        "tail-11",
         "zh-11",
         "zh-07",
-        "tail-07",
-        "zh-13"
+        "en-21"
       ],
       "id" : "lexical-11",
       "rank" : 1
@@ -908,9 +908,9 @@
       "hits" : [
         "zh-11",
         "tail-11",
+        "zh-21",
         "en-11",
-        "en-21",
-        "tail-21"
+        "zh-24"
       ],
       "id" : "chinese_short-11",
       "rank" : 1
@@ -919,13 +919,13 @@
       "group" : "cross_language",
       "hits" : [
         "en-11",
+        "tail-11",
         "zh-11",
         "zh-07",
-        "tail-07",
-        "zh-13"
+        "en-21"
       ],
       "id" : "cross_language-11",
-      "rank" : 2
+      "rank" : 3
     },
     {
       "group" : "long_tail",
@@ -949,8 +949,8 @@
         "tail-11",
         "en-11",
         "zh-11",
-        "en-21",
-        "tail-21"
+        "zh-13",
+        "en-21"
       ],
       "id" : "media_timestamp-11",
       "rank" : null
@@ -967,10 +967,10 @@
       "group" : "lexical",
       "hits" : [
         "en-12",
+        "tail-12",
         "zh-12",
         "zh-13",
-        "zh-00",
-        "tail-00"
+        "en-00"
       ],
       "id" : "lexical-12",
       "rank" : 1
@@ -987,10 +987,10 @@
       "group" : "chinese_short",
       "hits" : [
         "zh-12",
+        "zh-00",
         "tail-12",
         "en-12",
-        "en-05",
-        "zh-00"
+        "zh-04"
       ],
       "id" : "chinese_short-12",
       "rank" : 1
@@ -999,13 +999,13 @@
       "group" : "cross_language",
       "hits" : [
         "zh-12",
+        "zh-00",
         "tail-12",
         "en-12",
-        "en-05",
-        "zh-00"
+        "zh-04"
       ],
       "id" : "cross_language-12",
-      "rank" : 3
+      "rank" : 4
     },
     {
       "group" : "long_tail",
@@ -1047,10 +1047,10 @@
       "group" : "lexical",
       "hits" : [
         "en-13",
+        "tail-13",
         "zh-13",
         "zh-06",
-        "zh-14",
-        "tail-06"
+        "en-06"
       ],
       "id" : "lexical-13",
       "rank" : 1
@@ -1069,8 +1069,8 @@
         "zh-13",
         "en-13",
         "tail-13",
-        "en-06",
-        "tail-06"
+        "zh-12",
+        "zh-06"
       ],
       "id" : "chinese_short-13",
       "rank" : 1
@@ -1079,13 +1079,13 @@
       "group" : "cross_language",
       "hits" : [
         "en-13",
+        "tail-13",
         "zh-13",
         "zh-06",
-        "zh-14",
-        "tail-06"
+        "en-06"
       ],
       "id" : "cross_language-13",
-      "rank" : 2
+      "rank" : 3
     },
     {
       "group" : "long_tail",
@@ -1127,10 +1127,10 @@
       "group" : "lexical",
       "hits" : [
         "en-14",
+        "tail-14",
         "zh-14",
         "zh-23",
-        "tail-23",
-        "zh-19"
+        "en-23"
       ],
       "id" : "lexical-14",
       "rank" : 1
@@ -1147,10 +1147,10 @@
       "group" : "chinese_short",
       "hits" : [
         "zh-14",
+        "zh-23",
         "en-14",
         "tail-14",
-        "tail-23",
-        "en-23"
+        "zh-00"
       ],
       "id" : "chinese_short-14",
       "rank" : 1
@@ -1159,13 +1159,13 @@
       "group" : "cross_language",
       "hits" : [
         "zh-14",
+        "zh-23",
         "en-14",
         "tail-14",
-        "tail-23",
-        "en-23"
+        "zh-00"
       ],
       "id" : "cross_language-14",
-      "rank" : 2
+      "rank" : 3
     },
     {
       "group" : "long_tail",
@@ -1189,8 +1189,8 @@
         "en-14",
         "tail-14",
         "zh-14",
-        "en-23",
-        "zh-23"
+        "zh-23",
+        "en-23"
       ],
       "id" : "media_timestamp-14",
       "rank" : null
@@ -1207,10 +1207,10 @@
       "group" : "lexical",
       "hits" : [
         "en-15",
+        "tail-15",
         "zh-15",
         "zh-23",
-        "zh-14",
-        "zh-08"
+        "en-10"
       ],
       "id" : "lexical-15",
       "rank" : 1
@@ -1227,10 +1227,10 @@
       "group" : "chinese_short",
       "hits" : [
         "zh-15",
+        "zh-08",
         "tail-15",
         "en-15",
-        "zh-08",
-        "en-08"
+        "zh-00"
       ],
       "id" : "chinese_short-15",
       "rank" : 1
@@ -1239,13 +1239,13 @@
       "group" : "cross_language",
       "hits" : [
         "en-15",
+        "tail-15",
         "zh-15",
         "zh-23",
-        "zh-14",
-        "zh-08"
+        "en-10"
       ],
       "id" : "cross_language-15",
-      "rank" : 2
+      "rank" : 3
     },
     {
       "group" : "long_tail",
@@ -1269,8 +1269,8 @@
         "tail-15",
         "en-15",
         "zh-15",
-        "en-08",
-        "zh-08"
+        "zh-08",
+        "en-08"
       ],
       "id" : "media_timestamp-15",
       "rank" : null
@@ -1287,10 +1287,10 @@
       "group" : "lexical",
       "hits" : [
         "en-16",
+        "tail-16",
         "zh-16",
         "zh-19",
-        "tail-07",
-        "zh-14"
+        "en-04"
       ],
       "id" : "lexical-16",
       "rank" : 1
@@ -1308,9 +1308,9 @@
       "hits" : [
         "zh-16",
         "en-16",
+        "zh-19",
         "tail-16",
-        "en-04",
-        "zh-19"
+        "zh-23"
       ],
       "id" : "chinese_short-16",
       "rank" : 1
@@ -1320,9 +1320,9 @@
       "hits" : [
         "zh-16",
         "en-16",
+        "zh-19",
         "tail-16",
-        "en-04",
-        "zh-19"
+        "zh-23"
       ],
       "id" : "cross_language-16",
       "rank" : 2
@@ -1349,8 +1349,8 @@
         "en-16",
         "tail-16",
         "zh-16",
-        "en-04",
-        "en-21"
+        "zh-19",
+        "en-04"
       ],
       "id" : "media_timestamp-16",
       "rank" : null
@@ -1367,10 +1367,10 @@
       "group" : "lexical",
       "hits" : [
         "en-17",
+        "en-20",
         "zh-17",
-        "tail-20",
         "zh-19",
-        "zh-23"
+        "en-10"
       ],
       "id" : "lexical-17",
       "rank" : 1
@@ -1387,10 +1387,10 @@
       "group" : "chinese_short",
       "hits" : [
         "zh-17",
+        "zh-19",
         "en-17",
         "tail-17",
-        "zh-19",
-        "tail-20"
+        "zh-20"
       ],
       "id" : "chinese_short-17",
       "rank" : 1
@@ -1399,13 +1399,13 @@
       "group" : "cross_language",
       "hits" : [
         "en-17",
+        "en-20",
         "zh-17",
-        "tail-20",
         "zh-19",
-        "zh-23"
+        "en-10"
       ],
       "id" : "cross_language-17",
-      "rank" : 2
+      "rank" : 3
     },
     {
       "group" : "long_tail",
@@ -1429,8 +1429,8 @@
         "en-17",
         "tail-17",
         "zh-17",
-        "tail-20",
-        "en-20"
+        "zh-20",
+        "tail-20"
       ],
       "id" : "media_timestamp-17",
       "rank" : null
@@ -1450,7 +1450,7 @@
         "en-09",
         "zh-18",
         "zh-09",
-        "zh-14"
+        "tail-18"
       ],
       "id" : "lexical-18",
       "rank" : 1
@@ -1470,7 +1470,7 @@
         "zh-09",
         "en-18",
         "tail-18",
-        "en-09"
+        "zh-14"
       ],
       "id" : "chinese_short-18",
       "rank" : 1
@@ -1482,7 +1482,7 @@
         "zh-09",
         "en-18",
         "tail-18",
-        "en-09"
+        "zh-14"
       ],
       "id" : "cross_language-18",
       "rank" : 3
@@ -1508,9 +1508,9 @@
       "hits" : [
         "en-18",
         "tail-18",
-        "en-09",
-        "tail-09",
-        "zh-18"
+        "zh-18",
+        "zh-09",
+        "en-09"
       ],
       "id" : "media_timestamp-18",
       "rank" : null
@@ -1527,10 +1527,10 @@
       "group" : "lexical",
       "hits" : [
         "en-19",
+        "tail-19",
         "zh-19",
-        "tail-07",
         "zh-14",
-        "zh-23"
+        "en-07"
       ],
       "id" : "lexical-19",
       "rank" : 1
@@ -1547,10 +1547,10 @@
       "group" : "chinese_short",
       "hits" : [
         "zh-19",
+        "zh-04",
         "tail-19",
         "en-19",
-        "en-21",
-        "en-11"
+        "zh-13"
       ],
       "id" : "chinese_short-19",
       "rank" : 1
@@ -1559,13 +1559,13 @@
       "group" : "cross_language",
       "hits" : [
         "en-19",
+        "tail-19",
         "zh-19",
-        "tail-07",
         "zh-14",
-        "zh-23"
+        "en-07"
       ],
       "id" : "cross_language-19",
-      "rank" : 2
+      "rank" : 3
     },
     {
       "group" : "long_tail",
@@ -1589,8 +1589,8 @@
         "tail-19",
         "en-19",
         "zh-19",
-        "en-21",
-        "en-11"
+        "zh-04",
+        "en-21"
       ],
       "id" : "media_timestamp-19",
       "rank" : null
@@ -1607,10 +1607,10 @@
       "group" : "lexical",
       "hits" : [
         "en-20",
+        "tail-20",
         "zh-20",
         "zh-01",
-        "zh-19",
-        "zh-14"
+        "en-05"
       ],
       "id" : "lexical-20",
       "rank" : 1
@@ -1629,8 +1629,8 @@
         "zh-20",
         "en-20",
         "tail-20",
-        "en-05",
-        "tail-05"
+        "zh-19",
+        "zh-16"
       ],
       "id" : "chinese_short-20",
       "rank" : 1
@@ -1641,8 +1641,8 @@
         "zh-20",
         "en-20",
         "tail-20",
-        "en-05",
-        "tail-05"
+        "zh-19",
+        "zh-16"
       ],
       "id" : "cross_language-20",
       "rank" : 2
@@ -1669,8 +1669,8 @@
         "en-20",
         "tail-20",
         "zh-20",
-        "en-05",
-        "tail-05"
+        "zh-01",
+        "en-05"
       ],
       "id" : "media_timestamp-20",
       "rank" : null
@@ -1687,10 +1687,10 @@
       "group" : "lexical",
       "hits" : [
         "en-21",
+        "tail-21",
         "zh-11",
-        "tail-11",
         "zh-16",
-        "zh-21"
+        "en-11"
       ],
       "id" : "lexical-21",
       "rank" : 1
@@ -1707,10 +1707,10 @@
       "group" : "chinese_short",
       "hits" : [
         "zh-21",
+        "zh-11",
         "en-21",
         "tail-21",
-        "tail-11",
-        "zh-11"
+        "zh-19"
       ],
       "id" : "chinese_short-21",
       "rank" : 1
@@ -1719,13 +1719,13 @@
       "group" : "cross_language",
       "hits" : [
         "en-21",
+        "tail-21",
         "zh-11",
-        "tail-11",
         "zh-16",
-        "zh-21"
+        "en-11"
       ],
       "id" : "cross_language-21",
-      "rank" : 5
+      "rank" : null
     },
     {
       "group" : "long_tail",
@@ -1749,8 +1749,8 @@
         "en-21",
         "tail-21",
         "zh-11",
-        "en-11",
-        "tail-11"
+        "zh-21",
+        "en-11"
       ],
       "id" : "media_timestamp-21",
       "rank" : null
@@ -1767,10 +1767,10 @@
       "group" : "lexical",
       "hits" : [
         "en-22",
+        "tail-22",
         "zh-00",
         "zh-22",
-        "tail-00",
-        "zh-14"
+        "en-00"
       ],
       "id" : "lexical-22",
       "rank" : 1
@@ -1787,10 +1787,10 @@
       "group" : "chinese_short",
       "hits" : [
         "zh-22",
+        "zh-00",
         "en-22",
         "en-00",
-        "tail-06",
-        "zh-00"
+        "zh-06"
       ],
       "id" : "chinese_short-22",
       "rank" : 1
@@ -1799,13 +1799,13 @@
       "group" : "cross_language",
       "hits" : [
         "zh-22",
+        "zh-00",
         "en-22",
         "en-00",
-        "tail-06",
-        "zh-00"
+        "zh-06"
       ],
       "id" : "cross_language-22",
-      "rank" : 2
+      "rank" : 3
     },
     {
       "group" : "long_tail",
@@ -1847,10 +1847,10 @@
       "group" : "lexical",
       "hits" : [
         "en-23",
+        "tail-23",
         "zh-23",
         "zh-14",
-        "tail-07",
-        "zh-19"
+        "en-14"
       ],
       "id" : "lexical-23",
       "rank" : 1
@@ -1867,10 +1867,10 @@
       "group" : "chinese_short",
       "hits" : [
         "zh-23",
+        "zh-14",
         "tail-23",
         "en-23",
-        "zh-14",
-        "tail-09"
+        "zh-18"
       ],
       "id" : "chinese_short-23",
       "rank" : 1
@@ -1879,13 +1879,13 @@
       "group" : "cross_language",
       "hits" : [
         "en-23",
+        "tail-23",
         "zh-23",
         "zh-14",
-        "tail-07",
-        "zh-19"
+        "en-14"
       ],
       "id" : "cross_language-23",
-      "rank" : 2
+      "rank" : 3
     },
     {
       "group" : "long_tail",
@@ -1927,10 +1927,10 @@
       "group" : "lexical",
       "hits" : [
         "en-24",
+        "tail-24",
         "zh-24",
         "zh-14",
-        "tail-00",
-        "zh-10"
+        "en-10"
       ],
       "id" : "lexical-24",
       "rank" : 1
@@ -1947,10 +1947,10 @@
       "group" : "chinese_short",
       "hits" : [
         "zh-24",
+        "zh-11",
         "en-24",
         "tail-24",
-        "zh-11",
-        "tail-11"
+        "zh-04"
       ],
       "id" : "chinese_short-24",
       "rank" : 1
@@ -1959,13 +1959,13 @@
       "group" : "cross_language",
       "hits" : [
         "zh-24",
+        "zh-11",
         "en-24",
         "tail-24",
-        "zh-11",
-        "tail-11"
+        "zh-04"
       ],
       "id" : "cross_language-24",
-      "rank" : 2
+      "rank" : 3
     },
     {
       "group" : "long_tail",
@@ -1989,8 +1989,8 @@
         "en-24",
         "tail-24",
         "zh-24",
-        "tail-22",
-        "zh-10"
+        "zh-10",
+        "tail-22"
       ],
       "id" : "media_timestamp-24",
       "rank" : null

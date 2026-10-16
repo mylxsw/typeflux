@@ -11,10 +11,10 @@
       "group" : "lexical",
       "hits" : [
         "final-en-00",
+        "final-en-07",
         "final-audio-00",
         "final-audio-07",
-        "final-audio-06",
-        "final-audio-05"
+        "final-zh-00"
       ],
       "id" : "final_lexical-00",
       "rank" : 1
@@ -37,10 +37,10 @@
       "group" : "chinese_short",
       "hits" : [
         "final-zh-00",
-        "final-audio-07",
-        "final-audio-00",
+        "final-zh-07",
         "final-en-00",
-        "final-audio-10"
+        "final-en-07",
+        "final-audio-07"
       ],
       "id" : "final_chinese_short-00",
       "rank" : 1
@@ -51,14 +51,14 @@
       ],
       "group" : "cross_language",
       "hits" : [
+        "final-zh-00",
+        "final-zh-07",
         "final-en-00",
         "final-audio-00",
-        "final-zh-00",
-        "final-audio-07",
-        "final-en-07"
+        "final-audio-07"
       ],
       "id" : "final_cross_language-00",
-      "rank" : 1
+      "rank" : 3
     },
     {
       "expected" : [
@@ -66,14 +66,14 @@
       ],
       "group" : "semantic_paraphrase",
       "hits" : [
-        "final-audio-00",
         "final-en-00",
+        "final-audio-00",
         "final-zh-00",
-        "final-audio-07",
-        "final-audio-14"
+        "final-en-07",
+        "final-audio-07"
       ],
       "id" : "final_semantic_paraphrase-00",
-      "rank" : 2
+      "rank" : 1
     },
     {
       "expected" : [
@@ -85,7 +85,7 @@
         "final-audio-07",
         "final-audio-05",
         "final-audio-18",
-        "final-en-00"
+        "final-audio-14"
       ],
       "id" : "final_audio_semantic-00",
       "rank" : 1
@@ -98,9 +98,9 @@
       "hits" : [
         "final-image-red-circle",
         "final-image-black-circle",
-        "final-image-green-circle",
-        "final-image-blue-circle",
-        "final-image-red-diamond"
+        "final-en-01",
+        "final-en-15",
+        "final-zh-15"
       ],
       "id" : "final_image_semantic-00",
       "rank" : 1
@@ -123,10 +123,10 @@
       "group" : "lexical",
       "hits" : [
         "final-en-01",
+        "final-en-13",
         "final-audio-01",
         "final-zh-01",
-        "final-audio-00",
-        "final-audio-19"
+        "final-audio-00"
       ],
       "id" : "final_lexical-01",
       "rank" : 1
@@ -149,10 +149,10 @@
       "group" : "chinese_short",
       "hits" : [
         "final-zh-01",
-        "final-audio-01",
         "final-en-01",
-        "final-audio-24",
-        "final-audio-00"
+        "final-zh-06",
+        "final-audio-01",
+        "final-audio-24"
       ],
       "id" : "final_chinese_short-01",
       "rank" : 1
@@ -163,14 +163,14 @@
       ],
       "group" : "cross_language",
       "hits" : [
-        "final-audio-01",
         "final-en-01",
+        "final-audio-01",
+        "final-en-13",
         "final-zh-01",
-        "final-audio-00",
-        "final-audio-13"
+        "final-audio-00"
       ],
       "id" : "final_cross_language-01",
-      "rank" : 3
+      "rank" : 4
     },
     {
       "expected" : [
@@ -178,14 +178,14 @@
       ],
       "group" : "semantic_paraphrase",
       "hits" : [
-        "final-audio-01",
-        "final-en-01",
         "final-zh-01",
-        "final-audio-07",
-        "final-zh-13"
+        "final-audio-01",
+        "final-zh-13",
+        "final-en-01",
+        "final-en-13"
       ],
       "id" : "final_semantic_paraphrase-01",
-      "rank" : 3
+      "rank" : 1
     },
     {
       "expected" : [
@@ -196,8 +196,8 @@
         "final-audio-01",
         "final-audio-18",
         "final-audio-03",
-        "final-en-01",
-        "final-audio-13"
+        "final-audio-13",
+        "final-audio-07"
       ],
       "id" : "final_audio_semantic-01",
       "rank" : 1
@@ -209,10 +209,10 @@
       "group" : "image_semantic",
       "hits" : [
         "final-image-red-triangle",
+        "final-en-15",
         "final-image-red-diamond",
-        "final-audio-15",
-        "final-image-green-triangle",
-        "final-image-black-triangle"
+        "final-en-10",
+        "final-audio-15"
       ],
       "id" : "final_image_semantic-01",
       "rank" : 1
@@ -235,10 +235,10 @@
       "group" : "lexical",
       "hits" : [
         "final-en-02",
-        "final-audio-02",
         "final-zh-02",
-        "final-audio-21",
-        "final-audio-19"
+        "final-audio-02",
+        "final-en-21",
+        "final-audio-21"
       ],
       "id" : "final_lexical-02",
       "rank" : 1
@@ -261,10 +261,10 @@
       "group" : "chinese_short",
       "hits" : [
         "final-zh-02",
+        "final-zh-19",
         "final-en-02",
-        "final-audio-07",
-        "final-audio-03",
-        "final-audio-02"
+        "final-en-21",
+        "final-image-yellow-circle"
       ],
       "id" : "final_chinese_short-02",
       "rank" : 1
@@ -275,14 +275,14 @@
       ],
       "group" : "cross_language",
       "hits" : [
-        "final-audio-02",
         "final-zh-02",
         "final-en-02",
-        "final-audio-21",
-        "final-audio-14"
+        "final-audio-02",
+        "final-zh-11",
+        "final-en-19"
       ],
       "id" : "final_cross_language-02",
-      "rank" : 3
+      "rank" : 2
     },
     {
       "expected" : [
@@ -290,14 +290,14 @@
       ],
       "group" : "semantic_paraphrase",
       "hits" : [
+        "final-en-02",
         "final-audio-02",
         "final-zh-02",
-        "final-en-02",
-        "final-audio-21",
-        "final-audio-14"
+        "final-en-21",
+        "final-audio-21"
       ],
       "id" : "final_semantic_paraphrase-02",
-      "rank" : 3
+      "rank" : 1
     },
     {
       "expected" : [
@@ -309,7 +309,7 @@
         "final-audio-14",
         "final-audio-21",
         "final-audio-18",
-        "final-zh-02"
+        "final-audio-04"
       ],
       "id" : "final_audio_semantic-02",
       "rank" : 1
@@ -322,9 +322,9 @@
       "hits" : [
         "final-image-red-diamond",
         "final-image-black-diamond",
-        "final-image-blue-diamond",
-        "final-image-green-diamond",
-        "final-image-red-triangle"
+        "final-en-15",
+        "final-en-01",
+        "final-audio-20"
       ],
       "id" : "final_image_semantic-02",
       "rank" : 1
@@ -349,8 +349,8 @@
         "final-en-03",
         "final-audio-03",
         "final-zh-03",
-        "final-audio-16",
-        "final-audio-21"
+        "final-en-16",
+        "final-zh-16"
       ],
       "id" : "final_lexical-03",
       "rank" : 1
@@ -373,10 +373,10 @@
       "group" : "chinese_short",
       "hits" : [
         "final-zh-03",
+        "final-zh-16",
         "final-en-03",
-        "final-audio-10",
-        "final-audio-21",
-        "final-audio-16"
+        "final-en-16",
+        "final-audio-10"
       ],
       "id" : "final_chinese_short-03",
       "rank" : 1
@@ -387,14 +387,14 @@
       ],
       "group" : "cross_language",
       "hits" : [
-        "final-audio-03",
         "final-en-03",
         "final-zh-03",
-        "final-audio-16",
-        "final-audio-09"
+        "final-audio-03",
+        "final-en-02",
+        "final-audio-16"
       ],
       "id" : "final_cross_language-03",
-      "rank" : 3
+      "rank" : 2
     },
     {
       "expected" : [
@@ -402,14 +402,14 @@
       ],
       "group" : "semantic_paraphrase",
       "hits" : [
-        "final-audio-03",
-        "final-en-03",
         "final-zh-03",
-        "final-audio-16",
-        "final-audio-04"
+        "final-en-03",
+        "final-zh-15",
+        "final-audio-03",
+        "final-audio-16"
       ],
       "id" : "final_semantic_paraphrase-03",
-      "rank" : 3
+      "rank" : 1
     },
     {
       "expected" : [
@@ -434,9 +434,9 @@
       "hits" : [
         "final-image-red-star",
         "final-image-blue-star",
-        "final-image-black-star",
-        "final-image-green-star",
-        "final-image-yellow-star"
+        "final-en-15",
+        "final-en-01",
+        "final-zh-15"
       ],
       "id" : "final_image_semantic-03",
       "rank" : 1
@@ -459,10 +459,10 @@
       "group" : "lexical",
       "hits" : [
         "final-en-04",
+        "final-en-12",
         "final-zh-04",
         "final-audio-21",
-        "final-audio-04",
-        "final-audio-12"
+        "final-audio-04"
       ],
       "id" : "final_lexical-04",
       "rank" : 1
@@ -485,10 +485,10 @@
       "group" : "chinese_short",
       "hits" : [
         "final-zh-04",
+        "final-zh-21",
         "final-en-04",
-        "final-audio-19",
-        "final-audio-03",
-        "final-audio-21"
+        "final-en-21",
+        "final-image-black-cross"
       ],
       "id" : "final_chinese_short-04",
       "rank" : 1
@@ -501,9 +501,9 @@
       "hits" : [
         "final-zh-04",
         "final-en-04",
+        "final-zh-21",
         "final-audio-04",
-        "final-audio-19",
-        "final-audio-23"
+        "final-audio-19"
       ],
       "id" : "final_cross_language-04",
       "rank" : 2
@@ -515,10 +515,10 @@
       "group" : "semantic_paraphrase",
       "hits" : [
         "final-en-04",
+        "final-en-21",
         "final-audio-04",
         "final-audio-21",
-        "final-zh-04",
-        "final-audio-12"
+        "final-zh-04"
       ],
       "id" : "final_semantic_paraphrase-04",
       "rank" : 1
@@ -532,8 +532,8 @@
         "final-audio-04",
         "final-audio-21",
         "final-audio-18",
-        "final-en-04",
-        "final-audio-12"
+        "final-audio-12",
+        "final-audio-14"
       ],
       "id" : "final_audio_semantic-04",
       "rank" : 1
@@ -545,10 +545,10 @@
       "group" : "image_semantic",
       "hits" : [
         "final-image-red-cross",
+        "final-en-15",
         "final-image-black-cross",
-        "final-image-blue-cross",
-        "final-image-green-cross",
-        "final-image-yellow-cross"
+        "final-en-10",
+        "final-zh-02"
       ],
       "id" : "final_image_semantic-04",
       "rank" : 1
@@ -571,10 +571,10 @@
       "group" : "lexical",
       "hits" : [
         "final-en-05",
-        "final-audio-07",
+        "final-en-18",
         "final-zh-05",
-        "final-audio-18",
-        "final-audio-00"
+        "final-audio-07",
+        "final-zh-19"
       ],
       "id" : "final_lexical-05",
       "rank" : 1
@@ -597,10 +597,10 @@
       "group" : "chinese_short",
       "hits" : [
         "final-zh-05",
-        "final-audio-21",
+        "final-zh-19",
         "final-en-05",
-        "final-audio-19",
-        "final-audio-05"
+        "final-en-21",
+        "final-audio-21"
       ],
       "id" : "final_chinese_short-05",
       "rank" : 1
@@ -612,13 +612,13 @@
       "group" : "cross_language",
       "hits" : [
         "final-audio-05",
-        "final-zh-05",
         "final-en-05",
-        "final-audio-07",
-        "final-en-00"
+        "final-en-00",
+        "final-zh-05",
+        "final-audio-07"
       ],
       "id" : "final_cross_language-05",
-      "rank" : 2
+      "rank" : 4
     },
     {
       "expected" : [
@@ -626,14 +626,14 @@
       ],
       "group" : "semantic_paraphrase",
       "hits" : [
-        "final-audio-05",
         "final-zh-05",
         "final-en-05",
-        "final-audio-14",
-        "final-audio-18"
+        "final-zh-10",
+        "final-audio-05",
+        "final-en-18"
       ],
       "id" : "final_semantic_paraphrase-05",
-      "rank" : 2
+      "rank" : 1
     },
     {
       "expected" : [
@@ -658,9 +658,9 @@
       "hits" : [
         "final-image-blue-circle",
         "final-image-blue-diamond",
-        "final-image-blue-triangle",
-        "final-image-black-circle",
-        "final-image-yellow-circle"
+        "final-en-15",
+        "final-en-01",
+        "final-zh-02"
       ],
       "id" : "final_image_semantic-05",
       "rank" : 1
@@ -684,9 +684,9 @@
       "hits" : [
         "final-en-06",
         "final-audio-06",
+        "final-en-22",
         "final-zh-06",
-        "final-audio-22",
-        "final-audio-03"
+        "final-audio-22"
       ],
       "id" : "final_lexical-06",
       "rank" : 1
@@ -709,10 +709,10 @@
       "group" : "chinese_short",
       "hits" : [
         "final-zh-06",
-        "final-audio-06",
+        "final-zh-22",
         "final-en-06",
-        "final-audio-22",
-        "final-zh-22"
+        "final-en-22",
+        "final-audio-06"
       ],
       "id" : "final_chinese_short-06",
       "rank" : 1
@@ -723,14 +723,14 @@
       ],
       "group" : "cross_language",
       "hits" : [
-        "final-audio-06",
         "final-zh-06",
+        "final-zh-22",
+        "final-audio-06",
         "final-en-06",
-        "final-audio-22",
-        "final-zh-22"
+        "final-en-22"
       ],
       "id" : "final_cross_language-06",
-      "rank" : 3
+      "rank" : 4
     },
     {
       "expected" : [
@@ -738,14 +738,14 @@
       ],
       "group" : "semantic_paraphrase",
       "hits" : [
-        "final-audio-06",
         "final-en-06",
-        "final-audio-22",
+        "final-audio-06",
+        "final-en-22",
         "final-zh-06",
-        "final-audio-07"
+        "final-audio-22"
       ],
       "id" : "final_semantic_paraphrase-06",
-      "rank" : 2
+      "rank" : 1
     },
     {
       "expected" : [
@@ -770,9 +770,9 @@
       "hits" : [
         "final-image-blue-triangle",
         "final-image-blue-diamond",
-        "final-audio-15",
-        "final-audio-20",
-        "final-image-green-triangle"
+        "final-en-15",
+        "final-en-10",
+        "final-audio-15"
       ],
       "id" : "final_image_semantic-06",
       "rank" : 1
@@ -795,10 +795,10 @@
       "group" : "lexical",
       "hits" : [
         "final-en-07",
-        "final-audio-07",
+        "final-en-06",
         "final-zh-07",
-        "final-audio-06",
-        "final-audio-00"
+        "final-audio-07",
+        "final-audio-06"
       ],
       "id" : "final_lexical-07",
       "rank" : 1
@@ -822,9 +822,9 @@
       "hits" : [
         "final-zh-07",
         "final-en-07",
-        "final-audio-07",
-        "final-audio-06",
-        "final-audio-03"
+        "final-zh-06",
+        "final-en-06",
+        "final-audio-07"
       ],
       "id" : "final_chinese_short-07",
       "rank" : 1
@@ -837,12 +837,12 @@
       "hits" : [
         "final-audio-07",
         "final-en-07",
+        "final-en-23",
         "final-zh-07",
-        "final-audio-15",
-        "final-audio-10"
+        "final-audio-15"
       ],
       "id" : "final_cross_language-07",
-      "rank" : 3
+      "rank" : 4
     },
     {
       "expected" : [
@@ -850,14 +850,14 @@
       ],
       "group" : "semantic_paraphrase",
       "hits" : [
-        "final-audio-07",
         "final-zh-07",
+        "final-audio-07",
+        "final-zh-10",
         "final-en-07",
-        "final-en-00",
-        "final-audio-00"
+        "final-en-00"
       ],
       "id" : "final_semantic_paraphrase-07",
-      "rank" : 2
+      "rank" : 1
     },
     {
       "expected" : [
@@ -882,9 +882,9 @@
       "hits" : [
         "final-image-blue-diamond",
         "final-image-blue-triangle",
-        "final-image-blue-circle",
-        "final-image-black-diamond",
-        "final-image-red-diamond"
+        "final-en-15",
+        "final-en-01",
+        "final-audio-20"
       ],
       "id" : "final_image_semantic-07",
       "rank" : 1
@@ -909,8 +909,8 @@
         "final-en-08",
         "final-audio-08",
         "final-zh-08",
-        "final-audio-05",
-        "final-audio-19"
+        "final-en-23",
+        "final-audio-05"
       ],
       "id" : "final_lexical-08",
       "rank" : 1
@@ -933,10 +933,10 @@
       "group" : "chinese_short",
       "hits" : [
         "final-zh-08",
-        "final-audio-08",
+        "final-zh-21",
         "final-en-08",
-        "final-audio-19",
-        "final-audio-21"
+        "final-audio-08",
+        "final-en-21"
       ],
       "id" : "final_chinese_short-08",
       "rank" : 1
@@ -947,14 +947,14 @@
       ],
       "group" : "cross_language",
       "hits" : [
-        "final-audio-08",
         "final-zh-08",
-        "final-en-08",
         "final-zh-21",
-        "final-audio-23"
+        "final-audio-08",
+        "final-en-08",
+        "final-en-00"
       ],
       "id" : "final_cross_language-08",
-      "rank" : 3
+      "rank" : 4
     },
     {
       "expected" : [
@@ -962,14 +962,14 @@
       ],
       "group" : "semantic_paraphrase",
       "hits" : [
-        "final-audio-08",
         "final-en-08",
+        "final-audio-08",
         "final-zh-08",
-        "final-zh-21",
-        "final-audio-00"
+        "final-en-21",
+        "final-zh-21"
       ],
       "id" : "final_semantic_paraphrase-08",
-      "rank" : 2
+      "rank" : 1
     },
     {
       "expected" : [
@@ -994,9 +994,9 @@
       "hits" : [
         "final-image-blue-star",
         "final-image-yellow-star",
-        "final-image-blue-diamond",
-        "final-image-black-star",
-        "final-image-blue-circle"
+        "final-en-15",
+        "final-en-22",
+        "final-zh-06"
       ],
       "id" : "final_image_semantic-08",
       "rank" : 1
@@ -1021,8 +1021,8 @@
         "final-en-09",
         "final-audio-09",
         "final-zh-09",
-        "final-audio-19",
-        "final-audio-15"
+        "final-en-19",
+        "final-audio-19"
       ],
       "id" : "final_lexical-09",
       "rank" : 1
@@ -1045,10 +1045,10 @@
       "group" : "chinese_short",
       "hits" : [
         "final-zh-09",
-        "final-audio-09",
+        "final-zh-19",
         "final-en-09",
-        "final-audio-19",
-        "final-audio-15"
+        "final-en-16",
+        "final-audio-09"
       ],
       "id" : "final_chinese_short-09",
       "rank" : 1
@@ -1059,11 +1059,11 @@
       ],
       "group" : "cross_language",
       "hits" : [
-        "final-audio-09",
         "final-en-09",
+        "final-audio-09",
         "final-zh-09",
-        "final-audio-17",
-        "final-audio-23"
+        "final-en-02",
+        "final-audio-17"
       ],
       "id" : "final_cross_language-09",
       "rank" : 3
@@ -1074,14 +1074,14 @@
       ],
       "group" : "semantic_paraphrase",
       "hits" : [
+        "final-zh-09",
         "final-audio-09",
         "final-en-09",
-        "final-zh-09",
-        "final-audio-19",
-        "final-audio-17"
+        "final-zh-19",
+        "final-en-02"
       ],
       "id" : "final_semantic_paraphrase-09",
-      "rank" : 3
+      "rank" : 1
     },
     {
       "expected" : [
@@ -1092,8 +1092,8 @@
         "final-audio-09",
         "final-audio-17",
         "final-audio-23",
-        "final-en-09",
-        "final-audio-04"
+        "final-audio-04",
+        "final-audio-02"
       ],
       "id" : "final_audio_semantic-09",
       "rank" : 1
@@ -1106,9 +1106,9 @@
       "hits" : [
         "final-image-blue-cross",
         "final-image-black-cross",
-        "final-image-red-cross",
-        "final-image-yellow-cross",
-        "final-image-green-cross"
+        "final-en-15",
+        "final-en-10",
+        "final-zh-02"
       ],
       "id" : "final_image_semantic-09",
       "rank" : 1
@@ -1131,10 +1131,10 @@
       "group" : "lexical",
       "hits" : [
         "final-en-10",
+        "final-en-16",
         "final-audio-16",
         "final-audio-10",
-        "final-zh-10",
-        "final-audio-21"
+        "final-zh-10"
       ],
       "id" : "final_lexical-10",
       "rank" : 1
@@ -1157,10 +1157,10 @@
       "group" : "chinese_short",
       "hits" : [
         "final-zh-10",
-        "final-audio-21",
-        "final-audio-02",
-        "final-audio-05",
-        "final-audio-16"
+        "final-zh-14",
+        "final-en-21",
+        "final-en-10",
+        "final-audio-21"
       ],
       "id" : "final_chinese_short-10",
       "rank" : 1
@@ -1171,14 +1171,14 @@
       ],
       "group" : "cross_language",
       "hits" : [
-        "final-audio-10",
         "final-zh-10",
+        "final-audio-10",
+        "final-zh-07",
         "final-en-10",
-        "final-audio-20",
-        "final-audio-07"
+        "final-audio-20"
       ],
       "id" : "final_cross_language-10",
-      "rank" : 3
+      "rank" : 4
     },
     {
       "expected" : [
@@ -1186,14 +1186,14 @@
       ],
       "group" : "semantic_paraphrase",
       "hits" : [
-        "final-audio-10",
         "final-en-10",
+        "final-audio-10",
         "final-zh-10",
-        "final-audio-17",
-        "final-audio-01"
+        "final-en-17",
+        "final-audio-17"
       ],
       "id" : "final_semantic_paraphrase-10",
-      "rank" : 2
+      "rank" : 1
     },
     {
       "expected" : [
@@ -1218,9 +1218,9 @@
       "hits" : [
         "final-image-green-circle",
         "final-image-green-diamond",
-        "final-image-yellow-circle",
-        "final-image-black-circle",
-        "final-image-green-triangle"
+        "final-en-15",
+        "final-en-07",
+        "final-zh-15"
       ],
       "id" : "final_image_semantic-10",
       "rank" : 1
@@ -1243,10 +1243,10 @@
       "group" : "lexical",
       "hits" : [
         "final-en-11",
-        "final-audio-15",
-        "final-audio-17",
+        "final-en-17",
         "final-zh-11",
-        "final-audio-21"
+        "final-audio-15",
+        "final-audio-17"
       ],
       "id" : "final_lexical-11",
       "rank" : 1
@@ -1269,10 +1269,10 @@
       "group" : "chinese_short",
       "hits" : [
         "final-zh-11",
-        "final-audio-03",
-        "final-audio-20",
+        "final-zh-20",
         "final-en-11",
-        "final-audio-07"
+        "final-en-17",
+        "final-audio-03"
       ],
       "id" : "final_chinese_short-11",
       "rank" : 1
@@ -1283,11 +1283,11 @@
       ],
       "group" : "cross_language",
       "hits" : [
-        "final-audio-11",
-        "final-zh-11",
         "final-en-11",
-        "final-audio-04",
-        "final-audio-19"
+        "final-zh-11",
+        "final-en-17",
+        "final-audio-11",
+        "final-audio-04"
       ],
       "id" : "final_cross_language-11",
       "rank" : 2
@@ -1299,10 +1299,10 @@
       "group" : "semantic_paraphrase",
       "hits" : [
         "final-zh-11",
-        "final-audio-11",
         "final-en-11",
-        "final-audio-04",
-        "final-audio-17"
+        "final-zh-21",
+        "final-audio-11",
+        "final-en-17"
       ],
       "id" : "final_semantic_paraphrase-11",
       "rank" : 1
@@ -1315,9 +1315,9 @@
       "hits" : [
         "final-audio-11",
         "final-audio-04",
-        "final-zh-11",
-        "final-en-11",
-        "final-audio-18"
+        "final-audio-18",
+        "final-audio-15",
+        "final-audio-17"
       ],
       "id" : "final_audio_semantic-11",
       "rank" : 1
@@ -1330,9 +1330,9 @@
       "hits" : [
         "final-image-green-triangle",
         "final-image-green-diamond",
-        "final-audio-15",
-        "final-audio-20",
-        "final-image-yellow-triangle"
+        "final-en-15",
+        "final-en-10",
+        "final-audio-15"
       ],
       "id" : "final_image_semantic-11",
       "rank" : 1
@@ -1356,9 +1356,9 @@
       "hits" : [
         "final-en-12",
         "final-audio-12",
+        "final-en-04",
         "final-zh-12",
-        "final-audio-21",
-        "final-audio-04"
+        "final-audio-21"
       ],
       "id" : "final_lexical-12",
       "rank" : 1
@@ -1381,9 +1381,9 @@
       "group" : "chinese_short",
       "hits" : [
         "final-zh-12",
+        "final-zh-20",
         "final-audio-12",
         "final-en-12",
-        "final-audio-20",
         "final-en-20"
       ],
       "id" : "final_chinese_short-12",
@@ -1395,11 +1395,11 @@
       ],
       "group" : "cross_language",
       "hits" : [
-        "final-audio-12",
-        "final-en-12",
         "final-zh-12",
-        "final-audio-09",
-        "final-audio-04"
+        "final-en-12",
+        "final-audio-12",
+        "final-zh-04",
+        "final-en-04"
       ],
       "id" : "final_cross_language-12",
       "rank" : 2
@@ -1410,14 +1410,14 @@
       ],
       "group" : "semantic_paraphrase",
       "hits" : [
-        "final-audio-12",
         "final-en-12",
+        "final-audio-12",
         "final-zh-12",
-        "final-audio-21",
-        "final-audio-04"
+        "final-en-18",
+        "final-audio-21"
       ],
       "id" : "final_semantic_paraphrase-12",
-      "rank" : 2
+      "rank" : 1
     },
     {
       "expected" : [
@@ -1426,10 +1426,10 @@
       "group" : "audio_semantic",
       "hits" : [
         "final-audio-12",
-        "final-en-12",
         "final-audio-18",
         "final-audio-04",
-        "final-audio-17"
+        "final-audio-17",
+        "final-audio-10"
       ],
       "id" : "final_audio_semantic-12",
       "rank" : 1
@@ -1442,9 +1442,9 @@
       "hits" : [
         "final-image-green-diamond",
         "final-image-black-diamond",
-        "final-image-red-diamond",
-        "final-image-yellow-diamond",
-        "final-image-green-triangle"
+        "final-en-15",
+        "final-en-07",
+        "final-audio-20"
       ],
       "id" : "final_image_semantic-12",
       "rank" : 1
@@ -1469,8 +1469,8 @@
         "final-en-13",
         "final-audio-13",
         "final-zh-13",
-        "final-audio-01",
-        "final-audio-00"
+        "final-en-01",
+        "final-audio-01"
       ],
       "id" : "final_lexical-13",
       "rank" : 1
@@ -1493,10 +1493,10 @@
       "group" : "chinese_short",
       "hits" : [
         "final-zh-13",
+        "final-zh-01",
         "final-audio-01",
-        "final-audio-00",
         "final-en-13",
-        "final-zh-01"
+        "final-en-01"
       ],
       "id" : "final_chinese_short-13",
       "rank" : 1
@@ -1507,11 +1507,11 @@
       ],
       "group" : "cross_language",
       "hits" : [
-        "final-audio-13",
         "final-en-13",
+        "final-audio-13",
         "final-zh-13",
-        "final-audio-01",
-        "final-audio-02"
+        "final-en-01",
+        "final-audio-01"
       ],
       "id" : "final_cross_language-13",
       "rank" : 3
@@ -1522,14 +1522,14 @@
       ],
       "group" : "semantic_paraphrase",
       "hits" : [
-        "final-audio-13",
-        "final-en-13",
         "final-zh-13",
-        "final-audio-01",
-        "final-zh-01"
+        "final-zh-01",
+        "final-en-13",
+        "final-audio-13",
+        "final-en-01"
       ],
       "id" : "final_semantic_paraphrase-13",
-      "rank" : 3
+      "rank" : 1
     },
     {
       "expected" : [
@@ -1539,9 +1539,9 @@
       "hits" : [
         "final-audio-13",
         "final-audio-01",
-        "final-en-13",
         "final-audio-18",
-        "final-audio-02"
+        "final-audio-02",
+        "final-audio-15"
       ],
       "id" : "final_audio_semantic-13",
       "rank" : 1
@@ -1554,9 +1554,9 @@
       "hits" : [
         "final-image-green-star",
         "final-image-yellow-star",
-        "final-image-green-diamond",
-        "final-image-green-circle",
-        "final-image-green-cross"
+        "final-en-15",
+        "final-en-22",
+        "final-zh-06"
       ],
       "id" : "final_image_semantic-13",
       "rank" : 1
@@ -1580,9 +1580,9 @@
       "hits" : [
         "final-en-14",
         "final-zh-14",
+        "final-en-04",
         "final-audio-14",
-        "final-audio-23",
-        "final-audio-04"
+        "final-audio-23"
       ],
       "id" : "final_lexical-14",
       "rank" : 1
@@ -1605,10 +1605,10 @@
       "group" : "chinese_short",
       "hits" : [
         "final-zh-14",
+        "final-zh-10",
         "final-en-14",
-        "final-audio-00",
-        "final-audio-12",
-        "final-audio-04"
+        "final-en-04",
+        "final-audio-00"
       ],
       "id" : "final_chinese_short-14",
       "rank" : 1
@@ -1621,9 +1621,9 @@
       "hits" : [
         "final-zh-14",
         "final-en-14",
+        "final-zh-19",
         "final-audio-14",
-        "final-audio-04",
-        "final-audio-23"
+        "final-en-00"
       ],
       "id" : "final_cross_language-14",
       "rank" : 2
@@ -1634,14 +1634,14 @@
       ],
       "group" : "semantic_paraphrase",
       "hits" : [
-        "final-audio-14",
+        "final-en-14",
         "final-zh-14",
-        "final-audio-04",
-        "final-audio-19",
-        "final-audio-12"
+        "final-audio-14",
+        "final-en-04",
+        "final-audio-04"
       ],
       "id" : "final_semantic_paraphrase-14",
-      "rank" : null
+      "rank" : 1
     },
     {
       "expected" : [
@@ -1651,9 +1651,9 @@
       "hits" : [
         "final-audio-14",
         "final-audio-04",
-        "final-en-14",
         "final-audio-18",
-        "final-audio-19"
+        "final-audio-19",
+        "final-audio-15"
       ],
       "id" : "final_audio_semantic-14",
       "rank" : 1
@@ -1666,9 +1666,9 @@
       "hits" : [
         "final-image-green-cross",
         "final-image-red-cross",
-        "final-image-yellow-cross",
-        "final-image-black-cross",
-        "final-image-blue-cross"
+        "final-en-15",
+        "final-en-10",
+        "final-zh-02"
       ],
       "id" : "final_image_semantic-14",
       "rank" : 1
@@ -1692,9 +1692,9 @@
       "hits" : [
         "final-en-15",
         "final-audio-15",
-        "final-zh-15",
         "final-image-black-cross",
-        "final-image-black-circle"
+        "final-image-black-circle",
+        "final-image-yellow-cross"
       ],
       "id" : "final_lexical-15",
       "rank" : 1
@@ -1717,10 +1717,10 @@
       "group" : "chinese_short",
       "hits" : [
         "final-zh-15",
+        "final-zh-20",
         "final-en-15",
-        "final-audio-15",
-        "final-audio-20",
-        "final-audio-03"
+        "final-en-20",
+        "final-audio-15"
       ],
       "id" : "final_chinese_short-15",
       "rank" : 1
@@ -1734,8 +1734,8 @@
         "final-audio-15",
         "final-en-15",
         "final-zh-15",
-        "final-audio-07",
-        "final-audio-18"
+        "final-en-22",
+        "final-audio-07"
       ],
       "id" : "final_cross_language-15",
       "rank" : 3
@@ -1746,14 +1746,14 @@
       ],
       "group" : "semantic_paraphrase",
       "hits" : [
-        "final-audio-15",
         "final-zh-15",
+        "final-audio-15",
         "final-en-15",
-        "final-audio-21",
-        "final-audio-14"
+        "final-zh-14",
+        "final-en-24"
       ],
       "id" : "final_semantic_paraphrase-15",
-      "rank" : 2
+      "rank" : 1
     },
     {
       "expected" : [
@@ -1764,8 +1764,8 @@
         "final-audio-15",
         "final-audio-18",
         "final-audio-07",
-        "final-zh-15",
-        "final-en-15"
+        "final-audio-01",
+        "final-audio-19"
       ],
       "id" : "final_audio_semantic-15",
       "rank" : 1
@@ -1778,9 +1778,9 @@
       "hits" : [
         "final-image-yellow-circle",
         "final-image-yellow-diamond",
-        "final-image-yellow-triangle",
-        "final-image-black-circle",
-        "final-image-green-circle"
+        "final-en-15",
+        "final-en-01",
+        "final-zh-02"
       ],
       "id" : "final_image_semantic-15",
       "rank" : 1
@@ -1803,10 +1803,10 @@
       "group" : "lexical",
       "hits" : [
         "final-en-16",
-        "final-audio-16",
+        "final-en-03",
         "final-zh-16",
-        "final-audio-07",
-        "final-audio-10"
+        "final-audio-16",
+        "final-audio-07"
       ],
       "id" : "final_lexical-16",
       "rank" : 1
@@ -1830,9 +1830,9 @@
       "hits" : [
         "final-zh-16",
         "final-en-16",
+        "final-zh-14",
         "final-audio-16",
-        "final-audio-07",
-        "final-audio-21"
+        "final-en-03"
       ],
       "id" : "final_chinese_short-16",
       "rank" : 1
@@ -1843,14 +1843,14 @@
       ],
       "group" : "cross_language",
       "hits" : [
-        "final-audio-16",
         "final-zh-16",
+        "final-audio-16",
+        "final-zh-14",
         "final-en-16",
-        "final-audio-14",
-        "final-audio-07"
+        "final-en-03"
       ],
       "id" : "final_cross_language-16",
-      "rank" : 3
+      "rank" : 4
     },
     {
       "expected" : [
@@ -1859,13 +1859,13 @@
       "group" : "semantic_paraphrase",
       "hits" : [
         "final-audio-16",
-        "final-zh-16",
         "final-en-16",
-        "final-audio-14",
-        "final-audio-21"
+        "final-zh-16",
+        "final-en-03",
+        "final-zh-14"
       ],
       "id" : "final_semantic_paraphrase-16",
-      "rank" : 3
+      "rank" : 2
     },
     {
       "expected" : [
@@ -1874,10 +1874,10 @@
       "group" : "audio_semantic",
       "hits" : [
         "final-audio-16",
-        "final-zh-16",
         "final-audio-14",
-        "final-en-16",
-        "final-audio-10"
+        "final-audio-10",
+        "final-audio-21",
+        "final-audio-04"
       ],
       "id" : "final_audio_semantic-16",
       "rank" : 1
@@ -1890,9 +1890,9 @@
       "hits" : [
         "final-image-yellow-triangle",
         "final-image-yellow-diamond",
-        "final-audio-15",
-        "final-image-green-triangle",
-        "final-image-black-triangle"
+        "final-en-15",
+        "final-en-10",
+        "final-audio-15"
       ],
       "id" : "final_image_semantic-16",
       "rank" : 1
@@ -1915,10 +1915,10 @@
       "group" : "lexical",
       "hits" : [
         "final-en-17",
-        "final-audio-17",
+        "final-en-11",
         "final-zh-17",
-        "final-audio-15",
-        "final-audio-19"
+        "final-audio-17",
+        "final-audio-15"
       ],
       "id" : "final_lexical-17",
       "rank" : 1
@@ -1941,10 +1941,10 @@
       "group" : "chinese_short",
       "hits" : [
         "final-zh-17",
+        "final-zh-22",
         "final-en-17",
-        "final-audio-06",
-        "final-audio-20",
-        "final-audio-19"
+        "final-en-20",
+        "final-audio-06"
       ],
       "id" : "final_chinese_short-17",
       "rank" : 1
@@ -1955,14 +1955,14 @@
       ],
       "group" : "cross_language",
       "hits" : [
-        "final-audio-17",
         "final-en-17",
-        "final-zh-11",
         "final-en-11",
-        "final-audio-02"
+        "final-audio-17",
+        "final-zh-11",
+        "final-zh-17"
       ],
       "id" : "final_cross_language-17",
-      "rank" : null
+      "rank" : 5
     },
     {
       "expected" : [
@@ -1970,14 +1970,14 @@
       ],
       "group" : "semantic_paraphrase",
       "hits" : [
-        "final-audio-17",
-        "final-en-17",
         "final-zh-15",
         "final-zh-17",
-        "final-audio-15"
+        "final-audio-17",
+        "final-en-17",
+        "final-en-11"
       ],
       "id" : "final_semantic_paraphrase-17",
-      "rank" : 4
+      "rank" : 2
     },
     {
       "expected" : [
@@ -2002,9 +2002,9 @@
       "hits" : [
         "final-image-yellow-diamond",
         "final-image-red-diamond",
-        "final-image-black-diamond",
-        "final-image-yellow-triangle",
-        "final-image-green-diamond"
+        "final-en-15",
+        "final-en-10",
+        "final-audio-20"
       ],
       "id" : "final_image_semantic-17",
       "rank" : 1
@@ -2027,10 +2027,10 @@
       "group" : "lexical",
       "hits" : [
         "final-en-18",
-        "final-zh-18",
         "final-audio-18",
         "final-audio-01",
-        "final-audio-05"
+        "final-audio-05",
+        "final-audio-22"
       ],
       "id" : "final_lexical-18",
       "rank" : 1
@@ -2053,10 +2053,10 @@
       "group" : "chinese_short",
       "hits" : [
         "final-zh-18",
-        "final-audio-01",
+        "final-zh-01",
         "final-en-18",
-        "final-audio-10",
-        "final-audio-24"
+        "final-en-01",
+        "final-audio-01"
       ],
       "id" : "final_chinese_short-18",
       "rank" : 1
@@ -2069,9 +2069,9 @@
       "hits" : [
         "final-zh-18",
         "final-en-18",
+        "final-zh-15",
         "final-audio-18",
-        "final-audio-22",
-        "final-audio-10"
+        "final-en-22"
       ],
       "id" : "final_cross_language-18",
       "rank" : 2
@@ -2082,14 +2082,14 @@
       ],
       "group" : "semantic_paraphrase",
       "hits" : [
-        "final-audio-18",
         "final-en-18",
+        "final-en-22",
+        "final-audio-18",
         "final-zh-18",
-        "final-audio-10",
-        "final-audio-07"
+        "final-audio-10"
       ],
       "id" : "final_semantic_paraphrase-18",
-      "rank" : 2
+      "rank" : 1
     },
     {
       "expected" : [
@@ -2113,10 +2113,10 @@
       "group" : "image_semantic",
       "hits" : [
         "final-image-yellow-star",
+        "final-en-15",
         "final-image-black-star",
-        "final-image-yellow-circle",
-        "final-image-green-star",
-        "final-image-blue-star"
+        "final-en-10",
+        "final-zh-22"
       ],
       "id" : "final_image_semantic-18",
       "rank" : 1
@@ -2141,8 +2141,8 @@
         "final-en-19",
         "final-audio-19",
         "final-zh-19",
-        "final-audio-02",
-        "final-audio-21"
+        "final-en-21",
+        "final-audio-02"
       ],
       "id" : "final_lexical-19",
       "rank" : 1
@@ -2165,10 +2165,10 @@
       "group" : "chinese_short",
       "hits" : [
         "final-zh-19",
+        "final-zh-06",
         "final-en-19",
-        "final-audio-06",
-        "final-audio-07",
-        "final-audio-15"
+        "final-en-21",
+        "final-audio-06"
       ],
       "id" : "final_chinese_short-19",
       "rank" : 1
@@ -2179,11 +2179,11 @@
       ],
       "group" : "cross_language",
       "hits" : [
-        "final-audio-19",
         "final-en-19",
+        "final-audio-19",
         "final-zh-19",
-        "final-audio-02",
-        "final-audio-14"
+        "final-en-14",
+        "final-audio-02"
       ],
       "id" : "final_cross_language-19",
       "rank" : 3
@@ -2194,14 +2194,14 @@
       ],
       "group" : "semantic_paraphrase",
       "hits" : [
-        "final-audio-19",
-        "final-en-19",
         "final-zh-19",
-        "final-audio-02",
-        "final-audio-14"
+        "final-en-19",
+        "final-audio-19",
+        "final-zh-14",
+        "final-en-00"
       ],
       "id" : "final_semantic_paraphrase-19",
-      "rank" : 3
+      "rank" : 1
     },
     {
       "expected" : [
@@ -2212,8 +2212,8 @@
         "final-audio-19",
         "final-audio-04",
         "final-audio-02",
-        "final-en-19",
-        "final-audio-18"
+        "final-audio-18",
+        "final-audio-14"
       ],
       "id" : "final_audio_semantic-19",
       "rank" : 1
@@ -2225,10 +2225,10 @@
       "group" : "image_semantic",
       "hits" : [
         "final-image-yellow-cross",
+        "final-en-15",
         "final-image-yellow-diamond",
-        "final-image-black-cross",
-        "final-image-green-cross",
-        "final-image-red-cross"
+        "final-en-10",
+        "final-zh-02"
       ],
       "id" : "final_image_semantic-19",
       "rank" : 1
@@ -2252,9 +2252,9 @@
       "hits" : [
         "final-en-20",
         "final-zh-20",
+        "final-en-14",
         "final-audio-12",
-        "final-audio-20",
-        "final-audio-07"
+        "final-audio-20"
       ],
       "id" : "final_lexical-20",
       "rank" : 1
@@ -2277,10 +2277,10 @@
       "group" : "chinese_short",
       "hits" : [
         "final-zh-20",
+        "final-zh-12",
         "final-en-20",
-        "final-audio-12",
-        "final-audio-20",
-        "final-audio-17"
+        "final-en-17",
+        "final-audio-12"
       ],
       "id" : "final_chinese_short-20",
       "rank" : 1
@@ -2292,13 +2292,13 @@
       "group" : "cross_language",
       "hits" : [
         "final-zh-20",
-        "final-audio-20",
         "final-en-20",
-        "final-audio-07",
-        "final-audio-00"
+        "final-image-black-cross",
+        "final-image-black-circle",
+        "final-audio-20"
       ],
       "id" : "final_cross_language-20",
-      "rank" : 3
+      "rank" : 2
     },
     {
       "expected" : [
@@ -2306,14 +2306,14 @@
       ],
       "group" : "semantic_paraphrase",
       "hits" : [
-        "final-audio-20",
-        "final-zh-20",
         "final-en-20",
-        "final-audio-07",
-        "final-audio-00"
+        "final-zh-20",
+        "final-audio-20",
+        "final-en-00",
+        "final-zh-15"
       ],
       "id" : "final_semantic_paraphrase-20",
-      "rank" : 3
+      "rank" : 1
     },
     {
       "expected" : [
@@ -2338,9 +2338,9 @@
       "hits" : [
         "final-image-black-circle",
         "final-image-blue-circle",
-        "final-image-green-circle",
-        "final-image-yellow-circle",
-        "final-image-black-diamond"
+        "final-en-15",
+        "final-en-01",
+        "final-zh-15"
       ],
       "id" : "final_image_semantic-20",
       "rank" : 1
@@ -2363,10 +2363,10 @@
       "group" : "lexical",
       "hits" : [
         "final-en-21",
-        "final-audio-21",
+        "final-en-04",
         "final-zh-21",
-        "final-audio-00",
-        "final-audio-16"
+        "final-audio-21",
+        "final-audio-00"
       ],
       "id" : "final_lexical-21",
       "rank" : 1
@@ -2389,10 +2389,10 @@
       "group" : "chinese_short",
       "hits" : [
         "final-zh-21",
+        "final-zh-08",
         "final-en-21",
-        "final-audio-08",
-        "final-audio-16",
-        "final-audio-21"
+        "final-en-08",
+        "final-audio-08"
       ],
       "id" : "final_chinese_short-21",
       "rank" : 1
@@ -2403,14 +2403,14 @@
       ],
       "group" : "cross_language",
       "hits" : [
-        "final-audio-21",
         "final-en-21",
+        "final-audio-21",
+        "final-en-19",
         "final-zh-21",
-        "final-audio-04",
-        "final-audio-07"
+        "final-audio-04"
       ],
       "id" : "final_cross_language-21",
-      "rank" : 3
+      "rank" : 4
     },
     {
       "expected" : [
@@ -2419,10 +2419,10 @@
       "group" : "semantic_paraphrase",
       "hits" : [
         "final-zh-21",
-        "final-audio-21",
         "final-en-21",
-        "final-audio-15",
-        "final-audio-04"
+        "final-zh-04",
+        "final-audio-21",
+        "final-en-14"
       ],
       "id" : "final_semantic_paraphrase-21",
       "rank" : 1
@@ -2436,8 +2436,8 @@
         "final-audio-21",
         "final-audio-04",
         "final-audio-18",
-        "final-en-21",
-        "final-audio-17"
+        "final-audio-17",
+        "final-audio-15"
       ],
       "id" : "final_audio_semantic-21",
       "rank" : 1
@@ -2449,10 +2449,10 @@
       "group" : "image_semantic",
       "hits" : [
         "final-image-black-triangle",
-        "final-audio-15",
-        "final-audio-20",
+        "final-en-15",
         "final-image-black-diamond",
-        "final-image-blue-triangle"
+        "final-en-10",
+        "final-audio-15"
       ],
       "id" : "final_image_semantic-21",
       "rank" : 1
@@ -2475,9 +2475,9 @@
       "group" : "lexical",
       "hits" : [
         "final-en-22",
+        "final-en-06",
         "final-audio-22",
         "final-audio-06",
-        "final-audio-15",
         "final-zh-22"
       ],
       "id" : "final_lexical-22",
@@ -2501,10 +2501,10 @@
       "group" : "chinese_short",
       "hits" : [
         "final-zh-22",
-        "final-audio-06",
+        "final-zh-06",
+        "final-image-blue-star",
         "final-en-22",
-        "final-en-06",
-        "final-audio-22"
+        "final-en-06"
       ],
       "id" : "final_chinese_short-22",
       "rank" : 1
@@ -2515,11 +2515,11 @@
       ],
       "group" : "cross_language",
       "hits" : [
-        "final-audio-22",
         "final-zh-22",
+        "final-zh-06",
         "final-en-22",
-        "final-audio-06",
-        "final-zh-06"
+        "final-audio-22",
+        "final-en-06"
       ],
       "id" : "final_cross_language-22",
       "rank" : 3
@@ -2530,14 +2530,14 @@
       ],
       "group" : "semantic_paraphrase",
       "hits" : [
-        "final-audio-22",
         "final-en-22",
+        "final-audio-22",
         "final-zh-22",
-        "final-audio-06",
-        "final-audio-03"
+        "final-en-06",
+        "final-zh-06"
       ],
       "id" : "final_semantic_paraphrase-22",
-      "rank" : 2
+      "rank" : 1
     },
     {
       "expected" : [
@@ -2549,7 +2549,7 @@
         "final-audio-18",
         "final-audio-03",
         "final-audio-06",
-        "final-en-22"
+        "final-audio-10"
       ],
       "id" : "final_audio_semantic-22",
       "rank" : 1
@@ -2562,9 +2562,9 @@
       "hits" : [
         "final-image-black-diamond",
         "final-image-red-diamond",
-        "final-image-blue-diamond",
-        "final-image-black-triangle",
-        "final-image-black-circle"
+        "final-en-15",
+        "final-en-10",
+        "final-audio-20"
       ],
       "id" : "final_image_semantic-22",
       "rank" : 1
@@ -2587,10 +2587,10 @@
       "group" : "lexical",
       "hits" : [
         "final-en-23",
+        "final-en-04",
         "final-audio-23",
-        "final-audio-20",
         "final-zh-23",
-        "final-audio-07"
+        "final-audio-20"
       ],
       "id" : "final_lexical-23",
       "rank" : 1
@@ -2613,10 +2613,10 @@
       "group" : "chinese_short",
       "hits" : [
         "final-zh-23",
+        "final-zh-14",
         "final-en-23",
-        "final-audio-14",
-        "final-audio-19",
-        "final-audio-03"
+        "final-en-00",
+        "final-audio-14"
       ],
       "id" : "final_chinese_short-23",
       "rank" : 1
@@ -2627,14 +2627,14 @@
       ],
       "group" : "cross_language",
       "hits" : [
+        "final-en-23",
+        "final-en-17",
         "final-audio-23",
         "final-zh-23",
-        "final-en-23",
-        "final-audio-14",
-        "final-audio-17"
+        "final-audio-14"
       ],
       "id" : "final_cross_language-23",
-      "rank" : 2
+      "rank" : 4
     },
     {
       "expected" : [
@@ -2643,10 +2643,10 @@
       "group" : "semantic_paraphrase",
       "hits" : [
         "final-zh-23",
-        "final-audio-23",
+        "final-zh-14",
         "final-en-23",
-        "final-audio-17",
-        "final-audio-09"
+        "final-audio-23",
+        "final-en-17"
       ],
       "id" : "final_semantic_paraphrase-23",
       "rank" : 1
@@ -2674,9 +2674,9 @@
       "hits" : [
         "final-image-black-star",
         "final-image-blue-star",
-        "final-image-yellow-star",
-        "final-image-black-circle",
-        "final-image-green-star"
+        "final-en-15",
+        "final-en-22",
+        "final-zh-06"
       ],
       "id" : "final_image_semantic-23",
       "rank" : 1
@@ -2699,10 +2699,10 @@
       "group" : "lexical",
       "hits" : [
         "final-en-24",
-        "final-audio-10",
         "final-zh-24",
-        "final-audio-18",
-        "final-audio-01"
+        "final-en-10",
+        "final-audio-10",
+        "final-audio-18"
       ],
       "id" : "final_lexical-24",
       "rank" : 1
@@ -2725,10 +2725,10 @@
       "group" : "chinese_short",
       "hits" : [
         "final-zh-24",
+        "final-zh-15",
         "final-en-24",
-        "final-audio-01",
-        "final-audio-10",
-        "final-audio-18"
+        "final-en-13",
+        "final-audio-01"
       ],
       "id" : "final_chinese_short-24",
       "rank" : 1
@@ -2741,9 +2741,9 @@
       "hits" : [
         "final-zh-24",
         "final-en-24",
+        "final-zh-10",
         "final-audio-01",
-        "final-audio-24",
-        "final-audio-10"
+        "final-audio-24"
       ],
       "id" : "final_cross_language-24",
       "rank" : 2
@@ -2756,9 +2756,9 @@
       "hits" : [
         "final-en-24",
         "final-zh-24",
+        "final-en-22",
         "final-audio-24",
-        "final-audio-10",
-        "final-audio-01"
+        "final-audio-10"
       ],
       "id" : "final_semantic_paraphrase-24",
       "rank" : 1
@@ -2773,7 +2773,7 @@
         "final-audio-01",
         "final-audio-10",
         "final-audio-24",
-        "final-en-24"
+        "final-audio-03"
       ],
       "id" : "final_audio_semantic-24",
       "rank" : 4
@@ -2785,10 +2785,10 @@
       "group" : "image_semantic",
       "hits" : [
         "final-image-black-cross",
+        "final-en-15",
         "final-image-blue-cross",
-        "final-image-red-cross",
-        "final-image-yellow-cross",
-        "final-image-green-cross"
+        "final-en-20",
+        "final-zh-02"
       ],
       "id" : "final_image_semantic-24",
       "rank" : 1
@@ -2805,5 +2805,5 @@
       "rank" : null
     }
   ],
-  "scope" : "Frozen 100-source mixed corpus: 50 text documents, 25 generated speech clips, 25 colour\/shape images. final-holdout queries are a retained regression after the initial failed evaluation; unseen-query is new wording on those fixed source facts, frozen after the calibration design. Real captured model vectors and production media staging\/ranker. No extraction\/permission\/UI latency claim."
+  "scope" : "Frozen 100-source mixed corpus: 50 text documents, 25 generated speech clips, 25 colour\/shape images. final-holdout queries are a retained regression after the initial failed evaluation; unseen-query is new wording on those fixed source facts, frozen after the initial failed evaluation and evaluated only after development-only corrections. Real captured model vectors and production media staging\/ranker. No extraction\/permission\/UI latency claim."
 }

@@ -1,0 +1,27 @@
+{
+  "base": "ceeaaef5",
+  "covered": 38,
+  "executable": 38,
+  "percent": 100.0,
+  "files": {
+    "Sources/TypefluxSemanticHelper/main.swift": {
+      "executable": 38,
+      "covered": 38,
+      "uncovered": []
+    }
+  },
+  "binary_sha256": "b59bd48365d5ba8532cb861b79706d90e72662e82c43a53ffa947e6f340ff03d",
+  "source_sha256": "6376fb233954f4d7961dff4b8e5618a1c1aab6fdb5b601b81dddd868287eefdb",
+  "profiles": [
+    "helper-88837.profraw",
+    "helper-88905.profraw",
+    "helper-88906.profraw",
+    "helper-88907.profraw",
+    "helper-88910.profraw",
+    "helper-89265.profraw",
+    "helper-89368.profraw",
+    "helper-89369.profraw",
+    "helper-89370.profraw",
+    "helper-89390.profraw"
+  ]
+}

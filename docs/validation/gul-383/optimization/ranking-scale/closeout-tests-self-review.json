@@ -1,0 +1,35 @@
+{
+  "source_commit": "6a9c18d79561b49d8c5339754193c6a06ee79374",
+  "production_manifest_matches": true,
+  "resource_test": {
+    "duration_default_seconds": 300,
+    "minimum_finite_seconds": 300,
+    "kept": [
+      "probe readiness/liveness",
+      "native frame/event raw data",
+      "condition loop",
+      "durable progress snapshots",
+      "process exit checks",
+      "service/probe cleanup",
+      "failure partial report"
+    ],
+    "run_status": "Passed exactly one300-secondOFF/ON resource test;608.8934seconds whole command."
+  },
+  "original_media_test": {
+    "checks": [
+      "all100supportedfixturesexist",
+      "indexerfilescountmatch",
+      "audioandvideotimestampwindow"
+    ],
+    "verification": "Build/discovery only in this closeout; full oracle intentionally not rerun; incomplete prior88-file attempt remains disclosed"
+  },
+  "coverage_reuse": "Same production source bytes as retained separate app/helper LCOV; measured baseceeaaef5, not latest-main combined tree.",
+  "review": [
+    "No production ranking or budget parameters changed",
+    "Finite resource duration guard preserves lower bound",
+    "No permission or privacy relaxation",
+    "No cancellation/generation behavior changed",
+    "No full tests, baseline or matrix restarted",
+    "No conflict resolution that discards main supervision/lifecycle changes"
+  ]
+}

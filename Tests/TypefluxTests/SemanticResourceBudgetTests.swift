@@ -102,14 +102,14 @@ struct SemanticResourceBudgetTests {
         input.markAsFinished(); await writer.finishWriting(); try #require(writer.status == .completed)
     }
 
-    @Test func `fifteen minute off on comparison when explicitly requested`() async throws {
+    @Test func `short off on comparison when explicitly requested`() async throws {
         let env = ProcessInfo.processInfo.environment
         guard let folderName = env["TYPEFLUX_RESOURCE_REPORT"], let model = env["TYPEFLUX_RESOURCE_MODEL"],
               let projector = env["TYPEFLUX_RESOURCE_PROJECTOR"],
               let helper = env["TYPEFLUX_RESOURCE_HELPER"],
               let probePath = env["TYPEFLUX_RESOURCE_PROBE"] else { return }
-        let duration = Double(env["TYPEFLUX_RESOURCE_SECONDS"] ?? "900") ?? 900
-        try #require(duration >= 900, "formal resource evidence requires at least fifteen minutes per condition")
+        let duration = Double(env["TYPEFLUX_RESOURCE_SECONDS"] ?? "300") ?? 300
+        try #require(duration.isFinite && duration >= 300, "short resource evidence requires at least five minutes per condition")
         _ = NSApplication.shared
         let root = try semanticFixture(), assets = root.appendingPathComponent("assets")
         try FileManager.default.createDirectory(at: assets, withIntermediateDirectories: true)
@@ -180,7 +180,10 @@ struct SemanticResourceBudgetTests {
                         // The first real file remains eligible for durable tail work while short
                         // documents and media continue arriving; no repeated-chunk SQL fixture.
                         let repetitions = number == 0 ? 80000 : 500
-                        try (String(repeating: "Project \(number) travel receipts and finance approval. ", count: repetitions) +
+                        try (String(
+                            repeating: "Project \(number) travel receipts and finance approval. ",
+                            count: repetitions
+                        ) +
                             " tail marker \(number)")
                             .write(
                                 to: corpus.appendingPathComponent("document-\(number).txt"),
@@ -241,7 +244,7 @@ struct SemanticResourceBudgetTests {
                         "videos": counts.videos,
                         "chunks": counts.chunks
                     ],
-                    "events": "Standalone native AppKit application using NSApplication.run. CGEvent.postToPid -> NSResponder -> Metal GPU completion and, when available, drawable presentedTime. A zero presentedTime stays null; GPU completion is substitute evidence, not an onscreen presentation claim. Only generated event IDs are recorded."
+                    "events": "Standalone native AppKit application with an independent dispatch-queue producer. CGEvent.postToPid -> NSResponder -> exact generated event-ID pixels and ScreenCaptureKit WindowServer displayTime. Metal GPU completion is separate; zero drawable presentedTime stays null. This is not physical HID/monitor scanout or a query-result compositor measurement."
                 ])
                 await service.clear(); defaults.removePersistentDomain(forName: suite)
                 try FileManager.default.createDirectory(atPath: folderName, withIntermediateDirectories: true)

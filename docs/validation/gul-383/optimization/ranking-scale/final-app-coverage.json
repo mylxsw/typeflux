@@ -1,0 +1,409 @@
+{
+  "base": "ceeaaef5",
+  "covered": 2264,
+  "executable": 2460,
+  "percent": 92.03252032520325,
+  "files": {
+    "Sources/Typeflux/Ask/AskConversationModel+LauncherHome.swift": {
+      "executable": 18,
+      "covered": 18,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Files/AskDirectorySession.swift": {
+      "executable": 56,
+      "covered": 53,
+      "uncovered": [
+        34,
+        43,
+        64
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Files/AskFileReader.swift": {
+      "executable": 92,
+      "covered": 87,
+      "uncovered": [
+        119,
+        154,
+        167,
+        196,
+        203
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Files/AskFileWatcher.swift": {
+      "executable": 13,
+      "covered": 6,
+      "uncovered": [
+        70,
+        71,
+        72,
+        73,
+        74,
+        75,
+        76
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Files/AskFileWorkerCommand.swift": {
+      "executable": 49,
+      "covered": 37,
+      "uncovered": [
+        66,
+        106,
+        115,
+        121,
+        213,
+        214,
+        215,
+        224,
+        225,
+        231,
+        232,
+        238
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticEmbeddingWorker.swift": {
+      "executable": 37,
+      "covered": 34,
+      "uncovered": [
+        205,
+        206,
+        207
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileChangePlan.swift": {
+      "executable": 31,
+      "covered": 22,
+      "uncovered": [
+        28,
+        29,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer+Discovery.swift": {
+      "executable": 33,
+      "covered": 28,
+      "uncovered": [
+        75,
+        76,
+        77,
+        92,
+        93
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer+Document.swift": {
+      "executable": 24,
+      "covered": 23,
+      "uncovered": [
+        107
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer+Media.swift": {
+      "executable": 35,
+      "covered": 34,
+      "uncovered": [
+        59
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer+Priority.swift": {
+      "executable": 20,
+      "covered": 14,
+      "uncovered": [
+        68,
+        69,
+        70,
+        71,
+        72,
+        73
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer.swift": {
+      "executable": 65,
+      "covered": 56,
+      "uncovered": [
+        89,
+        90,
+        91,
+        161,
+        162,
+        163,
+        164,
+        170,
+        205
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFilePolicy.swift": {
+      "executable": 53,
+      "covered": 52,
+      "uncovered": [
+        52
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift": {
+      "executable": 379,
+      "covered": 346,
+      "uncovered": [
+        81,
+        82,
+        83,
+        84,
+        85,
+        86,
+        109,
+        199,
+        200,
+        201,
+        298,
+        299,
+        310,
+        311,
+        312,
+        313,
+        318,
+        328,
+        329,
+        331,
+        428,
+        539,
+        540,
+        541,
+        559,
+        560,
+        597,
+        598,
+        599,
+        600,
+        686,
+        689,
+        690
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Discovery.swift": {
+      "executable": 91,
+      "covered": 81,
+      "uncovered": [
+        75,
+        76,
+        77,
+        78,
+        85,
+        86,
+        87,
+        88,
+        89,
+        155
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Events.swift": {
+      "executable": 71,
+      "covered": 71,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Jobs.swift": {
+      "executable": 17,
+      "covered": 17,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+MediaJobs.swift": {
+      "executable": 67,
+      "covered": 66,
+      "uncovered": [
+        211
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+SearchMaintenance.swift": {
+      "executable": 113,
+      "covered": 110,
+      "uncovered": [
+        34,
+        63,
+        75
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+SearchSchema.swift": {
+      "executable": 52,
+      "covered": 52,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Totals.swift": {
+      "executable": 72,
+      "covered": 72,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore.swift": {
+      "executable": 64,
+      "covered": 64,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileValidator.swift": {
+      "executable": 16,
+      "covered": 13,
+      "uncovered": [
+        85,
+        86,
+        87
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticIndexDiagnostics.swift": {
+      "executable": 103,
+      "covered": 103,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticIndexEvents.swift": {
+      "executable": 183,
+      "covered": 179,
+      "uncovered": [
+        23,
+        84,
+        117,
+        118
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticIndexProgressRelay.swift": {
+      "executable": 29,
+      "covered": 29,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticLexicalReader.swift": {
+      "executable": 108,
+      "covered": 99,
+      "uncovered": [
+        87,
+        144,
+        145,
+        146,
+        147,
+        148,
+        149,
+        150,
+        151
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticMediaExtractor.swift": {
+      "executable": 101,
+      "covered": 87,
+      "uncovered": [
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        72,
+        83,
+        167,
+        168,
+        169,
+        170,
+        171
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticMediaPriority.swift": {
+      "executable": 14,
+      "covered": 13,
+      "uncovered": [
+        41
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticMediaWorker.swift": {
+      "executable": 17,
+      "covered": 11,
+      "uncovered": [
+        31,
+        76,
+        83,
+        84,
+        85,
+        115
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSQLiteCancellation.swift": {
+      "executable": 28,
+      "covered": 28,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSearchRanking.swift": {
+      "executable": 49,
+      "covered": 49,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticVectorReader.swift": {
+      "executable": 133,
+      "covered": 108,
+      "uncovered": [
+        66,
+        67,
+        68,
+        110,
+        111,
+        112,
+        113,
+        114,
+        115,
+        116,
+        123,
+        124,
+        149,
+        165,
+        166,
+        284,
+        291,
+        339,
+        419,
+        420,
+        421,
+        422,
+        423,
+        424,
+        425
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticWorkBudget.swift": {
+      "executable": 161,
+      "covered": 150,
+      "uncovered": [
+        64,
+        65,
+        92,
+        93,
+        94,
+        95,
+        96,
+        97,
+        166,
+        167,
+        170
+      ]
+    },
+    "Sources/Typeflux/Settings/SemanticFileSearchSettingsView.swift": {
+      "executable": 35,
+      "covered": 21,
+      "uncovered": [
+        87,
+        88,
+        104,
+        105,
+        138,
+        139,
+        175,
+        176,
+        187,
+        188,
+        189,
+        190,
+        191,
+        254
+      ]
+    },
+    "Sources/Typeflux/Settings/SemanticIndexDiagnosticsView.swift": {
+      "executable": 31,
+      "covered": 31,
+      "uncovered": []
+    }
+  }
+}

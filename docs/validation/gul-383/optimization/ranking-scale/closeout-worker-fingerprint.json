@@ -1,0 +1,6 @@
+{
+  "file": ".build/out/Products/Release/Typeflux",
+  "sha256": "e840189ab2a9c96493fbffb09ce20a4a86efeb27471d9c69d34c144559f7dba4",
+  "bytes": 141267784,
+  "scope": "File-reader worker selected by AskFileReader.executableURL from the prebuilt Release test bundle. Fingerprinted after the successful test; no rebuild or mutation between measurement and fingerprint."
+}

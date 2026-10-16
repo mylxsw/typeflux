@@ -1,0 +1,32 @@
+{
+  "head": "6a9c18d79561b49d8c5339754193c6a06ee79374",
+  "main": "040ca0e1cf16413f5b426c3c3e3424b7b263fd42",
+  "measured_base": "ceeaaef5bf4f2e5625a0654d6f3d31702821f174",
+  "overlap_files": [
+    "Sources/Typeflux/Ask/QuickResults/Files/AskFileReader.swift",
+    "Sources/Typeflux/Ask/QuickResults/Files/AskFileWatcher.swift",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticEmbeddingWorker.swift",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileChangePlan.swift",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer+Discovery.swift",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer.swift",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFilePolicy.swift",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Discovery.swift",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore.swift",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileValidator.swift",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticMediaWorker.swift",
+    "Sources/Typeflux/Resources/en.lproj/Localizable.strings",
+    "Sources/Typeflux/Resources/ja.lproj/Localizable.strings",
+    "Sources/Typeflux/Resources/ko.lproj/Localizable.strings",
+    "Sources/Typeflux/Resources/zh-Hans.lproj/Localizable.strings",
+    "Sources/Typeflux/Resources/zh-Hant.lproj/Localizable.strings",
+    "Sources/Typeflux/Settings/SemanticFileSearchSettingsView.swift",
+    "Tests/TypefluxTests/SemanticFileChangePlanTests.swift",
+    "Tests/TypefluxTests/SemanticFileSearchTests.swift",
+    "Tests/TypefluxTests/SemanticFileServiceTests.swift"
+  ],
+  "merge_tree_exit": 1,
+  "merge_tree_output": "619486b8a281332b85d67788865807bee2bcd3b1\nSources/Typeflux/Ask/QuickResults/Files/AskFileReader.swift\nSources/Typeflux/Ask/QuickResults/Files/AskFileWatcher.swift\nSources/Typeflux/Ask/QuickResults/Semantic/SemanticEmbeddingWorker.swift\nSources/Typeflux/Ask/QuickResults/Semantic/SemanticFileChangePlan.swift\nSources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer+Discovery.swift\nSources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer.swift\nSources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift\nSources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Discovery.swift\nSources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore.swift\nSources/Typeflux/Ask/QuickResults/Semantic/SemanticFileValidator.swift\nSources/Typeflux/Resources/en.lproj/Localizable.strings\nSources/Typeflux/Resources/ja.lproj/Localizable.strings\nSources/Typeflux/Resources/ko.lproj/Localizable.strings\nSources/Typeflux/Resources/zh-Hans.lproj/Localizable.strings\nSources/Typeflux/Resources/zh-Hant.lproj/Localizable.strings\nTests/TypefluxTests/SemanticFileChangePlanTests.swift\nTests/TypefluxTests/SemanticFileServiceTests.swift\n\nAuto-merging Sources/Typeflux/Ask/QuickResults/Files/AskFileReader.swift\nCONFLICT (content): Merge conflict in Sources/Typeflux/Ask/QuickResults/Files/AskFileReader.swift\nAuto-merging Sources/Typeflux/Ask/QuickResults/Files/AskFileWatcher.swift\nCONFLICT (content): Merge conflict in Sources/Typeflux/Ask/QuickResults/Files/AskFileWatcher.swift\nAuto-merging Sources/Typeflux/Ask/QuickResults/Semantic/SemanticEmbeddingWorker.swift\nCONFLICT (content): Merge conflict in Sources/Typeflux/Ask/QuickResults/Semantic/SemanticEmbeddingWorker.swift\nAuto-merging Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileChangePlan.swift\nCONFLICT (content): Merge conflict in Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileChangePlan.swift\nAuto-merging Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer+Discovery.swift\nCONFLICT (content): Merge conflict in Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer+Discovery.swift\nAuto-merging Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer.swift\nCONFLICT (content): Merge conflict in Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer.swift\nAuto-merging Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFilePolicy.swift\nAuto-merging Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift\nCONFLICT (content): Merge conflict in Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift\nAuto-merging Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Discovery.swift\nCONFLICT (content): Merge conflict in Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Discovery.swift\nAuto-merging Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore.swift\nCONFLICT (content): Merge conflict in Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore.swift\nAuto-merging Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileValidator.swift\nCONFLICT (content): Merge conflict in Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileValidator.swift\nAuto-merging Sources/Typeflux/Ask/QuickResults/Semantic/SemanticMediaWorker.swift\nAuto-merging Sources/Typeflux/Resources/en.lproj/Localizable.strings\nCONFLICT (content): Merge conflict in Sources/Typeflux/Resources/en.lproj/Localizable.strings\nAuto-merging Sources/Typeflux/Resources/ja.lproj/Localizable.strings\nCONFLICT (content): Merge conflict in Sources/Typeflux/Resources/ja.lproj/Localizable.strings\nAuto-merging Sources/Typeflux/Resources/ko.lproj/Localizable.strings\nCONFLICT (content): Merge conflict in Sources/Typeflux/Resources/ko.lproj/Localizable.strings\nAuto-merging Sources/Typeflux/Resources/zh-Hans.lproj/Localizable.strings\nCONFLICT (content): Merge conflict in Sources/Typeflux/Resources/zh-Hans.lproj/Localizable.strings\nAuto-merging Sources/Typeflux/Resources/zh-Hant.lproj/Localizable.strings\nCONFLICT (content): Merge conflict in Sources/Typeflux/Resources/zh-Hant.lproj/Localizable.strings\nAuto-merging Sources/Typeflux/Settings/SemanticFileSearchSettingsView.swift\nAuto-merging Tests/TypefluxTests/SemanticFileChangePlanTests.swift\nCONFLICT (content): Merge conflict in Tests/TypefluxTests/SemanticFileChangePlanTests.swift\nAuto-merging Tests/TypefluxTests/SemanticFileSearchTests.swift\nAuto-merging Tests/TypefluxTests/SemanticFileServiceTests.swift\nCONFLICT (content): Merge conflict in Tests/TypefluxTests/SemanticFileServiceTests.swift\n",
+  "merge_tree_stderr": "",
+  "scope": "Read-only working tree compatibility check; no merge/rebase performed and no existing main work overwritten."
+}

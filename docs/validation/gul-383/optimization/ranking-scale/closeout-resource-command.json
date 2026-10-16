@@ -1,0 +1,22 @@
+{
+  "command": [
+    "python3",
+    "<repository>/docs/validation/gul-383/optimization/ranking-scale/rework_resource_runner.py",
+    "--output",
+    "<repository>/docs/validation/gul-383/optimization/ranking-scale/resource-after-closeout-300",
+    "--",
+    "python3",
+    "<repository>/docs/validation/gul-383/optimization/ranking-scale/rework_release_runner.py",
+    "--checkout",
+    ".",
+    "--mode",
+    "resource",
+    "--label",
+    "after",
+    "--tag",
+    "closeout-300"
+  ],
+  "started_unix": 1792169263.2781062,
+  "wall_seconds": 608.8934097499587,
+  "exit_code": 0
+}
