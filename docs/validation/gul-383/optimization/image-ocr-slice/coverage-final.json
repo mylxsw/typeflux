@@ -1,0 +1,9 @@
+{
+  "command": [
+    "make",
+    "coverage",
+    "FILTER=SemanticImageOCRTests|SemanticMediaIndexTests"
+  ],
+  "wall_seconds": 85.36396670900285,
+  "exit_code": 2
+}

@@ -1,0 +1,9 @@
+{
+  "command": [
+    "make",
+    "coverage",
+    "FILTER=SemanticImageOCRTests/.*direct worker"
+  ],
+  "wall_seconds": 71.71016050002072,
+  "exit_code": 0
+}

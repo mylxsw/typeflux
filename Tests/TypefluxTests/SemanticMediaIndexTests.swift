@@ -207,7 +207,7 @@ struct SemanticMediaIndexTests {
         _ = try SemanticFileIndexer.run(scope: semanticScope(root.path), store: reopened, reader: reader,
                                         encoder: SemanticFixtureEncoder(), media: media, cancelled: { false },
                                         progress: { _ in })
-        #expect(media.calls == calls + 1, "the already completed first segment is reused")
+        #expect(media.calls == calls + 2, "an inference cancelled before staging must be retried")
         #expect(try reopened.job(path)?.state == .done)
         #expect(try !FileManager.default.fileExists(atPath: #require(reader.scratch)))
     }
@@ -217,8 +217,8 @@ struct SemanticMediaIndexTests {
         let reader = SemanticMediaFixtureReader(root: root.path); reader.names = ["bad.png", "good.png"]
         let store = try SemanticFileStore(url: root.appendingPathComponent("index.sqlite"))
         let media = SemanticFixtureMediaEncoder()
-        media.before = {
-            _ in if reader.current == "bad.png" {
+        media.before = { _ in
+            if reader.current == "bad.png" {
                 throw SemanticMediaInputError.unreadable
             }
         }

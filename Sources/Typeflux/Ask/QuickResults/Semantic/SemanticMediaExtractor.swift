@@ -7,6 +7,7 @@ import ImageIO
 enum SemanticMediaExtractor {
     // swiftlint:disable:next function_body_length cyclomatic_complexity
     static func extract(_ request: AskFileReadRequest, mounts: AskFileMounts,
+                        recognize: (CGImage) throws -> [String] = SemanticPDFText.recognize,
                         emit: (AskFileReadResponse) throws -> Void) throws -> AskFileReadResponse {
         guard let scope = request.scope, scope.includes(request.path, isDirectory: false),
               SemanticFilePolicy.allows(request.path), SemanticMediaPriority.of(request.path) != .document,
@@ -118,6 +119,13 @@ enum SemanticMediaExtractor {
                     try image(snapshot, to: output)
                     try frame(.init(more: true, media: .init(kind: .image, path: output.path)))
                 }
+                do {
+                    if ["png", "jpg", "jpeg"].contains((request.path as NSString).pathExtension.lowercased()) {
+                        try SemanticImageText.extract(snapshot, recognize: recognize, emit: frame)
+                    }
+                } catch { return .init(error: EIO, fileSize: Int64(after.st_size),
+                                       modified: Date(timeIntervalSince1970: Double(after.st_mtimespec.tv_sec)
+                                           + Double(after.st_mtimespec.tv_nsec) / 1e9), mediaSegments: ordinal) }
             case .audio: try audio(AVURLAsset(url: snapshot), folder: folderURL, start: resume.audioUntil, emit: frame)
             case .video:
                 let asset = AVURLAsset(url: snapshot)

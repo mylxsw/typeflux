@@ -4,7 +4,8 @@ extension SemanticFileIndexer {
     // Each file's staged vectors remain invisible until extraction and metadata checks finish.
     // swiftlint:disable:next function_parameter_count function_body_length cyclomatic_complexity
     static func indexMedia(_ path: String, metadata: AskFileReadResponse, scope: AskFileScope,
-                           store: SemanticFileStore, reader: AskFileReading, media: any SemanticMediaEmbedding,
+                           store: SemanticFileStore, reader: AskFileReading, encoder: SemanticEmbedding,
+                           media: any SemanticMediaEmbedding,
                            cancelled: () -> Bool, waitForIdle: () throws -> Void) throws -> Bool {
         try waitForIdle()
         let generation = try store.beginMediaJob(path: path, metadata: metadata)
@@ -31,51 +32,90 @@ extension SemanticFileIndexer {
         var failure: Error?, final: AskFileReadResponse?
         try store.setStage(.extracting)
         try store.record(.extractionBatches)
-        try reader.stream(
-            .init(operation: .media, path: path, scope: scope, scratch: scratch.path, paced: true, mediaCursor: resume),
-            isCancelled: cancelled
-        ) { response in
-            if let input = response.media {
-                if let supplied = response.mediaOrdinal {
-                    ordinal = supplied
-                }
-                do {
-                    guard (input.path as NSString).deletingLastPathComponent == scratch.path else {
-                        throw AskFileReadError.protocolError
+        do {
+            try reader.stream(
+                .init(
+                    operation: .media,
+                    path: path,
+                    scope: scope,
+                    scratch: scratch.path,
+                    paced: true,
+                    mediaCursor: resume
+                ),
+                isCancelled: cancelled
+            ) { response in
+                if let input = response.media {
+                    if let supplied = response.mediaOrdinal {
+                        ordinal = supplied
                     }
-                    try waitForIdle()
-                    defer { ordinal += 1 }
-                    if try store.hasMediaSegment(path: path, generation: generation, ordinal: ordinal) {
-                        try store.record(.vectorReusedSegments)
-                        try? FileManager.default.removeItem(atPath: input.path)
-                        return !cancelled()
-                    }
-                    let vector: [Float]
-                    try store.setStage(.encoding)
-                    try store.record(.encodingRequests)
                     do {
-                        vector = try media.embed(input, cancelled: cancelled)
-                    } catch is SemanticWorkBudget.Interrupted {
-                        throw SemanticWorkBudget.Interrupted()
-                    } catch let error as SemanticMediaInputError {
-                        throw error
-                    } catch { throw SemanticMediaFailure.unavailable(error) }
-                    try store.record(.vectorsInferred)
-                    try store.saveMediaSegment(
-                        path: path,
-                        generation: generation,
-                        ordinal: ordinal,
-                        input: input,
-                        vector: vector
-                    )
-                    try? FileManager.default.removeItem(atPath: input.path)
-                } catch { failure = error; return false }
+                        guard (input.path as NSString).deletingLastPathComponent == scratch.path else {
+                            throw AskFileReadError.protocolError
+                        }
+                        try waitForIdle()
+                        defer { ordinal += 1 }
+                        if try store.hasMediaSegment(path: path, generation: generation, ordinal: ordinal) {
+                            try store.record(.vectorReusedSegments)
+                            try? FileManager.default.removeItem(atPath: input.path)
+                            return !cancelled()
+                        }
+                        let vector: [Float]
+                        try store.setStage(.encoding)
+                        try store.record(.encodingRequests)
+                        do {
+                            vector = try media.embed(input, cancelled: cancelled)
+                        } catch is SemanticWorkBudget.Interrupted {
+                            throw SemanticWorkBudget.Interrupted()
+                        } catch let error as SemanticMediaInputError {
+                            throw error
+                        } catch { throw SemanticMediaFailure.unavailable(error) }
+                        try store.record(.vectorsInferred)
+                        if cancelled() {
+                            throw CancellationError()
+                        }
+                        try store.saveMediaSegment(
+                            path: path,
+                            generation: generation,
+                            ordinal: ordinal,
+                            input: input,
+                            vector: vector
+                        )
+                        try? FileManager.default.removeItem(atPath: input.path)
+                    } catch { failure = error; return false }
+                }
+                if let pages = response.pages {
+                    do {
+                        try waitForIdle()
+                        let chunks = SemanticChunk.make(pages)
+                        let title = String(path.split(separator: "/").last ?? "").prefix(80)
+                        for start in stride(from: 0, to: chunks.count, by: 8) {
+                            let batch = Array(chunks[start ..< min(start + 8, chunks.count)])
+                            if try store.hasMediaText(path: path, generation: generation, chunks: batch) {
+                                continue
+                            }
+                            try waitForIdle()
+                            try store.setStage(.encoding)
+                            try store.record(.encodingRequests)
+                            let vectors = try encoder.embed(batch.map { "title: \(title) | text: " + $0.text },
+                                                            cancelled: cancelled)
+                            if cancelled() {
+                                throw CancellationError()
+                            }
+                            try store.saveMediaText(path: path, generation: generation, chunks: batch, vectors: vectors)
+                        }
+                    } catch { failure = error; return false }
+                }
+                if response.more != true {
+                    final = response
+                    ordinal = response.mediaSegments ?? ordinal
+                }
+                return !cancelled()
             }
-            if response.more != true {
-                final = response
-                ordinal = response.mediaSegments ?? ordinal
+        } catch {
+            if cancelled() {
+                throw CancellationError()
             }
-            return !cancelled()
+            throw error
         }
         if cancelled() {
             throw CancellationError()
@@ -85,11 +125,19 @@ extension SemanticFileIndexer {
         }
         let after = try reader.read(.init(operation: .content, path: path, scope: scope, readText: false),
                                     isCancelled: cancelled)
+        if cancelled() {
+            throw CancellationError()
+        }
         guard after.error == nil, SemanticFileStore.version(after) == SemanticFileStore.version(metadata) else {
-            try store.skipUnavailable(path, reason: "media-missing-or-changed")
+            try store.skipUnavailable(
+                path,
+                reason: after.error == EACCES ? "permission-denied" : "media-missing-or-changed"
+            )
             return false
         }
-        guard final?.error == nil, final?.modified == metadata.modified, final?.fileSize == metadata.fileSize else {
+        let ocrFailed = final?.error == EIO && SemanticMediaPriority.of(path) == .image
+        guard final?.error == nil || ocrFailed, final?.modified == metadata.modified,
+              final?.fileSize == metadata.fileSize else {
             // Keep completed private vectors for the same verified file version when its decoder fails.
             try store.failJob(path, reason: "media-extraction-failed")
             return false
@@ -107,7 +155,10 @@ extension SemanticFileIndexer {
         if !committed {
             try store.failJob(path, reason: "inconsistent-media-segments")
         }
+        if committed, ocrFailed {
+            try store.failJob(path, reason: "image-ocr-failed")
+        }
         committedScratch = committed
-        return committed
+        return committed && !ocrFailed
     }
 }

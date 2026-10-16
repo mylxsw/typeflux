@@ -1,0 +1,69 @@
+{
+  "baseline": "3675c7309744523b10d5d4c651726f4d319d5c31",
+  "denominator": "Added/modified executable Swift lines in Sources/Typeflux, including new files, intersected with final LLVM LCOV DA records. Tests, helper wrapper and unchanged vendor code excluded; helper reported separately.",
+  "executable": 214,
+  "covered": 209,
+  "percent": 97.66,
+  "files": {
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer+Document.swift": {
+      "executable": 2,
+      "covered": 2,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer+Media.swift": {
+      "executable": 93,
+      "covered": 90,
+      "percent": 96.77,
+      "uncovered": [
+        68,
+        118,
+        129
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+ImageText.swift": {
+      "executable": 37,
+      "covered": 37,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+MediaJobs.swift": {
+      "executable": 46,
+      "covered": 46,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticImageText.swift": {
+      "executable": 21,
+      "covered": 19,
+      "percent": 90.48,
+      "uncovered": [
+        9,
+        23
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticMediaExtractor.swift": {
+      "executable": 8,
+      "covered": 8,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticVectorReader.swift": {
+      "executable": 7,
+      "covered": 7,
+      "percent": 100.0,
+      "uncovered": []
+    }
+  },
+  "application": {
+    "covered": 182,
+    "executable": 185,
+    "percent": 98.38
+  },
+  "shared_reader": {
+    "covered": 27,
+    "executable": 29,
+    "percent": 93.1
+  },
+  "profile_note": "Final-source application and helper coverage merges the 17-method focused pass (16 passed, one test-fixture cleanup assertion failed) with its passing one-method retry. Only test formatting/comment and the test scratch-path fix changed between these passes; production source was identical."
+}

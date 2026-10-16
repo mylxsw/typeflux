@@ -1,0 +1,71 @@
+{
+  "runs": [
+    {
+      "command": [
+        "make",
+        "coverage",
+        "SUITE=SemanticImageOCRTests SemanticMediaIndexTests SemanticSearchSnippetTests"
+      ],
+      "wall_seconds": 2.399434167018626,
+      "exit_code": 2,
+      "build_seconds": [],
+      "name": "coverage-build-failure"
+    },
+    {
+      "command": [
+        "make",
+        "coverage",
+        "SUITE=SemanticImageOCRTests SemanticMediaIndexTests SemanticSearchSnippetTests"
+      ],
+      "wall_seconds": 295.2236548750079,
+      "exit_code": 2,
+      "build_seconds": [
+        256.25
+      ],
+      "name": "coverage-first-tests"
+    },
+    {
+      "command": [
+        "make",
+        "coverage",
+        "FILTER=SemanticImageOCRTests|SemanticMediaIndexTests"
+      ],
+      "wall_seconds": 125.7430433750269,
+      "exit_code": 0,
+      "build_seconds": [
+        84.07
+      ],
+      "name": "coverage-retry"
+    },
+    {
+      "command": [
+        "make",
+        "coverage",
+        "FILTER=SemanticImageOCRTests|SemanticMediaIndexTests"
+      ],
+      "wall_seconds": 85.36396670900285,
+      "exit_code": 2,
+      "build_seconds": [
+        49.94
+      ],
+      "name": "coverage-final"
+    },
+    {
+      "command": [
+        "make",
+        "coverage",
+        "FILTER=SemanticImageOCRTests/.*direct worker"
+      ],
+      "wall_seconds": 71.71016050002072,
+      "exit_code": 0,
+      "build_seconds": [
+        30.97
+      ],
+      "name": "coverage-helper-retry"
+    }
+  ],
+  "total_command_wall_seconds": 580.440259626077,
+  "total_build_seconds": 421.23,
+  "final_scope": "17 test methods in SemanticImageOCRTests and SemanticMediaIndexTests, all passed across the 16/17 pass plus the corrected single-method retry. Production source was identical between these two passes.",
+  "coverage_profiles": "Merged all-methods and passing minimal retry profiles; application/helper function source unchanged between the two."
+}
