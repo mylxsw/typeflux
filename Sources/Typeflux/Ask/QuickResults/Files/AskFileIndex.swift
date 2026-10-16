@@ -221,8 +221,10 @@ extension AskFileIndex {
             let run = self.lock.withLock { () -> Int? in
                 guard self.preparationGeneration == requested,
                       fingerprint != self.target || (fingerprint == nil && self.currentStatus.phase != .off) else { return nil }
-                self.target = fingerprint
                 self.suspended = !self.readerOwnership.permitsWork && fingerprint != nil
+                // An initial pre-ready request must not consume this configuration.
+                // A later explicit start may try it; readiness itself never scans.
+                self.target = self.suspended ? nil : fingerprint
                 // A new scope cannot reuse paths authorized by the old configuration.
                 self.published = AskFileIndexState(home: self.home)
                 self.publishedRevision += 1

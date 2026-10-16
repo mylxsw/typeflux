@@ -155,6 +155,31 @@ private final class FileHealthClock: @unchecked Sendable {
         module = nil; try await wait { !index.readerOwnership.isOccupied }
         XCTAssertThrowsError(try child.resolve("/old", blocked: [])); await registry.shutdown()
     }
+    func testInitialPreReadyRequestDoesNotConsumeTheNextExplicitStart() async throws {
+        let root = try AskAttachmentFixture.directory(); defer { try? FileManager.default.removeItem(at: root) }
+        let tree = root.appendingPathComponent("tree")
+        try FileManager.default.createDirectory(at: tree, withIntermediateDirectories: false)
+        try Data().write(to: tree.appendingPathComponent("Startup.txt"))
+        var settings = AskLauncherSearchSettings(); settings.fileRoots = [tree.path]; settings.excludedPaths = []
+        let owner = AskFileReaderOwnership(requiresLifecycle: true)
+        let index = AskFileIndex(configuration: { (true, settings) }, fullDiskAccess: { true },
+            snapshotURL: root.appendingPathComponent("index.bin"),
+            defaults: UserDefaults(suiteName: UUID().uuidString)!, home: root.path, ownership: owner,
+            makeWatcher: { AskTestFileWatcher() })
+        index.start(); index.waitUntilIdle()
+        XCTAssertEqual(index.status.count, 0)
+        XCTAssertFalse(owner.isOccupied)
+        let module = FileIndexModule(index: index, healthDirectory: root)
+        let registry = ModuleRegistry([module.registration])
+        try await registry.start(.fileIndex)
+        index.waitUntilIdle()
+        XCTAssertEqual(index.status.count, 0, "Capability readiness must not replay the initial scan")
+        XCTAssertFalse(owner.isOccupied)
+        index.start(); index.waitUntilIdle()
+        XCTAssertEqual(index.search(.init("startup"), options: .init()).count, 1,
+                       "Opening the launcher after readiness may explicitly start the same scope")
+        await registry.shutdown()
+    }
     func testManagedIndexPreservesCacheAndSnapshotWithoutRecoveryScan() async throws {
         let root = try AskAttachmentFixture.directory(); defer { try? FileManager.default.removeItem(at: root) }
         let tree = root.appendingPathComponent("tree"); try FileManager.default.createDirectory(at: tree, withIntermediateDirectories: false)
