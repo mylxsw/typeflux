@@ -59,7 +59,7 @@ protocol AskFileSearching: AnyObject, Sendable {
 /// index and changes it; searches read the last published copy without waiting.
 final class AskFileIndex: AskFileSearching, @unchecked Sendable {
     /// Off inside test runs: a test must never scan the Mac it runs on. Tests inject their own index.
-    static let shared = AskFileIndex(configuration: isTesting ? { (false, AskLauncherSearchSettings()) } : storedConfiguration)
+    static let shared = AskFileIndex(configuration: isTesting ? { (false, AskLauncherSearchSettings()) } : storedConfiguration, ownership: AskFileReaderOwnership(requiresLifecycle: true))
 
     static var isTesting: Bool {
         NSClassFromString("XCTest.XCTestCase") != nil || NSClassFromString("XCTestCase") != nil
@@ -78,6 +78,9 @@ final class AskFileIndex: AskFileSearching, @unchecked Sendable {
     private let home: String
 
     private let preparation = DispatchQueue(label: "typeflux.ask.files.prepare", qos: .utility)
+    let readerOwnership: AskFileReaderOwnership
+    private var suspended = false
+    private var requestedConfiguration: String?
     private let makeReader: () -> AskFileReading
     private var reader: AskFileReading
     private let queue = DispatchQueue(label: "typeflux.ask.files.index", qos: .utility)
@@ -106,7 +109,7 @@ final class AskFileIndex: AskFileSearching, @unchecked Sendable {
     init(configuration: @escaping () -> (enabled: Bool, settings: AskLauncherSearchSettings) = AskFileIndex.storedConfiguration,
          fullDiskAccess: @escaping () -> Bool = { AskFullDiskAccess.isGranted() },
          snapshotURL: URL = AskFileIndex.defaultSnapshotURL, defaults: UserDefaults = .standard,
-         home: String = NSHomeDirectory(), makeReader: (() -> AskFileReading)? = nil,
+         home: String = NSHomeDirectory(), ownership: AskFileReaderOwnership = AskFileReaderOwnership(), makeReader: (() -> AskFileReading)? = nil,
          makeWatcher: @escaping () -> AskFileWatching = { AskFSEventsWatcher() },
          searchCandidates: AskFileSearchCandidates = AskFileSearchCandidates()) {
         self.configuration = configuration
@@ -115,7 +118,7 @@ final class AskFileIndex: AskFileSearching, @unchecked Sendable {
         self.defaults = defaults
         self.home = home
         self.makeWatcher = makeWatcher
-        let ownership = AskFileReaderOwnership()
+        self.readerOwnership = ownership
         let makeReader = makeReader ?? { AskFileReader(ownership: ownership) }
         self.makeReader = makeReader
         self.searchCandidates = searchCandidates
@@ -173,8 +176,43 @@ extension AskFileIndex {
 
     // MARK: - Lifecycle
 
+    /// Fences immediately; serial cleanup never closes a reader FD from another thread.
+    /// Cached results and the on-disk snapshot are deliberately retained.
+    func suspendWorker() {
+        let changed = lock.withLock {
+            guard !suspended else { return false }
+            suspended = true; preparationGeneration += 1; generation += 1
+            currentStatus.failed = max(1, currentStatus.failed)
+            if currentStatus.isBuilding { currentStatus.phase = .ready }
+            return true
+        }
+        guard changed else { return }
+        queue.async { [weak self] in self?.watcher?.stop(); self?.reader.stop() }
+        DispatchQueue.main.async { [weak self] in
+            guard let self else { return }
+            NotificationCenter.default.post(name: Self.didChange, object: self)
+        }
+    }
+
+    func retireWorker() async {
+        readerOwnership.stopOwned()
+        await withCheckedContinuation { continuation in
+            queue.async { continuation.resume() }
+        }
+        await readerOwnership.retireManaged()
+    }
+
     func start() {
         let (enabled, settings) = configuration()
+        let signature = String(enabled) + settings.fileIndexFingerprint
+        lock.withLock {
+            if let previous = requestedConfiguration, previous != signature {
+                published = AskFileIndexState(home: home); publishedRevision += 1
+                currentStatus = AskFileIndexStatus()
+                target = nil; preparationGeneration += 1; generation += 1
+            }
+            requestedConfiguration = signature
+        }
         let requested = lock.withLock { preparationGeneration += 1; return preparationGeneration }
         preparation.async { [weak self] in
             guard let self, self.lock.withLock({ self.preparationGeneration == requested }) else { return }
@@ -184,6 +222,12 @@ extension AskFileIndex {
                 guard self.preparationGeneration == requested,
                       fingerprint != self.target || (fingerprint == nil && self.currentStatus.phase != .off) else { return nil }
                 self.target = fingerprint
+                self.suspended = !self.readerOwnership.permitsWork && fingerprint != nil
+                // A new scope cannot reuse paths authorized by the old configuration.
+                self.published = AskFileIndexState(home: self.home)
+                self.publishedRevision += 1
+                self.currentStatus = AskFileIndexStatus(phase: self.suspended ? .ready : .loading)
+                self.currentStatus.failed = self.suspended ? 1 : 0
                 self.generation += 1
                 return self.generation
             }
@@ -210,8 +254,8 @@ extension AskFileIndex {
 
     func rebuild() {
         let (enabled, settings) = configuration()
-        guard enabled else { return }
-        let run = lock.withLock { preparationGeneration += 1; generation += 1; return generation }
+        guard enabled, readerOwnership.permitsWork else { return }
+        let run = lock.withLock { suspended = false; preparationGeneration += 1; generation += 1; return generation }
         preparation.async { [weak self] in
             guard let self, self.isCurrent(run) else { return }
             let access = self.fullDiskAccess()
@@ -238,17 +282,34 @@ extension AskFileIndex {
     func clear() {
         lock.withLock {
             target = nil
+            suspended = false
             preparationGeneration += 1
             generation += 1
         }
         queue.async { [weak self] in self?.turnOff() }
     }
 
-    private func isCurrent(_ run: Int) -> Bool { lock.withLock { generation == run } }
+    private func isCurrent(_ run: Int) -> Bool { lock.withLock { generation == run && !suspended && readerOwnership.permitsWork } }
 
     func forget(_ path: String) {
         queue.async { [weak self] in
-            guard let self, working.remove(path) else { return }
+            guard let self else { return }
+            // An explicit removal may reduce the authorized cache while paused;
+            // it must never publish other, uncommitted working-scan entries.
+            let paused = lock.withLock { () -> Bool in
+                guard self.suspended || !self.readerOwnership.permitsWork else { return false }
+                if self.published.remove(path) {
+                    self.publishedRevision += 1; self.searchCandidates.invalidate(revision: self.publishedRevision)
+                    self.currentStatus.count = self.published.count; self.currentStatus.bytes = Self.bytes(of: self.published)
+                }
+                return true
+            }
+            if paused {
+                _ = working.remove(path)
+                DispatchQueue.main.async { NotificationCenter.default.post(name: Self.didChange, object: self) }
+                return
+            }
+            guard working.remove(path) else { return }
             publish(phase: .ready)
             markDirty()
         }
@@ -359,12 +420,13 @@ extension AskFileIndex {
 
     /// Brings the index up to date with what the file system reported.
     func apply(_ changes: [AskFileChange]) {
-        guard let scope, !changes.isEmpty else { return }
+        guard let scope, !changes.isEmpty, lock.withLock({ !suspended }), readerOwnership.permitsWork else { return }
         // Each event batch starts with a fresh worker; earlier directory failures do not carry over.
         reader = makeReader()
         var changed = false
         var seen = Set<String>()
         for change in changes where seen.insert(change.path).inserted {
+            guard lock.withLock({ !suspended }), readerOwnership.permitsWork else { return }
             var path = change.path
             while path.count > 1, path.hasSuffix("/") { path.removeLast() }
             guard scope.includes(path, isDirectory: false) || scope.includes(path, isDirectory: true) else { continue }
@@ -395,7 +457,7 @@ extension AskFileIndex {
             catch { recordSkip(path, .failed) }
 
         }
-        guard changed else { return }
+        guard changed, lock.withLock({ !suspended }), readerOwnership.permitsWork else { return }
         if working.needsCompaction { working = working.compacted() }
         publish(phase: .ready, updatedAt: Date())
         markDirty()
@@ -443,7 +505,8 @@ extension AskFileIndex {
         let state = working
         let blocked = scope?.blockedInScope ?? []
         let bytes = Self.bytes(of: state)
-        lock.withLock {
+        let didPublish = lock.withLock {
+            guard phase == .off || !suspended && readerOwnership.permitsWork else { return false }
             published = state
             publishedRevision += 1
             searchCandidates.invalidate(revision: publishedRevision)
@@ -453,7 +516,9 @@ extension AskFileIndex {
             currentStatus.blocked = blocked
             if let updatedAt { currentStatus.updatedAt = updatedAt }
             if phase == .off { currentStatus = AskFileIndexStatus() }
+            return true
         }
+        guard didPublish else { return }
         DispatchQueue.main.async { NotificationCenter.default.post(name: Self.didChange, object: self) }
     }
 
@@ -485,7 +550,7 @@ extension AskFileIndex {
     }
 
     private func saveNow(force: Bool = false) {
-        guard let fingerprint, force || dirty else { return }
+        guard lock.withLock({ !suspended }), let fingerprint, force || dirty else { return }
         dirty = false
         // A partial snapshot remains useful on disk, but is rebuilt on the next launch.
         let savedFingerprint = fingerprint + (status.incomplete ? "\u{3}partial" : "")

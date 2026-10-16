@@ -5747,3 +5747,5 @@
 "settings.services.whisperInference" = "Local Whisper inference";
 
 "settings.services.mediaPlayback" = "Media playback";
+
+"settings.services.fileIndex" = "File indexing";

@@ -5747,3 +5747,5 @@
 "settings.services.whisperInference" = "本地 Whisper 转写";
 
 "settings.services.mediaPlayback" = "媒体播放";
+
+"settings.services.fileIndex" = "文件索引";

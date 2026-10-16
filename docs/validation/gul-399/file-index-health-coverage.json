@@ -1,0 +1,108 @@
+{
+  "covered": 183,
+  "executable_added": 187,
+  "percent": 97.86,
+  "files": [
+    {
+      "file": "Sources/Typeflux/App/DIContainer.swift",
+      "covered": 0,
+      "executable_added": 2,
+      "percent": 0.0,
+      "uncovered": [
+        167,
+        168
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Files/AskFileIndex.swift",
+      "covered": 68,
+      "executable_added": 69,
+      "percent": 98.55,
+      "uncovered": [
+        62
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Files/AskFileReader.swift",
+      "covered": 21,
+      "executable_added": 22,
+      "percent": 95.45,
+      "uncovered": [
+        12
+      ],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Files/AskFileReaderOwnership.swift",
+      "covered": 63,
+      "executable_added": 63,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Resources/en.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    },
+    {
+      "file": "Sources/Typeflux/Resources/ja.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    },
+    {
+      "file": "Sources/Typeflux/Resources/ko.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    },
+    {
+      "file": "Sources/Typeflux/Resources/zh-Hans.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    },
+    {
+      "file": "Sources/Typeflux/Resources/zh-Hant.lproj/Localizable.strings",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": false
+    },
+    {
+      "file": "Sources/Typeflux/Stability/FileIndexModule.swift",
+      "covered": 31,
+      "executable_added": 31,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Stability/ModuleHealthStore.swift",
+      "covered": 0,
+      "executable_added": 0,
+      "percent": null,
+      "uncovered": [],
+      "instrumented": true
+    }
+  ],
+  "attribution": {
+    "base": "b40cf9b9d921e4fa174b91f5a76c0f47dda92221",
+    "AskFileIndex.swift": "final: 3 fresh host profiles, final correction binary",
+    "all_other_files": "initial: 12 fresh profiles (3 host, 9 app worker), production source hashes unchanged",
+    "cross_binary_merge": false
+  }
+}

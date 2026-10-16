@@ -5633,3 +5633,5 @@
 "settings.services.whisperInference" = "로컬 Whisper 전사";
 
 "settings.services.mediaPlayback" = "미디어 재생";
+
+"settings.services.fileIndex" = "파일 인덱싱";
