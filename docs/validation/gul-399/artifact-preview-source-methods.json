@@ -1,0 +1,135 @@
+{
+  "baseline": "0977a6ebbc57f4c533d677436b8efab3a4c12afe",
+  "distinct_passing_methods": 27,
+  "one_shot_all_pass": false,
+  "initial": {
+    "methods": [
+      "TypefluxTests.ArtifactMemoryAuthorityTests/boundProductionAccessCapturesBeforeQueuedLoadAndKeepsExplicitFilesystemChecks()",
+      "TypefluxTests.ArtifactMemoryAuthorityTests/canceledMemoryCallbacksCannotAdmitReadOrProjectRetiredState()",
+      "TypefluxTests.ArtifactMemoryAuthorityTests/initialDenialAndExpiredFallbackRemainSafeAndRevokedOwnerCanBeReplaced()",
+      "TypefluxTests.ArtifactMemoryAuthorityTests/originalGetterAndDenialCallbacksCannotRestoreCanceledOwnership()",
+      "TypefluxTests.ArtifactMemoryAuthorityTests/originalProjectionIsSampledLastAndFreshOrUnscopedAccessCannotBlessPixels()",
+      "TypefluxTests.ArtifactMemoryAuthorityTests/productionMemoryFactoryBindsAccountTokenConversationAndSelectionWithoutIO()",
+      "TypefluxTests.ArtifactMemoryAuthorityTests/sourceRevocationInsideLoadOrFinalValidationCannotCopy(_:)",
+      "TypefluxTests.ArtifactMemoryAuthorityTests/staleDenialCannotRetireBusyOwnerAndOldCompletionCannotReplaceFreshIdentity()",
+      "TypefluxTests.ArtifactMemoryAuthorityTests/staleDeniedEntryPreservesOwnedSuccessOrFailure(_:)",
+      "TypefluxTests.ArtifactPreviewSourceTests/bodyValuesAndDirectLegacyPreviewDoNoPreparationAcrossAllContentBranches()",
+      "TypefluxTests.ArtifactPreviewSourceTests/bundleRevokedDuringReadIsRetainedPrivatelyWithoutReopenOrWrite()",
+      "TypefluxTests.ArtifactPreviewSourceTests/cancellationAtEntrySourceAndTerminalKeepsExistingOwnerOrWithholdsOutput()",
+      "TypefluxTests.ArtifactPreviewSourceTests/freshAuthorizerCannotReviveOriginalBundleAndExplicitReopenUsesFreshSource()",
+      "TypefluxTests.ArtifactPreviewSourceTests/getterCallbacksAndDeniedOriginalCannotRestoreClosedReceipt()",
+      "TypefluxTests.ArtifactPreviewSourceTests/initialDenialExpiredCorruptAndUnknownErrorsHaveBoundedFallback()",
+      "TypefluxTests.ArtifactPreviewSourceTests/oldReentrantSourceReturnOrThrowCannotReplaceNewBundle(_:)",
+      "TypefluxTests.ArtifactPreviewSourceTests/sameProductionFactoryBindsBeforeQueuedOpenAndProjectionNeverReadsFiles()",
+      "TypefluxTests.ArtifactPreviewSourceTests/sourceCallbackRetirementCannotReadOrPublish(_:)",
+      "TypefluxTests.ArtifactPreviewSourceTests/staleDeniedEntryPreservesOwnedBundleOrFailure(_:)",
+      "TypefluxTests.ArtifactRefProjectionTests/busyAndFailureBelongOnlyToCurrentAttemptReference()",
+      "TypefluxTests.ArtifactRefProjectionTests/canceledEntryPreservesOwnedProjectionAndCancelClearsBothIdentities()",
+      "TypefluxTests.ArtifactRefProjectionTests/collectedOldResultCannotChangeFreshProjection(_:)",
+      "TypefluxTests.ArtifactRefProjectionTests/copyingDifferentReferenceCannotProjectRetainedPixelsAsNewSource()",
+      "TypefluxTests.ArtifactRefProjectionTests/getterRequiresEntireOriginalReferenceAndPerformsNoPreparation()",
+      "TypefluxTests.ArtifactRefProjectionTests/initialDeniedAndExpiredFailuresRemainKeyedWithoutSourceReads()",
+      "TypefluxTests.ArtifactRefProjectionTests/viewValueConstructionNeverLoadsValidatesDecodesOrWrites()"
+    ],
+    "distinct_methods": 26,
+    "all_passed_first_functional_run": true,
+    "coverage": {
+      "covered": 65,
+      "executable_added": 73,
+      "percent": 89.04,
+      "files": [
+        {
+          "file": "Sources/Typeflux/Ask/Artifacts/AskArtifactPreviewModel.swift",
+          "covered": 48,
+          "executable_added": 48,
+          "percent": 100.0,
+          "uncovered": [],
+          "instrumented": true
+        },
+        {
+          "file": "Sources/Typeflux/Ask/Artifacts/AskStoredArtifactCard.swift",
+          "covered": 17,
+          "executable_added": 25,
+          "percent": 68.0,
+          "uncovered": [
+            99,
+            100,
+            126,
+            129,
+            130,
+            219,
+            220,
+            221
+          ],
+          "instrumented": true
+        }
+      ]
+    }
+  },
+  "final": {
+    "methods": [
+      "TypefluxTests.ArtifactPreviewSourceTests/actualImageContinuationRefusesClosedForeignCanceledAndRevokedPreviewBeforeRead()",
+      "TypefluxTests.ArtifactPreviewSourceTests/bodyValuesAndDirectLegacyPreviewDoNoPreparationAcrossAllContentBranches()",
+      "TypefluxTests.ArtifactPreviewSourceTests/bundleRevokedDuringReadIsRetainedPrivatelyWithoutReopenOrWrite()",
+      "TypefluxTests.ArtifactPreviewSourceTests/cancellationAtEntrySourceAndTerminalKeepsExistingOwnerOrWithholdsOutput()",
+      "TypefluxTests.ArtifactPreviewSourceTests/freshAuthorizerCannotReviveOriginalBundleAndExplicitReopenUsesFreshSource()",
+      "TypefluxTests.ArtifactPreviewSourceTests/getterCallbacksAndDeniedOriginalCannotRestoreClosedReceipt()",
+      "TypefluxTests.ArtifactPreviewSourceTests/initialDenialExpiredCorruptAndUnknownErrorsHaveBoundedFallback()",
+      "TypefluxTests.ArtifactPreviewSourceTests/oldReentrantSourceReturnOrThrowCannotReplaceNewBundle(_:)",
+      "TypefluxTests.ArtifactPreviewSourceTests/sameProductionFactoryBindsBeforeQueuedOpenAndProjectionNeverReadsFiles()",
+      "TypefluxTests.ArtifactPreviewSourceTests/sourceCallbackRetirementCannotReadOrPublish(_:)",
+      "TypefluxTests.ArtifactPreviewSourceTests/staleDeniedEntryPreservesOwnedBundleOrFailure(_:)"
+    ],
+    "distinct_methods": 11,
+    "all_passed": true,
+    "coverage": {
+      "covered": 69,
+      "executable_added": 75,
+      "percent": 92.0,
+      "files": [
+        {
+          "file": "Sources/Typeflux/Ask/Artifacts/AskArtifactPreviewModel.swift",
+          "covered": 48,
+          "executable_added": 48,
+          "percent": 100.0,
+          "uncovered": [],
+          "instrumented": true
+        },
+        {
+          "file": "Sources/Typeflux/Ask/Artifacts/AskStoredArtifactCard.swift",
+          "covered": 21,
+          "executable_added": 27,
+          "percent": 77.78,
+          "uncovered": [
+            99,
+            100,
+            126,
+            129,
+            130,
+            219
+          ],
+          "instrumented": true
+        }
+      ]
+    }
+  },
+  "mapping": {
+    "ArtifactPreviewSourceTests": "New original-bundle receipt, zero-I/O projection, owner/source callbacks, explicit open/close, denied/expired/corrupt fallback, same production factory, body-value cases and actual image continuation with custom raw-pixel model",
+    "ArtifactMemoryAuthorityTests": "Existing memory source factory, original-last projection, explicit copy sinks and held custom decoder ownership",
+    "ArtifactRefProjectionTests": "Complete ref identity, retained pixels and pure body-value preparation boundary"
+  },
+  "excluded": [
+    "Every SystemClipboardContentActions/pasteboard (including named)/Downloads/home/AskConversationModel/AskTestFixture construction",
+    "AskArtifactImageTests unsafe MIME/ClipboardWrites/RealHelper/PreviewAndCardRender and all actual encoder/codec/helper/Vision/HTTP/provider fixtures",
+    "AskArtifactToolTests native preview test constructs NSImage, encodes and hosts windows; whole suite excluded",
+    "Native icon/fallback/QuickLook, dialogs/windows/apps/capture/audio/TCC/devices/full suite and unrelated document/resource tests"
+  ],
+  "limits": [
+    "Same production boundImages factory is used with fake contexts; no production ConversationModel/DI object test",
+    "SwiftUI values only, no host/layout/render/coordinator/WebKit/window/button/sheet or task launcher; shared image continuation invoked directly",
+    "Native authority code/budgets unchanged and not independently functionally tested by this source-projection scope",
+    "Independent unscoped/direct preview callers retain their ownership contract",
+    "Card save-dialog local error/export lifecycle and arbitrary Published/Combine/AppKit/global UI epochs are outside this increment",
+    "No filesystem/account/settings permission transaction or rollback/automatic replay guarantee"
+  ]
+}

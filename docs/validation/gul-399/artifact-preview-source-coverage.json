@@ -1,0 +1,30 @@
+{
+  "covered": 69,
+  "executable_added": 75,
+  "percent": 92.0,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Ask/Artifacts/AskArtifactPreviewModel.swift",
+      "covered": 48,
+      "executable_added": 48,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/Artifacts/AskStoredArtifactCard.swift",
+      "covered": 21,
+      "executable_added": 27,
+      "percent": 77.78,
+      "uncovered": [
+        99,
+        100,
+        126,
+        129,
+        130,
+        219
+      ],
+      "instrumented": true
+    }
+  ]
+}
