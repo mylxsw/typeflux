@@ -1,10 +1,34 @@
 import Foundation
 
 /// Converts raw recursive FSEvents into work that can affect the content index.
-struct SemanticFileChangePlan: Equatable {
+struct SemanticFileChangePlan: Equatable, Sendable {
     var files = Set<String>()
     var directories = Set<String>()
     var fullScan = false
+
+    // Bounds retained handoff state, not the caller's input array or the index queue.
+    static let handoffPaths = 512
+    static let handoffBytes = 128 * 1024
+
+    mutating func mergeForHandoff(_ other: Self) {
+        guard !fullScan else { return }
+        if other.fullScan { requireFullScan(); return }
+        var bytes = files.reduce(0) { $0 + $1.utf8.count } + directories.reduce(0) { $0 + $1.utf8.count }
+        for (paths, directory) in [(other.files, false), (other.directories, true)] {
+            for path in paths {
+                if directory ? directories.contains(path) : files.contains(path) { continue }
+                let size = path.utf8.count
+                guard files.count + directories.count < Self.handoffPaths,
+                      size <= Self.handoffBytes - bytes else { requireFullScan(); return }
+                if directory { directories.insert(path) } else { files.insert(path) }
+                bytes += size
+            }
+        }
+    }
+
+    private mutating func requireFullScan() {
+        fullScan = true; files.removeAll(); directories.removeAll()
+    }
 
     static func make(_ changes: [AskFileChange], scope: AskFileScope, indexDirectory: String) -> Self {
         var plan = Self()

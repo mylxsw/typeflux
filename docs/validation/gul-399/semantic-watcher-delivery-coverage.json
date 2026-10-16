@@ -1,0 +1,31 @@
+{
+  "covered": 83,
+  "executable_added": 83,
+  "percent": 100.0,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileChangePlan.swift",
+      "covered": 18,
+      "executable_added": 18,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+      "covered": 19,
+      "executable_added": 19,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    },
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticWatcherDelivery.swift",
+      "covered": 46,
+      "executable_added": 46,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    }
+  ]
+}
