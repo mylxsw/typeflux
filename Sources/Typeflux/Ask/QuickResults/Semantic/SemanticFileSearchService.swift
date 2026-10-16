@@ -65,6 +65,8 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
         let attempt: SemanticIndexProgressDelivery.Source
     }
     private var pendingCountRefresh: CountRefreshRequest?
+    private let watcherDelivery: SemanticWatcherDelivery
+    private let eventHistory: @Sendable ([String]) -> (UInt64, String?)
     private let progressDelivery: SemanticIndexProgressDelivery
     private let countSnapshot: @Sendable (SemanticFileStore) throws -> SemanticFileStore.Counts
     private var indexAttempt: SemanticIndexProgressDelivery.Source?
@@ -110,9 +112,14 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
          makeQuery: (@Sendable (URL, URL) -> any SemanticQueryEmbedding)? = nil,
          embeddingOwners: SemanticEmbeddingOwners? = nil,
          requiresReaderLifecycle: Bool = false, requiresModelLifecycle: Bool = false, deferInitialStart: Bool = false,
+         watcherDelivery: SemanticWatcherDelivery = SemanticWatcherDelivery(),
+         eventHistory: @escaping @Sendable ([String]) -> (UInt64, String?) = {
+             (AskFSEventsWatcher.currentEventID, AskFSEventsWatcher.historySignature(paths: $0))
+         },
          progressDelivery: SemanticIndexProgressDelivery = SemanticIndexProgressDelivery(),
          downloadProgress: SemanticDownloadProgressDelivery = SemanticDownloadProgressDelivery(),
          countSnapshot: @escaping @Sendable (SemanticFileStore) throws -> SemanticFileStore.Counts = { try $0.counts() }) {
+        self.watcherDelivery = watcherDelivery; self.eventHistory = eventHistory
         self.progressDelivery = progressDelivery; self.countSnapshot = countSnapshot
         self.downloadProgress = downloadProgress
         self.settings = settings; self.directory = directory; self.helper = helper
@@ -233,6 +240,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
         currentProcessingPath = nil
         fingerprint = key
         invalidateIndexProgress()
+        watcherDelivery.invalidate()
         cancelDownload()
         let previousDownload = download
         token.cancel(); token = AskSearchCancellation()
@@ -284,8 +292,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
                     helper: helper, model: model, ownership: embeddingOwners.query, authorization: embeddingAuthorization?.query ?? .init(generation: nil), lifecycle: token)
                 if prewarmRequested { prepareForSearch() }
                 if fullScan { try database.invalidateDiscovery() }
-                let latestEventID = AskFSEventsWatcher.currentEventID
-                let signature = AskFSEventsWatcher.historySignature(paths: prepared.0.roots)
+                let (latestEventID, signature) = eventHistory(prepared.0.roots)
                 self.volumeSignature = signature
                 let previousEventID: UInt64?
                 if let signature {
@@ -299,10 +306,14 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
                 self.pendingEventID = watchEventID
                 let prunePending = try savedEventID != nil && database.hasPendingPrune()
                 let retryDirectories = savedEventID != nil ? try database.failedDirectories() : []
-                watcher.start(paths: prepared.0.roots, since: watchEventID) { [weak self] changes, last in
-                    Task { @MainActor in
-                        self?.receiveChanges(changes, eventID: last, lifecycle: token, fingerprint: key)
-                    }
+                let source = SemanticWatcherDelivery.Source(scope: prepared.0,
+                    indexDirectory: directory.path, lifecycle: token)
+                let delivery = watcherDelivery
+                delivery.begin(source) { [weak self] snapshot in
+                    self?.receiveChanges(snapshot, lifecycle: token, fingerprint: key)
+                }
+                watcher.start(paths: prepared.0.roots, since: watchEventID) { changes, last in
+                    delivery.offer(changes, eventID: last, from: source)
                 }
                 if self.backgroundPaused {
                     guard !Task.isCancelled, ownsLifecycle(token, fingerprint: key) else { return }
@@ -397,11 +408,11 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
         }
     }
 
-    private func receiveChanges(_ changes: [AskFileChange], eventID: UInt64,
+    private func receiveChanges(_ snapshot: SemanticWatcherDelivery.Snapshot,
                                 lifecycle: AskSearchCancellation, fingerprint: String) {
-        guard ownsLifecycle(lifecycle, fingerprint: fingerprint), let scope else { return }
-        pendingEventID = max(pendingEventID, eventID)
-        let plan = SemanticFileChangePlan.make(changes, scope: scope, indexDirectory: directory.path)
+        guard ownsLifecycle(lifecycle, fingerprint: fingerprint) else { return }
+        pendingEventID = max(pendingEventID, snapshot.eventID)
+        let plan = snapshot.plan
         if plan.fullScan {
             self.dirty = true; self.pendingPaths.removeAll(); self.pendingDirectories.removeAll()
         } else if !self.dirty {
@@ -456,7 +467,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
                            directories: directories, processedEventID: eventID)
     }
 
-    deinit { downloadProgress.invalidate(); progressDelivery.invalidate(); countRefresh?.cancel(); token.cancel(); readers.stop(); embeddingOwners.stop(); work?.cancel(); download?.cancel(); rescan?.cancel(); warmup?.cancel() }
+    deinit { watcherDelivery.invalidate(); downloadProgress.invalidate(); progressDelivery.invalidate(); countRefresh?.cancel(); token.cancel(); readers.stop(); embeddingOwners.stop(); work?.cancel(); download?.cancel(); rescan?.cancel(); warmup?.cancel() }
 }
 
 extension SemanticFileSearchService {
@@ -662,6 +673,7 @@ extension SemanticFileSearchService {
         _ = setEnabled(false)
         preferences = settings.semanticFileSearch
         invalidateIndexProgress()
+        watcherDelivery.invalidate()
         token.cancel(); work?.cancel(); rescan?.cancel(); cancelDownload(); watcher.stop()
         readers.stop(); embeddingOwners.stop()
         warmup?.cancel(); warmup = nil
