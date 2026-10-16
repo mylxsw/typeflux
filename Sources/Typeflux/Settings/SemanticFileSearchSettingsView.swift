@@ -252,6 +252,12 @@ struct SemanticProgressView: View {
                     Text(verbatim: "\(Int((fraction * 100).rounded()))%").monospacedDigit()
                 }
                 .font(.system(size: 11.5)).foregroundStyle(TFColors.textTertiary)
+            case let .pausedScanning(scanned, discovered):
+                Text(L("semantic.progress.scanningPaused", scanned.formatted(), discovered.formatted()))
+                    .font(.system(size: 11.5)).foregroundStyle(TFColors.textTertiary)
+            case let .pausedIndexing(processed, total):
+                Text(L("semantic.progress.indexing", processed.formatted(), total.formatted()))
+                    .font(.system(size: 11.5)).foregroundStyle(TFColors.textTertiary)
             }
         }
         .controlSize(.small)

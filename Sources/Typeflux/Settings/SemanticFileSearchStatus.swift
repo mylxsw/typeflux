@@ -3,7 +3,10 @@ import Foundation
 /// What the inline content-index row says about content search right now.
 struct SemanticFileSearchStatus: Equatable {
     enum Tone: Equatable { case off, busy, ready, warning }
-    enum Progress: Equatable { case download(Double), mediaDownload(Double), scanning(Int, Int), indexing(Int, Int) }
+    enum Progress: Equatable {
+        case download(Double), mediaDownload(Double), scanning(Int, Int), indexing(Int, Int)
+        case pausedScanning(Int, Int), pausedIndexing(Int, Int)
+    }
     enum Action: Equatable { case none, download, retryDownload, retry, permission }
 
     var tone: Tone
@@ -47,7 +50,10 @@ struct SemanticFileSearchStatus: Equatable {
                          progress: indexProgress(input.indexProgress))
         case .paused:
             return .init(tone: .busy, text: L("semantic.paused", files),
-                         progress: input.indexProgress.map { indexProgress($0) })
+                         progress: input.indexProgress.map { summary in
+                             if let total = summary.total { return .pausedIndexing(summary.processed, total) }
+                             return .pausedScanning(summary.scanned, summary.discovered)
+                         })
         case .ready where !input.blocked.isEmpty:
             return .init(tone: .warning, text: L("semantic.permissionNeeded"), action: .permission)
         case .ready:

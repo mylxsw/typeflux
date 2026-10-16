@@ -5140,6 +5140,7 @@
 "semantic.manage.subtitle" = "Documents and media · Processed on this Mac";
 "semantic.progress.download" = "Model download";
 "semantic.progress.scanning" = "Counting: %@ entries scanned, %@ supported files found";
+"semantic.progress.scanningPaused" = "Paused after scanning %@ entries and finding %@ supported files";
 "semantic.progress.indexing" = "%@ of %@ files processed";
 "semantic.metrics" = "Content index";
 "semantic.metric.files" = "Indexed files";

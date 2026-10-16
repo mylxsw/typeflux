@@ -5140,6 +5140,7 @@
 "semantic.manage.subtitle" = "文档与媒体 · 本机处理";
 "semantic.progress.download" = "模型下载";
 "semantic.progress.scanning" = "正在统计：已扫描 %@ 项，发现 %@ 个支持的文件";
+"semantic.progress.scanningPaused" = "暂停时已扫描 %@ 项，发现 %@ 个支持的文件";
 "semantic.progress.indexing" = "已处理 %@ / %@ 个文件";
 "semantic.metrics" = "内容索引";
 "semantic.metric.files" = "已索引文件";

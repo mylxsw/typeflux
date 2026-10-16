@@ -5091,6 +5091,7 @@
 "semantic.manage.subtitle" = "문서 및 미디어 · 이 Mac에서 처리";
 "semantic.progress.download" = "모델 다운로드";
 "semantic.progress.scanning" = "집계 중: 항목 %@개 스캔, 지원 파일 %@개 발견";
+"semantic.progress.scanningPaused" = "일시 중지 전 항목 %@개 스캔, 지원 파일 %@개 발견";
 "semantic.progress.indexing" = "파일 %@ / %@개 처리됨";
 "semantic.metrics" = "내용 색인";
 "semantic.metric.files" = "색인된 파일";

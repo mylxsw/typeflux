@@ -5091,6 +5091,7 @@
 "semantic.manage.subtitle" = "文書とメディア · このMacで処理";
 "semantic.progress.download" = "モデルのダウンロード";
 "semantic.progress.scanning" = "集計中：%@ 件を走査、対応ファイル %@ 件を検出";
+"semantic.progress.scanningPaused" = "一時停止時点：%@ 件を走査、対応ファイル %@ 件を検出";
 "semantic.progress.indexing" = "%@ / %@ ファイルを処理済み";
 "semantic.metrics" = "内容索引";
 "semantic.metric.files" = "索引済みファイル";

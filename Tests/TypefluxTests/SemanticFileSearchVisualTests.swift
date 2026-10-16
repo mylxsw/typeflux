@@ -92,10 +92,34 @@ struct SemanticFileSearchVisualTests {
         await service.prepareModelIfNeeded()
         try await SemanticFileServiceTests.wait { service.phase == .ready }
         #expect(await service.processingPage(.completed, offset: 0)?.total == 1)
-        let size = try await Self.render(SemanticIndexDetailsView(service: service), width: 760,
+        let size = try await Self.render(SemanticIndexDetailsView(service: service), width: 780,
                                          name: "processing-details")
-        #expect(size.width >= 700 && size.height >= 580)
+        #expect(size.width >= 780 && size.height >= 500)
         await service.clear(removeModel: true)
+    }
+
+    @Test func `paused scan shows a static count`() async throws {
+        let language = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(.simplifiedChinese)
+        defer { AppLocalization.shared.setLanguage(language) }
+        let status = SemanticFileSearchStatus.of(.init(
+            phase: .paused, enabled: true, filesEnabled: true, modelReady: true,
+            files: 27_347, indexProgress: {
+                var summary = SemanticFileIndexer.Summary()
+                summary.scanned = 59_000
+                summary.discovered = 17_262
+                return summary
+            }()
+        ))
+        #expect(status.progress == .pausedScanning(59_000, 17_262))
+        let detail = try #require(status.progress)
+        let view = VStack(alignment: .leading, spacing: 8) {
+            SemanticStatusLine(status: status)
+            SemanticProgressView(progress: detail, detailed: true)
+        }
+        .padding(20)
+        .tfCardSurface()
+        try await Self.render(view, width: 760, name: "paused-scan")
     }
 
     @Test func `content match rows render their passage`() async throws {

@@ -18,63 +18,50 @@ struct SemanticIndexDetailsView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack(alignment: .firstTextBaseline) {
-                Text(L("semantic.details.title"))
-                    .font(.system(size: 20, weight: .semibold)).foregroundStyle(TFColors.textPrimary)
-                Spacer()
-                Button(L("semantic.details.close")) { dismiss() }
-                    .keyboardShortcut(.cancelAction)
-            }
-            currentFile
-            HStack(spacing: 8) {
-                sectionButton(.pending, title: L("semantic.details.pending"))
-                sectionButton(.completed, title: L("semantic.details.completed"))
-                Spacer()
-                if let page {
-                    Text(L("semantic.details.total", page.total.formatted()))
-                        .font(.system(size: 12)).foregroundStyle(TFColors.textTertiary)
-                }
-            }
-            Divider()
-            ScrollView {
-                LazyVStack(spacing: 0) {
-                    if let page, page.items.isEmpty {
-                        Text(L("semantic.details.empty"))
-                            .font(.system(size: 13)).foregroundStyle(TFColors.textSecondary)
-                            .frame(maxWidth: .infinity, minHeight: 180)
-                    } else if let page {
-                        ForEach(page.items) { item in
-                            itemRow(item)
-                            Divider()
-                        }
-                    } else if loadFailed {
-                        Text(L("semantic.details.unavailable"))
-                            .font(.system(size: 13)).foregroundStyle(TFColors.textSecondary)
-                            .frame(maxWidth: .infinity, minHeight: 180)
-                    } else {
-                        ProgressView().frame(maxWidth: .infinity, minHeight: 180)
+        VStack(spacing: 0) {
+            header
+            TFDivider(inset: 0)
+            VStack(alignment: .leading, spacing: 16) {
+                currentFile
+                HStack {
+                    TFSegmentedControl(options: [
+                        TFOption(.pending, L("semantic.details.pending")),
+                        TFOption(.completed, L("semantic.details.completed"))
+                    ], selection: sectionSelection, size: .small) { value in
+                        "semantic.details.\(value == .pending ? "pending" : "completed")"
+                    }
+                    Spacer()
+                    if let page {
+                        Text(L("semantic.details.total", page.total.formatted()))
+                            .font(.system(size: 12)).foregroundStyle(TFColors.textTertiary)
                     }
                 }
-            }
-            .frame(minHeight: 300)
-            HStack {
-                Text(L("semantic.details.historyNote"))
-                    .font(.system(size: 11)).foregroundStyle(TFColors.textTertiary)
-                Spacer()
-                Button(L("semantic.details.previous")) {
-                    offset = max(0, offset - Self.pageSize); page = nil; loadFailed = false
+                TFCard {
+                    ScrollView {
+                        LazyVStack(spacing: 0) {
+                            if let page, page.items.isEmpty {
+                                emptyState(L("semantic.details.empty"))
+                            } else if let page {
+                                ForEach(page.items.indices, id: \.self) { index in
+                                    itemRow(page.items[index])
+                                    if index < page.items.count - 1 { TFDivider() }
+                                }
+                            } else if loadFailed {
+                                emptyState(L("semantic.details.unavailable"))
+                            } else {
+                                ProgressView().frame(maxWidth: .infinity, minHeight: 180)
+                            }
+                        }
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
-                    .disabled(offset == 0)
-                Text("\(offset / Self.pageSize + 1)")
-                    .monospacedDigit().foregroundStyle(TFColors.textSecondary)
-                Button(L("semantic.details.next")) { offset += Self.pageSize; page = nil; loadFailed = false }
-                    .disabled(page.map { offset + Self.pageSize >= $0.total } ?? true)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                footer
             }
-            .font(.system(size: 12))
+            .padding(20)
         }
-        .padding(22)
-        .frame(minWidth: 700, minHeight: 580)
+        .frame(width: 780, height: min(680, max(500, (NSScreen.main?.visibleFrame.height ?? 800) - 100)))
+        .background(ModelVisualStyle.canvas)
         .onAppear {
             if service.phase == .ready { section = .completed }
         }
@@ -88,21 +75,69 @@ struct SemanticIndexDetailsView: View {
         }
     }
 
+    private var header: some View {
+        HStack(spacing: 12) {
+            Text(L("semantic.details.title"))
+                .font(.system(size: 17, weight: .semibold)).foregroundStyle(TFColors.textPrimary)
+            Spacer()
+            TFButton(title: L("semantic.details.close"), systemImage: "xmark", kind: .plain, iconOnly: true) {
+                dismiss()
+            }
+            .keyboardShortcut(.cancelAction)
+        }
+        .padding(.horizontal, 24)
+        .padding(.top, 20)
+        .padding(.bottom, 18)
+    }
+
+    private var sectionSelection: Binding<SemanticFileStore.ProcessingSection> {
+        Binding(get: { section }, set: { value in
+            guard section != value else { return }
+            section = value; offset = 0; page = nil; loadFailed = false
+        })
+    }
+
+    private func emptyState(_ title: String) -> some View {
+        TFEmptyState(systemImage: "tray", title: title) { EmptyView() }
+            .frame(maxWidth: .infinity, minHeight: 180)
+    }
+
+    private var footer: some View {
+        HStack(spacing: 8) {
+            Text(L("semantic.details.historyNote"))
+                .font(.system(size: 11)).foregroundStyle(TFColors.textTertiary)
+            Spacer()
+            TFButton(title: L("semantic.details.previous"), kind: .secondary, size: .small) {
+                offset = max(0, offset - Self.pageSize); page = nil; loadFailed = false
+            }
+            .disabled(offset == 0)
+            Text("\(offset / Self.pageSize + 1)")
+                .font(.system(size: 12)).monospacedDigit().foregroundStyle(TFColors.textSecondary)
+            TFButton(title: L("semantic.details.next"), kind: .secondary, size: .small) {
+                offset += Self.pageSize; page = nil; loadFailed = false
+            }
+            .disabled(page.map { offset + Self.pageSize >= $0.total } ?? true)
+        }
+    }
+
     @ViewBuilder private var currentFile: some View {
         if let path = service.currentProcessingPath, (service.phase == .indexing || service.phase == .paused) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(L(service.phase == .paused ? "semantic.details.pausedFile" : "semantic.details.current"))
-                    .font(.system(size: 11, weight: .semibold)).foregroundStyle(TFColors.textSecondary)
-                Text(URL(fileURLWithPath: path).lastPathComponent)
-                    .font(.system(size: 14, weight: .medium)).foregroundStyle(TFColors.textPrimary)
-                    .lineLimit(1)
-                Text(AskLauncherSearchSettings.abbreviate((path as NSString).deletingLastPathComponent))
-                    .font(.system(size: 11)).foregroundStyle(TFColors.textTertiary)
-                    .lineLimit(1).truncationMode(.middle)
+            HStack(alignment: .top, spacing: 12) {
+                TFIconTile(systemImage: "doc.text.magnifyingglass", style: .neutral)
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(L(service.phase == .paused ? "semantic.details.pausedFile" : "semantic.details.current"))
+                        .font(.system(size: 11, weight: .semibold)).foregroundStyle(TFColors.textSecondary)
+                    Text(URL(fileURLWithPath: path).lastPathComponent)
+                        .font(.system(size: 14, weight: .medium)).foregroundStyle(TFColors.textPrimary)
+                        .lineLimit(1)
+                    Text(AskLauncherSearchSettings.abbreviate((path as NSString).deletingLastPathComponent))
+                        .font(.system(size: 11)).foregroundStyle(TFColors.textTertiary)
+                        .lineLimit(1).truncationMode(.middle)
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(12)
-            .background(TFColors.raised, in: RoundedRectangle(cornerRadius: 10))
+            .padding(14)
+            .tfCardSurface()
         } else {
             Text(L(service.phase == .indexing ? "semantic.details.scanning" : "semantic.details.noCurrent"))
                 .font(.system(size: 12)).foregroundStyle(TFColors.textSecondary)
@@ -110,24 +145,9 @@ struct SemanticIndexDetailsView: View {
         }
     }
 
-    private func sectionButton(_ value: SemanticFileStore.ProcessingSection, title: String) -> some View {
-        Button(title) {
-            guard section != value else { return }
-            section = value; offset = 0; page = nil; loadFailed = false
-        }
-        .font(.system(size: 12, weight: section == value ? .semibold : .regular))
-        .foregroundStyle(section == value ? TFColors.accent : TFColors.textSecondary)
-        .padding(.horizontal, 12).padding(.vertical, 6)
-        .background(section == value ? TFColors.selection : TFColors.raised,
-                    in: RoundedRectangle(cornerRadius: 8))
-        .buttonStyle(.plain)
-    }
-
     private func itemRow(_ item: SemanticFileStore.ProcessingItem) -> some View {
         HStack(alignment: .top, spacing: 12) {
-            Image(systemName: symbol(for: item.priority))
-                .font(.system(size: 17)).foregroundStyle(TFColors.textSecondary)
-                .frame(width: 22)
+            TFIconTile(systemImage: symbol(for: item.priority), style: .neutral)
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 8) {
                     Text(URL(fileURLWithPath: item.path).lastPathComponent)
@@ -148,7 +168,8 @@ struct SemanticIndexDetailsView: View {
             Spacer(minLength: 4)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.vertical, 9)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 11)
         .contentShape(Rectangle())
         .contextMenu {
             Button(L("semantic.details.reveal")) {
