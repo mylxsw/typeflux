@@ -1,0 +1,15 @@
+{
+  "covered": 9,
+  "executable_added": 9,
+  "percent": 100.0,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticMediaWorker.swift",
+      "covered": 9,
+      "executable_added": 9,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    }
+  ]
+}
