@@ -1,0 +1,36 @@
+{
+  "baseline": "162e72bda661f5df4c5c68cc34a35504e1b51011",
+  "methods": [
+    "TypefluxTests.SmallIconIsolationTests/testCacheHasStrictCapacityAndNeverCachesOversizedDecoderResults",
+    "TypefluxTests.SmallIconIsolationTests/testCancelledDownloadsRetainAdmissionUntilUncooperativeCompletion",
+    "TypefluxTests.SmallIconIsolationTests/testInputAndOutputLimitsRefuseBeforeNativeWork",
+    "TypefluxTests.SmallIconIsolationTests/testRevocationDuringDecodeRejectsLatePixels",
+    "TypefluxTests.SmallIconIsolationTests/testScopeInvalidationAndFreshAuthorizationCannotBlessOldCache",
+    "TypefluxTests.SmallIconIsolationTests/testSharedWaitersAreBoundedAndOneCancellationDoesNotCancelOthers",
+    "TypefluxTests.SmallIconIsolationTests/testSmallPixelBudgetIsReservedBeforeDecodeAndReleasedOnRevocation",
+    "TypefluxTests.AskBrowserFaviconTests/`canceled and unnormalized requests never start download`()",
+    "TypefluxTests.AskBrowserFaviconTests/`download uses short timeout size limit and handles offline failure`()",
+    "TypefluxTests.FaviconBatchAuthorityTests/canceledUncooperativeLoadersKeepPendingCapacityUntilCollected()",
+    "TypefluxTests.FaviconBatchAuthorityTests/canceledUncooperativeNativeKeepsSlotsAndCannotCacheLatePixels()",
+    "TypefluxTests.FaviconBatchAuthorityTests/customActorDecoderRemainsIndependentAndInputRefusalsKeepBounds()",
+    "TypefluxTests.FaviconBatchAuthorityTests/originalNativeCheckAfterFinalAccessCallbackPreventsCachePublication()",
+    "TypefluxTests.FaviconBatchAuthorityTests/preReadyFailureKeepsCooldownAndNeedsExplicitRequestAfterExpiry()",
+    "TypefluxTests.FaviconBatchAuthorityTests/scopeReplacementKeepsFreshDefaultResultAfterOldLoaderReturns()",
+    "TypefluxTests.FaviconBatchAuthorityTests/sharedWaitersKeepOriginalStampAcrossHeldLoaderAndRecovery()",
+    "TypefluxTests.SmallIconAuthorityTests/boundedDefaultReaderPreservesPrivateBytesAndRejectsInvalidSources()",
+    "TypefluxTests.SmallIconAuthorityTests/canceledNativeCallsKeepCapacityAndRejectValidLateReplies()",
+    "TypefluxTests.SmallIconAuthorityTests/canceledPreparationsKeepBothSlotsUntilPhysicalReturn(file:)",
+    "TypefluxTests.SmallIconAuthorityTests/heldOriginalPreparationCannotAdoptRecoveredGeneration(file:)",
+    "TypefluxTests.SmallIconAuthorityTests/unavailableCanceledAndRetiredRequestsCannotPrepareOrReplay()",
+    "TypefluxTests.SmallIconAuthorityTests/validNativeReplyThenOriginalRevocationIsNotAReusableResult()"
+  ],
+  "result": "22/22 distinct methods passed first functional run: 7 XCTest in one suite + 15 Swift Testing in three suites. Seven new FaviconBatchAuthorityTests methods.",
+  "distinct_passing_methods": 22,
+  "exclusions": [
+    "AskBrowserFaviconTests origins/entry projection not selected; concurrent rows/cancel rows/native rendering and failures methods use encoding or default native decoding",
+    "SmallIconIsolationTests real helper, decoder admission (png() encoding), file/favicon view, editor local scope: actual codec/helper/windows",
+    "SystemClipboardContentActions, named pasteboards, AskConversationModel/AskTestFixture and production app/home/file-index objects",
+    "Native application-icon fallback/OSQuickLook, real model/media/permissions, document indexing/resource matrices, full suite"
+  ],
+  "fixtures": "Actual cache default native branch with own managed worker and private injected loaders; validated synthetic JSON/raw 2x2 RGBA; private health stores. Existing custom raw-pixel/cache tests and fake transport DTO tests only. No HTTP/helper/codec execution."
+}
