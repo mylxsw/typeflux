@@ -18,7 +18,6 @@ struct ClipboardPanelRow: View, Equatable {
     var onClick: (Int) -> Void = { _ in }
     var onPerform: (ClipboardEntryAction) -> Void = { _ in }
     var onHover: (Bool) -> Void = { _ in }
-    @State private var info: ClipboardMediaInfo?
 
     static func == (lhs: Self, rhs: Self) -> Bool {
         lhs.entry == rhs.entry && lhs.index == rhs.index && lhs.isSelected == rhs.isSelected
@@ -26,11 +25,15 @@ struct ClipboardPanelRow: View, Equatable {
     }
 
     var body: some View {
+        ClipboardMediaValue(request: isMissing ? nil : .info(entry)) { value in row(info: value?.info) }
+    }
+
+    private func row(info: ClipboardMediaInfo?) -> some View {
         HStack(alignment: .center, spacing: 11) {
             ClipboardEntryLeadingIcon(entry: entry)
                 .opacity(isMissing ? 0.55 : 1)
             VStack(alignment: .leading, spacing: 2) {
-                content
+                content(info: info)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             if entry.isPinned {
@@ -58,28 +61,27 @@ struct ClipboardPanelRow: View, Equatable {
         .onHover(perform: onHover)
         .contextMenu { contextMenu }
         .modifier(AskLauncherNumberBadge(number: number))
-        .task(id: entry.id) { await loadInfo() }
     }
 
     @ViewBuilder
-    private var content: some View {
+    private func content(info: ClipboardMediaInfo?) -> some View {
         if entry.hasInlineMedia {
             ClipboardInlineMedia(entry: entry, info: info, isExpanded: false, isMissing: isMissing)
                 .opacity(isMissing ? 0.55 : 1)
                 .padding(.top, 1)
                 .padding(.bottom, 3)
-            subtitle(caption: entry.mediaCaption)
+            subtitle(caption: entry.mediaCaption, info: info)
         } else if entry.kind == .pdf {
             HStack(alignment: .center, spacing: 10) {
                 ClipboardPDFThumbnail(url: isMissing ? nil : entry.fileURLs.first, isExpanded: false)
                 VStack(alignment: .leading, spacing: 2) {
                     title
-                    subtitle()
+                    subtitle(info: info)
                 }
             }
         } else {
             title
-            subtitle()
+            subtitle(info: info)
         }
     }
 
@@ -93,7 +95,7 @@ struct ClipboardPanelRow: View, Equatable {
     }
 
     /// Kind, size, source and time; media rows lead with the file name, which truncates first.
-    private func subtitle(caption: String? = nil) -> some View {
+    private func subtitle(caption: String? = nil, info: ClipboardMediaInfo?) -> some View {
         HStack(spacing: 6) {
             if let caption {
                 Text(caption)
@@ -127,10 +129,6 @@ struct ClipboardPanelRow: View, Equatable {
         case .quickLook, .showOnlyApp: previous == .copy
         default: false
         }
-    }
-
-    private func loadInfo() async {
-        info = await ClipboardMediaInfoProvider.shared.loadInfo(for: entry)
     }
 
     @ViewBuilder

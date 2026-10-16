@@ -7,14 +7,19 @@ struct ClipboardPreviewPane: View {
 
     let entry: ClipboardEntry?
     let isMissing: Bool
-    @State private var info: ClipboardMediaInfo?
 
     var body: some View {
+        ClipboardMediaValue(request: isMissing ? nil : entry.flatMap(ClipboardMediaInfoProvider.Request.info)) { value in
+            contents(info: value?.info)
+        }
+    }
+
+    private func contents(info: ClipboardMediaInfo?) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             if let entry {
-                preview(for: entry)
+                preview(for: entry, info: info)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                details(for: entry)
+                details(for: entry, info: info)
             } else {
                 Spacer()
             }
@@ -22,15 +27,11 @@ struct ClipboardPreviewPane: View {
         .padding(14)
         .frame(width: Self.width)
         .frame(maxHeight: .infinity)
-        .task(id: entry?.id) {
-            info = nil
-            guard let entry else { return }
-            info = await ClipboardMediaInfoProvider.shared.loadInfo(for: entry)
-        }
+
     }
 
     @ViewBuilder
-    private func preview(for entry: ClipboardEntry) -> some View {
+    private func preview(for entry: ClipboardEntry, info: ClipboardMediaInfo?) -> some View {
         if isMissing {
             VStack(alignment: .leading, spacing: 8) {
                 Text(entry.title)
@@ -69,7 +70,7 @@ struct ClipboardPreviewPane: View {
         }
     }
 
-    private func details(for entry: ClipboardEntry) -> some View {
+    private func details(for entry: ClipboardEntry, info: ClipboardMediaInfo?) -> some View {
         Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 10, verticalSpacing: 4) {
             ForEach(Self.detailRows(for: entry, info: info), id: \.label) { row in
                 GridRow {
