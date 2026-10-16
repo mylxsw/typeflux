@@ -7,6 +7,7 @@ struct SemanticFileSearchSettingsView: View {
     var filesEnabled: Bool
     @State private var confirmation: Deletion?
     @State private var isHovering = false
+    @State private var showProcessingDetails = false
 
     enum Deletion { case index, model }
 
@@ -51,6 +52,9 @@ struct SemanticFileSearchSettingsView: View {
         }
         .padding(.horizontal, 14).padding(.vertical, 14)
         .onHover { isHovering = $0 }
+        .sheet(isPresented: $showProcessingDetails) {
+            SemanticIndexDetailsView(service: service)
+        }
     }
 
     @ViewBuilder private var detail: some View {
@@ -113,6 +117,7 @@ struct SemanticFileSearchSettingsView: View {
             .accessibilityIdentifier("semantic.fileTypes")
             HStack(spacing: TFMetrics.toolbarSpacing) {
                 lifecycleButton
+                Self.link(L("semantic.details.open")) { showProcessingDetails = true }
                 Self.destructiveLink(L("semantic.clear")) { confirmation = .index }
                 Self.destructiveLink(L("semantic.remove")) { confirmation = .model }
                     .disabled(!service.modelReady)

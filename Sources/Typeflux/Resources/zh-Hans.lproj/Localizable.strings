@@ -5699,6 +5699,31 @@
 "recording.timelineLoading" = "正在准备时间轴…";
 "recording.timelineUnavailable" = "时间轴音频不可用";
 
+"semantic.details.open" = "处理明细";
+"semantic.details.title" = "内容索引处理明细";
+"semantic.details.close" = "关闭";
+"semantic.details.pending" = "待处理";
+"semantic.details.completed" = "已处理";
+"semantic.details.total" = "%@ 个文件";
+"semantic.details.empty" = "暂无文件";
+"semantic.details.unavailable" = "暂时无法读取处理明细。";
+"semantic.details.historyNote" = "从此版本开始记录每个文件的处理耗时。";
+"semantic.details.previous" = "上一页";
+"semantic.details.next" = "下一页";
+"semantic.details.pausedFile" = "暂停时处理的文件";
+"semantic.details.current" = "正在处理";
+"semantic.details.scanning" = "正在扫描文件夹…";
+"semantic.details.noCurrent" = "当前没有正在处理的文件";
+"semantic.details.reveal" = "在访达中显示";
+"semantic.details.modified" = "修改于 %@";
+"semantic.details.page" = "第 %@ 页";
+"semantic.details.duration" = "耗时 %@";
+"semantic.details.durationUnknown" = "耗时未知";
+"semantic.details.metadataUnknown" = "文件信息不可用";
+"semantic.details.state.done" = "已索引";
+"semantic.details.state.skipped" = "已跳过";
+"semantic.details.state.failed" = "处理失败";
+
 "recording.publicationUnknown" = "无法确认文件发布结果。原始录屏和生成文件已保留；再次导出前请检查目标位置。";
 "recording.publicationUnavailable" = "暂时无法发布文件，原始录屏和生成文件已保留。";
 

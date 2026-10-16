@@ -5585,6 +5585,31 @@
 "recording.timelineLoading" = "タイムラインを準備中…";
 "recording.timelineUnavailable" = "タイムラインの音声を利用できません";
 
+"semantic.details.open" = "処理の詳細";
+"semantic.details.title" = "コンテンツ索引の処理状況";
+"semantic.details.close" = "閉じる";
+"semantic.details.pending" = "待機中";
+"semantic.details.completed" = "処理済み";
+"semantic.details.total" = "%@ ファイル";
+"semantic.details.empty" = "ファイルはありません";
+"semantic.details.unavailable" = "処理の詳細を読み込めません。";
+"semantic.details.historyNote" = "ファイルごとの処理時間はこのバージョンから記録します。";
+"semantic.details.previous" = "前へ";
+"semantic.details.next" = "次へ";
+"semantic.details.pausedFile" = "一時停止したファイル";
+"semantic.details.current" = "処理中";
+"semantic.details.scanning" = "フォルダをスキャン中…";
+"semantic.details.noCurrent" = "現在処理中のファイルはありません";
+"semantic.details.reveal" = "Finderで表示";
+"semantic.details.modified" = "更新日 %@";
+"semantic.details.page" = "%@ ページ";
+"semantic.details.duration" = "処理時間 %@";
+"semantic.details.durationUnknown" = "処理時間は不明";
+"semantic.details.metadataUnknown" = "ファイル情報を取得できません";
+"semantic.details.state.done" = "索引済み";
+"semantic.details.state.skipped" = "スキップ";
+"semantic.details.state.failed" = "失敗";
+
 "recording.publicationUnknown" = "ファイルの保存結果を確認できません。元の録画と生成ファイルは保持されています。再度書き出す前に保存先を確認してください。";
 "recording.publicationUnavailable" = "ファイルを保存できません。元の録画と生成ファイルは保持されています。";
 

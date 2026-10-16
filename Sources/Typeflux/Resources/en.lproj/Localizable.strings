@@ -5699,6 +5699,31 @@
 "recording.timelineLoading" = "Preparing timeline…";
 "recording.timelineUnavailable" = "Timeline audio unavailable";
 
+"semantic.details.open" = "Processing details";
+"semantic.details.title" = "Content indexing details";
+"semantic.details.close" = "Close";
+"semantic.details.pending" = "Waiting";
+"semantic.details.completed" = "Processed";
+"semantic.details.total" = "%@ files";
+"semantic.details.empty" = "No files in this list";
+"semantic.details.unavailable" = "Details are temporarily unavailable.";
+"semantic.details.historyNote" = "Processing times are recorded from this version onward.";
+"semantic.details.previous" = "Previous";
+"semantic.details.next" = "Next";
+"semantic.details.pausedFile" = "Paused at";
+"semantic.details.current" = "Currently processing";
+"semantic.details.scanning" = "Scanning folders for files…";
+"semantic.details.noCurrent" = "No file is being processed";
+"semantic.details.reveal" = "Show in Finder";
+"semantic.details.modified" = "Modified %@";
+"semantic.details.page" = "Page %@";
+"semantic.details.duration" = "Processing %@";
+"semantic.details.durationUnknown" = "Processing time unavailable";
+"semantic.details.metadataUnknown" = "File information unavailable";
+"semantic.details.state.done" = "Indexed";
+"semantic.details.state.skipped" = "Skipped";
+"semantic.details.state.failed" = "Failed";
+
 "recording.publicationUnknown" = "Publication could not be confirmed. The original recording and generated output are retained. Check the destination before exporting again.";
 "recording.publicationUnavailable" = "Publication is unavailable. The original recording and generated output are retained.";
 

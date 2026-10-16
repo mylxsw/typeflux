@@ -5585,6 +5585,31 @@
 "recording.timelineLoading" = "타임라인 준비 중…";
 "recording.timelineUnavailable" = "타임라인 오디오를 사용할 수 없습니다";
 
+"semantic.details.open" = "처리 상세";
+"semantic.details.title" = "콘텐츠 색인 처리 상세";
+"semantic.details.close" = "닫기";
+"semantic.details.pending" = "대기 중";
+"semantic.details.completed" = "처리됨";
+"semantic.details.total" = "%@개 파일";
+"semantic.details.empty" = "파일이 없습니다";
+"semantic.details.unavailable" = "처리 상세를 불러올 수 없습니다.";
+"semantic.details.historyNote" = "파일별 처리 시간은 이 버전부터 기록됩니다.";
+"semantic.details.previous" = "이전";
+"semantic.details.next" = "다음";
+"semantic.details.pausedFile" = "일시 중지된 파일";
+"semantic.details.current" = "현재 처리 중";
+"semantic.details.scanning" = "폴더에서 파일을 찾는 중…";
+"semantic.details.noCurrent" = "현재 처리 중인 파일이 없습니다";
+"semantic.details.reveal" = "Finder에서 보기";
+"semantic.details.modified" = "수정일 %@";
+"semantic.details.page" = "%@페이지";
+"semantic.details.duration" = "처리 시간 %@";
+"semantic.details.durationUnknown" = "처리 시간 알 수 없음";
+"semantic.details.metadataUnknown" = "파일 정보를 사용할 수 없습니다";
+"semantic.details.state.done" = "색인됨";
+"semantic.details.state.skipped" = "건너뜀";
+"semantic.details.state.failed" = "실패";
+
 "recording.publicationUnknown" = "파일 게시 결과를 확인할 수 없습니다. 원본 녹화와 생성된 파일은 보존됩니다. 다시 내보내기 전에 대상 위치를 확인하세요.";
 "recording.publicationUnavailable" = "파일을 게시할 수 없습니다. 원본 녹화와 생성된 파일은 보존됩니다.";
 

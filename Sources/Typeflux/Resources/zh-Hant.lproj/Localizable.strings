@@ -5619,6 +5619,31 @@
 "recording.timelineLoading" = "正在準備時間軸…";
 "recording.timelineUnavailable" = "時間軸音訊無法使用";
 
+"semantic.details.open" = "處理明細";
+"semantic.details.title" = "內容索引處理明細";
+"semantic.details.close" = "關閉";
+"semantic.details.pending" = "待處理";
+"semantic.details.completed" = "已處理";
+"semantic.details.total" = "%@ 個檔案";
+"semantic.details.empty" = "暫無檔案";
+"semantic.details.unavailable" = "暫時無法讀取處理明細。";
+"semantic.details.historyNote" = "從此版本開始記錄每個檔案的處理耗時。";
+"semantic.details.previous" = "上一頁";
+"semantic.details.next" = "下一頁";
+"semantic.details.pausedFile" = "暫停時處理的檔案";
+"semantic.details.current" = "正在處理";
+"semantic.details.scanning" = "正在掃描資料夾…";
+"semantic.details.noCurrent" = "目前沒有正在處理的檔案";
+"semantic.details.reveal" = "在 Finder 中顯示";
+"semantic.details.modified" = "修改於 %@";
+"semantic.details.page" = "第 %@ 頁";
+"semantic.details.duration" = "耗時 %@";
+"semantic.details.durationUnknown" = "耗時未知";
+"semantic.details.metadataUnknown" = "檔案資訊無法使用";
+"semantic.details.state.done" = "已索引";
+"semantic.details.state.skipped" = "已略過";
+"semantic.details.state.failed" = "處理失敗";
+
 "recording.publicationUnknown" = "無法確認檔案發佈結果。原始錄影和產生的檔案已保留；再次匯出前請檢查目標位置。";
 "recording.publicationUnavailable" = "暫時無法發佈檔案，原始錄影和產生的檔案已保留。";
 

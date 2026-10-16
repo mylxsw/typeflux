@@ -6,12 +6,13 @@ extension SemanticFileIndexer {
     static func waitForMedia(scope: AskFileScope, store: SemanticFileStore, reader: AskFileReading,
                              encoder: SemanticEmbedding, idle: () -> Bool, paused: () -> Bool,
                              documents: () -> SemanticIndexPauseGate.DocumentWork, cancelled: () -> Bool,
-                             summary: inout Summary, progress: (Summary) -> Void) throws {
+                             summary: inout Summary, progress: (Summary) -> Void,
+                             current: (String?) -> Void) throws {
         repeat {
             try waitWhilePaused(paused, cancelled: cancelled)
             try drainDocuments(scope: scope, store: store, reader: reader, encoder: encoder,
                                paused: paused, documents: documents, cancelled: cancelled,
-                               updates: true, summary: &summary, progress: progress)
+                               updates: true, summary: &summary, progress: progress, current: current)
             if idle() {
                 if summary.waitingForIdle {
                     summary.waitingForIdle = false; progress(summary)
@@ -32,7 +33,8 @@ extension SemanticFileIndexer {
     static func drainDocuments(scope: AskFileScope, store: SemanticFileStore, reader: AskFileReading,
                                encoder: SemanticEmbedding, paused: () -> Bool,
                                documents: () -> SemanticIndexPauseGate.DocumentWork, cancelled: () -> Bool,
-                               updates: Bool, summary: inout Summary, progress: (Summary) -> Void) throws {
+                               updates: Bool, summary: inout Summary, progress: (Summary) -> Void,
+                               current: (String?) -> Void) throws {
         var processedWork = false
         defer {
             if updates, processedWork {
@@ -55,11 +57,21 @@ extension SemanticFileIndexer {
             }
             guard let path = try store.nextWork(.document) else { return }
             processedWork = true
-            let result = try process(path, scope: scope, store: store, reader: reader, encoder: encoder,
+            current(path)
+            defer { current(nil) }
+            let started = ProcessInfo.processInfo.systemUptime
+            let result: SemanticFileStore.JobState
+            do {
+                result = try process(path, scope: scope, store: store, reader: reader, encoder: encoder,
                                      media: nil, cancelled: cancelled,
                                      checkpoint: { try waitWhilePaused(paused, cancelled: cancelled) },
                                      waitForIdle: {})
-            try store.completeWork(path, more: result == .partial)
+            } catch {
+                store.recordInterruptedWork(path, elapsed: ProcessInfo.processInfo.systemUptime - started)
+                throw error
+            }
+            try store.completeWork(path, more: result == .partial,
+                                   elapsed: ProcessInfo.processInfo.systemUptime - started)
             if result != .partial {
                 if updates {
                     summary.priorityUpdates += 1

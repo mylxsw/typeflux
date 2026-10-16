@@ -82,6 +82,22 @@ struct SemanticFileSearchVisualTests {
         await service.clear(removeModel: true)
     }
 
+    @Test func `processing details renders an indexed file`() async throws {
+        let language = AppLocalization.shared.language
+        AppLocalization.shared.setLanguage(.simplifiedChinese)
+        defer { AppLocalization.shared.setLanguage(language) }
+        let (service, root, _, _) = try SemanticFileServiceTests().fixture()
+        defer { try? FileManager.default.removeItem(at: root) }
+        #expect(service.setEnabled(true))
+        await service.prepareModelIfNeeded()
+        try await SemanticFileServiceTests.wait { service.phase == .ready }
+        #expect(await service.processingPage(.completed, offset: 0)?.total == 1)
+        let size = try await Self.render(SemanticIndexDetailsView(service: service), width: 760,
+                                         name: "processing-details")
+        #expect(size.width >= 700 && size.height >= 580)
+        await service.clear(removeModel: true)
+    }
+
     @Test func `content match rows render their passage`() async throws {
         let language = AppLocalization.shared.language
         AppLocalization.shared.setLanguage(.simplifiedChinese)

@@ -17,6 +17,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
     @Published private(set) var mediaDownload: Double?
     @Published private(set) var mediaFailed = false
     @Published private(set) var indexProgress: SemanticFileIndexer.Summary?
+    @Published private(set) var currentProcessingPath: String?
     @Published private(set) var blocked: [String] = []
     @Published private(set) var modelReady = false
     @Published private(set) var preferences: SemanticFileSettings
@@ -185,6 +186,7 @@ final class SemanticFileSearchService: ObservableObject, SemanticFileSearching {
         if fingerprint != key || !backgroundPaused {
             indexProgress = nil
         }
+        currentProcessingPath = nil
         fingerprint = key
         token.cancel(); token = AskSearchCancellation()
         let token = token
@@ -342,6 +344,14 @@ extension SemanticFileSearchService {
                 }
             }
         }
+        let reportCurrent: @Sendable (String?) -> Void = { [weak self] path in
+            Task { @MainActor [weak self] in
+                guard let self, !token.isCancelled, self.phase == .indexing else { return }
+                if self.currentProcessingPath != path {
+                    self.currentProcessingPath = path
+                }
+            }
+        }
         self.work = Task { [weak self] in
             do {
                 let result = try await Task.detached(priority: .utility) {
@@ -355,7 +365,7 @@ extension SemanticFileSearchService {
                             encoder: encoder, media: media, idle: { idle() && !pauseGate.isPaused },
                             paused: { pauseGate.isPaused }, documents: { pauseGate.takeDocuments() },
                             priorityReader: priorityReader,
-                            cancelled: { token.isCancelled }, progress: reportProgress
+                            cancelled: { token.isCancelled }, progress: reportProgress, current: reportCurrent
                         )
                     }
                     return try SemanticFileIndexer.run(scope: scope, store: database, reader: reader,
@@ -364,7 +374,8 @@ extension SemanticFileSearchService {
                                                        paused: { pauseGate.isPaused },
                                                        documents: { pauseGate.takeDocuments() },
                                                        priorityReader: priorityReader,
-                                                       cancelled: { token.isCancelled }, progress: reportProgress)
+                                                       cancelled: { token.isCancelled }, progress: reportProgress,
+                                                       current: reportCurrent)
                 }.value
                 guard let self, !token.isCancelled, !Task.isCancelled else { return }
                 self.skipped = result.skipped
@@ -372,6 +383,7 @@ extension SemanticFileSearchService {
                 await self.updateCounts(database)
                 guard !token.isCancelled, !Task.isCancelled else { return }
                 self.indexProgress = nil
+                self.currentProcessingPath = nil
                 if self.backgroundPaused {
                     self.pausedIndexing = false
                     self.pausedReady = true
@@ -384,6 +396,7 @@ extension SemanticFileSearchService {
                 guard let self, !token.isCancelled, !Task.isCancelled else { return }
                 if case SemanticMediaFailure.unavailable = error { self.mediaFailed = true }
                 if case SemanticFileStore.Failure.invalidVector = error { self.modelReady = false }
+                self.currentProcessingPath = nil
                 self.phase = .failed
             }
         }
@@ -460,6 +473,7 @@ extension SemanticFileSearchService {
             self.files = 0; self.chunks = 0; self.indexedCounts = .init()
             self.skipped = 0; self.mediaDownload = nil; self.mediaFailed = false
             self.indexProgress = nil; self.phase = .off
+            self.currentProcessingPath = nil
             if removeModel {
                 self.modelReady = false
             }
@@ -477,6 +491,14 @@ extension SemanticFileSearchService {
             $0 + size(URL(fileURLWithPath: database.path + $1))
         }
         return (index, size(self.modelURL) + size(self.mediaModelURL))
+    }
+
+    func processingPage(_ section: SemanticFileStore.ProcessingSection, offset: Int,
+                        limit: Int = 50) async -> SemanticFileStore.ProcessingPage? {
+        guard let database = store else { return nil }
+        return try? await Task.detached(priority: .utility) {
+            try database.processingPage(section, offset: offset, limit: limit)
+        }.value
     }
 
     func rebuild() async {
