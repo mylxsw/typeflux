@@ -1,97 +1,132 @@
 import CryptoKit
+import Darwin
 import Foundation
-import ImageIO
+import TypefluxMediaProtocol
 
-/// What `display: image` shows: the image file a script named, or the one it printed
-/// as a data URL, saved to the workflow's cache folder so it can be revealed in Finder
-/// like any other. See `docs/design/workflow-gallery-output-actions.md` §3.2.
+/// Inspection happens after the producer has run. Its original output is never replayed or discarded.
 enum AskWorkflowImage {
-    /// Larger data URLs are not images a launcher card should hold.
-    static let maximumDataBytes = 20 * 1024 * 1024
+    static let maximumDataBytes = MediaWorkflowImage.inputBytes
+    private static let admission = AskToolPixelBudget(limit: 2)
+    private static let clipboardBudget = AskToolPixelBudget(limit: MediaWorkflowImage.copyBytes * 2)
+    enum Failure: Error, Equatable { case notFound(String), notImage, unavailable }
 
-    enum Failure: Error, Equatable {
-        /// The path names no file.
-        case notFound(String)
-        /// The file or data is not an image this Mac can read.
-        case notImage
-    }
-
-    /// The image `stdout` names: a `data:image/…;base64,…` URL, else its first line as
-    /// a path (absolute, under `~`, or relative to the workflow's folder).
     static func resolve(_ stdout: String, folder: URL, cache: URL, home: String,
-                        fileManager: FileManager = .default) -> Result<AskPluginImage, Failure> {
-        let text = stdout.trimmingCharacters(in: .whitespacesAndNewlines)
-        if text.lowercased().hasPrefix("data:") {
-            guard let data = dataURL(text) else { return .failure(.notImage) }
-            return save(data, in: cache, fileManager: fileManager)
-        }
-        let line = text.split(separator: "\n").first.map { $0.trimmingCharacters(in: .whitespaces) } ?? ""
-        let path = line.hasPrefix("file://") ? URL(string: line)?.path ?? line : line
-        guard !path.isEmpty, let url = AskWorkflowActionRunner.file(path, folder: folder, home: home),
-              fileManager.fileExists(atPath: url.path) else { return .failure(.notFound(line)) }
-        return image(at: url).map { .success($0) } ?? .failure(.notImage)
+                        worker: MediaWorker = .previews) async -> Result<AskPluginImage, Failure> {
+        do {
+            return .success(try await work { cancellation in
+                guard stdout.utf8.count <= maximumDataBytes * 2 else { throw Failure.notImage }
+                let text = stdout.trimmingCharacters(in: .whitespacesAndNewlines)
+                let data: Data, source: URL?
+                if text.lowercased().hasPrefix("data:") {
+                    guard let decoded = dataURL(text) else { throw Failure.notImage }
+                    data = decoded; source = nil
+                } else {
+                    let line = text.split(separator: "\n").first.map { $0.trimmingCharacters(in: .whitespaces) } ?? ""
+                    let path = line.hasPrefix("file://") ? URL(string: line)?.path ?? line : line
+                    guard !path.isEmpty, let url = AskWorkflowActionRunner.file(path, folder: folder, home: home),
+                          FileManager.default.fileExists(atPath: url.path) else { throw Failure.notFound(line) }
+                    data = try read(url); source = url
+                }
+                let response = try worker.decode(.inspectWorkflowImage, input: .data(data), isCancelled: { cancellation.isCancelled })
+                guard let metadata = response.workflowImage else { throw MediaFailure.invalidProtocol }
+                if cancellation.isCancelled { throw CancellationError() }
+                let digest = hash(data)
+                let url = try source ?? save(data, digest: digest, type: metadata.format, cache: cache)
+                return AskPluginImage(url: url, width: Double(metadata.width) / Double(metadata.scale),
+                                      height: Double(metadata.height) / Double(metadata.scale), digest: digest)
+            })
+        } catch let failure as Failure { return .failure(failure) }
+        catch { return .failure((error as? MediaFailure) == .unreadable || (error as? MediaFailure) == .tooLarge ? .notImage : .unavailable) }
     }
 
-    /// The bytes of a base64 image data URL; nil for anything else.
     static func dataURL(_ text: String) -> Data? {
-        guard let comma = text.firstIndex(of: ",") else { return nil }
+        guard text.utf8.count <= maximumDataBytes * 2, let comma = text.firstIndex(of: ",") else { return nil }
         let header = text[..<comma].lowercased()
         guard header.hasPrefix("data:image/"), header.hasSuffix(";base64") else { return nil }
         let payload = text[text.index(after: comma)...].filter { !$0.isWhitespace }
         guard payload.count <= maximumDataBytes / 3 * 4 + 4,
-              let data = Data(base64Encoded: String(payload)) else { return nil }
+              let data = Data(base64Encoded: String(payload)), !data.isEmpty, data.count <= maximumDataBytes else { return nil }
         return data
     }
 
-    /// Writes data-URL bytes once, named by their hash, so running again reuses the file.
-    private static func save(_ data: Data, in cache: URL,
-                             fileManager: FileManager) -> Result<AskPluginImage, Failure> {
-        guard let source = CGImageSourceCreateWithData(data as CFData, nil),
-              let type = CGImageSourceGetType(source) as String?, size(of: source) != nil else {
-            return .failure(.notImage)
+    static func render(_ image: AskPluginImage, worker: MediaWorker = .previews) async throws -> AskFilePreviewPDF.Result {
+        try await work { cancellation in
+            let data = try read(image.url)
+            guard image.digest == nil || hash(data) == image.digest else { throw MediaFailure.unreadable }
+            return try MediaPreviewDisplay.renderImage(data, type: nil, cancellation: cancellation, worker: worker)
         }
-        let digest = SHA256.hash(data: data).prefix(12).map { String(format: "%02x", $0) }.joined()
-        let folder = cache.appendingPathComponent("images", isDirectory: true)
-        let url = folder.appendingPathComponent(digest).appendingPathExtension(fileExtension(for: type))
-        do {
-            try fileManager.createDirectory(at: folder, withIntermediateDirectories: true)
-            if !fileManager.fileExists(atPath: url.path) {
-                try data.write(to: url, options: .atomic)
+    }
+
+    struct Clipboard: @unchecked Sendable {
+        let png: Data
+        let tiff: Data
+        let reservation: AskToolPixelBudget.Lease
+    }
+    static func clipboard(_ url: URL, digest: String? = nil, worker: MediaWorker = .previews) async throws -> Clipboard {
+        let reservation = try clipboardBudget.acquire(bytes: MediaWorkflowImage.copyBytes)
+        return try await work { cancellation in
+            let data = try read(url)
+            guard digest == nil || hash(data) == digest else { throw MediaFailure.unreadable }
+            return try worker.perform(.copyWorkflowImage, input: .data(data), isCancelled: { cancellation.isCancelled }) { response, fd in
+                guard let metadata = response.workflowImage, let pngSize = metadata.pngBytes, let tiffSize = metadata.tiffBytes else { throw MediaFailure.invalidProtocol }
+                let directory = AskSecureDirectory(descriptor: dup(fd))
+                let png = try directory.readFile("clipboard-png", limit: pngSize)
+                let tiff = try directory.readFile("clipboard-tiff", limit: tiffSize)
+                guard png.count == pngSize, tiff.count == tiffSize,
+                      png.starts(with: [0x89, 0x50, 0x4e, 0x47, 13, 10, 26, 10]),
+                      tiff.starts(with: [0x49, 0x49, 42, 0]) || tiff.starts(with: [0x4d, 0x4d, 0, 42]) else { throw MediaFailure.invalidProtocol }
+                return Clipboard(png: png, tiff: tiff, reservation: reservation)
             }
-        } catch {
-            return .failure(.notImage)
         }
-        return image(at: url).map { .success($0) } ?? .failure(.notImage)
     }
 
-    /// The image at `url` with its size in points; nil when it is not an image.
-    static func image(at url: URL) -> AskPluginImage? {
-        guard let source = CGImageSourceCreateWithURL(url as CFURL, nil), let size = size(of: source) else {
-            return nil
-        }
-        return AskPluginImage(url: url, width: size.width, height: size.height)
+    static func work<T: Sendable>(_ operation: @escaping @Sendable (AskSearchCancellation) throws -> T) async throws -> T {
+        try Task.checkCancellation()
+        let slot = try admission.acquire(bytes: 1)
+        defer { withExtendedLifetime(slot) {} }
+        let cancellation = AskSearchCancellation()
+        return try await withTaskCancellationHandler {
+            try Task.checkCancellation()
+            let result = try await Task.detached(priority: .utility) {
+                if cancellation.isCancelled { throw CancellationError() }
+                return try operation(cancellation)
+            }.value
+            try Task.checkCancellation()
+            return result
+        } onCancel: { cancellation.cancel() }
     }
-
-    /// Pixel size, halved for images marked as 144 dpi (a Retina screenshot shows at its real size).
-    private static func size(of source: CGImageSource) -> (width: Double, height: Double)? {
-        guard CGImageSourceGetCount(source) > 0,
-              let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
-              let width = (properties[kCGImagePropertyPixelWidth] as? NSNumber)?.doubleValue,
-              let height = (properties[kCGImagePropertyPixelHeight] as? NSNumber)?.doubleValue,
-              width > 0, height > 0 else { return nil }
-        let dpi = (properties[kCGImagePropertyDPIWidth] as? NSNumber)?.doubleValue ?? 72
-        let scale = dpi >= 144 ? 2.0 : 1.0
-        return (width / scale, height / scale)
+    static func hash(_ data: Data) -> String { SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined() }
+    static func read(_ url: URL) throws -> Data {
+        guard url.isFileURL else { throw MediaFailure.unreadable }
+        let fd = open(url.path, O_RDONLY | O_NONBLOCK | O_CLOEXEC)
+        guard fd >= 0 else { throw MediaFailure.unreadable }
+        let handle = FileHandle(fileDescriptor: fd, closeOnDealloc: true)
+        defer { try? handle.close() }
+        var info = stat()
+        guard fstat(fd, &info) == 0, info.st_mode & S_IFMT == S_IFREG, info.st_size <= maximumDataBytes else { throw MediaFailure.tooLarge }
+        let data = try handle.read(upToCount: maximumDataBytes + 1) ?? Data()
+        guard !data.isEmpty, data.count <= maximumDataBytes else { throw MediaFailure.tooLarge }
+        return data
     }
-
-    private static func fileExtension(for type: String) -> String {
-        switch type {
-        case "public.jpeg": "jpg"
-        case "com.compuserve.gif": "gif"
-        case "org.webmproject.webp": "webp"
-        case "public.tiff": "tiff"
-        case "public.heic": "heic"
-        default: "png"
+    private static func save(_ data: Data, digest: String, type: MediaWorkflowFormat, cache: URL) throws -> URL {
+        let directory = try AskSecureDirectory.openRoot(cache.appendingPathComponent("images"))
+        try directory.lock()
+        let name = String(digest.prefix(24)) + "." + type.fileExtension
+        let entries = directory.entries(limit: 129)
+        if entries.contains(name) {
+            guard try directory.readFile(name, limit: maximumDataBytes) == data else { throw MediaFailure.unreadable }
+        } else {
+            guard entries.count < 128 else { throw MediaFailure.unavailable }
+            var size = data.count
+            for entry in entries {
+                var info = stat()
+                guard fstatat(directory.descriptor, entry, &info, AT_SYMLINK_NOFOLLOW) == 0,
+                      info.st_mode & S_IFMT == S_IFREG, info.st_size >= 0, info.st_size <= maximumDataBytes else { throw MediaFailure.unavailable }
+                size += Int(info.st_size)
+            }
+            guard size <= 256 * 1024 * 1024 else { throw MediaFailure.unavailable }
+            try directory.createFile(name, data: data)
         }
+        return try directory.url.appendingPathComponent(name)
     }
 }

@@ -15,7 +15,8 @@ public enum MediaFailure: String, Error, Codable, Sendable {
 }
 
 public struct MediaRequest: Codable, Sendable {
-    public enum Operation: String, Codable, Sendable { case image, pdf, validateGeneratedImage, normalizeImage, previewImage, previewPDF, previewVideo, previewAudio
+    public enum Operation: String, Codable, Sendable { case image, pdf, inspectWorkflowImage, copyWorkflowImage, validateGeneratedImage, normalizeImage, previewImage, previewPDF, previewVideo, previewAudio
+        public var isWorkflowImage: Bool { self == .inspectWorkflowImage || self == .copyWorkflowImage }
         public var isAV: Bool { self == .previewVideo || self == .previewAudio }
     }
     public var version = 1
@@ -54,6 +55,7 @@ public struct MediaResponse: Codable, Sendable {
     public var items: [MediaItem]
     public var failure: MediaFailure?
     public var normalization: MediaImageType?
+    public var workflowImage: MediaWorkflowImage?
     public var generatedImage: MediaGeneratedImage?
     public var preview: MediaPreviewResult?
     public init(id: UUID, items: [MediaItem] = [], failure: MediaFailure? = nil) {
@@ -65,9 +67,15 @@ public struct MediaResponse: Codable, Sendable {
         try request.validate()
         guard version == 1, id == request.id else { throw MediaFailure.invalidProtocol }
         if let failure {
-            guard items.isEmpty, preview == nil, normalization == nil, generatedImage == nil else { throw MediaFailure.invalidProtocol }
+            guard items.isEmpty, preview == nil, normalization == nil, generatedImage == nil, workflowImage == nil else { throw MediaFailure.invalidProtocol }
             throw failure
         }
+        if request.operation.isWorkflowImage {
+            guard items.isEmpty, preview == nil, normalization == nil, generatedImage == nil, let workflowImage else { throw MediaFailure.invalidProtocol }
+            try workflowImage.validate(copying: request.operation == .copyWorkflowImage)
+            return
+        }
+        guard workflowImage == nil else { throw MediaFailure.invalidProtocol }
         if request.operation == .validateGeneratedImage {
             guard items.isEmpty, preview == nil, normalization == nil, let generatedImage else { throw MediaFailure.invalidProtocol }
             try generatedImage.validate()

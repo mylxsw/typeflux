@@ -352,10 +352,9 @@ extension AskConversationModel {
             finishPluginResult()
             revealFile(url)
             return .close
-        case let .copyImage(url):
-            guard AskQuickResults.copyImage(url) else { confirm(L("ask.workflow.image.copyFailed")); return .stay }
-            finishPluginResult()
-            return .close
+        case .copyImage:
+            // The composer owns asynchronous preparation and post-await authorization.
+            return .stay
         case let .runWith(text):
             launcherDraft.text = text
             if plugins.plugin?.id == AskTranslatePlugin.id, plugins.output?.items.isEmpty == false {

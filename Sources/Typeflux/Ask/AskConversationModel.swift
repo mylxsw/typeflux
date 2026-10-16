@@ -41,7 +41,7 @@ final class AskConversationModel: ObservableObject {
     @Published var launcherHistoryMode = false
     @Published var launcherHistoryIndex = 0
     @Published var launcherHistoryFillID: UUID?
-    @Published var launcherPresentationID = UUID() { didSet { cancelAttachmentWork(launcher: true); launcherImageScope.invalidate() } }
+    @Published var launcherPresentationID = UUID() { didSet { cancelAttachmentWork(launcher: true); launcherImageScope.invalidate(); workflowImageCopyTask?.cancel() } }
     var launcherExecutedInput: String?
     /// Files and folders the launcher can open; tests supply their own.
     var fileIndex: any AskFileSearching = AskFileIndex.shared
@@ -92,6 +92,7 @@ final class AskConversationModel: ObservableObject {
     var lookUpInWordBook: @MainActor (String) -> Void = { text in
         AskWordBookWindowController.shared.show(lookingUp: text)
     }
+    var workflowImageCopyTask: Task<Void, Never>?
     /// Saved AI prompt results; the window controller supplies them (`AskConversationModel+Notes`).
     var notebookTask: Task<Void, Never>?
     var notebookReadTask: Task<Bool, Never>?
@@ -548,6 +549,7 @@ final class AskConversationModel: ObservableObject {
     }
 
     func resetSession() {
+        workflowImageCopyTask?.cancel()
         launcherImageScope.invalidate(); conversationImageScope.invalidate()
         cancelAttachmentWork()
         notebookTask?.cancel()

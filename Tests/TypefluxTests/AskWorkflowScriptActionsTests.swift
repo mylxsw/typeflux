@@ -254,50 +254,50 @@ struct AskWorkflowImageTests {
         return folder
     }
 
-    @Test func `paths are read from the folder home or anywhere`() throws {
+    @Test func `paths are read from the folder home or anywhere`() async throws {
         let folder = try folder()
         defer { try? FileManager.default.removeItem(at: folder) }
         try askWorkflowTestPNG(width: 40, height: 20).write(to: folder.appendingPathComponent("out/qr.png"))
         let cache = folder.appendingPathComponent("cache")
-        let relative = try AskWorkflowImage.resolve(
+        let relative = try await AskWorkflowImage.resolve(
             "out/qr.png\nignored",
             folder: folder,
             cache: cache,
             home: "/nowhere"
         ).get()
         #expect(relative.url.lastPathComponent == "qr.png" && relative.width == 40 && relative.height == 20)
-        let absolute = try AskWorkflowImage.resolve(folder.path + "/out/qr.png", folder: URL(fileURLWithPath: "/"),
+        let absolute = try await AskWorkflowImage.resolve(folder.path + "/out/qr.png", folder: URL(fileURLWithPath: "/"),
                                                     cache: cache, home: "/nowhere").get()
         #expect(absolute.url.path.hasSuffix("out/qr.png"))
-        #expect((try? AskWorkflowImage.resolve("~/out/qr.png", folder: cache, cache: cache, home: folder.path).get()) !=
+        #expect((try? await AskWorkflowImage.resolve("~/out/qr.png", folder: cache, cache: cache, home: folder.path).get()) !=
             nil)
-        #expect((try? AskWorkflowImage.resolve(URL(fileURLWithPath: folder.path + "/out/qr.png").absoluteString,
+        #expect((try? await AskWorkflowImage.resolve(URL(fileURLWithPath: folder.path + "/out/qr.png").absoluteString,
                                                folder: cache, cache: cache, home: "/").get()) != nil)
-        #expect(AskWorkflowImage.resolve("missing.png", folder: folder, cache: cache, home: "/")
+        #expect(await AskWorkflowImage.resolve("missing.png", folder: folder, cache: cache, home: "/")
             == .failure(.notFound("missing.png")))
-        #expect(AskWorkflowImage.resolve("", folder: folder, cache: cache, home: "/") == .failure(.notFound("")))
-        #expect(AskWorkflowImage.resolve("../escape.png", folder: folder, cache: cache, home: "/")
+        #expect(await AskWorkflowImage.resolve("", folder: folder, cache: cache, home: "/") == .failure(.notFound("")))
+        #expect(await AskWorkflowImage.resolve("../escape.png", folder: folder, cache: cache, home: "/")
             == .failure(.notFound("../escape.png")), "relative paths stay in the folder")
         try Data("not an image".utf8).write(to: folder.appendingPathComponent("out/fake.png"))
-        #expect(AskWorkflowImage
+        #expect(await AskWorkflowImage
             .resolve("out/fake.png", folder: folder, cache: cache, home: "/") == .failure(.notImage))
     }
 
-    @Test func `data UR ls are saved once to the cache`() throws {
+    @Test func `data UR ls are saved once to the cache`() async throws {
         let folder = try folder()
         defer { try? FileManager.default.removeItem(at: folder) }
         let cache = folder.appendingPathComponent("cache")
         let url = try "data:image/png;base64," + askWorkflowTestPNG(width: 8, height: 6).base64EncodedString()
-        let first = try AskWorkflowImage.resolve(url, folder: folder, cache: cache, home: "/").get()
+        let first = try await AskWorkflowImage.resolve(url, folder: folder, cache: cache, home: "/").get()
         #expect(first.url.deletingLastPathComponent().lastPathComponent == "images")
         #expect(first.url.pathExtension == "png" && first.width == 8 && first.height == 6)
-        let second = try AskWorkflowImage.resolve("  " + url + "\n", folder: folder, cache: cache, home: "/").get()
+        let second = try await AskWorkflowImage.resolve("  " + url + "\n", folder: folder, cache: cache, home: "/").get()
         #expect(second == first)
         #expect(try FileManager.default.contentsOfDirectory(atPath: first.url.deletingLastPathComponent().path)
             .count == 1)
-        #expect(AskWorkflowImage.resolve("data:text/plain;base64,aGk=", folder: folder, cache: cache, home: "/")
+        #expect(await AskWorkflowImage.resolve("data:text/plain;base64,aGk=", folder: folder, cache: cache, home: "/")
             == .failure(.notImage))
-        #expect(AskWorkflowImage.resolve("data:image/png;base64,aGk=", folder: folder, cache: cache, home: "/")
+        #expect(await AskWorkflowImage.resolve("data:image/png;base64,aGk=", folder: folder, cache: cache, home: "/")
             == .failure(.notImage), "base64 that is no image")
         #expect(AskWorkflowImage.dataURL("data:image/png,raw") == nil && AskWorkflowImage
             .dataURL("data:image/png") == nil)
@@ -328,20 +328,23 @@ struct AskWorkflowImageTests {
         #expect(image - text == 200 - AskPluginResultsView.bodyHeight("a.png"))
     }
 
-    @Test @MainActor func `copying an image puts the image and the file on the pasteboard`() throws {
+    @Test @MainActor func `copying an image puts the image and the file on the pasteboard`() async throws {
         let folder = try folder()
         defer { try? FileManager.default.removeItem(at: folder) }
         let file = folder.appendingPathComponent("a.png")
         try askWorkflowTestPNG().write(to: file)
         let pasteboard = NSPasteboard(name: NSPasteboard.Name("wf-image-\(UUID().uuidString)"))
         defer { pasteboard.releaseGlobally() }
-        #expect(AskQuickResults.copyImage(file, to: pasteboard))
+        let clipboard = try await AskWorkflowImage.clipboard(file)
+        #expect(AskQuickResults.copyImage(file, data: clipboard, to: pasteboard))
         #expect(pasteboard.pasteboardItems?.count == 1)
         #expect(pasteboard.data(forType: .png) != nil && pasteboard.data(forType: .tiff) != nil)
         #expect(pasteboard.string(forType: .fileURL) == file.absoluteString)
-        #expect(!AskQuickResults.copyImage(folder.appendingPathComponent("none.png"), to: pasteboard))
-        #expect(AskPluginResultsView.loadImage(file) != nil && AskPluginResultsView.loadImage(file) != nil)
-        #expect(AskPluginResultsView.loadImage(folder.appendingPathComponent("none.png")) == nil)
+        let image = try await AskWorkflowImage.resolve(file.path, folder: folder, cache: folder.appendingPathComponent("cache"), home: "/").get()
+        #expect(try await AskWorkflowImage.render(image).images.count == 1)
+        do { _ = try await AskWorkflowImage.clipboard(folder.appendingPathComponent("none.png")); Issue.record("Missing file accepted") }
+        catch {}
+
     }
 }
 
@@ -391,7 +394,7 @@ struct AskWorkflowO4PluginTests {
             output: ["display": "image"]
         )
         let image = try #require(try result.get().image)
-        #expect(image.url.path.hasPrefix(AskWorkflow.cacheDirectory(for: "local.a", home: fixture.home.path).path))
+        #expect(image.url.resolvingSymlinksInPath().path.hasPrefix(AskWorkflow.cacheDirectory(for: "local.a", home: fixture.home.path).resolvingSymlinksInPath().path))
     }
 
     @Test func `what is not an image says why`() async throws {
@@ -401,7 +404,8 @@ struct AskWorkflowO4PluginTests {
         #expect(card.action(for: .enter)?.kind == .copy("nope.png"))
         let (data, _) = try await run("print -r -- 'data:image/png;base64,aGVsbG8='", output: ["display": "image"])
         let broken = try data.get()
-        #expect(broken.note == L("ask.workflow.image.invalid") && broken.body.count <= 61)
+        #expect(broken.action(for: .enter)?.kind == .copy("data:image/png;base64,aGVsbG8="))
+        #expect(broken.note == L("ask.workflow.image.invalid") && broken.body == AskWorkflowActionRunner.clipped("data:image/png;base64,aGVsbG8=", limit: 60))
     }
 
     @Test func `script actions follow the configured ones when allowed`() async throws {

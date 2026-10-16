@@ -63,7 +63,7 @@ struct AskWorkflowDeveloperToolsTests {
         let result = try await run(fixture, "qr", query: "你好 Typeflux")
         #expect(result.succeeded, "\(result.stderr)")
         let folder = try #require(fixture.store.workflow("local.qr")?.folder)
-        let resolved = AskWorkflowImage.resolve(result.stdout, folder: folder,
+        let resolved = await AskWorkflowImage.resolve(result.stdout, folder: folder,
                                                 cache: fixture.home.appendingPathComponent("qr-cache"),
                                                 home: fixture.home.path)
         guard case let .success(image) = resolved

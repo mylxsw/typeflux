@@ -102,6 +102,7 @@ extension AskConversationModel {
         })
     }
     func invalidateRemoteImages() {
+        workflowImageCopyTask?.cancel()
         remoteImageScope.invalidate(); conversationImageScope.invalidate(); launcherImageScope.invalidate(); objectWillChange.send()
     }
     func setRemoteImagesVisible(_ visible: Bool) {
