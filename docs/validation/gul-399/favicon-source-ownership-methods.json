@@ -1,0 +1,41 @@
+{
+  "baseline": "07a5bcf91f129f07cc606318ff829d356cb8ce99",
+  "methods": [
+    "TypefluxTests.SmallIconIsolationTests/testCacheHasStrictCapacityAndNeverCachesOversizedDecoderResults",
+    "TypefluxTests.SmallIconIsolationTests/testCancelledDownloadsRetainAdmissionUntilUncooperativeCompletion",
+    "TypefluxTests.SmallIconIsolationTests/testInputAndOutputLimitsRefuseBeforeNativeWork",
+    "TypefluxTests.SmallIconIsolationTests/testRevocationDuringDecodeRejectsLatePixels",
+    "TypefluxTests.SmallIconIsolationTests/testScopeInvalidationAndFreshAuthorizationCannotBlessOldCache",
+    "TypefluxTests.SmallIconIsolationTests/testSharedWaitersAreBoundedAndOneCancellationDoesNotCancelOthers",
+    "TypefluxTests.SmallIconIsolationTests/testSmallPixelBudgetIsReservedBeforeDecodeAndReleasedOnRevocation",
+    "TypefluxTests.ContextImageSourceOwnershipTests/callbacksInvalidatingEntryOriginalOrDeduplicationCannotAuthorizeMoreWork()",
+    "TypefluxTests.ContextImageSourceOwnershipTests/canceledBeforeOrInsideEntryAccessCannotReplaceOwnedState()",
+    "TypefluxTests.ContextImageSourceOwnershipTests/failedIdentityNeverRetriesFromFreshAccessGettersOrBodyLikeReloads()",
+    "TypefluxTests.ContextImageSourceOwnershipTests/heldOldSuccessOrFailureCannotClearReplacementAndKeepsPixelLease()",
+    "TypefluxTests.ContextImageSourceOwnershipTests/projectionRetainsOriginalAccessAndRejectsCallbackInvalidation()",
+    "TypefluxTests.ContextImageSourceOwnershipTests/staleDeniedSameEpochAndForeignScopeCannotClearSuccessOrFailure()",
+    "TypefluxTests.ContextImageSourceOwnershipTests/terminalCallbacksCannotPublishPixelsOrRestoreOldFailure(_:)",
+    "TypefluxTests.FaviconBatchAuthorityTests/canceledUncooperativeLoadersKeepPendingCapacityUntilCollected()",
+    "TypefluxTests.FaviconBatchAuthorityTests/canceledUncooperativeNativeKeepsSlotsAndCannotCacheLatePixels()",
+    "TypefluxTests.FaviconBatchAuthorityTests/customActorDecoderRemainsIndependentAndInputRefusalsKeepBounds()",
+    "TypefluxTests.FaviconBatchAuthorityTests/originalNativeCheckAfterFinalAccessCallbackPreventsCachePublication()",
+    "TypefluxTests.FaviconBatchAuthorityTests/preReadyFailureKeepsCooldownAndNeedsExplicitRequestAfterExpiry()",
+    "TypefluxTests.FaviconBatchAuthorityTests/scopeReplacementKeepsFreshDefaultResultAfterOldLoaderReturns()",
+    "TypefluxTests.FaviconBatchAuthorityTests/sharedWaitersKeepOriginalStampAcrossHeldLoaderAndRecovery()",
+    "TypefluxTests.FaviconSourceOwnershipTests/accessRetirementAfterBindingStillPreventsPendingAdmission(cancelTask:)",
+    "TypefluxTests.FaviconSourceOwnershipTests/cancellationInsideIncomingAccessCannotReplaceCurrentCacheOrStartLoader()",
+    "TypefluxTests.FaviconSourceOwnershipTests/getterRequiresOriginalAuthorityAndExactScopeWithoutStartingWork()",
+    "TypefluxTests.FaviconSourceOwnershipTests/oldHeldCompletionCannotOverwriteFreshScopeOrKeepOldFailure(failed:)",
+    "TypefluxTests.FaviconSourceOwnershipTests/originalCallbacksDuringDedupeOrDenialCannotContinueOldEntry()",
+    "TypefluxTests.FaviconSourceOwnershipTests/staleDeniedAndCanceledEntriesPreserveOwnedSuccessOrFailure(failed:)",
+    "TypefluxTests.FaviconSourceOwnershipTests/terminalCallbackRetirementCannotPublishPixelsOrNegativeCache(failed:)"
+  ],
+  "result": "28/28 distinct methods passed first functional run: 7 XCTest in one suite + 21 Swift Testing in three suites. Seven new methods with eleven cases; terminal cases additionally exercise owner/scope/Task retirement.",
+  "distinct_passing_methods": 28,
+  "exclusions": [
+    "All browser real image encoding/default-helper/window methods; SmallIconIsolation decoder-admission fixture calls png() despite injected runner",
+    "SystemClipboardContentActions, named pasteboards, AskConversationModel/AskTestFixture and production app/home/file-index objects",
+    "Actual HTTP/URLSession, native application-icon fallback/OSQuickLook, real model/media/permissions/document indexing/resource matrices/full suite"
+  ],
+  "fixtures": "Actual small cache and context model with private raw CGImage/custom decoders; existing favicon default managed worker tests use private loaders/validated JSON/RGBA and private health stores. No helper/codec/network execution."
+}
