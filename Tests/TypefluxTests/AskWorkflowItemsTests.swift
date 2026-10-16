@@ -324,9 +324,9 @@ struct AskPluginListViewTests {
         #expect(AskPluginItemIcon.symbolName(.symbol("wifi")) == "wifi")
         #expect(AskPluginItemIcon.symbolName(.symbol("no.such.symbol.anywhere")) == nil)
         #expect(AskPluginItemIcon.symbolName(nil) == nil && AskPluginItemIcon.image(.symbol("wifi")) == nil)
-        #expect(AskPluginItemIcon.image(.fileType("public.folder")) != nil)
+        #expect(AskPluginItemIcon.image(.fileType("public.folder")) == nil)
         #expect(AskPluginItemIcon.image(.fileIcon(URL(fileURLWithPath: "/no/such/file"))) == nil)
-        #expect(AskPluginItemIcon.image(.fileIcon(URL(fileURLWithPath: NSTemporaryDirectory()))) != nil)
+        #expect(AskPluginItemIcon.image(.fileIcon(URL(fileURLWithPath: NSTemporaryDirectory()))) == nil)
         let png = FileManager.default.temporaryDirectory.appendingPathComponent("tf-icon-\(UUID().uuidString).png")
         defer { try? FileManager.default.removeItem(at: png) }
         let image = NSImage(size: NSSize(width: 4, height: 4))

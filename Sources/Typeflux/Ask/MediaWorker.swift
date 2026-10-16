@@ -41,12 +41,13 @@ final class MediaWorker: @unchecked Sendable {
     }
 
     /// Result extraction finishes before the private directory can be retired.
-    func perform<T>(_ operation: MediaRequest.Operation, input: Input, preview: MediaPreviewOptions? = nil, normalization: MediaImageType? = nil,
+    func perform<T>(_ operation: MediaRequest.Operation, input: Input, preview: MediaPreviewOptions? = nil, normalization: MediaImageType? = nil, icon: MediaNativeIcon? = nil,
                     isCancelled: @escaping @Sendable () -> Bool,
                     extract: (MediaResponse, Int32) throws -> T) throws -> T {
         var request = MediaRequest(operation: operation)
         request.preview = preview
         request.normalization = normalization
+        request.icon = icon
         try request.validate()
         let encoded = try JSONEncoder().encode(request)
         guard encoded.count <= (preview == nil ? MediaLimits.requestBytes : MediaPreviewOptions.requestBytes)
