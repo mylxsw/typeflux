@@ -9,15 +9,18 @@ final class OllamaLocalModelManager: OllamaModelManaging {
     private let fileManager = FileManager.default
     private let analyticsReporter: AnalyticsEventReporting
     private let session: URLSession
+    private let pullReporter: OllamaPullProgressReporting
 
     init(
         analyticsReporter: AnalyticsEventReporting = NoopAnalyticsEventReporter.shared,
         commandRunner: ProcessCommandRunning = ProcessCommandRunner(),
-        session: URLSession = .shared
+        session: URLSession = .shared,
+        pullReporter: OllamaPullProgressReporting = NoopOllamaPullProgressReporter.shared
     ) {
         self.analyticsReporter = analyticsReporter
         self.commandRunner = commandRunner
         self.session = session
+        self.pullReporter = pullReporter
     }
 
     func ensureModelReady(settingsStore: SettingsStore) async throws {
@@ -49,7 +52,7 @@ final class OllamaLocalModelManager: OllamaModelManaging {
             ]
             analyticsReporter.report(eventName: "model_download_started", properties: baseProperties)
             do {
-                _ = try await commandRunner.run(executablePath: executable, arguments: ["pull", model])
+                try await pull(model: model, baseURL: baseURL)
                 var properties = baseProperties
                 properties["duration_ms"] = String(startedAt.duration(to: .now).milliseconds)
                 properties["status"] = "succeeded"
@@ -66,6 +69,63 @@ final class OllamaLocalModelManager: OllamaModelManaging {
                 )
                 throw error
             }
+        }
+    }
+
+    /// Pulls through the HTTP API rather than `ollama pull`, so the download reports its bytes.
+    private func pull(model: String, baseURL: URL) async throws {
+        let session = session, reporter = pullReporter
+        let task = Task {
+            try await Self.streamPull(model: model, baseURL: baseURL, session: session) { completed, total in
+                reporter.pullProgressed(model: model, completed: completed, total: total)
+            }
+        }
+        reporter.pullStarted(model: model, cancel: { task.cancel() })
+        do {
+            try await withTaskCancellationHandler {
+                try await task.value
+            } onCancel: {
+                task.cancel()
+            }
+            reporter.pullFinished(model: model, error: nil)
+        } catch {
+            // URLSession reports a cancelled stream as a URL error; callers expect cancellation.
+            let failure: Error = task.isCancelled ? CancellationError() : error
+            reporter.pullFinished(model: model, error: failure)
+            throw failure
+        }
+    }
+
+    static func streamPull(
+        model: String,
+        baseURL: URL,
+        session: URLSession,
+        progress: (_ completed: Int64, _ total: Int64) -> Void
+    ) async throws {
+        var request = URLRequest(url: baseURL.appendingPathComponent("api/pull"))
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.httpBody = try JSONSerialization.data(withJSONObject: ["model": model, "stream": true])
+        // The stream goes quiet while Ollama verifies large layers.
+        request.timeoutInterval = 300
+        let (bytes, response) = try await session.bytes(for: request)
+        guard let http = response as? HTTPURLResponse else { throw URLError(.badServerResponse) }
+        var state = OllamaPullProgress()
+        guard (200 ..< 300).contains(http.statusCode) else {
+            for try await line in bytes.lines {
+                try state.apply(line: line)
+            }
+            throw OllamaPullProgress.Failure(message: "Ollama pull failed with HTTP \(http.statusCode).")
+        }
+        for try await line in bytes.lines {
+            try Task.checkCancellation()
+            if try state.apply(line: line) {
+                progress(state.completed, state.total)
+            }
+        }
+        try Task.checkCancellation()
+        guard state.succeeded else {
+            throw OllamaPullProgress.Failure(message: "The Ollama pull ended before the model was ready.")
         }
     }
 

@@ -62,10 +62,10 @@ final class OllamaModelDownloadAnalyticsTests: XCTestCase {
         let reporter = RecordingAnalyticsReporter()
         let manager = OllamaLocalModelManager(
             analyticsReporter: reporter,
-            commandRunner: AnalyticsOllamaCommandRunner(result: .success),
+            commandRunner: AnalyticsOllamaCommandRunner(),
             session: makeOllamaSession()
         )
-        let (store, defaults, suite) = makeOllamaSettings()
+        let (store, defaults, suite) = makeOllamaSettings(.success)
         defer { defaults.removePersistentDomain(forName: suite) }
 
         try await manager.ensureModelReady(settingsStore: store)
@@ -80,10 +80,10 @@ final class OllamaModelDownloadAnalyticsTests: XCTestCase {
         let reporter = RecordingAnalyticsReporter()
         let manager = OllamaLocalModelManager(
             analyticsReporter: reporter,
-            commandRunner: AnalyticsOllamaCommandRunner(result: .failure),
+            commandRunner: AnalyticsOllamaCommandRunner(),
             session: makeOllamaSession()
         )
-        let (store, defaults, suite) = makeOllamaSettings()
+        let (store, defaults, suite) = makeOllamaSettings(.failure)
         defer { defaults.removePersistentDomain(forName: suite) }
 
         do {
@@ -99,10 +99,11 @@ final class OllamaModelDownloadAnalyticsTests: XCTestCase {
         let reporter = RecordingAnalyticsReporter()
         let manager = OllamaLocalModelManager(
             analyticsReporter: reporter,
-            commandRunner: AnalyticsOllamaCommandRunner(result: .cancelled),
-            session: makeOllamaSession()
+            commandRunner: AnalyticsOllamaCommandRunner(),
+            session: makeOllamaSession(),
+            pullReporter: CancellingPullReporter()
         )
-        let (store, defaults, suite) = makeOllamaSettings()
+        let (store, defaults, suite) = makeOllamaSettings(.cancelled)
         defer { defaults.removePersistentDomain(forName: suite) }
 
         do {
@@ -113,11 +114,11 @@ final class OllamaModelDownloadAnalyticsTests: XCTestCase {
         }
     }
 
-    private func makeOllamaSettings() -> (SettingsStore, UserDefaults, String) {
+    private func makeOllamaSettings(_ result: AnalyticsOllamaPullResult) -> (SettingsStore, UserDefaults, String) {
         let suite = "OllamaModelDownloadAnalyticsTests-\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suite)!
         let store = SettingsStore(defaults: defaults)
-        store.ollamaBaseURL = "http://ollama.test:11434"
+        store.ollamaBaseURL = "http://\(result.host):11434"
         store.ollamaModel = "qwen-test:latest"
         store.ollamaAutoSetup = false
         return (store, defaults, suite)
@@ -159,11 +160,20 @@ private struct CancellingAnalyticsTestInstaller: SherpaOnnxModelInstalling {
     ) async throws -> String { throw CancellationError() }
 }
 
-private enum AnalyticsOllamaPullResult: Sendable { case success, failure, cancelled }
+/// The pull's outcome, chosen by the host the test points Ollama at.
+private enum AnalyticsOllamaPullResult: String, Sendable {
+    case success, failure, cancelled
+    var host: String { "\(rawValue).ollama.test" }
+}
+
+/// Cancels every pull as soon as it starts.
+private final class CancellingPullReporter: OllamaPullProgressReporting {
+    func pullStarted(model _: String, cancel: @escaping @Sendable () -> Void) { cancel() }
+    func pullProgressed(model _: String, completed _: Int64, total _: Int64) {}
+    func pullFinished(model _: String, error _: Error?) {}
+}
 
 private struct AnalyticsOllamaCommandRunner: ProcessCommandRunning {
-    let result: AnalyticsOllamaPullResult
-
     func run(
         executablePath: String,
         arguments: [String],
@@ -173,13 +183,7 @@ private struct AnalyticsOllamaCommandRunner: ProcessCommandRunning {
         if executablePath == "/usr/bin/env" && arguments == ["which", "ollama"] {
             return ProcessCommandResult(stdout: "/test/ollama\n", stderr: "", exitCode: 0)
         }
-        if arguments.first == "pull" {
-            switch result {
-            case .success: break
-            case .failure: throw NSError(domain: "OllamaModelDownloadAnalyticsTests", code: 1)
-            case .cancelled: throw CancellationError()
-            }
-        }
+        XCTAssertNotEqual(arguments.first, "pull", "models are pulled through the HTTP API")
         return ProcessCommandResult(stdout: "", stderr: "", exitCode: 0)
     }
 }
@@ -190,8 +194,22 @@ private final class AnalyticsOllamaURLProtocol: URLProtocol, @unchecked Sendable
     override func startLoading() {
         let response = HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: nil, headerFields: nil)!
         client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
-        client?.urlProtocol(self, didLoad: Data(#"{"models":[]}"#.utf8))
-        client?.urlProtocolDidFinishLoading(self)
+        guard request.url?.path == "/api/pull" else {
+            client?.urlProtocol(self, didLoad: Data(#"{"models":[]}"#.utf8))
+            client?.urlProtocolDidFinishLoading(self)
+            return
+        }
+        switch request.url?.host {
+        case AnalyticsOllamaPullResult.success.host:
+            client?.urlProtocol(self, didLoad: Data("{\"status\":\"pulling manifest\"}\n{\"status\":\"success\"}\n".utf8))
+            client?.urlProtocolDidFinishLoading(self)
+        case AnalyticsOllamaPullResult.failure.host:
+            client?.urlProtocol(self, didLoad: Data("{\"error\":\"pull model manifest: file does not exist\"}\n".utf8))
+            client?.urlProtocolDidFinishLoading(self)
+        default:
+            // A pull that never ends on its own; the test cancels it.
+            client?.urlProtocol(self, didLoad: Data("{\"status\":\"pulling manifest\"}\n".utf8))
+        }
     }
     override func stopLoading() {}
 }

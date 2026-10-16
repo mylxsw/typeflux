@@ -246,8 +246,10 @@ final class AppCoordinator {
                 (screenshotCoordinator?.pins.pinCount ?? 0, screenshotCoordinator?.pins.clickThroughCount ?? 0)
             },
             onRestorePinnedScreenshots: { [weak screenshotCoordinator] in screenshotCoordinator?.pins.restoreMouse() },
-            onClosePinnedScreenshots: { [weak screenshotCoordinator] in screenshotCoordinator?.pins.closeAll() }
+            onClosePinnedScreenshots: { [weak screenshotCoordinator] in screenshotCoordinator?.pins.closeAll() },
+            activityCenter: di.backgroundActivityCenter
         )
+        di.backgroundActivityCenter.onOpen = { [weak self] route in self?.openBackgroundActivity(route) }
         statusBarController?.start()
         di.askConversationWindowController?.model.onOpenHelp = { [weak self] query in
             self?.showHelp(query: query)
@@ -283,6 +285,17 @@ final class AppCoordinator {
             presentOnboarding()
         } else {
             presentPermissionGuidanceIfNeeded()
+        }
+    }
+
+    private func openBackgroundActivity(_ route: BackgroundActivity.Route) {
+        switch route {
+        case .speechModels:
+            statusBarController?.showSpeechModels()
+        case .contentSearchSettings:
+            statusBarController?.showLauncherSettings(.search)
+        case let .conversation(id):
+            di.askConversationWindowController?.model.openConversationFromLauncher(id)
         }
     }
 
