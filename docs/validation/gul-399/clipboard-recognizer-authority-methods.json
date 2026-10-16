@@ -1,0 +1,42 @@
+{
+  "baseline": "2a467deefed717342f997877b91bdb8276210798",
+  "initial_methods": [
+    "TypefluxTests.ClipboardOCRIsolationTests/testCancelledUncooperativeWorkRetainsBothAdmissions",
+    "TypefluxTests.ClipboardOCRIsolationTests/testDuplicateAndOwnerReleaseKeepLateOCRFromCommitting",
+    "TypefluxTests.ClipboardOCRIsolationTests/testExplicitCopyCommitsOnceAndEmptyDiffersFromFailure",
+    "TypefluxTests.ClipboardOCRIsolationTests/testProtocolRejectsMixedIdentityExcessLinesBytesAndControls",
+    "TypefluxTests.ClipboardOCRIsolationTests/testRevocationDeletionHideSourceMutationAndShutdownFenceCopy",
+    "TypefluxTests.ClipboardOCRIsolationTests/testSourceChangeAndOversizeRefuseWithoutPublishingText",
+    "TypefluxTests.ClipboardOCRModuleTests/testCorruptRecordRequiresExplicitResetWithoutRecognitionReplay",
+    "TypefluxTests.ClipboardOCRModuleTests/testExpectedRefusalAndMalformedTextHaveDifferentHealthOutcomes",
+    "TypefluxTests.ClipboardOCRModuleTests/testIndependentPersistentBudgetsFaultsDisableAndQuit",
+    "TypefluxTests.ClipboardOCRModuleTests/testManagedCancellationRetainsCapacityUntilUncooperativeHostReturns",
+    "TypefluxTests.MediaWorkerTests/testBundledAndSwiftPMHelperLocations",
+    "TypefluxTests.MediaWorkerTests/testCancellationBeforeAndAfterDispatchRejectsLateResult",
+    "TypefluxTests.MediaWorkerTests/testCopiedInputIsPrivateAndRemovedOnlyAfterConfirmedCollection",
+    "TypefluxTests.MediaWorkerTests/testMalformedInputFailureDoesNotPoisonOtherAttachments",
+    "TypefluxTests.MediaWorkerTests/testOversizedDataFileMissingFileAndFIFORefusedBeforeSpawn",
+    "TypefluxTests.MediaWorkerTests/testProtocolIdentityFailureAndCooldownNeverReplay",
+    "TypefluxTests.MediaWorkerTests/testShutdownCancelsRunningChildAndRejectsNewWork",
+    "TypefluxTests.MediaWorkerTests/testTwoRetainedChildrenBoundAdmissionAndShutdownFences",
+    "TypefluxTests.ClipboardRecognizerAuthorityTests/actualActionWithFakeActionsDoesNotCommitOrReplayRevokedRecognition()",
+    "TypefluxTests.ClipboardRecognizerAuthorityTests/blankIsNilAndControlledRefusalDoesNotPoisonNativeHealth()",
+    "TypefluxTests.ClipboardRecognizerAuthorityTests/canceledMetadataRetainsBothRecognizerSlotsUntilActualReturn()",
+    "TypefluxTests.ClipboardRecognizerAuthorityTests/canceledNativeWorkRetainsCapacityAndRejectsLateText()",
+    "TypefluxTests.ClipboardRecognizerAuthorityTests/heldMetadataCannotAdoptRecoveredNativeGeneration()",
+    "TypefluxTests.ClipboardRecognizerAuthorityTests/preReadyRetainedAndCanceledInputsCannotInspectMetadata()",
+    "TypefluxTests.ClipboardRecognizerAuthorityTests/validLateNativeReplyAfterRevocationCannotReturnText()"
+  ],
+  "final_methods": [
+    "TypefluxTests.ClipboardRecognizerAuthorityTests/actualActionWithFakeActionsDoesNotCommitOrReplayRevokedRecognition()",
+    "TypefluxTests.ClipboardRecognizerAuthorityTests/blankIsNilAndControlledRefusalDoesNotPoisonNativeHealth()",
+    "TypefluxTests.ClipboardRecognizerAuthorityTests/canceledMetadataRetainsBothRecognizerSlotsUntilActualReturn()",
+    "TypefluxTests.ClipboardRecognizerAuthorityTests/canceledNativeWorkRetainsCapacityAndRejectsLateText()",
+    "TypefluxTests.ClipboardRecognizerAuthorityTests/heldMetadataCannotAdoptRecoveredNativeGeneration()",
+    "TypefluxTests.ClipboardRecognizerAuthorityTests/preReadyRetainedAndCanceledInputsCannotInspectMetadata()",
+    "TypefluxTests.ClipboardRecognizerAuthorityTests/validLateNativeReplyAfterRevocationCannotReturnText()"
+  ],
+  "initial_result": "24/25: 18 XCTest and 6/7 new Swift Testing passed; one fake runner threw typed refusal instead of returning native reply",
+  "final_result": "7/7 affected methods passed after fixture-only correction; other 18 initial passing methods not rerun",
+  "distinct_passing_methods": 25
+}
