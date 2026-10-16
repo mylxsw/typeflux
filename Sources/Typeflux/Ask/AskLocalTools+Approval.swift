@@ -113,7 +113,11 @@ extension AskLocalTools {
             try authorize()
             let result = try await registry.callApproved(serverId: server, toolName: entry.1.tool.toolDef.name,
                                                        arguments: call.function.arguments, binding: binding, authorize: authorize)
-            return await Task.detached(priority: .userInitiated) { Self.output(from: result) }.value
+            let output = await Self.output(from: result)
+            // Execution has already happened. Revocation must not discard its receipt or replay it.
+            do { try authorize(); try Task.checkCancellation() }
+            catch { return AskTypedContent.withoutPreparedImages(output) }
+            return output
         }
         let args = try Self.jsonArguments(call.function.arguments)
         switch call.function.name {
@@ -141,6 +145,11 @@ extension AskLocalTools {
             }
             tool.approvedTarget = binding.target
             return .init(content: try await tool.execute(args))
+        case "run_code":
+            let output = try await execute(call, conversationId: conversationId)
+            do { try authorize(); try Task.checkCancellation() }
+            catch { return AskTypedContent.withoutPreparedImages(output) }
+            return output
         default: return try await execute(call, conversationId: conversationId)
         }
     }

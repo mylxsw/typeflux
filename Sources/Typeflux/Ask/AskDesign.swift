@@ -1251,7 +1251,7 @@ enum AskPresentation {
         case .running: return L("ask.tool.running")
         case .failed: return L("ask.tool.failed")
         default:
-            guard result?.resultImages.isEmpty == false else { return L("ask.tool.done") }
+            guard result?.retainedResultImages.isEmpty == false else { return L("ask.tool.done") }
             let captures = call.map { ["computer", "browser"].contains($0.function.name) } ?? true
             return L(captures ? "ask.image.captured" : "ask.image.generated")
         }

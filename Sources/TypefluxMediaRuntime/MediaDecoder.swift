@@ -14,6 +14,8 @@ public enum MediaDecoder {
         guard data.count <= MediaLimits.inputBytes else { throw MediaFailure.tooLarge }
         let items: [MediaItem]
         switch request.operation {
+        case .normalizeImage:
+            items = [try image(data, type: request.normalization)]
         case .image:
             items = [try image(data)]
         case .pdf:
@@ -21,24 +23,27 @@ public enum MediaDecoder {
         case .previewImage, .previewPDF, .previewVideo, .previewAudio:
             throw MediaFailure.invalidProtocol
         }
-        let response = MediaResponse(id: request.id, items: items)
+        var response = MediaResponse(id: request.id, items: items)
+        response.normalization = request.normalization
         try response.validate(for: request)
         return response
     }
 
-    public static func image(_ data: Data) throws -> MediaItem {
+    public static func image(_ data: Data, type: MediaImageType? = nil) throws -> MediaItem {
         guard data.count <= MediaLimits.inputBytes else { throw MediaFailure.tooLarge }
         guard let source = CGImageSourceCreateWithData(data as CFData,
                     [kCGImageSourceShouldCache: false] as CFDictionary),
+              type == nil || (data.count <= 10 * 1024 * 1024 && CGImageSourceGetType(source) as String? == type?.identifier),
               let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
               let width = properties[kCGImagePropertyPixelWidth] as? Int,
               let height = properties[kCGImagePropertyPixelHeight] as? Int,
               width > 0, height > 0, width <= 100_000, height <= 100_000,
               width <= 100_000_000 / height,
+              type == nil || (width <= 4096 && height <= 4096 && width <= 12_000_000 / height),
               let image = CGImageSourceCreateThumbnailAtIndex(source, 0, [
                 kCGImageSourceCreateThumbnailFromImageAlways: true,
                 kCGImageSourceCreateThumbnailWithTransform: true,
-                kCGImageSourceThumbnailMaxPixelSize: MediaLimits.imageLongEdge
+                kCGImageSourceThumbnailMaxPixelSize: type == nil ? MediaLimits.imageLongEdge : 1600
               ] as CFDictionary), let encoded = jpegDataURL(image) else { throw MediaFailure.unreadable }
         return MediaItem(image: encoded)
     }

@@ -1,5 +1,5 @@
 import Foundation
-import ImageIO
+import TypefluxMediaProtocol
 
 /// Storage and presentation never grant authority or fetch a resource URI.
 enum AskTypedContent {
@@ -25,22 +25,29 @@ enum AskTypedContent {
         return String(decoding: value.utf8.prefix(bytes), as: UTF8.self).replacingOccurrences(of: "\u{fffd}", with: "")
     }
 
-    static func output(from result: MCPToolsCallResult) -> AskLocalToolOutput {
+    static func output(from result: MCPToolsCallResult) async -> AskLocalToolOutput {
         var blocks = result.content.map(\.raw)
         if let value = result.structuredContent { blocks.append(json(["type": "structured_content", "value": object(value)])) }
         if let value = result.metadata { blocks.append(json(["type": "mcp_metadata", "value": object(value)])) }
-        var outcome = bounded(.init(status: result.isError == true ? "unknown" : "ok", content: blocks))
+        let outcome = await prepare(.init(status: result.isError == true ? "unknown" : "ok", content: blocks))
         let projection = project(outcome)
-        if projection.incomplete { outcome.truncated = outcome.truncated ?? false }
-        let legacyImage = projection.images.first.flatMap { url -> String? in
-            guard let comma = url.firstIndex(of: ",") else { return nil }
-            return AskLocalTools.jpegDataURL(base64: String(url[url.index(after: comma)...]))
-        }
+        let legacyImage = projection.images.first
         // A legacy peer must never interpret a partial multi-image result as complete.
         let incomplete = projection.incomplete || projection.images.count > 1
         var text = projection.text
         if projection.images.count > 1 { text += "\n[Multiple images retained; legacy delivery is incomplete]" }
         return AskLocalToolOutput(content: text, image: legacyImage, isError: result.isError == true || incomplete, outcome: outcome)
+    }
+
+    static func withoutPreparedImages(_ output: AskLocalToolOutput) -> AskLocalToolOutput {
+        var copy = output
+        copy.image = nil
+        if copy.outcome == nil { copy.outcome = .init(status: output.isError ? "unknown" : "ok") }
+        copy.outcome?.preparedImages = [:]
+        copy.outcome?.projectionWithheld = true
+        copy.content += "\n[Image projection withheld after cancellation or permission change; execution result retained]"
+        copy.isError = true
+        return copy
     }
 
     static func bounded(_ original: AskExecutionOutcome) -> AskExecutionOutcome {
@@ -64,19 +71,70 @@ enum AskTypedContent {
         return result
     }
 
-    static func imageURL(_ block: [String: Any]) -> String? {
-        guard let mime = block["mimeType"] as? String, ["image/jpeg", "image/png", "image/gif"].contains(mime),
-              let encoded = block["data"] as? String, encoded.utf8.count <= maxBytes,
-              let data = Data(base64Encoded: encoded), let source = CGImageSourceCreateWithData(data as CFData, nil),
-              let kind = CGImageSourceGetType(source) as String?,
-              ["image/jpeg": "public.jpeg", "image/png": "public.png", "image/gif": "com.compuserve.gif"][mime] == kind,
-              let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
-              let width = properties[kCGImagePropertyPixelWidth] as? Int, let height = properties[kCGImagePropertyPixelHeight] as? Int,
-              width > 0, height > 0, width <= 4096, height <= 4096, width * height <= 12000000 else { return nil }
-        return "data:" + mime + ";base64," + encoded
+    /// Read-only preparation. Failure retains the original result and never repeats its producer.
+    static func prepare(_ original: AskExecutionOutcome, limit: Int = 4,
+                        normalize: @Sendable (Data, MediaImageType) async throws -> String = {
+                            try await AskToolImageNormalizer.image($0, type: $1)
+                        }) async -> AskExecutionOutcome {
+        var outcome = bounded(original)
+        outcome.preparedImages = [:]
+        guard outcome.projectionWithheld != true else { return outcome }
+        var attempts = 0, bytes = 0
+        for raw in outcome.content ?? [] {
+            let block = object(raw)
+            guard block["type"] as? String == "image" else { continue }
+            guard !Task.isCancelled, attempts < min(4, limit) else { break }
+            attempts += 1
+            guard let input = imageInput(block) else { continue }
+            let key = AskToolPolicy.digest(raw.data)
+            do {
+                let image = try await normalize(input.data, input.type)
+                guard !Task.isCancelled, AskToolImageNormalizer.valid(image),
+                      bytes + image.utf8.count <= 2_000_000 else { continue }
+                bytes += image.utf8.count
+                outcome.preparedImages[key] = image
+            } catch { /* The outcome, including execution status and raw content, is retained. */ }
+        }
+        return outcome
     }
 
-    static func project(_ outcome: AskExecutionOutcome) -> Projection {
+    /// Prepare only a bounded recent window. Older/unavailable images stay explicitly incomplete.
+    static func prepareHistory(_ messages: [AskMessage]) async -> [AskMessage] {
+        var result = messages, remaining = 8, bytes = 0
+        for index in result.indices { result[index].harness?.outcome?.preparedImages = [:] }
+        for index in messages.indices.suffix(12).reversed() {
+            guard remaining > 0, !Task.isCancelled else { break }
+            guard messages[index].harness?.version == 1, let outcome = messages[index].harness?.outcome,
+                  let content = bounded(outcome).content else { continue }
+            let count = content.filter { object($0)["type"] as? String == "image" }.count
+            guard count > 0 else { continue }
+            var prepared = await prepare(outcome, limit: remaining)
+            remaining -= min(4, count)
+            let size = project(prepared).images.reduce(0) { $0 + $1.utf8.count }
+            if bytes + size > 2_000_000 { prepared.preparedImages = [:] }
+            else { bytes += size }
+            result[index].harness?.outcome = prepared
+            let projection = project(prepared)
+            result[index].image = projection.images.first
+            result[index].text = projection.text + (projection.images.count > 1 ? "\n[Multiple images retained; legacy delivery is incomplete]" : "")
+            result[index].isError = projection.incomplete || projection.images.count > 1 || prepared.safeStatus != .ok
+        }
+        return result
+    }
+
+    static func imageInput(_ block: [String: Any]) -> (data: Data, type: MediaImageType)? {
+        guard let mime = block["mimeType"] as? String, let type = MediaImageType(rawValue: mime),
+              let encoded = block["data"] as? String, encoded.utf8.count <= maxBytes,
+              let data = Data(base64Encoded: encoded), !data.isEmpty else { return nil }
+        return (data, type)
+    }
+
+    static func project(_ original: AskExecutionOutcome) -> Projection {
+        let outcome = bounded(original)
+        if outcome.projectionWithheld == true {
+            return Projection(text: "[Tool executed; result withheld after cancellation or permission change. Do not replay.]", images: [], incomplete: true)
+        }
+        var imageBytes = 0
         var texts: [String] = [], images: [String] = []
         var incomplete = outcome.truncated == true
         for raw in outcome.content ?? [] {
@@ -86,8 +144,10 @@ enum AskTypedContent {
                 if let text = block["text"] as? String { texts.append(text) }
                 else { texts.append("[Invalid text content]"); incomplete = true }
             case "image":
-                if let image = imageURL(block) { images.append(image); texts.append("[Tool image attached]") }
-                else { texts.append("[Unsupported or invalid image retained]"); incomplete = true }
+                if images.count < 4, let image = outcome.preparedImages[AskToolPolicy.digest(raw.data)], imageBytes + image.utf8.count <= 2_000_000 {
+                    images.append(image); imageBytes += image.utf8.count; texts.append("[Tool image attached]")
+                }
+                else { texts.append("[Image retained; projection unavailable or invalid]"); incomplete = true }
             case "structured_content":
                 if let value = block["value"], let data = try? JSONSerialization.data(withJSONObject: value, options: [.sortedKeys, .fragmentsAllowed]) {
                     texts.append("Structured content: " + String(decoding: data, as: UTF8.self))
@@ -125,6 +185,16 @@ extension AskMessage {
         guard harness?.version == 1, let outcome = harness?.outcome, outcome.content != nil else { return text }
         return AskTypedContent.project(outcome).text
     }
+    /// Encoded inputs for an owned asynchronous UI decoder, never a native image getter.
+    var retainedResultImages: [String] {
+        guard harness?.outcome?.projectionWithheld != true else { return [] }
+        guard harness?.version == 1, let content = harness?.outcome?.content else { return image.map { [$0] } ?? [] }
+        return AskTypedContent.bounded(.init(status: "ok", content: content)).content?.compactMap { raw in
+            let block = AskTypedContent.object(raw)
+            guard block["type"] as? String == "image", let input = AskTypedContent.imageInput(block) else { return nil }
+            return "data:" + input.type.rawValue + ";base64," + input.data.base64EncodedString()
+        }.prefix(4).map { $0 } ?? []
+    }
     var resultImages: [String] {
         guard harness?.version == 1, let outcome = harness?.outcome, outcome.content != nil else { return image.map { [$0] } ?? [] }
         return AskTypedContent.project(outcome).images
@@ -132,13 +202,52 @@ extension AskMessage {
 }
 
 extension AskToolResultRequest {
+    func prepared() async -> Self {
+        var copy = self
+        if harness?.version == 1, let outcome = harness?.outcome, outcome.content != nil {
+            copy.harness?.outcome = await AskTypedContent.prepare(outcome)
+        }
+        return copy
+    }
+
     /// The caller supplies a trusted advertisement pinned to this connection/run.
     /// No capability is inferred from a conversation or model-supplied envelope.
     func forPeer(_ peer: AskHarnessContract?, enabled: Set<AskHarnessCapability> = []) -> Self {
         var copy = legacyProjection()
+        if copy.harness?.outcome?.projectionWithheld == true {
+            // Keep the private original in the local receipt, not the network envelope.
+            copy.harness?.outcome?.content = [AskTypedContent.json(["type": "text", "text": copy.content])]
+            copy.harness?.outcome?.artifacts = nil
+            copy.harness?.observation = nil
+        }
         guard AskTypedContent.advertisement.permits(.typedContent, peer: peer, enabled: enabled) else {
             copy.harness = nil
             return copy
+        }
+        if copy.harness?.version == 1, var outcome = copy.harness?.outcome, let content = outcome.content {
+            // The durable local receipt keeps original blocks. Known images on the
+            // network carry only prepared pixels, never an unvalidated fallback.
+            let prepared = outcome.preparedImages
+            var omitted = false, imageCount = 0, imageBytes = 0
+            let wireBlocks = content.map { raw in
+                var block = AskTypedContent.object(raw)
+                guard block["type"] as? String == "image" else { return raw }
+                guard imageCount < 4, let image = prepared[AskToolPolicy.digest(raw.data)],
+                      AskToolImageNormalizer.valid(image), imageBytes + image.utf8.count <= 2_000_000 else {
+                    omitted = true
+                    return AskTypedContent.json(["type": "text", "text": "[Image retained locally; network projection unavailable. Do not replay the tool.]"])
+                }
+                imageCount += 1; imageBytes += image.utf8.count
+                block["mimeType"] = "image/jpeg"
+                block["data"] = String(image.dropFirst("data:image/jpeg;base64,".count))
+                return AskTypedContent.json(block)
+            }
+            outcome.content = wireBlocks
+            if omitted { outcome.truncated = true }
+            outcome = AskTypedContent.bounded(outcome)
+            outcome.preparedImages = [:]
+            copy.isError = copy.isError || outcome.truncated == true
+            copy.harness?.outcome = outcome
         }
         return copy
     }
@@ -157,10 +266,7 @@ extension AskToolResultRequest {
         if original.content != nil {
             let projection = AskTypedContent.project(outcome)
             copy.content = projection.text
-            copy.image = projection.images.first.flatMap { url in
-                guard let comma = url.firstIndex(of: ",") else { return nil }
-                return AskLocalTools.jpegDataURL(base64: String(url[url.index(after: comma)...]))
-            }
+            copy.image = projection.images.first
             if projection.images.count > 1 { copy.content += "\n[Multiple images retained; legacy delivery is incomplete]" }
             copy.isError = isError || projection.incomplete || projection.images.count > 1 || outcome.safeStatus != .ok
         } else { copy.isError = isError || outcome.safeStatus != .ok }

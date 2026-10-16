@@ -2,11 +2,11 @@
 import XCTest
 
 final class AskTypedContentIntegrationTests: XCTestCase {
-    func testActivityUsesModernOutcomeAndShowsEveryImage() throws {
+    func testActivityUsesModernOutcomeAndShowsEveryImage() async throws {
         let call = AskToolCall(id: "c", function: .init(name: "mcp_example", arguments: "{}"))
         let group = AskActivityGroup(id: "a", messages: [.init(id: "a", role: "assistant", text: "", toolCalls: [call], createdAt: Date())])
         var request = AskToolResultRequest(runId: "r", deviceId: "d", toolCallId: "c", content: "", isError: false)
-        request.record(AskTypedContent.output(from: try AskTypedContentTests.result()))
+        request.record(await AskTypedContent.output(from: try AskTypedContentTests.result()))
         var message = request.message(step: 1, now: Date())
         XCTAssertEqual(message.isError, true, "the legacy projection is incomplete")
         XCTAssertEqual(AskPresentation.toolState(result: message), .done)
@@ -27,13 +27,13 @@ final class AskTypedContentIntegrationTests: XCTestCase {
         XCTAssertEqual(AskPresentation.toolState(result: message), .done)
     }
 
-    func testProviderSchemaAndMultipleImagesRetainP07Limits() throws {
+    func testProviderSchemaAndMultipleImagesRetainP07Limits() async throws {
         let fixture = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent().appendingPathComponent("docs/harness/p06-fixtures/schema.json")
         let schema = JSONValue(data: try Data(contentsOf: fixture))
         let original = try JSONSerialization.jsonObject(with: schema.data) as! NSDictionary
         let definitions = [AskToolDefinition(name: "mcp_example", description: "Example", parameters: schema)]
         let image = try AskTypedContentTests.image()
-        let output = AskTypedContent.output(from: .init(content: [.init(type: "image", data: image, mimeType: "image/jpeg"), .init(type: "image", data: image, mimeType: "image/jpeg")], isError: false))
+        let output = await AskTypedContent.output(from: .init(content: [.init(type: "image", data: image, mimeType: "image/jpeg"), .init(type: "image", data: image, mimeType: "image/jpeg")], isError: false))
         var receipt = AskToolResultRequest(runId: "r", deviceId: "d", toolCallId: "c", content: "", isError: false)
         receipt.record(output)
         let call = AskToolCall(id: "c", type: "function", function: .init(name: "mcp_example", arguments: #"{"count":2}"#))
@@ -64,7 +64,7 @@ final class AskTypedContentIntegrationTests: XCTestCase {
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
         defer { try? FileManager.default.removeItem(at:directory) }
         let cache = try AskConversationCache(url:directory.appendingPathComponent("cache.sqlite"))
-        let output = AskTypedContent.output(from:try AskTypedContentTests.result())
+        let output = await AskTypedContent.output(from:try AskTypedContentTests.result())
         var req = AskToolResultRequest(runId:"r",deviceId:"d",toolCallId:"c",content:"",isError:false)
         req.record(output)
         try await cache.saveToolResult(req,owner:"owner")
@@ -73,12 +73,15 @@ final class AskTypedContentIntegrationTests: XCTestCase {
         let reopened = try AskConversationCache(url:directory.appendingPathComponent("cache.sqlite"))
         let receipt = try await reopened.toolResult(id:"r/c",owner:"owner")
         XCTAssertEqual(receipt?.harness?.outcome?.content?.count,7)
-        let saved = try await reopened.load(id:c.id,owner:"owner")
+        var saved = try await reopened.load(id:c.id,owner:"owner")
+        XCTAssertEqual(saved?.messages.first?.resultImages.count, 0)
+        let preparedMessages = await AskTypedContent.prepareHistory(saved?.messages ?? [])
+        saved?.messages = preparedMessages
         XCTAssertEqual(saved?.messages.first?.resultImages.count,2)
         let other = try await reopened.load(id:c.id,owner:"other");XCTAssertNil(other)
         var oldServer = c;oldServer.revision=2;oldServer.messages[0].harness=nil
         try await reopened.save(oldServer,owner:"owner")
         let merged = try await reopened.load(id:c.id,owner:"owner")
-        XCTAssertEqual(merged?.messages.first?.resultImages.count,2)
+        XCTAssertEqual(merged?.messages.first?.retainedResultImages.count,2)
     }
 }

@@ -127,7 +127,7 @@ enum AskActivity {
             guard !["computer", "browser"].contains(name),
                   let result = results.first(where: { $0.toolCallId == call.id }),
                   result.isError != true || result.harness?.outcome != nil else { continue }
-            for (index, image) in result.resultImages.enumerated() {
+            for (index, image) in result.retainedResultImages.enumerated() {
                 value.artifacts.append(.init(id: index == 0 ? call.id : call.id + "/" + String(index),
                                              image: image, toolName: name))
             }

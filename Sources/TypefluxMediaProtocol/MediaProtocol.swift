@@ -15,15 +15,17 @@ public enum MediaFailure: String, Error, Codable, Sendable {
 }
 
 public struct MediaRequest: Codable, Sendable {
-    public enum Operation: String, Codable, Sendable { case image, pdf, previewImage, previewPDF, previewVideo, previewAudio
+    public enum Operation: String, Codable, Sendable { case image, pdf, normalizeImage, previewImage, previewPDF, previewVideo, previewAudio
         public var isAV: Bool { self == .previewVideo || self == .previewAudio }
     }
     public var version = 1
     public var id: UUID
     public var operation: Operation
+    public var normalization: MediaImageType?
     public var preview: MediaPreviewOptions?
     public init(id: UUID = UUID(), operation: Operation) { self.id = id; self.operation = operation }
     public func validate() throws {
+        guard (operation == .normalizeImage) == (normalization != nil) else { throw MediaFailure.invalidProtocol }
         guard version == 1 else { throw MediaFailure.invalidProtocol }
         if operation == .previewImage || operation == .previewPDF || operation.isAV {
             guard let preview else { throw MediaFailure.invalidProtocol }
@@ -51,6 +53,7 @@ public struct MediaResponse: Codable, Sendable {
     public var id: UUID
     public var items: [MediaItem]
     public var failure: MediaFailure?
+    public var normalization: MediaImageType?
     public var preview: MediaPreviewResult?
     public init(id: UUID, items: [MediaItem] = [], failure: MediaFailure? = nil) {
         self.id = id; self.items = items; self.failure = failure
@@ -61,9 +64,10 @@ public struct MediaResponse: Codable, Sendable {
         try request.validate()
         guard version == 1, id == request.id else { throw MediaFailure.invalidProtocol }
         if let failure {
-            guard items.isEmpty, preview == nil else { throw MediaFailure.invalidProtocol }
+            guard items.isEmpty, preview == nil, normalization == nil else { throw MediaFailure.invalidProtocol }
             throw failure
         }
+        guard normalization == request.normalization else { throw MediaFailure.invalidProtocol }
         if request.preview != nil {
             guard items.isEmpty, let preview else { throw MediaFailure.invalidProtocol }
             try preview.validate(for: request)
@@ -71,7 +75,7 @@ public struct MediaResponse: Codable, Sendable {
         }
         guard preview == nil else { throw MediaFailure.invalidProtocol }
         guard !items.isEmpty, items.count <= MediaLimits.scannedPages,
-              request.operation != .image || items.count == 1 else { throw MediaFailure.invalidProtocol }
+              (request.operation != .image && request.operation != .normalizeImage) || items.count == 1 else { throw MediaFailure.invalidProtocol }
         var previous = 0
         for item in items {
             if let image = item.image {

@@ -41,11 +41,12 @@ final class MediaWorker: @unchecked Sendable {
     }
 
     /// Result extraction finishes before the private directory can be retired.
-    func perform<T>(_ operation: MediaRequest.Operation, input: Input, preview: MediaPreviewOptions? = nil,
+    func perform<T>(_ operation: MediaRequest.Operation, input: Input, preview: MediaPreviewOptions? = nil, normalization: MediaImageType? = nil,
                     isCancelled: @escaping @Sendable () -> Bool,
                     extract: (MediaResponse, Int32) throws -> T) throws -> T {
         var request = MediaRequest(operation: operation)
         request.preview = preview
+        request.normalization = normalization
         try request.validate()
         let encoded = try JSONEncoder().encode(request)
         guard encoded.count <= (preview == nil ? MediaLimits.requestBytes : MediaPreviewOptions.requestBytes)
@@ -65,7 +66,7 @@ final class MediaWorker: @unchecked Sendable {
                                                attributes: [.posixPermissions: 0o700])
         lease.directory = directory
         try copy(input, to: directory.appendingPathComponent("input"),
-                 limit: operation.isAV ? MediaAVLimits.inputBytes : MediaLimits.inputBytes, cancelled: cancelled)
+                 limit: operation == .normalizeImage ? 10 * 1024 * 1024 : (operation.isAV ? MediaAVLimits.inputBytes : MediaLimits.inputBytes), cancelled: cancelled)
         try check(cancelled)
         let fd = open(directory.path, O_RDONLY | O_DIRECTORY | O_CLOEXEC)
         guard fd >= 0 else { throw MediaFailure.unavailable }
