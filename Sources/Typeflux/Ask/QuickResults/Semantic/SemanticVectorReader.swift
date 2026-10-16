@@ -485,12 +485,14 @@ extension SemanticVectorReader {
             }
             return try ordered.prefix(maximum).map { candidate in
                 let id = candidate.id, value = candidate.hit
-                let row = try statement("SELECT text FROM chunks WHERE id=?")
+                let row = try statement("SELECT text,segment_kind FROM chunks WHERE id=?")
                 defer { sqlite3_finalize(row) }
                 sqlite3_bind_int64(row, 1, id)
                 var hit = value
                 if sqlite3_step(row) == SQLITE_ROW {
-                    hit.evidence?.text = String(string(row, 0).prefix(180))
+                    hit.evidence?.text = SemanticSearchSnippet.make(string(row, 0), ranking: ranking)
+                    hit.evidence?.chunkID = id
+                    hit.evidence?.segmentKind = sqlite3_column_type(row, 1) == SQLITE_NULL ? nil : string(row, 1)
                 }
                 return hit
             }

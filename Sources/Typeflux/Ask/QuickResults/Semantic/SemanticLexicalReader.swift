@@ -79,7 +79,7 @@ final class SemanticLexicalReader: @unchecked Sendable {
             for join in terms.count == 1 ? [" AND "] : [" AND ", " OR "] {
                 var row: OpaquePointer?
                 let sql = """
-                SELECT c.id,c.path,c.text,c.page,f.modified,f.version,c.start_offset,c.end_offset,c.time,c.search_script,c.modality,rank
+                SELECT c.id,c.path,c.text,c.page,f.modified,f.version,c.start_offset,c.end_offset,c.time,c.search_script,c.modality,rank,c.segment_kind
                 FROM \(table) JOIN chunks c ON c.id=\(table).rowid JOIN files f ON f.path=c.path
                 WHERE \(table) MATCH ? \(filter) ORDER BY rank,c.id
                 """
@@ -120,7 +120,7 @@ final class SemanticLexicalReader: @unchecked Sendable {
                                                  modified: Date(timeIntervalSince1970: sqlite3_column_double(row, 4)),
                                                  score: score,
                                                  evidence: .init(
-                                                     text: String(passage.prefix(180)),
+                                                     text: SemanticSearchSnippet.make(passage, ranking: ranking),
                                                      page: page,
                                                      time: time,
                                                      version: string(5).isEmpty ? nil : string(5),
@@ -133,7 +133,10 @@ final class SemanticLexicalReader: @unchecked Sendable {
                                                          nil : sqlite3_column_int64(
                                                              row,
                                                              7
-                                                         )
+                                                         ),
+                                                     chunkID: sqlite3_column_int64(row, 0),
+                                                     segmentKind: sqlite3_column_type(row, 12) == SQLITE_NULL
+                                                         ? nil : string(12)
                                                  ))
                             best[path] = Candidate(id: sqlite3_column_int64(row, 0), hit: hit, evidence: evidence,
                                                    bucket: .init(modality: SemanticMediaPriority.of(path),

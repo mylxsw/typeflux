@@ -1,0 +1,71 @@
+{
+  "baseline": "dcae50561a637082ffc8710f06a9d99924cd3f5c",
+  "denominator": "Added/modified executable Swift lines in Sources/Typeflux, including new files, intersected with final LLVM LCOV DA records. Tests, helper wrapper and unchanged vendor code excluded; helper reported separately.",
+  "executable": 130,
+  "covered": 129,
+  "percent": 99.23,
+  "files": {
+    "Sources/Typeflux/Ask/QuickResults/Files/AskFileIndexState.swift": {
+      "executable": 0,
+      "covered": 0,
+      "percent": null,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileContentWorker.swift": {
+      "executable": 8,
+      "covered": 8,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer+Document.swift": {
+      "executable": 4,
+      "covered": 4,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFilePolicy.swift": {
+      "executable": 2,
+      "covered": 2,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Jobs.swift": {
+      "executable": 45,
+      "covered": 45,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticIndexDiagnostics.swift": {
+      "executable": 2,
+      "covered": 2,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticLexicalReader.swift": {
+      "executable": 6,
+      "covered": 6,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticPDFText.swift": {
+      "executable": 27,
+      "covered": 26,
+      "percent": 96.3,
+      "uncovered": [
+        18
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSearchSnippet.swift": {
+      "executable": 32,
+      "covered": 32,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticVectorReader.swift": {
+      "executable": 4,
+      "covered": 4,
+      "percent": 100.0,
+      "uncovered": []
+    }
+  }
+}

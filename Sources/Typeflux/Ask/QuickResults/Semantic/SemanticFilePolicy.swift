@@ -174,6 +174,7 @@ struct SemanticPage: Codable, Equatable, Sendable {
     var text: String
     var page: Int?
     var offset: Int64 = 0
+    var segmentKind: String?
 }
 
 struct SemanticChunk: Equatable, Sendable {
@@ -182,6 +183,7 @@ struct SemanticChunk: Equatable, Sendable {
     var time: TimeInterval?
     var startOffset: Int64?
     var endOffset: Int64?
+    var segmentKind: String?
 
     static func make(_ pages: [SemanticPage]) -> [SemanticChunk] {
         var result: [SemanticChunk] = []
@@ -197,7 +199,8 @@ struct SemanticChunk: Equatable, Sendable {
                 let text = String(String.UnicodeScalarView(scalars[start ..< end]))
                 if !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     result.append(.init(text: text, page: page.page,
-                                        startOffset: offset, endOffset: offset + Int64(bytes)))
+                                        startOffset: offset, endOffset: offset + Int64(bytes),
+                                        segmentKind: page.segmentKind))
                 }
                 if end == scalars.count {
                     break

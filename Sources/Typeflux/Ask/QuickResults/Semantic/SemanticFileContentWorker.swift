@@ -43,17 +43,21 @@ extension AskFileWorkerCommand {
         if (request.path as NSString).pathExtension.lowercased() == "pdf" {
             // PDFKit reads lazily from the held descriptor. Never load a whole PDF into Data.
             // Decoder stalls remain confined to the disposable worker's existing deadline.
-            guard let pdf = PDFDocument(url: URL(fileURLWithPath: "/dev/fd/\(descriptor)")), !pdf.isLocked
+            guard let pdf = PDFDocument(url: URL(fileURLWithPath: "/dev/fd/\(descriptor)"))
             else { return .init(error: EILSEQ) }
+            guard !pdf.isLocked else { return .init(error: EAUTH) }
             guard cursor.page <= pdf.pageCount else { return .init(error: EINVAL) }
             if cursor.page == pdf.pageCount {
                 result.pages = []; return result
             }
-            let text = pdf.page(at: cursor.page)?.string ?? ""
-            let bytes = Data(text.utf8)
+            guard let page = pdf.page(at: cursor.page) else { return .init(error: EILSEQ) }
+            let extracted: (text: String, kind: String)
+            do { extracted = try SemanticPDFText.extract(page) } catch { return .init(error: EIO) }
+            let bytes = Data(extracted.text.utf8)
             guard cursor.offset <= bytes.count else { return .init(error: EINVAL) }
             guard let part = contentSlice(bytes, offset: Int(cursor.offset)) else { return .init(error: EILSEQ) }
-            result.pages = [.init(text: part.text, page: cursor.page + 1, offset: cursor.offset)]
+            result.pages = [.init(text: part.text, page: cursor.page + 1, offset: cursor.offset,
+                                  segmentKind: extracted.kind)]
             if part.consumed < bytes.count - Int(cursor.offset) {
                 result.nextCursor = .init(page: cursor.page, offset: cursor.offset + Int64(part.consumed))
             } else if cursor.page + 1 < pdf.pageCount {

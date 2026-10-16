@@ -1,0 +1,71 @@
+{
+  "baseline": "dcae50561a637082ffc8710f06a9d99924cd3f5c",
+  "unique_focused_methods": 58,
+  "final_result": "All 58 selected methods passed across the initial functional pass and the corrected smallest-suite retry. No production source changed after the functional pass.",
+  "attempts": [
+    {
+      "command": "make coverage SUITE=<11 focused suites listed in README>",
+      "wall_seconds": 413.54477091599256,
+      "build_seconds": 320.16,
+      "result": "Runner rejected all of its compact discovery inventory; zero tests executed. Added the directly related ranking source to discovery only, retained the same execution scope."
+    },
+    {
+      "command": "make coverage SUITE=<same 11 focused suites>",
+      "wall_seconds": 185.30512491601985,
+      "build_seconds": 100.41,
+      "selected_methods": 58,
+      "passed_methods": 57,
+      "failed_methods": 1,
+      "result": "PDFKit Live Text invalidated a fixture precondition; real OCR and the remaining production assertions passed. Corrected only that test assertion."
+    },
+    {
+      "command": "make coverage FILTER=SemanticPDFOCRTests/<human-readable method name>",
+      "wall_seconds": 57.07274433301063,
+      "build_seconds": 32.79,
+      "result": "Discovery filter did not match; zero tests executed. Retried the smallest containing suite."
+    },
+    {
+      "command": "make coverage SUITE=SemanticPDFOCRTests",
+      "wall_seconds": 59.72909012500895,
+      "build_seconds": 28.36,
+      "passed_methods": 7,
+      "failed_methods": 0,
+      "result": "Passed; includes three parameterized failure cases."
+    }
+  ],
+  "changed_application_lines": {
+    "covered": 95,
+    "executable": 95,
+    "percent": 100.0
+  },
+  "changed_content_reader_lines": {
+    "covered": 34,
+    "executable": 35,
+    "percent": 97.14,
+    "uncovered": "SemanticPDFText.swift:18, invalid PDF geometry failure branch"
+  },
+  "no_project_wide_coverage_claim": true,
+  "no_new_native_media_inference_helper_lines": true,
+  "lint": "Zero new diagnostics, one pre-existing strict lint error retained.",
+  "limits": [
+    "No real embedding weights or new recall-group evaluation in this slice.",
+    "OCR requests may benefit from warm PDFKit/Vision/OS caches.",
+    "No new native UI-input/rendering timing or light/dark screenshots.",
+    "No production scheduler throughput, GPU counters or long-term thermal result.",
+    "Legacy PDF queue enrollment is one metadata transaction; very large existing-catalog enrollment cost was not benchmarked.",
+    "Remaining Office/screenshot/media/open/download work is preserved in README."
+  ],
+  "resource_short_probe": {
+    "wall_seconds": 90.17181479197461,
+    "samples": 404,
+    "missing_identifier": 0,
+    "milliseconds": {
+      "p50": 117.61245899833739,
+      "p95": 126.47679098881781,
+      "p99": 134.2823330196552
+    },
+    "peak_rss_bytes": 217120768
+  },
+  "resource_limit": "The 166.75-second shared-input attempt is invalidated by a functional-test artifact rewrite; the isolated retry passed 90.17 seconds. No clean continuous five-minute or long-term claim.",
+  "resource_probe_sha256": "5edb740104f4a45b71b8f73ff9f097884b52c9f7cdc97f53413c56aef0b5fbae"
+}

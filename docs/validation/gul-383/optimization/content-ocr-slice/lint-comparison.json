@@ -1,0 +1,17 @@
+{
+  "command": "swiftlint lint --quiet --strict --config .swiftlint.yml <changed production files> --reporter json",
+  "baseline": "dcae50561a637082ffc8710f06a9d99924cd3f5c",
+  "baseline_diagnostics": 1,
+  "current_diagnostics": 1,
+  "new_diagnostics": 0,
+  "baseline_exit_code": 2,
+  "current_exit_code": 2,
+  "diagnostics": [
+    {
+      "file": "AskFileIndexState.swift",
+      "line": 164,
+      "rule": "optional_data_string_conversion",
+      "reason": "Prefer failable `String(bytes:encoding:)` initializer when converting `Data` to `String`"
+    }
+  ]
+}

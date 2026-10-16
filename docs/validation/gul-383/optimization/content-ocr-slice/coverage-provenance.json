@@ -1,0 +1,27 @@
+{
+  "product_source_matches_frozen_validation": true,
+  "product_source_sha256": {
+    "Sources/Typeflux/Ask/QuickResults/Files/AskFileIndexState.swift": "165d19ddcc4e8ff9f306e67e9390ac8af7a6a1a3a76339ce24e860eb3ec5b532",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileContentWorker.swift": "7c689d83edcbdaad82d710455c45d95de541900f6f849ee23f394860eafe1185",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer+Document.swift": "4e03b31c895cb98882cf6fb738428a4509fbc69413dfee79cf4675a802cdd2ac",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFilePolicy.swift": "c5b365d9cdb64cb4fb65f3633ce904ea9f27aa8bc4cd0ea4cab1c2513ec81776",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Jobs.swift": "8933bf479b877c99626022f7e1ee1b16bd80482c28e7e5dbc44477b0003cdc86",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticIndexDiagnostics.swift": "84aeb2e3c0eeed0ff9c461deedb698a1720c219ead34517f0991f97dd073d036",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticLexicalReader.swift": "325d3469677ee9280dbd23b726236fa42902e40cd369ed140e59a408f2a3cc1e",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticPDFText.swift": "fe157637e1a42daf3dad5c3d0813f3a4b390ae8d593d189699bff08fc6a63e5f",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSearchSnippet.swift": "4ee4e38752706293a10b6cc7e3f55878cc297ad4d134bd8ac6cf292de65a74a5",
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticVectorReader.swift": "c1ae863bee1080c5f58ffb135c368cb589609243aa6dffe257a62ccadbd33f36"
+  },
+  "final_test_sha256": {
+    "Tests/TypefluxTests/SemanticPDFOCRTests.swift": "a183947f7702c834023df8a33aef400637c2e12519506e356e34c1029fdf05cb",
+    "Tests/TypefluxTests/SemanticSearchSnippetTests.swift": "3390b0a294d8acbfed1d4128c44f0a5c967b5365316029b089f26798a3eaf725"
+  },
+  "coverage_binary_sha256": "707e09c98fe0ea7626dadfdc94c74ab7d5df96c57fb59a5c74ef7f908f336832",
+  "coverage_profile_sha256": "9f49beca7b075f5a84a0f53c8000541d4ce7b0e99c72706bec8f78d641b708b6",
+  "coverage_origin": "First functional focused pass: 57/58 methods passed; one invalid PDFKit fixture precondition failed, while the method continued and all production OCR assertions passed. Export uses that exact binary/profile with unchanged production source; only the test precondition changes for the single-method retry. No incompatible profile merge is used. Copying the binary changes its filesystem mtime, producing the benign newer-object warning; there were no counter/hash mismatch diagnostics.",
+  "unchanged_native_media_inference_helpers": {
+    "changed_executable_lines": 0,
+    "percent": null
+  },
+  "retry_result": "The complete smallest containing suite, SemanticPDFOCRTests, passed all 7 methods (including 3 parameterized failure cases) after correcting the fixture precondition. Product source is unchanged."
+}
