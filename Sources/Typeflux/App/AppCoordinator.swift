@@ -299,9 +299,11 @@ final class AppCoordinator {
         di.nativeSystemCommands.preventNewWork()
         di.localInferenceWorkers.preventNewWork()
         di.mediaWorkers.preventNewWork()
+        di.mediaPreviewWorkers.preventNewWork()
         await di.nativeSystemCommands.shutdown()
         await di.localInferenceWorkers.shutdown()
         await di.mediaWorkers.shutdown()
+        await di.mediaPreviewWorkers.shutdown()
         await di.moduleRegistry.shutdown()
     }
 
@@ -312,6 +314,7 @@ final class AppCoordinator {
         di.nativeSystemCommands.preventNewWork()
         di.localInferenceWorkers.preventNewWork()
         di.mediaWorkers.preventNewWork()
+        di.mediaPreviewWorkers.preventNewWork()
         Task { [di] in await di.moduleRegistry.shutdown() }
         if let authAnalyticsObserver { NotificationCenter.default.removeObserver(authAnalyticsObserver) }
         if let authLogoutObserver { NotificationCenter.default.removeObserver(authLogoutObserver) }

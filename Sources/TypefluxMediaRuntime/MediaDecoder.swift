@@ -18,6 +18,8 @@ public enum MediaDecoder {
             items = [try image(data)]
         case .pdf:
             items = try pdf(data)
+        case .previewImage, .previewPDF:
+            throw MediaFailure.invalidProtocol
         }
         let response = MediaResponse(id: request.id, items: items)
         try response.validate(for: request)

@@ -103,6 +103,8 @@ final class AskFilePreviewLoader: AskFilePreviewLoading {
     }
 
     private func content(_ hit: AskFileHit, pixels: CGSize) async throws -> AskFilePreviewContent {
+        guard pixels.width.isFinite, pixels.height.isFinite, pixels.width >= 1, pixels.height >= 1,
+              pixels.width <= 4096, pixels.height <= 4096 else { throw AskFileReadError.unavailable }
         guard let kind = AskFilePreviewPolicy.kind(for: hit) else { throw AskFileReadError.unavailable }
         let cacheTicket = cacheGeneration
         let info = try await metadata(hit, kind.readsText)

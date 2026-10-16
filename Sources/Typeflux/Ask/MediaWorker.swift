@@ -2,9 +2,10 @@ import Darwin
 import Foundation
 import TypefluxMediaProtocol
 
-/// A bounded, independent fault domain for disposable attachment decoders.
+/// A bounded, independent fault domain for disposable media decoders.
 final class MediaWorker: @unchecked Sendable {
     static let shared = MediaWorker()
+    static let previews = MediaWorker(timeout: 3)
     enum Input { case file(URL), data(Data) }
     typealias Runner = @Sendable (ManagedProcess.Request, @escaping @Sendable () -> Bool) throws -> ManagedProcess.Result
     private let lock = NSLock()
@@ -33,10 +34,23 @@ final class MediaWorker: @unchecked Sendable {
             .appendingPathComponent("TypefluxMediaHelper")
     }
 
-    /// Synchronous only on the attachment batch's owned background task.
+    /// Synchronous only on an owned background task.
     func decode(_ operation: MediaRequest.Operation, input: Input,
                 isCancelled: @escaping @Sendable () -> Bool = { false }) throws -> MediaResponse {
-        let id = UUID(), lease = MediaLease()
+        try perform(operation, input: input, isCancelled: isCancelled) { response, _ in response }
+    }
+
+    /// Result extraction finishes before the private directory can be retired.
+    func perform<T>(_ operation: MediaRequest.Operation, input: Input, preview: MediaPreviewOptions? = nil,
+                    isCancelled: @escaping @Sendable () -> Bool,
+                    extract: (MediaResponse, Int32) throws -> T) throws -> T {
+        var request = MediaRequest(operation: operation)
+        request.preview = preview
+        try request.validate()
+        let encoded = try JSONEncoder().encode(request)
+        guard encoded.count <= (preview == nil ? MediaLimits.requestBytes : MediaPreviewOptions.requestBytes)
+        else { throw MediaFailure.tooLarge }
+        let id = request.id, lease = MediaLease()
         try lock.withLock {
             guard !disabled, budget.permitsAttempt(at: uptime()), active.count < 2,
                   !isCancelled() else { throw MediaFailure.unavailable }
@@ -55,12 +69,11 @@ final class MediaWorker: @unchecked Sendable {
         let fd = open(directory.path, O_RDONLY | O_DIRECTORY | O_CLOEXEC)
         guard fd >= 0 else { throw MediaFailure.unavailable }
         defer { close(fd) }
-        let request = MediaRequest(id: id, operation: operation)
         do {
             let process = ManagedProcess.Request(executable: executable.path, environment: ["PATH": "/usr/bin:/bin", "LANG": "en_US.UTF-8"],
-                directoryDescriptor: fd, timeout: timeout, outputLimit: MediaLimits.responseBytes,
+                directoryDescriptor: fd, timeout: timeout, outputLimit: preview == nil ? MediaLimits.responseBytes : 16 * 1024,
                 stopOnOutputLimit: true, preserveWhitespace: true, onStarted: { lease.started() },
-                stdin: try JSONEncoder().encode(request), stderrLimit: 1024,
+                stdin: encoded, stderrLimit: 1024,
                 onReaped: { lease.reaped() })
             let result = try run(process, cancelled)
             try check(cancelled)
@@ -69,7 +82,9 @@ final class MediaWorker: @unchecked Sendable {
             let response = try JSONDecoder().decode(MediaResponse.self, from: Data(result.stdout.utf8))
             try response.validate(for: request)
             try check(cancelled)
-            return response
+            let value = try extract(response, fd)
+            try check(cancelled)
+            return value
         } catch {
             // Bad media is a per-input refusal, not a reason to rebuild repeatedly.
             if !cancelled(), (error as? MediaFailure) != .unreadable, (error as? MediaFailure) != .tooLarge {

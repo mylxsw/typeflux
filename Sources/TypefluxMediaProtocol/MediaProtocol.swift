@@ -15,13 +15,18 @@ public enum MediaFailure: String, Error, Codable, Sendable {
 }
 
 public struct MediaRequest: Codable, Sendable {
-    public enum Operation: String, Codable, Sendable { case image, pdf }
+    public enum Operation: String, Codable, Sendable { case image, pdf, previewImage, previewPDF }
     public var version = 1
     public var id: UUID
     public var operation: Operation
+    public var preview: MediaPreviewOptions?
     public init(id: UUID = UUID(), operation: Operation) { self.id = id; self.operation = operation }
     public func validate() throws {
         guard version == 1 else { throw MediaFailure.invalidProtocol }
+        if operation == .previewImage || operation == .previewPDF {
+            guard let preview else { throw MediaFailure.invalidProtocol }
+            try preview.validate()
+        } else if preview != nil { throw MediaFailure.invalidProtocol }
     }
 }
 
@@ -42,6 +47,7 @@ public struct MediaResponse: Codable, Sendable {
     public var id: UUID
     public var items: [MediaItem]
     public var failure: MediaFailure?
+    public var preview: MediaPreviewResult?
     public init(id: UUID, items: [MediaItem] = [], failure: MediaFailure? = nil) {
         self.id = id; self.items = items; self.failure = failure
     }
@@ -51,9 +57,15 @@ public struct MediaResponse: Codable, Sendable {
         try request.validate()
         guard version == 1, id == request.id else { throw MediaFailure.invalidProtocol }
         if let failure {
-            guard items.isEmpty else { throw MediaFailure.invalidProtocol }
+            guard items.isEmpty, preview == nil else { throw MediaFailure.invalidProtocol }
             throw failure
         }
+        if request.preview != nil {
+            guard items.isEmpty, let preview else { throw MediaFailure.invalidProtocol }
+            try preview.validate(for: request)
+            return
+        }
+        guard preview == nil else { throw MediaFailure.invalidProtocol }
         guard !items.isEmpty, items.count <= MediaLimits.scannedPages,
               request.operation != .image || items.count == 1 else { throw MediaFailure.invalidProtocol }
         var previous = 0
