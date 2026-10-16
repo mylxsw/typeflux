@@ -1,0 +1,15 @@
+{
+  "covered": 25,
+  "executable_added": 25,
+  "percent": 100.0,
+  "files": [
+    {
+      "file": "Sources/Typeflux/Imaging/ImageTextRecognizer.swift",
+      "covered": 25,
+      "executable_added": 25,
+      "percent": 100.0,
+      "uncovered": [],
+      "instrumented": true
+    }
+  ]
+}
