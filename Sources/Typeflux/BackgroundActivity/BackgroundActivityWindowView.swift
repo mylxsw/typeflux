@@ -90,7 +90,6 @@ struct BackgroundActivityWindowView: View {
 
     private var footer: some View {
         HStack(spacing: 16) {
-            Toggle(L("activity.window.indicator"), isOn: $center.indicatorEnabled)
             Toggle(L("activity.window.notifications"), isOn: $center.notificationsEnabled)
             Spacer()
         }

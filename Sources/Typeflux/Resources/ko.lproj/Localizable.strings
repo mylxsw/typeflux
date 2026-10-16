@@ -5552,7 +5552,6 @@
 "activity.window.recent" = "최근 완료";
 "activity.window.emptyActive" = "현재 백그라운드 작업이 없습니다";
 "activity.window.emptyRecent" = "Typeflux 시작 후 완료된 작업이 없습니다";
-"activity.window.indicator" = "메뉴 막대 아이콘에 작업 상태 표시";
 "activity.window.notifications" = "긴 다운로드가 끝나면 알림";
 "activity.window.finished" = "완료 · %@";
 "activity.window.justNow" = "방금";

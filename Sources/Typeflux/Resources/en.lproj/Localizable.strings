@@ -5666,7 +5666,6 @@
 "activity.window.recent" = "Recently Finished";
 "activity.window.emptyActive" = "No background tasks right now";
 "activity.window.emptyRecent" = "Nothing has finished since Typeflux started";
-"activity.window.indicator" = "Show task status on the menu bar icon";
 "activity.window.notifications" = "Notify when a long download finishes";
 "activity.window.finished" = "Finished · %@";
 "activity.window.justNow" = "just now";

@@ -21,11 +21,13 @@ final class BackgroundActivityUITests: XCTestCase {
 
     // MARK: - Menu
 
-    func testMenuShowsTheTaskSectionFirstAndTheDotFollowsTheTasks() throws {
-        let (controller, center, source) = try makeController()
+    func testMenuShowsTheTaskSectionFirstAndTheIconNeverChanges() throws {
+        let (controller, _, source) = try makeController()
         defer { controller.stop() }
         XCTAssertNil(controller.menu?.items.first?.view, "no section while idle")
-        XCTAssertEqual(controller.activityIndicatorState, .none)
+        let button = try XCTUnwrap(controller.statusItemButton)
+        let idleSubviews = button.subviews.count
+        let idleSize = button.image?.size
 
         source.feed.publish([makeActivity("download")])
         drain(until: { controller.menu?.items.first?.view != nil })
@@ -35,21 +37,16 @@ final class BackgroundActivityUITests: XCTestCase {
                                                   height: controller.menuActivityLayout.height))
         XCTAssertTrue(try XCTUnwrap(controller.menu?.items[1]).isSeparatorItem)
         XCTAssertEqual(controller.menu?.items[2].title, L("menu.openVoiceStudio"))
-        XCTAssertEqual(controller.activityIndicatorState, .running)
 
         source.feed.publish([makeActivity("download"), makeActivity("approval", kind: .agent, state: .attention)])
         drain()
-        XCTAssertEqual(controller.activityIndicatorState, .attention)
         XCTAssertEqual(controller.menuActivityLayout.rows, ["approval", "download"])
 
-        center.indicatorEnabled = false
-        drain()
-        XCTAssertEqual(controller.activityIndicatorState, .none)
-
-        source.feed.publish([makeActivity("paused", state: .paused)])
-        center.indicatorEnabled = true
-        drain()
-        XCTAssertEqual(controller.activityIndicatorState, .none, "resting work keeps the icon quiet")
+        // Background work never changes the menu bar icon.
+        XCTAssertEqual(button.subviews.count, idleSubviews)
+        XCTAssertEqual(button.image?.size, idleSize)
+        XCTAssertEqual(button.image?.isTemplate, true)
+        XCTAssertNil(button.contentTintColor)
     }
 
     func testOpenMenuKeepsItsRowsUntilItCloses() throws {
@@ -134,111 +131,6 @@ final class BackgroundActivityUITests: XCTestCase {
             ["Ready", L("activity.accessibility", 1), L("activity.accessibility.attention")]
                 .joined(separator: L("activity.accessibility.separator"))
         )
-    }
-
-    // MARK: - Dot
-
-    func testIndicatorColorsAndAnimations() {
-        XCTAssertNil(StatusItemActivityIndicator.color(for: .none))
-        XCTAssertEqual(StatusItemActivityIndicator.color(for: .running), .systemBlue)
-        XCTAssertEqual(StatusItemActivityIndicator.color(for: .attention), .systemOrange)
-        XCTAssertNil(StatusItemActivityIndicator.animation(for: .none))
-        let breathe = try? XCTUnwrap(StatusItemActivityIndicator.animation(for: .running))
-        let blink = try? XCTUnwrap(StatusItemActivityIndicator.animation(for: .attention))
-        XCTAssertEqual(breathe?.toValue as? CGFloat, 0.12)
-        XCTAssertEqual(blink?.toValue as? CGFloat, 0.2)
-        XCTAssertLessThan(blink?.duration ?? 1, breathe?.duration ?? 0, "attention blinks faster than running breathes")
-        XCTAssertEqual(breathe?.autoreverses, true)
-        XCTAssertEqual(breathe?.repeatCount, .infinity)
-    }
-
-    func testMarkImageFillsOnlyTheInfinityCutOut() throws {
-        let exact = try coloredPixels(growth: 0)
-        let thick = try coloredPixels(growth: StatusItemActivityIndicator.markGrowth)
-        XCTAssertGreaterThan(exact.count, 20, "the ∞ cut-out is filled")
-        XCTAssertGreaterThan(thick.count, exact.count * 5 / 4, "the default mark is thicker than the cut-out")
-        XCTAssertLessThan(thick.count, 44 * 44 / 3, "the disc around the ∞ stays clear")
-        XCTAssertTrue(thick.allSatisfy { $0.blue > $0.red }, "only the tint color is drawn")
-        XCTAssertFalse(thick.contains { $0.x == 22 && $0.y <= 3 }, "the icon's ring is not tinted")
-        XCTAssertFalse(thick.contains { $0.x <= 1 || $0.y <= 1 || $0.x >= 42 || $0.y >= 42 })
-    }
-
-    private func coloredPixels(growth: CGFloat) throws -> [(x: Int, y: Int, red: CGFloat, blue: CGFloat)] {
-        let configuration = NSImage.SymbolConfiguration(pointSize: 16, weight: .medium)
-        let size = NSSize(width: 22, height: 22)
-        let image = try XCTUnwrap(StatusItemActivityIndicator.markImage(
-            symbol: StudioTheme.Symbol.brand, configuration: configuration, size: size, color: .systemBlue,
-            growth: growth
-        ))
-        XCTAssertFalse(image.isTemplate)
-        let bitmap = try XCTUnwrap(NSBitmapImageRep(
-            bitmapDataPlanes: nil, pixelsWide: 44, pixelsHigh: 44, bitsPerSample: 8, samplesPerPixel: 4,
-            hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0
-        ))
-        bitmap.size = size
-        NSGraphicsContext.saveGraphicsState()
-        NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: bitmap)
-        image.draw(in: NSRect(origin: .zero, size: size))
-        NSGraphicsContext.restoreGraphicsState()
-        var pixels: [(x: Int, y: Int, red: CGFloat, blue: CGFloat)] = []
-        for x in 0 ..< 44 {
-            for y in 0 ..< 44 {
-                guard let color = bitmap.colorAt(x: x, y: y), color.alphaComponent > 0.5 else { continue }
-                pixels.append((x, y, color.redComponent, color.blueComponent))
-            }
-        }
-        return pixels
-    }
-
-    func testIndicatorBreathesOnlyWhileRunningWithMotionAllowed() throws {
-        let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-        defer { NSStatusBar.system.removeStatusItem(item) }
-        let button = try XCTUnwrap(item.button)
-        let indicator = StatusItemActivityIndicator()
-        let configuration = NSImage.SymbolConfiguration(pointSize: 16, weight: .medium)
-        func apply(_ state: BackgroundActivityIndicator, reduceMotion: Bool = false) {
-            indicator.apply(state, to: button, symbol: StudioTheme.Symbol.brand, configuration: configuration,
-                            size: NSSize(width: 22, height: 22), reduceMotion: reduceMotion)
-        }
-
-        apply(.running)
-        XCTAssertTrue(indicator.mark.superview === button)
-        XCTAssertTrue(indicator.base.superview === button)
-        XCTAssertFalse(indicator.mark.isHidden)
-        XCTAssertFalse(indicator.base.isHidden)
-        XCTAssertEqual(indicator.base.image?.isTemplate, true, "the base follows the icon's color")
-        XCTAssertEqual(indicator.mark.image?.isTemplate, false)
-        XCTAssertFalse(indicator.mark.allowsVibrancy, "vibrancy would mute the colored ∞")
-        XCTAssertTrue(indicator.base.allowsVibrancy)
-        XCTAssertLessThan(try XCTUnwrap(button.subviews.firstIndex { $0 === indicator.base }),
-                          try XCTUnwrap(button.subviews.firstIndex { $0 === indicator.mark }), "color sits above the base")
-        XCTAssertNil(indicator.base.hitTest(NSPoint(x: 5, y: 5)))
-        XCTAssertNotNil(indicator.mark.image)
-        XCTAssertTrue(indicator.isAnimating)
-        XCTAssertEqual(item.length, NSStatusItem.squareLength, "the icon keeps its width")
-        XCTAssertNil(indicator.mark.hitTest(NSPoint(x: 5, y: 5)), "clicks reach the status bar button")
-        let runningImage = indicator.mark.image
-        apply(.running)
-        XCTAssertTrue(indicator.mark.image === runningImage, "the tinted image is reused")
-
-        apply(.running, reduceMotion: true)
-        XCTAssertFalse(indicator.isAnimating)
-        XCTAssertFalse(indicator.mark.isHidden, "without motion the ∞ stays tinted")
-
-        apply(.attention)
-        XCTAssertTrue(indicator.isAnimating)
-        XCTAssertFalse(indicator.mark.image === runningImage)
-        XCTAssertEqual(indicator.state, .attention)
-
-        let baseImage = indicator.base.image
-        apply(.running)
-        XCTAssertTrue(indicator.base.image === baseImage, "the base is shared by both states")
-
-        apply(.none)
-        XCTAssertTrue(indicator.mark.isHidden)
-        XCTAssertTrue(indicator.base.isHidden)
-        XCTAssertFalse(indicator.isAnimating)
-        XCTAssertEqual(button.subviews.filter { $0 === indicator.mark }.count, 1)
     }
 
     // MARK: - Views and window

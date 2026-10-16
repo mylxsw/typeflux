@@ -48,7 +48,7 @@ struct BackgroundActivity: Identifiable, Equatable {
     var actions: [Action] = []
     var route: Route?
 
-    /// Uses resources right now or waits for the user: the menu bar icon shows it.
+    /// Uses resources right now or waits for the user.
     var isActive: Bool {
         state == .running || state == .attention
     }
@@ -82,23 +82,6 @@ struct BackgroundActivity: Identifiable, Equatable {
             }
             return lhs.offset < rhs.offset
         }.map(\.element)
-    }
-}
-
-/// What the ∞ in the menu bar icon shows.
-enum BackgroundActivityIndicator: Equatable {
-    case none
-    case running
-    case attention
-
-    static func of(_ activities: [BackgroundActivity]) -> Self {
-        if activities.contains(where: \.needsUser) {
-            return .attention
-        }
-        if activities.contains(where: { $0.state == .running }) {
-            return .running
-        }
-        return .none
     }
 }
 
