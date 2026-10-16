@@ -29,7 +29,8 @@ extension SemanticFileIndexer {
 
     // Consume events at every document batch boundary. Partial files rotate in the durable queue;
     // never recursively reconcile a live event's whole file before checking the next event.
-    // swiftlint:disable:next function_parameter_count
+    // Keep the durable queue, checkpoints and current-file timing in one ownership boundary.
+    // swiftlint:disable:next function_parameter_count function_body_length cyclomatic_complexity
     static func drainDocuments(scope: AskFileScope, store: SemanticFileStore, reader: AskFileReading,
                                encoder: SemanticEmbedding, paused: () -> Bool,
                                documents: () throws -> SemanticIndexPauseGate.DocumentWork, cancelled: () -> Bool,

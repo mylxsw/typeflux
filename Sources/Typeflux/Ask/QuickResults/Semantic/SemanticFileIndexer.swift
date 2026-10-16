@@ -68,7 +68,7 @@ enum SemanticFileIndexer {
     }
 
     // Full discovery and event replay share the same durable round-robin scheduler.
-    // swiftlint:disable:next function_parameter_count
+    // swiftlint:disable:next function_parameter_count function_body_length
     private static func drainWork(scope: AskFileScope, store: SemanticFileStore, reader: AskFileReading,
                                   encoder: SemanticEmbedding, media: (any SemanticMediaEmbedding)?,
                                   idle: () -> Bool, paused: () -> Bool,

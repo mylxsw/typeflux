@@ -27,8 +27,9 @@ extension SemanticFileIndexer {
                         if cancelled() {
                             return false
                         }
-                        do { try waitWhilePaused(paused, cancelled: cancelled) }
-                        catch { writeFailure = error; return false }
+                        do {
+                            try waitWhilePaused(paused, cancelled: cancelled)
+                        } catch { writeFailure = error; return false }
                         if let code = response.error, code != ENOENT, code != ENOTDIR {
                             failed = true
                         }
