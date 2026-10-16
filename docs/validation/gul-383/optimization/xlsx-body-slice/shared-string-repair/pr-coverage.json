@@ -1,0 +1,73 @@
+{
+  "baseline": "c056cfece5d6b55a1644aec51cc8840524809ed2",
+  "denominator": "Added/modified executable Swift lines in Sources/Typeflux, including new files, intersected with final LLVM LCOV DA records. Tests, helper wrapper and unchanged vendor code excluded; helper reported separately.",
+  "executable": 270,
+  "covered": 266,
+  "percent": 98.52,
+  "files": {
+    "Sources/Typeflux/Ask/QuickResults/AskQuickResultsView+ContentMatch.swift": {
+      "executable": 1,
+      "covered": 1,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Files/AskFileIndexState.swift": {
+      "executable": 1,
+      "covered": 1,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Files/AskFileSearchPlugin.swift": {
+      "executable": 1,
+      "covered": 1,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileContentWorker.swift": {
+      "executable": 4,
+      "covered": 4,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFilePolicy.swift": {
+      "executable": 0,
+      "covered": 0,
+      "percent": null,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Jobs.swift": {
+      "executable": 1,
+      "covered": 1,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticIndexDiagnostics.swift": {
+      "executable": 2,
+      "covered": 2,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSpreadsheetText.swift": {
+      "executable": 260,
+      "covered": 256,
+      "percent": 98.46,
+      "uncovered": [
+        87,
+        88,
+        181,
+        300
+      ]
+    }
+  },
+  "application": {
+    "covered": 6,
+    "executable": 6,
+    "percent": 100.0
+  },
+  "shared_reader": {
+    "covered": 260,
+    "executable": 264,
+    "percent": 98.48
+  },
+  "coverage_scope": "Fresh XLSX suite profiles only; shared source runs in the app library and disposable file reader. Inference/media helper targets unchanged."
+}

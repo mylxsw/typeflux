@@ -1,0 +1,28 @@
+{
+  "baseline_head": "05f560a46a4320f117d6dc8f95a636fd6b233a11",
+  "pr_base": "c056cfece5d6b55a1644aec51cc8840524809ed2",
+  "final_head": "Recorded in PR 614 and the final issue delivery; no source changes after the frozen validation.",
+  "hardware": "Mac16,10 arm64, 16 GiB RAM",
+  "swift": "Apple Swift version 6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)\nTarget: arm64-apple-macosx26.0",
+  "build": "Debug with LLVM coverage; native SwiftPM build system",
+  "frozen_source_files": 98,
+  "source_hashes_verified": true,
+  "sha256": {
+    ".build/arm64-apple-macosx/debug/Typeflux": "5f8bfa7ec6f995bea7b4ee5b96ede5ef82e47083839c0101013954aa68937395",
+    ".build/arm64-apple-macosx/debug/TypefluxPackageTests.xctest/Contents/MacOS/TypefluxPackageTests": "25b2bdb82a3b4f54c3379c5ea28df4658b8fbdbd6982509eda960073fd358d95",
+    ".build/arm64-apple-macosx/debug/codecov/default.profdata": "201e216bba16db434c611820040440ff5fcc4e090fd607c3b1e219bb2cb2f837",
+    "Package.resolved": "faf33527478681a0b411242554c3f5908665f8e884af8234181a6d08bef01c5d",
+    "scripts/coverage.sh": "1a18ada556b3875baf54f389ae48f5bceaf2c699a37f8638ebd16d7255e89095",
+    "scripts/test_groups.py": "488dbe8cec3f3528adb4ef265bb5d8e3cf5c13867581fb5acb5dc19eb281af46",
+    "docs/validation/gul-383/optimization/changed_coverage.py": "dd9efb30a427617a614235a0c65f86b2cb5ab6dd7c28b857031a91545db135ac",
+    "docs/validation/gul-383/optimization/html-body-slice/coverage-swift.sh": "42967efaf9199510c5f13f9219641be7b87a08eb2a781fc8b4200bfe1da8996f",
+    "docs/validation/gul-383/optimization/xlsx-body-slice/test-files.json": "92c7b2c78be9db8447966d723eb206ef44abc11d678604a3e7304221d2f4ed17",
+    "docs/validation/gul-383/optimization/xlsx-body-slice/shared-string-repair/shared-2000.xlsx": "2595e81d51ce2410dae7a826f9ec4f4b077213b52cc6c841a374d0a3843dd6a2"
+  },
+  "wall_seconds": 357.80102875002194,
+  "build_seconds": [
+    318.93
+  ],
+  "tests": "make coverage SUITE=SemanticSpreadsheetTextTests; 10/10 passed",
+  "retry_count": 0
+}

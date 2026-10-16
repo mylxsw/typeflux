@@ -1,0 +1,30 @@
+{
+  "baseline": "05f560a46a4320f117d6dc8f95a636fd6b233a11",
+  "denominator": "Added/modified executable Swift lines in Sources/Typeflux, including new files, intersected with final LLVM LCOV DA records. Tests, helper wrapper and unchanged vendor code excluded; helper reported separately.",
+  "executable": 123,
+  "covered": 120,
+  "percent": 97.56,
+  "files": {
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSpreadsheetText.swift": {
+      "executable": 123,
+      "covered": 120,
+      "percent": 97.56,
+      "uncovered": [
+        87,
+        88,
+        300
+      ]
+    }
+  },
+  "application": {
+    "covered": 0,
+    "executable": 0,
+    "percent": null
+  },
+  "shared_reader": {
+    "covered": 120,
+    "executable": 123,
+    "percent": 97.56
+  },
+  "coverage_scope": "Fresh XLSX suite profiles only; shared source runs in the app library and disposable file reader. Inference/media helper targets unchanged."
+}

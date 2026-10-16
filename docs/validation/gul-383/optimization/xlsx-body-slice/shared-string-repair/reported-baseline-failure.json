@@ -1,0 +1,29 @@
+{
+  "source": "Current GUL-405 description read at turn start; reviewer report, not a locally rerun measurement",
+  "head": "05f560a46a4320f117d6dc8f95a636fd6b233a11",
+  "compressed_bytes": 22537,
+  "rows": 2000,
+  "independent_shared_strings": 2000,
+  "batches": [
+    {
+      "seconds": 2.84,
+      "cursor": {
+        "page": 0,
+        "offset": 32606
+      }
+    },
+    {
+      "seconds": 9.31,
+      "cursor": {
+        "page": 0,
+        "offset": 65214
+      }
+    },
+    {
+      "seconds_greater_than": 15,
+      "returned": false
+    }
+  ],
+  "native_mode": "Debug worker",
+  "production_continuation_deadline_seconds": 5
+}

@@ -1,0 +1,31 @@
+{
+  "zip_bytes": 22942,
+  "members": [
+    "[Content_Types].xml",
+    "_rels/.rels",
+    "xl/_rels/workbook.xml.rels",
+    "xl/strings.xml",
+    "xl/workbook.xml",
+    "xl/worksheets/sheet2.xml"
+  ],
+  "row_count": 2000,
+  "shared_strings": 2000,
+  "batches": 8,
+  "request_seconds": [
+    0.05574691668152809,
+    0.11342416668776423,
+    0.0649143333430402,
+    0.08956737502012402,
+    0.11532304162392393,
+    0.14821462496183813,
+    0.18086962500819936,
+    0.18877741665346548
+  ],
+  "max_seconds": 0.18877741665346548,
+  "sum_seconds": 0.9568374999798834,
+  "worker_restarted_after_batch": 1,
+  "complete_byte_reconstruction": true,
+  "default_reader_timeout_seconds": 5,
+  "default_startup_timeout_seconds": 30,
+  "mode": "Debug coverage-instrumented native reader; fresh startup plus warm sequential requests; not UI, inference, Release, or thermal measurements."
+}

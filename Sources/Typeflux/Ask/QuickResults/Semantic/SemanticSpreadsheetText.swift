@@ -7,7 +7,7 @@ enum SemanticSpreadsheetText {
 
     static func matches(_ uri: String?) -> Bool { SemanticPresentationText.matches(uri, namespace) }
 
-    // swiftlint:disable:next cyclomatic_complexity
+    // swiftlint:disable:next cyclomatic_complexity function_body_length
     static func read(descriptor: Int32, size: Int64, cursor: SemanticContentCursor) throws -> AskFileReadResponse {
         let order = SemanticSpreadsheetMetadata(relationships: false)
         try parse(descriptor, size, "xl/workbook.xml", order)
@@ -18,7 +18,8 @@ enum SemanticSpreadsheetText {
             guard let target = relations.targets[sheet.0 + ":worksheet"] else { throw SemanticDocumentError() }
             return (try memberPath(target), sheet.1)
         }
-        guard cursor.page >= 0, cursor.page <= sheets.count, cursor.offset >= 0 else {
+        guard cursor.page >= 0, cursor.page <= sheets.count, cursor.offset >= 0,
+              cursor.offset <= Int64.max - Int64(SemanticFilePolicy.contentBatchBytes + 4) else {
             throw SemanticDocumentError(EINVAL)
         }
         if cursor.page == sheets.count {
@@ -26,31 +27,67 @@ enum SemanticSpreadsheetText {
             return .init(pages: [])
         }
         let shared = try relations.targets[":sharedStrings"].map(memberPath)
-        let body = SemanticSpreadsheetBody(offset: cursor.offset, label: "\(cursor.page + 1):\(sheets[cursor.page].1)")
-        // Foundation XMLParser is not reentrant. Suspend at a reference, parse it after the
-        // worksheet parser returns, then replay the worksheet past already consumed cells.
-        while true {
-            try parse(descriptor, size, sheets[cursor.page].0, body)
-            guard let index = body.pendingString else { break }
-            guard let shared else { throw SemanticDocumentError() }
-            body.stopped = false
-            let strings = SemanticSpreadsheetStrings(index: index) { text in
-                body.appendValue(text, nil)
-                return !body.stopped && body.failure == nil
+        let sheet = sheets[cursor.page]
+        let output = SemanticSpreadsheetWindow(lower: cursor.offset,
+            upper: cursor.offset + Int64(SemanticFilePolicy.contentBatchBytes + 4))
+        var position: Int64 = 0, firstCell = 0, more = false
+        // Resolve a bounded group together. No parser is entered from another parser's callback.
+        repeat {
+            let body = SemanticSpreadsheetBody(firstCell: firstCell, label: "\(cursor.page + 1):\(sheet.1)")
+            try parse(descriptor, size, sheet.0, body)
+            guard body.hasData else { throw SemanticDocumentError() }
+            let indices = Set(body.cells.compactMap(\.index))
+            var lengths: [Int: Int64] = [:]
+            if !indices.isEmpty {
+                guard let shared else { throw SemanticDocumentError() }
+                let strings = SemanticSpreadsheetStrings(indices: indices)
+                try parse(descriptor, size, shared, strings)
+                guard strings.lengths.count == indices.count else { throw SemanticDocumentError() }
+                lengths = strings.lengths
             }
-            try parse(descriptor, size, shared, strings)
-            if let error = body.failure { throw error }
-            guard strings.found else { throw SemanticDocumentError() }
-            if body.stopped { break }
-            body.finishReference()
-            if body.stopped { break }
-        }
-        if let error = body.failure { throw error }
-        guard body.hasData else { throw SemanticDocumentError() }
-        guard body.bytesSeen >= cursor.offset,
-              let part = AskFileWorkerCommand.contentSlice(body.bytes, offset: 0)
+            let groupStart = position
+            var values: [Int: [SemanticSpreadsheetWindow]] = [:]
+            for cell in body.cells {
+                let length = cell.index.flatMap { lengths[$0] } ?? cell.length
+                guard length > 0 else { continue }
+                position += Int64(cell.label.utf8.count)
+                if position < output.upper, position + length > output.lower {
+                    cell.window = SemanticSpreadsheetWindow(lower: max(0, output.lower - position),
+                        upper: min(length, output.upper - position))
+                    if let index = cell.index, let window = cell.window {
+                        values[index, default: []].append(window)
+                    }
+                }
+                position += length
+                position += 1
+            }
+            if !values.isEmpty, let shared {
+                let strings = SemanticSpreadsheetStrings(indices: Set(values.keys), windows: values)
+                try parse(descriptor, size, shared, strings)
+            }
+            if body.cells.contains(where: { $0.index == nil && $0.window != nil }) {
+                let text = SemanticSpreadsheetBody(firstCell: firstCell, label: "", replay: body.cells)
+                try parse(descriptor, size, sheet.0, text)
+            }
+            var groupPosition = groupStart
+            for cell in body.cells {
+                let length = cell.index.flatMap { lengths[$0] } ?? cell.length
+                guard length > 0 else { continue }
+                try output.append(cell.label, at: groupPosition)
+                groupPosition += Int64(cell.label.utf8.count)
+                output.bytes.append(cell.window?.bytes ?? Data())
+                groupPosition += length
+                try output.append("\n", at: groupPosition)
+                groupPosition += 1
+            }
+            firstCell += body.cells.count
+            more = body.stopped
+            if position >= output.upper || !more { break }
+        } while true
+        guard position >= cursor.offset,
+              let part = AskFileWorkerCommand.contentSlice(output.bytes, offset: 0)
         else { throw SemanticDocumentError(EINVAL) }
-        let next: SemanticContentCursor? = body.stopped || part.consumed < body.bytes.count
+        let next: SemanticContentCursor? = more || part.consumed < output.bytes.count
             ? .init(page: cursor.page, offset: cursor.offset + Int64(part.consumed))
             : cursor.page + 1 < sheets.count ? .init(page: cursor.page + 1) : nil
         // The ordinal is a worksheet position, distinguished from a PDF page by segmentKind.
@@ -84,7 +121,7 @@ enum SemanticSpreadsheetText {
         parser.delegate = delegate
         let parsed = parser.parse()
         if let error = stream.streamError { throw error }
-        if let error = (delegate as? SemanticSpreadsheetBody)?.failure { throw error }
+        if let error = delegate.failure { throw error }
         guard delegate.hasRoot, parsed || delegate.stopped else { throw SemanticDocumentError() }
     }
 }
@@ -93,6 +130,7 @@ private class SemanticSpreadsheetXML: NSObject, XMLParserDelegate {
     var path: [String] = []
     var hasRoot = false
     var stopped = false
+    var failure: Error?
     func parser(_: XMLParser, didStartElement name: String, namespaceURI uri: String?,
                 qualifiedName _: String?, attributes _: [String: String]) {
         path.append(SemanticSpreadsheetText.matches(uri) ? name : "?")
@@ -147,50 +185,84 @@ private final class SemanticSpreadsheetMetadata: SemanticSpreadsheetXML {
     }
 }
 
-/// Resolve a single reference without retaining a workbook-sized shared-string table.
+/// A byte window into one streamed value. Memory depends on the response, not the value length.
+private final class SemanticSpreadsheetWindow {
+    let lower: Int64
+    let upper: Int64
+    var bytes = Data()
+    init(lower: Int64, upper: Int64) { self.lower = lower; self.upper = upper }
+    func append(_ text: String, at start: Int64) throws {
+        var position = start
+        if position + Int64(text.utf8.count) <= lower || position >= upper { return }
+        for scalar in text.unicodeScalars {
+            let end = position + Int64(scalar.utf8.count)
+            if position < lower, end > lower { throw SemanticDocumentError(EINVAL) }
+            if position >= lower, position < upper { bytes.append(contentsOf: scalar.utf8) }
+            position = end
+            if position >= upper { break }
+        }
+    }
+}
+
+/// One sequential string-table pass measures or captures all references in the current group.
 private final class SemanticSpreadsheetStrings: SemanticSpreadsheetXML {
-    private let index: Int
-    private let output: (String) -> Bool
+    private var remaining: Set<Int>
+    private let windows: [Int: [SemanticSpreadsheetWindow]]
     private var current = -1
-    var found = false
-    init(index: Int, output: @escaping (String) -> Bool) { self.index = index; self.output = output }
+    private var length: Int64 = 0
+    var lengths: [Int: Int64] = [:]
+    init(indices: Set<Int>, windows: [Int: [SemanticSpreadsheetWindow]] = [:]) {
+        remaining = indices; self.windows = windows
+    }
     override func parser(_ parser: XMLParser, didStartElement name: String, namespaceURI uri: String?,
                          qualifiedName qualified: String?, attributes: [String: String]) {
         super.parser(parser, didStartElement: name, namespaceURI: uri, qualifiedName: qualified, attributes: attributes)
         if path == ["sst"] { hasRoot = true }
-        if path == ["sst", "si"] { current += 1; if current == index { found = true } }
+        if path == ["sst", "si"] { current += 1; length = 0 }
     }
     override func parser(_ parser: XMLParser, didEndElement name: String, namespaceURI uri: String?,
                          qualifiedName qualified: String?) {
-        let done = found && path == ["sst", "si"]
+        if path == ["sst", "si"], remaining.remove(current) != nil {
+            lengths[current] = length
+            if remaining.isEmpty { stopped = true; parser.abortParsing() }
+        }
         super.parser(parser, didEndElement: name, namespaceURI: uri, qualifiedName: qualified)
-        if done { stopped = true; parser.abortParsing() }
     }
     func parser(_ parser: XMLParser, foundCharacters text: String) {
-        guard current == index, path == ["sst", "si", "t"] || path == ["sst", "si", "r", "t"] else { return }
-        if !output(text) { stopped = true; parser.abortParsing() }
+        guard remaining.contains(current), path == ["sst", "si", "t"] || path == ["sst", "si", "r", "t"] else { return }
+        do {
+            for window in windows[current] ?? [] { try window.append(text, at: length) }
+            length += Int64(text.utf8.count)
+        } catch { failure = error; parser.abortParsing() }
     }
     func parser(_ parser: XMLParser, foundCDATA data: Data) {
         if let text = String(data: data, encoding: .utf8) { self.parser(parser, foundCharacters: text) }
     }
 }
 
+private final class SemanticSpreadsheetCell {
+    let label: String
+    var index: Int?
+    var length: Int64 = 0
+    var window: SemanticSpreadsheetWindow?
+    init(label: String) { self.label = label }
+}
+
+/// Keep at most 128 cell descriptors, then replay only to capture selected inline/cache windows.
 private final class SemanticSpreadsheetBody: SemanticSpreadsheetXML {
-    private let offset: Int64
+    private let firstCell: Int
     private let label: String
+    private let replay: [SemanticSpreadsheetCell]?
+    private var seenCells = 0
     private var cellType = ""
     private var reference = ""
-    private var skipCells = 0
-    private var seenCells = 0
-    private var cellLabel = ""
-    private var cellStarted = false
-    var pendingString: Int?
-    var failure: Error?
+    private var cell: SemanticSpreadsheetCell?
+    private var length: Int64 = 0
+    var cells: [SemanticSpreadsheetCell] = []
     var hasData = false
-    var bytesSeen: Int64 = 0
-    var bytes = Data()
-    init(offset: Int64, label: String) { self.offset = offset; self.label = label }
-
+    init(firstCell: Int, label: String, replay: [SemanticSpreadsheetCell]? = nil) {
+        self.firstCell = firstCell; self.label = label; self.replay = replay
+    }
     override func parser(_ parser: XMLParser, didStartElement name: String, namespaceURI uri: String?,
                          qualifiedName qualified: String?, attributes: [String: String]) {
         super.parser(parser, didStartElement: name, namespaceURI: uri, qualifiedName: qualified, attributes: attributes)
@@ -198,60 +270,46 @@ private final class SemanticSpreadsheetBody: SemanticSpreadsheetXML {
         if path == ["worksheet", "sheetData"] { hasData = true }
         if path == ["worksheet", "sheetData", "row", "c"] {
             seenCells += 1
-            cellType = attributes["t"] ?? "n"; reference = ""; cellStarted = false
-            cellLabel = "[\(label)!\(attributes["r"] ?? "?")]\t"
+            guard seenCells > firstCell else { return }
+            cellType = attributes["t"] ?? "n"; reference = ""; length = 0
+            let index = seenCells - firstCell - 1
+            cell = replay?[index] ?? SemanticSpreadsheetCell(label: "[\(label)!\(attributes["r"] ?? "?")]\t")
+            if let cell { cells.append(cell) }
         }
     }
     override func parser(_ parser: XMLParser, didEndElement name: String, namespaceURI uri: String?,
                          qualifiedName qualified: String?) {
-        if seenCells > skipCells {
+        if cell != nil {
             if path == ["worksheet", "sheetData", "row", "c", "v"], cellType == "s" {
                 if let index = Int(reference.trimmingCharacters(in: .whitespacesAndNewlines)), index >= 0 {
-                    pendingString = index; stopped = true; parser.abortParsing()
+                    cell?.index = index
                 } else { failure = SemanticDocumentError(); parser.abortParsing() }
             }
-            if path == ["worksheet", "sheetData", "row", "c"], cellStarted { append("\n", parser) }
+            if path == ["worksheet", "sheetData", "row", "c"] {
+                cell = nil
+                if cells.count == (replay?.count ?? 128) { stopped = true; parser.abortParsing() }
+            }
         }
         super.parser(parser, didEndElement: name, namespaceURI: uri, qualifiedName: qualified)
     }
     func parser(_ parser: XMLParser, foundCharacters text: String) {
-        guard seenCells > skipCells else { return }
-        let cell = ["worksheet", "sheetData", "row", "c"]
-        if path == cell + ["v"], cellType != "inlineStr" {
-            if cellType == "s" {
-                // A shared-string reference is an integer, never searchable cell content.
-                if reference.utf8.count + text.utf8.count > 32 {
-                    failure = SemanticDocumentError(); parser.abortParsing()
-                } else { reference += text }
-            } else { appendValue(text, parser) }
-        } else if cellType == "inlineStr", path == cell + ["is", "t"] || path == cell + ["is", "r", "t"] {
-            appendValue(text, parser)
+        guard let cell else { return }
+        let pathToCell = ["worksheet", "sheetData", "row", "c"]
+        if path == pathToCell + ["v"], cellType == "s" {
+            if reference.utf8.count + text.utf8.count > 32 {
+                failure = SemanticDocumentError(); parser.abortParsing()
+            } else { reference += text }
+        } else if (path == pathToCell + ["v"] && cellType != "inlineStr") ||
+            (cellType == "inlineStr" && (path == pathToCell + ["is", "t"] || path == pathToCell + ["is", "r", "t"])) {
+            do {
+                if replay != nil {
+                    try cell.window?.append(text, at: length)
+                } else { cell.length += Int64(text.utf8.count) }
+                length += Int64(text.utf8.count)
+            } catch { failure = error; parser.abortParsing() }
         }
     }
     func parser(_ parser: XMLParser, foundCDATA data: Data) {
         if let text = String(data: data, encoding: .utf8) { self.parser(parser, foundCharacters: text) }
-    }
-    func appendValue(_ text: String, _ parser: XMLParser?) {
-        guard !text.isEmpty else { return }
-        if !cellStarted { cellStarted = true; append(cellLabel, parser) }
-        append(text, parser)
-    }
-    func finishReference() {
-        if cellStarted { append("\n", nil) }
-        skipCells = seenCells; seenCells = 0; pendingString = nil
-        path = []; hasRoot = false
-    }
-    private func append(_ text: String, _ parser: XMLParser?) {
-        guard !stopped, failure == nil else { return }
-        for scalar in text.unicodeScalars {
-            let count = Int64(scalar.utf8.count)
-            if bytesSeen >= offset { bytes.append(contentsOf: scalar.utf8) } else if bytesSeen + count > offset {
-                failure = SemanticDocumentError(EINVAL); parser?.abortParsing(); return
-            }
-            bytesSeen += count
-            if bytes.count >= SemanticFilePolicy.contentBatchBytes + 4 {
-                stopped = true; parser?.abortParsing(); return
-            }
-        }
     }
 }

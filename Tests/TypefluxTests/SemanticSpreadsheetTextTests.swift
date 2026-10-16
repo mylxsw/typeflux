@@ -1,3 +1,4 @@
+// swiftlint:disable file_length
 import AppKit
 import SwiftUI
 import Darwin
@@ -9,7 +10,7 @@ private final class XLSXReader: AskFileReading {
     var cursors: [SemanticContentCursor] = []
     var after: (() -> Void)?
     private let native: AskFileReader?
-    init(native: Bool = false) { self.native = native ? AskFileReader(timeout: 15) : nil }
+    init(native: Bool = false) { self.native = native ? AskFileReader() : nil }
     deinit { native?.stop() }
     func read(_ request: AskFileReadRequest, isCancelled: () -> Bool) throws -> AskFileReadResponse {
         if isCancelled() { throw CancellationError() }
@@ -97,7 +98,7 @@ struct SemanticSpreadsheetTextTests {
         let file = try fixture(root, document(cells),
             second: document("<c r='A1' t='inlineStr'><is><t>secondsheetzebra</t></is></c>"),
             stored: stored, strings: strings)
-        let child = AskFileReader(timeout: 15); defer { child.stop() }
+        let child = AskFileReader(); defer { child.stop() }
         let result = try child.read(.init(operation: .content, path: file.path, scope: semanticScope(root.path)))
         let local = read(file, root: root)
         #expect(result.pages?.map(\.text) == local.pages?.map(\.text))
@@ -140,10 +141,12 @@ struct SemanticSpreadsheetTextTests {
             + repeated.replacingOccurrences(of: "&", with: "&amp;") + " tailxlsxzebra</t></si></sst>"
         let file = try fixture(root, document("<c r='A1' t='s'><v>0</v></c>"),
             second: document("<c r='A1' t='inlineStr'><is><t>secondsheetzebra</t></is></c>"), strings: strings)
+        let splitScalar = Int64("[1:项目!A1]\tfirstword ".utf8.count + 1)
+        #expect(read(file, root: root, cursor: .init(offset: splitScalar)).error == EINVAL)
         let first = read(file, root: root)
         var cursor = try #require(first.nextCursor), batches = 1, tail = false
         var complete = Data(first.pages!.first!.text.utf8.prefix(Int(cursor.offset)))
-        let child = AskFileReader(timeout: 15); defer { child.stop() }
+        let child = AskFileReader(); defer { child.stop() }
         repeat {
             let response = try child.read(.init(operation: .content, path: file.path,
                 scope: semanticScope(root.path), cursor: cursor))
@@ -189,6 +192,65 @@ struct SemanticSpreadsheetTextTests {
         _ = try SemanticFileIndexer.run(scope: semanticScope(root.path), store: reopened, reader: resumed,
             encoder: resumedEncoder, cancelled: { false }, progress: { _ in })
         #expect(resumedEncoder.calls == calls)
+    }
+
+    // swiftlint:disable:next function_body_length
+    @Test func `two thousand independent shared strings finish with default deadlines and durable restart`() throws {
+        let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
+        let texts = (0..<2000).map { "sharedrow\($0) " + String(repeating: "ordinary spreadsheet value ", count: 3) + "项目 😀" }
+        let rows = texts.indices.map {
+            "<row r='\($0 + 1)'><c r='A\($0 + 1)' t='s'><v>\($0)</v></c></row>"
+        }.joined()
+        let worksheet = "<worksheet xmlns='\(SemanticSpreadsheetText.namespace)'><sheetData>"
+            + rows + "</sheetData></worksheet>"
+        let strings = "<sst xmlns='\(SemanticSpreadsheetText.namespace)'>"
+            + texts.map { "<si><t>\($0)</t></si>" }.joined() + "</sst>"
+        let file = try fixture(root, worksheet, strings: strings)
+        let child = AskFileReader(); defer { child.stop() }
+        var cursor: SemanticContentCursor?, complete = Data(), timings: [Double] = [], restarted = false
+        repeat {
+            let started = ProcessInfo.processInfo.systemUptime
+            let response = try child.read(.init(operation: .content, path: file.path,
+                scope: semanticScope(root.path), cursor: cursor))
+            timings.append(ProcessInfo.processInfo.systemUptime - started)
+            try #require(response.error == nil)
+            let page = try #require(response.pages?.first)
+            #expect(page.text.utf8.count <= 32768 && page.segmentKind == "xlsx-sheet")
+            let old = cursor?.offset ?? 0
+            let count = response.nextCursor.map { Int($0.offset - old) } ?? page.text.utf8.count
+            complete.append(contentsOf: page.text.utf8.prefix(count))
+            if let next = response.nextCursor { try #require(next.offset > old) }
+            cursor = response.nextCursor
+            if !restarted { child.stop(); restarted = true }
+        } while cursor != nil
+        let expected = texts.indices.map { "[1:项目!A\($0 + 1)]\t\(texts[$0])\n" }.joined()
+        #expect(String(data: complete, encoding: .utf8) == expected)
+        #expect(timings.count > 2 && timings.dropFirst().allSatisfy { $0 < 5 })
+        let store = try SemanticFileStore(url: root.appendingPathComponent("index.sqlite"))
+        let reader = XLSXReader(native: true), encoder = SemanticFixtureEncoder(), token = AskSearchCancellation()
+        encoder.after = { if encoder.calls == 2 { token.cancel() } }
+        #expect(throws: CancellationError.self) {
+            try SemanticFileIndexer.run(scope: semanticScope(root.path), store: store, reader: reader,
+                encoder: encoder, cancelled: { token.isCancelled }, progress: { _ in })
+        }
+        let partial = try #require(try store.job(file.path))
+        let count = try store.counts().chunks
+        #expect(partial.state == .partial && partial.cursor.offset > 0)
+        let reopened = try SemanticFileStore(url: store.url), resumed = XLSXReader(native: true)
+        let resumedEncoder = SemanticFixtureEncoder()
+        _ = try SemanticFileIndexer.reconcile(paths: [], scope: semanticScope(root.path), store: reopened,
+            reader: resumed, encoder: resumedEncoder, cancelled: { false }, progress: { _ in })
+        let resumedCount = try reopened.counts().chunks
+        #expect(resumed.cursors.first == partial.cursor && resumedCount > count)
+        #expect(try reopened.job(file.path)?.state == .done)
+        let hits = try reopened.lexicalSearch(text: "sharedrow1999", query: .init("sharedrow1999"), type: .all,
+            scope: semanticScope(root.path), limit: 5, cancelled: { false })
+        #expect(hits.first?.path == file.path)
+        if let folder = ProcessInfo.processInfo.environment["TYPEFLUX_GUL405_XLSX_REPAIR_EVIDENCE"] {
+            let destination = URL(fileURLWithPath: folder)
+            try FileManager.default.copyItem(at: file, to: destination.appendingPathComponent("shared-2000.xlsx"))
+            try JSONEncoder().encode(timings).write(to: destination.appendingPathComponent("shared-2000-seconds.json"))
+        }
     }
 
     @Test func `cross sheet restart keeps committed first sheet vectors`() throws {
@@ -344,7 +406,9 @@ struct SemanticSpreadsheetTextTests {
         #expect(AskFileHit.Evidence(text: "PDF", page: 1).pageLocalizationKey == "semantic.page")
         #expect(read(empty, root: root, cursor: .init(page: 1)).pages?.isEmpty == true)
         let file = try fixture(root, document("<c r='A1' t='inlineStr'><is><t>汉字</t></is></c>"))
-        for cursor in [SemanticContentCursor(page: 2), .init(page: 1, offset: 1), .init(offset: 4), .init(offset: 99)] {
+        let invalid = [SemanticContentCursor(page: 2), .init(page: 1, offset: 1),
+                       .init(offset: 4), .init(offset: 99), .init(offset: Int64.max)]
+        for cursor in invalid {
             #expect(read(file, root: root, cursor: cursor).error == EINVAL)
         }
         let strict = document("<c r='A1' t='inlineStr'><is><t>strictzebra</t></is></c>")
