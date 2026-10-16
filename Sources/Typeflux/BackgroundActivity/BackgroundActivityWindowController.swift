@@ -37,6 +37,9 @@ final class BackgroundActivityWindowController: NSObject {
                 defer: false
             )
             window.identifier = Self.identifier
+            window.titlebarAppearsTransparent = true
+            window.titlebarSeparatorStyle = .none
+            window.backgroundColor = NSColor(ModelVisualStyle.canvas)
             window.isReleasedWhenClosed = false
             window.delegate = self
             window.minSize = NSSize(width: 460, height: 360)

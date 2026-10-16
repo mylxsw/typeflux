@@ -33,6 +33,7 @@ struct ModulePolicy: Sendable {
     var cleanupTimeout: TimeInterval = 2
     var maxInFlight = 8
     var automaticallyRecover = true
+    var automaticallyRecoverPersistentQuarantine = false
 
     var isValid: Bool {
         [startupTimeout, operationTimeout, cleanupTimeout].allSatisfy {

@@ -12,11 +12,15 @@ struct StorageModules: Sendable {
          conversationFactory: @escaping @Sendable () throws -> any AskCaching,
          wordBookFactory: @escaping @Sendable () throws -> any AskWordBookStoring,
          noteFactory: @escaping @Sendable () throws -> any AskNoteStoring) {
+        let policy = ModulePolicy(automaticallyRecoverPersistentQuarantine: true)
         notes = RecoveringAskNoteStore(factory: noteFactory,
+            policy: policy,
             healthStore: ModuleHealthStore(url: healthDirectory.appendingPathComponent("notebook.json")))
         words = RecoveringAskWordBookStore(factory: wordBookFactory,
+            policy: policy,
             healthStore: ModuleHealthStore(url: healthDirectory.appendingPathComponent("wordBook.json")))
         conversations = RecoveringAskConversationCache(factory: conversationFactory,
+            policy: policy,
             healthStore: ModuleHealthStore(url: healthDirectory.appendingPathComponent("conversations.json")))
         // These stores are independent. Losing chat must not disable notebooks
         // or translations, and none is a prerequisite for the launcher shell.
