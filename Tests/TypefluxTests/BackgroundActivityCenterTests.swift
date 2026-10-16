@@ -1,6 +1,6 @@
 import Combine
-import XCTest
 @testable import Typeflux
+import XCTest
 
 @MainActor
 final class BackgroundActivityCenterTests: XCTestCase {
@@ -22,7 +22,7 @@ final class BackgroundActivityCenterTests: XCTestCase {
             makeActivity("agent", kind: .agent),
             makeActivity("failed", state: .failed),
             makeActivity("download", kind: .download),
-            makeActivity("attention", kind: .agent, state: .attention),
+            makeActivity("attention", kind: .agent, state: .attention)
         ])
 
         XCTAssertEqual(sorted.map(\.id), ["attention", "failed", "agent", "download", "index", "paused", "waiting"])
@@ -35,10 +35,15 @@ final class BackgroundActivityCenterTests: XCTestCase {
 
     func testIndicatorShowsAttentionBeforeRunningAndNothingForRestingWork() {
         XCTAssertEqual(BackgroundActivityIndicator.of([]), .none)
-        XCTAssertEqual(BackgroundActivityIndicator.of([makeActivity("p", state: .paused), makeActivity("w", state: .waiting)]),
-                       .none)
+        XCTAssertEqual(
+            BackgroundActivityIndicator.of([makeActivity("p", state: .paused), makeActivity("w", state: .waiting)]),
+            .none
+        )
         XCTAssertEqual(BackgroundActivityIndicator.of([makeActivity("r"), makeActivity("p", state: .paused)]), .running)
-        XCTAssertEqual(BackgroundActivityIndicator.of([makeActivity("r"), makeActivity("f", state: .failed)]), .attention)
+        XCTAssertEqual(
+            BackgroundActivityIndicator.of([makeActivity("r"), makeActivity("f", state: .failed)]),
+            .attention
+        )
         XCTAssertEqual(BackgroundActivityIndicator.of([makeActivity("a", state: .attention)]), .attention)
     }
 
@@ -155,7 +160,10 @@ final class BackgroundActivityCenterTests: XCTestCase {
         center.register(first)
 
         first.feed.publish([makeActivity("download", kind: .download), makeActivity("shared")])
-        second.feed.publish([makeActivity("approval", kind: .agent, state: .attention), makeActivity("shared", detail: "dup")])
+        second.feed.publish([
+            makeActivity("approval", kind: .agent, state: .attention),
+            makeActivity("shared", detail: "dup")
+        ])
 
         XCTAssertEqual(center.activities.map(\.id), ["approval", "download", "shared"])
         XCTAssertEqual(center.activity("shared")?.detail, "", "the first source to report an id owns it")
@@ -289,7 +297,7 @@ final class BackgroundActivityCenterTests: XCTestCase {
 }
 
 func makeActivity(_ id: String, kind: BackgroundActivity.Kind = .download, detail: String = "",
-              state: BackgroundActivity.State = .running) -> BackgroundActivity {
+                  state: BackgroundActivity.State = .running) -> BackgroundActivity {
     BackgroundActivity(id: id, kind: kind, title: id.capitalized, detail: detail, progress: nil, state: state)
 }
 
@@ -302,8 +310,13 @@ final class FakeActivitySource: BackgroundActivitySource {
         self.feed = feed ?? BackgroundActivityFeed()
     }
 
-    var activitiesPublisher: AnyPublisher<[BackgroundActivity], Never> { feed.activitiesPublisher }
-    var completionsPublisher: AnyPublisher<BackgroundActivityCompletion, Never> { feed.completionsPublisher }
+    var activitiesPublisher: AnyPublisher<[BackgroundActivity], Never> {
+        feed.activitiesPublisher
+    }
+
+    var completionsPublisher: AnyPublisher<BackgroundActivityCompletion, Never> {
+        feed.completionsPublisher
+    }
 
     func perform(_ action: BackgroundActivity.Action, on activityID: String) {
         performed.append((action, activityID))
@@ -314,7 +327,9 @@ final class RecordingNotifications: LocalNotificationSending, @unchecked Sendabl
     struct Sent { let title: String; let body: String; let identifier: String }
     private let lock = NSLock()
     private var storage: [Sent] = []
-    var sent: [Sent] { lock.withLock { storage } }
+    var sent: [Sent] {
+        lock.withLock { storage }
+    }
 
     func sendLocalNotification(title: String, body: String, identifier: String) async {
         lock.withLock { storage.append(Sent(title: title, body: body, identifier: identifier)) }

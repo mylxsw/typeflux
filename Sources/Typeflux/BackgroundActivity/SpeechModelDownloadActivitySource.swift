@@ -29,8 +29,13 @@ final class SpeechModelDownloadActivitySource: BackgroundActivitySource {
         refresh()
     }
 
-    var activitiesPublisher: AnyPublisher<[BackgroundActivity], Never> { feed.activitiesPublisher }
-    var completionsPublisher: AnyPublisher<BackgroundActivityCompletion, Never> { feed.completionsPublisher }
+    var activitiesPublisher: AnyPublisher<[BackgroundActivity], Never> {
+        feed.activitiesPublisher
+    }
+
+    var completionsPublisher: AnyPublisher<BackgroundActivityCompletion, Never> {
+        feed.completionsPublisher
+    }
 
     func perform(_ action: BackgroundActivity.Action, on activityID: String) {
         guard activityID == Self.activityID, action == .dismiss else { return }
@@ -50,15 +55,15 @@ final class SpeechModelDownloadActivitySource: BackgroundActivitySource {
     static func activities(for status: LocalModelDownloadProgressStatus) -> [BackgroundActivity] {
         switch status {
         case .idle:
-            return []
+            []
         case let .downloading(model, progress):
-            return [BackgroundActivity(
+            [BackgroundActivity(
                 id: activityID, kind: .download, title: title(model),
                 detail: L("activity.download.percent", BackgroundActivityFormat.percent(progress)),
                 progress: progress, state: .running, route: .speechModels
             )]
         case let .failed(model, message):
-            return [BackgroundActivity(
+            [BackgroundActivity(
                 id: activityID, kind: .download, title: title(model),
                 detail: L("activity.download.failed", message), progress: nil, state: .failed,
                 actions: [.open, .dismiss], route: .speechModels

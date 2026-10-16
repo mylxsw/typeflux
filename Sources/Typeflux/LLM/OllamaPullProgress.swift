@@ -21,15 +21,22 @@ final class NoopOllamaPullProgressReporter: OllamaPullProgressReporting {
 struct OllamaPullProgress: Equatable {
     struct Failure: LocalizedError, Equatable {
         var message: String
-        var errorDescription: String? { message }
+        var errorDescription: String? {
+            message
+        }
     }
 
     private(set) var layers: [String: (completed: Int64, total: Int64)] = [:]
     private(set) var succeeded = false
     private(set) var status = ""
 
-    var completed: Int64 { layers.values.reduce(0) { $0 + min($1.completed, $1.total) } }
-    var total: Int64 { layers.values.reduce(0) { $0 + $1.total } }
+    var completed: Int64 {
+        layers.values.reduce(0) { $0 + min($1.completed, $1.total) }
+    }
+
+    var total: Int64 {
+        layers.values.reduce(0) { $0 + $1.total }
+    }
 
     /// Applies one line. Returns true when the byte counts changed; throws the
     /// error the server reported.
@@ -38,14 +45,20 @@ struct OllamaPullProgress: Equatable {
         let trimmed = line.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, let data = trimmed.data(using: .utf8) else { return false }
         let event = try JSONDecoder().decode(Event.self, from: data)
-        if let error = event.error { throw Failure(message: error) }
+        if let error = event.error {
+            throw Failure(message: error)
+        }
         if let status = event.status {
             self.status = status
-            if status == "success" { succeeded = true }
+            if status == "success" {
+                succeeded = true
+            }
         }
         guard let digest = event.digest, let total = event.total, total > 0 else { return false }
         let next = (completed: max(0, event.completed ?? 0), total: total)
-        if let current = layers[digest], current == next { return false }
+        if let current = layers[digest], current == next {
+            return false
+        }
         layers[digest] = next
         return true
     }

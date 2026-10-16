@@ -27,7 +27,9 @@ final class BackgroundActivityCenter: ObservableObject {
     }
 
     /// Activities using resources or waiting for the user.
-    var activeCount: Int { activities.filter(\.isActive).count }
+    var activeCount: Int {
+        activities.filter(\.isActive).count
+    }
 
     private let settings: SettingsStore
     private let notifications: LocalNotificationSending
@@ -72,7 +74,9 @@ final class BackgroundActivityCenter: ObservableObject {
     func perform(_ action: BackgroundActivity.Action, on id: String) {
         guard let activity = activity(id) else { return }
         if action == .open {
-            if let route = activity.route { onOpen(route) }
+            if let route = activity.route {
+                onOpen(route)
+            }
             return
         }
         guard let owner = owners[id], let source = sources[owner] else { return }
@@ -107,12 +111,16 @@ final class BackgroundActivityCenter: ObservableObject {
         }
         self.owners = owners
         let sorted = BackgroundActivity.sorted(merged)
-        if sorted != activities { activities = sorted }
+        if sorted != activities {
+            activities = sorted
+        }
     }
 
     private func record(_ completion: BackgroundActivityCompletion) {
         recent.insert(completion, at: 0)
-        if recent.count > Self.recentLimit { recent.removeLast(recent.count - Self.recentLimit) }
+        if recent.count > Self.recentLimit {
+            recent.removeLast(recent.count - Self.recentLimit)
+        }
         guard completion.notifies, notificationsEnabled,
               (completion.duration ?? 0) >= Self.notificationThreshold else { return }
         let notifications = notifications

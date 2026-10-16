@@ -49,9 +49,17 @@ struct BackgroundActivity: Identifiable, Equatable {
     var route: Route?
 
     /// Uses resources right now or waits for the user: the menu bar dot is on.
-    var isActive: Bool { state == .running || state == .attention }
-    var needsUser: Bool { state == .attention || state == .failed }
-    var showsProgress: Bool { state == .running || state == .paused || state == .waiting }
+    var isActive: Bool {
+        state == .running || state == .attention
+    }
+
+    var needsUser: Bool {
+        state == .attention || state == .failed
+    }
+
+    var showsProgress: Bool {
+        state == .running || state == .paused || state == .waiting
+    }
 
     /// Needs the user first, then work under way, then work at rest.
     var rank: Int {
@@ -66,8 +74,12 @@ struct BackgroundActivity: Identifiable, Equatable {
 
     static func sorted(_ activities: [Self]) -> [Self] {
         activities.enumerated().sorted { lhs, rhs in
-            if lhs.element.rank != rhs.element.rank { return lhs.element.rank < rhs.element.rank }
-            if lhs.element.kind != rhs.element.kind { return lhs.element.kind.rawValue < rhs.element.kind.rawValue }
+            if lhs.element.rank != rhs.element.rank {
+                return lhs.element.rank < rhs.element.rank
+            }
+            if lhs.element.kind != rhs.element.kind {
+                return lhs.element.kind.rawValue < rhs.element.kind.rawValue
+            }
             return lhs.offset < rhs.offset
         }.map(\.element)
     }
@@ -80,8 +92,12 @@ enum BackgroundActivityIndicator: Equatable {
     case attention
 
     static func of(_ activities: [BackgroundActivity]) -> Self {
-        if activities.contains(where: \.needsUser) { return .attention }
-        if activities.contains(where: { $0.state == .running }) { return .running }
+        if activities.contains(where: \.needsUser) {
+            return .attention
+        }
+        if activities.contains(where: { $0.state == .running }) {
+            return .running
+        }
         return .none
     }
 }

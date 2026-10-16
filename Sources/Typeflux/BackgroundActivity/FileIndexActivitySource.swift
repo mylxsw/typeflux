@@ -25,8 +25,13 @@ final class FileIndexActivitySource: BackgroundActivitySource {
         refresh()
     }
 
-    var activitiesPublisher: AnyPublisher<[BackgroundActivity], Never> { feed.activitiesPublisher }
-    var completionsPublisher: AnyPublisher<BackgroundActivityCompletion, Never> { feed.completionsPublisher }
+    var activitiesPublisher: AnyPublisher<[BackgroundActivity], Never> {
+        feed.activitiesPublisher
+    }
+
+    var completionsPublisher: AnyPublisher<BackgroundActivityCompletion, Never> {
+        feed.completionsPublisher
+    }
 
     func perform(_: BackgroundActivity.Action, on _: String) {}
 

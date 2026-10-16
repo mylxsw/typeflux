@@ -24,7 +24,9 @@ final class StatusItemActivityIndicator {
         dot.setAccessibilityElement(false)
     }
 
-    var isPulsing: Bool { dot.layer?.animation(forKey: Self.pulseKey) != nil }
+    var isPulsing: Bool {
+        dot.layer?.animation(forKey: Self.pulseKey) != nil
+    }
 
     /// The status item's width for `state`, given the menu bar's thickness.
     static func length(for state: BackgroundActivityIndicator, thickness: CGFloat) -> CGFloat {
@@ -62,7 +64,7 @@ final class StatusItemActivityIndicator {
                 dot.widthAnchor.constraint(equalToConstant: Self.diameter),
                 dot.heightAnchor.constraint(equalToConstant: Self.diameter),
                 dot.trailingAnchor.constraint(equalTo: button.trailingAnchor, constant: -Self.trailingInset),
-                dot.centerYAnchor.constraint(equalTo: button.centerYAnchor),
+                dot.centerYAnchor.constraint(equalTo: button.centerYAnchor)
             ])
         }
         guard let color = Self.color(for: state) else {

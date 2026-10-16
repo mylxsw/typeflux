@@ -39,7 +39,11 @@ struct BackgroundActivityRowView: View {
                 .fill(hovering && activity.route != nil ? Color.primary.opacity(0.07) : .clear)
         )
         .contentShape(Rectangle())
-        .onTapGesture { if activity.route != nil { perform(.open) } }
+        .onTapGesture {
+            if activity.route != nil {
+                perform(.open)
+            }
+        }
         .onHover { hovering = $0 }
         .accessibilityElement(children: .contain)
         .accessibilityLabel(Text("\(activity.title), \(activity.detail)"))
@@ -72,7 +76,7 @@ struct BackgroundActivityRowView: View {
         }
     }
 
-    @ViewBuilder private var progress: some View {
+    private var progress: some View {
         Group {
             if let value = activity.progress {
                 ProgressView(value: value)

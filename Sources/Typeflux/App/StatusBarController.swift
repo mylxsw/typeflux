@@ -48,7 +48,7 @@ final class StatusBarController: NSObject {
     private let onClosePinnedScreenshots: () -> Void
     private let activityCenter: BackgroundActivityCenter?
     private let activityIndicator = StatusItemActivityIndicator()
-    private lazy var activityWindow: BackgroundActivityWindowController? = activityCenter.map {
+    private(set) lazy var activityWindow: BackgroundActivityWindowController? = activityCenter.map {
         BackgroundActivityWindowController(center: $0, settingsStore: settingsStore)
     }
 
@@ -56,7 +56,10 @@ final class StatusBarController: NSObject {
     private(set) var menuActivityLayout = BackgroundActivityMenuLayout(activities: [])
     /// The status menu while it is open; other refreshes may replace `menu` meanwhile.
     private weak var openMenu: NSMenu?
-    private var isMenuOpen: Bool { openMenu != nil }
+    private var isMenuOpen: Bool {
+        openMenu != nil
+    }
+
     private var activityRebuildPending = false
 
     private var statusItem: NSStatusItem?
@@ -231,12 +234,18 @@ final class StatusBarController: NSObject {
     /// "Ready, 2 background tasks in progress, a background task needs your attention".
     static func accessibilityTitle(_ status: String, center: BackgroundActivityCenter) -> String {
         var parts = [status]
-        if center.activeCount > 0 { parts.append(L("activity.accessibility", center.activeCount)) }
-        if center.activities.contains(where: \.needsUser) { parts.append(L("activity.accessibility.attention")) }
+        if center.activeCount > 0 {
+            parts.append(L("activity.accessibility", center.activeCount))
+        }
+        if center.activities.contains(where: \.needsUser) {
+            parts.append(L("activity.accessibility.attention"))
+        }
         return parts.joined(separator: L("activity.accessibility.separator"))
     }
 
-    var activityIndicatorState: BackgroundActivityIndicator { activityIndicator.state }
+    var activityIndicatorState: BackgroundActivityIndicator {
+        activityIndicator.state
+    }
 
     private func activitiesDidChange() {
         updateTitle()
@@ -266,7 +275,9 @@ final class StatusBarController: NSObject {
             layout: menuActivityLayout,
             perform: { [weak self, weak activityCenter] action, id in
                 // Opening something leaves the menu; row buttons such as pause keep it open.
-                if action == .open { self?.openMenu?.cancelTracking() }
+                if action == .open {
+                    self?.openMenu?.cancelTracking()
+                }
                 activityCenter?.perform(action, on: id)
             },
             showAll: { [weak self] in
@@ -719,7 +730,9 @@ final class StatusBarController: NSObject {
 
 extension StatusBarController: NSMenuDelegate {
     func menuWillOpen(_ menu: NSMenu) {
-        if menu === self.menu { openMenu = menu }
+        if menu === self.menu {
+            openMenu = menu
+        }
         // The shortcut may have changed in Settings since the menu was built.
         if let item = menu.item(withTag: MenuTag.screenshot) {
             applyScreenshotShortcut(to: item)

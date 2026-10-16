@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
-import XCTest
 @testable import Typeflux
+import XCTest
 
 @MainActor
 final class BackgroundActivityUITests: XCTestCase {
@@ -79,6 +79,28 @@ final class BackgroundActivityUITests: XCTestCase {
         source.feed.publish([makeActivity("a", detail: "50%"), makeActivity("b")])
         drain()
         XCTAssertTrue(controller.menu === rebuilt)
+    }
+
+    func testMenuSectionRoutesActionsAndOpensTheWindow() throws {
+        let (controller, center, source) = try makeController()
+        defer { controller.stop() }
+        var opened: [BackgroundActivity.Route] = []
+        center.onOpen = { opened.append($0) }
+        var routed = makeActivity("agent", kind: .agent)
+        routed.route = .conversation("c1")
+        source.feed.publish([routed, makeActivity("download")])
+        drain()
+        let host = try XCTUnwrap(controller.menu?.items.first?.view as? NSHostingView<BackgroundActivityMenuSection>)
+
+        host.rootView.perform(.cancel, "download")
+        host.rootView.perform(.open, "agent")
+        XCTAssertEqual(source.performed.map(\.1), ["download"])
+        XCTAssertEqual(opened, [.conversation("c1")])
+
+        host.rootView.showAll()
+        let window = try XCTUnwrap(controller.activityWindow?.window)
+        XCTAssertTrue(window.isVisible)
+        window.close()
     }
 
     func testMenuLayoutLimitsRowsAndKeepsTitles() {
@@ -201,7 +223,8 @@ final class BackgroundActivityUITests: XCTestCase {
 
         source.feed.publish([makeActivity("p", state: .paused)])
         render(BackgroundActivityMenuSection(center: center, layout: BackgroundActivityMenuLayout(
-            activities: center.activities), perform: { _, _ in }, showAll: {}))
+            activities: center.activities
+        ), perform: { _, _ in }, showAll: {}))
     }
 
     func testWindowShowsActiveAndRecentTasks() throws {
@@ -289,11 +312,22 @@ final class BackgroundActivityUITests: XCTestCase {
 
 private final class ActivityEmptyHistoryStore: HistoryStore {
     func save(record _: HistoryRecord) {}
-    func list() -> [HistoryRecord] { [] }
-    func list(limit _: Int, offset _: Int, searchQuery _: String?) -> [HistoryRecord] { [] }
-    func record(id _: UUID) -> HistoryRecord? { nil }
+    func list() -> [HistoryRecord] {
+        []
+    }
+
+    func list(limit _: Int, offset _: Int, searchQuery _: String?) -> [HistoryRecord] {
+        []
+    }
+
+    func record(id _: UUID) -> HistoryRecord? {
+        nil
+    }
+
     func delete(id _: UUID) {}
     func purge(olderThanDays _: Int) {}
     func clear() {}
-    func exportMarkdown() throws -> URL { URL(fileURLWithPath: "/tmp/history.md") }
+    func exportMarkdown() throws -> URL {
+        URL(fileURLWithPath: "/tmp/history.md")
+    }
 }

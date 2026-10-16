@@ -24,19 +24,42 @@ protocol AgentActivityControlling: AnyObject {
     func stopAgentRun(_ id: String)
 }
 
-extension AskConversationModel: AgentActivityControlling {
-    var agentActivityInput: AgentActivityInput {
-        AgentActivityInput(runs: busyIds.sorted().map { id in
+extension AgentActivityInput {
+    /// The conversation on screen: the only one whose run and plan are loaded.
+    struct Selection {
+        var id: String
+        var title: String
+        var run: AskRun?
+    }
+
+    /// The runs in `busy`, described with what the conversation model knows of each.
+    static func make(busy: Set<String>, titles: [String: String], selected: Selection?,
+                     liveSteps: [String: [AskToolCall]], approvals: [String: AskToolCall]) -> Self {
+        AgentActivityInput(runs: busy.sorted().map { id in
             let loaded = selected?.id == id ? selected : nil
-            let steps = inferenceProgress[id]?.toolCalls ?? loaded?.run?.previewTools ?? []
-            return AgentActivityInput.Run(
+            let steps = liveSteps[id] ?? loaded?.run?.previewTools ?? []
+            return Run(
                 id: id,
-                title: conversations.first { $0.id == id }?.title ?? loaded?.title,
-                approval: pendingApprovals[id],
+                title: titles[id] ?? loaded?.title,
+                approval: approvals[id],
                 step: steps.last { $0.function.name != "update_plan" },
                 plan: loaded?.run?.plan
             )
         })
+    }
+}
+
+extension AskConversationModel: AgentActivityControlling {
+    var agentActivityInput: AgentActivityInput {
+        guard !busyIds.isEmpty else { return AgentActivityInput() }
+        let busy = busyIds
+        return .make(
+            busy: busy,
+            titles: Dictionary(conversations.filter { busy.contains($0.id) }.map { ($0.id, $0.title) },
+                               uniquingKeysWith: { first, _ in first }),
+            selected: selected.map { .init(id: $0.id, title: $0.title, run: $0.run) },
+            liveSteps: inferenceProgress.mapValues(\.toolCalls), approvals: pendingApprovals
+        )
     }
 
     var agentActivityChanges: AnyPublisher<Void, Never> {
@@ -73,10 +96,17 @@ final class AgentRunActivitySource: BackgroundActivitySource {
         refresh()
     }
 
-    var activitiesPublisher: AnyPublisher<[BackgroundActivity], Never> { feed.activitiesPublisher }
-    var completionsPublisher: AnyPublisher<BackgroundActivityCompletion, Never> { feed.completionsPublisher }
+    var activitiesPublisher: AnyPublisher<[BackgroundActivity], Never> {
+        feed.activitiesPublisher
+    }
 
-    static func activityID(_ conversationID: String) -> String { idPrefix + conversationID }
+    var completionsPublisher: AnyPublisher<BackgroundActivityCompletion, Never> {
+        feed.completionsPublisher
+    }
+
+    static func activityID(_ conversationID: String) -> String {
+        idPrefix + conversationID
+    }
 
     func perform(_ action: BackgroundActivity.Action, on activityID: String) {
         guard action == .stop, activityID.hasPrefix(Self.idPrefix) else { return }

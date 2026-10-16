@@ -22,7 +22,9 @@ struct BackgroundActivityMenuLayout: Equatable {
         hiddenCount = max(0, activities.count - Self.rowLimit)
     }
 
-    var isEmpty: Bool { rows.isEmpty }
+    var isEmpty: Bool {
+        rows.isEmpty
+    }
 
     var height: CGFloat {
         Self.verticalPadding * 2 + Self.headerHeight + CGFloat(rows.count) * BackgroundActivityRowView.height

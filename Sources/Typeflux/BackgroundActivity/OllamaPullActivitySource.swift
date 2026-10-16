@@ -50,11 +50,18 @@ final class OllamaPullActivitySource: BackgroundActivitySource, OllamaPullProgre
         self.feed = feed ?? BackgroundActivityFeed()
     }
 
-    static func activityID(_ model: String) -> String { "ollama.\(model)" }
+    static func activityID(_ model: String) -> String {
+        "ollama.\(model)"
+    }
 
-    static func title(_ model: String) -> String { L("activity.llmModel.title", model) }
+    static func title(_ model: String) -> String {
+        L("activity.llmModel.title", model)
+    }
 
-    @MainActor var activitiesPublisher: AnyPublisher<[BackgroundActivity], Never> { feed.activitiesPublisher }
+    @MainActor var activitiesPublisher: AnyPublisher<[BackgroundActivity], Never> {
+        feed.activitiesPublisher
+    }
+
     @MainActor var completionsPublisher: AnyPublisher<BackgroundActivityCompletion, Never> {
         feed.completionsPublisher
     }
@@ -95,7 +102,9 @@ final class OllamaPullActivitySource: BackgroundActivitySource, OllamaPullProgre
                                     failure: message)
             } else {
                 pulls[model] = nil
-                if error == nil { finished.append(model) }
+                if error == nil {
+                    finished.append(model)
+                }
             }
         }
         scheduleRefresh()

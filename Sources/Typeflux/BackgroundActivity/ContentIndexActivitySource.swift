@@ -55,8 +55,13 @@ final class ContentIndexActivitySource: BackgroundActivitySource {
         refresh()
     }
 
-    var activitiesPublisher: AnyPublisher<[BackgroundActivity], Never> { feed.activitiesPublisher }
-    var completionsPublisher: AnyPublisher<BackgroundActivityCompletion, Never> { feed.completionsPublisher }
+    var activitiesPublisher: AnyPublisher<[BackgroundActivity], Never> {
+        feed.activitiesPublisher
+    }
+
+    var completionsPublisher: AnyPublisher<BackgroundActivityCompletion, Never> {
+        feed.completionsPublisher
+    }
 
     func perform(_ action: BackgroundActivity.Action, on activityID: String) {
         switch (action, activityID) {
@@ -72,30 +77,38 @@ final class ContentIndexActivitySource: BackgroundActivitySource {
 
     func refresh() {
         let next = service.activityInput
-        for (id, kind, title) in Self.completions(from: last, to: next) {
-            feed.complete(id, kind: kind, title: title, notifies: kind == .download)
+        for id in Self.completions(from: last, to: next) {
+            let kind: BackgroundActivity.Kind = id == Self.indexID ? .index : .download
+            feed.complete(id, kind: kind, title: Self.title(id), notifies: kind == .download)
         }
         last = next
         feed.publish(Self.activities(for: next))
     }
 
-    /// The work that finished between two readings.
-    static func completions(from previous: ContentIndexActivityInput, to next: ContentIndexActivityInput)
-        -> [(String, BackgroundActivity.Kind, String)] {
-        var finished: [(String, BackgroundActivity.Kind, String)] = []
+    static func title(_ id: String) -> String {
+        switch id {
+        case modelID: L("activity.contentModel.title")
+        case mediaModelID: L("activity.mediaModel.title")
+        default: L("activity.contentIndex.title")
+        }
+    }
+
+    /// The ids of the work that finished between two readings.
+    static func completions(from previous: ContentIndexActivityInput, to next: ContentIndexActivityInput) -> [String] {
+        var finished: [String] = []
         if case .downloading = previous.phase, next.modelReady,
            ![.failed, .modelRequired, .off].contains(next.phase) {
             if case .downloading = next.phase {} else {
-                finished.append((modelID, .download, L("activity.contentModel.title")))
+                finished.append(modelID)
             }
         }
         if previous.mediaDownload != nil, next.mediaDownload == nil, !next.mediaFailed, next.phase != .failed,
            next.phase != .off {
-            finished.append((mediaModelID, .download, L("activity.mediaModel.title")))
+            finished.append(mediaModelID)
         }
         let wasIndexing = previous.phase == .indexing || (previous.phase == .paused && previous.indexProgress != nil)
         if wasIndexing, next.phase == .ready {
-            finished.append((indexID, .index, L("activity.contentIndex.title")))
+            finished.append(indexID)
         }
         return finished
     }

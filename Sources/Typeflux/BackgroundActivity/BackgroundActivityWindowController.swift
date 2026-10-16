@@ -23,7 +23,9 @@ final class BackgroundActivityWindowController: NSObject {
     }
 
     deinit {
-        if let languageObserver { NotificationCenter.default.removeObserver(languageObserver) }
+        if let languageObserver {
+            NotificationCenter.default.removeObserver(languageObserver)
+        }
     }
 
     func show(activate: Bool = true) {
@@ -46,7 +48,9 @@ final class BackgroundActivityWindowController: NSObject {
         window.appearance = AppAppearance.nsAppearance(for: settingsStore.appearanceMode)
         DockVisibilityController.shared.windowDidShow(window)
         window.makeKeyAndOrderFront(nil)
-        if activate { NSApp.activate(ignoringOtherApps: true) }
+        if activate {
+            NSApp.activate(ignoringOtherApps: true)
+        }
     }
 
     private func reload() {
@@ -58,7 +62,9 @@ final class BackgroundActivityWindowController: NSObject {
 
 extension BackgroundActivityWindowController: NSWindowDelegate {
     func windowWillClose(_: Notification) {
-        if let window { DockVisibilityController.shared.windowDidHide(window) }
+        if let window {
+            DockVisibilityController.shared.windowDidHide(window)
+        }
         window = nil
     }
 }

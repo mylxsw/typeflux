@@ -1,5 +1,5 @@
-import XCTest
 @testable import Typeflux
+import XCTest
 
 final class OllamaPullProgressTests: XCTestCase {
     func testAddsUpLayersAndRecognisesSuccess() throws {
@@ -78,7 +78,8 @@ final class OllamaPullProgressTests: XCTestCase {
     private func assertPullFails(_ scenario: PullScenario, message: String,
                                  file: StaticString = #filePath, line: UInt = #line) async {
         do {
-            try await OllamaLocalModelManager.streamPull(model: "m", baseURL: url(scenario), session: makeSession()) { _, _ in }
+            try await OllamaLocalModelManager
+                .streamPull(model: "m", baseURL: url(scenario), session: makeSession()) { _, _ in }
             XCTFail("Expected failure", file: file, line: line)
         } catch {
             XCTAssertEqual(error.localizedDescription, message, file: file, line: line)
@@ -101,8 +102,13 @@ private enum PullScenario: String {
 }
 
 private final class PullURLProtocol: URLProtocol, @unchecked Sendable {
-    override class func canInit(with _: URLRequest) -> Bool { true }
-    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override class func canInit(with _: URLRequest) -> Bool {
+        true
+    }
+
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest {
+        request
+    }
 
     override func startLoading() {
         let host = request.url?.host ?? ""
@@ -111,7 +117,7 @@ private final class PullURLProtocol: URLProtocol, @unchecked Sendable {
         let status = isPull && (scenario == .httpError || scenario == .httpErrorWithoutBody) ? 500 : 200
         let response = HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: nil, headerFields: nil)!
         client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
-        let body: String = if !isPull {
+        let body = if !isPull {
             #"{"models":[]}"#
         } else {
             switch scenario {
@@ -139,7 +145,9 @@ private final class PullURLProtocol: URLProtocol, @unchecked Sendable {
 private final class RecordingPullReporter: OllamaPullProgressReporting, @unchecked Sendable {
     private let lock = NSLock()
     private var storage: [String] = []
-    var events: [String] { lock.withLock { storage } }
+    var events: [String] {
+        lock.withLock { storage }
+    }
 
     func pullStarted(model: String, cancel _: @escaping @Sendable () -> Void) {
         lock.withLock { storage.append("start \(model)") }

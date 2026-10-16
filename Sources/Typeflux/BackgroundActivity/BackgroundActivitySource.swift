@@ -36,7 +36,9 @@ final class BackgroundActivityFeed {
         finished.eraseToAnyPublisher()
     }
 
-    var current: [BackgroundActivity] { subject.value }
+    var current: [BackgroundActivity] {
+        subject.value
+    }
 
     func reported(_ id: String) -> BackgroundActivity? {
         reported.first { $0.id == id }

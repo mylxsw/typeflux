@@ -1,6 +1,6 @@
 import Combine
-import XCTest
 @testable import Typeflux
+import XCTest
 
 @MainActor
 final class BackgroundActivitySourceTests: XCTestCase {
@@ -18,7 +18,10 @@ final class BackgroundActivitySourceTests: XCTestCase {
         XCTAssertEqual(running[0].state, .running)
         XCTAssertEqual(running[0].route, .speechModels)
 
-        let failed = SpeechModelDownloadActivitySource.activities(for: .failed(model: .senseVoiceSmall, message: "Offline"))
+        let failed = SpeechModelDownloadActivitySource.activities(for: .failed(
+            model: .senseVoiceSmall,
+            message: "Offline"
+        ))
         XCTAssertEqual(failed[0].state, .failed)
         XCTAssertEqual(failed[0].detail, L("activity.download.failed", "Offline"))
         XCTAssertEqual(failed[0].actions, [.open, .dismiss])
@@ -126,7 +129,10 @@ final class BackgroundActivitySourceTests: XCTestCase {
             phase: .indexing, modelReady: true, mediaDownload: 0.25, indexProgress: summary
         ))
 
-        XCTAssertEqual(activities.map(\.id), [ContentIndexActivitySource.mediaModelID, ContentIndexActivitySource.indexID])
+        XCTAssertEqual(
+            activities.map(\.id),
+            [ContentIndexActivitySource.mediaModelID, ContentIndexActivitySource.indexID]
+        )
         XCTAssertEqual(activities[0].detail,
                        BackgroundActivityFormat.bytes(fraction: 0.25, of: SemanticMediaModel.bytes))
         XCTAssertEqual(activities[1].progress, 0.25)
@@ -183,7 +189,7 @@ final class BackgroundActivitySourceTests: XCTestCase {
     func testContentIndexCompletions() {
         typealias Input = ContentIndexActivityInput
         func ids(_ from: Input, _ to: Input) -> [String] {
-            ContentIndexActivitySource.completions(from: from, to: to).map(\.0)
+            ContentIndexActivitySource.completions(from: from, to: to)
         }
         XCTAssertEqual(ids(.init(phase: .downloading(0.9)), .init(phase: .preparing, modelReady: true)),
                        [ContentIndexActivitySource.modelID])
@@ -199,6 +205,15 @@ final class BackgroundActivitySourceTests: XCTestCase {
                        [ContentIndexActivitySource.indexID])
         XCTAssertEqual(ids(.init(phase: .paused), .init(phase: .ready)), [])
         XCTAssertEqual(ids(.init(phase: .indexing), .init(phase: .failed)), [])
+    }
+
+    func testContentIndexTitlesFollowTheActivity() {
+        XCTAssertEqual(ContentIndexActivitySource.title(ContentIndexActivitySource.modelID),
+                       L("activity.contentModel.title"))
+        XCTAssertEqual(ContentIndexActivitySource.title(ContentIndexActivitySource.mediaModelID),
+                       L("activity.mediaModel.title"))
+        XCTAssertEqual(ContentIndexActivitySource.title(ContentIndexActivitySource.indexID),
+                       L("activity.contentIndex.title"))
     }
 
     func testContentIndexRoutesActionsToTheService() {
@@ -231,11 +246,14 @@ final class BackgroundActivitySourceTests: XCTestCase {
         XCTAssertEqual(recorder.completions.first?.notifies, true)
     }
 
-    func testSemanticServiceReportsItsActivityInput() {
+    func testSemanticServiceReportsItsActivityInput() throws {
         let suite = "BackgroundActivitySourceTests.\(UUID().uuidString)"
         defer { UserDefaults().removePersistentDomain(forName: suite) }
-        let service = SemanticFileSearchService(settings: SettingsStore(defaults: UserDefaults(suiteName: suite)!),
-                                                supported: false, automaticStart: false)
+        let service = try SemanticFileSearchService(
+            settings: SettingsStore(defaults: XCTUnwrap(UserDefaults(suiteName: suite))),
+            supported: false,
+            automaticStart: false
+        )
         XCTAssertEqual(service.activityInput, ContentIndexActivityInput())
         var fired = false
         let cancellable = service.activityChanges.sink { fired = true }
@@ -253,7 +271,7 @@ final class BackgroundActivitySourceTests: XCTestCase {
         let activities = AgentRunActivitySource.activities(for: .init(runs: [
             .init(id: "c1", title: "Plan run", step: call, plan: plan),
             .init(id: "c2", title: "  ", approval: call),
-            .init(id: "c3", title: nil),
+            .init(id: "c3", title: nil)
         ]))
 
         XCTAssertEqual(activities.map(\.id), ["agent.c1", "agent.c2", "agent.c3"])
@@ -267,6 +285,37 @@ final class BackgroundActivitySourceTests: XCTestCase {
         XCTAssertNil(activities[2].progress)
         XCTAssertEqual(activities[2].detail, L("ask.activity.working"))
         XCTAssertEqual(activities[2].state, .running)
+    }
+
+    func testAgentInputDescribesBusyRunsFromWhatTheModelKnows() {
+        let call = AskToolCall(id: "t", function: .init(name: "web_search", arguments: "{}"))
+        let planCall = AskToolCall(id: "p", function: .init(name: "update_plan", arguments: "{}"))
+        var run = AskRun(id: "r", deviceId: "d", status: "running", steps: 1, updatedAt: Date(), tools: [], pending: [])
+        run.previewTools = [call, planCall]
+        run.plan = [AskPlanItem(step: "a", status: "completed")]
+
+        let input = AgentActivityInput.make(
+            busy: ["b", "a", "c"], titles: ["a": "Listed"], selected: .init(id: "b", title: "Selected", run: run),
+            liveSteps: ["c": [planCall]], approvals: ["a": call]
+        )
+
+        XCTAssertEqual(input.runs, [
+            .init(id: "a", title: "Listed", approval: call, step: nil, plan: nil),
+            .init(id: "b", title: "Selected", approval: nil, step: call, plan: run.plan),
+            .init(id: "c", title: nil, approval: nil, step: nil, plan: nil)
+        ])
+    }
+
+    func testConversationModelReportsNoRunsWhileIdleAndForwardsChanges() throws {
+        let fixture = try AskTestFixture()
+        XCTAssertEqual(fixture.model.agentActivityInput, AgentActivityInput())
+        var fired = 0
+        let cancellable = fixture.model.agentActivityChanges.sink { fired += 1 }
+        defer { cancellable.cancel() }
+        fixture.model.objectWillChange.send()
+        XCTAssertEqual(fired, 1)
+        fixture.model.stopAgentRun("missing")
+        XCTAssertTrue(fixture.model.busyIds.isEmpty)
     }
 
     func testAgentRunsCompleteUnlessStoppedFromTheMenu() {
@@ -371,8 +420,13 @@ final class BackgroundActivitySourceTests: XCTestCase {
 private final class CancelFlag: @unchecked Sendable {
     private let lock = NSLock()
     private var value = false
-    var isSet: Bool { lock.withLock { value } }
-    func set() { lock.withLock { value = true } }
+    var isSet: Bool {
+        lock.withLock { value }
+    }
+
+    func set() {
+        lock.withLock { value = true }
+    }
 }
 
 @MainActor
@@ -393,12 +447,29 @@ private final class FakeContentIndexService: ContentIndexActivityControlling {
     let changes = PassthroughSubject<Void, Never>()
     var calls: [String] = []
 
-    var activityInput: ContentIndexActivityInput { input }
-    var activityChanges: AnyPublisher<Void, Never> { changes.eraseToAnyPublisher() }
-    func downloadModel() { calls.append("download") }
-    func cancelDownload() { calls.append("cancel") }
-    func pause(_ paused: Bool) { calls.append("pause:\(paused)") }
-    func start(force: Bool) { calls.append("start:\(force)") }
+    var activityInput: ContentIndexActivityInput {
+        input
+    }
+
+    var activityChanges: AnyPublisher<Void, Never> {
+        changes.eraseToAnyPublisher()
+    }
+
+    func downloadModel() {
+        calls.append("download")
+    }
+
+    func cancelDownload() {
+        calls.append("cancel")
+    }
+
+    func pause(_ paused: Bool) {
+        calls.append("pause:\(paused)")
+    }
+
+    func start(force: Bool) {
+        calls.append("start:\(force)")
+    }
 }
 
 @MainActor
@@ -407,7 +478,15 @@ private final class FakeAgentModel: AgentActivityControlling {
     let changes = PassthroughSubject<Void, Never>()
     var stopped: [String] = []
 
-    var agentActivityInput: AgentActivityInput { input }
-    var agentActivityChanges: AnyPublisher<Void, Never> { changes.eraseToAnyPublisher() }
-    func stopAgentRun(_ id: String) { stopped.append(id) }
+    var agentActivityInput: AgentActivityInput {
+        input
+    }
+
+    var agentActivityChanges: AnyPublisher<Void, Never> {
+        changes.eraseToAnyPublisher()
+    }
+
+    func stopAgentRun(_ id: String) {
+        stopped.append(id)
+    }
 }
