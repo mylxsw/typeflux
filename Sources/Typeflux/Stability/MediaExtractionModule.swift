@@ -3,9 +3,22 @@ import Foundation
 /// Adapts one existing disposable extraction pool. Typed requests stay in the
 /// pool; the supervisor manages readiness and recovery, never request replay.
 final class MediaExtractionModule: @unchecked Sendable {
-    enum Domain: String, Sendable {
-        case mediaExtraction, mediaPreviews
-        var id: ModuleID { self == .mediaExtraction ? .mediaExtraction : .mediaPreviews }
+    enum Domain: String, CaseIterable, Sendable {
+        case mediaExtraction, mediaPreviews, clipboardThumbnails
+        var id: ModuleID {
+            switch self {
+            case .mediaExtraction: .mediaExtraction
+            case .mediaPreviews: .mediaPreviews
+            case .clipboardThumbnails: .clipboardThumbnails
+            }
+        }
+        var worker: MediaWorker {
+            switch self {
+            case .mediaExtraction: .shared
+            case .mediaPreviews: .previews
+            case .clipboardThumbnails: .clipboardThumbnails
+            }
+        }
     }
     let module: ModuleHandle<MediaWorker>
     private let domain: Domain
@@ -87,5 +100,19 @@ final class MediaExtractionGate: @unchecked Sendable {
     func succeeded(_ generation: UUID?) {
         guard let generation, admission.permitsWork, health.current?.generation == generation else { return }
         lock.withLock { if fault != generation { store.succeeded() } }
+    }
+}
+
+/// The managed pools are composed without initializing audio, AppKit or storage.
+/// Keep the adapters alive together; registrations alone do not own gate observers.
+struct MediaExtractionModules: Sendable {
+    let adapters: [MediaExtractionModule]
+    var registrations: [ModuleRegistration] { adapters.map(\.registration) }
+
+    init(healthDirectory: URL,
+         worker: (MediaExtractionModule.Domain) -> MediaWorker = { $0.worker }) {
+        adapters = MediaExtractionModule.Domain.allCases.map { domain in
+            MediaExtractionModule(worker: worker(domain), healthDirectory: healthDirectory, domain: domain)
+        }
     }
 }

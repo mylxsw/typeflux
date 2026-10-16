@@ -5707,3 +5707,4 @@
 "settings.services.mediaExtraction" = "附件媒体提取";
 
 "settings.services.mediaPreviews" = "媒体预览";
+"settings.services.clipboardThumbnails" = "剪贴板缩略图";

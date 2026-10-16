@@ -5707,3 +5707,4 @@
 "settings.services.mediaExtraction" = "Attachment media extraction";
 
 "settings.services.mediaPreviews" = "Media previews";
+"settings.services.clipboardThumbnails" = "Clipboard thumbnails";
