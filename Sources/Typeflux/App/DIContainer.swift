@@ -28,6 +28,7 @@ final class DIContainer {
     let textRecognitionWorkers = MediaWorker.textRecognition
     let clipboardOCRWorkers = MediaWorker.clipboardOCR
     let clipboardMetadataWorkers = MediaWorker.clipboardMetadata
+    let recordingExportWorkers = MediaWorker.recordingExport
     let recordingTimelineWorkers = MediaWorker.recordingTimeline
     let localInferenceWorkers = WhisperWorkerPool.shared
     let noteStore: RecoveringAskNoteStore

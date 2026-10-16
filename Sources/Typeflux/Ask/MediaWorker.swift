@@ -5,6 +5,7 @@ import TypefluxMediaProtocol
 /// A bounded, independent fault domain for disposable media decoders.
 final class MediaWorker: @unchecked Sendable {
     static let shared = MediaWorker()
+    static let recordingExport = MediaWorker(timeout: 600)
     static let recordingTimeline = MediaWorker(timeout: 30)
     static let previews = MediaWorker(timeout: 3)
     static let clipboardThumbnails = MediaWorker(timeout: 3)
@@ -62,17 +63,8 @@ final class MediaWorker: @unchecked Sendable {
         let encoded = try JSONEncoder().encode(request)
         guard encoded.count <= (preview == nil ? MediaLimits.requestBytes : MediaPreviewOptions.requestBytes)
         else { throw MediaFailure.tooLarge }
-        let id = request.id, lease = MediaLease()
-        lease.retained = retaining
-        try lock.withLock {
-            guard !disabled, budget.permitsAttempt(at: uptime()), active.count < 2,
-                  !isCancelled() else { throw MediaFailure.unavailable }
-            active[id] = lease
-        }
-        lease.cleanup = { [self] in lock.withLock { active[id] = nil } }
-        defer { lease.returned() }
-        let cancelled: @Sendable () -> Bool = { lease.cancelled || isCancelled() }
-        try check(cancelled)
+        return try owned(id: request.id, retaining: retaining, isCancelled: isCancelled) { lease, executable, timeout, run, cancelled in
+        let id = request.id
         let directory = FileManager.default.temporaryDirectory.appendingPathComponent("typeflux-media-" + id.uuidString)
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false,
                                                attributes: [.posixPermissions: 0o700])
@@ -99,8 +91,27 @@ final class MediaWorker: @unchecked Sendable {
             let value = try extract(response, fd)
             try check(cancelled)
             return value
+        } catch { throw error }
+        }
+    }
+
+    /// The caller owns its directory policy; failed producers must retain their outputs.
+    func owned<T>(id: UUID, retaining: AnyObject?, isCancelled: @escaping @Sendable () -> Bool,
+                  body: (MediaLease, URL, TimeInterval, Runner, @escaping @Sendable () -> Bool) throws -> T) throws -> T {
+        let lease = MediaLease()
+        lease.retained = retaining
+        try lock.withLock {
+            guard !disabled, budget.permitsAttempt(at: uptime()), active.count < 2,
+                  !isCancelled() else { throw MediaFailure.unavailable }
+            active[id] = lease
+        }
+        lease.cleanup = { [self] in lock.withLock { active[id] = nil } }
+        defer { lease.returned() }
+        let cancelled: @Sendable () -> Bool = { lease.cancelled || isCancelled() }
+        do {
+            try check(cancelled)
+            return try body(lease, executable, timeout, run, cancelled)
         } catch {
-            // Bad media is a per-input refusal, not a reason to rebuild repeatedly.
             if !cancelled(), (error as? MediaFailure) != .unreadable, (error as? MediaFailure) != .tooLarge {
                 lock.withLock { budget.failed(at: uptime()) }
             }

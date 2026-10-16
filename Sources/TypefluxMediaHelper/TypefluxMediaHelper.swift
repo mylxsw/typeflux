@@ -16,6 +16,11 @@ enum TypefluxMediaHelper {
             }
             return
         }
+        if CommandLine.arguments == [CommandLine.arguments[0], "--recording-export"] {
+            alarm(605)
+            await MediaRecordingExportDecoder.run()
+            return
+        }
         // One disposable process, one request. No app DI, model or microphone.
         // The parent normally enforces 30 seconds. Bound orphaned native work too.
         alarm(35)

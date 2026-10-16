@@ -71,8 +71,8 @@ private final class ToastGate: @unchecked Sendable {
         try AskAttachmentFixture.encode(AskAttachmentFixture.image(width: 10, height: 10), type: .png).write(to: url)
         do { _ = try await loader.thumbnail(url); XCTFail("Renamed PNG accepted as GIF") } catch {}
         let data = NSMutableData(), image = AskAttachmentFixture.image(width: 1, height: 1)
-        let destination = try XCTUnwrap(CGImageDestinationCreateWithData(data, "com.compuserve.gif" as CFString, 301, nil))
-        for _ in 0..<301 { CGImageDestinationAddImage(destination, image, nil) }
+        let destination = try XCTUnwrap(CGImageDestinationCreateWithData(data, "com.compuserve.gif" as CFString, 302, nil))
+        for _ in 0..<302 { CGImageDestinationAddImage(destination, image, nil) }
         XCTAssertTrue(CGImageDestinationFinalize(destination)); try (data as Data).write(to: url)
         // Separate domain: the earlier intentional failure must not suppress this native validation.
         let second = try self.worker()

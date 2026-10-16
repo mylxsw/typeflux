@@ -1,6 +1,4 @@
-import AVFoundation
-import ImageIO
-import UniformTypeIdentifiers
+import Foundation
 
 protocol ScreenRecordingExporting {
     func export(source: URL, destination: URL, format: ScreenRecordingFormat, trim: ScreenRecordingTrim,
@@ -8,114 +6,10 @@ protocol ScreenRecordingExporting {
 }
 
 struct ScreenRecordingExporter: ScreenRecordingExporting {
+    var encoder = ScreenRecordingEncoder.shared
     func export(source: URL, destination: URL, format: ScreenRecordingFormat, trim: ScreenRecordingTrim,
                 progress: @escaping @Sendable (Double) -> Void) async throws {
-        guard !FileManager.default.fileExists(atPath: destination.path) else {
-            throw CocoaError(.fileWriteFileExists)
-        }
-        let asset = AVURLAsset(url: source)
-        let duration = try await asset.load(.duration).seconds
-        let range = try trim.validated(duration: duration, format: format)
-        try Task.checkCancellation()
-        do {
-            switch format {
-            case .mp4:
-                try await video(asset: asset, destination: destination, range: range, progress: progress)
-            case .gif:
-                let job = Task.detached(priority: .userInitiated) {
-                    try gif(asset: asset, destination: destination, range: range, progress: progress)
-                }
-                try await withTaskCancellationHandler { try await job.value } onCancel: { job.cancel() }
-            }
-        } catch {
-            // A failed encoder may have produced useful bytes. Keep them beside the original.
-            throw error
-        }
-    }
-
-    private func video(asset: AVAsset, destination: URL, range: CMTimeRange,
-                       progress: @escaping @Sendable (Double) -> Void) async throws {
-        // Composition combines the microphone and system tracks into one portable AAC track.
-        let composition = AVMutableComposition()
-        let videoTracks = try await asset.loadTracks(withMediaType: .video)
-        guard let sourceVideo = videoTracks.first,
-              let video = composition.addMutableTrack(
-                  withMediaType: .video,
-                  preferredTrackID: kCMPersistentTrackID_Invalid
-              )
-        else { throw ScreenRecordingFailure.noFrames }
-        try video.insertTimeRange(range, of: sourceVideo, at: .zero)
-        video.preferredTransform = try await sourceVideo.load(.preferredTransform)
-        let audioSources = try await asset.loadTracks(withMediaType: .audio)
-        var parameters: [AVAudioMixInputParameters] = []
-        for source in audioSources {
-            guard let track = composition.addMutableTrack(
-                withMediaType: .audio,
-                preferredTrackID: kCMPersistentTrackID_Invalid
-            )
-            else { throw ScreenRecordingFailure.encoding }
-            let overlap = try await CMTimeRangeGetIntersection(range, otherRange: source.load(.timeRange))
-            guard overlap.duration.seconds > 0 else { continue }
-            try track.insertTimeRange(overlap, of: source, at: overlap.start - range.start)
-            let parameter = AVMutableAudioMixInputParameters(track: track)
-            parameter.setVolume(audioSources.count > 1 ? 0.5 : 1, at: .zero)
-            parameters.append(parameter)
-        }
-        guard let session = AVAssetExportSession(asset: composition, presetName: AVAssetExportPresetHighestQuality)
-        else {
-            throw ScreenRecordingFailure.encoding
-        }
-        let mix = AVMutableAudioMix()
-        mix.inputParameters = parameters
-        session.audioMix = mix
-        session.outputFileType = .mp4
-        session.outputURL = destination
-        session.shouldOptimizeForNetworkUse = true
-        let monitor = Task {
-            while !Task.isCancelled {
-                progress(Double(session.progress))
-                try? await Task.sleep(for: .milliseconds(200))
-            }
-        }
-        defer { monitor.cancel() }
-        await withTaskCancellationHandler { await session.export() } onCancel: { session.cancelExport() }
-        try Task.checkCancellation()
-        guard session.status == .completed else { throw session.error ?? ScreenRecordingFailure.encoding }
-        progress(1)
-    }
-
-    private func gif(asset: AVAsset, destination: URL, range: CMTimeRange,
-                     progress: @escaping @Sendable (Double) -> Void) throws {
-        let duration = range.duration.seconds
-        let frames = max(1, Int(ceil(duration * 10)))
-        guard let output = CGImageDestinationCreateWithURL(destination as CFURL, UTType.gif.identifier as CFString,
-                                                           frames, nil) else { throw ScreenRecordingFailure.encoding }
-        CGImageDestinationSetProperties(
-            output,
-            [kCGImagePropertyGIFDictionary: [kCGImagePropertyGIFLoopCount: 0]] as CFDictionary
-        )
-        let reader = AVAssetImageGenerator(asset: asset)
-        reader.appliesPreferredTrackTransform = true
-        reader.maximumSize = CGSize(width: 960, height: 960)
-        reader.requestedTimeToleranceBefore = .zero
-        reader.requestedTimeToleranceAfter = .zero
-        defer { reader.cancelAllCGImageGeneration() }
-        for index in 0 ..< frames {
-            try Task.checkCancellation()
-            try autoreleasepool {
-                let position = Double(index) / 10
-                let time = range.start + CMTime(seconds: position, preferredTimescale: 600)
-                let image = try reader.copyCGImage(at: time, actualTime: nil)
-                let delay = max(0.02, min(0.1, duration - position))
-                CGImageDestinationAddImage(output, image, [kCGImagePropertyGIFDictionary: [
-                    kCGImagePropertyGIFDelayTime: delay, kCGImagePropertyGIFUnclampedDelayTime: delay
-                ]] as CFDictionary)
-            }
-            progress(Double(index + 1) / Double(frames + 1))
-        }
-        try Task.checkCancellation()
-        guard CGImageDestinationFinalize(output) else { throw ScreenRecordingFailure.encoding }
-        progress(1)
+        try await encoder.export(source: source, destination: destination, format: format, trim: trim, progress: progress)
     }
 }
 
@@ -145,9 +39,9 @@ struct ScreenRecordingFiles {
 
     func discard(_ directory: URL) {
         // Only the directory owned by this feature can be removed.
-        guard directory.resolvingSymlinksInPath().deletingLastPathComponent()
-            == root.resolvingSymlinksInPath() else { return }
-        try? manager.removeItem(at: directory)
+        let canonical = directory.resolvingSymlinksInPath()
+        guard canonical.deletingLastPathComponent() == root.resolvingSymlinksInPath() else { return }
+        ScreenRecordingEncodingOwnership.discard(canonical) { try? manager.removeItem(at: canonical) }
     }
 
     func preparePublication(

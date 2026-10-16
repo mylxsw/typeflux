@@ -5621,3 +5621,5 @@
 
 "recording.publicationUnknown" = "無法確認檔案發佈結果。原始錄影和產生的檔案已保留；再次匯出前請檢查目標位置。";
 "recording.publicationUnavailable" = "暫時無法發佈檔案，原始錄影和產生的檔案已保留。";
+
+"recording.encodingUnconfirmed" = "無法確認錄影匯出結果。原錄影和已產生的檔案均已保留，未自動重試。";
