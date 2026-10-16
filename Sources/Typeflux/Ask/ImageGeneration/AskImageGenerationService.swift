@@ -28,11 +28,15 @@ protocol AskImageGenerating: Sendable {
 
 struct AskImageGenerationService: AskImageGenerating {
     var transport: any AskImageTransport = AskImageHTTP()
-    var validate: @Sendable (Data) async throws -> AskGeneratedImageData = { try await AskGeneratedImageValidator.shared.validate($0) }
+    var validate: (@Sendable (Data) async throws -> AskGeneratedImageData)? = nil
+    var nativeValidator: AskGeneratedImageValidator = .shared
     static let maximumResponseBytes = 46 * 1024 * 1024
 
     func generate(_ input: AskImageRequest, configuration: AskImageConfiguration,
                   key: String, retention: AskImageGenerationRetention) async throws -> AskImageGenerationResult {
+        // Native availability is not permission to POST. Retain the original stamp
+        // without gating the request or losing a charged response when it expires.
+        let validate = validate ?? nativeValidator.batch()
         let request = try Self.request(input, configuration: configuration, key: key)
         let data = try await transport.send(request, limit: Self.maximumResponseBytes)
         // The HTTP response (including inline originals and usage) is retained
