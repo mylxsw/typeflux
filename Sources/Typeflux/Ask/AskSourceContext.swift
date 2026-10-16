@@ -43,9 +43,8 @@ struct AskSourceContextDetails: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 6) {
-                if let bundle = draft.sourceBundleID, let image = AskContextChips.appIcon(bundle) {
-                    Image(nsImage: image).resizable().frame(width: 18, height: 18)
-                        .accessibilityHidden(true)
+                AskApplicationIcon(bundleID: draft.sourceOff == true ? nil : draft.sourceBundleID) { image in
+                    if let image { Image(nsImage: image).resizable().frame(width: 18, height: 18).accessibilityHidden(true) }
                 }
                 Text(L(restored ? "ask.context.source.draft" : "ask.context.source"))
                     .font(.system(size: 13, weight: .semibold))

@@ -4,6 +4,7 @@ import SwiftUI
 
 @MainActor
 final class AskFilePreviewState: ObservableObject {
+    @Published var imageAccess = AskImagePresentationAccess()
     @Published var hit: AskFileHit?
     @Published var content: AskFilePreviewContent?
     @Published var contentID = UUID()
@@ -13,7 +14,7 @@ final class AskFilePreviewState: ObservableObject {
 
 /// Owns one panel and the selection clock. Every delayed callback belongs to a selection generation.
 @MainActor
-final class AskFilePreviewController {
+final class AskFilePreviewController: AskImageScopeObserver {
     let state = AskFilePreviewState()
     private(set) var isVisible = false
     private(set) var panel: NSPanel?
@@ -31,6 +32,30 @@ final class AskFilePreviewController {
     private var placement: AskFilePreviewPlacement?
     private var observers: [NSObjectProtocol] = []
     private var style: InterfaceStyleObserver?
+    private let imageScope = AskImagePresentationScope()
+    private var originalAccess: AskImagePresentationAccess?
+    private var accessRegistration: UUID?
+
+    private func retireImageAccess() {
+        imageScope.setVisible(false); state.imageAccess = .init()
+        if let accessRegistration { originalAccess?.scope?.remove(accessRegistration) }
+        accessRegistration = nil; originalAccess = nil
+    }
+
+    private func showImageAccess() {
+        guard let originalAccess, originalAccess.allows(), selected != nil else { return }
+        imageScope.setVisible(true)
+        let requiresParent = parent != nil
+        state.imageAccess = .init(scope: imageScope, epoch: imageScope.epoch,
+            authorize: { [weak self] in
+                guard let self else { return false }
+                return isVisible && (!requiresParent || parent?.isVisible == true) && originalAccess.allows()
+            })
+    }
+
+    /// Upstream account, selection and launcher visibility revoke this separate panel too.
+    func cancel() { dismissNow() }
+
     var pixels = CGSize(width: 720, height: 900)
 
     init(loader: (any AskFilePreviewLoading)? = nil,
@@ -56,6 +81,13 @@ final class AskFilePreviewController {
         ) { [weak self] _ in
             MainActor.assumeIsolated { self?.dismissNow() }
         })
+        for name in [AskFloatingPanel.willOrderOut, NSWindow.willCloseNotification, NSWindow.didChangeOcclusionStateNotification] {
+            observers.append(NotificationCenter.default.addObserver(forName: name, object: parent, queue: .main) { [weak self] notification in
+                MainActor.assumeIsolated {
+                    if notification.name != NSWindow.didChangeOcclusionStateNotification || self?.parent?.isVisible == false { self?.dismissNow() }
+                }
+            })
+        }
         observers.append(NotificationCenter.default.addObserver(
             forName: AskQuickLook.willShow,
             object: nil,
@@ -66,13 +98,21 @@ final class AskFilePreviewController {
         updateFrame()
     }
 
-    func request(_ hit: AskFileHit?, neighbours: [AskFileHit] = [], empty: Bool = false) {
-        guard !empty else { dismissNow(); return }
-        if let hit, hit.path == selected?.path, hit.modified == selected?.modified,
+    func request(_ hit: AskFileHit?, neighbours: [AskFileHit] = [], empty: Bool = false, access: AskImagePresentationAccess? = nil) {
+        if originalAccess?.allows() == false { dismissNow() }
+        guard !empty, access?.allows() != false else { dismissNow(); return }
+        if access?.epoch == originalAccess?.epoch, let hit, hit.path == selected?.path, hit.modified == selected?.modified,
            hit.evidence == selected?.evidence {
             // Rank changes can reuse the image; a different matched page or passage must render again.
             selected = hit; state.hit = hit
             grace?.cancel(); grace = nil; return
+        }
+        retireImageAccess()
+        if let access {
+            do {
+                guard let scope = access.scope, let epoch = access.epoch else { dismissNow(); return }
+                accessRegistration = try scope.register(self, epoch: epoch); originalAccess = access
+            } catch { dismissNow(); return }
         }
         generation += 1
         let ticket = generation
@@ -90,6 +130,7 @@ final class AskFilePreviewController {
         loader.setVisible(true)
         debounce = clock.schedule(after: 0.12) { [weak self] in
             guard let self, generation == ticket else { return }
+            guard originalAccess?.allows() != false else { dismissNow(); return }
             skeleton = clock.schedule(after: 0.15) { [weak self] in
                 guard let self, generation == ticket else { return }
                 state.skeleton = true
@@ -97,6 +138,7 @@ final class AskFilePreviewController {
             }
             loader.load(hit, pixels: pixels) { [weak self] content in
                 guard let self, generation == ticket else { return }
+                guard originalAccess?.allows() != false else { dismissNow(); return }
                 skeleton?.cancel(); skeleton = nil
                 guard let content else { hide(animated: true); return }
                 withAnimation(.easeInOut(duration: reduceMotion() ? 0.1 : 0.12)) {
@@ -134,7 +176,9 @@ final class AskFilePreviewController {
     }
 
     private func show() {
-        guard !isVisible else { return }
+        if let parent, !parent.isVisible { dismissNow(); return }
+        guard originalAccess?.allows() != false else { dismissNow(); return }
+        if isVisible { showImageAccess(); return }
         if parent != nil {
             updateFrame()
             guard parent?.isVisible == true, placement != nil else { return }
@@ -142,6 +186,7 @@ final class AskFilePreviewController {
         motionGeneration += 1
         hideCompletion?.cancel(); hideCompletion = nil
         isVisible = true
+        showImageAccess()
         guard let parent, let placement else { return }
         let panel = makePanel()
         panel.appearance = parent.appearance
@@ -161,6 +206,7 @@ final class AskFilePreviewController {
     }
 
     private func hide(animated: Bool) {
+        retireImageAccess()
         let wasVisible = isVisible
         isVisible = false
         motionGeneration += 1
@@ -216,6 +262,9 @@ final class AskFilePreviewController {
         panel.isReleasedWhenClosed = false; panel.level = .floating; panel.becomesKeyOnlyIfNeeded = true
         panel.collectionBehavior = [.fullScreenAuxiliary, .canJoinAllSpaces]
         panel.identifier = NSUserInterfaceItemIdentifier("ask.filePreview")
+        panel.onOrderOut = { [weak self] in
+            if self?.isVisible == true { self?.dismissNow() }
+        }
         if let style {
             let hosting = NSHostingView(rootView: AskFilePreviewView(state: state).interfaceStyle(following: style))
             hosting.sizingOptions = []
@@ -230,6 +279,8 @@ final class AskFilePreviewController {
     }
 
     private final class Panel: NSPanel {
+        var onOrderOut: (() -> Void)?
+        override func orderOut(_ sender: Any?) { onOrderOut?(); super.orderOut(sender) }
         override var canBecomeKey: Bool {
             false
         }
@@ -239,5 +290,10 @@ final class AskFilePreviewController {
         }
     }
 
-    deinit { observers.forEach(NotificationCenter.default.removeObserver) }
+    deinit {
+        observers.forEach(NotificationCenter.default.removeObserver)
+        Task { @MainActor [imageScope, loader] in
+            imageScope.setVisible(false); loader.setVisible(false)
+        }
+    }
 }

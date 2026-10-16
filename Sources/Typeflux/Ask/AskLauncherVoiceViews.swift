@@ -146,8 +146,8 @@ struct AskVoicePanel: View {
 
     private func contextNote(_ token: AskLauncherContext.Token) -> some View {
         HStack(spacing: 6) {
-            if let bundle = token.bundleID, let icon = AskContextChips.appIcon(bundle), !token.sourceOff {
-                Image(nsImage: icon).resizable().frame(width: 14, height: 14)
+            AskApplicationIcon(bundleID: token.sourceOff ? nil : token.bundleID) { icon in
+                if let icon { Image(nsImage: icon).resizable().frame(width: 14, height: 14) }
             }
             if token.screenshot == .attached {
                 Image(systemName: "display").font(.system(size: 10))

@@ -173,16 +173,7 @@ enum AskContextChips {
         (tile / appIconTileFraction).rounded(.up)
     }
 
-    /// App icons by bundle identifier; nil when the app cannot be found.
-    @MainActor static func appIcon(_ bundleID: String) -> NSImage? {
-        if let cached = iconCache[bundleID] { return cached }
-        guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) else { return nil }
-        let icon = NSWorkspace.shared.icon(forFile: url.path)
-        iconCache[bundleID] = icon
-        return icon
-    }
 
-    @MainActor private static var iconCache: [String: NSImage] = [:]
 }
 
 /// An icon context chip. The icon's colour carries the state; there is no
@@ -334,51 +325,51 @@ struct AskIconChipFace: View {
     let item: AskContextItem
     var hovering = false
 
-    private var appImage: NSImage? {
-        guard let bundleID = item.appBundleID else { return nil }
-        return AskContextChips.appIcon(bundleID)
-    }
-
     var body: some View {
-        icon
-            .frame(width: AskContextChips.chipSize, height: AskContextChips.chipSize)
-            // A switch that is on sits in a tinted well, so "on" reads by shape as
-            // well as colour next to the borderless menus beside it.
-            .background {
-                if appImage == nil {
-                    RoundedRectangle(cornerRadius: Self.wellCorner, style: .continuous)
-                        .fill(Self.wellFill(item.style, hovering: hovering))
-                        .overlay(RoundedRectangle(cornerRadius: Self.wellCorner, style: .continuous)
-                            .strokeBorder(Self.wellEdge(item.style)))
-                        .padding(Self.wellInset)
+        AskApplicationIcon(bundleID: item.appBundleID) { appImage in
+            icon(appImage)
+                .frame(width: AskContextChips.chipSize, height: AskContextChips.chipSize)
+                // A switch that is on sits in a tinted well, so "on" reads by shape as
+                // well as colour next to the borderless menus beside it.
+                .background {
+                    if appImage == nil {
+                        RoundedRectangle(cornerRadius: Self.wellCorner, style: .continuous)
+                            .fill(Self.wellFill(item.style, hovering: hovering))
+                            .overlay(RoundedRectangle(cornerRadius: Self.wellCorner, style: .continuous)
+                                .strokeBorder(Self.wellEdge(item.style)))
+                            .padding(Self.wellInset)
+                    }
                 }
-            }
-            .animation(.easeOut(duration: 0.15), value: item.style)
-            .animation(.easeOut(duration: 0.12), value: hovering)
-            .overlay(alignment: .topTrailing) {
-                if case let .count(value) = item.badge {
-                    Text(verbatim: value > 99 ? "99+" : String(value))
-                        .font(.system(size: 9, weight: .bold))
-                        .foregroundStyle(Color.white)
-                        .padding(.horizontal, 3)
-                        .frame(minWidth: 15, minHeight: 15)
-                        .background(AskTheme.accent, in: Capsule())
-                        .overlay(Capsule().strokeBorder(AskTheme.composerSurface, lineWidth: 1.5))
-                        .offset(x: 2, y: -3)
-                        .opacity(hovering && item.removable ? 0 : 1)
+                .animation(.easeOut(duration: 0.15), value: item.style)
+                .animation(.easeOut(duration: 0.12), value: hovering)
+                .overlay(alignment: .topTrailing) {
+                    if case let .count(value) = item.badge {
+                        Text(verbatim: value > 99 ? "99+" : String(value))
+                            .font(.system(size: 9, weight: .bold))
+                            .foregroundStyle(Color.white)
+                            .padding(.horizontal, 3)
+                            .frame(minWidth: 15, minHeight: 15)
+                            .background(AskTheme.accent, in: Capsule())
+                            .overlay(Capsule().strokeBorder(AskTheme.composerSurface, lineWidth: 1.5))
+                            .offset(x: 2, y: -3)
+                            .opacity(hovering && item.removable ? 0 : 1)
+                    }
                 }
-            }
-            .overlay(alignment: .bottomTrailing) {
-                if case let .app(bundleID) = item.badge, let image = AskContextChips.appIcon(bundleID) {
-                    Image(nsImage: image).resizable().frame(width: 13, height: 13).offset(x: 1, y: 1)
-                } else if let bundleID = item.sourceAppBundleID, let image = AskContextChips.appIcon(bundleID) {
-                    Image(nsImage: image).resizable().frame(width: 13, height: 13).offset(x: 1, y: 1)
+                .overlay(alignment: .bottomTrailing) {
+                    AskApplicationIcon(bundleID: badgeBundleID) { image in
+                        if let image { Image(nsImage: image).resizable().frame(width: 13, height: 13).offset(x: 1, y: 1) }
+                    }
                 }
-            }
-            .contentShape(Rectangle())
+                .contentShape(Rectangle())
+        }
     }
 
-    @ViewBuilder private var icon: some View {
+    private var badgeBundleID: String? {
+        if case let .app(bundleID) = item.badge { return bundleID }
+        return item.sourceAppBundleID
+    }
+
+    @ViewBuilder private func icon(_ appImage: NSImage?) -> some View {
         if let image = appImage {
             Image(nsImage: image).resizable().interpolation(.high)
                 .frame(width: AskContextChips.appIconSide(tile: AskContextChips.appTileSize),
