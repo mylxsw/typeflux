@@ -1,0 +1,10 @@
+{
+  "baseline_head": "05f560a46a4320f117d6dc8f95a636fd6b233a11",
+  "total_files": 98,
+  "matching_files": 96,
+  "changed_files": [
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSpreadsheetText.swift",
+    "Tests/TypefluxTests/SemanticSpreadsheetTextTests.swift"
+  ],
+  "reuse": "Unchanged historical suites use the issue-provided independent 77/77 baseline evidence; the modified XLSX suite is rerun with coverage."
+}

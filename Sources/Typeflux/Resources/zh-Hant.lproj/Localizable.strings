@@ -5158,6 +5158,7 @@
 "semantic.about" = "模型說明與授權";
 "semantic.result" = "內容相符";
 "semantic.page" = "第 %d 頁";
+"semantic.sheet" = "工作表 %d";
 
 // Launcher selected-text switch and preview.
 "ask.context.selection.enabled" = "已啟用";

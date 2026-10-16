@@ -1,0 +1,9 @@
+{
+  "command": [
+    "make",
+    "coverage",
+    "FILTER=SemanticSpreadsheetTextTests.*native.*reader.*resolves"
+  ],
+  "wall_seconds": 66.4556307499879,
+  "exit_code": 0
+}

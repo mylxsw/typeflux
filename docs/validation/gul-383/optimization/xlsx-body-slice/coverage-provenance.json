@@ -1,0 +1,444 @@
+{
+  "baseline": "c056cfece5d6b55a1644aec51cc8840524809ed2",
+  "configuration": "Instrumented Debug",
+  "hardware": "Mac16,10\n17179869184",
+  "toolchain": "Apple Swift version 6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)\nTarget: arm64-apple-macosx26.0",
+  "commands": {
+    "coverage": {
+      "command": [
+        "make",
+        "coverage",
+        "SUITE=SemanticSpreadsheetTextTests SemanticPresentationTextTests SemanticODTTextTests SemanticRTFTextTests SemanticHTMLTextTests SemanticWordTextTests SemanticPDFOCRTests SemanticFilePolicyTests SemanticFileStoreTests SemanticFileContentTests SemanticFileIndexerTests SemanticIndexDiagnosticsTests SemanticReaderOwnershipTests SemanticScanAdmissionTests SemanticDiscoveryPauseTests"
+      ],
+      "wall_seconds": 391.0684261659626,
+      "exit_code": 2
+    },
+    "coverage-retry": {
+      "command": [
+        "make",
+        "coverage",
+        "SUITE=SemanticSpreadsheetTextTests SemanticWordTextTests"
+      ],
+      "wall_seconds": 115.66275962500367,
+      "exit_code": 2
+    },
+    "coverage-method-retry": {
+      "command": [
+        "make",
+        "coverage",
+        "FILTER=SemanticSpreadsheetTextTests.*native.*reader.*resolves"
+      ],
+      "wall_seconds": 66.4556307499879,
+      "exit_code": 0
+    },
+    "coverage-boundary-final": {
+      "command": [
+        "make",
+        "coverage",
+        "SUITE=SemanticSpreadsheetTextTests"
+      ],
+      "wall_seconds": 144.40358654101146,
+      "exit_code": 0
+    }
+  },
+  "phases": {
+    "coverage": {
+      "build_seconds": [
+        "332.61"
+      ],
+      "discovery_seconds": [
+        "373.06"
+      ]
+    },
+    "coverage-retry": {
+      "build_seconds": [
+        "66.56"
+      ],
+      "discovery_seconds": [
+        "108.27"
+      ]
+    },
+    "coverage-method-retry": {
+      "build_seconds": [
+        "34.32"
+      ],
+      "discovery_seconds": [
+        "59.94"
+      ]
+    },
+    "coverage-boundary-final": {
+      "build_seconds": [
+        "90.80"
+      ],
+      "discovery_seconds": [
+        "132.52"
+      ]
+    }
+  },
+  "unique_selected_methods": 77,
+  "unique_methods_with_passing_evidence": 77,
+  "initial_passed": 62,
+  "initial_failures": 1,
+  "initial_crashed_method": 1,
+  "initial_not_executed": 13,
+  "second_passed": 14,
+  "second_selected": 15,
+  "method_retry_passed": 1,
+  "final_xlsx_passed": 9,
+  "build_failures": 0,
+  "frozen_source_file_count": 98,
+  "frozen_sources_match": true,
+  "source_hashes_file": "frozen-source-hashes.json",
+  "source_hashes_sha256": "d4ba706b0ea8f0c0253e5f8f5d492a401434106f9deaa8577187a317b2401029",
+  "binary_sha256": {
+    "reader": "16f330b6c9d7443467c43c2870843bb4d99607e9e037ce50818bc4a80745c85a",
+    "tests": "b38fade5392d4e811176ba6a69218ec3fc6d37debc0425b8466206d42b137070"
+  },
+  "final_profile_sha256": "c8261c192857655e69898dea160b069f7c40d6f6a4c5bab3b8e9ceba3ee8b437",
+  "coverage_note": "Final clean 9-method XLSX suite only. Resource profiles and earlier failed/crashed profiles excluded. Line coverage, not branch or whole-project coverage.",
+  "dependency_lock_sha256": "faf33527478681a0b411242554c3f5908665f8e884af8234181a6d08bef01c5d",
+  "dependency_pins": [
+    {
+      "identity": "grpc-swift",
+      "state": {
+        "revision": "6a8927df5a91710b414caba4f8a088dead4633db",
+        "version": "1.27.5"
+      }
+    },
+    {
+      "identity": "opencc-swift",
+      "state": {
+        "branch": "main",
+        "revision": "5e22c21ac6775ea21ebf880349c53dab1253b003"
+      }
+    },
+    {
+      "identity": "swift-algorithms",
+      "state": {
+        "revision": "87e50f483c54e6efd60e885f7f5aa946cee68023",
+        "version": "1.2.1"
+      }
+    },
+    {
+      "identity": "swift-argument-parser",
+      "state": {
+        "revision": "626b5b7b2f45e1b0b1c6f4a309296d1d21d7311b",
+        "version": "1.7.1"
+      }
+    },
+    {
+      "identity": "swift-asn1",
+      "state": {
+        "revision": "eb50cbd14606a9161cbc5d452f18797c90ef0bab",
+        "version": "1.7.0"
+      }
+    },
+    {
+      "identity": "swift-async-algorithms",
+      "state": {
+        "revision": "9d349bcc328ac3c31ce40e746b5882742a0d1272",
+        "version": "1.1.3"
+      }
+    },
+    {
+      "identity": "swift-atomics",
+      "state": {
+        "revision": "b601256eab081c0f92f059e12818ac1d4f178ff7",
+        "version": "1.3.0"
+      }
+    },
+    {
+      "identity": "swift-certificates",
+      "state": {
+        "revision": "bde8ca32a096825dfce37467137c903418c1893d",
+        "version": "1.19.1"
+      }
+    },
+    {
+      "identity": "swift-cmark",
+      "state": {
+        "revision": "5d9bdaa4228b381639fff09403e39a04926e2dbe",
+        "version": "0.7.1"
+      }
+    },
+    {
+      "identity": "swift-collections",
+      "state": {
+        "revision": "6675bc0ff86e61436e615df6fc5174e043e57924",
+        "version": "1.4.1"
+      }
+    },
+    {
+      "identity": "swift-crypto",
+      "state": {
+        "revision": "bb4ba815dab96d4edc1e0b86d7b9acf9ff973a84",
+        "version": "4.3.1"
+      }
+    },
+    {
+      "identity": "swift-http-structured-headers",
+      "state": {
+        "revision": "76d7627bd88b47bf5a0f8497dd244885960dde0b",
+        "version": "1.6.0"
+      }
+    },
+    {
+      "identity": "swift-http-types",
+      "state": {
+        "revision": "45eb0224913ea070ec4fba17291b9e7ecf4749ca",
+        "version": "1.5.1"
+      }
+    },
+    {
+      "identity": "swift-jinja",
+      "state": {
+        "revision": "0aeefadec459ce8e11a333769950fb86183aca43",
+        "version": "2.3.5"
+      }
+    },
+    {
+      "identity": "swift-log",
+      "state": {
+        "revision": "5073617dac96330a486245e4c0179cb0a6fd2256",
+        "version": "1.12.0"
+      }
+    },
+    {
+      "identity": "swift-markdown",
+      "state": {
+        "revision": "7d9a5ce307528578dfa777d505496bd5f544ad94",
+        "version": "0.7.3"
+      }
+    },
+    {
+      "identity": "swift-nio",
+      "state": {
+        "revision": "558f24a4647193b5a0e2104031b71c55d31ff83a",
+        "version": "2.97.1"
+      }
+    },
+    {
+      "identity": "swift-nio-extras",
+      "state": {
+        "revision": "abcf5312eb8ed2fb11916078aef7c46b06f20813",
+        "version": "1.33.0"
+      }
+    },
+    {
+      "identity": "swift-nio-http2",
+      "state": {
+        "revision": "6d8d596f0a9bfebb925733003731fe2d749b7e02",
+        "version": "1.42.0"
+      }
+    },
+    {
+      "identity": "swift-nio-ssl",
+      "state": {
+        "revision": "df9c3406028e3297246e6e7081977a167318b692",
+        "version": "2.36.1"
+      }
+    },
+    {
+      "identity": "swift-nio-transport-services",
+      "state": {
+        "revision": "60c3e187154421171721c1a38e800b390680fb5d",
+        "version": "1.26.0"
+      }
+    },
+    {
+      "identity": "swift-numerics",
+      "state": {
+        "revision": "0c0290ff6b24942dadb83a929ffaaa1481df04a2",
+        "version": "1.1.1"
+      }
+    },
+    {
+      "identity": "swift-protobuf",
+      "state": {
+        "revision": "a008af1a102ff3dd6cc3764bb69bf63226d0f5f6",
+        "version": "1.36.1"
+      }
+    },
+    {
+      "identity": "swift-service-lifecycle",
+      "state": {
+        "revision": "9829955b385e5bb88128b73f1b8389e9b9c3191a",
+        "version": "2.11.0"
+      }
+    },
+    {
+      "identity": "swift-system",
+      "state": {
+        "revision": "7c6ad0fc39d0763e0b699210e4124afd5041c5df",
+        "version": "1.6.4"
+      }
+    },
+    {
+      "identity": "swift-transformers",
+      "state": {
+        "revision": "150169bfba0889c229a2ce7494cf8949f18e6906",
+        "version": "1.1.9"
+      }
+    },
+    {
+      "identity": "whisperkit",
+      "state": {
+        "revision": "e2adabbe7d98dc4d0ab9a5b75424ecc42a9cdbef",
+        "version": "0.18.0"
+      }
+    },
+    {
+      "identity": "yams",
+      "state": {
+        "revision": "a27b21e0c81c5bf42049b897a62aaf387e80f279",
+        "version": "6.2.2"
+      }
+    },
+    {
+      "identity": "yyjson",
+      "state": {
+        "revision": "8b4a38dc994a110abaec8a400615567bd996105f",
+        "version": "0.12.0"
+      }
+    }
+  ],
+  "tools": {
+    "scripts/test_groups.py": "488dbe8cec3f3528adb4ef265bb5d8e3cf5c13867581fb5acb5dc19eb281af46",
+    "scripts/coverage.sh": "1a18ada556b3875baf54f389ae48f5bceaf2c699a37f8638ebd16d7255e89095",
+    "docs/validation/gul-383/optimization/changed_coverage.py": "dd9efb30a427617a614235a0c65f86b2cb5ab6dd7c28b857031a91545db135ac",
+    "docs/validation/gul-383/optimization/html-body-slice/coverage-swift.sh": "42967efaf9199510c5f13f9219641be7b87a08eb2a781fc8b4200bfe1da8996f",
+    "docs/validation/gul-383/optimization/xlsx-body-slice/xlsx_resource_probe.py": "188c249233492ac9ae1cd2f50e56738d1df5a694707eb083c22b2683df6c758c"
+  },
+  "new_real_model_or_end_to_end_ui_validation": false,
+  "rendered_synthetic_ui_captures": 4,
+  "log_note": "Original failure bytes retained with repository/home path normalization; invalid UTF-8 is preserved in the gzip stream.",
+  "resource_300_second_version": "pre-boundary-source-hashes.json and pre-boundary-binary-hashes.json; synthetic-body-pre-boundary.xlsx",
+  "resource_60_second_version": "Final frozen source and binary; synthetic-body.xlsx",
+  "synthetic-body.xlsx": {
+    "bytes": 2635,
+    "sha256": "1020ae5b0a7170e44085eaa9bc26ee708a7c11123cb00847114e5a7ee29a15a7",
+    "members": [
+      {
+        "name": "[Content_Types].xml",
+        "expanded": 774,
+        "compressed": 252,
+        "crc": 2567553843
+      },
+      {
+        "name": "_rels/.rels",
+        "expanded": 240,
+        "compressed": 138,
+        "crc": 2453600885
+      },
+      {
+        "name": "xl/_rels/workbook.xml.rels",
+        "expanded": 652,
+        "compressed": 246,
+        "crc": 3756110603
+      },
+      {
+        "name": "xl/strings.xml",
+        "expanded": 204,
+        "compressed": 167,
+        "crc": 217739270
+      },
+      {
+        "name": "xl/workbook.xml",
+        "expanded": 290,
+        "compressed": 185,
+        "crc": 861376848
+      },
+      {
+        "name": "xl/worksheets/sheet10.xml",
+        "expanded": 189,
+        "compressed": 140,
+        "crc": 131432482
+      },
+      {
+        "name": "xl/worksheets/sheet2.xml",
+        "expanded": 554,
+        "compressed": 321,
+        "crc": 1116193979
+      }
+    ]
+  },
+  "synthetic-body-pre-boundary.xlsx": {
+    "bytes": 2635,
+    "sha256": "902d45969ff022bc13a163e51585e3549dc1eb3f6ccdf89355bc0c72371774b4",
+    "members": [
+      {
+        "name": "[Content_Types].xml",
+        "expanded": 774,
+        "compressed": 252,
+        "crc": 2567553843
+      },
+      {
+        "name": "_rels/.rels",
+        "expanded": 240,
+        "compressed": 138,
+        "crc": 2453600885
+      },
+      {
+        "name": "xl/_rels/workbook.xml.rels",
+        "expanded": 652,
+        "compressed": 246,
+        "crc": 3756110603
+      },
+      {
+        "name": "xl/strings.xml",
+        "expanded": 204,
+        "compressed": 167,
+        "crc": 217739270
+      },
+      {
+        "name": "xl/workbook.xml",
+        "expanded": 290,
+        "compressed": 185,
+        "crc": 861376848
+      },
+      {
+        "name": "xl/worksheets/sheet10.xml",
+        "expanded": 189,
+        "compressed": 140,
+        "crc": 131432482
+      },
+      {
+        "name": "xl/worksheets/sheet2.xml",
+        "expanded": 554,
+        "compressed": 321,
+        "crc": 1116193979
+      }
+    ]
+  },
+  "resource_summary": {
+    "xlsx-resources.json": {
+      "wall_seconds": 300.0910284999991,
+      "worker_exit_code": 0,
+      "error": null,
+      "samples": 2713,
+      "missing_identifier": 0,
+      "milliseconds": {
+        "p50": 1.0110840084962547,
+        "p95": 1.9664170104078948,
+        "p99": 2.5416670250706375
+      },
+      "peak_rss_bytes": 60653568,
+      "scope": "Debug instrumented production file-index-worker, nice 10, sequential repeated extraction of the same synthetic XLSX body, 100 ms between requests. No embedding, background scheduler, UI input, GPU counters or long-term thermal acceptance measured. RSS is ps resident pages; CPU percent is ps lifetime average, 100 percent per core."
+    },
+    "xlsx-resources-final.json": {
+      "wall_seconds": 60.12188024999341,
+      "worker_exit_code": 0,
+      "error": null,
+      "samples": 518,
+      "missing_identifier": 0,
+      "milliseconds": {
+        "p50": 3.5152920172549784,
+        "p95": 4.181416996289045,
+        "p99": 4.251000005751848
+      },
+      "peak_rss_bytes": 60653568,
+      "scope": "Debug instrumented production file-index-worker, nice 10, sequential repeated extraction of the same synthetic XLSX body, 100 ms between requests. No embedding, background scheduler, UI input, GPU counters or long-term thermal acceptance measured. RSS is ps resident pages; CPU percent is ps lifetime average, 100 percent per core."
+    }
+  },
+  "source_tool_binary_hashes_rechecked_after_final_probe": true
+}

@@ -143,6 +143,7 @@ extension SemanticFileStore {
         switch (path as NSString).pathExtension.lowercased() {
         case "pdf": return documentProvenance + ";" + SemanticPDFText.recipe
         case "docx": return documentProvenance + ";" + SemanticWordText.recipe
+        case "xlsx": return documentProvenance + ";" + SemanticSpreadsheetText.recipe
         case "pptx": return documentProvenance + ";" + SemanticPresentationText.recipe
         case "odt": return documentProvenance + ";" + SemanticODTText.recipe
         case "html", "htm": return documentProvenance + ";" + SemanticHTMLText.recipe

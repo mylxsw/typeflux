@@ -1,0 +1,14 @@
+{
+  "command": [
+    "make",
+    "coverage",
+    "SUITE=SemanticSpreadsheetTextTests"
+  ],
+  "wall_seconds": 357.80102875002194,
+  "exit_code": 0,
+  "build_seconds": [
+    318.93
+  ],
+  "selected_methods": 10,
+  "result": "10/10 passed, first command; no failed test/build retry"
+}

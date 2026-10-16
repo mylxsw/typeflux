@@ -1,0 +1,14 @@
+{
+  "wall_seconds": 300.0910284999991,
+  "worker_exit_code": 0,
+  "error": null,
+  "samples": 2713,
+  "missing_identifier": 0,
+  "milliseconds": {
+    "p50": 1.0110840084962547,
+    "p95": 1.9664170104078948,
+    "p99": 2.5416670250706375
+  },
+  "peak_rss_bytes": 60653568,
+  "scope": "Debug instrumented production file-index-worker, nice 10, sequential repeated extraction of the same synthetic XLSX body, 100 ms between requests. No embedding, background scheduler, UI input, GPU counters or long-term thermal acceptance measured. RSS is ps resident pages; CPU percent is ps lifetime average, 100 percent per core."
+}

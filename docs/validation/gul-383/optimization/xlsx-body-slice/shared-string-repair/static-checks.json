@@ -1,0 +1,18 @@
+{
+  "strict_lint": {
+    "command": "swiftlint lint --strict --quiet Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSpreadsheetText.swift Tests/TypefluxTests/SemanticSpreadsheetTextTests.swift",
+    "exit_code": 0
+  },
+  "diff_check": {
+    "command": "git diff --check",
+    "exit_code": 0
+  },
+  "self_review": {
+    "functional_path": "descriptor > workbook > bounded cell group > shared lengths/windows > scalar-safe body > cursor > index/store > tail query",
+    "boundary_and_failures": "empty and long values, duplicate references, invalid/scalar-split/max cursors, unsupported/malformed input",
+    "resources": "sequential parser lifetime; no added process, file, lock, persistent cache or asynchronous ownership",
+    "security": "archive-only paths, no formula/external execution; existing cancellation/authority/version publication gates retained",
+    "consistency": "unchanged extraction recipe/cursor semantics and vectors; throughput documentation updated",
+    "fixed_during_review": "maximum-cursor overflow guard; representative row XML and throwing test autoclosure before compilation"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "command": [
+    "make",
+    "coverage",
+    "SUITE=SemanticSpreadsheetTextTests SemanticPresentationTextTests SemanticODTTextTests SemanticRTFTextTests SemanticHTMLTextTests SemanticWordTextTests SemanticPDFOCRTests SemanticFilePolicyTests SemanticFileStoreTests SemanticFileContentTests SemanticFileIndexerTests SemanticIndexDiagnosticsTests SemanticReaderOwnershipTests SemanticScanAdmissionTests SemanticDiscoveryPauseTests"
+  ],
+  "wall_seconds": 391.0684261659626,
+  "exit_code": 2
+}

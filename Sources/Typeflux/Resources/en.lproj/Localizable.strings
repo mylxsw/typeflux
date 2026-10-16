@@ -5173,6 +5173,7 @@
 "semantic.about" = "About the model & license";
 "semantic.result" = "Content match";
 "semantic.page" = "Page %d";
+"semantic.sheet" = "Sheet %d";
 
 // Launcher selected-text switch and preview.
 "ask.context.selection.enabled" = "Enabled";

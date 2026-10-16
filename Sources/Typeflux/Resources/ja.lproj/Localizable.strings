@@ -5124,6 +5124,7 @@
 "semantic.about" = "モデルとライセンスについて";
 "semantic.result" = "内容一致";
 "semantic.page" = "%d ページ";
+"semantic.sheet" = "シート %d";
 
 // Launcher selected-text switch and preview.
 "ask.context.selection.enabled" = "有効";
