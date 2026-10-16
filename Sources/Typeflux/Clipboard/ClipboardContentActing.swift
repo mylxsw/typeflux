@@ -12,7 +12,7 @@ protocol ClipboardContentActing: AnyObject {
     func revealInFinder(_ urls: [URL])
     /// Copies a stored image into ~/Downloads and returns the new file.
     func saveToDownloads(_ url: URL) -> URL?
-    func recognizeText(in imageURL: URL) async -> String?
+    func recognizeText(in imageURL: URL) async throws -> String?
 }
 
 

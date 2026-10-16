@@ -6,13 +6,13 @@ final class SystemClipboardContentActions: ClipboardContentActing {
     private let pasteboard: NSPasteboard
     private let fileManager: FileManager
     private let downloadsDirectory: URL?
-    private let textRecognizer: any ImageTextRecognizing
+    private let textRecognizer: (any ImageTextRecognizing)?
 
     init(
         pasteboard: NSPasteboard = .general,
         fileManager: FileManager = .default,
         downloadsDirectory: URL? = FileManager.default.urls(for: .downloadsDirectory, in: .userDomainMask).first,
-        textRecognizer: any ImageTextRecognizing = VisionImageTextRecognizer()
+        textRecognizer: (any ImageTextRecognizing)? = nil
     ) {
         self.pasteboard = pasteboard
         self.fileManager = fileManager
@@ -77,12 +77,8 @@ final class SystemClipboardContentActions: ClipboardContentActing {
         }
     }
 
-    func recognizeText(in imageURL: URL) async -> String? {
-        do {
-            return try await textRecognizer.recognizeText(in: .url(imageURL)).string
-        } catch {
-            ErrorLogStore.shared.log("Clipboard text recognition failed: \(error.localizedDescription)")
-            return nil
-        }
+    func recognizeText(in imageURL: URL) async throws -> String? {
+        if let textRecognizer { return try await textRecognizer.recognizeText(in: .url(imageURL)).string }
+        return try await ClipboardTextRecognizer().recognize(imageURL)
     }
 }

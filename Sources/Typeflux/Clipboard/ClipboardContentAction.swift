@@ -78,4 +78,33 @@ struct ClipboardImageRevision: Equatable, Sendable {
         }
         return true
     }
+    /// OCR is read-only until this owner commits once, with the original authority and file revision.
+    @discardableResult
+    func startText(url: URL, actions: any ClipboardContentActing,
+                   authorized: @escaping @MainActor () -> Bool,
+                   commit: @escaping @MainActor (String?) -> Void,
+                   failed: @escaping @MainActor () -> Void) -> Bool {
+        guard !disabled, task == nil, authorized() else { return false }
+        observeAccount()
+        committed = false
+        let current = generation
+        let originalRevision = Result { try ClipboardImageRevision(url) }
+        task = Task { [weak self] in
+            defer { self?.task = nil }
+            do {
+                let revision = try originalRevision.get()
+                let text = try await actions.recognizeText(in: url)
+                guard !Task.isCancelled, self?.generation == current, authorized() else { return }
+                guard revision.matches(url) else { throw MediaFailure.unreadable }
+                let result = MediaOCRResult(lines: text?.components(separatedBy: "\n") ?? [])
+                try result.validate()
+                self?.committed = true
+                commit(result.text)
+            } catch {
+                if !Task.isCancelled, self?.generation == current, authorized() { failed() }
+            }
+        }
+        return true
+    }
+
 }
