@@ -14,6 +14,7 @@ struct ScreenshotSensitiveInfoPanel: View {
         }
 
         var rows: [Row]
+        var failed = false
 
         var allApplied: Bool { rows.allSatisfy(\.applied) }
     }
@@ -35,7 +36,7 @@ struct ScreenshotSensitiveInfoPanel: View {
             HStack(spacing: 6) {
                 Image(systemName: "eye.trianglebadge.exclamationmark").foregroundStyle(AskTheme.accent)
                 Text(L("screenshot.sensitive.title")).font(.system(size: 13, weight: .semibold))
-                Text("\(state.rows.count)").font(.system(size: 12)).foregroundStyle(.secondary)
+                if !state.failed { Text("\(state.rows.count)").font(.system(size: 12)).foregroundStyle(.secondary) }
                 Spacer(minLength: 4)
                 Button { perform(.close) } label: {
                     Image(systemName: "xmark").font(.system(size: 10, weight: .semibold)).foregroundStyle(.secondary)
@@ -44,7 +45,7 @@ struct ScreenshotSensitiveInfoPanel: View {
                 .buttonStyle(.plain)
                 .help(L("screenshot.sensitive.close"))
             }
-            Text(L("screenshot.sensitive.hint")).font(.system(size: 11)).foregroundStyle(.secondary)
+            Text(L(state.failed ? "screenshot.sensitive.failed" : "screenshot.sensitive.hint")).font(.system(size: 11)).foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
             ScrollView(.vertical) {
                 VStack(spacing: 2) {
@@ -62,8 +63,10 @@ struct ScreenshotSensitiveInfoPanel: View {
             }
             .buttonStyle(.plain)
             .disabled(state.allApplied)
-            Text(L("screenshot.sensitive.footnote")).font(.system(size: 10.5)).foregroundStyle(.tertiary)
-                .fixedSize(horizontal: false, vertical: true)
+            if !state.failed {
+                Text(L("screenshot.sensitive.footnote")).font(.system(size: 10.5)).foregroundStyle(.tertiary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
         .padding(12)
         .frame(width: Self.width)
@@ -103,6 +106,8 @@ final class ScreenshotSensitiveInfoController {
     private var shown: (state: ScreenshotSensitiveInfoPanel.State, crop: CGRect?)?
     private let scanner: (any ScreenshotSensitiveInfoScanning)?
     private var task: Task<Void, Never>?
+    private var observers: [NSObjectProtocol] = []
+    private var retired = false
     /// The panel's content changed; the editor lays it out again.
     var onChange: (() -> Void)?
     var annotations: () -> [ScreenshotAnnotation] = { [] }
@@ -114,18 +119,29 @@ final class ScreenshotSensitiveInfoController {
 
     init(scanner: (any ScreenshotSensitiveInfoScanning)?) {
         self.scanner = scanner
+        for name in [Notification.Name.authDidLogin, .authDidLogout, .authTokenDidRefresh] {
+            observers.append(NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                MainActor.assumeIsolated { self?.cancel() }
+            })
+        }
     }
+    deinit { task?.cancel(); observers.forEach(NotificationCenter.default.removeObserver) }
 
     /// Looks for sensitive text once, in the background.
     func scan(_ image: CGImage, scale: CGFloat) {
-        guard let scanner, suggestions.status == .idle else { return }
+        guard !retired, let scanner, suggestions.status == .idle else { return }
         suggestions.beginScan()
         let size = CGSize(width: image.width, height: image.height)
         task = Task { [weak self] in
-            let findings = await scanner.scan(image)
-            guard !Task.isCancelled, let self else { return }
-            self.suggestions.finishScan(findings, imageSize: size, scale: scale)
-            self.onChange?()
+            do {
+                let findings = try await scanner.scan(image)
+                guard !Task.isCancelled, let self, !self.retired else { return }
+                self.suggestions.finishScan(findings, imageSize: size, scale: scale)
+                self.onChange?()
+            } catch {
+                guard !Task.isCancelled, let self, !self.retired else { return }
+                self.suggestions.failScan(); self.onChange?()
+            }
         }
     }
 
@@ -135,7 +151,7 @@ final class ScreenshotSensitiveInfoController {
     }
 
     var isPanelShown: Bool {
-        hasFindings && !suggestions.isDismissed
+        (hasFindings || suggestions.status == .failed) && !suggestions.isDismissed
     }
 
     /// The More menu's "Sensitive information": shows the panel again, or puts it away.
@@ -150,8 +166,12 @@ final class ScreenshotSensitiveInfoController {
     }
 
     func cancel() {
+        retired = true
         task?.cancel()
         task = nil
+        suggestions = ScreenshotRedactionSuggestions()
+        host?.removeFromSuperview(); host = nil; shown = nil
+        onChange?()
     }
 
     func perform(_ action: ScreenshotSensitiveInfoPanel.Action, crop: CGRect?) {

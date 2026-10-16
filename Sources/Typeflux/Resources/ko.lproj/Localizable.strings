@@ -5515,3 +5515,5 @@
 "imagegen.recovery.empty" = "이 대화에 복구할 출력이 없습니다.";
 "imagegen.recovery.saved" = "파일을 저장했습니다. 비공개 원본과 실행 상태는 그대로입니다.";
 "imagegen.recovery.unavailable" = "복구할 수 없거나 접근 권한이 변경되었습니다. 비공개 원본은 삭제되지 않았습니다.";
+
+"screenshot.sensitive.failed" = "민감한 정보를 확인하지 못했습니다. 이미지를 검토하고 개인 정보를 직접 가려 주세요.";

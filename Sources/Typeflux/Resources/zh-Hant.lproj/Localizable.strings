@@ -5549,3 +5549,5 @@
 "imagegen.recovery.empty" = "此對話沒有可復原的輸出。";
 "imagegen.recovery.saved" = "檔案已儲存，私有原件和執行狀態保持不變。";
 "imagegen.recovery.unavailable" = "復原暫不可用或存取權限已變更。私有原件未刪除。";
+
+"screenshot.sensitive.failed" = "無法檢查敏感資訊，請檢查圖片並手動遮蓋隱私內容。";

@@ -5629,3 +5629,5 @@
 "imagegen.recovery.empty" = "No retained output is available for this conversation.";
 "imagegen.recovery.saved" = "File saved. The private original and execution status are unchanged.";
 "imagegen.recovery.unavailable" = "Recovery is unavailable or access changed. Private originals have not been removed.";
+
+"screenshot.sensitive.failed" = "Could not check for sensitive information. Review the image and cover private content manually.";

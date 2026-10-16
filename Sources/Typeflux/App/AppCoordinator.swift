@@ -303,6 +303,7 @@ final class AppCoordinator {
         di.mediaWorkers.preventNewWork()
         di.mediaPreviewWorkers.preventNewWork()
         di.clipboardThumbnailWorkers.preventNewWork()
+        di.textRecognitionWorkers.preventNewWork()
         di.clipboardOCRWorkers.preventNewWork()
         di.clipboardMetadataWorkers.preventNewWork()
         await di.nativeSystemCommands.shutdown()
@@ -310,6 +311,7 @@ final class AppCoordinator {
         await di.mediaWorkers.shutdown()
         await di.mediaPreviewWorkers.shutdown()
         await di.clipboardThumbnailWorkers.shutdown()
+        await di.textRecognitionWorkers.shutdown()
         await di.clipboardOCRWorkers.shutdown()
         await di.clipboardMetadataWorkers.shutdown()
         await di.moduleRegistry.shutdown()
@@ -326,6 +328,7 @@ final class AppCoordinator {
         di.mediaWorkers.preventNewWork()
         di.mediaPreviewWorkers.preventNewWork()
         di.clipboardThumbnailWorkers.preventNewWork()
+        di.textRecognitionWorkers.preventNewWork()
         di.clipboardOCRWorkers.preventNewWork()
         di.clipboardMetadataWorkers.preventNewWork()
         Task { [di] in await di.moduleRegistry.shutdown() }

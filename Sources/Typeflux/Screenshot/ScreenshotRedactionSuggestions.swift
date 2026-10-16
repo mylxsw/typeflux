@@ -3,15 +3,16 @@ import Foundation
 
 /// Finds sensitive text on a screenshot, on this Mac.
 protocol ScreenshotSensitiveInfoScanning {
-    func scan(_ image: CGImage) async -> [ScreenshotSensitiveFinding]
+    func scan(_ image: CGImage) async throws -> [ScreenshotSensitiveFinding]
 }
 
 /// Reads the image with Vision (band by band for a long one) and runs the detector's rules.
 struct VisionSensitiveInfoScanner: ScreenshotSensitiveInfoScanning {
     var recognizer: any ImageTextRecognizing = TiledImageTextRecognizer(base: VisionImageTextRecognizer())
 
-    func scan(_ image: CGImage) async -> [ScreenshotSensitiveFinding] {
-        guard let text = try? await recognizer.recognizeText(in: .image(image)) else { return [] }
+    func scan(_ image: CGImage) async throws -> [ScreenshotSensitiveFinding] {
+        let text = try await recognizer.recognizeText(in: .image(image))
+        try Task.checkCancellation()
         return ScreenshotSensitiveInfoDetector.findings(in: text)
     }
 }
@@ -29,7 +30,7 @@ struct ScreenshotRedactionSuggestions: Equatable {
     }
 
     enum Status: Equatable {
-        case idle, scanning, done
+        case idle, scanning, done, failed
     }
 
     /// Room added around found text, in points, so the mosaic covers it whole.
@@ -45,6 +46,8 @@ struct ScreenshotRedactionSuggestions: Equatable {
     mutating func beginScan() {
         status = .scanning
     }
+
+    mutating func failScan() { status = .failed; items = [] }
 
     /// Places what the scan found on an image of `imageSize` pixels at `scale` pixels per point.
     mutating func finishScan(_ findings: [ScreenshotSensitiveFinding], imageSize: CGSize, scale: CGFloat) {
@@ -97,7 +100,9 @@ struct ScreenshotRedactionSuggestions: Equatable {
 
     /// The panel's rows for the region; nil when it has nothing to show.
     func panelState(crop: CGRect?, annotations: [ScreenshotAnnotation]) -> ScreenshotSensitiveInfoPanel.State? {
-        guard !isDismissed, status == .done else { return nil }
+        guard !isDismissed else { return nil }
+        if status == .failed { return .init(rows: [], failed: true) }
+        guard status == .done else { return nil }
         let visible = visibleItems(in: crop)
         guard !visible.isEmpty else { return nil }
         return .init(rows: visible.map { item in

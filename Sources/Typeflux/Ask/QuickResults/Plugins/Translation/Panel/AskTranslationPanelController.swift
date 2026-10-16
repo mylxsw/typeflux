@@ -4,6 +4,7 @@ import SwiftUI
 
 @MainActor
 final class AskTranslationPanelController: NSObject, NSWindowDelegate {
+    var onHide: (() -> Void)?
     let model: AskTranslationPanelModel
     private var panel: AskTranslationPanelWindow?
     private var host: NSHostingView<AnyView>?
@@ -155,6 +156,7 @@ final class AskTranslationPanelController: NSObject, NSWindowDelegate {
             backing: .buffered,
             defer: false
         )
+        window.onOrderOut = { [weak self] in self?.onHide?() }
         window.delegate = self
         window.level = .floating
         window.isOpaque = false
@@ -329,6 +331,9 @@ extension AskTranslationPanelController {
 }
 
 final class AskTranslationPanelWindow: NSPanel {
+    var onOrderOut: (() -> Void)?
+    override func orderOut(_ sender: Any?) { onOrderOut?(); super.orderOut(sender) }
+    override func close() { onOrderOut?(); super.close() }
     override var canBecomeKey: Bool {
         true
     }

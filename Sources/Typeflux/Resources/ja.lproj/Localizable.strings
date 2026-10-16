@@ -5515,3 +5515,5 @@
 "imagegen.recovery.empty" = "この会話に復元可能な出力はありません。";
 "imagegen.recovery.saved" = "保存しました。元のファイルと実行状態は変更されていません。";
 "imagegen.recovery.unavailable" = "復元できないか、アクセス権が変更されました。元のファイルは削除されていません。";
+
+"screenshot.sensitive.failed" = "機密情報を確認できませんでした。画像を確認し、個人情報を手動で隠してください。";
