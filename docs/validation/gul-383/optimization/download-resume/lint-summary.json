@@ -1,0 +1,5 @@
+{
+  "strict_new_files_pass": true,
+  "caller_findings": 42,
+  "findings_on_changed_lines": []
+}

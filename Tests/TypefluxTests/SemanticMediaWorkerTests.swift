@@ -38,6 +38,7 @@ struct SemanticMediaWorkerTests {
         let worker = SemanticMediaWorker(helper: source, model: source, projector: target, models: models,
                                          makeEncoder: { _, _, _ in encoder })
         #expect(models.fetches == 0)
+        models.status = 206
         let input = SemanticMediaInput(kind: .image, path: "/fixture.jpg")
         #expect(try worker.embed(input, cancelled: { false }) == semanticVector())
         #expect(try worker.embed(input, cancelled: { false }) == semanticVector())

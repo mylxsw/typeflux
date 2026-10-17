@@ -1,0 +1,55 @@
+{
+  "baseline": "55985dbd039f320f6771aa8a64c4f632bec43cd2",
+  "denominator": "Added/modified executable Swift lines in Sources/Typeflux, including new files, intersected with final LLVM LCOV DA records. Tests, helper wrapper and unchanged vendor code excluded; helper reported separately.",
+  "executable": 211,
+  "covered": 198,
+  "percent": 93.84,
+  "files": {
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticDownloadState.swift": {
+      "executable": 82,
+      "covered": 74,
+      "percent": 90.24,
+      "uncovered": [
+        35,
+        60,
+        66,
+        67,
+        85,
+        94,
+        101,
+        102
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticEmbeddingWorker.swift": {
+      "executable": 6,
+      "covered": 4,
+      "percent": 66.67,
+      "uncovered": [
+        126,
+        127
+      ]
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift": {
+      "executable": 1,
+      "covered": 1,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticMediaWorker.swift": {
+      "executable": 8,
+      "covered": 8,
+      "percent": 100.0,
+      "uncovered": []
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticModelDownload.swift": {
+      "executable": 114,
+      "covered": 111,
+      "percent": 97.37,
+      "uncovered": [
+        86,
+        93,
+        130
+      ]
+    }
+  }
+}

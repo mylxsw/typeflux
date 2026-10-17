@@ -1,0 +1,49 @@
+{
+  "coverage_commands": [
+    {
+      "record": "coverage-build-retry.json",
+      "command": [
+        "make",
+        "coverage",
+        "FILTER=SemanticDownloadResumeTests|SemanticFileServiceTests/(model.*download.*retry.*search.*rebuild.*removal|download.*cancellation.*corruption.*disabling|download.*failures.*early.*cancellation.*release.*session)|SemanticMediaWorkerTests/(downloadIsLazyVerifiedAndReused|failedAndCancelledTransfersAreJoinedAndNeverInstalled)"
+      ],
+      "wall_seconds": 145.6773766669794,
+      "exit_code": 2
+    },
+    {
+      "record": "coverage-fixture-repair.json",
+      "command": [
+        "make",
+        "coverage",
+        "FILTER=SemanticDownloadResumeTests|SemanticFileServiceTests/.*(model.*download.*retry.*search.*rebuild.*removal|download.*cancellation.*corruption.*disabling|download.*failures.*early.*cancellation.*release.*session)"
+      ],
+      "wall_seconds": 69.01976020802977,
+      "exit_code": 0
+    },
+    {
+      "record": "coverage-identity-proof.json",
+      "command": [
+        "make",
+        "coverage",
+        "FILTER=SemanticDownloadResumeTests/productionTextAndProjectorFetchUseSeparatePinnedIdentities"
+      ],
+      "wall_seconds": 66.97127341700252,
+      "exit_code": 0
+    },
+    {
+      "record": "coverage-run.json",
+      "command": [
+        "make",
+        "coverage",
+        "FILTER=SemanticDownloadResumeTests|SemanticFileServiceTests/(model.*download.*retry.*search.*rebuild.*removal|download.*cancellation.*corruption.*disabling|download.*failures.*early.*cancellation.*release.*session)|SemanticMediaWorkerTests/(downloadIsLazyVerifiedAndReused|failedAndCancelledTransfersAreJoinedAndNeverInstalled)"
+      ],
+      "wall_seconds": 247.64990120800212,
+      "exit_code": 2
+    }
+  ],
+  "coverage_wall_seconds_total": 529.3183115000138,
+  "build_failures": 1,
+  "failed_test_commands": 1,
+  "successful_commands": 2,
+  "scope": "12 distinct methods passed across runs; final one-method proof passed; no claim of one final 12-method run."
+}

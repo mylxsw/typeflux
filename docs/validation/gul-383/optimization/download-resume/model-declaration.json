@@ -1,0 +1,15 @@
+{
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticEmbeddingWorker.swift": {
+    "sha256": "2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135",
+    "bytes": "309_855_456",
+    "revision": "bfcd298762cc34d0357ece5ebdd31791a3a374d8"
+  },
+  "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticMediaWorker.swift": {
+    "sha256": "c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f",
+    "bytes": "554_821_024",
+    "revision": "bfcd298762cc34d0357ece5ebdd31791a3a374d8"
+  },
+  "actual_weights_used": false,
+  "fixture_sha256": "2312394bd99545d9de131c24efb781e765ac1aec243f2ed9347597a793a415e9",
+  "fixture_kind": "deterministic bytes, not GGUF"
+}

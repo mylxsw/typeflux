@@ -1,0 +1,2 @@
+{"mode": "ignore", "attempt": 1, "range": null, "if_range": null, "status": 200, "etag": "\"v1\"", "start": 0, "interrupted": true, "full_sha256": "2312394bd99545d9de131c24efb781e765ac1aec243f2ed9347597a793a415e9", "prefix_bytes": 65536}
+{"mode": "ignore", "attempt": 2, "range": null, "if_range": null, "status": 200, "etag": "\"v1\"", "start": 0, "interrupted": false, "full_sha256": "2312394bd99545d9de131c24efb781e765ac1aec243f2ed9347597a793a415e9", "prefix_bytes": 65536}

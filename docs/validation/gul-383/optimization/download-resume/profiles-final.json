@@ -1,0 +1,39 @@
+{
+  "raw_profiles": [
+    {
+      "path": "application-profiles/Swift Testing6755308177549342514_0.44980.profraw.gz",
+      "gzip_sha256": "a1f24d9dede89e56a4bd44c47f0c1f815102c69c79a2860a5e88d621c0c958cd",
+      "raw_sha256": "7d26dc9a3d8b938468fc8ea1e6592c9d72f7d982ed2ed528b5b0c88edc9ba94c"
+    },
+    {
+      "path": "application-profiles/XCTest6755308177549342514_0.44979.profraw.gz",
+      "gzip_sha256": "9d497d293b59b4c79049a02bf67bb6a04f16fb5b8aa66384ac41a89c34cf15a9",
+      "raw_sha256": "34849e8244b1cf30f3f16aadd47c52578ec5df4154215a921c95d607b68374d5"
+    },
+    {
+      "path": "first-pass-profiles/Swift Testing6755294975892567858_0.38986.profraw.gz",
+      "gzip_sha256": "7dfacf4c5839b6fd0d53b2687c269e72756fe1bfc29138fb79a3805e8a6f4d7e",
+      "raw_sha256": "0bc940a87586ec2a9257bf68223e56d6f5d8ed2abd5b91672d8ee586db741cd2"
+    },
+    {
+      "path": "first-pass-profiles/XCTest6755294975892567858_0.38985.profraw.gz",
+      "gzip_sha256": "61700487cf7580f6e12bbf102f9e116ddc42773049494657e3dd85f478fcfad5",
+      "raw_sha256": "af7a61f7131a93acba42d22339a206b9a37eec8522f707c22703f87456c307bf"
+    },
+    {
+      "path": "repair-pass-profiles/Swift Testing6755294976966309682_0.42606.profraw.gz",
+      "gzip_sha256": "287e3655ee4f8b0b31b42c2d8619e82ec3c61161717ace8062c12a748ce6e4a4",
+      "raw_sha256": "865ab3d3d868603ce975d1e1ea63d2d58c7bf650a59d6354c3533a220b216a12"
+    },
+    {
+      "path": "repair-pass-profiles/XCTest6755294976966309682_0.42605.profraw.gz",
+      "gzip_sha256": "2bdf5d570e2782d803599be11ff569ceda7b7183f35ed035732ca14a144ebb00",
+      "raw_sha256": "22d6436435902f11237c77ed200394b45aed53a0ca3a160f62651e19a3ff211d"
+    }
+  ],
+  "clean_merged_profile": {
+    "path": "application.profdata.gz",
+    "gzip_sha256": "f69a078ea56c37acd6319dce739ee9b7fdc945694ba8695db049d7725debeac3",
+    "profdata_sha256": "e0e53926fee7e8e19e6ddadcdfbf40a2a213e88791db750ab13ee74de5f19c88"
+  }
+}

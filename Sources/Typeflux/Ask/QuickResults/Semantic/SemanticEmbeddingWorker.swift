@@ -35,6 +35,12 @@ enum SemanticModel {
                        cancelled: () -> Bool = { false }) throws {
         let handle = try FileHandle(forReadingFrom: url)
         defer { try? handle.close() }
+        try verify(handle, bytes: bytes, sha256: sha256, cancelled: cancelled)
+    }
+
+    /// Verify an already-open private download without reopening a replaced pathname.
+    static func verify(_ handle: FileHandle, bytes: Int64, sha256: String,
+                       cancelled: () -> Bool) throws {
         var hash = SHA256(), total: Int64 = 0
         while true {
             if cancelled() {
@@ -117,6 +123,9 @@ protocol SemanticModelHandling: Sendable {
 }
 
 struct SemanticModelFiles: SemanticModelHandling {
+    var directory = SemanticModel.directory.appendingPathComponent("Downloads", isDirectory: true)
+    var configuration = URLSessionConfiguration.ephemeral
+
     func verify(_ url: URL, cancelled: @Sendable () -> Bool) throws {
         try SemanticModel.verify(url, cancelled: cancelled)
     }
@@ -126,7 +135,7 @@ struct SemanticModelFiles: SemanticModelHandling {
     }
 
     func fetch(progress: @escaping @Sendable (Int64) -> Void) async throws -> (URL, URLResponse) {
-        try await SemanticModelDownload(progress: progress).fetch()
+        try await SemanticModelDownload(directory: directory, configuration: configuration, progress: progress).fetch()
     }
 }
 

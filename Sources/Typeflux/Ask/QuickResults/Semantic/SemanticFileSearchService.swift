@@ -754,7 +754,7 @@ extension SemanticFileSearchService {
                 try Task.checkCancellation()
                 guard self?.ownsDownload(attempt, lifecycle: lifecycle, fingerprint: fingerprint) == true else { throw CancellationError() }
                 guard let http = response as? HTTPURLResponse,
-                      http.statusCode == 200 else { throw URLError(.badServerResponse) }
+                      (http.statusCode == 200 || http.statusCode == 206) else { throw URLError(.badServerResponse) }
                 let cancellation = AskSearchCancellation()
                 try await withTaskCancellationHandler {
                     try await Task.detached(priority: .utility) {

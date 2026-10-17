@@ -1,0 +1,12 @@
+{
+  "os": "ProductName:\t\tmacOS\nProductVersion:\t\t26.6.2\nBuildVersion:\t\t25G83",
+  "hardware": "Apple M4\n17179869184",
+  "swift": "Apple Swift version 6.4 (swiftlang-6.4.0.34.1 clang-2100.3.34.1)\nTarget: arm64-apple-macosx26.0",
+  "xcode": "Xcode 27.1\nBuild version 27A9275",
+  "build": "Debug, instrumented application tests",
+  "fixture_bytes": 262144,
+  "prefix_bytes": 65536,
+  "real_weights": false,
+  "base": "55985dbd039f320f6771aa8a64c4f632bec43cd2",
+  "cache": "Task-local APFS copy of prior build; relocated ModuleCache moved aside before compilation. Reuse requires normal runner input/artifact verification; no prior passing results/profiles reused."
+}

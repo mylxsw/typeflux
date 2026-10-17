@@ -136,7 +136,7 @@ struct SemanticFileServiceTests {
         models.status = 503
         service.downloadModel()
         try await Self.wait { service.phase == .failed }
-        models.status = 200
+        models.status = 206
         service.downloadModel()
         try await Self.wait { service.phase == .ready }
         #expect(service.files == 1); #expect(service.chunks == 1); #expect(service.modelReady)
@@ -313,18 +313,19 @@ struct SemanticFileServiceTests {
     }
 
     @Test func `download failures and early cancellation release session`() async throws {
+        let root = try semanticFixture(); defer { try? FileManager.default.removeItem(at: root) }
         let config = URLSessionConfiguration.ephemeral
         config.protocolClasses = [SemanticFailureURLProtocol.self]
         let downloader = try SemanticModelDownload(
             url: #require(URL(string: "https://semantic.test/model")),
-            configuration: config,
+            directory: root, configuration: config,
             progress: { _ in }
         )
         await #expect(throws: (any Error).self) { try await downloader.fetch() }
         await #expect(throws: (any Error).self) { try await downloader.fetch() }
         let cancelled = try SemanticModelDownload(
             url: #require(URL(string: "https://semantic.test/model")),
-            configuration: config,
+            directory: root, configuration: config,
             progress: { _ in }
         )
         let task = Task { try await cancelled.fetch() }
