@@ -1,0 +1,60 @@
+{
+  "commands": [
+    {
+      "label": "baseline",
+      "exit_code": 2,
+      "wall_seconds": 0.3517914159456268,
+      "counts": {
+        "SemanticResourceBudgetTests.swift:cyclomatic_complexity:Warning": 1,
+        "SemanticResourceBudgetTests.swift:function_body_length:Warning": 1,
+        "SemanticResourceBudgetTests.swift:function_body_length:Error": 1,
+        "SemanticResourceBudgetTests.swift:line_length:Warning": 3,
+        "SemanticResourceBudgetTests.swift:line_length:Error": 3,
+        "SemanticResourceBudgetTests.swift:type_body_length:Warning": 1,
+        "SemanticNativeContentionTests.swift:cyclomatic_complexity:Warning": 1,
+        "SemanticNativeContentionTests.swift:function_body_length:Error": 1,
+        "SemanticNativeContentionTests.swift:line_length:Error": 1,
+        "SemanticNativeLatencyTests.swift:cyclomatic_complexity:Error": 1,
+        "SemanticNativeLatencyTests.swift:function_body_length:Error": 1,
+        "SemanticNativeLatencyTests.swift:line_length:Error": 2,
+        "AskConversationTests.swift:file_length:Warning": 1,
+        "AskConversationTests.swift:identifier_name:Error": 31,
+        "AskConversationTests.swift:identifier_name:Warning": 1,
+        "AskConversationTests.swift:line_length:Warning": 24,
+        "AskConversationTests.swift:line_length:Error": 4,
+        "AskConversationTests.swift:optional_data_string_conversion:Warning": 2,
+        "AskConversationTests.swift:type_body_length:Warning": 1
+      }
+    },
+    {
+      "label": "current",
+      "exit_code": 2,
+      "wall_seconds": 0.15332012507133186,
+      "counts": {
+        "SemanticNativeContentionTests.swift:cyclomatic_complexity:Error": 1,
+        "SemanticNativeContentionTests.swift:function_body_length:Error": 1,
+        "SemanticNativeContentionTests.swift:line_length:Error": 1,
+        "SemanticResourceBudgetTests.swift:cyclomatic_complexity:Warning": 1,
+        "SemanticResourceBudgetTests.swift:function_body_length:Warning": 1,
+        "SemanticResourceBudgetTests.swift:function_body_length:Error": 1,
+        "SemanticResourceBudgetTests.swift:line_length:Warning": 3,
+        "SemanticResourceBudgetTests.swift:line_length:Error": 2,
+        "SemanticResourceBudgetTests.swift:type_body_length:Warning": 1,
+        "SemanticNativeLatencyTests.swift:cyclomatic_complexity:Error": 1,
+        "SemanticNativeLatencyTests.swift:function_body_length:Error": 1,
+        "SemanticNativeLatencyTests.swift:line_length:Error": 2,
+        "AskConversationTests.swift:file_length:Warning": 1,
+        "AskConversationTests.swift:identifier_name:Error": 31,
+        "AskConversationTests.swift:identifier_name:Warning": 1,
+        "AskConversationTests.swift:line_length:Warning": 24,
+        "AskConversationTests.swift:line_length:Error": 4,
+        "AskConversationTests.swift:optional_data_string_conversion:Warning": 2,
+        "AskConversationTests.swift:type_body_length:Warning": 1
+      }
+    }
+  ],
+  "increased_diagnostic_counts": {
+    "SemanticNativeContentionTests.swift:cyclomatic_complexity:Error": 1
+  },
+  "boundary": "Compare counts by filename/rule/severity; existing method complexity and line warnings remain. Not a strict-lint green claim."
+}

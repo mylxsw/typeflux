@@ -1,0 +1,11 @@
+{
+  "command": [
+    "python3",
+    "docs/validation/gul-383/optimization/scale-resource-slice/run.py"
+  ],
+  "started_unix": 1792228599.578718,
+  "wall_seconds": 414.38511425000615,
+  "exit_code": 0,
+  "samples": 198,
+  "scope": "Same-host reference window and real mixed-file indexing. CPU process time is cumulative; %CPU is lifetime averaged. Owned proc_pid_rusage V2 records sampled physical footprint, physical disk IO and CPU Mach ticks converted using the host timebase; its CPU units were cross-checked against process_time_ns. Unsupported/denied PID reads retain available=false and errno. RSS includes shared resident pages; summed RSS is not unique physical RAM. GPU metrics are best-effort IOAccelerator counters, not energy measurements. No privileged powermetrics, external process arguments, filenames or input contents collected."
+}

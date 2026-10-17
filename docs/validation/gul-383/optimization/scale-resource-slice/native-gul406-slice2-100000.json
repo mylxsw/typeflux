@@ -1,0 +1,239 @@
+{
+  "app_max_rss_bytes" : 545898496,
+  "build" : "Release",
+  "chunks" : 100000,
+  "cold_definition" : "Ten fresh service\/helper openings per entry; OS\/model\/shader caches may be warm; opening the panel requests prewarming. Reopen and model verification occur outside the timed native edit.",
+  "complete" : true,
+  "corpus" : [
+    {
+      "chunks" : 100000,
+      "disk_bytes" : 481903608,
+      "entry" : "mixed",
+      "load_seconds" : 9.687834708369337,
+      "noise_vector_source" : "constructed-orthogonal"
+    },
+    {
+      "chunks" : 100000,
+      "disk_bytes" : 481907728,
+      "entry" : "file-mode",
+      "load_seconds" : 27.057592208380811,
+      "noise_vector_source" : "constructed-orthogonal"
+    }
+  ],
+  "entry_scope" : "all",
+  "failed_body_samples" : 0,
+  "index_inference_concurrency" : 0,
+  "index_writer_concurrency" : 0,
+  "indexed_files" : 2,
+  "model_sha256" : "2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135",
+  "permission_denial_fixture" : false,
+  "rows" : [
+    {
+      "complete_ms" : 139.48041599999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 31.675415999999998,
+      "input_to_publish_ms" : 14.266708,
+      "input_uptime" : 542212.24915912526,
+      "main_actor_max_timer_gap_ms" : 16.821541,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 0,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 139.78895900000001,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 28.125959000000002,
+      "input_to_publish_ms" : 11.992667000000001,
+      "input_uptime" : 542212.40516991634,
+      "main_actor_max_timer_gap_ms" : 15.3725,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 1,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 131.67599999999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 26.933166,
+      "input_to_publish_ms" : 11.864915999999999,
+      "input_uptime" : 542212.56093912502,
+      "main_actor_max_timer_gap_ms" : 14.116042,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 2,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 150.80254199999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 114.381167,
+      "input_to_publish_ms" : 98.309083000000001,
+      "input_uptime" : 542212.7178801666,
+      "main_actor_max_timer_gap_ms" : 15.083917,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 0,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 144.486166,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 103.27333299999999,
+      "input_to_publish_ms" : 87.359958000000006,
+      "input_uptime" : 542212.88511820871,
+      "main_actor_max_timer_gap_ms" : 14.908583,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 1,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 142.88179199999999,
+      "entry" : "mixed",
+      "input_to_draw_ms" : 101.365917,
+      "input_to_publish_ms" : 85.520042000000004,
+      "input_uptime" : 542213.04616824968,
+      "main_actor_max_timer_gap_ms" : 14.637708,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 2,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 117.487083,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 50.086500000000001,
+      "input_to_publish_ms" : 38.330416999999997,
+      "input_uptime" : 542241.34071758378,
+      "main_actor_max_timer_gap_ms" : 11.714833,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 0,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 103.00975,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 46.872,
+      "input_to_publish_ms" : 36.017000000000003,
+      "input_uptime" : 542241.5020634993,
+      "main_actor_max_timer_gap_ms" : 11.615167,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 1,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 107.66312499999999,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 46.500250000000001,
+      "input_to_publish_ms" : 35.641249999999999,
+      "input_uptime" : 542241.64739825041,
+      "main_actor_max_timer_gap_ms" : 11.7765,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 2,
+      "scenario" : "fts-cache",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 134.33629099999999,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 134.31029100000001,
+      "input_to_publish_ms" : 117.586833,
+      "input_uptime" : 542241.79911195906,
+      "main_actor_max_timer_gap_ms" : 11.84925,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 0,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 132.387542,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 132.36066700000001,
+      "input_to_publish_ms" : 115.146125,
+      "input_uptime" : 542242.18469416606,
+      "main_actor_max_timer_gap_ms" : 11.214916000000001,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 1,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    },
+    {
+      "complete_ms" : 131.053583,
+      "entry" : "file-mode",
+      "input_to_draw_ms" : 131.0275,
+      "input_to_publish_ms" : 114.128666,
+      "input_uptime" : 542242.36781829235,
+      "main_actor_max_timer_gap_ms" : 12.044041,
+      "model_ready" : true,
+      "outcome" : "drawn",
+      "query_state" : "idle",
+      "quick_visible" : true,
+      "round" : 2,
+      "scenario" : "hot-new-semantic",
+      "trace" : [
+
+      ]
+    }
+  ],
+  "scenario_scope" : "short-hot",
+  "scope" : "Actual AskComposer, native NSTextView commit, production mixed\/f sessions and service, real model and permission helper. Drawing forces layout\/display and checks rendered accessibility; it is not a GPU presentation fence.",
+  "warm_samples_per_scenario" : 3
+}

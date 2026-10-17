@@ -1,0 +1,6 @@
+{
+  "measured_source": "77ef235125864d33e52aa9700e97576d720ae5ad",
+  "observed_main": "074a86ab544444837c2c265716f7a59601646265",
+  "changes": "M\tSources/Typeflux/Ask/AskConversationModel+QuickResults.swift\nM\tSources/Typeflux/Ask/QuickResults/AskFinderIcon.swift\nM\tSources/Typeflux/Ask/QuickResults/AskLauncherIconCache.swift\nM\tTests/TypefluxTests/NativeIconIsolationTests.swift\n",
+  "boundary": "No rebase/rebuild after measurements. New main-only icon delivery changes are unmeasured; saved explicitly for independent review/next bounded slice if required."
+}

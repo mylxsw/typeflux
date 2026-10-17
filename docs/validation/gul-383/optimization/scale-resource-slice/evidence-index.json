@@ -1,0 +1,1731 @@
+[
+  {
+    "path": "audio-live/live-query-existing-corpus/report.json",
+    "sha256": "0f319a91bf8e144302e4fb3f9a3f12c26983f6f2d5ae17bf1cfd5ce927ace99e",
+    "bytes": 431,
+    "last_record_commit": "a24c72bce3401bdf4e4d9be8145a94f3d3ead0f6",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "audio-live/live-query-existing-corpus/trace.jsonl",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0,
+    "last_record_commit": "a24c72bce3401bdf4e4d9be8145a94f3d3ead0f6",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "audio-live/live-visible-root/report.json",
+    "sha256": "4bdaa77405f41561db05a87505472d013c7a18fb9676d3e3b50c46336c2bc766",
+    "bytes": 123455,
+    "last_record_commit": "a24c72bce3401bdf4e4d9be8145a94f3d3ead0f6",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "audio-live/video-live/report.json",
+    "sha256": "8a918f93229bf63ee736fcab602c43b84bbaf9244db1bb627c7495684b29ffc4",
+    "bytes": 26348,
+    "last_record_commit": "a24c72bce3401bdf4e4d9be8145a94f3d3ead0f6",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "audio-live/video-live/trace.jsonl",
+    "sha256": "a3cfb3442dcbb3146bc50e537e11a31ddec662d74cc8c68e3d8b4e4045ff6220",
+    "bytes": 36161,
+    "last_record_commit": "a24c72bce3401bdf4e4d9be8145a94f3d3ead0f6",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "audio-windows/README.md",
+    "sha256": "88343c8f017939439742afb24a43c290a3823194f358ca50de69ba7d56854597",
+    "bytes": 6998,
+    "last_record_commit": "fda0045d4ef2cf30878adfaebff78f0a5c16a02e",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "audio-windows/changed-coverage.json",
+    "sha256": "83905ccf31048e264a0b7d1c45e767ac7514eca7cf05ed43847bb5f832b69c4d",
+    "bytes": 2149,
+    "last_record_commit": "fda0045d4ef2cf30878adfaebff78f0a5c16a02e",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "audio-windows/coverage-summary.py",
+    "sha256": "b07b3e13d1065becf246afa121b2e697c041499feab13753fb912b176698856d",
+    "bytes": 3294,
+    "last_record_commit": "fda0045d4ef2cf30878adfaebff78f0a5c16a02e",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "audio-windows/coverage-swift.sh",
+    "sha256": "42967efaf9199510c5f13f9219641be7b87a08eb2a781fc8b4200bfe1da8996f",
+    "bytes": 975,
+    "last_record_commit": "fda0045d4ef2cf30878adfaebff78f0a5c16a02e",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "audio-windows/export-coverage.py",
+    "sha256": "fb055faaeb135f41f47333cdf5ee168a6e11f70a0b42752defdcd2ea616ac474",
+    "bytes": 2114,
+    "last_record_commit": "fda0045d4ef2cf30878adfaebff78f0a5c16a02e",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "audio-windows/run-coverage.py",
+    "sha256": "3c8fa3bd424f891b6a3301658b3413197773e04f356b028c0f90cd3b39e66797",
+    "bytes": 1800,
+    "last_record_commit": "fda0045d4ef2cf30878adfaebff78f0a5c16a02e",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "audio-windows/source-match.json",
+    "sha256": "da9f94bd3dfd8831a001b852e8bd0dcd23b4169a7857694d421807f3352a8047",
+    "bytes": 39,
+    "last_record_commit": "fda0045d4ef2cf30878adfaebff78f0a5c16a02e",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "changed-app-coverage.json",
+    "sha256": "a5f556c645d912854432468402acc534e0759bc08a677d97878234f935172799",
+    "bytes": 3800,
+    "last_record_commit": "69aa4446bfa705486965d8411fdb17b4cfe5d162",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "changed-helper-coverage.json",
+    "sha256": "9e7e8dfb83fd7adeb5059a53b06b778d77ae43e3e4308832825ae258cd4871d6",
+    "bytes": 1007,
+    "last_record_commit": "69aa4446bfa705486965d8411fdb17b4cfe5d162",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "content-ocr-slice/README.md",
+    "sha256": "b1453483a9831ce37ef9b53acad1ca5fddc4b44c490397d77f9ca1a524c5e89a",
+    "bytes": 9332,
+    "last_record_commit": "60364b73b0ba3785024e03a571c8314618c2106a",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "content-ocr-slice/changed-app-coverage.json",
+    "sha256": "f132f39b8849083bc7f17287a51590779f143f2dd4c4832efee60210773168b4",
+    "bytes": 1833,
+    "last_record_commit": "60364b73b0ba3785024e03a571c8314618c2106a",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "content-ocr-slice/changed-reader-coverage.json",
+    "sha256": "1c34734c68a854305676e8e21fc0a228c5d780560fd6f4405919f479b003c63a",
+    "bytes": 815,
+    "last_record_commit": "60364b73b0ba3785024e03a571c8314618c2106a",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "content-ocr-slice/changed-source-coverage.lcov.gz",
+    "sha256": "70aad3771ffa590c7cfcf536c37019590ad423f58de301df0dc016ce69ce6a17",
+    "bytes": 11312,
+    "last_record_commit": "60364b73b0ba3785024e03a571c8314618c2106a",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "content-ocr-slice/changed-total-coverage.json",
+    "sha256": "e089a82c78115a8f9b155796f1bb09120b5650a3b1d3294698b48918acfcb0b4",
+    "bytes": 2148,
+    "last_record_commit": "60364b73b0ba3785024e03a571c8314618c2106a",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "content-ocr-slice/coverage-first-attempt-resources.json",
+    "sha256": "08e0db2b47475828130d0eb1152fe70983893924fa9ea407445a7fd84d432fe2",
+    "bytes": 271,
+    "last_record_commit": "60364b73b0ba3785024e03a571c8314618c2106a",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "content-ocr-slice/coverage-first-attempt.log.gz",
+    "sha256": "4e291b996ae8f062340a1efa73f1aab31e29473afd63979ce9932249610e2973",
+    "bytes": 38131,
+    "last_record_commit": "60364b73b0ba3785024e03a571c8314618c2106a",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "content-ocr-slice/coverage-functional-initial-resources.json",
+    "sha256": "b52bd4ef1b5ba73ea52664dfdb7924814f3cfeb96648e850b17c1f6c06009aa5",
+    "bytes": 3335,
+    "last_record_commit": "60364b73b0ba3785024e03a571c8314618c2106a",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "content-ocr-slice/coverage-functional-initial.log.gz",
+    "sha256": "89616afc836aa0a55bbb1069642b78c2ea0c795f59f37b96940dbaea731c290b",
+    "bytes": 6042,
+    "last_record_commit": "60364b73b0ba3785024e03a571c8314618c2106a",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "content-ocr-slice/coverage-ocr-retry-resources.json",
+    "sha256": "6b0c5536c5d5fefabf673ee8a64e8644563fc109713cd33b040c6a16d526b7a1",
+    "bytes": 270,
+    "last_record_commit": "60364b73b0ba3785024e03a571c8314618c2106a",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "content-ocr-slice/coverage-ocr-retry.log.gz",
+    "sha256": "8bbb668cdffe0b239196f910327bb9f0971b3a0047b9fc5df131d9f9f4138b1a",
+    "bytes": 26010,
+    "last_record_commit": "60364b73b0ba3785024e03a571c8314618c2106a",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "content-ocr-slice/coverage-provenance.json",
+    "sha256": "1cc8caed973495cf83f38eff63af9220c208b1aedddb8c61d0abd1afea10b4c2",
+    "bytes": 2852,
+    "last_record_commit": "60364b73b0ba3785024e03a571c8314618c2106a",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "content-ocr-slice/coverage-retry-resources.json",
+    "sha256": "1a1f6843620118091e48924dd7ded4ef9771814d249f46ba6f78db4a42f8e073",
+    "bytes": 270,
+    "last_record_commit": "60364b73b0ba3785024e03a571c8314618c2106a",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "content-ocr-slice/coverage-retry.log.gz",
+    "sha256": "a427d4a98ff418307eba83a5b02f32f54a51e19f7d3f14ded8a262b249ea24f7",
+    "bytes": 664,
+    "last_record_commit": "60364b73b0ba3785024e03a571c8314618c2106a",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "content-ocr-slice/coverage-swift.sh",
+    "sha256": "42967efaf9199510c5f13f9219641be7b87a08eb2a781fc8b4200bfe1da8996f",
+    "bytes": 975,
+    "last_record_commit": "60364b73b0ba3785024e03a571c8314618c2106a",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "content-ocr-slice/native-ocr-result.json",
+    "sha256": "b0f246914c926cc739eac8838805f7ba026970ec60a135e60f3b98df91326495",
+    "bytes": 186,
+    "last_record_commit": "60364b73b0ba3785024e03a571c8314618c2106a",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "content-ocr-slice/ocr-resources-shared-fixture.json",
+    "sha256": "dd96325e3acdd0f16f9eefc66fada63a6cfd087b8be0dd212d4b8db74286489f",
+    "bytes": 105390,
+    "last_record_commit": "60364b73b0ba3785024e03a571c8314618c2106a",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "content-ocr-slice/ocr-resources.json",
+    "sha256": "81cb2018cc092d6caf77081ad1a6891852696ba298a631434bacf293aa2173cd",
+    "bytes": 52804,
+    "last_record_commit": "60364b73b0ba3785024e03a571c8314618c2106a",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "content-ocr-slice/ocr_resource_probe.py",
+    "sha256": "5edb740104f4a45b71b8f73ff9f097884b52c9f7cdc97f53413c56aef0b5fbae",
+    "bytes": 4593,
+    "last_record_commit": "60364b73b0ba3785024e03a571c8314618c2106a",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "content-ocr-slice/validation-sources.json",
+    "sha256": "0fa756dd440d11170f2c7c999d5792e31c2f77834bf7e9047e71d8c9c20b6806",
+    "bytes": 2147,
+    "last_record_commit": "60364b73b0ba3785024e03a571c8314618c2106a",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "download-resume/README.md",
+    "sha256": "f27144fa0c59f8675281f5c3ad5856261a92d5bea5b84ab62dc48c45e25ce438",
+    "bytes": 7633,
+    "last_record_commit": "689225d8a83747fde8a5e5f7cfa6151892df6f23",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "download-resume/change-result.json",
+    "sha256": "b864fa0a6b983d62632f4d92573c85fbee2117a909cfbdb96c4faa2b1902f82f",
+    "bytes": 135,
+    "last_record_commit": "689225d8a83747fde8a5e5f7cfa6151892df6f23",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "download-resume/changed-coverage.json",
+    "sha256": "acce34a11d43cfe88a31558c3a4a69e221d687fba880c2a3225354907c3415af",
+    "bytes": 1437,
+    "last_record_commit": "689225d8a83747fde8a5e5f7cfa6151892df6f23",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "download-resume/coverage-build-retry.json",
+    "sha256": "fc0cd0a8252ff56db0247b1527daca314fad254a79ae5debb65ec6d68306cd82",
+    "bytes": 440,
+    "last_record_commit": "689225d8a83747fde8a5e5f7cfa6151892df6f23",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "download-resume/coverage-build-retry.log.gz",
+    "sha256": "6e41f076948fe4b5e78d01cb22ffc6a170b46cb9e3f53c8257fe3a65d724326f",
+    "bytes": 9638,
+    "last_record_commit": "689225d8a83747fde8a5e5f7cfa6151892df6f23",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "download-resume/coverage-fixture-repair.json",
+    "sha256": "252c3e054fc01e01e6bbcc48b9f019ce1b1ca7c3e29551ed17641c5a3b56570f",
+    "bytes": 329,
+    "last_record_commit": "689225d8a83747fde8a5e5f7cfa6151892df6f23",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "download-resume/coverage-fixture-repair.log.gz",
+    "sha256": "e91f4ab8fed126bab5c394cc0fb4551ea2ccd66135678c3d05a2ce4d6d45a81e",
+    "bytes": 27439,
+    "last_record_commit": "689225d8a83747fde8a5e5f7cfa6151892df6f23",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "download-resume/coverage-identity-proof.json",
+    "sha256": "43bf972e8f2065b16e2884d259960b12414955a3b3a6bcd05c2fef4c5a22f35c",
+    "bytes": 206,
+    "last_record_commit": "689225d8a83747fde8a5e5f7cfa6151892df6f23",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "download-resume/coverage-identity-proof.log.gz",
+    "sha256": "a010ef1c27036f64e9b502346b081845a2c1b5314d46fa5ddba72eab0abfac91",
+    "bytes": 26065,
+    "last_record_commit": "689225d8a83747fde8a5e5f7cfa6151892df6f23",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "download-resume/coverage-run.json",
+    "sha256": "5f8a8dd8b81456f0ba18dbd956c7757eb86189ac3c3c6a0178e7fc480f15bac6",
+    "bytes": 441,
+    "last_record_commit": "689225d8a83747fde8a5e5f7cfa6151892df6f23",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "download-resume/coverage-run.log.gz",
+    "sha256": "97ae01d31374da5ea117991cdb506af6599fe720fcc8fe684daed940a02e89cc",
+    "bytes": 52041,
+    "last_record_commit": "689225d8a83747fde8a5e5f7cfa6151892df6f23",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "download-resume/coverage-swift.sh",
+    "sha256": "42967efaf9199510c5f13f9219641be7b87a08eb2a781fc8b4200bfe1da8996f",
+    "bytes": 975,
+    "last_record_commit": "689225d8a83747fde8a5e5f7cfa6151892df6f23",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "download-resume/etag206-result.json",
+    "sha256": "6ba2cadd1e73f90d88c5285dee2ceffa286e5a12e3497d51dbf9be68b7105ff5",
+    "bytes": 68,
+    "last_record_commit": "689225d8a83747fde8a5e5f7cfa6151892df6f23",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "download-resume/hash-result.json",
+    "sha256": "e49d0cf712307646b3ef591a603a47980390fa577d93fc5cbff83c9d4eb00ecf",
+    "bytes": 68,
+    "last_record_commit": "689225d8a83747fde8a5e5f7cfa6151892df6f23",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "download-resume/ignore-result.json",
+    "sha256": "689468e48d7dfa41b9ac8220f60802d791fd7cd7eed32f3721396196e00bc49d",
+    "bytes": 135,
+    "last_record_commit": "689225d8a83747fde8a5e5f7cfa6151892df6f23",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "download-resume/resume-result.json",
+    "sha256": "553148beb27f3c97afcd18b1e38ef3703689728170935ec9f33e3fffdbb10f82",
+    "bytes": 351,
+    "last_record_commit": "689225d8a83747fde8a5e5f7cfa6151892df6f23",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "download-resume/run-coverage.py",
+    "sha256": "c973b6d35984a03a56b62645dffaf0fc6cb60cac6dff1bc15c07fdb8b1d37bcf",
+    "bytes": 1903,
+    "last_record_commit": "689225d8a83747fde8a5e5f7cfa6151892df6f23",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "download-resume/source.patch.gz",
+    "sha256": "57a8eb32af7559860e7d0eb822cc79a8ab5ac01eb2290bb300961b59f95d954d",
+    "bytes": 10094,
+    "last_record_commit": "689225d8a83747fde8a5e5f7cfa6151892df6f23",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "download-resume/truncated-result.json",
+    "sha256": "4858b419c8593401550d823df8c745d57ddc836be68268f443e6ccbdb4b195f1",
+    "bytes": 73,
+    "last_record_commit": "689225d8a83747fde8a5e5f7cfa6151892df6f23",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "download-resume/unchanged-native-coverage.json",
+    "sha256": "83cdf07f168517dbd1c862f9ac817e7e88102867dd845818085bee3026dcde28",
+    "bytes": 212,
+    "last_record_commit": "689225d8a83747fde8a5e5f7cfa6151892df6f23",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "download-resume/wrong-result.json",
+    "sha256": "6ba2cadd1e73f90d88c5285dee2ceffa286e5a12e3497d51dbf9be68b7105ff5",
+    "bytes": 68,
+    "last_record_commit": "689225d8a83747fde8a5e5f7cfa6151892df6f23",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "html-body-slice/README.md",
+    "sha256": "92d65bedadf7d042911ff549895dc5a7d3aa33c28a7d81d3be191ef2f2296973",
+    "bytes": 8405,
+    "last_record_commit": "ff32894486f5319b68f9e01b0c6d543ad6286e9a",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "html-body-slice/changed-coverage.json",
+    "sha256": "9126c1943f455338c8e0581d0d94a71380b957ec173b3fe85ea3ee9fddc7ccae",
+    "bytes": 1914,
+    "last_record_commit": "ff32894486f5319b68f9e01b0c6d543ad6286e9a",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "html-body-slice/changed-source.lcov",
+    "sha256": "9b88562cab023d0d6d70c9f35f1d13f6d4a0fa40f8e1ac1f46ef4a66a2397e79",
+    "bytes": 54461,
+    "last_record_commit": "ff32894486f5319b68f9e01b0c6d543ad6286e9a",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "html-body-slice/coverage-provenance.json",
+    "sha256": "13d1498fa7ecf938188f9a7da01f2df184e6dcb0c137187842fc5b648ae16f57",
+    "bytes": 4953,
+    "last_record_commit": "ff32894486f5319b68f9e01b0c6d543ad6286e9a",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "html-body-slice/coverage-swift.sh",
+    "sha256": "42967efaf9199510c5f13f9219641be7b87a08eb2a781fc8b4200bfe1da8996f",
+    "bytes": 975,
+    "last_record_commit": "ff32894486f5319b68f9e01b0c6d543ad6286e9a",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "html-body-slice/coverage.log.gz",
+    "sha256": "208e8ef957d4dbe59b2f66b60608c4406fb84c73f40e168a19e65d13c6e4d632",
+    "bytes": 67186,
+    "last_record_commit": "ff32894486f5319b68f9e01b0c6d543ad6286e9a",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "html-body-slice/html-resource-summary.json",
+    "sha256": "35287b01f270924a73859a3cfc7cf51d7dec77f59ad7649c15c44cb60b58e927",
+    "bytes": 588,
+    "last_record_commit": "ff32894486f5319b68f9e01b0c6d543ad6286e9a",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "html-body-slice/html-resources.json.gz",
+    "sha256": "ec55456dcb999fa64f6f8dc9a38142bbfd891465ef4819d2a5aec869905faaf4",
+    "bytes": 53351,
+    "last_record_commit": "ff32894486f5319b68f9e01b0c6d543ad6286e9a",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "html-body-slice/html_resource_probe.py",
+    "sha256": "e47c40174fc4b630ddbfc3c7c2e98c0bfa28d38ebd628f05d10a001af851cd1b",
+    "bytes": 4638,
+    "last_record_commit": "ff32894486f5319b68f9e01b0c6d543ad6286e9a",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "html-body-slice/native-html-result.json",
+    "sha256": "7edbdb2edf869eab3811a43517ab199158e57318bd156623289eeee8ae17b3df",
+    "bytes": 301,
+    "last_record_commit": "ff32894486f5319b68f9e01b0c6d543ad6286e9a",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "html-body-slice/native-ocr-result.json",
+    "sha256": "b0f246914c926cc739eac8838805f7ba026970ec60a135e60f3b98df91326495",
+    "bytes": 186,
+    "last_record_commit": "ff32894486f5319b68f9e01b0c6d543ad6286e9a",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "html-body-slice/source-sha256.json",
+    "sha256": "d6e0d318ccb6490a5aa0060e14d718b09e19fd8355d06382cb8df6c4e6c982ce",
+    "bytes": 967,
+    "last_record_commit": "ff32894486f5319b68f9e01b0c6d543ad6286e9a",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "index-recovery/review-fixes/events.json",
+    "sha256": "ebfbd8d38875e6f8e20c5c516546df9a71413d2fd37472ea9eae448f680c6f19",
+    "bytes": 8669,
+    "last_record_commit": "609c5ea68c3c167d9308e568e981433bbadb0e96",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "index-recovery/review-fixes/pr-coverage.json",
+    "sha256": "297861f2ae72dcca491ad5616e039f2ec0d5b672db47934e0f46ae456f2a439b",
+    "bytes": 3762,
+    "last_record_commit": "609c5ea68c3c167d9308e568e981433bbadb0e96",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "index-recovery/review-fixes/summary.json",
+    "sha256": "30275e87042c482e19311389855370f94d90ef903472ef5e1087272da08f3701",
+    "bytes": 1447,
+    "last_record_commit": "609c5ea68c3c167d9308e568e981433bbadb0e96",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "index-recovery/review-fixes/validation-results.txt",
+    "sha256": "ece31ead548fa6c3ef716ff97643e03cf346690808a093e2849e8d313dbbbae1",
+    "bytes": 24852,
+    "last_record_commit": "609c5ea68c3c167d9308e568e981433bbadb0e96",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "mixed-pdf-slice/README.md",
+    "sha256": "978a9f456344633d57ae454f2e2c1e999d327c2ec6da1d4831f0408090125fe4",
+    "bytes": 5200,
+    "last_record_commit": "b0e72ce9817f6cf5115ee193d9ffd47b14c69b2a",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "mixed-pdf-slice/changed-coverage.json",
+    "sha256": "b4e338bb016e382c8687f0904fcef58f0fcb37c3a8ad27475e3bc9fe0cc3aa5e",
+    "bytes": 1018,
+    "last_record_commit": "b0e72ce9817f6cf5115ee193d9ffd47b14c69b2a",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "mixed-pdf-slice/changed-source.lcov.gz",
+    "sha256": "d69acc3ab02782f566648f6e900eccf039f51e11388be53725069dc338fea1dd",
+    "bytes": 2913,
+    "last_record_commit": "b0e72ce9817f6cf5115ee193d9ffd47b14c69b2a",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "mixed-pdf-slice/coverage-build-failure.json",
+    "sha256": "6d7d3823b8a844f458e915805a93688f7a66fd1e407736a0acf957d6fd5e7af8",
+    "bytes": 315,
+    "last_record_commit": "b0e72ce9817f6cf5115ee193d9ffd47b14c69b2a",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "mixed-pdf-slice/coverage-build-failure.log.gz",
+    "sha256": "1db8c76bbcb8664f49ec61f11c5e20654c9def2b6946757357701edd21479de2",
+    "bytes": 1991,
+    "last_record_commit": "b0e72ce9817f6cf5115ee193d9ffd47b14c69b2a",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "mixed-pdf-slice/coverage-run.json",
+    "sha256": "f6ab1eefbac624844eccc9e08edcf1eae4e89dd9960284b3a8daebfc293b847c",
+    "bytes": 332,
+    "last_record_commit": "b0e72ce9817f6cf5115ee193d9ffd47b14c69b2a",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "mixed-pdf-slice/coverage-swift.sh",
+    "sha256": "42967efaf9199510c5f13f9219641be7b87a08eb2a781fc8b4200bfe1da8996f",
+    "bytes": 975,
+    "last_record_commit": "b0e72ce9817f6cf5115ee193d9ffd47b14c69b2a",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "mixed-pdf-slice/coverage.log.gz",
+    "sha256": "9c28a20b4130c5723661f9ec9a998b86e17aa91e65f8e5bc13df9748f4bac720",
+    "bytes": 62459,
+    "last_record_commit": "b0e72ce9817f6cf5115ee193d9ffd47b14c69b2a",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "mixed-pdf-slice/frozen-source-hashes.json",
+    "sha256": "67dd7c7d2ef5657424fcce59e85daaab52d2a275f63daea565336f746e42dc54",
+    "bytes": 13420,
+    "last_record_commit": "b0e72ce9817f6cf5115ee193d9ffd47b14c69b2a",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "mixed-pdf-slice/native-ocr-result.json",
+    "sha256": "c8c706859685b88e09b022e4e16b83dadb4a755759cd73a0b97d242554bc745d",
+    "bytes": 282,
+    "last_record_commit": "b0e72ce9817f6cf5115ee193d9ffd47b14c69b2a",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "native-publication-latency.json",
+    "sha256": "f993346f04955c3ca0d5ccfcf161e6f0a5fc06ab2ae8120f64cbb44d10fe2979",
+    "bytes": 113312,
+    "last_record_commit": "69aa4446bfa705486965d8411fdb17b4cfe5d162",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "odt-body-slice/README.md",
+    "sha256": "c55c64645ecbdb4887c7847b9e0f3ee5c679edb737ab7351146c1ad04f6cd4ef",
+    "bytes": 9495,
+    "last_record_commit": "eed1bedbd7fa3853258f7defd753b0629bef95e3",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "odt-body-slice/changed-coverage.json",
+    "sha256": "52740919cf99b3813a4f6664aad720a8fb1db10d0e3464f2661a37422b32dbb7",
+    "bytes": 2992,
+    "last_record_commit": "eed1bedbd7fa3853258f7defd753b0629bef95e3",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "odt-body-slice/changed-source.lcov",
+    "sha256": "7825c0348810b761071ab6a10bd3e0117be141f5cd6ff51c44937286045491ce",
+    "bytes": 50051,
+    "last_record_commit": "eed1bedbd7fa3853258f7defd753b0629bef95e3",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "odt-body-slice/coverage-provenance.json",
+    "sha256": "a31c513526b230588433eb3dcd863de38bd651b78c2708190867858822222661",
+    "bytes": 4528,
+    "last_record_commit": "eed1bedbd7fa3853258f7defd753b0629bef95e3",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "odt-body-slice/coverage.log.gz",
+    "sha256": "4a1f9379057e9c7b239000cc67b4642e37ed399a3df09c968b41e5ef00504f46",
+    "bytes": 67727,
+    "last_record_commit": "eed1bedbd7fa3853258f7defd753b0629bef95e3",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "odt-body-slice/frozen-source-sha256.json",
+    "sha256": "c0019cbbb4d3f7557b3c0840875383a8b95e99de670a97ba4d7fd5c58ba417bb",
+    "bytes": 15765,
+    "last_record_commit": "eed1bedbd7fa3853258f7defd753b0629bef95e3",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "odt-body-slice/native-ocr-result.json",
+    "sha256": "b0f246914c926cc739eac8838805f7ba026970ec60a135e60f3b98df91326495",
+    "bytes": 186,
+    "last_record_commit": "eed1bedbd7fa3853258f7defd753b0629bef95e3",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "odt-body-slice/native-odt-result.json",
+    "sha256": "338365a4cf69d2983ce2d1336b005045c51d526bed2ceb651d0a65549e89a02c",
+    "bytes": 322,
+    "last_record_commit": "eed1bedbd7fa3853258f7defd753b0629bef95e3",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "odt-body-slice/odt-resource-summary.json",
+    "sha256": "dddf837a9a1f76fe2605e19ae15fa8a3817d8be2d80df4a94264abd1f73f220b",
+    "bytes": 620,
+    "last_record_commit": "eed1bedbd7fa3853258f7defd753b0629bef95e3",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "odt-body-slice/odt-resources.json.gz",
+    "sha256": "4d60e66a31a2a72498994949d1f7108343ef9fcc181bf9d5e7ab255530b822eb",
+    "bytes": 53188,
+    "last_record_commit": "eed1bedbd7fa3853258f7defd753b0629bef95e3",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "odt-body-slice/odt_resource_probe.py",
+    "sha256": "4d70fe19c56c7d6af45853cd43ca0856af81b4e53be85aab0fe0e03ae590c648",
+    "bytes": 4630,
+    "last_record_commit": "eed1bedbd7fa3853258f7defd753b0629bef95e3",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "odt-body-slice/source-freeze-note.txt",
+    "sha256": "590ee6ac3e652066fe4ecd494003f6ab4dfb26bc2576fb10f7f5f40dfdd95ed5",
+    "bytes": 302,
+    "last_record_commit": "eed1bedbd7fa3853258f7defd753b0629bef95e3",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "pdf-open-slice/README.md",
+    "sha256": "391f507e9931c5cb7bb9a7fe0ba44edaed745b17a93d1529e09a2939c996022f",
+    "bytes": 6955,
+    "last_record_commit": "c86e6a3ca63a74fff445f369765bf4295f662c1f",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "pdf-open-slice/changed-coverage.json",
+    "sha256": "f8506169cdb784a518d000239e9e518ea099a86e81f7afa332c52ae5e1e78e71",
+    "bytes": 1928,
+    "last_record_commit": "c86e6a3ca63a74fff445f369765bf4295f662c1f",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "pdf-open-slice/checkpoint-frozen-source-hashes.json",
+    "sha256": "43975eba5112c11003e81c9119e17b2637a885894f6acc4bb5db02bfa186e3f1",
+    "bytes": 38866,
+    "last_record_commit": "c86e6a3ca63a74fff445f369765bf4295f662c1f",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "pdf-open-slice/checkpoint-source-comparison.json",
+    "sha256": "990d0f7bb24f739615bde5cb5cacd5ea73e09f0c61dbdcc582f931e856332cf4",
+    "bytes": 1289,
+    "last_record_commit": "c86e6a3ca63a74fff445f369765bf4295f662c1f",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "pdf-open-slice/coverage-build-retry.json",
+    "sha256": "6cbecdda0ec7b3d49b565f644eb6c0e4516d3a4a1d8f46aab5c1df4fe85b9676",
+    "bytes": 261,
+    "last_record_commit": "c86e6a3ca63a74fff445f369765bf4295f662c1f",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "pdf-open-slice/coverage-build-retry.log.gz",
+    "sha256": "f1595cca83f6277cf42006df98368e6bdaf9b69436d4acfc5e51d93041497276",
+    "bytes": 47411,
+    "last_record_commit": "c86e6a3ca63a74fff445f369765bf4295f662c1f",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "pdf-open-slice/coverage-export.json",
+    "sha256": "1a385c065c3d1a9d800ebb95ecbcfcc187f01c5efbc5c986ff19e44bc8359f63",
+    "bytes": 171,
+    "last_record_commit": "c86e6a3ca63a74fff445f369765bf4295f662c1f",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "pdf-open-slice/coverage-export.log.gz",
+    "sha256": "259820628291e55bd7317c45c3bce4d6d289deb208b5ec5a1c8fb0e63a6dfb1d",
+    "bytes": 170,
+    "last_record_commit": "c86e6a3ca63a74fff445f369765bf4295f662c1f",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "pdf-open-slice/coverage-method-retry.log.gz",
+    "sha256": "31e8c627730e73e1c9e3bee1c06f79cfe014a5bfb8291244970979341f2a8e64",
+    "bytes": 514,
+    "last_record_commit": "c86e6a3ca63a74fff445f369765bf4295f662c1f",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "pdf-open-slice/coverage-run.json",
+    "sha256": "2be8af64af6d635c8106ebba7bb65f699a5cf18c773531d37e600f35db8cb619",
+    "bytes": 261,
+    "last_record_commit": "c86e6a3ca63a74fff445f369765bf4295f662c1f",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "pdf-open-slice/coverage-run.log.gz",
+    "sha256": "b2bfcbeb83ea69704e17e8dc81336c896d083cc5c37f6203e05cca580601fe09",
+    "bytes": 761,
+    "last_record_commit": "c86e6a3ca63a74fff445f369765bf4295f662c1f",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "pdf-open-slice/coverage-summary.py",
+    "sha256": "b1f530c652e401a4faab1f4a30e9c14df5af6d58b5d27990f1f033f4ef311874",
+    "bytes": 2908,
+    "last_record_commit": "c86e6a3ca63a74fff445f369765bf4295f662c1f",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "pdf-open-slice/coverage-swift.sh",
+    "sha256": "42967efaf9199510c5f13f9219641be7b87a08eb2a781fc8b4200bfe1da8996f",
+    "bytes": 975,
+    "last_record_commit": "c86e6a3ca63a74fff445f369765bf4295f662c1f",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "pdf-open-slice/export-coverage.py",
+    "sha256": "fa784e559cb5ef6cd7cf5026d8f77df8a22254bb68402f99147304855bde63cc",
+    "bytes": 2453,
+    "last_record_commit": "c86e6a3ca63a74fff445f369765bf4295f662c1f",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "pdf-open-slice/frozen-source-hashes.json",
+    "sha256": "2c42ef271a212874338c50096b24d7aa1cd3f70d20cb849f77e4489c3a9b6cf0",
+    "bytes": 175000,
+    "last_record_commit": "c86e6a3ca63a74fff445f369765bf4295f662c1f",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "pdf-open-slice/pre-native-fixture-source-hashes.json",
+    "sha256": "001fcf0cd2ed6ef2e28132f762fd946883663e35a3599ef375e1face6384b4a4",
+    "bytes": 2508,
+    "last_record_commit": "c86e6a3ca63a74fff445f369765bf4295f662c1f",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "pdf-open-slice/run-coverage.py",
+    "sha256": "98f34158ac9f18dcf095d78b5d987baaf97f2e5b7b544651806d02c5d0141b0a",
+    "bytes": 1828,
+    "last_record_commit": "c86e6a3ca63a74fff445f369765bf4295f662c1f",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "pdf-open-slice/validation-results.json",
+    "sha256": "df1a0364364d5b55e8cd93609516f4b283fb1a9da3015db664fa62f0b94006b3",
+    "bytes": 4649,
+    "last_record_commit": "c86e6a3ca63a74fff445f369765bf4295f662c1f",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "pdf-preview-slice/README.md",
+    "sha256": "baaa4d3393103e9e3d56dd53fe8869d18ef15c88a0c58f2ef7995e8a43d46a2f",
+    "bytes": 6321,
+    "last_record_commit": "062ea78a8a889c227a937dabb8e04fc9c0fa45bc",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "pdf-preview-slice/changed-coverage.json",
+    "sha256": "44593646368c86d0bc4d000bebaf108cac1f207319a2fe44028944de00a99c4e",
+    "bytes": 1565,
+    "last_record_commit": "062ea78a8a889c227a937dabb8e04fc9c0fa45bc",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "pdf-preview-slice/changed-source.lcov.gz",
+    "sha256": "89bf96ea64e7e5dd5044788a86ed9ecf94d478cdb4428d02a0d6712b026bed47",
+    "bytes": 8338,
+    "last_record_commit": "062ea78a8a889c227a937dabb8e04fc9c0fa45bc",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "pdf-preview-slice/coverage-build-retry.json",
+    "sha256": "453d0b3ec1a9e15e1940bfee789dcee13f12b645039c3e69e98a58a39541357b",
+    "bytes": 250,
+    "last_record_commit": "062ea78a8a889c227a937dabb8e04fc9c0fa45bc",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "pdf-preview-slice/coverage-build-retry.log.gz",
+    "sha256": "05a13ebfa095f89ee1cdd2139f20d1a7dd9ac5db96910156b30f237b47119f0a",
+    "bytes": 1990,
+    "last_record_commit": "062ea78a8a889c227a937dabb8e04fc9c0fa45bc",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "pdf-preview-slice/coverage-method-final.json",
+    "sha256": "289c7458120cec5b3a52f52698d34869670ab8452a4b38aab6d731972806af0c",
+    "bytes": 157,
+    "last_record_commit": "062ea78a8a889c227a937dabb8e04fc9c0fa45bc",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "pdf-preview-slice/coverage-method-final.log.gz",
+    "sha256": "d416b736dd397bd920a8b6bb9143b82f1cfc2c871e489f9c80a7ccfc2d0116b5",
+    "bytes": 26761,
+    "last_record_commit": "062ea78a8a889c227a937dabb8e04fc9c0fa45bc",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "pdf-preview-slice/coverage-method-retry.json",
+    "sha256": "8a63856dfefbac27f4efe2dede4013b915c5ad02a7223bd91fbe0b5818117b24",
+    "bytes": 155,
+    "last_record_commit": "062ea78a8a889c227a937dabb8e04fc9c0fa45bc",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "pdf-preview-slice/coverage-method-retry.log.gz",
+    "sha256": "cdfa927e6e641d80d47d7e2f7af41e9ff9b5c1c349cdfe3e82c1c99e7a1be7e3",
+    "bytes": 1251,
+    "last_record_commit": "062ea78a8a889c227a937dabb8e04fc9c0fa45bc",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "pdf-preview-slice/coverage-run.json",
+    "sha256": "f092779904f9fa5553b500d2163a823e2bd3880b44f6ccb485a7e0fea85ed2dc",
+    "bytes": 250,
+    "last_record_commit": "062ea78a8a889c227a937dabb8e04fc9c0fa45bc",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "pdf-preview-slice/coverage-run.log.gz",
+    "sha256": "c62c3dff9d9e64d378603a02e0152aefa1c99f54d2214d0e658d8c8c4188f70e",
+    "bytes": 37754,
+    "last_record_commit": "062ea78a8a889c227a937dabb8e04fc9c0fa45bc",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "pdf-preview-slice/coverage-summary.py",
+    "sha256": "0aea3e15f3e29cb6a237fa8798c309ca79b45d2c8b52274e9fc40be2e9c83a90",
+    "bytes": 2771,
+    "last_record_commit": "062ea78a8a889c227a937dabb8e04fc9c0fa45bc",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "pdf-preview-slice/coverage-swift.sh",
+    "sha256": "42967efaf9199510c5f13f9219641be7b87a08eb2a781fc8b4200bfe1da8996f",
+    "bytes": 975,
+    "last_record_commit": "062ea78a8a889c227a937dabb8e04fc9c0fa45bc",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "pdf-preview-slice/frozen-source-hashes.json",
+    "sha256": "801b24ab7c04e7d8abdad434562c54a3ebe150412d622a8c0d42c5222c65ed98",
+    "bytes": 22716,
+    "last_record_commit": "062ea78a8a889c227a937dabb8e04fc9c0fa45bc",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "pdf-preview-slice/plain-source.png",
+    "sha256": "5fbe858bf56a01076cdd7dee81bd873c00c0a88cdfd82ba5c8ff847a7e8e9dc1",
+    "bytes": 55597,
+    "last_record_commit": "062ea78a8a889c227a937dabb8e04fc9c0fa45bc",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "pdf-preview-slice/rotated-source.png",
+    "sha256": "5fbe858bf56a01076cdd7dee81bd873c00c0a88cdfd82ba5c8ff847a7e8e9dc1",
+    "bytes": 55597,
+    "last_record_commit": "062ea78a8a889c227a937dabb8e04fc9c0fa45bc",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "pdf-preview-slice/run-coverage.py",
+    "sha256": "a8e30f54b0a254954de15f3fd421f11499c2600bc448b328921b2ccc80262517",
+    "bytes": 1818,
+    "last_record_commit": "062ea78a8a889c227a937dabb8e04fc9c0fa45bc",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "pptx-body-slice/README.md",
+    "sha256": "06c3f01c3120d3366e125a4db6b3aeb665dc4e75f7c0989c9b2d45554881d746",
+    "bytes": 11076,
+    "last_record_commit": "19d5885e6edb8426da8804c434b0cbc8d290bef9",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "pptx-body-slice/changed-coverage.json",
+    "sha256": "59a762910908bf0a0b5e900d5b2016ad0e251c0e58d3de5f495bc3386be7613b",
+    "bytes": 2532,
+    "last_record_commit": "19d5885e6edb8426da8804c434b0cbc8d290bef9",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "pptx-body-slice/changed-source.lcov",
+    "sha256": "16b0439c321a1947d901703b23db27c749588da330c33230fc9a1a2715916105",
+    "bytes": 48425,
+    "last_record_commit": "19d5885e6edb8426da8804c434b0cbc8d290bef9",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "pptx-body-slice/coverage-initial-failed.log.gz",
+    "sha256": "15159e319d8f71a7388cc1eca0fc680e9d37dfc1d386eedcc0d8dfc13bbcf76c",
+    "bytes": 43267,
+    "last_record_commit": "19d5885e6edb8426da8804c434b0cbc8d290bef9",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "pptx-body-slice/coverage-provenance.json",
+    "sha256": "3382d210742a5e09eb681ec1f0222a5baedc570564f3572b57f311ef2db25406",
+    "bytes": 6502,
+    "last_record_commit": "19d5885e6edb8426da8804c434b0cbc8d290bef9",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "pptx-body-slice/coverage-retry.log.gz",
+    "sha256": "6207ec9268a8893eb524348a5e60812cffce9c45fc4d2b22b40a168bd385ddd0",
+    "bytes": 27830,
+    "last_record_commit": "19d5885e6edb8426da8804c434b0cbc8d290bef9",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "pptx-body-slice/frozen-source-sha256.json",
+    "sha256": "03d0d8b4a4a9fc7630b46b414189f100aaab6bdc2bc940690cfd12fa97f9e71f",
+    "bytes": 16729,
+    "last_record_commit": "19d5885e6edb8426da8804c434b0cbc8d290bef9",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "pptx-body-slice/native-ocr-result.json",
+    "sha256": "b0f246914c926cc739eac8838805f7ba026970ec60a135e60f3b98df91326495",
+    "bytes": 186,
+    "last_record_commit": "19d5885e6edb8426da8804c434b0cbc8d290bef9",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "pptx-body-slice/native-pptx-result.json",
+    "sha256": "5afde8fff769a8770ff31b3fd9a4c8e013a2990b8fcc4264ed71c4351668db4f",
+    "bytes": 306,
+    "last_record_commit": "19d5885e6edb8426da8804c434b0cbc8d290bef9",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "pptx-body-slice/pptx-resource-summary.json",
+    "sha256": "e4d2c16499d6d9edf87a4911a876e406ef6c4791f3e1c485f5cc754996b9672a",
+    "bytes": 621,
+    "last_record_commit": "19d5885e6edb8426da8804c434b0cbc8d290bef9",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "pptx-body-slice/pptx-resources.json.gz",
+    "sha256": "e923fd2084f35cd887b1c09cec990cd6be195459e149991b38c0811bd9a8734c",
+    "bytes": 53186,
+    "last_record_commit": "19d5885e6edb8426da8804c434b0cbc8d290bef9",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "pptx-body-slice/pptx_resource_probe.py",
+    "sha256": "68a6689e6935fa9c667ecb2cd4c2ade2ff5971fbe4757d0beb51d48da47cf797",
+    "bytes": 4638,
+    "last_record_commit": "19d5885e6edb8426da8804c434b0cbc8d290bef9",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "pptx-body-slice/source-freeze-note.txt",
+    "sha256": "e422a1112e4183aa98b8a2e47fd22447da7b0847a14b7783ec0628cb61ea79b2",
+    "bytes": 714,
+    "last_record_commit": "19d5885e6edb8426da8804c434b0cbc8d290bef9",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "processing-retry/README.md",
+    "sha256": "fa9dd2aacc2e51d6518070b34c10eef9ed4d9ce2eeebbf571241018023cacb3a",
+    "bytes": 6373,
+    "last_record_commit": "d6a466082d496b7ab8628b24b9e48c0bef8a186c",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "processing-retry/changed-coverage.json",
+    "sha256": "9cda61944fa726ca8bd3035824fdc5518d6b1c8151f29da241af1de710184482",
+    "bytes": 1369,
+    "last_record_commit": "d6a466082d496b7ab8628b24b9e48c0bef8a186c",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "processing-retry/coverage-build-retry.json",
+    "sha256": "f51dc2c7cd845349ad9ebd55a2908828647b4735dc6e195968c47c23f5d414cf",
+    "bytes": 412,
+    "last_record_commit": "d6a466082d496b7ab8628b24b9e48c0bef8a186c",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "processing-retry/coverage-build-retry.log.gz",
+    "sha256": "1f4da5a531f720c62f2adb84d111214c4344ff5685f2c0c661a6171bf876c879",
+    "bytes": 37417,
+    "last_record_commit": "d6a466082d496b7ab8628b24b9e48c0bef8a186c",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "processing-retry/coverage-compile-repair.json",
+    "sha256": "e5cc2e791130ebf2418f2f1462a1bda7c7603c19f3d2572373ce40d59146607d",
+    "bytes": 413,
+    "last_record_commit": "d6a466082d496b7ab8628b24b9e48c0bef8a186c",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "processing-retry/coverage-compile-repair.log.gz",
+    "sha256": "16d6294086ae5b6a831bb5ef0e0e20915822635afa3eccf582cb3dfbb5115fd6",
+    "bytes": 6841,
+    "last_record_commit": "d6a466082d496b7ab8628b24b9e48c0bef8a186c",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "processing-retry/coverage-frozen.json",
+    "sha256": "b7313e54fefd500998368f1eed3b855183226c6918d2ea9b69442c3e2823d920",
+    "bytes": 412,
+    "last_record_commit": "d6a466082d496b7ab8628b24b9e48c0bef8a186c",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "processing-retry/coverage-frozen.log.gz",
+    "sha256": "05cdc3bfffa4582ab7a2a914645cd53be6c6ecaa14afc3442a85c30494919afe",
+    "bytes": 14353,
+    "last_record_commit": "d6a466082d496b7ab8628b24b9e48c0bef8a186c",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "processing-retry/coverage-media-fixture.json",
+    "sha256": "b50577f1722ee6ae4147b9674c9c84ef7d2d236b76e36954743c1febf54272b8",
+    "bytes": 158,
+    "last_record_commit": "d6a466082d496b7ab8628b24b9e48c0bef8a186c",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "processing-retry/coverage-media-fixture.log.gz",
+    "sha256": "86ad06a209f8d7aa6013ecb4cdfbd019fff7fae34b692dd924301f9b8ffa153d",
+    "bytes": 26829,
+    "last_record_commit": "d6a466082d496b7ab8628b24b9e48c0bef8a186c",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "processing-retry/coverage-reuse.json",
+    "sha256": "6f0d7dbd1d8060fdbcab7ddad1d38b87c216c1f2188311367698c0c62b467334",
+    "bytes": 722,
+    "last_record_commit": "d6a466082d496b7ab8628b24b9e48c0bef8a186c",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "processing-retry/coverage-run.json",
+    "sha256": "c6ec3ed7c89a15bbf7b3ae7e2110b0061034ae5ea95c09ad8a0b61f2c12b8e84",
+    "bytes": 413,
+    "last_record_commit": "d6a466082d496b7ab8628b24b9e48c0bef8a186c",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "processing-retry/coverage-run.log.gz",
+    "sha256": "92899991d53d1abc6af01dd15b9177b464f81558e77cfb2ef0d4b026ff306ddd",
+    "bytes": 2025,
+    "last_record_commit": "d6a466082d496b7ab8628b24b9e48c0bef8a186c",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "processing-retry/coverage-swift.sh",
+    "sha256": "42967efaf9199510c5f13f9219641be7b87a08eb2a781fc8b4200bfe1da8996f",
+    "bytes": 975,
+    "last_record_commit": "d6a466082d496b7ab8628b24b9e48c0bef8a186c",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "processing-retry/coverage-two-failures.json",
+    "sha256": "a569be41350dec7a0160ef0efa7a81cb0633c919c2dbecf3f756bc2ce9e9d157",
+    "bytes": 251,
+    "last_record_commit": "d6a466082d496b7ab8628b24b9e48c0bef8a186c",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "processing-retry/coverage-two-failures.log.gz",
+    "sha256": "b7ba4b8a89ffd961e32fa2c017d4cad0dad5c8b99cfffd5bcc137432df359068",
+    "bytes": 1879,
+    "last_record_commit": "d6a466082d496b7ab8628b24b9e48c0bef8a186c",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "processing-retry/run-coverage.py",
+    "sha256": "4f455cdf4af7e3592351ff2a403db52b69c4a2df794e29eedd44c57717e2ebe8",
+    "bytes": 1875,
+    "last_record_commit": "d6a466082d496b7ab8628b24b9e48c0bef8a186c",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "processing-retry/source.patch",
+    "sha256": "ca64b94510abef7227c7b858d82fb4416f11d87e011599ca7468b2d03685aed3",
+    "bytes": 55068,
+    "last_record_commit": "d6a466082d496b7ab8628b24b9e48c0bef8a186c",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "ranking-scale/final-current-matrix-summary.json",
+    "sha256": "9f290aa3c08365ee2bf3e7c396c1699c8235869bf9981cffb1fab1416b3785de",
+    "bytes": 105855,
+    "last_record_commit": "be64a7319239a8ff8e8f8dab87abea35e658db6c",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "ranking-scale/final-current-ranking-summary.json",
+    "sha256": "63a330f23ce5f6d273c8951bbfa136ca5545f59e52e1e83c598138cb05daf82c",
+    "bytes": 20281,
+    "last_record_commit": "be64a7319239a8ff8e8f8dab87abea35e658db6c",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "ranking-scale/final-integration-short/results.md",
+    "sha256": "e332f1e33a954e04a3ca94b7d115d03cc8bd3ee5a305ec20c5b60940e85f6973",
+    "bytes": 2716,
+    "last_record_commit": "39fe90af854d91cf0c41ea2b089d6320b3a44d6e",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "ranking-scale/integration-main-b463/coverage-native-retry.log.gz",
+    "sha256": "be51c74d753d840c5798f6fd48aadf8558ebae1e05dc22520ddc060be98dbe7b",
+    "bytes": 27402,
+    "last_record_commit": "7122762e738188cb5c94a45bf0efac7fb74fdb5a",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "ranking-scale/integration-main-b463/coverage-summary.json",
+    "sha256": "6a0b27099425c2370b273a92ba9324e77a7b892947c920809cd8577d41ab4bcc",
+    "bytes": 23610,
+    "last_record_commit": "7122762e738188cb5c94a45bf0efac7fb74fdb5a",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "ranking-scale/integration-main-b463/coverage.log.gz",
+    "sha256": "af5b65451f7d60bfe109c183bc769458453f57d579db453abc8ad729c7e17393",
+    "bytes": 40664,
+    "last_record_commit": "7122762e738188cb5c94a45bf0efac7fb74fdb5a",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "ranking-scale/resource-after-closeout-300/native-resource.json",
+    "sha256": "ed52291fa51ed7e0fd28208d6bbccddcf055d4b8f77c454c3c919d74632eea36",
+    "bytes": 901599,
+    "last_record_commit": "be64a7319239a8ff8e8f8dab87abea35e658db6c",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "ranking-scale/resource-after-closeout-300/resources.json",
+    "sha256": "c5e740dabaf4f8f7587f112b261abbacf94e83207835c73dbd690575effdd8b1",
+    "bytes": 1199753,
+    "last_record_commit": "be64a7319239a8ff8e8f8dab87abea35e658db6c",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "ranking-scale/resource-after-closeout-300/summary.json",
+    "sha256": "36e2c0b80b9a7562134608e48ef32cb93b15a8a654e82273af4db8bd150c2ef7",
+    "bytes": 17710,
+    "last_record_commit": "be64a7319239a8ff8e8f8dab87abea35e658db6c",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "release-ui-slice/native-ui.json",
+    "sha256": "430f72ca4f4e6a0a16024aff74a42c3ebb6e4b0bcf60a3a383bbbce1a8f62769",
+    "bytes": 7754,
+    "last_record_commit": "6e853c0766b730fd22fcd5de16a34b70c01b64b7",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "release-ui-slice/package.json",
+    "sha256": "1fd1b5138101a812de22d1a1b004dee3ed3c5d5477211b8a7df4b332d5b4ecaa",
+    "bytes": 9836,
+    "last_record_commit": "6e853c0766b730fd22fcd5de16a34b70c01b64b7",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "release-ui-slice/packaged-semantic-execution.json",
+    "sha256": "55b2dbaaa6071f486890c369a4b4d3af3ddd5fa2ecbe004587ba9dd852e2b3ca",
+    "bytes": 311,
+    "last_record_commit": "6e853c0766b730fd22fcd5de16a34b70c01b64b7",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "rtf-body-slice/README.md",
+    "sha256": "b332981a06f1f5ac19e1b817f24c2929ef5ac32c910d4449cc705de9908d1835",
+    "bytes": 9264,
+    "last_record_commit": "cb1d3ac5ccc33f7b3874c4a903bcb0ca33df4342",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "rtf-body-slice/changed-coverage.json",
+    "sha256": "dbb6b62bccbe5909555533e1f2c3bd42d4636213a68ed48dc91e7eb7bdb31202",
+    "bytes": 1513,
+    "last_record_commit": "cb1d3ac5ccc33f7b3874c4a903bcb0ca33df4342",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "rtf-body-slice/changed-source.lcov",
+    "sha256": "0c0f70095eb1a2f5855a8cfe96636d1e4b40857759e062ca50213e514860c730",
+    "bytes": 44669,
+    "last_record_commit": "cb1d3ac5ccc33f7b3874c4a903bcb0ca33df4342",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "rtf-body-slice/coverage-provenance.json",
+    "sha256": "06b5d843b2cb65339e8949bc515b4ebeb52fdb79a26c9b355b19a871ad673dff",
+    "bytes": 6406,
+    "last_record_commit": "cb1d3ac5ccc33f7b3874c4a903bcb0ca33df4342",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "rtf-body-slice/coverage-retry.log.gz",
+    "sha256": "909bd7f79810516b5a8a6a40e62ef8cca59ad39471ee9a1065bf06d8a4304431",
+    "bytes": 25735,
+    "last_record_commit": "cb1d3ac5ccc33f7b3874c4a903bcb0ca33df4342",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "rtf-body-slice/coverage.log.gz",
+    "sha256": "ea2a1e157271416e07c3a9836daa125aad2cb96b2ecac142aedba014f5a48146",
+    "bytes": 41355,
+    "last_record_commit": "cb1d3ac5ccc33f7b3874c4a903bcb0ca33df4342",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "rtf-body-slice/frozen-source-sha256.json",
+    "sha256": "d079e661c0ca35d01715af8ef739f2443434623bd784482b9f23e55c6968cf16",
+    "bytes": 6987,
+    "last_record_commit": "cb1d3ac5ccc33f7b3874c4a903bcb0ca33df4342",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "rtf-body-slice/native-ocr-result.json",
+    "sha256": "b0f246914c926cc739eac8838805f7ba026970ec60a135e60f3b98df91326495",
+    "bytes": 186,
+    "last_record_commit": "cb1d3ac5ccc33f7b3874c4a903bcb0ca33df4342",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "rtf-body-slice/native-rtf-result.json",
+    "sha256": "4f90963b6f2a9cc17e40558b453b1ba3768d679dcd8f656f8bd6fab394d6a943",
+    "bytes": 293,
+    "last_record_commit": "cb1d3ac5ccc33f7b3874c4a903bcb0ca33df4342",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "rtf-body-slice/rtf-resource-summary.json",
+    "sha256": "6e6fd39532630cba1f0195ce9e063ab6acca152b92d20a2df45885ce9462302b",
+    "bytes": 619,
+    "last_record_commit": "cb1d3ac5ccc33f7b3874c4a903bcb0ca33df4342",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "rtf-body-slice/rtf-resources.json.gz",
+    "sha256": "f426328dc7a4564f48a6a9a1421ce92dabfb13a270750e47c63e96eeda858d5f",
+    "bytes": 53050,
+    "last_record_commit": "cb1d3ac5ccc33f7b3874c4a903bcb0ca33df4342",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "rtf-body-slice/rtf_resource_probe.py",
+    "sha256": "4e1374e4bfed5d1d9fbaba1c91cc6b299ac03804061de1cb9e777f6dd5fd9ca7",
+    "bytes": 4630,
+    "last_record_commit": "cb1d3ac5ccc33f7b3874c4a903bcb0ca33df4342",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "rtf-body-slice/source-freeze-note.txt",
+    "sha256": "6670a19809223a1031de00d4e9d50f306992c149bab01a7b7702173d93eb68cf",
+    "bytes": 281,
+    "last_record_commit": "cb1d3ac5ccc33f7b3874c4a903bcb0ca33df4342",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "validation-plan.json",
+    "sha256": "b32078ff0d005ea5fbedf5cb062537124804efbb5edd14211f5d5f754dac5262",
+    "bytes": 5007,
+    "last_record_commit": "69aa4446bfa705486965d8411fdb17b4cfe5d162",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "video-audio/location-repair/README.md",
+    "sha256": "ef4746660a32f86efc6fb3856b50e295cbc927dbda3163ea20c8471e79780b1d",
+    "bytes": 6723,
+    "last_record_commit": "dee49f2dbb6bc2faa47d0b5f8de787d83c6a7923",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "video-audio/location-repair/changed-coverage-first-pass.json",
+    "sha256": "df34c7dc8deba0a4c51e12e99b4f953e7d7766ddea93ba9a139998101da52683",
+    "bytes": 2533,
+    "last_record_commit": "dee49f2dbb6bc2faa47d0b5f8de787d83c6a7923",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "video-audio/location-repair/changed-coverage.json",
+    "sha256": "df34c7dc8deba0a4c51e12e99b4f953e7d7766ddea93ba9a139998101da52683",
+    "bytes": 2533,
+    "last_record_commit": "dee49f2dbb6bc2faa47d0b5f8de787d83c6a7923",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "video-audio/location-repair/coverage-final.json",
+    "sha256": "2218c8bb994d6f30688bba39cf9955028c493842525205b17f2a88b70cd8c992",
+    "bytes": 260,
+    "last_record_commit": "dee49f2dbb6bc2faa47d0b5f8de787d83c6a7923",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "video-audio/location-repair/coverage-final.log.gz",
+    "sha256": "e4e2f0acf81eebefdbac548c240bba665acc0565f3324445ef0820b960d02012",
+    "bytes": 27595,
+    "last_record_commit": "dee49f2dbb6bc2faa47d0b5f8de787d83c6a7923",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "video-audio/location-repair/coverage-repair.json",
+    "sha256": "9eb58714fcb8558ea8bdf125ef13eb51fece1a62147aadef3cf540830c012053",
+    "bytes": 261,
+    "last_record_commit": "dee49f2dbb6bc2faa47d0b5f8de787d83c6a7923",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "video-audio/location-repair/coverage-repair.log.gz",
+    "sha256": "b63e4a0a5ac28fd108d4c1479e2752a7512ce9281a00d17c8128ba0f1f9b2e6c",
+    "bytes": 27734,
+    "last_record_commit": "dee49f2dbb6bc2faa47d0b5f8de787d83c6a7923",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "video-audio/location-repair/coverage-reuse.json",
+    "sha256": "da86695586714aea96b8190c954d20dfde8f3dcc877562728964e07b8371df08",
+    "bytes": 352808,
+    "last_record_commit": "dee49f2dbb6bc2faa47d0b5f8de787d83c6a7923",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "video-audio/location-repair/coverage-swift.sh",
+    "sha256": "42967efaf9199510c5f13f9219641be7b87a08eb2a781fc8b4200bfe1da8996f",
+    "bytes": 975,
+    "last_record_commit": "dee49f2dbb6bc2faa47d0b5f8de787d83c6a7923",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "video-audio/location-repair/run-coverage.py",
+    "sha256": "b481b3e039f39d062399663ae660d22bdb25f6723424d6206299ee0a89c1a460",
+    "bytes": 1670,
+    "last_record_commit": "dee49f2dbb6bc2faa47d0b5f8de787d83c6a7923",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "video-frames/fixture-repair/README.md",
+    "sha256": "7829a37323845cbc022610731196a1996e567dd573fc94b79c3f8de105d9bdde",
+    "bytes": 7838,
+    "last_record_commit": "a94372b75a4b66e6f3c3f1862c31373e4d7f8a28",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "video-frames/fixture-repair/focused-changed-coverage.json",
+    "sha256": "65a2db760607150ae14b385b4d07a2e8020e197b579da60252aacc98721c1893",
+    "bytes": 1757,
+    "last_record_commit": "a94372b75a4b66e6f3c3f1862c31373e4d7f8a28",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "video-frames/fixture-repair/source-fingerprints.json",
+    "sha256": "cbb83995ebb3fc87eb761d78427a4a01250c2573a49e1da248286270ba195477",
+    "bytes": 313377,
+    "last_record_commit": "a94372b75a4b66e6f3c3f1862c31373e4d7f8a28",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "visual-corroboration/manifest.json",
+    "sha256": "d335ad0a550eea2dcf22513ecda93182cc081301c8297ca8d0aec014276594f6",
+    "bytes": 10079,
+    "last_record_commit": "b4ec2917b39599978de6b96aa2262b69b97e97a8",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "visual-corroboration/mixed-oracle.json",
+    "sha256": "cbd3f1cd8a3400f0449dde4f849802d6a4fc189cbbd00e94703aec05b51016bc",
+    "bytes": 81004,
+    "last_record_commit": "b4ec2917b39599978de6b96aa2262b69b97e97a8",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "visual-corroboration/service-replay.json",
+    "sha256": "9f9a8753147542ac018bee81d77f5b3713186d3f0e226aa8e565d02160300897",
+    "bytes": 201,
+    "last_record_commit": "b4ec2917b39599978de6b96aa2262b69b97e97a8",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "visual-corroboration/store-replay.json",
+    "sha256": "cfa6dacbd212e9fc4b00c2e29fff16ec4e451c299d43a0394e3cfcdb7982e5b8",
+    "bytes": 6852,
+    "last_record_commit": "b4ec2917b39599978de6b96aa2262b69b97e97a8",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "word-body-slice/README.md",
+    "sha256": "de11f7bd746690c0f66e2493fac12652e3fc9d9edc0a0333ce9e8fae29e84b9e",
+    "bytes": 8790,
+    "last_record_commit": "e6f70d5596df0175ff684a6c14fe6954ef6c5f83",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "word-body-slice/changed-app-coverage.json",
+    "sha256": "91ea0a0322bb756b908664830110cdee57b03b341467b5b913f27cdfd688adfb",
+    "bytes": 1344,
+    "last_record_commit": "e6f70d5596df0175ff684a6c14fe6954ef6c5f83",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "word-body-slice/changed-reader-coverage.json",
+    "sha256": "a1a5912c4150cf29e1b6b981917a03d6bf03a64fb300d1b5a6d95d66dc63540d",
+    "bytes": 1085,
+    "last_record_commit": "e6f70d5596df0175ff684a6c14fe6954ef6c5f83",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "word-body-slice/changed-source-coverage.lcov.gz",
+    "sha256": "c3dd0dde46b11cfd5f8a4280d1194aeaf79cbcd0709a3b760201db1075f7f37f",
+    "bytes": 9115,
+    "last_record_commit": "e6f70d5596df0175ff684a6c14fe6954ef6c5f83",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "word-body-slice/changed-total-coverage.json",
+    "sha256": "761e9a1187d0f915ccc39563ae029f1c2c04792709b0d5c827539400609616fe",
+    "bytes": 1897,
+    "last_record_commit": "e6f70d5596df0175ff684a6c14fe6954ef6c5f83",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "word-body-slice/coverage-build-failure.json",
+    "sha256": "78a509b1277da928e6213779255d97abb9ba2ac22ce4fe00e522f2855e65aba9",
+    "bytes": 464,
+    "last_record_commit": "e6f70d5596df0175ff684a6c14fe6954ef6c5f83",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "word-body-slice/coverage-build-failure.log.gz",
+    "sha256": "7f1a6571a5194444f813d73e3809395110423e090ac2683ab6b62fd6550961ec",
+    "bytes": 33611,
+    "last_record_commit": "e6f70d5596df0175ff684a6c14fe6954ef6c5f83",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "word-body-slice/coverage-fixture-failure.json",
+    "sha256": "6760d46474307700a8b26f2d4023b89d2e9f9979b123761c4740ea63ed5c4832",
+    "bytes": 509,
+    "last_record_commit": "e6f70d5596df0175ff684a6c14fe6954ef6c5f83",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "word-body-slice/coverage-fixture-failure.log.gz",
+    "sha256": "1a85d93dd48bb639a02a17216c3b7dc016ead4032e33b912e2543ca74a574f43",
+    "bytes": 1143,
+    "last_record_commit": "e6f70d5596df0175ff684a6c14fe6954ef6c5f83",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "word-body-slice/coverage-provenance.json",
+    "sha256": "47dead01d8339f3a8ebf2f83817417a03b752d4930afc6badd7116e9d422a13b",
+    "bytes": 2000,
+    "last_record_commit": "e6f70d5596df0175ff684a6c14fe6954ef6c5f83",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "word-body-slice/coverage-run.json",
+    "sha256": "37d41d00021021b0f3a4deccff9c2b35dbd395656e3cbf381a30be308ee35255",
+    "bytes": 492,
+    "last_record_commit": "e6f70d5596df0175ff684a6c14fe6954ef6c5f83",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "word-body-slice/coverage-swift.sh",
+    "sha256": "42967efaf9199510c5f13f9219641be7b87a08eb2a781fc8b4200bfe1da8996f",
+    "bytes": 975,
+    "last_record_commit": "e6f70d5596df0175ff684a6c14fe6954ef6c5f83",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "word-body-slice/coverage.log.gz",
+    "sha256": "d5e9cf704b71400262c8d655c0fbc751711d3fa121061f3747a73fbe9686a398",
+    "bytes": 29889,
+    "last_record_commit": "e6f70d5596df0175ff684a6c14fe6954ef6c5f83",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "word-body-slice/document-resource-summary.json",
+    "sha256": "eefb5885614b5139d080217c0d81f5951e18aadaf269fa7178af068e2d6317ac",
+    "bytes": 1085,
+    "last_record_commit": "e6f70d5596df0175ff684a6c14fe6954ef6c5f83",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "word-body-slice/document-resources.json.gz",
+    "sha256": "6d4ac7e8bd0b6afb239f2995f5ee4e431b756a3e44c750660d552ba19803fa50",
+    "bytes": 50523,
+    "last_record_commit": "e6f70d5596df0175ff684a6c14fe6954ef6c5f83",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "word-body-slice/document_resource_probe.py",
+    "sha256": "f97a1d20522a02a8003ebe98b97675abe2d92321b2642a4bac20e7c603d35436",
+    "bytes": 4637,
+    "last_record_commit": "e6f70d5596df0175ff684a6c14fe6954ef6c5f83",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "word-body-slice/frozen-source-sha256.json",
+    "sha256": "098f4cd6917087c1f190293480b714747b5896441653bb906562067ccb27d141",
+    "bytes": 6711,
+    "last_record_commit": "e6f70d5596df0175ff684a6c14fe6954ef6c5f83",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "word-body-slice/native-docx-result.json",
+    "sha256": "ca8d69800a6a1c3baea6aca62e45471df01a24431186803a901cd746e274ef4a",
+    "bytes": 287,
+    "last_record_commit": "e6f70d5596df0175ff684a6c14fe6954ef6c5f83",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "word-body-slice/native-ocr-result.json",
+    "sha256": "b0f246914c926cc739eac8838805f7ba026970ec60a135e60f3b98df91326495",
+    "bytes": 186,
+    "last_record_commit": "e6f70d5596df0175ff684a6c14fe6954ef6c5f83",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "word-body-slice/prebuild-result.json",
+    "sha256": "ae954d8d9a908ab37b54f0d1c731a29a0ebdacbc66b7146c5798e5fdbffe2757",
+    "bytes": 515,
+    "last_record_commit": "e6f70d5596df0175ff684a6c14fe6954ef6c5f83",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "xlsx-body-slice/README.md",
+    "sha256": "84c12c3d81ab360fd8770edb293d9f99a6aad442c0c79c9c16105ca9c637625e",
+    "bytes": 13381,
+    "last_record_commit": "33844a57202943c1c59819dc7cd0292875efedb4",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "xlsx-body-slice/changed-coverage.json",
+    "sha256": "04bef8d8352cd182fd7c65c239e99876ca6cfc61b9c101c33a3d9c14137ae4e9",
+    "bytes": 1990,
+    "last_record_commit": "05f560a46a4320f117d6dc8f95a636fd6b233a11",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "xlsx-body-slice/changed-source.lcov.gz",
+    "sha256": "6cfe72b9d2fd38d026b45434e0877424bd3572aff371e14f7d6eda479590fcae",
+    "bytes": 9968,
+    "last_record_commit": "05f560a46a4320f117d6dc8f95a636fd6b233a11",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "xlsx-body-slice/coverage-boundary-final-run.json",
+    "sha256": "34ff26b5d90096e567a176c37db2b23b5d9bd2c2510c71b74873ec37a5b8ded7",
+    "bytes": 148,
+    "last_record_commit": "05f560a46a4320f117d6dc8f95a636fd6b233a11",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "xlsx-body-slice/coverage-boundary-final.log.gz",
+    "sha256": "f675891a248a2750abf6adaa0a787ce152c2727e196a79ece69e26f2cda66df6",
+    "bytes": 28483,
+    "last_record_commit": "05f560a46a4320f117d6dc8f95a636fd6b233a11",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "xlsx-body-slice/coverage-method-retry-run.json",
+    "sha256": "c82787b01565c7493737a2e6511716aa8e7e0fa87beaeb3ca44622dabcf83e96",
+    "bytes": 173,
+    "last_record_commit": "05f560a46a4320f117d6dc8f95a636fd6b233a11",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "xlsx-body-slice/coverage-method-retry.log.gz",
+    "sha256": "119808b227fe40f1712e6215e613002cb767e6cdb25160c5a925f9c5f2f8a813",
+    "bytes": 25977,
+    "last_record_commit": "05f560a46a4320f117d6dc8f95a636fd6b233a11",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "xlsx-body-slice/coverage-provenance.json",
+    "sha256": "280b99e0cf252558d4def7a0ccd8ff89e44672876a8ce974c40c8ceb31f824cb",
+    "bytes": 12768,
+    "last_record_commit": "05f560a46a4320f117d6dc8f95a636fd6b233a11",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "xlsx-body-slice/coverage-retry-run.json",
+    "sha256": "d8099bd4e96cdc70608a0bbca91b07ab514b7fdf144930b46216323e3d670309",
+    "bytes": 170,
+    "last_record_commit": "05f560a46a4320f117d6dc8f95a636fd6b233a11",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "xlsx-body-slice/coverage-retry.log.gz",
+    "sha256": "545eee6d09c16e81bd651c70255c90e0b47fb277d6b8178f55f35158c7e9f4df",
+    "bytes": 3531,
+    "last_record_commit": "05f560a46a4320f117d6dc8f95a636fd6b233a11",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "xlsx-body-slice/coverage-run.json",
+    "sha256": "ed6c8ee14012aeb404472dba73c250af0573e47d3f9f875e52d06a201275e28b",
+    "bytes": 494,
+    "last_record_commit": "05f560a46a4320f117d6dc8f95a636fd6b233a11",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "xlsx-body-slice/coverage.log.gz",
+    "sha256": "3b714e4a3f419bc03987569040e7a0b4bd22db5dc1866566fcf49390ac33f2c8",
+    "bytes": 44318,
+    "last_record_commit": "05f560a46a4320f117d6dc8f95a636fd6b233a11",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "xlsx-body-slice/frozen-source-hashes.json",
+    "sha256": "d4ba706b0ea8f0c0253e5f8f5d492a401434106f9deaa8577187a317b2401029",
+    "bytes": 13420,
+    "last_record_commit": "05f560a46a4320f117d6dc8f95a636fd6b233a11",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "xlsx-body-slice/initial-source-hashes.json",
+    "sha256": "c31741d0e48e61622c98adfcc5538e6bcd5e2bc7a78518ba920e01a00e71147a",
+    "bytes": 13420,
+    "last_record_commit": "05f560a46a4320f117d6dc8f95a636fd6b233a11",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "xlsx-body-slice/native-ocr-result.json",
+    "sha256": "b0f246914c926cc739eac8838805f7ba026970ec60a135e60f3b98df91326495",
+    "bytes": 186,
+    "last_record_commit": "05f560a46a4320f117d6dc8f95a636fd6b233a11",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "xlsx-body-slice/native-xlsx-result.json",
+    "sha256": "981e8c5ad5ee1473ad0276f7d89b5b1ef6faf5f979ce01278ca290e4722515cc",
+    "bytes": 447,
+    "last_record_commit": "05f560a46a4320f117d6dc8f95a636fd6b233a11",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "xlsx-body-slice/pre-boundary-source-hashes.json",
+    "sha256": "a30420d231a95d20d496304b8794e0488ce993ab0f38f9fd1f3947614035ec7b",
+    "bytes": 13420,
+    "last_record_commit": "05f560a46a4320f117d6dc8f95a636fd6b233a11",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "xlsx-body-slice/source-freeze-note.txt",
+    "sha256": "74e7f7f1b47eb1d6c0d711752ad9d21d84af208c848c94bd2a3a903aed80348a",
+    "bytes": 1531,
+    "last_record_commit": "05f560a46a4320f117d6dc8f95a636fd6b233a11",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "xlsx-body-slice/xlsx-resource-summary.json",
+    "sha256": "80b7193707d5811ecd6b0513c6136d63707fdc0eedf89df84e622341d5bf7a62",
+    "bytes": 621,
+    "last_record_commit": "05f560a46a4320f117d6dc8f95a636fd6b233a11",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "xlsx-body-slice/xlsx-resources-final-summary.json",
+    "sha256": "62e5795e7422b242fa9a3db73aaed12c2783761a246c003412dccd34002c439d",
+    "bytes": 618,
+    "last_record_commit": "05f560a46a4320f117d6dc8f95a636fd6b233a11",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "xlsx-body-slice/xlsx-resources-final.json.gz",
+    "sha256": "f25daeed79171340abe0a955425a7384bf27a9486f2e6e72f0b78ec0d2e9bdaa",
+    "bytes": 11742,
+    "last_record_commit": "05f560a46a4320f117d6dc8f95a636fd6b233a11",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "xlsx-body-slice/xlsx-resources-summary.json",
+    "sha256": "80b7193707d5811ecd6b0513c6136d63707fdc0eedf89df84e622341d5bf7a62",
+    "bytes": 621,
+    "last_record_commit": "05f560a46a4320f117d6dc8f95a636fd6b233a11",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "xlsx-body-slice/xlsx-resources.json.gz",
+    "sha256": "0293f752833c61cb4d175ba75cefaefff9a41bd4195f1cc2b2d8767b4f64052b",
+    "bytes": 53018,
+    "last_record_commit": "05f560a46a4320f117d6dc8f95a636fd6b233a11",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  },
+  {
+    "path": "xlsx-body-slice/xlsx_resource_probe.py",
+    "sha256": "188c249233492ac9ae1cd2f50e56738d1df5a694707eb083c22b2683df6c758c",
+    "bytes": 4638,
+    "last_record_commit": "05f560a46a4320f117d6dc8f95a636fd6b233a11",
+    "boundary": "Historical source/binary/profile as specified by its report; not rerun in this slice"
+  }
+]

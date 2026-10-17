@@ -1,0 +1,878 @@
+{
+  "visual-corroboration/manifest.json": {
+    "checked": 12,
+    "matches": 12,
+    "rows": [
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticVectorReader.swift",
+        "expected": "c92408a24a74c83f0be45f7fad22ffe50d500a5620937af093b9607d08da610f",
+        "actual": "c92408a24a74c83f0be45f7fad22ffe50d500a5620937af093b9607d08da610f",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSearchRanking.swift",
+        "expected": "4b9c1a4fdd22bce1c041cf4305f07bc840d0883653d664a0ebb0ee1e385db21d",
+        "actual": "4b9c1a4fdd22bce1c041cf4305f07bc840d0883653d664a0ebb0ee1e385db21d",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticScoreCalibration.swift",
+        "expected": "4202dd6b2d9fea677ae972c4cfc54d4051e778ee33afa1fe8e391b38417b8ecb",
+        "actual": "4202dd6b2d9fea677ae972c4cfc54d4051e778ee33afa1fe8e391b38417b8ecb",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticLexicalReader.swift",
+        "expected": "325d3469677ee9280dbd23b726236fa42902e40cd369ed140e59a408f2a3cc1e",
+        "actual": "325d3469677ee9280dbd23b726236fa42902e40cd369ed140e59a408f2a3cc1e",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore.swift",
+        "expected": "6932cb190686224dc4e1f7304947e57e4e29c4ec406f3681c17f76f66372b897",
+        "actual": "6932cb190686224dc4e1f7304947e57e4e29c4ec406f3681c17f76f66372b897",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+ImageText.swift",
+        "expected": "47a14d48c2afccc22d3339eb07858d62bfe9307b949902450f8e45e5db5b81e8",
+        "actual": "47a14d48c2afccc22d3339eb07858d62bfe9307b949902450f8e45e5db5b81e8",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+MediaJobs.swift",
+        "expected": "4fcff59f24c84ec6cd48033286d0be7cc7c0b9f17ffb5bc94ba62bbd29a62c19",
+        "actual": "4fcff59f24c84ec6cd48033286d0be7cc7c0b9f17ffb5bc94ba62bbd29a62c19",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileValidator.swift",
+        "expected": "295b17587af0ecaf5de04caeb282b95548638e2b20d7d1561a7c211dd64dfc90",
+        "actual": "295b17587af0ecaf5de04caeb282b95548638e2b20d7d1561a7c211dd64dfc90",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+        "expected": "af5c269c93c08e1563efcfd7f61782f74d7de469298f00846d85d3faaeeae1a9",
+        "actual": "af5c269c93c08e1563efcfd7f61782f74d7de469298f00846d85d3faaeeae1a9",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticEmbeddingWorker.swift",
+        "expected": "e5fdce8f4f4dcbb27bb52c279c641b547cde1d523321f7251144e5425ceed0f5",
+        "actual": "e5fdce8f4f4dcbb27bb52c279c641b547cde1d523321f7251144e5425ceed0f5",
+        "match": true
+      },
+      {
+        "file": "Sources/TypefluxSemanticHelper/main.swift",
+        "expected": "8e3d3a3b6b64a62b4fb0ec55cdda50108adc0b22b215f937c3d992eccd00d13d",
+        "actual": "8e3d3a3b6b64a62b4fb0ec55cdda50108adc0b22b215f937c3d992eccd00d13d",
+        "match": true
+      },
+      {
+        "file": "Tests/TypefluxTests/SemanticImageCorroborationTests.swift",
+        "expected": "cb7c489ba325acdeaa539a20110ef863a8f954a94d4278f99eef6bf6e13c3b85",
+        "actual": "cb7c489ba325acdeaa539a20110ef863a8f954a94d4278f99eef6bf6e13c3b85",
+        "match": true
+      }
+    ]
+  },
+  "audio-live/reused-source-hashes.json": {
+    "checked": 59,
+    "matches": 59,
+    "rows": [
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticEmbeddingWorker.swift",
+        "expected": "e5fdce8f4f4dcbb27bb52c279c641b547cde1d523321f7251144e5425ceed0f5",
+        "actual": "e5fdce8f4f4dcbb27bb52c279c641b547cde1d523321f7251144e5425ceed0f5",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticVectorReader.swift",
+        "expected": "c92408a24a74c83f0be45f7fad22ffe50d500a5620937af093b9607d08da610f",
+        "actual": "c92408a24a74c83f0be45f7fad22ffe50d500a5620937af093b9607d08da610f",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSearchRanking.swift",
+        "expected": "4b9c1a4fdd22bce1c041cf4305f07bc840d0883653d664a0ebb0ee1e385db21d",
+        "actual": "4b9c1a4fdd22bce1c041cf4305f07bc840d0883653d664a0ebb0ee1e385db21d",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticScoreCalibration.swift",
+        "expected": "4202dd6b2d9fea677ae972c4cfc54d4051e778ee33afa1fe8e391b38417b8ecb",
+        "actual": "4202dd6b2d9fea677ae972c4cfc54d4051e778ee33afa1fe8e391b38417b8ecb",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore.swift",
+        "expected": "6932cb190686224dc4e1f7304947e57e4e29c4ec406f3681c17f76f66372b897",
+        "actual": "6932cb190686224dc4e1f7304947e57e4e29c4ec406f3681c17f76f66372b897",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+MediaJobs.swift",
+        "expected": "4fcff59f24c84ec6cd48033286d0be7cc7c0b9f17ffb5bc94ba62bbd29a62c19",
+        "actual": "4fcff59f24c84ec6cd48033286d0be7cc7c0b9f17ffb5bc94ba62bbd29a62c19",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+ImageText.swift",
+        "expected": "47a14d48c2afccc22d3339eb07858d62bfe9307b949902450f8e45e5db5b81e8",
+        "actual": "47a14d48c2afccc22d3339eb07858d62bfe9307b949902450f8e45e5db5b81e8",
+        "match": true
+      },
+      {
+        "file": "Sources/TypefluxSemanticHelper/main.swift",
+        "expected": "8e3d3a3b6b64a62b4fb0ec55cdda50108adc0b22b215f937c3d992eccd00d13d",
+        "actual": "8e3d3a3b6b64a62b4fb0ec55cdda50108adc0b22b215f937c3d992eccd00d13d",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+SearchMaintenance.swift",
+        "expected": "3e26ba61e2e7623a84f396d018d7b211b60ebdd4c802eb622fb0e0df0016687c",
+        "actual": "3e26ba61e2e7623a84f396d018d7b211b60ebdd4c802eb622fb0e0df0016687c",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticODTText.swift",
+        "expected": "0c35230624d4c4828f8b880d80a3bda30c37967d0893423e92075b54be279126",
+        "actual": "0c35230624d4c4828f8b880d80a3bda30c37967d0893423e92075b54be279126",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticIndexDiagnostics.swift",
+        "expected": "a1bd2060e3ce80e74615649306d3d1a6ff10d8a04726b66dbd1d2831a24dbdfb",
+        "actual": "a1bd2060e3ce80e74615649306d3d1a6ff10d8a04726b66dbd1d2831a24dbdfb",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Events.swift",
+        "expected": "5f6dddd144a790317d0ec3ea7b900e27ca9eace7572373a3a7f3d7eb19aa81d1",
+        "actual": "5f6dddd144a790317d0ec3ea7b900e27ca9eace7572373a3a7f3d7eb19aa81d1",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticPresentationText.swift",
+        "expected": "7a573072474e4a028f051876aa91ef3a61fd01f21c0631cbdff8eef1c876b474",
+        "actual": "7a573072474e4a028f051876aa91ef3a61fd01f21c0631cbdff8eef1c876b474",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer+Priority.swift",
+        "expected": "e0811f6f7ed145f10db4b6148d18db501cbaa823cbcd60c22e4645ff2f76ebee",
+        "actual": "e0811f6f7ed145f10db4b6148d18db501cbaa823cbcd60c22e4645ff2f76ebee",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticWorkBudget.swift",
+        "expected": "5902cddeaf130fa6996dc0426c24cf7bd7e900686c1f00a1ddd5bc22f793ad10",
+        "actual": "5902cddeaf130fa6996dc0426c24cf7bd7e900686c1f00a1ddd5bc22f793ad10",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSearchSnippet.swift",
+        "expected": "4ee4e38752706293a10b6cc7e3f55878cc297ad4d134bd8ac6cf292de65a74a5",
+        "actual": "4ee4e38752706293a10b6cc7e3f55878cc297ad4d134bd8ac6cf292de65a74a5",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticMediaPriority.swift",
+        "expected": "192909499c301ce3a0e636922143ce95ad278e79f1ce27cd78166c57c5290922",
+        "actual": "192909499c301ce3a0e636922143ce95ad278e79f1ce27cd78166c57c5290922",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticIndexEvents.swift",
+        "expected": "3c8d09a3c1e0b041f7a855e0583cd68606f898ae6f396c4a7e18b4f0cc7d2a5c",
+        "actual": "3c8d09a3c1e0b041f7a855e0583cd68606f898ae6f396c4a7e18b4f0cc7d2a5c",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticLexicalReader.swift",
+        "expected": "325d3469677ee9280dbd23b726236fa42902e40cd369ed140e59a408f2a3cc1e",
+        "actual": "325d3469677ee9280dbd23b726236fa42902e40cd369ed140e59a408f2a3cc1e",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+        "expected": "af5c269c93c08e1563efcfd7f61782f74d7de469298f00846d85d3faaeeae1a9",
+        "actual": "af5c269c93c08e1563efcfd7f61782f74d7de469298f00846d85d3faaeeae1a9",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticDownloadState.swift",
+        "expected": "e343d1bf01928a2e1141bb60bc07963acb9ea380b58f765bc6b6c5fb941bb344",
+        "actual": "e343d1bf01928a2e1141bb60bc07963acb9ea380b58f765bc6b6c5fb941bb344",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSearchTrace.swift",
+        "expected": "f8d2daa74c114d793dffedd5aadac10d7a86a7145f5b8f57539b0324db1c8514",
+        "actual": "f8d2daa74c114d793dffedd5aadac10d7a86a7145f5b8f57539b0324db1c8514",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer.swift",
+        "expected": "3d0f41037eeb68bf0d977accdc649a1b522dfb2048d9ca9c2db23b9e5528966c",
+        "actual": "3d0f41037eeb68bf0d977accdc649a1b522dfb2048d9ca9c2db23b9e5528966c",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Discovery.swift",
+        "expected": "0c3133288372ec9070094325a20c3e322f2d152741a084c4abee1b331bcc8286",
+        "actual": "0c3133288372ec9070094325a20c3e322f2d152741a084c4abee1b331bcc8286",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer+Document.swift",
+        "expected": "cae7f101b098f21f1bdd7e94d089eb357c0889a117127732b109dc733f03dfa0",
+        "actual": "cae7f101b098f21f1bdd7e94d089eb357c0889a117127732b109dc733f03dfa0",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Totals.swift",
+        "expected": "5932028a0396eeaac565d40b38e68de1621674db98083e892299593925bc89fe",
+        "actual": "5932028a0396eeaac565d40b38e68de1621674db98083e892299593925bc89fe",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticVideoFrames.swift",
+        "expected": "f825508e225a593fedcd33b0dbdd8f1a67f2f5fada063fa09d14a7d173c310fb",
+        "actual": "f825508e225a593fedcd33b0dbdd8f1a67f2f5fada063fa09d14a7d173c310fb",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileReaders.swift",
+        "expected": "70d8c341a260be6681e17e999fc25fb85855082825bc93dcff664f14a67a3eb3",
+        "actual": "70d8c341a260be6681e17e999fc25fb85855082825bc93dcff664f14a67a3eb3",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticDownloadProgressDelivery.swift",
+        "expected": "b6926ffae85314b895f3a09e9d0786fb5ded01fc420c174681105db320ce0ac9",
+        "actual": "b6926ffae85314b895f3a09e9d0786fb5ded01fc420c174681105db320ce0ac9",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticRTFText.swift",
+        "expected": "5b700e73b8dc922a7a3a5ad775bef1619a482af96d672c6d8d9279dd18c2e40f",
+        "actual": "5b700e73b8dc922a7a3a5ad775bef1619a482af96d672c6d8d9279dd18c2e40f",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticImageText.swift",
+        "expected": "4c5e762158097b4e54f45b0522b6031e80d24c34ff17923a1a77a0b4a2c855b5",
+        "actual": "4c5e762158097b4e54f45b0522b6031e80d24c34ff17923a1a77a0b4a2c855b5",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticPDFText.swift",
+        "expected": "e399708e7c6361f6daa3f285c87d04ef3d29ad0a0ce75fbf151aed53e467ae0d",
+        "actual": "e399708e7c6361f6daa3f285c87d04ef3d29ad0a0ce75fbf151aed53e467ae0d",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFilePolicy.swift",
+        "expected": "f0e1d9d05da01c8830cc8ca176b584b02eceafc8237f5d54fba9f7295e82948e",
+        "actual": "f0e1d9d05da01c8830cc8ca176b584b02eceafc8237f5d54fba9f7295e82948e",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticIndexProgressDelivery.swift",
+        "expected": "1cd19c2b02dfd6884be7a483237a4f80b127d99c816c8c8f15a1a9392c87a4c0",
+        "actual": "1cd19c2b02dfd6884be7a483237a4f80b127d99c816c8c8f15a1a9392c87a4c0",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticDocumentZIP.swift",
+        "expected": "f36f20688c0bf0b4bae88dc03a6fd7aa2f03f932ba2b1908bc035a29a063c563",
+        "actual": "f36f20688c0bf0b4bae88dc03a6fd7aa2f03f932ba2b1908bc035a29a063c563",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+ProcessingDetails.swift",
+        "expected": "c6fa39a1b866c0e1c083050bde32d09707955da29821757170c46451d7fc5932",
+        "actual": "c6fa39a1b866c0e1c083050bde32d09707955da29821757170c46451d7fc5932",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticWordText.swift",
+        "expected": "7dcfa9733a79b9bafc0bc76ea3694ad671b104dc2e9464b2ea28661ad3319b42",
+        "actual": "7dcfa9733a79b9bafc0bc76ea3694ad671b104dc2e9464b2ea28661ad3319b42",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer+Discovery.swift",
+        "expected": "2883e7e57cfa770a632b4667c5bc751a802ef6a79b0a14af393f21a0479a6cc7",
+        "actual": "2883e7e57cfa770a632b4667c5bc751a802ef6a79b0a14af393f21a0479a6cc7",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticModelDownload.swift",
+        "expected": "4af3d95e57d15cf0e0c28608eeda9c5cccebc43218376bfb38b3081db7ecc557",
+        "actual": "4af3d95e57d15cf0e0c28608eeda9c5cccebc43218376bfb38b3081db7ecc557",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+SearchSchema.swift",
+        "expected": "605ad60ed3ccab054df582db2ff0cca5ebd2d3eb7093202dfa1169bdbf0cd46a",
+        "actual": "605ad60ed3ccab054df582db2ff0cca5ebd2d3eb7093202dfa1169bdbf0cd46a",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticMediaExtractor.swift",
+        "expected": "137219fcba131fb48df827f4290b692900d2633308527a7989bfe9dc183b985c",
+        "actual": "137219fcba131fb48df827f4290b692900d2633308527a7989bfe9dc183b985c",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer+Media.swift",
+        "expected": "f5d4cbca288e03fc582ccd5af6fa04885276e5955f2ff7b86ccb49f07052a8c0",
+        "actual": "f5d4cbca288e03fc582ccd5af6fa04885276e5955f2ff7b86ccb49f07052a8c0",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+VideoProgress.swift",
+        "expected": "269c25fccf216b7900f3767cd4f6f464acbeb6beb4d1ff1ec6abaf90f8308097",
+        "actual": "269c25fccf216b7900f3767cd4f6f464acbeb6beb4d1ff1ec6abaf90f8308097",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+VideoAudio.swift",
+        "expected": "2a2a380654d60c7c9f14c02381fe00a13a7845c4d1ca4776172efc6c8431fbbe",
+        "actual": "2a2a380654d60c7c9f14c02381fe00a13a7845c4d1ca4776172efc6c8431fbbe",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticAudioWindows.swift",
+        "expected": "2ee588554d0ba5236ebaa2838ab1c4fb5a2694daa0404b68de71298b8d4cf0d9",
+        "actual": "2ee588554d0ba5236ebaa2838ab1c4fb5a2694daa0404b68de71298b8d4cf0d9",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticHTMLText.swift",
+        "expected": "157b36a2b14f8b09935f39023824a60fcd6d00f88bd051427a5250f5b96b57ed",
+        "actual": "157b36a2b14f8b09935f39023824a60fcd6d00f88bd051427a5250f5b96b57ed",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSpreadsheetText.swift",
+        "expected": "7b7c789411e58296870a910e68345c37cf0be4baad33c46456f5577b4abaa593",
+        "actual": "7b7c789411e58296870a910e68345c37cf0be4baad33c46456f5577b4abaa593",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileValidator.swift",
+        "expected": "295b17587af0ecaf5de04caeb282b95548638e2b20d7d1561a7c211dd64dfc90",
+        "actual": "295b17587af0ecaf5de04caeb282b95548638e2b20d7d1561a7c211dd64dfc90",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileContentWorker.swift",
+        "expected": "e4a439cbf6d636cc7faf55bbf090ba29f2484bc41bade5e7954b1d2a5e3e05ad",
+        "actual": "e4a439cbf6d636cc7faf55bbf090ba29f2484bc41bade5e7954b1d2a5e3e05ad",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticIndexPauseGate.swift",
+        "expected": "f45443968b3d357e20163f94cb75c910e3554b0990cf0e6bc5a5aadd5537c380",
+        "actual": "f45443968b3d357e20163f94cb75c910e3554b0990cf0e6bc5a5aadd5537c380",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticWatcherDelivery.swift",
+        "expected": "ee7af88093e2c71ce094b9108236604d74ff6b9d175476e8ba3a59b8138e3521",
+        "actual": "ee7af88093e2c71ce094b9108236604d74ff6b9d175476e8ba3a59b8138e3521",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+AudioProgress.swift",
+        "expected": "61cbf9e1b43eb6e957aefdff10830441a4c24374544e9703bb0069e76efa1b12",
+        "actual": "61cbf9e1b43eb6e957aefdff10830441a4c24374544e9703bb0069e76efa1b12",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticMediaWorker.swift",
+        "expected": "d3f61c6dbac4de2c0673cbd8a99b377815587b36840d89cdc02aa6d6cd1f4da6",
+        "actual": "d3f61c6dbac4de2c0673cbd8a99b377815587b36840d89cdc02aa6d6cd1f4da6",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSettingsAuthority.swift",
+        "expected": "2015682291e6f54175dd8d539f0ec576d50bdb5052bbdfa92bbc13c227ad550d",
+        "actual": "2015682291e6f54175dd8d539f0ec576d50bdb5052bbdfa92bbc13c227ad550d",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Jobs.swift",
+        "expected": "3ad84b944ddbc324e346dccd7eaca8b770863a7ab19732dc5aa605cad359c454",
+        "actual": "3ad84b944ddbc324e346dccd7eaca8b770863a7ab19732dc5aa605cad359c454",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSQLiteCancellation.swift",
+        "expected": "9baf9e260754d3e2b2f49cf2ab157ceb390f3f4869cd6d44f5cf4ba895c685da",
+        "actual": "9baf9e260754d3e2b2f49cf2ab157ceb390f3f4869cd6d44f5cf4ba895c685da",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticIndexProgressRelay.swift",
+        "expected": "0ade465272dd595352fbaf57379a2149b392ed0a033d0b2a93775f0aa2eb80df",
+        "actual": "0ade465272dd595352fbaf57379a2149b392ed0a033d0b2a93775f0aa2eb80df",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileChangePlan.swift",
+        "expected": "c07411071681b17ce1fb35220a8b30b65104fe50ea59e6821deaf085b1428863",
+        "actual": "c07411071681b17ce1fb35220a8b30b65104fe50ea59e6821deaf085b1428863",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticEmbeddingOwnership.swift",
+        "expected": "097c3b9a15eff702b6fc7cdf99ccc42403a2b8abd4b4c06f0be2702fbb3de387",
+        "actual": "097c3b9a15eff702b6fc7cdf99ccc42403a2b8abd4b4c06f0be2702fbb3de387",
+        "match": true
+      }
+    ]
+  },
+  "audio-live/local-closure.json": {
+    "checked": 72,
+    "matches": 72,
+    "rows": [
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+SearchMaintenance.swift",
+        "expected": "3e26ba61e2e7623a84f396d018d7b211b60ebdd4c802eb622fb0e0df0016687c",
+        "actual": "3e26ba61e2e7623a84f396d018d7b211b60ebdd4c802eb622fb0e0df0016687c",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticODTText.swift",
+        "expected": "0c35230624d4c4828f8b880d80a3bda30c37967d0893423e92075b54be279126",
+        "actual": "0c35230624d4c4828f8b880d80a3bda30c37967d0893423e92075b54be279126",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticIndexDiagnostics.swift",
+        "expected": "a1bd2060e3ce80e74615649306d3d1a6ff10d8a04726b66dbd1d2831a24dbdfb",
+        "actual": "a1bd2060e3ce80e74615649306d3d1a6ff10d8a04726b66dbd1d2831a24dbdfb",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Events.swift",
+        "expected": "5f6dddd144a790317d0ec3ea7b900e27ca9eace7572373a3a7f3d7eb19aa81d1",
+        "actual": "5f6dddd144a790317d0ec3ea7b900e27ca9eace7572373a3a7f3d7eb19aa81d1",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticPresentationText.swift",
+        "expected": "7a573072474e4a028f051876aa91ef3a61fd01f21c0631cbdff8eef1c876b474",
+        "actual": "7a573072474e4a028f051876aa91ef3a61fd01f21c0631cbdff8eef1c876b474",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer+Priority.swift",
+        "expected": "e0811f6f7ed145f10db4b6148d18db501cbaa823cbcd60c22e4645ff2f76ebee",
+        "actual": "e0811f6f7ed145f10db4b6148d18db501cbaa823cbcd60c22e4645ff2f76ebee",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticWorkBudget.swift",
+        "expected": "5902cddeaf130fa6996dc0426c24cf7bd7e900686c1f00a1ddd5bc22f793ad10",
+        "actual": "5902cddeaf130fa6996dc0426c24cf7bd7e900686c1f00a1ddd5bc22f793ad10",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSearchSnippet.swift",
+        "expected": "4ee4e38752706293a10b6cc7e3f55878cc297ad4d134bd8ac6cf292de65a74a5",
+        "actual": "4ee4e38752706293a10b6cc7e3f55878cc297ad4d134bd8ac6cf292de65a74a5",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticMediaPriority.swift",
+        "expected": "192909499c301ce3a0e636922143ce95ad278e79f1ce27cd78166c57c5290922",
+        "actual": "192909499c301ce3a0e636922143ce95ad278e79f1ce27cd78166c57c5290922",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticIndexEvents.swift",
+        "expected": "3c8d09a3c1e0b041f7a855e0583cd68606f898ae6f396c4a7e18b4f0cc7d2a5c",
+        "actual": "3c8d09a3c1e0b041f7a855e0583cd68606f898ae6f396c4a7e18b4f0cc7d2a5c",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticLexicalReader.swift",
+        "expected": "325d3469677ee9280dbd23b726236fa42902e40cd369ed140e59a408f2a3cc1e",
+        "actual": "325d3469677ee9280dbd23b726236fa42902e40cd369ed140e59a408f2a3cc1e",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+        "expected": "af5c269c93c08e1563efcfd7f61782f74d7de469298f00846d85d3faaeeae1a9",
+        "actual": "af5c269c93c08e1563efcfd7f61782f74d7de469298f00846d85d3faaeeae1a9",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticDownloadState.swift",
+        "expected": "e343d1bf01928a2e1141bb60bc07963acb9ea380b58f765bc6b6c5fb941bb344",
+        "actual": "e343d1bf01928a2e1141bb60bc07963acb9ea380b58f765bc6b6c5fb941bb344",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSearchTrace.swift",
+        "expected": "f8d2daa74c114d793dffedd5aadac10d7a86a7145f5b8f57539b0324db1c8514",
+        "actual": "f8d2daa74c114d793dffedd5aadac10d7a86a7145f5b8f57539b0324db1c8514",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer.swift",
+        "expected": "3d0f41037eeb68bf0d977accdc649a1b522dfb2048d9ca9c2db23b9e5528966c",
+        "actual": "3d0f41037eeb68bf0d977accdc649a1b522dfb2048d9ca9c2db23b9e5528966c",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Discovery.swift",
+        "expected": "0c3133288372ec9070094325a20c3e322f2d152741a084c4abee1b331bcc8286",
+        "actual": "0c3133288372ec9070094325a20c3e322f2d152741a084c4abee1b331bcc8286",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer+Document.swift",
+        "expected": "cae7f101b098f21f1bdd7e94d089eb357c0889a117127732b109dc733f03dfa0",
+        "actual": "cae7f101b098f21f1bdd7e94d089eb357c0889a117127732b109dc733f03dfa0",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Totals.swift",
+        "expected": "5932028a0396eeaac565d40b38e68de1621674db98083e892299593925bc89fe",
+        "actual": "5932028a0396eeaac565d40b38e68de1621674db98083e892299593925bc89fe",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticVideoFrames.swift",
+        "expected": "f825508e225a593fedcd33b0dbdd8f1a67f2f5fada063fa09d14a7d173c310fb",
+        "actual": "f825508e225a593fedcd33b0dbdd8f1a67f2f5fada063fa09d14a7d173c310fb",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+MediaJobs.swift",
+        "expected": "4fcff59f24c84ec6cd48033286d0be7cc7c0b9f17ffb5bc94ba62bbd29a62c19",
+        "actual": "4fcff59f24c84ec6cd48033286d0be7cc7c0b9f17ffb5bc94ba62bbd29a62c19",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileReaders.swift",
+        "expected": "70d8c341a260be6681e17e999fc25fb85855082825bc93dcff664f14a67a3eb3",
+        "actual": "70d8c341a260be6681e17e999fc25fb85855082825bc93dcff664f14a67a3eb3",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticDownloadProgressDelivery.swift",
+        "expected": "b6926ffae85314b895f3a09e9d0786fb5ded01fc420c174681105db320ce0ac9",
+        "actual": "b6926ffae85314b895f3a09e9d0786fb5ded01fc420c174681105db320ce0ac9",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticScoreCalibration.swift",
+        "expected": "4202dd6b2d9fea677ae972c4cfc54d4051e778ee33afa1fe8e391b38417b8ecb",
+        "actual": "4202dd6b2d9fea677ae972c4cfc54d4051e778ee33afa1fe8e391b38417b8ecb",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticRTFText.swift",
+        "expected": "5b700e73b8dc922a7a3a5ad775bef1619a482af96d672c6d8d9279dd18c2e40f",
+        "actual": "5b700e73b8dc922a7a3a5ad775bef1619a482af96d672c6d8d9279dd18c2e40f",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticImageText.swift",
+        "expected": "4c5e762158097b4e54f45b0522b6031e80d24c34ff17923a1a77a0b4a2c855b5",
+        "actual": "4c5e762158097b4e54f45b0522b6031e80d24c34ff17923a1a77a0b4a2c855b5",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticPDFText.swift",
+        "expected": "e399708e7c6361f6daa3f285c87d04ef3d29ad0a0ce75fbf151aed53e467ae0d",
+        "actual": "e399708e7c6361f6daa3f285c87d04ef3d29ad0a0ce75fbf151aed53e467ae0d",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFilePolicy.swift",
+        "expected": "f0e1d9d05da01c8830cc8ca176b584b02eceafc8237f5d54fba9f7295e82948e",
+        "actual": "f0e1d9d05da01c8830cc8ca176b584b02eceafc8237f5d54fba9f7295e82948e",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticIndexProgressDelivery.swift",
+        "expected": "1cd19c2b02dfd6884be7a483237a4f80b127d99c816c8c8f15a1a9392c87a4c0",
+        "actual": "1cd19c2b02dfd6884be7a483237a4f80b127d99c816c8c8f15a1a9392c87a4c0",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticDocumentZIP.swift",
+        "expected": "f36f20688c0bf0b4bae88dc03a6fd7aa2f03f932ba2b1908bc035a29a063c563",
+        "actual": "f36f20688c0bf0b4bae88dc03a6fd7aa2f03f932ba2b1908bc035a29a063c563",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+ProcessingDetails.swift",
+        "expected": "c6fa39a1b866c0e1c083050bde32d09707955da29821757170c46451d7fc5932",
+        "actual": "c6fa39a1b866c0e1c083050bde32d09707955da29821757170c46451d7fc5932",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticWordText.swift",
+        "expected": "7dcfa9733a79b9bafc0bc76ea3694ad671b104dc2e9464b2ea28661ad3319b42",
+        "actual": "7dcfa9733a79b9bafc0bc76ea3694ad671b104dc2e9464b2ea28661ad3319b42",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer+Discovery.swift",
+        "expected": "2883e7e57cfa770a632b4667c5bc751a802ef6a79b0a14af393f21a0479a6cc7",
+        "actual": "2883e7e57cfa770a632b4667c5bc751a802ef6a79b0a14af393f21a0479a6cc7",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticEmbeddingWorker.swift",
+        "expected": "e5fdce8f4f4dcbb27bb52c279c641b547cde1d523321f7251144e5425ceed0f5",
+        "actual": "e5fdce8f4f4dcbb27bb52c279c641b547cde1d523321f7251144e5425ceed0f5",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+ImageText.swift",
+        "expected": "47a14d48c2afccc22d3339eb07858d62bfe9307b949902450f8e45e5db5b81e8",
+        "actual": "47a14d48c2afccc22d3339eb07858d62bfe9307b949902450f8e45e5db5b81e8",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticModelDownload.swift",
+        "expected": "4af3d95e57d15cf0e0c28608eeda9c5cccebc43218376bfb38b3081db7ecc557",
+        "actual": "4af3d95e57d15cf0e0c28608eeda9c5cccebc43218376bfb38b3081db7ecc557",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+SearchSchema.swift",
+        "expected": "605ad60ed3ccab054df582db2ff0cca5ebd2d3eb7093202dfa1169bdbf0cd46a",
+        "actual": "605ad60ed3ccab054df582db2ff0cca5ebd2d3eb7093202dfa1169bdbf0cd46a",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticMediaExtractor.swift",
+        "expected": "137219fcba131fb48df827f4290b692900d2633308527a7989bfe9dc183b985c",
+        "actual": "137219fcba131fb48df827f4290b692900d2633308527a7989bfe9dc183b985c",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSearchRanking.swift",
+        "expected": "4b9c1a4fdd22bce1c041cf4305f07bc840d0883653d664a0ebb0ee1e385db21d",
+        "actual": "4b9c1a4fdd22bce1c041cf4305f07bc840d0883653d664a0ebb0ee1e385db21d",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer+Media.swift",
+        "expected": "f5d4cbca288e03fc582ccd5af6fa04885276e5955f2ff7b86ccb49f07052a8c0",
+        "actual": "f5d4cbca288e03fc582ccd5af6fa04885276e5955f2ff7b86ccb49f07052a8c0",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+VideoProgress.swift",
+        "expected": "269c25fccf216b7900f3767cd4f6f464acbeb6beb4d1ff1ec6abaf90f8308097",
+        "actual": "269c25fccf216b7900f3767cd4f6f464acbeb6beb4d1ff1ec6abaf90f8308097",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+VideoAudio.swift",
+        "expected": "2a2a380654d60c7c9f14c02381fe00a13a7845c4d1ca4776172efc6c8431fbbe",
+        "actual": "2a2a380654d60c7c9f14c02381fe00a13a7845c4d1ca4776172efc6c8431fbbe",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticAudioWindows.swift",
+        "expected": "2ee588554d0ba5236ebaa2838ab1c4fb5a2694daa0404b68de71298b8d4cf0d9",
+        "actual": "2ee588554d0ba5236ebaa2838ab1c4fb5a2694daa0404b68de71298b8d4cf0d9",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticHTMLText.swift",
+        "expected": "157b36a2b14f8b09935f39023824a60fcd6d00f88bd051427a5250f5b96b57ed",
+        "actual": "157b36a2b14f8b09935f39023824a60fcd6d00f88bd051427a5250f5b96b57ed",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSpreadsheetText.swift",
+        "expected": "7b7c789411e58296870a910e68345c37cf0be4baad33c46456f5577b4abaa593",
+        "actual": "7b7c789411e58296870a910e68345c37cf0be4baad33c46456f5577b4abaa593",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileValidator.swift",
+        "expected": "295b17587af0ecaf5de04caeb282b95548638e2b20d7d1561a7c211dd64dfc90",
+        "actual": "295b17587af0ecaf5de04caeb282b95548638e2b20d7d1561a7c211dd64dfc90",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileContentWorker.swift",
+        "expected": "e4a439cbf6d636cc7faf55bbf090ba29f2484bc41bade5e7954b1d2a5e3e05ad",
+        "actual": "e4a439cbf6d636cc7faf55bbf090ba29f2484bc41bade5e7954b1d2a5e3e05ad",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticIndexPauseGate.swift",
+        "expected": "f45443968b3d357e20163f94cb75c910e3554b0990cf0e6bc5a5aadd5537c380",
+        "actual": "f45443968b3d357e20163f94cb75c910e3554b0990cf0e6bc5a5aadd5537c380",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticWatcherDelivery.swift",
+        "expected": "ee7af88093e2c71ce094b9108236604d74ff6b9d175476e8ba3a59b8138e3521",
+        "actual": "ee7af88093e2c71ce094b9108236604d74ff6b9d175476e8ba3a59b8138e3521",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+AudioProgress.swift",
+        "expected": "61cbf9e1b43eb6e957aefdff10830441a4c24374544e9703bb0069e76efa1b12",
+        "actual": "61cbf9e1b43eb6e957aefdff10830441a4c24374544e9703bb0069e76efa1b12",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticMediaWorker.swift",
+        "expected": "d3f61c6dbac4de2c0673cbd8a99b377815587b36840d89cdc02aa6d6cd1f4da6",
+        "actual": "d3f61c6dbac4de2c0673cbd8a99b377815587b36840d89cdc02aa6d6cd1f4da6",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSettingsAuthority.swift",
+        "expected": "2015682291e6f54175dd8d539f0ec576d50bdb5052bbdfa92bbc13c227ad550d",
+        "actual": "2015682291e6f54175dd8d539f0ec576d50bdb5052bbdfa92bbc13c227ad550d",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Jobs.swift",
+        "expected": "3ad84b944ddbc324e346dccd7eaca8b770863a7ab19732dc5aa605cad359c454",
+        "actual": "3ad84b944ddbc324e346dccd7eaca8b770863a7ab19732dc5aa605cad359c454",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSQLiteCancellation.swift",
+        "expected": "9baf9e260754d3e2b2f49cf2ab157ceb390f3f4869cd6d44f5cf4ba895c685da",
+        "actual": "9baf9e260754d3e2b2f49cf2ab157ceb390f3f4869cd6d44f5cf4ba895c685da",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticIndexProgressRelay.swift",
+        "expected": "0ade465272dd595352fbaf57379a2149b392ed0a033d0b2a93775f0aa2eb80df",
+        "actual": "0ade465272dd595352fbaf57379a2149b392ed0a033d0b2a93775f0aa2eb80df",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore.swift",
+        "expected": "6932cb190686224dc4e1f7304947e57e4e29c4ec406f3681c17f76f66372b897",
+        "actual": "6932cb190686224dc4e1f7304947e57e4e29c4ec406f3681c17f76f66372b897",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileChangePlan.swift",
+        "expected": "c07411071681b17ce1fb35220a8b30b65104fe50ea59e6821deaf085b1428863",
+        "actual": "c07411071681b17ce1fb35220a8b30b65104fe50ea59e6821deaf085b1428863",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticEmbeddingOwnership.swift",
+        "expected": "097c3b9a15eff702b6fc7cdf99ccc42403a2b8abd4b4c06f0be2702fbb3de387",
+        "actual": "097c3b9a15eff702b6fc7cdf99ccc42403a2b8abd4b4c06f0be2702fbb3de387",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Files/AskFileSearch.swift",
+        "expected": "85dee912bc0d43c76c66ee47c9be8166aeeefb7db359cde26c425aac4140a918",
+        "actual": "85dee912bc0d43c76c66ee47c9be8166aeeefb7db359cde26c425aac4140a918",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Files/AskFileReaderOwnership.swift",
+        "expected": "96fb73d585e95ff5efdcf65945bd2ca0552c74cceab4274ded5c039446ca8e59",
+        "actual": "96fb73d585e95ff5efdcf65945bd2ca0552c74cceab4274ded5c039446ca8e59",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Files/AskDirectorySession.swift",
+        "expected": "439c826c4aab5d96947f79d7df07e3d52ed207fc74e0482c92952acb1c023538",
+        "actual": "439c826c4aab5d96947f79d7df07e3d52ed207fc74e0482c92952acb1c023538",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Files/AskFileSearchCandidates.swift",
+        "expected": "a671addda9a599f506b0602bb76c34ce9d3480c4c506911e93df1a2816a2c11d",
+        "actual": "a671addda9a599f506b0602bb76c34ce9d3480c4c506911e93df1a2816a2c11d",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Files/AskFileCrawler.swift",
+        "expected": "8bd902f54b97b5b3d6c474ad00d325ec9d4f365df131719c7eed88e3ccde0254",
+        "actual": "8bd902f54b97b5b3d6c474ad00d325ec9d4f365df131719c7eed88e3ccde0254",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Files/AskFileWatcher.swift",
+        "expected": "485805df7a0c5b6374c66f7cc4b0bde6cf350cf4b16636f2b69bb48114d853d0",
+        "actual": "485805df7a0c5b6374c66f7cc4b0bde6cf350cf4b16636f2b69bb48114d853d0",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Files/AskFileLabels.swift",
+        "expected": "a30d267f933aa7dc24329876841c849dd340d5f771a26a0e84985769404c635a",
+        "actual": "a30d267f933aa7dc24329876841c849dd340d5f771a26a0e84985769404c635a",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Files/AskFileScope.swift",
+        "expected": "8f2b8800e7b07c2711fd9b93b500d5ef979c14151710bfd5f13d6cbace2c8ec6",
+        "actual": "8f2b8800e7b07c2711fd9b93b500d5ef979c14151710bfd5f13d6cbace2c8ec6",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Files/AskFileWorkerCommand.swift",
+        "expected": "28fddadd36765c9c4a6734486f841d0fd021303cfa3ae3e969353998373f0e93",
+        "actual": "28fddadd36765c9c4a6734486f841d0fd021303cfa3ae3e969353998373f0e93",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Files/AskFileLocationActions.swift",
+        "expected": "0795c7df46d0c753fb4c1c8555ec4d0189017d5bfd55ad07ca5e79d114e9b4fc",
+        "actual": "0795c7df46d0c753fb4c1c8555ec4d0189017d5bfd55ad07ca5e79d114e9b4fc",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Files/AskFileType.swift",
+        "expected": "c802e2bee65f466eaa5620bf30c9b69b48b7018d84bfb454d3fb76dc27ff3f6d",
+        "actual": "c802e2bee65f466eaa5620bf30c9b69b48b7018d84bfb454d3fb76dc27ff3f6d",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Files/AskFileMounts.swift",
+        "expected": "1767bb63566217c2b47148d555346ff0af2dd63e669a47485cdce70813d17019",
+        "actual": "1767bb63566217c2b47148d555346ff0af2dd63e669a47485cdce70813d17019",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Files/AskFileIndexState.swift",
+        "expected": "349e156ce730bb0b0dc2c0ede02e64bf1c094a33d284178155527d26a77f5dd0",
+        "actual": "349e156ce730bb0b0dc2c0ede02e64bf1c094a33d284178155527d26a77f5dd0",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Files/AskFileSnapshot.swift",
+        "expected": "43839bd9c538dbd1c407c2d82409beaaaa02d1df50c069647b89acf3ab4db79a",
+        "actual": "43839bd9c538dbd1c407c2d82409beaaaa02d1df50c069647b89acf3ab4db79a",
+        "match": true
+      },
+      {
+        "file": "Sources/Typeflux/Ask/QuickResults/Files/AskFileReader.swift",
+        "expected": "4c0efcad2007a9517873f3a08a921c08bb6c0b8024234d58b86e7add51dbbea4",
+        "actual": "4c0efcad2007a9517873f3a08a921c08bb6c0b8024234d58b86e7add51dbbea4",
+        "match": true
+      }
+    ]
+  }
+}

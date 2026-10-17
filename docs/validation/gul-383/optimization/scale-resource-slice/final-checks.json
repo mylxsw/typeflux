@@ -1,0 +1,19 @@
+{
+  "native_observations": 24,
+  "expected_observations": 24,
+  "groups": 8,
+  "native_cancellation_entries": 2,
+  "matched_independent_events": 302,
+  "effective_vectors": 321,
+  "python_syntax": "pass",
+  "git_diff_check": "pass",
+  "cleanup": "no exact task product processes",
+  "production_change_denominators": {
+    "application": "0/0 N/A",
+    "file_worker": "0/0 N/A",
+    "native_semantic_helper": "0/0 N/A",
+    "runtime": "0/0 N/A"
+  },
+  "wall_seconds": 0.06687062501441687,
+  "artifact_review": "Staged diff caught CSV CRLF as trailing whitespace; normalized line endings and fixed writer, values unchanged."
+}

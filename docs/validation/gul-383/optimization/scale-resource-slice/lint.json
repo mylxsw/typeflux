@@ -1,0 +1,13 @@
+{
+  "command": [
+    "swiftlint",
+    "lint",
+    "--quiet",
+    "Tests/TypefluxTests/AskConversationTests.swift",
+    "Tests/TypefluxTests/SemanticNativeLatencyTests.swift",
+    "Tests/TypefluxTests/SemanticNativeContentionTests.swift",
+    "Tests/TypefluxTests/SemanticResourceBudgetTests.swift"
+  ],
+  "exit_code": 2,
+  "wall_seconds": 0.4927970829885453
+}

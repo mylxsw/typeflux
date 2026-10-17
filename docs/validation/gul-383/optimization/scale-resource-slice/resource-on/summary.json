@@ -1,0 +1,246 @@
+{
+  "scope": "Sequential OFF/ON phases; measured durations are reported per condition. Observed CPU and per-process physical IO are lower bounds from adjacent samples of identical PID/start-time; first/last intervals and processes entirely between samples are missed. CPU 100% means one core, not machine capacity. RSS sums shared pages; footprint sums are not exact unique machine RAM. Global IOAccelerator GPU counters include other applications. External compiler/test process presence and adjacent cumulative CPU deltas are separate; nearest-sample overlap is not causal attribution. Own-window ScreenCaptureKit displayTime is a WindowServer observation, not physical HID/monitor scanout or search-result rendering. No privileged watts/energy data. Missing values remain null.",
+  "phases": [
+    {
+      "condition": "index-on",
+      "wall_seconds": 303.02656000002753,
+      "samples": 146,
+      "per_kind": {
+        "keyboard": {
+          "n": 100,
+          "missing_handler": 0,
+          "missing_windowserver": 0,
+          "invalid_handler_context": 0,
+          "windowserver_ms": {
+            "0.5": 16.833291621878743,
+            "0.95": 19.640124985016882,
+            "0.99": 20.14079166110605,
+            "1": 20.14079166110605
+          },
+          "handler_ms": {
+            "0.5": 0.6511249812319875,
+            "0.95": 4.909750074148178,
+            "0.99": 6.243041600100696,
+            "1": 6.243041600100696
+          },
+          "producer_delay_ms": {
+            "0.5": 0.1633750507608056,
+            "0.95": 1.081541646271944,
+            "0.99": 1.0889583500102162,
+            "1": 1.0889583500102162
+          }
+        },
+        "mouse": {
+          "n": 101,
+          "missing_handler": 0,
+          "missing_windowserver": 0,
+          "invalid_handler_context": 0,
+          "windowserver_ms": {
+            "0.5": 16.342458315193653,
+            "0.95": 32.00099989771843,
+            "0.99": 81.70162490569055,
+            "1": 166.56066675204784
+          },
+          "handler_ms": {
+            "0.5": 6.788874976336956,
+            "0.95": 11.831708252429962,
+            "0.99": 63.90649999957532,
+            "1": 145.31266666017473
+          },
+          "producer_delay_ms": {
+            "0.5": 1.0871667182072997,
+            "0.95": 1.0950000723823905,
+            "0.99": 1.0993333999067545,
+            "1": 1.2005000608041883
+          }
+        },
+        "window": {
+          "n": 101,
+          "missing_handler": 0,
+          "missing_windowserver": 0,
+          "invalid_handler_context": 0,
+          "windowserver_ms": {
+            "0.5": 20.178791601210833,
+            "0.95": 24.170291610062122,
+            "0.99": 24.537416640669107,
+            "1": 39.04812503606081
+          },
+          "handler_ms": {
+            "0.5": 1.386291696690023,
+            "0.95": 5.608791718259454,
+            "0.99": 6.64145837072283,
+            "1": 11.663999990560114
+          },
+          "producer_delay_ms": {
+            "0.5": 1.0857500601559877,
+            "0.95": 1.0929583804681897,
+            "0.99": 1.0973750613629818,
+            "1": 1.0973750613629818
+          }
+        }
+      },
+      "per_process": {
+        "Python": {
+          "peak_rss_bytes": 107823104,
+          "available_rusage_samples": 146.0,
+          "peak_footprint_bytes": 96682440,
+          "observed_cpu_user_ns": 0.0,
+          "observed_cpu_system_ns": 0.0,
+          "observed_disk_read_bytes": 0.0,
+          "observed_disk_written_bytes": 0.0,
+          "observed_pageins": 0.0
+        },
+        "swiftpm-testing-helper": {
+          "peak_rss_bytes": 390430720,
+          "available_rusage_samples": 146.0,
+          "peak_footprint_bytes": 193184968,
+          "observed_cpu_user_ns": 1052192541.0,
+          "observed_cpu_system_ns": 920792083.0,
+          "observed_disk_read_bytes": 917504.0,
+          "observed_disk_written_bytes": 18505728.0,
+          "observed_pageins": 0.0
+        },
+        "SemanticNativeResponseProbe": {
+          "peak_rss_bytes": 83050496,
+          "available_rusage_samples": 146.0,
+          "peak_footprint_bytes": 82428792,
+          "observed_cpu_user_ns": 854141917.0,
+          "observed_cpu_system_ns": 346062750.0,
+          "observed_disk_read_bytes": 2027520.0,
+          "observed_disk_written_bytes": 6930432.0,
+          "observed_pageins": 55.0
+        },
+        "Typeflux": {
+          "peak_rss_bytes": 22216704,
+          "available_rusage_samples": 146.0,
+          "peak_footprint_bytes": 3899944,
+          "observed_cpu_user_ns": 143884041.0,
+          "observed_cpu_system_ns": 83401584.0,
+          "observed_disk_read_bytes": 253952.0,
+          "observed_disk_written_bytes": 0.0,
+          "observed_pageins": 153.0
+        },
+        "TypefluxSemanticHelper": {
+          "peak_rss_bytes": 641171456,
+          "available_rusage_samples": 142.0,
+          "peak_footprint_bytes": 340722648,
+          "observed_cpu_user_ns": 57605885706.0,
+          "observed_cpu_system_ns": 860132337.0,
+          "observed_disk_read_bytes": 0.0,
+          "observed_disk_written_bytes": 0.0,
+          "observed_pageins": 52.0
+        },
+        "<defunct>": {
+          "peak_rss_bytes": 0.0,
+          "unavailable_rusage_samples": 2.0
+        },
+        "(TypefluxSemantic)": {
+          "peak_rss_bytes": 0.0,
+          "available_rusage_samples": 1.0,
+          "peak_footprint_bytes": 0.0,
+          "observed_cpu_user_ns": 1055758375.0,
+          "observed_cpu_system_ns": 2775583.0,
+          "observed_disk_read_bytes": 0.0,
+          "observed_disk_written_bytes": 0.0,
+          "observed_pageins": 0.0
+        }
+      },
+      "observed_cpu_seconds": 62.925026917,
+      "observed_mean_cpu_core_percent": 20.765515378254065,
+      "cpu_core_percent": {
+        "0.5": 1.2378625392797995,
+        "0.95": 52.03635844075025,
+        "0.99": 52.32214430088826,
+        "1": 52.402393589994354
+      },
+      "owned_sum_rss_bytes": {
+        "0.5": 1230225408,
+        "0.95": 1236631552,
+        "0.99": 1241268224,
+        "1": 1242251264
+      },
+      "owned_sum_footprint_bytes": {
+        "0.5": 579276808,
+        "0.95": 708808712,
+        "0.99": 713674736,
+        "1": 714330096
+      },
+      "embedding_helpers_sum_rss_bytes": {
+        "0.5": 639303680,
+        "0.95": 639664128,
+        "0.99": 640532480,
+        "1": 641171456
+      },
+      "embedding_helpers_sum_footprint_bytes": {
+        "0.5": 338854824,
+        "0.95": 339215320,
+        "0.99": 340100080,
+        "1": 340722648
+      },
+      "external_process_present_samples": 0,
+      "external_observed_cpu_core_percent": {
+        "0.5": 0,
+        "0.95": 0,
+        "0.99": 0,
+        "1": 0
+      },
+      "swap_mb": {
+        "first": 5361.38,
+        "last": 5172.75,
+        "minimum": 5172.75,
+        "maximum": 5361.38
+      },
+      "pressure_values": [
+        "kern.memorystatus_vm_pressure_level: 1"
+      ],
+      "thermal_values": [
+        "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded"
+      ],
+      "process_info_thermal_states": [
+        0
+      ],
+      "global_gpu_percent": {
+        "0.5": 1,
+        "0.95": 1,
+        "0.99": 7,
+        "1": 7
+      },
+      "inputs_over_100ms": [
+        {
+          "id": 10,
+          "kind": "mouse",
+          "windowserver_ms": 166.56066675204784,
+          "seconds": 9.996247053146362,
+          "nearest_sample_offset_seconds": -0.9972670078277588,
+          "external_process_present": false,
+          "observed_external_cpu_core_percent": 0
+        }
+      ],
+      "published": {
+        "audio": 0,
+        "chunks": 334,
+        "documents": 10,
+        "images": 0,
+        "videos": 0
+      },
+      "database": {
+        "jobs_done": 8,
+        "jobs_failed": 0,
+        "jobs_partial": 2,
+        "jobs_pending": 0,
+        "largest_document_bytes": 3840014,
+        "pending_vectors": 13,
+        "published_vectors": 321,
+        "queued_audio": 0,
+        "queued_documents": 2,
+        "queued_images": 0,
+        "queued_video": 0,
+        "saved_media_segments": 0,
+        "subtree_requests": 0
+      },
+      "effective_vectors_per_second": 1.059313084635125,
+      "completed_jobs_per_second": 0.02640032609682555,
+      "supplied_files": 10
+    }
+  ]
+}

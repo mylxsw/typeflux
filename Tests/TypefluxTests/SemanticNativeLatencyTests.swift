@@ -5,6 +5,14 @@ import SwiftUI
 import Testing
 @testable import Typeflux
 
+/// A process-local home prevents the shared icon cache from touching real app caches.
+@MainActor
+func requireSemanticValidationCacheIsolation() throws {
+    guard let privateRoot = ProcessInfo.processInfo.environment["TYPEFLUX_VALIDATION_PRIVATE_ROOT"] else { return }
+    let cache = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+    try #require(cache.path.hasPrefix(privateRoot + "/"), "Foundation cache isolation failed")
+}
+
 @Suite("Native composer semantic latency", .serialized, .exclusiveUIState)
 @MainActor
 struct SemanticNativeLatencyTests {
@@ -19,6 +27,7 @@ struct SemanticNativeLatencyTests {
 extension SemanticNativeLatencyTests {
     @Test func `measure committed native input to body publication and drawing when requested`() async throws {
         guard let model = ProcessInfo.processInfo.environment["TYPEFLUX_SEMANTIC_NATIVE_BENCH_MODEL"] else { return }
+        try requireSemanticValidationCacheIsolation()
         _ = NSApplication.shared
         let attribute = NSAccessibility.Attribute(rawValue: "AXEnhancedUserInterface")
         let previous = NSApp.accessibilityAttributeValue(attribute)
@@ -29,14 +38,17 @@ extension SemanticNativeLatencyTests {
         var timerGap = 0.0
         let environment = ProcessInfo.processInfo.environment
         let largeScale = environment["TYPEFLUX_SEMANTIC_SCALE"] == "1000000"
-        let warmSamples = largeScale ? 20 : 100
+        let warmSamples = Int(ProcessInfo.processInfo.environment["TYPEFLUX_SEMANTIC_SHORT_SAMPLES"] ?? "")
+            ?? (largeScale ? 20 : 100)
+        try #require((1 ... 100).contains(warmSamples))
         let selectedEntry = environment["TYPEFLUX_SEMANTIC_ENTRY"]
         let selectedScenario = environment["TYPEFLUX_SEMANTIC_SCENARIO"]
         let scenarios = ["cold", "fts-cache", "semantic-cache", "hot-new-semantic", "index-writer"]
         try #require(try selectedEntry == nil || ["mixed", "file-mode"].contains(#require(selectedEntry)))
-        let availableScenarios = scenarios + ["cold-fts"]
+        let availableScenarios = scenarios + ["cold-fts", "short-hot"]
         try #require(try selectedScenario == nil || availableScenarios.contains(#require(selectedScenario)))
-        let selectedScenarios = selectedScenario.map { [$0] } ?? scenarios
+        let selectedScenarios = selectedScenario == "short-hot" ? ["fts-cache", "hot-new-semantic"]
+            : selectedScenario.map { [$0] } ?? scenarios
         let suffix = environment["TYPEFLUX_SEMANTIC_TAG"].map { "-" + $0 } ?? ""
         let output = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
             .deletingLastPathComponent().appendingPathComponent(
@@ -86,7 +98,7 @@ extension SemanticNativeLatencyTests {
                 if environment["TYPEFLUX_SEMANTIC_DENY_DOCUMENT"] == "1" {
                     try FileManager.default.setAttributes([.posixPermissions: 0], ofItemAtPath: data.document.path)
                 }
-                let fixture = try AskTestFixture(authenticated: false)
+                let fixture = try AskTestFixture(authenticated: false, defaults: data.defaults)
                 let diagnostic = environment["TYPEFLUX_SEMANTIC_TRACE"] == "1"
                     ? SemanticNativeTraceService(service: data.service) : nil
                 if let diagnostic {

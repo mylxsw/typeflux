@@ -110,11 +110,13 @@ struct SemanticResourceBudgetTests {
               let probePath = env["TYPEFLUX_RESOURCE_PROBE"] else { return }
         let duration = Double(env["TYPEFLUX_RESOURCE_SECONDS"] ?? "300") ?? 300
         try #require(duration.isFinite && duration >= 300, "short resource evidence requires at least five minutes per condition")
+        try requireSemanticValidationCacheIsolation()
         _ = NSApplication.shared
         let root = try semanticFixture(), assets = root.appendingPathComponent("assets")
         try FileManager.default.createDirectory(at: assets, withIntermediateDirectories: true)
         defer { try? FileManager.default.removeItem(at: root) }
-        try await templates(assets)
+        let textOnly = env["TYPEFLUX_RESOURCE_TEXT_ONLY"] == "1"
+        if !textOnly { try await templates(assets) }
         let selectedCondition = env["TYPEFLUX_RESOURCE_CONDITION"]
         try #require(selectedCondition == nil || selectedCondition == "on" || selectedCondition == "off")
         let conditions = [false, true].filter {
@@ -131,10 +133,12 @@ struct SemanticResourceBudgetTests {
                 at: URL(fileURLWithPath: model),
                 to: state.appendingPathComponent("embeddinggemma-2-Q8_0.gguf")
             )
-            try FileManager.default.linkItem(
-                at: URL(fileURLWithPath: projector),
-                to: state.appendingPathComponent(SemanticMediaModel.name)
-            )
+            if !textOnly {
+                try FileManager.default.linkItem(
+                    at: URL(fileURLWithPath: projector),
+                    to: state.appendingPathComponent(SemanticMediaModel.name)
+                )
+            }
             let suite = "budget-reference-" + UUID().uuidString, defaults = try #require(UserDefaults(suiteName: suite))
             defer { defaults.removePersistentDomain(forName: suite) }
             let settings = SettingsStore(defaults: defaults)
@@ -195,7 +199,8 @@ struct SemanticResourceBudgetTests {
                                 atomically: true,
                                 encoding: .utf8
                             )
-                        for (source, ext) in [("image.png", "png"), ("speech.wav", "wav"), ("video.mov", "mov")] {
+                        for (source, ext) in (textOnly ? [] : [("image.png", "png"), ("speech.wav", "wav"),
+                                                            ("video.mov", "mov")]) {
                             try FileManager.default.copyItem(
                                 at: assets.appendingPathComponent(source),
                                 to: corpus.appendingPathComponent("media-\(number)." + ext)
@@ -204,7 +209,7 @@ struct SemanticResourceBudgetTests {
                         supplied += 1; nextFile += 30
                         try progress.append([
                             "seconds": now - started,
-                            "supplied_files": supplied * 4,
+                            "supplied_files": supplied * (textOnly ? 1 : 4),
                             "published_files": service.files,
                             "published_chunks": service.chunks,
                             "thermal": ProcessInfo.processInfo.thermalState.rawValue,
@@ -236,8 +241,16 @@ struct SemanticResourceBudgetTests {
                     "response_probe": nativeReport,
                     "inputs": nativeReport["inputs"] ?? [],
                     "progress": progress,
-                    "supplied_files": supplied * 4,
-                    "workload": "Four actual files every thirty seconds: text, PNG, generated speech WAV, generated MOV. First text file repeats 80000 paragraphs; later texts repeat 500. Four generated templates are reused; this is a controlled sustained workload, not a 27000-file representative corpus.",
+                    "supplied_files": supplied * (textOnly ? 1 : 4),
+                    "text_only": textOnly,
+                    "workload": textOnly ? """
+                    One actual text file every thirty seconds; first repeats 80000 paragraphs, later texts 500.
+                    Prior media observations reused; no new media claim.
+                    """ : """
+                    Four actual files every thirty seconds: text, PNG, generated speech WAV, generated MOV.
+                    First text file repeats 80000 paragraphs; later texts repeat 500. Four generated templates
+                    are reused; this is a controlled sustained workload, not a 27000-file representative corpus.
+                    """,
                     "final_database_snapshot": snapshot,
                     "final_diagnostics": service.diagnostics.map {
                         try JSONSerialization.jsonObject(with: JSONEncoder().encode($0))
