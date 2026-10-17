@@ -1,0 +1,13 @@
+{
+  "command": [
+    "python3",
+    "-m",
+    "unittest",
+    "test_analysis.DiagnosisTests.test_persisted_bytes_and_quantization_do_not_explain_rejection",
+    "-v"
+  ],
+  "PYTHONPATH": "<evidence-directory>",
+  "wall_seconds": 0.10114779195282608,
+  "exit_code": 0,
+  "scope": "One affected readback method after explicit immutable read-only SQLite lifetime fix"
+}

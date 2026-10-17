@@ -1,7 +1,7 @@
 {
-  "README.md": "fb326dfb37ddf228175480920baea1b0efafa01d7a4d3b5fb96e7904826c1198",
+  "README.md": "5626bcf3cc5d76235603c21e76717999f2ca5f8cbf84cb612531876235234574",
   "analysis.json": "d84284a35020bc8ed00d462f0c7af6399d40318c39dbe21c8d612e2cfdff6558",
-  "analyze.py": "8a6846b9fb75081cea7309347168ce640f4dd1897c2dbd7ef1c1c60e7b86d3dd",
+  "analyze.py": "1f4f5a45fc07be864f624608d5fa0dfa2bd3c5463a9dbc3bc52f6673ac34efc0",
   "archive-validation.json": "7470194554af0ed2b2a52c29ed3107cbe07af3fbb37467a7b60280b1750e7345",
   "binary-retention.json": "2b05986a64bfb56b66108ac34390d9b1993aea50a9353810f29f7d81743e5941",
   "build.json": "7584cdb3270246dcd6f8652d4d916113dadbb2f54c108376019e804d155987b6",
@@ -25,8 +25,6 @@
   "fixed-capture/runtime.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "fixed-capture/sample-command.json": "a1eb81afe8eff490f345d97b0e859083753e0d85e63a67036f6596ff6406315a",
   "fixed-capture/synthetic.sqlite": "5436bfd63eae8ff4ccddaffd2482a3e77b16817070d2d3750020d178c25ef3d6",
-  "fixed-capture/synthetic.sqlite-shm": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb",
-  "fixed-capture/synthetic.sqlite-wal": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "fixed-capture/trace.jsonl": "a447b59920804deb0b91795ad083251e98d06143ba9a8575ca909fce39c2e64a",
   "link.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "media_probe.swift": "04e6167dab8367807b3efd232348a4db2574f57cb1611575c5aba9bee01be9b5",
@@ -55,10 +53,12 @@
   "replay-link.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "reused-source-hashes.json": "c70a3208ceb45129f0a7e56d891337c36fa71fc064b61276684723dabedb6b35",
   "run_capture.py": "d959fffdb7ef1f87ca0f550ce43571168fae990e98235cc93262d003610493eb",
-  "self-review.json": "1efee37a46b7e5de8ea3249e70832637191726727347511c56a70e0977de03e2",
+  "self-review.json": "333a82a0d25fc4c875c55a731e8629b4e2e539f2f072a921cb81664dace78d2d",
   "test_analysis.py": "7c94be49371a0681b46f91a498ba0c1a4e0e66f35bb7ed74b43a6143d2ae38cd",
   "tests-ordering.log": "2ff3381e791a80d7c756e2d75a17bd1fcb807272087037a6715ab947b3a56bc5",
+  "tests-readonly.log": "e80ec1a12bf006b23db7740fdf5d8e2d39e3844d436842fa1b2e466f4ad59bee",
   "tests.log": "08a8fe45d66c436cde55753bc3acde80faf0a3d773bb5cbb15e028d97a9709a2",
   "validation-ordering.json": "b53930793cd2a8b2341166e913454ba68aa0d1a496ad3b88ddf95a1e563ef0f5",
+  "validation-readonly.json": "91c7a14c5f71f648d92f5ecd751b53bc628fde8bd45d991a0387165989a447a3",
   "validation.json": "235a71f085be6ae1a350da04386e779acc88efd6013a93ddeabd15c36cb3cb16"
 }

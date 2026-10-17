@@ -1,4 +1,5 @@
 """Recompute retained real-vector diagnostics without a model, process, or threshold change."""
+from contextlib import closing
 import json
 import math
 from pathlib import Path
@@ -24,7 +25,7 @@ def analyze(here):
     query = list(struct.unpack('<768f', struct.pack('<768f', *query_json)))
     generated = json.loads((capture / 'image-generated-vector.json').read_text())
     unit_vector(query)
-    with sqlite3.connect('file:' + str(capture / 'synthetic.sqlite') + '?mode=ro', uri=True) as db:
+    with closing(sqlite3.connect('file:' + str(capture / 'synthetic.sqlite') + '?mode=ro&immutable=1', uri=True)) as db:
         assert db.execute('PRAGMA integrity_check').fetchone()[0] == 'ok'
         records = db.execute('SELECT id,path,vector,modality,segment_kind,provenance FROM chunks ORDER BY id').fetchall()
         versions = db.execute('SELECT path,version FROM files').fetchall()

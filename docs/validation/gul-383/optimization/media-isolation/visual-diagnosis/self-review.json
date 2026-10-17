@@ -10,7 +10,8 @@
   },
   "issues_repaired": [
     "Diagnostic omission of actual OCR script adjustment corrected and affected methods rechecked",
-    "Metadata-only relative-path collection failure corrected without product rerun"
+    "Metadata-only relative-path collection failure corrected without product rerun",
+    "Read-only analyzer SQLite connection explicitly closed; immutable frozen-backup access prevents WAL/SHM sidecars. Removed empty sidecars and reran only the affected readback method."
   ],
   "coverage_this_slice": {
     "application": "0/0 N/A",
