@@ -90,6 +90,9 @@ extension AskConversationModel {
     private let nativeIcon: AskNativeIconPreparation?
     private let browserIcon: AskBrowserIconPreparation?
     private let maximumEdge: Int
+    private var registrationKind: AskImagePresentationScope.RegistrationKind {
+        nativeIcon != nil && maximumEdge <= 56 ? .smallIcon : .standard
+    }
     init(budget: AskToolPixelBudget = .shared, maximumEdge: Int = 1600, worker: MediaWorker = .previews,
          readInput: @escaping AskContextImageDecoder.InputReader = { try AskContextImageDecoder.input($0) },
          smallFileIcon: AskSmallFileIconPreparation? = nil,
@@ -135,7 +138,7 @@ extension AskConversationModel {
         do {
             guard value.utf8.count <= AskContextImageDecoder.maximumEncodedBytes,
                   let scope = access.scope, let epoch = access.epoch else { throw MediaFailure.unavailable }
-            self.scope = scope; registration = try scope.register(self, epoch: epoch)
+            self.scope = scope; registration = try scope.register(self, epoch: epoch, kind: registrationKind)
             let authorization = decode == nil && smallFileIcon == nil && nativeIcon == nil && browserIcon == nil ? worker.authorization() : nil
             let iconBatch = decode == nil ? smallFileIcon?.bind(value) : nil
             let nativeBatch = decode == nil && smallFileIcon == nil ? try nativeIcon?.bind(value) : nil
@@ -182,7 +185,7 @@ extension AskConversationModel {
             if retainFailure {
                 source = value; epoch = access.epoch; originalAccess = access; unavailable = true
                 if let scope = access.scope, let epoch = access.epoch {
-                    self.scope = scope; registration = try? scope.register(self, epoch: epoch)
+                    self.scope = scope; registration = try? scope.register(self, epoch: epoch, kind: registrationKind)
                 }
             }
         }

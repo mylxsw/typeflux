@@ -19,6 +19,11 @@ private actor NativeIconCalls {
     func called() { count += 1 }
 }
 
+@MainActor private final class IconScopeObserver: AskImageScopeObserver {
+    var cancellations = 0
+    func cancel() { cancellations += 1 }
+}
+
 @MainActor final class NativeIconIsolationTests: XCTestCase {
     private func request(_ icon: MediaNativeIcon = .init(kind: .type, value: "public.folder"), edge: Int = 56) -> MediaRequest {
         var request = MediaRequest(operation: .nativeIcon)
@@ -295,6 +300,51 @@ private actor NativeIconCalls {
         for _ in 0..<100 where cache.cached(icon) == nil { try await Task.sleep(for: .milliseconds(10)) }
         XCTAssertNotNil(cache.cached(icon), "the icon still loads in the background")
         XCTAssertEqual(immediateLookups, 0)
+    }
+
+    func testHomeLoadsMoreIconsThanTheStandardImageScopeLimit() async throws {
+        _ = NSApplication.shared
+        let pixels = raster(), scope = AskImagePresentationScope()
+        let cache = AskLauncherIconCache(decode: { _ in .init(images: [pixels], numbers: [], pages: 0) })
+        let access = AskImagePresentationAccess(scope: scope, epoch: scope.epoch, authorize: { true })
+        let rows = (0..<24).map { index in
+            let app = AskAppEntry(name: "App \(index)", url: URL(fileURLWithPath: "/Applications/App\(index).app"),
+                                  bundleID: nil, names: [])
+            return AskLauncherHome.Row(id: "application.\(index)", title: app.name, symbol: "app",
+                                       tint: .neutral, action: .application(app))
+        }
+        let height = AskLauncherSuggestions.height(for: [.applications(rows: rows)])
+        let view = NSHostingView(rootView: AskLauncherSuggestions(
+            sections: [.applications(rows: rows)], highlighted: .constant(0), onPick: { _ in },
+            viewportHeight: height
+        ).frame(width: 400, height: height)
+            .environment(\.askLauncherIconCache, cache)
+            .environment(\.askContextImageAccess, access))
+        let window = NSWindow(contentRect: .init(x: 100, y: 100, width: 400, height: height),
+                              styleMask: [.titled], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false; window.contentView = view; window.orderFront(nil)
+        defer { window.contentView = nil; window.close() }
+        view.layoutSubtreeIfNeeded()
+        let icons = rows.compactMap { row -> MediaNativeIcon? in
+            guard case let .application(app) = row.action else { return nil }
+            return .init(kind: .file, value: app.url.path)
+        }
+        for _ in 0..<200 where icons.contains(where: { cache.cached($0) == nil }) {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        XCTAssertEqual(icons.filter { cache.cached($0) != nil }.count, icons.count,
+                       "every home icon must load after the sixteenth row")
+    }
+
+    func testSmallIconRegistrationsKeepTheStandardLimitAndRevocation() throws {
+        let scope = AskImagePresentationScope()
+        let icons = (0..<24).map { _ in IconScopeObserver() }
+        let standard = (0..<17).map { _ in IconScopeObserver() }
+        for icon in icons { _ = try scope.register(icon, epoch: scope.epoch, kind: .smallIcon) }
+        for observer in standard.prefix(16) { _ = try scope.register(observer, epoch: scope.epoch) }
+        XCTAssertThrowsError(try scope.register(standard[16], epoch: scope.epoch))
+        scope.invalidate()
+        XCTAssertTrue((icons + Array(standard.prefix(16))).allSatisfy { $0.cancellations == 1 })
     }
 
     func testClosingLauncherDoesNotRepopulatePrivateIconCacheFromLateDecode() async throws {

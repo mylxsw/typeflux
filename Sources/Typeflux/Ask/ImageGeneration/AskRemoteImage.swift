@@ -74,14 +74,24 @@ struct AskRemoteImageLoader: Sendable {
 @MainActor protocol AskImageScopeObserver: AnyObject { func cancel() }
 
 @MainActor final class AskImagePresentationScope {
-    private struct Observer { weak var model: (any AskImageScopeObserver)? }
+    /// Small native icons use the shared pixel budget, so they do not need the
+    /// separate 16-view ceiling that protects full-size image presentations.
+    enum RegistrationKind { case standard, smallIcon }
+    private struct Observer {
+        weak var model: (any AskImageScopeObserver)?
+        let kind: RegistrationKind
+    }
     private var observers: [UUID: Observer] = [:]
     private(set) var epoch = UUID()
     private(set) var visible = true
-    func register(_ model: any AskImageScopeObserver, epoch: UUID) throws -> UUID {
+    func register(_ model: any AskImageScopeObserver, epoch: UUID,
+                  kind: RegistrationKind = .standard) throws -> UUID {
         observers = observers.filter { $0.value.model != nil }
-        guard visible, self.epoch == epoch, observers.count < 16 else { throw MediaFailure.unavailable }
-        let id = UUID(); observers[id] = Observer(model: model); return id
+        let standardCount = observers.values.filter { $0.kind == .standard }.count
+        guard visible, self.epoch == epoch, kind == .smallIcon || standardCount < 16 else {
+            throw MediaFailure.unavailable
+        }
+        let id = UUID(); observers[id] = Observer(model: model, kind: kind); return id
     }
     func remove(_ id: UUID) { observers[id] = nil }
     func invalidate() {
