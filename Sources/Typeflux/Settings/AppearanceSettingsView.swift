@@ -35,7 +35,7 @@ struct AppearanceSettingsView: View {
                     Text(L("settings.appIcon.title"))
                         .font(.system(size: 13, weight: .medium))
                         .foregroundStyle(TFColors.textPrimary)
-                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 112), spacing: 10)], spacing: 10) {
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 130), spacing: 10)], spacing: 10) {
                         ForEach(AppIconStyle.allCases) { style in
                             TFChoiceCard(
                                 title: style.displayName,

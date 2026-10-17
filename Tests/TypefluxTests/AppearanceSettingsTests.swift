@@ -94,6 +94,23 @@ struct AppearanceSettingsTests {
         }
     }
 
+    @Test func `pure white icon has white background and transparent corners`() throws {
+        #expect(AppIconController.image(for: .pureWhite) != nil)
+        let url = try #require(Bundle.appResources.url(
+            forResource: "TypefluxIconPureWhite", withExtension: "png", subdirectory: "AppIcons"
+        ) ?? Bundle.appResources.url(forResource: "TypefluxIconPureWhite", withExtension: "png"))
+        let bitmap = try #require(NSBitmapImageRep(data: try Data(contentsOf: url)))
+        #expect(bitmap.pixelsWide == 1024)
+        #expect(bitmap.pixelsHigh == 1024)
+        let pixels = try #require(bitmap.bitmapData)
+        let background = 200 * bitmap.bytesPerRow + 512 * 4
+        #expect(pixels[background] == 255)
+        #expect(pixels[background + 1] == 255)
+        #expect(pixels[background + 2] == 255)
+        #expect(pixels[background + 3] == 255)
+        #expect(pixels[3] == 0)
+    }
+
     @Test func `legacy defaults load without a migration`() async throws {
         try await withModel { settings, _ in
             settings.defaults.set("simple", forKey: "ask.launcher.windowMode")

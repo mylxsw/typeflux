@@ -7,7 +7,8 @@
 "appearance.system" = "システム";
 "appearance.light" = "ライト";
 "appearance.dark" = "ダーク";
-"appIcon.white" = "ホワイト";
+"appIcon.pureWhite" = "ピュアホワイト";
+"appIcon.white" = "ウォームホワイト";
 "appIcon.black" = "ブラック";
 "appIcon.colorful" = "カラフル";
 "appIcon.retroMosaic" = "レトロモザイク";

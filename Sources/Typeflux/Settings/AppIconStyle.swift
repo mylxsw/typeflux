@@ -1,6 +1,7 @@
 import AppKit
 
 enum AppIconStyle: String, CaseIterable, Codable, Identifiable {
+    case pureWhite
     case white
     case black
     case colorful
@@ -10,6 +11,7 @@ enum AppIconStyle: String, CaseIterable, Codable, Identifiable {
 
     var displayName: String {
         switch self {
+        case .pureWhite: L("appIcon.pureWhite")
         case .white: L("appIcon.white")
         case .black: L("appIcon.black")
         case .colorful: L("appIcon.colorful")
@@ -19,6 +21,7 @@ enum AppIconStyle: String, CaseIterable, Codable, Identifiable {
 
     var resourceName: String {
         switch self {
+        case .pureWhite: "TypefluxIconPureWhite"
         case .white: "TypefluxIconWhite"
         case .black: "TypefluxIconBlack"
         case .colorful: "TypefluxIconColorful"
