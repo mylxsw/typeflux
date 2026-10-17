@@ -1,0 +1,87 @@
+{
+  "actual_file_metadata" : true,
+  "budget_enabled" : true,
+  "complete" : true,
+  "live_query" : true,
+  "model_ready" : true,
+  "prepared_phase" : "paused",
+  "query" : "a tone",
+  "reopened" : [
+    {
+      "kind" : "audio-window",
+      "name" : "boundary.wav",
+      "score" : 0.37704376578330995,
+      "time" : 25,
+      "version" : "16777239:84476163:1792044:1792224882:786676859:1792224882:786676859"
+    },
+    {
+      "kind" : null,
+      "name" : "en-05.txt",
+      "score" : 0.37125678360462194,
+      "time" : null,
+      "version" : null
+    },
+    {
+      "kind" : null,
+      "name" : "tail-20.txt",
+      "score" : 0.37078264951705936,
+      "time" : null,
+      "version" : null
+    },
+    {
+      "kind" : null,
+      "name" : "zh-01.txt",
+      "score" : 0.32269474864006042,
+      "time" : null,
+      "version" : null
+    },
+    {
+      "kind" : null,
+      "name" : "zh-20.txt",
+      "score" : 0.32057876586914064,
+      "time" : null,
+      "version" : null
+    }
+  ],
+  "reused_audio_vectors" : 2,
+  "reused_original_text_vectors" : 75,
+  "scope" : "New live query and actual isolated metadata validation; retained audio and original text vectors. No new audio inference or UI claim.",
+  "service" : [
+    {
+      "kind" : "audio-window",
+      "name" : "boundary.wav",
+      "score" : 0.37704376578330995,
+      "time" : 25,
+      "version" : "16777239:84476163:1792044:1792224882:786676859:1792224882:786676859"
+    },
+    {
+      "kind" : null,
+      "name" : "en-05.txt",
+      "score" : 0.37125678360462194,
+      "time" : null,
+      "version" : null
+    },
+    {
+      "kind" : null,
+      "name" : "tail-20.txt",
+      "score" : 0.37078264951705936,
+      "time" : null,
+      "version" : null
+    },
+    {
+      "kind" : null,
+      "name" : "zh-01.txt",
+      "score" : 0.32269474864006042,
+      "time" : null,
+      "version" : null
+    },
+    {
+      "kind" : null,
+      "name" : "zh-20.txt",
+      "score" : 0.32057876586914064,
+      "time" : null,
+      "version" : null
+    }
+  ],
+  "wall_seconds" : 1.0899490000447258
+}

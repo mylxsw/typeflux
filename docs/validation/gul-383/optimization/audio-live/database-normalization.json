@@ -1,0 +1,32 @@
+[
+  {
+    "file": "live-visible-root/final.sqlite",
+    "raw_sha256": "a8161247dc65ab7d572fc04fe6056f4712256d296aeefffa8888040ee8e14fc3",
+    "delivered_sha256": "a8161247dc65ab7d572fc04fe6056f4712256d296aeefffa8888040ee8e14fc3",
+    "change": "Synthetic path normalization only; vectors/times/provenance unchanged. Exact originals retained privately."
+  },
+  {
+    "file": "live-visible-root/synthetic.sqlite",
+    "raw_sha256": "a8161247dc65ab7d572fc04fe6056f4712256d296aeefffa8888040ee8e14fc3",
+    "delivered_sha256": "a8161247dc65ab7d572fc04fe6056f4712256d296aeefffa8888040ee8e14fc3",
+    "change": "Synthetic path normalization only; vectors/times/provenance unchanged. Exact originals retained privately."
+  },
+  {
+    "file": "video-live/final.sqlite",
+    "raw_sha256": "6ad431b3d6e2a09cab20cb5e34e602618eaf03c4b61805ab3ad4e6d2f0b6d3fe",
+    "delivered_sha256": "6ad431b3d6e2a09cab20cb5e34e602618eaf03c4b61805ab3ad4e6d2f0b6d3fe",
+    "change": "Synthetic path normalization only; vectors/times/provenance unchanged. Exact originals retained privately."
+  },
+  {
+    "file": "video-live/synthetic.sqlite",
+    "raw_sha256": "6ad431b3d6e2a09cab20cb5e34e602618eaf03c4b61805ab3ad4e6d2f0b6d3fe",
+    "delivered_sha256": "6ad431b3d6e2a09cab20cb5e34e602618eaf03c4b61805ab3ad4e6d2f0b6d3fe",
+    "change": "Synthetic path normalization only; vectors/times/provenance unchanged. Exact originals retained privately."
+  },
+  {
+    "file": "live/final.sqlite",
+    "raw_sha256": "e5efe1a07c6ccb04f3d6a293dc0a6305a026ef1f1a4aa635773ac771fddf3672",
+    "delivered_sha256": "e5efe1a07c6ccb04f3d6a293dc0a6305a026ef1f1a4aa635773ac771fddf3672",
+    "change": "Synthetic path normalization only; vectors/times/provenance unchanged. Exact originals retained privately."
+  }
+]

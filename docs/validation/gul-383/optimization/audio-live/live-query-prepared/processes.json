@@ -1,0 +1,131 @@
+[
+  {
+    "seconds": 1.0287462499691173,
+    "processes": [
+      [
+        "34635",
+        "34618",
+        "Ss",
+        "0.0",
+        "32",
+        "0:00.00",
+        "<repo>/.build/audio-live/ServiceProbe"
+      ]
+    ]
+  },
+  {
+    "seconds": 2.0722315419698134,
+    "processes": [
+      [
+        "34635",
+        "34618",
+        "Ss",
+        "0.0",
+        "32",
+        "0:00.00",
+        "<repo>/.build/audio-live/ServiceProbe"
+      ]
+    ]
+  },
+  {
+    "seconds": 3.1067322089802474,
+    "processes": [
+      [
+        "34635",
+        "34618",
+        "Ss",
+        "0.0",
+        "32",
+        "0:00.00",
+        "<repo>/.build/audio-live/ServiceProbe"
+      ]
+    ]
+  },
+  {
+    "seconds": 4.142373042064719,
+    "processes": [
+      [
+        "34635",
+        "34618",
+        "Ss",
+        "0.0",
+        "32",
+        "0:00.00",
+        "<repo>/.build/audio-live/ServiceProbe"
+      ]
+    ]
+  },
+  {
+    "seconds": 5.172264958964661,
+    "processes": [
+      [
+        "34635",
+        "34618",
+        "Rs",
+        "34.3",
+        "82640",
+        "0:00.13",
+        "<repo>/.build/audio-live/ServiceProbe"
+      ],
+      [
+        "34655",
+        "34635",
+        "R",
+        "0.0",
+        "512",
+        "0:00.00",
+        "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux"
+      ]
+    ]
+  },
+  {
+    "seconds": 6.203339167055674,
+    "processes": [
+      [
+        "34635",
+        "34618",
+        "Ss",
+        "6.7",
+        "105280",
+        "0:00.35",
+        "<repo>/.build/audio-live/ServiceProbe"
+      ],
+      [
+        "34655",
+        "34635",
+        "S",
+        "0.6",
+        "58368",
+        "0:00.06",
+        "<accepted-cache>/.build/video-frames/arm64-apple-macosx/debug/Typeflux"
+      ],
+      [
+        "34662",
+        "34635",
+        "S",
+        "1.6",
+        "56912",
+        "0:00.02",
+        "(Typeflux)"
+      ],
+      [
+        "34663",
+        "34635",
+        "S",
+        "70.4",
+        "498080",
+        "0:00.38",
+        "(ProductSemanticH)"
+      ],
+      [
+        "34667",
+        "34635",
+        "R",
+        "0.0",
+        "57920",
+        "0:00.03",
+        "(Typeflux)"
+      ]
+    ]
+  }
+]

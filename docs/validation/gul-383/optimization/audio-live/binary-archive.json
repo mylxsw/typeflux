@@ -1,0 +1,22 @@
+{
+  "name": "gul405-media-binaries.tar.zst",
+  "bytes": 203851510,
+  "sha256": "780e8d919d7e818c247553250a5eb52d77b614d8790327a535a34fe3393bdf75",
+  "parts": [
+    {
+      "name": "gul405-media-binaries.tar.zst.001",
+      "bytes": 90000000,
+      "sha256": "46e0b04ae5c13451ab0f0798db31f4ce8964f055db31556c1db1ec0cdb850e1a"
+    },
+    {
+      "name": "gul405-media-binaries.tar.zst.002",
+      "bytes": 90000000,
+      "sha256": "fa98fcb6312eed9f46f012abb211141d2c68dd421d3e57c644302ffb2f66eaf0"
+    },
+    {
+      "name": "gul405-media-binaries.tar.zst.003",
+      "bytes": 23851510,
+      "sha256": "c33fcaa33bb9000ffc3876e045f777e81ffd8a7f29a982fae848c4ba99bdb834"
+    }
+  ]
+}

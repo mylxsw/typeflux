@@ -1,0 +1,27 @@
+[
+  {
+    "command": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 0.016046332893893123,
+    "output": ""
+  },
+  {
+    "command": [
+      "zstd",
+      "--long=29",
+      "-t",
+      "-q",
+      "<workdir>/gul405-media-binaries.tar.zst"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 0.6565217920579016,
+    "output": ""
+  },
+  {
+    "prior_archive_test": "Initial default-memory zstd -t returned nonzero; orchestration asserted before saving its stdout, return code or wrapper timing. Explicit --long=29 validation passes. No model work repeated."
+  }
+]

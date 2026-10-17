@@ -1,0 +1,6 @@
+{"pid":30555,"seconds":0.057262583402916789,"stage":"service-enable","uptime":538023.13911804173}
+{"pid":30555,"seconds":0.071336416760459542,"stage":"model-verify-begin","uptime":538023.15321850008}
+{"pid":30555,"seconds":0.40242258342914283,"stage":"model-verify-end","uptime":538023.48430466675}
+{"pid":30555,"seconds":0.60428125003818423,"stage":"index-observation-ended","uptime":538023.68616354174}
+{"occupied":false,"pid":30555,"seconds":0.6129698334261775,"stage":"media-ownership-retired","uptime":538023.69485191675}
+{"pid":30555,"seconds":0.61312620842363685,"stage":"service-cleared","uptime":538023.69500854169}

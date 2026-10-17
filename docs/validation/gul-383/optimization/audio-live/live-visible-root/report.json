@@ -1,0 +1,5125 @@
+{
+  "audio_retrieval_complete" : false,
+  "backup_finish" : 0,
+  "backup_step" : 101,
+  "budget_enabled" : true,
+  "cleaned_up" : true,
+  "complete" : false,
+  "diagnosis" : {
+    "absolute_confidence_floor" : 0.69999999999999996,
+    "confident" : false,
+    "distinct_files" : 1,
+    "lexical_candidate_count" : 0,
+    "peak" : 0.68553406000137329,
+    "query" : "a tone",
+    "query_norm" : 0.99999995446411194,
+    "query_valid" : true,
+    "rows" : [
+      {
+        "allowed" : true,
+        "candidate_score" : 0.37265608310699466,
+        "dimensions" : 768,
+        "float32_dot" : 0.67750570095138274,
+        "id" : 1,
+        "lexical_coverage" : 0,
+        "modality" : "audio",
+        "name" : "boundary.wav",
+        "norm" : 0.99999997185962619,
+        "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1;audio30-stride25-pcm16k-f32-peak1e-7-v1",
+        "provenance_matches" : true,
+        "scanner_cosine" : 0.67755651473999023,
+        "segment_kind" : "audio-window",
+        "vector_valid" : true
+      },
+      {
+        "allowed" : true,
+        "candidate_score" : 0.37704373300075533,
+        "dimensions" : 768,
+        "float32_dot" : 0.68550095312781245,
+        "id" : 2,
+        "lexical_coverage" : 0,
+        "modality" : "audio",
+        "name" : "boundary.wav",
+        "norm" : 0.99999998850548666,
+        "provenance" : "model=2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135;projector=c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f;prompt=media-v1;sampling=audio30-video10-v1;chunk=segment-v1;audio30-stride25-pcm16k-f32-peak1e-7-v1",
+        "provenance_matches" : true,
+        "scanner_cosine" : 0.68553406000137329,
+        "segment_kind" : "audio-window",
+        "vector_valid" : true
+      }
+    ],
+    "runner_up" : null,
+    "semantic_floor" : 0.45000000000000001
+  },
+  "enabled" : true,
+  "media" : "audio",
+  "phase_before_pause" : "ready",
+  "queries" : [
+    {
+      "hits" : [
+
+      ],
+      "query" : "a tone"
+    }
+  ],
+  "ready" : true,
+  "reopened_query" : {
+    "hits" : [
+
+    ],
+    "query" : "a tone"
+  },
+  "resume_requested" : true,
+  "scope" : "Single synthetic media; accepted Debug application and Release inference helper. Production resource\/thermal\/low-power checks enabled; idle callback controlled.",
+  "service_query_complete" : false,
+  "snapshots" : [
+    {
+      "chunks" : 0,
+      "current" : null,
+      "files" : 0,
+      "items" : [
+
+      ],
+      "media_failed" : false,
+      "model_ready" : false,
+      "phase" : "preparing",
+      "pressure" : 0,
+      "seconds" : 0.041570583241991699,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : null,
+      "files" : 0,
+      "items" : [
+
+      ],
+      "media_failed" : false,
+      "model_ready" : false,
+      "phase" : "preparing",
+      "pressure" : 0,
+      "seconds" : 0.14594158332329243,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : null,
+      "files" : 0,
+      "items" : [
+
+      ],
+      "media_failed" : false,
+      "model_ready" : false,
+      "phase" : "preparing",
+      "pressure" : 0,
+      "seconds" : 0.26247391663491726,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : null,
+      "files" : 0,
+      "items" : [
+
+      ],
+      "media_failed" : false,
+      "model_ready" : false,
+      "phase" : "preparing",
+      "pressure" : 0,
+      "seconds" : 0.36545212497003376,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 0.4730471249204129,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 0.57909195823594928,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 0.68017795833293349,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 0.78163679165299982,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 0.88764962495770305,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 1.0178771666251123,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 1.1190118748927489,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 1.2691712082596496,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 1.3736544583225623,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 1.4747142916312441,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 1.5821052916580811,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 1.6902223333017901,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 1.7915307499933988,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 1.8928457499714568,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 1.9940719582373276,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 2.0981047915993258,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 2.2000117083080113,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 2.3070616666227579,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 2.4131348748924211,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 2.5143437499646097,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 2.6156885832315311,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 2.7171591249061748,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 2.8203853332670406,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 2.9217801665654406,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 3.0230419166618958,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 3.124394083279185,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 3.2257037915987894,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 3.328108458314091,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 3.4293442915659398,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 3.5374790416099131,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 3.6402076666709036,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 3.7444869999308139,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 3.8457211249042302,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 3.9469648333033547,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 4.0484080832684413,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 4.1597686249297112,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 4.263733166619204,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 4.3656751665985212,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 4.4670474166050553,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 4.5754615833284333,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 4.6811081249034032,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 4.7840391249628738,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 4.8915975416311994,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 4.9932175416033715,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 5.0984985416289419,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 5.2002304999623448,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 5.3027114999713376,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 5.4041377916000783,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 5.5123874165583402,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 5.623864374938421,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 5.7268224166473374,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 5.8291456665610895,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 5.9308132915757596,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 6.0324116665869951,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 6.1438607915770262,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 6.2471490832976997,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 6.348766666604206,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 6.4503004999132827,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 6.5584133332595229,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 6.6600299999117851,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 6.7717537499265745,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 6.8738168749259785,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 6.97550937498454,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 7.0774155833059922,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 7.1841463332530111,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 7.2885469999164343,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 7.3903699999209493,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 7.4927261249395087,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 7.5943809582386166,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 7.6961462083272636,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 7.7979829165851697,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 7.9067299999296665,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 8.0084216248942539,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 8.1118916666600853,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 8.2141784999985248,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 8.3163899582577869,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 8.4181566250044852,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 8.5199675000039861,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 8.6218949999893084,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 8.7238792083226144,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 8.8349896249128506,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 8.9373080832883716,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 9.045890333247371,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 9.1536818332970142,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 9.2556553749600425,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 9.3629871249431744,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 9.464879791601561,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 9.5697110833134502,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 9.6756116666365415,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 9.7810454582795501,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 9.8846697916742414,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 9.9865014998940751,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 10.089229666627944,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 10.199210333288647,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 10.304171249968931,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 10.412626499892212,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 10.514708624919876,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 10.620086749899201,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 10.722002541646361,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 10.824180958326906,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 10.926302041625604,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 11.02926333330106,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 11.131513333297335,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 11.233909333241172,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 11.336243500001729,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 11.438193041598424,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 11.542519666603766,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 11.645348666585051,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 11.754299833322875,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 11.860917541664094,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 11.963534166570753,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 12.066407749895006,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 12.17865224997513,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 12.280658916570246,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 12.38278895826079,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 12.488071749918163,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 12.590750333270989,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 0,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 12.694105916656554,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 12.79637529165484,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 13.168465499999002,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 13.279676208272576,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 13.383603124995716,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 13.485928499954753,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 13.592144041671418,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 13.694910666672513,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 13.797087124898098,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 13.899430083227344,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 14.004287374904379,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 14.107106083305553,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 14.209619958302937,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 14.31327245826833,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 14.415539791574702,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 14.518036458292045,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 14.620244124904275,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 14.722822124953382,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 14.829018416581675,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 14.937868749955669,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 15.041755499900319,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 15.145683291601017,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 15.248159958282486,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 15.360376750002615,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 15.462708541657776,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 15.565676916623488,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 15.67088454158511,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 15.774933833279647,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 15.877866124967113,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 15.980455249897204,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 16.090657999971882,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 16.192992249969393,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 16.295500124921091,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 16.398059124941938,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 16.500487333280034,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 16.602987833321095,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 16.710854791570455,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 16.813376874895766,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 16.921600666595623,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 17.02440566662699,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 17.127125124912709,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 17.23427766666282,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 17.34593449998647,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 17.449915749952197,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 17.552666374947876,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 17.662405624985695,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 17.764942208305001,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 17.867771249962971,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 17.971575708244927,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 18.074216291657649,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 18.176844624918886,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 18.279751166584902,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 18.392367916647345,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 18.496257124934345,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 18.598952583270147,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 18.703746833256446,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 18.806483166641556,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 18.910966249997728,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 19.015203916584142,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 19.118197416653857,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 19.224356166669168,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 19.33299724990502,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 19.435770208248869,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 19.538539166562259,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 19.641215916606598,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 19.747544708312489,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 19.85665724996943,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 19.959279416594654,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 20.061965958331712,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 20.164608833263628,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 20.267250833334401,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 20.369886041618884,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 20.472578833228908,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 20.581361749907956,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 20.688747583306395,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 20.791491499985568,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 20.89551404165104,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 20.999703291570768,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 21.10505183332134,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 21.208087999955751,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 21.310805583256297,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 21.421705249929801,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 21.524654749897309,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 21.631507624988444,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 21.735081291641109,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 21.839933249983005,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 21.94283058331348,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 22.045790041564032,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 22.152995208278298,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 22.262523624929599,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 22.372810874949209,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 22.475839999970049,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 22.578815833316185,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 22.689510499942116,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 22.794139124918729,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 22.902647124952637,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 23.005725916591473,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 30,
+          "encoded_text" : 0,
+          "media_segments" : 1,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 23.108770374907181,
+      "waiting" : null
+    },
+    {
+      "chunks" : 0,
+      "current" : "boundary.wav",
+      "files" : 0,
+      "items" : [
+        {
+          "audio_covered" : 55,
+          "encoded_text" : 0,
+          "media_segments" : 2,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "partial",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "indexing",
+      "pressure" : 0,
+      "seconds" : 23.211764583247714,
+      "waiting" : null
+    },
+    {
+      "chunks" : 2,
+      "current" : null,
+      "files" : 1,
+      "items" : [
+        {
+          "audio_covered" : null,
+          "encoded_text" : 0,
+          "media_segments" : 2,
+          "name" : "boundary.wav",
+          "reason" : null,
+          "state" : "done",
+          "text_chunks" : 0,
+          "video_checked" : null
+        }
+      ],
+      "media_failed" : false,
+      "model_ready" : true,
+      "phase" : "ready",
+      "pressure" : 0,
+      "seconds" : 23.314925749902613,
+      "waiting" : null
+    }
+  ],
+  "wall_seconds" : 23.976896999985911
+}

@@ -1,0 +1,14 @@
+{
+  "probe": "dbeeddca04321c28c5681d8cc1a6f00fe46082bdd156020209c596865b204eb5",
+  "file-helper": "bd5bd750ea94b34a1f23401d1064e9d094a3f958285e775b36de20d27394e96d",
+  "model-helper": "1c2a49fa3620ff75612909ef91d1b49b8b83495a754c57a8c6c2905ca31c0b06",
+  "embeddinggemma-2-Q8_0.gguf": {
+    "sha256": "2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135",
+    "bytes": 309855456
+  },
+  "mmproj-embeddinggemma-2-Q8_0.gguf": {
+    "sha256": "c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f",
+    "bytes": 554821024
+  },
+  "fixture": "9d7299a4eba785f57f6d704e6e9d4603d72cef1bab7539e32ca9b43346b3113b"
+}

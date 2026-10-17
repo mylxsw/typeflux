@@ -1,0 +1,65 @@
+{
+  "audio_live_window_cosines": [
+    {
+      "time": 0.0,
+      "end_time": 30.0,
+      "raw_float32_dot": 0.6775057025254595,
+      "compact_dot": 0.677556607019295
+    },
+    {
+      "time": 25.0,
+      "end_time": 55.0,
+      "raw_float32_dot": 0.6855009548036962,
+      "compact_dot": 0.6855341389145584
+    }
+  ],
+  "audio_single_file_rejected": true,
+  "audio_retained_vectors_live_query_actual_metadata": true,
+  "audio_hit_window": [
+    25,
+    55
+  ],
+  "fixed_rows": 306,
+  "no_answer": {
+    "false_positives": 0,
+    "denominator": 50
+  },
+  "positive_denominators": {
+    "audio_cross_language": 25,
+    "audio_paraphrase": 25,
+    "audio_topic": 25,
+    "chinese_short": 25,
+    "cross_language": 25,
+    "identifier": 25,
+    "image": 6,
+    "lexical": 25,
+    "long_tail": 25
+  },
+  "recalled": {
+    "audio_cross_language": 25,
+    "audio_paraphrase": 24,
+    "audio_topic": 23,
+    "chinese_short": 25,
+    "cross_language": 24,
+    "identifier": 25,
+    "image": 6,
+    "lexical": 25,
+    "long_tail": 25
+  },
+  "video_actual_retained_times": [
+    0.0,
+    1.5,
+    2.0,
+    5.9
+  ],
+  "video_hit_time": 1.5,
+  "video_unique_decode_times": 13,
+  "video_decode_callbacks": 14,
+  "video_requests": 5,
+  "video_returned_vectors": 4,
+  "cancelled_uncommitted_request": 1,
+  "video_wrapper_exit_status": 1,
+  "video_product_report_complete": true,
+  "scope": "Raw/compact arithmetic and production report verification. Video observer exited nonzero after product completion; its two focused child-exit regressions pass. No threshold, model, label or product changes.",
+  "wall_seconds": 0.003521583043038845
+}
