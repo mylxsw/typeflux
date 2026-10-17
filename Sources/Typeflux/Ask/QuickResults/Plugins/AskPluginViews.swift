@@ -25,6 +25,8 @@ struct AskPluginDisplay: Equatable {
     var savesNoteWhenDone = false
     /// The system monitor (`top`) takes the results' place.
     var systemMonitor = false
+    /// This Mac's configuration (`sys`) takes the results' place.
+    var systemInfo = false
     var calendar = false
     var translation = false
 
@@ -244,6 +246,7 @@ struct AskPluginResultsView: View {
     /// Everything the list adds to the launcher card.
     static func height(for display: AskPluginDisplay) -> CGFloat {
         if display.systemMonitor { return SystemMonitorLauncherView.height }
+        if display.systemInfo { return SystemInfoLauncherView.height }
         if display.calendar { return CalendarLauncherView.height }
         return 1 + listPadding * 2 + sectionHeight + rowSpacing + mainHeight(display)
     }
@@ -251,7 +254,7 @@ struct AskPluginResultsView: View {
     /// What Return and the other keys do now, for the bottom bar.
     static func hint(for display: AskPluginDisplay) -> String {
         // The monitor names its keys in its own footer.
-        if display.systemMonitor { return "" }
+        if display.systemMonitor || display.systemInfo { return "" }
         if display.calendar { return "" }
         // The chat button already names this action in the bottom bar.
         if display.hint?.pluginID == AskOpenChatPlugin.id {
@@ -462,6 +465,9 @@ struct AskPluginResultsView: View {
                     .foregroundStyle(StudioTheme.textTertiary)
                 if hint.pluginID == AskSystemMonitorPlugin.id {
                     SystemMonitorHintSummary(store: .shared).layoutPriority(-1)
+                }
+                if hint.pluginID == AskSystemInfoPlugin.id {
+                    SystemInfoHintSummary(store: .shared).layoutPriority(-1)
                 }
                 if hint.pluginID == AskCalendarPlugin.id {
                     CalendarHintSummary(options: hint.options, provider: calendarProvider)

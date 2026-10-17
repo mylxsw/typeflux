@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Typeflux · 本机配置关键字 sys（可交互设计稿）</title>
+<style>
+:root {
+  --card: rgba(255,255,255,.045); --card-hover: rgba(255,255,255,.075);
+  --border: rgba(255,255,255,.115); --border-soft: rgba(255,255,255,.07);
+  --text: #eeeeef; --text2: #b8b8bb; --text3: #85858a; --accent: #2f8cff; --accent-soft: rgba(47,140,255,.16); --accent-text: #8ebdff;
+  --ok: #29c76e; --ok-soft: rgba(41,199,110,.14); --warn: #eb8040; --warn-soft: rgba(235,128,64,.15);
+  --danger: #dc5252; --danger-soft: rgba(220,82,82,.14); --tile: rgba(255,255,255,.07);
+  --c-cpu: #3d95ff; --c-mem: #b07cff; --c-disk: #2bb3aa; --c-disp: #ff7ab6; --c-net: #34c759; --c-bat: #ffb340; --c-sys: #8e9bb0; --c-gpu: #5ac8fa;
+  --kw: #6c7cff; --kw-soft: rgba(108,124,255,.18); --kw-text: #b4bdff;
+  --stage: #0e0e10; --pop: #2a2a2d; --glass: rgba(34,34,38,.92); --bg: #1b1b1d;
+  --desk: radial-gradient(1200px 700px at 20% 10%, #2a3f63 0%, transparent 60%), radial-gradient(900px 600px at 90% 80%, #4a2e3e 0%, transparent 60%), linear-gradient(135deg, #1b2538 0%, #271d33 55%, #33241f 100%);
+  --shadow: 0 30px 80px rgba(0,0,0,.5);
+}
+body.light {
+  --card: rgba(255,255,255,.75); --card-hover: rgba(0,0,0,.045);
+  --border: rgba(97,115,143,.18); --border-soft: rgba(97,115,143,.11);
+  --text: #141414; --text2: #474747; --text3: #85868a; --accent: #1f6fe0; --accent-soft: rgba(31,111,224,.12); --accent-text: #0a6cdb;
+  --ok: #1fab63; --ok-soft: rgba(31,171,99,.12); --warn: #e0662a; --warn-soft: rgba(224,102,42,.12);
+  --danger: #d23f3f; --danger-soft: rgba(210,63,63,.10); --tile: rgba(0,0,0,.05);
+  --c-cpu: #1f6fe0; --c-mem: #8a4fe8; --c-disk: #1c9a92; --c-disp: #d6417f; --c-net: #1fab63; --c-bat: #d08a10; --c-sys: #66748a; --c-gpu: #1a8fc4;
+  --kw: #5161f0; --kw-soft: rgba(81,97,240,.12); --kw-text: #3f4fd8;
+  --stage: #d9dde3; --pop: #fff; --glass: rgba(250,250,252,.93); --bg: #f4f5f7;
+  --desk: radial-gradient(1200px 700px at 20% 10%, #c7d8f2 0%, transparent 60%), radial-gradient(900px 600px at 90% 80%, #ecd3df 0%, transparent 60%), linear-gradient(135deg, #b9cbe6 0%, #d8c8e8 55%, #ecd6c6 100%);
+  --shadow: 0 30px 80px rgba(30,40,60,.22);
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { font: 13px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Helvetica Neue", "Noto Sans SC", sans-serif;
+  color: var(--text); background: var(--stage); display: flex; flex-direction: column; align-items: center; min-height: 100vh; padding-bottom: 48px; }
+button, input { font: inherit; color: inherit; }
+svg { flex: none; display: block; }
+.num { font-variant-numeric: tabular-nums; }
+.mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+.kbd, kbd { font: 11px ui-monospace, Menlo, monospace; background: var(--tile); border-radius: 4px; padding: 0 4px; margin-right: 3px; color: var(--text2); }
+
+/* ---------- Stage ---------- */
+.stagebar { width: 1200px; max-width: calc(100vw - 32px); display: flex; flex-wrap: wrap; align-items: center; gap: 7px; padding: 18px 0 6px; color: var(--text2); }
+.stagebar b { color: var(--text); font-size: 14px; margin-right: 6px; }
+.stagebar .sp { flex: 1; }
+.pill { border: 1px solid var(--border); background: var(--card); border-radius: 999px; padding: 4px 11px; cursor: pointer; font-size: 12px; }
+.pill.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.caption { width: 1200px; max-width: calc(100vw - 32px); color: var(--text3); font-size: 12px; padding: 0 0 12px; min-height: 34px; }
+.caption b { color: var(--text2); font-weight: 600; }
+body.solo .stagebar, body.solo .caption, body.solo .notes { display: none; }
+
+/* ---------- Desktop ---------- */
+.desk { position: relative; width: 1200px; height: 800px; border-radius: 14px; overflow: hidden; background: var(--desk); box-shadow: var(--shadow); user-select: none; flex: none; }
+.menubar { height: 26px; display: flex; align-items: center; gap: 18px; padding: 0 14px; font-size: 12.5px; background: rgba(0,0,0,.22); color: rgba(255,255,255,.92); backdrop-filter: blur(20px); }
+body.light .menubar { background: rgba(255,255,255,.45); color: #1a1a1a; }
+.menubar .sp { flex: 1; }
+.menubar .tf { display: inline-flex; align-items: center; padding: 1px 6px; border-radius: 5px; cursor: pointer; }
+.menubar .tf:hover { background: rgba(255,255,255,.15); }
+.openhint { position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%); z-index: 20; font-size: 12px; color: rgba(255,255,255,.75); background: rgba(0,0,0,.25); padding: 6px 12px; border-radius: 999px; cursor: pointer; backdrop-filter: blur(10px); }
+body.light .openhint { color: #333; background: rgba(255,255,255,.5); }
+
+/* ---------- Launcher ---------- */
+.scrim { position: absolute; inset: 26px 0 0; z-index: 50; display: none; }
+.scrim.show { display: block; }
+.launcher { position: absolute; left: 50%; top: 84px; transform: translateX(-50%); width: 720px; background: var(--glass); border: 1px solid var(--border);
+  border-radius: 16px; box-shadow: 0 26px 70px rgba(0,0,0,.45); backdrop-filter: blur(28px) saturate(1.4); z-index: 60; display: none; overflow: hidden; }
+.launcher.show { display: block; animation: lin .16s ease-out; }
+@keyframes lin { from { opacity: 0; transform: translateX(-50%) scale(.98); } }
+.lin { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid var(--border-soft); }
+.lin input { flex: 1; min-width: 0; border: 0; outline: none; background: transparent; font-size: 17px; }
+.lin input::placeholder { color: var(--text3); }
+.chip { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px 0 6px; border-radius: 9px; flex: none; font-size: 13px; font-weight: 600; white-space: nowrap; background: var(--kw-soft); color: var(--kw-text); }
+.chip .g { width: 20px; height: 20px; border-radius: 6px; display: grid; place-items: center; background: var(--kw); color: #fff; }
+.chip .opt { font-weight: 500; opacity: .8; }
+.hbtn { height: 28px; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); cursor: pointer; font-size: 12.5px; white-space: nowrap; }
+.hbtn:hover { background: var(--card-hover); }
+.hbtn .s { color: var(--text3); font-size: 11px; }
+.hbtn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.hbtn.primary .s { color: rgba(255,255,255,.75); }
+.hbtn.sm { height: 22px; font-size: 11.5px; padding: 0 8px; border-radius: 6px; }
+.lbody { padding: 0 14px; }
+.lbar { display: flex; align-items: center; gap: 14px; padding: 8px 14px; border-top: 1px solid var(--border-soft); font-size: 12px; color: var(--text3); white-space: nowrap; position: relative; }
+.lbar .sp { flex: 1; }
+.lbar .lk { cursor: pointer; } .lbar .lk:hover { color: var(--text); }
+
+/* home / hint lists */
+.sec { font-size: 11.5px; font-weight: 600; color: var(--text3); padding: 10px 4px 4px; }
+.item { display: flex; align-items: center; gap: 11px; padding: 0 10px; height: 46px; border-radius: 10px; cursor: pointer; }
+.item.on { background: var(--card-hover); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--kw) 60%, transparent); }
+.item:hover { background: var(--card-hover); }
+.item .ic { width: 28px; height: 28px; border-radius: 7px; display: grid; place-items: center; flex: none; color: #fff; }
+.item .t { font-weight: 600; white-space: nowrap; }
+.item .d { color: var(--text3); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.item .d b { color: var(--text2); font-weight: 500; }
+.item .r { margin-left: auto; color: var(--text3); font-size: 11.5px; display: flex; gap: 8px; align-items: center; white-space: nowrap; }
+
+/* ---------- System info view ---------- */
+.si { display: grid; grid-template-columns: 158px 1fr; height: 486px; margin: 0 -14px; }
+.nav { border-right: 1px solid var(--border-soft); padding: 8px 6px; display: flex; flex-direction: column; gap: 1px; }
+.nav .n { display: flex; align-items: center; gap: 8px; height: 30px; padding: 0 8px; border-radius: 7px; cursor: pointer; font-size: 12.5px; color: var(--text2); white-space: nowrap; }
+.nav .n:hover { background: var(--card-hover); }
+.nav .n.on { background: var(--accent-soft); color: var(--text); font-weight: 600; }
+.nav .n .gl { width: 18px; height: 18px; border-radius: 5px; display: grid; place-items: center; color: #fff; flex: none; }
+.nav .n .k { margin-left: auto; font: 10.5px ui-monospace, Menlo, monospace; color: var(--text3); font-weight: 400; }
+.nav .n .cnt { margin-left: auto; font-size: 10.5px; min-width: 18px; height: 16px; padding: 0 5px; border-radius: 8px; background: var(--accent); color: #fff; display: grid; place-items: center; font-weight: 600; }
+.nav .n.dim { opacity: .38; }
+.nav .grow { flex: 1; }
+.nav .foot { font-size: 11px; color: var(--text3); padding: 6px 8px 2px; line-height: 1.5; }
+.nav .foot .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--ok); display: inline-block; margin-right: 5px; vertical-align: 1px; }
+.pane { overflow-y: auto; padding: 10px 14px 14px; scrollbar-width: thin; position: relative; }
+
+/* hero */
+.hero { display: flex; gap: 14px; align-items: center; padding: 12px 14px; border-radius: 14px; background: var(--card); border: 1px solid var(--border-soft); }
+.hero .mac { width: 74px; height: 50px; flex: none; color: var(--text2); }
+.hero h2 { margin: 0; font-size: 17px; font-weight: 650; letter-spacing: -.2px; }
+.hero .sub { color: var(--text3); font-size: 12px; margin-top: 1px; }
+.hero .os { white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 12px; color: var(--text2); }
+.hero .os .badge { font-size: 10.5px; padding: 1px 6px; border-radius: 5px; background: var(--ok-soft); color: var(--ok); font-weight: 600; }
+.hero .act { margin-left: auto; display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
+
+.specs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 8px; }
+.spec { border-radius: 12px; background: var(--card); border: 1px solid var(--border-soft); padding: 9px 11px; cursor: pointer; min-height: 78px; display: flex; flex-direction: column; gap: 1px; transition: border-color .12s, background .12s; }
+.spec:hover { background: var(--card-hover); border-color: color-mix(in srgb, var(--sc) 55%, transparent); }
+.spec .lb { display: flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; color: var(--text2); }
+.spec .lb .k { margin-left: auto; font: 10.5px ui-monospace, Menlo, monospace; color: var(--text3); font-weight: 400; }
+.spec .v { font-size: 15px; font-weight: 650; letter-spacing: -.2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+.spec .s { font-size: 11.5px; color: var(--text3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.spec .bar { height: 4px; border-radius: 2px; background: var(--tile); overflow: hidden; margin-top: 5px; }
+.spec .bar i { display: block; height: 100%; border-radius: 2px; }
+
+.fit { margin-top: 8px; border-radius: 12px; padding: 9px 12px; display: flex; align-items: center; gap: 10px; background: linear-gradient(90deg, var(--kw-soft), transparent 80%); border: 1px solid color-mix(in srgb, var(--kw) 30%, transparent); font-size: 12.5px; }
+.fit .t, .fit .livelink { font-weight: 600; white-space: nowrap; } .fit .d { color: var(--text2); }
+.fit .sp { flex: 1; }
+.asks { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 10px; }
+.asks .q { font-size: 12px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--border); background: var(--card); cursor: pointer; color: var(--text2); }
+.asks .q:hover { color: var(--text); border-color: var(--accent); }
+.asks .lab { font-size: 11.5px; color: var(--text3); align-self: center; margin-right: 2px; }
+
+/* key-value rows */
+.ph { display: flex; align-items: center; gap: 8px; margin: 2px 0 6px; }
+.ph h3 { margin: 0; font-size: 14px; font-weight: 650; }
+.ph .s { color: var(--text3); font-size: 12px; }
+.ph .sp { flex: 1; }
+.grp { font-size: 11px; font-weight: 600; color: var(--text3); padding: 10px 2px 4px; letter-spacing: .2px; display: flex; gap: 8px; align-items: center; }
+.grp .sp { flex: 1; }
+.grp .tag { font-weight: 500; font-size: 10.5px; padding: 0 5px; border-radius: 4px; background: var(--tile); color: var(--text2); }
+.rows { border-radius: 10px; background: var(--card); border: 1px solid var(--border-soft); overflow: hidden; }
+.kv { display: flex; align-items: center; gap: 10px; min-height: 32px; padding: 5px 10px; border-top: 1px solid var(--border-soft); cursor: default; position: relative; }
+.kv:first-child { border-top: 0; }
+.kv:hover { background: var(--card-hover); }
+.kv.sel { background: var(--accent-soft); box-shadow: inset 2px 0 0 var(--accent); }
+.kv .l { width: 128px; flex: none; color: var(--text3); font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kv .val { flex: 1; min-width: 0; font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.kv .val .x { color: var(--text3); margin-left: 6px; font-size: 11.5px; }
+.kv .val .chipv { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; padding: 0 6px; height: 18px; border-radius: 5px; vertical-align: 1px; }
+.chipv.ok { background: var(--ok-soft); color: var(--ok); } .chipv.warn { background: var(--warn-soft); color: var(--warn); } .chipv.off { background: var(--tile); color: var(--text3); }
+.kv .tools { display: flex; gap: 4px; opacity: 0; transition: opacity .1s; flex: none; }
+.kv:hover .tools, .kv.sel .tools { opacity: 1; }
+.ib { width: 24px; height: 24px; border-radius: 6px; display: grid; place-items: center; border: 0; background: transparent; color: var(--text3); cursor: pointer; padding: 0; }
+.ib:hover { background: var(--tile); color: var(--text); }
+.mask { letter-spacing: 1.5px; color: var(--text3); }
+mark { background: color-mix(in srgb, var(--warn) 32%, transparent); color: inherit; border-radius: 3px; padding: 0 1px; }
+.vbar { height: 6px; border-radius: 3px; background: var(--tile); overflow: hidden; margin-top: 4px; display: flex; }
+.vbar i { display: block; height: 100%; }
+.legend { display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: 11px; color: var(--text3); margin-top: 3px; }
+.legend i { width: 7px; height: 7px; border-radius: 2px; display: inline-block; margin-right: 4px; }
+.perm { display: inline-flex; align-items: center; gap: 6px; color: var(--warn); font-size: 12px; }
+.skel { display: inline-block; height: 10px; border-radius: 5px; background: linear-gradient(90deg, var(--tile) 25%, var(--card-hover) 50%, var(--tile) 75%); background-size: 200% 100%; animation: sk 1.2s infinite linear; vertical-align: middle; }
+@keyframes sk { to { background-position: -200% 0; } }
+.empty { text-align: center; color: var(--text3); padding: 60px 0 20px; font-size: 13px; }
+.empty .big { font-size: 15px; color: var(--text2); margin-bottom: 6px; }
+.livelink { display: inline-flex; gap: 4px; align-items: center; font-size: 11.5px; color: var(--accent-text); cursor: pointer; }
+.livelink:hover { text-decoration: underline; }
+.resrow { display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--text3); padding: 10px 2px 4px; }
+.resrow .tag { color: var(--text2); display: inline-flex; gap: 5px; align-items: center; font-weight: 600; }
+.resrow .tag i { width: 14px; height: 14px; border-radius: 4px; display: grid; place-items: center; color: #fff; }
+
+/* popover */
+.pop { position: absolute; background: var(--pop); border: 1px solid var(--border); border-radius: 12px; box-shadow: 0 16px 40px rgba(0,0,0,.35); z-index: 90; font-size: 12.5px; padding: 6px; display: none; }
+.pop.show { display: block; }
+.pop .mi { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 7px; cursor: pointer; }
+.pop .mi:hover, .pop .mi.on { background: var(--accent); color: #fff; }
+.pop .mi:hover .s, .pop .mi.on .s, .pop .mi:hover .d, .pop .mi.on .d { color: rgba(255,255,255,.8); }
+.pop .mi .s { margin-left: auto; color: var(--text3); font: 11px ui-monospace, Menlo, monospace; }
+.pop .mi .d { color: var(--text3); font-size: 11px; }
+.pop hr { border: 0; border-top: 1px solid var(--border-soft); margin: 4px 2px; }
+.pop .ck { display: flex; align-items: center; gap: 8px; padding: 6px 8px; cursor: pointer; color: var(--text2); font-size: 12px; }
+.box { width: 14px; height: 14px; border-radius: 4px; border: 1px solid var(--border); display: grid; place-items: center; background: var(--card); }
+.box.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.prev { width: 300px; max-height: 300px; overflow: auto; margin: 0; padding: 10px 12px; font: 11px/1.55 ui-monospace, Menlo, monospace; color: var(--text2); background: var(--tile); border-radius: 8px; white-space: pre-wrap; }
+.popgrid { display: grid; grid-template-columns: 230px 300px; gap: 8px; }
+
+/* settings window */
+.swin { position: absolute; left: 50%; top: 70px; transform: translateX(-50%); width: 760px; height: 600px; border-radius: 12px; background: var(--bg); border: 1px solid var(--border); box-shadow: 0 30px 80px rgba(0,0,0,.45); display: none; z-index: 70; overflow: hidden; }
+.swin.show { display: grid; grid-template-columns: 190px 1fr; grid-template-rows: 38px 1fr; }
+.swin .tb { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; padding: 0 14px; border-bottom: 1px solid var(--border-soft); font-size: 12.5px; color: var(--text3); }
+.lights { display: flex; gap: 8px; } .lights i { width: 12px; height: 12px; border-radius: 50%; display: block; }
+.lights i:nth-child(1) { background: #ff5f57; } .lights i:nth-child(2) { background: #febc2e; } .lights i:nth-child(3) { background: #28c840; }
+.swin .side { padding: 10px 8px; border-right: 1px solid var(--border-soft); display: flex; flex-direction: column; gap: 2px; }
+.swin .side div { padding: 6px 10px; border-radius: 7px; font-size: 12.5px; color: var(--text2); }
+.swin .side .on { background: var(--accent-soft); color: var(--text); font-weight: 600; }
+.swin .main { padding: 18px 22px; overflow: auto; }
+.swin h4 { margin: 0 0 4px; font-size: 15px; } .swin .hint { color: var(--text3); font-size: 12px; margin-bottom: 14px; }
+.sg { border-radius: 10px; background: var(--card); border: 1px solid var(--border-soft); margin-bottom: 14px; }
+.sg .srow { display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-top: 1px solid var(--border-soft); font-size: 12.5px; }
+.sg .srow:first-child { border-top: 0; }
+.sg .srow .t { flex: 1; } .sg .srow .t small { display: block; color: var(--text3); font-size: 11.5px; }
+.sgt { font-size: 11.5px; font-weight: 600; color: var(--text3); margin: 0 2px 6px; }
+.tog { width: 32px; height: 19px; border-radius: 10px; background: var(--tile); position: relative; cursor: pointer; flex: none; border: 1px solid var(--border-soft); }
+.tog::after { content: ''; position: absolute; left: 2px; top: 2px; width: 13px; height: 13px; border-radius: 50%; background: #fff; transition: left .15s; box-shadow: 0 1px 2px rgba(0,0,0,.3); }
+.tog.on { background: var(--ok); border-color: var(--ok); } .tog.on::after { left: 15px; }
+.seg { display: inline-flex; background: var(--tile); border-radius: 7px; padding: 2px; gap: 2px; }
+.seg button { border: 0; background: transparent; border-radius: 5px; padding: 2px 9px; cursor: pointer; font-size: 12px; color: var(--text2); }
+.seg button.on { background: var(--card); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,.2); }
+.kwtag { display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: 6px; background: var(--kw-soft); color: var(--kw-text); font: 12px ui-monospace, Menlo, monospace; margin-right: 4px; }
+
+/* toast */
+.toast { position: absolute; left: 50%; bottom: 26px; transform: translateX(-50%); background: var(--pop); border: 1px solid var(--border); border-radius: 999px; padding: 7px 14px; box-shadow: 0 10px 30px rgba(0,0,0,.3); font-size: 12.5px; display: none; z-index: 100; white-space: nowrap; }
+.toast.show { display: block; }
+
+/* notes below the stage */
+.notes { width: 1200px; max-width: calc(100vw - 32px); margin-top: 28px; display: grid; grid-template-columns: 1fr 1fr; gap: 18px 28px; color: var(--text2); font-size: 12.5px; }
+.notes h3 { margin: 0 0 8px; font-size: 14px; color: var(--text); }
+.notes table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.notes td, .notes th { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--border-soft); vertical-align: top; }
+.notes th { color: var(--text3); font-weight: 600; }
+.notes code { font: 11.5px ui-monospace, Menlo, monospace; color: var(--text); }
+.notes ul { margin: 0; padding-left: 18px; } .notes li { margin-bottom: 5px; }
+.notes .full { grid-column: 1 / -1; }
+</style>
+</head>
+<body>
+
+<div class="stagebar">
+  <b>本机配置 · sys</b>
+  <button class="pill" data-s="hint">① 输入关键字</button>
+  <button class="pill" data-s="overview">② 概览</button>
+  <button class="pill" data-s="section">③ 分区详情</button>
+  <button class="pill" data-s="search">④ 搜索字段</button>
+  <button class="pill" data-s="privacy">⑤ 隐私与权限</button>
+  <button class="pill" data-s="copy">⑥ 复制报告</button>
+  <button class="pill" data-s="direct">⑦ 免关键字直达</button>
+  <button class="pill" data-s="loading">⑧ 首次读取</button>
+  <button class="pill" data-s="settings">⑨ 关键字设置</button>
+  <span class="sp"></span>
+  <button class="pill" id="desktopBtn">台式机（无电池）</button>
+  <button class="pill" id="lightBtn">浅色</button>
+</div>
+<div class="caption" id="caption"></div>
+
+<div class="desk" id="desk">
+  <div class="menubar"><b></b><b>访达</b><span>文件</span><span>编辑</span><span>显示</span><span>前往</span><span class="sp"></span>
+    <span class="tf" id="mbTf" title="Typeflux"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 7h16M12 7v12"/></svg></span>
+    <span>10月17日 周六 09:24</span></div>
+
+  <div class="openhint" id="openhint">按 ⌘Space 打开启动器</div>
+  <div class="scrim" id="scrim"></div>
+  <div class="launcher" id="launcher">
+    <div class="lin">
+      <span id="chipSlot"></span>
+      <input id="q" autocomplete="off" spellcheck="false" placeholder="随便问，或输入关键字…">
+      <span id="headRight"></span>
+    </div>
+    <div class="lbody" id="lbody"></div>
+    <div class="lbar" id="lbar"></div>
+    <div class="pop" id="pop"></div>
+  </div>
+
+  <div class="swin" id="swin"></div>
+  <div class="toast" id="toast"></div>
+</div>
+
+<div class="notes">
+  <div>
+    <h3>交互要点</h3>
+    <ul>
+      <li><b>关键字</b>：<code>sys</code>，别名 <code>about</code> / <code>本机</code> / <code>配置</code>（可在设置中改）。<code>sys</code> + 空格直接进入并开始搜索字段。</li>
+      <li><b>定位</b>：<code>top</code> 看「此刻在发生什么」（实时占用），<code>sys</code> 看「这台机器是什么」（静态配置）。两者互相跳转：存储 / 内存 / 电池分区里的「实时占用 →」直接打开 <code>top</code> 并聚焦对应指标；<code>top</code> 状态栏的机型点击回到 <code>sys</code>。</li>
+      <li><b>键盘</b>：⌘1–⌘8 切分区，⇥ 下一分区，↑↓ 选行，↩ / ⌘C 复制该行的值，⌘⇧C 复制完整报告，⌘↩ 带上配置问 AI，⌘O 打开 macOS「系统信息」，按住 ⌥ 临时显示敏感值，esc 逐层退出（清空搜索 → 回概览 → 退出关键字）。</li>
+      <li><b>复制优先</b>：每一行都能一键复制「值」；复制报告默认<b>不含</b>序列号、MAC、公网 IP、主机名，适合直接贴到 issue / 工单里。</li>
+      <li><b>问 AI</b>：概览底部给出 2–3 个与本机相关的问题（例如「能流畅跑哪个本地语音模型」），发送时附带脱敏后的配置摘要。</li>
+    </ul>
+  </div>
+  <div>
+    <h3>边界与降级</h3>
+    <ul>
+      <li><b>台式机 / 无电池</b>：电池分区整项隐藏，⌘ 数字顺延（点右上角「台式机」查看）。</li>
+      <li><b>Intel Mac</b>：处理器显示型号与基础频率，隐藏「性能核 / 能效核」与神经网络引擎行。</li>
+      <li><b>Wi‑Fi 名称</b>：macOS 14+ 读取 SSID 需要定位权限；未授权时只显示「需要定位权限」和「去授权」，其余网络信息照常显示。</li>
+      <li><b>公网 IP</b>：唯一需要联网的字段，默认<b>点击才查询</b>（设置可改为自动 / 从不），查询结果只缓存在内存。</li>
+      <li><b>慢字段</b>：显示器、电池健康、存储设备需 IOKit / system_profiler，首次打开逐项填入（骨架占位），结果本次运行内缓存 10 分钟；网络字段每次进入时刷新。</li>
+      <li><b>搜索无结果</b>：提示改用 AI 提问，⌘↩ 直接把关键词连同配置摘要发给随便问。</li>
+    </ul>
+  </div>
+  <div class="full">
+    <h3>数据来源（实现参考）</h3>
+    <table>
+      <tr><th style="width:120px">分区</th><th>字段</th><th>来源</th></tr>
+      <tr><td>概览 / 系统</td><td>机型名、型号标识、序列号、macOS 版本与 Build、内核、启动时间、SIP / FileVault</td><td><code>sysctl hw.model</code>、<code>IOPlatformExpertDevice</code>（序列号、型号编号）、<code>ProcessInfo.operatingSystemVersion</code>、<code>kern.osversion</code>、<code>kern.boottime</code>、<code>csrutil</code> 状态 / <code>fdesetup status</code></td></tr>
+      <tr><td>处理器</td><td>芯片、核心（P/E）、架构、Rosetta</td><td>复用现有 <code>SystemMachineInfo</code>（<code>machdep.cpu.brand_string</code>、<code>hw.perflevel0/1.physicalcpu</code>），<code>sysctl.proc_translated</code></td></tr>
+      <tr><td>内存</td><td>总量、类型</td><td><code>hw.memsize</code>；内存类型来自 <code>SPMemoryDataType</code>（慢字段）</td></tr>
+      <tr><td>存储</td><td>卷、容量、文件系统、加密、外接设备</td><td><code>FileManager</code> 卷资源键（<code>volumeTotalCapacity</code>、<code>volumeAvailableCapacityForImportantUsage</code>、<code>volumeIsEncrypted</code>…）</td></tr>
+      <tr><td>显示与图形</td><td>分辨率、缩放、刷新率、HDR、GPU、Metal</td><td><code>NSScreen</code>（<code>maximumFramesPerSecond</code>、<code>backingScaleFactor</code>）、<code>CGDisplayCopyDisplayMode</code>、<code>MTLCreateSystemDefaultDevice()</code></td></tr>
+      <tr><td>网络</td><td>接口、IP、路由器、DNS、代理、Wi‑Fi</td><td><code>getifaddrs</code>、<code>SCDynamicStore</code>（路由 / DNS / 代理）、<code>CWWiFiClient</code>（SSID 需定位权限）</td></tr>
+      <tr><td>电池</td><td>电量、健康、循环次数、充电器</td><td><code>IOPSCopyPowerSourcesInfo</code>、<code>AppleSmartBattery</code>（<code>CycleCount</code>、<code>MaxCapacity</code>）、<code>IOPSCopyExternalPowerAdapterDetails</code></td></tr>
+    </table>
+  </div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const params = new URLSearchParams(location.search);
+const KEYWORDS = ['sys', 'about', '本机', '配置'];
+
+/* ---------- Icons ---------- */
+const P = {
+  info: '<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>',
+  grid: '<rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/>',
+  cpu: '<rect x="6" y="6" width="12" height="12" rx="2"/><path d="M9 2v4M15 2v4M9 18v4M15 18v4M2 9h4M2 15h4M18 9h4M18 15h4"/>',
+  mem: '<rect x="3" y="7" width="18" height="10" rx="1.5"/><path d="M7 7v10M11 7v10M15 7v10M3 20h18"/>',
+  disk: '<ellipse cx="12" cy="6" rx="8" ry="3"/><path d="M4 6v12c0 1.7 3.6 3 8 3s8-1.3 8-3V6"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/>',
+  disp: '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>',
+  net: '<path d="M2 9a15 15 0 0 1 20 0M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19.5" r=".8"/>',
+  bat: '<rect x="2" y="7" width="17" height="10" rx="2"/><path d="M22 11v2"/><path d="M6 10v4M9.5 10v4"/>',
+  sys: '<path d="M12 3a9 9 0 1 0 9 9"/><path d="M12 7v5l3 2"/><path d="M17 3h4v4"/>',
+  copy: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/>',
+  eye: '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  eyeoff: '<path d="M3 3l18 18"/><path d="M10.6 5.1A10.6 10.6 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3.2 4.1M6.3 6.3C3.6 8 2 12 2 12s3.5 7 10 7c1.7 0 3.2-.4 4.5-1.1"/>',
+  spark: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/>',
+  ext: '<path d="M14 4h6v6M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/>',
+  gauge: '<path d="M12 14l4-4"/><path d="M3.3 17a9 9 0 1 1 17.4 0"/>',
+  pin: '<path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/>',
+  globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
+  search: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>',
+  chev: '<path d="M6 9l6 6 6-6"/>',
+  check: '<path d="M5 12l5 5 9-10"/>',
+  gear: '<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+};
+const ic = (n, s = 14, w = 2) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round">${P[n]}</svg>`;
+const MAC_ART = `<svg class="mac" viewBox="0 0 74 50" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="10" y="3" width="54" height="36" rx="3.5"/><rect x="14" y="7" width="46" height="28" rx="1" fill="url(#scr)" stroke="none"/><path d="M3 41h68l-3 5H6z" stroke-linejoin="round"/><path d="M31 41v1.6h12V41"/><defs><linearGradient id="scr" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3d6fd8"/><stop offset=".55" stop-color="#8a4fe8"/><stop offset="1" stop-color="#ff7ab6"/></linearGradient></defs></svg>`;
+
+/* ---------- Simulated machine ---------- */
+const SECTIONS = [
+  { id: 'overview', name: '概览', icon: 'grid', color: '--accent' },
+  { id: 'cpu', name: '处理器', icon: 'cpu', color: '--c-cpu' },
+  { id: 'mem', name: '内存', icon: 'mem', color: '--c-mem' },
+  { id: 'disk', name: '存储', icon: 'disk', color: '--c-disk' },
+  { id: 'disp', name: '显示与图形', icon: 'disp', color: '--c-disp' },
+  { id: 'net', name: '网络', icon: 'net', color: '--c-net' },
+  { id: 'bat', name: '电池', icon: 'bat', color: '--c-bat' },
+  { id: 'sys', name: '系统与安全', icon: 'sys', color: '--c-sys' },
+];
+/* f: field. sens = hidden by default; slow = filled after a delay on first read;
+   kind: perm (needs permission) | fetch (needs a network request); a = search aliases. */
+const F = [
+  // CPU
+  { s: 'cpu', g: '芯片', l: '芯片', v: 'Apple M3 Pro', a: ['chip', 'cpu', 'soc', '处理器'] },
+  { s: 'cpu', g: '芯片', l: 'CPU 核心', v: '12 核', x: '6 性能核 + 6 能效核', a: ['core', 'cores', '核心', '核数'] },
+  { s: 'cpu', g: '芯片', l: 'GPU 核心', v: '18 核', a: ['gpu', '显卡', '图形'] },
+  { s: 'cpu', g: '芯片', l: '神经网络引擎', v: '16 核', x: '本地模型推理会用到', a: ['npu', 'ane', 'neural'] },
+  { s: 'cpu', g: '芯片', l: '架构', v: 'arm64', x: 'Apple 芯片', a: ['arch', 'arm'] },
+  { s: 'cpu', g: '兼容', l: 'Rosetta 2', v: '<span class="chipv ok">已安装</span>', raw: '已安装', a: ['rosetta', 'intel', 'x86'] },
+  { s: 'cpu', g: '兼容', l: '当前进程', v: '原生 arm64', x: 'Typeflux 未经转译运行', a: ['translated', '转译'] },
+  // Memory
+  { s: 'mem', g: '内存', l: '容量', v: '18 GB', a: ['ram', 'memory', '内存', '容量'] },
+  { s: 'mem', g: '内存', l: '类型', v: 'LPDDR5 · 统一内存', slow: true, a: ['type', 'lpddr', '统一内存'] },
+  { s: 'mem', g: '内存', l: '制造商', v: 'Micron', slow: true, a: ['vendor', '厂商'] },
+  { s: 'mem', g: '内存', l: '可升级', v: '<span class="chipv off">否</span>', raw: '否', x: '集成在芯片封装上', a: ['upgrade', '升级', '插槽'] },
+  // Storage
+  { s: 'disk', g: '内建 · APPLE SSD AP1024Z', l: 'Macintosh HD', v: 'vol-root', raw: '已用 612 GB / 1 TB（可用 382 GB）', a: ['ssd', 'disk', '硬盘', '磁盘', '容量', '剩余', 'free'] },
+  { s: 'disk', g: '内建 · APPLE SSD AP1024Z', l: '文件系统', v: 'APFS', x: '区分大小写：否', a: ['apfs', 'fs'] },
+  { s: 'disk', g: '内建 · APPLE SSD AP1024Z', l: '加密', v: '<span class="chipv ok">FileVault 已开启</span>', raw: 'FileVault 已开启', a: ['filevault', '加密', 'encrypt'] },
+  { s: 'disk', g: '内建 · APPLE SSD AP1024Z', l: '连接 / SMART', v: 'Apple Fabric · <span class="chipv ok">已验证</span>', raw: 'Apple Fabric · SMART 已验证', slow: true, a: ['smart', '健康'] },
+  { s: 'disk', g: '外接 · Samsung T7 Shield', l: 'T7 Shield', v: 'vol-ext', raw: '已用 1.1 TB / 2 TB（可用 0.9 TB）', a: ['usb', '外接', 'external', '移动硬盘'] },
+  { s: 'disk', g: '外接 · Samsung T7 Shield', l: '文件系统', v: 'exFAT', x: 'USB 3.2 Gen 2 · 10 Gb/s', a: ['exfat'] },
+  { s: 'disk', g: '备份', l: '时间机器', v: '上次备份 今天 08:12', x: '目标：T7 Shield', a: ['time machine', 'backup', '备份'] },
+  // Display & GPU
+  { s: 'disp', g: '内建 · Liquid Retina XDR 14.2″', l: '分辨率', v: '3024 × 1964', x: '看起来像 1512 × 982', slow: true, a: ['resolution', '分辨率', 'retina'] },
+  { s: 'disp', g: '内建 · Liquid Retina XDR 14.2″', l: '刷新率', v: '最高 120 Hz', x: 'ProMotion', slow: true, a: ['hz', 'refresh', '刷新率', 'promotion'] },
+  { s: 'disp', g: '内建 · Liquid Retina XDR 14.2″', l: 'HDR', v: '<span class="chipv ok">支持</span>', raw: '支持 HDR', x: '峰值 1600 尼特', slow: true, a: ['hdr', 'xdr', '亮度'] },
+  { s: 'disp', g: '外接 · Studio Display 27″', l: '分辨率', v: '5120 × 2880', x: '看起来像 2560 × 1440', slow: true, a: ['resolution', '分辨率', '5k', '外接'] },
+  { s: 'disp', g: '外接 · Studio Display 27″', l: '刷新率 / 连接', v: '60 Hz · Thunderbolt', slow: true, a: ['hz', 'refresh', 'thunderbolt'] },
+  { s: 'disp', g: '图形', l: 'GPU', v: 'Apple M3 Pro（18 核）', a: ['gpu', '显卡', 'graphics'] },
+  { s: 'disp', g: '图形', l: 'Metal', v: 'Metal 3', x: '硬件光线追踪：支持', a: ['metal', 'raytracing', '光追'] },
+  // Network
+  { s: 'net', g: '当前连接 · Wi‑Fi (en0)', l: 'Wi‑Fi 名称', v: 'Home‑5G', kind: 'perm', a: ['ssid', 'wifi', 'wi-fi', '无线', '网络名'] },
+  { s: 'net', g: '当前连接 · Wi‑Fi (en0)', l: '协议 / 信道', v: 'Wi‑Fi 6E (802.11ax)', x: '5 GHz · 信道 149 · −52 dBm', a: ['channel', '信道', '信号', 'rssi', '802.11'] },
+  { s: 'net', g: '当前连接 · Wi‑Fi (en0)', l: 'IPv4 地址', v: '192.168.1.23', a: ['ip', 'ipv4', '地址', '内网'] },
+  { s: 'net', g: '当前连接 · Wi‑Fi (en0)', l: 'IPv6 地址', v: 'fe80::1c2b:9aff:fe31:7d10', a: ['ip', 'ipv6'] },
+  { s: 'net', g: '当前连接 · Wi‑Fi (en0)', l: '路由器', v: '192.168.1.1', a: ['ip', 'router', 'gateway', '网关', '路由'] },
+  { s: 'net', g: '当前连接 · Wi‑Fi (en0)', l: 'DNS', v: '223.5.5.5, 119.29.29.29', a: ['dns'] },
+  { s: 'net', g: '当前连接 · Wi‑Fi (en0)', l: 'MAC 地址', v: 'a4:83:e7:2c:91:5f', sens: true, x: '私有地址：固定', a: ['mac', '物理地址', 'mac地址'] },
+  { s: 'net', g: '外网与代理', l: '公网 IP', v: '203.0.113.24', x: '上海 · 电信', kind: 'fetch', sens: true, a: ['ip', 'public', '公网', '外网', 'wan'] },
+  { s: 'net', g: '外网与代理', l: '系统代理', v: 'HTTP/HTTPS 127.0.0.1:7890', x: 'SOCKS 未启用', a: ['proxy', '代理'] },
+  { s: 'net', g: '外网与代理', l: 'VPN', v: '<span class="chipv off">未连接</span>', raw: '未连接', a: ['vpn'] },
+  { s: 'net', g: '本机', l: '主机名', v: 'Oras-MacBook-Pro.local', sens: true, a: ['hostname', 'host', '主机', '电脑名'] },
+  // Battery
+  { s: 'bat', g: '电池', l: '电量', v: 'bat-level', raw: '82% · 使用电源适配器充电中', a: ['battery', '电量', '电池', '充电'] },
+  { s: 'bat', g: '电池', l: '健康', v: '<span class="chipv ok">正常</span>', raw: '正常 · 最大容量 91%', x: '最大容量 91%', slow: true, a: ['health', '健康', '容量'] },
+  { s: 'bat', g: '电池', l: '循环次数', v: '214', x: '设计寿命 1000 次', slow: true, a: ['cycle', '循环'] },
+  { s: 'bat', g: '电源', l: '充电器', v: '96 W USB‑C 电源适配器', slow: true, a: ['charger', 'adapter', '充电器', '功率'] },
+  { s: 'bat', g: '电源', l: '低电量模式', v: '<span class="chipv off">关闭</span>', raw: '关闭', a: ['low power', '低电量', '省电'] },
+  // System
+  { s: 'sys', g: 'macOS', l: '版本', v: 'macOS Sequoia 15.1', x: 'Build 24B83', a: ['os', 'macos', 'version', '版本', '系统'] },
+  { s: 'sys', g: 'macOS', l: '内核', v: 'Darwin 24.1.0', a: ['kernel', 'darwin', 'xnu'] },
+  { s: 'sys', g: 'macOS', l: '已运行', v: '3 天 4 小时', x: '启动于 10月14日 05:11', a: ['uptime', 'boot', '运行时间', '开机'] },
+  { s: 'sys', g: 'macOS', l: '语言与地区', v: '简体中文 · 中国大陆', a: ['locale', 'language', '语言', '地区'] },
+  { s: 'sys', g: '这台 Mac', l: '型号名称', v: 'MacBook Pro（14 英寸，2023 年 11 月）', a: ['model', '型号', '机型'] },
+  { s: 'sys', g: '这台 Mac', l: '型号标识', v: 'Mac15,6', a: ['model', 'identifier', '型号'] },
+  { s: 'sys', g: '这台 Mac', l: '型号编号', v: 'MRX33CH/A', a: ['part', '型号'] },
+  { s: 'sys', g: '这台 Mac', l: '序列号', v: 'C02XK4M1Q6L4', sens: true, a: ['serial', 'sn', '序列号', '保修'] },
+  { s: 'sys', g: '安全', l: '系统完整性保护', v: '<span class="chipv ok">已开启</span>', raw: '已开启', a: ['sip', 'csrutil', '完整性'] },
+  { s: 'sys', g: '安全', l: '防火墙', v: '<span class="chipv warn">已关闭</span>', raw: '已关闭', a: ['firewall', '防火墙'] },
+  { s: 'sys', g: '安全', l: 'Gatekeeper', v: 'App Store 与已知开发者', a: ['gatekeeper', '安全'] },
+  { s: 'sys', g: 'Typeflux', l: 'Typeflux 版本', v: '1.42.0 (1420)', a: ['typeflux', 'version', '版本'] },
+];
+F.forEach((f, i) => { f.id = i; });
+
+/* ---------- State ---------- */
+const state = {
+  launcher: true, view: 'home', section: 'overview', sel: null, reveal: new Set(), alt: false,
+  wifiGranted: false, pubip: 'idle', loaded: true, loadStarted: 0, pop: null,
+  report: { fmt: 'md', sens: false }, desktop: false, light: false, settings: false,
+  cfg: { defaultSec: 'last', hideSens: true, pubip: 'ask', direct: true, reportSens: false },
+};
+const secs = () => SECTIONS.filter(s => !(state.desktop && s.id === 'bat'));
+const secName = id => SECTIONS.find(s => s.id === id).name;
+const secColor = id => `var(${SECTIONS.find(s => s.id === id).color})`;
+const fields = () => F.filter(f => !(state.desktop && f.s === 'bat'));
+const isSlowPending = f => f.slow && !state.loaded;
+
+/* ---------- Search ---------- */
+function plain(f) { return (f.raw || f.v).replace(/<[^>]+>/g, ''); }
+function matches(f, q) {
+  const t = q.trim().toLowerCase();
+  if (!t) return true;
+  // Labels, groups and values match anywhere; aliases only by prefix, so "ip" does not hit "chip" or "sip".
+  const hay = [f.l, f.g, secName(f.s), f.sens && !revealed(f) ? '' : plain(f), f.x || ''].join(' ').toLowerCase();
+  const aliases = (f.a || []).map(a => a.toLowerCase());
+  return t.split(/\s+/).every(w => hay.includes(w) || aliases.some(a => a.startsWith(w)));
+}
+function hl(text, q) {
+  const words = q.trim().split(/\s+/).filter(Boolean);
+  if (!words.length) return esc(text);
+  let out = esc(text);
+  words.forEach(w => { out = out.replace(new RegExp(`(${w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'ig'), '<mark>$1</mark>'); });
+  return out;
+}
+const revealed = f => !f.sens || !state.cfg.hideSens || state.alt || state.reveal.has(f.id);
+
+/* ---------- Launcher ---------- */
+function matchKeyword(text) { const t = text.trim().toLowerCase(); return KEYWORDS.find(k => t === k) || null; }
+function query() { return state.view === 'sys' ? $('#q').value : ''; }
+
+function renderLauncher() {
+  $('#launcher').classList.toggle('show', state.launcher);
+  $('#scrim').classList.toggle('show', state.launcher);
+  $('#openhint').style.display = state.launcher || state.settings ? 'none' : '';
+  if (!state.launcher) return;
+  const q = $('#q');
+  if (state.view === 'sys') {
+    const sec = state.section !== 'overview' && !query().trim() ? `<span class="opt">→ ${secName(state.section)}</span>` : '';
+    $('#chipSlot').innerHTML = `<span class="chip"><span class="g">${ic('info', 13, 2.4)}</span>本机配置${sec}</span>`;
+    q.placeholder = '搜索配置项：ip、序列号、分辨率、电池…';
+    $('#headRight').innerHTML = `<button class="hbtn" data-act="report" title="复制完整配置报告">${ic('copy', 13)}复制报告<span class="s">⌘⇧C</span></button>`;
+  } else {
+    $('#chipSlot').innerHTML = '';
+    q.placeholder = '随便问，或输入关键字…';
+    $('#headRight').innerHTML = '';
+  }
+  renderBody();
+}
+
+function renderBody() {
+  if (!state.launcher) return;
+  const body = $('#lbody'), bar = $('#lbar');
+  if (state.view === 'sys') { body.innerHTML = sysHTML(); bar.innerHTML = sysBarHTML(); renderPop(); return; }
+  const text = $('#q').value;
+  const kw = matchKeyword(text);
+  const summary = `<b>MacBook Pro 14″</b> · M3 Pro · 18 GB · 1 TB · macOS 15.1`;
+  if (state.view === 'hint' && kw) {
+    body.innerHTML = `
+      <div class="sec">关键字</div>
+      <div class="item on" data-act="enter">
+        <span class="ic" style="background:var(--kw)">${ic('info', 16, 2.2)}</span>
+        <div style="min-width:0"><div class="t">本机配置</div><div class="d">${summary}</div></div>
+        <div class="r"><span><span class="kbd">↩</span>打开</span></div>
+      </div>
+      <div class="item" data-act="type-top"><span class="ic" style="background:#2bb3aa">${ic('gauge', 16, 2.2)}</span><div><div class="t">系统监控</div><div class="d">想看实时占用？输入 <span class="kbd">top</span></div></div><div class="r"><span class="kbd">top</span></div></div>
+      <div class="sec">应用</div>
+      <div class="item"><span class="ic" style="background:#555">${ic('info', 16)}</span><div><div class="t">系统信息</div><div class="d">/System/Applications/Utilities</div></div><div class="r"><span class="kbd">⌘2</span></div></div>
+      <div class="sec">AI</div>
+      <div class="item"><span class="ic" style="background:var(--accent-soft);color:var(--accent)">${ic('spark', 16)}</span><div><div class="t">问 AI “${esc(text)}”</div></div><div class="r"><span class="kbd">⌘↩</span></div></div>`;
+    bar.innerHTML = `<span><kbd>↩</kbd>打开本机配置</span><span><kbd>空格</kbd>进入并搜索字段</span><span class="sp"></span><span><kbd>esc</kbd>关闭</span>`;
+    return;
+  }
+  const direct = state.cfg.direct && text.trim().length >= 2 ? fields().filter(f => (f.a || []).some(a => a.toLowerCase() === text.trim().toLowerCase())).slice(0, 4) : [];
+  if (direct.length) {
+    body.innerHTML = `
+      <div class="sec" style="display:flex;gap:8px">本机配置<span style="font-weight:400">· 来自 <span class="kbd">sys</span></span></div>
+      ${direct.map((f, i) => `<div class="item ${i === 0 ? 'on' : ''}" data-copy="${f.id}">
+        <span class="ic" style="background:${secColor(f.s)}">${ic(SECTIONS.find(s => s.id === f.s).icon, 15, 2.2)}</span>
+        <div style="min-width:0"><div class="t">${directTitle(f)}</div><div class="d">${esc(f.l)} · ${esc(f.g)}</div></div>
+        <div class="r">${i === 0 ? '<span><span class="kbd">↩</span>复制</span>' : ''}</div></div>`).join('')}
+      <div class="item" data-act="enter-search"><span class="ic" style="background:var(--kw-soft);color:var(--kw)">${ic('search', 15)}</span><div><div class="t">在本机配置中查看全部「${esc(text.trim())}」</div></div><div class="r"><span class="kbd">⌘↩</span></div></div>
+      <div class="sec">AI</div>
+      <div class="item"><span class="ic" style="background:var(--accent-soft);color:var(--accent)">${ic('spark', 16)}</span><div><div class="t">问 AI “${esc(text)}”</div></div></div>`;
+    bar.innerHTML = `<span><kbd>↩</kbd>复制</span><span><kbd>⌘↩</kbd>在本机配置中查看</span><span class="sp"></span><span>可在设置中关闭「免关键字直达」</span>`;
+    return;
+  }
+  body.innerHTML = `
+    <div class="sec">试试</div>
+    <div class="item" data-act="type-sys"><span class="ic" style="background:var(--kw)">${ic('info', 16, 2.2)}</span><div style="min-width:0"><div class="t">本机配置</div><div class="d">输入 <span class="kbd">sys</span> 或 <span class="kbd">本机</span>：机型、芯片、内存、存储、显示器、网络、电池</div></div><div class="r"><span class="kbd">sys</span></div></div>
+    <div class="item" data-act="type-ip"><span class="ic" style="background:var(--c-net)">${ic('net', 16, 2.2)}</span><div><div class="t">直接输入 ip / 序列号 / mac</div><div class="d">免关键字也能命中本机字段</div></div></div>
+    <div class="item"><span class="ic" style="background:var(--accent-soft);color:var(--accent)">${ic('spark', 16)}</span><div><div class="t">随便问</div><div class="d">直接输入问题，⌘↩ 发给 AI</div></div></div>`;
+  bar.innerHTML = `<span>输入 <kbd>sys</kbd> 试试</span><span class="sp"></span><span><kbd>esc</kbd>关闭</span>`;
+}
+
+function directTitle(f) {
+  if (f.kind === 'fetch' && state.pubip !== 'done') return state.pubip === 'loading' ? '查询中…' : '↩ 查询公网 IP';
+  return revealed(f) ? esc(plain(f)) : '<span class="mask">••••••••</span>';
+}
+
+function navHTML(counts) {
+  const searching = !!counts;
+  return `<div class="nav">${secs().map((s, i) => {
+    const c = counts ? counts[s.id] || 0 : null;
+    const right = searching ? (s.id === 'overview' ? '' : c ? `<span class="cnt">${c}</span>` : '') : `<span class="k">⌘${i + 1}</span>`;
+    return `<div class="n ${state.section === s.id && !searching ? 'on' : ''} ${searching && s.id !== 'overview' && !c ? 'dim' : ''}" data-sec="${s.id}">
+      <span class="gl" style="background:var(${s.color})">${ic(s.icon, 11, 2.4)}</span>${s.name}${right}</div>`;
+  }).join('')}
+    <div class="grow"></div>
+    <div class="foot">${state.loaded ? '<span class="dot"></span>已读取 · 刚刚' : '<span class="dot" style="background:var(--warn)"></span>正在读取硬件信息…'}<br><span class="livelink" data-act="open-sysinfo">${ic('ext', 11)}系统信息 App ⌘O</span></div>
+  </div>`;
+}
+
+function sysHTML() {
+  const q = query();
+  if (q.trim()) {
+    const hits = fields().filter(f => matches(f, q));
+    const counts = {};
+    hits.forEach(f => { counts[f.s] = (counts[f.s] || 0) + 1; });
+    let inner;
+    if (!hits.length) {
+      inner = `<div class="empty"><div class="big">没有叫「${esc(q.trim())}」的配置项</div>试试 ip、序列号、分辨率、循环次数…<br><br>
+        <button class="hbtn" data-act="ask">${ic('spark', 13)}问 AI：“${esc(q.trim())}”<span class="s">⌘↩</span></button></div>`;
+    } else {
+      inner = `<div class="ph"><h3>${hits.length} 项匹配「${esc(q.trim())}」</h3><span class="sp"></span><span class="s">↑↓ 选择 · ↩ 复制</span></div>`;
+      let lastSec = null, open = false;
+      hits.forEach(f => {
+        if (f.s !== lastSec) {
+          if (open) inner += '</div>';
+          const s = SECTIONS.find(x => x.id === f.s);
+          inner += `<div class="resrow"><span class="tag"><i style="background:var(${s.color})">${ic(s.icon, 9, 2.6)}</i>${s.name}</span></div><div class="rows">`;
+          open = true; lastSec = f.s;
+        }
+        inner += rowHTML(f, q, true);
+      });
+      if (open) inner += '</div>';
+    }
+    return `<div class="si">${navHTML(counts)}<div class="pane" id="pane">${inner}</div></div>`;
+  }
+  const pane = state.section === 'overview' ? overviewHTML() : sectionHTML(state.section);
+  return `<div class="si">${navHTML(null)}<div class="pane" id="pane">${pane}</div></div>`;
+}
+
+function overviewHTML() {
+  const pending = !state.loaded;
+  const skel = w => `<span class="skel" style="width:${w}px"></span>`;
+  const spec = (id, v, s, extra = '') => {
+    const S = SECTIONS.find(x => x.id === id), idx = secs().findIndex(x => x.id === id) + 1;
+    return `<div class="spec" data-sec="${id}" style="--sc:var(${S.color})"><div class="lb"><span style="color:var(${S.color})">${ic(S.icon, 13)}</span>${S.name}<span class="k">⌘${idx}</span></div><div class="v">${v}</div><div class="s">${s}</div>${extra}</div>`;
+  };
+  const bar = (p, c) => `<div class="bar"><i style="width:${p}%;background:${c}"></i></div>`;
+  const tiles = [
+    spec('cpu', 'Apple M3 Pro', '12 核 CPU · 18 核 GPU · 16 核 NE'),
+    spec('mem', '18 GB', pending ? skel(110) : 'LPDDR5 统一内存'),
+    spec('disk', '1 TB SSD', '可用 382 GB · 外接 1 个', bar(62, 'var(--c-disk)')),
+    spec('disp', pending ? skel(120) : '14.2″ XDR + 27″ 5K', pending ? skel(90) : '120 Hz · Metal 3'),
+    spec('net', 'Wi‑Fi 6E', '192.168.1.23 · 代理已开启'),
+    state.desktop ? spec('sys', 'macOS 15.1', 'SIP 已开启 · 防火墙已关闭')
+      : spec('bat', pending ? skel(80) : '82% · 充电中', pending ? skel(120) : '健康 正常 · 循环 214 次', bar(82, 'var(--c-bat)')),
+  ].join('');
+  const model = state.desktop ? 'Mac mini' : 'MacBook Pro';
+  const sub = state.desktop ? '2023 年 · Mac14,12' : '14 英寸 · 2023 年 11 月 · Mac15,6';
+  return `
+    <div class="hero">${MAC_ART}
+      <div style="min-width:0"><h2>${model}</h2><div class="sub">${sub}</div>
+        <div class="os">macOS Sequoia 15.1 <span style="color:var(--text3)">(24B83)</span><span class="badge">已是最新</span></div></div>
+      <div class="act">
+        <button class="hbtn sm" data-act="copy-summary">${ic('copy', 12)}复制一行摘要</button>
+        <span class="livelink" data-act="goto-top">${ic('gauge', 11)}实时占用 → top</span>
+      </div>
+    </div>
+    <div class="specs">${tiles}</div>
+    <div class="fit">${ic('spark', 15)}<span class="t">本地语音模型</span><span class="d">16 核神经网络引擎 + 18 GB 内存：可流畅运行 Whisper large‑v3‑turbo，推荐开启本地识别</span><span class="sp"></span><span class="livelink" data-act="goto-model">前往设置</span></div>
+    <div class="asks"><span class="lab">问 AI</span>
+      <span class="q" data-ask="这台 Mac 能流畅跑哪个本地语音模型？">能跑哪个本地模型？</span>
+      <span class="q" data-ask="磁盘还剩 382 GB，装 Xcode 和模拟器够吗？">磁盘够装 Xcode 吗？</span>
+      <span class="q" data-ask="电池循环 214 次、健康 91%，需要换电池吗？">电池需要换吗？</span>
+    </div>`;
+}
+
+function sectionHTML(id) {
+  const list = fields().filter(f => f.s === id);
+  const S = SECTIONS.find(s => s.id === id);
+  const live = { mem: '内存压力', disk: '读写速度', net: '实时网速', bat: '耗电进程', cpu: '每核负载' }[id];
+  let html = `<div class="ph"><span style="color:var(${S.color})">${ic(S.icon, 16)}</span><h3>${S.name}</h3><span class="s">${list.length} 项</span><span class="sp"></span>${live ? `<span class="livelink" data-act="goto-top">${ic('gauge', 11)}${live} → top</span>` : ''}</div>`;
+  let g = null;
+  list.forEach(f => {
+    if (f.g !== g) {
+      if (g !== null) html += '</div>';
+      const tag = /^外接/.test(f.g) ? '<span class="tag">可移除</span>' : '';
+      html += `<div class="grp">${esc(f.g)}${tag}</div><div class="rows">`;
+      g = f.g;
+    }
+    html += rowHTML(f, '', false);
+  });
+  if (g !== null) html += '</div>';
+  return html;
+}
+
+function valueHTML(f, q) {
+  if (isSlowPending(f)) return `<span class="skel" style="width:${90 + (f.id * 37) % 90}px"></span>`;
+  if (f.kind === 'perm' && !state.wifiGranted) {
+    return `<span class="perm">${ic('pin', 12)}需要定位权限才能读取</span> <button class="hbtn sm" data-act="grant" style="margin-left:6px">去授权</button>`;
+  }
+  if (f.kind === 'fetch') {
+    if (state.cfg.pubip === 'never') return `<span style="color:var(--text3)">已在设置中关闭</span>`;
+    if (state.pubip === 'idle') return `<button class="hbtn sm" data-act="fetch-ip">${ic('globe', 12)}查询公网 IP</button><span class="x">会向外部服务发起一次请求</span>`;
+    if (state.pubip === 'loading') return `<span class="skel" style="width:110px"></span><span class="x">查询中…</span>`;
+  }
+  if (f.v === 'vol-root' || f.v === 'vol-ext') {
+    const root = f.v === 'vol-root';
+    const segs = root ? [['应用', 21, 'var(--c-cpu)'], ['文档', 18, 'var(--c-mem)'], ['开发者', 14, 'var(--c-disk)'], ['系统数据', 9, 'var(--c-sys)']] : [['已用', 55, 'var(--c-disk)']];
+    return `<div class="num">${root ? '<b>382 GB</b> 可用 · 共 1 TB' : '<b>0.9 TB</b> 可用 · 共 2 TB'}</div>
+      <div class="vbar">${segs.map(s => `<i style="width:${s[1]}%;background:${s[2]}"></i>`).join('')}</div>
+      ${root ? `<div class="legend">${segs.map(s => `<span><i style="background:${s[2]}"></i>${s[0]}</span>`).join('')}</div>` : ''}`;
+  }
+  if (f.v === 'bat-level') {
+    return `<span class="num"><b>82%</b></span> <span class="chipv ok" style="margin-left:4px">充电中</span><span class="x">约 40 分钟充满</span>
+      <div class="vbar" style="width:180px"><i style="width:82%;background:var(--c-bat)"></i></div>`;
+  }
+  if (f.sens && !revealed(f)) return `<span class="mask">••••••••••••</span>`;
+  const main = f.v.includes('<') ? f.v : (q ? hl(f.v, q) : esc(f.v));
+  return `${main}${f.x ? `<span class="x">${q ? hl(f.x, q) : esc(f.x)}</span>` : ''}`;
+}
+
+function rowHTML(f, q, showGroup) {
+  const label = q ? hl(f.l, q) : esc(f.l);
+  const eye = f.sens && state.cfg.hideSens && !(f.kind === 'fetch' && state.pubip !== 'done')
+    ? `<button class="ib" data-eye="${f.id}" title="${revealed(f) ? '隐藏' : '显示（或按住 ⌥）'}">${ic(revealed(f) ? 'eyeoff' : 'eye', 13)}</button>` : '';
+  const copyable = !isSlowPending(f) && !(f.kind === 'perm' && !state.wifiGranted) && !(f.kind === 'fetch' && state.pubip !== 'done');
+  return `<div class="kv ${state.sel === f.id ? 'sel' : ''}" data-row="${f.id}">
+    <span class="l" title="${esc(f.l)}">${label}${showGroup ? `<div style="font-size:10.5px;color:var(--text3);opacity:.8">${esc(f.g)}</div>` : ''}</span>
+    <span class="val">${valueHTML(f, q)}</span>
+    <span class="tools">${eye}${copyable ? `<button class="ib" data-copy="${f.id}" title="复制值（↩）">${ic('copy', 13)}</button>` : ''}</span></div>`;
+}
+
+function sysBarHTML() {
+  const q = query().trim();
+  const sel = state.sel != null ? F[state.sel] : null;
+  const left = sel ? `<span><kbd>↩</kbd>复制「${esc(sel.l)}」</span>${sel.sens ? '<span><kbd>⌥</kbd>按住显示</span>' : ''}`
+    : q ? `<span><kbd>↑↓</kbd>选择</span><span><kbd>↩</kbd>复制</span>` : `<span><kbd>⌘1–${secs().length}</kbd>切换分区</span><span><kbd>↑↓</kbd>选择</span>`;
+  return `${left}<span><kbd>⌘↩</kbd>问 AI</span><span class="sp"></span><span class="lk" data-act="report"><kbd>⌘⇧C</kbd>复制报告</span><span><kbd>esc</kbd>${q ? '清空' : state.section !== 'overview' ? '回概览' : '退出'}</span>`;
+}
+
+/* ---------- Report popover ---------- */
+function reportText(fmt, sens) {
+  const rows = fields().filter(f => (sens || !f.sens) && f.kind !== 'perm' && !(f.kind === 'fetch'));
+  if (fmt === 'line') return 'MacBook Pro 14″ (2023, Mac15,6) · Apple M3 Pro 12C CPU/18C GPU · 18 GB · 1 TB SSD · macOS 15.1 (24B83)';
+  if (fmt === 'json') {
+    const o = {};
+    rows.forEach(f => { (o[secName(f.s)] = o[secName(f.s)] || {})[f.l] = plain(f) + (f.x ? ` (${f.x})` : ''); });
+    return JSON.stringify(o, null, 2);
+  }
+  let out = '## 本机配置\n', s = null;
+  rows.forEach(f => { if (f.s !== s) { out += `\n### ${secName(f.s)}\n`; s = f.s; } out += `- ${f.l}：${plain(f)}${f.x ? `（${f.x}）` : ''}\n`; });
+  return out;
+}
+function renderPop() {
+  const el = $('#pop');
+  if (state.pop !== 'report' || state.view !== 'sys') { el.classList.remove('show'); return; }
+  const r = state.report;
+  const n = fields().filter(f => (r.sens || !f.sens) && f.kind !== 'perm' && f.kind !== 'fetch').length;
+  const opt = (k, t, d, key) => `<div class="mi ${r.fmt === k ? 'on' : ''}" data-fmt="${k}"><div><div>${t}</div><div class="d">${d}</div></div><span class="s">${key}</span></div>`;
+  el.innerHTML = `<div class="popgrid"><div>
+      ${opt('line', '一行摘要', '机型 · 芯片 · 内存 · 存储 · 系统', '')}
+      ${opt('md', 'Markdown 报告', `${n} 项，按分区分组`, '⌘⇧C')}
+      ${opt('json', 'JSON', '给脚本或工单系统用', '')}
+      <hr><div class="ck" data-act="toggle-sens"><span class="box ${r.sens ? 'on' : ''}">${r.sens ? ic('check', 10, 3) : ''}</span>包含敏感信息<span style="color:var(--text3);font-size:11px">序列号、MAC、主机名</span></div>
+      <div style="padding:6px 8px 2px"><button class="hbtn primary" data-act="do-copy" style="width:100%;justify-content:center">${ic('copy', 13)}复制<span class="s">↩</span></button></div>
+    </div><pre class="prev">${esc(reportText(r.fmt, r.sens))}</pre></div>`;
+  el.style.right = '14px'; el.style.top = '54px';
+  el.classList.add('show');
+}
+
+/* ---------- Settings window ---------- */
+function renderSettings() {
+  const el = $('#swin');
+  el.classList.toggle('show', state.settings);
+  if (!state.settings) return;
+  const c = state.cfg;
+  const seg = (k, opts) => `<span class="seg">${opts.map(([v, t]) => `<button class="${c[k] === v ? 'on' : ''}" data-cfg="${k}" data-v="${v}">${t}</button>`).join('')}</span>`;
+  const tog = k => `<span class="tog ${c[k] ? 'on' : ''}" data-tog="${k}"></span>`;
+  el.innerHTML = `<div class="tb"><div class="lights"><i></i><i></i><i></i></div><span style="margin-left:8px">设置 — 启动器 › 关键字 › 本机配置</span></div>
+    <div class="side"><div>通用</div><div>语音输入</div><div>随便问</div><div class="on">启动器关键字</div><div>快捷键</div><div>隐私</div></div>
+    <div class="main">
+      <h4>本机配置</h4><div class="hint">在启动器里查看这台 Mac 的硬件、系统和网络配置。所有信息都在本机读取，只有「公网 IP」需要联网。</div>
+      <div class="sgt">关键字</div>
+      <div class="sg"><div class="srow"><div class="t">触发词<small>输入后按 ↩ 或空格进入</small></div><span><span class="kwtag">sys</span><span class="kwtag">about</span><span class="kwtag">本机</span><span class="kwtag">配置</span><span class="kwtag" style="background:var(--tile);color:var(--text3)">＋ 添加</span></span></div>
+        <div class="srow"><div class="t">快捷键<small>不打开启动器首页，直接进入本机配置</small></div><button class="hbtn sm">录制快捷键</button></div>
+        <div class="srow"><div class="t">打开时显示<small>选择「上次查看」会记住最后停留的分区</small></div>${seg('defaultSec', [['overview', '概览'], ['last', '上次查看']])}</div>
+        <div class="srow"><div class="t">免关键字直达<small>在启动器首页直接输入 ip、序列号、mac 等也能命中</small></div>${tog('direct')}</div></div>
+      <div class="sgt">隐私</div>
+      <div class="sg"><div class="srow"><div class="t">默认隐藏敏感信息<small>序列号、MAC 地址、主机名、公网 IP 显示为 ••••，点眼睛或按住 ⌥ 查看</small></div>${tog('hideSens')}</div>
+        <div class="srow"><div class="t">复制报告时包含敏感信息<small>关闭时报告可以放心贴到 issue 或群聊</small></div>${tog('reportSens')}</div>
+        <div class="srow"><div class="t">公网 IP<small>查询会向外部服务发起一次 HTTPS 请求，结果不落盘</small></div>${seg('pubip', [['ask', '点击时查询'], ['auto', '打开时查询'], ['never', '从不']])}</div></div>
+    </div>`;
+}
+
+/* ---------- Actions ---------- */
+let toastTimer;
+function toast(t) { const el = $('#toast'); el.innerHTML = t; el.classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('show'), 2200); }
+function enterSys(q = '') {
+  state.view = 'sys'; state.sel = null; state.pop = null;
+  if (state.cfg.defaultSec === 'overview') state.section = 'overview';
+  $('#q').value = q;
+  if (state.cfg.pubip === 'auto' && state.pubip === 'idle') fetchIP();
+  renderLauncher(); $('#q').focus();
+}
+function leaveSys() { state.view = 'home'; state.sel = null; state.pop = null; $('#q').value = ''; renderLauncher(); $('#q').focus(); }
+function openLauncher() { state.launcher = true; state.settings = false; renderSettings(); renderLauncher(); setTimeout(() => $('#q').focus(), 0); }
+function closeLauncher() { state.launcher = false; state.pop = null; renderLauncher(); }
+function setSection(id) { state.section = id; state.sel = null; $('#q').value = ''; renderLauncher(); const p = $('#pane'); if (p) p.scrollTop = 0; }
+function visibleRows() {
+  const q = query();
+  if (q.trim()) return fields().filter(f => matches(f, q));
+  return state.section === 'overview' ? [] : fields().filter(f => f.s === state.section);
+}
+function moveSel(d) {
+  const rows = visibleRows();
+  if (!rows.length) return;
+  const i = rows.findIndex(f => f.id === state.sel);
+  state.sel = rows[i < 0 ? (d > 0 ? 0 : rows.length - 1) : (i + d + rows.length) % rows.length].id;
+  renderBody();
+  const el = document.querySelector(`.kv[data-row="${state.sel}"]`); if (el) el.scrollIntoView({ block: 'nearest' });
+}
+function copyField(id) {
+  const f = F[id];
+  if (isSlowPending(f)) { toast('还在读取，稍等一下'); return; }
+  if (f.kind === 'perm' && !state.wifiGranted) { toast('需要先授予定位权限'); return; }
+  if (f.kind === 'fetch' && state.pubip !== 'done') { fetchIP(); return; }
+  toast(`已复制${f.l}：<b>${f.sens && !revealed(f) ? '（敏感值，已复制原文）' : esc(plain(f))}</b>`);
+}
+function fetchIP() {
+  if (state.cfg.pubip === 'never') return;
+  state.pubip = 'loading'; renderBody();
+  setTimeout(() => { state.pubip = 'done'; renderBody(); }, 900);
+}
+function startLoading() {
+  state.loaded = false; renderBody();
+  clearTimeout(startLoading.t);
+  startLoading.t = setTimeout(() => { state.loaded = true; renderBody(); }, 2200);
+}
+function ask(text) { toast(`已发给随便问：“${esc(text)}” · 附带配置摘要（不含敏感信息）`); }
+
+/* Launcher input */
+$('#q').addEventListener('input', e => {
+  const v = e.target.value;
+  if (state.view !== 'sys') {
+    const t = v.toLowerCase();
+    const withSep = KEYWORDS.find(k => t.startsWith(k + ' '));
+    if (withSep) { enterSys(v.slice(withSep.length + 1)); return; }
+    state.view = matchKeyword(v) ? 'hint' : 'home';
+  } else { state.sel = null; state.pop = null; }
+  renderLauncher();
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Alt') { if (!state.alt) { state.alt = true; if (state.view === 'sys') renderBody(); } }
+  const mod = e.metaKey || e.ctrlKey;
+  if (!state.launcher) { if (mod && e.key === ' ') { e.preventDefault(); openLauncher(); } return; }
+  if (state.view !== 'sys') {
+    if (state.view === 'hint' && e.key === 'Enter') { e.preventDefault(); enterSys(); return; }
+    if (e.key === 'Enter') {
+      const first = document.querySelector('#lbody .item.on[data-copy]');
+      if (first) { e.preventDefault(); if (mod) enterSys($('#q').value.trim()); else copyField(+first.dataset.copy); }
+      return;
+    }
+    if (e.key === 'Escape') { e.preventDefault(); if ($('#q').value) { $('#q').value = ''; state.view = 'home'; renderBody(); } else closeLauncher(); }
+    return;
+  }
+  if (state.pop === 'report') {
+    if (e.key === 'Escape') { e.preventDefault(); state.pop = null; renderPop(); return; }
+    if (e.key === 'Enter') { e.preventDefault(); doCopyReport(); return; }
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); const o = ['line', 'md', 'json']; state.report.fmt = o[(o.indexOf(state.report.fmt) + (e.key === 'ArrowDown' ? 1 : 2)) % 3]; renderPop(); return; }
+  }
+  const S = secs();
+  if (mod && e.shiftKey && e.key.toLowerCase() === 'c') { e.preventDefault(); state.pop = 'report'; state.report.sens = state.cfg.reportSens; renderPop(); }
+  else if (mod && e.key === 'Enter') { e.preventDefault(); ask(query().trim() || '帮我看看这台 Mac 的配置'); }
+  else if (mod && e.key.toLowerCase() === 'o') { e.preventDefault(); toast('已打开「系统信息」App'); }
+  else if (mod && /^[1-9]$/.test(e.key) && +e.key <= S.length) { e.preventDefault(); setSection(S[+e.key - 1].id); }
+  else if (mod && e.key.toLowerCase() === 'c' && state.sel != null && !window.getSelection().toString()) { e.preventDefault(); copyField(state.sel); }
+  else if (e.key === 'Tab' && !query().trim()) { e.preventDefault(); const i = S.findIndex(s => s.id === state.section); setSection(S[(i + (e.shiftKey ? S.length - 1 : 1)) % S.length].id); }
+  else if (e.key === 'ArrowDown') { e.preventDefault(); moveSel(1); }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); moveSel(-1); }
+  else if (e.key === 'Enter') { e.preventDefault(); if (state.sel != null) copyField(state.sel); else if (query().trim()) { const r = visibleRows(); if (r[0]) { state.sel = r[0].id; copyField(r[0].id); renderBody(); } } }
+  else if (e.key === 'Backspace' && !$('#q').value) { e.preventDefault(); if (state.section !== 'overview') setSection('overview'); else leaveSys(); }
+  else if (e.key === 'Escape') {
+    e.preventDefault();
+    if (state.sel != null) { state.sel = null; renderBody(); }
+    else if ($('#q').value) { $('#q').value = ''; renderLauncher(); }
+    else if (state.section !== 'overview') setSection('overview');
+    else leaveSys();
+  }
+});
+document.addEventListener('keyup', e => { if (e.key === 'Alt') { state.alt = false; if (state.view === 'sys') renderBody(); } });
+window.addEventListener('blur', () => { if (state.alt) { state.alt = false; renderBody(); } });
+
+function doCopyReport() {
+  const r = state.report;
+  const n = fields().filter(f => (r.sens || !f.sens) && f.kind !== 'perm' && f.kind !== 'fetch').length;
+  const name = { line: '一行摘要', md: 'Markdown 报告', json: 'JSON 报告' }[r.fmt];
+  state.pop = null; renderPop();
+  toast(`已复制${name}${r.fmt === 'line' ? '' : `（${n} 项${r.sens ? '，含敏感信息' : '，不含敏感信息'}）`}`);
+}
+
+/* Launcher clicks */
+$('#launcher').addEventListener('click', e => {
+  const t = e.target.closest('[data-act],[data-sec],[data-row],[data-copy],[data-eye],[data-ask],[data-fmt]');
+  if (state.pop && !e.target.closest('#pop') && !(t && t.dataset.act === 'report')) { state.pop = null; renderPop(); }
+  if (!t) return;
+  if (t.dataset.fmt) { state.report.fmt = t.dataset.fmt; renderPop(); return; }
+  if (t.dataset.eye) { const id = +t.dataset.eye; state.reveal.has(id) ? state.reveal.delete(id) : state.reveal.add(id); renderBody(); return; }
+  if (t.dataset.copy) { copyField(+t.dataset.copy); if (state.view === 'sys') { state.sel = +t.dataset.copy; renderBody(); } return; }
+  if (t.dataset.sec) { setSection(t.dataset.sec); return; }
+  if (t.dataset.ask) { ask(t.dataset.ask); return; }
+  const a = t.dataset.act;
+  if (a === 'enter') enterSys();
+  else if (a === 'enter-search') enterSys($('#q').value.trim());
+  else if (a === 'type-sys') { $('#q').value = 'sys'; state.view = 'hint'; renderBody(); }
+  else if (a === 'type-ip') { $('#q').value = 'ip'; state.view = 'home'; renderBody(); }
+  else if (a === 'type-top') toast('这里切到 <b>top</b> 系统监控（见系统监控设计稿）');
+  else if (a === 'goto-top') toast('打开 <b>top</b> 系统监控，并聚焦对应指标');
+  else if (a === 'goto-model') toast('打开 设置 › 语音输入 › 本地模型');
+  else if (a === 'open-sysinfo') toast('已打开「系统信息」App');
+  else if (a === 'copy-summary') toast(`已复制：${esc(reportText('line'))}`);
+  else if (a === 'report') { state.pop = state.pop === 'report' ? null : 'report'; state.report.sens = state.cfg.reportSens; renderPop(); }
+  else if (a === 'toggle-sens') { state.report.sens = !state.report.sens; renderPop(); }
+  else if (a === 'do-copy') doCopyReport();
+  else if (a === 'fetch-ip') fetchIP();
+  else if (a === 'grant') { toast('已打开 系统设置 › 隐私与安全性 › 定位服务'); setTimeout(() => { state.wifiGranted = true; renderBody(); }, 1200); }
+  else if (a === 'ask') ask(query().trim());
+  else if (t.dataset.row) { state.sel = +t.dataset.row; renderBody(); }
+  if (!e.target.closest('input')) $('#q').focus();
+});
+$('#launcher').addEventListener('dblclick', e => { const r = e.target.closest('[data-row]'); if (r) copyField(+r.dataset.row); });
+$('#scrim').addEventListener('click', closeLauncher);
+$('#openhint').addEventListener('click', openLauncher);
+$('#mbTf').addEventListener('click', openLauncher);
+$('#swin').addEventListener('click', e => {
+  const t = e.target.closest('[data-tog],[data-cfg]'); if (!t) return;
+  if (t.dataset.tog) state.cfg[t.dataset.tog] = !state.cfg[t.dataset.tog];
+  else state.cfg[t.dataset.cfg] = t.dataset.v;
+  renderSettings();
+});
+
+/* ---------- Screens ---------- */
+const CAPTIONS = {
+  hint: '<b>① 输入关键字</b>：输入 <b>sys</b>（或 about / 本机 / 配置），第一行是「本机配置」，行内就能看到一行摘要：机型 · 芯片 · 内存 · 存储 · 系统版本。↩ 进入；输入「sys 空格」直接进入并开始搜索字段。第二行提醒想看实时占用用 <b>top</b>。',
+  overview: '<b>② 概览</b>：左侧 8 个分区（⌘1–⌘8 / ⇥ 切换），右侧是机型卡 + 6 张规格卡，点卡片进入对应分区。下方「本地语音模型」根据芯片与内存给出 Typeflux 本地识别建议；再往下是和本机相关的 AI 问题，点击即带上脱敏配置发给随便问。',
+  section: '<b>③ 分区详情</b>：以「存储」为例。每个分区按设备 / 用途分组，行是「名称 — 值 — 补充说明」。↑↓ 选行、↩ 或双击复制值，悬停出现复制按钮。容量用分段条展示，外接设备标「可移除」。右上「读写速度 → top」跳到实时监控。点左侧其他分区看看。',
+  search: '<b>④ 搜索字段</b>：输入框搜索的是<b>配置项</b>而不是分区：「ip」同时命中 IPv4、IPv6、路由器、公网 IP，按分区分组，左侧显示每个分区的命中数，匹配处高亮。支持中英文别名（sn = 序列号、gpu = 显卡、hz = 刷新率）。↩ 复制第一项。试试输入「序列号」「刷新率」「循环」或一个不存在的词。',
+  privacy: '<b>⑤ 隐私与权限</b>：网络分区。MAC、主机名、序列号、公网 IP 默认打码，点眼睛或<b>按住 ⌥</b> 临时显示；复制拿到的是原文。公网 IP 是唯一需要联网的字段，<b>点击才查询</b>。Wi‑Fi 名称在 macOS 14+ 需要定位权限，未授权时只占一行说明，不影响其他字段。',
+  copy: '<b>⑥ 复制报告</b>：右上「复制报告」或 ⌘⇧C：一行摘要 / Markdown / JSON 三种格式，右侧实时预览。默认<b>不含敏感信息</b>，勾选后才带上序列号等。适合贴进 bug 反馈、工单或发给同事。↑↓ 切格式，↩ 复制。',
+  direct: '<b>⑦ 免关键字直达</b>：在启动器首页直接输入 <b>ip</b>、序列号、mac 这类精确别名，「本机配置」分组会直接给出答案，↩ 复制，⌘↩ 进入 sys 查看全部匹配。只匹配精确别名，避免干扰普通搜索；可在设置中关闭。',
+  loading: '<b>⑧ 首次读取</b>：sysctl 能拿到的字段立即显示；显示器、内存类型、电池健康这类需要 IOKit / system_profiler 的慢字段用骨架占位，读完后逐项填入（约 1–2 秒），本次运行缓存 10 分钟。左下角显示读取状态。',
+  settings: '<b>⑨ 关键字设置</b>：设置 › 启动器关键字 › 本机配置：自定义触发词与快捷键、打开时停在概览还是上次分区、免关键字直达、敏感信息默认隐藏、复制报告是否含敏感信息、公网 IP 查询策略（点击时 / 打开时 / 从不）。改完再点 ②–⑦ 看效果。',
+};
+function show(id) {
+  document.querySelectorAll('.pill[data-s]').forEach(p => p.classList.toggle('on', p.dataset.s === id));
+  $('#caption').innerHTML = CAPTIONS[id] || '';
+  Object.assign(state, { sel: null, pop: null, settings: id === 'settings', launcher: id !== 'settings' });
+  state.reveal = new Set(); state.loaded = true; clearTimeout(startLoading.t);
+  if (id !== 'privacy') { state.pubip = 'idle'; state.wifiGranted = false; }
+  $('#q').value = '';
+  if (id === 'hint') { state.view = 'hint'; $('#q').value = 'sys'; }
+  else if (id === 'direct') { state.view = 'home'; $('#q').value = 'ip'; }
+  else if (id !== 'settings') {
+    state.view = 'sys';
+    state.section = { overview: 'overview', section: 'disk', search: 'overview', privacy: 'net', copy: 'overview', loading: 'overview' }[id] ?? 'overview';
+    if (id === 'search') $('#q').value = 'ip';
+    if (id === 'privacy') { state.pubip = 'idle'; state.wifiGranted = false; state.sel = F.find(f => f.l === 'MAC 地址').id; }
+    if (id === 'copy') { state.pop = 'report'; state.report = { fmt: 'md', sens: state.cfg.reportSens }; }
+  }
+  renderSettings(); renderLauncher();
+  if (id === 'loading') startLoading();
+  if (state.launcher) setTimeout(() => $('#q').focus(), 0);
+  history.replaceState(null, '', '?' + new URLSearchParams({ ...Object.fromEntries(params), s: id }).toString());
+}
+document.querySelectorAll('.pill[data-s]').forEach(p => p.onclick = () => show(p.dataset.s));
+$('#lightBtn').onclick = () => { state.light = !state.light; document.body.classList.toggle('light', state.light); $('#lightBtn').classList.toggle('on', state.light); };
+$('#desktopBtn').onclick = () => {
+  state.desktop = !state.desktop; $('#desktopBtn').classList.toggle('on', state.desktop);
+  if (state.desktop && state.section === 'bat') state.section = 'overview';
+  renderLauncher();
+};
+
+if (params.get('light') === '1') { state.light = true; document.body.classList.add('light'); $('#lightBtn').classList.add('on'); }
+if (params.get('solo') === '1') document.body.classList.add('solo');
+show(params.get('s') || 'hint');
+</script>
+</body>
+</html>
