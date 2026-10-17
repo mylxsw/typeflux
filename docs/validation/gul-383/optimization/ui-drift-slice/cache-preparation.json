@@ -1,0 +1,10 @@
+{
+  "source_slice": "PR #651 second-slice Release/SwiftPM/candidate/model cache",
+  "wall_seconds": 6.233289416995831,
+  "command": [
+    "cp",
+    "-cR",
+    "<second-slice>/.build",
+    ".build"
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "command": [
+    "swiftlint",
+    "lint",
+    "--quiet",
+    "--reporter",
+    "json",
+    "--config",
+    "<repository>/.swiftlint.yml",
+    "<repository>/.build/ui-drift-lint-baseline/SemanticReleaseUISliceTests.swift"
+  ],
+  "wall_seconds": 0.42354145797435194,
+  "exit_code": 0,
+  "diagnostics": []
+}

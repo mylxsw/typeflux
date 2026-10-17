@@ -1,0 +1,12 @@
+{
+  "measured_source_commit": "e5108fa312983ec4558d0d9174fa4d88defa9c17",
+  "latest_observed_main": "6c8d994eff55de582c238bf49166e6c5f50e73ad",
+  "changed_source_test_files": [
+    "Sources/Typeflux/Ask/AskDesign.swift",
+    "Tests/TypefluxTests/AskLauncherPlacementTests.swift"
+  ],
+  "policy": "Freeze the tested source; do not relabel later main changes as measured.",
+  "observed_change": "6c8d994e changes AskMetrics.launcherWidth from 1500 to 750 and updates one matching placement expectation. No semantic/index/model/cache implementation changes.",
+  "impact": "Narrower launcher wrapping/clipping and exact 750-point native geometry were not executed by the frozen e510 candidate. Existing first-slice 720-point text layout and this 1500-point fixture are separate evidence, not an exact current-750 execution.",
+  "remaining_if_required": "One bounded current-width native/layout check after refreshing only affected app/test products; no 100k/resource/quality rerun is justified."
+}

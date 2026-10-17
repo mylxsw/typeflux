@@ -1,0 +1,45 @@
+{
+  "swift_lint_changed_file": true,
+  "python_syntax": [
+    "audit_quality.py",
+    "collect.py",
+    "executed-run-initial.py",
+    "finalize.py",
+    "package_refresh.py",
+    "run.py"
+  ],
+  "diff_check_exit_code": 0,
+  "bundle_files_verified": 305,
+  "placement_tests_passed": 14,
+  "icon_tests_passed": 2,
+  "final_native_method_exit_code": 0,
+  "changed_production_lines": {
+    "app": {
+      "covered": 0,
+      "executable": 0,
+      "status": "N/A"
+    },
+    "file-worker": {
+      "covered": 0,
+      "executable": 0,
+      "status": "N/A"
+    },
+    "native-helper": {
+      "covered": 0,
+      "executable": 0,
+      "status": "N/A"
+    },
+    "media-runtime": {
+      "covered": 0,
+      "executable": 0,
+      "status": "N/A"
+    }
+  },
+  "acceptance": "Partial GUL-406 handoff. Fixed 306 recall fails; current 750-point main geometry unmeasured. No threshold waiver or GUL-407 start.",
+  "current_performance_gate_established": false,
+  "file_mode_lexical_layout_target_exceedances": {
+    "above_100ms": 1,
+    "samples": 3,
+    "max_ms": 128.92108329106122
+  }
+}

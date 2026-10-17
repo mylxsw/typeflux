@@ -1,0 +1,21 @@
+{
+  "boundary" : "Final NSTextView insertText commit to current production result publication,\nthen forced layout\/display and accessibility observation.\nNo physical HID or WindowServer presentation fence.",
+  "complete" : false,
+  "documents" : 50,
+  "indexed_files" : 0,
+  "model_ready" : false,
+  "model_sha256" : "2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135",
+  "mutation" : {
+    "file" : "final-en-00.txt",
+    "milliseconds" : 2194.7774583240971,
+    "new_version" : "16777239:84784635:159:1792230540:82251355:1792230540:82598814",
+    "old_version" : "16777239:84784442:79:1792230518:277533622:1792230518:277665872",
+    "trigger" : "Real atomic write; production FSEvents; no explicit rescan"
+  },
+  "rows" : [
+
+  ],
+  "service_phase" : "off",
+  "source" : "Existing final-holdout labels; all source and query embeddings inferred live.\nNo captured vectors are used.",
+  "stage" : "mixed-final_lexical-00"
+}

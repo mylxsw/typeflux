@@ -1,0 +1,8 @@
+{
+  "machine": "arm64",
+  "configuration": "Release -enable-testing",
+  "macos": "26.6.2",
+  "cpu": "Apple M4",
+  "physical_memory_bytes": 17179869184,
+  "samples": "50 existing text documents; 3 samples per entry/group; no 100k/resource rerun"
+}

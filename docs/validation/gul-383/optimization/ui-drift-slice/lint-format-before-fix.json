@@ -1,0 +1,32 @@
+{
+  "command": [
+    "swiftlint",
+    "lint",
+    "--quiet",
+    "--reporter",
+    "json",
+    "Tests/TypefluxTests/SemanticReleaseUISliceTests.swift"
+  ],
+  "exit_code": 0,
+  "wall_seconds": 0.37737895897589624,
+  "diagnostics": [
+    {
+      "character": 1,
+      "file": "<repository>/Tests/TypefluxTests/SemanticReleaseUISliceTests.swift",
+      "line": 274,
+      "reason": "Line should be 120 characters or less; currently it has 134 characters",
+      "rule_id": "line_length",
+      "severity": "Warning",
+      "type": "Line Length"
+    },
+    {
+      "character": 30,
+      "file": "<repository>/Tests/TypefluxTests/SemanticReleaseUISliceTests.swift",
+      "line": 20,
+      "reason": "Function parameters should be aligned vertically if they're in multiple lines in a declaration",
+      "rule_id": "vertical_parameter_alignment",
+      "severity": "Warning",
+      "type": "Vertical Parameter Alignment"
+    }
+  ]
+}

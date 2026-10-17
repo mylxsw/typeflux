@@ -1,0 +1,419 @@
+{
+  "cohorts": [
+    {
+      "cohort": "final-holdout",
+      "historical": {
+        "rows": 200,
+        "recalled": 175,
+        "positives": 175,
+        "recall_at_5": 1.0,
+        "false_positives": 0,
+        "negatives": 25,
+        "false_positive_rate": 0.0,
+        "mrr": 0.8982857142857142,
+        "location_correct": 175
+      },
+      "capture_model_sha256": "2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135",
+      "capture_projector_sha256": "c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f",
+      "capture_helper_sha256": "1ac53aae1ee878b8fec6826d6277a5b180a64ee7493ca88bff79f17d4554f12e",
+      "media_sources_with_sha256": 50,
+      "source_count": 100,
+      "label_and_capture_match": true,
+      "all_expected_sources_available_in_capture": true
+    },
+    {
+      "cohort": "unseen-query",
+      "historical": {
+        "rows": 200,
+        "recalled": 175,
+        "positives": 175,
+        "recall_at_5": 1.0,
+        "false_positives": 1,
+        "negatives": 25,
+        "false_positive_rate": 0.04,
+        "mrr": 0.8949523809523809,
+        "location_correct": 175
+      },
+      "capture_model_sha256": "2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135",
+      "capture_projector_sha256": "c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f",
+      "capture_helper_sha256": null,
+      "media_sources_with_sha256": 50,
+      "source_count": 100,
+      "label_and_capture_match": true,
+      "all_expected_sources_available_in_capture": true
+    },
+    {
+      "cohort": "rework-frozen",
+      "historical": {
+        "rows": 200,
+        "recalled": 175,
+        "positives": 175,
+        "recall_at_5": 1.0,
+        "false_positives": 2,
+        "negatives": 25,
+        "false_positive_rate": 0.08,
+        "mrr": 0.900952380952381,
+        "location_correct": 175
+      },
+      "capture_model_sha256": "2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135",
+      "capture_projector_sha256": "c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f",
+      "capture_helper_sha256": "21510854b22e6460bad5e9266173254b6138793f515912afeb01751756c3d12c",
+      "media_sources_with_sha256": 50,
+      "source_count": 125,
+      "label_and_capture_match": true,
+      "all_expected_sources_available_in_capture": true
+    },
+    {
+      "cohort": "rework-final2",
+      "historical": {
+        "rows": 200,
+        "recalled": 174,
+        "positives": 175,
+        "recall_at_5": 0.9942857142857143,
+        "false_positives": 0,
+        "negatives": 25,
+        "false_positive_rate": 0.0,
+        "mrr": 0.8995238095238095,
+        "location_correct": 174
+      },
+      "capture_model_sha256": "2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135",
+      "capture_projector_sha256": "c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f",
+      "capture_helper_sha256": "21510854b22e6460bad5e9266173254b6138793f515912afeb01751756c3d12c",
+      "media_sources_with_sha256": 50,
+      "source_count": 125,
+      "label_and_capture_match": true,
+      "all_expected_sources_available_in_capture": true
+    },
+    {
+      "cohort": "rework-final3",
+      "historical": {
+        "rows": 200,
+        "recalled": 175,
+        "positives": 175,
+        "recall_at_5": 1.0,
+        "false_positives": 0,
+        "negatives": 25,
+        "false_positive_rate": 0.0,
+        "mrr": 0.9128571428571428,
+        "location_correct": 175
+      },
+      "capture_model_sha256": "2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135",
+      "capture_projector_sha256": "c4a8a52691ecef40618438928bdf9e68379b854e24166f292592353db0aab64f",
+      "capture_helper_sha256": "7a81bd83814276fd1495a9f2bc3c98d56d808fa48987297001e117269616c2ea",
+      "media_sources_with_sha256": 50,
+      "source_count": 125,
+      "label_and_capture_match": true,
+      "all_expected_sources_available_in_capture": true
+    }
+  ],
+  "historical_source_commit": "6a9c18d79561b49d8c5339754193c6a06ee79374",
+  "historical_binary_sha256": "587dfa0f32563a004fb6d536c5985b535495354f9723e53dda24b1cd5d5d6731",
+  "historical_command_exit": 0,
+  "source_comparison": {
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+SearchMaintenance.swift": {
+      "historical_sha256": "d6e6805e7c9aa8ad4a8be48fede501de87e066472661eeb4e4deb4d190284b23",
+      "current_sha256": "3e26ba61e2e7623a84f396d018d7b211b60ebdd4c802eb622fb0e0df0016687c",
+      "unchanged": false
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticIndexDiagnostics.swift": {
+      "historical_sha256": "99af15a954c7b2215936e7a99bdee11cf7ed26ed1aea2de7ae640734a6c64ed7",
+      "current_sha256": "a1bd2060e3ce80e74615649306d3d1a6ff10d8a04726b66dbd1d2831a24dbdfb",
+      "unchanged": false
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Events.swift": {
+      "historical_sha256": "b04525762073772543df6624a75777c319b8c9c3f004199df136ec5806086577",
+      "current_sha256": "5f6dddd144a790317d0ec3ea7b900e27ca9eace7572373a3a7f3d7eb19aa81d1",
+      "unchanged": false
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer+Priority.swift": {
+      "historical_sha256": "e0811f6f7ed145f10db4b6148d18db501cbaa823cbcd60c22e4645ff2f76ebee",
+      "current_sha256": "e0811f6f7ed145f10db4b6148d18db501cbaa823cbcd60c22e4645ff2f76ebee",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticWorkBudget.swift": {
+      "historical_sha256": "61196c17c383a9632ec24b1b0cc1145d4843964d9abb56b731c1e89459399c2d",
+      "current_sha256": "5902cddeaf130fa6996dc0426c24cf7bd7e900686c1f00a1ddd5bc22f793ad10",
+      "unchanged": false
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticMediaPriority.swift": {
+      "historical_sha256": "cc3eecd9d2bd8dbcb19500533898994f6e219a0f6427c5b774c3387e5a78358c",
+      "current_sha256": "192909499c301ce3a0e636922143ce95ad278e79f1ce27cd78166c57c5290922",
+      "unchanged": false
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticIndexEvents.swift": {
+      "historical_sha256": "21a93e60eb75f8e2b8886a82d058f7221fffb5b60d05ed21a4dba4cfd64e0151",
+      "current_sha256": "3c8d09a3c1e0b041f7a855e0583cd68606f898ae6f396c4a7e18b4f0cc7d2a5c",
+      "unchanged": false
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticLexicalReader.swift": {
+      "historical_sha256": "20f4b3edab5c58fa9f9940e97130ef85f599903b2530f4f897330381ed615ecc",
+      "current_sha256": "325d3469677ee9280dbd23b726236fa42902e40cd369ed140e59a408f2a3cc1e",
+      "unchanged": false
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift": {
+      "historical_sha256": "faf1c128c77698eec03debe7ee8f9f9f960a25e231253b76ce5c0dea5e3c6146",
+      "current_sha256": "af5c269c93c08e1563efcfd7f61782f74d7de469298f00846d85d3faaeeae1a9",
+      "unchanged": false
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSearchTrace.swift": {
+      "historical_sha256": "f8d2daa74c114d793dffedd5aadac10d7a86a7145f5b8f57539b0324db1c8514",
+      "current_sha256": "f8d2daa74c114d793dffedd5aadac10d7a86a7145f5b8f57539b0324db1c8514",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer.swift": {
+      "historical_sha256": "2ba2f97aabf85e7a83b6f1ea00c4e47dd61cb4a110c177f94f9b6f504cc21799",
+      "current_sha256": "3d0f41037eeb68bf0d977accdc649a1b522dfb2048d9ca9c2db23b9e5528966c",
+      "unchanged": false
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Discovery.swift": {
+      "historical_sha256": "e8d02062063413e071b3cbc4568f256d21b4c491256d5f1db4dbca1d6e065f18",
+      "current_sha256": "0c3133288372ec9070094325a20c3e322f2d152741a084c4abee1b331bcc8286",
+      "unchanged": false
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer+Document.swift": {
+      "historical_sha256": "a8da92377fa22589d53fe66a4a38dea9ab0e0ff3c1c4e3711c34ad4dcb32ba8c",
+      "current_sha256": "cae7f101b098f21f1bdd7e94d089eb357c0889a117127732b109dc733f03dfa0",
+      "unchanged": false
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Totals.swift": {
+      "historical_sha256": "5932028a0396eeaac565d40b38e68de1621674db98083e892299593925bc89fe",
+      "current_sha256": "5932028a0396eeaac565d40b38e68de1621674db98083e892299593925bc89fe",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+MediaJobs.swift": {
+      "historical_sha256": "ad3afd3a82750afd680fc2d19db0c271b951b853468faeb2d34afe6350917764",
+      "current_sha256": "4fcff59f24c84ec6cd48033286d0be7cc7c0b9f17ffb5bc94ba62bbd29a62c19",
+      "unchanged": false
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticScoreCalibration.swift": {
+      "historical_sha256": "4202dd6b2d9fea677ae972c4cfc54d4051e778ee33afa1fe8e391b38417b8ecb",
+      "current_sha256": "4202dd6b2d9fea677ae972c4cfc54d4051e778ee33afa1fe8e391b38417b8ecb",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFilePolicy.swift": {
+      "historical_sha256": "033b2e6416c9d40cf9321bd845f9e5f377cf4b87abdff7fea707a471b38de66f",
+      "current_sha256": "f0e1d9d05da01c8830cc8ca176b584b02eceafc8237f5d54fba9f7295e82948e",
+      "unchanged": false
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+ProcessingDetails.swift": {
+      "historical_sha256": "77e222b6b1920d25e3c75dc311ac76bdd303d9ac1e703c35b6cc475cdebd617e",
+      "current_sha256": "c6fa39a1b866c0e1c083050bde32d09707955da29821757170c46451d7fc5932",
+      "unchanged": false
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer+Discovery.swift": {
+      "historical_sha256": "3c75e04220d68b3b4012387ceaec2a8e7ec60093c0191c7d78a5aadac4e51655",
+      "current_sha256": "2883e7e57cfa770a632b4667c5bc751a802ef6a79b0a14af393f21a0479a6cc7",
+      "unchanged": false
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticEmbeddingWorker.swift": {
+      "historical_sha256": "33f5fd46b189653395952932f75d2c6829623cf9853de87b2cdec195b9f08c21",
+      "current_sha256": "e5fdce8f4f4dcbb27bb52c279c641b547cde1d523321f7251144e5425ceed0f5",
+      "unchanged": false
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticModelDownload.swift": {
+      "historical_sha256": "e41ce30202d01fca258ee3821f56930db2397c914bce3e5284f0c54ffc9726da",
+      "current_sha256": "4af3d95e57d15cf0e0c28608eeda9c5cccebc43218376bfb38b3081db7ecc557",
+      "unchanged": false
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+SearchSchema.swift": {
+      "historical_sha256": "605ad60ed3ccab054df582db2ff0cca5ebd2d3eb7093202dfa1169bdbf0cd46a",
+      "current_sha256": "605ad60ed3ccab054df582db2ff0cca5ebd2d3eb7093202dfa1169bdbf0cd46a",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticMediaExtractor.swift": {
+      "historical_sha256": "086fb5899515fd5b1336f7b5c94daa8bf95b147dfea6682b3c60199f5cba0b71",
+      "current_sha256": "137219fcba131fb48df827f4290b692900d2633308527a7989bfe9dc183b985c",
+      "unchanged": false
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSearchRanking.swift": {
+      "historical_sha256": "4b9c1a4fdd22bce1c041cf4305f07bc840d0883653d664a0ebb0ee1e385db21d",
+      "current_sha256": "4b9c1a4fdd22bce1c041cf4305f07bc840d0883653d664a0ebb0ee1e385db21d",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer+Media.swift": {
+      "historical_sha256": "61e46618aba07a54604544d1944ce4d5d6a9b75999a8a9e282695df6530412b9",
+      "current_sha256": "f5d4cbca288e03fc582ccd5af6fa04885276e5955f2ff7b86ccb49f07052a8c0",
+      "unchanged": false
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileValidator.swift": {
+      "historical_sha256": "3ab7fb61fccb6d8d89ae881205fc8f92e7e49f5c87d850fe6616166f38f06d11",
+      "current_sha256": "295b17587af0ecaf5de04caeb282b95548638e2b20d7d1561a7c211dd64dfc90",
+      "unchanged": false
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileContentWorker.swift": {
+      "historical_sha256": "b51cc089e34434336cd4f5b4d448f9ec7bc0367456ee138a524c59a690c839e9",
+      "current_sha256": "e4a439cbf6d636cc7faf55bbf090ba29f2484bc41bade5e7954b1d2a5e3e05ad",
+      "unchanged": false
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticVectorReader.swift": {
+      "historical_sha256": "b01632aa000d01770d3b558ec5b22e90d19aa01f5ad7dc79ff2cae4924806826",
+      "current_sha256": "c92408a24a74c83f0be45f7fad22ffe50d500a5620937af093b9607d08da610f",
+      "unchanged": false
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticIndexPauseGate.swift": {
+      "historical_sha256": "27a559cb82cbea4bdab9e275de53b553be923e5ea791e73e8b8603d49c63ba0d",
+      "current_sha256": "f45443968b3d357e20163f94cb75c910e3554b0990cf0e6bc5a5aadd5537c380",
+      "unchanged": false
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticMediaWorker.swift": {
+      "historical_sha256": "cd99144ac7ffa36bb93f7f86f5c90daa920a4f92be706b390997254df064dc72",
+      "current_sha256": "d3f61c6dbac4de2c0673cbd8a99b377815587b36840d89cdc02aa6d6cd1f4da6",
+      "unchanged": false
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Jobs.swift": {
+      "historical_sha256": "15d0c99f5644debc21e8cd5c1cf75139d4d2d6be5ab98afc1d29845cad9cd1cb",
+      "current_sha256": "3ad84b944ddbc324e346dccd7eaca8b770863a7ab19732dc5aa605cad359c454",
+      "unchanged": false
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSQLiteCancellation.swift": {
+      "historical_sha256": "9baf9e260754d3e2b2f49cf2ab157ceb390f3f4869cd6d44f5cf4ba895c685da",
+      "current_sha256": "9baf9e260754d3e2b2f49cf2ab157ceb390f3f4869cd6d44f5cf4ba895c685da",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticIndexProgressRelay.swift": {
+      "historical_sha256": "0ade465272dd595352fbaf57379a2149b392ed0a033d0b2a93775f0aa2eb80df",
+      "current_sha256": "0ade465272dd595352fbaf57379a2149b392ed0a033d0b2a93775f0aa2eb80df",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore.swift": {
+      "historical_sha256": "afbbad3158c4ba9b23ddd3388295c0ada47b9e862ff673f2dd38c203bd7065ff",
+      "current_sha256": "6932cb190686224dc4e1f7304947e57e4e29c4ec406f3681c17f76f66372b897",
+      "unchanged": false
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileChangePlan.swift": {
+      "historical_sha256": "4dc61fa098ff5b439e15fcaf4e3284b5cc3a4ad82d13a8369049d2f49457f484",
+      "current_sha256": "c07411071681b17ce1fb35220a8b30b65104fe50ea59e6821deaf085b1428863",
+      "unchanged": false
+    }
+  },
+  "harness": {
+    "historical_sha256": "3a7036bc8ef1df96d2b66f36332544d48493f8d0f4997f2f8ac90018258e9e80",
+    "current_sha256": "3a7036bc8ef1df96d2b66f36332544d48493f8d0f4997f2f8ac90018258e9e80",
+    "unchanged": true
+  },
+  "artifacts": {
+    "final-ui-ranking-provenance.json": {
+      "sha256": "822cc57f59a0c014cf5fb74b0740df13b17fe82c170da51137d01ac81660066b",
+      "bytes": 987,
+      "location": "ranking-scale/final-ui-ranking-provenance.json"
+    },
+    "rework-run-ranking-after-100000-ui-final.json": {
+      "sha256": "181f0959868332a2142419f62707d165ad8254b72c3fc9096ffd9dfd5daabe69",
+      "bytes": 149863,
+      "location": "ranking-scale/evidence-history.tar.gz!ranking-scale/rework-run-ranking-after-100000-ui-final.json"
+    },
+    "final-holdout-labels.json": {
+      "sha256": "f632e17e8f5ea3dfec4f493be80268bc0049f161457767dbab93da4bf7608469",
+      "bytes": 53155,
+      "location": "ranking-scale/final-holdout-labels.json"
+    },
+    "final-holdout-vectors.json": {
+      "sha256": "e1390573efdc314f1d7224fbb192065c02ef477198c45186268eef81c20c030d",
+      "bytes": 3154154,
+      "location": "ranking-scale/final-holdout-vectors.json"
+    },
+    "ranking-after-ui-final-final-holdout.json": {
+      "sha256": "632f2710e774fd86f1dc7ed10a3b63e6cf0d7e576074cc9f02cda5efc0c56e30",
+      "bytes": 62490,
+      "location": "ranking-scale/evidence-history.tar.gz!ranking-scale/ranking-after-ui-final-final-holdout.json"
+    },
+    "unseen-query-labels.json": {
+      "sha256": "c88e64e38cb56132154060fe272c2e912fe7e1bdd556e362f92d87a1d6eecbac",
+      "bytes": 39691,
+      "location": "ranking-scale/unseen-query-labels.json"
+    },
+    "unseen-query-vectors.json": {
+      "sha256": "0f04c6cbb7c2a5ba10c870dc8078889436f01ad2344aeecf6410f2cf19b18939",
+      "bytes": 3155842,
+      "location": "ranking-scale/unseen-query-vectors.json"
+    },
+    "ranking-after-ui-final-unseen-query.json": {
+      "sha256": "b6b4cd6d1be945adc4eadf0ac287765e13bb44eb4fbe305661fc87b7e58d6bec",
+      "bytes": 63772,
+      "location": "ranking-scale/evidence-history.tar.gz!ranking-scale/ranking-after-ui-final-unseen-query.json"
+    },
+    "rework-frozen-labels.json": {
+      "sha256": "dd4f6a64d96a29ba5902f21694c29404a0cc02f1dc28245db8d99ba1e2be4c4d",
+      "bytes": 59581,
+      "location": "ranking-scale/evidence-history.tar.gz!ranking-scale/rework-frozen-labels.json"
+    },
+    "rework-frozen-vectors.json": {
+      "sha256": "c7229f330d9848ffd06f96e154f9c6aee0aea17f6438b2e83b2ead1d7dcd382e",
+      "bytes": 3417845,
+      "location": "ranking-scale/evidence-history.tar.gz!ranking-scale/rework-frozen-vectors.json"
+    },
+    "ranking-after-ui-final-rework-frozen.json": {
+      "sha256": "6a75f152237bf758a7ce3915cdbe379b9444e032712d74c00bc848508e170f1e",
+      "bytes": 62112,
+      "location": "ranking-scale/evidence-history.tar.gz!ranking-scale/ranking-after-ui-final-rework-frozen.json"
+    },
+    "rework-final2-labels.json": {
+      "sha256": "65ce1305ae2b4ddcb6c5a9b6f1a6596ba6deae9cf3a28a1e2739c61bd5f8ee83",
+      "bytes": 60288,
+      "location": "ranking-scale/evidence-history.tar.gz!ranking-scale/rework-final2-labels.json"
+    },
+    "rework-final2-vectors.json": {
+      "sha256": "4d9bef229de330247c28307e473ab00722d4c67bc7b700a66e17d5a1abdc3b1f",
+      "bytes": 3417563,
+      "location": "ranking-scale/evidence-history.tar.gz!ranking-scale/rework-final2-vectors.json"
+    },
+    "ranking-after-ui-final-rework-final2.json": {
+      "sha256": "72f6b15dd9729e52e22302ca28a71e5b3b29ebea542328139aed60ef91d3f4e3",
+      "bytes": 62873,
+      "location": "ranking-scale/evidence-history.tar.gz!ranking-scale/ranking-after-ui-final-rework-final2.json"
+    },
+    "rework-final3-labels.json": {
+      "sha256": "039a5cf33dddff07ae13efcccca32e8e41e2473ba1373a83ae44ec304a59f009",
+      "bytes": 61776,
+      "location": "ranking-scale/evidence-history.tar.gz!ranking-scale/rework-final3-labels.json"
+    },
+    "rework-final3-vectors.json": {
+      "sha256": "49bc16e2f9711137cde33c91014fc48237ebe3ef14e3f8bf31f5abf79410a498",
+      "bytes": 3419338,
+      "location": "ranking-scale/evidence-history.tar.gz!ranking-scale/rework-final3-vectors.json"
+    },
+    "ranking-after-ui-final-rework-final3.json": {
+      "sha256": "8c91d748fa5e11ad421435a24dd8453adbbac632e6a8321540fda8473459c896",
+      "bytes": 63015,
+      "location": "ranking-scale/evidence-history.tar.gz!ranking-scale/ranking-after-ui-final-rework-final3.json"
+    },
+    "capture_final_holdout.py": {
+      "sha256": "be3c1b46043fbb6cf36a244ca5da76c85391fa13dcb8f5fa43e6ecf40e1447e9",
+      "bytes": 2753,
+      "location": "ranking-scale/capture_final_holdout.py"
+    },
+    "capture_unseen_queries.py": {
+      "sha256": "53e351bab68d53597277befadbf7b5d71dadc4d969012ca06bed9d207b335005",
+      "bytes": 7761,
+      "location": "ranking-scale/capture_unseen_queries.py"
+    },
+    "capture_frozen_candidate.py": {
+      "sha256": "5169381d77b1236f9277f8972bcaea8a3cc1cd1bde6af0b6e640f29db62c859d",
+      "bytes": 3139,
+      "location": "ranking-scale/capture_frozen_candidate.py"
+    },
+    "rework_release_runner.py": {
+      "sha256": "03842d468b7bbb69b99ba92fd492b41a38fe183b627fb318b21adf74a4dbf939",
+      "bytes": 4606,
+      "location": "ranking-scale/rework_release_runner.py"
+    },
+    "final-current-heldout-failures.json": {
+      "sha256": "21b89a194e80011994297cab1bb13a188a5f16c73fa4032eee826714e1352aa0",
+      "bytes": 71705,
+      "location": "ranking-scale/final-current-heldout-failures.json"
+    }
+  },
+  "archive_sha256": "fed6d6ba2dc047dcfcca1290e26e42a9b0c111450ef9fa166b6c5f2621bda3dd",
+  "fixed_306": {
+    "rows": 306,
+    "supported_recalled": 202,
+    "supported_positives": 206,
+    "all_recalled": 202,
+    "all_positives": 256,
+    "missing_source_failures": 50,
+    "false_positives": 0,
+    "negatives": 50,
+    "full_recall_gate_pass": false
+  },
+  "boundary": "Each 200-row cohort remains separate historical quality evidence. Captured real vectors and fictional sources are reusable ranking inputs. Ranking/calibration files match, but vector-reader/image scoring and media recipes changed after historical execution; old results are not current extraction/UI/inference results. Exact current-result equivalence is not asserted. If required for final acceptance, the minimal supplement is the existing fixed-vector ranking harness on the original cohorts, without re-encoding, new labels, holdout or tuning. The 306-row full-positive recall remains below 85%."
+}

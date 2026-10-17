@@ -1,0 +1,106 @@
+{
+  "cache-preparation.json": {
+    "wall_seconds": 6.233289416995831,
+    "command": [
+      "cp",
+      "-cR",
+      "<second-slice>/.build",
+      ".build"
+    ]
+  },
+  "plan-initial-failed.json": {
+    "command": [
+      "test_groups.py",
+      "--profile",
+      "ui-drift-slice",
+      "--jobs",
+      "4",
+      "--serial",
+      "--suite",
+      "SemanticReleaseUISliceTests",
+      "--suite",
+      "AskLauncherPlacementTests",
+      "--filter",
+      "NativeIconIsolationTests[./](testVisiblePlaceholderUpdatesWhenApplicationCacheRecovers|testApplicationDiskIconsPreloadWithoutStartingDecoders)$",
+      "--plan"
+    ],
+    "wall_seconds": 497.7626089169644,
+    "exit_code": 1
+  },
+  "plan-SemanticReleaseUISliceTests-AskLauncherPlacementTests.json": {
+    "command": [
+      "test_groups.py",
+      "--profile",
+      "ui-drift-slice",
+      "--jobs",
+      "4",
+      "--serial",
+      "--suite",
+      "SemanticReleaseUISliceTests",
+      "--suite",
+      "AskLauncherPlacementTests",
+      "--filter",
+      "NativeIconIsolationTests[./](testVisiblePlaceholderUpdatesWhenApplicationCacheRecovers|testApplicationDiskIconsPreloadWithoutStartingDecoders)$",
+      "--plan"
+    ],
+    "wall_seconds": 114.26278208300937,
+    "exit_code": 0
+  },
+  "run-initial-failed.json": {
+    "command": [
+      "test_groups.py",
+      "--profile",
+      "ui-drift-slice",
+      "--jobs",
+      "4",
+      "--serial",
+      "--suite",
+      "SemanticReleaseUISliceTests",
+      "--suite",
+      "AskLauncherPlacementTests",
+      "--filter",
+      "NativeIconIsolationTests[./](testVisiblePlaceholderUpdatesWhenApplicationCacheRecovers|testApplicationDiskIconsPreloadWithoutStartingDecoders)$"
+    ],
+    "wall_seconds": 119.71373954194132,
+    "exit_code": 1
+  },
+  "before-height-repair/run-SemanticReleaseUISliceTests.json": {
+    "command": [
+      "test_groups.py",
+      "--profile",
+      "ui-drift-slice",
+      "--jobs",
+      "4",
+      "--serial",
+      "--suite",
+      "SemanticReleaseUISliceTests"
+    ],
+    "wall_seconds": 108.12017054192256,
+    "exit_code": 0
+  },
+  "run-SemanticReleaseUISliceTests.json": {
+    "command": [
+      "test_groups.py",
+      "--profile",
+      "ui-drift-slice",
+      "--jobs",
+      "4",
+      "--serial",
+      "--suite",
+      "SemanticReleaseUISliceTests"
+    ],
+    "wall_seconds": 107.81072425004095,
+    "exit_code": 0
+  },
+  "package-refresh.json": {
+    "wall_seconds": 2.232127832947299
+  },
+  "quality-audit-command.json": {
+    "command": [
+      "python3",
+      "docs/validation/gul-383/optimization/ui-drift-slice/audit_quality.py"
+    ],
+    "exit_code": 0,
+    "wall_seconds": 0.8835927080363035
+  }
+}
