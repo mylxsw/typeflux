@@ -1,0 +1,2581 @@
+{
+  "production_sha256": {
+    "Sources/TypefluxSemanticHelper/main.swift": {
+      "previous_sha256": "8e3d3a3b6b64a62b4fb0ec55cdda50108adc0b22b215f937c3d992eccd00d13d",
+      "current_sha256": "8e3d3a3b6b64a62b4fb0ec55cdda50108adc0b22b215f937c3d992eccd00d13d",
+      "unchanged": true
+    },
+    "Package.swift": {
+      "previous_sha256": "da482b760809275c860a1ac38898aca6c8559ecccc4f186c34f65dde56c4bc52",
+      "current_sha256": "da482b760809275c860a1ac38898aca6c8559ecccc4f186c34f65dde56c4bc52",
+      "unchanged": true
+    },
+    "Package.resolved": {
+      "previous_sha256": "faf33527478681a0b411242554c3f5908665f8e884af8234181a6d08bef01c5d",
+      "current_sha256": "faf33527478681a0b411242554c3f5908665f8e884af8234181a6d08bef01c5d",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskLauncherHeightAnimator.swift": {
+      "previous_sha256": "5f4a20dda9b147f4e47c2212c839604c2f9b61f69d3cc2ebcb23bb9a97d2f182",
+      "current_sha256": "5f4a20dda9b147f4e47c2212c839604c2f9b61f69d3cc2ebcb23bb9a97d2f182",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskActivityViews.swift": {
+      "previous_sha256": "b15c618fcce6603ca5a0b1c1726390a441638a6923f21bd7bb92ce0be063e044",
+      "current_sha256": "b15c618fcce6603ca5a0b1c1726390a441638a6923f21bd7bb92ce0be063e044",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskConversationModel+Screenshot.swift": {
+      "previous_sha256": "aa3289aad7969ad3b44fd2c1a700d9993c95cc6c4ce7ff45b7d6cece30dbc255",
+      "current_sha256": "aa3289aad7969ad3b44fd2c1a700d9993c95cc6c4ce7ff45b7d6cece30dbc255",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskReasoningEffort.swift": {
+      "previous_sha256": "75089481e85e8d3657ccf05992cf97ffd43271e6f5f31adf2a3d914fcd4d34e8",
+      "current_sha256": "75089481e85e8d3657ccf05992cf97ffd43271e6f5f31adf2a3d914fcd4d34e8",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskImageRecoveryViews.swift": {
+      "previous_sha256": "423a105272078d3174ae279724f85baa6073df8f2f292f2cd46b27c38a8e5026",
+      "current_sha256": "423a105272078d3174ae279724f85baa6073df8f2f292f2cd46b27c38a8e5026",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskToolImageView.swift": {
+      "previous_sha256": "0e8cf0082927360f52f81d6ec086146b47f1a6686cf536afe70457a615fa7395",
+      "current_sha256": "0e8cf0082927360f52f81d6ec086146b47f1a6686cf536afe70457a615fa7395",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskAttachmentStrip.swift": {
+      "previous_sha256": "477dba18febab97ec3a82030af709db78dfe48fb3fe9ea195c5f3488e782d9ad",
+      "current_sha256": "477dba18febab97ec3a82030af709db78dfe48fb3fe9ea195c5f3488e782d9ad",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskSendQueue.swift": {
+      "previous_sha256": "c038bcbb6297059ced2ed0d8394de118e9175f09136b5bced8f29d7d74f24a47",
+      "current_sha256": "c038bcbb6297059ced2ed0d8394de118e9175f09136b5bced8f29d7d74f24a47",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskLauncherPrimaryAction.swift": {
+      "previous_sha256": "47805364260a1b63116064dac1312e10a40baade167f5c7ca4f668301602eb64",
+      "current_sha256": "47805364260a1b63116064dac1312e10a40baade167f5c7ca4f668301602eb64",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskCommandPaletteView.swift": {
+      "previous_sha256": "b0808a9b1ecb711790c851a6c0e05130edeff01915a4dfd59685a6b599909e59",
+      "current_sha256": "b0808a9b1ecb711790c851a6c0e05130edeff01915a4dfd59685a6b599909e59",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskSourceContext.swift": {
+      "previous_sha256": "90ea15b213b43d348566f539f218d7a7b4adb96fa294f45434fd997163301124",
+      "current_sha256": "90ea15b213b43d348566f539f218d7a7b4adb96fa294f45434fd997163301124",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskMarkdownTable.swift": {
+      "previous_sha256": "b25f958d12fdc9bdb241957cbbee06e2e7485aeae8a89e1659eecc04861d2f32",
+      "current_sha256": "b25f958d12fdc9bdb241957cbbee06e2e7485aeae8a89e1659eecc04861d2f32",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskContentCardSurface.swift": {
+      "previous_sha256": "3762312f680d30f1a27d62af42e86524dab5a211044c8c6713f54e8c7c459ac9",
+      "current_sha256": "3762312f680d30f1a27d62af42e86524dab5a211044c8c6713f54e8c7c459ac9",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskComputerTargetProbe.swift": {
+      "previous_sha256": "d76fdfc0dea94e0a6965cec80fa00e09b77ed0f9171acd6ddfcd20de8502790f",
+      "current_sha256": "d76fdfc0dea94e0a6965cec80fa00e09b77ed0f9171acd6ddfcd20de8502790f",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskSelectionHoverCard.swift": {
+      "previous_sha256": "d5e6becb57299eeb800c176cbb1ddcecf1d1b0e115cce37437855b36bc424c66",
+      "current_sha256": "d5e6becb57299eeb800c176cbb1ddcecf1d1b0e115cce37437855b36bc424c66",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskConversationModel+SystemMonitor.swift": {
+      "previous_sha256": "5f80a07871e5a06e5eeef05038cbfd0884a8c5ee56d2b1819ce951074e6afdfd",
+      "current_sha256": "5f80a07871e5a06e5eeef05038cbfd0884a8c5ee56d2b1819ce951074e6afdfd",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskUsageViews.swift": {
+      "previous_sha256": "d8e8871b7d2c521960333ea13dab81632b53fbc353e480ad6510af3d94d5e0e5",
+      "current_sha256": "d8e8871b7d2c521960333ea13dab81632b53fbc353e480ad6510af3d94d5e0e5",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskObservationStore.swift": {
+      "previous_sha256": "93b4250dd89a2ade1856e189543254e393c595fdcfcda208c47f46eb9c459f51",
+      "current_sha256": "93b4250dd89a2ade1856e189543254e393c595fdcfcda208c47f46eb9c459f51",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskContextImage.swift": {
+      "previous_sha256": "1b1d4c24565fed09d510bf4100a2ace1393247084d89ffbbd3f034bc9c91cc13",
+      "current_sha256": "1b1d4c24565fed09d510bf4100a2ace1393247084d89ffbbd3f034bc9c91cc13",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskLauncherNumberShortcuts.swift": {
+      "previous_sha256": "ad3dc66a16d9c220598faba0593e6de7f7445bd9e3a30568845d467c6779c640",
+      "current_sha256": "ad3dc66a16d9c220598faba0593e6de7f7445bd9e3a30568845d467c6779c640",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskAttachViews.swift": {
+      "previous_sha256": "7bc430e2479ed7e068e4efbaf9fc156678091752bb580dc5ef4b14f400bcff9d",
+      "current_sha256": "7bc430e2479ed7e068e4efbaf9fc156678091752bb580dc5ef4b14f400bcff9d",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskConversationModel+SystemCommands.swift": {
+      "previous_sha256": "c88e290f540304a4f797492fa3970f6c4e29693890333bf428fc53f5ec17a8ae",
+      "current_sha256": "c88e290f540304a4f797492fa3970f6c4e29693890333bf428fc53f5ec17a8ae",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskHistoryTitleEditor.swift": {
+      "previous_sha256": "4a67e96b2859386664b4503d6bcfa622b0664c58c95635a97dafee2489f8dd51",
+      "current_sha256": "4a67e96b2859386664b4503d6bcfa622b0664c58c95635a97dafee2489f8dd51",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskConversationModel+Calendar.swift": {
+      "previous_sha256": "42f97667d2abcde065010100d162311f9159f74a71d2be3d2e77589cdb3ed74b",
+      "current_sha256": "42f97667d2abcde065010100d162311f9159f74a71d2be3d2e77589cdb3ed74b",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskProviderInference.swift": {
+      "previous_sha256": "d6756a45c00aa7ad0037f9aeb6a716c112e8845b9829bd25dbf8ab8b321bfb0d",
+      "current_sha256": "d6756a45c00aa7ad0037f9aeb6a716c112e8845b9829bd25dbf8ab8b321bfb0d",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskAttachment.swift": {
+      "previous_sha256": "589eeede07400ad6866528800f76f43806c55408827756bee0f88ad7e3935733",
+      "current_sha256": "589eeede07400ad6866528800f76f43806c55408827756bee0f88ad7e3935733",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskHarnessContract.swift": {
+      "previous_sha256": "913dee93e678541b2e27e0b188d5bbe1e6760b455a8eb438a6c8fde84bc3bb42",
+      "current_sha256": "913dee93e678541b2e27e0b188d5bbe1e6760b455a8eb438a6c8fde84bc3bb42",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/CloudModelPricing.swift": {
+      "previous_sha256": "52427e19ae38f69726a5799435afad9abd5db1577c8eb627421ec01c221eef88",
+      "current_sha256": "52427e19ae38f69726a5799435afad9abd5db1577c8eb627421ec01c221eef88",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskSkillInstaller.swift": {
+      "previous_sha256": "0d8e68627a097f487cff336e7f93396e2bd733ed41252550c62377a8757fa2d1",
+      "current_sha256": "0d8e68627a097f487cff336e7f93396e2bd733ed41252550c62377a8757fa2d1",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskWindowDragArea.swift": {
+      "previous_sha256": "cc9bee4907d25aa6c544f942f04753aeaa26ddb94ff477c9626190359c46d35e",
+      "current_sha256": "cc9bee4907d25aa6c544f942f04753aeaa26ddb94ff477c9626190359c46d35e",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskConversationModel+Notes.swift": {
+      "previous_sha256": "fb23b28c0f5f700d16ffbd02b64cdf92d09028a5699ff6b0cfa0a6219da5e265",
+      "current_sha256": "fb23b28c0f5f700d16ffbd02b64cdf92d09028a5699ff6b0cfa0a6219da5e265",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskToolPreparationFailure.swift": {
+      "previous_sha256": "a5b4a26c984cc53894462cb095afd026b9ff97ab7c4ebfd8a29530ec1cba2bf8",
+      "current_sha256": "a5b4a26c984cc53894462cb095afd026b9ff97ab7c4ebfd8a29530ec1cba2bf8",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskDesign.swift": {
+      "previous_sha256": "2bf1fddbfe971a2ae038e4c70c1ccabe3f0892ee2bc4730fd0ba4834583c0f65",
+      "current_sha256": "1c4708d69001e86ea613a4bf931bc61deb44191c8bba9df54652d647922403da",
+      "unchanged": false
+    },
+    "Sources/Typeflux/Ask/AskHistoryPullRefresh.swift": {
+      "previous_sha256": "c0ced0c040fcdee6293498b3b42e1d743566055d7e1e2eedb346d9c2fc5960f5",
+      "current_sha256": "c0ced0c040fcdee6293498b3b42e1d743566055d7e1e2eedb346d9c2fc5960f5",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskSkillSource.swift": {
+      "previous_sha256": "17f06b9ef9da127b48b2bcb9a08c4d321f39650b4d702d09babfe3c62b426c4f",
+      "current_sha256": "17f06b9ef9da127b48b2bcb9a08c4d321f39650b4d702d09babfe3c62b426c4f",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskTemporaryViews.swift": {
+      "previous_sha256": "cfead29b4f57b3b36ff83a6712fa4db79ae796564beba10b51e192345b959f94",
+      "current_sha256": "cfead29b4f57b3b36ff83a6712fa4db79ae796564beba10b51e192345b959f94",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskLauncherEscapeMonitor.swift": {
+      "previous_sha256": "1cccab806f52e710df339efa66f97372a0922c04186cbdca76e475dc188ee4c3",
+      "current_sha256": "1cccab806f52e710df339efa66f97372a0922c04186cbdca76e475dc188ee4c3",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskLocalTools+Automation.swift": {
+      "previous_sha256": "5177a6bdf5b89ea7935882f3990ae7ba4800be73d3b180a374d97650bcd1814f",
+      "current_sha256": "5177a6bdf5b89ea7935882f3990ae7ba4800be73d3b180a374d97650bcd1814f",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskScreenshotAttachments.swift": {
+      "previous_sha256": "53129bad36c85cddcca39c7cd24ceab4395f3f3bce106115b03b3da9ea695689",
+      "current_sha256": "53129bad36c85cddcca39c7cd24ceab4395f3f3bce106115b03b3da9ea695689",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskConversationWindowController.swift": {
+      "previous_sha256": "360585a550f36fae13730e1414b88bf8b87ef7e81013f05e8283e74da3ac2e5f",
+      "current_sha256": "360585a550f36fae13730e1414b88bf8b87ef7e81013f05e8283e74da3ac2e5f",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskGlass.swift": {
+      "previous_sha256": "5b579dd87ea888533246075b6a1bd39a80c08c0529791a7151d4bf2ed0798734",
+      "current_sha256": "5b579dd87ea888533246075b6a1bd39a80c08c0529791a7151d4bf2ed0798734",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskComposerLayout.swift": {
+      "previous_sha256": "e2d4d6941d6ba315452c361430df26c7c2199416cf132b7398e213ba609f5ecf",
+      "current_sha256": "e2d4d6941d6ba315452c361430df26c7c2199416cf132b7398e213ba609f5ecf",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskToolImageNormalizer.swift": {
+      "previous_sha256": "b7d39f3a9c4cc3216491686a3454ef11c8c567f2f5171839f06ccf2bf9eba78b",
+      "current_sha256": "b7d39f3a9c4cc3216491686a3454ef11c8c567f2f5171839f06ccf2bf9eba78b",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskLauncherOpenChatButton.swift": {
+      "previous_sha256": "74e0fb9821c90dd9d9a19ebe31ba94fe4fa516a3961923bdda4609caaad13add",
+      "current_sha256": "74e0fb9821c90dd9d9a19ebe31ba94fe4fa516a3961923bdda4609caaad13add",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskConversationModel+SystemInfo.swift": {
+      "previous_sha256": "f9c285b8b16186d4ca0e8a6997d0d2217ae70d61156dc72e91bc368fc1117979",
+      "current_sha256": "f9c285b8b16186d4ca0e8a6997d0d2217ae70d61156dc72e91bc368fc1117979",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskScreenObservation.swift": {
+      "previous_sha256": "4ef0f734f63ef2cc9c74a8a6e900de0838b778941c5de6231ee1ca97ca7c14f4",
+      "current_sha256": "4ef0f734f63ef2cc9c74a8a6e900de0838b778941c5de6231ee1ca97ca7c14f4",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskModelViews.swift": {
+      "previous_sha256": "fa899bfefe5991f905c10baf9dede86e99443977aa9018080769e6f1a9d6e1ad",
+      "current_sha256": "fa899bfefe5991f905c10baf9dede86e99443977aa9018080769e6f1a9d6e1ad",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskWorkspaceLayout.swift": {
+      "previous_sha256": "2a90f594e8c68ea69756c8c545c8f1b23c0620bec3f68f29bf3c7072c51d1099",
+      "current_sha256": "2a90f594e8c68ea69756c8c545c8f1b23c0620bec3f68f29bf3c7072c51d1099",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskPermissionMode.swift": {
+      "previous_sha256": "42b37f789d12a1ce5014613c4935c902bb6d970df6caa10182f88986efe966cc",
+      "current_sha256": "42b37f789d12a1ce5014613c4935c902bb6d970df6caa10182f88986efe966cc",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskCreditPauseViews.swift": {
+      "previous_sha256": "b8194d96deb3fe04e27b8e7745317edb95e1afeea305939bf07ccafc62ba6247",
+      "current_sha256": "b8194d96deb3fe04e27b8e7745317edb95e1afeea305939bf07ccafc62ba6247",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskConversationOrb.swift": {
+      "previous_sha256": "b47e88727a2f074af501838821b84735f79bddb1a23ab179986f51ab463ffe40",
+      "current_sha256": "b47e88727a2f074af501838821b84735f79bddb1a23ab179986f51ab463ffe40",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskHoverCard.swift": {
+      "previous_sha256": "055baedb8722112cb0f28e92b075567fa567c55871d1e6f022c6fc463595a8eb",
+      "current_sha256": "055baedb8722112cb0f28e92b075567fa567c55871d1e6f022c6fc463595a8eb",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskVoiceLive.swift": {
+      "previous_sha256": "b3bd7f3dcfe5c35bf37661e839e2ea4f87947a671cbdcb46e0e58589c292f459",
+      "current_sha256": "b3bd7f3dcfe5c35bf37661e839e2ea4f87947a671cbdcb46e0e58589c292f459",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskAccountCard.swift": {
+      "previous_sha256": "10436b26f029f842040204efaaddc80b37eec700bbbf7d0f010f2a29da07286c",
+      "current_sha256": "10436b26f029f842040204efaaddc80b37eec700bbbf7d0f010f2a29da07286c",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskConversationModel+WorkflowImage.swift": {
+      "previous_sha256": "fd380eedf89b9704d381e908b193240b9863028c8a8c540a15c48247a991eaba",
+      "current_sha256": "fd380eedf89b9704d381e908b193240b9863028c8a8c540a15c48247a991eaba",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskVoiceInput.swift": {
+      "previous_sha256": "1bbcd52e8c55d2c91fe9172d42b207e94b301956c34eaaafdf629958dc7b838f",
+      "current_sha256": "1bbcd52e8c55d2c91fe9172d42b207e94b301956c34eaaafdf629958dc7b838f",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskVisionSwitch.swift": {
+      "previous_sha256": "c8dc7a21fb3c02220ea51070074606e4ec686592a36964e895f6354adcaa9b37",
+      "current_sha256": "c8dc7a21fb3c02220ea51070074606e4ec686592a36964e895f6354adcaa9b37",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskConversationModel+KeywordHotkey.swift": {
+      "previous_sha256": "bb08c6778082e0efca1ebf2de24e73c836b41245a2f9e9983ad02ae168bb526d",
+      "current_sha256": "bb08c6778082e0efca1ebf2de24e73c836b41245a2f9e9983ad02ae168bb526d",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskMemory.swift": {
+      "previous_sha256": "25de2038089a84d8a84dc6cc04abb324925eecd5fbb561dfe51887e0e1d94a9f",
+      "current_sha256": "25de2038089a84d8a84dc6cc04abb324925eecd5fbb561dfe51887e0e1d94a9f",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskFileTools.swift": {
+      "previous_sha256": "62534f2394e3f9b099cb59626f79cc9dd02a34390d673280298af5515346b9e4",
+      "current_sha256": "62534f2394e3f9b099cb59626f79cc9dd02a34390d673280298af5515346b9e4",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskTemporaryCache.swift": {
+      "previous_sha256": "1352534d9d3ae109268a6389f1abcb05d3ff2daa1c136c803b3ab44f63f6eb0c",
+      "current_sha256": "1352534d9d3ae109268a6389f1abcb05d3ff2daa1c136c803b3ab44f63f6eb0c",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskIconChipFace+Switch.swift": {
+      "previous_sha256": "c521b5a8dd9b034a5bdc9e792eedb811a0bb9de55a5a23d57792e12ce2d2b17a",
+      "current_sha256": "c521b5a8dd9b034a5bdc9e792eedb811a0bb9de55a5a23d57792e12ce2d2b17a",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskBrowserExecutor.swift": {
+      "previous_sha256": "6ce21c9bf3598beab3fe00a6d3d43b273d712800dc92448490dde07c54fc24bc",
+      "current_sha256": "6ce21c9bf3598beab3fe00a6d3d43b273d712800dc92448490dde07c54fc24bc",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskConversationModel+KeywordDirectory.swift": {
+      "previous_sha256": "0e653d25c3230f98d68cde73f97f969eee34b1bfc8639e01da4c968fea48c93c",
+      "current_sha256": "0e653d25c3230f98d68cde73f97f969eee34b1bfc8639e01da4c968fea48c93c",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskRecordingSheen.swift": {
+      "previous_sha256": "5510209d00a959d0a4366b3309f65772a9499191605476b4844bf84a2d1d0d74",
+      "current_sha256": "5510209d00a959d0a4366b3309f65772a9499191605476b4844bf84a2d1d0d74",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskLauncherVoiceViews.swift": {
+      "previous_sha256": "c76e1da0d1ebd8273eba7749241fdc703893a91f84fc699f049e5285513349a6",
+      "current_sha256": "c76e1da0d1ebd8273eba7749241fdc703893a91f84fc699f049e5285513349a6",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskSourceApplicationTracker.swift": {
+      "previous_sha256": "79b82605b26990e361f59f4ff37e494bc07ab6a9445f1256da0f85739bfaeef7",
+      "current_sha256": "79b82605b26990e361f59f4ff37e494bc07ab6a9445f1256da0f85739bfaeef7",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskMarkdownFences.swift": {
+      "previous_sha256": "9063e8e298caa3ba584f9ecd3150d1d13769acc0d4aec51e0962ac397d9c39e9",
+      "current_sha256": "9063e8e298caa3ba584f9ecd3150d1d13769acc0d4aec51e0962ac397d9c39e9",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskConversationModel+CapturedContent.swift": {
+      "previous_sha256": "da31e2fd33e1e082885cbcea1a08e9a30cbe84c22939e586263d1136c50f9883",
+      "current_sha256": "da31e2fd33e1e082885cbcea1a08e9a30cbe84c22939e586263d1136c50f9883",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskMemoryNotes.swift": {
+      "previous_sha256": "5e36f3151c220cd41e50af24eca7f28c15552e782b5d26bec1a371b9761cb1bf",
+      "current_sha256": "5e36f3151c220cd41e50af24eca7f28c15552e782b5d26bec1a371b9761cb1bf",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskGlassMenu.swift": {
+      "previous_sha256": "5c89ffa2ea95e4436e341f9ba8dabaa04e7ba8928e21b3258cd7fd021a62d6cb",
+      "current_sha256": "5c89ffa2ea95e4436e341f9ba8dabaa04e7ba8928e21b3258cd7fd021a62d6cb",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskWorkspaceChrome.swift": {
+      "previous_sha256": "04a266ef63b046aa93b720756ac630c9c585801604b51d1a35de325b0ef94c44",
+      "current_sha256": "04a266ef63b046aa93b720756ac630c9c585801604b51d1a35de325b0ef94c44",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskComputerExecutor.swift": {
+      "previous_sha256": "ba71985afbe22c3b80b1e3b41f4b5cfc320542a1792594bbb2de0cd427dfb2e5",
+      "current_sha256": "ba71985afbe22c3b80b1e3b41f4b5cfc320542a1792594bbb2de0cd427dfb2e5",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskPermissionModeMenu.swift": {
+      "previous_sha256": "8bb0b77d0115a6daefad418c4f0c7d4a62ea934d05e9b13a4a5ae6f38edf298f",
+      "current_sha256": "8bb0b77d0115a6daefad418c4f0c7d4a62ea934d05e9b13a4a5ae6f38edf298f",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskSubmissionIssue.swift": {
+      "previous_sha256": "7f748d57c79092ebfb3b31f8a95195bd87d1814a8630f2bd64f9946507f99193",
+      "current_sha256": "7f748d57c79092ebfb3b31f8a95195bd87d1814a8630f2bd64f9946507f99193",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskReferenceViews.swift": {
+      "previous_sha256": "81df6ba045de7bad0f6714d44739f11a4b2d7a453bbe1a04c7491238a638adc5",
+      "current_sha256": "81df6ba045de7bad0f6714d44739f11a4b2d7a453bbe1a04c7491238a638adc5",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskToolPolicy.swift": {
+      "previous_sha256": "31528eb536d1e3f0a86731cc6deae21ee8385a35212c73694afea7395132fb23",
+      "current_sha256": "31528eb536d1e3f0a86731cc6deae21ee8385a35212c73694afea7395132fb23",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskActivity.swift": {
+      "previous_sha256": "269bb2061a8bf14c75e806bba2ebdc52dc17a5f19be532efe2b0f1fb96f50993",
+      "current_sha256": "269bb2061a8bf14c75e806bba2ebdc52dc17a5f19be532efe2b0f1fb96f50993",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskHistoryRow.swift": {
+      "previous_sha256": "5fec7d0f009f634a34fdc55ebc12832aafbe74ca764a6766c5c9a1ce24e04bcd",
+      "current_sha256": "5fec7d0f009f634a34fdc55ebc12832aafbe74ca764a6766c5c9a1ce24e04bcd",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskMotionEffects.swift": {
+      "previous_sha256": "b46acf6da2ecc77c8bdbf5313b6d7e0838b652c386d332da2381df584ea71eaf",
+      "current_sha256": "b46acf6da2ecc77c8bdbf5313b6d7e0838b652c386d332da2381df584ea71eaf",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskConversationModel+Help.swift": {
+      "previous_sha256": "a8a268c170f6a244df5785a457c5c07f35296b5e8e5df204a46ad957d623d47d",
+      "current_sha256": "a8a268c170f6a244df5785a457c5c07f35296b5e8e5df204a46ad957d623d47d",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskModelLibrary.swift": {
+      "previous_sha256": "1c511a9e937046d63d2b5148a1b48541bd95552518f51c2a8645b47ad52136a8",
+      "current_sha256": "1c511a9e937046d63d2b5148a1b48541bd95552518f51c2a8645b47ad52136a8",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskConversationModel.swift": {
+      "previous_sha256": "ad1228439f68cc457ad546c9380e50826e270a433105b1cd9ca77875e3e92abc",
+      "current_sha256": "ad1228439f68cc457ad546c9380e50826e270a433105b1cd9ca77875e3e92abc",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskLauncherViewport.swift": {
+      "previous_sha256": "606f4863cf6be65bb4434a996560db8cd17dfc548386d1fe1a28ce8e406d70db",
+      "current_sha256": "606f4863cf6be65bb4434a996560db8cd17dfc548386d1fe1a28ce8e406d70db",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/ResponsesStream.swift": {
+      "previous_sha256": "b6af334333d19e7657f55c4bba20b328f1854f54173805a0a37ec4f588bfb9e3",
+      "current_sha256": "b6af334333d19e7657f55c4bba20b328f1854f54173805a0a37ec4f588bfb9e3",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskAutomationScriptRunner.swift": {
+      "previous_sha256": "52a56aaad20a2b87f8c1c4c7c2ad80f36a907b89d1cd15bd9d57f67635728f25",
+      "current_sha256": "52a56aaad20a2b87f8c1c4c7c2ad80f36a907b89d1cd15bd9d57f67635728f25",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskLauncherInputSource.swift": {
+      "previous_sha256": "92781a36fa9a333da8d45fe676d26c5f7d3f35ea31134ff892e2000e19d77521",
+      "current_sha256": "92781a36fa9a333da8d45fe676d26c5f7d3f35ea31134ff892e2000e19d77521",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskLauncherContext.swift": {
+      "previous_sha256": "97206cc0f6479aa95464bb67a5705972946d996c801a8871ea0c213fb7ab349e",
+      "current_sha256": "97206cc0f6479aa95464bb67a5705972946d996c801a8871ea0c213fb7ab349e",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskLauncherHeightReserve.swift": {
+      "previous_sha256": "e70cf8eb8c5664b16ad749377335033346e8da5d3669c9966349e663bf1744ed",
+      "current_sha256": "e70cf8eb8c5664b16ad749377335033346e8da5d3669c9966349e663bf1744ed",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskAccountFooter.swift": {
+      "previous_sha256": "8a769d0cef0b51460281521ef5f74ed6a7fb86150676a9336017b39614eef8a9",
+      "current_sha256": "8a769d0cef0b51460281521ef5f74ed6a7fb86150676a9336017b39614eef8a9",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskClassicStyle.swift": {
+      "previous_sha256": "49ae464d0235ef077dc81c716437ef7641d82a85b08963c380bda946aea56c56",
+      "current_sha256": "49ae464d0235ef077dc81c716437ef7641d82a85b08963c380bda946aea56c56",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskConversationModel+Title.swift": {
+      "previous_sha256": "8363c2732377c96e1eaea94e19d1ba2781c8c187769a1b0f6408192a185e7e8a",
+      "current_sha256": "8363c2732377c96e1eaea94e19d1ba2781c8c187769a1b0f6408192a185e7e8a",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskImageRecoveryPicker.swift": {
+      "previous_sha256": "3cfe2f7f4341188d9fb7976944add7049e476864a7b731716268acc1a6d9f174",
+      "current_sha256": "3cfe2f7f4341188d9fb7976944add7049e476864a7b731716268acc1a6d9f174",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskCustomInference.swift": {
+      "previous_sha256": "a63cf7dae65df3b226fa69f9b8a8f6d8d619cb7154db8e53364257e698f4057a",
+      "current_sha256": "a63cf7dae65df3b226fa69f9b8a8f6d8d619cb7154db8e53364257e698f4057a",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskSkills.swift": {
+      "previous_sha256": "9cd0987aed61f34d6bdbaac8764aea9d85f898081c14efbe54e1df9e8c3de37c",
+      "current_sha256": "9cd0987aed61f34d6bdbaac8764aea9d85f898081c14efbe54e1df9e8c3de37c",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskMessageProvenance.swift": {
+      "previous_sha256": "5a8936f41d5c1ed2e11eedb3624277eebf43e811d9fd7e98e4d17234c82be350",
+      "current_sha256": "5a8936f41d5c1ed2e11eedb3624277eebf43e811d9fd7e98e4d17234c82be350",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskConversationModel+Attachments.swift": {
+      "previous_sha256": "8672720bd537c6446b64cf076a47a86ce70e5b1e5fca200c663b24a913aed9b2",
+      "current_sha256": "8672720bd537c6446b64cf076a47a86ce70e5b1e5fca200c663b24a913aed9b2",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskLauncherSuggestions.swift": {
+      "previous_sha256": "b6c39e58d84c5bfa5613639215ad2d8cf419e0497740350e9cb0ce5510bd5ff3",
+      "current_sha256": "b6c39e58d84c5bfa5613639215ad2d8cf419e0497740350e9cb0ce5510bd5ff3",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskCapturedContentFeedbackView.swift": {
+      "previous_sha256": "2570d2da8c124c6d78325ca174627e2a676b4d3f542dd53bc2c83208c54823e3",
+      "current_sha256": "2570d2da8c124c6d78325ca174627e2a676b4d3f542dd53bc2c83208c54823e3",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskConversationModel+QuickResults.swift": {
+      "previous_sha256": "3e7dcfe111199d5a2a2e465c8d3161890d81604270f020ebf8336dc624993ee2",
+      "current_sha256": "a8d2e878252c799dd31faf1040a83487f8041157af7051f603c3798560674f7e",
+      "unchanged": false
+    },
+    "Sources/Typeflux/Ask/AskLauncherInputHistory.swift": {
+      "previous_sha256": "d8cd2560e34cf0cec60285e941909f8fbcce2162144522f5b443d2204918681d",
+      "current_sha256": "d8cd2560e34cf0cec60285e941909f8fbcce2162144522f5b443d2204918681d",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskReference.swift": {
+      "previous_sha256": "ccea170505587949252f19aebcc30cc10a84545802994418cf5288bbce98e6b4",
+      "current_sha256": "ccea170505587949252f19aebcc30cc10a84545802994418cf5288bbce98e6b4",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskApprovalViews.swift": {
+      "previous_sha256": "a92eed45d2e5865ecec0163de0937e3576c2dff175d3dd64104389586a81940b",
+      "current_sha256": "a92eed45d2e5865ecec0163de0937e3576c2dff175d3dd64104389586a81940b",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskCreditPause.swift": {
+      "previous_sha256": "d4ce14f217af2491d697cb24ba0d467258e78be93913d137e17b41e4eb41cabe",
+      "current_sha256": "d4ce14f217af2491d697cb24ba0d467258e78be93913d137e17b41e4eb41cabe",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskConversationViews.swift": {
+      "previous_sha256": "9f9d67c828236912449c3cf3dd902a75d043673969018a87201d282c35414f5e",
+      "current_sha256": "9f9d67c828236912449c3cf3dd902a75d043673969018a87201d282c35414f5e",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskDesktopActions.swift": {
+      "previous_sha256": "c91d84fc7b27821f6c3416f1e61a8dde1c012a02ba46118130b8b50e981d4ced",
+      "current_sha256": "c91d84fc7b27821f6c3416f1e61a8dde1c012a02ba46118130b8b50e981d4ced",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskConversationModel+OpenChat.swift": {
+      "previous_sha256": "aab4fd0d69a536becd0cccedc7aed2af638d010b5525179259921501a4e18bf6",
+      "current_sha256": "aab4fd0d69a536becd0cccedc7aed2af638d010b5525179259921501a4e18bf6",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/MediaWorker.swift": {
+      "previous_sha256": "2cdc215159e8b0e3eb4a9eb54145d41302b070a60d793c44f1c32b8e6e5124ed",
+      "current_sha256": "2cdc215159e8b0e3eb4a9eb54145d41302b070a60d793c44f1c32b8e6e5124ed",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskReasoningRequest.swift": {
+      "previous_sha256": "d33db8fbcfc6cdd9b8a1c39bfe883cc39dcafee23e5da42fac9de338f71222dd",
+      "current_sha256": "d33db8fbcfc6cdd9b8a1c39bfe883cc39dcafee23e5da42fac9de338f71222dd",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskContextChips.swift": {
+      "previous_sha256": "9c13f7b2cb48356a7668ab75abced93c933a1f323a76ff72abe24509972c27db",
+      "current_sha256": "9c13f7b2cb48356a7668ab75abced93c933a1f323a76ff72abe24509972c27db",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskComposerTextView.swift": {
+      "previous_sha256": "d5baebe1cc037237bf0a6069910efccaa09d473f52ad3c18aff1f8e727a1a818",
+      "current_sha256": "d5baebe1cc037237bf0a6069910efccaa09d473f52ad3c18aff1f8e727a1a818",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskConversationModel+WorkflowActions.swift": {
+      "previous_sha256": "b76306e8780267d0f727b64901bb857dbe41f8d8d8dca7f8931f7fccd36254fb",
+      "current_sha256": "b76306e8780267d0f727b64901bb857dbe41f8d8d8dca7f8931f7fccd36254fb",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskLocalMode.swift": {
+      "previous_sha256": "c9ffb1344ac24bb4b4171c4988cac8466ccd7d33ed9d0b77cea647c61997f713",
+      "current_sha256": "1dfc9e3cc743edadac31d6c1f82af3fe070a1f8347199c6ae537c6853169eea4",
+      "unchanged": false
+    },
+    "Sources/Typeflux/Ask/AskConversationModel+HistorySearch.swift": {
+      "previous_sha256": "361b3bd7e4231ddfe45de56956f55a36e25564f4168ecda30ba961c54d5ba796",
+      "current_sha256": "361b3bd7e4231ddfe45de56956f55a36e25564f4168ecda30ba961c54d5ba796",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskLauncherWindowMode.swift": {
+      "previous_sha256": "22577fcacceda6a54f76927527e22ea58146f48cc388d9f6090a5e010d5663c4",
+      "current_sha256": "22577fcacceda6a54f76927527e22ea58146f48cc388d9f6090a5e010d5663c4",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskLauncherEscape.swift": {
+      "previous_sha256": "066c83489dd2374220ef3fbffda90ea36f4d7ea933957d4cae940d78153ecf28",
+      "current_sha256": "066c83489dd2374220ef3fbffda90ea36f4d7ea933957d4cae940d78153ecf28",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskLauncherInputHistoryView.swift": {
+      "previous_sha256": "59f542d564257550e4535cb63e2150bf27d401652bfd750bef426d229d71bd51",
+      "current_sha256": "59f542d564257550e4535cb63e2150bf27d401652bfd750bef426d229d71bd51",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskCodeSandbox.swift": {
+      "previous_sha256": "604fa658a771056bc0257895f5a135c732e5f8447b266b9bdcd170e1676fc202",
+      "current_sha256": "604fa658a771056bc0257895f5a135c732e5f8447b266b9bdcd170e1676fc202",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskSavedChatDraft.swift": {
+      "previous_sha256": "7e8b4723e7b0d3a631db38a59eecf55880d5a11de8324033e61e8dec7d1b63ae",
+      "current_sha256": "7e8b4723e7b0d3a631db38a59eecf55880d5a11de8324033e61e8dec7d1b63ae",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskModelLibrary+Presentation.swift": {
+      "previous_sha256": "8594bcaa881271ae72835b525ea22ba7fa9c679e11a65ee0d73dbc6dde726c71",
+      "current_sha256": "8594bcaa881271ae72835b525ea22ba7fa9c679e11a65ee0d73dbc6dde726c71",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskConversationStream.swift": {
+      "previous_sha256": "b20d33c2320d796bf6506a7655232736077a4665ea1d3e8a8b27d2d9d22eca34",
+      "current_sha256": "b20d33c2320d796bf6506a7655232736077a4665ea1d3e8a8b27d2d9d22eca34",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskConversationModel+Plugins.swift": {
+      "previous_sha256": "5d92eb9355e025f646e4443ee0759db681b9398a919e4239124da152b8a8dcfd",
+      "current_sha256": "5d92eb9355e025f646e4443ee0759db681b9398a919e4239124da152b8a8dcfd",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskContextCapture.swift": {
+      "previous_sha256": "387cb2b0bfa79016f88e2681d1dabd02163e63458785a5ab96a2467f9a0c57b6",
+      "current_sha256": "387cb2b0bfa79016f88e2681d1dabd02163e63458785a5ab96a2467f9a0c57b6",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskConversationModel+Commands.swift": {
+      "previous_sha256": "1b6f53c552a42f0a3e2fb4bde0027be8b80a1eab0d3c68e82840a679a8ca203f",
+      "current_sha256": "1b6f53c552a42f0a3e2fb4bde0027be8b80a1eab0d3c68e82840a679a8ca203f",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskTypedContent.swift": {
+      "previous_sha256": "b2d36760698cdb96df79e9452e571f6b5e90ba9fe65a123198f72b5511d7b0f0",
+      "current_sha256": "b2d36760698cdb96df79e9452e571f6b5e90ba9fe65a123198f72b5511d7b0f0",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskPlanList.swift": {
+      "previous_sha256": "383b115759933c4062a2f145a58b5e0110debe9b2d320d8bca356cfd4ff55142",
+      "current_sha256": "383b115759933c4062a2f145a58b5e0110debe9b2d320d8bca356cfd4ff55142",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskMemoryNoteFileStorage.swift": {
+      "previous_sha256": "ba722acbbeb59f679655aeb65285be1e45333fc43a4f2f9616081ebc2b787802",
+      "current_sha256": "ba722acbbeb59f679655aeb65285be1e45333fc43a4f2f9616081ebc2b787802",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskConversationModel+Clipboard.swift": {
+      "previous_sha256": "3913d1aafd048f2bad131cadd374e83657754fa7acdd4e9c7f4e19295ff0a3ae",
+      "current_sha256": "3913d1aafd048f2bad131cadd374e83657754fa7acdd4e9c7f4e19295ff0a3ae",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskConversationModel+Memory.swift": {
+      "previous_sha256": "6196a56f31199ed993de191670b89ab7145283d78fc53aa30a710025635f2ade",
+      "current_sha256": "6196a56f31199ed993de191670b89ab7145283d78fc53aa30a710025635f2ade",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskConversation.swift": {
+      "previous_sha256": "eecd3da30cd9d5ff5eb40507520df39c1246f81db33852be4b9159fcc814ab34",
+      "current_sha256": "eecd3da30cd9d5ff5eb40507520df39c1246f81db33852be4b9159fcc814ab34",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskCommands.swift": {
+      "previous_sha256": "3b0bddffbb12a050f69c4b798edfca1854590270b60bd8af6cd9c71fbe85f2e3",
+      "current_sha256": "3b0bddffbb12a050f69c4b798edfca1854590270b60bd8af6cd9c71fbe85f2e3",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskTranscriptText.swift": {
+      "previous_sha256": "2843298066b0e5778084721478bb613df311f2d5e19b9a0b55cb103743eded66",
+      "current_sha256": "2843298066b0e5778084721478bb613df311f2d5e19b9a0b55cb103743eded66",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskUsage.swift": {
+      "previous_sha256": "deed2ef5363a50837fa1d76f67b907376af33d326ec071d415838ca9074b6899",
+      "current_sha256": "deed2ef5363a50837fa1d76f67b907376af33d326ec071d415838ca9074b6899",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskLibraryChrome.swift": {
+      "previous_sha256": "bb16c4bcbac600e7a4da78a2aa6a68e420493f88a5fd5796dda736563c50a78b",
+      "current_sha256": "bb16c4bcbac600e7a4da78a2aa6a68e420493f88a5fd5796dda736563c50a78b",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskAPIClient.swift": {
+      "previous_sha256": "d0fc8ea7c39ee20be72c5af2c22942897e1c4145afb79a637ac3072e5687cc1c",
+      "current_sha256": "d0fc8ea7c39ee20be72c5af2c22942897e1c4145afb79a637ac3072e5687cc1c",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskQueueViews.swift": {
+      "previous_sha256": "18b2093f5e16a6df4fa52ffa67262bcadd3ee18988aaa9e2db03ba3fcda80057",
+      "current_sha256": "18b2093f5e16a6df4fa52ffa67262bcadd3ee18988aaa9e2db03ba3fcda80057",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskLauncherContextToken.swift": {
+      "previous_sha256": "5089c4f71182eae19e535de52529c30d172e5bf482c63b31da6fe79429c15ac8",
+      "current_sha256": "5089c4f71182eae19e535de52529c30d172e5bf482c63b31da6fe79429c15ac8",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskWorkspacePresentation.swift": {
+      "previous_sha256": "0f0a213ea78d248a7964e79b505ccaa53197f2e266fd27e18594123ce1d89f62",
+      "current_sha256": "0f0a213ea78d248a7964e79b505ccaa53197f2e266fd27e18594123ce1d89f62",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskConversationModel+LauncherInputHistory.swift": {
+      "previous_sha256": "ddc699c6507916c57170d13fe34d3a98284c8b442c2157d6853a273a0acf9280",
+      "current_sha256": "ddc699c6507916c57170d13fe34d3a98284c8b442c2157d6853a273a0acf9280",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskConversationModel+LauncherHome.swift": {
+      "previous_sha256": "a009d6257c2b23c13f6f15451a5e1c83514ce8d1d257da2602b953ce19c0684a",
+      "current_sha256": "a009d6257c2b23c13f6f15451a5e1c83514ce8d1d257da2602b953ce19c0684a",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskConversationModel+NoteChat.swift": {
+      "previous_sha256": "b5dc11ee776f9ff67221f68441412f138175e99324ee7633a653b61b1b049097",
+      "current_sha256": "b5dc11ee776f9ff67221f68441412f138175e99324ee7633a653b61b1b049097",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskConversationModel+Emoji.swift": {
+      "previous_sha256": "9b8487779c1e35a52c5366a881dbb4a74d40e41e7415ce39b7cb3dfdab82f004",
+      "current_sha256": "9b8487779c1e35a52c5366a881dbb4a74d40e41e7415ce39b7cb3dfdab82f004",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskBrowserScripts.swift": {
+      "previous_sha256": "e63e4fb77a0cedd578926d860a7c6af3e6accb0349cc5d1c6ca300e6359f4496",
+      "current_sha256": "e63e4fb77a0cedd578926d860a7c6af3e6accb0349cc5d1c6ca300e6359f4496",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskLauncherHome.swift": {
+      "previous_sha256": "6f5bd85718766a485ccf9956be8b52011fef8b17278e64a53b0e5fbada6d6e68",
+      "current_sha256": "6f5bd85718766a485ccf9956be8b52011fef8b17278e64a53b0e5fbada6d6e68",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskConversationTitle.swift": {
+      "previous_sha256": "c6d2ac746459ddd18560f1a34b207aae77272f44d9207b482a69cccf1bc612f6",
+      "current_sha256": "c6d2ac746459ddd18560f1a34b207aae77272f44d9207b482a69cccf1bc612f6",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskConversationWindowServices.swift": {
+      "previous_sha256": "1d2759ad374e1faf482e79ed977d0e53d780a4933d7777311b8458aa47b9e477",
+      "current_sha256": "1d2759ad374e1faf482e79ed977d0e53d780a4933d7777311b8458aa47b9e477",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskKeywordUsage.swift": {
+      "previous_sha256": "82a1913b4e9718a2b3b1bf227bb73444a9c9d1c543ff5cf4054d9987fb21a958",
+      "current_sha256": "82a1913b4e9718a2b3b1bf227bb73444a9c9d1c543ff5cf4054d9987fb21a958",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskLauncherInputHistoryStore.swift": {
+      "previous_sha256": "e8b7eacc814427bb272988aac49871f3822c379dc295820d264bed36ff1ba38d",
+      "current_sha256": "e8b7eacc814427bb272988aac49871f3822c379dc295820d264bed36ff1ba38d",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskLocalTools+Approval.swift": {
+      "previous_sha256": "304db5739bb5d4fdea20effbec99f89053bfef12e10aff146005ac622cc94ca8",
+      "current_sha256": "304db5739bb5d4fdea20effbec99f89053bfef12e10aff146005ac622cc94ca8",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskSearchPaletteView.swift": {
+      "previous_sha256": "f32cd7f7269cd4f61fce24dbaa806c0529ed889acb1c5a6ef934719a2bae8487",
+      "current_sha256": "f32cd7f7269cd4f61fce24dbaa806c0529ed889acb1c5a6ef934719a2bae8487",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskSkillInstaller+GitHub.swift": {
+      "previous_sha256": "1508e600dbcf6b8578e7423226b04914ec8c37f275545f73e0b174ec64b70767",
+      "current_sha256": "1508e600dbcf6b8578e7423226b04914ec8c37f275545f73e0b174ec64b70767",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskEffortPicker.swift": {
+      "previous_sha256": "2f58f32144744022633a51270541bf7f62a5af5a6ada8ff7d96ff6d6ae2862f2",
+      "current_sha256": "2f58f32144744022633a51270541bf7f62a5af5a6ada8ff7d96ff6d6ae2862f2",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskFolderGrants.swift": {
+      "previous_sha256": "46ea10266b675b3e4a4af085a3c74b38d0a51ba851994f606219dee13fa49f64",
+      "current_sha256": "46ea10266b675b3e4a4af085a3c74b38d0a51ba851994f606219dee13fa49f64",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskSkillParser.swift": {
+      "previous_sha256": "9b4fa85f2ba5455c43d6aa17d79b0a2e3c4c7e535eeea2d4bc6afa6eb3698f76",
+      "current_sha256": "9b4fa85f2ba5455c43d6aa17d79b0a2e3c4c7e535eeea2d4bc6afa6eb3698f76",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskLauncherPlacement.swift": {
+      "previous_sha256": "d109dfd943234b7568d15ac001fbb8e2c5897dd876a714f61644bd516fd8344d",
+      "current_sha256": "d109dfd943234b7568d15ac001fbb8e2c5897dd876a714f61644bd516fd8344d",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskSearchPalette.swift": {
+      "previous_sha256": "155d89633fe63e650f0c9559f9509d4985cb4554b76ad6b616ca8df2da38167c",
+      "current_sha256": "155d89633fe63e650f0c9559f9509d4985cb4554b76ad6b616ca8df2da38167c",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskVoiceButton.swift": {
+      "previous_sha256": "f9447c88ac80604bc80290fda1ea44f35998ca0517eb4c162947ab3971f57783",
+      "current_sha256": "f9447c88ac80604bc80290fda1ea44f35998ca0517eb4c162947ab3971f57783",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskConversationCache.swift": {
+      "previous_sha256": "ead3d16dad7830ebba024242b8a47592b09ce6c3cc9a8dd20d33bb742cb7167f",
+      "current_sha256": "ead3d16dad7830ebba024242b8a47592b09ce6c3cc9a8dd20d33bb742cb7167f",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskImageCapability.swift": {
+      "previous_sha256": "523df4a83523e90b1ec1f38fbbf3fec440fa200c4c967f1a255325881474cd40",
+      "current_sha256": "523df4a83523e90b1ec1f38fbbf3fec440fa200c4c967f1a255325881474cd40",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskStream.swift": {
+      "previous_sha256": "71b761afcdee93bdb6ec9cd806fbb6488e3b24d2f53e25fb2e827778f37a1e2d",
+      "current_sha256": "71b761afcdee93bdb6ec9cd806fbb6488e3b24d2f53e25fb2e827778f37a1e2d",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskResponseWaiting.swift": {
+      "previous_sha256": "b75f4aaefc1f19b4409c11efbfc9ab0840cc3294c5231fc2c6c793725a30206c",
+      "current_sha256": "b75f4aaefc1f19b4409c11efbfc9ab0840cc3294c5231fc2c6c793725a30206c",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskComposerNotices.swift": {
+      "previous_sha256": "882aa44e49db312cb0e6499aef00d1f3ed87629e969dadf3c7b0fa4ea7f128ef",
+      "current_sha256": "882aa44e49db312cb0e6499aef00d1f3ed87629e969dadf3c7b0fa4ea7f128ef",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskSkillInstallationStore.swift": {
+      "previous_sha256": "a18f6ac06ea07798ae21d87ff792f9deba6ebe8876d8676b619397d7fffd2ce1",
+      "current_sha256": "a18f6ac06ea07798ae21d87ff792f9deba6ebe8876d8676b619397d7fffd2ce1",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskConversationModel+Temporary.swift": {
+      "previous_sha256": "36d46e7bfca83ab4a782cef2dceeb8afa50f5b733724baadc40ee5002d435003",
+      "current_sha256": "36d46e7bfca83ab4a782cef2dceeb8afa50f5b733724baadc40ee5002d435003",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskUsageDetails.swift": {
+      "previous_sha256": "5772d471af7b3970c1b4d1377afe4b719648fef24edc34a1cfb60fd8a5f29b94",
+      "current_sha256": "5772d471af7b3970c1b4d1377afe4b719648fef24edc34a1cfb60fd8a5f29b94",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/MemoryProvenance.swift": {
+      "previous_sha256": "8e9a9a098039b875fb2026aad2888589496c13210dde04cb5ad481df3d37b179",
+      "current_sha256": "8e9a9a098039b875fb2026aad2888589496c13210dde04cb5ad481df3d37b179",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskComposerViews.swift": {
+      "previous_sha256": "93d291e330cb7ab8285af6d15fbcb39c008857b68a1773ef626a8abb5b43262b",
+      "current_sha256": "93d291e330cb7ab8285af6d15fbcb39c008857b68a1773ef626a8abb5b43262b",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/AskLocalTools.swift": {
+      "previous_sha256": "513dde65f3eb2e68da6e8c27a2a1ea8fd23721292e6e9d13ef2da052b4ef0a4c",
+      "current_sha256": "513dde65f3eb2e68da6e8c27a2a1ea8fd23721292e6e9d13ef2da052b4ef0a4c",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Artifacts/AskArtifactSaveModel.swift": {
+      "previous_sha256": "a67ada938deed7d3f6ed1531927b5463d3dc29a4ec29c599f67934ae81843c34",
+      "current_sha256": "a67ada938deed7d3f6ed1531927b5463d3dc29a4ec29c599f67934ae81843c34",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Artifacts/AskDevelopmentPreview.swift": {
+      "previous_sha256": "743037e36942e03143b680aeb069b5b2fe0263f947a3a227470afb0842f5b0b1",
+      "current_sha256": "743037e36942e03143b680aeb069b5b2fe0263f947a3a227470afb0842f5b0b1",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Artifacts/AskStoredArtifactCard.swift": {
+      "previous_sha256": "562fd75236dbea0b06c8c882d182cdc88e697c1a3bc579819a2ac5df32f3da37",
+      "current_sha256": "562fd75236dbea0b06c8c882d182cdc88e697c1a3bc579819a2ac5df32f3da37",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Artifacts/AskPreviewHost.swift": {
+      "previous_sha256": "c1eb2dc4fba7087c54bf6a10139d3ec130a296c30c406a20893ef03115ef10fc",
+      "current_sha256": "c1eb2dc4fba7087c54bf6a10139d3ec130a296c30c406a20893ef03115ef10fc",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Artifacts/AskArtifactPreviewModel.swift": {
+      "previous_sha256": "0f16818d81665feb99520bd1911e109db743150af1c39d0e518733e0f611aa0d",
+      "current_sha256": "0f16818d81665feb99520bd1911e109db743150af1c39d0e518733e0f611aa0d",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Artifacts/AskArtifactStore.swift": {
+      "previous_sha256": "0b616d1d4ee157f23f27ae0ef30aba686bec145ab11510cb86e276aab4b773ac",
+      "current_sha256": "0b616d1d4ee157f23f27ae0ef30aba686bec145ab11510cb86e276aab4b773ac",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Artifacts/AskPreviewEnginePolicy.swift": {
+      "previous_sha256": "70e3e13c010a7c34e8be82ce94b9818210f955390c2682dd6f77e7983a639ab5",
+      "current_sha256": "70e3e13c010a7c34e8be82ce94b9818210f955390c2682dd6f77e7983a639ab5",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Artifacts/AskArtifactImageModel.swift": {
+      "previous_sha256": "5bb6dff45a50ff4412ca628674293feb85bfe1d59b8de57a5a10afda36651f27",
+      "current_sha256": "5bb6dff45a50ff4412ca628674293feb85bfe1d59b8de57a5a10afda36651f27",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Artifacts/AskArtifactCapture.swift": {
+      "previous_sha256": "bd469ffac5bb588054802f017d6dbcd0bc695ecc20974f181fd7ec0fa2675225",
+      "current_sha256": "bd469ffac5bb588054802f017d6dbcd0bc695ecc20974f181fd7ec0fa2675225",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Artifacts/AskLocalTools+Artifacts.swift": {
+      "previous_sha256": "c3bb1aeb28344d5258352f98272dc111f381324ea2a0ed1b5cc8c6c8655cf93c",
+      "current_sha256": "c3bb1aeb28344d5258352f98272dc111f381324ea2a0ed1b5cc8c6c8655cf93c",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Artifacts/AskProjectPreviewCapture.swift": {
+      "previous_sha256": "67285be41839d4c3034800a31160c775570519ea127a706c1debb99160ede33b",
+      "current_sha256": "67285be41839d4c3034800a31160c775570519ea127a706c1debb99160ede33b",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/ImageGeneration/AskImageGenerationRetention.swift": {
+      "previous_sha256": "5748964294a05391e0c99c314e0f4cc4cfc8e844b783adb363eac4114f39d2a4",
+      "current_sha256": "5748964294a05391e0c99c314e0f4cc4cfc8e844b783adb363eac4114f39d2a4",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/ImageGeneration/AskLocalTools+ImageGeneration.swift": {
+      "previous_sha256": "0e1c42cceb485f041d7ff5b63d2175adf26c13b73715027426d27cac1ce63dc5",
+      "current_sha256": "0e1c42cceb485f041d7ff5b63d2175adf26c13b73715027426d27cac1ce63dc5",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/ImageGeneration/AskImageConfiguration.swift": {
+      "previous_sha256": "1f2bc21a60a213ba0ed978fca68fc910052818396e007c5f25bed73b5ae8c6f8",
+      "current_sha256": "1f2bc21a60a213ba0ed978fca68fc910052818396e007c5f25bed73b5ae8c6f8",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/ImageGeneration/AskGenerationRecoveryView.swift": {
+      "previous_sha256": "a8defdc39dc69ade5739b413c640c69de4dc2ea7efd70f5f3d54ebb35b7dfc90",
+      "current_sha256": "a8defdc39dc69ade5739b413c640c69de4dc2ea7efd70f5f3d54ebb35b7dfc90",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/ImageGeneration/AskImageModelDiscovery.swift": {
+      "previous_sha256": "88b0d0ba9f7dd798162c2bb61cd6d78ca7d80ec8507b3367800915beb6d0a0d6",
+      "current_sha256": "88b0d0ba9f7dd798162c2bb61cd6d78ca7d80ec8507b3367800915beb6d0a0d6",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/ImageGeneration/AskGeneratedImageValidator.swift": {
+      "previous_sha256": "731bb3f0537fe138d3bd44d4ee6fe88fff4e770fa0060544fcfd323c3bff3f3e",
+      "current_sha256": "731bb3f0537fe138d3bd44d4ee6fe88fff4e770fa0060544fcfd323c3bff3f3e",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/ImageGeneration/AskImageGenerationService.swift": {
+      "previous_sha256": "1c5a0d6e40a3e8b29a48ca94fc9fb1caaedd65e39718769e5e0a982c5c9e4a90",
+      "current_sha256": "1c5a0d6e40a3e8b29a48ca94fc9fb1caaedd65e39718769e5e0a982c5c9e4a90",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/ImageGeneration/AskImageSettings.swift": {
+      "previous_sha256": "90110098898b88c7ef69d0fce00a2152c2885cfb73a04be7f389b18a53f6fd03",
+      "current_sha256": "90110098898b88c7ef69d0fce00a2152c2885cfb73a04be7f389b18a53f6fd03",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/ImageGeneration/AskRemoteImage.swift": {
+      "previous_sha256": "5c1cbb4cf1629c8404f0a081e3739009ed01c09af358e8629a0a3d5abc18935c",
+      "current_sha256": "5c1cbb4cf1629c8404f0a081e3739009ed01c09af358e8629a0a3d5abc18935c",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/ImageGeneration/AskGenerationRecovery.swift": {
+      "previous_sha256": "e70806aa46295679ce0f4d4dc0b4a3692d79e9e55c4e35a2d680a45c8a332c30",
+      "current_sha256": "e70806aa46295679ce0f4d4dc0b4a3692d79e9e55c4e35a2d680a45c8a332c30",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/ImageGeneration/AskImageHTTP.swift": {
+      "previous_sha256": "18209ad5752b083c9ed641a00626d296ec588d04f6e0ef473951bb71f007e210",
+      "current_sha256": "18209ad5752b083c9ed641a00626d296ec588d04f6e0ef473951bb71f007e210",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Recovery/AskConversationModel+Recovery.swift": {
+      "previous_sha256": "c8a462ca940bc30849af0a32be760cdd328416a6d77533d02fea1613209ac7b9",
+      "current_sha256": "c8a462ca940bc30849af0a32be760cdd328416a6d77533d02fea1613209ac7b9",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Recovery/AskRecovery.swift": {
+      "previous_sha256": "7af4575c156f1b4e3a93142661a29d49e76a7d35d5a53d8fa92e61d3fdfb120d",
+      "current_sha256": "7af4575c156f1b4e3a93142661a29d49e76a7d35d5a53d8fa92e61d3fdfb120d",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Recovery/AskConversationCache+Execution.swift": {
+      "previous_sha256": "23c2584f105b23317ead6b4c3edf6ace5843c067d9477adb50ceb7f6e1cc2596",
+      "current_sha256": "23c2584f105b23317ead6b4c3edf6ace5843c067d9477adb50ceb7f6e1cc2596",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Recovery/RecoveringAskConversationCache.swift": {
+      "previous_sha256": "96cbf12f144bd78f2a472d15630db16ef000bc560e499b360bf16beb0e4d4ced",
+      "current_sha256": "96cbf12f144bd78f2a472d15630db16ef000bc560e499b360bf16beb0e4d4ced",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Recovery/AskRecoveryViews.swift": {
+      "previous_sha256": "27f4628af559a0e948f733b5bcef1221ace2c0c76ff4d86d1e0e3b18293bfd06",
+      "current_sha256": "27f4628af559a0e948f733b5bcef1221ace2c0c76ff4d86d1e0e3b18293bfd06",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Recovery/RecoveringAskNoteStore.swift": {
+      "previous_sha256": "ade1fb5ba79c9aa0f76ef21aaada6037243cbf959ce7fbbb1330b8f743b7c807",
+      "current_sha256": "ade1fb5ba79c9aa0f76ef21aaada6037243cbf959ce7fbbb1330b8f743b7c807",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Recovery/AskRecoveryPresentation.swift": {
+      "previous_sha256": "b2c7d260f06b0efebf499c3ca81772f8ce0c1ad29245d1602737f92fd08b8e85",
+      "current_sha256": "b2c7d260f06b0efebf499c3ca81772f8ce0c1ad29245d1602737f92fd08b8e85",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Recovery/AskConversationModel+ToolFailure.swift": {
+      "previous_sha256": "6c887befa67ecbaf1a43d0a946938681dadf8e1a3e2d56155ff648bbb972efa5",
+      "current_sha256": "6c887befa67ecbaf1a43d0a946938681dadf8e1a3e2d56155ff648bbb972efa5",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Recovery/RecoveringAskWordBookStore.swift": {
+      "previous_sha256": "170712d73806eb1bc595f777742ea55708f42dd207d44303a835a1372a53eb66",
+      "current_sha256": "170712d73806eb1bc595f777742ea55708f42dd207d44303a835a1372a53eb66",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Local/AskSearchSettings.swift": {
+      "previous_sha256": "c1533e678e216c3933a1c981b8293ffdd2a6bbb7edaa9e5e2ea7aacc5c3e3e43",
+      "current_sha256": "c1533e678e216c3933a1c981b8293ffdd2a6bbb7edaa9e5e2ea7aacc5c3e3e43",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Local/AskLocalEngine+Budget.swift": {
+      "previous_sha256": "0ea2ab6df4ca6b135f1d2a9ea6edfb7997699329e5be2fa8e828e22494aa56c1",
+      "current_sha256": "0ea2ab6df4ca6b135f1d2a9ea6edfb7997699329e5be2fa8e828e22494aa56c1",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Local/AskLocalPrompt.swift": {
+      "previous_sha256": "5adca6e297b29fb1ba4abcb0ac0ccfb8a37df3047586384e2053df87144ef149",
+      "current_sha256": "5adca6e297b29fb1ba4abcb0ac0ccfb8a37df3047586384e2053df87144ef149",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Local/AskLocalWebTools.swift": {
+      "previous_sha256": "c8c32d415ae65f6edeb46f5538c20c05919d9a9107d99981f4063897e66707c6",
+      "current_sha256": "c8c32d415ae65f6edeb46f5538c20c05919d9a9107d99981f4063897e66707c6",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Local/AskRoutedAPI.swift": {
+      "previous_sha256": "31060c3f5582e84a8027ca325f61accbfb8e128c29c414644c9920dad096b132",
+      "current_sha256": "31060c3f5582e84a8027ca325f61accbfb8e128c29c414644c9920dad096b132",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Local/AskCloudflareSearch.swift": {
+      "previous_sha256": "52638d867f9869ef935337e06d247e7e761e95f940a24114ca466f732f5eea50",
+      "current_sha256": "52638d867f9869ef935337e06d247e7e761e95f940a24114ca466f732f5eea50",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Local/AskLocalEngine.swift": {
+      "previous_sha256": "a1d6ed111f0e193467a8791e674d2811a27ae7790c2b22cfc7b035d35555c9bb",
+      "current_sha256": "a1d6ed111f0e193467a8791e674d2811a27ae7790c2b22cfc7b035d35555c9bb",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Local/AskOfflineHTML.swift": {
+      "previous_sha256": "4ebfcb9e67e7ab468cd8fbf4bd3d63e8ed3b9d01b6d31fa6d4d0ff7be3f6d4db",
+      "current_sha256": "4ebfcb9e67e7ab468cd8fbf4bd3d63e8ed3b9d01b6d31fa6d4d0ff7be3f6d4db",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Local/AskLocalUsage.swift": {
+      "previous_sha256": "552198781cb1d4d7afeb9695ea1412a294c46b84baf77518981db2bf2b1f7a8f",
+      "current_sha256": "552198781cb1d4d7afeb9695ea1412a294c46b84baf77518981db2bf2b1f7a8f",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Project/AskTerminalTextBuffer.swift": {
+      "previous_sha256": "c4d64da52a35c7f81b72cc497d1e9c69cc7b2c5b4a39738925ebe8bde1dc5d6d",
+      "current_sha256": "c4d64da52a35c7f81b72cc497d1e9c69cc7b2c5b4a39738925ebe8bde1dc5d6d",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Project/AskProjectChangeSet.swift": {
+      "previous_sha256": "73bd1643a31e80682c9c578103088cc29f11466b8cad4afb9c7182c5768352a1",
+      "current_sha256": "73bd1643a31e80682c9c578103088cc29f11466b8cad4afb9c7182c5768352a1",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Project/AskProjectFileAccess.swift": {
+      "previous_sha256": "b77bae2ca3aa438c525e895255f4611b42d8ea8cddb39b053335dc2fc2e01f9c",
+      "current_sha256": "b77bae2ca3aa438c525e895255f4611b42d8ea8cddb39b053335dc2fc2e01f9c",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Project/AskTerminalSession.swift": {
+      "previous_sha256": "6784a5c5bda99153bd9967454c0e3b6b1f122cc174922216f29e0ee5811ffe2f",
+      "current_sha256": "6784a5c5bda99153bd9967454c0e3b6b1f122cc174922216f29e0ee5811ffe2f",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Project/AskProjectTerminalCard.swift": {
+      "previous_sha256": "a8456e7c81f9ba657f6a8f30efc1e8741b04468f810a8e0d22b3f7dcc1abb78d",
+      "current_sha256": "a8456e7c81f9ba657f6a8f30efc1e8741b04468f810a8e0d22b3f7dcc1abb78d",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Project/AskLocalTools+Terminal.swift": {
+      "previous_sha256": "c870fbd3d5f2d944a83cc2cdc451ae0cf7aaa8f59648f100e52d5bff544bafe5",
+      "current_sha256": "c870fbd3d5f2d944a83cc2cdc451ae0cf7aaa8f59648f100e52d5bff544bafe5",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Project/AskProjectPortLease.swift": {
+      "previous_sha256": "3d21cfe6913dc97d5fabd4f1192eff9018aba77863aee319f04cd7ef5ddc0117",
+      "current_sha256": "3d21cfe6913dc97d5fabd4f1192eff9018aba77863aee319f04cd7ef5ddc0117",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Project/AskProjectProcessIO.swift": {
+      "previous_sha256": "a3342afc67c0547d1e86418123939f2c333c3017953e7d933dfd29ce457ab329",
+      "current_sha256": "a3342afc67c0547d1e86418123939f2c333c3017953e7d933dfd29ce457ab329",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Project/AskProjectExecutionCopy.swift": {
+      "previous_sha256": "c6a63aa99ad9e5de130494378eea3d0e9b46276da28a7c11024134681adddea1",
+      "current_sha256": "c6a63aa99ad9e5de130494378eea3d0e9b46276da28a7c11024134681adddea1",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Project/AskLocalTools+Project.swift": {
+      "previous_sha256": "aa96fcacb7ccf653cd51e0a06f101a13c2cc87ed25659190d4184cfee56ba6e3",
+      "current_sha256": "aa96fcacb7ccf653cd51e0a06f101a13c2cc87ed25659190d4184cfee56ba6e3",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Project/AskProjectRuntime.swift": {
+      "previous_sha256": "b1f58a7259177ea29f5302046c993effcbf580197598178c09fd01e339523961",
+      "current_sha256": "b1f58a7259177ea29f5302046c993effcbf580197598178c09fd01e339523961",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Project/AskProjectRuntimePolicy.swift": {
+      "previous_sha256": "72083fc0a042e7ccb776ac3d8942b33ca92e466c93b7f08b04028534333e2ab2",
+      "current_sha256": "72083fc0a042e7ccb776ac3d8942b33ca92e466c93b7f08b04028534333e2ab2",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Project/AskProjectWorkspace.swift": {
+      "previous_sha256": "417d4ac68b0972f41e6834b1e37dcfa2e0b5ec27d004542bbdf0fbcf5229af1b",
+      "current_sha256": "417d4ac68b0972f41e6834b1e37dcfa2e0b5ec27d004542bbdf0fbcf5229af1b",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Project/AskProjectReviewView.swift": {
+      "previous_sha256": "41ffdd3f3dbddef960360fcc4b201cdf8e0e3638c3fd4f647cf3b5ccff442b7b",
+      "current_sha256": "41ffdd3f3dbddef960360fcc4b201cdf8e0e3638c3fd4f647cf3b5ccff442b7b",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/ResultWindow/AskResultWindowView.swift": {
+      "previous_sha256": "e656c3f4271322b0b452ae409e3e04bef457436ff71c223bf3a0a37bf0647741",
+      "current_sha256": "e656c3f4271322b0b452ae409e3e04bef457436ff71c223bf3a0a37bf0647741",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/ResultWindow/AskResultDocument.swift": {
+      "previous_sha256": "5330f997f60656c90ead908aca794245a236627e8366dd3428ec29342b54aaaa",
+      "current_sha256": "5330f997f60656c90ead908aca794245a236627e8366dd3428ec29342b54aaaa",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/ResultWindow/AskResultWindowController.swift": {
+      "previous_sha256": "6613380fd259992baa39d634cdef080a228e2c9555e34107f8db6c36eb3486d9",
+      "current_sha256": "6613380fd259992baa39d634cdef080a228e2c9555e34107f8db6c36eb3486d9",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Notes/AskMarkdownFormat.swift": {
+      "previous_sha256": "fb6c5c2d253dbe8a8e141e54206bb04e49c3c39d7b95d06cdfa3dfef29a9c501",
+      "current_sha256": "fb6c5c2d253dbe8a8e141e54206bb04e49c3c39d7b95d06cdfa3dfef29a9c501",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Notes/AskNoteDetailView.swift": {
+      "previous_sha256": "22fc28bfe4ab83d087b8984a2fc17a850e33214eee2b45d208fefaa865146b83",
+      "current_sha256": "22fc28bfe4ab83d087b8984a2fc17a850e33214eee2b45d208fefaa865146b83",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Notes/AskNoteImporter.swift": {
+      "previous_sha256": "e193d29246b8f94380a8699b80d7a16e93d2ca4f66528f577cea4f170d453bbe",
+      "current_sha256": "e193d29246b8f94380a8699b80d7a16e93d2ca4f66528f577cea4f170d453bbe",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Notes/AskNoteExporter.swift": {
+      "previous_sha256": "32822a73f60f6e80261ef252ef48c27ffac94e24f294ad6ae218b35725897fa4",
+      "current_sha256": "32822a73f60f6e80261ef252ef48c27ffac94e24f294ad6ae218b35725897fa4",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Notes/AskNoteMarkdown.swift": {
+      "previous_sha256": "b424f77dbcc68259501f4cbd6b786765e37cc91046bf22a80c4e21a7cdd2448e",
+      "current_sha256": "b424f77dbcc68259501f4cbd6b786765e37cc91046bf22a80c4e21a7cdd2448e",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Notes/AskNotebookTool.swift": {
+      "previous_sha256": "2869cb53e25000d74512d5efd63adbf4f858f05a874bc1a394d7d471c20f24c2",
+      "current_sha256": "2869cb53e25000d74512d5efd63adbf4f858f05a874bc1a394d7d471c20f24c2",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Notes/AskNotesView.swift": {
+      "previous_sha256": "63fa19d02c12614ef3f6f36459b2b8d8517ccb1b90f6147b97c68abe056c636e",
+      "current_sha256": "63fa19d02c12614ef3f6f36459b2b8d8517ccb1b90f6147b97c68abe056c636e",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Notes/SQLiteAskNoteStore.swift": {
+      "previous_sha256": "9cca7b8d88c44f766afb9928eab140228ab63816937d459a9ca6c2c93a51ad79",
+      "current_sha256": "9cca7b8d88c44f766afb9928eab140228ab63816937d459a9ca6c2c93a51ad79",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Notes/AskNote.swift": {
+      "previous_sha256": "6140ce260787998adcb41ed8d51edd6d49c14753570e9625651314a51390763a",
+      "current_sha256": "6140ce260787998adcb41ed8d51edd6d49c14753570e9625651314a51390763a",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Notes/AskNoteTextViews.swift": {
+      "previous_sha256": "8ef989f06dbd771901b3a3e76923709400fabc9ce6cec1bb3c43b802d8d3bb52",
+      "current_sha256": "8ef989f06dbd771901b3a3e76923709400fabc9ce6cec1bb3c43b802d8d3bb52",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Notes/AskNotesSidebar.swift": {
+      "previous_sha256": "a8e1a1e68096aa128a2954c33c04546960985580dae1ccb4f76b151f265e47f8",
+      "current_sha256": "a8e1a1e68096aa128a2954c33c04546960985580dae1ccb4f76b151f265e47f8",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Notes/AskNotesViewModel.swift": {
+      "previous_sha256": "08505f90c6e1006e6c339766f9c5488bbb04510fe7a76dd522add0880a5164eb",
+      "current_sha256": "08505f90c6e1006e6c339766f9c5488bbb04510fe7a76dd522add0880a5164eb",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Notes/AskNotesList.swift": {
+      "previous_sha256": "edac53ea5ac803fe3a9682b0f8aa67fa4b0542c67875b12f2d162864fa152291",
+      "current_sha256": "edac53ea5ac803fe3a9682b0f8aa67fa4b0542c67875b12f2d162864fa152291",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Notes/AskNotebookSkill.swift": {
+      "previous_sha256": "128d1714543ee85c079d63828c83fd4ce6ba9eb69ffefacc1230a4185389e282",
+      "current_sha256": "128d1714543ee85c079d63828c83fd4ce6ba9eb69ffefacc1230a4185389e282",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Notes/AskNotesWindowController.swift": {
+      "previous_sha256": "057e1e7fc70b3abf658d1f510b983bae97f7546d57ae8a677617419592c37912",
+      "current_sha256": "057e1e7fc70b3abf658d1f510b983bae97f7546d57ae8a677617419592c37912",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/AskQuickResultSecondaryClick.swift": {
+      "previous_sha256": "7b0cc1d6f4346adfcd4bbae4372fb05f38c6b453c45a6ae35ea1e844520b29e5",
+      "current_sha256": "7b0cc1d6f4346adfcd4bbae4372fb05f38c6b453c45a6ae35ea1e844520b29e5",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/AskLauncherIconDiskCache.swift": {
+      "previous_sha256": "c963b74163ca371f0c30351eb6187711fa9c4ef40ea1b63bd902680130c72f66",
+      "current_sha256": "c963b74163ca371f0c30351eb6187711fa9c4ef40ea1b63bd902680130c72f66",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/AskQuickResultsView.swift": {
+      "previous_sha256": "54a08cd71905d719f5b7b37fdea820a4cb1ea992e5ed6495970bcfc0f8eeec5f",
+      "current_sha256": "54a08cd71905d719f5b7b37fdea820a4cb1ea992e5ed6495970bcfc0f8eeec5f",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/AskLauncherIconCache.swift": {
+      "previous_sha256": "6fefb061e6ec328cb0936f7b9d4690180911762b21c2a70dbb22f4687598e55a",
+      "current_sha256": "2c59767ee036d3f9f2ef883005e4df3fee610ee0a10a6001a691064e55e24760",
+      "unchanged": false
+    },
+    "Sources/Typeflux/Ask/QuickResults/AskQuickResultsView+Layout.swift": {
+      "previous_sha256": "f5d53732e5db70501cdc010e709a9acb91202a2b488608763687acd6331052e3",
+      "current_sha256": "f5d53732e5db70501cdc010e709a9acb91202a2b488608763687acd6331052e3",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/AskSmallIcon.swift": {
+      "previous_sha256": "f89359ebe20079543ad4943b8b7cd4f418db0b111c10fb19a0bc86499dffc712",
+      "current_sha256": "f89359ebe20079543ad4943b8b7cd4f418db0b111c10fb19a0bc86499dffc712",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/AskResultImageCache.swift": {
+      "previous_sha256": "832b523a3788d380588bc009ff1e26be036b75d9c8fd83a807a7a35bc3af5630",
+      "current_sha256": "832b523a3788d380588bc009ff1e26be036b75d9c8fd83a807a7a35bc3af5630",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/AskQuickResults.swift": {
+      "previous_sha256": "fa384e424544930409e149f67f017c81f3b7a7802b690c459c99465a0c397bb7",
+      "current_sha256": "fa384e424544930409e149f67f017c81f3b7a7802b690c459c99465a0c397bb7",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/AskQuickSearchSession.swift": {
+      "previous_sha256": "43a404c252825875d79b80e62652b8b8e3779e034fc2d6f882b3e773374b0e51",
+      "current_sha256": "43a404c252825875d79b80e62652b8b8e3779e034fc2d6f882b3e773374b0e51",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/AskQuickResultsView+ContentMatch.swift": {
+      "previous_sha256": "47189cd87fe1d3894e508277d7e7d7abd36752241aabe0dfe1c3ffde6acb003b",
+      "current_sha256": "47189cd87fe1d3894e508277d7e7d7abd36752241aabe0dfe1c3ffde6acb003b",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/AskFinderIcon.swift": {
+      "previous_sha256": "02a622729c536b5533d486014428a400247fecba67de5fd9dfea8635ebb4759f",
+      "current_sha256": "26cfd038f45a262b858111a29e2fda5de67ddd835f6b32f8deb382d933d0acb3",
+      "unchanged": false
+    },
+    "Sources/Typeflux/Ask/QuickResults/AskNativeIconAdmission.swift": {
+      "previous_sha256": "ee53296095e388d76b440cf374ef6ebdf8a62cad71ea9c13fdc7bcb09099e1f7",
+      "current_sha256": "ee53296095e388d76b440cf374ef6ebdf8a62cad71ea9c13fdc7bcb09099e1f7",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/AskQuickLookThumbnail.swift": {
+      "previous_sha256": "de5c1e09c36dcd84ec3aaef120d0be8e81f832e626de468b28c9c42982c4d52c",
+      "current_sha256": "de5c1e09c36dcd84ec3aaef120d0be8e81f832e626de468b28c9c42982c4d52c",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/AskQuickActions.swift": {
+      "previous_sha256": "04851f528f9375091ed585f2eb3bb3ba523ca9179f33cbd94adcdce801c7fdd2",
+      "current_sha256": "04851f528f9375091ed585f2eb3bb3ba523ca9179f33cbd94adcdce801c7fdd2",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Execution/AskHostCommand.swift": {
+      "previous_sha256": "695abd1c6f92a903b22bddd641e78a23545bb35427285614a068b73102da4247",
+      "current_sha256": "695abd1c6f92a903b22bddd641e78a23545bb35427285614a068b73102da4247",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Execution/OwnedProcessReaper.swift": {
+      "previous_sha256": "37311be5cd3b04c0face8bab8de34ba475c1d75c46ba170e763c74673fbe3c3a",
+      "current_sha256": "37311be5cd3b04c0face8bab8de34ba475c1d75c46ba170e763c74673fbe3c3a",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Execution/AskSecureDirectory.swift": {
+      "previous_sha256": "8c47e3afd075d49d6e0099b0399ab4def44d2eb951bff01d8cf3d735d88120d7",
+      "current_sha256": "8c47e3afd075d49d6e0099b0399ab4def44d2eb951bff01d8cf3d735d88120d7",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Execution/ManagedProcess.swift": {
+      "previous_sha256": "81073975d87d8370549a3b8431c3e98036150fe0386468a7f833b582541a787f",
+      "current_sha256": "81073975d87d8370549a3b8431c3e98036150fe0386468a7f833b582541a787f",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/WorkflowAuthoring/AskLocalTools+WorkflowAuthoring.swift": {
+      "previous_sha256": "880f114aa362a93cf0142d313f4e6bad026c1f3b736599b8e4f3a9dc45cf49c8",
+      "current_sha256": "880f114aa362a93cf0142d313f4e6bad026c1f3b736599b8e4f3a9dc45cf49c8",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/WorkflowAuthoring/AskWorkflowAuthoringPresentation.swift": {
+      "previous_sha256": "10c44fd50d6ff669738ba9d039f3bc77eb3d57e58149946ee467debde5ae4c9b",
+      "current_sha256": "10c44fd50d6ff669738ba9d039f3bc77eb3d57e58149946ee467debde5ae4c9b",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/WorkflowAuthoring/AskWorkflowAuthoringSession.swift": {
+      "previous_sha256": "563edee0f11faf150d120ac72f67190daa6a47f483abdbc932d4a07777237d52",
+      "current_sha256": "563edee0f11faf150d120ac72f67190daa6a47f483abdbc932d4a07777237d52",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/WorkflowAuthoring/AskWorkflowAuthoringStore.swift": {
+      "previous_sha256": "c4ab79561aae22a8b59d3f3ad542b197e77d3076144c21e2c57d89528f3c897f",
+      "current_sha256": "c4ab79561aae22a8b59d3f3ad542b197e77d3076144c21e2c57d89528f3c897f",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/WorkflowAuthoring/AskWorkflowAuthoringPanel.swift": {
+      "previous_sha256": "d2f829ff892e8a3cd71bef3d9378e4926ad36b96335afaaf7830a6ce56197638",
+      "current_sha256": "d2f829ff892e8a3cd71bef3d9378e4926ad36b96335afaaf7830a6ce56197638",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Budget/AskContextPlanner.swift": {
+      "previous_sha256": "1ada1e492e2800554bde71329e9fa7bc6b5af8a2e46aefaebd23be3f8843b956",
+      "current_sha256": "1ada1e492e2800554bde71329e9fa7bc6b5af8a2e46aefaebd23be3f8843b956",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Budget/AskBudgetStore.swift": {
+      "previous_sha256": "68527946d2f6a7baac789a310c5d2b92c5be28e04bf79541c58c8ccc333ee1d3",
+      "current_sha256": "68527946d2f6a7baac789a310c5d2b92c5be28e04bf79541c58c8ccc333ee1d3",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Budget/AskBudgetView.swift": {
+      "previous_sha256": "de6434322f2d7c6baf387454e87a2dc7b2a8a979deca6e49c27a39139bd2f60b",
+      "current_sha256": "de6434322f2d7c6baf387454e87a2dc7b2a8a979deca6e49c27a39139bd2f60b",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/Budget/AskBudgetController.swift": {
+      "previous_sha256": "a7265260c65e9c9229c5bc0cb61c0e188016c02f8d30c6e78b4985e58e8d56a1",
+      "current_sha256": "a7265260c65e9c9229c5bc0cb61c0e188016c02f8d30c6e78b4985e58e8d56a1",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Calculator/AskCalculatorFormats.swift": {
+      "previous_sha256": "d030eaf9c61723f68982a5877b6c36fa2daa379d88546410bfd9b7254a6135f5",
+      "current_sha256": "d030eaf9c61723f68982a5877b6c36fa2daa379d88546410bfd9b7254a6135f5",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Calculator/AskCalculator.swift": {
+      "previous_sha256": "5803f9311b0c70ab3eba12b7c97120200d3ea275626fe23857a5e419d8a36fff",
+      "current_sha256": "5803f9311b0c70ab3eba12b7c97120200d3ea275626fe23857a5e419d8a36fff",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Calculator/AskCalculatorNumber.swift": {
+      "previous_sha256": "b7a426376a5a66c6f03cd9863e0d79120a934f71890f84f5d125f5cd01087fc6",
+      "current_sha256": "b7a426376a5a66c6f03cd9863e0d79120a934f71890f84f5d125f5cd01087fc6",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Calculator/AskNumberConversions.swift": {
+      "previous_sha256": "0239a34dcb8c7579364478aeb153ee3616a3dc0ce71344ef887d6314a6f4424d",
+      "current_sha256": "0239a34dcb8c7579364478aeb153ee3616a3dc0ce71344ef887d6314a6f4424d",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Calculator/AskCalculatorLexer.swift": {
+      "previous_sha256": "2fc9b13e51fc6e3be1b00f99319735adba13fb80cf7b0a3415df706ba0e752bd",
+      "current_sha256": "2fc9b13e51fc6e3be1b00f99319735adba13fb80cf7b0a3415df706ba0e752bd",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Calculator/AskCalculatorParser.swift": {
+      "previous_sha256": "c6aa96c1615c81cdb4281c9b2b40a36d71ad77661b0918b9f29b40c662ad2aca",
+      "current_sha256": "c6aa96c1615c81cdb4281c9b2b40a36d71ad77661b0918b9f29b40c662ad2aca",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Calculator/AskCalculatorEvaluator.swift": {
+      "previous_sha256": "65ee77fdfd611dde1280ad8453a1e48ed0e4f65f4995666bbf67358f67200bd1",
+      "current_sha256": "65ee77fdfd611dde1280ad8453a1e48ed0e4f65f4995666bbf67358f67200bd1",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/AskLauncherSearchEntry.swift": {
+      "previous_sha256": "15f648530bf1fce66e6732a78d5402b256bafccd84ca7d5eccd630ab49953957",
+      "current_sha256": "15f648530bf1fce66e6732a78d5402b256bafccd84ca7d5eccd630ab49953957",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/AskHistoryPlugin.swift": {
+      "previous_sha256": "9edb5150ee776d43074ddb1e527aa3704caed84826de18ead8e3c31ee391045b",
+      "current_sha256": "9edb5150ee776d43074ddb1e527aa3704caed84826de18ead8e3c31ee391045b",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/AskScreenshotPlugin.swift": {
+      "previous_sha256": "d766a8b9742ef16b53e30baf7409f4ce14c94e6c65738720ccf686dce6d88009",
+      "current_sha256": "d766a8b9742ef16b53e30baf7409f4ce14c94e6c65738720ccf686dce6d88009",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/AskOpenChatPlugin.swift": {
+      "previous_sha256": "a7e3bdb9e986801b0943f1a766be11b0cbb13580a980bd50ad584b3fe9791fae",
+      "current_sha256": "a7e3bdb9e986801b0943f1a766be11b0cbb13580a980bd50ad584b3fe9791fae",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/AskLauncherPlugin.swift": {
+      "previous_sha256": "2c88f3f97c8875d93ba97b2d0e9079da8a406a749dc593296da4be69d9b2bcbe",
+      "current_sha256": "2c88f3f97c8875d93ba97b2d0e9079da8a406a749dc593296da4be69d9b2bcbe",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/AskScreenshotTextPlugin.swift": {
+      "previous_sha256": "10ef94c4fd8df48f0a675e274e6803fc4118e337818a9f62382fcc704367854c",
+      "current_sha256": "10ef94c4fd8df48f0a675e274e6803fc4118e337818a9f62382fcc704367854c",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/AskPluginViews.swift": {
+      "previous_sha256": "1fee74bfcf6c7f866b82d502f9b83e611e1a514b90aa5990d28f799661ee4e53",
+      "current_sha256": "1fee74bfcf6c7f866b82d502f9b83e611e1a514b90aa5990d28f799661ee4e53",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/AskKeyword.swift": {
+      "previous_sha256": "47d9d2960d02fe3b69a1c6a7f167d7d3e1f229171e48e0527f13ed5eb92a07fc",
+      "current_sha256": "47d9d2960d02fe3b69a1c6a7f167d7d3e1f229171e48e0527f13ed5eb92a07fc",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/AskScreenshotTextPlugin+Organization.swift": {
+      "previous_sha256": "6925beb010d078a57312423703c3e8ac60907ac42bef63a8bcfa7cc1813e5ca5",
+      "current_sha256": "6925beb010d078a57312423703c3e8ac60907ac42bef63a8bcfa7cc1813e5ca5",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/AskClipboardPlugin.swift": {
+      "previous_sha256": "e308f15da0150e01de5c61805c5f9c61d48bb9683db276851d9846f2ce00bd2b",
+      "current_sha256": "e308f15da0150e01de5c61805c5f9c61d48bb9683db276851d9846f2ce00bd2b",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/AskKillAppPlugin.swift": {
+      "previous_sha256": "3656415c282141f1e6c6fd5c9431ae316ad0be85f17e007e43300bfe9d5075f4",
+      "current_sha256": "3656415c282141f1e6c6fd5c9431ae316ad0be85f17e007e43300bfe9d5075f4",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/AskPluginItemViews.swift": {
+      "previous_sha256": "bf0253970bdc56ca9a0010a7f29facdfece2d4ddfcbff4fa106823cbe3ef1716",
+      "current_sha256": "bf0253970bdc56ca9a0010a7f29facdfece2d4ddfcbff4fa106823cbe3ef1716",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/AskNotesPlugin.swift": {
+      "previous_sha256": "df4920671f135c85f0033173740ffaeeb79ed30aa3e41c3eb6b1c68147fbe41f",
+      "current_sha256": "df4920671f135c85f0033173740ffaeeb79ed30aa3e41c3eb6b1c68147fbe41f",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/AskPrefixPlugin.swift": {
+      "previous_sha256": "e9dd3d38936f50b634a66a92832fb476156358b78b36859f6c06cdad7107ec44",
+      "current_sha256": "e9dd3d38936f50b634a66a92832fb476156358b78b36859f6c06cdad7107ec44",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/AskSettingsPlugin.swift": {
+      "previous_sha256": "4d19739befffd34f5cffdc21c944878dfe1fd74626c2f29914f30eb1170d580e",
+      "current_sha256": "4d19739befffd34f5cffdc21c944878dfe1fd74626c2f29914f30eb1170d580e",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/AskHelpPlugin.swift": {
+      "previous_sha256": "8264e0da1dea3e6b3308e71ede2aa5f5ee8d9e2bc26fdb6013df1cd4eb63c8b2",
+      "current_sha256": "8264e0da1dea3e6b3308e71ede2aa5f5ee8d9e2bc26fdb6013df1cd4eb63c8b2",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/AskPluginSession.swift": {
+      "previous_sha256": "b3f2f3b32d3d77b071f7fa7add1be284226bc22a142a3e8ff74d7715c2580d8d",
+      "current_sha256": "b3f2f3b32d3d77b071f7fa7add1be284226bc22a142a3e8ff74d7715c2580d8d",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Search/AskSearchKey.swift": {
+      "previous_sha256": "8dbc99914927219114f94bdbc3542f1cc79d4225ef50296b698b80930540bbbb",
+      "current_sha256": "8dbc99914927219114f94bdbc3542f1cc79d4225ef50296b698b80930540bbbb",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Search/AskSearchCancellation.swift": {
+      "previous_sha256": "92dbb7a3cd1a59e9285b803a7625c99c777c25e607764e5cf63c8416dffac430",
+      "current_sha256": "92dbb7a3cd1a59e9285b803a7625c99c777c25e607764e5cf63c8416dffac430",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Search/AskLauncherSearchSettings.swift": {
+      "previous_sha256": "b09a107ecf525acea72e8378e457daad8060dad6d636c4f9a8e9c4eca24fd889",
+      "current_sha256": "b09a107ecf525acea72e8378e457daad8060dad6d636c4f9a8e9c4eca24fd889",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Search/AskSearchQuery.swift": {
+      "previous_sha256": "f4308ce6cffb2aec9ec0f7dc4a6bbd7e2f29d99f9bb93662bcc6cf475f1bc4ff",
+      "current_sha256": "f4308ce6cffb2aec9ec0f7dc4a6bbd7e2f29d99f9bb93662bcc6cf475f1bc4ff",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Search/AskFuzzyMatcher.swift": {
+      "previous_sha256": "b4831596ad83b4d83086e1136115bea106793ba731c937c21d64e21d54ca359b",
+      "current_sha256": "b4831596ad83b4d83086e1136115bea106793ba731c937c21d64e21d54ca359b",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Search/AskSearchText.swift": {
+      "previous_sha256": "4398a832859d96267f36202cfd85644dc220e9787faaa57bc81da624ecefadaa",
+      "current_sha256": "4398a832859d96267f36202cfd85644dc220e9787faaa57bc81da624ecefadaa",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Search/AskSearchTopK.swift": {
+      "previous_sha256": "91f171669c44595d0d1f63706593933c40f3ad9f2f711b57a9ce036bc9897b2c",
+      "current_sha256": "91f171669c44595d0d1f63706593933c40f3ad9f2f711b57a9ce036bc9897b2c",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Search/AskSearchPointer.swift": {
+      "previous_sha256": "eaca1e6b8f76242182356741afafb1ef6e4436b4c588ec463b9e7c8bc239d7d8",
+      "current_sha256": "eaca1e6b8f76242182356741afafb1ef6e4436b4c588ec463b9e7c8bc239d7d8",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Browser/AskBrowserFaviconCache.swift": {
+      "previous_sha256": "d5a3d174e73230bd93e24b48bae61fe4d260131166c0757405f3611de86f5c8d",
+      "current_sha256": "d5a3d174e73230bd93e24b48bae61fe4d260131166c0757405f3611de86f5c8d",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Browser/AskBrowserSearchSettings.swift": {
+      "previous_sha256": "553af494994b955e571799b39b6c71022f00a7609c54f4b48aa6c5d34076715b",
+      "current_sha256": "553af494994b955e571799b39b6c71022f00a7609c54f4b48aa6c5d34076715b",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Browser/AskBrowserSearchEntry.swift": {
+      "previous_sha256": "1047d0d7d186debe7acc2b4008a6125cc88ef9e4aa635d6425b70f695742f8f8",
+      "current_sha256": "1047d0d7d186debe7acc2b4008a6125cc88ef9e4aa635d6425b70f695742f8f8",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Browser/AskBrowserFaviconView.swift": {
+      "previous_sha256": "2c24e401e94909a7e9ba0f1d32e86381e399fbb945255f2239ca199d76e43a0b",
+      "current_sha256": "2c24e401e94909a7e9ba0f1d32e86381e399fbb945255f2239ca199d76e43a0b",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Browser/AskBrowserTabScripts.swift": {
+      "previous_sha256": "bafe0af8fd74271ecaef5ce5939b6cb9dfd7cb894b2652af88915c0ee874bfd7",
+      "current_sha256": "bafe0af8fd74271ecaef5ce5939b6cb9dfd7cb894b2652af88915c0ee874bfd7",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Browser/AskBrowserSearchService.swift": {
+      "previous_sha256": "68996281e1d2df8cea027c26ef4b78468aea2ab589a3b4a3afad0e1df3355bec",
+      "current_sha256": "68996281e1d2df8cea027c26ef4b78468aea2ab589a3b4a3afad0e1df3355bec",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Browser/AskBrowserSearchPlugin.swift": {
+      "previous_sha256": "51d20e5ed4cdee2a818d0f32dd62c995e8e15fc122508e0ca5b66c70ca6171bc",
+      "current_sha256": "51d20e5ed4cdee2a818d0f32dd62c995e8e15fc122508e0ca5b66c70ca6171bc",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Browser/AskBrowserBookmarks.swift": {
+      "previous_sha256": "25ff66d13e8ef449466884e750e2f995548a2145f48747840c32dfcb39b6f1d3",
+      "current_sha256": "25ff66d13e8ef449466884e750e2f995548a2145f48747840c32dfcb39b6f1d3",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+SearchMaintenance.swift": {
+      "previous_sha256": "3e26ba61e2e7623a84f396d018d7b211b60ebdd4c802eb622fb0e0df0016687c",
+      "current_sha256": "3e26ba61e2e7623a84f396d018d7b211b60ebdd4c802eb622fb0e0df0016687c",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticODTText.swift": {
+      "previous_sha256": "0c35230624d4c4828f8b880d80a3bda30c37967d0893423e92075b54be279126",
+      "current_sha256": "0c35230624d4c4828f8b880d80a3bda30c37967d0893423e92075b54be279126",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticIndexDiagnostics.swift": {
+      "previous_sha256": "a1bd2060e3ce80e74615649306d3d1a6ff10d8a04726b66dbd1d2831a24dbdfb",
+      "current_sha256": "a1bd2060e3ce80e74615649306d3d1a6ff10d8a04726b66dbd1d2831a24dbdfb",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Events.swift": {
+      "previous_sha256": "5f6dddd144a790317d0ec3ea7b900e27ca9eace7572373a3a7f3d7eb19aa81d1",
+      "current_sha256": "5f6dddd144a790317d0ec3ea7b900e27ca9eace7572373a3a7f3d7eb19aa81d1",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticPresentationText.swift": {
+      "previous_sha256": "7a573072474e4a028f051876aa91ef3a61fd01f21c0631cbdff8eef1c876b474",
+      "current_sha256": "7a573072474e4a028f051876aa91ef3a61fd01f21c0631cbdff8eef1c876b474",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer+Priority.swift": {
+      "previous_sha256": "e0811f6f7ed145f10db4b6148d18db501cbaa823cbcd60c22e4645ff2f76ebee",
+      "current_sha256": "e0811f6f7ed145f10db4b6148d18db501cbaa823cbcd60c22e4645ff2f76ebee",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticWorkBudget.swift": {
+      "previous_sha256": "5902cddeaf130fa6996dc0426c24cf7bd7e900686c1f00a1ddd5bc22f793ad10",
+      "current_sha256": "5902cddeaf130fa6996dc0426c24cf7bd7e900686c1f00a1ddd5bc22f793ad10",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSearchSnippet.swift": {
+      "previous_sha256": "4ee4e38752706293a10b6cc7e3f55878cc297ad4d134bd8ac6cf292de65a74a5",
+      "current_sha256": "4ee4e38752706293a10b6cc7e3f55878cc297ad4d134bd8ac6cf292de65a74a5",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticMediaPriority.swift": {
+      "previous_sha256": "192909499c301ce3a0e636922143ce95ad278e79f1ce27cd78166c57c5290922",
+      "current_sha256": "192909499c301ce3a0e636922143ce95ad278e79f1ce27cd78166c57c5290922",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticIndexEvents.swift": {
+      "previous_sha256": "3c8d09a3c1e0b041f7a855e0583cd68606f898ae6f396c4a7e18b4f0cc7d2a5c",
+      "current_sha256": "3c8d09a3c1e0b041f7a855e0583cd68606f898ae6f396c4a7e18b4f0cc7d2a5c",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticLexicalReader.swift": {
+      "previous_sha256": "325d3469677ee9280dbd23b726236fa42902e40cd369ed140e59a408f2a3cc1e",
+      "current_sha256": "325d3469677ee9280dbd23b726236fa42902e40cd369ed140e59a408f2a3cc1e",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift": {
+      "previous_sha256": "af5c269c93c08e1563efcfd7f61782f74d7de469298f00846d85d3faaeeae1a9",
+      "current_sha256": "af5c269c93c08e1563efcfd7f61782f74d7de469298f00846d85d3faaeeae1a9",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticDownloadState.swift": {
+      "previous_sha256": "e343d1bf01928a2e1141bb60bc07963acb9ea380b58f765bc6b6c5fb941bb344",
+      "current_sha256": "e343d1bf01928a2e1141bb60bc07963acb9ea380b58f765bc6b6c5fb941bb344",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSearchTrace.swift": {
+      "previous_sha256": "f8d2daa74c114d793dffedd5aadac10d7a86a7145f5b8f57539b0324db1c8514",
+      "current_sha256": "f8d2daa74c114d793dffedd5aadac10d7a86a7145f5b8f57539b0324db1c8514",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer.swift": {
+      "previous_sha256": "3d0f41037eeb68bf0d977accdc649a1b522dfb2048d9ca9c2db23b9e5528966c",
+      "current_sha256": "3d0f41037eeb68bf0d977accdc649a1b522dfb2048d9ca9c2db23b9e5528966c",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Discovery.swift": {
+      "previous_sha256": "0c3133288372ec9070094325a20c3e322f2d152741a084c4abee1b331bcc8286",
+      "current_sha256": "0c3133288372ec9070094325a20c3e322f2d152741a084c4abee1b331bcc8286",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer+Document.swift": {
+      "previous_sha256": "cae7f101b098f21f1bdd7e94d089eb357c0889a117127732b109dc733f03dfa0",
+      "current_sha256": "cae7f101b098f21f1bdd7e94d089eb357c0889a117127732b109dc733f03dfa0",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Totals.swift": {
+      "previous_sha256": "5932028a0396eeaac565d40b38e68de1621674db98083e892299593925bc89fe",
+      "current_sha256": "5932028a0396eeaac565d40b38e68de1621674db98083e892299593925bc89fe",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticVideoFrames.swift": {
+      "previous_sha256": "f825508e225a593fedcd33b0dbdd8f1a67f2f5fada063fa09d14a7d173c310fb",
+      "current_sha256": "f825508e225a593fedcd33b0dbdd8f1a67f2f5fada063fa09d14a7d173c310fb",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+MediaJobs.swift": {
+      "previous_sha256": "4fcff59f24c84ec6cd48033286d0be7cc7c0b9f17ffb5bc94ba62bbd29a62c19",
+      "current_sha256": "4fcff59f24c84ec6cd48033286d0be7cc7c0b9f17ffb5bc94ba62bbd29a62c19",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileReaders.swift": {
+      "previous_sha256": "70d8c341a260be6681e17e999fc25fb85855082825bc93dcff664f14a67a3eb3",
+      "current_sha256": "70d8c341a260be6681e17e999fc25fb85855082825bc93dcff664f14a67a3eb3",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticDownloadProgressDelivery.swift": {
+      "previous_sha256": "b6926ffae85314b895f3a09e9d0786fb5ded01fc420c174681105db320ce0ac9",
+      "current_sha256": "b6926ffae85314b895f3a09e9d0786fb5ded01fc420c174681105db320ce0ac9",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticScoreCalibration.swift": {
+      "previous_sha256": "4202dd6b2d9fea677ae972c4cfc54d4051e778ee33afa1fe8e391b38417b8ecb",
+      "current_sha256": "4202dd6b2d9fea677ae972c4cfc54d4051e778ee33afa1fe8e391b38417b8ecb",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticRTFText.swift": {
+      "previous_sha256": "5b700e73b8dc922a7a3a5ad775bef1619a482af96d672c6d8d9279dd18c2e40f",
+      "current_sha256": "5b700e73b8dc922a7a3a5ad775bef1619a482af96d672c6d8d9279dd18c2e40f",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticImageText.swift": {
+      "previous_sha256": "4c5e762158097b4e54f45b0522b6031e80d24c34ff17923a1a77a0b4a2c855b5",
+      "current_sha256": "4c5e762158097b4e54f45b0522b6031e80d24c34ff17923a1a77a0b4a2c855b5",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticPDFText.swift": {
+      "previous_sha256": "e399708e7c6361f6daa3f285c87d04ef3d29ad0a0ce75fbf151aed53e467ae0d",
+      "current_sha256": "e399708e7c6361f6daa3f285c87d04ef3d29ad0a0ce75fbf151aed53e467ae0d",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFilePolicy.swift": {
+      "previous_sha256": "f0e1d9d05da01c8830cc8ca176b584b02eceafc8237f5d54fba9f7295e82948e",
+      "current_sha256": "f0e1d9d05da01c8830cc8ca176b584b02eceafc8237f5d54fba9f7295e82948e",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticIndexProgressDelivery.swift": {
+      "previous_sha256": "1cd19c2b02dfd6884be7a483237a4f80b127d99c816c8c8f15a1a9392c87a4c0",
+      "current_sha256": "1cd19c2b02dfd6884be7a483237a4f80b127d99c816c8c8f15a1a9392c87a4c0",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticDocumentZIP.swift": {
+      "previous_sha256": "f36f20688c0bf0b4bae88dc03a6fd7aa2f03f932ba2b1908bc035a29a063c563",
+      "current_sha256": "f36f20688c0bf0b4bae88dc03a6fd7aa2f03f932ba2b1908bc035a29a063c563",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+ProcessingDetails.swift": {
+      "previous_sha256": "c6fa39a1b866c0e1c083050bde32d09707955da29821757170c46451d7fc5932",
+      "current_sha256": "c6fa39a1b866c0e1c083050bde32d09707955da29821757170c46451d7fc5932",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticWordText.swift": {
+      "previous_sha256": "7dcfa9733a79b9bafc0bc76ea3694ad671b104dc2e9464b2ea28661ad3319b42",
+      "current_sha256": "7dcfa9733a79b9bafc0bc76ea3694ad671b104dc2e9464b2ea28661ad3319b42",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer+Discovery.swift": {
+      "previous_sha256": "2883e7e57cfa770a632b4667c5bc751a802ef6a79b0a14af393f21a0479a6cc7",
+      "current_sha256": "2883e7e57cfa770a632b4667c5bc751a802ef6a79b0a14af393f21a0479a6cc7",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticEmbeddingWorker.swift": {
+      "previous_sha256": "e5fdce8f4f4dcbb27bb52c279c641b547cde1d523321f7251144e5425ceed0f5",
+      "current_sha256": "e5fdce8f4f4dcbb27bb52c279c641b547cde1d523321f7251144e5425ceed0f5",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+ImageText.swift": {
+      "previous_sha256": "47a14d48c2afccc22d3339eb07858d62bfe9307b949902450f8e45e5db5b81e8",
+      "current_sha256": "47a14d48c2afccc22d3339eb07858d62bfe9307b949902450f8e45e5db5b81e8",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticModelDownload.swift": {
+      "previous_sha256": "4af3d95e57d15cf0e0c28608eeda9c5cccebc43218376bfb38b3081db7ecc557",
+      "current_sha256": "4af3d95e57d15cf0e0c28608eeda9c5cccebc43218376bfb38b3081db7ecc557",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+SearchSchema.swift": {
+      "previous_sha256": "605ad60ed3ccab054df582db2ff0cca5ebd2d3eb7093202dfa1169bdbf0cd46a",
+      "current_sha256": "605ad60ed3ccab054df582db2ff0cca5ebd2d3eb7093202dfa1169bdbf0cd46a",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticMediaExtractor.swift": {
+      "previous_sha256": "137219fcba131fb48df827f4290b692900d2633308527a7989bfe9dc183b985c",
+      "current_sha256": "137219fcba131fb48df827f4290b692900d2633308527a7989bfe9dc183b985c",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSearchRanking.swift": {
+      "previous_sha256": "4b9c1a4fdd22bce1c041cf4305f07bc840d0883653d664a0ebb0ee1e385db21d",
+      "current_sha256": "4b9c1a4fdd22bce1c041cf4305f07bc840d0883653d664a0ebb0ee1e385db21d",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileIndexer+Media.swift": {
+      "previous_sha256": "f5d4cbca288e03fc582ccd5af6fa04885276e5955f2ff7b86ccb49f07052a8c0",
+      "current_sha256": "f5d4cbca288e03fc582ccd5af6fa04885276e5955f2ff7b86ccb49f07052a8c0",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+VideoProgress.swift": {
+      "previous_sha256": "269c25fccf216b7900f3767cd4f6f464acbeb6beb4d1ff1ec6abaf90f8308097",
+      "current_sha256": "269c25fccf216b7900f3767cd4f6f464acbeb6beb4d1ff1ec6abaf90f8308097",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+VideoAudio.swift": {
+      "previous_sha256": "2a2a380654d60c7c9f14c02381fe00a13a7845c4d1ca4776172efc6c8431fbbe",
+      "current_sha256": "2a2a380654d60c7c9f14c02381fe00a13a7845c4d1ca4776172efc6c8431fbbe",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticAudioWindows.swift": {
+      "previous_sha256": "2ee588554d0ba5236ebaa2838ab1c4fb5a2694daa0404b68de71298b8d4cf0d9",
+      "current_sha256": "2ee588554d0ba5236ebaa2838ab1c4fb5a2694daa0404b68de71298b8d4cf0d9",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticHTMLText.swift": {
+      "previous_sha256": "157b36a2b14f8b09935f39023824a60fcd6d00f88bd051427a5250f5b96b57ed",
+      "current_sha256": "157b36a2b14f8b09935f39023824a60fcd6d00f88bd051427a5250f5b96b57ed",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSpreadsheetText.swift": {
+      "previous_sha256": "7b7c789411e58296870a910e68345c37cf0be4baad33c46456f5577b4abaa593",
+      "current_sha256": "7b7c789411e58296870a910e68345c37cf0be4baad33c46456f5577b4abaa593",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileValidator.swift": {
+      "previous_sha256": "295b17587af0ecaf5de04caeb282b95548638e2b20d7d1561a7c211dd64dfc90",
+      "current_sha256": "295b17587af0ecaf5de04caeb282b95548638e2b20d7d1561a7c211dd64dfc90",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileContentWorker.swift": {
+      "previous_sha256": "e4a439cbf6d636cc7faf55bbf090ba29f2484bc41bade5e7954b1d2a5e3e05ad",
+      "current_sha256": "e4a439cbf6d636cc7faf55bbf090ba29f2484bc41bade5e7954b1d2a5e3e05ad",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticVectorReader.swift": {
+      "previous_sha256": "c92408a24a74c83f0be45f7fad22ffe50d500a5620937af093b9607d08da610f",
+      "current_sha256": "c92408a24a74c83f0be45f7fad22ffe50d500a5620937af093b9607d08da610f",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticIndexPauseGate.swift": {
+      "previous_sha256": "f45443968b3d357e20163f94cb75c910e3554b0990cf0e6bc5a5aadd5537c380",
+      "current_sha256": "f45443968b3d357e20163f94cb75c910e3554b0990cf0e6bc5a5aadd5537c380",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticWatcherDelivery.swift": {
+      "previous_sha256": "ee7af88093e2c71ce094b9108236604d74ff6b9d175476e8ba3a59b8138e3521",
+      "current_sha256": "ee7af88093e2c71ce094b9108236604d74ff6b9d175476e8ba3a59b8138e3521",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+AudioProgress.swift": {
+      "previous_sha256": "61cbf9e1b43eb6e957aefdff10830441a4c24374544e9703bb0069e76efa1b12",
+      "current_sha256": "61cbf9e1b43eb6e957aefdff10830441a4c24374544e9703bb0069e76efa1b12",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticMediaWorker.swift": {
+      "previous_sha256": "d3f61c6dbac4de2c0673cbd8a99b377815587b36840d89cdc02aa6d6cd1f4da6",
+      "current_sha256": "d3f61c6dbac4de2c0673cbd8a99b377815587b36840d89cdc02aa6d6cd1f4da6",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSettingsAuthority.swift": {
+      "previous_sha256": "2015682291e6f54175dd8d539f0ec576d50bdb5052bbdfa92bbc13c227ad550d",
+      "current_sha256": "2015682291e6f54175dd8d539f0ec576d50bdb5052bbdfa92bbc13c227ad550d",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore+Jobs.swift": {
+      "previous_sha256": "3ad84b944ddbc324e346dccd7eaca8b770863a7ab19732dc5aa605cad359c454",
+      "current_sha256": "3ad84b944ddbc324e346dccd7eaca8b770863a7ab19732dc5aa605cad359c454",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticSQLiteCancellation.swift": {
+      "previous_sha256": "9baf9e260754d3e2b2f49cf2ab157ceb390f3f4869cd6d44f5cf4ba895c685da",
+      "current_sha256": "9baf9e260754d3e2b2f49cf2ab157ceb390f3f4869cd6d44f5cf4ba895c685da",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticIndexProgressRelay.swift": {
+      "previous_sha256": "0ade465272dd595352fbaf57379a2149b392ed0a033d0b2a93775f0aa2eb80df",
+      "current_sha256": "0ade465272dd595352fbaf57379a2149b392ed0a033d0b2a93775f0aa2eb80df",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileStore.swift": {
+      "previous_sha256": "6932cb190686224dc4e1f7304947e57e4e29c4ec406f3681c17f76f66372b897",
+      "current_sha256": "6932cb190686224dc4e1f7304947e57e4e29c4ec406f3681c17f76f66372b897",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileChangePlan.swift": {
+      "previous_sha256": "c07411071681b17ce1fb35220a8b30b65104fe50ea59e6821deaf085b1428863",
+      "current_sha256": "c07411071681b17ce1fb35220a8b30b65104fe50ea59e6821deaf085b1428863",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Semantic/SemanticEmbeddingOwnership.swift": {
+      "previous_sha256": "097c3b9a15eff702b6fc7cdf99ccc42403a2b8abd4b4c06f0be2702fbb3de387",
+      "current_sha256": "097c3b9a15eff702b6fc7cdf99ccc42403a2b8abd4b4c06f0be2702fbb3de387",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Files/AskFileSearch.swift": {
+      "previous_sha256": "85dee912bc0d43c76c66ee47c9be8166aeeefb7db359cde26c425aac4140a918",
+      "current_sha256": "85dee912bc0d43c76c66ee47c9be8166aeeefb7db359cde26c425aac4140a918",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Files/AskFileReaderOwnership.swift": {
+      "previous_sha256": "96fb73d585e95ff5efdcf65945bd2ca0552c74cceab4274ded5c039446ca8e59",
+      "current_sha256": "96fb73d585e95ff5efdcf65945bd2ca0552c74cceab4274ded5c039446ca8e59",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Files/AskDirectorySession.swift": {
+      "previous_sha256": "439c826c4aab5d96947f79d7df07e3d52ed207fc74e0482c92952acb1c023538",
+      "current_sha256": "439c826c4aab5d96947f79d7df07e3d52ed207fc74e0482c92952acb1c023538",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Files/AskFileSearchCandidates.swift": {
+      "previous_sha256": "a671addda9a599f506b0602bb76c34ce9d3480c4c506911e93df1a2816a2c11d",
+      "current_sha256": "a671addda9a599f506b0602bb76c34ce9d3480c4c506911e93df1a2816a2c11d",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Files/AskFileCrawler.swift": {
+      "previous_sha256": "8bd902f54b97b5b3d6c474ad00d325ec9d4f365df131719c7eed88e3ccde0254",
+      "current_sha256": "8bd902f54b97b5b3d6c474ad00d325ec9d4f365df131719c7eed88e3ccde0254",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Files/AskFileWatcher.swift": {
+      "previous_sha256": "485805df7a0c5b6374c66f7cc4b0bde6cf350cf4b16636f2b69bb48114d853d0",
+      "current_sha256": "485805df7a0c5b6374c66f7cc4b0bde6cf350cf4b16636f2b69bb48114d853d0",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Files/AskFileLabels.swift": {
+      "previous_sha256": "a30d267f933aa7dc24329876841c849dd340d5f771a26a0e84985769404c635a",
+      "current_sha256": "a30d267f933aa7dc24329876841c849dd340d5f771a26a0e84985769404c635a",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Files/AskFileScope.swift": {
+      "previous_sha256": "8f2b8800e7b07c2711fd9b93b500d5ef979c14151710bfd5f13d6cbace2c8ec6",
+      "current_sha256": "8f2b8800e7b07c2711fd9b93b500d5ef979c14151710bfd5f13d6cbace2c8ec6",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Files/AskFileWorkerCommand.swift": {
+      "previous_sha256": "28fddadd36765c9c4a6734486f841d0fd021303cfa3ae3e969353998373f0e93",
+      "current_sha256": "28fddadd36765c9c4a6734486f841d0fd021303cfa3ae3e969353998373f0e93",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Files/AskFileIndex.swift": {
+      "previous_sha256": "07fa5e18c9d1525eb04bfa21273256752ef0a46c6c8b80e35287e8cb24e8188c",
+      "current_sha256": "07fa5e18c9d1525eb04bfa21273256752ef0a46c6c8b80e35287e8cb24e8188c",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Files/AskFileLocationActions.swift": {
+      "previous_sha256": "0795c7df46d0c753fb4c1c8555ec4d0189017d5bfd55ad07ca5e79d114e9b4fc",
+      "current_sha256": "0795c7df46d0c753fb4c1c8555ec4d0189017d5bfd55ad07ca5e79d114e9b4fc",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Files/AskFileType.swift": {
+      "previous_sha256": "c802e2bee65f466eaa5620bf30c9b69b48b7018d84bfb454d3fb76dc27ff3f6d",
+      "current_sha256": "c802e2bee65f466eaa5620bf30c9b69b48b7018d84bfb454d3fb76dc27ff3f6d",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Files/AskFileMounts.swift": {
+      "previous_sha256": "1767bb63566217c2b47148d555346ff0af2dd63e669a47485cdce70813d17019",
+      "current_sha256": "1767bb63566217c2b47148d555346ff0af2dd63e669a47485cdce70813d17019",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Files/AskFileIndexState.swift": {
+      "previous_sha256": "349e156ce730bb0b0dc2c0ede02e64bf1c094a33d284178155527d26a77f5dd0",
+      "current_sha256": "349e156ce730bb0b0dc2c0ede02e64bf1c094a33d284178155527d26a77f5dd0",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Files/AskFileSnapshot.swift": {
+      "previous_sha256": "43839bd9c538dbd1c407c2d82409beaaaa02d1df50c069647b89acf3ab4db79a",
+      "current_sha256": "43839bd9c538dbd1c407c2d82409beaaaa02d1df50c069647b89acf3ab4db79a",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Files/AskFileReader.swift": {
+      "previous_sha256": "4c0efcad2007a9517873f3a08a921c08bb6c0b8024234d58b86e7add51dbbea4",
+      "current_sha256": "4c0efcad2007a9517873f3a08a921c08bb6c0b8024234d58b86e7add51dbbea4",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPolicy.swift": {
+      "previous_sha256": "6a7686d2fad81cdc215bc0b592bd6853a40e18e296887429225acc11d8d2294a",
+      "current_sha256": "6a7686d2fad81cdc215bc0b592bd6853a40e18e296887429225acc11d8d2294a",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewText.swift": {
+      "previous_sha256": "40ada76e3aaf5ae9197cadd3bb7effdb37664727798079f5113a3a4bccbfeee7",
+      "current_sha256": "40ada76e3aaf5ae9197cadd3bb7effdb37664727798079f5113a3a4bccbfeee7",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewLoader.swift": {
+      "previous_sha256": "f49b8c819d1af66678a0aff879fde290f6a38d7b157b3f8d2577bedbe208b954",
+      "current_sha256": "f49b8c819d1af66678a0aff879fde290f6a38d7b157b3f8d2577bedbe208b954",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewContent.swift": {
+      "previous_sha256": "d7a4769a2c3caea0d7771a01a6cab6e5b57e28d17714be373919d9cd6860747c",
+      "current_sha256": "d7a4769a2c3caea0d7771a01a6cab6e5b57e28d17714be373919d9cd6860747c",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewController.swift": {
+      "previous_sha256": "7e749fe34d4b39ad8aed5cae960950b77c68472830a5d72785bfa2a0f0589463",
+      "current_sha256": "7e749fe34d4b39ad8aed5cae960950b77c68472830a5d72785bfa2a0f0589463",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewClock.swift": {
+      "previous_sha256": "209931ac724e47fcf698b05fcee6d6b648dd95a9a51e0fdd9f7f84f352c5ce13",
+      "current_sha256": "209931ac724e47fcf698b05fcee6d6b648dd95a9a51e0fdd9f7f84f352c5ce13",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewRenderer.swift": {
+      "previous_sha256": "0ff711ef68ecc0078606d01ff2deedc13108ea4fa3623ba75de8129f95f406bc",
+      "current_sha256": "0ff711ef68ecc0078606d01ff2deedc13108ea4fa3623ba75de8129f95f406bc",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewView.swift": {
+      "previous_sha256": "1243d1e0216e339153bda486a1163dd652213a84a2b81a09699652265471528d",
+      "current_sha256": "1243d1e0216e339153bda486a1163dd652213a84a2b81a09699652265471528d",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPDF.swift": {
+      "previous_sha256": "d34caf6b39d1c921a582ee7d0977ab3ea468a52a27bfb1e021d42bbf252e564a",
+      "current_sha256": "d34caf6b39d1c921a582ee7d0977ab3ea468a52a27bfb1e021d42bbf252e564a",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Preview/AskFilePreviewPlacement.swift": {
+      "previous_sha256": "614c5bbefc7db926e2282e17943e8a20278aceb69279efeb14abecb8852c25c9",
+      "current_sha256": "614c5bbefc7db926e2282e17943e8a20278aceb69279efeb14abecb8852c25c9",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Apps/AskAppEntry.swift": {
+      "previous_sha256": "96bc2959b4e82f097e22faea0a273b4d1e9ef2c100903ab6cf1350f3a16a8027",
+      "current_sha256": "96bc2959b4e82f097e22faea0a273b4d1e9ef2c100903ab6cf1350f3a16a8027",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Apps/AskAppMatcher.swift": {
+      "previous_sha256": "48aa7da0c966d4dd6663981e5113b9aa6dfd0f1e7b3277d4d4b8c52596396bcf",
+      "current_sha256": "48aa7da0c966d4dd6663981e5113b9aa6dfd0f1e7b3277d4d4b8c52596396bcf",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Apps/AskAppIndex.swift": {
+      "previous_sha256": "a26715b2fbc6af0c3df80a01f0929ce6c23952b8ace612e864ea49196f31e8c7",
+      "current_sha256": "a26715b2fbc6af0c3df80a01f0929ce6c23952b8ace612e864ea49196f31e8c7",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Calendar/AskCalendarPlugin.swift": {
+      "previous_sha256": "840244f6ed45c5518fde59dd1675ad219bc9681bfd31f6a3ade3ccb71e426182",
+      "current_sha256": "840244f6ed45c5518fde59dd1675ad219bc9681bfd31f6a3ade3ccb71e426182",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskTranslationEngineFactory.swift": {
+      "previous_sha256": "1c9eef4ebb6420f5df4a49adf77bbbcfe22822d9659ebc787cc826e4a617d710",
+      "current_sha256": "1c9eef4ebb6420f5df4a49adf77bbbcfe22822d9659ebc787cc826e4a617d710",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskTranslationFanout.swift": {
+      "previous_sha256": "e6063ebd1db0d7f9ece10767994ac616d55d1413f7672a05d5ac5c5e1f626dea",
+      "current_sha256": "e6063ebd1db0d7f9ece10767994ac616d55d1413f7672a05d5ac5c5e1f626dea",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskTranslatePlugin+Output.swift": {
+      "previous_sha256": "a7da13de5ee0df20345ee87f5544ee4c1d5470eb7112ae8c3a3b6d990a16e596",
+      "current_sha256": "a7da13de5ee0df20345ee87f5544ee4c1d5470eb7112ae8c3a3b6d990a16e596",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskTranslationLanguageDownload.swift": {
+      "previous_sha256": "b28cbb69b29d998d5523efc3e003e3c48cd826564f1914e70e3b7980270582fd",
+      "current_sha256": "b28cbb69b29d998d5523efc3e003e3c48cd826564f1914e70e3b7980270582fd",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskTranslatePlugin.swift": {
+      "previous_sha256": "ac0c82a63c826687a784a81fe943cf5a9af748a5714d1b2fc191d885ab65b397",
+      "current_sha256": "ac0c82a63c826687a784a81fe943cf5a9af748a5714d1b2fc191d885ab65b397",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskTranslationStackView.swift": {
+      "previous_sha256": "44a81c9b3d7dbb889ffb07b84a33ca57e2f0833404ed2f0aa3ecb5e81a8b4e31",
+      "current_sha256": "44a81c9b3d7dbb889ffb07b84a33ca57e2f0833404ed2f0aa3ecb5e81a8b4e31",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskTranslationSettings.swift": {
+      "previous_sha256": "be653616d602a293314544932c79c7cc76982a7f273e8c96409cb31eef79a816",
+      "current_sha256": "be653616d602a293314544932c79c7cc76982a7f273e8c96409cb31eef79a816",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskWordCard.swift": {
+      "previous_sha256": "85200f23172536f42a0a52f0c1ada1cf67b6c6804fee5653ddfb3918a4c0994e",
+      "current_sha256": "85200f23172536f42a0a52f0c1ada1cf67b6c6804fee5653ddfb3918a4c0994e",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskTranslationConfigurationPresenter.swift": {
+      "previous_sha256": "89fc1fa86f1f29791da110873ba7550918c29a09ee763f35a5c26d5ea7ff2016",
+      "current_sha256": "89fc1fa86f1f29791da110873ba7550918c29a09ee763f35a5c26d5ea7ff2016",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskTranslationContentHeight.swift": {
+      "previous_sha256": "90027d0a420f5ce8f1411ecef8ff35f59648f54e949c82d7116303ba5cec660d",
+      "current_sha256": "90027d0a420f5ce8f1411ecef8ff35f59648f54e949c82d7116303ba5cec660d",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskTranslationLanguages.swift": {
+      "previous_sha256": "c0297597a2b3a93706f8c6b6ec0f86b92526b0cbd4b2121aa43f574d32f90a4d",
+      "current_sha256": "c0297597a2b3a93706f8c6b6ec0f86b92526b0cbd4b2121aa43f574d32f90a4d",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskTranslationLLMService.swift": {
+      "previous_sha256": "02474ff2d23dd1f7fcd0f8fd1f1cdb2acaaec1afa1d5e54a985dbf52c8f0c5ba",
+      "current_sha256": "02474ff2d23dd1f7fcd0f8fd1f1cdb2acaaec1afa1d5e54a985dbf52c8f0c5ba",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskTranslationEngines.swift": {
+      "previous_sha256": "f02b8f9ab2d09549b1b900d2a5f57544de3e06e6460a9a6d25e9bdab05102c2b",
+      "current_sha256": "f02b8f9ab2d09549b1b900d2a5f57544de3e06e6460a9a6d25e9bdab05102c2b",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/AskWordCardView.swift": {
+      "previous_sha256": "8ab05fc1363167160f7669e17d09056c879c19f49553cc6e69befd755382975e",
+      "current_sha256": "8ab05fc1363167160f7669e17d09056c879c19f49553cc6e69befd755382975e",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/WebSearch/AskWebSearchPlugin.swift": {
+      "previous_sha256": "60b1001c0814bf25642e5ab49f5698ecc2edfac90d3eb08ac7a93dfb0d9c11c1",
+      "current_sha256": "60b1001c0814bf25642e5ab49f5698ecc2edfac90d3eb08ac7a93dfb0d9c11c1",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Emoji/EmojiCatalog.swift": {
+      "previous_sha256": "30ad44aead86f0de1f69497f7f7c40ebb42a5df9569ab2e48cd501dff8637285",
+      "current_sha256": "30ad44aead86f0de1f69497f7f7c40ebb42a5df9569ab2e48cd501dff8637285",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Emoji/EmojiSearchService.swift": {
+      "previous_sha256": "a46df7fbf83918618523da91287fefe6775456404b8fca2487b822460544df0b",
+      "current_sha256": "a46df7fbf83918618523da91287fefe6775456404b8fca2487b822460544df0b",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Emoji/EmojiGridKeyboard.swift": {
+      "previous_sha256": "b19cd3a022654c415761a759b99b284a20f12d89f9414513791bc5b5a8a7cbde",
+      "current_sha256": "b19cd3a022654c415761a759b99b284a20f12d89f9414513791bc5b5a8a7cbde",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Emoji/AskEmojiPlugin.swift": {
+      "previous_sha256": "61fbc58bfa73448e9eb17c9329c655aaa508840241bea21ba257a59dad452df3",
+      "current_sha256": "61fbc58bfa73448e9eb17c9329c655aaa508840241bea21ba257a59dad452df3",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Emoji/EmojiResultsView.swift": {
+      "previous_sha256": "229fdb179023cb361454d91e4e3843545823f80bbad8a9d940fc11524212c7e3",
+      "current_sha256": "229fdb179023cb361454d91e4e3843545823f80bbad8a9d940fc11524212c7e3",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/System/NativeSystemWorkerCommand.swift": {
+      "previous_sha256": "7580fb97f0af40f24b95d1e7a0d3fc53382f3738fcdff1e2b0f042219eb2e652",
+      "current_sha256": "7580fb97f0af40f24b95d1e7a0d3fc53382f3738fcdff1e2b0f042219eb2e652",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/System/NativeSystemAdapter.swift": {
+      "previous_sha256": "9c0ada2d96feba60268c93850db4583e75a1a15e18c774ed8888a39a60677b03",
+      "current_sha256": "9c0ada2d96feba60268c93850db4583e75a1a15e18c774ed8888a39a60677b03",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/System/AskSystemCommand.swift": {
+      "previous_sha256": "4126e89b5cdeab6f39fd82984db90050e5e80225b777bd7838c5a48e8a2acf33",
+      "current_sha256": "4126e89b5cdeab6f39fd82984db90050e5e80225b777bd7838c5a48e8a2acf33",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/System/AskSystemCommandRunner.swift": {
+      "previous_sha256": "b0fd8b848bbeb83639ddfbfd785111edc28fa0c7a846c7b1bdd9026754c423f6",
+      "current_sha256": "b0fd8b848bbeb83639ddfbfd785111edc28fa0c7a846c7b1bdd9026754c423f6",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/System/NativeSystemProtocol.swift": {
+      "previous_sha256": "032365ca0da7e43a27c735af8d2752851f7dff90457025da049b8421d34ab60b",
+      "current_sha256": "032365ca0da7e43a27c735af8d2752851f7dff90457025da049b8421d34ab60b",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/System/NativeSystemWorker.swift": {
+      "previous_sha256": "57e7a423534f15a1edf17e402da15f66086a17e359ca601a5c73bead0f0d9017",
+      "current_sha256": "57e7a423534f15a1edf17e402da15f66086a17e359ca601a5c73bead0f0d9017",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/System/AskScreenCleaningController.swift": {
+      "previous_sha256": "de5ddf42e36046cc4f7e99ab982551d83f8241b509dcab23b24f1d16fe739c33",
+      "current_sha256": "de5ddf42e36046cc4f7e99ab982551d83f8241b509dcab23b24f1d16fe739c33",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/SystemMonitor/AskSystemMonitorPlugin.swift": {
+      "previous_sha256": "ffa753ba9c190985b4319c482a7908b652aaba8aeea4cb7de02b18e3fa03cec2",
+      "current_sha256": "ffa753ba9c190985b4319c482a7908b652aaba8aeea4cb7de02b18e3fa03cec2",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Prompt/AskPromptPlugin.swift": {
+      "previous_sha256": "d99b94372b7b1c8bbb3e5ac2c99619dd589e388e3e0dc4dd4fab78a6440a91d8",
+      "current_sha256": "d99b94372b7b1c8bbb3e5ac2c99619dd589e388e3e0dc4dd4fab78a6440a91d8",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowManifest.swift": {
+      "previous_sha256": "f842a8a6662ef1a48785c6cc4adb89540b1b1e08c9a92b537c273c319ca5c577",
+      "current_sha256": "f842a8a6662ef1a48785c6cc4adb89540b1b1e08c9a92b537c273c319ca5c577",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowStore.swift": {
+      "previous_sha256": "c2659cd0db3bafd56b20610e12fa78ae29a8f0694ebb55001bb690c676eaab70",
+      "current_sha256": "c2659cd0db3bafd56b20610e12fa78ae29a8f0694ebb55001bb690c676eaab70",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowScriptOutput.swift": {
+      "previous_sha256": "94bc67feb78cc67ed198cbdff7bf4674158e14b4833d1e22446a2e999afd124b",
+      "current_sha256": "94bc67feb78cc67ed198cbdff7bf4674158e14b4833d1e22446a2e999afd124b",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowStore+Gallery.swift": {
+      "previous_sha256": "0b1f990bb342bd052460407443057ec85d05e88f5c2c28a33e3314113f2ee4e7",
+      "current_sha256": "0b1f990bb342bd052460407443057ec85d05e88f5c2c28a33e3314113f2ee4e7",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowGallery.swift": {
+      "previous_sha256": "519cb193be8303c60b90fdea66080d5dbab2e58faa2d4e2507bb4bd01f21b91d",
+      "current_sha256": "519cb193be8303c60b90fdea66080d5dbab2e58faa2d4e2507bb4bd01f21b91d",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowStore+Editor.swift": {
+      "previous_sha256": "1578551b2bcb726d4d8577b07ba8350d1e67c6edc9f72d1bc33268b7180e6029",
+      "current_sha256": "1578551b2bcb726d4d8577b07ba8350d1e67c6edc9f72d1bc33268b7180e6029",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowPlugin.swift": {
+      "previous_sha256": "95f35153312253be9a5a811ab523ab40c4131666849045f8e0b0d9e567ac7442",
+      "current_sha256": "95f35153312253be9a5a811ab523ab40c4131666849045f8e0b0d9e567ac7442",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowAction.swift": {
+      "previous_sha256": "3cd9c03feac866ecf9c5a798b3cffcbb4f0444fdb3e723d7cb26b2f489c7eab3",
+      "current_sha256": "3cd9c03feac866ecf9c5a798b3cffcbb4f0444fdb3e723d7cb26b2f489c7eab3",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowPlaceholders.swift": {
+      "previous_sha256": "ed48b8987887059674219565477c310bd3848c0ed92d5c71b1ab45860fc1c6f8",
+      "current_sha256": "ed48b8987887059674219565477c310bd3848c0ed92d5c71b1ab45860fc1c6f8",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowNoticePanel.swift": {
+      "previous_sha256": "bbe93d91701e4457f22e169854e4133a7e185d0efdba939ea411dcd7cfdb01a0",
+      "current_sha256": "bbe93d91701e4457f22e169854e4133a7e185d0efdba939ea411dcd7cfdb01a0",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowItemRows.swift": {
+      "previous_sha256": "757f994aae85b4605c0f5f181c62369d5454e0fe6ade8f8fff8234a1bd3af449",
+      "current_sha256": "757f994aae85b4605c0f5f181c62369d5454e0fe6ade8f8fff8234a1bd3af449",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowItems.swift": {
+      "previous_sha256": "c208a2dd6db794d0f94cde02178b9af437e94cfdae280c85c3825b5babb6f0a0",
+      "current_sha256": "c208a2dd6db794d0f94cde02178b9af437e94cfdae280c85c3825b5babb6f0a0",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowActionRunner.swift": {
+      "previous_sha256": "5f5284e4d5b763c829666b75e180052819ad6edcbab2c251e4328cf31e30aaad",
+      "current_sha256": "5f5284e4d5b763c829666b75e180052819ad6edcbab2c251e4328cf31e30aaad",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowRuntime.swift": {
+      "previous_sha256": "b29d30a8aa709bd44852c4d163dd3803d7a6e7f4df1e07f26e89ce5b61c530ee",
+      "current_sha256": "b29d30a8aa709bd44852c4d163dd3803d7a6e7f4df1e07f26e89ce5b61c530ee",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowImage.swift": {
+      "previous_sha256": "2e975daad2c10dd9f30e87109c9c425d7f4aaab0ef7a1b56b3a1906c0d8290dd",
+      "current_sha256": "2e975daad2c10dd9f30e87109c9c425d7f4aaab0ef7a1b56b3a1906c0d8290dd",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowImageView.swift": {
+      "previous_sha256": "e0b494343edc2a1e5a424c6b61705f2bf471b1afcfc815ade80e00f7892217c7",
+      "current_sha256": "e0b494343edc2a1e5a424c6b61705f2bf471b1afcfc815ade80e00f7892217c7",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowTemplate.swift": {
+      "previous_sha256": "93329a26b53197647300739d87f18a63452e9100397a0b6ee4f7dd9bf74e511e",
+      "current_sha256": "93329a26b53197647300739d87f18a63452e9100397a0b6ee4f7dd9bf74e511e",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowRunner.swift": {
+      "previous_sha256": "5ee87c5d11de6b86bcbf7db7d00a6c541a87470dc6a8008a65772368ca4b7abf",
+      "current_sha256": "5ee87c5d11de6b86bcbf7db7d00a6c541a87470dc6a8008a65772368ca4b7abf",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowActionsSummaryView.swift": {
+      "previous_sha256": "0bda3b2564ada49a069d40e2e7e7c23219849c7b784ec4777c09e178770aec84",
+      "current_sha256": "0bda3b2564ada49a069d40e2e7e7c23219849c7b784ec4777c09e178770aec84",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflowOutput.swift": {
+      "previous_sha256": "6546037d99278a92819791a14bbc5facd503824ed15394d5d43ae59b64771f1c",
+      "current_sha256": "6546037d99278a92819791a14bbc5facd503824ed15394d5d43ae59b64771f1c",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/AskWorkflow.swift": {
+      "previous_sha256": "2917a39977776fbcebe889c0cc8c24c0b86ae326bf90ae380a93e28139bd4d9d",
+      "current_sha256": "2917a39977776fbcebe889c0cc8c24c0b86ae326bf90ae380a93e28139bd4d9d",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/SystemInfo/AskSystemInfoPlugin.swift": {
+      "previous_sha256": "ec84315f339dddf72e1b84cfdb7935caaace8a7b68471c473a54afac01dc622e",
+      "current_sha256": "ec84315f339dddf72e1b84cfdb7935caaace8a7b68471c473a54afac01dc622e",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Files/AskSemanticFileSearchPlugin.swift": {
+      "previous_sha256": "e13e0f107e35ea5d1fc8b934495cf7c2df37e724e65e6c9783c85821e647aa4d",
+      "current_sha256": "e13e0f107e35ea5d1fc8b934495cf7c2df37e724e65e6c9783c85821e647aa4d",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Files/AskFileSearchPlugin.swift": {
+      "previous_sha256": "5e3b894e56981f32073f18f1087f5c3b7c9b237c5ff79360dcba82114eeeb306",
+      "current_sha256": "5e3b894e56981f32073f18f1087f5c3b7c9b237c5ff79360dcba82114eeeb306",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/Editor/AskWorkflowSyntaxHighlighter.swift": {
+      "previous_sha256": "8c23220f8f5d2e6603e18da43e7b6c002d4e637cf4a1ea34ca9f4299a56576d5",
+      "current_sha256": "8c23220f8f5d2e6603e18da43e7b6c002d4e637cf4a1ea34ca9f4299a56576d5",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/Editor/AskWorkflowJSONLayout.swift": {
+      "previous_sha256": "786d661c11859c1f6caa798bb684d4ae52dc9654df3a202949990bb7563fef29",
+      "current_sha256": "786d661c11859c1f6caa798bb684d4ae52dc9654df3a202949990bb7563fef29",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/Editor/AskWorkflowAuthorTools.swift": {
+      "previous_sha256": "04c3d5086b0a8dc94dd727d07c73dc422de592f0080853b1d1a1baa6e56f84a4",
+      "current_sha256": "04c3d5086b0a8dc94dd727d07c73dc422de592f0080853b1d1a1baa6e56f84a4",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/Editor/AskWorkflowEditorModel+Actions.swift": {
+      "previous_sha256": "2bd652d3251f660ceba9c2a38b07566a2175835ed7798671cea3049a0236a206",
+      "current_sha256": "2bd652d3251f660ceba9c2a38b07566a2175835ed7798671cea3049a0236a206",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/Editor/AskWorkflowStderrLocator.swift": {
+      "previous_sha256": "1612e059cef978dc0ab99161394690e7b0a8d2a0cf9b84c024a6a6c06b697316",
+      "current_sha256": "1612e059cef978dc0ab99161394690e7b0a8d2a0cf9b84c024a6a6c06b697316",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/Editor/AskWorkflowAuthorSkill.swift": {
+      "previous_sha256": "61a64e403a7d243b28a9f9718f8b10bd82bd5a2e1683dc55ee5ead0158b559cd",
+      "current_sha256": "61a64e403a7d243b28a9f9718f8b10bd82bd5a2e1683dc55ee5ead0158b559cd",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/Editor/AskWorkflowAuthorManifestSchema.swift": {
+      "previous_sha256": "08870d6405c21fd06c387d8224cfd3aea31451f3d04194c5e394bcaa7e979f5b",
+      "current_sha256": "08870d6405c21fd06c387d8224cfd3aea31451f3d04194c5e394bcaa7e979f5b",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/Editor/AskWorkflowDraft.swift": {
+      "previous_sha256": "663497930e074faa63916d5f2dee4540a0af94f515387646e111fe519e0a49fe",
+      "current_sha256": "663497930e074faa63916d5f2dee4540a0af94f515387646e111fe519e0a49fe",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/Editor/AskWorkflowEditorModel+Files.swift": {
+      "previous_sha256": "a34b8ca459767b49c3ba61aca43ba7de437fc47178c8cbbc9df7912d8287a9de",
+      "current_sha256": "a34b8ca459767b49c3ba61aca43ba7de437fc47178c8cbbc9df7912d8287a9de",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/Editor/AskWorkflowEditorModel+Output.swift": {
+      "previous_sha256": "538d45428d19f76276e8f1fcd91ac9f01e6954d7e209f5225cc13d012ff8cd07",
+      "current_sha256": "538d45428d19f76276e8f1fcd91ac9f01e6954d7e209f5225cc13d012ff8cd07",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/Editor/AskWorkflowRiskScanner.swift": {
+      "previous_sha256": "03bdf3fabb929ba4aeb3382845e615bce518609bfc06b175b2cf4b3c702db54a",
+      "current_sha256": "03bdf3fabb929ba4aeb3382845e615bce518609bfc06b175b2cf4b3c702db54a",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/Editor/AskWorkflowTester.swift": {
+      "previous_sha256": "985946ad5635e15982b6b6afab32ea29d0c663279d643576aa80b286b0df37d1",
+      "current_sha256": "985946ad5635e15982b6b6afab32ea29d0c663279d643576aa80b286b0df37d1",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/Editor/AskWorkflowFileReferences.swift": {
+      "previous_sha256": "55d2cf8afec7419e345dba2942674ba097486c1b31f20058d84ab7ffec7b16da",
+      "current_sha256": "55d2cf8afec7419e345dba2942674ba097486c1b31f20058d84ab7ffec7b16da",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/Editor/AskWorkflowEditorModel.swift": {
+      "previous_sha256": "8f13534a80df101421b0795d8dafdf1ee484f299ea2b9cf073a57430c9e62c6c",
+      "current_sha256": "8f13534a80df101421b0795d8dafdf1ee484f299ea2b9cf073a57430c9e62c6c",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/Editor/AskWorkflowProposal.swift": {
+      "previous_sha256": "0939369b1a0b2bcd96548a8ba471b3101d32a52efe07ba706cd29d56e66a9451",
+      "current_sha256": "0939369b1a0b2bcd96548a8ba471b3101d32a52efe07ba706cd29d56e66a9451",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/Editor/AskWorkflowEditorModel+Presentation.swift": {
+      "previous_sha256": "589479cd7c38ec20175e8c9a68157635ace72d6c9f6588dab8af67b46029d3ac",
+      "current_sha256": "589479cd7c38ec20175e8c9a68157635ace72d6c9f6588dab8af67b46029d3ac",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Workflow/Editor/AskWorkflowAssistant.swift": {
+      "previous_sha256": "b8d89bd4d41da6255c2f429ec0064504137789b50e77a9d81d11f63fdbffba12",
+      "current_sha256": "b8d89bd4d41da6255c2f429ec0064504137789b50e77a9d81d11f63fdbffba12",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/WordBook/SQLiteAskWordBookStore.swift": {
+      "previous_sha256": "fa2e7d43bbf80a1f8f50e0a2a97b6965be2c746d33f8b24f9d537a3859915381",
+      "current_sha256": "fa2e7d43bbf80a1f8f50e0a2a97b6965be2c746d33f8b24f9d537a3859915381",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/WordBook/AskWordBookWindowController.swift": {
+      "previous_sha256": "b7d1e429c99bd88f501cee581653b6e105bee204915b3e6e03d82b49249698fa",
+      "current_sha256": "b7d1e429c99bd88f501cee581653b6e105bee204915b3e6e03d82b49249698fa",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/WordBook/AskWordBookRelatedChip.swift": {
+      "previous_sha256": "9b52b1003c6f4de479491b1c6bb53a8bc60e1bd4dcf9cdeb477181b38a78d842",
+      "current_sha256": "9b52b1003c6f4de479491b1c6bb53a8bc60e1bd4dcf9cdeb477181b38a78d842",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/WordBook/AskWordBookExporter.swift": {
+      "previous_sha256": "e84e4b1931f52abfffea38e3a86685221da2bedd6881358478bb111c48a508f7",
+      "current_sha256": "e84e4b1931f52abfffea38e3a86685221da2bedd6881358478bb111c48a508f7",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/WordBook/AskWordBookView.swift": {
+      "previous_sha256": "4caaaf5e0aca0955e9c879c096442d4f794b382d8066dbc86c1ec8fa9cd03790",
+      "current_sha256": "4caaaf5e0aca0955e9c879c096442d4f794b382d8066dbc86c1ec8fa9cd03790",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/WordBook/AskWordBook.swift": {
+      "previous_sha256": "c6b0b4000986e1b07ed824a8c0cc10f2bffd1faee168c49c9b5dbcc72b22fe2b",
+      "current_sha256": "c6b0b4000986e1b07ed824a8c0cc10f2bffd1faee168c49c9b5dbcc72b22fe2b",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/WordBook/AskWordBookViewModel.swift": {
+      "previous_sha256": "057d3e168e90ad1865372557d49eea2d3d795a79fd3dcdf4790aa5fad6dcf41e",
+      "current_sha256": "057d3e168e90ad1865372557d49eea2d3d795a79fd3dcdf4790aa5fad6dcf41e",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/Panel/AskTranslationPanelModel.swift": {
+      "previous_sha256": "e35c43d8097119b40377241ae1a29f43f57d38f4af09d9fa6cb49ee5e80fc0b3",
+      "current_sha256": "e35c43d8097119b40377241ae1a29f43f57d38f4af09d9fa6cb49ee5e80fc0b3",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/Panel/AskTranslationPanelKeyCommand.swift": {
+      "previous_sha256": "595fca373ad40bc4ccdbd82f266774945be2d6d71dcc978c208821b5e0f28055",
+      "current_sha256": "595fca373ad40bc4ccdbd82f266774945be2d6d71dcc978c208821b5e0f28055",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/Panel/AskTranslationPanelPreferences.swift": {
+      "previous_sha256": "03a6dc1db8f00de1f2fbbbb7cb9b67873c474468e444cc99be7c071f0371b661",
+      "current_sha256": "03a6dc1db8f00de1f2fbbbb7cb9b67873c474468e444cc99be7c071f0371b661",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/Panel/AskTranslationPanelPlacement.swift": {
+      "previous_sha256": "21a8d1c0f03edc0423649acbd0de10842942fcedfb1fcf218d11eec022beb6c0",
+      "current_sha256": "21a8d1c0f03edc0423649acbd0de10842942fcedfb1fcf218d11eec022beb6c0",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/Panel/AskTranslationHistory.swift": {
+      "previous_sha256": "973ee450f684e64c8a971bbdf7d76c05a1a2c0cea6b81678f1b86518f52c6dd2",
+      "current_sha256": "973ee450f684e64c8a971bbdf7d76c05a1a2c0cea6b81678f1b86518f52c6dd2",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/Panel/AskTranslationPanelController.swift": {
+      "previous_sha256": "7cba0688e87aad6600f53c6fbd1a3db26807eab794df02c1ad3700cac400b6a6",
+      "current_sha256": "7cba0688e87aad6600f53c6fbd1a3db26807eab794df02c1ad3700cac400b6a6",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/Panel/AskTranslationPanelCoordinator.swift": {
+      "previous_sha256": "01570d909f49e55cf4bd129b857ee76cb72add8d0eac10a34f0e47d4398eda2b",
+      "current_sha256": "01570d909f49e55cf4bd129b857ee76cb72add8d0eac10a34f0e47d4398eda2b",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/Panel/AskTranslationPanelModel+Actions.swift": {
+      "previous_sha256": "6297529419db682546f1d56008a8259b12728fd90af7822d79a74f205328bdba",
+      "current_sha256": "6297529419db682546f1d56008a8259b12728fd90af7822d79a74f205328bdba",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/Panel/AskTranslationPanelView.swift": {
+      "previous_sha256": "fdcc35f8868368c6fae9f8bf60fb8e76758661cf015c4478e58c5c423cdebc97",
+      "current_sha256": "fdcc35f8868368c6fae9f8bf60fb8e76758661cf015c4478e58c5c423cdebc97",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/Providers/AskBaiduTranslationClient.swift": {
+      "previous_sha256": "123b1e2ca5082d49b103405951d195adcecc54a3843937027863ed18e26733e8",
+      "current_sha256": "123b1e2ca5082d49b103405951d195adcecc54a3843937027863ed18e26733e8",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/Providers/AskTranslationSigning.swift": {
+      "previous_sha256": "0a4caf54a6ca8745144b447feef97b10abdba30eeb8a5b405c2eb026effacf91",
+      "current_sha256": "0a4caf54a6ca8745144b447feef97b10abdba30eeb8a5b405c2eb026effacf91",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/Providers/AskServiceTranslationEngine.swift": {
+      "previous_sha256": "74f2ab0ded695b897f2f952c2e9390f2e588f4e781d0a126172785278b66375f",
+      "current_sha256": "74f2ab0ded695b897f2f952c2e9390f2e588f4e781d0a126172785278b66375f",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/Providers/AskVolcengineTranslationClient.swift": {
+      "previous_sha256": "8b8c3911be35f0936b106c2186120b95b09fbde6fb2d6bae2217ec03356c448e",
+      "current_sha256": "8b8c3911be35f0936b106c2186120b95b09fbde6fb2d6bae2217ec03356c448e",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/Providers/AskTencentTranslationClient.swift": {
+      "previous_sha256": "cc420d4dec93613d9e875785f4faaab43d54514cddc579343044ec74a55c5e4d",
+      "current_sha256": "cc420d4dec93613d9e875785f4faaab43d54514cddc579343044ec74a55c5e4d",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/Providers/AskGoogleTranslationClient.swift": {
+      "previous_sha256": "3c01d13f9627e0ef3c8a63d053c366b86f6a5db302969ad717b145ea559dc1ad",
+      "current_sha256": "3c01d13f9627e0ef3c8a63d053c366b86f6a5db302969ad717b145ea559dc1ad",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/Providers/AskMicrosoftTranslationClient.swift": {
+      "previous_sha256": "6e555302cefcf1d0cef62762cab99c45769960589137a3c20f8c032e77bf74dd",
+      "current_sha256": "6e555302cefcf1d0cef62762cab99c45769960589137a3c20f8c032e77bf74dd",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/Providers/AskDeepLTranslationClient.swift": {
+      "previous_sha256": "9e2bde6310684f8aed1b961f2c72f4721e7e8819c401ce9349b691367980cce1",
+      "current_sha256": "9e2bde6310684f8aed1b961f2c72f4721e7e8819c401ce9349b691367980cce1",
+      "unchanged": true
+    },
+    "Sources/Typeflux/Ask/QuickResults/Plugins/Translation/Providers/AskYoudaoTranslationClient.swift": {
+      "previous_sha256": "067bf8c796532bec8adf7e6f81f1a656142f6529096e4b6f956a5c2fc22192b1",
+      "current_sha256": "067bf8c796532bec8adf7e6f81f1a656142f6529096e4b6f956a5c2fc22192b1",
+      "unchanged": true
+    },
+    "Sources/TypefluxMediaRuntime/MediaRecordingPosterDecoder.swift": {
+      "previous_sha256": "05bc35901c32c32f43534632939c71184b38679a7e8608416cbca822ac753f8f",
+      "current_sha256": "05bc35901c32c32f43534632939c71184b38679a7e8608416cbca822ac753f8f",
+      "unchanged": true
+    },
+    "Sources/TypefluxMediaRuntime/MediaRegistrationDecoder.swift": {
+      "previous_sha256": "dea96f2703a04d29889283486b13bcbcb5e1d69cbfde73438a40ce03ad2b1227",
+      "current_sha256": "dea96f2703a04d29889283486b13bcbcb5e1d69cbfde73438a40ce03ad2b1227",
+      "unchanged": true
+    },
+    "Sources/TypefluxMediaRuntime/MediaClipboardDecoder.swift": {
+      "previous_sha256": "9318451becd06f9c408ba337206b51b5111dfb5522f36de00aa1510160a892e6",
+      "current_sha256": "9318451becd06f9c408ba337206b51b5111dfb5522f36de00aa1510160a892e6",
+      "unchanged": true
+    },
+    "Sources/TypefluxMediaRuntime/MediaNativeIconDecoder.swift": {
+      "previous_sha256": "2a77812256ad70d38afe11740c7083f5fe75e93d72927dd505483a454198fd38",
+      "current_sha256": "2a77812256ad70d38afe11740c7083f5fe75e93d72927dd505483a454198fd38",
+      "unchanged": true
+    },
+    "Sources/TypefluxMediaRuntime/MediaQuickLookDecoder.swift": {
+      "previous_sha256": "d3d5d999b68e57c214b30e23b9b099cf4180f202efb4d3a4b7e3cfdc71d08723",
+      "current_sha256": "d3d5d999b68e57c214b30e23b9b099cf4180f202efb4d3a4b7e3cfdc71d08723",
+      "unchanged": true
+    },
+    "Sources/TypefluxMediaRuntime/MediaRecordingTimelineDecoder.swift": {
+      "previous_sha256": "4b4ed00b7df8b55680ca436025f6b82b54e13304feaefc4797ca99b69bfb6557",
+      "current_sha256": "4b4ed00b7df8b55680ca436025f6b82b54e13304feaefc4797ca99b69bfb6557",
+      "unchanged": true
+    },
+    "Sources/TypefluxMediaRuntime/MediaPreviewDecoder.swift": {
+      "previous_sha256": "37e84cd0b90f5086336fc4a2c3dacf89e77505c6d5c942105d8380065e858385",
+      "current_sha256": "37e84cd0b90f5086336fc4a2c3dacf89e77505c6d5c942105d8380065e858385",
+      "unchanged": true
+    },
+    "Sources/TypefluxMediaRuntime/MediaOCRDecoder.swift": {
+      "previous_sha256": "6fa77c7ab69ce74d3073cb4db99da4066ae641578b691d5a0fe919e8d0083db4",
+      "current_sha256": "6fa77c7ab69ce74d3073cb4db99da4066ae641578b691d5a0fe919e8d0083db4",
+      "unchanged": true
+    },
+    "Sources/TypefluxMediaRuntime/MediaVideoFrames.swift": {
+      "previous_sha256": "35800b100dd73406887ea1fefd0979b0b797d69c92e5908800e507c46cea1e0d",
+      "current_sha256": "35800b100dd73406887ea1fefd0979b0b797d69c92e5908800e507c46cea1e0d",
+      "unchanged": true
+    },
+    "Sources/TypefluxMediaRuntime/MediaWorkflowDecoder.swift": {
+      "previous_sha256": "4ab6eeda6d3ef3dee59128d334f1ac514addc5a40f1305cdfd216dc2d1883bfb",
+      "current_sha256": "4ab6eeda6d3ef3dee59128d334f1ac514addc5a40f1305cdfd216dc2d1883bfb",
+      "unchanged": true
+    },
+    "Sources/TypefluxMediaRuntime/MediaRecordingExportDecoder.swift": {
+      "previous_sha256": "e48c0671f218b5c3ee877842fb19789311f7a89783a6b556d9531b85215a2436",
+      "current_sha256": "e48c0671f218b5c3ee877842fb19789311f7a89783a6b556d9531b85215a2436",
+      "unchanged": true
+    },
+    "Sources/TypefluxMediaRuntime/MediaAVDecoder.swift": {
+      "previous_sha256": "a14bfebbe207dd8cc94013c20b878cb0075c43a336603dde01d2777c2b6fef02",
+      "current_sha256": "a14bfebbe207dd8cc94013c20b878cb0075c43a336603dde01d2777c2b6fef02",
+      "unchanged": true
+    },
+    "Sources/TypefluxMediaRuntime/MediaPreviewPDFGeometry.swift": {
+      "previous_sha256": "506350d7fcb9ad7993213ebac216b56e2c1062a7598256bac268f287d6c9061a",
+      "current_sha256": "506350d7fcb9ad7993213ebac216b56e2c1062a7598256bac268f287d6c9061a",
+      "unchanged": true
+    },
+    "Sources/TypefluxMediaRuntime/MediaPreviewOCR.swift": {
+      "previous_sha256": "c0eab3c56b8be6c53752dc0884a5af5e9704a200e2a6d79dd59f639ad538f3ac",
+      "current_sha256": "c0eab3c56b8be6c53752dc0884a5af5e9704a200e2a6d79dd59f639ad538f3ac",
+      "unchanged": true
+    },
+    "Sources/TypefluxMediaRuntime/MediaTextDecoder.swift": {
+      "previous_sha256": "a31be91c6f4f8942c4da4666b2f94fd897204c896676c0eac4ab9675efde0efd",
+      "current_sha256": "a31be91c6f4f8942c4da4666b2f94fd897204c896676c0eac4ab9675efde0efd",
+      "unchanged": true
+    },
+    "Sources/TypefluxMediaRuntime/MediaHelperCommand.swift": {
+      "previous_sha256": "93eae4ef966899a7e62f2604be46827cb1126a7ddc6352be068e94bb56c7e065",
+      "current_sha256": "93eae4ef966899a7e62f2604be46827cb1126a7ddc6352be068e94bb56c7e065",
+      "unchanged": true
+    },
+    "Sources/TypefluxMediaRuntime/MediaPlaybackServer.swift": {
+      "previous_sha256": "00d01632b3bcd6244f276c0a84760a08a4ed505f07520cd24814bd15e4df80a8",
+      "current_sha256": "00d01632b3bcd6244f276c0a84760a08a4ed505f07520cd24814bd15e4df80a8",
+      "unchanged": true
+    },
+    "Sources/TypefluxMediaRuntime/MediaDecoder.swift": {
+      "previous_sha256": "ede4f51cc1f83b851977427dd863ed25461c10a9e3510d12b4a0b4dc2a69ee00",
+      "current_sha256": "ede4f51cc1f83b851977427dd863ed25461c10a9e3510d12b4a0b4dc2a69ee00",
+      "unchanged": true
+    }
+  },
+  "test_sha256": {
+    "Tests/TypefluxTests/SemanticResourceBudgetTests.swift": {
+      "previous_sha256": "be420d759b998faaa3a29eec4b2999eb3b3828b57a16b99dd110e1dfba24e029",
+      "current_sha256": "be420d759b998faaa3a29eec4b2999eb3b3828b57a16b99dd110e1dfba24e029",
+      "unchanged": true
+    },
+    "Tests/TypefluxTests/AskConversationTests.swift": {
+      "previous_sha256": "ed35cb3967145146a1823fa19d01b95646d66e5fde9408ab96b730c49de2f6fc",
+      "current_sha256": "ed35cb3967145146a1823fa19d01b95646d66e5fde9408ab96b730c49de2f6fc",
+      "unchanged": true
+    },
+    "Tests/TypefluxTests/SemanticNativeContentionTests.swift": {
+      "previous_sha256": "88980957edab07e16df8bd2fe99321a1a462520a1d2f3703c28c786b032fef35",
+      "current_sha256": "88980957edab07e16df8bd2fe99321a1a462520a1d2f3703c28c786b032fef35",
+      "unchanged": true
+    },
+    "Tests/TypefluxTests/SemanticNativeLatencyTests.swift": {
+      "previous_sha256": "b0db0899a521272a68264eb87c6e46d9ad332d0f85351a49be33312d340d8186",
+      "current_sha256": "b0db0899a521272a68264eb87c6e46d9ad332d0f85351a49be33312d340d8186",
+      "unchanged": true
+    }
+  }
+}

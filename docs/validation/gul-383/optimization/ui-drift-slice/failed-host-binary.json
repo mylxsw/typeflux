@@ -1,0 +1,11 @@
+{
+  "initial_failed_test_host": {
+    "path": ".build/out/Products/Release/TypefluxFocusedTests.xctest/Contents/MacOS/TypefluxFocusedTests",
+    "sha256": "0eca7d4499051b1f8e27c52fc002160b1d60db14067b5f5ee2b112da3f3c0c18",
+    "bytes": 167938264,
+    "mtime_unix": 1792230507.9632835
+  },
+  "run_started_unix": 1792230423.7931361,
+  "run_ended_unix": 1792230543.5068758,
+  "scope": "Captured before retry relink; mtime within initial failed build/execution command. No initial object-file snapshot is inferred."
+}

@@ -1,0 +1,12 @@
+{
+  ".build/semantic/TypefluxSemanticHelper": {
+    "sha256": "353139dd155f76da16d113bad6b46f6d888f3aa00dc34dd44c28b932c5054d7d",
+    "bytes": 11895168,
+    "matches_accepted_PR651": true
+  },
+  ".build/semantic/embeddinggemma-2-Q8_0.gguf": {
+    "sha256": "2188ac1deca4b77dffefd603c2776a9d76d9d74ec01841392982ebb840b09135",
+    "bytes": 309855456,
+    "matches_accepted_PR651": true
+  }
+}

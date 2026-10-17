@@ -1,0 +1,25 @@
+{
+  "command": [
+    "swiftlint",
+    "lint",
+    "--quiet",
+    "--reporter",
+    "json",
+    "--config",
+    "<repository>/.swiftlint.yml",
+    "<repository>/Tests/TypefluxTests/SemanticReleaseUISliceTests.swift"
+  ],
+  "wall_seconds": 0.09806412504985929,
+  "exit_code": 0,
+  "diagnostics": [
+    {
+      "character": 1,
+      "file": "<repository>/Tests/TypefluxTests/SemanticReleaseUISliceTests.swift",
+      "line": 19,
+      "reason": "Struct body should span 250 lines or less excluding comments and whitespace: currently spans 276 lines",
+      "rule_id": "type_body_length",
+      "severity": "Warning",
+      "type": "Type Body Length"
+    }
+  ]
+}

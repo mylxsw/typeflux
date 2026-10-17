@@ -1,0 +1,148 @@
+{
+  "source_commit": "e5108fa312983ec4558d0d9174fa4d88defa9c17",
+  "records": [
+    {
+      "command": [
+        "bash",
+        "<repository>/scripts/copy_inference_helper.sh",
+        "<repository>/.build/out/Products/Release",
+        "<repository>/.build/candidate/Typeflux.app"
+      ],
+      "wall_seconds": 0.02457633300218731,
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "bash",
+        "<repository>/scripts/copy_media_helper.sh",
+        "<repository>/.build/out/Products/Release",
+        "<repository>/.build/candidate/Typeflux.app"
+      ],
+      "wall_seconds": 0.0072814589366316795,
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "bash",
+        "<repository>/scripts/copy_resource_bundles.sh",
+        "<repository>/.build/out/Products/Release",
+        "<repository>/.build/candidate/Typeflux.app/Contents/Resources"
+      ],
+      "wall_seconds": 0.11563929205294698,
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "codesign",
+        "--force",
+        "--sign",
+        "-",
+        "--options",
+        "runtime",
+        "<repository>/.build/candidate/Typeflux.app/Contents/Helpers/swift-transformers_Hub.bundle"
+      ],
+      "wall_seconds": 0.013884750078432262,
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "codesign",
+        "--force",
+        "--sign",
+        "-",
+        "--options",
+        "runtime",
+        "<repository>/.build/candidate/Typeflux.app/Contents/Helpers/TypefluxInferenceHelper"
+      ],
+      "wall_seconds": 0.028911917004734278,
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "<repository>/.build/candidate/Typeflux.app/Contents/Helpers/TypefluxInferenceHelper: replacing existing signature\n"
+    },
+    {
+      "command": [
+        "codesign",
+        "--force",
+        "--sign",
+        "-",
+        "--options",
+        "runtime",
+        "<repository>/.build/candidate/Typeflux.app/Contents/Helpers/TypefluxMediaHelper"
+      ],
+      "wall_seconds": 0.013810624950565398,
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "<repository>/.build/candidate/Typeflux.app/Contents/Helpers/TypefluxMediaHelper: replacing existing signature\n"
+    },
+    {
+      "command": [
+        "codesign",
+        "--force",
+        "--sign",
+        "-",
+        "--options",
+        "runtime",
+        "<repository>/.build/candidate/Typeflux.app/Contents/MacOS/Typeflux"
+      ],
+      "wall_seconds": 0.39529587503056973,
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "<repository>/.build/candidate/Typeflux.app/Contents/MacOS/Typeflux: replacing existing signature\n"
+    },
+    {
+      "command": [
+        "codesign",
+        "--force",
+        "--sign",
+        "-",
+        "--options",
+        "runtime",
+        "--entitlements",
+        "<repository>/app/TypefluxRuntime.entitlements",
+        "<repository>/.build/candidate/Typeflux.app"
+      ],
+      "wall_seconds": 0.3632007500855252,
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "<repository>/.build/candidate/Typeflux.app: replacing existing signature\n"
+    },
+    {
+      "command": [
+        "codesign",
+        "--verify",
+        "--deep",
+        "--strict",
+        "--verbose=2",
+        "<repository>/.build/candidate/Typeflux.app"
+      ],
+      "wall_seconds": 0.11601937492378056,
+      "exit_code": 0,
+      "stdout": "",
+      "stderr": "--prepared:<repository>/.build/candidate/Typeflux.app/Contents/Helpers/swift-transformers_Hub.bundle\n--prepared:<repository>/.build/candidate/Typeflux.app/Contents/Helpers/TypefluxMediaHelper\n--validated:<repository>/.build/candidate/Typeflux.app/Contents/Helpers/TypefluxMediaHelper\n--validated:<repository>/.build/candidate/Typeflux.app/Contents/Helpers/swift-transformers_Hub.bundle\n--prepared:<repository>/.build/candidate/Typeflux.app/Contents/Helpers/TypefluxInferenceHelper\n--validated:<repository>/.build/candidate/Typeflux.app/Contents/Helpers/TypefluxInferenceHelper\n<repository>/.build/candidate/Typeflux.app: valid on disk\n<repository>/.build/candidate/Typeflux.app: satisfies its Designated Requirement\n"
+    },
+    {
+      "command": [
+        "bash",
+        "<repository>/scripts/audit_macho_minos.sh",
+        "<repository>/.build/candidate/Typeflux.app",
+        "13.4",
+        "arm64"
+      ],
+      "wall_seconds": 0.7748679589712992,
+      "exit_code": 0,
+      "stdout": "Auditing Mach-O minos under <repository>/.build/candidate/Typeflux.app\nMaximum allowed macOS minos: 13.4\nRequired Mach-O architecture: arm64\nMach-O minos audit passed (4 files scanned)\n",
+      "stderr": ""
+    }
+  ],
+  "wall_seconds": 2.232127832947299,
+  "native_helper_unchanged_sha256": "353139dd155f76da16d113bad6b46f6d888f3aa00dc34dd44c28b932c5054d7d",
+  "scope": "Current-source app/file helper and current resource/helper copy scripts; unchanged signed semantic helper retained. Local ad-hoc arm64 signature/architecture/deployment audit, no distribution/notarization claim."
+}

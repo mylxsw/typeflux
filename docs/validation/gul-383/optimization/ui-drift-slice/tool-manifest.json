@@ -1,0 +1,19 @@
+{
+  "Tests/TypefluxTests/AskAttachmentTests.swift": "f73f36a0389cf7783960a8de51b5314da9e640240b827e3113b62ca9e80c5758",
+  "Tests/TypefluxTests/AskLauncherPlacementTests.swift": "32125915e3a77367fb5dc665ab51e193d509652105809102916a859742a8e904",
+  "Tests/TypefluxTests/NativeIconIsolationTests.swift": "3b64f76e09490bdf941304942146bf79adc4859e25ef27637f8ebdb0cea065cd",
+  "Tests/TypefluxTests/SemanticReleaseUISliceTests.swift": "6b1258c6452c1aca3ca3b8133458ce18689489de672b09db8c1a1a96f4447663",
+  "docs/validation/gul-383/optimization/ui-drift-slice/audit_quality.py": "fbb8e474b5a0aedfbf949d379b46c7f3a72af8e527bed60b992414cfa253ca27",
+  "docs/validation/gul-383/optimization/ui-drift-slice/collect.py": "f68bc5a6e9e3d7270b85d51e903eb02a709f2d4d39600ca321ddf006b9d83d7d",
+  "docs/validation/gul-383/optimization/ui-drift-slice/executed-run-initial.py": "f8c7aa8e2d1e854eb6173cbb6070447d898fc32765f5a9948e86ffcccfe35f6d",
+  "docs/validation/gul-383/optimization/ui-drift-slice/finalize.py": "c5224492ebc83addace72a265beb136458d9b8c5818a1d92ba87913242eeaaf6",
+  "docs/validation/gul-383/optimization/ui-drift-slice/package_refresh.py": "d174971eed4ae1d61c3524e364a88ee503b205e677b5d8b92c6c30dad5644d4e",
+  "docs/validation/gul-383/optimization/ui-drift-slice/run.py": "e3b6fc7641a6176ff796a2d9de2b3e08684ae9092a6a3b310ac5288818316beb",
+  "scripts/audit_macho_minos.sh": "49c4dcc8fa0286e09d2f195fc7e4c1d225ab1348f5885a7bd8d34306c794c1e1",
+  "scripts/copy_inference_helper.sh": "7a2a36b59ee3b0b6c1568bf0fcb1b1dd5b3cec9b50f439fd2b51a81a3095e197",
+  "scripts/copy_media_helper.sh": "d913f4f8b4e9f2d668889c87e32f8c58277bf5edc170cf8b56466828463b51b1",
+  "scripts/copy_resource_bundles.sh": "5dc99f5936f1744fe57457ec91b813e774b098ff85e3e5c289b3438b4e3b6925",
+  "scripts/test_groups.py": "488dbe8cec3f3528adb4ef265bb5d8e3cf5c13867581fb5acb5dc19eb281af46",
+  "scripts/test_profiles.py": "dd23721810dda230c1a3ccefe17d0a21582391ce130e3d38af20dba4904cdde8",
+  "scripts/test_runtime.py": "09c0d2bcb0e82fca07b7ee3c2eea233e5006e457e37fa118957a3bd8d7500a49"
+}

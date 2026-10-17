@@ -1,0 +1,13 @@
+{
+  "command": [
+    "swiftlint",
+    "lint",
+    "--quiet",
+    "--reporter",
+    "json",
+    "Tests/TypefluxTests/SemanticReleaseUISliceTests.swift"
+  ],
+  "exit_code": 0,
+  "wall_seconds": 0.10571745806373656,
+  "diagnostics": []
+}

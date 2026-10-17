@@ -2,6 +2,7 @@ import AppKit
 import Combine
 import SwiftUI
 import Testing
+import TypefluxMediaProtocol
 @testable import Typeflux
 
 private struct ReleaseUISliceBrowserSearch: AskBrowserSearching {
@@ -13,16 +14,67 @@ private struct ReleaseUISliceBrowserSearch: AskBrowserSearching {
     func focus(_: AskBrowserTabTarget) async throws {}
 }
 
-@Suite("Release candidate native search slice", .serialized, .exclusiveUIState)
 @MainActor
-struct SemanticReleaseUISliceTests {
-    private func editor(in view: NSView) -> AskComposerTextView.Editor? {
+private enum ReleaseUISliceNativeUI {
+    static func editor(in view: NSView) -> AskComposerTextView.Editor? {
         if let value = view as? AskComposerTextView.Editor {
             return value
         }
         return view.subviews.lazy.compactMap { editor(in: $0) }.first
     }
 
+    static func oracle(in repository: URL) throws -> SemanticRankingComparisonTests.Capture {
+        return try JSONDecoder().decode(SemanticRankingComparisonTests.Capture.self, from: Data(
+            contentsOf: repository.appendingPathComponent(
+                "docs/validation/gul-383/optimization/ranking-scale/final-holdout-vectors.json"
+            )
+        ))
+    }
+
+    static func previews(in state: URL) -> (MediaExtractionModule, ModuleRegistry) {
+        let module = MediaExtractionModule(worker: .previews, healthDirectory: state, domain: .mediaPreviews)
+        return (module, ModuleRegistry([module.registration]))
+    }
+
+    static func frame(on screen: NSRect, refresh: Bool) -> NSRect {
+        NSRect(x: screen.minX + 12, y: screen.minY + 12,
+               width: refresh ? AskLauncherPlacement.preferredFrame(on: screen).width : 720,
+               height: refresh ? AskLauncherWindowMode.expandedHeight + 40 : 520)
+    }
+
+    static func run(
+        _ hit: AskFileHit, model: AskConversationModel, fileMode: Bool, host: NSView
+    ) async throws -> [String: Any] {
+        func identities() -> [AskFileHit] {
+            let hits = fileMode ? model.plugins.output?.items.compactMap(\.fileHit) ?? []
+                : model.quickSearch.results?.files ?? []
+            return hits
+        }
+        let before = identities(), cache = model.launcherIconCache
+        try #require(before.contains { $0.path == hit.path }, "The target must be in the settled result set")
+        let icon = MediaNativeIcon(kind: .file, value: hit.path)
+        let revision = cache.revision(for: icon, modified: hit.modified)
+        let previous = revision.value
+        cache.clearFiles()
+        _ = try await cache.load(icon, revision: hit.modified)
+        let deadline = ProcessInfo.processInfo.systemUptime + 5
+        while revision.value == previous {
+            try #require(ProcessInfo.processInfo.systemUptime < deadline, "Icon revision did not arrive")
+            try await Task.sleep(for: .milliseconds(2))
+        }
+        host.layoutSubtreeIfNeeded(); host.displayIfNeeded()
+        try #require(identities() == before, "An icon refresh changed the semantic result identities")
+        try #require(SettingsBehaviorTestSupport.elements(in: host).contains {
+            $0.text.contains(hit.name) || $0.label.contains(hit.name)
+        })
+        return ["before_revision": previous, "after_revision": revision.value,
+                "result_identities_preserved": true, "target_still_in_ax": true]
+    }
+}
+
+@Suite("Release candidate native search slice", .serialized, .exclusiveUIState)
+@MainActor
+struct SemanticReleaseUISliceTests {
     // Keep the bounded index-to-native-publication scenario together.
     // swiftlint:disable:next function_body_length cyclomatic_complexity
     @Test func `current bundle indexes changes and publishes both native entries`() async throws {
@@ -30,14 +82,12 @@ struct SemanticReleaseUISliceTests {
         guard let output = env["TYPEFLUX_RELEASE_UI_OUTPUT"],
               let appPath = env["TYPEFLUX_RELEASE_UI_APP"],
               let modelPath = env["TYPEFLUX_RELEASE_UI_MODEL"] else { return }
+        try requireSemanticValidationCacheIsolation()
+        let refreshIcons = env["TYPEFLUX_RELEASE_UI_REFRESH_ICONS"] == "1"
         let outputURL = URL(fileURLWithPath: output)
         let repository = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
             .deletingLastPathComponent().deletingLastPathComponent()
-        let oracle = try JSONDecoder().decode(SemanticRankingComparisonTests.Capture.self, from: Data(
-            contentsOf: repository.appendingPathComponent(
-                "docs/validation/gul-383/optimization/ranking-scale/final-holdout-vectors.json"
-            )
-        ))
+        let oracle = try ReleaseUISliceNativeUI.oracle(in: repository)
         let documents = oracle.documents.filter { $0.kind == "text" }
         // The production privacy policy excludes every source under .build, even an explicit root.
         let root = repository.appendingPathComponent("gul406-ui-runtime-" + UUID().uuidString)
@@ -105,7 +155,10 @@ struct SemanticReleaseUISliceTests {
             try? store.destroy()
             defaults.removePersistentDomain(forName: suite)
         }
+        let previews = refreshIcons ? ReleaseUISliceNativeUI.previews(in: state) : nil
+        defer { withExtendedLifetime(previews?.0) {} }
         do {
+            if let previews { try #require(await previews.1.startAll().isEmpty) }
             #expect(!service.preferences.enabled)
             try #require(service.setEnabled(true))
             try await wait({ service.phase == .ready && service.modelReady && service.files == documents.count },
@@ -150,7 +203,8 @@ struct SemanticReleaseUISliceTests {
                 if fileMode {
                     fixture.model.plugins.enter(AskFileSearchPlugin.keywords[0])
                 }
-                let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 720, height: 520),
+                let screen = try #require(NSScreen.main).visibleFrame
+                let window = NSWindow(contentRect: ReleaseUISliceNativeUI.frame(on: screen, refresh: refreshIcons),
                                       styleMask: .borderless, backing: .buffered, defer: false)
                 window.isReleasedWhenClosed = false
                 let host = NSHostingView(rootView: AskComposer(model: fixture.model, launcher: true).padding(20))
@@ -161,8 +215,8 @@ struct SemanticReleaseUISliceTests {
                     try? FileManager.default.removeItem(at: fixture.root)
                 }
                 stage = "native-editor"
-                try await wait { editor(in: host) != nil }
-                let input = try #require(editor(in: host))
+                try await wait { ReleaseUISliceNativeUI.editor(in: host) != nil }
+                let input = try #require(ReleaseUISliceNativeUI.editor(in: host))
                 func settled(_ text: String) -> Bool {
                     fileMode ? fixture.model.plugins.isPlanCurrent && fixture.model.plugins.request?.text == text
                         && fixture.model.plugins.output != nil
@@ -227,12 +281,18 @@ struct SemanticReleaseUISliceTests {
                                 $0.text.contains(target) || $0.label.contains(target)
                             }
                         }
+                        try #require(host.bounds.contains(input.convert(input.bounds, to: host)),
+                                     "Native input must be fully inside the test host")
                         let drawn = (ProcessInfo.processInfo.systemUptime - start) * 1000
                         try await wait { settled(query.query) }
                         let completed = (ProcessInfo.processInfo.systemUptime - start) * 1000
                         let hit = try #require(result), evidence = try #require(hit.evidence)
                         try #require(hit.path.hasPrefix(corpus.path + "/"))
                         try #require(evidence.version != nil && evidence.chunkID != nil)
+                        let iconRefresh = refreshIcons
+                            ? try await ReleaseUISliceNativeUI.run(
+                                hit, model: fixture.model, fileMode: fileMode, host: host
+                            ) : [:]
                         let bitmap = try #require(host.bitmapImageRepForCachingDisplay(in: host.bounds))
                         host.cacheDisplay(in: host.bounds, to: bitmap)
                         try #require(bitmap.representation(using: .png, properties: [:])).write(
@@ -242,6 +302,11 @@ struct SemanticReleaseUISliceTests {
                                          "query": query.query, "target": target, "group": group,
                                          "publication_ms": #require(published), "layout_ax_ms": drawn,
                                          "complete_query_ms": completed,
+                                         "launcher_width": window.frame.width,
+                                         "host_height": window.frame.height,
+                                         "requested_launcher_width": AskMetrics.launcherWidth,
+                                         "screen_visible_width": screen.width,
+                                         "icon_refresh": iconRefresh,
                                          "target_in_fts": lexical.contains { $0.name == target },
                                          "source_version": evidence.version as Any? ?? NSNull(),
                                          "chunk_id": evidence.chunkID as Any? ?? NSNull(),
@@ -255,8 +320,10 @@ struct SemanticReleaseUISliceTests {
             }
             complete = true; stage = "complete"
             service.endSearch(); await service.clear(removeModel: true)
+            if let previews { await previews.1.shutdown() }
         } catch {
             service.endSearch(); await service.clear(removeModel: true)
+            if let previews { await previews.1.shutdown() }
             throw error
         }
     }

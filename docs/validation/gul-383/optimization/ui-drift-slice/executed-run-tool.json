@@ -1,0 +1,5 @@
+{
+  "path": "docs/validation/gul-383/optimization/ui-drift-slice/run.py",
+  "sha256": "f8c7aa8e2d1e854eb6173cbb6070447d898fc32765f5a9948e86ffcccfe35f6d",
+  "scope": "Actual runner source while the foreground native run is active; later documentation-only metadata corrections must be disclosed."
+}
