@@ -6,8 +6,6 @@ import SwiftUI
 struct AskHistoryRow: View {
     let title: String
     let updatedAt: Date
-    /// Kept on this Mac; marked only while signed in, when Cloud ones are listed too.
-    var stored = false
     let selected: Bool
     let busy: Bool
     let selectionSpace: Namespace.ID
@@ -44,12 +42,6 @@ struct AskHistoryRow: View {
         HStack(spacing: 8) {
             // A conversation still working shows a breathing accent dot.
             if busy { AskRunToneDot(tone: .running) }
-            if stored {
-                Image(systemName: "lock").font(.system(size: 10.5, weight: .medium))
-                    .foregroundStyle(AskTheme.privateTint)
-                    .help(L("ask.storage.local"))
-                    .accessibilityLabel(L("ask.storage.local"))
-            }
             if let editorTitle {
                 AskHistoryTitleEditor(title: editorTitle, selected: selected, onFinish: finishRename)
                     .id(editSession)
@@ -67,8 +59,7 @@ struct AskHistoryRow: View {
             } else {
                 Text(savingTitle ?? title)
                     .font(.system(size: 13, weight: selected ? .semibold : .regular))
-                    .foregroundStyle(Self.titleColor(selected: selected, hovering: hovering, stored: stored,
-                                                     glass: style.usesGlass))
+                    .foregroundStyle(Self.titleColor(selected: selected, hovering: hovering, glass: style.usesGlass))
                     .lineLimit(1)
                 Spacer(minLength: 4)
             }
@@ -112,11 +103,11 @@ struct AskHistoryRow: View {
         .contentShape(RoundedRectangle(cornerRadius: style.ask.sidebarRowCorner, style: .continuous))
     }
 
-    /// Glass marks the open conversation by its title in the accent (the
-    /// private tint for one kept on this Mac); classic keeps the primary text.
-    static func titleColor(selected: Bool, hovering: Bool, stored: Bool, glass: Bool) -> Color {
+    /// Glass marks the open conversation by its title in the accent; classic
+    /// keeps the primary text.
+    static func titleColor(selected: Bool, hovering: Bool, glass: Bool) -> Color {
         AskSidebarSelection.titleColor(selected: selected, hovering: hovering, glass: glass,
-                                       accent: stored ? AskTheme.privateTint : AskTheme.accent)
+                                       accent: AskTheme.accent)
     }
 
     private func beginRename() {

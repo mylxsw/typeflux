@@ -598,7 +598,6 @@ struct AskConversationView: View {
         AskHistoryRow(
             title: item.title,
             updatedAt: item.updatedAt,
-            stored: model.isSignedIn && model.isLocal(item.id),
             selected: model.selectedId == item.id,
             busy: model.busyIds.contains(item.id),
             selectionSpace: selectionSpace,
@@ -716,7 +715,7 @@ struct AskConversationView: View {
 
     private var spaciousHeader: some View {
         HStack(spacing: 8) {
-            if let id = model.selectedId {
+            if model.selectedId != nil {
                 HStack(spacing: 10) {
                     Text(headerTitle ?? model.selected?.title
                         ?? model.conversations.first(where: { $0.id == model.selectedId })?.title
@@ -755,37 +754,8 @@ struct AskConversationView: View {
             }
             if let id = model.selectedId {
                 HStack(spacing: 2) {
-                    if let credits = headerCredits {
-                        Button { toggleUsage() } label: {
-                            HStack(spacing: 6) {
-                                Image(systemName: "sparkles").font(.system(size: 12, weight: .medium))
-                                    .foregroundStyle(AskTheme.accent)
-                                // Credits this conversation spent, labelled so it never
-                                // reads as the account's remaining balance.
-                                (Text(L("ask.usage.conversationSpent") + " ").font(.system(size: 12.5))
-                                    .foregroundColor(StudioTheme.textSecondary)
-                                    + Text(credits).font(.system(size: 12.5, weight: .semibold))
-                                    .foregroundColor(StudioTheme.textPrimary))
-                                    .monospacedDigit()
-                                    .lineLimit(1)
-                                    .fixedSize()
-                            }
-                            .padding(.horizontal, 10)
-                            .frame(height: 28)
-                            .background(showsUsage ? AskTheme.hoverFill : Color.clear,
-                                        in: style.controlShape(height: 28))
-                            .contentShape(style.controlShape(height: 28))
-                        }
-                        .buttonStyle(.plain)
-                        .help(L("ask.usage.conversationSpentHelp"))
-                        .accessibilityLabel(L("ask.usage.title"))
-                        .accessibilityValue(L("ask.usage.conversationSpent") + " " + credits + " credits")
+                    headerAction(.usage, label: L("ask.usage.title"), active: showsUsage) { toggleUsage() }
                         .accessibilityIdentifier("ask.workspace.usage")
-                        Rectangle().fill(AskTheme.separator).frame(width: 1, height: 18).padding(.horizontal, 4)
-                    } else {
-                        headerAction(.usage, label: L("ask.usage.title"), active: showsUsage) { toggleUsage() }
-                            .accessibilityIdentifier("ask.workspace.usage")
-                    }
                     headerAction(.trash, label: L("ask.delete")) { deleteId = id }
                 }
                 .padding(.horizontal, 3)
@@ -801,12 +771,6 @@ struct AskConversationView: View {
     /// A temporary conversation is never named, a new one is just "Temporary chat".
     private var headerTitle: String? {
         model.isTemporaryComposer(launcher: false) ? L("ask.temporary.title") : nil
-    }
-
-    private var headerCredits: String? {
-        guard let id = model.selectedId, !model.isLocal(id), !model.isTemporary(id),
-              let usage = model.selected?.usage else { return nil }
-        return usage.total.creditsText
     }
 
     /// The header icon and the composer's context ring both toggle the panel:

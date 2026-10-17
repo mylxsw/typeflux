@@ -129,15 +129,13 @@ struct AskWorkspaceGlassTests {
     }
 
     @Test func selectedHistoryTitleTakesTheAccentOnGlass() {
-        #expect(AskHistoryRow.titleColor(selected: true, hovering: false, stored: false, glass: true)
+        #expect(AskHistoryRow.titleColor(selected: true, hovering: false, glass: true)
             == AskTheme.accent)
-        #expect(AskHistoryRow.titleColor(selected: true, hovering: false, stored: true, glass: true)
-            == AskTheme.privateTint)
-        #expect(AskHistoryRow.titleColor(selected: true, hovering: false, stored: false, glass: false)
+        #expect(AskHistoryRow.titleColor(selected: true, hovering: false, glass: false)
             == StudioTheme.textPrimary)
-        #expect(AskHistoryRow.titleColor(selected: false, hovering: true, stored: false, glass: true)
+        #expect(AskHistoryRow.titleColor(selected: false, hovering: true, glass: true)
             == StudioTheme.textPrimary)
-        #expect(AskHistoryRow.titleColor(selected: false, hovering: false, stored: true, glass: true)
+        #expect(AskHistoryRow.titleColor(selected: false, hovering: false, glass: true)
             == StudioTheme.textSecondary)
     }
 
