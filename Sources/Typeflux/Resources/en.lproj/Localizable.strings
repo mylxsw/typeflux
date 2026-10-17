@@ -7,6 +7,12 @@
 "appearance.system" = "System";
 "appearance.light" = "Light";
 "appearance.dark" = "Dark";
+"appIcon.white" = "White";
+"appIcon.black" = "Black";
+"appIcon.colorful" = "Colorful";
+"appIcon.retroMosaic" = "Retro mosaic";
+"settings.appIcon.title" = "App icon";
+"settings.appIcon.note" = "Changes appear in the Dock immediately. The app file in Finder keeps the default icon.";
 "interfaceStyle.liquidGlass" = "Liquid Glass";
 "interfaceStyle.classic" = "Classic";
 

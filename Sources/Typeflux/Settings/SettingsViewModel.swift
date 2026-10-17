@@ -115,6 +115,7 @@ final class StudioViewModel: ObservableObject {
     @Published var llmProvider: LLMProvider
     @Published var llmRemoteProvider: LLMRemoteProvider
     @Published var appearanceMode: AppearanceMode
+    @Published var appIconStyle: AppIconStyle
     @Published var interfaceStyle: InterfaceStyle
     @Published var liquidGlassIntensity: Double
     @Published var launcherWindowMode: AskLauncherWindowMode
@@ -287,6 +288,7 @@ final class StudioViewModel: ObservableObject {
     private var personaStoreObserver: NSObjectProtocol?
     private var hotkeySettingsObserver: NSObjectProtocol?
     private var appearanceObserver: NSObjectProtocol?
+    private var appIconObserver: NSObjectProtocol?
     private var vocabularyObserver: NSObjectProtocol?
     private var cloudAccountModelDefaultsObserver: NSObjectProtocol?
     private var localModelDownloadProgressObserver: NSObjectProtocol?
@@ -365,6 +367,7 @@ final class StudioViewModel: ObservableObject {
             focusedModelProvider = .typefluxOfficial
         }
         appearanceMode = settingsStore.appearanceMode
+        appIconStyle = settingsStore.appIconStyle
         interfaceStyle = settingsStore.interfaceStyle
         liquidGlassIntensity = settingsStore.liquidGlassIntensity
         launcherWindowMode = settingsStore.askLauncherWindowMode
@@ -530,6 +533,16 @@ final class StudioViewModel: ObservableObject {
                 appearanceMode = self.settingsStore.appearanceMode
             }
         }
+        appIconObserver = NotificationCenter.default.addObserver(
+            forName: .appIconStyleDidChange,
+            object: settingsStore,
+            queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                appIconStyle = self.settingsStore.appIconStyle
+            }
+        }
         vocabularyObserver = NotificationCenter.default.addObserver(
             forName: .vocabularyStoreDidChange,
             object: nil,
@@ -586,6 +599,9 @@ final class StudioViewModel: ObservableObject {
         }
         if let appearanceObserver {
             NotificationCenter.default.removeObserver(appearanceObserver)
+        }
+        if let appIconObserver {
+            NotificationCenter.default.removeObserver(appIconObserver)
         }
         if let vocabularyObserver {
             NotificationCenter.default.removeObserver(vocabularyObserver)
@@ -1144,6 +1160,11 @@ final class StudioViewModel: ObservableObject {
     func setAppearanceMode(_ mode: AppearanceMode) {
         appearanceMode = mode
         settingsStore.appearanceMode = mode
+    }
+
+    func setAppIconStyle(_ style: AppIconStyle) {
+        appIconStyle = style
+        settingsStore.appIconStyle = style
     }
 
     func setInterfaceStyle(_ style: InterfaceStyle) {

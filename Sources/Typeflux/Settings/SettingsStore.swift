@@ -8,6 +8,7 @@ extension Notification.Name {
     )
     static let hotkeySettingsDidChange = Notification.Name("SettingsStore.hotkeySettingsDidChange")
     static let appearanceModeDidChange = Notification.Name("SettingsStore.appearanceModeDidChange")
+    static let appIconStyleDidChange = Notification.Name("SettingsStore.appIconStyleDidChange")
     static let interfaceStyleDidChange = Notification.Name("SettingsStore.interfaceStyleDidChange")
     static let preferredMicrophoneDidChange = Notification.Name("SettingsStore.preferredMicrophoneDidChange")
     static let instantVoiceInputDidChange = Notification.Name("SettingsStore.instantVoiceInputDidChange")
@@ -183,6 +184,18 @@ final class SettingsStore {
             guard currentValue != newValue else { return }
             defaults.set(newValue.rawValue, forKey: "ui.appearance")
             NotificationCenter.default.post(name: .appearanceModeDidChange, object: self)
+        }
+    }
+
+    var appIconStyle: AppIconStyle {
+        get {
+            let raw = defaults.string(forKey: "ui.appIconStyle") ?? AppIconStyle.black.rawValue
+            return AppIconStyle(rawValue: raw) ?? .black
+        }
+        set {
+            guard appIconStyle != newValue else { return }
+            defaults.set(newValue.rawValue, forKey: "ui.appIconStyle")
+            NotificationCenter.default.post(name: .appIconStyleDidChange, object: self)
         }
     }
 

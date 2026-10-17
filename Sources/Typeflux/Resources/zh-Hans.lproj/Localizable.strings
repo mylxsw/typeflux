@@ -7,6 +7,12 @@
 "appearance.system" = "跟随系统";
 "appearance.light" = "浅色";
 "appearance.dark" = "深色";
+"appIcon.white" = "白色";
+"appIcon.black" = "黑色";
+"appIcon.colorful" = "彩色";
+"appIcon.retroMosaic" = "复古马赛克";
+"settings.appIcon.title" = "应用图标";
+"settings.appIcon.note" = "切换后立即显示在程序坞；访达中的应用文件仍显示默认图标。";
 "interfaceStyle.liquidGlass" = "Liquid Glass";
 "interfaceStyle.classic" = "经典";
 

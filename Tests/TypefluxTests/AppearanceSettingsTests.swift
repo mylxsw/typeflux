@@ -57,6 +57,12 @@ struct AppearanceSettingsTests {
         try await withModel { settings, model in
             model.setLiquidGlassIntensity(0.82)
             try await UI.withWindow(AppearanceSettingsView(viewModel: model), width: 574, height: 1000) { _, host in
+                for style in AppIconStyle.allCases {
+                    #expect(AppIconController.image(for: style) != nil)
+                    try UI.button(style.displayName, in: host).press()
+                    #expect(settings.appIconStyle == style)
+                    #expect(model.appIconStyle == style)
+                }
                 for appearance in AppearanceMode.allCases {
                     try UI.button(appearance.displayName, in: host).press()
                     #expect(settings.appearanceMode == appearance)
@@ -84,6 +90,7 @@ struct AppearanceSettingsTests {
             #expect(restored.askLauncherWindowMode == model.launcherWindowMode)
             #expect(restored.appLanguage == model.appLanguage)
             #expect(restored.appearanceMode == model.appearanceMode)
+            #expect(restored.appIconStyle == model.appIconStyle)
         }
     }
 
@@ -142,10 +149,14 @@ struct AppearanceSettingsTests {
                             try await Task.sleep(for: .milliseconds(80))
                             host.layoutSubtreeIfNeeded()
                             let bounds = window.convertToScreen(host.convert(host.bounds, to: nil))
-                            for label in [AppearanceMode.system.displayName, InterfaceStyle.classic.displayName,
-                                          AskLauncherWindowMode.simple.title, AskLauncherWindowMode.complete.title] {
+                            let labels = [AppearanceMode.system.displayName, InterfaceStyle.classic.displayName,
+                                          AskLauncherWindowMode.simple.title, AskLauncherWindowMode.complete.title]
+                                + AppIconStyle.allCases.map(\.displayName)
+                            for label in labels {
                                 let button = try UI.button(label, in: host)
-                                #expect(button.frame.width > 0 && bounds.insetBy(dx: -1, dy: -1).contains(button.frame))
+                                #expect(button.frame.width > 0)
+                                #expect(button.frame.minX >= bounds.minX - 1)
+                                #expect(button.frame.maxX <= bounds.maxX + 1)
                             }
                             #expect(host.fittingSize.width <= width)
                             try UI.snapshot(

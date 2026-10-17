@@ -87,6 +87,29 @@ final class SettingsStoreTests: XCTestCase {
         NotificationCenter.default.removeObserver(observer)
     }
 
+    func testAppIconStyleDefaultsToBlackAndPersistsAllChoices() {
+        XCTAssertEqual(store.appIconStyle, .black)
+        for style in AppIconStyle.allCases {
+            store.appIconStyle = style
+            XCTAssertEqual(SettingsStore(defaults: defaults).appIconStyle, style)
+        }
+        defaults.set("unknown", forKey: "ui.appIconStyle")
+        XCTAssertEqual(store.appIconStyle, .black)
+    }
+
+    func testAppIconStyleChangePostsNotificationOnce() {
+        var count = 0
+        let observer = NotificationCenter.default.addObserver(
+            forName: .appIconStyleDidChange,
+            object: nil,
+            queue: nil
+        ) { _ in count += 1 }
+        store.appIconStyle = .colorful
+        store.appIconStyle = .colorful
+        NotificationCenter.default.removeObserver(observer)
+        XCTAssertEqual(count, 1)
+    }
+
     func testAppearanceModeNoNotificationWhenSameValue() {
         store.appearanceMode = .dark
 

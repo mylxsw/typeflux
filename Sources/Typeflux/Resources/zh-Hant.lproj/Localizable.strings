@@ -7,6 +7,12 @@
 "appearance.system" = "跟隨系統";
 "appearance.light" = "淺色";
 "appearance.dark" = "深色";
+"appIcon.white" = "白色";
+"appIcon.black" = "黑色";
+"appIcon.colorful" = "彩色";
+"appIcon.retroMosaic" = "復古馬賽克";
+"settings.appIcon.title" = "應用程式圖示";
+"settings.appIcon.note" = "切換後立即顯示在 Dock；Finder 中的應用程式檔案仍顯示預設圖示。";
 "interfaceStyle.liquidGlass" = "Liquid Glass";
 "interfaceStyle.classic" = "經典";
 

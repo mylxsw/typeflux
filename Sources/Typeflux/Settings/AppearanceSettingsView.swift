@@ -30,6 +30,31 @@ struct AppearanceSettingsView: View {
                     .padding(14)
                 }
             }
+            TFFormSection(footnote: L("settings.appIcon.note")) {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text(L("settings.appIcon.title"))
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(TFColors.textPrimary)
+                    LazyVGrid(columns: [GridItem(.adaptive(minimum: 112), spacing: 10)], spacing: 10) {
+                        ForEach(AppIconStyle.allCases) { style in
+                            TFChoiceCard(
+                                title: style.displayName,
+                                isSelected: viewModel.appIconStyle == style,
+                                action: { viewModel.setAppIconStyle(style) }
+                            ) {
+                                if let image = AppIconController.image(for: style) {
+                                    Image(nsImage: image)
+                                        .resizable()
+                                        .interpolation(.high)
+                                        .frame(width: 72, height: 72)
+                                }
+                            }
+                            .accessibilityIdentifier("settings.appIcon." + style.rawValue)
+                        }
+                    }
+                }
+                .padding(14)
+            }
             TFFormSection {
                 LauncherWindowModeSetting(selection: Binding(
                     get: { viewModel.launcherWindowMode }, set: viewModel.setLauncherWindowMode

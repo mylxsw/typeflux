@@ -21,12 +21,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var appCoordinator: AppCoordinator?
     private var languageObserver: NSObjectProtocol?
     private var appearanceObserver: NSObjectProtocol?
+    private var appIconObserver: NSObjectProtocol?
     private let termination = AppTerminationBarrier()
 
     func applicationDidFinishLaunching(_: Notification) {
         let settingsStore = SettingsStore()
         AppLocalization.shared.setLanguage(settingsStore.appLanguage)
         AppAppearance.apply(settingsStore.appearanceMode)
+        AppIconController.apply(settingsStore.appIconStyle)
         AppMenuController.install()
         languageObserver = NotificationCenter.default.addObserver(
             forName: .appLanguageDidChange,
@@ -44,6 +46,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         ) { _ in
             Task { @MainActor in
                 AppAppearance.apply(settingsStore.appearanceMode)
+            }
+        }
+        appIconObserver = NotificationCenter.default.addObserver(
+            forName: .appIconStyleDidChange,
+            object: nil,
+            queue: .main
+        ) { _ in
+            Task { @MainActor in
+                AppIconController.apply(settingsStore.appIconStyle)
             }
         }
         appCoordinator = AppCoordinator()
@@ -82,6 +93,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
         if let appearanceObserver {
             NotificationCenter.default.removeObserver(appearanceObserver)
+        }
+        if let appIconObserver {
+            NotificationCenter.default.removeObserver(appIconObserver)
         }
         appCoordinator?.stop()
     }

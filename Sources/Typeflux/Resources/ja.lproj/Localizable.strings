@@ -7,6 +7,12 @@
 "appearance.system" = "システム";
 "appearance.light" = "ライト";
 "appearance.dark" = "ダーク";
+"appIcon.white" = "ホワイト";
+"appIcon.black" = "ブラック";
+"appIcon.colorful" = "カラフル";
+"appIcon.retroMosaic" = "レトロモザイク";
+"settings.appIcon.title" = "アプリアイコン";
+"settings.appIcon.note" = "変更は Dock にすぐ反映されます。Finder のアプリファイルには標準アイコンが表示されます。";
 "interfaceStyle.liquidGlass" = "Liquid Glass";
 "interfaceStyle.classic" = "クラシック";
 
