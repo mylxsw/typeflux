@@ -1,93 +1,166 @@
 import Foundation
 
-/// A session-owned download delegate delivers incremental progress on macOS.
-/// The temporary file must be moved before the delegate callback returns.
-final class SemanticModelDownload: NSObject, URLSessionDownloadDelegate, @unchecked Sendable {
-    private let url: URL
+/// A serial session streams bytes to a private persistent prefix. A new instance can resume it.
+final class SemanticModelDownload: NSObject, URLSessionDataDelegate, @unchecked Sendable {
+    private let identity: SemanticDownloadState.Identity
     private let configuration: URLSessionConfiguration
+    private let directory: URL
     private let progress: @Sendable (Int64) -> Void
     private let lock = NSLock()
     private var continuation: CheckedContinuation<(URL, URLResponse), Error>?
     private var session: URLSession?
-    private var task: URLSessionDownloadTask?
-    private var downloaded: URL?
-    private var copyError: Error?
+    private var task: URLSessionDataTask?
+    // Accessed only by the serial delegate queue after start.
+    private var storage: SemanticDownloadState?
+    private var response: HTTPURLResponse?
+    private var failure: Error?
+    private var responseEnd: Int64 = 0
     private var cancelled = false
     private var started = false
 
-    private struct Completion {
-        let continuation: CheckedContinuation<(URL, URLResponse), Error>?
-        let file: URL?
-        let error: Error?
-        let session: URLSession?
-    }
-
-    init(url: URL = SemanticModel.url, configuration: URLSessionConfiguration = .ephemeral,
+    init(url: URL = SemanticModel.url, bytes: Int64 = SemanticModel.bytes, sha256: String = SemanticModel.sha256,
+         directory: URL = SemanticModel.directory.appendingPathComponent("Downloads", isDirectory: true),
+         configuration: URLSessionConfiguration = .ephemeral,
          progress: @escaping @Sendable (Int64) -> Void) {
-        self.url = url; self.configuration = configuration; self.progress = progress
+        identity = .init(url: url, bytes: bytes, sha256: sha256)
+        self.directory = directory; self.configuration = configuration; self.progress = progress
     }
 
     func fetch() async throws -> (URL, URLResponse) {
         try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { continuation in
-                self.lock.lock()
-                guard !self.cancelled else {
-                    self.lock.unlock(); continuation.resume(throwing: CancellationError()); return
+                lock.lock()
+                guard !cancelled, !started else {
+                    let error: Error = cancelled ? CancellationError() : URLError(.unknown)
+                    lock.unlock(); continuation.resume(throwing: error); return
                 }
-                guard !self.started else {
-                    self.lock.unlock(); continuation.resume(throwing: URLError(.unknown)); return
+                started = true
+                do {
+                    let state = try SemanticDownloadState(root: directory, identity: identity)
+                    storage = state
+                    if state.received == identity.bytes {
+                        self.continuation = continuation
+                        lock.unlock()
+                        DispatchQueue.global(qos: .utility).async {
+                            self.response = HTTPURLResponse(url: self.identity.url, statusCode: 200,
+                                                            httpVersion: nil, headerFields: nil)
+                            self.responseEnd = self.identity.bytes
+                            self.finish(error: nil)
+                        }
+                        return
+                    }
+                    var request = URLRequest(url: identity.url)
+                    request.setValue("identity", forHTTPHeaderField: "Accept-Encoding")
+                    if state.received > 0, let etag = state.etag {
+                        request.setValue("bytes=\(state.received)-", forHTTPHeaderField: "Range")
+                        request.setValue(etag, forHTTPHeaderField: "If-Range")
+                    }
+                    let queue = OperationQueue(); queue.maxConcurrentOperationCount = 1
+                    queue.qualityOfService = .utility
+                    let session = URLSession(configuration: configuration, delegate: self, delegateQueue: queue)
+                    let task = session.dataTask(with: request)
+                    self.continuation = continuation; self.session = session; self.task = task
+                    lock.unlock()
+                    task.resume()
+                } catch {
+                    storage = nil
+                    lock.unlock(); continuation.resume(throwing: error)
                 }
-                self.started = true
-                self.continuation = continuation
-                let session = URLSession(configuration: configuration, delegate: self, delegateQueue: nil)
-                let task = session.downloadTask(with: self.url)
-                self.session = session; self.task = task
-                self.lock.unlock()
-                task.resume()
             }
         } onCancel: { self.cancel() }
     }
 
+    private var isCancelled: Bool { lock.withLock { cancelled } }
+
     private func cancel() {
-        let task = self.lock.withLock { self.cancelled = true; return self.task }
+        let task = lock.withLock { cancelled = true; return self.task }
         task?.cancel()
     }
 
-    func urlSession(_: URLSession, downloadTask _: URLSessionDownloadTask, didWriteData _: Int64,
-                    totalBytesWritten: Int64, totalBytesExpectedToWrite _: Int64) {
-        self.progress(totalBytesWritten)
-    }
-
-    func urlSession(_: URLSession, downloadTask _: URLSessionDownloadTask, didFinishDownloadingTo location: URL) {
-        let target = FileManager.default.temporaryDirectory
-            .appendingPathComponent("semantic-model-\(UUID().uuidString).partial")
+    func urlSession(_: URLSession, dataTask _: URLSessionDataTask, didReceive response: URLResponse,
+                    completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
         do {
-            try FileManager.default.moveItem(at: location, to: target)
-            self.lock.withLock { self.downloaded = target }
-        } catch { self.lock.withLock { self.copyError = error } }
+            guard !isCancelled else { throw CancellationError() }
+            guard let http = response as? HTTPURLResponse, let state = storage,
+                  http.value(forHTTPHeaderField: "Content-Encoding").map({ $0 == "identity" }) ?? true else {
+                throw URLError(.badServerResponse)
+            }
+            let etag = http.value(forHTTPHeaderField: "ETag")
+            if http.statusCode == 200 {
+                // If-Range mismatch or ignored Range: replace the prefix, never append.
+                try state.reset(etag: etag.flatMap { $0.hasPrefix("\"") && $0.hasSuffix("\"") ? $0 : nil })
+                guard http.expectedContentLength < 0 || http.expectedContentLength == identity.bytes else {
+                    throw URLError(.badServerResponse)
+                }
+                responseEnd = identity.bytes
+            } else if http.statusCode == 206 {
+                guard state.received > 0, let previous = state.etag, etag == previous,
+                      let range = http.value(forHTTPHeaderField: "Content-Range"),
+                      let end = Self.rangeEnd(range, start: state.received, total: identity.bytes),
+                      http.expectedContentLength < 0 || http.expectedContentLength == end - state.received else {
+                    try state.reset(etag: nil)
+                    throw URLError(.badServerResponse)
+                }
+                responseEnd = end
+            } else { throw URLError(.badServerResponse) }
+            self.response = http
+            progress(state.received)
+            completionHandler(.allow)
+        } catch {
+            failure = error; completionHandler(.cancel)
+        }
     }
 
-    func urlSession(_: URLSession, task: URLSessionTask, didCompleteWithError error: Error?) {
-        let state = self.lock.withLock {
-            let failure: Error? = self.cancelled ? CancellationError() : (self.copyError ?? error)
-            let result = Completion(continuation: continuation, file: downloaded, error: failure, session: session)
-            continuation = nil; self.downloaded = nil; self.session = nil; self.task = nil
-            return result
-        }
-        state.session?.finishTasksAndInvalidate()
-        guard let continuation = state.continuation else { return }
-        if let error = state.error {
-            if let file = state.file {
-                try? FileManager.default.removeItem(at: file)
+    /// End is exclusive. A bounded 206 is retained as partial, never published as complete.
+    static func rangeEnd(_ value: String, start: Int64, total: Int64) -> Int64? {
+        guard value.hasPrefix("bytes ") else { return nil }
+        let parts = value.dropFirst(6).split(separator: "/", omittingEmptySubsequences: false)
+        guard parts.count == 2, Int64(parts[1]) == total else { return nil }
+        let bounds = parts[0].split(separator: "-", omittingEmptySubsequences: false)
+        guard bounds.count == 2, Int64(bounds[0]) == start, let end = Int64(bounds[1]),
+              end >= start, end < total else { return nil }
+        return end + 1
+    }
+
+    func urlSession(_: URLSession, dataTask: URLSessionDataTask, didReceive data: Data) {
+        do {
+            guard !isCancelled else { throw CancellationError() }
+            guard failure == nil, response != nil, let state = storage else { return }
+            guard Int64(data.count) <= responseEnd - state.received else {
+                try state.reset(etag: nil); throw URLError(.badServerResponse)
             }
-            continuation.resume(throwing: error)
-        } else if let file = state.file, let response = task.response {
-            continuation.resume(returning: (file, response))
-        } else {
-            if let file = state.file {
-                try? FileManager.default.removeItem(at: file)
+            try state.append(data)
+            progress(state.received)
+        } catch { failure = error; dataTask.cancel() }
+    }
+
+    func urlSession(_ session: URLSession, task _: URLSessionTask, didCompleteWithError error: Error?) {
+        defer { session.finishTasksAndInvalidate() }
+        finish(error: error)
+    }
+
+    private func finish(error: Error?) {
+        var result: Result<(URL, URLResponse), Error>
+        do {
+            guard !isCancelled else { throw CancellationError() }
+            if let failure = failure ?? error { throw failure }
+            guard let state = storage, let response, state.received == responseEnd,
+                  state.received == identity.bytes else { throw URLError(.networkConnectionLost) }
+            let file = try state.complete(cancelled: { self.isCancelled })
+            if !isCancelled { progress(state.received) }
+            result = .success((file, response))
+        } catch { result = .failure(error) }
+        let completion = lock.withLock {
+            if cancelled {
+                if case let .success((url, _)) = result { try? FileManager.default.removeItem(at: url) }
+                result = .failure(CancellationError())
             }
-            continuation.resume(throwing: URLError(.badServerResponse))
+            let completion = continuation
+            continuation = nil; task = nil; session = nil
+            return completion
         }
+        // Release the exclusive directory before a resumed caller starts another attempt.
+        storage = nil
+        completion?.resume(with: result)
     }
 }

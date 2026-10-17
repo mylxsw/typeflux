@@ -1,0 +1,13 @@
+{
+  "etag" : "\"v1\"",
+  "expected_sha256" : "2312394bd99545d9de131c24efb781e765ac1aec243f2ed9347597a793a415e9",
+  "installed_sha256" : "2312394bd99545d9de131c24efb781e765ac1aec243f2ed9347597a793a415e9",
+  "metadata_exists" : true,
+  "metadata_removed" : true,
+  "prefix_bytes" : 0,
+  "resumed_progress" : [
+    0,
+    262144,
+    262144
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "command": [
+    "make",
+    "coverage",
+    "FILTER=SemanticDownloadResumeTests/productionTextAndProjectorFetchUseSeparatePinnedIdentities"
+  ],
+  "wall_seconds": 66.97127341700252,
+  "exit_code": 0
+}

@@ -10,6 +10,9 @@ enum SemanticMediaModel {
 }
 
 struct SemanticMediaModelFiles: SemanticModelHandling {
+    var directory = SemanticModel.directory.appendingPathComponent("Downloads", isDirectory: true)
+    var configuration = URLSessionConfiguration.ephemeral
+
     func verify(_ url: URL, cancelled: @Sendable () -> Bool) throws {
         try SemanticModel.verify(url, bytes: SemanticMediaModel.bytes, sha256: SemanticMediaModel.sha256,
                                  cancelled: cancelled)
@@ -21,7 +24,9 @@ struct SemanticMediaModelFiles: SemanticModelHandling {
     }
 
     func fetch(progress: @escaping @Sendable (Int64) -> Void) async throws -> (URL, URLResponse) {
-        try await SemanticModelDownload(url: SemanticMediaModel.url, progress: progress).fetch()
+        try await SemanticModelDownload(url: SemanticMediaModel.url, bytes: SemanticMediaModel.bytes,
+                                        sha256: SemanticMediaModel.sha256, directory: directory,
+                                        configuration: configuration, progress: progress).fetch()
     }
 }
 
@@ -133,7 +138,9 @@ final class SemanticMediaWorker: SemanticMediaEmbedding {
         if cancelled() {
             throw CancellationError()
         }
-        guard (response as? HTTPURLResponse)?.statusCode == 200 else { throw URLError(.badServerResponse) }
+        guard let status = (response as? HTTPURLResponse)?.statusCode, status == 200 || status == 206 else {
+            throw URLError(.badServerResponse)
+        }
         try models.install(temporary, to: projector, cancelled: { cancelled() })
     }
 }

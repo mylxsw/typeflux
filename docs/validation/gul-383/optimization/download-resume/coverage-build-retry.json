@@ -1,0 +1,9 @@
+{
+  "command": [
+    "make",
+    "coverage",
+    "FILTER=SemanticDownloadResumeTests|SemanticFileServiceTests/(model.*download.*retry.*search.*rebuild.*removal|download.*cancellation.*corruption.*disabling|download.*failures.*early.*cancellation.*release.*session)|SemanticMediaWorkerTests/(downloadIsLazyVerifiedAndReused|failedAndCancelledTransfersAreJoinedAndNeverInstalled)"
+  ],
+  "wall_seconds": 145.6773766669794,
+  "exit_code": 2
+}

@@ -1,0 +1,380 @@
+[
+  {
+    "character" : 51,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-f24b0cafde2f/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticEmbeddingWorker.swift",
+    "line" : 263,
+    "reason" : "Tuples should have at most 2 members",
+    "rule_id" : "large_tuple",
+    "severity" : "Warning",
+    "type" : "Large Tuple"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-f24b0cafde2f/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticEmbeddingWorker.swift",
+    "line" : 270,
+    "reason" : "Line should be 120 characters or less; currently it has 131 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-f24b0cafde2f/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticEmbeddingWorker.swift",
+    "line" : 310,
+    "reason" : "Line should be 120 characters or less; currently it has 174 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-f24b0cafde2f/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticEmbeddingWorker.swift",
+    "line" : 318,
+    "reason" : "Line should be 120 characters or less; currently it has 174 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-f24b0cafde2f/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticEmbeddingWorker.swift",
+    "line" : 346,
+    "reason" : "Line should be 120 characters or less; currently it has 127 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 119,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-f24b0cafde2f/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticEmbeddingWorker.swift",
+    "line" : 205,
+    "reason" : "Trailing closure syntax should not be used when passing more than one closure argument",
+    "rule_id" : "multiple_closures_with_trailing_closure",
+    "severity" : "Warning",
+    "type" : "Multiple Closures with Trailing Closure"
+  },
+  {
+    "character" : 119,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-f24b0cafde2f/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticEmbeddingWorker.swift",
+    "line" : 234,
+    "reason" : "Trailing closure syntax should not be used when passing more than one closure argument",
+    "rule_id" : "multiple_closures_with_trailing_closure",
+    "severity" : "Warning",
+    "type" : "Multiple Closures with Trailing Closure"
+  },
+  {
+    "character" : 174,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-f24b0cafde2f/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticEmbeddingWorker.swift",
+    "line" : 310,
+    "reason" : "Trailing closure syntax should not be used when passing more than one closure argument",
+    "rule_id" : "multiple_closures_with_trailing_closure",
+    "severity" : "Warning",
+    "type" : "Multiple Closures with Trailing Closure"
+  },
+  {
+    "character" : 17,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-f24b0cafde2f/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+    "line" : 756,
+    "reason" : "`if`, `for`, `guard`, `switch`, `while`, and `catch` statements shouldn't unnecessarily wrap their conditionals or arguments in parentheses",
+    "rule_id" : "control_statement",
+    "severity" : "Warning",
+    "type" : "Control Statement"
+  },
+  {
+    "character" : 5,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-f24b0cafde2f/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+    "line" : 720,
+    "reason" : "Function should have complexity 10 or less; currently complexity is 12",
+    "rule_id" : "cyclomatic_complexity",
+    "severity" : "Warning",
+    "type" : "Cyclomatic Complexity"
+  },
+  {
+    "character" : 13,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-f24b0cafde2f/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+    "line" : 267,
+    "reason" : "Function should have complexity 10 or less; currently complexity is 28",
+    "rule_id" : "cyclomatic_complexity",
+    "severity" : "Error",
+    "type" : "Cyclomatic Complexity"
+  },
+  {
+    "character" : null,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-f24b0cafde2f/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+    "line" : 263,
+    "reason" : "SwiftLint rule 'cyclomatic_complexity' did not trigger a violation in the disabled region; remove the disable command",
+    "rule_id" : "superfluous_disable_command",
+    "severity" : "Warning",
+    "type" : "Superfluous Disable Command"
+  },
+  {
+    "character" : 5,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-f24b0cafde2f/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+    "line" : 720,
+    "reason" : "Function body should span 50 lines or less excluding comments and whitespace: currently spans 56 lines",
+    "rule_id" : "function_body_length",
+    "severity" : "Warning",
+    "type" : "Function Body Length"
+  },
+  {
+    "character" : 13,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-f24b0cafde2f/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+    "line" : 267,
+    "reason" : "Function body should span 100 lines or less excluding comments and whitespace: currently spans 141 lines",
+    "rule_id" : "function_body_length",
+    "severity" : "Error",
+    "type" : "Function Body Length"
+  },
+  {
+    "character" : null,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-f24b0cafde2f/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+    "line" : 263,
+    "reason" : "SwiftLint rule 'function_body_length' did not trigger a violation in the disabled region; remove the disable command",
+    "rule_id" : "superfluous_disable_command",
+    "severity" : "Warning",
+    "type" : "Superfluous Disable Command"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-f24b0cafde2f/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+    "line" : 155,
+    "reason" : "Line should be 120 characters or less; currently it has 132 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-f24b0cafde2f/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+    "line" : 156,
+    "reason" : "Line should be 120 characters or less; currently it has 176 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-f24b0cafde2f/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+    "line" : 324,
+    "reason" : "Line should be 120 characters or less; currently it has 122 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-f24b0cafde2f/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+    "line" : 331,
+    "reason" : "Line should be 120 characters or less; currently it has 133 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-f24b0cafde2f/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+    "line" : 349,
+    "reason" : "Line should be 120 characters or less; currently it has 173 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-f24b0cafde2f/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+    "line" : 518,
+    "reason" : "Line should be 120 characters or less; currently it has 136 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-f24b0cafde2f/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+    "line" : 541,
+    "reason" : "Line should be 200 characters or less; currently it has 281 characters",
+    "rule_id" : "line_length",
+    "severity" : "Error",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-f24b0cafde2f/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+    "line" : 584,
+    "reason" : "Line should be 120 characters or less; currently it has 173 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-f24b0cafde2f/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+    "line" : 625,
+    "reason" : "Line should be 120 characters or less; currently it has 122 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-f24b0cafde2f/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+    "line" : 628,
+    "reason" : "Line should be 120 characters or less; currently it has 199 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-f24b0cafde2f/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+    "line" : 635,
+    "reason" : "Line should be 120 characters or less; currently it has 129 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-f24b0cafde2f/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+    "line" : 658,
+    "reason" : "Line should be 120 characters or less; currently it has 121 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-f24b0cafde2f/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+    "line" : 668,
+    "reason" : "Line should be 120 characters or less; currently it has 139 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-f24b0cafde2f/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+    "line" : 682,
+    "reason" : "Line should be 120 characters or less; currently it has 133 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-f24b0cafde2f/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+    "line" : 684,
+    "reason" : "Line should be 120 characters or less; currently it has 129 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-f24b0cafde2f/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+    "line" : 686,
+    "reason" : "Line should be 120 characters or less; currently it has 129 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-f24b0cafde2f/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+    "line" : 700,
+    "reason" : "Line should be 120 characters or less; currently it has 139 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-f24b0cafde2f/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+    "line" : 749,
+    "reason" : "Line should be 120 characters or less; currently it has 140 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-f24b0cafde2f/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+    "line" : 755,
+    "reason" : "Line should be 120 characters or less; currently it has 140 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-f24b0cafde2f/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+    "line" : 763,
+    "reason" : "Line should be 120 characters or less; currently it has 131 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-f24b0cafde2f/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+    "line" : 767,
+    "reason" : "Line should be 120 characters or less; currently it has 140 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-f24b0cafde2f/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+    "line" : 776,
+    "reason" : "Line should be 120 characters or less; currently it has 122 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  },
+  {
+    "character" : 81,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-f24b0cafde2f/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+    "line" : 318,
+    "reason" : "Trailing closure syntax should not be used when passing more than one closure argument",
+    "rule_id" : "multiple_closures_with_trailing_closure",
+    "severity" : "Warning",
+    "type" : "Multiple Closures with Trailing Closure"
+  },
+  {
+    "character" : 81,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-f24b0cafde2f/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+    "line" : 621,
+    "reason" : "Trailing closure syntax should not be used when passing more than one closure argument",
+    "rule_id" : "multiple_closures_with_trailing_closure",
+    "severity" : "Warning",
+    "type" : "Multiple Closures with Trailing Closure"
+  },
+  {
+    "character" : 76,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-f24b0cafde2f/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+    "line" : 195,
+    "reason" : "Else and catch should be on the same line, one space after the previous declaration",
+    "rule_id" : "statement_position",
+    "severity" : "Warning",
+    "type" : "Statement Position"
+  },
+  {
+    "character" : 62,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-f24b0cafde2f/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticFileSearchService.swift",
+    "line" : 724,
+    "reason" : "Else and catch should be on the same line, one space after the previous declaration",
+    "rule_id" : "statement_position",
+    "severity" : "Warning",
+    "type" : "Statement Position"
+  },
+  {
+    "character" : 1,
+    "file" : "/Users/mylxsw/multica_workspaces_desktop-api.multica.ai/gulu-bf089d178fd3/gul-405-f24b0cafde2f/workdir/typeflux/Sources/Typeflux/Ask/QuickResults/Semantic/SemanticMediaWorker.swift",
+    "line" : 74,
+    "reason" : "Line should be 120 characters or less; currently it has 133 characters",
+    "rule_id" : "line_length",
+    "severity" : "Warning",
+    "type" : "Line Length"
+  }
+]

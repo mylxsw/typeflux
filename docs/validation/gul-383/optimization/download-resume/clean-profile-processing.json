@@ -1,0 +1,43 @@
+{
+  "production_source_and_object_match_required": true,
+  "production_coverage_identical_to_unfiltered_merge": true,
+  "merge_stderr": "",
+  "profiles": [
+    {
+      "source": "application-profiles/XCTest6755308177549342514_0.44979.profraw.gz",
+      "raw_sha256": "34849e8244b1cf30f3f16aadd47c52578ec5df4154215a921c95d607b68374d5",
+      "filter": "TypefluxFocusedTests",
+      "filter_output": "3002 of 65483 functions in the original profile are filtered.\n"
+    },
+    {
+      "source": "application-profiles/Swift Testing6755308177549342514_0.44980.profraw.gz",
+      "raw_sha256": "7d26dc9a3d8b938468fc8ea1e6592c9d72f7d982ed2ed528b5b0c88edc9ba94c",
+      "filter": "TypefluxFocusedTests",
+      "filter_output": "3002 of 65483 functions in the original profile are filtered.\n"
+    },
+    {
+      "source": "first-pass-profiles/XCTest6755294975892567858_0.38985.profraw.gz",
+      "raw_sha256": "af7a61f7131a93acba42d22339a206b9a37eec8522f707c22703f87456c307bf",
+      "filter": "TypefluxFocusedTests",
+      "filter_output": "3001 of 65482 functions in the original profile are filtered.\n"
+    },
+    {
+      "source": "first-pass-profiles/Swift Testing6755294975892567858_0.38986.profraw.gz",
+      "raw_sha256": "0bc940a87586ec2a9257bf68223e56d6f5d8ed2abd5b91672d8ee586db741cd2",
+      "filter": "TypefluxFocusedTests",
+      "filter_output": "3001 of 65482 functions in the original profile are filtered.\n"
+    },
+    {
+      "source": "repair-pass-profiles/Swift Testing6755294976966309682_0.42606.profraw.gz",
+      "raw_sha256": "865ab3d3d868603ce975d1e1ea63d2d58c7bf650a59d6354c3533a220b216a12",
+      "filter": "TypefluxFocusedTests",
+      "filter_output": "3001 of 65482 functions in the original profile are filtered.\n"
+    },
+    {
+      "source": "repair-pass-profiles/XCTest6755294976966309682_0.42605.profraw.gz",
+      "raw_sha256": "22d6436435902f11237c77ed200394b45aed53a0ca3a160f62651e19a3ff211d",
+      "filter": "TypefluxFocusedTests",
+      "filter_output": "3001 of 65482 functions in the original profile are filtered.\n"
+    }
+  ]
+}
