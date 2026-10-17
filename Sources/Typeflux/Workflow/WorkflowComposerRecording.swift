@@ -241,19 +241,30 @@ final class WorkflowComposerRecording: AskVoiceRecording {
         guard WorkflowController.hasRewritePersona(personaContext.prompt), !personaContext.wasApplied else {
             return trimmed
         }
-        let result = try await workflow.generateRewrite(
-            request: LLMRewriteRequest(
-                mode: .rewriteTranscript, sourceText: trimmed, spokenInstruction: nil,
-                personaPrompt: personaContext.prompt, personaID: persona?.persona?.id,
-                vocabularyTerms: VocabularyStore.activeTerms()
-            ),
-            sessionID: workflow.processingSessionID,
-            showsStreamingPreview: false,
-            presentsConfigurationFailure: false,
-            timeoutBudget: workflow.llmRewriteTimeoutBudget(for: trimmed)
-        )
-        try Task.checkCancellation()
-        return result.text
+        do {
+            let result = try await workflow.generateRewrite(
+                request: LLMRewriteRequest(
+                    mode: .rewriteTranscript, sourceText: trimmed, spokenInstruction: nil,
+                    personaPrompt: personaContext.prompt, personaID: persona?.persona?.id,
+                    vocabularyTerms: VocabularyStore.activeTerms()
+                ),
+                sessionID: workflow.processingSessionID,
+                showsStreamingPreview: false,
+                presentsConfigurationFailure: false,
+                timeoutBudget: workflow.llmRewriteTimeoutBudget(for: trimmed)
+            )
+            try Task.checkCancellation()
+            if !result.text.isEmpty { return result.text }
+            ErrorLogStore.shared.log("Composer persona rewrite returned an empty response, using transcript as fallback")
+        } catch is CancellationError {
+            throw CancellationError()
+        } catch let error as URLError where error.code == .cancelled {
+            throw CancellationError()
+        } catch {
+            try Task.checkCancellation()
+            ErrorLogStore.shared.log("Composer persona rewrite failed, using transcript as fallback: \(error.localizedDescription)")
+        }
+        return trimmed
     }
 
     func cancel() async {

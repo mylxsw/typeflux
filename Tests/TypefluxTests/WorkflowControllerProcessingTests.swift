@@ -4194,7 +4194,7 @@ extension WorkflowControllerProcessingTests {
     }
 
     @MainActor
-    func testComposerMissingLLMConfigurationReturnsInlineErrorAndCleansUp() async throws {
+    func testComposerMissingLLMConfigurationUsesTranscriptAndCleansUp() async throws {
         let recorder = MockProcessingAudioRecorder()
         let controller = makeWorkflowController(audioRecorder: recorder,
             sttTranscriber: MockProcessingTranscriber(transcript: "raw speech"), configureSettings: {
@@ -4207,11 +4207,73 @@ extension WorkflowControllerProcessingTests {
             }, hasPaidCloudSubscription: { true })
         let service = WorkflowComposerRecording(controller, isAppBundle: { true })
         try await service.start()
-        do { _ = try await service.transcribe(); XCTFail("Missing configuration must be reported") }
-        catch { XCTAssertFalse(error is CancellationError) }
+        let text = try await service.transcribe()
+        XCTAssertEqual(text, "raw speech")
         await service.cancel()
         XCTAssertEqual(recorder.stopCallCount, 1)
         XCTAssertFalse(controller.shouldPreserveLLMConfigurationNotice)
+        XCTAssertEqual(controller.appState.status, .idle)
+    }
+
+    @MainActor
+    func testComposerPersonaTimeoutInsertsTranscriptWithoutInlineError() async throws {
+        _ = NSApplication.shared
+        let audioRecorder = MockProcessingAudioRecorder()
+        let controller = makeWorkflowController(
+            audioRecorder: audioRecorder,
+            sttTranscriber: MockProcessingTranscriber(transcript: "spoken fallback"),
+            llmService: SlowProcessingLLMService(delay: .seconds(2)),
+            configureSettings: {
+                $0.sttProvider = .appleSpeech
+                $0.applyPersonaSelection(SettingsStore.defaultPersonaID)
+                self.configureReadyLLM(settingsStore: $0)
+            }, hasPaidCloudSubscription: { true }
+        )
+        controller.llmTimeoutAfterTranscription = 0.01
+        let voice = AskVoiceInput()
+        voice.recorder = WorkflowComposerRecording(controller, isAppBundle: { true })
+        let editor = AskComposerTextView.Editor(frame: NSRect(x: 0, y: 0, width: 300, height: 80))
+        editor.voice = voice
+        let window = AskTestVoiceWindow(contentRect: editor.frame, styleMask: .titled,
+                                        backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = editor
+        NSApp.activate(ignoringOtherApps: true)
+        window.makeKeyAndOrderFront(nil)
+        window.makeFirstResponder(editor)
+        defer { window.close() }
+
+        XCTAssertTrue(voice.begin(in: editor, locked: true))
+        for _ in 0..<100 where audioRecorder.startCallCount == 0 {
+            try await Task.sleep(for: .milliseconds(2))
+        }
+        XCTAssertEqual(audioRecorder.startCallCount, 1)
+        voice.stop()
+        for _ in 0..<500 where voice.isOccupied {
+            try await Task.sleep(for: .milliseconds(5))
+        }
+
+        XCTAssertFalse(voice.isOccupied)
+        XCTAssertEqual(editor.string, "spoken fallback")
+        XCTAssertNil(voice.error)
+        XCTAssertEqual(controller.appState.status, .idle)
+    }
+
+    @MainActor
+    func testComposerEmptyPersonaRewriteKeepsTranscript() async throws {
+        let controller = makeWorkflowController(
+            sttTranscriber: MockProcessingTranscriber(transcript: "raw speech"),
+            llmService: CountingProcessingLLMService(rewriteText: ""),
+            configureSettings: {
+                $0.sttProvider = .appleSpeech
+                $0.applyPersonaSelection(SettingsStore.defaultPersonaID)
+                self.configureReadyLLM(settingsStore: $0)
+            }, hasPaidCloudSubscription: { true }
+        )
+        let service = WorkflowComposerRecording(controller, isAppBundle: { true })
+        try await service.start()
+        let text = try await service.transcribe()
+        XCTAssertEqual(text, "raw speech")
         XCTAssertEqual(controller.appState.status, .idle)
     }
 
